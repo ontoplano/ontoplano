@@ -7,7 +7,11 @@
 	import { settingsForm } from '$lib/actions/settings-form';
 	import { armed } from '$lib/actions/armed';
 	import Banner from '$lib/components/Banner.svelte';
-	import Card from '$lib/components/Card.svelte';
+	import CopyBlock from '$lib/components/CopyBlock.svelte';
+	import Modal from '$lib/components/Modal.svelte';
+	import RoomSurface from '$lib/components/RoomSurface.svelte';
+	import SettingGroup from '$lib/components/SettingGroup.svelte';
+	import SettingRow from '$lib/components/SettingRow.svelte';
 	import EmptyState from '$lib/components/EmptyState.svelte';
 	import Field from '$lib/components/Field.svelte';
 	import FormError from '$lib/components/FormError.svelte';
@@ -62,7 +66,7 @@
 	};
 
 	let confirmRevoke = $state<number | null>(null);
-	let copied = $state<string | null>(null);
+	let inviting = $state(false);
 
 	/** Shown once, right after it is made: the code is no use on this page. */
 	const fresh = $derived(
@@ -76,17 +80,6 @@
 	function inviteLink(code: string): string {
 		const origin = typeof location === 'undefined' ? '' : location.origin;
 		return `${origin}/login?register&invite=${encodeURIComponent(code)}`;
-	}
-
-	async function copy(code: string) {
-		try {
-			await navigator.clipboard.writeText(code);
-			copied = code;
-			setTimeout(() => (copied = null), 2000);
-		} catch {
-			// A browser that refuses the clipboard is not an error worth a banner;
-			// the code is on screen and can be selected.
-		}
 	}
 
 	/** "3 minutes ago", down to the granularity anybody reads at a glance. */
@@ -131,418 +124,465 @@
 	<FormError message={form?.message} />
 
 	{#if data.staging}
-		<StagingBand
-			detail="ONTOPLANO_STAGING=true in the server's environment. Unset it and restart to close the doors."
-		/>
+		<StagingBand detail={t('settings.instance.stagingDetail')} />
 	{/if}
 
-	<Card
-		title={t('settings.instance.whatIsRunning')}
-		description={onDevice
-			? t('settings.instance.whichOntoplanoThisIsAnd')
-			: t('settings.instance.whetherTheLastDeployIs')}
-	>
-		<dl class="grid gap-x-6 gap-y-3 sm:grid-cols-2">
+	<!--
+		One surface, a subject per band, a fact or a setting per row — the shape
+		the account page has. It was a card per subject with a Save button in
+		each, several of them under one grey header each for a single checkbox.
+		The switches save themselves now; the only fields that need a press are
+		the ones you type into.
+	-->
+	<RoomSurface>
+		<SettingGroup
+			title={t('settings.instance.whatIsRunning')}
+			description={onDevice
+				? t('settings.instance.whichOntoplanoThisIsAnd')
+				: t('settings.instance.whetherTheLastDeployIs')}
+		>
 			<!--
 				Which of the two this is, said before anything else on the page.
-
 				Somebody can be running this copy and one behind a server at the
 				same time, and the two are the same app to look at — so the screen
 				that answers "what am I looking at" has to answer that part first.
-				The main menu's mark wears the device's own blue here for the same
-				reason; this is the sentence behind it.
 			-->
 			{#if onDevice}
-				<div>
-					<dt class="text-sm text-gray-500">{t('settings.instance.instance')}</dt>
-					<dd class="text-sm font-semibold text-gray-900">
-						{t('settings.instance.isolated')}
-						<span class="block font-normal text-gray-500">
-							{t('settings.instance.thisDeviceOnItsOwn')}
-						</span>
-					</dd>
-				</div>
+				<SettingRow
+					label={t('settings.instance.instance')}
+					hint={t('settings.instance.thisDeviceOnItsOwn')}
+				>
+					{#snippet control()}
+						<span class="text-sm font-semibold text-gray-900"
+							>{t('settings.instance.isolated')}</span
+						>
+					{/snippet}
+				</SettingRow>
 			{/if}
-
-			<div>
-				<dt class="text-sm text-gray-500">{t('settings.instance.version')}</dt>
-				<dd class="tabular text-lg font-semibold text-gray-900" data-testid="app-version">
-					{data.build.version}
-					<span class="text-sm font-normal text-gray-500">({data.build.commit})</span>
-				</dd>
-			</div>
-
-			<div>
-				<dt class="text-sm text-gray-500">{t('settings.instance.built')}</dt>
-				<dd class="text-sm text-gray-900">
-					{ago(data.build.builtAt)}
-					<span class="text-gray-500">· {exactly(data.build.builtAt)}</span>
-				</dd>
-			</div>
-
+			<SettingRow label={t('settings.instance.version')}>
+				{#snippet control()}
+					<span class="tabular text-sm font-semibold text-gray-900" data-testid="app-version">
+						{data.build.version}
+						<span class="font-normal text-gray-500">({data.build.commit})</span>
+					</span>
+				{/snippet}
+			</SettingRow>
+			<SettingRow label={t('settings.instance.built')}>
+				{#snippet control()}
+					<span class="text-sm text-gray-900">
+						{ago(data.build.builtAt)}
+						<span class="text-gray-500">· {exactly(data.build.builtAt)}</span>
+					</span>
+				{/snippet}
+			</SettingRow>
 			<!-- A server can be older than the build it reports; here the page you
 			     are looking at is the build. -->
 			{#if !onDevice}
-				<div>
-					<dt class="text-sm text-gray-500">{t('settings.instance.runningSince')}</dt>
-					<dd class="text-sm text-gray-900">
-						{ago(data.build.startedAt)}
-						<span class="text-gray-500">· {exactly(data.build.startedAt)}</span>
-					</dd>
-				</div>
-			{/if}
-
-			{#if !onDevice}
-				<div>
-					<dt class="text-sm text-gray-500">{t('settings.instance.registrationInForce')}</dt>
-					<dd class="text-sm text-gray-900">
-						{data.effectiveRegistration}
-						{#if data.effectiveRegistration !== data.config.registration.mode}
-							<span class="text-amber-700"
-								>{t('settings.instance.theEnvironmentOverridesThe', {
-									mode: data.config.registration.mode
-								})}</span
-							>
-						{/if}
-					</dd>
-				</div>
+				<SettingRow label={t('settings.instance.runningSince')}>
+					{#if !restartedIntoThisBuild}
+						<div class="mt-2">
+							<Banner kind="warning">
+								{t('settings.instance.thisProcessIsOlderThan')}
+								<code class="tabular">{t('settings.instance.makeRestartServer')}</code>
+							</Banner>
+						</div>
+					{/if}
+					{#snippet control()}
+						<span class="text-sm text-gray-900">
+							{ago(data.build.startedAt)}
+							<span class="text-gray-500">· {exactly(data.build.startedAt)}</span>
+						</span>
+					{/snippet}
+				</SettingRow>
+				<SettingRow
+					label={t('settings.instance.registrationInForce')}
+					hint={data.effectiveRegistration !== data.config.registration.mode
+						? t('settings.instance.theEnvironmentOverridesThe', {
+								mode: data.config.registration.mode
+							})
+						: ''}
+				>
+					{#snippet control()}
+						<span class="text-sm font-medium text-gray-900">{data.effectiveRegistration}</span>
+					{/snippet}
+				</SettingRow>
 			{:else if storage}
-				<div>
-					<dt class="text-sm text-gray-500">{t('settings.instance.whereTheDataIs')}</dt>
-					<dd class="text-sm text-gray-900">
-						<span class="tabular">{storage.path}</span>
-						<span class="text-gray-500"
-							>{t('settings.instance.tables', { tables: storage.tables })}</span
-						>
-					</dd>
-				</div>
-			{/if}
-		</dl>
-
-		{#if !onDevice && !restartedIntoThisBuild}
-			<div class="mt-4">
-				<Banner kind="warning">
-					{t('settings.instance.thisProcessIsOlderThan')}
-					<code class="tabular">{t('settings.instance.makeRestartServer')}</code>
-				</Banner>
-			</div>
-		{/if}
-	</Card>
-
-	<!--
-		The rest of this page is somebody else's deployment.
-		
-		The timers beside the app, the address it listens on, who may register,
-		the mailing list, what an account may change, where reports go, the
-		invitations. An instance that is a phone has none of them — there is
-		nobody else who could register and nothing listening — so they are
-		absent rather than shown empty.
-	-->
-	{#if !onDevice}
-		{#if data.companions.length > 0}
-			<!--
-				The processes the app needs beside itself.
-
-				`ontoplano.service` alone is an app that works perfectly and never
-				reminds anybody of anything: reminders, the weekly review mail and
-				(where this instance sells) billing reconciliation each fire from a
-				timer of their own. This says which of them this box actually has —
-				and for reminders it reads the app's own record of being asked, which
-				is true whatever is doing the asking.
-
-				Blue for running and red for not, never green — and the word carries
-				the meaning either way.
-			-->
-			<Card
-				title={t('settings.instance.theServicesBesideTheApp')}
-				description={t('settings.instance.theAppAnswersRequestsThese')}
-			>
-				<ul class="divide-y divide-gray-200">
-					{#each data.companions as row (row.unit)}
-						<li class="flex flex-wrap items-baseline gap-x-3 gap-y-1 py-2">
-							<span
-								class="h-2 w-2 shrink-0 self-center rounded-full {row.ok
-									? 'bg-blue-600'
-									: 'bg-red-600'}"
-								aria-hidden="true"
-							></span>
-							<span class="text-sm font-medium text-gray-900">{t(row.label)}</span>
-							<span class="text-sm {row.ok ? 'text-gray-600' : 'text-red-700'}">{row.detail}</span>
-							{#if row.fix}
-								<code class="tabular basis-full pl-5 text-xs text-gray-600 sm:basis-auto sm:pl-0"
-									>{row.fix}</code
-								>
-							{/if}
-						</li>
-					{/each}
-				</ul>
-			</Card>
-		{/if}
-
-		<div class="grid gap-4 lg:grid-cols-2">
-			<!--
-				Read, not edit.
-			
-				The host and port were fields here, and there is no moment at which
-				somebody signed into a running instance wants to change the address it
-				is listening on from inside that instance: a wrong value takes the app
-				off the air, and the way back is a text editor and a restart on the
-				box. It is a fact about the deployment, like the database path beside
-				it, so it is shown the same way.
-			-->
-			<!--
-				Blank on the demo. Both of these describe somebody's server — the
-				address it answers on, and a path that carries the name of the user it
-				runs as — and everybody browsing the demo is signed into its one
-				administrator account. The cards stay, because what this page is for is
-				part of what the demo shows.
-			-->
-			<Card
-				title={t('settings.instance.deployment')}
-				description={t('settings.instance.whereTheServerListensSet')}
-			>
-				<p
-					class="tabular border border-gray-200 bg-gray-50 px-3 py-2 text-sm break-all text-gray-700"
+				<SettingRow
+					label={t('settings.instance.whereTheDataIs')}
+					hint={t('settings.instance.tables', { tables: storage.tables })}
 				>
-					{#if data.demo}
-						<span class="text-gray-500">{t('settings.instance.hiddenOnTheDemo')}</span>
-					{:else}
-						{data.config.server.host}:{data.config.server.port}
-					{/if}
-				</p>
-			</Card>
-
-			<Card
-				title={t('settings.instance.database')}
-				description={t('settings.instance.whereYourDataIsStored')}
-			>
-				<p
-					class="tabular border border-gray-200 bg-gray-50 px-3 py-2 text-sm break-all text-gray-700"
-				>
-					{#if data.demo}
-						<span class="text-gray-500">{t('settings.instance.hiddenOnTheDemo')}</span>
-					{:else}
-						{data.config.database.path}
-					{/if}
-				</p>
-			</Card>
-		</div>
-
-		<Card
-			title={t('settings.instance.whoCanRegister')}
-			description={t('settings.instance.anInstanceOnTheOpen')}
-		>
-			{#if data.effectiveRegistration !== data.config.registration.mode}
-				<!--
-					The bug this fixes: the radios showed the file while the environment
-					was forcing something else, so the page said "Closed" on an instance
-					anybody could join. What is stored and what is in force are two
-					different facts and the page has to show both.
-				-->
-				<div class="mb-4">
-					<Banner kind="warning">
-						<strong>{data.effectiveRegistration}</strong>
-						{t('settings.instance.rightNowSetInThe')}
-					</Banner>
-				</div>
+					{#snippet control()}
+						<code class="tabular text-sm break-all text-gray-900">{storage.path}</code>
+					{/snippet}
+				</SettingRow>
 			{/if}
-
-			<form
-				method="post"
-				action="?/setRegistration"
-				use:settingsForm={{ notice: t('settings.instance.registrationSaved') }}
-				class="space-y-3"
-			>
-				{#each REGISTRATION_MODES as mode (mode.key)}
-					<label class="flex cursor-pointer items-start gap-3">
-						<input
-							type="radio"
-							name="mode"
-							value={mode.key}
-							checked={data.config.registration.mode === mode.key}
-							class="mt-1"
-						/>
-						<span>
-							<span class="block text-sm font-medium text-gray-900">{t(mode.label)}</span>
-							<span class="block text-sm text-gray-500">{t(mode.hint)}</span>
-						</span>
-					</label>
-				{/each}
-
-				<button class="btn btn-primary">{t('ui.save')}</button>
-			</form>
-		</Card>
-
-		{#if data.newsletter}
-			{@const list = data.newsletter}
-			<Card
-				title={t('settings.instance.theMailingList')}
-				description={t('settings.instance.peopleWhoAskedToBe')}
-			>
-				{#snippet actions()}
-					<form method="post" action="?/exportSubscribers" use:enhance={exportList}>
-						<button class="btn btn-sm" disabled={list.confirmed === 0}>
-							<Icon name="download" />
-							{t('settings.instance.export')}
-						</button>
-					</form>
-				{/snippet}
-				<p class="text-sm text-gray-500">
-					<span class="font-medium text-gray-900">{list.confirmed}</span>
-					{t('settings.instance.confirmed')}{#if list.pending > 0}{t('settings.instance.and')}
-						{list.pending}
-						{t('settings.instance.whoHaveNotFollowedThe')}{/if}{t(
-						'settings.instance.onlyConfirmedAddressesAre'
-					)}
-				</p>
-			</Card>
-		{/if}
-
-		<Card
-			title={t('settings.instance.whatAnAccountMayChange')}
-			description={t('settings.instance.anAddressIsWhatAn')}
-		>
-			<form
-				method="post"
-				action="?/setEmailChange"
-				use:settingsForm={{ notice: 'Saved.' }}
-				class="space-y-3"
-			>
-				<label class="flex cursor-pointer items-start gap-3">
-					<input
-						type="checkbox"
-						name="allowEmailChange"
-						value="true"
-						checked={data.config.account.allowEmailChange}
-						class="mt-1"
-					/>
-					<span>
-						<span class="block text-sm font-medium text-gray-900">
-							{t('settings.instance.letPeopleMoveTheirAccount')}
-						</span>
-						<span class="block text-sm text-gray-500">
-							{t('settings.instance.offByDefaultTheChange')}
-						</span>
-					</span>
-				</label>
-
-				<button class="btn btn-primary">{t('ui.save')}</button>
-			</form>
-		</Card>
-
-		<Card
-			title={t('settings.instance.reportsAndSuggestions')}
-			description={t('settings.instance.whenAPageBreaksIn')}
-		>
-			<form
-				method="post"
-				action="?/setClientErrors"
-				use:settingsForm={{ notice: 'Saved.' }}
-				class="space-y-3"
-			>
-				<label class="flex cursor-pointer items-start gap-3">
-					<input
-						type="checkbox"
-						name="clientErrors"
-						value="true"
-						checked={data.config.reports.clientErrors}
-						class="mt-1"
-					/>
-					<span>
-						<span class="block text-sm font-medium text-gray-900">
-							{t('settings.instance.offerToSendWhatBroke')}
-						</span>
-						<span class="block text-sm text-gray-500">
-							{t('settings.instance.offByDefaultEachPerson')}
-						</span>
-					</span>
-				</label>
-
-				<label class="block text-sm">
-					<span class="block font-medium text-gray-900"
-						>{t('settings.instance.sendReportsAndSuggestionsTo')}</span
-					>
-					<span class="block text-gray-500">
-						{t('settings.instance.leaveItEmptyAndThey')}
-					</span>
-					<OneLine
-						name="feedbackEmail"
-						value={data.config.reports.feedbackEmail}
-						class="input mt-1 w-full sm:max-w-sm"
-						placeholder={t('settings.instance.youExampleCom')}
-					/>
-				</label>
-
-				<button class="btn btn-primary">{t('ui.save')}</button>
-			</form>
-		</Card>
+		</SettingGroup>
 
 		<!--
-			Invitations are not only for a closed instance.
+			The rest of this page is somebody else's deployment.
 
-			They used to be: open registration ignored a code outright, so on the
-			instance that actually sells something an invitation meant nothing. What it
-			means now is the thing worth giving away — a month of the app handed over at
-			sign-up, no card asked for and no trial spent. The code still lets somebody
-			in where the instance is closed; that is the smaller half of its job.
+			The timers beside the app, the address it listens on, who may register,
+			the mailing list, what an account may change, where reports go, the
+			invitations. An instance that is a phone has none of them — there is
+			nobody else who could register and nothing listening — so they are
+			absent rather than shown empty.
 		-->
-		<Card
-			title={t('settings.instance.invitations')}
-			description={data.sellsAnything
-				? t('settings.instance.aCodeSomebodyTypesWhen')
-				: t('settings.instance.aCodeSomebodyTypesWhen2')}
-		>
-			{#snippet actions()}
-				<span class="eyebrow text-gray-600"
-					>{t('settings.instance.open', { length: open.length })}</span
+		{#if !onDevice}
+			{#if data.companions.length > 0}
+				<!--
+					The processes the app needs beside itself.
+
+					`ontoplano.service` alone is an app that works perfectly and never
+					reminds anybody of anything: reminders, the weekly review mail and
+					(where this instance sells) billing reconciliation each fire from a
+					timer of their own. This says which of them this box actually has.
+
+					A glyph and a word, never red or green text: the state is said by
+					the tick or the warning and by the sentence beside it.
+				-->
+				<SettingGroup
+					title={t('settings.instance.theServicesBesideTheApp')}
+					description={t('settings.instance.theAppAnswersRequestsThese')}
 				>
-			{/snippet}
-
-			{#if fresh}
-				<div class="mb-4 border border-blue-200 bg-blue-50 p-3">
-					<p class="text-sm text-blue-900">
-						{t('settings.instance.handThisOverNow')}
-					</p>
-					<div class="mt-2 flex items-center gap-2">
-						<code
-							class="tabular flex-1 border border-blue-200 bg-white px-3 py-2 text-sm break-all"
-						>
-							{fresh}
-						</code>
-						<button type="button" onclick={() => copy(fresh)} class="btn btn-sm">
-							<Icon name="copy" />
-							{copied === fresh ? 'Copied' : 'Copy'}
-						</button>
-					</div>
-					<!--
-						The link, not only the code.
-
-						Sending somebody a string and telling them where to paste it is a step
-						they can get wrong; this one opens the register form with the code
-						already in it, which is the whole of what they have to do.
-					-->
-					<div class="mt-2 flex items-center gap-2">
-						<code class="flex-1 border border-blue-200 bg-white px-3 py-2 text-xs break-all">
-							{inviteLink(fresh)}
-						</code>
-						<button type="button" onclick={() => copy(inviteLink(fresh))} class="btn btn-sm">
-							<Icon name="link" />
-							{copied === inviteLink(fresh) ? 'Copied' : t('settings.instance.copyLink')}
-						</button>
-					</div>
-				</div>
+					{#each data.companions as row (row.unit)}
+						<SettingRow label={t(row.label)} hint={row.detail}>
+							{#if row.fix}
+								<code class="tabular mt-1 block text-xs break-all text-gray-600">{row.fix}</code>
+							{/if}
+							{#snippet control()}
+								<span
+									class="flex items-center gap-1.5 text-sm font-medium text-gray-900"
+									title={row.detail}
+								>
+									<Icon name={row.ok ? 'check' : 'warning'} size={16} />
+									{row.ok ? t('settings.instance.running') : t('settings.instance.notRunning')}
+								</span>
+							{/snippet}
+						</SettingRow>
+					{/each}
+				</SettingGroup>
 			{/if}
 
-			<form method="post" action="?/createInvite" use:enhance>
+			<!--
+				Read, not edit: a wrong value takes the app off the air, and the way
+				back is a text editor and a restart on the box. Blank on the demo,
+				where everybody is signed into its one administrator account.
+			-->
+			<SettingGroup title={t('settings.instance.whereItRuns')}>
+				<SettingRow
+					label={t('settings.instance.deployment')}
+					hint={t('settings.instance.whereTheServerListensSet')}
+				>
+					{#snippet control()}
+						<code class="tabular text-sm break-all text-gray-900">
+							{#if data.demo}
+								<span class="text-gray-500">{t('settings.instance.hiddenOnTheDemo')}</span>
+							{:else}
+								{data.config.server.host}:{data.config.server.port}
+							{/if}
+						</code>
+					{/snippet}
+				</SettingRow>
+				<SettingRow
+					label={t('settings.instance.database')}
+					hint={t('settings.instance.whereYourDataIsStored')}
+				>
+					{#snippet control()}
+						<code class="tabular text-sm break-all text-gray-900">
+							{#if data.demo}
+								<span class="text-gray-500">{t('settings.instance.hiddenOnTheDemo')}</span>
+							{:else}
+								{data.config.database.path}
+							{/if}
+						</code>
+					{/snippet}
+				</SettingRow>
+			</SettingGroup>
+
+			<SettingGroup
+				title={t('settings.instance.whoCanRegister')}
+				description={t('settings.instance.anInstanceOnTheOpen')}
+			>
+				{#if data.effectiveRegistration !== data.config.registration.mode}
+					<!--
+						The radios show the file; the environment can force something
+						else. What is stored and what is in force are two different facts
+						and the page shows both.
+					-->
+					<div class="px-4 py-3">
+						<Banner kind="warning">
+							<strong>{data.effectiveRegistration}</strong>
+							{t('settings.instance.rightNowSetInThe')}
+						</Banner>
+					</div>
+				{/if}
+				<form
+					id="registration-form"
+					method="post"
+					action="?/setRegistration"
+					use:settingsForm={{ notice: t('settings.instance.registrationSaved') }}
+					hidden
+				></form>
+				<!-- Each choice saves itself: a Save under three radios was a second
+				     press for one answer. -->
+				{#each REGISTRATION_MODES as mode (mode.key)}
+					<label class="block cursor-pointer hover:bg-gray-50">
+						<SettingRow label={t(mode.label)} hint={t(mode.hint)}>
+							{#snippet control()}
+								<input
+									type="radio"
+									name="mode"
+									form="registration-form"
+									value={mode.key}
+									checked={data.config.registration.mode === mode.key}
+									onchange={(e) => e.currentTarget.form?.requestSubmit()}
+								/>
+							{/snippet}
+						</SettingRow>
+					</label>
+				{/each}
+			</SettingGroup>
+
+			{#if data.newsletter}
+				{@const list = data.newsletter}
+				<SettingGroup title={t('settings.instance.theMailingList')}>
+					<SettingRow
+						label={t('settings.instance.theMailingList')}
+						hint={t('settings.instance.peopleWhoAskedToBe')}
+					>
+						<p class="mt-1 text-sm text-gray-500">
+							<span class="font-medium text-gray-900">{list.confirmed}</span>
+							{t('settings.instance.confirmed')}{#if list.pending > 0}{t('settings.instance.and')}
+								{list.pending}
+								{t('settings.instance.whoHaveNotFollowedThe')}{/if}{t(
+								'settings.instance.onlyConfirmedAddressesAre'
+							)}
+						</p>
+						{#snippet control()}
+							<form method="post" action="?/exportSubscribers" use:enhance={exportList}>
+								<button class="btn btn-sm" disabled={list.confirmed === 0}>
+									<Icon name="download" />
+									{t('settings.instance.export')}
+								</button>
+							</form>
+						{/snippet}
+					</SettingRow>
+				</SettingGroup>
+			{/if}
+
+			<SettingGroup
+				title={t('settings.instance.whatAnAccountMayChange')}
+				description={t('settings.instance.anAddressIsWhatAn')}
+			>
+				<SettingRow
+					label={t('settings.instance.letPeopleMoveTheirAccount')}
+					hint={t('settings.instance.offByDefaultTheChange')}
+				>
+					{#snippet control()}
+						<form
+							method="post"
+							action="?/setEmailChange"
+							use:settingsForm={{ notice: t('settings.language.saved') }}
+						>
+							<input
+								type="checkbox"
+								class="toggle"
+								name="allowEmailChange"
+								value="true"
+								checked={data.config.account.allowEmailChange}
+								aria-label={t('settings.instance.letPeopleMoveTheirAccount')}
+								onchange={(e) => e.currentTarget.form?.requestSubmit()}
+							/>
+						</form>
+					{/snippet}
+				</SettingRow>
+			</SettingGroup>
+
+			<!--
+				One action reads both fields, so both carry `form=` to the one form:
+				the switch saves itself, and the address is saved by its own button
+				beside it.
+			-->
+			<SettingGroup
+				title={t('settings.instance.reportsAndSuggestions')}
+				description={t('settings.instance.whenAPageBreaksIn')}
+			>
+				<form
+					id="reports-form"
+					method="post"
+					action="?/setClientErrors"
+					use:settingsForm={{ notice: t('settings.language.saved') }}
+					hidden
+				></form>
+				<SettingRow
+					label={t('settings.instance.offerToSendWhatBroke')}
+					hint={t('settings.instance.offByDefaultEachPerson')}
+				>
+					{#snippet control()}
+						<input
+							type="checkbox"
+							class="toggle"
+							name="clientErrors"
+							value="true"
+							form="reports-form"
+							checked={data.config.reports.clientErrors}
+							aria-label={t('settings.instance.offerToSendWhatBroke')}
+							onchange={(e) => e.currentTarget.form?.requestSubmit()}
+						/>
+					{/snippet}
+				</SettingRow>
+				<SettingRow
+					label={t('settings.instance.sendReportsAndSuggestionsTo')}
+					hint={t('settings.instance.leaveItEmptyAndThey')}
+				>
+					{#snippet control()}
+						<label class="block w-64 max-w-full">
+							<span class="sr-only">{t('settings.instance.sendReportsAndSuggestionsTo')}</span>
+							<input
+								type="email"
+								name="feedbackEmail"
+								form="reports-form"
+								value={data.config.reports.feedbackEmail}
+								autocomplete="off"
+								class="input input-sm"
+								placeholder={t('settings.instance.youExampleCom')}
+							/>
+						</label>
+						<button type="submit" form="reports-form" class="btn btn-sm btn-primary">
+							<Icon name="check" />
+							{t('ui.save')}
+						</button>
+					{/snippet}
+				</SettingRow>
+			</SettingGroup>
+
+			<!--
+				Invitations are not only for a closed instance: where the instance
+				sells, a code hands over a month of the app at sign-up with no card
+				asked for. Where it is closed, the code also lets somebody in.
+			-->
+			<SettingGroup
+				title={t('settings.instance.invitations')}
+				description={data.sellsAnything
+					? t('settings.instance.aCodeSomebodyTypesWhen')
+					: t('settings.instance.aCodeSomebodyTypesWhen2')}
+			>
+				{#snippet actions()}
+					<span class="eyebrow tabular text-gray-600"
+						>{t('settings.instance.open', { length: open.length })}</span
+					>
+					<button type="button" class="btn btn-sm" onclick={() => (inviting = true)}>
+						<Icon name="plus" />
+						{t('settings.instance.newInvitation')}
+					</button>
+				{/snippet}
+				{#if fresh}
+					<!-- Shown once, right after it is made. The link as well as the
+					     code: it opens the register form with the code already in it. -->
+					<div class="space-y-2 px-4 py-3">
+						<Banner kind="success" message={t('settings.instance.handThisOverNow')} />
+						<CopyBlock text={fresh} label={t('ui.copy')} />
+						<CopyBlock text={inviteLink(fresh)} label={t('settings.instance.copyLink')} />
+					</div>
+				{/if}
+				{#each [...open, ...used] as invite (invite.id)}
+					<div class="list-row">
+						<div class="list-row-main">
+							<p class="text-sm text-gray-900">{invite.note || t('settings.instance.noNote')}</p>
+							<p class="text-xs text-gray-500">
+								{t('settings.instance.made')}
+								{when(invite.createdAt)}
+								{#if invite.usedAt}
+									{t('settings.instance.used2')} {when(invite.usedAt)}
+								{:else if invite.expiresAt}
+									{t('settings.instance.codeExpires')} {when(invite.expiresAt)}
+								{/if}
+								{#if data.sellsAnything}
+									· {invite.grantsUntil
+										? t('settings.instance.freeUntilDate', { date: when(invite.grantsUntil) })
+										: t('settings.instance.freeWithNoEndDate')}
+								{/if}
+							</p>
+						</div>
+						{#if invite.usedAt}
+							<span class="eyebrow shrink-0 text-gray-500">{t('settings.instance.used')}</span>
+						{:else}
+							<form
+								method="post"
+								action="?/revokeInvite"
+								use:enhance={() =>
+									async ({ update }) => {
+										confirmRevoke = null;
+										await update();
+									}}
+								class="list-row-actions"
+							>
+								<input type="hidden" name="id" value={invite.id} />
+								{#if confirmRevoke === invite.id}
+									<button class="btn btn-danger btn-sm" use:armed
+										>{t('settings.instance.yesRevoke')}</button
+									>
+									<button
+										type="button"
+										onclick={() => (confirmRevoke = null)}
+										class="icon-btn"
+										title={t('ui.cancel')}
+										aria-label={t('ui.cancel')}><Icon name="close" /></button
+									>
+								{:else}
+									<button
+										type="button"
+										onclick={() => (confirmRevoke = invite.id)}
+										class="icon-btn icon-btn-danger"
+										title={t('settings.instance.revoke')}
+										aria-label={t('settings.instance.revoke')}><Icon name="trash" /></button
+									>
+								{/if}
+							</form>
+						{/if}
+					</div>
+				{:else}
+					<EmptyState
+						icon="key"
+						title={t('settings.instance.noInvitationsYet')}
+						description={t('settings.instance.makeOneWhenSomebodyNeeds')}
+					/>
+				{/each}
+			</SettingGroup>
+		{/if}
+	</RoomSurface>
+
+	{#if !onDevice}
+		<Modal
+			open={inviting}
+			error={form?.message}
+			onclose={() => (inviting = false)}
+			title={t('settings.instance.newInvitation')}
+			size="sm"
+		>
+			<form
+				id="invite-form"
+				method="post"
+				action="?/createInvite"
+				use:enhance={() =>
+					async ({ update, result }) => {
+						if (result.type === 'success') inviting = false;
+						await update({ reset: result.type === 'success' });
+					}}
+			>
 				<FormGrid>
 					<Field
 						label={t('settings.instance.whoIsItFor')}
 						span={12}
 						hint={t('settings.instance.forYourOwnMemoryThey')}
 					>
-						<OneLine name="note" placeholder={t('settings.instance.myBrother')} class="input" />
+						<OneLine
+							name="note"
+							placeholder={t('settings.instance.myBrother')}
+							class="input"
+							autofocus
+						/>
 					</Field>
-
 					<Field
 						label={t('settings.instance.codeExpiresIn')}
 						span={6}
@@ -550,13 +590,9 @@
 					>
 						<NumberBox autocomplete="off" name="expiresInDays" min="1" max="365" />
 					</Field>
-
 					{#if data.sellsAnything}
-						<!--
-							The two dates on this form are different clocks and the labels say
-							so: one is how long the code works for, the other is how long what
-							it hands over lasts.
-						-->
+						<!-- Two different clocks: how long the code works for, and how long
+						     what it hands over lasts. -->
 						<Field
 							label={t('settings.instance.freeUntil')}
 							span={6}
@@ -572,78 +608,16 @@
 						</Field>
 					{/if}
 				</FormGrid>
-
-				<div class="mt-4">
-					<button class="btn btn-primary"
-						><Icon name="plus" /> {t('settings.instance.newInvitation')}</button
-					>
-				</div>
 			</form>
-
-			{#if data.invites.length === 0}
-				<div class="mt-4 border-t border-gray-200 pt-4">
-					<EmptyState
-						icon="key"
-						title={t('settings.instance.noInvitationsYet')}
-						description={t('settings.instance.makeOneWhenSomebodyNeeds')}
-					/>
-				</div>
-			{:else}
-				<div class="mt-4 divide-y divide-gray-200 border-t border-gray-200">
-					{#each [...open, ...used] as invite (invite.id)}
-						<div class="flex items-center gap-3 py-2 text-sm">
-							<span class="min-w-0 flex-1">
-								<span class="text-gray-900">{invite.note || t('settings.instance.noNote')}</span>
-								<span class="block text-xs text-gray-500">
-									{t('settings.instance.made')}
-									{when(invite.createdAt)}
-									{#if invite.usedAt}
-										{t('settings.instance.used2')} {when(invite.usedAt)}
-									{:else if invite.expiresAt}
-										{t('settings.instance.codeExpires')} {when(invite.expiresAt)}
-									{/if}
-									{#if data.sellsAnything}
-										· {invite.grantsUntil
-											? t('settings.instance.freeUntilDate', { date: when(invite.grantsUntil) })
-											: t('settings.instance.freeWithNoEndDate')}
-									{/if}
-								</span>
-							</span>
-
-							{#if invite.usedAt}
-								<span class="eyebrow shrink-0 text-gray-500">{t('settings.instance.used')}</span>
-							{:else if confirmRevoke === invite.id}
-								<form
-									method="post"
-									action="?/revokeInvite"
-									use:enhance={() =>
-										async ({ update }) => {
-											confirmRevoke = null;
-											await update();
-										}}
-									class="flex shrink-0 items-center gap-1"
-								>
-									<input type="hidden" name="id" value={invite.id} />
-									<button type="button" onclick={() => (confirmRevoke = null)} class="btn btn-sm">
-										{t('ui.cancel')}
-									</button>
-									<button class="btn btn-danger btn-sm" use:armed
-										>{t('settings.instance.yesRevoke')}</button
-									>
-								</form>
-							{:else}
-								<button
-									onclick={() => (confirmRevoke = invite.id)}
-									class="btn btn-danger btn-sm shrink-0"
-								>
-									<Icon name="trash" />
-									{t('settings.instance.revoke')}
-								</button>
-							{/if}
-						</div>
-					{/each}
-				</div>
-			{/if}
-		</Card>
+			{#snippet footer()}
+				<button type="button" class="btn" onclick={() => (inviting = false)}
+					>{t('ui.cancel')}</button
+				>
+				<button type="submit" form="invite-form" class="btn btn-primary">
+					<Icon name="plus" />
+					{t('settings.instance.newInvitation')}
+				</button>
+			{/snippet}
+		</Modal>
 	{/if}
 </div>

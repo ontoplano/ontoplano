@@ -132,6 +132,7 @@ export const PAGE_SHORTCUTS: Record<string, PageShortcuts> = {
 			{ key: 'j', action: 'navigate-down', description: 'shortcut.navigateList' },
 			{ key: 'k', action: 'navigate-up', description: 'shortcut.navigateList' },
 			{ key: 'n', action: 'new', description: 'shortcut.newActivity' },
+			{ key: 'e', action: 'edit', description: 'shortcut.editTheOneUnderThe' },
 			{ key: '1', action: 'filter-1', description: 'shortcut.toggleCategoryFilter' },
 			{ key: '2', action: 'filter-2', description: 'shortcut.toggleCategoryFilter' },
 			{ key: '3', action: 'filter-3', description: 'shortcut.toggleCategoryFilter' },
@@ -141,6 +142,13 @@ export const PAGE_SHORTCUTS: Record<string, PageShortcuts> = {
 			{ key: '7', action: 'filter-7', description: 'shortcut.toggleCategoryFilter' },
 			{ key: '8', action: 'filter-8', description: 'shortcut.toggleCategoryFilter' },
 			{ key: '9', action: 'filter-9', description: 'shortcut.toggleCategoryFilter' }
+		]
+	},
+	'/tasks/review': {
+		label: 'app.review',
+		shortcuts: [
+			{ key: '[', action: 'prev-week', description: 'shortcut.switchWeek' },
+			{ key: ']', action: 'next-week', description: 'shortcut.switchWeek' }
 		]
 	},
 	'/tasks/todo': {

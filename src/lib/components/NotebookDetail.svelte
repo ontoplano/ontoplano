@@ -1,5 +1,7 @@
 <script lang="ts">
 	import GoalFields, { type FormTarget } from '$lib/components/fields/GoalFields.svelte';
+	import ShowingCount from '$lib/components/ShowingCount.svelte';
+	import SearchField from '$lib/components/SearchField.svelte';
 	import SortControl from '$lib/components/SortControl.svelte';
 	import MarkdownBox from '$lib/components/MarkdownBox.svelte';
 	import { page } from '$app/state';
@@ -836,6 +838,63 @@
 	 */
 	let noteSearch = $state('');
 
+	/*
+	 * What the search box on every other tab holds.
+
+	 * One box for all of them, cleared when the tab changes: the Notes and
+	 * Tasks tabs each open on a search strip, and a Goals tab that opened on
+	 * its first card read as a different kind of screen.
+	 */
+	let moduleSearch = $state('');
+	$effect(() => {
+		void tab;
+		untrack(() => (moduleSearch = ''));
+	});
+
+	/** The words of whatever a module tab lists, for the search box above it. */
+	function wordsOf(item: Record<string, unknown>): string {
+		const words: string[] = [];
+		for (const value of Object.values(item)) {
+			if (typeof value === 'string') words.push(value);
+			else if (Array.isArray(value))
+				for (const one of value)
+					if (one && typeof one === 'object' && 'name' in one && typeof one.name === 'string')
+						words.push(one.name);
+		}
+		return words.join('\n').toLowerCase();
+	}
+
+	/** A module tab's list, narrowed by its search box. */
+	function searched<T>(items: readonly T[]): T[] {
+		const needle = moduleSearch.trim().toLowerCase();
+		if (!needle) return [...items];
+		return items.filter((item) => wordsOf(item as Record<string, unknown>).includes(needle));
+	}
+
+	const shownGoals = $derived(searched(contents?.goals ?? []));
+	const shownIdeas = $derived(searched(contents?.ideas ?? []));
+	const shownInventory = $derived(searched(contents?.inventory ?? []));
+	const shownWorkouts = $derived(searched(contents?.workouts ?? []));
+	const shownRecipes = $derived(searched(contents?.recipes ?? []));
+	const shownLedgers = $derived(searched(contents?.ledgers ?? []));
+	const shownHabits = $derived(searched(contents?.habits ?? []));
+	const shownBills = $derived(searched(contents?.bills ?? []));
+
+	/** How many the showing tab holds, and how many of them the search leaves. */
+	const moduleTally = $derived.by(() => {
+		const pairs: Partial<Record<Tab, [number, number]>> = {
+			goals: [contents?.goals.length ?? 0, shownGoals.length],
+			ideas: [contents?.ideas.length ?? 0, shownIdeas.length],
+			inventory: [contents?.inventory.length ?? 0, shownInventory.length],
+			workouts: [contents?.workouts.length ?? 0, shownWorkouts.length],
+			recipes: [contents?.recipes.length ?? 0, shownRecipes.length],
+			ledgers: [contents?.ledgers.length ?? 0, shownLedgers.length],
+			habits: [contents?.habits.length ?? 0, shownHabits.length],
+			bills: [contents?.bills.length ?? 0, shownBills.length]
+		};
+		return pairs[tab] ?? null;
+	});
+
 	function toggleNoteTag(name: string) {
 		noteTagFilter = noteTagFilter.includes(name)
 			? noteTagFilter.filter((one) => one !== name)
@@ -1032,7 +1091,7 @@
 	 * over rather than fighting it for them.
 	 */
 	browsable(() => ({
-		items: () => (tab === 'notes' ? shownNotes : tab === 'goals' ? (contents?.goals ?? []) : []),
+		items: () => (tab === 'notes' ? shownNotes : tab === 'goals' ? shownGoals : []),
 		cursor: () => cursor,
 		moveTo: (at: number) => (cursor = at),
 		tabs: { of: TAB_KEYS, current: () => tab, go: (key: string) => (tab = key as Tab) },
@@ -1232,6 +1291,18 @@
 						{@render noteControls()}
 					{/snippet}
 				</RoomToolbar>
+			{:else if moduleTally && moduleTally[0] > 0}
+				<!-- The strip every tab of a notebook opens on: search and count, in
+				     the places the Notes and Tasks tabs put them. -->
+				<RoomToolbar inset>
+					{#snippet tools()}
+						{@render moduleControls(moduleTally[0], moduleTally[1])}
+					{/snippet}
+				</RoomToolbar>
+			{/if}
+
+			{#if moduleTally && moduleTally[0] > 0 && moduleTally[1] === 0}
+				<EmptyState icon="search" title={t('todoRows.nothingToShow')} compact />
 			{/if}
 
 			{#if tab === 'notes'}
@@ -1411,7 +1482,7 @@
 					to scope it, not strip it.
 				-->
 				<div class="divide-y divide-gray-200">
-					{#each contents.goals as goal, at (goal.id)}
+					{#each shownGoals as goal, at (goal.id)}
 						<div class={tab === 'goals' && cursor === at ? 'kb-cursor' : ''}>
 							<GoalCard
 								{goal}
@@ -1442,9 +1513,9 @@
 						compact
 					/>
 				{:else}
-					<div class="divide-y divide-gray-200 px-4">
-						{#each contents.ideas as idea (idea.id)}
-							<div class="py-3">
+					<div class="divide-y divide-gray-200">
+						{#each shownIdeas as idea (idea.id)}
+							<div class="px-4 py-3">
 								<IdeaCard
 									{idea}
 									actions={NOTEBOOK_IDEA_ACTIONS}
@@ -1473,8 +1544,8 @@
 					/>
 				{:else}
 					<div class="divide-y divide-gray-200">
-						{#each contents.inventory as item (item.id)}
-							<div class="flex items-stretch gap-x-3 px-4 py-2">
+						{#each shownInventory as item (item.id)}
+							<div class="flex items-stretch gap-x-3 px-4 py-3">
 								<ItemRow {item} {currency} actions={NOTEBOOK_ITEM_ACTIONS} />
 							</div>
 						{/each}
@@ -1495,7 +1566,7 @@
 					/>
 				{:else}
 					<ul class="divide-y divide-gray-200">
-						{#each contents.workouts as workout (workout.id)}
+						{#each shownWorkouts as workout (workout.id)}
 							<WorkoutCard
 								{workout}
 								sessions={contents.workoutSessions}
@@ -1518,8 +1589,8 @@
 						compact
 					/>
 				{:else}
-					<div class="grid gap-px bg-gray-200 sm:grid-cols-2">
-						{#each contents.recipes as recipe (recipe.id)}
+					<div class="divide-y divide-gray-200">
+						{#each shownRecipes as recipe (recipe.id)}
 							<RecipeCard {recipe} />
 						{/each}
 					</div>
@@ -1539,7 +1610,7 @@
 					/>
 				{:else}
 					<div class="flex flex-wrap gap-2 px-4 py-3">
-						{#each contents.ledgers as ledger (ledger.id)}
+						{#each shownLedgers as ledger (ledger.id)}
 							<LedgerTile
 								{ledger}
 								{currency}
@@ -1562,7 +1633,7 @@
 					/>
 				{:else}
 					<div class="divide-y divide-gray-200">
-						{#each contents.habits as habit (habit.id)}
+						{#each shownHabits as habit (habit.id)}
 							<HabitCard
 								{habit}
 								occurrences={contents.habitOccurrences}
@@ -1580,7 +1651,7 @@
 				-->
 				<BillList
 					bind:this={billList}
-					bills={contents.bills}
+					bills={shownBills}
 					{currency}
 					actions={NOTEBOOK_BILL_ACTIONS}
 					notebooks={pickableNotebooks}
@@ -1658,6 +1729,19 @@
 	One snippet, drawn either beside the tabs or on a row below them depending
 	on the width — never twice at once, and never two versions of it.
 -->
+{#snippet moduleControls(total: number, shown: number)}
+	<!-- The Notes tab's search and count, in the same slots; these tabs have
+	     nothing else to narrow by. -->
+	<FilterBar name="notebook-module">
+		{#snippet lead()}
+			<SearchField bind:value={moduleSearch} label={t('notebookDetail.searchThisTab')} />
+		{/snippet}
+		{#snippet count()}
+			<ShowingCount {total} {shown} said={(count) => t('notebookDetail.itemsShowing', { count })} />
+		{/snippet}
+	</FilterBar>
+{/snippet}
+
 {#snippet noteControls()}
 	<!--
 		The same strip the tasks tab has, in the same order.
@@ -1682,39 +1766,18 @@
 			<!-- The box fills the slot; how wide that slot is belongs to
 			     `FilterBar`, so this tab and the Tasks tab beside it are the same
 			     shape. -->
-			<label class="block w-full">
-				<span class="sr-only">{t('notebookDetail.searchTheseNotes')}</span>
-				<input
-					type="search"
-					bind:value={noteSearch}
-					placeholder={t('notebookDetail.searchTheseNotes')}
-					autocomplete="off"
-					class="input input-sm"
-				/>
-			</label>
+			<SearchField bind:value={noteSearch} label={t('notebookDetail.searchTheseNotes')} />
 		{/snippet}
 
 		{#snippet count()}
 			<!-- How many are on screen right now — the toggles say what is hidden
 			     and nothing said what is left. -->
 			<!-- Held open at the count of every note there is — see `.count-slot`. -->
-			<span
-				class="tabular count-slot shrink-0 self-center text-xs text-gray-500"
-				title={t('notebookDetail.showingCount', { count: shownNotes.length })}
-			>
-				<span class="count-widest" aria-hidden="true">
-					<span class="sm:hidden">{contents?.entries.length ?? 0}</span>
-					<span class="hidden sm:inline"
-						>{t('notebookDetail.showingCount', { count: contents?.entries.length ?? 0 })}</span
-					>
-				</span>
-				<span>
-					<span class="sm:hidden">{shownNotes.length}</span>
-					<span class="hidden sm:inline"
-						>{t('notebookDetail.showingCount', { count: shownNotes.length })}</span
-					>
-				</span>
-			</span>
+			<ShowingCount
+				total={contents?.entries.length ?? 0}
+				shown={shownNotes.length}
+				said={(count) => t('notebookDetail.showingCount', { count })}
+			/>
 		{/snippet}
 
 		{#snippet trailing()}
@@ -2168,7 +2231,9 @@
 						aria-label={item.title}
 					/>
 					<div class="min-w-0 flex-1">
-						<p class="text-sm {item.done ? 'text-gray-400' : 'text-gray-900'}">{item.title}</p>
+						<p class="text-sm {item.done ? 'text-gray-500 line-through' : 'text-gray-900'}">
+							{item.title}
+						</p>
 						{#if item.notes}
 							<p class="mt-0.5 text-xs whitespace-pre-wrap text-gray-500">{item.notes}</p>
 						{/if}

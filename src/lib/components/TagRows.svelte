@@ -72,7 +72,7 @@
 
 <div class="divide-y divide-gray-200" data-tour="tag-list">
 	{#each tags as tag, i (tag.id)}
-		<div use:keepInView={cursor === i} class="list-row {cursor === i ? 'kbd-cursor' : ''}">
+		<div use:keepInView={cursor === i} class="list-row {cursor === i ? 'kb-cursor' : ''}">
 			<div class="list-row-main flex min-w-0 flex-col gap-1">
 				<div class="flex min-w-0 flex-wrap items-center gap-3">
 					<!-- The label as every other room draws it, so a colour is chosen

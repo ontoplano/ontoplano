@@ -1,9 +1,13 @@
 <script lang="ts">
-	import Card from '$lib/components/Card.svelte';
 	import Backlinks from '$lib/components/Backlinks.svelte';
+	import ShowingCount from '$lib/components/ShowingCount.svelte';
+	import SearchField from '$lib/components/SearchField.svelte';
+	import StripVerb from '$lib/components/StripVerb.svelte';
 	import Swatch from '$lib/components/Swatch.svelte';
 	import { setRoomAction } from '$lib/room-action.svelte';
-	import RoomToolbar from '$lib/components/RoomToolbar.svelte';
+	import RoomSurface from '$lib/components/RoomSurface.svelte';
+	import FilterBar from '$lib/components/FilterBar.svelte';
+	import Picker from '$lib/components/Picker.svelte';
 	import OneLine from '$lib/components/OneLine.svelte';
 	import { enhance } from '$lib/enhance';
 	import FormError from '$lib/components/FormError.svelte';
@@ -13,14 +17,17 @@
 	import Field from '$lib/components/Field.svelte';
 	import FormGrid from '$lib/components/FormGrid.svelte';
 	import Modal from '$lib/components/Modal.svelte';
-	import { tick } from 'svelte';
 	import type { PageServerData, ActionData } from './$types';
 	import { CATEGORY_FALLBACK_COLOR, CATEGORY_DEFAULT_NEW } from '$lib/colors.js';
-	import { getAction } from '$lib/shortcuts';
+	import { pillStyle } from '$lib/pill-ink';
+	import { getAction, keyFor } from '$lib/shortcuts';
 	import { keepInView } from '$lib/actions/keep-in-view';
+	import { phoneWidth } from '$lib/breakpoints.svelte';
 	import { useT } from '$lib/i18n';
 
 	const t = useT();
+	const phone = phoneWidth();
+	const ROOM = '/tasks/activities';
 
 	let { data, form }: { data: PageServerData; form: ActionData } = $props();
 
@@ -28,6 +35,7 @@
 	let editingId: number | null = $state(null);
 	let selectedIndex = $state(0);
 	let activeFilters: Set<number> = $state(new Set());
+	let looking = $state('');
 	let showCategoryForm = $state(false);
 	let editingCategoryId: number | null = $state(null);
 	let newCatColor = $state(CATEGORY_DEFAULT_NEW);
@@ -35,13 +43,48 @@
 
 	function catColor(catId: number | null): string {
 		if (!catId) return CATEGORY_FALLBACK_COLOR;
-		const cat = data.categories?.find((c: { id: number }) => c.id === catId);
-		return cat?.color ?? CATEGORY_FALLBACK_COLOR;
+		return data.categories.find((c) => c.id === catId)?.color ?? CATEGORY_FALLBACK_COLOR;
 	}
 
-	function filteredActivities() {
-		if (activeFilters.size === 0) return data.activities;
-		return data.activities.filter((a: { categoryId: number }) => activeFilters.has(a.categoryId));
+	const narrowed = $derived(activeFilters.size > 0 || looking.trim() !== '');
+
+	const shown = $derived.by(() => {
+		const needle = looking.trim().toLowerCase();
+		return data.activities.filter(
+			(a) =>
+				(activeFilters.size === 0 || activeFilters.has(a.categoryId)) &&
+				(!needle ||
+					a.name.toLowerCase().includes(needle) ||
+					(a.description ?? '').toLowerCase().includes(needle))
+		);
+	});
+
+	/** "Every category" first: it is what the Picker says with nothing chosen, and picking it clears. */
+	const EVERY = '';
+	const categoryChoices = $derived([
+		{ value: EVERY, label: t('tasks.activities.everyCategory') },
+		...data.categories.map((c) => ({ value: String(c.id), label: c.name }))
+	]);
+	const chosenCategories = $derived([...activeFilters].map(String));
+
+	function pickCategories(next: string[]) {
+		const everyNewlyPicked = next.includes(EVERY) && !chosenCategories.includes(EVERY);
+		activeFilters = everyNewlyPicked
+			? new Set()
+			: new Set(next.filter((v) => v !== EVERY).map(Number));
+		selectedIndex = 0;
+	}
+
+	function summary(): string {
+		const names = data.categories.filter((c) => activeFilters.has(c.id)).map((c) => c.name);
+		if (looking.trim()) names.unshift(`“${looking.trim()}”`);
+		return names.join(', ');
+	}
+
+	function clearFilters() {
+		activeFilters = new Set();
+		looking = '';
+		selectedIndex = 0;
 	}
 
 	function toggleFilter(catId: number) {
@@ -53,27 +96,36 @@
 		selectedIndex = 0;
 	}
 
-	function handleKeydown(e: KeyboardEvent) {
-		if (e.key === 'Escape') {
-			e.preventDefault();
-			showForm = false;
-			editingId = null;
-			showCategoryForm = false;
-			editingCategoryId = null;
-			confirmingDelete = null;
-			(document.activeElement as HTMLElement)?.blur?.();
-			return;
-		}
+	function openNew() {
+		editingId = null;
+		showForm = true;
+	}
 
+	function openEdit(id: number) {
+		editingId = id;
+		showForm = true;
+	}
+
+	function openCategories() {
+		showCategoryForm = true;
+		editingCategoryId = null;
+		newCatColor = CATEGORY_DEFAULT_NEW;
+	}
+
+	function handleKeydown(e: KeyboardEvent) {
 		if (
 			e.target instanceof HTMLInputElement ||
 			e.target instanceof HTMLTextAreaElement ||
 			e.target instanceof HTMLSelectElement
 		)
 			return;
+		if (e.key === 'Escape') {
+			confirmingDelete = null;
+			return;
+		}
 
-		const items = filteredActivities();
-		const action = getAction('/tasks/activities', e.key);
+		const items = shown;
+		const action = getAction(ROOM, e.key);
 		if (!action) return;
 		e.preventDefault();
 
@@ -87,19 +139,15 @@
 				selectedIndex = Math.max(selectedIndex - 1, 0);
 				break;
 			case 'new':
-				showForm = true;
-				editingId = null;
-				tick().then(() => {
-					const nameInput = document.querySelector<HTMLInputElement>('#activity-name');
-					nameInput?.focus();
-				});
+				openNew();
+				break;
+			case 'edit':
+				if (items[selectedIndex]) openEdit(items[selectedIndex].id);
 				break;
 			default: {
 				if (!action.startsWith('filter-')) break;
 				const idx = parseInt(action.split('-')[1], 10) - 1;
-				if (data.categories[idx]) {
-					toggleFilter(data.categories[idx].id);
-				}
+				if (data.categories[idx]) toggleFilter(data.categories[idx].id);
 				break;
 			}
 		}
@@ -108,334 +156,136 @@
 	/* This screen's one verb, drawn by the room's bar — see $lib/room-action. */
 	setRoomAction(() => ({
 		label: t('tasks.activities.newActivity'),
-		open: showForm,
-		run: () => {
-			showForm = !showForm;
-			editingId = null;
-			if (!showForm) return;
-			tick().then(() => {
-				const nameInput = document.querySelector<HTMLInputElement>('#activity-name');
-				nameInput?.focus();
-			});
-		}
+		run: openNew,
+		kbd: keyFor(ROOM, 'new')
 	}));
 </script>
 
 <svelte:window onkeydown={handleKeydown} />
 
 <div class="space-y-4">
-	<RoomToolbar>
-		{#snippet tools()}
-			<button
-				onclick={() => {
-					showCategoryForm = !showCategoryForm;
-					editingCategoryId = null;
-					if (showCategoryForm) {
-						newCatColor = CATEGORY_DEFAULT_NEW;
-					}
-				}}
-				aria-pressed={showCategoryForm}
-				class="btn btn-sm"
-				data-tour="activity-categories"
-			>
-				<!-- One label either way: "Manage categories" becoming "Hide
-				     categories" is a press that changes its own width. -->
-				{t('tasks.activities.categoriesCount')}
-			</button>
-		{/snippet}
-	</RoomToolbar>
-
-	<Modal
-		bind:open={showCategoryForm}
-		error={form?.message}
-		title={t('tasks.activities.categories')}
-		size="sm"
-	>
-		<div class="space-y-3">
-			<div class="divide-y divide-gray-100">
-				{#each data.categories as cat (cat.id)}
-					<div class="flex items-center gap-3 py-2">
-						{#if editingCategoryId === cat.id}
-							<form
-								method="post"
-								action="?/updateCategory"
-								use:enhance={() => {
-									return async ({ update }) => {
-										await update({ reset: false });
-										editingCategoryId = null;
-									};
-								}}
-								class="flex flex-1 items-center gap-2"
-							>
-								<input type="hidden" name="id" value={cat.id} />
-								<input
-									name="color"
-									type="color"
-									value={cat.color}
-									class="h-8 w-10 cursor-pointer border border-gray-300"
-								/>
-								<OneLine
-									name="label"
-									value={cat.name}
-									class="flex-1 border border-gray-300 px-2 py-1 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
-									required
-								/>
-								<button
-									type="submit"
-									class="border border-gray-300 bg-white px-2 py-1 text-xs text-gray-700 shadow-sm hover:bg-gray-50"
-								>
-									{t('ui.save')}
-								</button>
-								<button type="button" onclick={() => (editingCategoryId = null)} class="btn btn-sm">
-									{t('ui.cancel')}
-								</button>
-							</form>
-						{:else}
-							<Swatch color={cat.color} shape="tall" />
-							<span class="flex-1 text-sm text-gray-900">{cat.name}</span>
-							<button
-								title={t('ui.edit')}
-								aria-label={t('ui.edit')}
-								onclick={() => (editingCategoryId = cat.id)}
-								class="btn btn-sm"
-							>
-								<Icon name="edit" />
-							</button>
-							{#if confirmingDelete === `cat-${cat.id}`}
-								<form
-									method="post"
-									action="?/deleteCategory"
-									use:enhance={() => {
-										return async ({ update }) => {
-											await update({ reset: false });
-											confirmingDelete = null;
-										};
-									}}
-								>
-									<input type="hidden" name="id" value={cat.id} />
-									<button
-										type="submit"
-										class="border border-red-300 bg-red-50 px-2 py-1 text-xs font-medium text-red-700 transition hover:bg-red-100"
-										use:armed
-									>
-										{t('tasks.activities.confirm')}
-									</button>
-								</form>
-								<button
-									type="button"
-									onclick={() => {
-										confirmingDelete = null;
-									}}
-									class="btn btn-sm"
-								>
-									{t('ui.cancel')}
-								</button>
-							{:else}
-								<button
-									title={t('ui.delete')}
-									aria-label={t('ui.delete')}
-									type="button"
-									onclick={() => {
-										confirmingDelete = `cat-${cat.id}`;
-									}}
-									class="btn btn-danger btn-sm"
-								>
-									<Icon name="trash" />
-								</button>
-							{/if}
-						{/if}
-					</div>
-				{/each}
-			</div>
-			<form
-				method="post"
-				action="?/createCategory"
-				use:enhance={() => {
-					return async ({ update }) => {
-						await update();
-						newCatColor = CATEGORY_DEFAULT_NEW;
-					};
-				}}
-				class="flex items-center gap-2 border-t border-gray-100 pt-3"
-			>
-				<input
-					name="color"
-					type="color"
-					bind:value={newCatColor}
-					class="h-8 w-10 cursor-pointer border border-gray-300"
-				/>
-				<OneLine
-					name="label"
-					placeholder={t('tasks.activities.newCategoryName')}
-					class="flex-1 border border-gray-300 px-2 py-1 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
-					required
-				/>
-				<button type="submit" class="btn btn-primary btn-sm">{t('ui.add')}</button>
-			</form>
-		</div>
-
-		{#snippet footer()}
-			<button type="button" class="btn" onclick={() => (showCategoryForm = false)}
-				>{t('ui.done')}</button
-			>
-		{/snippet}
-	</Modal>
-
-	<div class="flex gap-2">
-		{#each data.categories as cat (cat.id)}
-			<button
-				onclick={() => toggleFilter(cat.id)}
-				class="border px-2 py-1 text-xs font-medium transition {activeFilters.has(cat.id)
-					? 'border-2 bg-white'
-					: 'border-gray-200 bg-white text-gray-500 hover:text-gray-600'}"
-				style={activeFilters.has(cat.id) ? `border-color: ${cat.color}; color: ${cat.color}` : ''}
-			>
-				{cat.name}
-			</button>
-		{/each}
-		{#if activeFilters.size > 0}
-			<button
-				onclick={() => {
-					activeFilters = new Set();
-					selectedIndex = 0;
-				}}
-				class="btn btn-sm"
-			>
-				{t('tasks.activities.clear')}
-			</button>
-		{/if}
-	</div>
-
 	<FormError message={form?.message} />
 
-	<Modal
-		bind:open={showForm}
-		error={form?.message}
-		title={editingId ? t('tasks.activities.editActivity') : t('tasks.plan.newActivity')}
-		onclose={() => (editingId = null)}
-		size="sm"
-	>
-		{@const editing = editingId ? data.activities.find((a) => a.id === editingId) : null}
-		<form
-			id="activity-form"
-			method="post"
-			action={editingId ? '?/update' : '?/create'}
-			use:enhance={() => {
-				return async ({ update, result }) => {
-					await update({ reset: false });
-					if (result.type === 'success') {
-						showForm = false;
-						editingId = null;
-					}
-				};
-			}}
-		>
-			{#if editingId}
-				<input type="hidden" name="id" value={editingId} />
-			{/if}
-
-			<FormGrid>
-				<Field label={t('ui.name')} span={12} required>
-					<OneLine name="label" value={editing?.name ?? ''} class="input" required />
-				</Field>
-
-				<Field label={t('ui.category')} span={12} required>
-					<select name="categoryId" required class="select">
-						{#each data.categories as cat (cat.id)}
-							<option value={cat.id} selected={editing?.categoryId === cat.id}>{cat.name}</option>
-						{/each}
-					</select>
-				</Field>
-
-				<Field label={t('ui.description')} span={12}>
-					<OneLine name="description" value={editing?.description ?? ''} class="input" />
-				</Field>
-			</FormGrid>
-		</form>
-
-		{#snippet footer()}
-			<button type="button" class="btn" onclick={() => (showForm = false)}>{t('ui.cancel')}</button>
-			<button type="submit" form="activity-form" class="btn btn-primary">
-				{editingId ? 'Save' : t('tasks.activities.createActivity')}
-			</button>
-		{/snippet}
-	</Modal>
-
-	{#if filteredActivities().length === 0}
-		<Card flush>
-			<div class="p-8 text-center text-sm text-gray-500">
-				{#if activeFilters.size > 0}
-					{t('tasks.activities.noActivitiesMatchTheSelected')}
-				{:else}
-					<EmptyState
-						icon="planner"
-						title={t('tasks.activities.noActivitiesYet')}
-						description={t('tasks.activities.anActivityIsANamed')}
-					>
-						{#snippet action()}
-							<button onclick={() => (showForm = true)} class="btn btn-primary">
-								<Icon name="plus" />
-								{t('tasks.activities.newActivity')}
-							</button>
-						{/snippet}
-					</EmptyState>
+	<RoomSurface dataTour="activity-list">
+		{#snippet tools()}
+			<FilterBar name="activities" on={narrowed} summary={summary()} onclear={clearFilters}>
+				{#snippet lead()}
+					<SearchField
+						bind:value={looking}
+						oninput={() => (selectedIndex = 0)}
+						label={t('tasks.activities.searchActivities')}
+					/>
+				{/snippet}
+				{#snippet verb()}
+					<StripVerb
+						icon="sliders"
+						label={t('tasks.activities.categories')}
+						onclick={openCategories}
+						aria-haspopup="dialog"
+						data-tour="activity-categories"
+					/>
+				{/snippet}
+				{#snippet count()}
+					<!-- Held open at the count of every activity — see `.count-slot`. -->
+					<ShowingCount
+						total={data.activities.length}
+						shown={shown.length}
+						said={(count) => t('tasks.activities.showingCount', { count })}
+					/>
+				{/snippet}
+				{#if data.categories.length > 0}
+					<Picker
+						values={chosenCategories}
+						options={categoryChoices}
+						onpickMany={pickCategories}
+						label={t('ui.category')}
+						class="min-w-40 flex-1 sm:flex-none"
+					/>
 				{/if}
-			</div>
-		</Card>
-	{:else}
-		<Card flush dataTour="activity-list">
+			</FilterBar>
+		{/snippet}
+
+		{#if shown.length === 0}
+			{#if narrowed}
+				<EmptyState
+					icon="search"
+					title={t('todoRows.nothingToShow')}
+					description={t('tasks.activities.noActivitiesMatchTheSelected')}
+				>
+					{#snippet action()}
+						<!-- On a phone the strip's own Clear is behind the filter sheet. -->
+						{#if phone.current}
+							<button type="button" class="btn btn-sm" onclick={clearFilters}>
+								{t('filters.clear')}
+							</button>
+						{/if}
+					{/snippet}
+				</EmptyState>
+			{:else}
+				<EmptyState
+					icon="planner"
+					title={t('tasks.activities.noActivitiesYet')}
+					description={t('tasks.activities.anActivityIsANamed')}
+				>
+					{#snippet action()}
+						<button onclick={openNew} class="btn btn-primary">
+							<Icon name="plus" />
+							{t('tasks.activities.newActivity')}
+						</button>
+					{/snippet}
+				</EmptyState>
+			{/if}
+		{:else}
 			<div class="divide-y divide-gray-200">
-				{#each filteredActivities() as activity, i (activity.id)}
+				{#each shown as activity, i (activity.id)}
 					<div
 						use:keepInView={i === selectedIndex}
-						class="flex flex-col gap-2 px-4 py-3 transition-colors sm:flex-row sm:items-center sm:gap-4 {i ===
-						selectedIndex
-							? 'kbd-cursor'
-							: ''} {!activity.active ? 'opacity-50' : ''}"
-						style="border-left: 4px solid {catColor(activity.categoryId)}"
+						class="list-row {i === selectedIndex ? 'kbd-cursor' : ''}"
+						data-activity-id={activity.id}
 					>
-						<div class="min-w-0 flex-1">
-							<div class="flex items-center gap-2">
+						<div class="list-row-main {activity.active ? '' : 'opacity-60'}">
+							<div class="flex flex-wrap items-center gap-x-2 gap-y-1">
 								<span class="text-sm font-medium text-gray-900">{activity.name}</span>
-								<!-- The colour is the mark; the name is in ink. A category colour
-							     is the user's to choose, so it cannot be relied on to be
-							     readable as text on either theme's ground. -->
-								<span class="inline-flex items-center gap-1 text-xs font-medium text-gray-600">
-									<span
-										class="h-2.5 w-0.5 rounded-full"
-										style="background-color: {catColor(activity.categoryId)}"
-									></span>
-									{activity.categoryName}
-								</span>
+								<span class="pill" style={pillStyle(catColor(activity.categoryId))}
+									>{activity.categoryName}</span
+								>
+								{#if !activity.active}
+									<span class="text-xs text-gray-600">{t('tasks.activities.disabled')}</span>
+								{/if}
 							</div>
 							{#if activity.description}
-								<p class="truncate text-xs text-gray-500">{activity.description}</p>
+								<p class="mt-0.5 truncate text-xs text-gray-500">{activity.description}</p>
 							{/if}
 							<Backlinks goals={data.goalLinks.activities[activity.id]} />
 						</div>
 
-						<div class="flex flex-wrap items-center gap-2 sm:shrink-0">
+						<div class="list-row-actions">
 							<button
+								type="button"
 								title={t('ui.edit')}
 								aria-label={t('ui.edit')}
-								onclick={() => {
-									editingId = activity.id;
-									showForm = true;
-									tick().then(() => {
-										const nameInput =
-											document.querySelector<HTMLInputElement>('input[name="label"]');
-										nameInput?.focus();
-									});
-								}}
-								class="btn btn-sm"
+								onclick={() => openEdit(activity.id)}
+								class="icon-btn"
 							>
 								<Icon name="edit" />
 							</button>
+							<!-- One glyph whichever way it is set, so the rail does not move;
+							     the pressed surface and the word say which. -->
 							<form method="post" action="?/toggleActive" use:enhance>
 								<input type="hidden" name="id" value={activity.id} />
 								<input type="hidden" name="active" value={String(activity.active)} />
-								<button type="submit" class="btn btn-sm">
-									{activity.active ? 'Disable' : 'Enable'}
+								<button
+									type="submit"
+									class="icon-btn"
+									aria-pressed={!activity.active}
+									title={activity.active
+										? t('tasks.activities.disable')
+										: t('tasks.activities.enable')}
+									aria-label={activity.active
+										? t('tasks.activities.disable')
+										: t('tasks.activities.enable')}
+								>
+									<Icon name="pause" />
 								</button>
 							</form>
 							{#if confirmingDelete === `act-${activity.id}` && !activity.hasReferences}
@@ -450,35 +300,23 @@
 									}}
 								>
 									<input type="hidden" name="id" value={activity.id} />
-									<button
-										type="submit"
-										class="border border-red-300 bg-red-50 px-2 py-1 text-xs font-medium text-red-700 transition hover:bg-red-100"
-										use:armed
-									>
+									<button type="submit" class="btn btn-sm btn-danger" use:armed>
 										{t('tasks.activities.confirm')}
 									</button>
 								</form>
-								<button
-									type="button"
-									onclick={() => {
-										confirmingDelete = null;
-									}}
-									class="btn btn-sm"
-								>
+								<button type="button" onclick={() => (confirmingDelete = null)} class="btn btn-sm">
 									{t('ui.cancel')}
 								</button>
 							{:else}
 								<button
-									aria-label={t('ui.delete')}
 									type="button"
-									onclick={() => {
-										if (!activity.hasReferences) confirmingDelete = `act-${activity.id}`;
-									}}
+									onclick={() => (confirmingDelete = `act-${activity.id}`)}
 									disabled={activity.hasReferences}
-									class="border px-2 py-1 text-xs transition {activity.hasReferences
-										? 'cursor-not-allowed border-gray-100 text-gray-300'
-										: 'border-red-200 bg-white text-red-600 hover:bg-red-50'}"
+									class="icon-btn icon-btn-danger"
 									title={activity.hasReferences
+										? t('tasks.activities.cannotDeleteReferencedByPlanner')
+										: t('tasks.activities.deleteActivity')}
+									aria-label={activity.hasReferences
 										? t('tasks.activities.cannotDeleteReferencedByPlanner')
 										: t('tasks.activities.deleteActivity')}
 								>
@@ -489,6 +327,197 @@
 					</div>
 				{/each}
 			</div>
-		</Card>
-	{/if}
+		{/if}
+	</RoomSurface>
 </div>
+
+<Modal bind:open={showCategoryForm} error={form?.message} title={t('tasks.activities.categories')}>
+	<div class="divide-y divide-gray-200 border-y border-gray-200">
+		{#each data.categories as cat (cat.id)}
+			<div class="flex items-center gap-3 py-2">
+				{#if editingCategoryId === cat.id}
+					<form
+						method="post"
+						action="?/updateCategory"
+						use:enhance={() => {
+							return async ({ update }) => {
+								await update({ reset: false });
+								editingCategoryId = null;
+							};
+						}}
+						class="flex flex-1 items-center gap-2"
+					>
+						<input type="hidden" name="id" value={cat.id} />
+						<input
+							name="color"
+							type="color"
+							value={cat.color}
+							class="h-8 w-10 shrink-0 cursor-pointer border border-gray-300"
+							aria-label={t('tasks.activities.colour')}
+						/>
+						<OneLine
+							name="label"
+							value={cat.name}
+							class="input input-sm min-w-0 flex-1"
+							required
+							autofocus
+						/>
+						<button type="submit" class="icon-btn" title={t('ui.save')} aria-label={t('ui.save')}>
+							<Icon name="check" />
+						</button>
+						<button
+							type="button"
+							onclick={() => (editingCategoryId = null)}
+							class="icon-btn"
+							title={t('ui.cancel')}
+							aria-label={t('ui.cancel')}
+						>
+							<Icon name="close" />
+						</button>
+					</form>
+				{:else}
+					<Swatch color={cat.color} shape="tall" />
+					<span class="min-w-0 flex-1 truncate text-sm text-gray-900">{cat.name}</span>
+					{#if confirmingDelete === `cat-${cat.id}`}
+						<form
+							method="post"
+							action="?/deleteCategory"
+							use:enhance={() => {
+								return async ({ update }) => {
+									await update({ reset: false });
+									confirmingDelete = null;
+								};
+							}}
+						>
+							<input type="hidden" name="id" value={cat.id} />
+							<button type="submit" class="btn btn-sm btn-danger" use:armed>
+								{t('tasks.activities.confirm')}
+							</button>
+						</form>
+						<button type="button" onclick={() => (confirmingDelete = null)} class="btn btn-sm">
+							{t('ui.cancel')}
+						</button>
+					{:else}
+						<button
+							type="button"
+							title={t('ui.edit')}
+							aria-label={t('ui.edit')}
+							onclick={() => (editingCategoryId = cat.id)}
+							class="icon-btn"
+						>
+							<Icon name="edit" />
+						</button>
+						<button
+							type="button"
+							title={t('ui.delete')}
+							aria-label={t('ui.delete')}
+							onclick={() => (confirmingDelete = `cat-${cat.id}`)}
+							class="icon-btn icon-btn-danger"
+						>
+							<Icon name="trash" />
+						</button>
+					{/if}
+				{/if}
+			</div>
+		{/each}
+	</div>
+	<form
+		method="post"
+		action="?/createCategory"
+		use:enhance={() => {
+			return async ({ update }) => {
+				await update();
+				newCatColor = CATEGORY_DEFAULT_NEW;
+			};
+		}}
+		class="mt-3 flex items-center gap-2"
+	>
+		<input
+			name="color"
+			type="color"
+			bind:value={newCatColor}
+			class="h-8 w-10 shrink-0 cursor-pointer border border-gray-300"
+			aria-label={t('tasks.activities.colour')}
+		/>
+		<OneLine
+			name="label"
+			placeholder={t('tasks.activities.newCategoryName')}
+			class="input input-sm min-w-0 flex-1"
+			required
+		/>
+		<button
+			type="submit"
+			class="btn btn-sm btn-primary shrink-0"
+			title={t('ui.add')}
+			aria-label={t('ui.add')}
+		>
+			<Icon name="plus" />
+		</button>
+	</form>
+
+	{#snippet footer()}
+		<button type="button" class="btn" onclick={() => (showCategoryForm = false)}
+			>{t('ui.done')}</button
+		>
+	{/snippet}
+</Modal>
+
+<Modal
+	bind:open={showForm}
+	error={form?.message}
+	title={editingId ? t('tasks.activities.editActivity') : t('tasks.plan.newActivity')}
+	onclose={() => (editingId = null)}
+	size="sm"
+>
+	{@const editing = editingId ? data.activities.find((a) => a.id === editingId) : null}
+	<form
+		id="activity-form"
+		method="post"
+		action={editingId ? '?/update' : '?/create'}
+		use:enhance={() => {
+			return async ({ update, result }) => {
+				await update({ reset: false });
+				if (result.type === 'success') {
+					showForm = false;
+					editingId = null;
+				}
+			};
+		}}
+	>
+		{#if editingId}
+			<input type="hidden" name="id" value={editingId} />
+		{/if}
+
+		<FormGrid>
+			<Field label={t('ui.name')} span={12} required>
+				<OneLine
+					id="activity-name"
+					name="label"
+					value={editing?.name ?? ''}
+					class="input"
+					required
+					autofocus
+				/>
+			</Field>
+
+			<Field label={t('ui.category')} span={12} required>
+				<select name="categoryId" required class="select">
+					{#each data.categories as cat (cat.id)}
+						<option value={cat.id} selected={editing?.categoryId === cat.id}>{cat.name}</option>
+					{/each}
+				</select>
+			</Field>
+
+			<Field label={t('ui.description')} span={12}>
+				<OneLine name="description" value={editing?.description ?? ''} class="input" />
+			</Field>
+		</FormGrid>
+	</form>
+
+	{#snippet footer()}
+		<button type="button" class="btn" onclick={() => (showForm = false)}>{t('ui.cancel')}</button>
+		<button type="submit" form="activity-form" class="btn btn-primary">
+			{editingId ? t('ui.save') : t('tasks.activities.createActivity')}
+		</button>
+	{/snippet}
+</Modal>

@@ -110,11 +110,11 @@ test('the whole list still works, filed or not', async ({ page }) => {
 
 	// "Got it" is a count of one now — the arrow where the tick used to be.
 	await page.getByRole('button', { name: 'One more Butter' }).click();
-	await expect(page.locator('[title$="you keep 1"]')).toHaveText('1');
+	await expect(page.getByRole('textbox', { name: /you keep 1$/ })).toHaveValue('1');
 
 	await page.getByRole('button', { name: /^Archive: Butter/ }).click();
 	await expect(page.getByText('Butter')).toHaveCount(0);
-	await page.getByRole('button', { name: /Show archived/ }).click();
+	await page.getByRole('button', { name: /^Archived/ }).click();
 	await expect(page.getByText('Butter')).toBeVisible();
 });
 
@@ -263,26 +263,26 @@ test('a thing is counted, and the list is what you are short of', async ({ page 
 	await add.getByRole('button', { name: 'Add item', exact: true }).click();
 	await expect(add).toBeHidden({ timeout: DIALOG_CLOSES });
 
-	const count = page.locator('[title$="you keep 4"]');
-	await expect(count).toHaveText('0/4');
+	const count = page.getByRole('textbox', { name: /you keep 4$/ });
+	await expect(count).toHaveValue('0');
 
 	// Down cannot go below none.
 	await expect(page.getByRole('button', { name: 'One fewer Tinned tomatoes' })).toBeDisabled();
 
 	await page.getByRole('button', { name: 'One more Tinned tomatoes' }).click();
-	await expect(count).toHaveText('1/4');
+	await expect(count).toHaveValue('1');
 
 	// Two of four is still something to buy: it stays on the to-buy view, which
 	// hides what you have.
 	await expect(page.getByText('Tinned tomatoes')).toBeVisible();
 
-	// Filling it up takes it off, exactly as ticking used to.
+	// Filling it up keeps it in the cupboard, counted full: the stock shows
+	// what you have as well as what you are short of.
 	for (let i = 0; i < 3; i++) {
 		await page.getByRole('button', { name: 'One more Tinned tomatoes' }).click();
-		await expect(count).toHaveText(new RegExp(`^${i + 2}/4`));
+		await expect(count).toHaveValue(String(i + 2));
 	}
-	await page.getByRole('button', { name: /Show bought/ }).click();
-	await expect(page.locator('[title$="you keep 4"]')).toHaveText('4/4');
+	await expect(page.getByRole('textbox', { name: /you keep 4$/ })).toHaveValue('4');
 });
 
 /** Having more than you keep is a fact, not an error. */
@@ -293,16 +293,36 @@ test('the count has no ceiling', async ({ page }) => {
 	await visit(page, '/inventory');
 	await addItem(page, 'Batteries');
 
-	// One at a time, waiting for each to land rather than for 300ms and hoping.
-	// Three clicks against a loaded server is three writes in flight, and the
-	// last one arriving after the assertion is how this failed under a full run.
-	const count = page.locator('[title$="you keep 1"]');
+	// The presses answer at once — no waiting on the server between them — and
+	// are sent as one write once they stop, which is what a reload reads back.
+	const count = page.getByRole('textbox', { name: /you keep 1$/ });
+	const more = page.getByRole('button', { name: 'One more Batteries' });
+	const written = page.waitForResponse((r) => r.url().includes('setQty'));
 	for (let want = 1; want <= 3; want++) {
-		await page.getByRole('button', { name: 'One more Batteries' }).click();
-		await expect(count).toHaveText(String(want), { timeout: 15_000 });
+		await more.click();
+		await expect(count).toHaveValue(String(want), { timeout: 1_000 });
 	}
-	await page.getByRole('button', { name: /Show bought/ }).click();
-	await expect(count).toHaveText('3');
+	await written;
+	await expect(count).toHaveValue('3');
+	await page.reload();
+	await expect(page.getByRole('textbox', { name: /you keep 1$/ })).toHaveValue('3');
+});
+
+/** Ten more is typed, not pressed ten times. */
+test('the count can be typed', async ({ page }) => {
+	await register(page, testEmail('inv-type'));
+	await visit(page, '/inventory');
+	await foodCategory(page);
+	await visit(page, '/inventory');
+	await addItem(page, 'Pegs');
+
+	const count = page.getByRole('textbox', { name: /you keep 1$/ });
+	const written = page.waitForResponse((r) => r.url().includes('setQty'));
+	await count.fill('12');
+	await count.press('Enter');
+	await written;
+	await page.reload();
+	await expect(page.getByRole('textbox', { name: /you keep 1$/ })).toHaveValue('12');
 });
 
 test.describe('a row on a phone', () => {
@@ -336,7 +356,9 @@ test.describe('a row on a phone', () => {
 		await page.mouse.move(0, 0);
 		// Sized for a loaded runner, like the count above it: the press posts a
 		// form and the room's whole query runs again behind it.
-		await expect(page.locator('[title$="you keep 1"]')).toHaveText('1', { timeout: 15_000 });
+		await expect(page.getByRole('textbox', { name: /you keep 1$/ })).toHaveValue('1', {
+			timeout: 15_000
+		});
 
 		/*
 		 * Wider than it is tall: that is what a line of text is, and what a
@@ -381,7 +403,7 @@ test.describe('a row on a phone', () => {
 
 		// Having one of it, so there is a price to record.
 		await page.getByRole('button', { name: 'One more Olive oil' }).click();
-		await expect(page.locator('[title^="Olive oil:"]')).toHaveText('1');
+		await expect(page.getByRole('textbox', { name: /^Olive oil:/ })).toHaveValue('1');
 		expect((await below.boundingBox())!.y, 'after counting').toBe(start!.y);
 
 		// A field of its own, which is the thing that appears on a row.
@@ -407,7 +429,7 @@ test.describe('a row on a phone', () => {
 		const below = page.getByText('Bread');
 		const before = await below.boundingBox();
 		await page.getByRole('button', { name: 'One more Milk' }).click();
-		await expect(page.locator('[title^="Milk:"]')).toHaveText('1');
+		await expect(page.getByRole('textbox', { name: /^Milk:/ })).toHaveValue('1');
 		const after = await below.boundingBox();
 
 		expect(before, 'the row below is on screen').not.toBeNull();
@@ -479,32 +501,30 @@ test.describe('what the filters are hiding', () => {
 		await expect(page.getByText('Olive oil')).toBeHidden();
 	});
 
-	test('the page says how many it is not showing, and never moves to say it', async ({ page }) => {
+	test('the page says how many it is showing, and never moves to say it', async ({ page }) => {
 		await register(page, testEmail('inv-hidden'));
 		await visit(page, '/inventory');
 		await aHouse(page);
 
-		const line = page.getByText(/^Not showing /);
+		const count = page.getByText(/^\d+ things? showing$/).last();
 		const panel = page.getByRole('heading', { name: 'Where things live' });
+		const short = page.getByRole('button', { name: 'Short', exact: true });
 		const before = await panel.boundingBox();
+		const shortBefore = await short.boundingBox();
+		const all = await count.textContent();
 
-		// Nothing hidden: the line is in the layout but has nothing to say.
-		await expect(line).toBeHidden();
+		// Short is a filter, and what it leaves out comes off the count.
+		await short.click();
+		await expect(count).not.toHaveText(all!);
 
-		// Short is a filter, and what it leaves out is what the line counts.
-		// The wishlist is not: it is the other tab, not something hidden here.
-		await page.getByRole('button', { name: 'Short', exact: true }).click();
-		await expect(line).toHaveText(/^Not showing \d+ items?$/);
-
-		// The panel under it has not moved a pixel — the space was already
-		// reserved, which is the whole point of keeping the line invisible
-		// rather than removing it.
-		const after = await panel.boundingBox();
+		// Nothing around it moved: the count sits in a slot as wide as its
+		// longest, and nothing appears or disappears to say it.
 		expect(before, 'the panel is on screen').not.toBeNull();
-		expect(after!.y).toBe(before!.y);
+		expect((await panel.boundingBox())!.y).toBe(before!.y);
+		expect((await short.boundingBox())!.x).toBe(shortBefore!.x);
 
-		await page.getByRole('button', { name: 'Short', exact: true }).click();
-		await expect(line).toBeHidden();
+		await short.click();
+		await expect(count).toHaveText(all!);
 		expect((await panel.boundingBox())!.y).toBe(before!.y);
 	});
 

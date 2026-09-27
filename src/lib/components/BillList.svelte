@@ -42,7 +42,14 @@
 		startingNotebook = null,
 		onattach,
 		/** What to show when there is nothing active and nothing put away. */
-		empty
+		empty,
+		/** Whether the archived bills are listed under the active ones. */
+		showArchived = $bindable(false),
+		/**
+		 * Draw its own disclosure for the archived bills. Off where the screen
+		 * has a filter strip that carries the toggle instead.
+		 */
+		archiveToggle = true
 	}: {
 		bills: Listed[];
 		currency: Currency;
@@ -51,12 +58,12 @@
 		startingNotebook?: number | null;
 		onattach?: (id: number) => void;
 		empty?: Snippet;
+		showArchived?: boolean;
+		archiveToggle?: boolean;
 	} = $props();
 
 	const active = $derived(bills.filter((b) => b.active));
 	const archived = $derived(bills.filter((b) => !b.active));
-
-	let showArchived = $state(false);
 
 	// The form does both jobs: no editing id is a new bill, an id is that bill
 	// being changed — one form, so the two can never drift apart.
@@ -109,7 +116,7 @@
 {#if active.length === 0 && archived.length === 0}
 	{@render empty?.()}
 {:else}
-	<div class="space-y-3">
+	<div class={archiveToggle ? 'space-y-3' : ''}>
 		{#if active.length === 0}
 			{@render empty?.()}
 		{:else}
@@ -118,7 +125,7 @@
 			</ul>
 		{/if}
 
-		{#if archived.length > 0}
+		{#if archived.length > 0 && archiveToggle}
 			<div>
 				<button
 					type="button"
@@ -135,6 +142,10 @@
 					</ul>
 				{/if}
 			</div>
+		{:else if archived.length > 0 && showArchived}
+			<ul class="divide-y divide-gray-200 border-t border-gray-200">
+				{#each archived as bill (bill.id)}{@render row(bill)}{/each}
+			</ul>
 		{/if}
 	</div>
 {/if}

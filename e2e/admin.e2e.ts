@@ -134,6 +134,8 @@ test('deleting an account asks for its address, and means it', async ({ page }) 
 		.getByRole('link', { name: new RegExp(email, 'i') })
 		.first()
 		.click();
+	// Behind the closed danger zone, the way the account page keeps its own.
+	await page.getByText('Danger zone').click();
 	await expect(page.getByRole('heading', { name: 'Delete this account' })).toBeVisible();
 
 	await page.getByRole('button', { name: 'Delete this account' }).click();
@@ -229,7 +231,8 @@ test('granting admin takes a deliberate second press', async ({ page }) => {
 
 	// And the deliberate version, after the arming delay, does the thing.
 	await page.getByRole('button', { name: 'Make admin' }).click();
-	const confirm = page.getByRole('button', { name: 'Make admin' });
+	// The confirmation is a dialog, whose own button says the same words.
+	const confirm = page.getByRole('dialog').getByRole('button', { name: 'Make admin' });
 	await page.waitForTimeout(600);
 	await confirm.click();
 	await expect(page.getByRole('button', { name: 'Remove admin' })).toBeVisible();

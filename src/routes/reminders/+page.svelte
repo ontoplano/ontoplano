@@ -16,7 +16,10 @@
 		openPhoneNotificationSettings,
 		phonePermission
 	} from '$lib/phone-notifications';
-	import Card from '$lib/components/Card.svelte';
+	import RoomSurface from '$lib/components/RoomSurface.svelte';
+	import SettingGroup from '$lib/components/SettingGroup.svelte';
+	import SettingRow from '$lib/components/SettingRow.svelte';
+	import { setRoomAction } from '$lib/room-action.svelte';
 	import Modal from '$lib/components/Modal.svelte';
 	import { alarmsChanged } from '$lib/alarms';
 	import Field from '$lib/components/Field.svelte';
@@ -458,6 +461,33 @@
 
 	/** Whether the "set one" dialog is open. */
 	let setting = $state(false);
+
+	/*
+	 * The screen's one verb, in the corner every screen keeps it in — drawn by
+	 * the bar, not by this page. See `$lib/room-action`.
+	 */
+	setRoomAction(() => ({
+		label: t('reminders.newReminder'),
+		run: () => (setting = true),
+		kbd: 'n',
+		tour: 'set-alarm'
+	}));
+
+	function handleKeydown(e: KeyboardEvent) {
+		const target = e.target as HTMLElement | null;
+		if (
+			target instanceof HTMLInputElement ||
+			target instanceof HTMLTextAreaElement ||
+			target instanceof HTMLSelectElement ||
+			target?.isContentEditable
+		)
+			return;
+		if (e.metaKey || e.ctrlKey || e.altKey) return;
+		if (e.key === 'n' && !setting && !ranging) {
+			e.preventDefault();
+			setting = true;
+		}
+	}
 	let editDay = $state('');
 	let editTime = $state('');
 	let editSay = $state('');
@@ -524,30 +554,12 @@
 
 <svelte:head><title>{t('reminders.remindersOntoplano')}</title></svelte:head>
 
+<svelte:window onkeydown={handleKeydown} />
+
 <audio bind:this={audio} class="hidden"></audio>
 
 <div class="space-y-4">
-	<RoomBar title={t('reminders.reminders')}>
-		{#snippet actions()}
-			<!--
-				Where every other room keeps the thing that makes one.
-
-				This sat on a row of its own under the bar, right-aligned, which on
-				a phone is a band of empty space above the list somebody came here
-				to read. The bar is the shared component and this is the shared
-				habit; see `RoomBar`.
-			-->
-			<button
-				type="button"
-				class="btn btn-sm btn-primary"
-				data-tour="set-alarm"
-				onclick={() => (setting = true)}
-			>
-				<Icon name="plus" />
-				{t('reminders.newReminder')}
-			</button>
-		{/snippet}
-	</RoomBar>
+	<RoomBar title={t('reminders.reminders')} />
 
 	<FormError message={form?.message} />
 
@@ -640,7 +652,7 @@
 					</button>
 				{:else}
 					<button type="button" class="btn btn-primary" onclick={allow} disabled={asking}>
-						{asking ? 'Asking…' : t('reminders.allowNotifications')}
+						{asking ? t('reminders.asking') : t('reminders.allowNotifications')}
 					</button>
 				{/if}
 			</div>
@@ -830,15 +842,15 @@
 		question you ask once — "and what about November?" — not a setting you
 		keep, and this way the answer is a link you can send yourself.
 	-->
-	<Card
-		title={data.past ? t('reminders.alreadyBeen') : t('reminders.comingUp')}
-		description={data.past
-			? t('reminders.theLastDays', { count: data.days })
-			: t('reminders.theNextDays', { count: data.days })}
-		flush
-	>
+	<!--
+		The list and the controls that choose it, and the settings for how it
+		sounds, as one surface: the window along the top, the list under it,
+		then a band per setting. They were three cards on the page ground, the
+		first wearing a heading that repeated what its own controls said.
+	-->
+	<RoomSurface>
 		<div
-			class="flex flex-wrap items-center gap-2 border-b border-gray-200 px-4 py-2"
+			class="flex flex-wrap items-center gap-2 border-b border-gray-200 p-4"
 			data-tour="reminder-window"
 		>
 			<!--
@@ -1003,31 +1015,35 @@
 		{:else}
 			<ul class="divide-y divide-gray-200">
 				{#each upcoming as reminder (reminder.key)}
-					<li class="px-4 py-2">
+					<li class="px-4 py-3">
 						<div class="flex items-center gap-3">
-							<span class="shrink-0 text-gray-400" title={t(kindOf(reminder.subjectKind).label)}>
+							<span class="shrink-0 text-gray-500" title={t(kindOf(reminder.subjectKind).label)}>
 								<Icon name={kindOf(reminder.subjectKind).icon} size={14} />
 							</span>
 							<span class="min-w-0 flex-1">
 								<span class="block truncate text-sm text-gray-900">{reminder.message}</span>
 								<span class="flex items-center gap-1.5 text-xs text-gray-500">
 									{t(kindOf(reminder.subjectKind).label)}
+									<!-- On a phone the time rides here, so the sentence keeps the width. -->
+									<span class="tabular sm:hidden">· {when(reminder.remindAt)}</span>
 									{#if reminder.shown}{t('reminders.alreadyShown')}{/if}
 									<!-- The one thing about a reminder you want to know before it
 								     happens rather than after. -->
 									{#if reminder.audible}
-										<span class="text-blue-600" title={t('reminders.thisOneMakesASound')}>
+										<span class="text-gray-700" title={t('reminders.thisOneMakesASound')}>
 											<Icon name="sound" size={12} />
 										</span>
 									{/if}
 								</span>
 							</span>
-							<span class="tabular shrink-0 text-xs text-gray-500">{when(reminder.remindAt)}</span>
+							<span class="tabular hidden shrink-0 text-xs text-gray-500 sm:block"
+								>{when(reminder.remindAt)}</span
+							>
 
 							{#if reminder.id === null}
 								<!-- Nothing to change or remove: it is not a row, it is a date
 							     in the address book or on a bill. -->
-								<span class="w-14 shrink-0"></span>
+								<span class="hidden w-14 shrink-0 sm:block"></span>
 							{:else if confirmingDelete === reminder.id}
 								<form
 									method="post"
@@ -1202,20 +1218,18 @@
 				{/each}
 			</ul>
 		{/if}
-	</Card>
 
-	<!--
+		<!--
 		Which kinds are worth hearing.
 
 		Silent unless asked, for every kind: an alarm probably is worth a noise
 		and a birthday probably is not, and that is a judgement nobody else can
 		make for you.
 	-->
-	<div data-tour="reminder-sounds">
-		<Card
+		<SettingGroup
 			title={t('reminders.whatMakesASound')}
 			description={t('reminders.everythingShowsOnlyTheseAre')}
-			flush
+			dataTour="reminder-sounds"
 		>
 			<!--
 				A kind, whether it makes a noise, and which noise.
@@ -1235,89 +1249,83 @@
 				button you also have to remember to press is a row people leave
 				half-set. See `settings/preferences`.
 			-->
-			<ul class="divide-y divide-gray-200">
-				{#each data.sounds as choice (choice.kind)}
-					<li class="px-4 py-3">
-						<form
-							method="post"
-							action="?/setSound"
-							use:enhance
-							class="grid grid-cols-[1fr_auto] items-center gap-x-3 gap-y-2 sm:grid-cols-[1fr_14rem_auto]"
-						>
-							<input type="hidden" name="kind" value={choice.kind} />
+			{#each data.sounds as choice (choice.kind)}
+				<div class="px-4 py-3">
+					<form
+						method="post"
+						action="?/setSound"
+						use:enhance
+						class="grid grid-cols-[1fr_auto] items-center gap-x-3 gap-y-2 sm:grid-cols-[1fr_14rem_auto]"
+					>
+						<input type="hidden" name="kind" value={choice.kind} />
 
-							<span class="flex min-w-0 items-center gap-2 text-sm text-gray-900">
-								<span class="shrink-0 text-gray-400">
-									<Icon name={kindOf(choice.kind).icon} size={14} />
-								</span>
-								<span class="truncate">{t(kindOf(choice.kind).label)}</span>
+						<span class="flex min-w-0 items-center gap-2 text-sm text-gray-900">
+							<span class="shrink-0 text-gray-500">
+								<Icon name={kindOf(choice.kind).icon} size={14} />
 							</span>
+							<span class="truncate">{t(kindOf(choice.kind).label)}</span>
+						</span>
 
-							<!--
+						<!--
 								The switch sits last on a wide row and first-line-right on a
 								phone, which is why it is ordered rather than placed: it is
 								the answer to the question the name asks, so it stays beside
 								the name at every width.
 							-->
-							<input
-								type="checkbox"
-								name="audible"
-								value="on"
-								class="toggle justify-self-end sm:order-last"
-								checked={choice.audible}
-								aria-label={t('reminders.sound')}
-								onchange={(e) => e.currentTarget.form?.requestSubmit()}
-							/>
+						<input
+							type="checkbox"
+							name="audible"
+							value="on"
+							class="toggle justify-self-end sm:order-last"
+							checked={choice.audible}
+							aria-label={t('reminders.sound')}
+							onchange={(e) => e.currentTarget.form?.requestSubmit()}
+						/>
 
-							<select
-								name="ringtoneId"
-								class="select col-span-2 w-full sm:col-span-1"
-								aria-label={t('reminders.whatMakesASound')}
-								onchange={(e) => e.currentTarget.form?.requestSubmit()}
-							>
-								<option value="" selected={choice.ringtoneId === null}>
-									{t('reminders.default')}
-								</option>
-								{#each data.ringtones as tone (tone.id)}
-									<option value={tone.id} selected={choice.ringtoneId === tone.id}
-										>{tone.name}</option
-									>
-								{/each}
-							</select>
-						</form>
-					</li>
-				{/each}
-			</ul>
-		</Card>
-	</div>
-
-	<!-- The sounds themselves. -->
-	<Card
-		title={t('reminders.yourSounds')}
-		description={t('reminders.upToRingtonesKbEach', {
-			ringtones: data.limits.ringtones,
-			kilobytes: data.limits.kilobytes
-		})}
-		flush
-	>
-		{#if data.ringtones.length > 0}
-			<ul class="divide-y divide-gray-200">
-				{#each data.ringtones as tone (tone.id)}
-					<li class="flex items-center gap-3 px-4 py-2">
-						<span class="min-w-0 flex-1 truncate text-sm text-gray-900">{tone.name}</span>
-						<span class="tabular shrink-0 text-xs text-gray-500"
-							>{t('reminders.kb', { bytes: Math.round(tone.bytes / 1024) })}</span
+						<select
+							name="ringtoneId"
+							class="select col-span-2 w-full sm:col-span-1"
+							aria-label={t('reminders.whatMakesASound')}
+							onchange={(e) => e.currentTarget.form?.requestSubmit()}
 						>
+							<option value="" selected={choice.ringtoneId === null}>
+								{t('reminders.default')}
+							</option>
+							{#each data.ringtones as tone (tone.id)}
+								<option value={tone.id} selected={choice.ringtoneId === tone.id}>{tone.name}</option
+								>
+							{/each}
+						</select>
+					</form>
+				</div>
+			{/each}
+		</SettingGroup>
+
+		<!-- The sounds themselves. -->
+		<SettingGroup
+			title={t('reminders.yourSounds')}
+			description={t('reminders.upToRingtonesKbEach', {
+				ringtones: data.limits.ringtones,
+				kilobytes: data.limits.kilobytes
+			})}
+		>
+			{#each data.ringtones as tone (tone.id)}
+				<div class="list-row">
+					<span class="list-row-main truncate text-sm text-gray-900">{tone.name}</span>
+					<span class="tabular shrink-0 text-xs text-gray-500"
+						>{t('reminders.kb', { bytes: Math.round(tone.bytes / 1024) })}</span
+					>
+					<div class="list-row-actions">
 						<button
 							type="button"
 							onclick={() => preview(`/api/ringtones/${tone.id}`)}
-							class="icon-btn shrink-0"
+							class="icon-btn"
 							title={t('reminders.hearIt')}
 							aria-label={t('reminders.hear', { name: tone.name })}
 						>
 							<Icon name="play" />
 						</button>
-						<form method="post" action="?/removeSound" use:enhance class="shrink-0">
+						<form method="post" action="?/removeSound" use:enhance>
 							<input type="hidden" name="id" value={tone.id} />
 							<button
 								type="submit"
@@ -1329,51 +1337,49 @@
 								<Icon name="trash" />
 							</button>
 						</form>
-					</li>
-				{/each}
-			</ul>
-		{/if}
+					</div>
+				</div>
+			{/each}
+			<!--
+				Adding one: a name, then the file. Choosing the file is the submit —
+				a second button to press after picking one is a step nobody needs —
+				so the name comes first, where it is typed before the picker opens.
 
-		<div class="border-t border-gray-200 px-4 py-3">
-			<form
-				method="post"
-				action="?/addSound"
-				enctype="multipart/form-data"
-				use:enhance
-				class="flex flex-wrap items-end gap-3"
-			>
-				<label class="flex flex-col gap-1 text-sm text-gray-700">
-					{t('reminders.aSoundFile')}
-					<!-- Choosing the file is the submit: a second button to press after
-					     picking one is a step nobody needs. -->
-					<!--
-						Extensions, not MIME types.
-
-						`accept="audio/mpeg"` tells a phone browser that this field wants
-						audio, and a phone browser's answer to that is to offer the
-						microphone — Firefox on Android asks for permission to record
-						before it will show you a file picker, which is a baffling thing
-						to be asked when you are uploading a ringtone. Naming extensions
-						asks for a file and nothing else. The server checks the type
-						properly either way, so this only decides what the picker offers.
-					-->
-					<input
-						name="sound"
-						type="file"
-						accept=".mp3,.ogg,.wav"
-						required
-						class="text-sm"
-						onchange={(e) => (e.currentTarget as HTMLInputElement).form?.requestSubmit()}
-					/>
-				</label>
-				<label class="flex flex-col gap-1 text-sm text-gray-700">
-					{t('reminders.callIt')}
-					<OneLine name="label" placeholder={t('reminders.optional')} class="input" />
-				</label>
-			</form>
-			<p class="mt-2 text-xs text-gray-500">
-				{t('reminders.leaveTheNameEmptyAnd')}
-			</p>
-		</div>
-	</Card>
+				Extensions, not MIME types, in `accept`: `audio/mpeg` makes a phone
+				browser offer the microphone, and Firefox on Android asks to record
+				before it will show a file picker. The server checks the type either
+				way; this only decides what the picker offers.
+			-->
+			<SettingRow label={t('reminders.aSoundFile')} hint={t('reminders.leaveTheNameEmptyAnd')}>
+				{#snippet control()}
+					<form
+						method="post"
+						action="?/addSound"
+						enctype="multipart/form-data"
+						use:enhance
+						class="flex flex-wrap items-center justify-end gap-2"
+					>
+						<OneLine
+							name="label"
+							placeholder={t('reminders.nameOptional')}
+							ariaLabel={t('reminders.callIt')}
+							class="input input-sm w-44"
+						/>
+						<label class="btn btn-sm cursor-pointer">
+							<Icon name="plus" />
+							{t('reminders.chooseAFile')}
+							<input
+								name="sound"
+								type="file"
+								accept=".mp3,.ogg,.wav"
+								required
+								class="sr-only"
+								onchange={(e) => (e.currentTarget as HTMLInputElement).form?.requestSubmit()}
+							/>
+						</label>
+					</form>
+				{/snippet}
+			</SettingRow>
+		</SettingGroup>
+	</RoomSurface>
 </div>

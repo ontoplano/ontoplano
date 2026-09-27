@@ -1,5 +1,9 @@
 <script lang="ts">
-	import Card from '$lib/components/Card.svelte';
+	import RoomSurface from '$lib/components/RoomSurface.svelte';
+	import FilterBar from '$lib/components/FilterBar.svelte';
+	import SearchField from '$lib/components/SearchField.svelte';
+	import ShowingCount from '$lib/components/ShowingCount.svelte';
+	import Icon from '$lib/components/Icon.svelte';
 	import { routeGlyph } from '$lib/glyphs';
 	import { useWhen } from '$lib/when-context.svelte';
 	import { dayOf } from '$lib/when';
@@ -12,6 +16,14 @@
 	const now = useWhen();
 
 	let { data }: { data: PageServerData } = $props();
+
+	/** What the search box holds: weeks whose note contains it. */
+	let looking = $state('');
+	const shownWeeks = $derived.by(() => {
+		const needle = looking.trim().toLowerCase();
+		if (!needle) return data.weeks;
+		return data.weeks.filter((one) => one.note.toLowerCase().includes(needle));
+	});
 
 	/**
 	 * A year, a week at a time.
@@ -38,45 +50,56 @@
 	No second heading: the room's name is above and the Weekly notes tab is
 	lit, so a page saying it again said it three times.
 -->
-<div class="space-y-4">
+<!--
+	One surface, and a week is a row on it — the search and the count along
+	its top, the way a notebook's Notes tab opens.
+-->
+<RoomSurface accent="var(--section-accent)">
+	{#snippet tools()}
+		{#if data.weeks.length > 0}
+			<FilterBar name="weekly">
+				{#snippet lead()}
+					<SearchField bind:value={looking} label={t('notebooks.weekly.searchTheWeeks')} />
+				{/snippet}
+				{#snippet count()}
+					<ShowingCount
+						total={data.weeks.length}
+						shown={shownWeeks.length}
+						said={(count) => t('notebooks.weekly.showingCount', { count })}
+					/>
+				{/snippet}
+			</FilterBar>
+		{/if}
+	{/snippet}
 	{#if data.weeks.length === 0}
-		<Card flush>
-			<EmptyState
-				icon={routeGlyph('/notebooks/weekly')!}
-				title={t('notebooks.weekly.nothingWrittenYet')}
-				description={t('notebooks.weekly.everyWeekYouWriteAbout')}
-			/>
-		</Card>
+		<EmptyState
+			icon={routeGlyph('/notebooks/weekly')!}
+			title={t('notebooks.weekly.nothingWrittenYet')}
+			description={t('notebooks.weekly.everyWeekYouWriteAbout')}
+		/>
+	{:else if shownWeeks.length === 0}
+		<EmptyState icon="search" title={t('todoRows.nothingToShow')} />
 	{:else}
-		<!--
-			One surface, and a week is a row on it.
-
-			Each week used to be a card of its own with its own accent edge, so a
-			year of writing was a column of boxes with a strip of page between
-			every two — and on a phone, where a card bleeds to both screen edges,
-			twelve accent bars stacked up the side with gaps between them. The
-			same shape the diary and the to-do list already have: one bordered
-			surface, a hairline between rows, and the accent on the surface
-			rather than on each row of it.
-		-->
-		<Card flush accent="var(--section-accent)">
-			<div class="divide-y divide-gray-200">
-				{#each data.weeks as week (week.weekStart)}
-					<article class="p-4">
-						<h2 class="mb-2 text-sm font-semibold text-gray-900">{weekLabel(week.weekStart)}</h2>
+		<div class="divide-y divide-gray-200">
+			{#each shownWeeks as week (week.weekStart)}
+				<article class="list-row items-start">
+					<div class="list-row-main min-w-0">
+						<h2 class="text-sm font-medium text-gray-900">{weekLabel(week.weekStart)}</h2>
 						<!-- The note as it was typed: paragraphs stay paragraphs. -->
-						<p class="text-sm whitespace-pre-wrap text-gray-900">{week.note}</p>
-						<div class="mt-2">
-							<a
-								href="{resolve('/tasks/review')}?week={week.weekStart}"
-								class="text-xs text-gray-500 hover:text-gray-900 hover:underline"
-							>
-								{t('notebooks.weekly.openThatWeek')}
-							</a>
-						</div>
-					</article>
-				{/each}
-			</div>
-		</Card>
+						<p class="mt-1 text-sm whitespace-pre-wrap text-gray-900">{week.note}</p>
+					</div>
+					<div class="list-row-actions flex-none">
+						<a
+							href="{resolve('/tasks/review')}?week={week.weekStart}"
+							class="icon-btn"
+							title={t('notebooks.weekly.openThatWeek')}
+							aria-label={t('notebooks.weekly.openThatWeek')}
+						>
+							<Icon name="arrow-right" />
+						</a>
+					</div>
+				</article>
+			{/each}
+		</div>
 	{/if}
-</div>
+</RoomSurface>

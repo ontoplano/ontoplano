@@ -6,6 +6,7 @@ import {
 	deleteHabit,
 	deleteOccurrence,
 	logOccurrence,
+	setDayCount,
 	toggleOccurrence,
 	updateHabit,
 	updateOccurrence
@@ -75,6 +76,21 @@ export const habitHandlers = {
 				habitId: formData.get('habitId'),
 				date: formData.get('date'),
 				notes: formData.get('notes')
+			});
+			return { success: true };
+		} catch (e) {
+			return toActionFailure(e);
+		}
+	},
+
+	/** The counter on a card: the day's count, set outright once the pressing stops. */
+	setDayCount: async ({ request, locals }: Event) => {
+		const formData = await request.formData();
+		try {
+			setDayCount(buildCtx(locals.user!.id), {
+				habitId: formData.get('habitId'),
+				date: formData.get('date'),
+				count: formData.get('count')
 			});
 			return { success: true };
 		} catch (e) {

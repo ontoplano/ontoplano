@@ -29,7 +29,7 @@ async function gridAndCard(page: import('@playwright/test').Page) {
 	const days = page.locator('.heat-day');
 	const first = (await days.first().boundingBox())!;
 	const last = (await days.last().boundingBox())!;
-	const card = (await page.locator('.shadow-card').first().boundingBox())!;
+	const card = (await page.locator('.room-surface').first().boundingBox())!;
 	return { first, spanned: last.x + last.width - first.x, card };
 }
 

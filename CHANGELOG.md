@@ -20,6 +20,7 @@ releases mattered.
 
 ## 0.184.0 — 2026-09-27
 
+- Plus and minus on an inventory count or a goal's progress answer immediately and save once you stop pressing, and the number itself can be typed — ten more is one edit, not ten presses.
 - A zoomed-in picture closes with a tap on the dark around it; only dragging it keeps it open.
 - On a phone, going somewhere right after closing a dialog is no longer cancelled by the dialog's own way back.
 - Opening the shopping list or recipes right after signing in no longer fails with a network error.

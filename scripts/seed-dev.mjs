@@ -3703,4 +3703,57 @@ attributeKeys.forEach((key, i) => {
 });
 console.log(`  ${attributeKeys.length} inventory attributes coloured`);
 
+// --- Recordings -----------------------------------------------------------------
+
+/*
+ * A few short recordings, so Media → Recordings is a list with its player,
+ * its rename and its delete rather than an empty state. Each is a second or
+ * two of a plain tone written as a WAV — nobody's voice, and small enough to
+ * sit in the database beside the pictures.
+ */
+const RECORDING_RATE = 8000;
+const tone = (hz, seconds) => {
+	const samples = Math.round(RECORDING_RATE * seconds);
+	const bytes = Buffer.alloc(44 + samples);
+	bytes.write('RIFF', 0);
+	bytes.writeUInt32LE(36 + samples, 4);
+	bytes.write('WAVEfmt ', 8);
+	bytes.writeUInt32LE(16, 16);
+	bytes.writeUInt16LE(1, 20); // PCM
+	bytes.writeUInt16LE(1, 22); // mono
+	bytes.writeUInt32LE(RECORDING_RATE, 24);
+	bytes.writeUInt32LE(RECORDING_RATE, 28);
+	bytes.writeUInt16LE(1, 32);
+	bytes.writeUInt16LE(8, 34);
+	bytes.write('data', 36);
+	bytes.writeUInt32LE(samples, 40);
+	for (let i = 0; i < samples; i++)
+		bytes[44 + i] = Math.round(128 + 60 * Math.sin((2 * Math.PI * hz * i) / RECORDING_RATE));
+	return bytes;
+};
+const recordings = [
+	['Idea for the kitchen shelves', 440, 2, 3],
+	['What the plumber said', 330, 1.5, 9],
+	['Birdsong at the park', 660, 2.5, 20]
+];
+for (const [name, hz, seconds, daysBack] of recordings) {
+	const bytes = tone(hz, seconds);
+	const sha = createHash('sha256').update(bytes).digest('hex');
+	if (one('select id from media where user_id = ? and sha256 = ?', uid, sha)) continue;
+	const at = new Date(now);
+	at.setDate(at.getDate() - daysBack);
+	run(
+		`insert into media (user_id, mime, filename, alt, byte_size, seconds, bytes, sha256, created_at)
+		 values (?, 'audio/wav', ?, '', ?, ?, ?, ?, ?)`,
+		uid,
+		name,
+		bytes.length,
+		seconds,
+		bytes,
+		sha,
+		stamp(at)
+	);
+}
+console.log(`  ${recordings.length} recordings`);
+
 console.log(`seeded synthetic data for ${user.email ?? uid}`);

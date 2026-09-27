@@ -16,6 +16,7 @@
 	 * Only for a notebook of your own. One shared into the family is somebody
 	 * else's to dress.
 	 */
+	import Banner from '$lib/components/Banner.svelte';
 	import Icon from '$lib/components/Icon.svelte';
 	import { enhance } from '$lib/enhance';
 	import { useT } from '$lib/i18n';
@@ -155,7 +156,7 @@
 		<p class="mt-1 text-xs text-gray-500">{t('pictures.uploading')}</p>
 	{/if}
 	{#if problem}
-		<p class="mt-1 text-xs text-red-700">{problem}</p>
+		<div class="mt-2"><Banner message={problem} /></div>
 	{/if}
 
 	<!-- A bin rather than a sentence: it is one small destructive act beside
@@ -165,7 +166,7 @@
 		<form method="post" action="?/removePicture" use:enhance class="mt-1 flex justify-center">
 			<input type="hidden" name="id" value={notebook.id} />
 			<button
-				class="icon-btn text-gray-500 hover:text-red-700"
+				class="icon-btn icon-btn-danger"
 				aria-label={t('notebooks.id.removeThePicture')}
 				title={t('notebooks.id.removeThePicture')}
 			>

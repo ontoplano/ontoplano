@@ -56,7 +56,7 @@
 -->
 {#snippet picture()}
 	{#if data.notebook.mine}
-		<NotebookPicture notebook={data.notebook} kilobytes={data.pictureKilobytes} removable />
+		<NotebookPicture notebook={data.notebook} kilobytes={data.pictureKilobytes} />
 	{:else if data.notebook.pictureId}
 		<img
 			src="/media/{data.notebook.pictureId}"
@@ -151,9 +151,13 @@
 				<!-- This subject's own words, rather than the whole account's: the
 				     Tags tab used to sit in the room strip, answering a question
 				     nobody has while they are looking at one notebook. -->
-				<button onclick={() => (managingTags = true)} class="btn btn-sm">
+				<button
+					onclick={() => (managingTags = true)}
+					class="btn btn-sm"
+					title={t('tags.manageTags')}
+					aria-label={t('tags.manageTags')}
+				>
 					<Icon name="tag" />
-					{t('tags.manageTags')}
 				</button>
 				<!-- The reader's own star, so a notebook shared with them can carry one. -->
 				<NotebookStar notebook={data.notebook} kind="btn btn-sm" />
@@ -174,11 +178,17 @@
 							name="shared"
 							value={data.notebook.sharedWithFamily ? 'false' : 'true'}
 						/>
-						<button class="btn btn-sm">
-							<Icon name="user" />
-							{data.notebook.sharedWithFamily
+						<button
+							class="btn btn-sm"
+							aria-pressed={data.notebook.sharedWithFamily}
+							title={data.notebook.sharedWithFamily
 								? t('notebooks.id.stopSharing')
 								: t('notebooks.id.shareWithFamily')}
+							aria-label={data.notebook.sharedWithFamily
+								? t('notebooks.id.stopSharing')
+								: t('notebooks.id.shareWithFamily')}
+						>
+							<Icon name="user" />
 						</button>
 					</form>
 				{/if}
@@ -199,17 +209,25 @@
 					>
 						<input type="hidden" name="id" value={data.notebook.id} />
 						<input type="hidden" name="closed" value={data.notebook.closedAt ? 'false' : 'true'} />
-						<button class="btn btn-sm">
-							{#if data.notebook.closedAt}
-								<Icon name="undo" /> {t('notebooks.id.reopen')}
-							{:else}
-								<Icon name="check" /> {t('notebooks.id.close')}
-							{/if}
+						<button
+							class="btn btn-sm"
+							title={data.notebook.closedAt ? t('notebooks.id.reopen') : t('notebooks.id.close')}
+							aria-label={data.notebook.closedAt
+								? t('notebooks.id.reopen')
+								: t('notebooks.id.close')}
+						>
+							<Icon name={data.notebook.closedAt ? 'undo' : 'check'} />
 						</button>
 					</form>
-					<button onclick={() => (confirmingDelete = true)} class="btn btn-danger btn-sm">
+					<!-- Icons alone past the two that fill the notebook, so the row
+					     holds on one line of a phone; each still says its word. -->
+					<button
+						onclick={() => (confirmingDelete = true)}
+						class="btn btn-danger btn-sm"
+						title={t('ui.delete')}
+						aria-label={t('ui.delete')}
+					>
 						<Icon name="trash" />
-						{t('ui.delete')}
 					</button>
 				{/if}
 			{/snippet}

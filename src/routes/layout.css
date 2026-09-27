@@ -3901,13 +3901,13 @@ option {
 	min-height: 7.5rem;
 }
 
-input[type='checkbox'],
+input[type='checkbox']:not(.toggle),
 input[type='radio'] {
 	background-color: transparent;
 	border-color: var(--color-gray-400);
 }
 
-input[type='checkbox']:checked,
+input[type='checkbox']:not(.toggle):checked,
 input[type='radio']:checked {
 	background-color: var(--control-on);
 	border-color: var(--control-on);
@@ -3935,7 +3935,7 @@ input[type='radio']:disabled {
  * At 16px the playful radius turns it into a circle, and a circle means
  * one-of. A checkbox that looks like a radio lies about how many you may pick.
  */
-html[data-style='playful'] input[type='checkbox'] {
+html[data-style='playful'] input[type='checkbox']:not(.toggle) {
 	border-radius: 0.25rem;
 }
 
@@ -4301,8 +4301,10 @@ html button.tab-link {
  */
 .notebook-shelf {
 	display: grid;
-	grid-template-columns: repeat(auto-fill, 6.5rem);
-	justify-content: space-between;
+	/* Columns share the width and a cover sits in the middle of its own, so a
+	   row of two is not flung to opposite edges. */
+	grid-template-columns: repeat(auto-fill, minmax(6.5rem, 1fr));
+	justify-items: center;
 	gap: 0.75rem;
 	align-content: start;
 	padding: 0.75rem;
@@ -4310,6 +4312,12 @@ html button.tab-link {
 
 .notebook-cover {
 	position: relative;
+}
+
+/* A cover keeps its size whatever the column it sits in has to spare. */
+.notebook-shelf > .notebook-cover,
+.notebook-family > .notebook-cover {
+	width: 6.5rem;
 }
 
 /*
@@ -4327,13 +4335,16 @@ html button.tab-link {
 .notebook-family {
 	display: grid;
 	grid-column: 1 / -1;
-	grid-template-columns: repeat(auto-fill, 6.5rem);
-	justify-content: space-between;
+	justify-self: stretch;
+	/* The shelf's own columns, so a cover in a folder sits in line with the
+	   covers outside it. */
+	grid-template-columns: subgrid;
+	justify-items: center;
 	gap: 0.75rem;
 	align-content: start;
 	border-radius: var(--radius, 0);
 	background-color: color-mix(in srgb, var(--color-gray-500) 9%, transparent);
-	padding: 0.5rem;
+	padding: 0.5rem 0;
 }
 
 .notebook-family .notebook-family {
@@ -5557,6 +5568,11 @@ html[data-pie-open] .float-layer {
 	height: calc(1lh + 1rem + 2px);
 	min-height: 0;
 	white-space: pre;
+}
+
+/* The small field's own padding, so it stands as tall as the small buttons beside it. */
+.one-line.input-sm {
+	height: calc(1lh + 0.5rem + 2px);
 }
 
 /*

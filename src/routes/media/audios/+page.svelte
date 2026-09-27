@@ -1,5 +1,9 @@
 <script lang="ts">
-	import Card from '$lib/components/Card.svelte';
+	import FilterBar from '$lib/components/FilterBar.svelte';
+	import SearchField from '$lib/components/SearchField.svelte';
+	import ShowingCount from '$lib/components/ShowingCount.svelte';
+	import RoomSurface from '$lib/components/RoomSurface.svelte';
+	import Field from '$lib/components/Field.svelte';
 	import { routeGlyph } from '$lib/glyphs';
 	import { enhance } from '$lib/enhance';
 	import { invalidateAll } from '$app/navigation';
@@ -10,7 +14,6 @@
 	import Icon from '$lib/components/Icon.svelte';
 	import OneLine from '$lib/components/OneLine.svelte';
 	import Recorder from '$lib/components/Recorder.svelte';
-	import RoomToolbar from '$lib/components/RoomToolbar.svelte';
 	import { armed } from '$lib/actions/armed';
 	import { setRoomAction } from '$lib/room-action.svelte';
 	import { useT } from '$lib/i18n';
@@ -57,8 +60,18 @@
 	let justMade = $state<{ id: number; name: string } | null>(null);
 	const ideaSeed = $derived(ideaOf ? audioMarkdown(ideaOf.id, ideaOf.name) + '\n' : '');
 
-	/** Which row's name is being edited, if any. One at a time. */
+	/** Which recording's name is being edited, if any. */
 	let renaming = $state<number | null>(null);
+	const renamingOne = $derived(data.recordings.find((one) => one.id === renaming) ?? null);
+
+	/** Finding one by name. */
+	let looking = $state('');
+	const needle = $derived(looking.trim().toLowerCase());
+	const shown = $derived(
+		needle === ''
+			? data.recordings
+			: data.recordings.filter((one) => one.name.toLowerCase().includes(needle))
+	);
 
 	/**
 	 * Recording lives where every room's "new something" lives.
@@ -109,18 +122,30 @@
 	const said = (iso: string) => instantInWords(iso, now());
 
 	function size(bytes: number): string {
-		return `${Math.max(1, Math.ceil(bytes / 1024))}KB`;
+		return t('audio.sizeKB', { size: Math.max(1, Math.ceil(bytes / 1024)) });
 	}
 </script>
 
-<div class="space-y-4">
-	<RoomToolbar>
-		{#snippet tools()}
-			<span class="text-sm text-gray-500">
-				{t('audio.held', { count: data.recordings.length })}
-			</span>
-		{/snippet}
-	</RoomToolbar>
+<!--
+	One surface: finding one along its top, the offer a new recording makes
+	under that, and the recordings edge to edge.
+-->
+<RoomSurface>
+	{#snippet tools()}
+		<!-- Nothing here to narrow by but a name: a strip with no filters. -->
+		<FilterBar name="audios">
+			{#snippet lead()}
+				<SearchField bind:value={looking} label={t('audio.searchRecordings')} />
+			{/snippet}
+			{#snippet count()}
+				<ShowingCount
+					total={data.recordings.length}
+					shown={shown.length}
+					said={(count) => t('audio.held', { count })}
+				/>
+			{/snippet}
+		</FilterBar>
+	{/snippet}
 
 	<!--
 		Just recorded: the offer, not a demand.
@@ -131,120 +156,135 @@
 		thing for ever afterwards.
 	-->
 	{#if justMade}
-		<Banner kind="info">
-			<div class="flex flex-wrap items-center gap-2">
-				<span class="min-w-0 flex-1">{t('audio.justRecorded', { name: justMade.name })}</span>
-				<button
-					type="button"
-					class="btn btn-sm"
-					onclick={() => {
-						ideaOf = justMade;
-						justMade = null;
-					}}
-				>
-					<Icon name="ideas" class="mr-1.5" />
-					{t('audio.makeAnIdea')}
-				</button>
-				<button
-					type="button"
-					class="icon-btn"
-					title={t('ui.dismiss')}
-					aria-label={t('ui.dismiss')}
-					onclick={() => (justMade = null)}
-				>
-					<Icon name="close" />
-				</button>
-			</div>
-		</Banner>
+		<div class="border-b border-gray-200 px-4 py-3">
+			<Banner kind="info">
+				<div class="flex flex-wrap items-center gap-2">
+					<span class="min-w-0 flex-1">{t('audio.justRecorded', { name: justMade.name })}</span>
+					<button
+						type="button"
+						class="btn btn-sm"
+						onclick={() => {
+							ideaOf = justMade;
+							justMade = null;
+						}}
+					>
+						<Icon name="ideas" />
+						{t('audio.makeAnIdea')}
+					</button>
+					<button
+						type="button"
+						class="icon-btn"
+						title={t('ui.dismiss')}
+						aria-label={t('ui.dismiss')}
+						onclick={() => (justMade = null)}
+					>
+						<Icon name="close" />
+					</button>
+				</div>
+			</Banner>
+		</div>
 	{/if}
 
 	{#if data.recordings.length === 0}
-		<EmptyState icon={routeGlyph('/media/audios')!} title={t('audio.none')} />
+		<EmptyState
+			icon={routeGlyph('/media/audios')!}
+			title={t('audio.none')}
+			description={t('audio.noneDescription')}
+		/>
+	{:else if shown.length === 0}
+		<EmptyState
+			icon="search"
+			title={t('todoRows.nothingToShow')}
+			description={t('audio.noneMatch')}
+		/>
 	{:else}
-		<Card flush>
-			<ul class="divide-y divide-gray-200">
-				{#each data.recordings as one (one.id)}
-					<li class="flex flex-col gap-2 p-3 sm:flex-row sm:items-center sm:gap-4">
-						<div class="min-w-0 flex-1">
-							{#if renaming === one.id}
-								<form
-									method="post"
-									action="?/rename"
-									class="flex flex-wrap items-center gap-2"
-									use:enhance={() => {
-										return async ({ update }) => {
-											renaming = null;
-											await update();
-										};
-									}}
-								>
-									<input type="hidden" name="id" value={one.id} />
-									<OneLine
-										name="label"
-										value={one.name}
-										class="input w-auto flex-1 sm:max-w-72"
-										ariaLabel={t('audio.nameIt')}
-										required
-									/>
-									<button class="btn btn-sm btn-primary" type="submit">{t('ui.save')}</button>
-									<button
-										type="button"
-										class="btn btn-sm btn-quiet"
-										onclick={() => (renaming = null)}
-									>
-										{t('ui.cancel')}
-									</button>
-								</form>
-							{:else}
-								<p class="truncate text-sm font-medium text-gray-900">{one.name}</p>
-								<p class="mt-0.5 text-xs text-gray-500">
-									{said(one.createdAt)} · {size(one.byteSize)}
-								</p>
-							{/if}
-						</div>
+		<ul class="divide-y divide-gray-200">
+			{#each shown as one (one.id)}
+				<li class="list-row flex-wrap">
+					<div class="list-row-main min-w-0 flex-1">
+						<p class="truncate text-sm font-medium text-gray-900">{one.name}</p>
+						<p class="mt-0.5 text-xs text-gray-500">
+							{said(one.createdAt)} · {size(one.byteSize)}
+						</p>
+					</div>
 
-						<!-- The app's own transport rather than the browser's, which
+					<!-- The app's own transport rather than the browser's, which
 					     arrives at a fixed size in a grey of its own and reads as a
 					     foreign object in the list. See `AudioPlayer`. -->
-						<AudioPlayer
-							src="/media/audio/{one.id}"
-							label={one.name}
-							seconds={one.seconds}
-							class="w-full sm:w-72"
-						/>
+					<AudioPlayer
+						src="/media/audio/{one.id}"
+						label={one.name}
+						seconds={one.seconds}
+						class="order-last w-full sm:order-none sm:w-72"
+					/>
 
-						<div class="flex shrink-0 items-center gap-2">
-							<button
-								type="button"
-								class="btn btn-sm"
-								onclick={() => (renaming = renaming === one.id ? null : one.id)}
-							>
-								<Icon name="edit" class="mr-1.5" />
-								{t('audio.rename')}
-							</button>
-							<button
-								type="button"
-								class="btn btn-sm"
-								onclick={() => (ideaOf = { id: one.id, name: one.name })}
-							>
-								<Icon name="ideas" class="mr-1.5" />
-								{t('audio.makeAnIdea')}
-							</button>
-							<button
-								type="button"
-								class="btn btn-sm btn-danger"
-								onclick={() => (doomedId = one.id)}
-							>
-								<Icon name="trash" class="mr-1.5" />
-								{t('audio.delete')}
-							</button>
-						</div>
-					</li>
-				{/each}
-			</ul>
-		</Card>
+					<div class="list-row-actions">
+						<button
+							type="button"
+							class="icon-btn"
+							title={t('audio.rename')}
+							aria-label={t('audio.renameName', { name: one.name })}
+							onclick={() => (renaming = one.id)}
+						>
+							<Icon name="edit" />
+						</button>
+						<button
+							type="button"
+							class="icon-btn"
+							title={t('audio.makeAnIdea')}
+							aria-label={t('audio.makeAnIdea')}
+							onclick={() => (ideaOf = { id: one.id, name: one.name })}
+						>
+							<Icon name="ideas" />
+						</button>
+						<button
+							type="button"
+							class="icon-btn icon-btn-danger"
+							title={t('audio.delete')}
+							aria-label={t('audio.deleteName', { name: one.name })}
+							onclick={() => (doomedId = one.id)}
+						>
+							<Icon name="trash" />
+						</button>
+					</div>
+				</li>
+			{/each}
+		</ul>
 	{/if}
-</div>
+</RoomSurface>
+
+<!-- A new name, in a dialog like every other form here. -->
+<Modal
+	open={renamingOne !== null}
+	title={t('audio.rename')}
+	error={form?.message}
+	onclose={() => (renaming = null)}
+	size="sm"
+>
+	{#if renamingOne}
+		<form
+			id="audio-rename-form"
+			method="post"
+			action="?/rename"
+			use:enhance={() =>
+				async ({ result, update }) => {
+					await update();
+					if (result.type === 'success') renaming = null;
+				}}
+		>
+			<input type="hidden" name="id" value={renamingOne.id} />
+			<FormGrid>
+				<Field label={t('audio.nameIt')}>
+					<OneLine name="label" value={renamingOne.name} class="input w-full" required autofocus />
+				</Field>
+			</FormGrid>
+		</form>
+	{/if}
+	{#snippet footer()}
+		<button type="button" class="btn" onclick={() => (renaming = null)}>{t('ui.cancel')}</button>
+		<button type="submit" form="audio-rename-form" class="btn btn-primary">{t('ui.save')}</button>
+	{/snippet}
+</Modal>
 
 <!-- The same centred stage the wheel raises. Recording is the only thing
      anybody is doing while it runs. -->

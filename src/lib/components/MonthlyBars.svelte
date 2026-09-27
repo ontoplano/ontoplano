@@ -89,7 +89,7 @@
 					x={cx}
 					y={H - 1}
 					text-anchor="middle"
-					class="text-[9px] {r.netCents >= 0 ? 'fill-blue-700' : 'fill-red-600'}"
+					class="text-[9px] {r.netCents >= 0 ? 'fill-blue-700' : 'fill-gray-900'}"
 					style="font-variant-numeric: tabular-nums"
 				>
 					{r.netCents === 0 ? '' : money(r.netCents)}

@@ -13,7 +13,9 @@
 	import { resolve } from '$app/paths';
 	import { EMPTY_CONFIRMATION, ERASE_CONFIRMATION } from '$lib/danger';
 	import { notify } from '$lib/notify.svelte';
-	import Card from '$lib/components/Card.svelte';
+	import RoomSurface from '$lib/components/RoomSurface.svelte';
+	import SettingGroup from '$lib/components/SettingGroup.svelte';
+	import SettingRow from '$lib/components/SettingRow.svelte';
 	import Field from '$lib/components/Field.svelte';
 	import Icon from '$lib/components/Icon.svelte';
 	import FormGrid from '$lib/components/FormGrid.svelte';
@@ -130,7 +132,7 @@
 				} catch {
 					// It was the sentence itself.
 				}
-				exportError = message || 'The export did not come back. Try again in a moment.';
+				exportError = message || t('settings.account.exportDidNotComeBack');
 				notify.error(exportError);
 				return;
 			}
@@ -148,8 +150,8 @@
 			setTimeout(() => (cooling = false), COOLDOWN_MS);
 		} catch {
 			exportError = gaveUp
-				? 'The export is taking too long. Try again, or leave the pictures out.'
-				: 'The export did not come back. Check your connection and try again.';
+				? t('settings.account.exportTakingTooLong')
+				: t('settings.account.exportCheckConnection');
 			notify.error(exportError);
 		} finally {
 			clearTimeout(stop);
@@ -163,6 +165,21 @@
 	let confirmRevoke = $state<string | null>(null);
 	let confirmSignOutAll = $state(false);
 	let selected = $state(-1);
+
+	/**
+	 * This device first, then the rest newest first, and only the first few
+	 * until asked: a browser that signs in on every visit leaves dozens of
+	 * lines, and the page was a screen of them between the password and the
+	 * export.
+	 */
+	const SESSIONS_SHOWN = 5;
+	let allSessions = $state(false);
+	const sortedSessions = $derived(
+		[...data.sessions].sort((a, b) => Number(b.current) - Number(a.current))
+	);
+	const shownSessions = $derived(
+		allSessions ? sortedSessions : sortedSessions.slice(0, SESSIONS_SHOWN)
+	);
 
 	/** Times come from the server as UTC; the browser knows what they mean here. */
 	function when(iso: string): string {
@@ -194,7 +211,7 @@
 		const action = getAction('/settings/account', e.key);
 		if (action === 'navigate-down') {
 			e.preventDefault();
-			selected = Math.min(selected + 1, data.sessions.length - 1);
+			selected = Math.min(selected + 1, shownSessions.length - 1);
 		}
 		if (action === 'navigate-up') {
 			e.preventDefault();
@@ -207,14 +224,13 @@
 
 <div class="space-y-4">
 	<FormError message={form?.message} />
-
 	{#if notice}
 		<Banner kind="success" message={notice} />
 	{/if}
 
 	<!--
 		The installed app being behind the instance, said here too.
-		
+
 		The band at the top of the shell can be put away for the session, which
 		is right — somebody mid-sentence should be able to get rid of it. This
 		is the page they come to when they go looking, so it says the same thing
@@ -231,62 +247,372 @@
 	{/if}
 
 	<!--
-		Everything that needs a server behind it.
-		
-		An address to sign in with, the password for it, the mail this instance
-		sends and the sessions it has opened — a device that is its own instance
-		has none of them, and a card about each one saying so would be a page of
-		apologies. What is below the fold is the part that is the same either
-		way: your data, and the end of it.
+		One surface, a subject per band, a setting per row.
+
+		This was a card per sentence — eight headers, eight bodies of one line,
+		and a white gap between each — so the page was three screens tall for
+		what is a dozen answers. See `SettingGroup` and `SettingRow`.
 	-->
+	<RoomSurface>
+		<!--
+			Everything that needs a server behind it.
+
+			An address to sign in with, the password for it, the mail this instance
+			sends and the sessions it has opened — a device that is its own instance
+			has none of them, and a row about each one saying so would be a page of
+			apologies. What is below is the part that is the same either way: your
+			data, and the end of it.
+		-->
+		{#if !onDevice}
+			<SettingGroup title={t('settings.account.signingIn')}>
+				<SettingRow
+					label={t('settings.account.emailAddress')}
+					hint={data.emailChangeAllowed
+						? t('settings.account.aNewAddressHasTo')
+						: t('settings.account.changingItIsTurnedOff')}
+				>
+					<p class="mt-1 text-sm font-medium break-all text-gray-900">{data.email}</p>
+					{#if !data.emailVerified}
+						<p class="mt-0.5 text-sm text-gray-500">{t('settings.account.thisOneHasNotBeen')}</p>
+					{/if}
+					{#snippet control()}
+						{#if data.emailChangeAllowed}
+							<button onclick={() => (editing = 'email')} class="btn btn-sm">
+								<Icon name="edit" />
+								{t('settings.account.change')}
+							</button>
+						{/if}
+					{/snippet}
+				</SettingRow>
+				<SettingRow
+					label={t('settings.account.password')}
+					hint={t('settings.account.changingItSignsOutEvery')}
+				>
+					{#snippet control()}
+						<button onclick={() => (editing = 'password')} class="btn btn-sm">
+							<Icon name="edit" />
+							{t('settings.account.change')}
+						</button>
+					{/snippet}
+				</SettingRow>
+				<!--
+					The phone's only door out. The desktop has Sign out in the header
+					menu; the bottom bar carries no menu, so this page — where the
+					account's other session controls already live — is where a finger
+					finds it.
+				-->
+				<SettingRow
+					label={t('settings.account.signOut')}
+					hint={t('settings.account.thisDeviceOnlyTheSessions')}
+				>
+					{#snippet control()}
+						<form method="post" action="/login?/signOut" use:enhance>
+							<button type="submit" class="btn btn-sm">
+								<Icon name="sign-out" />
+								{t('settings.account.signOut')}
+							</button>
+						</form>
+					{/snippet}
+				</SettingRow>
+			</SettingGroup>
+
+			<SettingGroup title={t('settings.account.mail')}>
+				<!-- A switch, like every other on/off in settings: a button that said
+				     "Turn on" and then "Turn off" changed its own width under the
+				     finger and read as an action rather than a state. -->
+				<SettingRow
+					label={t('settings.account.weeklyReview')}
+					hint={data.weeklyReviewMail
+						? t('settings.account.oneMessageOnAMonday', { hour: data.weeklyReviewHour })
+						: t('settings.account.offTurnItOnAnd', { hour: data.weeklyReviewHour })}
+				>
+					{#if !data.emailConfigured}
+						<p class="mt-0.5 text-sm text-gray-500">
+							{t('settings.account.thisInstanceHasNoMail')}
+						</p>
+					{/if}
+					{#snippet control()}
+						<form method="post" action="?/setWeeklyReviewMail" use:enhance>
+							<input type="hidden" name="on" value={data.weeklyReviewMail ? 'false' : 'true'} />
+							<input
+								type="checkbox"
+								class="toggle"
+								checked={data.weeklyReviewMail}
+								aria-label={t('settings.account.weeklyReview')}
+								onchange={(e) => e.currentTarget.form?.requestSubmit()}
+							/>
+						</form>
+					{/snippet}
+				</SettingRow>
+			</SettingGroup>
+
+			<SettingGroup
+				title={t('settings.account.whereYouAreSignedIn')}
+				description={t('settings.account.oneLinePerSignInAnything')}
+				dataTour="account-sessions"
+			>
+				{#snippet actions()}
+					{#if data.sessions.length > 1}
+						<!-- Both states in one cell, so arming the confirmation does not
+						     move anything beside it. -->
+						<form
+							method="post"
+							action="?/signOutEverywhere"
+							use:enhance={() =>
+								async ({ update }) => {
+									confirmSignOutAll = false;
+									await update();
+								}}
+							class="grid"
+						>
+							<button
+								type="button"
+								onclick={() => (confirmSignOutAll = true)}
+								class="btn btn-sm col-start-1 row-start-1"
+								class:invisible={confirmSignOutAll}
+								>{t('settings.account.signOutEverywhere')}</button
+							>
+							<span
+								class="col-start-1 row-start-1 flex items-center justify-end gap-1"
+								class:invisible={!confirmSignOutAll}
+							>
+								{#if confirmSignOutAll}
+									<button type="submit" class="btn btn-danger btn-sm" use:armed
+										>{t('settings.account.confirm')}</button
+									>
+									<button
+										type="button"
+										onclick={() => (confirmSignOutAll = false)}
+										class="icon-btn"
+										title={t('ui.cancel')}
+										aria-label={t('ui.cancel')}><Icon name="close" /></button
+									>
+								{/if}
+							</span>
+						</form>
+					{/if}
+				{/snippet}
+				{#if confirmSignOutAll}
+					<p class="px-4 py-2 text-sm text-gray-600">
+						{t('settings.account.thisSignsOutEveryDevice')}
+					</p>
+				{/if}
+				{#each shownSessions as s, i (s.id)}
+					<div class="list-row {selected === i ? 'kbd-cursor' : ''}">
+						<div class="list-row-main">
+							<p class="text-sm font-medium text-gray-900">
+								{s.device}
+								{#if s.current}
+									<span class="eyebrow ml-2 text-gray-500">{t('settings.account.thisDevice')}</span>
+								{/if}
+							</p>
+							<p class="tabular text-xs text-gray-500">
+								{t('settings.account.lastSeen')}
+								{when(s.lastSeen)}
+								{t('settings.account.middotSignedIn')}
+								{when(s.createdAt)}
+								{#if s.ipAddress}&middot; {s.ipAddress}{/if}
+							</p>
+						</div>
+						{#if !s.current}
+							<form
+								method="post"
+								action="?/revokeSession"
+								use:enhance={() =>
+									async ({ update }) => {
+										confirmRevoke = null;
+										await update();
+									}}
+								class="list-row-actions"
+							>
+								<input type="hidden" name="id" value={s.id} />
+								{#if confirmRevoke === s.id}
+									<button class="btn btn-danger btn-sm" use:armed
+										>{t('settings.account.confirm')}</button
+									>
+									<button
+										type="button"
+										onclick={() => (confirmRevoke = null)}
+										class="icon-btn"
+										title={t('ui.cancel')}
+										aria-label={t('ui.cancel')}><Icon name="close" /></button
+									>
+								{:else}
+									<button
+										type="button"
+										onclick={() => (confirmRevoke = s.id)}
+										class="icon-btn icon-btn-danger"
+										title={t('settings.account.signOut')}
+										aria-label={t('settings.account.signOut')}><Icon name="sign-out" /></button
+									>
+								{/if}
+							</form>
+						{/if}
+					</div>
+				{:else}
+					<p class="px-4 py-3 text-sm text-gray-500">{t('settings.account.noOtherSessions')}</p>
+				{/each}
+				{#if sortedSessions.length > SESSIONS_SHOWN}
+					<div class="px-4 py-2">
+						<button
+							type="button"
+							class="btn btn-sm"
+							aria-expanded={allSessions}
+							onclick={() => (allSessions = !allSessions)}
+						>
+							<Icon name={allSessions ? 'chevron-up' : 'chevron-down'} />
+							{t('settings.account.allSessions', { count: sortedSessions.length })}
+						</button>
+					</div>
+				{/if}
+			</SettingGroup>
+		{/if}
+
+		<SettingGroup title={t('settings.account.yourData')}>
+			<SettingRow
+				label={t('settings.account.exportYourData')}
+				hint={t('settings.account.everythingThisAccountOwnsAs')}
+				dataTour="account-export"
+			>
+				<!--
+					The pictures are most of the weight. Their bytes ride in the JSON as
+					base64, so an account with a gallery in it makes a file bigger than a
+					small instance will accept back — which is exactly when somebody is
+					exporting to move rather than to keep. Leaving them out is a choice on
+					the file, not a different feature.
+				-->
+				<label class="mt-2 flex cursor-pointer items-start gap-2 text-sm">
+					<input type="checkbox" bind:checked={withPictures} class="mt-0.5" />
+					<span>
+						<span class="text-gray-900">{t('settings.account.includePictures')}</span>
+						<span class="block text-gray-500">{t('settings.account.theyAreMostOfThe')}</span>
+					</span>
+				</label>
+				<!--
+					Always says where you stand, rather than only warning near the end.
+					A limit you only hear about when you hit it feels like a trap; a
+					count you can see is just a fact. Never red or amber: small coloured
+					text is the one place colour cannot carry meaning here.
+				-->
+				{#if exportError}
+					<p class="mt-2 flex items-center gap-1.5 text-sm text-gray-900">
+						<Icon name="warning" size={14} />{exportError}
+					</p>
+				{:else if onDevice}
+					<!-- Nothing to ration: this is the device asking itself for a copy of
+					     what is already on it. -->
+				{:else if data.exports.remaining <= 0}
+					<p class="mt-2 flex items-center gap-1.5 text-sm text-gray-900">
+						<Icon name="warning" size={14} />{t('settings.account.noExportsLeftToday', {
+							allowed: data.exports.allowed,
+							unlocksIn: data.exports.unlocksIn ?? ''
+						})}
+					</p>
+				{:else}
+					<p
+						class="mt-2 text-sm {data.exports.remaining === 1
+							? 'font-medium text-gray-900'
+							: 'text-gray-500'}"
+					>
+						{t('settings.account.exportsLeft', {
+							count: data.exports.allowed,
+							remaining: data.exports.remaining
+						})}
+						{#if data.exports.unlocksIn}
+							{t('settings.account.theAllowanceResets')} {data.exports.unlocksIn}.
+						{/if}
+					</p>
+				{/if}
+				{#snippet control()}
+					<!--
+						Fetched rather than linked.
+
+						A plain `<a download>` never re-renders the page, so the allowance
+						kept saying two left until you reloaded — and there was nothing to
+						stop a double-click spending both. This knows exactly when the file
+						has arrived: it refreshes the count then, and holds the button for
+						five seconds so the second click of a double lands on nothing.
+
+						Both words in one cell, so the button is the width of the longer
+						and does not change size while it works.
+					-->
+					<button
+						type="button"
+						onclick={download}
+						disabled={data.exports.remaining <= 0 || downloading || cooling}
+						class="btn btn-sm"
+					>
+						<Icon name="download" />
+						<span class="grid">
+							<span class="col-start-1 row-start-1" class:invisible={downloading}
+								>{t('settings.account.download')}</span
+							>
+							<span class="col-start-1 row-start-1" class:invisible={!downloading}
+								>{t('settings.account.preparing')}</span
+							>
+						</span>
+					</button>
+				{/snippet}
+			</SettingRow>
+			<!--
+				Beside the export, because it is the same question the other way
+				round: "can I get my things in, and can I get them out again". The
+				doing is a page of its own — moving in happens once.
+			-->
+			<SettingRow
+				label={t('settings.account.bringThingsIn')}
+				hint={t('settings.account.aListFromTodoistGoogle')}
+			>
+				{#snippet control()}
+					<a href={resolve('/settings/account/import')} class="btn btn-sm">
+						<Icon name="arrow-right" />
+						{t('settings.account.import')}
+					</a>
+				{/snippet}
+			</SettingRow>
+			<!--
+				The way out of the instance, not out of the account.
+
+				In the app it goes to the copy of the app on the phone, never to
+				`/instance` on the server being left — see `askAgainOnThisPhone`.
+				Either signal, because neither covers the other: the cookie is set
+				from `?app=android` at launch and is the only thing that sees a
+				Trusted Web Activity; the user agent is what a page still sees once
+				the app has sent it to a server. A browser has no copy of the app to
+				hand back to, so it goes to the chooser on this instance instead.
+			-->
+			<SettingRow label={t('settings.account.thisInstance')}>
+				<p class="mt-0.5 text-sm text-gray-500">
+					{#if onDevice}
+						{t('settings.account.thisAppIsOpenOn')}
+						<strong class="text-gray-700">{t('settings.account.itsOwnCopyOnThis')}</strong>{t(
+							'settings.account.switchingPointsItAt'
+						)}
+					{:else}
+						{t('settings.account.thisAppIsOpenOn')}
+						<strong class="text-gray-700">{data.host}</strong>{t(
+							'settings.account.switchingPointsItAt2'
+						)}
+					{/if}
+				</p>
+				{#snippet control()}
+					{#if data.nativeApp || inPhoneApp()}
+						<!-- eslint-disable svelte/no-navigation-without-resolve -- another origin, not a route -->
+						<a href={askAgainOnThisPhone()} class="btn btn-sm"
+							><Icon name="server" />{t('settings.account.switchInstance')}</a
+						>
+						<!-- eslint-enable svelte/no-navigation-without-resolve -->
+					{:else}
+						<a href={resolve('/instance')} class="btn btn-sm"
+							><Icon name="server" />{t('settings.account.switchInstance')}</a
+						>
+					{/if}
+				{/snippet}
+			</SettingRow>
+		</SettingGroup>
+	</RoomSurface>
+
 	{#if !onDevice}
-		<Card title={t('settings.account.emailAddress')}>
-			{#snippet actions()}
-				{#if data.emailChangeAllowed}
-					<button onclick={() => (editing = 'email')} class="btn btn-sm">
-						<Icon name="edit" />
-						{t('settings.account.change')}
-					</button>
-				{/if}
-			{/snippet}
-			<p class="font-medium text-gray-900">{data.email}</p>
-			<p class="mt-1 text-sm text-gray-500">
-				{#if data.emailChangeAllowed}
-					{t('settings.account.aNewAddressHasTo')}
-				{:else}
-					{t('settings.account.changingItIsTurnedOff')}
-				{/if}
-				{#if !data.emailVerified}
-					<span class="block">{t('settings.account.thisOneHasNotBeen')}</span>
-				{/if}
-			</p>
-		</Card>
-
-		<Card title={t('settings.account.weeklyReview')}>
-			{#snippet actions()}
-				<form method="post" action="?/setWeeklyReviewMail" use:enhance>
-					<input type="hidden" name="on" value={data.weeklyReviewMail ? 'false' : 'true'} />
-					<button type="submit" class="btn btn-sm">
-						{data.weeklyReviewMail
-							? t('settings.preferences.turnOff')
-							: t('settings.preferences.turnOn')}
-					</button>
-				</form>
-			{/snippet}
-			<p class="text-sm text-gray-500">
-				{#if data.weeklyReviewMail}
-					{t('settings.account.oneMessageOnAMonday', { hour: data.weeklyReviewHour })}
-				{:else}
-					<!-- Off is the default: mail nobody asked for is spam however useful
-					     it is. What it would be is said here, not after it arrives. -->
-					{t('settings.account.offTurnItOnAnd', { hour: data.weeklyReviewHour })}
-				{/if}
-				{#if !data.emailConfigured}
-					<span class="block">{t('settings.account.thisInstanceHasNoMail')}</span>
-				{/if}
-			</p>
-		</Card>
-
 		<Modal
 			open={editing === 'email' && data.emailChangeAllowed}
 			error={form?.message}
@@ -296,14 +622,13 @@
 			size="sm"
 		>
 			{#if !data.emailConfigured}
-				<p class="mb-4 border border-gray-200 bg-gray-50 px-3 py-2 text-xs text-gray-600">
-					{t('settings.account.thisServerHasNoMail')}
-				</p>
+				<Banner kind="info" message={t('settings.account.thisServerHasNoMail')} />
 			{/if}
 			<form
 				id="email-form"
 				method="post"
 				action="?/changeEmail"
+				class="mt-4"
 				use:enhance={() =>
 					async ({ update, result }) => {
 						if (result.type === 'success') editing = null;
@@ -325,7 +650,6 @@
 					</Field>
 				</FormGrid>
 			</form>
-
 			{#snippet footer()}
 				<button type="button" class="btn" onclick={() => (editing = null)}>{t('ui.cancel')}</button>
 				<button type="submit" form="email-form" class="btn btn-primary"
@@ -333,18 +657,6 @@
 				>
 			{/snippet}
 		</Modal>
-
-		<Card title={t('settings.account.password')}>
-			{#snippet actions()}
-				<button onclick={() => (editing = 'password')} class="btn btn-sm">
-					<Icon name="edit" />
-					{t('settings.account.change')}
-				</button>
-			{/snippet}
-			<p class="text-sm text-gray-500">
-				{t('settings.account.changingItSignsOutEvery')}
-			</p>
-		</Card>
 
 		<Modal
 			open={editing === 'password'}
@@ -404,257 +716,6 @@
 				>
 			{/snippet}
 		</Modal>
-
-		<Card
-			title={t('settings.account.whereYouAreSignedIn')}
-			description={t('settings.account.oneLinePerSignInAnything')}
-			flush
-		>
-			{#snippet actions()}
-				{#if data.sessions.length > 1 && !confirmSignOutAll}
-					<button onclick={() => (confirmSignOutAll = true)} class="btn btn-sm"
-						>{t('settings.account.signOutEverywhere')}</button
-					>
-				{/if}
-			{/snippet}
-
-			{#if confirmSignOutAll}
-				<form
-					method="post"
-					action="?/signOutEverywhere"
-					use:enhance
-					class="mx-4 mt-4 mb-2 flex items-center gap-2 border border-gray-200 bg-gray-50 px-3 py-2"
-				>
-					<span class="flex-1 text-sm text-gray-700">
-						{t('settings.account.thisSignsOutEveryDevice')}
-					</span>
-					<button
-						class="border border-red-200 bg-white px-3 py-1 text-sm text-red-600 hover:bg-red-50"
-						use:armed
-					>
-						{t('settings.account.confirm')}
-					</button>
-					<button
-						type="button"
-						onclick={() => (confirmSignOutAll = false)}
-						class="text-sm text-gray-500 hover:text-gray-900">{t('ui.cancel')}</button
-					>
-				</form>
-			{/if}
-
-			<div class="divide-y divide-gray-200 border-t border-gray-200" data-tour="account-sessions">
-				{#each data.sessions as s, i (s.id)}
-					<div class="flex items-center gap-4 px-4 py-3 {selected === i ? 'kbd-cursor' : ''}">
-						<div class="min-w-0 flex-1">
-							<p class="text-sm font-medium text-gray-900">
-								{s.device}
-								{#if s.current}
-									<span class="eyebrow ml-2 text-gray-500">{t('settings.account.thisDevice')}</span>
-								{/if}
-							</p>
-							<p class="tabular text-xs text-gray-500">
-								{t('settings.account.lastSeen')}
-								{when(s.lastSeen)}
-								{t('settings.account.middotSignedIn')}
-								{when(s.createdAt)}
-								{#if s.ipAddress}&middot; {s.ipAddress}{/if}
-							</p>
-						</div>
-						{#if !s.current}
-							{#if confirmRevoke === s.id}
-								<form
-									method="post"
-									action="?/revokeSession"
-									use:enhance={() =>
-										async ({ update }) => {
-											confirmRevoke = null;
-											await update();
-										}}
-									class="flex items-center gap-2"
-								>
-									<input type="hidden" name="id" value={s.id} />
-									<button class="btn btn-danger btn-sm" use:armed
-										>{t('settings.account.confirm')}</button
-									>
-									<button
-										type="button"
-										onclick={() => (confirmRevoke = null)}
-										class="text-xs text-gray-500 hover:text-gray-900">{t('ui.cancel')}</button
-									>
-								</form>
-							{:else}
-								<button onclick={() => (confirmRevoke = s.id)} class="btn btn-sm"
-									>{t('settings.account.signOut')}</button
-								>
-							{/if}
-						{/if}
-					</div>
-				{:else}
-					<p class="px-4 py-3 text-sm text-gray-500">{t('settings.account.noOtherSessions')}</p>
-				{/each}
-			</div>
-		</Card>
-	{/if}
-
-	<Card title={t('settings.account.exportYourData')}>
-		{#snippet actions()}
-			<!--
-				Fetched rather than linked.
-
-				A plain `<a download>` never re-renders the page, so the allowance kept
-				saying two left until you reloaded — and there was nothing to stop a
-				double-click spending both. This knows exactly when the file has
-				arrived: it refreshes the count then, and holds the button for five
-				seconds so the second click of a double lands on nothing.
-			-->
-			<button
-				type="button"
-				onclick={download}
-				disabled={data.exports.remaining <= 0 || downloading || cooling}
-				class="btn btn-sm"
-				data-tour="account-export"
-			>
-				<Icon name="download" />
-				{downloading ? 'Preparing…' : 'Download'}
-			</button>
-		{/snippet}
-		<p class="text-sm text-gray-500">
-			{t('settings.account.everythingThisAccountOwnsAs')}
-		</p>
-
-		<!--
-			The pictures are most of the weight. Their bytes ride in the JSON as
-			base64, so an account with a gallery in it makes a file bigger than a
-			small instance will accept back — which is exactly when somebody is
-			exporting to move rather than to keep. Leaving them out is a choice on
-			the file, not a different feature.
-		-->
-		<label class="mt-3 flex cursor-pointer items-start gap-2 text-sm">
-			<input type="checkbox" bind:checked={withPictures} class="mt-0.5" />
-			<span>
-				<span class="text-gray-900">{t('settings.account.includePictures')}</span>
-				<span class="block text-gray-500">
-					{t('settings.account.theyAreMostOfThe')}
-				</span>
-			</span>
-		</label>
-
-		<!--
-			Always says where you stand, rather than only warning near the end.
-
-			A limit you only hear about when you hit it feels like a trap; a count
-			you can see is just a fact. It also means the number visibly changes the
-			moment an export lands, which is the thing that was broken.
-		-->
-		{#if exportError}
-			<p class="mt-2 text-sm text-red-600">{exportError}</p>
-		{:else if onDevice}
-			<!-- Nothing to ration: this is the device asking itself for a copy of
-			     what is already on it. -->
-		{:else if data.exports.remaining <= 0}
-			<p class="mt-2 text-sm text-red-600">
-				{t('settings.account.noExportsLeftToday', {
-					allowed: data.exports.allowed,
-					unlocksIn: data.exports.unlocksIn ?? ''
-				})}
-			</p>
-		{:else}
-			<p class="mt-2 text-sm {data.exports.remaining === 1 ? 'text-amber-700' : 'text-gray-500'}">
-				{t('settings.account.exportsLeft', {
-					count: data.exports.allowed,
-					remaining: data.exports.remaining
-				})}
-				{#if data.exports.unlocksIn}
-					{t('settings.account.theAllowanceResets')} {data.exports.unlocksIn}.
-				{/if}
-			</p>
-		{/if}
-	</Card>
-
-	<!--
-		Beside the export, because it is the same question the other way round.
-
-		A person deciding whether to move here is asking "can I get my things in,
-		and can I get them out again" — and the answer being next to each other is
-		worth more than either is alone. The doing is a page of its own: moving in
-		happens once, and it had grown into two long forms sitting between the
-		sessions list and the delete button.
-	-->
-	<Card title={t('settings.account.bringThingsIn')}>
-		{#snippet actions()}
-			<a href={resolve('/settings/account/import')} class="btn btn-sm"
-				>{t('settings.account.import')}</a
-			>
-		{/snippet}
-		<p class="text-sm text-gray-500">
-			{t('settings.account.aListFromTodoistGoogle')}
-		</p>
-	</Card>
-
-	<!--
-		The way out of the instance, not out of the account.
-
-		One card, because there was no reading of the page on which two were
-		different questions: which ontoplano this is, and how to go to another
-		one. It lands here, beside sign-out, because leaving a server and
-		leaving an account are the two things somebody comes to this page to
-		do.
-
-		In the app it goes to the copy of the app on the phone, never to
-		`/instance` on the server being left — see `askAgainOnThisPhone`. This
-		used to be `ontoplano://instance`, a native screen from before the
-		chooser was a page; there is no such scheme registered and the web view
-		answered with "unknown url scheme".
-
-		Either signal, because neither covers the other. The cookie is set from
-		`?app=android` at launch and is the only thing that sees a Trusted Web
-		Activity, which is Chrome and answers every browser question as Chrome
-		does. The user agent is what a page still sees once the app has sent it
-		to a server — and it is the only one the copy on the device has, since
-		that copy sets no cookie. Leaving *it*, to try a server, is the same act
-		from the same place. A browser has no copy of the app to hand back to,
-		so it goes to the chooser on this instance instead.
-	-->
-	<Card title={t('settings.account.thisInstance')}>
-		{#snippet actions()}
-			{#if data.nativeApp || inPhoneApp()}
-				<!-- eslint-disable svelte/no-navigation-without-resolve -- another origin, not a route -->
-				<a href={askAgainOnThisPhone()} class="btn btn-sm">{t('settings.account.switchInstance')}</a
-				>
-				<!-- eslint-enable svelte/no-navigation-without-resolve -->
-			{:else}
-				<a href={resolve('/instance')} class="btn btn-sm">{t('settings.account.switchInstance')}</a>
-			{/if}
-		{/snippet}
-		<p class="text-sm text-gray-500">
-			{#if onDevice}
-				{t('settings.account.thisAppIsOpenOn')}
-				<strong class="text-gray-700">{t('settings.account.itsOwnCopyOnThis')}</strong>{t(
-					'settings.account.switchingPointsItAt'
-				)}
-			{:else}
-				{t('settings.account.thisAppIsOpenOn')}
-				<strong class="text-gray-700">{data.host}</strong>{t(
-					'settings.account.switchingPointsItAt2'
-				)}
-			{/if}
-		</p>
-	</Card>
-
-	{#if !onDevice}
-		<!--
-			The phone's only door out. The desktop has Sign out in the header menu;
-			the bottom bar carries no menu, so this page — where the account's other
-			session controls already live — is where a finger finds it.
-		-->
-		<Card title={t('settings.account.signOut')}>
-			{#snippet actions()}
-				<form method="post" action="/login?/signOut" use:enhance>
-					<button type="submit" class="btn btn-sm">{t('settings.account.signOut')}</button>
-				</form>
-			{/snippet}
-			<p class="text-sm text-gray-500">{t('settings.account.thisDeviceOnlyTheSessions')}</p>
-		</Card>
 	{/if}
 
 	<!--
@@ -746,7 +807,13 @@
 				}}
 		>
 			<FormGrid>
-				<Field label={`Type “${EMPTY_CONFIRMATION}” to confirm`} span={12} required>
+				<Field
+					label={t('settings.account.import.typeWordToConfirm', {
+						word: `“${EMPTY_CONFIRMATION}”`
+					})}
+					span={12}
+					required
+				>
 					<input name="confirm" autocomplete="off" required class="input" />
 				</Field>
 				<Field label={t('settings.account.yourPassword')} span={12} required>
@@ -789,8 +856,8 @@
 				-->
 				<Field
 					label={onDevice
-						? `Type “${ERASE_CONFIRMATION}” to confirm`
-						: `Type “${data.email}” to confirm`}
+						? t('settings.account.import.typeWordToConfirm', { word: `“${ERASE_CONFIRMATION}”` })
+						: t('settings.account.import.typeWordToConfirm', { word: `“${data.email}”` })}
 					span={12}
 					required
 				>

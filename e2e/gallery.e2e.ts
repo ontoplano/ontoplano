@@ -136,7 +136,9 @@ test('a folder is looked at before any of it is sent', async ({ page }) => {
 	await expect(page.getByRole('link', { name: /herons/ })).toHaveCount(0);
 
 	await page.getByRole('button', { name: /^Import 2$/ }).click();
-	await expect(page.getByText('2 pictures into 2 albums.')).toBeVisible();
+	await expect(
+		page.getByRole('status').filter({ hasText: '2 pictures into 2 albums' })
+	).toBeVisible();
 	// The subfolder became an album under its parent, which is the point of
 	// choosing a folder rather than files.
 	await expect(page.getByRole('link', { name: /^birds/ })).toBeVisible();

@@ -1,5 +1,7 @@
 <script lang="ts">
 	import { say } from '$lib/said.svelte';
+	import ShowingCount from '$lib/components/ShowingCount.svelte';
+	import SearchField from '$lib/components/SearchField.svelte';
 	import { notebooksHolding } from '$lib/notebook-modules';
 	import { openFromUrl } from '$lib/open-from-url.svelte';
 	import { discardForm, keptForm } from '$lib/kept-form';
@@ -1119,16 +1121,7 @@
 						<!-- The box fills the slot; how wide that slot is belongs to
 						     `FilterBar`, so this tab and the Notes tab beside it are
 						     the same shape. -->
-						<label class="block w-full">
-							<span class="sr-only">{t('todoRows.searchTheseTasks')}</span>
-							<input
-								type="search"
-								bind:value={looking}
-								placeholder={t('todoRows.searchTheseTasks')}
-								autocomplete="off"
-								class="input input-sm"
-							/>
-						</label>
+						<SearchField bind:value={looking} label={t('todoRows.searchTheseTasks')} />
 					{/snippet}
 					{#snippet count()}
 						<!--
@@ -1156,23 +1149,11 @@
 							already narrowed — so it is the largest it can say and does not
 							change when a filter does. See `.count-slot`.
 						-->
-						<span
-							class="tabular count-slot shrink-0 self-center text-xs text-gray-500"
-							title={t('todoRows.showingCount', { count: visibleTodos.length })}
-						>
-							<span class="count-widest" aria-hidden="true">
-								<span class="sm:hidden">{todos.length}</span>
-								<span class="hidden sm:inline"
-									>{t('todoRows.showingCount', { count: todos.length })}</span
-								>
-							</span>
-							<span>
-								<span class="sm:hidden">{visibleTodos.length}</span>
-								<span class="hidden sm:inline"
-									>{t('todoRows.showingCount', { count: visibleTodos.length })}</span
-								>
-							</span>
-						</span>
+						<ShowingCount
+							total={todos.length}
+							shown={visibleTodos.length}
+							said={(count) => t('todoRows.showingCount', { count })}
+						/>
 					{/snippet}
 					<!--
 						One label, whichever way it is set.

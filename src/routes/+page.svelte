@@ -18,7 +18,10 @@
 	import TagChip from '$lib/components/TagChip.svelte';
 	import { enhance } from '$lib/enhance';
 	import FormError from '$lib/components/FormError.svelte';
-	import { tick } from 'svelte';
+	import Modal from '$lib/components/Modal.svelte';
+	import FormGrid from '$lib/components/FormGrid.svelte';
+	import Field from '$lib/components/Field.svelte';
+	import { autofocus } from '$lib/actions/autofocus';
 	import type { PageServerData, ActionData } from './$types';
 	import { SECTION_COLORS, CATEGORY_FALLBACK_COLOR } from '$lib/colors.js';
 	import { cardById, type DashboardCardId } from '$lib/dashboard.js';
@@ -283,6 +286,17 @@
 	let showDiaryForm = $state(false);
 	let showWinsForm = $state(false);
 
+	/** Writing opens a dialog; the dialog focuses its first field itself. */
+	function openDiary() {
+		showWinsForm = false;
+		showDiaryForm = true;
+	}
+
+	function openWins() {
+		showDiaryForm = false;
+		showWinsForm = true;
+	}
+
 	// The three-wins card is now a layout choice; this only gates its keybind.
 	const winsEnabled = $derived(layout.includes('threeWins'));
 
@@ -371,25 +385,10 @@
 
 		switch (action) {
 			case 'new-diary':
-				showDiaryForm = !showDiaryForm;
-				showWinsForm = false;
-				if (showDiaryForm) {
-					tick().then(() => {
-						const ta = document.querySelector<HTMLTextAreaElement>('textarea[name="content"]');
-						ta?.focus();
-					});
-				}
+				openDiary();
 				break;
 			case 'new-wins':
-				if (!winsEnabled) break;
-				showWinsForm = !showWinsForm;
-				showDiaryForm = false;
-				if (showWinsForm) {
-					tick().then(() => {
-						const input = document.querySelector<HTMLInputElement>('input[name="win_0"]');
-						input?.focus();
-					});
-				}
+				if (winsEnabled) openWins();
 				break;
 		}
 	}
@@ -405,9 +404,18 @@
 	<FrontDoor {...data.frontDoor} />
 {:else}
 	<div class="space-y-6">
-		<div class="flex flex-wrap items-center justify-between gap-3">
+		<!-- Padded on a phone, where the page has no gutter and the cards run to
+		     the edges: the date sat against the glass. -->
+		<div class="flex flex-wrap items-center justify-between gap-3 px-4 sm:px-0">
+			<!-- Short on a phone, so the date and the corner share one line rather
+			     than the corner falling to a row of its own under it. -->
 			<h1 class="text-lg font-bold text-gray-900">
-				{dayOf(new Date(), now(), { weekday: 'long', month: 'long' })}
+				<span class="sm:hidden"
+					>{dayOf(new Date(), now(), { weekday: 'short', month: 'short' })}</span
+				>
+				<span class="hidden sm:inline"
+					>{dayOf(new Date(), now(), { weekday: 'long', month: 'long' })}</span
+				>
 			</h1>
 			<!--
 				Both states of this corner, in one cell.
@@ -452,15 +460,26 @@
 					</button>
 				</div>
 				<div class="dash-corner-state" class:is-away={!arranging} inert={!arranging}>
-					<button onclick={() => (pickingWidgets = true)} class="btn btn-sm">
+					<!-- Words from `sm`; the glyphs alone on a phone, where the row
+					     has to share its line with the date. -->
+					<button
+						onclick={() => (pickingWidgets = true)}
+						class="btn btn-sm"
+						title={t('home.widgets')}
+						aria-label={t('home.widgets')}
+					>
 						<Icon name="plus" />
-						{t('home.widgets')}
+						<span class="hidden sm:inline">{t('home.widgets')}</span>
 					</button>
 					<button
 						onclick={() => (arranging = false)}
 						class="btn btn-sm"
-						title={t('home.leaveTheCardsAsThey')}>{t('ui.cancel')}</button
+						title={t('home.leaveTheCardsAsThey')}
+						aria-label={t('ui.cancel')}
 					>
+						<Icon name="close" class="sm:hidden" />
+						<span class="hidden sm:inline">{t('ui.cancel')}</span>
+					</button>
 					<button onclick={saveOrder} class="btn btn-primary btn-sm">{t('ui.done')}</button>
 				</div>
 			</div>
@@ -691,13 +710,11 @@
 									<span class="tabular w-12 shrink-0 font-mono text-xs text-gray-500"
 										>{task.startTime}</span
 									>
-									<span class="truncate text-sm {pending ? 'text-gray-400' : 'text-gray-900'}"
+									<span class="truncate text-sm {pending ? 'text-gray-500' : 'text-gray-900'}"
 										>{task.name}</span
 									>
 									{#if task.kind === 'once'}
-										<span
-											class="ml-auto shrink-0 text-[10px] tracking-wide text-blue-600 uppercase"
-										>
+										<span class="eyebrow ml-auto shrink-0 text-gray-500">
 											{t('home.oneOff')}
 										</span>
 									{/if}
@@ -798,17 +815,9 @@
 							<div class="flex items-center justify-between">
 								<span class="text-sm text-gray-700">{habit.name}</span>
 								<span
-									class="text-xs font-medium {habit.type === 'bad'
-										? habit.streak > 0
-											? 'text-blue-600'
-											: 'text-red-600'
-										: habit.type === 'neutral'
-											? habit.streak > 0
-												? 'text-gray-600'
-												: 'text-gray-500'
-											: habit.streak > 0
-												? 'text-blue-600'
-												: 'text-gray-500'}"
+									class="tabular text-xs {habit.streak > 0
+										? 'font-medium text-gray-900'
+										: 'text-gray-500'}"
 								>
 									{habit.streak}d
 								</span>
@@ -868,7 +877,7 @@
 											>
 											<span
 												class="min-w-0 flex-1 truncate {block.status === 'done'
-													? 'text-gray-400'
+													? 'text-gray-500'
 													: 'text-gray-700'}"
 												title={block.name}>{block.name}</span
 											>
@@ -943,112 +952,119 @@
 		{#snippet card_diary()}
 			<Card title={t('home.diary')} accent={SECTION_COLORS.diary}>
 				{#snippet actions()}
-					<div class="flex items-center gap-3">
-						<a href={resolve('/notebooks/diary')} class="text-xs text-gray-500 hover:text-gray-900">
-							{t('home.allEntries')}
-						</a>
+					<!--
+						The same corner every card has — "Open →" — and the two things
+						you write here as the quiet buttons every card uses. They were
+						hand-drawn boxes whose words turned into "Cancel" while an inline
+						form opened under them and pushed the entry down; writing opens a
+						dialog now, and the buttons never change.
+					-->
+					<div class="flex items-center gap-2">
 						{#if winsEnabled}
-							<button
-								onclick={() => {
-									showWinsForm = !showWinsForm;
-									showDiaryForm = false;
-									if (showWinsForm) {
-										tick().then(() => {
-											const input = document.querySelector<HTMLInputElement>('input[name="win_0"]');
-											input?.focus();
-										});
-									}
-								}}
-								class="border border-gray-300 bg-white px-2 py-1 text-xs text-gray-700 shadow-sm transition hover:bg-gray-50"
-							>
-								{showWinsForm ? 'Cancel' : 'Wins'}
-								<kbd class="border border-gray-300 bg-gray-50 px-1 text-gray-700"
+							<button onclick={openWins} class="btn btn-sm" aria-haspopup="dialog">
+								<Icon name="plus" />
+								{t('home.3Wins')}
+								<kbd
+									class="hidden border border-gray-300 bg-gray-100 px-1 text-xs text-gray-600 sm:inline"
 									>{keyFor('/', 'new-wins')}</kbd
 								>
 							</button>
 						{/if}
-						<button
-							onclick={() => {
-								showDiaryForm = !showDiaryForm;
-								showWinsForm = false;
-							}}
-							class="border border-gray-300 bg-white px-2 py-1 text-xs text-gray-700 shadow-sm transition hover:bg-gray-50"
-						>
-							{showDiaryForm ? 'Cancel' : t('notebooks.diary.newEntry')}
+						<button onclick={openDiary} class="btn btn-sm" aria-haspopup="dialog">
+							<Icon name="plus" />
+							{t('notebooks.diary.newEntry')}
 						</button>
+						<a href={resolve('/notebooks/diary')} class="text-xs text-gray-500 hover:text-gray-900"
+							>{t('home.open')}</a
+						>
 					</div>
 				{/snippet}
 
-				{#if showDiaryForm}
+				<Modal
+					open={showDiaryForm}
+					onclose={() => (showDiaryForm = false)}
+					title={t('notebooks.diary.newEntry')}
+					size="md"
+				>
 					<form
+						id="dash-diary-form"
 						method="post"
 						action="?/createDiaryEntry"
 						use:enhance={() => {
-							return async ({ update }) => {
-								await update({ reset: false });
-								showDiaryForm = false;
+							return async ({ update, result }) => {
+								await update({ reset: result.type === 'success' });
+								if (result.type === 'success') showDiaryForm = false;
 							};
 						}}
-						class="mb-4 space-y-3 border border-gray-100 bg-gray-50 p-3"
 					>
-						<textarea
-							name="content"
-							required
-							rows="3"
-							placeholder={t('home.whatSOnYourMind')}
-							class="block w-full border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
-						></textarea>
-						<TagInput
-							known={page.data.tagVocabulary ?? []}
-							placeholder={t('home.tagsCommaSeparated')}
-						/>
-						<button type="submit" class="btn btn-primary btn-sm">
-							{t('ui.save')}
-						</button>
+						<FormGrid>
+							<Field label={t('home.whatSOnYourMind')} span={12} required>
+								<textarea name="content" required rows="5" class="textarea" use:autofocus
+								></textarea>
+							</Field>
+							<Field label={t('home.tagsCommaSeparated')} span={12}>
+								<TagInput known={page.data.tagVocabulary ?? []} />
+							</Field>
+						</FormGrid>
 					</form>
-				{/if}
+					{#snippet footer()}
+						<button type="button" class="btn" onclick={() => (showDiaryForm = false)}
+							>{t('ui.cancel')}</button
+						>
+						<button type="submit" form="dash-diary-form" class="btn btn-primary"
+							>{t('ui.save')}</button
+						>
+					{/snippet}
+				</Modal>
 
-				{#if winsEnabled && showWinsForm}
-					<form
-						method="post"
-						action="?/createWins"
-						use:enhance={() => {
-							return async ({ update }) => {
-								await update({ reset: false });
-								showWinsForm = false;
-							};
-						}}
-						class="mb-4 space-y-3 border border-gray-100 bg-gray-50 p-3"
+				{#if winsEnabled}
+					<Modal
+						open={showWinsForm}
+						onclose={() => (showWinsForm = false)}
+						title={t('home.3Wins')}
+						size="sm"
 					>
-						<div class="flex items-center justify-between">
-							<span class="text-sm font-medium text-gray-700">{t('home.3Wins')}</span>
-							<input
-								autocomplete="off"
-								name="forDate"
-								type="date"
-								value={today(now())}
-								class="border border-gray-300 px-2 py-1 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
-							/>
-						</div>
-						<OneLine
-							name="win_0"
-							placeholder={t('home.win1')}
-							class="block w-full border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
-						/>
-						<OneLine
-							name="win_1"
-							placeholder={t('home.win2')}
-							class="block w-full border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
-						/>
-						<OneLine
-							name="win_2"
-							placeholder={t('home.win3')}
-							class="block w-full border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
-						/>
-						<button type="submit" class="btn btn-primary btn-sm">
-							{t('home.saveWins')}
-						</button>
-					</form>
+						<form
+							id="dash-wins-form"
+							method="post"
+							action="?/createWins"
+							use:enhance={() => {
+								return async ({ update, result }) => {
+									await update({ reset: result.type === 'success' });
+									if (result.type === 'success') showWinsForm = false;
+								};
+							}}
+						>
+							<FormGrid>
+								<Field label={t('home.win1')} span={12}>
+									<OneLine name="win_0" class="input" autofocus />
+								</Field>
+								<Field label={t('home.win2')} span={12}>
+									<OneLine name="win_1" class="input" />
+								</Field>
+								<Field label={t('home.win3')} span={12}>
+									<OneLine name="win_2" class="input" />
+								</Field>
+								<Field label={t('home.forTheDay')} span={12}>
+									<input
+										autocomplete="off"
+										name="forDate"
+										type="date"
+										value={today(now())}
+										class="input"
+									/>
+								</Field>
+							</FormGrid>
+						</form>
+						{#snippet footer()}
+							<button type="button" class="btn" onclick={() => (showWinsForm = false)}
+								>{t('ui.cancel')}</button
+							>
+							<button type="submit" form="dash-wins-form" class="btn btn-primary"
+								>{t('home.saveWins')}</button
+							>
+						{/snippet}
+					</Modal>
 				{/if}
 
 				{#if data.lastEntry}
@@ -1543,6 +1559,17 @@
 	 * where it ends. Today's wears the card's own accent, which is the one
 	 * difference between the three columns that has to be visible at a glance.
 	 */
+	/*
+	 * A card fills its grid cell.
+	 *
+	 * Two half-width cards share a row, and the shorter one stopped where its
+	 * content did — a white card with a band of page ground under it beside a
+	 * taller one. The cell already stretches; the card now does too.
+	 */
+	[data-card] > :global(section) {
+		height: 100%;
+	}
+
 	.day-column {
 		padding-left: 0.625rem;
 		border-left: 2px solid var(--color-gray-200);

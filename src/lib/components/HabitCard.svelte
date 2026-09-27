@@ -14,6 +14,7 @@
 	import Icon from '$lib/components/Icon.svelte';
 	import RowCard from '$lib/components/RowCard.svelte';
 	import OneLine from '$lib/components/OneLine.svelte';
+	import Counter from '$lib/components/Counter.svelte';
 	import { enhance } from '$lib/enhance';
 	import { invalidateAll } from '$app/navigation';
 	import { armed } from '$lib/actions/armed';
@@ -33,7 +34,8 @@
 		buildHeatmapWeeks,
 		dayLabelsFrom,
 		formatScheduledDays,
-		logLabel
+		logLabel,
+		MAX_DAY_COUNT
 	} from '$lib/habit-heatmap';
 	import type { HabitActionNames } from '$lib/habit-action-names';
 	import { useT } from '$lib/i18n';
@@ -131,7 +133,9 @@
 	const heatmapWeeks = $derived(
 		buildHeatmapWeeks(wide.current ? HEATMAP_YEAR : HEATMAP_SEASON, firstDay)
 	);
-	const heatmapSpan = $derived(wide.current ? 'Last 365 days' : 'Last 90 days');
+	const heatmapSpan = $derived(
+		t('health.habits.lastDays', { count: wide.current ? HEATMAP_YEAR : HEATMAP_SEASON })
+	);
 
 	function badHeatmapColor(count: number): string {
 		return HEATMAP_BAD[Math.min(count, HEATMAP_BAD.length - 1)];
@@ -207,12 +211,11 @@
 						aria-label={logLabel(habit)}
 						class="-m-1 flex shrink-0 items-start justify-center self-start p-1 pointer-coarse:w-11"
 					>
+						<!-- Grey whatever the kind: the edge down the card already says
+						     which kind it is, and a small red glyph is one a red-green
+						     colourblind reader cannot tell from the blue one. -->
 						<span
-							class="flex size-7 items-center justify-center border bg-white transition {isBad
-								? 'border-red-200 text-red-600 hover:bg-red-50'
-								: isNeutral
-									? 'border-gray-300 text-gray-600 hover:bg-gray-50'
-									: 'border-blue-200 text-blue-600 hover:bg-blue-50'}"
+							class="flex size-7 items-center justify-center border border-gray-400 bg-white text-gray-600 transition hover:border-gray-600 hover:bg-gray-50"
 						>
 							<Icon name="target" size={16} />
 						</span>
@@ -221,32 +224,46 @@
 			{/snippet}
 
 			{#snippet controls()}
-				{#if todayLogged}
-					<form method="post" action={actions.logOccurrence} use:enhance>
-						<input type="hidden" name="habitId" value={habit.id} />
-						<input type="hidden" name="date" value={today} />
-						<button
-							type="submit"
-							class="icon-btn"
-							title={t('health.habits.logItAgain')}
-							aria-label={t('health.habits.logItAgain')}
-						>
-							<Icon name="plus" size={14} />
-						</button>
-					</form>
-				{:else}
+				<!--
+					Today's count once there is one, and a word on today before.
+
+					Both drawn in one cell, the absent one invisible, so logging the day
+					does not change how wide the actions are and move the buttons after
+					it. The count is a `Counter`: a run of presses is one write of where
+					it ended up, and minus takes back the one pressed by mistake.
+				-->
+				<span class="grid items-center">
+					<span class="[grid-area:1/1] {todayLogged ? '' : 'invisible'}" inert={!todayLogged}>
+						<Counter
+							value={todayCount}
+							action={actions.setDayCount}
+							name="count"
+							fields={{ habitId: habit.id, date: today }}
+							max={MAX_DAY_COUNT}
+							label={t('health.habits.timesToday', { name: habit.name })}
+							lessLabel={t('health.habits.oneFewerToday')}
+							moreLabel={t('health.habits.logItAgain')}
+						/>
+					</span>
 					<!-- The form the mark in the rail sends, with a word on today. -->
-					<form method="post" action={actions.logOccurrence} use:enhance id="habit-log-{habit.id}">
+					<form
+						method="post"
+						action={actions.logOccurrence}
+						use:enhance
+						id="habit-log-{habit.id}"
+						class="[grid-area:1/1] {todayLogged ? 'invisible' : ''}"
+						inert={todayLogged}
+					>
 						<input type="hidden" name="habitId" value={habit.id} />
 						<input type="hidden" name="date" value={today} />
 						<OneLine
 							name="notes"
 							placeholder={t('health.habits.note')}
 							ariaLabel={t('health.habits.note')}
-							class="w-24 border border-gray-200 px-1.5 py-1 text-xs focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
+							class="input input-sm w-24"
 						/>
 					</form>
-				{/if}
+				</span>
 				<button
 					type="button"
 					title={t('ui.edit')}
@@ -410,14 +427,15 @@
 				<span>{t('ui.more')}</span>
 			</div>
 
-			<div class="mt-3 flex items-center gap-2">
+			<div class="mt-3 flex flex-wrap items-center gap-2">
 				<span class="text-xs font-medium text-gray-500">{t('health.habits.logPastEntry')}</span>
 				<input
 					autocomplete="off"
 					type="date"
 					bind:value={backdateInput}
 					max={today}
-					class="border border-gray-300 px-2 py-1 text-xs shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
+					aria-label={t('ui.date')}
+					class="input input-sm w-auto"
 				/>
 				<form
 					method="post"
@@ -435,13 +453,10 @@
 						<OneLine
 							name="notes"
 							placeholder={t('health.habits.note')}
-							class="w-20 border border-gray-200 px-1.5 py-1 text-xs focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
+							ariaLabel={t('health.habits.note')}
+							class="input input-sm w-28"
 						/>
-						<button
-							type="submit"
-							disabled={!backdateInput}
-							class="border border-gray-300 bg-white px-2 py-1 text-xs text-gray-700 shadow-sm transition hover:bg-gray-50 disabled:opacity-50"
-						>
+						<button type="submit" disabled={!backdateInput} class="btn btn-sm">
 							{t('health.habits.log')}
 						</button>
 					</div>
@@ -473,14 +488,17 @@
 									<OneLine
 										name="notes"
 										placeholder={t('health.habits.addNote')}
+										ariaLabel={t('health.habits.noteOn', { date: occurrence.date })}
 										value={occurrence.notes ?? ''}
-										class="w-32 border border-transparent px-1 py-0.5 text-xs text-gray-500 hover:border-gray-200 focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
+										class="input input-sm w-40"
 									/>
 									<button
 										type="submit"
-										class="text-xs text-gray-300 transition hover:text-gray-600"
+										class="icon-btn"
+										title={t('ui.save')}
+										aria-label={t('ui.save')}
 									>
-										✓
+										<Icon name="check" size={14} />
 									</button>
 								</form>
 							</div>
@@ -496,11 +514,7 @@
 									}}
 								>
 									<input type="hidden" name="id" value={occurrence.id} />
-									<button
-										type="submit"
-										class="border border-red-300 bg-red-50 px-2 py-1 text-xs font-medium text-red-700"
-										use:armed
-									>
+									<button type="submit" class="btn btn-sm btn-danger" use:armed>
 										{t('health.habits.confirm')}
 									</button>
 								</form>
@@ -519,9 +533,11 @@
 									onclick={() => {
 										confirmingOccurrence = occurrence.id;
 									}}
-									class="text-xs text-gray-500 transition hover:text-red-500"
+									class="icon-btn icon-btn-danger"
+									title={t('ui.delete')}
+									aria-label={t('ui.delete')}
 								>
-									&times;
+									<Icon name="trash" size={14} />
 								</button>
 							{/if}
 						</div>

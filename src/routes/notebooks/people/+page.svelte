@@ -10,6 +10,11 @@
 	import FormError from '$lib/components/FormError.svelte';
 	import { armed } from '$lib/actions/armed';
 	import Card from '$lib/components/Card.svelte';
+	import Banner from '$lib/components/Banner.svelte';
+	import RoomToolbar from '$lib/components/RoomToolbar.svelte';
+	import FilterBar from '$lib/components/FilterBar.svelte';
+	import SearchField from '$lib/components/SearchField.svelte';
+	import ShowingCount from '$lib/components/ShowingCount.svelte';
 	import EmptyState from '$lib/components/EmptyState.svelte';
 	import Field from '$lib/components/Field.svelte';
 	import FormGrid from '$lib/components/FormGrid.svelte';
@@ -45,6 +50,19 @@
 	let faceProblem = $state('');
 	let confirmDelete = $state<number | null>(null);
 	let selectedIndex = $state(0);
+	/** What the search box holds: people whose name, relationship or notes contain it. */
+	let looking = $state('');
+
+	const shownPeople = $derived.by(() => {
+		const needle = looking.trim().toLowerCase();
+		if (!needle) return data.people;
+		return data.people.filter((one) =>
+			[one.name, t(RELATIONSHIP_LABELS[one.relationship]), one.notes ?? '']
+				.join('\n')
+				.toLowerCase()
+				.includes(needle)
+		);
+	});
 
 	const editing = $derived(
 		editingId ? (data.people.find((p) => p.id === editingId) ?? null) : null
@@ -86,7 +104,7 @@
 		}
 		if (action === 'navigate-down' || action === 'navigate-up') {
 			e.preventDefault();
-			const max = data.people.length - 1;
+			const max = shownPeople.length - 1;
 			if (max < 0) return;
 			selectedIndex = Math.min(
 				Math.max(selectedIndex + (action === 'navigate-down' ? 1 : -1), 0),
@@ -147,8 +165,29 @@
 					{/snippet}
 				</EmptyState>
 			{:else}
+				<!-- The search and the count along the top of the list, where a
+				     notebook's Notes tab has them. -->
+				<RoomToolbar inset>
+					{#snippet tools()}
+						<FilterBar name="people">
+							{#snippet lead()}
+								<SearchField bind:value={looking} label={t('notebooks.people.searchPeople')} />
+							{/snippet}
+							{#snippet count()}
+								<ShowingCount
+									total={data.people.length}
+									shown={shownPeople.length}
+									said={(count) => t('notebooks.people.showingCount', { count })}
+								/>
+							{/snippet}
+						</FilterBar>
+					{/snippet}
+				</RoomToolbar>
+				{#if shownPeople.length === 0}
+					<EmptyState icon="search" title={t('todoRows.nothingToShow')} />
+				{/if}
 				<div class="divide-y divide-gray-200" data-tour="people-list">
-					{#each data.people as person, i (person.id)}
+					{#each shownPeople as person, i (person.id)}
 						<!--
 							The shared row shape, so a person looks like a bill and a
 							workout look. It used to stack into three blocks on a phone —
@@ -157,7 +196,9 @@
 						-->
 						<div
 							use:keepInView={selectedIndex === i}
-							class="list-row {selectedIndex === i ? 'kbd-cursor' : ''}"
+							class="list-row {selectedIndex === i ? 'kb-cursor' : ''}"
+							class:bg-gray-100={person.id === data.selected}
+							aria-current={person.id === data.selected ? 'true' : undefined}
 						>
 							<div class="list-row-main flex min-w-0 items-center gap-3">
 								<!--
@@ -226,8 +267,7 @@
 											</span>
 										{/if}
 										<span class="tabular">
-											{person.mentions}
-											{person.mentions === 1 ? 'mention' : 'mentions'}
+											{t('notebooks.people.mentionsCount', { count: person.mentions })}
 										</span>
 										{#if person.notes}
 											<span class="min-w-0 truncate">{person.notes}</span>
@@ -489,7 +529,11 @@
 							faceProblem = '';
 							if (!file) return;
 							if (file.size > data.pictureKilobytes * 1024) {
-								faceProblem = `Pictures here are at most ${data.pictureKilobytes}KB, and ${file.name} is ${Math.ceil(file.size / 1024)}KB.`;
+								faceProblem = t('pictures.tooBig', {
+									limit: data.pictureKilobytes,
+									name: file.name,
+									size: Math.ceil(file.size / 1024)
+								});
 								field.value = '';
 								return;
 							}
@@ -516,14 +560,14 @@
 			</span>
 		</div>
 		{#if faceProblem}
-			<p class="mt-1 text-xs text-red-700">{faceProblem}</p>
+			<div class="mt-2"><Banner message={faceProblem} /></div>
 		{/if}
 	{/if}
 
 	{#snippet footer()}
 		<button type="button" class="btn" onclick={() => (showForm = false)}>{t('ui.cancel')}</button>
 		<button type="submit" form="person-form" class="btn btn-primary">
-			{editingId ? 'Save' : t('notebooks.people.addPerson')}
+			{editingId ? t('ui.save') : t('notebooks.people.addPerson')}
 		</button>
 	{/snippet}
 </Modal>

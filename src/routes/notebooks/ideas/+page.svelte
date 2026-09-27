@@ -1,18 +1,21 @@
 <script lang="ts">
 	/* biome-ignore-all assist/source/organizeImports lint/correctness/noUnusedImports lint/correctness/noUnusedVariables lint/style/useConst: Svelte template and rune usage in this file triggers false positives in current Biome diagnostics. */
 	import { enhance } from '$lib/enhance';
+	import ShowingCount from '$lib/components/ShowingCount.svelte';
+	import SearchField from '$lib/components/SearchField.svelte';
 	import { openFromUrl } from '$lib/open-from-url.svelte';
-	import FilterChips from '$lib/components/FilterChips.svelte';
+	import FilterBar from '$lib/components/FilterBar.svelte';
+	import Picker from '$lib/components/Picker.svelte';
+	import { tagFilterWords } from '$lib/tag-filter-summary';
 	import TagFilter from '$lib/components/TagFilter.svelte';
 	import { tagFilterInUrl } from '$lib/tag-filter-url.svelte';
-	import { isTagFiltering, passesTagFilter } from '$lib/tag-filter';
+	import { isTagFiltering, passesTagFilter, NO_TAG_FILTER } from '$lib/tag-filter';
 	import RoomSurface from '$lib/components/RoomSurface.svelte';
 	import { SECTION_COLORS } from '$lib/colors';
 	import { setRoomAction } from '$lib/room-action.svelte';
 	import FormError from '$lib/components/FormError.svelte';
 	import IdeaFields from '$lib/components/fields/IdeaFields.svelte';
 	import EmptyState from '$lib/components/EmptyState.svelte';
-	import Icon from '$lib/components/Icon.svelte';
 	import FormGrid from '$lib/components/FormGrid.svelte';
 	import Modal from '$lib/components/Modal.svelte';
 	import type { PageServerData, ActionData } from './$types';
@@ -38,8 +41,53 @@
 	 * reason to open this screen. Opening on everything buried the second in
 	 * the first, and the filter is one press away either way.
 	 */
-	let filterApplied: 'all' | 'applied' | 'not-applied' = $state('not-applied');
-	let filterFavorite: 'all' | 'favorite' | 'not-favorite' = $state('all');
+	type AppliedChoice = 'all' | 'applied' | 'not-applied';
+	type FavouriteChoice = 'all' | 'favorite' | 'not-favorite';
+	const DEFAULT_APPLIED: AppliedChoice = 'not-applied';
+	const DEFAULT_FAVOURITE: FavouriteChoice = 'all';
+	let filterApplied: AppliedChoice = $state(DEFAULT_APPLIED);
+	let filterFavorite: FavouriteChoice = $state(DEFAULT_FAVOURITE);
+	/** What the search box holds: ideas whose words or tags contain it. */
+	let looking = $state('');
+
+	const appliedChoices = $derived([
+		{ value: 'not-applied' as const, label: t('notebooks.ideas.notApplied') },
+		{ value: 'applied' as const, label: t('notebooks.ideas.applied') },
+		{ value: 'all' as const, label: t('notebooks.ideas.appliedOrNot') }
+	]);
+	const favouriteChoices = $derived([
+		{ value: 'all' as const, label: t('notebooks.ideas.favouriteOrNot') },
+		{ value: 'favorite' as const, label: t('notebooks.ideas.favourites') },
+		{ value: 'not-favorite' as const, label: t('notebooks.ideas.notFavourite') }
+	]);
+
+	/*
+	 * Narrowed past where the room opens. "Not applied" is where it starts,
+	 * so it is not something to clear.
+	 */
+	const narrowed = $derived(
+		isTagFiltering(tagFilter.current) ||
+			looking.trim() !== '' ||
+			filterApplied !== DEFAULT_APPLIED ||
+			filterFavorite !== DEFAULT_FAVOURITE
+	);
+
+	function narrowing(): string {
+		const said = tagFilterWords(tagFilter.current, t('tagFilter.untagged'));
+		if (filterApplied !== DEFAULT_APPLIED)
+			said.unshift(appliedChoices.find((one) => one.value === filterApplied)?.label ?? '');
+		if (filterFavorite !== DEFAULT_FAVOURITE)
+			said.unshift(favouriteChoices.find((one) => one.value === filterFavorite)?.label ?? '');
+		return said.filter(Boolean).join(', ');
+	}
+
+	function clearFilters() {
+		tagFilter.current = NO_TAG_FILTER;
+		filterApplied = DEFAULT_APPLIED;
+		filterFavorite = DEFAULT_FAVOURITE;
+		looking = '';
+		selectedIndex = 0;
+	}
 
 	let filteredIdeas = $derived.by(() =>
 		data.ideas
@@ -58,6 +106,14 @@
 				if (filterFavorite === 'favorite') return idea.favorite;
 				if (filterFavorite === 'not-favorite') return !idea.favorite;
 				return true;
+			})
+			.filter((idea) => {
+				const needle = looking.trim().toLowerCase();
+				if (!needle) return true;
+				return [idea.content, idea.appliedNote ?? '', ...idea.tags.map((tag) => tag.name)]
+					.join('\n')
+					.toLowerCase()
+					.includes(needle);
 			})
 	);
 
@@ -198,72 +254,42 @@
 		{#snippet footer()}
 			<button type="button" class="btn" onclick={closeForms}>{t('ui.cancel')}</button>
 			<button type="submit" form="idea-form" class="btn btn-primary">
-				{editingId ? 'Save' : t('notebooks.ideas.saveIdea')}
+				{editingId ? t('ui.save') : t('notebooks.ideas.saveIdea')}
 			</button>
 		{/snippet}
 	</Modal>
 
-	{#if data.ideas.length === 0}
-		<div class="border border-gray-200 bg-white p-8 text-center text-sm text-gray-500 shadow-sm">
+	<!--
+		The controls and the ideas are one object — see `RoomSurface` — with the
+		strip a notebook's Notes tab has: search, count, what narrows, clear.
+	-->
+	<RoomSurface accent={SECTION_COLORS.diary} dataTour="idea-list">
+		{#snippet tools()}
+			{#if data.ideas.length > 0}{@render ideaFilters()}{/if}
+		{/snippet}
+		{#if data.ideas.length === 0}
 			<EmptyState
 				icon="ideas"
 				title={t('notebooks.ideas.nothingCapturedYet')}
 				description={t('notebooks.ideas.ideasAreTheThingsYou')}
-			>
-				{#snippet action()}
-					<button onclick={() => (showForm = true)} class="btn btn-primary">
-						<Icon name="plus" />
-						{t('notebooks.ideas.newIdea')}
-					</button>
-				{/snippet}
-			</EmptyState>
-		</div>
-	{:else}
-		<!--
-			One surface, and an idea is a row on it.
-
-			A card each meant twenty captured thoughts drew twenty boxes on the
-			page's ground, with the background showing through between every two.
-			They are one list, so they sit on one surface with a hairline between
-			them — the same shape the todo list and the activities list have.
-		-->
-		<!--
-			The controls and the ideas are one object — see `RoomSurface`. They
-			were two: a fold of tags and two rows of chips on the page's own
-			patterned ground, then a gap, then a card of rows.
-		-->
-		<RoomSurface accent={SECTION_COLORS.diary} dataTour="idea-list">
-			{#snippet tools()}
-				<!--
-					The tags fold away, and start folded.
-
-					Every tag anybody has ever used, above everything, is a wall of
-					chips between the page and the ideas — and an idea list gathers
-					tags faster than almost anything else here. It is a filter,
-					which is something you go looking for; the ideas are what the
-					page is. Folded, it still says what it is doing.
-				-->
-				{@render ideaTags()}
-			{/snippet}
-			{#snippet filters()}
-				{#if data.ideas.length > 0}{@render ideaFilters()}{/if}
-			{/snippet}
+			/>
+		{:else if filteredIdeas.length === 0}
 			<!-- Inside the surface, so the controls that emptied it stay to undo it. -->
-			{#if filteredIdeas.length === 0}
-				<div class="p-8 text-center text-sm text-gray-500">
-					<EmptyState icon="ideas" title={t('notebooks.ideas.noIdeasMatchTheCurrent')} />
-				</div>
-			{/if}
+			<EmptyState
+				icon="search"
+				title={t('todoRows.nothingToShow')}
+				description={t('notebooks.ideas.noIdeasMatchTheCurrent')}
+			/>
+		{:else}
 			<div class="divide-y divide-gray-200">
 				{#each filteredIdeas as idea, i (idea.id)}
 					<div
 						use:keepInView={i === clampedSelectedIndex}
-						class="relative px-4 py-3 {i === clampedSelectedIndex ? 'kb-cursor' : ''}"
+						class="px-4 py-3 {i === clampedSelectedIndex ? 'kb-cursor' : ''}"
 					>
 						<!--
 							The card is a component, so a notebook's Ideas tab shows the
-							same idea this room does rather than a line of text beside a
-							tick — see `IdeaCard`.
+							same idea this room does — see `IdeaCard`.
 						-->
 						<IdeaCard
 							{idea}
@@ -284,47 +310,54 @@
 					</div>
 				{/each}
 			</div>
-		</RoomSurface>
-	{/if}
+		{/if}
+	</RoomSurface>
 </div>
 
-<!--
-	The two blocks the surface puts along its top, written here because they
-	are this room's own and only their placement belongs to the component.
--->
-{#snippet ideaTags()}
-	{#if data.allTags.length > 0 || isTagFiltering(tagFilter.current)}
-		<TagFilter
-			tags={data.allTags.map((tag) => tag.name)}
-			value={tagFilter.current}
-			onchange={(next) => {
-				tagFilter.current = next;
+{#snippet ideaFilters()}
+	<FilterBar name="ideas" on={narrowed} summary={narrowing()} onclear={clearFilters}>
+		{#snippet lead()}
+			<SearchField bind:value={looking} label={t('notebooks.ideas.searchTheseIdeas')} />
+		{/snippet}
+		{#snippet count()}
+			<!-- Held open at the count of every idea — see `.count-slot`. -->
+			<ShowingCount
+				total={data.ideas.length}
+				shown={filteredIdeas.length}
+				said={(count) => t('notebooks.ideas.showingCount', { count })}
+			/>
+		{/snippet}
+		<Picker
+			value={filterApplied}
+			options={appliedChoices}
+			onpick={(next) => {
+				filterApplied = next;
 				selectedIndex = 0;
 			}}
-			name="idea-tags"
+			label={t('notebooks.ideas.applied')}
+			class="min-w-36 flex-1 sm:flex-none"
 		/>
-	{/if}
-{/snippet}
-
-{#snippet ideaFilters()}
-	<FilterChips
-		label={t('notebooks.ideas.applied')}
-		bind:value={filterApplied}
-		onchange={() => (selectedIndex = 0)}
-		options={[
-			{ value: 'all', label: 'ui.all' },
-			{ value: 'applied', label: 'notebooks.ideas.applied' },
-			{ value: 'not-applied', label: 'notebooks.ideas.notApplied' }
-		]}
-	/>
-	<FilterChips
-		label={t('notebooks.ideas.favourite')}
-		bind:value={filterFavorite}
-		onchange={() => (selectedIndex = 0)}
-		options={[
-			{ value: 'all', label: 'ui.all' },
-			{ value: 'favorite', label: 'notebooks.ideas.favourites' },
-			{ value: 'not-favorite', label: 'notebooks.ideas.notFavourite' }
-		]}
-	/>
+		<Picker
+			value={filterFavorite}
+			options={favouriteChoices}
+			onpick={(next) => {
+				filterFavorite = next;
+				selectedIndex = 0;
+			}}
+			label={t('notebooks.ideas.favourite')}
+			class="min-w-36 flex-1 sm:flex-none"
+		/>
+		{#if data.allTags.length > 0 || isTagFiltering(tagFilter.current)}
+			<TagFilter
+				tags={data.allTags.map((tag) => tag.name)}
+				value={tagFilter.current}
+				onchange={(next) => {
+					tagFilter.current = next;
+					selectedIndex = 0;
+				}}
+				name="idea-tags"
+				class="min-w-36 flex-1 sm:flex-none"
+			/>
+		{/if}
+	</FilterBar>
 {/snippet}

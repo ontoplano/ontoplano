@@ -19,12 +19,16 @@ import { listTodos } from '$lib/services/todos';
 export const load = async ({ locals, url }: IsolatedEvent) => {
 	const ctx = buildCtx(locals.user!.id);
 	const includeClosed = url.searchParams.get('closed') === '1';
+	const everyGoal = listGoals(ctx, { includeClosed: true });
 
 	return {
 		areas: listAreas(ctx),
 		notebooks: pickableNotebooks(ctx),
-		goals: listGoals(ctx, { includeClosed }),
+		goals: includeClosed ? everyGoal : everyGoal.filter((g) => g.status === 'open'),
 		includeClosed,
+		/* How many are put away, so the toggle says so and is there to press
+		   even when every goal is closed. */
+		closedCount: everyGoal.filter((g) => g.status !== 'open').length,
 		slots: linkableSlots(ctx),
 		todos: listTodos(ctx).filter((t) => t.status !== 'done'),
 		/*

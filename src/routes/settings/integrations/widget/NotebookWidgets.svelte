@@ -5,7 +5,7 @@
 	import { armed } from '$lib/actions/armed';
 	import { autofocus } from '$lib/actions/autofocus';
 	import { keepInView } from '$lib/actions/keep-in-view';
-	import Card from '$lib/components/Card.svelte';
+	import SettingGroup from '$lib/components/SettingGroup.svelte';
 	import EmptyState from '$lib/components/EmptyState.svelte';
 	import Field from '$lib/components/Field.svelte';
 	import FormGrid from '$lib/components/FormGrid.svelte';
@@ -73,7 +73,7 @@
 	let open = $state(false);
 	let editing = $state<Widget | null>(null);
 	let deleting = $state<Widget | null>(null);
-	let cursor = $state(0);
+	let cursor = $state(-1);
 
 	// The form's choices, which depend on each other: a notebook offers its own
 	// tabs, a tab offers its own filters and orders.
@@ -209,75 +209,68 @@
 
 <svelte:window onkeydown={handleKeydown} />
 
-<Card
+<SettingGroup
 	title={t('widgets.notebookWidgets')}
 	description={t('widgets.notebookWidgetsDescription')}
 	id="notebook-widgets"
 >
 	{#snippet actions()}
 		{#if slot && notebooks.length > 0}
-			<button type="button" class="btn btn-sm btn-primary" onclick={openNew}>
+			<button type="button" class="btn btn-sm" onclick={openNew}>
 				<Icon name="plus" />
 				{t('widgets.newWidget')}
-				<kbd class="ml-1">{keyFor(PAGE, 'new')}</kbd>
+				<kbd>{keyFor(PAGE, 'new')}</kbd>
 			</button>
 		{/if}
 	{/snippet}
 
-	<div data-tour="widgets-list">
-		{#if widgets.length === 0}
-			<EmptyState
-				compact
-				icon="phone"
-				title={t('widgets.none')}
-				description={t('widgets.noneHow')}
-			/>
-		{:else}
-			<p class="mb-2 text-xs text-gray-500">
+	<div data-tour="widgets-list" class="divide-y divide-gray-200">
+		{#if widgets.length > 0}
+			<p class="px-4 py-2 text-xs text-gray-500">
 				{t('widgets.count', { count: widgets.length })} ·
 				<kbd>{keyFor(PAGE, 'navigate-down')}</kbd>/<kbd>{keyFor(PAGE, 'navigate-up')}</kbd>
 				<kbd>{keyFor(PAGE, 'edit')}</kbd>
 			</p>
-			<ul class="divide-y divide-gray-200 border border-gray-200">
-				{#each widgets as widget, at (widget.id)}
-					<li
-						class="list-row {cursor === at ? 'kb-cursor' : ''}"
-						use:keepInView={cursor === at}
-						data-widget-row
-					>
-						<div class="list-row-main min-w-0">
-							<p class="truncate text-sm font-medium text-gray-900">
-								{widget.notebookTitle} — {t(moduleMeta(widget.section).name)}
-							</p>
-							<p class="truncate text-xs text-gray-500">
-								{describe(widget)}
-								{#if !widget.connected}
-									· {t('widgets.disconnected')}
-								{/if}
-							</p>
-						</div>
-						<div class="list-row-actions flex-none">
-							<button
-								type="button"
-								class="icon-btn"
-								title={t('ui.edit')}
-								aria-label={t('ui.edit')}
-								onclick={() => openEdit(widget)}><Icon name="edit" /></button
-							>
-							<button
-								type="button"
-								class="icon-btn icon-btn-danger"
-								title={t('ui.delete')}
-								aria-label={t('ui.delete')}
-								onclick={() => (deleting = widget)}><Icon name="trash" /></button
-							>
-						</div>
-					</li>
-				{/each}
-			</ul>
 		{/if}
+		{#each widgets as widget, at (widget.id)}
+			<div
+				class="list-row {cursor === at ? 'kbd-cursor' : ''}"
+				use:keepInView={cursor === at}
+				data-widget-row
+			>
+				<div class="list-row-main">
+					<p class="truncate text-sm font-medium text-gray-900">
+						{widget.notebookTitle} — {t(moduleMeta(widget.section).name)}
+					</p>
+					<p class="truncate text-xs text-gray-500">
+						{describe(widget)}
+						{#if !widget.connected}
+							· {t('widgets.disconnected')}
+						{/if}
+					</p>
+				</div>
+				<div class="list-row-actions">
+					<button
+						type="button"
+						class="icon-btn"
+						title={t('ui.edit')}
+						aria-label={t('ui.edit')}
+						onclick={() => openEdit(widget)}><Icon name="edit" /></button
+					>
+					<button
+						type="button"
+						class="icon-btn icon-btn-danger"
+						title={t('ui.delete')}
+						aria-label={t('ui.delete')}
+						onclick={() => (deleting = widget)}><Icon name="trash" /></button
+					>
+				</div>
+			</div>
+		{:else}
+			<EmptyState icon="phone" title={t('widgets.none')} description={t('widgets.noneHow')} />
+		{/each}
 	</div>
-</Card>
+</SettingGroup>
 
 <Modal
 	bind:open
@@ -390,7 +383,7 @@
 				async ({ update }) => {
 					await update({ reset: false });
 					deleting = null;
-					cursor = 0;
+					cursor = -1;
 				}}
 		>
 			<input type="hidden" name="id" value={deleting?.id ?? ''} />

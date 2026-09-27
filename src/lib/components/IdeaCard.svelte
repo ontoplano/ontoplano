@@ -90,16 +90,21 @@
 				use:enhance
 			>
 				<input type="hidden" name="id" value={idea.id} />
+				<!-- The star a notebook wears on the shelf: the same outline, filled
+				     when it is on, so pressing it does not change its size. -->
 				<button
 					type="submit"
-					class="flex size-7 items-center justify-center text-lg leading-none transition {idea.favorite
-						? 'text-amber-600 hover:text-amber-700'
-						: 'text-gray-300 hover:text-amber-600'}"
+					class="icon-btn idea-star"
+					class:is-on={idea.favorite}
+					aria-pressed={idea.favorite}
+					title={idea.favorite
+						? t('notebooks.ideas.removeFavorite')
+						: t('notebooks.ideas.markAsFavorite')}
 					aria-label={idea.favorite
 						? t('notebooks.ideas.removeFavorite')
 						: t('notebooks.ideas.markAsFavorite')}
 				>
-					{idea.favorite ? '★' : '☆'}
+					<Icon name="star" />
 				</button>
 			</form>
 		{/snippet}
@@ -163,7 +168,7 @@
 							? t('notebooks.ideas.appliedUndo')
 							: t('notebooks.ideas.markApplied')}
 						aria-pressed={idea.isApplied}
-						class="icon-btn {idea.isApplied ? 'text-blue-700' : ''}"
+						class="icon-btn"
 					>
 						<Icon name="check" />
 					</button>
@@ -188,7 +193,7 @@
 		<div class="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-gray-500">
 			<span>{formatDate(idea.createdAt)}</span>
 			{#if idea.isApplied}
-				<span class="font-medium text-blue-700">{t('notebooks.ideas.applied2')}</span>
+				<span class="font-medium text-gray-700">· {t('notebooks.ideas.applied2')}</span>
 			{/if}
 			{#if idea.updatedAt !== idea.createdAt}
 				<span>{t('notebooks.ideas.edited', { updatedAt: formatDate(idea.updatedAt) })}</span>
@@ -196,10 +201,10 @@
 		</div>
 
 		{#if idea.isApplied && selected}
-			<div class="mt-3 border border-blue-200 bg-blue-50 px-3 py-2 text-sm text-blue-900 shadow-sm">
+			<div class="mt-3 border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-900">
 				<div class="flex items-start justify-between gap-3">
 					<div class="min-w-0 flex-1">
-						<div class="text-xs font-medium tracking-wide text-blue-700 uppercase">
+						<div class="eyebrow text-gray-600">
 							{t('notebooks.ideas.appliedNote')}
 						</div>
 						{#if editingNote}
@@ -220,7 +225,7 @@
 									name="appliedNote"
 									placeholder={t('notebooks.ideas.whatDidYouApply')}
 									bind:value={noteDraft}
-									class="min-w-0 flex-1 border border-blue-300 bg-white px-2 py-1 text-sm shadow-sm focus:border-blue-700 focus:ring-1 focus:ring-blue-700 focus:outline-none"
+									class="input input-sm min-w-0 flex-1"
 									autofocus
 								/>
 								<button type="submit" class="btn btn-primary btn-sm">{t('ui.save')}</button>
@@ -236,7 +241,7 @@
 								</button>
 							</form>
 						{:else}
-							<p class="mt-1 text-sm whitespace-pre-wrap text-blue-900">
+							<p class="mt-1 text-sm whitespace-pre-wrap text-gray-900">
 								{idea.appliedNote || t('notebooks.ideas.noAppliedNoteYet')}
 							</p>
 						{/if}
@@ -246,9 +251,13 @@
 						<button
 							type="button"
 							onclick={startNoteEdit}
-							class="border border-blue-200 bg-white px-2 py-1 text-xs text-blue-700 hover:bg-blue-100"
+							class="icon-btn shrink-0"
+							title={idea.appliedNote ? t('notebooks.ideas.editNote') : t('notebookDetail.addNote')}
+							aria-label={idea.appliedNote
+								? t('notebooks.ideas.editNote')
+								: t('notebookDetail.addNote')}
 						>
-							{idea.appliedNote ? t('notebooks.ideas.editNote') : t('notebookDetail.addNote')}
+							<Icon name={idea.appliedNote ? 'edit' : 'plus'} />
 						</button>
 					{/if}
 				</div>
@@ -256,3 +265,10 @@
 		{/if}
 	</RowCard>
 </div>
+
+<style>
+	/* Filled when it is on, like a notebook's star on the shelf. */
+	.idea-star.is-on :global(path) {
+		fill: currentColor;
+	}
+</style>

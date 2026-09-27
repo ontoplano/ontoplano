@@ -34,5 +34,29 @@
 	{tabs}
 	label={t('rooms.integrations.sections')}
 >
-	{@render children()}
+	<div class="integrations-body">{@render children()}</div>
 </TabbedRoom>
+
+<style>
+	/*
+	 * The surface steps out to the edges of the room, as it does one level up.
+	 *
+	 * Settings' own body pulls a full-width surface flush with its sides, but
+	 * only a few levels down, and a page under this strip sits deeper than
+	 * that — so the tabs' pages were an inset card with a rem of white round
+	 * it while Account and Preferences ran edge to edge.
+	 */
+	@media (width >= 40rem) {
+		.integrations-body :global(.room-surface) {
+			margin-inline: -1rem;
+			border-inline-width: 0;
+			border-radius: 0 !important;
+		}
+	}
+
+	@media (width < 40rem) {
+		.integrations-body :global(.room-surface) {
+			border-inline-width: 0;
+		}
+	}
+</style>

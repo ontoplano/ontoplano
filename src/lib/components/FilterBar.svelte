@@ -78,6 +78,7 @@
 		banner,
 		lead,
 		count,
+		verb,
 		trailing,
 		children
 	}: {
@@ -105,9 +106,24 @@
 		 * end of the strip from everything that changes it.
 		 */
 		count?: Snippet;
+		/**
+		 * One secondary verb about the whole list — Areas, Categories.
+		 *
+		 * On the first line at every width, pushed to the right end of it. It
+		 * was left to `trailing`, which a phone puts on a line of its own, so
+		 * each room with one found its own way round that: an icon beside the
+		 * search box on one screen, inside the Filters sheet on the next, where
+		 * pressing it opened a dialog over a dialog.
+		 */
+		verb?: Snippet;
 		/** The sort order and its direction, at the far end. */
 		trailing?: Snippet;
-		children: Snippet;
+		/**
+		 * The filters. A list with none — a search box and a count, nothing
+		 * else — leaves this out, and a phone gets no Filters button to open an
+		 * empty sheet with.
+		 */
+		children?: Snippet;
 	} = $props();
 
 	/** Whether the phone's sheet is up. Nothing on a desktop, where they are out. */
@@ -180,9 +196,14 @@
 
 	<!-- How many rows are showing, next to the box that narrows them by name —
 	     on a phone, at the end of the line, after the way back. -->
-	{#if count && !folded}<div class="shrink-0">{@render count()}</div>{/if}
+	{#if count && (!folded || !children)}<div class="shrink-0">{@render count()}</div>{/if}
 
-	{#if folded}
+	{#if !children}
+		<!-- Nothing to narrow by but the box: the slack goes here, as it would
+		     to the filters, so the verb and the order still sit at the end. Not
+		     on a phone, where the box itself takes the slack. -->
+		<div class="hidden flex-1 sm:block"></div>
+	{:else if folded}
 		<!--
 			On a phone the filters are a sheet, because the row is not there.
 
@@ -243,22 +264,26 @@
 		</button>
 	{/if}
 
-	{#if count && folded}<div class="shrink-0">{@render count()}</div>{/if}
+	{#if count && folded && children}<div class="shrink-0">{@render count()}</div>{/if}
+
+	{#if verb}
+		<div class="ml-auto flex shrink-0 items-center gap-2">{@render verb()}</div>
+	{/if}
 
 	<!-- On a phone the order is a line of its own, so the first line is the
 	     search and what narrows it, the way a task list draws it. -->
 	{#if trailing}
 		<div
-			class="ml-auto flex shrink-0 items-center justify-end gap-2 {phone.current
+			class="flex shrink-0 items-center justify-end gap-2 {phone.current
 				? 'basis-full'
-				: ''}"
+				: ''} {verb && !phone.current ? '' : 'ml-auto'}"
 		>
 			{@render trailing()}
 		</div>
 	{/if}
 </div>
 
-{#if folded}
+{#if folded && children}
 	<!--
 		The same controls, once, in a sheet.
 
@@ -271,7 +296,7 @@
 			<div class="mb-3 flex flex-wrap items-center gap-2">{@render banner()}</div>
 		{/if}
 		<div id="{name}-filters" class="flex flex-wrap items-center gap-2">
-			{@render children()}
+			{@render children?.()}
 		</div>
 
 		{#snippet footer()}

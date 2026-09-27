@@ -45,7 +45,9 @@
 
 	const shell = $derived(
 		`flex min-w-36 shrink-0 flex-col items-start gap-0.5 rounded border px-3 py-2 text-left transition-colors ${
-			current ? 'border-gray-900 bg-gray-50' : 'border-gray-200 hover:border-gray-400'
+			current
+				? 'border-gray-900 bg-gray-100'
+				: 'border-gray-200 hover:border-gray-400 hover:bg-gray-50'
 		}`
 	);
 </script>
@@ -57,7 +59,7 @@
 		<span class="text-xs text-gray-500 tabular-nums">{ledger.count}</span>
 		<span
 			class="ml-auto text-xs tabular-nums {ledger.balanceCents < 0
-				? 'text-red-600'
+				? 'text-gray-900'
 				: 'text-blue-700'}"
 		>
 			{formatMoney(ledger.balanceCents, currency)}
@@ -70,5 +72,7 @@
 	<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -->
 	<a {href} class={shell}>{@render body()}</a>
 {:else}
-	<button class={shell} onclick={() => onpick?.(ledger.id)}>{@render body()}</button>
+	<button class={shell} aria-pressed={current} onclick={() => onpick?.(ledger.id)}
+		>{@render body()}</button
+	>
 {/if}

@@ -9,6 +9,9 @@
  * enough to be worth keeping exactly.
  */
 
+/** The most one day can be set to in one go — a counter, not a data import. */
+export const MAX_DAY_COUNT = 99;
+
 /** Monday first, which is how `scheduledDays` is numbered. */
 export const FULL_DAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 

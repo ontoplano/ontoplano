@@ -1,11 +1,15 @@
 <script lang="ts">
-	import Card from '$lib/components/Card.svelte';
 	import { routeGlyph } from '$lib/glyphs';
 	import Picker from '$lib/components/Picker.svelte';
 	import { dayStamp, monthOf } from '$lib/when';
 	import { useWhen } from '$lib/when-context.svelte';
 	import { enhance } from '$lib/enhance';
-	import Swatch from '$lib/components/Swatch.svelte';
+	import TagChip from '$lib/components/TagChip.svelte';
+	import RoomSurface from '$lib/components/RoomSurface.svelte';
+	import FilterBar from '$lib/components/FilterBar.svelte';
+	import ShowingCount from '$lib/components/ShowingCount.svelte';
+	import SearchField from '$lib/components/SearchField.svelte';
+	import { pillStyle } from '$lib/pill-ink';
 	import RoomToolbar from '$lib/components/RoomToolbar.svelte';
 	import { setRoomAction } from '$lib/room-action.svelte';
 	import { CSV_PARSER_KEY, sniffCsv, type CsvMapping } from '$lib/bank-parsers';
@@ -159,96 +163,111 @@
 	}));
 </script>
 
-<div class="space-y-4">
-	<RoomToolbar>
-		{#snippet tools()}
-			{#each active as ledger (ledger.id)}
-				<!--
-					The tile is a component, so a ledger filed under a notebook reads
-					the same way it does here — see `LedgerTile`.
-				-->
-				<LedgerTile
-					{ledger}
-					{currency}
-					current={data.current?.id === ledger.id}
-					onpick={(id) => show(id)}
-				/>
-			{/each}
-			{#if archived.length > 0}
-				<button
-					class="text-xs text-gray-500 hover:text-gray-700"
-					onclick={() => (showArchived = !showArchived)}
-					>{t('finance.ledgers.archived', {
-						show: showArchived ? t('ui.hide') : t('ui.show'),
-						length: archived.length
-					})}</button
-				>
-			{/if}
-		{/snippet}
-	</RoomToolbar>
+<FormError message={form?.message} />
 
-	{#if showArchived && archived.length > 0}
-		<ul class="divide-y divide-gray-100 rounded border border-gray-200">
-			{#each archived as ledger (ledger.id)}
-				<li class="flex items-center gap-3 px-3 py-2 text-sm">
-					<span class="min-w-0 flex-1 truncate text-gray-600">{ledger.name}</span>
-					<span class="text-xs text-gray-400 tabular-nums"
-						>{t('finance.ledgers.lines', { count: ledger.count })}</span
-					>
-					<form method="post" action="?/archiveLedger" use:enhance>
-						<input type="hidden" name="id" value={ledger.id} />
-						<input type="hidden" name="archived" value="false" />
-						<button class="btn btn-sm" type="submit">{t('finance.ledgers.restore')}</button>
-					</form>
-					<button
-						class="icon-btn"
-						aria-label={t('finance.ledgers.delete', { name: ledger.name })}
-						onclick={() => (deletingLedger = ledger)}
-					>
-						<Icon name="trash" />
-					</button>
-				</li>
-			{/each}
-		</ul>
-	{/if}
-
-	<FormError message={form?.message} />
-
-	{#if !data.current}
+{#if active.length === 0 && archived.length === 0}
+	<RoomSurface>
 		<EmptyState
 			icon={routeGlyph('/finance/ledgers')!}
 			title={t('finance.ledgers.noLedgersYet')}
 			description={t('finance.ledgers.aLedgerIsOnePlace')}
 		/>
-	{:else}
-		{@const current = data.current}
-		<!--
-			One surface, top to bottom, rather than three things in a field.
+	</RoomSurface>
+{:else}
+	<!--
+		One surface, top to bottom, rather than things in a field.
 
-			The ledger's name, what narrows it and the lines themselves are one
-			statement read downwards, and they were drawn as a box, a loose row of
-			controls on the page's own ground, and a second box. The table had no
-			background of its own either, so the page showed through every row a
-			category had washed — which is what made the colour look like it was
-			painted straight onto the ground. One white surface now, with a rule
-			under each band.
-		-->
-		<Card flush>
+		Which ledger, what it is and what can be done to it, what narrows it and
+		the lines themselves are one statement read downwards: the switcher along
+		the top, a rule under each band, the lines edge to edge.
+	-->
+	<RoomSurface>
+		{#snippet tools()}
+			<div class="flex w-full flex-wrap items-center gap-2">
+				{#each active as ledger (ledger.id)}
+					<!--
+						The tile is a component, so a ledger filed under a notebook reads
+						the same way it does here — see `LedgerTile`.
+					-->
+					<LedgerTile
+						{ledger}
+						{currency}
+						current={data.current?.id === ledger.id}
+						onpick={(id) => show(id)}
+					/>
+				{/each}
+				<!-- One label, whichever way it is set: pressing it must not change
+				     its width. -->
+				{#if archived.length > 0}
+					<button
+						type="button"
+						class="btn btn-sm ml-auto"
+						aria-pressed={showArchived}
+						onclick={() => (showArchived = !showArchived)}
+						>{t('finance.ledgers.archivedCount', { count: archived.length })}</button
+					>
+				{/if}
+			</div>
+		{/snippet}
+
+		{#if showArchived && archived.length > 0}
+			<ul class="divide-y divide-gray-200 border-b border-gray-200">
+				{#each archived as ledger (ledger.id)}
+					<li class="list-row">
+						<span class="list-row-main truncate text-sm text-gray-600">{ledger.name}</span>
+						<span class="tabular text-xs text-gray-500"
+							>{t('finance.ledgers.lines', { count: ledger.count })}</span
+						>
+						<span class="list-row-actions">
+							<form method="post" action="?/archiveLedger" use:enhance>
+								<input type="hidden" name="id" value={ledger.id} />
+								<input type="hidden" name="archived" value="false" />
+								<button
+									class="icon-btn"
+									type="submit"
+									title={t('finance.ledgers.restore')}
+									aria-label={t('finance.ledgers.restore')}
+								>
+									<Icon name="undo" />
+								</button>
+							</form>
+							<button
+								class="icon-btn icon-btn-danger"
+								title={t('ui.delete')}
+								aria-label={t('finance.ledgers.delete', { name: ledger.name })}
+								onclick={() => (deletingLedger = ledger)}
+							>
+								<Icon name="trash" />
+							</button>
+						</span>
+					</li>
+				{/each}
+			</ul>
+		{/if}
+
+		{#if !data.current}
+			<EmptyState
+				icon={routeGlyph('/finance/ledgers')!}
+				title={t('finance.ledgers.noLedgersYet')}
+				description={t('finance.ledgers.aLedgerIsOnePlace')}
+			/>
+		{:else}
+			{@const current = data.current}
 			<!-- What this ledger is, and what can be done to it. -->
-			<div class="flex flex-wrap items-center gap-2 border-b border-gray-200 px-3 py-2">
+			<div class="flex flex-wrap items-center gap-x-3 gap-y-2 border-b border-gray-200 px-4 py-3">
 				<span class="text-sm font-semibold text-gray-900">{current.name}</span>
 				<span class="text-xs text-gray-500">
-					{t(LEDGER_KIND_LABELS[current.kind])}{current.lastOn ? ` · last ${current.lastOn}` : ''}
+					{t(LEDGER_KIND_LABELS[current.kind])}{current.lastOn
+						? ` · ${t('finance.ledgers.lastOn', { day: current.lastOn })}`
+						: ''}
 				</span>
 				{#if data.unsorted > 0}
-					<a
-						href={resolve('/finance/rules')}
-						class="rounded bg-amber-50 px-1.5 py-0.5 text-xs font-medium text-amber-800"
+					<a href={resolve('/finance/rules')} class="btn btn-sm btn-quiet"
 						>{t('finance.ledgers.uncategorized', { unsorted: data.unsorted })}</a
 					>
 				{/if}
 				<!-- On a phone these are the row, not an afterthought pushed right. -->
-				<span class="flex w-full items-center gap-1 sm:ml-auto sm:w-auto">
+				<span class="flex w-full flex-wrap items-center gap-1 sm:ml-auto sm:w-auto">
 					<!-- The ledger's own default, or the generic reader: opening the
 					     screen with nothing chosen would make the first thing anybody
 					     does be choosing something they have no opinion about yet. -->
@@ -266,95 +285,121 @@
 						<Icon name="plus" />
 						{t('finance.ledgers.line')}
 					</button>
-					<button
-						class="icon-btn"
-						aria-label={t('finance.ledgers.edit', { name: current.name })}
-						onclick={() => (editingLedger = current)}
-					>
-						<Icon name="edit" />
-					</button>
-					<form method="post" action="?/moveLedger" use:enhance>
-						<input type="hidden" name="id" value={current.id} />
-						<input type="hidden" name="delta" value="-1" />
+					<span class="ml-auto flex items-center gap-1">
 						<button
 							class="icon-btn"
-							aria-label={t('finance.ledgers.moveEarlier', { name: current.name })}
+							title={t('ui.edit')}
+							aria-label={t('finance.ledgers.edit', { name: current.name })}
+							onclick={() => (editingLedger = current)}
 						>
-							<Icon name="chevron-up" />
+							<Icon name="edit" />
 						</button>
-					</form>
-					<form method="post" action="?/moveLedger" use:enhance>
-						<input type="hidden" name="id" value={current.id} />
-						<input type="hidden" name="delta" value="1" />
+						<!-- Earlier and later along the switcher above, which runs sideways. -->
+						<form method="post" action="?/moveLedger" use:enhance>
+							<input type="hidden" name="id" value={current.id} />
+							<input type="hidden" name="delta" value="-1" />
+							<button
+								class="icon-btn"
+								title={t('finance.ledgers.moveEarlier', { name: current.name })}
+								aria-label={t('finance.ledgers.moveEarlier', { name: current.name })}
+							>
+								<Icon name="chevron-left" />
+							</button>
+						</form>
+						<form method="post" action="?/moveLedger" use:enhance>
+							<input type="hidden" name="id" value={current.id} />
+							<input type="hidden" name="delta" value="1" />
+							<button
+								class="icon-btn"
+								title={t('finance.ledgers.moveLater', { name: current.name })}
+								aria-label={t('finance.ledgers.moveLater', { name: current.name })}
+							>
+								<Icon name="chevron-right" />
+							</button>
+						</form>
+						<form method="post" action="?/archiveLedger" use:enhance>
+							<input type="hidden" name="id" value={current.id} />
+							<input type="hidden" name="archived" value="true" />
+							<button
+								class="icon-btn"
+								aria-label={t('finance.ledgers.archive', { name: current.name })}
+								title={t('finance.ledgers.putItAway')}
+							>
+								<Icon name="archive" />
+							</button>
+						</form>
 						<button
-							class="icon-btn"
-							aria-label={t('finance.ledgers.moveLater', { name: current.name })}
+							class="icon-btn icon-btn-danger"
+							title={t('ui.delete')}
+							aria-label={t('finance.ledgers.delete', { name: current.name })}
+							onclick={() => (deletingLedger = current)}
 						>
-							<Icon name="chevron-down" />
+							<Icon name="trash" />
 						</button>
-					</form>
-					<form method="post" action="?/archiveLedger" use:enhance>
-						<input type="hidden" name="id" value={current.id} />
-						<input type="hidden" name="archived" value="true" />
-						<button
-							class="icon-btn"
-							aria-label={t('finance.ledgers.archive', { name: current.name })}
-							title={t('finance.ledgers.putItAway')}
-						>
-							<Icon name="archive" />
-						</button>
-					</form>
-					<button
-						class="icon-btn"
-						aria-label={t('finance.ledgers.delete', { name: current.name })}
-						onclick={() => (deletingLedger = current)}
-					>
-						<Icon name="trash" />
-					</button>
+					</span>
 				</span>
 			</div>
 
 			<!-- Finding one line among a year of them. -->
-			<div class="flex flex-wrap items-center gap-2 border-b border-gray-200 px-3 py-2">
-				<input
-					value={data.query}
-					placeholder={t('finance.ledgers.searchDescriptions')}
-					class="input w-56"
-					oninput={(e) => filter({ q: (e.currentTarget as HTMLInputElement).value })}
-				/>
-				<!--
-					The months this ledger has, not a date field.
-
-					`input type="month"` is a picker in Chromium and a bare text box in
-					Firefox, where typing "2" filters to nothing and the box explains
-					nothing. A list of the months there is something to look at is
-					native everywhere, and shorter.
-				-->
-				<Picker
-					value={data.month ?? ''}
-					options={[
-						{ value: '', label: t('finance.ledgers.everyMonth') },
-						...data.months.map((m) => ({ value: m, label: monthName(m) }))
-					]}
-					onpick={(next) => filter({ month: next })}
-					label={t('finance.ledgers.month')}
-				/>
-				{#if data.query || data.month}
-					<button class="btn btn-sm" onclick={() => filter({ q: '', month: '' })}
-						>{t('finance.ledgers.clear')}</button
+			<RoomToolbar inset>
+				{#snippet tools()}
+					<FilterBar
+						name="movements"
+						on={Boolean(data.query || data.month)}
+						summary={[data.query, data.month ? monthName(data.month) : '']
+							.filter(Boolean)
+							.join(', ')}
+						onclear={() => filter({ q: '', month: '' })}
 					>
-				{/if}
-				<span class="ml-auto text-xs text-gray-500 tabular-nums"
-					>{t('finance.ledgers.shown', { length: data.movements.length })}</span
-				>
-			</div>
+						{#snippet lead()}
+							<SearchField
+								value={data.query}
+								label={t('finance.ledgers.searchDescriptions')}
+								oninput={(e) => filter({ q: (e.currentTarget as HTMLInputElement).value })}
+							/>
+						{/snippet}
+						{#snippet count()}
+							<ShowingCount
+								total={current.count}
+								shown={data.movements.length}
+								said={(count) => t('finance.ledgers.shown', { length: count })}
+							/>
+						{/snippet}
+						<!--
+							The months this ledger has, not a date field.
+
+							`input type="month"` is a picker in Chromium and a bare text box in
+							Firefox, where typing "2" filters to nothing and the box explains
+							nothing. A list of the months there is something to look at is
+							native everywhere, and shorter.
+						-->
+						<Picker
+							value={data.month ?? ''}
+							options={[
+								{ value: '', label: t('finance.ledgers.everyMonth') },
+								...data.months.map((m) => ({ value: m, label: monthName(m) }))
+							]}
+							onpick={(next) => filter({ month: next })}
+							label={t('finance.ledgers.month')}
+						/>
+					</FilterBar>
+				{/snippet}
+			</RoomToolbar>
 
 			{#if data.movements.length === 0}
-				<EmptyState
-					icon={routeGlyph('/finance/ledgers')!}
-					title={t('finance.ledgers.nothingHereYet')}
-					description={t('finance.ledgers.importThisLedgerSExportOr')}
-				/>
+				{#if data.query || data.month}
+					<EmptyState
+						icon="search"
+						title={t('todoRows.nothingToShow')}
+						description={t('finance.ledgers.noLinesMatch')}
+					/>
+				{:else}
+					<EmptyState
+						icon={routeGlyph('/finance/ledgers')!}
+						title={t('finance.ledgers.nothingHereYet')}
+						description={t('finance.ledgers.importThisLedgerSExportOr')}
+					/>
+				{/if}
 			{:else}
 				<!-- The list scrolls inside itself: a year of a card's statement is
 				     hundreds of rows, and the ledger switcher must stay reachable. -->
@@ -399,33 +444,24 @@
 							</div>
 							<div class="mt-1 flex items-center gap-2">
 								{#if m.category}
-									<span
-										class="inline-flex shrink-0 items-center gap-1.5 text-xs font-medium"
-										style="color: {m.categoryColor}"
-									>
-										<Swatch color={m.categoryColor ?? '#6b7280'} shape="dot" />
-										{m.category}
-									</span>
+									<span class="pill shrink-0" style={pillStyle(m.categoryColor)}>{m.category}</span>
 								{/if}
 								<span class="flex min-w-0 flex-1 flex-wrap gap-1">
 									{#each m.tags as tag (tag.name)}
-										<span
-											class="rounded-full px-1.5 py-0.5 text-xs whitespace-nowrap"
-											style="background-color: {tag.color}1f; color: {tag.color}"
-										>
-											#{tag.name}
-										</span>
+										<TagChip name={tag.name} color={tag.color} />
 									{/each}
 								</span>
 								<button
 									class="icon-btn shrink-0"
+									title={t('finance.ledgers.editThisLine')}
 									aria-label={t('finance.ledgers.editThisLine')}
 									onclick={() => (editingId = m.id)}
 								>
 									<Icon name="edit" />
 								</button>
 								<button
-									class="icon-btn shrink-0"
+									class="icon-btn icon-btn-danger shrink-0"
+									title={t('finance.ledgers.deleteThisLine')}
 									aria-label={t('finance.ledgers.deleteThisLine')}
 									onclick={() => (deletingMovement = m)}
 								>
@@ -473,26 +509,17 @@
 									</td>
 									<td class="px-3 py-2 whitespace-nowrap">
 										{#if m.category}
-											<span
-												class="inline-flex items-center gap-1.5 text-xs font-medium"
-												style="color: {m.categoryColor}"
+											<span class="pill shrink-0" style={pillStyle(m.categoryColor)}
+												>{m.category}</span
 											>
-												<Swatch color={m.categoryColor ?? '#6b7280'} shape="dot" />
-												{m.category}
-											</span>
 										{:else}
-											<span class="text-xs text-gray-400">—</span>
+											<span class="text-xs text-gray-500">—</span>
 										{/if}
 									</td>
 									<td class="px-3 py-2">
 										<span class="flex flex-wrap gap-1">
 											{#each m.tags as tag (tag.name)}
-												<span
-													class="rounded-full px-1.5 py-0.5 text-xs"
-													style="background-color: {tag.color}1f; color: {tag.color}"
-												>
-													#{tag.name}
-												</span>
+												<TagChip name={tag.name} color={tag.color} />
 											{/each}
 										</span>
 									</td>
@@ -506,13 +533,15 @@
 									<td class="px-3 py-2 text-right whitespace-nowrap">
 										<button
 											class="icon-btn"
+											title={t('finance.ledgers.editThisLine')}
 											aria-label={t('finance.ledgers.editThisLine')}
 											onclick={() => (editingId = m.id)}
 										>
 											<Icon name="edit" />
 										</button>
 										<button
-											class="icon-btn"
+											class="icon-btn icon-btn-danger"
+											title={t('finance.ledgers.deleteThisLine')}
 											aria-label={t('finance.ledgers.deleteThisLine')}
 											onclick={() => (deletingMovement = m)}
 										>
@@ -525,16 +554,16 @@
 					</table>
 				</div>
 			{/if}
-		</Card>
-	{/if}
+		{/if}
+	</RoomSurface>
+{/if}
 
-	<p class="text-xs text-gray-500">
-		{t('finance.ledgers.moneyYouExpectRatherThan')}
-		<a href={resolve('/finance/bills')} class="underline">{t('finance.ledgers.bill')}</a>{t(
-			'finance.ledgers.andBillsTurnUp'
-		)}
-	</p>
-</div>
+<p class="mt-3 text-xs text-gray-500">
+	{t('finance.ledgers.moneyYouExpectRatherThan')}
+	<a href={resolve('/finance/bills')} class="underline">{t('finance.ledgers.bill')}</a>{t(
+		'finance.ledgers.andBillsTurnUp'
+	)}
+</p>
 
 <!-- New ledger. -->
 <Modal

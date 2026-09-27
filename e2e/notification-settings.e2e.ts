@@ -22,7 +22,7 @@ test('every notification the app sends has a switch, and the answers stick', asy
 
 	// Drawn from the list rather than written out, so this is really asking
 	// whether the list reached the screen.
-	const rows = section.locator('li');
+	const rows = section.locator('.setting-row');
 	expect(await rows.count()).toBeGreaterThanOrEqual(6);
 	await expect(section.getByText('Task blocks, as they start')).toBeVisible();
 	await expect(section.getByText('The end of the day')).toBeVisible();
@@ -39,7 +39,10 @@ test('every notification the app sends has a switch, and the answers stick', asy
 	await blocks.locator('input.toggle').check();
 	await visit(page, '/settings/preferences');
 	await expect(
-		section.locator('li').filter({ hasText: 'Task blocks, as they start' }).locator('input.toggle')
+		section
+			.locator('.setting-row')
+			.filter({ hasText: 'Task blocks, as they start' })
+			.locator('input.toggle')
 	).toBeChecked();
 });
 
@@ -57,7 +60,7 @@ test('the end of the day is set to an hour, and keeps it', async ({ page }) => {
 	const notifications = page
 		.locator('section')
 		.filter({ has: page.getByRole('heading', { name: 'Notifications', exact: true }) });
-	const row = notifications.locator('li').filter({ hasText: 'The end of the day' });
+	const row = notifications.locator('.setting-row').filter({ hasText: 'The end of the day' });
 
 	// It opens on the hour this account's planner closes on rather than on
 	// nothing, because an empty time field is a question with no default.
@@ -84,7 +87,7 @@ test('the end of the day is set to an hour, and keeps it', async ({ page }) => {
 	const again = page
 		.locator('section')
 		.filter({ has: page.getByRole('heading', { name: 'Notifications', exact: true }) })
-		.locator('li')
+		.locator('.setting-row')
 		.filter({ hasText: 'The end of the day' });
 	await expect(again.locator('input[type="time"]')).toHaveValue('21:30');
 	/*

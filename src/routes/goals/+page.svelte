@@ -1,7 +1,11 @@
 <script lang="ts">
 	import { useWhen } from '$lib/when-context.svelte';
+	import ShowingCount from '$lib/components/ShowingCount.svelte';
+	import SearchField from '$lib/components/SearchField.svelte';
+	import StripVerb from '$lib/components/StripVerb.svelte';
 	import { setRoomAction } from '$lib/room-action.svelte';
-	import RoomToolbar from '$lib/components/RoomToolbar.svelte';
+	import RoomSurface from '$lib/components/RoomSurface.svelte';
+	import FilterBar from '$lib/components/FilterBar.svelte';
 	import RoomBar from '$lib/components/RoomBar.svelte';
 	import { page } from '$app/state';
 	import { resolve } from '$app/paths';
@@ -16,7 +20,6 @@
 	import Icon from '$lib/components/Icon.svelte';
 	import type { PageServerData, ActionData } from './$types';
 	import Field from '$lib/components/Field.svelte';
-	import Card from '$lib/components/Card.svelte';
 	import GoalCard from '$lib/components/GoalCard.svelte';
 	import GoalLinksModal from '$lib/components/GoalLinksModal.svelte';
 	import GoalFields from '$lib/components/fields/GoalFields.svelte';
@@ -73,8 +76,39 @@
 
 	const accent = SECTION_COLORS.home;
 
-	const visible = $derived(
+	/** What the search box holds; a goal matches on its title, notes or area. */
+	let looking = $state('');
+	const needle = $derived(looking.trim().toLocaleLowerCase());
+
+	const inArea = $derived(
 		areaFilter === null ? data.goals : data.goals.filter((g) => g.areaId === areaFilter)
+	);
+	const visible = $derived(
+		needle === ''
+			? inArea
+			: inArea.filter((g) =>
+					[g.title, g.notes ?? '', g.areaName ?? ''].some((text) =>
+						text.toLocaleLowerCase().includes(needle)
+					)
+				)
+	);
+	/** Whether the area or the search is hiding any goal. */
+	const narrowed = $derived(areaFilter !== null || needle !== '');
+
+	function clearFilters() {
+		areaFilter = null;
+		looking = '';
+		if (data.includeClosed) toggleClosed();
+	}
+
+	/** What is narrowing the list, for the phone's folded filter button. */
+	const summary = $derived(
+		[
+			areaFilter === null ? '' : (data.areas.find((a) => a.id === areaFilter)?.name ?? ''),
+			data.includeClosed ? t('goals.closedCount', { count: data.closedCount }) : ''
+		]
+			.filter(Boolean)
+			.join(', ')
 	);
 
 	/** One column per horizon, so the year and the week sit side by side. */
@@ -99,7 +133,7 @@
 				}))
 				.sort((a, b) => a.title.localeCompare(b.title));
 			return { horizon: h, goals: of, loose, filed };
-		}).filter((c) => c.goals.length > 0 || showForm)
+		}).filter((c) => c.goals.length > 0)
 	);
 
 	/** Every goal in the order it is drawn, which is the order j and k walk. */
@@ -272,48 +306,6 @@
 
 <div class="space-y-4">
 	<RoomBar title={t('goals.goals')} />
-	<!--
-		One row: what narrows the list on the left, managing the areas on the
-		right. It wraps as a row, never into a stack of one control per line.
-	-->
-	<!-- On a phone the cards run to the screen's edges; the controls do not. -->
-	{#if data.areas.length > 0 || data.goals.length > 0}
-		<div class="px-4 sm:px-0">
-			<RoomToolbar>
-				{#snippet tools()}
-					{#if data.areas.length > 0}
-						<Picker
-							value={areaFilter === null ? ALL_AREAS : String(areaFilter)}
-							options={areaOptions}
-							onpick={(next) => (areaFilter = next === ALL_AREAS ? null : Number(next))}
-							label={t('goals.area')}
-						/>
-					{/if}
-					{#if data.goals.length > 0}
-						<button
-							type="button"
-							class="btn btn-sm"
-							aria-pressed={data.includeClosed}
-							onclick={toggleClosed}
-						>
-							<Icon name="archive" size={14} />
-							{t('goals.showClosed')}
-						</button>
-						<button
-							type="button"
-							onclick={() => (showAreas = true)}
-							class="btn btn-sm btn-quiet ml-auto"
-							data-tour="goal-areas"
-						>
-							<Icon name="tag" size={14} />
-							{t('goals.areas')}
-						</button>
-					{/if}
-				{/snippet}
-			</RoomToolbar>
-		</div>
-	{/if}
-
 	<FormError message={form?.message} />
 
 	<Modal
@@ -531,33 +523,6 @@
 		{/snippet}
 	</Modal>
 
-	{#if visible.length === 0 && !showForm}
-		<Card flush>
-			{#if data.goals.length === 0}
-				<EmptyState
-					icon="goals"
-					title={t('goals.noGoalsYet')}
-					description={t('goals.aGoalIsACommitment')}
-				>
-					{#snippet action()}
-						<button onclick={() => openCreate()} class="btn btn-primary">
-							<Icon name="plus" />
-							{t('goals.newGoal')}
-						</button>
-					{/snippet}
-				</EmptyState>
-			{:else}
-				<EmptyState icon="goals" title={t('goals.noGoalsInThisArea')}>
-					{#snippet action()}
-						<button onclick={() => (areaFilter = null)} class="btn"
-							>{t('goals.showEveryArea')}</button
-						>
-					{/snippet}
-				</EmptyState>
-			{/if}
-		</Card>
-	{/if}
-
 	{#snippet card(goal: Goal)}
 		<GoalCard
 			{goal}
@@ -576,55 +541,116 @@
 		/>
 	{/snippet}
 
-	<!--
-		No strip of page between two groups on a phone.
-
-		Each horizon is a card, and on a phone the cards are the page — a band
-		of background between MONTH and QUARTER reads as a trench rather than
-		as a boundary. The gap comes back at desktop width, where a card is an
-		object on a page again.
-	-->
-	<div class="space-y-0 sm:space-y-4" data-tour="goal-list">
-		{#each byHorizon as column (column.horizon)}
-			<Card title={t(HORIZON_LABELS[column.horizon])} {accent} flush>
-				{#snippet actions()}
-					<span class="tabular text-xs text-gray-500">{column.goals.length}</span>
+	<RoomSurface dataTour="goal-list">
+		{#snippet tools()}
+			<FilterBar name="goals" on={narrowed || data.includeClosed} {summary} onclear={clearFilters}>
+				{#snippet lead()}
+					<SearchField bind:value={looking} label={t('goals.searchGoals')} />
 				{/snippet}
+				<!-- Managing the areas is not narrowing the list, so it stands at the
+				     far end of the strip, where another room keeps its order. -->
+				{#snippet verb()}
+					<StripVerb
+						icon="tag"
+						label={t('goals.areas')}
+						onclick={() => (showAreas = true)}
+						data-tour="goal-areas"
+					/>
+				{/snippet}
+				{#snippet count()}
+					<!-- Held open by the whole list's count, so narrowing it moves nothing. -->
+					<ShowingCount
+						total={data.goals.length}
+						shown={visible.length}
+						said={(count) => t('goals.showingCount', { count })}
+					/>
+				{/snippet}
+				{#if data.areas.length > 0}
+					<Picker
+						value={areaFilter === null ? ALL_AREAS : String(areaFilter)}
+						options={areaOptions}
+						onpick={(next) => (areaFilter = next === ALL_AREAS ? null : Number(next))}
+						label={t('goals.area')}
+						class="min-w-36 flex-1 sm:flex-none"
+					/>
+				{/if}
+				<!-- One label either way, with the number of goals it puts away. -->
+				<button
+					type="button"
+					class="btn btn-sm shrink-0"
+					aria-pressed={data.includeClosed}
+					onclick={toggleClosed}
+					hidden={data.closedCount === 0 && !data.includeClosed}
+				>
+					{t('goals.closedCount', { count: data.closedCount })}
+				</button>
+			</FilterBar>
+		{/snippet}
 
-				<div class="divide-y divide-gray-200">
-					{#each column.loose as goal (goal.id)}
-						{@render card(goal)}
-					{/each}
-
-					{#if column.goals.length === 0}
-						<p class="px-4 py-3 text-xs text-gray-500">{t('goals.nothingAtThisHorizon')}</p>
-					{/if}
-				</div>
-
-				<!--
-					A notebook's own goals, under a rule with its name on it, so the
-					list says which of these are about a subject and which are not.
-					The name is a link: the notebook is where the rest of it is.
-				-->
-				{#each column.filed as book (book.id)}
-					<div class="notebook-rule border-t-2 border-gray-300 pt-2">
-						<a
-							href={resolve('/notebooks/[id]', { id: String(book.id) })}
-							class="eyebrow flex items-center gap-1.5 px-4 text-gray-600 hover:text-gray-900"
+		{#if visible.length === 0}
+			{#if narrowed}
+				<EmptyState
+					icon="search"
+					title={t('goals.noGoalsMatch')}
+					description={t('goals.noneOfTheseMatch', { count: data.goals.length })}
+				>
+					{#snippet action()}
+						<button onclick={clearFilters} class="btn btn-sm">{t('filters.clear')}</button>
+					{/snippet}
+				</EmptyState>
+			{:else}
+				<EmptyState
+					icon="goals"
+					title={t('goals.noGoalsYet')}
+					description={t('goals.aGoalIsACommitment')}
+				/>
+			{/if}
+		{:else}
+			<!--
+				One group per horizon, headed the way the review heads its days: a
+				quiet band with the name and how many, the rows edge to edge under it.
+			-->
+			<div class="divide-y divide-gray-200">
+				{#each byHorizon as column (column.horizon)}
+					<section aria-labelledby="horizon-{column.horizon}">
+						<h2
+							id="horizon-{column.horizon}"
+							class="eyebrow flex items-center justify-between gap-4 border-b border-gray-200 bg-gray-50 px-4 py-1.5 text-gray-600"
 						>
-							<Icon name="notebook" size={12} />
-							{book.title}
-						</a>
-						<div class="mt-1 divide-y divide-gray-200">
-							{#each book.goals as goal (goal.id)}
+							{t(HORIZON_LABELS[column.horizon])}
+							<span class="tabular">{column.goals.length}</span>
+						</h2>
+						<div class="divide-y divide-gray-200">
+							{#each column.loose as goal (goal.id)}
 								{@render card(goal)}
 							{/each}
+							<!--
+								A notebook's own goals, under its name, so the list says which
+								of these are about a subject and which are not. The name is a
+								link: the notebook is where the rest of it is.
+							-->
+							{#each column.filed as book (book.id)}
+								<div>
+									<a
+										href={resolve('/notebooks/[id]', { id: String(book.id) })}
+										class="flex items-center gap-1.5 px-4 pt-2.5 pb-1 text-xs font-medium text-gray-600 hover:text-gray-900 hover:underline"
+									>
+										<Icon name="notebook" size={12} />
+										{book.title}
+									</a>
+									<div class="divide-y divide-gray-200">
+										{#each book.goals as goal (goal.id)}
+											{@render card(goal)}
+										{/each}
+									</div>
+								</div>
+							{/each}
 						</div>
-					</div>
+					</section>
 				{/each}
-			</Card>
-		{/each}
-	</div>
+			</div>
+		{/if}
+	</RoomSurface>
 
 	<GoalLinksModal
 		goal={linking}
@@ -637,10 +663,3 @@
 		onclose={() => (linkingId = null)}
 	/>
 </div>
-
-<style>
-	/* A rule across the card, not the top of a box: square at both ends. */
-	.notebook-rule {
-		border-radius: 0;
-	}
-</style>

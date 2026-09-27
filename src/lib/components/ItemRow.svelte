@@ -15,6 +15,7 @@
 	 */
 	import Icon from '$lib/components/Icon.svelte';
 	import RowCard from '$lib/components/RowCard.svelte';
+	import Counter from '$lib/components/Counter.svelte';
 	import { resolve } from '$app/paths';
 	import { enhance } from '$lib/enhance';
 	import { armed } from '$lib/actions/armed';
@@ -94,11 +95,6 @@
 		else ownConfirming = on;
 	}
 
-	const requantify =
-		() =>
-		async ({ update }: { update: (o?: object) => Promise<void> }) =>
-			await update({ reset: false });
-
 	function fieldsOf(raw: string | null | undefined): [string, string][] {
 		try {
 			return Object.entries(JSON.parse(raw || '{}') as Record<string, string>);
@@ -150,49 +146,33 @@
 				does not have, and a name that has run out of width breaks one letter per
 				line.
 			-->
-			<div class="flex w-9 shrink-0 flex-col items-center leading-none">
-				<form method="POST" action={actions.setQty} use:enhance={requantify} class="contents">
-					<input type="hidden" name="id" value={item.id} />
-					<input type="hidden" name="qty" value={item.qty + 1} />
-					<button
-						type="submit"
-						class="icon-btn h-5 w-9 text-base"
-						title={t('inventory.oneMore')}
-						aria-label={t('inventory.oneMore2', { name: item.name })}>+</button
-					>
-				</form>
-				<!--
-				"2" alone does not answer the question the list is for. Where you keep
-				more than one, the count you are measured against is written beside it,
-				so "two of four" is a glance rather than an arithmetic.
+			<!--
+				The count answers the press at once and is sent when the pressing stops,
+				and it is a field: five more is typing it, not five presses. See `Counter`.
+				Where you keep more than one, the count you are measured against is written
+				beside it, so "two of four" is a glance rather than an arithmetic.
 			-->
-				<span
-					class="tabular py-0.5 text-center text-sm whitespace-nowrap {item.qty >=
-					Math.max(item.idealQty, 1)
-						? 'text-blue-700'
-						: 'text-gray-900'}"
-					title={t('inventory.hereAndYou', {
-						name: item.name,
-						qty: item.qty,
-						idealQty: item.idealQty
-					})}
-				>
-					{item.qty}{#if item.idealQty > 1}<span class="text-xs text-gray-500"
-							>/{item.idealQty}</span
-						>{/if}
-				</span>
-				<form method="POST" action={actions.setQty} use:enhance={requantify} class="contents">
-					<input type="hidden" name="id" value={item.id} />
-					<input type="hidden" name="qty" value={Math.max(0, item.qty - 1)} />
-					<button
-						type="submit"
-						disabled={item.qty <= 0}
-						class="icon-btn h-5 w-9 text-base disabled:opacity-25"
-						title={t('inventory.oneFewer')}
-						aria-label={t('inventory.oneFewer2', { name: item.name })}>−</button
-					>
-				</form>
-			</div>
+			<Counter
+				vertical
+				value={item.qty}
+				action={actions.setQty}
+				name="qty"
+				fields={{ id: item.id }}
+				label={t('inventory.hereAndYou', {
+					name: item.name,
+					qty: item.qty,
+					idealQty: item.idealQty
+				})}
+				lessLabel={t('inventory.oneFewer2', { name: item.name })}
+				moreLabel={t('inventory.oneMore2', { name: item.name })}
+				valueClass={(qty) =>
+					qty >= Math.max(item.idealQty, 1) ? 'text-blue-700' : 'text-gray-900'}
+				class="w-9 shrink-0 leading-none"
+			>
+				{#snippet suffix()}
+					{#if item.idealQty > 1}<span class="text-xs text-gray-500">/{item.idealQty}</span>{/if}
+				{/snippet}
+			</Counter>
 		{/if}
 	{/snippet}
 

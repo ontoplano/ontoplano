@@ -118,13 +118,13 @@
 			{#if recipe.ingredients === 0}
 				<span class="text-gray-500">{t('health.recipes.nothingInItYet')}</span>
 			{:else if recipe.missing === 0}
-				<span class="text-teal-700">{t('health.recipes.youHaveEverything')}</span>
+				<!-- Blue for the good news and grey for the rest, never green and
+				     amber: a small word in either is one a red-green colourblind
+				     reader cannot tell apart. -->
+				<span class="font-medium text-blue-700">{t('health.recipes.youHaveEverything')}</span>
 			{:else}
-				<span class="text-amber-700"
-					>{t('health.recipes.missing', {
-						missing: recipe.missing,
-						ingredients: recipe.missing === 1 ? 'ingredient' : 'ingredients'
-					})}</span
+				<span class="font-medium text-gray-700"
+					>{t('health.recipes.missingCount', { count: recipe.missing })}</span
 				>
 			{/if}
 		</span>

@@ -74,8 +74,10 @@ test('records, keeps it under a name, renames it and deletes it', async ({ page 
 	 */
 	const only = page.locator('ul li').first();
 	await only.getByRole('button', { name: 'Rename' }).click();
-	await only.getByRole('textbox', { name: 'What to call it' }).fill('what I actually said');
-	await only.getByRole('button', { name: 'Save', exact: true }).click();
+	// The new name is asked for in a dialog, like every other form here.
+	const renaming = page.getByRole('dialog');
+	await renaming.getByRole('textbox', { name: 'What to call it' }).fill('what I actually said');
+	await renaming.getByRole('button', { name: 'Save', exact: true }).click();
 	await expect(page.locator('ul li').first()).toContainText('what I actually said');
 
 	// Deleting is asked in a dialog, and the dialog's own button answers it.

@@ -25,11 +25,9 @@ test('a day ending at midnight can be scrolled to midnight', async ({ page }) =>
 	// The hours somebody actually sets when they work late.
 	await visit(page, '/settings/preferences');
 	await page.locator('select[name="start"]').selectOption('6');
+	// Each select saves itself on change; wait for the second to land.
 	await page.locator('select[name="end"]').selectOption('24');
-	await page
-		.locator('form[action="?/saveGridHours"]')
-		.getByRole('button', { name: 'Save' })
-		.click();
+	await expect(page.getByText('Planner hours saved.').last()).toBeVisible();
 
 	await visit(page, '/tasks/plan');
 	const main = page.locator('.ec-main');

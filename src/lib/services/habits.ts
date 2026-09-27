@@ -6,6 +6,7 @@ import { localDateOf, type Ctx } from './ctx.js';
 import { created } from './time.js';
 import { NotFoundError } from './errors.js';
 import { notebookPatch } from './notebooks.js';
+import { MAX_DAY_COUNT } from '$lib/habit-heatmap';
 import { num, oneOf, optionalStr, str } from './validate.js';
 
 /**
@@ -23,6 +24,7 @@ export const MAX_NAME_LENGTH = 100;
 export const MAX_DESCRIPTION_LENGTH = 1000;
 export const MAX_NOTES_LENGTH = 1000;
 export const HISTORY_DAYS = 365;
+export { MAX_DAY_COUNT };
 
 const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -155,6 +157,45 @@ export function logOccurrence(
 	const notes = optionalStr(raw.notes, 'notes', { max: MAX_NOTES_LENGTH });
 
 	writeOccurrence(ctx, { habitId, date, notes });
+}
+
+/**
+ * A day's count, set outright.
+ *
+ * What the counter on a card sends once the pressing stops: the number the
+ * day should hold, never a step, so a repeated or late write cannot count
+ * twice. Going up adds blank occurrences; going down takes the newest ones
+ * back, which are the ones the presses just added.
+ */
+export function setDayCount(
+	ctx: Ctx,
+	raw: { habitId: unknown; date?: unknown; count: unknown }
+): void {
+	const habitId = ownedHabitId(ctx, raw.habitId);
+	const date = parseDate(ctx, raw.date);
+	const count = num(raw.count, 'count', { min: 0, max: MAX_DAY_COUNT, int: true });
+
+	db.transaction(() => {
+		const held = db
+			.select({ id: habitOccurrences.id })
+			.from(habitOccurrences)
+			.where(
+				and(
+					eq(habitOccurrences.habitId, habitId),
+					eq(habitOccurrences.date, date),
+					eq(habitOccurrences.userId, ctx.userId)
+				)
+			)
+			.orderBy(desc(habitOccurrences.id))
+			.all();
+
+		for (let i = held.length; i < count; i++) writeOccurrence(ctx, { habitId, date, notes: '' });
+		for (const one of held.slice(0, Math.max(held.length - count, 0))) {
+			db.delete(habitOccurrences)
+				.where(and(eq(habitOccurrences.id, one.id), eq(habitOccurrences.userId, ctx.userId)))
+				.run();
+		}
+	});
 }
 
 /**

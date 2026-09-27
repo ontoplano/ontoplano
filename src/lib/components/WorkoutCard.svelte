@@ -179,13 +179,13 @@
 					'health.workouts.aboutMinutes',
 					{ minutes: workout.minutes }
 				)}{/if}{#if workout.lastDoneAt}{t('health.workouts.lastDone', {
-					date: workout.lastDoneAt.slice(0, 10)
+					date: dayOf(workout.lastDoneAt.slice(0, 10))
 				})}{/if}
 		</span>
 	</RowCard>
 
 	{#if open}
-		<div class="mt-3 w-full space-y-3 border-t border-gray-100 pt-3">
+		<div class="mt-3 w-full space-y-3 border-t border-gray-200 pt-3">
 			<div class="text-sm whitespace-pre-wrap text-gray-700">
 				{#if workout.plan}{workout.plan}{:else}<span class="text-gray-500"
 						>{t('health.workouts.noPlanWrittenYet')}</span
@@ -199,9 +199,9 @@
 						on the same panel: somebody opening a workout to see what it asks
 						of them is the same person wondering what they managed last time.
 					-->
-			<div class="border-t border-gray-100 pt-3">
+			<div class="border-t border-gray-200 pt-3">
 				<div class="mb-2 flex items-center justify-between">
-					<h3 class="text-xs font-semibold tracking-wide text-gray-500 uppercase">
+					<h3 class="eyebrow text-gray-600">
 						{t('health.workouts.whatYouDid')}
 					</h3>
 					<button class="btn btn-sm" onclick={() => onlog?.(workout.id)}>

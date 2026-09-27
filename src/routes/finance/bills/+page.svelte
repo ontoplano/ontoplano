@@ -8,6 +8,10 @@
 	import { formatMoney, type Currency } from '$lib/money';
 	import type { PageServerData } from './$types';
 	import BillList from '$lib/components/BillList.svelte';
+	import RoomSurface from '$lib/components/RoomSurface.svelte';
+	import FilterBar from '$lib/components/FilterBar.svelte';
+	import ShowingCount from '$lib/components/ShowingCount.svelte';
+	import SearchField from '$lib/components/SearchField.svelte';
 	import { BILL_ROOM_ACTIONS } from '$lib/bill-action-names';
 	import { useT } from '$lib/i18n';
 
@@ -43,50 +47,111 @@
 			: t('finance.bills.amountUnder', { amount: money(-diff) });
 	}
 
+	/** Finding one bill by name, and whether the put-away ones are listed. */
+	let looking = $state('');
+	let showArchived = $state(false);
+	const needle = $derived(looking.trim().toLowerCase());
+	const shownBills = $derived(
+		needle === '' ? data.bills : data.bills.filter((b) => b.name.toLowerCase().includes(needle))
+	);
+	const putAway = $derived(data.bills.filter((b) => !b.active).length);
+	const showing = $derived(shownBills.filter((b) => b.active || showArchived).length);
+
 	/* This screen's one verb, drawn by the room's bar — see $lib/room-action. */
 	setRoomAction(() => ({ label: t('finance.bills.newBill'), run: () => list?.openNew() }));
 </script>
 
-<div class="space-y-5">
+<!--
+	One surface: what narrows the list along its top, the month at a glance
+	under it, and the bills edge to edge — the shape the task list has.
+-->
+<RoomSurface>
+	{#snippet tools()}
+		<FilterBar
+			name="bills"
+			on={needle !== '' || showArchived}
+			summary={[
+				looking.trim(),
+				showArchived ? t('finance.bills.archived', { length: putAway }) : ''
+			]
+				.filter(Boolean)
+				.join(', ')}
+			onclear={() => {
+				looking = '';
+				showArchived = false;
+			}}
+		>
+			{#snippet lead()}
+				<SearchField bind:value={looking} label={t('finance.bills.searchBills')} />
+			{/snippet}
+			{#snippet count()}
+				<ShowingCount
+					total={data.bills.length}
+					shown={showing}
+					said={(count) => t('finance.bills.showingCount', { count })}
+				/>
+			{/snippet}
+			<button
+				type="button"
+				onclick={() => (showArchived = !showArchived)}
+				aria-pressed={showArchived}
+				class="btn btn-sm"
+				hidden={putAway === 0 && !showArchived}
+			>
+				{t('finance.bills.archived', { length: putAway })}
+			</button>
+		</FilterBar>
+	{/snippet}
+
 	<!-- The month at a glance. -->
-	<div class="flex flex-wrap items-baseline gap-x-6 gap-y-1 rounded border border-gray-200 p-4">
+	<dl class="flex flex-wrap gap-x-8 gap-y-2 border-b border-gray-200 px-4 py-3">
 		<div>
-			<div class="text-xs text-gray-500">{t('finance.bills.expectedThisMonth')}</div>
-			<div class="text-lg font-semibold text-gray-900">{money(data.summary.expected)}</div>
+			<dt class="text-xs text-gray-500">{t('finance.bills.expectedThisMonth')}</dt>
+			<dd class="tabular text-lg font-semibold text-gray-900">{money(data.summary.expected)}</dd>
 		</div>
 		<div>
-			<div class="text-xs text-gray-500">{t('finance.bills.paidSoFar')}</div>
-			<div class="text-lg font-semibold text-gray-900">{money(data.summary.paid)}</div>
+			<dt class="text-xs text-gray-500">{t('finance.bills.paidSoFar')}</dt>
+			<dd class="tabular text-lg font-semibold text-gray-900">{money(data.summary.paid)}</dd>
 		</div>
 		<div>
-			<div class="text-xs text-gray-500">{t('finance.bills.difference')}</div>
-			<div class="text-lg font-semibold text-gray-900">{gapText(data.summary.difference)}</div>
+			<dt class="text-xs text-gray-500">{t('finance.bills.difference')}</dt>
+			<dd class="tabular text-lg font-semibold text-gray-900">
+				{gapText(data.summary.difference)}
+			</dd>
 		</div>
-	</div>
+	</dl>
 
 	<!--
 		The same list a notebook's Bills tab draws, with the same form: see
 		`BillList`. Only this room can point a payment at a statement line.
 	-->
-	<div class="rounded border border-gray-200">
-		<BillList
-			bind:this={list}
-			bills={data.bills}
-			{currency}
-			actions={BILL_ROOM_ACTIONS}
-			notebooks={data.notebooks}
-			onattach={(id) => (attaching = id)}
-		>
-			{#snippet empty()}
+	<BillList
+		bind:this={list}
+		bind:showArchived
+		archiveToggle={false}
+		bills={shownBills}
+		{currency}
+		actions={BILL_ROOM_ACTIONS}
+		notebooks={data.notebooks}
+		onattach={(id) => (attaching = id)}
+	>
+		{#snippet empty()}
+			{#if needle !== ''}
+				<EmptyState
+					icon="search"
+					title={t('todoRows.nothingToShow')}
+					description={t('finance.bills.noneMatch')}
+				/>
+			{:else}
 				<EmptyState
 					icon={routeGlyph('/finance/bills')!}
 					title={t('finance.bills.noBillsYet')}
 					description={t('finance.bills.theBillsYouExpectTo')}
 				/>
-			{/snippet}
-		</BillList>
-	</div>
-</div>
+			{/if}
+		{/snippet}
+	</BillList>
+</RoomSurface>
 
 <!--
 	Which line paid this bill.
@@ -98,7 +163,9 @@
 -->
 <Modal
 	open={attaching !== null}
-	title={attachingBill ? `What paid ${attachingBill.name}?` : t('finance.bills.whatPaidIt')}
+	title={attachingBill
+		? t('finance.bills.whatPaidName', { name: attachingBill.name })
+		: t('finance.bills.whatPaidIt')}
 	description={t('finance.bills.theAmountComesFromThe')}
 	onclose={() => {
 		attaching = null;

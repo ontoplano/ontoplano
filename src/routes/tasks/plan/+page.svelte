@@ -1,5 +1,7 @@
 <script lang="ts">
 	import Card from '$lib/components/Card.svelte';
+	import ShowingCount from '$lib/components/ShowingCount.svelte';
+	import SearchField from '$lib/components/SearchField.svelte';
 	import { pillStyle } from '$lib/pill-ink';
 	import RemindLead from '$lib/components/RemindLead.svelte';
 	import { dayOf, wantsTwelveHour } from '$lib/when';
@@ -9,6 +11,9 @@
 	import PickOne from '$lib/components/PickOne.svelte';
 	import Picker from '$lib/components/Picker.svelte';
 	import FilterBar from '$lib/components/FilterBar.svelte';
+	import RoomSurface from '$lib/components/RoomSurface.svelte';
+	import { sliding } from '$lib/actions/sliding';
+	import { phoneWidth } from '$lib/breakpoints.svelte';
 	import SortControl from '$lib/components/SortControl.svelte';
 	import TagFilterControl from '$lib/components/TagFilter.svelte';
 	import { NO_TAG_FILTER, isTagFiltering, passesTagFilter, type TagFilter } from '$lib/tag-filter';
@@ -831,6 +836,9 @@
 	 * the air: an affordance nobody can see is one nobody uses.
 	 */
 	let trayEl: HTMLElement | undefined = $state();
+	/** The strip's own row in the toolbar: a drop there counts too. */
+	let trayHeadEl: HTMLElement | undefined = $state();
+	const phone = phoneWidth();
 	let draggingBlock = $state(false);
 	/** The name of the block in the air, so the strip can show it arriving. */
 	let draggingBlockTitle = $state('');
@@ -838,6 +846,9 @@
 	let overTrayNow = $state(false);
 	/** Set when a drag ended on the strip, so `eventDrop` does not also act. */
 	let takenOffGrid = false;
+
+	/** The first day on screen in week view, as the nudge beside the date names it. */
+	const weekStartDay = $derived(weekdayNames[data.range.days[0]?.weekday ?? 0].slice(0, 3));
 
 	const dueToday = $derived(
 		data.todos.filter((t: { due: string | null }) => t.due === 'today').length
@@ -921,9 +932,9 @@
 
 	function overTray(jsEvent: Calendar.DomEvent | undefined): boolean {
 		const point = jsEvent as { clientX?: number; clientY?: number } | undefined;
-		if (!trayEl || point?.clientX === undefined || point.clientY === undefined) return false;
+		if (point?.clientX === undefined || point.clientY === undefined) return false;
 		const el = document.elementFromPoint(point.clientX, point.clientY);
-		return el !== null && trayEl.contains(el);
+		return el !== null && [trayEl, trayHeadEl].some((zone) => zone?.contains(el));
 	}
 
 	/*
@@ -2664,588 +2675,972 @@
 	{/if}
 
 	<!--
-		One bar.
+		The plan is one surface, the shape every room has: its controls as a
+		block along the top, a rule under them, the grid edge to edge below.
 
-		This was four stacked things: an arrow cluster, a view cluster, an add
-		cluster, and the date orphaned on a line of its own underneath — three
-		different alignments and, on a phone, two hundred pixels spent before the
-		grid began. Grouped by what they do instead: where you are on the left
-		(the date beside the arrows that move it, because that is what the eye is
-		already looking at when it reaches for them), what shape and what next on
-		the right. It wraps to two rows on a phone and holds one on a laptop.
+		The controls are two rows at most. Where you are and how much of it is
+		on screen on the first — ← date →, where the week begins, and on the
+		right the saved weeks and Day / Week / Month. What is waiting for a time
+		on the second, narrowed the way the task list narrows.
 	-->
-	<div class="flex flex-wrap items-center gap-x-4 gap-y-1 py-2" data-tour="plan-toolbar">
-		<!--
-			One block: ← date →, arrows hugging the date they move.
+	<RoomSurface>
+		{#snippet tools()}
+			<div class="flex w-full flex-wrap items-center gap-x-4 gap-y-2" data-tour="plan-toolbar">
+				<PeriodNav
+					unit={{
+						day: t('tasks.plan.day'),
+						week: t('tasks.plan.week'),
+						month: t('tasks.plan.month')
+					}[effectiveView]}
+					atNow={data.range.isCurrent}
+					prevDisabled={!data.range.prev}
+					onprev={goToPrevWeek}
+					onnext={goToNextWeek}
+					onnow={goToToday}
+					onwarm={warm}
+				>
+					<span class="truncate text-sm text-gray-700">
+						{#if effectiveView === 'month'}
+							{monthLabel(data.range.month)}
+						{:else if effectiveView === 'day'}
+							<!-- One day is one date. "Sep 1 — Sep 1" is a range with nothing
+							     in it, and it read as a bug every time. -->
+							{formatWeekDate(data.range.from)}
+							{#if data.range.isCurrent}<span class="text-gray-500">
+									{t('tasks.plan.today')}</span
+								>{/if}
+						{:else}
+							{formatWeekDate(data.range.from)} &mdash; {formatWeekDate(data.range.last)}
+							{#if data.range.isCurrent}
+								<span class="hidden text-gray-500 sm:inline"> {t('tasks.plan.next7Days')}</span>
+							{/if}
+						{/if}
+					</span>
+				</PeriodNav>
 
-			On a phone the block is the full row and the arrows go to its two
-			ends, thumb-sized, the direction being the side it is on. On a
-			desktop it stays compact — stretched, the right arrow ended up at the
-			far edge of a wide screen, a metre of nothing between it and the date
-			it belonged to.
-		-->
-		<PeriodNav
-			unit={{ day: t('tasks.plan.day'), week: t('tasks.plan.week'), month: t('tasks.plan.month') }[
-				effectiveView
-			]}
-			atNow={data.range.isCurrent}
-			prevDisabled={!data.range.prev}
-			onprev={goToPrevWeek}
-			onnext={goToNextWeek}
-			onnow={goToToday}
-			onwarm={warm}
-		>
-			<span class="truncate text-sm text-gray-600">
-				{#if effectiveView === 'month'}
-					{monthLabel(data.range.month)}
-				{:else if effectiveView === 'day'}
-					<!-- One day is one date. "Sep 1 — Sep 1" is a range with nothing
-					     in it, and it read as a bug every time. -->
-					{formatWeekDate(data.range.from)}
-					{#if data.range.isCurrent}<span class="text-gray-500"> {t('tasks.plan.today')}</span>{/if}
-				{:else}
-					{formatWeekDate(data.range.from)} &mdash; {formatWeekDate(data.range.last)}
-					{#if data.range.isCurrent}
-						<span class="hidden text-gray-500 sm:inline"> {t('tasks.plan.next7Days')}</span>
-					{/if}
+				<!--
+					Where the week begins, nudged a day at a time, beside the date it
+					changes.
+
+					The arrows beside the date step a whole week, which always lands on
+					the same weekday — so they can never answer *where does my week
+					start*. It names the day it starts on, in a slot as wide as the
+					longest name, so stepping it moves nothing. Only where seven days
+					are on screen: a single day has no first day, and neither does a
+					month.
+				-->
+				{#if effectiveView === 'week'}
+					<div class="flex shrink-0 items-center" data-tour="plan-week-start">
+						<button
+							type="button"
+							onclick={() => goToRange(data.range.backOne)}
+							class="icon-btn"
+							title={t('tasks.plan.startADayEarlier')}
+							aria-label={t('tasks.plan.startADayEarlier')}
+						>
+							<Icon name="chevron-left" />
+						</button>
+						<!-- "Starts Sun" where there is room, the day alone on a phone. -->
+						<span class="count-slot justify-items-center text-xs text-gray-500">
+							<span class="count-widest grid" aria-hidden="true">
+								{#each weekdayNames as name (name)}<span class="col-start-1 row-start-1">
+										<span class="sm:hidden">{name.slice(0, 3)}</span>
+										<span class="hidden sm:inline"
+											>{t('tasks.plan.startsOn', { day: name.slice(0, 3) })}</span
+										>
+									</span>{/each}
+							</span>
+							<span>
+								<span class="sm:hidden">{weekStartDay}</span>
+								<span class="hidden sm:inline"
+									>{t('tasks.plan.startsOn', { day: weekStartDay })}</span
+								>
+							</span>
+						</span>
+						<button
+							type="button"
+							onclick={() => goToRange(data.range.forwardOne)}
+							class="icon-btn"
+							title={t('tasks.plan.startADayLater')}
+							aria-label={t('tasks.plan.startADayLater')}
+						>
+							<Icon name="chevron-right" />
+						</button>
+					</div>
 				{/if}
-			</span>
-		</PeriodNav>
 
-		<!--
-			Where the week begins, nudged a day at a time.
-
-			The arrows beside the date step a whole week, which always lands on
-			the same weekday — so they can move you through time and never answer
-			*where does my week start*. A plan that begins on Saturday and one
-			that begins on Sunday are different weeks to the person living them.
-			Small, and beside the thing they move, because they are an adjustment
-			rather than a way of getting somewhere.
-
-			Only where seven days are on screen: on a single day this is the
-			arrow next to it, and a month has no first day to slide.
-		-->
-		{#if effectiveView === 'week'}
-			<!--
-				Centred in the space between the date and the view controls, on the
-				same line — never on a line of its own, which on a phone was four
-				rows of chrome between the tabs and the first hour of the day.
-			-->
-			<div
-				class="flex shrink-0 items-center justify-center gap-1 sm:flex-1"
-				data-tour="plan-week-start"
-			>
-				<span class="eyebrow hidden text-gray-500 lg:inline">{t('tasks.plan.weekStarts')}</span>
-				<button
-					type="button"
-					onclick={() => goToRange(data.range.backOne)}
-					class="icon-btn"
-					title={t('tasks.plan.startADayEarlier')}
-					aria-label={t('tasks.plan.startADayEarlier')}
+				<div
+					class="ml-auto flex shrink-0 items-center gap-2 {effectiveView === 'week'
+						? ''
+						: 'max-sm:w-full max-sm:justify-between'}"
 				>
-					<Icon name="chevron-left" />
-				</button>
-				<button
-					type="button"
-					onclick={() => goToRange(data.range.forwardOne)}
-					class="icon-btn"
-					title={t('tasks.plan.startADayLater')}
-					aria-label={t('tasks.plan.startADayLater')}
-				>
-					<Icon name="chevron-right" />
-				</button>
+					<!-- A saved shape of a week, loaded over this one: it opens a dialog,
+					     so it is a button beside the view, not a fourth position in it. -->
+					<button
+						type="button"
+						onclick={() => (schemesExpanded = true)}
+						aria-haspopup="dialog"
+						class="btn btn-sm shrink-0"
+						title={t('tasks.plan.savedShapesOfAWeek')}
+						aria-label={t('tasks.plan.schemes')}
+						data-tour="plan-schemes"
+					>
+						<Icon name="copy" size={14} />
+						<span class="hidden sm:inline">{t('tasks.plan.schemes')}</span>
+					</button>
+
+					<div use:sliding class="seg" role="group" aria-label={t('tasks.plan.howMuchToShow')}>
+						{#each [['day', t('tasks.plan.day')], ['week', t('tasks.plan.week')], ['month', t('tasks.plan.month')]] as [mode, label] (mode)}
+							<button
+								onclick={() => setView(mode as PlanView)}
+								aria-pressed={(pendingView ?? effectiveView) === mode}
+								title={t('tasks.plan.viewGCycles', { label: label })}>{label}</button
+							>
+						{/each}
+					</div>
+				</div>
+
+				<!--
+					The day picker, where there is more than one day to pick.
+
+					In day view the range is one day, so this drew a single full-width
+					button saying "Today" that moved nothing. The arrows above are what
+					moves the day; this is for a range that has several.
+				-->
+				{#if effectiveView === 'day' && data.range.days.length > 1}
+					<div
+						use:sliding
+						class="seg seg-fill basis-full"
+						role="group"
+						aria-label={t('tasks.plan.whichDay')}
+					>
+						{#each data.range.days as day, i (day.date)}
+							<button
+								onclick={() => (selectedOffset = i)}
+								aria-pressed={selectedOffset === i}
+								title={day.date}
+							>
+								{day.isToday ? t('app.today') : weekdayNames[day.weekday].slice(0, 3)}
+							</button>
+						{/each}
+					</div>
+				{/if}
 			</div>
+		{/snippet}
+
+		{#snippet filters()}
+			{#if data.todos.length > 0 || draggingBlock}
+				<!--
+					What is waiting for a time, narrowed the way the task list narrows
+					it. The fold is beside the search because it is the strip's own
+					switch: a staging area, not the plan, so it starts shut and the
+					grid keeps the top of the page. Dropping a block anywhere on this
+					row or the strip under it takes the block off the day.
+				-->
+				<div
+					bind:this={trayHeadEl}
+					class="flex w-full items-center gap-2 {draggingBlock
+						? 'outline-1 outline-offset-4 outline-gray-400 outline-dashed'
+						: ''}"
+					data-tour="plan-tray"
+				>
+					<button
+						type="button"
+						class="btn btn-sm shrink-0"
+						aria-expanded={todosOpen}
+						aria-controls="plan-tray-pills"
+						onclick={() => (todosOpen = !todosOpen)}
+					>
+						<Icon name={todosOpen ? 'chevron-down' : 'chevron-right'} size={14} />
+						{t('tasks.plan.toDo')}
+					</button>
+					<div class="min-w-0 flex-1">
+						<FilterBar
+							name="plan-tray"
+							on={trayNarrowed}
+							summary={trayNarrowed ? t('tasks.plan.trayNarrowed') : ''}
+							onclear={clearTray}
+							trailing={phone.current ? undefined : traySort}
+						>
+							{#snippet lead()}
+								<SearchField
+									bind:value={trayLooking}
+									oninput={() => (todosOpen = true)}
+									label={t('todoRows.searchTheseTasks')}
+								/>
+							{/snippet}
+							{#snippet count()}
+								<!-- How many are showing, in a slot as wide as the whole strip's
+								     count, so narrowing it moves nothing beside it. -->
+								<ShowingCount
+									total={data.todos.length}
+									shown={trayMatches.length}
+									said={(count) => t('todoRows.showingCount', { count })}
+								/>
+							{/snippet}
+							{#if dueToday > 0}
+								<!-- The reason to open the strip, said on it while it is shut. -->
+								<span class="shrink-0 text-xs text-gray-600">
+									{t('tasks.plan.countForToday', { count: dueToday })}
+								</span>
+							{/if}
+							<Picker
+								value={trayNotebook}
+								options={trayNotebooks}
+								onpick={(next) => {
+									trayNotebook = next;
+									todosOpen = true;
+								}}
+								label={t('ui.notebook')}
+								class="min-w-36 flex-1 sm:flex-none"
+							/>
+							{#if trayTagNames.length > 0 || isTagFiltering(trayTags)}
+								<TagFilterControl
+									tags={trayTagNames}
+									value={trayTags}
+									onchange={(next) => {
+										trayTags = next;
+										todosOpen = true;
+									}}
+									name="plan-tray-tags"
+									class="min-w-36 flex-1 sm:flex-none"
+								/>
+							{/if}
+							{#if phone.current}
+								{@render traySort()}
+							{/if}
+						</FilterBar>
+					</div>
+				</div>
+			{/if}
+		{/snippet}
+
+		{#if (data.todos.length > 0 || draggingBlock) && (todosOpen || draggingBlock)}
+			<section bind:this={trayEl} class="border-b border-gray-200">
+				<!-- A few rows of pills and the rest behind a scroll, so the strip is
+				     never taller than a glance. -->
+				<div id="plan-tray-pills" class="max-h-44 overflow-y-auto p-3">
+					<div class="flex flex-wrap items-stretch gap-2">
+						{#if draggingBlock && overTrayNow}
+							<span
+								class="border border-dashed border-gray-400 bg-gray-100 px-3 py-2 text-sm text-gray-500 italic"
+							>
+								{draggingBlockTitle}
+							</span>
+						{/if}
+						{#each trayMatches.slice(0, TRAY_SHOWN) as todo (todo.id)}
+							<button
+								type="button"
+								draggable="true"
+								onclick={() => (placingTodoId = placingTodoId === todo.id ? null : todo.id)}
+								ondragstart={(e) => {
+									placingTodoId = null;
+									dragTodoId = todo.id;
+									e.dataTransfer?.setData('text/plain', String(todo.id));
+									if (e.dataTransfer) e.dataTransfer.effectAllowed = 'move';
+								}}
+								ondragend={() => {
+									dragTodoId = null;
+									dropPreview = null;
+								}}
+								class="lift flex max-w-72 cursor-grab flex-col items-start gap-1 px-3 py-2 text-left text-sm shadow-card {placingTodoId ===
+								todo.id
+									? 'on-fill'
+									: todo.categoryColor
+										? 'pill-soft'
+										: todo.due
+											? 'border border-gray-400 bg-white text-gray-900'
+											: 'border border-gray-200 bg-white text-gray-800'} {dragTodoId === todo.id
+									? 'opacity-40'
+									: ''}"
+								style={todo.categoryColor && placingTodoId !== todo.id
+									? pillStyle(todo.categoryColor)
+									: ''}
+								title={t('tasks.plan.dragOntoTheGridOr')}
+							>
+								<span class="line-clamp-2 font-medium">{todo.title}</span>
+								<!-- What it is filed under and when it is owed, in words: which
+								     of these is for today is the reason to open the strip. -->
+								<span class="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs opacity-80">
+									{#if todo.due === 'today'}
+										<span class="tracking-wide uppercase">{t('tasks.plan.today2')}</span>
+									{:else if todo.due === 'overdue'}
+										<span class="tracking-wide uppercase">{t('tasks.plan.owed')}</span>
+									{/if}
+									{#if todo.notebookTitle}
+										<span class="inline-flex items-center gap-1">
+											<Icon name="notebook" size={12} />{todo.notebookTitle}
+										</span>
+									{/if}
+									{#each todo.tags as tag (tag.id)}<span>#{tag.name}</span>{/each}
+								</span>
+							</button>
+						{:else}
+							{#if !draggingBlock}
+								<p class="text-sm text-gray-500">{t('tasks.plan.trayNothingMatches')}</p>
+							{/if}
+						{/each}
+					</div>
+					{#if trayMatches.length > TRAY_SHOWN}
+						<p class="mt-2 text-xs text-gray-500">
+							{t('tasks.plan.trayMore', { count: trayMatches.length - TRAY_SHOWN })}
+						</p>
+					{/if}
+					<div class="mt-2 flex flex-wrap items-center gap-2">
+						{#if draggingBlock}
+							<span class="text-xs text-gray-600">{t('tasks.plan.dropHereToTakeIt')}</span>
+						{:else if placingTodo}
+							<span class="text-xs text-gray-600"
+								>{t('tasks.plan.nowTapATimeFor', { title: placingTodo.title })}</span
+							>
+							<button
+								type="button"
+								class="text-xs text-gray-500 underline"
+								onclick={() => (placingTodoId = null)}>{t('tasks.plan.cancel')}</button
+							>
+						{:else}
+							<span class="hidden text-xs text-gray-500 sm:inline">
+								{t('tasks.plan.dragOntoTheGridTo')}
+							</span>
+							<span class="text-xs text-gray-500 sm:hidden">{t('tasks.plan.tapOneThenTapA')}</span>
+						{/if}
+					</div>
+				</div>
+			</section>
 		{/if}
 
 		<!--
-			Pinned right, and on a phone it shares the second line with the week's
-			own nudge rather than taking one of its own.
+			A month gets more height than the window, on purpose.
+
+			Six rows inside 70vh is about a hundred pixels each, which fits three
+			events and then says "+2 more" for the rest of what the day holds — the
+			grid ends up describing itself instead of the month. It is taller than the
+			viewport and the page scrolls, which is the trade every calendar makes.
 		-->
-		<div class="ml-auto flex flex-1 items-center justify-between gap-2 sm:flex-none sm:justify-end">
-			<!--
-				Schemes: a saved shape of a week, loaded over this one. Here rather
-				than on a line of its own because it is a control, and a control
-				belongs with the other controls.
-			-->
-			<!--
-				Quiet, and with a glyph, because it is not one of the three beside
-				it.
+		<div
+			bind:this={gridWrap}
+			data-tour="plan-grid"
+			class="plan-grid relative {effectiveView === 'month'
+				? 'h-[calc(100dvh-12rem)] min-h-[54rem]'
+				: gridDays === 1
+					? 'h-[62vh]'
+					: 'h-[70vh]'}"
+			use:gridZoomWheel
+			use:selectionSurface
+			ondragover={(e) => {
+				if (dragTodoId === null) return;
+				e.preventDefault();
+				dropPreview = dropTarget(e);
+			}}
+			ondragleave={() => (dropPreview = null)}
+			ondrop={onTodoDrop}
+			onpointerdowncapture={onGridPointerDown}
+			onpointerupcapture={onGridPointerUp}
+			onpointermovecapture={onGridPointerMove}
+			onpointercancelcapture={cancelHold}
+			role="application"
+		>
+			{#if marqueeRect}
+				<!-- Drawn over the grid rather than inside it, so it can span
+					     columns without the calendar reflowing anything. -->
+				<div
+					class="pointer-events-none absolute z-30 border-2 border-gray-900 bg-gray-900/10"
+					style="left:{marqueeRect.left}px; top:{marqueeRect.top}px; width:{marqueeRect.width}px; height:{marqueeRect.height}px"
+				></div>
+			{/if}
 
-				Drawn as a plain button it read as a fourth position in the
-				segmented control next to it — four things of the same size and
-				shape, one of which opens a panel and three of which change what
-				you are looking at. The icon and the lack of a face say which
-				kind of thing it is before the word is read.
-			-->
-			<button
-				type="button"
-				onclick={() => {
-					schemesExpanded = !schemesExpanded;
-					if (!schemesExpanded) {
-						confirmingLoadSchemeId = null;
-						confirmingDeleteSchemeId = null;
-					}
-				}}
-				aria-expanded={schemesExpanded}
-				aria-controls="plan-schemes-panel"
-				class="btn btn-sm btn-quiet shrink-0"
-				title={t('tasks.plan.savedShapesOfAWeek')}
-			>
-				<Icon name="copy" size={14} />
-				{t('tasks.plan.schemes')}
-			</button>
+			{#if selectedEventIds.size > 1}
+				<div
+					class="pointer-events-none absolute bottom-2 left-2 z-30 border border-gray-300 bg-white px-2 py-1 text-xs text-gray-700 shadow-card"
+				>
+					{t('tasks.plan.selectedDragOne', { size: selectedEventIds.size })}
+				</div>
+			{/if}
 
-			<div class="seg" role="group" aria-label={t('tasks.plan.howMuchToShow')}>
-				{#each [['day', t('tasks.plan.day')], ['week', t('tasks.plan.week')], ['month', t('tasks.plan.month')]] as [mode, label] (mode)}
-					<button
-						onclick={() => setView(mode as PlanView)}
-						aria-pressed={(pendingView ?? effectiveView) === mode}
-						title={t('tasks.plan.viewGCycles', { label: label })}>{label}</button
+			{#if dropPreview?.box}
+				<!--
+					The todo, drawn as the block it is about to become.
+
+					This was a chip in the corner reading the date and the time, which is
+					a sentence to read while your hand is holding a drag. The shape in
+					the right place answers the same question with nothing to read.
+				-->
+				<div
+					class="pointer-events-none absolute z-20 overflow-hidden border-2 border-dashed border-gray-500 bg-gray-500/15"
+					style="left:{dropPreview.box.left}px; top:{dropPreview.box.top}px; width:{dropPreview.box
+						.width}px; height:{dropPreview.box.height}px"
+				>
+					<span class="tabular block px-1 text-[0.65rem] leading-tight text-gray-700">
+						{dropPreview.startTime}
+						{dragTodoTitle}
+					</span>
+				</div>
+			{/if}
+			{#if browser && widthChecked}
+				<Calendar bind:this={ec} plugins={[TimeGrid, DayGrid, Interaction]} options={gridOptions} />
+			{/if}
+
+			<!--
+				The wash that says the next week is on its way.
+
+				Over the grid and nothing else, because the grid is the only part
+				about to change — and `pointer-events: none` so it is a statement
+				rather than a shutter: a press that lands during it still lands.
+			-->
+			{#if waiting}
+				<div class="grid-waiting" aria-hidden="true"></div>
+			{/if}
+		</div>
+		<div
+			class="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 border-t border-gray-200 px-4 py-2"
+		>
+			<!--
+				All of this is mouse-and-keyboard advice — drag, Ctrl, scroll — so a
+				touch screen has no use for it, and `kbd-hint` is what hides a thing on a
+				coarse pointer. It was squeezing the zoom control beside it into a
+				one-letter-per-line ribbon on a phone, to say something the phone cannot
+				do.
+			-->
+			<!-- The touch equivalent, said where a touch screen will see it — the
+			     line below is hidden on a coarse pointer, and used to be the only
+			     place the grid explained how to make a block. -->
+			<p class="hidden text-xs text-gray-500 [@media(pointer:coarse)]:block">
+				{t('tasks.plan.pressAndHoldOnThe')}
+			</p>
+			<p class="kbd-hint min-w-0 flex-1 text-xs text-gray-500">
+				{t('tasks.plan.dragToCreateDrag')}
+				<kbd class="border border-gray-300 bg-gray-50 px-1 text-gray-700"
+					>{t('tasks.plan.ctrl')}</kbd
+				>
+				{t('tasks.plan.whileDraggingToDuplicateOr')}
+				<kbd class="border border-gray-300 bg-gray-50 px-1 text-gray-700">{t('tasks.plan.alt')}</kbd
+				>
+				{t('tasks.plan.toMoveOrResizeJust')}
+				<kbd class="border border-gray-300 bg-gray-50 px-1 text-gray-700"
+					>{t('tasks.plan.shift')}</kbd
+				>
+				{t('tasks.plan.dragToSelectSeveralThen')}
+				<kbd class="border border-gray-300 bg-gray-50 px-1 text-gray-700"
+					>{t('tasks.plan.ctrl')}</kbd
+				>+<kbd class="border border-gray-300 bg-gray-50 px-1 text-gray-700">Z</kbd>
+				{t('tasks.plan.undoesSnapsTo15min')}
+			</p>
+			<div class="flex shrink-0 items-center gap-1">
+				<span class="mr-1 text-xs whitespace-nowrap text-gray-500">
+					{t('tasks.plan.zoom')}
+					<span class="kbd-hint"
+						>(<kbd class="border border-gray-300 bg-gray-50 px-1 text-gray-700"
+							>{t('tasks.plan.ctrl')}</kbd
+						>{t('tasks.plan.scroll')}</span
 					>
-				{/each}
+				</span>
+				<!--
+					The design pass replaced white-with-a-border-and-a-shadow everywhere
+					except here, so this one control was still wearing the old clothes.
+					A stepper is two quiet square buttons around the value they change,
+					and the value is the reset.
+				-->
+				<button
+					type="button"
+					onclick={() => setZoom(zoomIndex - 1)}
+					disabled={zoomIndex === 0}
+					title={t('tasks.plan.zoomOut2')}
+					aria-label={t('tasks.plan.zoomOut')}
+					class="icon-btn disabled:cursor-not-allowed disabled:opacity-30">&minus;</button
+				>
+				<button
+					type="button"
+					onclick={() => setZoom(GRID_DEFAULT_ZOOM_INDEX)}
+					title={t('tasks.plan.resetZoom0')}
+					class="btn btn-sm tabular"
+					>{Math.round((slotHeight / GRID_ZOOM_LEVELS[GRID_DEFAULT_ZOOM_INDEX]) * 100)}%</button
+				>
+				<button
+					type="button"
+					onclick={() => setZoom(zoomIndex + 1)}
+					disabled={zoomIndex === GRID_ZOOM_LEVELS.length - 1}
+					title={t('tasks.plan.zoomIn2')}
+					aria-label={t('tasks.plan.zoomIn')}
+					class="icon-btn disabled:cursor-not-allowed disabled:opacity-30">+</button
+				>
 			</div>
 		</div>
-	</div>
+	</RoomSurface>
 
 	<!--
-		The panel, when it is open. The control that opens it is in the toolbar.
-
-		It had a line of its own above the grid, reading "SCHEMES  SHOW" — two
-		uppercase words with a gap, which is not a control, it is a label that
-		looks broken. And it was one of six things stacked between the tabs and
-		the first hour of the week, for something most people open once a month.
+		Saved weeks, calendars from elsewhere, the starter weeks and a CSV: the
+		things that lay a whole plan down at once, in one dialog. It opens over
+		the grid rather than pushing it down, and most people open it once a
+		month.
 	-->
-	<div
-		class:border={schemesExpanded}
-		class:border-gray-200={schemesExpanded}
-		class:bg-white={schemesExpanded}
-		class:shadow-card={schemesExpanded}
-		data-tour="plan-schemes"
-		id="plan-schemes-panel"
+	<Modal
+		bind:open={schemesExpanded}
+		title={t('tasks.plan.schemes')}
+		size="lg"
+		onclose={() => {
+			confirmingLoadSchemeId = null;
+			confirmingDeleteSchemeId = null;
+			confirmingTemplate = null;
+		}}
 	>
-		{#if schemesExpanded}
-			<div class="space-y-4 border-t border-gray-200 px-4 py-4">
-				<form
-					method="post"
-					action="?/saveScheme"
-					use:enhance={() => {
-						return async ({ result, update }) => {
-							await update();
-							if (result.type === 'success') {
-								newSchemeName = '';
-							}
-						};
-					}}
-					class="space-y-2"
-				>
-					<div class="text-sm font-medium text-gray-900">
-						{t('tasks.plan.saveCurrentPlanAsScheme')}
-					</div>
-					<!-- What a scheme is, once, where it is made. Saying it here is
-					     what makes the Load button's warning short enough to read. -->
-					<p class="text-xs text-gray-500">
-						{t('tasks.plan.aSchemeIsYourRepeating')}
-					</p>
-					<div class="flex gap-2">
-						<OneLine
-							name="label"
-							placeholder={t('tasks.plan.schemeName')}
-							bind:value={newSchemeName}
-							class="flex-1 border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
-							required
-							autofocus
-						/>
-						<button type="submit" class="btn btn-primary"> {t('ui.save')} </button>
-					</div>
-				</form>
+		<div class="space-y-4" id="plan-schemes-panel">
+			<form
+				method="post"
+				action="?/saveScheme"
+				use:enhance={() => {
+					return async ({ result, update }) => {
+						await update();
+						if (result.type === 'success') {
+							newSchemeName = '';
+						}
+					};
+				}}
+				class="space-y-2"
+			>
+				<div class="text-sm font-medium text-gray-900">
+					{t('tasks.plan.saveCurrentPlanAsScheme')}
+				</div>
+				<!-- What a scheme is, once, where it is made. Saying it here is
+				     what makes the Load button's warning short enough to read. -->
+				<p class="text-xs text-gray-500">
+					{t('tasks.plan.aSchemeIsYourRepeating')}
+				</p>
+				<div class="flex gap-2">
+					<OneLine
+						name="label"
+						placeholder={t('tasks.plan.schemeName')}
+						bind:value={newSchemeName}
+						class="input min-w-0 flex-1"
+						required
+						autofocus
+					/>
+					<button type="submit" class="btn btn-primary"> {t('ui.save')} </button>
+				</div>
+			</form>
 
-				<Card flush>
-					<div class="eyebrow border-b border-gray-200 px-4 py-2.5 text-gray-500">
-						{t('tasks.plan.savedSchemes')}
+			<Card flush>
+				<div class="eyebrow border-b border-gray-200 px-4 py-2.5 text-gray-500">
+					{t('tasks.plan.savedSchemes')}
+				</div>
+				{#if data.schemes.length === 0}
+					<div class="px-3">
+						<EmptyState icon="calendar" title={t('tasks.plan.noSchemesSavedYet')} compact />
 					</div>
-					{#if data.schemes.length === 0}
-						<div class="px-3">
-							<EmptyState icon="calendar" title={t('tasks.plan.noSchemesSavedYet')} compact />
-						</div>
-					{:else}
-						<div class="divide-y divide-gray-200">
-							{#each data.schemes as scheme (scheme.id)}
-								<!--
-									Two rows on a phone, one on a desktop.
+				{:else}
+					<div class="divide-y divide-gray-200">
+						{#each data.schemes as scheme (scheme.id)}
+							<!--
+								Two rows on a phone, one on a desktop.
 
-									It was a single flex row — name, Rename, Load, Delete — and on
-									a narrow screen the name was the only thing that could give,
-									so it collapsed to a sliver and the schemes were a list of
-									identical unlabelled rows. The name is what somebody is
-									choosing between, so it gets its own line where there is not
-									room for both.
-								-->
-								<div class="space-y-2 px-4 py-3 sm:flex sm:items-center sm:gap-4 sm:space-y-0">
-									<form method="post" action="?/renameScheme" use:enhance class="min-w-0 sm:flex-1">
-										<input type="hidden" name="schemeId" value={scheme.id} />
+								It was a single flex row — name, Rename, Load, Delete — and on
+								a narrow screen the name was the only thing that could give,
+								so it collapsed to a sliver and the schemes were a list of
+								identical unlabelled rows. The name is what somebody is
+								choosing between, so it gets its own line where there is not
+								room for both.
+							-->
+							<div class="space-y-2 px-4 py-3 sm:flex sm:items-center sm:gap-4 sm:space-y-0">
+								<form method="post" action="?/renameScheme" use:enhance class="min-w-0 sm:flex-1">
+									<input type="hidden" name="schemeId" value={scheme.id} />
+									<div class="flex gap-2">
+										<OneLine
+											name="label"
+											value={scheme.name}
+											class="input w-full min-w-0"
+											required
+											ariaLabel="Name of this scheme"
+										/>
+										<button
+											type="submit"
+											class="icon-btn shrink-0"
+											title={t('ui.rename')}
+											aria-label={t('ui.rename')}
+										>
+											<Icon name="check" />
+										</button>
+									</div>
+								</form>
+
+								{#if confirmingLoadSchemeId === scheme.id}
+									<!--
+										The warning as a sentence, and the button as a button.
+
+										It used to BE the button — a paragraph of text in a control,
+										which on a phone was a long dark slab lying across the row
+										and half of the one under it. The words still have to be
+										read before it is pressed; they just are not a target.
+									-->
+									<div class="min-w-0 sm:shrink-0">
+										<p class="mb-1.5 text-xs text-gray-500">
+											{t('tasks.plan.replacesYourRepeatingWeekOneOff')}
+										</p>
 										<div class="flex gap-2">
-											<OneLine
-												name="label"
-												value={scheme.name}
-												class="w-full min-w-0 border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
-												required
-												ariaLabel="Name of this scheme"
-											/>
-											<button type="submit" class="btn shrink-0"> {t('ui.rename')} </button>
-										</div>
-									</form>
-
-									{#if confirmingLoadSchemeId === scheme.id}
-										<!--
-											The warning as a sentence, and the button as a button.
-
-											It used to BE the button — a paragraph of text in a control,
-											which on a phone was a long dark slab lying across the row
-											and half of the one under it. The words still have to be
-											read before it is pressed; they just are not a target.
-										-->
-										<div class="min-w-0 sm:shrink-0">
-											<p class="mb-1.5 text-xs text-gray-500">
-												{t('tasks.plan.replacesYourRepeatingWeekOneOff')}
-											</p>
-											<div class="flex gap-2">
-												<form
-													method="post"
-													action="?/loadScheme"
-													use:enhance={() => {
-														return async ({ update }) => {
-															await update({ reset: false });
-															confirmingLoadSchemeId = null;
-														};
-													}}
-												>
-													<input type="hidden" name="schemeId" value={scheme.id} />
-													<button
-														type="submit"
-														class="btn border-blue-200 text-blue-600 hover:bg-blue-50"
-													>
-														{t('tasks.plan.loadIt')}
-													</button>
-												</form>
-												<button
-													type="button"
-													onclick={() => (confirmingLoadSchemeId = null)}
-													class="btn"
-												>
-													{t('ui.cancel')}
-												</button>
-											</div>
-										</div>
-									{:else if confirmingDeleteSchemeId === scheme.id}
-										<div class="flex shrink-0 items-center gap-2">
 											<form
 												method="post"
-												action="?/deleteScheme"
+												action="?/loadScheme"
 												use:enhance={() => {
 													return async ({ update }) => {
 														await update({ reset: false });
-														confirmingDeleteSchemeId = null;
+														confirmingLoadSchemeId = null;
 													};
 												}}
 											>
 												<input type="hidden" name="schemeId" value={scheme.id} />
-												<button
-													type="submit"
-													class="border border-red-300 bg-red-50 px-3 py-2 text-sm font-medium text-red-700 shadow-sm transition hover:bg-red-100"
-													use:armed
-												>
-													{t('tasks.plan.deleteIt')}
+												<button type="submit" class="btn btn-primary">
+													{t('tasks.plan.loadIt')}
 												</button>
 											</form>
 											<button
 												type="button"
-												onclick={() => (confirmingDeleteSchemeId = null)}
+												onclick={() => (confirmingLoadSchemeId = null)}
 												class="btn"
 											>
 												{t('ui.cancel')}
 											</button>
 										</div>
-									{:else}
-										<div class="flex shrink-0 items-center gap-2">
-											<button
-												type="button"
-												onclick={() => {
-													confirmingLoadSchemeId = scheme.id;
+									</div>
+								{:else if confirmingDeleteSchemeId === scheme.id}
+									<div class="flex shrink-0 items-center gap-2">
+										<form
+											method="post"
+											action="?/deleteScheme"
+											use:enhance={() => {
+												return async ({ update }) => {
+													await update({ reset: false });
 													confirmingDeleteSchemeId = null;
-												}}
-												class="btn"
-											>
-												{t('tasks.plan.load')}
-											</button>
-											<button
-												title={t('ui.delete')}
-												aria-label={t('tasks.plan.delete', { name: scheme.name })}
-												type="button"
-												onclick={() => {
-													confirmingDeleteSchemeId = scheme.id;
-													confirmingLoadSchemeId = null;
-												}}
-												class="btn btn-danger"
-											>
-												<Icon name="trash" />
-											</button>
-										</div>
-									{/if}
-								</div>
-							{/each}
-						</div>
-					{/if}
-				</Card>
-
-				<!--
-					Calendars somebody else controls.
-
-					Read-only and one-way on purpose: an `.ics` address needs no OAuth
-					and stores no token that could be stolen, and it is the one thing
-					Google, Outlook, Fastmail and Nextcloud all agree on. In Google
-					Calendar it is Settings → your calendar → "Secret address in iCal
-					format".
-				-->
-				<!--
-					Folded to begin with.
-
-					Subscribing to a calendar is a thing somebody does once, and the
-					panel is a paragraph of instructions and three fields — which sat
-					under the schemes, open, every time the drawer was opened for the
-					schemes. It is not the reason anybody comes here.
-				-->
-				<Card flush>
-					<button
-						type="button"
-						onclick={() => (calendarsOpen = !calendarsOpen)}
-						class="eyebrow flex w-full items-center gap-1.5 border-b border-gray-200 px-4 py-2.5 text-left text-gray-500 hover:text-gray-900"
-						aria-expanded={calendarsOpen}
-					>
-						<Icon name={calendarsOpen ? 'chevron-down' : 'chevron-right'} size={14} />
-						{t('tasks.plan.calendarsYouSubscribeTo')}
-						{#if data.feeds.length > 0}
-							<span class="text-gray-500">({data.feeds.length})</span>
-						{/if}
-					</button>
-					{#if calendarsOpen}
-						{#if data.feeds.length === 0}
-							<div class="px-3">
-								<EmptyState
-									icon="calendar"
-									title={t('tasks.plan.noCalendarsSubscribedYet')}
-									compact
-								/>
-							</div>
-						{:else}
-							<ul class="divide-y divide-gray-200">
-								{#each data.feeds as feed (feed.id)}
-									<li class="flex flex-wrap items-center gap-3 px-4 py-3">
-										<Swatch color={feed.color} />
-										<div class="min-w-0 flex-1">
-											<p class="truncate text-sm text-gray-900">{feed.name}</p>
-											{#if feed.lastError}
-												<p class="truncate text-xs text-amber-700">
-													{t('tasks.plan.lastFetchFailed', { lastError: feed.lastError })}
-												</p>
-											{:else if feed.fetchedAt}
-												<p class="text-xs text-gray-500">
-													{t('tasks.plan.read', {
-														t: feed.fetchedAt.slice(0, 16).replace('T', ' ')
-													})}
-												</p>
-											{/if}
-										</div>
-										<form method="post" action="?/removeCalendar" use:enhance class="shrink-0">
-											<input type="hidden" name="id" value={feed.id} />
-											<button
-												class="btn btn-danger btn-sm"
-												title={t('tasks.plan.stopSubscribing')}
-												aria-label={t('tasks.plan.stopSubscribingTo', { name: feed.name })}
-												use:armed
-											>
-												<Icon name="trash" size={14} />
+												};
+											}}
+										>
+											<input type="hidden" name="schemeId" value={scheme.id} />
+											<button type="submit" class="btn btn-danger" use:armed>
+												{t('tasks.plan.deleteIt')}
 											</button>
 										</form>
-									</li>
-								{/each}
-							</ul>
-						{/if}
-
-						<form
-							method="post"
-							action="?/addCalendar"
-							use:enhance
-							class="border-t border-gray-200 p-4"
-						>
-							<!--
-							The address gets a line of its own on a phone.
-
-							Four controls on one row left it about two characters wide —
-							long enough to show "ht" of an iCal URL, which is the one field
-							here nobody can type from memory and everybody pastes.
-						-->
-							<div class="flex flex-wrap gap-2">
-								<input
-									autocomplete="off"
-									name="url"
-									type="url"
-									placeholder={t('tasks.plan.httpsCalendarGoogleComCalendarIcalBasicI')}
-									required
-									class="input w-full min-w-0 sm:order-2 sm:w-auto sm:flex-1"
-									aria-label={t('tasks.plan.theCalendarSIcalAddress')}
-								/>
-								<OneLine
-									name="label"
-									placeholder={t('tasks.plan.work')}
-									class="input w-32 sm:order-1"
-									required
-									ariaLabel="What to call it"
-								/>
-								<input
-									name="color"
-									type="color"
-									value="#6b7280"
-									class="h-10 w-12 border border-gray-300 sm:order-3"
-									aria-label={t('ui.colour')}
-								/>
-								<button
-									class="btn btn-primary sm:order-4"
-									title={t('tasks.plan.subscribe')}
-									aria-label={t('tasks.plan.subscribe')}
-								>
-									<Icon name="plus" />
-								</button>
-							</div>
-							<p class="mt-2 text-xs text-gray-500">
-								{t('tasks.plan.inGoogleCalendarSettings')}
-							</p>
-						</form>
-					{/if}
-				</Card>
-
-				<!--
-					The starter weeks, still available.
-
-					These were offered once during onboarding and then never again, so
-					anybody who skipped that step — or whose life changed in March — had
-					no way back to them. Same three weeks, same application, behind the
-					same confirmation as loading a scheme, because it replaces the plan.
-				-->
-				<Card flush>
-					<div class="eyebrow border-b border-gray-200 px-4 py-2.5 text-gray-500">
-						{t('tasks.plan.startFromATemplate')}
-					</div>
-					<div class="divide-y divide-gray-200">
-						{#each data.templates as template (template.key)}
-							<div class="flex items-center gap-4 px-4 py-3">
-								<div class="min-w-0 flex-1">
-									<p class="text-sm font-medium text-gray-900">{template.label}</p>
-									<p class="text-xs text-gray-500">{template.description}</p>
-								</div>
-								<form
-									method="post"
-									action="?/applyTemplate"
-									use:enhance={() => {
-										return async ({ update }) => {
-											await update({ reset: false });
-											confirmingTemplate = null;
-										};
-									}}
-									class="shrink-0"
-								>
-									<input type="hidden" name="key" value={template.key} />
-									{#if confirmingTemplate === template.key}
-										<button type="submit" class="btn btn-danger" use:armed>
-											{t('tasks.plan.thisReplacesYourPlanContinue')}
+										<button
+											type="button"
+											onclick={() => (confirmingDeleteSchemeId = null)}
+											class="btn"
+										>
+											{t('ui.cancel')}
 										</button>
-									{:else}
+									</div>
+								{:else}
+									<div class="flex shrink-0 items-center gap-2">
 										<button
 											type="button"
 											onclick={() => {
-												confirmingTemplate = template.key;
-												confirmingLoadSchemeId = null;
+												confirmingLoadSchemeId = scheme.id;
 												confirmingDeleteSchemeId = null;
 											}}
 											class="btn"
 										>
-											{t('tasks.plan.use')}
+											{t('tasks.plan.load')}
 										</button>
-									{/if}
-								</form>
+										<button
+											title={t('ui.delete')}
+											aria-label={t('tasks.plan.delete', { name: scheme.name })}
+											type="button"
+											onclick={() => {
+												confirmingDeleteSchemeId = scheme.id;
+												confirmingLoadSchemeId = null;
+											}}
+											class="icon-btn icon-btn-danger"
+										>
+											<Icon name="trash" />
+										</button>
+									</div>
+								{/if}
 							</div>
 						{/each}
 					</div>
-				</Card>
-			</div>
-		{/if}
-	</div>
+				{/if}
+			</Card>
 
-	{#if showCopyPanel}
-		<Card>
-			<h3 class="mb-3 text-sm font-medium text-gray-900">{t('tasks.plan.copyToDays')}</h3>
-			<form
-				method="post"
-				action="?/copyToWeekdays"
-				use:enhance={() => {
-					return async ({ update }) => {
-						await update({ reset: false });
-						showCopyPanel = false;
-						multiselect = false;
-						selectedIds = new Set();
-					};
-				}}
-			>
-				<input type="hidden" name="ids" value={[...selectedIds].join(',')} />
-				<input type="hidden" name="targetDays" value={[...copyTargetDays].join(',')} />
-				<div class="mb-3 flex flex-wrap gap-2">
-					{#each weekdayNames as day, i (i)}
-						<label
-							class="flex items-center gap-1.5 px-2 py-1 text-sm {selectedWeekday === i
-								? 'cursor-not-allowed text-gray-500'
-								: 'cursor-pointer text-gray-700 hover:bg-gray-50'}"
-						>
-							<input
-								type="checkbox"
-								checked={copyTargetDays.has(i)}
-								disabled={selectedWeekday === i}
-								onchange={() => {
-									if (copyTargetDays.has(i)) {
-										copyTargetDays = new Set([...copyTargetDays].filter((x) => x !== i));
-									} else {
-										copyTargetDays = new Set([...copyTargetDays, i]);
-									}
-								}}
-								class="sr-only"
+			<!--
+				Calendars somebody else controls.
+
+				Read-only and one-way on purpose: an `.ics` address needs no OAuth
+				and stores no token that could be stolen, and it is the one thing
+				Google, Outlook, Fastmail and Nextcloud all agree on. In Google
+				Calendar it is Settings → your calendar → "Secret address in iCal
+				format".
+			-->
+			<!--
+				Folded to begin with.
+
+				Subscribing to a calendar is a thing somebody does once, and the
+				panel is a paragraph of instructions and three fields — which sat
+				under the schemes, open, every time the drawer was opened for the
+				schemes. It is not the reason anybody comes here.
+			-->
+			<Card flush>
+				<button
+					type="button"
+					onclick={() => (calendarsOpen = !calendarsOpen)}
+					class="eyebrow flex w-full items-center gap-1.5 border-b border-gray-200 px-4 py-2.5 text-left text-gray-500 hover:text-gray-900"
+					aria-expanded={calendarsOpen}
+				>
+					<Icon name={calendarsOpen ? 'chevron-down' : 'chevron-right'} size={14} />
+					{t('tasks.plan.calendarsYouSubscribeTo')}
+					{#if data.feeds.length > 0}
+						<span class="text-gray-500">({data.feeds.length})</span>
+					{/if}
+				</button>
+				{#if calendarsOpen}
+					{#if data.feeds.length === 0}
+						<div class="px-3">
+							<EmptyState
+								icon="calendar"
+								title={t('tasks.plan.noCalendarsSubscribedYet')}
+								compact
 							/>
-							<span
-								class="inline-block h-4 w-4 border {copyTargetDays.has(i)
-									? 'on-fill'
-									: 'border-gray-400 bg-white'}"
-							></span>
-							{day}
-						</label>
+						</div>
+					{:else}
+						<ul class="divide-y divide-gray-200">
+							{#each data.feeds as feed (feed.id)}
+								<li class="flex flex-wrap items-center gap-3 px-4 py-3">
+									<Swatch color={feed.color} />
+									<div class="min-w-0 flex-1">
+										<p class="truncate text-sm text-gray-900">{feed.name}</p>
+										{#if feed.lastError}
+											<p class="truncate text-xs text-amber-700">
+												{t('tasks.plan.lastFetchFailed', { lastError: feed.lastError })}
+											</p>
+										{:else if feed.fetchedAt}
+											<p class="text-xs text-gray-500">
+												{t('tasks.plan.read', {
+													t: feed.fetchedAt.slice(0, 16).replace('T', ' ')
+												})}
+											</p>
+										{/if}
+									</div>
+									<form method="post" action="?/removeCalendar" use:enhance class="shrink-0">
+										<input type="hidden" name="id" value={feed.id} />
+										<button
+											class="icon-btn icon-btn-danger"
+											title={t('tasks.plan.stopSubscribing')}
+											aria-label={t('tasks.plan.stopSubscribingTo', { name: feed.name })}
+											use:armed
+										>
+											<Icon name="trash" size={14} />
+										</button>
+									</form>
+								</li>
+							{/each}
+						</ul>
+					{/if}
+
+					<form
+						method="post"
+						action="?/addCalendar"
+						use:enhance
+						class="border-t border-gray-200 p-4"
+					>
+						<!--
+						The address gets a line of its own on a phone.
+
+						Four controls on one row left it about two characters wide —
+						long enough to show "ht" of an iCal URL, which is the one field
+						here nobody can type from memory and everybody pastes.
+					-->
+						<div class="flex flex-wrap gap-2">
+							<input
+								autocomplete="off"
+								name="url"
+								type="url"
+								placeholder={t('tasks.plan.httpsCalendarGoogleComCalendarIcalBasicI')}
+								required
+								class="input w-full min-w-0 sm:order-2 sm:w-auto sm:flex-1"
+								aria-label={t('tasks.plan.theCalendarSIcalAddress')}
+							/>
+							<OneLine
+								name="label"
+								placeholder={t('tasks.plan.work')}
+								class="input w-32 sm:order-1"
+								required
+								ariaLabel="What to call it"
+							/>
+							<input
+								name="color"
+								type="color"
+								value="#6b7280"
+								class="h-10 w-12 border border-gray-300 sm:order-3"
+								aria-label={t('ui.colour')}
+							/>
+							<button
+								class="btn btn-primary sm:order-4"
+								title={t('tasks.plan.subscribe')}
+								aria-label={t('tasks.plan.subscribe')}
+							>
+								<Icon name="plus" />
+							</button>
+						</div>
+						<p class="mt-2 text-xs text-gray-500">
+							{t('tasks.plan.inGoogleCalendarSettings')}
+						</p>
+					</form>
+				{/if}
+			</Card>
+
+			<!--
+				The starter weeks, still available.
+
+				These were offered once during onboarding and then never again, so
+				anybody who skipped that step — or whose life changed in March — had
+				no way back to them. Same three weeks, same application, behind the
+				same confirmation as loading a scheme, because it replaces the plan.
+			-->
+			<Card flush>
+				<div class="eyebrow border-b border-gray-200 px-4 py-2.5 text-gray-500">
+					{t('tasks.plan.startFromATemplate')}
+				</div>
+				<div class="divide-y divide-gray-200">
+					{#each data.templates as template (template.key)}
+						<div class="flex items-center gap-4 px-4 py-3">
+							<div class="min-w-0 flex-1">
+								<p class="text-sm font-medium text-gray-900">{t(template.label)}</p>
+								<p class="text-xs text-gray-500">{t(template.description)}</p>
+							</div>
+							<form
+								method="post"
+								action="?/applyTemplate"
+								use:enhance={() => {
+									return async ({ update }) => {
+										await update({ reset: false });
+										confirmingTemplate = null;
+									};
+								}}
+								class="shrink-0"
+							>
+								<input type="hidden" name="key" value={template.key} />
+								{#if confirmingTemplate === template.key}
+									<button type="submit" class="btn btn-danger" use:armed>
+										{t('tasks.plan.thisReplacesYourPlanContinue')}
+									</button>
+								{:else}
+									<button
+										type="button"
+										onclick={() => {
+											confirmingTemplate = template.key;
+											confirmingLoadSchemeId = null;
+											confirmingDeleteSchemeId = null;
+										}}
+										class="btn"
+									>
+										{t('tasks.plan.use')}
+									</button>
+								{/if}
+							</form>
+						</div>
 					{/each}
 				</div>
-				<div class="flex gap-2">
-					<button type="submit" class="btn btn-primary btn-sm" disabled={copyTargetDays.size === 0}>
-						{t('ui.copy')}
-					</button>
-					<button
-						type="button"
-						onclick={() => (showCopyPanel = false)}
-						class="border border-gray-300 bg-white px-3 py-1.5 text-sm text-gray-700 transition hover:bg-gray-50"
+			</Card>
+			<Card flush>
+				<button
+					type="button"
+					onclick={() => (showCsvImport = !showCsvImport)}
+					class="eyebrow flex w-full items-center gap-1.5 px-4 py-2.5 text-left text-gray-500 hover:text-gray-900"
+					aria-expanded={showCsvImport}
+				>
+					<Icon name={showCsvImport ? 'chevron-down' : 'chevron-right'} size={14} />
+					{t('tasks.plan.importCsv')}
+				</button>
+				{#if showCsvImport}
+					<form
+						method="post"
+						action="?/importCsv"
+						use:enhance={() => {
+							return async ({ update }) => {
+								await update();
+							};
+						}}
+						class="space-y-3 border-t border-gray-200 px-4 py-4"
 					>
-						{t('ui.cancel')}
-					</button>
-				</div>
-			</form>
-		</Card>
-	{/if}
+						<p class="text-xs text-gray-500">
+							{t('tasks.plan.formatHTimeDDuration')}
+						</p>
+						<textarea
+							name="csv"
+							rows="8"
+							placeholder={t('tasks.plan.hDMTWTFSSn61030WakeUpWakeUpWakeUpWakeUpW')}
+							class="textarea block w-full font-mono text-xs"
+						></textarea>
+						<div class="flex items-center gap-4">
+							<label class="flex items-center gap-2 text-sm text-gray-700">
+								<input type="checkbox" name="clearExisting" class="border-gray-300" />
+								{t('tasks.plan.clearExistingPlan')}
+							</label>
+						</div>
+						<button type="submit" class="btn btn-primary btn-sm">
+							{t('tasks.plan.import')}
+						</button>
+					</form>
+				{/if}
+			</Card>
+		</div>
+	</Modal>
+
+	<Modal bind:open={showCopyPanel} title={t('tasks.plan.copyToDays')} size="sm">
+		<form
+			method="post"
+			action="?/copyToWeekdays"
+			use:enhance={() => {
+				return async ({ update }) => {
+					await update({ reset: false });
+					showCopyPanel = false;
+					multiselect = false;
+					selectedIds = new Set();
+				};
+			}}
+		>
+			<input type="hidden" name="ids" value={[...selectedIds].join(',')} />
+			<input type="hidden" name="targetDays" value={[...copyTargetDays].join(',')} />
+			<div class="mb-3 flex flex-wrap gap-2">
+				{#each weekdayNames as day, i (i)}
+					<label
+						class="flex items-center gap-1.5 px-2 py-1 text-sm {selectedWeekday === i
+							? 'cursor-not-allowed text-gray-500'
+							: 'cursor-pointer text-gray-700 hover:bg-gray-50'}"
+					>
+						<input
+							type="checkbox"
+							checked={copyTargetDays.has(i)}
+							disabled={selectedWeekday === i}
+							onchange={() => {
+								if (copyTargetDays.has(i)) {
+									copyTargetDays = new Set([...copyTargetDays].filter((x) => x !== i));
+								} else {
+									copyTargetDays = new Set([...copyTargetDays, i]);
+								}
+							}}
+							class="sr-only"
+						/>
+						<span
+							class="inline-block h-4 w-4 border {copyTargetDays.has(i)
+								? 'on-fill'
+								: 'border-gray-400 bg-white'}"
+						></span>
+						{day}
+					</label>
+				{/each}
+			</div>
+			<div class="flex gap-2">
+				<button type="submit" class="btn btn-primary" disabled={copyTargetDays.size === 0}>
+					{t('ui.copy')}
+				</button>
+				<button type="button" onclick={() => (showCopyPanel = false)} class="btn">
+					{t('ui.cancel')}
+				</button>
+			</div>
+		</form>
+	</Modal>
 
 	{#if multiselect && selectedIds.size > 0}
-		<div class="fixed right-0 bottom-0 left-0 z-50 border-t border-blue-200 bg-blue-50 px-4 py-2">
-			<div class="mx-auto flex w-full max-w-page items-center justify-between">
-				<span class="text-sm font-medium text-blue-900"
+		<div
+			class="fixed right-0 bottom-0 left-0 z-50 border-t border-gray-200 bg-white px-4 py-2 shadow-overlay"
+		>
+			<div class="mx-auto flex w-full max-w-page items-center justify-between gap-4">
+				<span class="text-sm font-medium text-gray-900"
 					>{t('tasks.plan.selected', { size: selectedIds.size })}</span
 				>
 				<div class="flex gap-2">
@@ -3264,10 +3659,7 @@
 					>
 						<input type="hidden" name="ids" value={[...selectedIds].join(',')} />
 						{#if confirmingBulkDelete}
-							<button
-								type="submit"
-								class="border border-red-300 bg-red-50 px-3 py-1 text-sm font-medium text-red-700 transition hover:bg-red-100"
-							>
+							<button type="submit" class="btn btn-sm btn-danger" use:armed>
 								{t('tasks.plan.confirmDelete')}
 							</button>
 						{:else}
@@ -3276,16 +3668,13 @@
 								onclick={() => {
 									confirmingBulkDelete = true;
 								}}
-								class="border border-red-200 bg-white px-3 py-1 text-sm text-red-600 transition hover:bg-red-50"
+								class="btn btn-sm btn-danger"
 							>
 								{t('tasks.plan.deleteSelected')}
 							</button>
 						{/if}
 					</form>
-					<button
-						onclick={() => (showCopyPanel = true)}
-						class="border border-gray-300 bg-white px-3 py-1 text-sm text-gray-700 transition hover:bg-gray-50"
-					>
+					<button onclick={() => (showCopyPanel = true)} class="btn btn-sm">
 						{t('tasks.plan.copyTo')}
 					</button>
 				</div>
@@ -3937,376 +4326,21 @@
 		{/snippet}
 	</Modal>
 
-	<!--
-		The day picker, where there is more than one day to pick.
+	{#snippet traySort()}
+		<SortControl
+			value={trayOrder}
+			options={TRAY_ORDERS}
+			labels={TRAY_ORDER_LABELS}
+			direction={trayDirection}
+			onpick={(next) => {
+				trayOrder = next;
+				todosOpen = true;
+			}}
+			onflip={() => (trayDirection = trayDirection === 'desc' ? 'asc' : 'desc')}
+			label={t('todoRows.orderTasksBy')}
+		/>
+	{/snippet}
 
-		In day view the range is one day, so this drew a single full-width button
-		saying "Today" that moved nothing — a hundred pixels of the phone's screen
-		spent on a control with one position. The arrows above are what moves the
-		day; this is for a range that has several.
-	-->
-	{#if effectiveView === 'day' && data.range.days.length > 1}
-		<div class="seg flex w-full" role="group" aria-label={t('tasks.plan.whichDay')}>
-			{#each data.range.days as day, i (day.date)}
-				<button
-					onclick={() => (selectedOffset = i)}
-					aria-pressed={selectedOffset === i}
-					class="flex-1"
-					title={day.date}
-				>
-					{day.isToday ? t('app.today') : weekdayNames[day.weekday].slice(0, 3)}
-				</button>
-			{/each}
-		</div>
-	{/if}
-
-	<!--
-		The strip things wait on, in both directions.
-
-		It holds what has no time yet: the undated pile, and the ones due today or
-		still owed from an earlier day — those had nowhere on this page at all,
-		though a todo due today is exactly what somebody opens the planner to
-		place. Dropping a block back onto it takes the block off the day again,
-		which is what makes the grid somewhere you can change your mind.
-	-->
-	{#if data.todos.length > 0 || draggingBlock}
-		<section
-			bind:this={trayEl}
-			data-tour="plan-tray"
-			class="mb-1 border bg-white shadow-card {draggingBlock
-				? 'border-dashed border-gray-400'
-				: 'border-gray-200'}"
-		>
-			<div class="flex items-center gap-3 border-b border-gray-200 px-3 py-2">
-				<!-- The fold, with how many are waiting: a staging area, not the plan,
-				     so it starts shut and the grid keeps the top of the page. -->
-				<button
-					type="button"
-					class="flex shrink-0 items-center gap-2 text-sm text-gray-600 hover:text-gray-900"
-					aria-expanded={todosOpen}
-					aria-controls="plan-tray-pills"
-					onclick={() => (todosOpen = !todosOpen)}
-				>
-					<Icon name={todosOpen ? 'chevron-down' : 'chevron-right'} size={14} />
-					<span class="eyebrow text-gray-600">{t('tasks.plan.toDo')}</span>
-					<span class="tabular border border-gray-300 bg-gray-50 px-1 text-xs text-gray-700">
-						{data.todos.length}
-					</span>
-				</button>
-				<div class="min-w-0 flex-1">
-					<FilterBar
-						name="plan-tray"
-						on={trayNarrowed}
-						summary={trayNarrowed ? t('tasks.plan.trayNarrowed') : ''}
-						onclear={clearTray}
-						trailing={traySort}
-					>
-						{#snippet lead()}
-							<label class="block w-full">
-								<span class="sr-only">{t('todoRows.searchTheseTasks')}</span>
-								<input
-									type="search"
-									bind:value={trayLooking}
-									oninput={() => (todosOpen = true)}
-									placeholder={t('todoRows.searchTheseTasks')}
-									autocomplete="off"
-									class="input input-sm"
-								/>
-							</label>
-						{/snippet}
-						{#snippet count()}
-							<span class="tabular text-xs text-gray-500">
-								{#if draggingBlock}
-									{t('tasks.plan.dropHereToTakeIt')}
-								{:else if dueToday > 0}
-									{t('tasks.plan.countForToday', { count: dueToday })}
-								{:else}
-									{trayMatches.length}
-								{/if}
-							</span>
-						{/snippet}
-						<Picker
-							value={trayNotebook}
-							options={trayNotebooks}
-							onpick={(next) => {
-								trayNotebook = next;
-								todosOpen = true;
-							}}
-							label={t('ui.notebook')}
-							class="min-w-36"
-						/>
-						{#if trayTagNames.length > 0 || isTagFiltering(trayTags)}
-							<TagFilterControl
-								tags={trayTagNames}
-								value={trayTags}
-								onchange={(next) => {
-									trayTags = next;
-									todosOpen = true;
-								}}
-								name="plan-tray-tags"
-								class="min-w-36"
-							/>
-						{/if}
-					</FilterBar>
-				</div>
-			</div>
-
-			{#if todosOpen || draggingBlock}
-				<!-- A few rows of pills and the rest behind a scroll, so the strip is
-				     never taller than a glance. -->
-				<div id="plan-tray-pills" class="max-h-44 overflow-y-auto p-3">
-					<div class="flex flex-wrap items-stretch gap-2">
-						{#if draggingBlock && overTrayNow}
-							<span
-								class="border border-dashed border-gray-400 bg-gray-100 px-3 py-2 text-sm text-gray-500 italic"
-							>
-								{draggingBlockTitle}
-							</span>
-						{/if}
-						{#each trayMatches.slice(0, TRAY_SHOWN) as todo (todo.id)}
-							<button
-								type="button"
-								draggable="true"
-								onclick={() => (placingTodoId = placingTodoId === todo.id ? null : todo.id)}
-								ondragstart={(e) => {
-									placingTodoId = null;
-									dragTodoId = todo.id;
-									e.dataTransfer?.setData('text/plain', String(todo.id));
-									if (e.dataTransfer) e.dataTransfer.effectAllowed = 'move';
-								}}
-								ondragend={() => {
-									dragTodoId = null;
-									dropPreview = null;
-								}}
-								class="lift flex max-w-72 cursor-grab flex-col items-start gap-1 px-3 py-2 text-left text-sm shadow-card {placingTodoId ===
-								todo.id
-									? 'on-fill'
-									: todo.categoryColor
-										? 'pill-soft'
-										: todo.due
-											? 'border border-gray-400 bg-white text-gray-900'
-											: 'border border-gray-200 bg-white text-gray-800'} {dragTodoId === todo.id
-									? 'opacity-40'
-									: ''}"
-								style={todo.categoryColor && placingTodoId !== todo.id
-									? pillStyle(todo.categoryColor)
-									: ''}
-								title={t('tasks.plan.dragOntoTheGridOr')}
-							>
-								<span class="line-clamp-2 font-medium">{todo.title}</span>
-								<!-- What it is filed under and when it is owed, in words: which
-								     of these is for today is the reason to open the strip. -->
-								<span class="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs opacity-80">
-									{#if todo.due === 'today'}
-										<span class="tracking-wide uppercase">{t('tasks.plan.today2')}</span>
-									{:else if todo.due === 'overdue'}
-										<span class="tracking-wide uppercase">{t('tasks.plan.owed')}</span>
-									{/if}
-									{#if todo.notebookTitle}
-										<span class="inline-flex items-center gap-1">
-											<Icon name="notebook" size={12} />{todo.notebookTitle}
-										</span>
-									{/if}
-									{#each todo.tags as tag (tag.id)}<span>#{tag.name}</span>{/each}
-								</span>
-							</button>
-						{:else}
-							{#if !draggingBlock}
-								<p class="text-sm text-gray-500">{t('tasks.plan.trayNothingMatches')}</p>
-							{/if}
-						{/each}
-					</div>
-					{#if trayMatches.length > TRAY_SHOWN}
-						<p class="mt-2 text-xs text-gray-500">
-							{t('tasks.plan.trayMore', { count: trayMatches.length - TRAY_SHOWN })}
-						</p>
-					{/if}
-					<div class="mt-2 flex flex-wrap items-center gap-2">
-						{#if placingTodo}
-							<span class="text-xs text-gray-600"
-								>{t('tasks.plan.nowTapATimeFor', { title: placingTodo.title })}</span
-							>
-							<button
-								type="button"
-								class="text-xs text-gray-500 underline"
-								onclick={() => (placingTodoId = null)}>{t('tasks.plan.cancel')}</button
-							>
-						{:else}
-							<span class="hidden text-xs text-gray-500 sm:inline">
-								{t('tasks.plan.dragOntoTheGridTo')}
-							</span>
-							<span class="text-xs text-gray-500 sm:hidden">{t('tasks.plan.tapOneThenTapA')}</span>
-						{/if}
-					</div>
-				</div>
-			{/if}
-		</section>
-
-		{#snippet traySort()}
-			<SortControl
-				value={trayOrder}
-				options={TRAY_ORDERS}
-				labels={TRAY_ORDER_LABELS}
-				direction={trayDirection}
-				onpick={(next) => {
-					trayOrder = next;
-					todosOpen = true;
-				}}
-				onflip={() => (trayDirection = trayDirection === 'desc' ? 'asc' : 'desc')}
-				label={t('todoRows.orderTasksBy')}
-			/>
-		{/snippet}
-	{/if}
-
-	<!--
-		A month gets more height than the window, on purpose.
-
-		Six rows inside 70vh is about a hundred pixels each, which fits three
-		events and then says "+2 more" for the rest of what the day holds — the
-		grid ends up describing itself instead of the month. It is taller than the
-		viewport and the page scrolls, which is the trade every calendar makes.
-	-->
-	<div
-		bind:this={gridWrap}
-		data-tour="plan-grid"
-		class="relative border border-gray-200 bg-white shadow-sm {effectiveView === 'month'
-			? 'h-[calc(100dvh-12rem)] min-h-[54rem]'
-			: gridDays === 1
-				? 'h-[62vh]'
-				: 'h-[70vh]'}"
-		use:gridZoomWheel
-		use:selectionSurface
-		ondragover={(e) => {
-			if (dragTodoId === null) return;
-			e.preventDefault();
-			dropPreview = dropTarget(e);
-		}}
-		ondragleave={() => (dropPreview = null)}
-		ondrop={onTodoDrop}
-		onpointerdowncapture={onGridPointerDown}
-		onpointerupcapture={onGridPointerUp}
-		onpointermovecapture={onGridPointerMove}
-		onpointercancelcapture={cancelHold}
-		role="application"
-	>
-		{#if marqueeRect}
-			<!-- Drawn over the grid rather than inside it, so it can span
-				     columns without the calendar reflowing anything. -->
-			<div
-				class="pointer-events-none absolute z-30 border-2 border-gray-900 bg-gray-900/10"
-				style="left:{marqueeRect.left}px; top:{marqueeRect.top}px; width:{marqueeRect.width}px; height:{marqueeRect.height}px"
-			></div>
-		{/if}
-
-		{#if selectedEventIds.size > 1}
-			<div
-				class="pointer-events-none absolute bottom-2 left-2 z-30 border border-gray-300 bg-white px-2 py-1 text-xs text-gray-700 shadow-card"
-			>
-				{t('tasks.plan.selectedDragOne', { size: selectedEventIds.size })}
-			</div>
-		{/if}
-
-		{#if dropPreview?.box}
-			<!--
-				The todo, drawn as the block it is about to become.
-
-				This was a chip in the corner reading the date and the time, which is
-				a sentence to read while your hand is holding a drag. The shape in
-				the right place answers the same question with nothing to read.
-			-->
-			<div
-				class="pointer-events-none absolute z-20 overflow-hidden border-2 border-dashed border-gray-500 bg-gray-500/15"
-				style="left:{dropPreview.box.left}px; top:{dropPreview.box.top}px; width:{dropPreview.box
-					.width}px; height:{dropPreview.box.height}px"
-			>
-				<span class="tabular block px-1 text-[0.65rem] leading-tight text-gray-700">
-					{dropPreview.startTime}
-					{dragTodoTitle}
-				</span>
-			</div>
-		{/if}
-		{#if browser && widthChecked}
-			<Calendar bind:this={ec} plugins={[TimeGrid, DayGrid, Interaction]} options={gridOptions} />
-		{/if}
-
-		<!--
-			The wash that says the next week is on its way.
-
-			Over the grid and nothing else, because the grid is the only part
-			about to change — and `pointer-events: none` so it is a statement
-			rather than a shutter: a press that lands during it still lands.
-		-->
-		{#if waiting}
-			<div class="grid-waiting" aria-hidden="true"></div>
-		{/if}
-	</div>
-	<div class="mt-1 flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
-		<!--
-			All of this is mouse-and-keyboard advice — drag, Ctrl, scroll — so a
-			touch screen has no use for it, and `kbd-hint` is what hides a thing on a
-			coarse pointer. It was squeezing the zoom control beside it into a
-			one-letter-per-line ribbon on a phone, to say something the phone cannot
-			do.
-		-->
-		<!-- The touch equivalent, said where a touch screen will see it — the
-		     line below is hidden on a coarse pointer, and used to be the only
-		     place the grid explained how to make a block. -->
-		<p class="hidden text-xs text-gray-500 [@media(pointer:coarse)]:block">
-			{t('tasks.plan.pressAndHoldOnThe')}
-		</p>
-		<p class="kbd-hint min-w-0 flex-1 text-xs text-gray-500">
-			{t('tasks.plan.dragToCreateDrag')}
-			<kbd class="border border-gray-300 bg-gray-50 px-1 text-gray-700">{t('tasks.plan.ctrl')}</kbd>
-			{t('tasks.plan.whileDraggingToDuplicateOr')}
-			<kbd class="border border-gray-300 bg-gray-50 px-1 text-gray-700">{t('tasks.plan.alt')}</kbd>
-			{t('tasks.plan.toMoveOrResizeJust')}
-			<kbd class="border border-gray-300 bg-gray-50 px-1 text-gray-700">{t('tasks.plan.shift')}</kbd
-			>
-			{t('tasks.plan.dragToSelectSeveralThen')}
-			<kbd class="border border-gray-300 bg-gray-50 px-1 text-gray-700">{t('tasks.plan.ctrl')}</kbd
-			>+<kbd class="border border-gray-300 bg-gray-50 px-1 text-gray-700">Z</kbd>
-			{t('tasks.plan.undoesSnapsTo15min')}
-		</p>
-		<div class="flex shrink-0 items-center gap-1">
-			<span class="mr-1 text-xs whitespace-nowrap text-gray-500">
-				{t('tasks.plan.zoom')}
-				<span class="kbd-hint"
-					>(<kbd class="border border-gray-300 bg-gray-50 px-1 text-gray-700"
-						>{t('tasks.plan.ctrl')}</kbd
-					>{t('tasks.plan.scroll')}</span
-				>
-			</span>
-			<!--
-				The design pass replaced white-with-a-border-and-a-shadow everywhere
-				except here, so this one control was still wearing the old clothes.
-				A stepper is two quiet square buttons around the value they change,
-				and the value is the reset.
-			-->
-			<button
-				type="button"
-				onclick={() => setZoom(zoomIndex - 1)}
-				disabled={zoomIndex === 0}
-				title={t('tasks.plan.zoomOut2')}
-				aria-label={t('tasks.plan.zoomOut')}
-				class="icon-btn disabled:cursor-not-allowed disabled:opacity-30">&minus;</button
-			>
-			<button
-				type="button"
-				onclick={() => setZoom(GRID_DEFAULT_ZOOM_INDEX)}
-				title={t('tasks.plan.resetZoom0')}
-				class="btn btn-sm tabular"
-				>{Math.round((slotHeight / GRID_ZOOM_LEVELS[GRID_DEFAULT_ZOOM_INDEX]) * 100)}%</button
-			>
-			<button
-				type="button"
-				onclick={() => setZoom(zoomIndex + 1)}
-				disabled={zoomIndex === GRID_ZOOM_LEVELS.length - 1}
-				title={t('tasks.plan.zoomIn2')}
-				aria-label={t('tasks.plan.zoomIn')}
-				class="icon-btn disabled:cursor-not-allowed disabled:opacity-30">+</button
-			>
-		</div>
-	</div>
 	{#if hovered}
 		<div
 			data-block-hover
@@ -4340,55 +4374,23 @@
 			{/if}
 		</div>
 	{/if}
-
-	<div class="mt-6 border border-gray-200 bg-white shadow-sm">
-		<button
-			type="button"
-			onclick={() => (showCsvImport = !showCsvImport)}
-			class="flex w-full items-center justify-between px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50"
-		>
-			{t('tasks.plan.importCsv')}
-			<span class="text-xs text-gray-500">{showCsvImport ? '▲' : '▼'}</span>
-		</button>
-		{#if showCsvImport}
-			<form
-				method="post"
-				action="?/importCsv"
-				use:enhance={() => {
-					return async ({ update }) => {
-						await update();
-					};
-				}}
-				class="space-y-3 border-t border-gray-200 px-4 py-4"
-			>
-				<p class="text-xs text-gray-500">
-					{t('tasks.plan.formatHTimeDDuration')}
-				</p>
-				<textarea
-					name="csv"
-					rows="8"
-					placeholder={t('tasks.plan.hDMTWTFSSn61030WakeUpWakeUpWakeUpWakeUpW')}
-					class="block w-full border border-gray-300 px-3 py-2 font-mono text-xs shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
-				></textarea>
-				<div class="flex items-center gap-4">
-					<label class="flex items-center gap-2 text-sm text-gray-700">
-						<input type="checkbox" name="clearExisting" class="border-gray-300" />
-						{t('tasks.plan.clearExistingPlan')}
-					</label>
-				</div>
-				<button type="submit" class="btn btn-primary btn-sm">
-					{t('tasks.plan.import')}
-				</button>
-			</form>
-		{/if}
-	</div>
 </div>
 
 <style>
 	:global(.og-event--inactive) {
 		opacity: 0.5;
 	}
-	:global(.og-event--exceptional) {
-		border-left: 3px solid #3b82f6;
+	/*
+	 * The grid is the body of the room's surface, edge to edge — not a card of
+	 * its own inside it, with a second border, a second shadow and the empty
+	 * strip the calendar keeps for a header toolbar it does not have.
+	 */
+	.plan-grid :global(.ec) {
+		border: 0;
+		border-radius: 0;
+		box-shadow: none;
+	}
+	.plan-grid :global(.ec-toolbar) {
+		display: none;
 	}
 </style>

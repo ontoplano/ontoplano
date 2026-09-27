@@ -1,7 +1,7 @@
 <script lang="ts">
-	import Card from '$lib/components/Card.svelte';
+	import RoomSurface from '$lib/components/RoomSurface.svelte';
+	import Banner from '$lib/components/Banner.svelte';
 	import { setRoomAction } from '$lib/room-action.svelte';
-	import RoomToolbar from '$lib/components/RoomToolbar.svelte';
 	import { enhance } from '$lib/enhance';
 	import { deserialize } from '$app/forms';
 	import { invalidateAll } from '$app/navigation';
@@ -67,7 +67,7 @@
 	const level = $derived(standingIn ? standingIn.children : data.tree);
 	/** `Trips — Japan` is a name and a lineage at once; the strip reads it as one. */
 	const here = $derived(
-		standingIn ? standingIn.name.split(ALBUM_SEPARATOR).join(' › ') : 'All albums'
+		standingIn ? standingIn.name.split(ALBUM_SEPARATOR).join(' › ') : t('gallery.allAlbums')
 	);
 
 	function choose(id: number) {
@@ -209,7 +209,7 @@
 			{#if node.children.length > 0}
 				<button
 					onclick={() => toggle(node.id)}
-					class="shrink-0 py-2 pl-1 text-gray-400 transition hover:text-gray-700"
+					class="shrink-0 py-2 pl-1 text-gray-500 transition hover:text-gray-900"
 					style="margin-left: {depth * 0.9}rem"
 					aria-expanded={opened.has(node.id)}
 					title={opened.has(node.id)
@@ -225,8 +225,11 @@
 					/>
 				</button>
 			{:else}
-				<span class="invisible size-4 shrink-0 py-2 pl-1" style="margin-left: {depth * 0.9}rem"
-				></span>
+				<!-- As wide as the chevron's button, so a leaf's name lines up with a
+				     branch's. -->
+				<span class="invisible shrink-0 py-2 pl-1" style="margin-left: {depth * 0.9}rem"
+					><span class="block size-4"></span></span
+				>
 			{/if}
 			<button
 				onclick={() => choose(node.id)}
@@ -300,13 +303,15 @@
 		<span class="absolute top-1.5 right-1.5 flex gap-1">
 			<button
 				class="icon-btn bg-white/80"
+				title={t('gallery.rename', { name: node.name })}
 				aria-label={t('gallery.rename', { name: node.name })}
 				onclick={() => (renaming = node)}
 			>
 				<Icon name="edit" />
 			</button>
 			<button
-				class="icon-btn bg-white/80"
+				class="icon-btn icon-btn-danger bg-white/80"
+				title={t('gallery.delete', { name: node.name })}
 				aria-label={t('gallery.delete', { name: node.name })}
 				onclick={() => (confirmingDelete = node)}
 			>
@@ -321,25 +326,58 @@
 				class="flex w-full items-center gap-1 border-t border-gray-200 px-2.5 py-1.5 text-xs text-gray-500 hover:text-gray-700"
 				onclick={() => choose(node.id)}
 			>
-				<Icon name="chevron-right" size={14} />{t('gallery.inside', {
-					length: node.children.length,
-					albums: node.children.length === 1 ? 'album' : 'albums'
+				<Icon name="chevron-right" size={14} />{t('gallery.albumsInside', {
+					count: node.children.length
 				})}</button
 			>
 		{/if}
 	</li>
 {/snippet}
 
-<div class="space-y-4">
-	<!-- The room's own bar carries the title and the tab strip now; a second
-	     one here would put "Gallery" twice on the same screen. -->
-	<RoomToolbar>
-		{#snippet tools()}
+<!--
+	One surface under the folders and what is in them.
+
+	The tree used to open inside the grid itself — a row of tiles, then a
+	strip of whatever was inside the one you had expanded — so the deeper you
+	went the less a row of cells had to do with the row above it, and the
+	whole thing floated on the page's own background as a loose wall of
+	squares. The folders are a panel down the left now, the way inventory's
+	locations are, and the tiles beside them are one level: what is directly
+	inside wherever the panel says you are standing.
+-->
+<RoomSurface>
+	{#snippet tools()}
+		<!--
+			Where you are, along the top of the same white, with the import beside
+			it rather than loose on the page above.
+
+			And the way into the album's own pictures, because a folder's tiles
+			are the folders in it: what it holds itself is one press from here.
+			The button is drawn whether or not there is anywhere to go, so
+			choosing a folder never moves the row underneath it.
+		-->
+		<div class="flex w-full items-center gap-3">
+			<span class="min-w-0 flex-1 truncate text-sm font-medium text-gray-900">{here}</span>
+			<span class="tabular shrink-0 text-xs text-gray-500">
+				{#if standingIn}
+					{t('gallery.picturesCount', { count: standingIn.totalCount ?? standingIn.count })}
+				{:else}
+					{t('gallery.albumsCount', { count: data.albums.length })}
+				{/if}
+			</span>
+			<a
+				href="{resolve('/media/gallery')}/{standingIn?.id ?? ''}"
+				class="btn btn-sm shrink-0 {standingIn ? '' : 'invisible'}"
+				aria-hidden={standingIn ? undefined : 'true'}
+				tabindex={standingIn ? undefined : -1}
+			>
+				{t('ui.open')}
+			</a>
 			<!-- A folder of pictures, with its subfolders as albums. -->
 			<!-- Ask first: what is in this folder, and what would be refused. -->
 			<form method="post" action="?/planFolder" bind:this={planForm} use:enhance>
 				<input type="hidden" name="files" />
-				<label class="btn btn-sm cursor-pointer">
+				<label class="btn btn-sm shrink-0 cursor-pointer" title={t('gallery.importAFolder')}>
 					<Icon name="download" />
 					{t('gallery.import')}
 					<input
@@ -352,8 +390,8 @@
 					/>
 				</label>
 			</form>
-		{/snippet}
-	</RoomToolbar>
+		</div>
+	{/snippet}
 
 	<!--
 		What would happen, before it happens.
@@ -363,7 +401,7 @@
 		limit in config.toml) rather than a count of files that vanished.
 	-->
 	{#if plan}
-		<div class="rounded border border-gray-200">
+		<div class="border-b border-gray-200">
 			<div class="flex flex-wrap items-baseline gap-2 border-b border-gray-200 px-4 py-3">
 				<span class="text-sm font-medium text-gray-900"
 					>{t('gallery.pictureIntoAlbum', {
@@ -374,9 +412,11 @@
 					})}</span
 				>
 				{#if plan.willRefuse > 0}
-					<span class="text-sm text-red-700"
-						>{t('gallery.refused', { willRefuse: plan.willRefuse })}</span
-					>
+					<!-- A mark and a word, never red text alone. -->
+					<span class="inline-flex items-center gap-1 text-sm font-medium text-gray-900">
+						<Icon name="warning" size={14} />
+						{t('gallery.refused', { willRefuse: plan.willRefuse })}
+					</span>
 				{/if}
 				<span class="ml-auto flex items-center gap-2">
 					<button class="btn btn-sm" type="button" onclick={() => (chosen = [])}
@@ -403,9 +443,13 @@
 						</span>
 						<span class="shrink-0 text-xs text-gray-500">{file.album}</span>
 						<span
-							class="shrink-0 text-xs tabular-nums {file.ok ? 'text-gray-400' : 'text-red-700'}"
-							title={file.refusedBecause ?? `Pictures here are at most ${plan.maxKilobytes}KB.`}
+							class="inline-flex shrink-0 items-center gap-1 text-xs tabular-nums {file.ok
+								? 'text-gray-500'
+								: 'font-medium text-gray-900'}"
+							title={file.refusedBecause ??
+								t('gallery.atMostKilobytes', { kilobytes: plan.maxKilobytes })}
 						>
+							{#if !file.ok}<Icon name="warning" size={12} />{/if}
 							{asKB(file.bytes)}
 						</span>
 					</li>
@@ -415,162 +459,120 @@
 	{/if}
 
 	{#if outcome}
-		<p class="rounded border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-700">
-			{outcome.pictures}
-			{t('gallery.picture')}{outcome.pictures === 1 ? '' : 's'}
-			{t('gallery.into')}
-			{outcome.albums}
-			{t('gallery.album')}{outcome.albums === 1 ? '' : 's'}{outcome.skipped
-				? `, ${outcome.skipped} refused`
-				: ''}.
-		</p>
+		<div class="border-b border-gray-200 px-4 py-3">
+			<Banner kind="success">
+				{t('gallery.pictureIntoAlbum', {
+					willImport: outcome.pictures,
+					s: outcome.pictures === 1 ? '' : 's',
+					length: outcome.albums,
+					s2: outcome.albums === 1 ? '' : 's'
+				})}{outcome.skipped ? ` · ${t('gallery.refused', { willRefuse: outcome.skipped })}` : ''}
+			</Banner>
+		</div>
 	{/if}
 
-	<!--
-		One surface under the folders and what is in them.
+	<div
+		class="grid overflow-hidden lg:grid-cols-[var(--folders)_1fr]"
+		style="--folders: {PANEL_REM}rem"
+	>
+		<section class="border-b border-gray-200 lg:border-r lg:border-b-0">
+			<h2 class="eyebrow border-b border-gray-200 px-4 py-2 text-gray-600">
+				{t('gallery.folders')}
+			</h2>
 
-		The tree used to open inside the grid itself — a row of tiles, then a
-		strip of whatever was inside the one you had expanded — so the deeper you
-		went the less a row of cells had to do with the row above it, and the
-		whole thing floated on the page's own background as a loose wall of
-		squares. The folders are a panel down the left now, the way inventory's
-		locations are, and the tiles beside them are one level: what is directly
-		inside wherever the panel says you are standing.
-	-->
-	<Card flush>
-		<!--
-			Where you are, along the top of the same white.
-
-			And the way into the album's own pictures, because a folder's tiles
-			are the folders in it: what it holds itself is one press from here.
-			The button is drawn whether or not there is anywhere to go, so
-			choosing a folder never moves the row underneath it.
-		-->
-		<div class="flex items-center gap-3 border-b border-gray-200 px-4 py-2">
-			<span class="min-w-0 flex-1 truncate text-sm text-gray-900">{here}</span>
-			<span class="shrink-0 text-xs text-gray-500 tabular-nums">
-				{#if standingIn}
-					{standingIn.totalCount ?? standingIn.count}
-					{t('gallery.picture')}{(standingIn.totalCount ?? standingIn.count) === 1 ? '' : 's'}
-				{:else}
-					{data.albums.length} {t('gallery.album')}{data.albums.length === 1 ? '' : 's'}
-				{/if}
-			</span>
-			<a
-				href="{resolve('/media/gallery')}/{standingIn?.id ?? ''}"
-				class="btn btn-sm shrink-0 {standingIn ? '' : 'invisible'}"
-				aria-hidden={standingIn ? undefined : 'true'}
-				tabindex={standingIn ? undefined : -1}
+			<!-- Capped on a phone, where the panel sits above the tiles rather
+			     than beside them: an import of forty subfolders would otherwise
+			     push the pictures off the bottom of the screen. -->
+			<ul
+				class="max-h-64 divide-y divide-gray-200 overflow-y-auto lg:max-h-none lg:overflow-visible"
 			>
-				{t('ui.open')}
-			</a>
-		</div>
+				<li>
+					<button
+						onclick={() => (folderId = null)}
+						class="flex w-full items-center gap-2 py-2 pr-3 pl-1 text-left text-sm transition {folderId ===
+						null
+							? 'bg-gray-100 font-medium text-gray-900'
+							: 'text-gray-700 hover:bg-gray-50'}"
+					>
+						<!-- Where a foldable row keeps its chevron, so a folder gaining
+						     children never shifts any name sideways. -->
+						<span class="invisible size-4 shrink-0"><Icon name="chevron-down" /></span>
+						<span class="truncate">{t('gallery.allAlbums')}</span>
+						<span class="ml-auto shrink-0 text-xs text-gray-500 tabular-nums">
+							{data.albums.length}
+						</span>
+					</button>
+				</li>
+				{#each data.tree as root (root.id)}
+					{@render folderRow(root, 0)}
+				{/each}
+			</ul>
+		</section>
 
-		<div
-			class="grid overflow-hidden lg:grid-cols-[var(--folders)_1fr]"
-			style="--folders: {PANEL_REM}rem"
-		>
-			<section class="border-b border-gray-200 lg:border-r lg:border-b-0">
-				<h2 class="eyebrow border-b border-gray-200 px-4 py-2 text-gray-600">
-					{t('gallery.folders')}
-				</h2>
-
-				<!-- Capped on a phone, where the panel sits above the tiles rather
-				     than beside them: an import of forty subfolders would otherwise
-				     push the pictures off the bottom of the screen. -->
-				<ul
-					class="max-h-64 divide-y divide-gray-200 overflow-y-auto lg:max-h-none lg:overflow-visible"
+		<div class="min-w-0 p-4">
+			{#if data.albums.length === 0}
+				<EmptyState
+					icon="image"
+					title={t('gallery.noAlbumsYet')}
+					description={t('gallery.anAlbumIsWherePictures')}
+				/>
+			{:else if standingIn && level.length === 0}
+				<!-- A folder with no folders in it. Its pictures are the thing to
+				     offer: an empty grid with nothing to press is a dead end. -->
+				<EmptyState
+					icon="image"
+					title={t('gallery.noAlbumsInside', { name: leafAlbumName(standingIn.name) })}
 				>
-					<li>
-						<button
-							onclick={() => (folderId = null)}
-							class="flex w-full items-center gap-2 py-2 pr-3 pl-1 text-left text-sm transition {folderId ===
-							null
-								? 'bg-gray-100 font-medium text-gray-900'
-								: 'text-gray-700 hover:bg-gray-50'}"
-						>
-							<!-- Where a foldable row keeps its chevron, so a folder gaining
-							     children never shifts any name sideways. -->
-							<span class="invisible size-4 shrink-0"><Icon name="chevron-down" /></span>
-							<span class="truncate">{t('gallery.allAlbums')}</span>
-							<span class="ml-auto shrink-0 text-xs text-gray-500 tabular-nums">
-								{data.albums.length}
-							</span>
-						</button>
-					</li>
-					{#each data.tree as root (root.id)}
-						{@render folderRow(root, 0)}
+					{#snippet action()}
+						<a class="btn btn-primary" href="{resolve('/media/gallery')}/{standingIn?.id}">
+							{t('gallery.openTheAlbum')}
+						</a>
+					{/snippet}
+				</EmptyState>
+			{:else}
+				<!-- `tiles`: two columns at phone width, so each cell keeps its own
+				     edges rather than bleeding to both sides of the screen. -->
+				<ul class="tiles grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
+					{#each level as node (node.id)}
+						{@render albumCard(node)}
 					{/each}
 				</ul>
-			</section>
+			{/if}
 
-			<div class="min-w-0 p-4">
-				{#if data.albums.length === 0}
-					<EmptyState
-						icon="image"
-						title={t('gallery.noAlbumsYet')}
-						description={t('gallery.anAlbumIsWherePictures')}
-					/>
-				{:else if standingIn && level.length === 0}
-					<!-- A folder with no folders in it. Its pictures are the thing to
-					     offer: an empty grid with nothing to press is a dead end. -->
-					<EmptyState
-						icon="image"
-						title={t('gallery.noAlbumsInside', { name: leafAlbumName(standingIn.name) })}
-					>
-						{#snippet action()}
-							<a class="btn btn-primary" href="{resolve('/media/gallery')}/{standingIn?.id}">
-								{t('gallery.openTheAlbum')}
-							</a>
-						{/snippet}
-					</EmptyState>
-				{:else}
-					<!-- `tiles`: two columns at phone width, so each cell keeps its own
-					     edges rather than bleeding to both sides of the screen. -->
-					<ul class="tiles grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
-						{#each level as node (node.id)}
-							{@render albumCard(node)}
-						{/each}
-					</ul>
-				{/if}
+			<!--
+				The pictures that are in notebooks.
 
-				<!--
-					The pictures that are in notebooks.
-
-					Not an album somebody made and not one they can make: a picture is
-					in a notebook because a note mentions it, so this is a view of the
-					writing rather than a place to put things. It draws a notebook
-					rather than a cover for the same reason — a preview would suggest it
-					is a pile of pictures like the others, and opening it shows folders
-					named after notebooks, not a wall. It belongs to the top of the
-					tree, so standing inside a folder puts it away with the rest of what
-					is not in that folder.
-				-->
-				{#if folderId === null && data.notebookPictures > 0}
-					<ul
-						class="tiles mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5"
-					>
-						<li class="group relative overflow-hidden rounded-lg border border-gray-200">
-							<a href="{resolve('/media/gallery')}/notebooks" class="block">
-								<span
-									class="flex aspect-square items-center justify-center bg-gray-50 text-gray-300"
+				Not an album somebody made and not one they can make: a picture is
+				in a notebook because a note mentions it, so this is a view of the
+				writing rather than a place to put things. It draws a notebook
+				rather than a cover for the same reason — a preview would suggest it
+				is a pile of pictures like the others, and opening it shows folders
+				named after notebooks, not a wall. It belongs to the top of the
+				tree, so standing inside a folder puts it away with the rest of what
+				is not in that folder.
+			-->
+			{#if folderId === null && data.notebookPictures > 0}
+				<ul class="tiles mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
+					<li class="group relative overflow-hidden rounded-lg border border-gray-200">
+						<a href="{resolve('/media/gallery')}/notebooks" class="block">
+							<span class="flex aspect-square items-center justify-center bg-gray-50 text-gray-300">
+								<Icon name="notebook" size={40} />
+							</span>
+							<span class="flex items-baseline justify-between gap-2 px-2.5 py-2">
+								<span class="truncate text-sm font-medium text-gray-900">
+									{t('gallery.notebooks')}
+								</span>
+								<span class="shrink-0 text-xs text-gray-500 tabular-nums"
+									>{data.notebookPictures}</span
 								>
-									<Icon name="notebook" size={56} />
-								</span>
-								<span class="flex items-baseline gap-2 px-3 py-2">
-									<span class="min-w-0 flex-1 truncate text-sm font-medium text-gray-900">
-										{t('gallery.notebooks')}
-									</span>
-									<span class="text-xs text-gray-400 tabular-nums">{data.notebookPictures}</span>
-								</span>
-							</a>
-						</li>
-					</ul>
-				{/if}
-			</div>
+							</span>
+						</a>
+					</li>
+				</ul>
+			{/if}
 		</div>
-	</Card>
-</div>
+	</div>
+</RoomSurface>
 
 <Modal bind:open={showNew} error={form?.message} title={t('gallery.newAlbum')} size="sm">
 	<form

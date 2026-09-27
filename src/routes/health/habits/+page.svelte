@@ -1,10 +1,12 @@
 <script lang="ts">
-	import Card from '$lib/components/Card.svelte';
 	import { routeGlyph } from '$lib/glyphs';
+	import ShowingCount from '$lib/components/ShowingCount.svelte';
+	import SearchField from '$lib/components/SearchField.svelte';
 	import { enhance } from '$lib/enhance';
-	import FilterChips from '$lib/components/FilterChips.svelte';
+	import FilterBar from '$lib/components/FilterBar.svelte';
+	import Picker from '$lib/components/Picker.svelte';
+	import RoomSurface from '$lib/components/RoomSurface.svelte';
 	import { setRoomAction } from '$lib/room-action.svelte';
-	import RoomToolbar from '$lib/components/RoomToolbar.svelte';
 	import FormError from '$lib/components/FormError.svelte';
 	import EmptyState from '$lib/components/EmptyState.svelte';
 	import Icon from '$lib/components/Icon.svelte';
@@ -41,9 +43,32 @@
 	let newHabitType: 'bad' | 'good' | 'neutral' = $state('bad');
 	let scheduledDaysState: boolean[] = $state([false, false, false, false, false, false, false]);
 
+	let looking = $state('');
+
+	const KINDS = [
+		{ value: 'all', label: 'health.habits.everyKind' },
+		{ value: 'good', label: 'app.good' },
+		{ value: 'bad', label: 'app.bad' },
+		{ value: 'neutral', label: 'app.neutral' }
+	] as const;
+
+	const narrowed = $derived(typeFilter !== 'all' || looking.trim() !== '');
+
 	function filteredHabits() {
-		if (typeFilter === 'all') return data.habits as Habit[];
-		return (data.habits as Habit[]).filter((h: Habit) => h.type === typeFilter);
+		const needle = looking.trim().toLowerCase();
+		return (data.habits as Habit[]).filter(
+			(h) =>
+				(typeFilter === 'all' || h.type === typeFilter) &&
+				(needle === '' ||
+					h.name.toLowerCase().includes(needle) ||
+					(h.description ?? '').toLowerCase().includes(needle))
+		);
+	}
+
+	function clearFilters() {
+		typeFilter = 'all';
+		looking = '';
+		selectedHabitIndex = 0;
 	}
 
 	function handleKeydown(e: KeyboardEvent) {
@@ -153,115 +178,86 @@
 <svelte:window onkeydown={handleKeydown} />
 
 <div class="space-y-4">
-	<RoomToolbar>
-		{#snippet filters()}
-			<FilterChips
-				label={t('health.habits.kind')}
-				bind:value={typeFilter}
-				onchange={() => (selectedHabitIndex = 0)}
-				options={[
-					{ value: 'all', label: 'app.all' },
-					{ value: 'good', label: 'app.good' },
-					{ value: 'bad', label: 'app.bad' },
-					{ value: 'neutral', label: 'app.neutral' }
-				]}
-			/>
-		{/snippet}
-	</RoomToolbar>
-
 	<FormError message={form?.message} />
 
-	<Modal
-		bind:open={showForm}
-		error={form?.message}
-		title={editingId ? t('health.habits.editHabit') : t('health.habits.newHabit')}
-		onclose={resetForm}
-		size="sm"
-	>
-		{@const editHabit = editingId ? (data.habits as Habit[]).find((h) => h.id === editingId) : null}
-		<form
-			id="habit-form"
-			method="post"
-			action={editingId ? '?/update' : '?/create'}
-			use:enhance={() => {
-				return async ({ update, result }) => {
-					await update({ reset: false });
-					if (result.type === 'success') {
-						showForm = false;
-						resetForm();
-					}
-				};
-			}}
-		>
-			{#if editingId}
-				<input type="hidden" name="id" value={editingId} />
-			{/if}
-			<HabitFields
-				editing={editHabit}
-				bind:kind={newHabitType}
-				bind:days={scheduledDaysState}
-				notebooks={data.notebooks}
-			/>
-		</form>
-
-		{#snippet footer()}
-			<button type="button" class="btn" onclick={() => (showForm = false)}>{t('ui.cancel')}</button>
-			<button type="submit" form="habit-form" class="btn btn-primary">
-				{editingId ? t('ui.save') : t('health.habits.createHabit')}
-			</button>
+	<!--
+		The controls and the habits are one object — see `RoomSurface` — with
+		the same strip the task list has along its top: search, how many are
+		showing, and the kind as a `Picker`.
+	-->
+	<RoomSurface dataTour="habit-list">
+		{#snippet tools()}
+			<FilterBar
+				name="habits"
+				on={narrowed}
+				summary={typeFilter === 'all' ? '' : t(KINDS.find((k) => k.value === typeFilter)!.label)}
+				onclear={clearFilters}
+			>
+				{#snippet lead()}
+					<SearchField
+						bind:value={looking}
+						oninput={() => (selectedHabitIndex = 0)}
+						label={t('health.habits.search')}
+					/>
+				{/snippet}
+				{#snippet count()}
+					<!-- Held open by the count of every habit, so narrowing does not
+					     change its width. See `.count-slot`. -->
+					<ShowingCount
+						total={data.habits.length}
+						shown={filteredHabits().length}
+						said={(count) => t('health.habits.showingCount', { count })}
+					/>
+				{/snippet}
+				<Picker
+					value={typeFilter}
+					options={KINDS.map((k) => ({ value: k.value, label: t(k.label) }))}
+					onpick={(next) => {
+						typeFilter = next;
+						selectedHabitIndex = 0;
+					}}
+					label={t('health.habits.kind')}
+					class="min-w-32 flex-1 sm:flex-none"
+				/>
+			</FilterBar>
 		{/snippet}
-	</Modal>
 
-	{#if filteredHabits().length === 0}
-		<Card flush>
-			<div class="p-8 text-center text-sm text-gray-500">
-				{#if typeFilter === 'all'}
-					<EmptyState
-						icon={routeGlyph('/health/habits')!}
-						title={t('health.habits.nothingTrackedYet')}
-						description={t('health.habits.aHabitIsSomethingYou')}
-					>
-						{#snippet action()}
-							<button onclick={openNewHabit} class="btn btn-primary">
-								<Icon name="plus" />
-								{t('health.habits.newHabit')}
-							</button>
-						{/snippet}
-					</EmptyState>
-				{:else}
-					<EmptyState
-						icon={routeGlyph('/health/habits')!}
-						title={t('health.habits.nothingTrackedInThisFilter')}
-					>
-						{#snippet action()}
-							<button onclick={() => (typeFilter = 'all')} class="btn"
-								>{t('health.habits.showAllHabits')}</button
-							>
-						{/snippet}
-					</EmptyState>
-				{/if}
-			</div>
-		</Card>
-	{:else}
-		<!--
-			One surface, and a habit is a row on it.
-
-			The coloured edge down the left is what tells one habit from another —
-			it does not need a card each and a strip of page between them to do
-			that, and a screen of separate boxes read as a scatter rather than as
-			the list it is.
-		-->
-		<Card flush dataTour="habit-list">
+		{#if filteredHabits().length === 0}
+			<!-- Inside the surface, so the controls that emptied it stay to undo it. -->
+			{#if !narrowed}
+				<EmptyState
+					icon={routeGlyph('/health/habits')!}
+					title={t('health.habits.nothingTrackedYet')}
+					description={t('health.habits.aHabitIsSomethingYou')}
+				>
+					{#snippet action()}
+						<button onclick={openNewHabit} class="btn btn-primary">
+							<Icon name="plus" />
+							{t('health.habits.newHabit')}
+						</button>
+					{/snippet}
+				</EmptyState>
+			{:else}
+				<EmptyState icon="search" title={t('health.habits.nothingTrackedInThisFilter')}>
+					{#snippet action()}
+						<button onclick={clearFilters} class="btn">{t('health.habits.showAllHabits')}</button>
+					{/snippet}
+				</EmptyState>
+			{/if}
+		{:else}
+			<!--
+				A habit is a row on the surface. The coloured edge down the left is
+				what tells one kind from another; the rows need no card each.
+			-->
 			<div class="divide-y divide-gray-200">
 				{#each filteredHabits() as habit, i (habit.id)}
 					<!--
-					The card is a component, so a habit filed under a notebook is the
-					same habit this room shows — its streak, its year at a glance, its
-					backdating and the notes on each day. See `HabitCard`.
-				-->
+						The card is a component, so a habit filed under a notebook is the
+						same habit this room shows. See `HabitCard`.
+					-->
 					<div
 						use:keepInView={i === selectedHabitIndex}
-						class={i === selectedHabitIndex ? 'kbd-cursor' : ''}
+						class={i === selectedHabitIndex ? 'kb-cursor' : ''}
 					>
 						<HabitCard
 							{habit}
@@ -276,6 +272,47 @@
 					</div>
 				{/each}
 			</div>
-		</Card>
-	{/if}
+		{/if}
+	</RoomSurface>
 </div>
+
+<Modal
+	bind:open={showForm}
+	error={form?.message}
+	title={editingId ? t('health.habits.editHabit') : t('health.habits.newHabit')}
+	onclose={resetForm}
+	size="sm"
+>
+	{@const editHabit = editingId ? (data.habits as Habit[]).find((h) => h.id === editingId) : null}
+	<form
+		id="habit-form"
+		method="post"
+		action={editingId ? '?/update' : '?/create'}
+		use:enhance={() => {
+			return async ({ update, result }) => {
+				await update({ reset: false });
+				if (result.type === 'success') {
+					showForm = false;
+					resetForm();
+				}
+			};
+		}}
+	>
+		{#if editingId}
+			<input type="hidden" name="id" value={editingId} />
+		{/if}
+		<HabitFields
+			editing={editHabit}
+			bind:kind={newHabitType}
+			bind:days={scheduledDaysState}
+			notebooks={data.notebooks}
+		/>
+	</form>
+
+	{#snippet footer()}
+		<button type="button" class="btn" onclick={() => (showForm = false)}>{t('ui.cancel')}</button>
+		<button type="submit" form="habit-form" class="btn btn-primary">
+			{editingId ? t('ui.save') : t('health.habits.createHabit')}
+		</button>
+	{/snippet}
+</Modal>

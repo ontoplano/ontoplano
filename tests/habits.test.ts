@@ -74,6 +74,39 @@ describe('logging a day', () => {
 		expect(logged.notes).toBe('along the river');
 	});
 
+	test('a day can be set to a count, up and back down', () => {
+		const id = habits.createHabit(ctx, { name: 'coffee', type: 'neutral' });
+		const onTheDay = () =>
+			habits.listOccurrences(ctx).filter((o) => o.habitId === id && o.date === '2026-08-17');
+
+		habits.logOccurrence(ctx, { habitId: id, date: '2026-08-17', notes: 'the first one' });
+		habits.setDayCount(ctx, { habitId: id, date: '2026-08-17', count: '3' });
+		expect(onTheDay()).toHaveLength(3);
+
+		// Sent twice, it is still three: the count is absolute, not a step.
+		habits.setDayCount(ctx, { habitId: id, date: '2026-08-17', count: '3' });
+		expect(onTheDay()).toHaveLength(3);
+
+		// Down takes the newest back, so the one with a note is kept.
+		habits.setDayCount(ctx, { habitId: id, date: '2026-08-17', count: '1' });
+		expect(onTheDay().map((o) => o.notes)).toEqual(['the first one']);
+
+		habits.setDayCount(ctx, { habitId: id, date: '2026-08-17', count: '0' });
+		expect(onTheDay()).toHaveLength(0);
+
+		expect(() => habits.setDayCount(ctx, { habitId: id, count: '-1' })).toThrow();
+		expect(() =>
+			habits.setDayCount(ctx, { habitId: id, count: String(habits.MAX_DAY_COUNT + 1) })
+		).toThrow();
+	});
+
+	test("another account's day cannot be counted", () => {
+		const mine = habits.listHabits(ctx)[0];
+		expect(() =>
+			habits.setDayCount(theirs, { habitId: mine.id, date: '2026-08-17', count: '2' })
+		).toThrow();
+	});
+
 	test("another account's habit cannot be logged against", () => {
 		const mine = habits.listHabits(ctx)[0];
 		expect(() => habits.logOccurrence(theirs, { habitId: mine.id, date: '2026-08-17' })).toThrow();

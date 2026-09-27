@@ -6,7 +6,9 @@
 	import { page } from '$app/state';
 	import { base, resolve } from '$app/paths';
 	import Banner from '$lib/components/Banner.svelte';
-	import Card from '$lib/components/Card.svelte';
+	import RoomSurface from '$lib/components/RoomSurface.svelte';
+	import SettingGroup from '$lib/components/SettingGroup.svelte';
+	import SettingRow from '$lib/components/SettingRow.svelte';
 	import FormError from '$lib/components/FormError.svelte';
 	import Icon from '$lib/components/Icon.svelte';
 	import { LIMIT_LABELS, describeYearly, formatPrice, tierPricing } from '$lib/plans';
@@ -103,272 +105,288 @@
 		<Banner kind="info" message={t('settings.billing.confirmingYourPayment')} />
 	{/if}
 
-	<Card
-		title={t('settings.billing.yourPlan')}
-		description={data.entitlement.status === 'trialing' || data.entitlement.source === 'trial'
-			? t('settings.billing.trialRunsUntil', { date: when(data.entitlement.until) })
-			: data.entitlement.source === 'lapsed'
-				? t('settings.billing.yourSubscriptionHasEndedNothing')
-				: data.entitlement.source === 'invited' && data.entitlement.until
-					? // An invitation, not a trial: nothing was charged and no card was
-						// asked for. Say when it runs out, because the buttons below are
-						// only useful to somebody who knows that it does.
-						t('settings.billing.invitedRunsUntil', { date: when(data.entitlement.until) })
-					: current.blurb}
-	>
-		{#snippet actions()}
-			{#if data.portal && !moneyStays}
-				<a href={data.portal} class="btn btn-sm" rel="external"
-					>{t('settings.billing.managePayment')}</a
-				>
-			{/if}
-		{/snippet}
-
-		<div class="flex flex-wrap items-baseline gap-x-4 gap-y-1">
-			<span class="text-2xl font-bold text-gray-900">{t(current.label)}</span>
-			{#if data.hasProviderSub && data.interval}
-				<span class="text-sm text-gray-500">
-					{data.interval === 'year'
-						? t('settings.billing.aYear', {
-								currency: formatPrice(mine.yearlyCents, mine.currency)
-							})
-						: t('settings.billing.aMonth', {
-								currency: formatPrice(mine.monthlyCents, mine.currency)
-							})}
-				</span>
-			{:else if current.id === 'pro'}
-				<span class="text-sm text-gray-500"
-					>{t('settings.billing.aMonth', {
-						currency: formatPrice(mine.monthlyCents, mine.currency)
-					})}</span
-				>
-			{/if}
-
-			{#if data.tier === 'family'}
-				<span class="chip">{t('settings.billing.familyAccounts', { seats: data.seats })}</span>
-				<a class="text-sm underline" href={resolve('/settings/family')}
-					>{t('settings.billing.whoIsOnIt')}</a
-				>
-			{/if}
-
-			{#if data.entitlement.until}
-				<span class="text-sm text-gray-500">
-					{data.entitlement.endingAt
-						? t('settings.billing.endsOn', { date: when(data.entitlement.endingAt) })
-						: data.entitlement.status === 'trialing' || data.entitlement.source === 'trial'
-							? t('settings.billing.firstChargeOn', { date: when(data.entitlement.until) })
-							: t('settings.billing.renewsOn', { date: when(data.entitlement.until) })}
-				</span>
-			{/if}
-		</div>
-
-		<div class="mt-3"><FormError message={form?.message} /></div>
-
-		{#if form && 'switched' in form && form.switched}
-			<div class="mt-3">
-				<Banner
-					kind="success"
-					message={form.switched === 'yearly'
-						? t('settings.billing.switchedToYearlyBilling')
-						: t('settings.billing.switchedToMonthlyBilling')}
-				/>
-			</div>
-		{/if}
-
-		{#if moneyStays}
-			{#if data.hasProviderSub || data.canCheckout}
-				<p class="mt-4 text-sm text-gray-600">
-					{t('settings.billing.aSubscriptionCannotBeStarted')}
-				</p>
-			{/if}
-		{:else if data.hasProviderSub && data.yearly && data.interval === 'month'}
-			<!-- The one honest upgrade: same subscription, better cycle. -->
-			<form method="post" action="?/switchInterval" use:enhance class="mt-4">
-				<button name="interval" value="yearly" class="btn btn-primary">
-					<Icon name="arrow-right" />{t('settings.billing.switchToYearly', {
-						yearlyLine: yearlyLine ?? ''
-					})}</button
-				>
-			</form>
-		{:else if data.hasProviderSub && data.interval === 'year'}
-			{#if confirmMonthly}
-				<div class="mt-4 flex flex-wrap items-center gap-2">
-					<span class="text-sm text-gray-700"
-						>{t('settings.billing.monthlyIsOverAYear', {
-							currency: formatPrice(mine.monthlyCents * 12, mine.currency),
-							currency2: formatPrice(mine.monthlyCents * 12 - mine.yearlyCents, mine.currency)
-						})}</span
+	<!-- The shape every settings screen has: one surface, a band per subject. -->
+	<RoomSurface>
+		<SettingGroup
+			title={t('settings.billing.yourPlan')}
+			description={data.entitlement.status === 'trialing' || data.entitlement.source === 'trial'
+				? t('settings.billing.trialRunsUntil', { date: when(data.entitlement.until) })
+				: data.entitlement.source === 'lapsed'
+					? t('settings.billing.yourSubscriptionHasEndedNothing')
+					: data.entitlement.source === 'invited' && data.entitlement.until
+						? // An invitation, not a trial: nothing was charged and no card was
+							// asked for. Say when it runs out, because the buttons below are
+							// only useful to somebody who knows that it does.
+							t('settings.billing.invitedRunsUntil', { date: when(data.entitlement.until) })
+						: current.blurb}
+		>
+			{#snippet actions()}
+				{#if data.portal && !moneyStays}
+					<a href={data.portal} class="btn btn-sm" rel="external"
+						>{t('settings.billing.managePayment')}</a
 					>
-					<form method="post" action="?/switchInterval" use:enhance>
-						<button name="interval" value="monthly" class="btn btn-sm btn-danger">
-							{t('settings.billing.switchAnyway')}
-						</button>
-					</form>
-					<button type="button" class="btn btn-sm" onclick={() => (confirmMonthly = false)}>
-						{t('settings.billing.keepYearly')}
-					</button>
-				</div>
-			{:else}
-				<button
-					type="button"
-					class="btn btn-sm btn-quiet mt-4"
-					onclick={() => (confirmMonthly = true)}
-				>
-					{t('settings.billing.switchToMonthly')}
-				</button>
-			{/if}
+				{/if}
+			{/snippet}
 
-			<!-- The twice-a-day ceiling is only spoken as its refusal: the third
+			<div class="px-4 py-3">
+				<div class="flex flex-wrap items-baseline gap-x-4 gap-y-1">
+					<span class="text-2xl font-bold text-gray-900">{t(current.label)}</span>
+					{#if data.hasProviderSub && data.interval}
+						<span class="text-sm text-gray-500">
+							{data.interval === 'year'
+								? t('settings.billing.aYear', {
+										currency: formatPrice(mine.yearlyCents, mine.currency)
+									})
+								: t('settings.billing.aMonth', {
+										currency: formatPrice(mine.monthlyCents, mine.currency)
+									})}
+						</span>
+					{:else if current.id === 'pro'}
+						<span class="text-sm text-gray-500"
+							>{t('settings.billing.aMonth', {
+								currency: formatPrice(mine.monthlyCents, mine.currency)
+							})}</span
+						>
+					{/if}
+
+					{#if data.tier === 'family'}
+						<span class="chip">{t('settings.billing.familyAccounts', { seats: data.seats })}</span>
+						<a class="text-sm underline" href={resolve('/settings/family')}
+							>{t('settings.billing.whoIsOnIt')}</a
+						>
+					{/if}
+
+					{#if data.entitlement.until}
+						<span class="text-sm text-gray-500">
+							{data.entitlement.endingAt
+								? t('settings.billing.endsOn', { date: when(data.entitlement.endingAt) })
+								: data.entitlement.status === 'trialing' || data.entitlement.source === 'trial'
+									? t('settings.billing.firstChargeOn', { date: when(data.entitlement.until) })
+									: t('settings.billing.renewsOn', { date: when(data.entitlement.until) })}
+						</span>
+					{/if}
+				</div>
+
+				<div class="mt-3"><FormError message={form?.message} /></div>
+
+				{#if form && 'switched' in form && form.switched}
+					<div class="mt-3">
+						<Banner
+							kind="success"
+							message={form.switched === 'yearly'
+								? t('settings.billing.switchedToYearlyBilling')
+								: t('settings.billing.switchedToMonthlyBilling')}
+						/>
+					</div>
+				{/if}
+
+				{#if moneyStays}
+					{#if data.hasProviderSub || data.canCheckout}
+						<p class="mt-4 text-sm text-gray-600">
+							{t('settings.billing.aSubscriptionCannotBeStarted')}
+						</p>
+					{/if}
+				{:else if data.hasProviderSub && data.yearly && data.interval === 'month'}
+					<!-- The one honest upgrade: same subscription, better cycle. -->
+					<form method="post" action="?/switchInterval" use:enhance class="mt-4">
+						<button name="interval" value="yearly" class="btn btn-primary">
+							<Icon name="arrow-right" />{t('settings.billing.switchToYearly', {
+								yearlyLine: yearlyLine ?? ''
+							})}</button
+						>
+					</form>
+				{:else if data.hasProviderSub && data.interval === 'year'}
+					{#if confirmMonthly}
+						<div class="mt-4 flex flex-wrap items-center gap-2">
+							<span class="text-sm text-gray-700"
+								>{t('settings.billing.monthlyIsOverAYear', {
+									currency: formatPrice(mine.monthlyCents * 12, mine.currency),
+									currency2: formatPrice(mine.monthlyCents * 12 - mine.yearlyCents, mine.currency)
+								})}</span
+							>
+							<form method="post" action="?/switchInterval" use:enhance>
+								<button name="interval" value="monthly" class="btn btn-sm btn-danger">
+									{t('settings.billing.switchAnyway')}
+								</button>
+							</form>
+							<button type="button" class="btn btn-sm" onclick={() => (confirmMonthly = false)}>
+								{t('settings.billing.keepYearly')}
+							</button>
+						</div>
+					{:else}
+						<button
+							type="button"
+							class="btn btn-sm btn-quiet mt-4"
+							onclick={() => (confirmMonthly = true)}
+						>
+							{t('settings.billing.switchToMonthly')}
+						</button>
+					{/if}
+
+					<!-- The twice-a-day ceiling is only spoken as its refusal: the third
 			     press is told "you can switch again tomorrow", and nobody who
 			     never meets the limit reads about it. -->
-		{/if}
+				{/if}
 
-		{#if data.canCheckout && !moneyStays}
-			<div class="mt-4">
-				{#if data.configured}
-					{@const trialFirst = data.pricing.trialRequiresCard && data.trialDaysAhead > 0}
-					<!-- Full page post on purpose: the answer is a redirect to the
+				{#if data.canCheckout && !moneyStays}
+					<div class="mt-4">
+						{#if data.configured}
+							{@const trialFirst = data.pricing.trialRequiresCard && data.trialDaysAhead > 0}
+							<!-- Full page post on purpose: the answer is a redirect to the
 					     provider's checkout, which enhance would swallow. Yearly
 					     leads; it is the one worth taking. -->
-					<form method="post" action="?/checkout" class="flex flex-wrap items-center gap-2">
-						<input type="hidden" name="channel" value={payChannel} />
-						<input type="hidden" name="tier" value="solo" />
-						{#if data.yearly}
-							<button class="btn btn-primary" name="interval" value="yearly">
-								<Icon name="arrow-right" />
-								{trialFirst ? `Start your free ${data.trialDaysAhead} days` : 'Subscribe'}
-								{t('settings.billing.yearly2')}
-							</button>
-							<button class="btn" name="interval" value="monthly"
-								>{t('settings.billing.monthly', {
-									currency: formatPrice(data.pricing.monthlyCents, data.pricing.currency)
-								})}</button
-							>
-						{:else}
-							<button class="btn btn-primary" name="interval" value="monthly">
-								<Icon name="arrow-right" />
-								{trialFirst ? `Start your free ${data.trialDaysAhead} days` : 'Subscribe'}
-							</button>
-						{/if}
-					</form>
+							<form method="post" action="?/checkout" class="flex flex-wrap items-center gap-2">
+								<input type="hidden" name="channel" value={payChannel} />
+								<input type="hidden" name="tier" value="solo" />
+								{#if data.yearly}
+									<button class="btn btn-primary" name="interval" value="yearly">
+										<Icon name="arrow-right" />
+										{trialFirst
+											? t('settings.billing.startYourFreeDays', { count: data.trialDaysAhead })
+											: t('settings.billing.subscribe')}
+										{t('settings.billing.yearly2')}
+									</button>
+									<button class="btn" name="interval" value="monthly"
+										>{t('settings.billing.monthly', {
+											currency: formatPrice(data.pricing.monthlyCents, data.pricing.currency)
+										})}</button
+									>
+								{:else}
+									<button class="btn btn-primary" name="interval" value="monthly">
+										<Icon name="arrow-right" />
+										{trialFirst
+											? t('settings.billing.startYourFreeDays', { count: data.trialDaysAhead })
+											: t('settings.billing.subscribe')}
+									</button>
+								{/if}
+							</form>
 
-					<!--
+							<!--
 						The family plan, offered beside the ordinary one rather than as
 						an upsell after it: somebody buying for a household knows that
 						before they reach this page, and finding out afterwards means
 						cancelling and buying again.
 					-->
-					{#if data.pricing.familyMonthlyCents > 0}
-						<form
-							method="post"
-							action="?/checkout"
-							class="mt-3 flex flex-wrap items-center gap-2 border-t border-gray-200 pt-3"
-						>
-							<input type="hidden" name="tier" value="family" />
-							<input type="hidden" name="channel" value={payChannel} />
-							<span class="text-sm text-gray-600"
-								>{t('settings.billing.forUpToAccountsOn', {
-									familySeats: data.pricing.familySeats
-								})}</span
-							>
-							{#if data.yearly}
-								<button class="btn btn-sm" name="interval" value="yearly"
-									>{t('settings.billing.yearly', {
-										currency: formatPrice(data.pricing.familyYearlyCents, data.pricing.currency)
-									})}</button
+							{#if data.pricing.familyMonthlyCents > 0}
+								<form
+									method="post"
+									action="?/checkout"
+									class="mt-3 flex flex-wrap items-center gap-2 border-t border-gray-200 pt-3"
 								>
+									<input type="hidden" name="tier" value="family" />
+									<input type="hidden" name="channel" value={payChannel} />
+									<span class="text-sm text-gray-600"
+										>{t('settings.billing.forUpToAccountsOn', {
+											familySeats: data.pricing.familySeats
+										})}</span
+									>
+									{#if data.yearly}
+										<button class="btn btn-sm" name="interval" value="yearly"
+											>{t('settings.billing.yearly', {
+												currency: formatPrice(data.pricing.familyYearlyCents, data.pricing.currency)
+											})}</button
+										>
+									{/if}
+									<button class="btn btn-sm" name="interval" value="monthly"
+										>{t('settings.billing.monthly', {
+											currency: formatPrice(data.pricing.familyMonthlyCents, data.pricing.currency)
+										})}</button
+									>
+								</form>
 							{/if}
-							<button class="btn btn-sm" name="interval" value="monthly"
-								>{t('settings.billing.monthly', {
-									currency: formatPrice(data.pricing.familyMonthlyCents, data.pricing.currency)
-								})}</button
-							>
-						</form>
-					{/if}
-					{#if data.yearly && yearlyLine}
-						<p class="mt-2 text-xs text-gray-500">
-							{t('settings.billing.yearlyIs', { yearlyLine: yearlyLine ?? '' })}
-						</p>
-					{/if}
-					{#if trialFirst}
-						<p class="mt-1 text-xs text-gray-500">
-							{t('settings.billing.cardNowNothingChargedToday', {
-								trialDays: data.pricing.trialDays
-							})}
-						</p>
-					{/if}
-				{:else}
-					<p class="mt-2 text-xs text-gray-500">
-						{t('settings.billing.thisInstanceHasNoPayment')}
-					</p>
-				{/if}
+							{#if data.yearly && yearlyLine}
+								<p class="mt-2 text-xs text-gray-500">
+									{t('settings.billing.yearlyIs', { yearlyLine: yearlyLine ?? '' })}
+								</p>
+							{/if}
+							{#if trialFirst}
+								<p class="mt-1 text-xs text-gray-500">
+									{t('settings.billing.cardNowNothingChargedToday', {
+										trialDays: data.pricing.trialDays
+									})}
+								</p>
+							{/if}
+						{:else}
+							<p class="mt-2 text-xs text-gray-500">
+								{t('settings.billing.thisInstanceHasNoPayment')}
+							</p>
+						{/if}
 
-				<!--
+						<!--
 					The third answer to "how do I pay for this": somebody already has.
 					Without it the only route was to buy a second subscription and
 					then ask for a refund, which is what one person did.
 				-->
-				{#if !onSomebodyElses}
-					<button
-						type="button"
-						class="btn btn-sm btn-quiet mt-4"
-						onclick={() => (onSomebodyElses = true)}
-					>
-						{t('settings.billing.somebodyElseSPlanShouldCover')}
-					</button>
-				{:else}
-					<div class="mt-4 border border-gray-200 bg-gray-50 p-3">
-						<p class="text-sm text-gray-700">
-							{t('settings.billing.askThemToAddYou')}
-						</p>
-						<img
-							src="{base}/help/family-seat.png"
-							alt={t('settings.billing.theFamilyTabWithA')}
-							class="mt-3 w-full max-w-2xl border border-gray-200"
-							loading="lazy"
-						/>
-						<p class="mt-2 text-xs text-gray-500">
-							{t('settings.billing.aBandAppearsAtThe')}
-						</p>
-						<button type="button" class="btn btn-sm mt-3" onclick={() => (onSomebodyElses = false)}>
-							<Icon name="arrow-left" />
-							{t('ui.back')}
-						</button>
+						{#if !onSomebodyElses}
+							<button
+								type="button"
+								class="btn btn-sm btn-quiet mt-4"
+								onclick={() => (onSomebodyElses = true)}
+							>
+								{t('settings.billing.somebodyElseSPlanShouldCover')}
+							</button>
+						{:else}
+							<div class="mt-4">
+								<Banner kind="info">
+									<p>
+										{t('settings.billing.askThemToAddYou')}
+									</p>
+									<img
+										src="{base}/help/family-seat.png"
+										alt={t('settings.billing.theFamilyTabWithA')}
+										class="mt-3 w-full max-w-2xl border border-gray-200"
+										loading="lazy"
+									/>
+									<p class="mt-2 text-xs text-gray-500">
+										{t('settings.billing.aBandAppearsAtThe')}
+									</p>
+									<button
+										type="button"
+										class="btn btn-sm mt-3"
+										onclick={() => (onSomebodyElses = false)}
+									>
+										<Icon name="arrow-left" />
+										{t('ui.back')}
+									</button>
+								</Banner>
+							</div>
+						{/if}
 					</div>
 				{/if}
 			</div>
-		{/if}
-	</Card>
+		</SettingGroup>
 
-	<Card
-		title={t('settings.billing.whatYouAreUsing')}
-		description={t('settings.billing.againstTheCeilingsOnYour')}
-	>
-		<div class="space-y-3">
+		<SettingGroup
+			title={t('settings.billing.whatYouAreUsing')}
+			description={t('settings.billing.againstTheCeilingsOnYour')}
+		>
 			{#each data.limitKeys as key (key)}
 				{@const limit = current.limits[key]}
 				{@const used = data.usage[key]}
-				<div>
-					<div class="flex items-baseline justify-between text-sm">
-						<span class="text-gray-700">{t(LIMIT_LABELS[key])}</span>
-						<span class="tabular text-gray-500">
-							{used}{limit === null ? '' : ` / ${limit}`}
-						</span>
-					</div>
-					{#if limit === null}
-						<!-- No bar: a full one against no ceiling reads as "you are at
-							     the limit", which is the opposite of what it means. -->
-						<p class="mt-0.5 text-xs text-gray-500">{t('settings.billing.noLimitOnThisPlan')}</p>
-					{:else}
-						<div class="mt-1 h-1.5 w-full bg-gray-200">
-							<div
-								class="h-full {percent(used, limit) >= 100 ? 'bg-red-600' : 'bg-gray-900'}"
-								style="width: {percent(used, limit)}%"
-							></div>
+				<SettingRow
+					label={t(LIMIT_LABELS[key])}
+					hint={limit === null ? t('settings.billing.noLimitOnThisPlan') : ''}
+				>
+					<!-- No bar against no ceiling: a full one reads as "at the limit",
+				     the opposite of what it means. One ink whatever the level — a
+				     thin red bar is a colour doing the word's job; the glyph and the
+				     number say it is full. -->
+					{#if limit !== null}
+						<div class="mt-2 h-1.5 w-full max-w-md bg-gray-200">
+							<div class="h-full bg-gray-900" style="width: {percent(used, limit)}%"></div>
 						</div>
 					{/if}
-				</div>
+					{#snippet control()}
+						<span class="tabular flex items-center gap-1 text-sm text-gray-900">
+							{#if limit !== null && percent(used, limit) >= 100}<Icon
+									name="warning"
+									size={14}
+								/>{/if}
+							{used}{limit === null ? '' : ` / ${limit}`}
+						</span>
+					{/snippet}
+				</SettingRow>
 			{/each}
-		</div>
-	</Card>
+		</SettingGroup>
+	</RoomSurface>
 </div>

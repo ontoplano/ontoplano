@@ -17,7 +17,7 @@
 	import Icon from '$lib/components/Icon.svelte';
 	import RowCard from '$lib/components/RowCard.svelte';
 	import Written from '$lib/components/Written.svelte';
-	import NumberBox from '$lib/components/NumberBox.svelte';
+	import Counter from '$lib/components/Counter.svelte';
 	import Modal from '$lib/components/Modal.svelte';
 	import { pillStyle } from '$lib/pill-ink';
 	import { enhance } from '$lib/enhance';
@@ -217,6 +217,45 @@
 			{/if}
 		{/snippet}
 
+		{#snippet labels()}
+			<!-- Its area, when it is for, and what it is part of: on the card's
+			     foot, where a task's notebook and labels sit, so the line the
+			     actions stand on is not a line of nothing else. -->
+			<span class="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-gray-500">
+				{#if goal.areaName}
+					<span class="pill" style={pillStyle(goal.areaColor)}>{goal.areaName}</span>
+				{/if}
+				{#if !open && isGoalStatus(goal.status)}
+					<span class="eyebrow text-gray-600"
+						>{t(STATUS_LABELS[goal.status as keyof typeof STATUS_LABELS])}</span
+					>
+				{/if}
+				<span class="tabular inline-flex items-center gap-1">
+					<Icon name="calendar" size={12} />
+					{describePeriod(t, now(), goal.horizon, goal.periodStart)}
+				</span>
+				{#if parent}
+					<span class="inline-flex min-w-0 items-center gap-1">
+						<Icon name="goals" size={12} />
+						<span class="break-words">{t('goals.partOf2', { title: parent.title })}</span>
+					</span>
+				{/if}
+				<!-- What counts towards this goal: it opens above this line, inside
+				     the card, where the words it belongs to are. -->
+				<button
+					type="button"
+					onclick={() => (openTasks = !openTasks)}
+					class="goal-fold"
+					aria-expanded={openTasks}
+					title={t('goals.whatCountsTowardsThisGoal')}
+					>{t('goals.tasks', { length: linkedCount })}<Icon
+						name={openTasks ? 'chevron-up' : 'chevron-down'}
+						size={12}
+					/>
+				</button>
+			</span>
+		{/snippet}
+
 		{#snippet controls()}
 			{#if open}
 				<button
@@ -261,29 +300,6 @@
 		>
 			{goal.title}
 		</p>
-		<!-- Its area, when it is for, and what it is part of: the line a task's
-		     notebook sits on, in the same small type with its glyph. -->
-		<div class="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-gray-500">
-			{#if goal.areaName}
-				<span class="pill" style={pillStyle(goal.areaColor)}>{goal.areaName}</span>
-			{/if}
-			{#if !open && isGoalStatus(goal.status)}
-				<span class="eyebrow text-gray-600"
-					>{t(STATUS_LABELS[goal.status as keyof typeof STATUS_LABELS])}</span
-				>
-			{/if}
-			<span class="tabular inline-flex items-center gap-1">
-				<Icon name="calendar" size={12} />
-				{describePeriod(t, now(), goal.horizon, goal.periodStart)}
-			</span>
-			{#if parent}
-				<span class="inline-flex min-w-0 items-center gap-1">
-					<Icon name="goals" size={12} />
-					<span class="break-words">{t('goals.partOf2', { title: parent.title })}</span>
-				</span>
-			{/if}
-		</div>
-
 		{#if goal.notes}
 			<Written content={goal.notes} compact class="mt-1" />
 		{/if}
@@ -313,13 +329,7 @@
 		{#if goal.targets.length > 0}
 			<div class="mt-1.5 space-y-1">
 				{#each goal.targets as target (target.id)}
-					<form
-						method="post"
-						action={actions.setProgress}
-						use:enhance
-						class="flex flex-wrap items-center gap-2"
-					>
-						<input type="hidden" name="targetId" value={target.id} />
+					<div class="flex flex-wrap items-center gap-2">
 						<!--
 							A measure counted from the workouts is read, not typed: the
 							sum of what the register holds for that activity inside the
@@ -334,51 +344,30 @@
 							<span class="tabular text-xs text-gray-700">
 								{target.currentValue}
 							</span>
-						{:else if target.whole}
-							<!--
-								A thing you count moves one at a time: each button carries
-								the new number, so a press is the whole gesture. A measured
-								one keeps its field, because 14.6 is not two presses away
-								from anything.
-							-->
-							<button
-								class="icon-btn"
-								name="currentValue"
-								value={Math.max(0, target.currentValue - COUNT_STEP)}
-								disabled={target.currentValue <= 0}
-								title={t('goals.oneFewer')}
-								aria-label={t('goals.oneFewerUnit', {
-									unit: target.unit || t('goals.towardsThis')
-								}).trim()}
-							>
-								<Icon name="minus" />
-							</button>
-							<span class="tabular min-w-4 text-center text-xs text-gray-700">
-								{target.currentValue}
-							</span>
-							<button
-								class="icon-btn"
-								name="currentValue"
-								value={target.currentValue + COUNT_STEP}
-								title={t('goals.oneMore')}
-								aria-label={t('goals.oneMoreUnit', {
-									unit: target.unit || t('goals.towardsThis')
-								}).trim()}
-							>
-								<Icon name="plus" />
-							</button>
 						{:else}
-							<NumberBox
-								autocomplete="off"
-								name="currentValue"
-								min="0"
-								step="any"
+							<!--
+								Counted or measured, the number answers the press at once and
+								is sent when the pressing stops — see `Counter`. A measured
+								one is typed as often as it is nudged, so it takes decimals.
+							-->
+							<Counter
 								value={target.currentValue}
-								aria-label={t('goals.progressTowards', {
+								action={actions.setProgress}
+								name="currentValue"
+								fields={{ targetId: target.id }}
+								step={COUNT_STEP}
+								whole={target.whole}
+								label={t('goals.progressTowards', {
 									value: target.targetValue,
 									unit: target.unit
 								}).trim()}
-								class="w-20"
+								lessLabel={t('goals.oneFewerUnit', {
+									unit: target.unit || t('goals.towardsThis')
+								}).trim()}
+								moreLabel={t('goals.oneMoreUnit', {
+									unit: target.unit || t('goals.towardsThis')
+								}).trim()}
+								class="text-gray-700"
 							/>
 						{/if}
 						<span class="tabular text-xs text-gray-500">
@@ -392,35 +381,10 @@
 									background-color: {goal.areaColor ?? accent}"
 							></div>
 						</div>
-						{#if !target.whole && !target.measureActivity}
-							<button
-								class="icon-btn"
-								title={t('goals.saveProgress')}
-								aria-label={t('goals.saveProgress')}
-							>
-								<Icon name="check" />
-							</button>
-						{/if}
-					</form>
+					</div>
 				{/each}
 			</div>
 		{/if}
-
-		<!--
-			What counts towards this goal. It reveals a part of this card, so it
-			starts where the card's text starts rather than in a button's padding.
-		-->
-		<button
-			type="button"
-			onclick={() => (openTasks = !openTasks)}
-			class="goal-fold mt-1.5 self-start"
-			aria-expanded={openTasks}
-			title={t('goals.whatCountsTowardsThisGoal')}
-			>{t('goals.tasks', { length: linkedCount })}<Icon
-				name={openTasks ? 'chevron-up' : 'chevron-down'}
-				size={12}
-			/>
-		</button>
 
 		{#if openTasks}
 			<!--

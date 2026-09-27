@@ -509,8 +509,8 @@
 									title={t('tags.manageTags')}
 									aria-label={t('tags.manageTags')}
 								>
+									<!-- The glyph alone, as on the notebook's own page. -->
 									<Icon name="tag" />
-									<span class="hidden sm:inline">{t('tags.manageTags')}</span>
 								</button>
 							{/if}
 						{/snippet}

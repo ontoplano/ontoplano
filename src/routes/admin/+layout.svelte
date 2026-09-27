@@ -2,6 +2,7 @@
 	import { page } from '$app/state';
 	import { resolve } from '$app/paths';
 	import TabbedRoom from '$lib/components/TabbedRoom.svelte';
+	import Icon from '$lib/components/Icon.svelte';
 	import { settingsTabs } from '$lib/settings-tabs';
 	import { useT } from '$lib/i18n';
 	import type { Snippet } from 'svelte';
@@ -26,18 +27,16 @@
 	label={t('rooms.settings.sections')}
 >
 	<!--
-		No heading on the list itself: the active tab already says Administration,
-		and a page that names itself twice reads as two pages. One account's page
-		is a level down, and that one needs saying — and needs a way back.
+		No heading: the active tab already says Administration, and one
+		account's page names the account in its own first band. What a level
+		down needs is the way back, drawn the way the import page's is.
 	-->
 	{#if onAccount}
-		<div class="flex items-center gap-3">
-			<h2 class="text-base font-semibold text-gray-900">
-				{t('rooms.settings.tabs.administration')}
-			</h2>
-			<a href={resolve('/admin')} class="text-sm text-gray-500 hover:text-gray-900"
-				>{t('admin.allAccounts')}</a
-			>
+		<div class="mb-4">
+			<a href={resolve('/admin')} class="btn btn-sm btn-quiet">
+				<Icon name="arrow-left" />
+				{t('admin.backToAccounts')}
+			</a>
 		</div>
 	{/if}
 
