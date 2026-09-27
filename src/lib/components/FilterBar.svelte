@@ -155,17 +155,18 @@
 		was 405px wide on one and 235px on the other. Everything after it moved
 		when you changed tab: the button, the count, all of it.
 
-		A row of its own on a phone: it is the one control somebody types into
-		rather than presses, so it takes the first line whole.
+		On a phone it takes what the row has left after the filter button, the
+		broom and the count, so all four share the first line.
 	-->
 	{#if lead}
-		<div class="order-first w-full min-w-32 sm:order-none sm:w-56 sm:shrink-0">
+		<div class="min-w-24 flex-1 sm:w-56 sm:flex-none sm:shrink-0">
 			{@render lead()}
 		</div>
 	{/if}
 
-	<!-- How many rows are showing, next to the box that narrows them by name. -->
-	{#if count}<div class="shrink-0">{@render count()}</div>{/if}
+	<!-- How many rows are showing, next to the box that narrows them by name —
+	     on a phone, at the end of the line, after the way back. -->
+	{#if count && !phone.current}<div class="shrink-0">{@render count()}</div>{/if}
 
 	{#if phone.current}
 		<!--
@@ -219,13 +220,25 @@
 			onclick={onclear}
 			class="btn btn-sm btn-quiet shrink-0 {on ? '' : 'invisible'}"
 			inert={!on}
+			title={t('filters.clear')}
+			aria-label={t('filters.clear')}
 		>
-			{t('filters.clear')}
+			{#if phone.current}<Icon name="broom" size={14} />{:else}{t('filters.clear')}{/if}
 		</button>
 	{/if}
 
+	{#if count && phone.current}<div class="shrink-0">{@render count()}</div>{/if}
+
+	<!-- On a phone the order is a line of its own, so the first line is the
+	     search and what narrows it, the way a task list draws it. -->
 	{#if trailing}
-		<div class="ml-auto flex shrink-0 items-center gap-2">{@render trailing()}</div>
+		<div
+			class="ml-auto flex shrink-0 items-center justify-end gap-2 {phone.current
+				? 'basis-full'
+				: ''}"
+		>
+			{@render trailing()}
+		</div>
 	{/if}
 </div>
 

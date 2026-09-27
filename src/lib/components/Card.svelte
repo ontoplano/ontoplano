@@ -129,9 +129,15 @@
 			     count or a note is the same height as the card beside it that
 			     carries nothing: two headers in a row meet in one line. -->
 			{#if title && titleActions}
-				<div class="flex flex-wrap items-center gap-x-3 gap-y-1">
-					<h2 class="eyebrow flex min-h-4 shrink-0 items-center text-gray-600">{title}</h2>
-					{@render titleActions()}
+				<!-- On a phone the title takes the line and these sit in its far
+				     corner; wider, they follow the title. -->
+				<div class="flex items-start gap-x-3 gap-y-1 sm:flex-wrap sm:items-center">
+					<h2
+						class="eyebrow flex min-h-4 min-w-0 flex-1 items-center text-gray-600 sm:flex-none sm:shrink-0"
+					>
+						{title}
+					</h2>
+					<div class="flex shrink-0 items-center gap-2">{@render titleActions()}</div>
 				</div>
 			{:else if title}<h2 class="eyebrow flex min-h-4 items-center text-gray-600">{title}</h2>{/if}
 			{#if description}
@@ -155,7 +161,7 @@
 			<!-- Named, because the dashboard takes this corner over while cards are
 			     being rearranged: the handle goes where "Open →" was rather than in
 			     a bar of its own. -->
-			<div class="card-actions flex flex-wrap items-center gap-2">
+			<div class="card-actions ml-auto flex flex-wrap items-center gap-2">
 				{@render actions()}
 			</div>
 		{/if}

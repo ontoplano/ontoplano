@@ -1078,6 +1078,19 @@
 	</span>
 {/snippet}
 
+{#snippet sortControl()}
+	<!-- The same control a notebook's notes use. See `SortControl`. -->
+	<SortControl
+		value={order}
+		options={ORDERS}
+		labels={ORDER_LABELS}
+		{direction}
+		onpick={pickOrder}
+		onflip={flipDirection}
+		label={t('todoRows.orderTasksBy')}
+	/>
+{/snippet}
+
 <div class="space-y-4">
 	<!--
 		The filters and the list they narrow are one object.
@@ -1107,6 +1120,7 @@
 					on={narrowed || showCompleted || showArchived}
 					summary={narrowing()}
 					onclear={clearFilters}
+					trailing={phone.current ? undefined : sortControl}
 				>
 					{#snippet banner()}
 						<!-- The narrowings this screen has kept, on a line of their own
@@ -1176,18 +1190,6 @@
 								>
 							</span>
 						</span>
-					{/snippet}
-					{#snippet trailing()}
-						<!-- The same control a notebook's notes use. See `SortControl`. -->
-						<SortControl
-							value={order}
-							options={ORDERS}
-							labels={ORDER_LABELS}
-							{direction}
-							onpick={pickOrder}
-							onflip={flipDirection}
-							label={t('todoRows.orderTasksBy')}
-						/>
 					{/snippet}
 					<!--
 						One label, whichever way it is set.
@@ -1287,6 +1289,9 @@
 			>
 				{selecting ? t('ui.cancel') : t('todoRows.selectMany')}
 			</button>
+			<!-- On a phone the order shares this line, so the one above is the
+			     search and what narrows it. -->
+			{#if phone.current}<div class="ml-auto">{@render sortControl()}</div>{/if}
 			<div class="flex items-center gap-1" class:invisible={!selecting}>
 				<button
 					type="button"

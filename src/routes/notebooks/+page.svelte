@@ -382,14 +382,21 @@
 								<a
 									href={resolve('/notebooks/[id]', { id: String(selected.id) })}
 									class="btn btn-sm"
+									title={t('ui.open')}
+									aria-label={t('ui.open')}
 								>
-									{t('ui.open')}
+									<span class="hidden sm:inline">{t('ui.open')}</span>
 									<Icon name="arrow-right" />
 								</a>
 								<!-- This subject's own words, rather than the whole account's. -->
-								<button onclick={() => (managingTags = true)} class="btn btn-sm">
+								<button
+									onclick={() => (managingTags = true)}
+									class="btn btn-sm"
+									title={t('tags.manageTags')}
+									aria-label={t('tags.manageTags')}
+								>
 									<Icon name="tag" />
-									{t('tags.manageTags')}
+									<span class="hidden sm:inline">{t('tags.manageTags')}</span>
 								</button>
 							{/if}
 						{/snippet}
