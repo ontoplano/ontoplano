@@ -75,6 +75,27 @@ const one = (sql, ...args) => db.prepare(sql).get(...args);
 const all = (sql, ...args) => db.prepare(sql).all(...args);
 const run = (sql, ...args) => db.prepare(sql).run(...args).lastInsertRowid;
 
+/*
+ * The colours seeded labels and attributes wear, handed out in order so
+ * neighbours differ. A copy of `COLOUR_PALETTE` in `src/lib/colors.ts`: this
+ * file runs with nothing beside it, and `tests/seed-palette.test.ts` fails
+ * when the two drift.
+ */
+const PALETTE = [
+	'#1d4ed8',
+	'#b45309',
+	'#6d28d9',
+	'#4d7c0f',
+	'#0f766e',
+	'#be123c',
+	'#155e63',
+	'#a16207',
+	'#9d174d',
+	'#7c2d12'
+];
+let paletteNext = 0;
+const nextColour = () => PALETTE[paletteNext++ % PALETTE.length];
+
 const setting = (key, value) => {
 	const existing = one('select id from user_settings where user_id = ? and key = ?', uid, key);
 	if (existing) {
@@ -366,10 +387,21 @@ const orphanNote = (content) => {
 	);
 };
 
+/*
+ * Coloured, so the tag vocabulary shows what a coloured label looks like. The
+ * colour goes to a label the first time this run meets it, and only fills one
+ * that has none: a colour somebody picked on a re-seeded account stays.
+ */
+const tagColours = new Map();
 const tag = (name) => {
-	const existing = one('select id from tags where user_id = ? and name = ?', uid, name);
-	if (existing) return existing.id;
-	return run('insert into tags (user_id, name) values (?, ?)', uid, name);
+	if (!tagColours.has(name)) tagColours.set(name, nextColour());
+	const colour = tagColours.get(name);
+	const existing = one('select id, color from tags where user_id = ? and name = ?', uid, name);
+	if (existing) {
+		if (!existing.color) run('update tags set color = ? where id = ?', colour, existing.id);
+		return existing.id;
+	}
+	return run('insert into tags (user_id, name, color) values (?, ?, ?)', uid, name, colour);
 };
 
 /**
@@ -3376,5 +3408,28 @@ for (const [title, daysAgo] of FINISHED) {
 }
 
 console.log(`  ${HISTORY_WEEKS} weeks of history: ${kept} blocks kept`);
+
+// --- Attribute colours (inventory) ----------------------------------------------
+
+/*
+ * Every attribute the inventory was seeded with gets a colour of its own, so
+ * the chips on a row read apart. Last, because items gain attributes all the
+ * way down this file. A colour already there is left alone.
+ */
+const attributeKeys = all(
+	`select distinct j.key as key from inventory_items i, json_each(i.attributes) j
+	 where i.user_id = ? order by j.key`,
+	uid
+).map((r) => r.key);
+attributeKeys.forEach((key, i) => {
+	run(
+		`insert or ignore into inventory_attribute_colors (user_id, key, value, color)
+		 values (?, ?, '', ?)`,
+		uid,
+		key,
+		PALETTE[i % PALETTE.length]
+	);
+});
+console.log(`  ${attributeKeys.length} inventory attributes coloured`);
 
 console.log(`seeded synthetic data for ${user.email ?? uid}`);

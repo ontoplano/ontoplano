@@ -143,6 +143,31 @@ export const CATEGORY_FALLBACK_COLOR = '#d1d5db';
 export const CATEGORY_FALLBACK_LIGHT = '#f3f4f6';
 export const CATEGORY_DEFAULT_NEW = '#6b7280';
 
+// -- Picked colours -----------------------------------------------------------
+
+/**
+ * The colours handed out, in order, to things a person can colour — a new
+ * sorting rule, and the labels and attributes the seed writes.
+ *
+ * Deep enough for a pale wash and for `.pill` ink to be computed from. The
+ * order alternates what reads as blue-ish with what reads as yellow-ish under
+ * red-green colour blindness, so two neighbours never differ only by red
+ * against green. `scripts/seed-dev.mjs` keeps a copy, because it runs with
+ * nothing beside it; `tests/seed-palette.test.ts` holds the two together.
+ */
+export const COLOUR_PALETTE = [
+	'#1d4ed8',
+	'#b45309',
+	'#6d28d9',
+	'#4d7c0f',
+	'#0f766e',
+	'#be123c',
+	'#155e63',
+	'#a16207',
+	'#9d174d',
+	'#7c2d12'
+] as const;
+
 // -- Tags ---------------------------------------------------------------------
 
 /**

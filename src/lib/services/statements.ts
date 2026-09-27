@@ -11,6 +11,7 @@
  */
 import { and, desc, eq, gte, inArray } from 'drizzle-orm';
 
+import { COLOUR_PALETTE } from '../colors.js';
 import { db } from '$lib/db/index.js';
 import { financeRules, financeTransactions, ledgers } from '$lib/db/schema.js';
 import {
@@ -46,24 +47,8 @@ export const MAX_RULE_NAME_LENGTH = 100;
 /** How far back the plots look by default. Far enough for a shape. */
 export const DEFAULT_MONTHS = 12;
 
-/**
- * The colours a new rule is given, in order.
- *
- * Distinguishable from each other and readable as a pale row wash, which is
- * what a category does to its line. Changeable per rule afterwards.
- */
-export const RULE_PALETTE = [
-	'#1d4ed8',
-	'#b45309',
-	'#0f766e',
-	'#7c2d12',
-	'#6d28d9',
-	'#9d174d',
-	'#155e63',
-	'#4d7c0f',
-	'#a16207',
-	'#be123c'
-] as const;
+/** The colours a new rule is given, in order. Changeable per rule afterwards. */
+export const RULE_PALETTE = COLOUR_PALETTE;
 
 /** What a line is filed under when no category rule claims it. */
 export const UNCATEGORIZED = 'Uncategorized';
