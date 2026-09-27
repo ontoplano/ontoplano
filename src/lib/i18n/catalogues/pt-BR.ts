@@ -3491,8 +3491,6 @@ export const messages: Catalogue = {
 	'tasks.plan.backOneUnitPlain': 'Voltar um(a) {unit}',
 	'tasks.plan.backToLabel': 'Voltar para {label}',
 	'tasks.plan.backToToDo': 'Voltar às tarefas',
-	'tasks.plan.borderBorderDashedBorderGray400BgGray50P':
-		'border border-dashed border-gray-400 bg-gray-50 px-2 py-1',
 	'tasks.plan.borderBorderGray300BgWhiteTextGray700Sha':
 		'border border-gray-300 bg-white text-gray-700 shadow-sm hover:bg-gray-50',
 	'tasks.plan.calendarsYouSubscribeTo': 'Calendários que você assina',
@@ -3523,6 +3521,7 @@ export const messages: Catalogue = {
 	'tasks.plan.dropHereToTakeIt': 'solte aqui para tirá-lo do dia',
 	'tasks.plan.dropJustThisOneOccurrence':
 		'Solte apenas esta ocorrência; o bloco continua se repetindo',
+	'tasks.plan.due': 'Prazo',
 	'tasks.plan.duration': 'Duração',
 	'tasks.plan.eGDentist': 'ex.: dentista',
 	'tasks.plan.eGLearnRussian': 'ex.: aprender russo',
@@ -3608,7 +3607,6 @@ export const messages: Catalogue = {
 	'tasks.plan.startFromATemplate': 'Começar a partir de um modelo',
 	'tasks.plan.stateInactive': 'Inativo',
 	'tasks.plan.stateSkipped': 'Pulado',
-	'tasks.plan.stillWithoutATime': 'ainda sem horário',
 	'tasks.plan.stopSubscribing': 'Parar de assinar',
 	'tasks.plan.stopSubscribingTo': 'Parar de assinar {name}',
 	'tasks.plan.subscribe': 'Assinar',
@@ -3624,6 +3622,9 @@ export const messages: Catalogue = {
 	'tasks.plan.today': '· hoje',
 	'tasks.plan.today2': 'hoje',
 	'tasks.plan.translatex100Translatex8px': 'translateX(-100%) translateX(-8px)',
+	'tasks.plan.trayMore': 'Mais {count} — filtre a lista para chegar a elas.',
+	'tasks.plan.trayNarrowed': 'Filtrado por caderno ou etiqueta',
+	'tasks.plan.trayNothingMatches': 'Nada corresponde.',
 	'tasks.plan.undoesSnapsTo15min': 'desfaz · encaixa em 15min',
 	'tasks.plan.untitledBlock': 'Bloco',
 	'tasks.plan.urgencyEaseInterest': 'Urgência, facilidade, interesse',
@@ -3988,6 +3989,8 @@ export const messages: Catalogue = {
 	'tour.scopedToWhatItNeeds':
 		'Restrito ao que precisa, e revogável a partir daqui. Copie assim que aparecer — ele é armazenado com hash e não pode ser mostrado de novo.',
 	'tour.search': 'Buscar',
+	'tour.searchTheTasksWithNoTime':
+		'Tarefas ainda sem horário, e as de hoje. Busque, filtre e ordene como na lista de tarefas e arraste uma para a grade — ou toque nela e depois num horário.',
 	'tour.shopping': 'Compras',
 	'tour.signOneOutOrAll': 'Desconecte um, ou todos de uma vez se algo parecer errado.',
 	'tour.sixViewsOfTheSame': 'Seis visões da mesma semana',
@@ -4051,6 +4054,7 @@ export const messages: Catalogue = {
 		'Até seis fotos por receita. Marque uma com estrela e ela vira a que a lista mostra.',
 	'tour.urgencyEaseInterest': 'Urgência, facilidade, interesse',
 	'tour.whatHappenedInYourWords': 'O que aconteceu, com suas palavras',
+	'tour.whatIsWaitingForATime': 'O que espera um horário',
 	'tour.whatIsWorthHearing': 'O que vale a pena ouvir',
 	'tour.whatTheWeekIsFor': 'Para que serve a semana',
 	'tour.whatTheWeekStartsOn':

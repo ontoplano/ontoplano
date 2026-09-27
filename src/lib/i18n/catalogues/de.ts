@@ -3536,8 +3536,6 @@ export const messages: Catalogue = {
 	'tasks.plan.backOneUnitPlain': 'Eine(n) {unit} zurück',
 	'tasks.plan.backToLabel': 'Zurück zu {label}',
 	'tasks.plan.backToToDo': 'Zurück zu den Aufgaben',
-	'tasks.plan.borderBorderDashedBorderGray400BgGray50P':
-		'border border-dashed border-gray-400 bg-gray-50 px-2 py-1',
 	'tasks.plan.borderBorderGray300BgWhiteTextGray700Sha':
 		'border border-gray-300 bg-white text-gray-700 shadow-sm hover:bg-gray-50',
 	'tasks.plan.calendarsYouSubscribeTo': 'Kalender, die Sie abonniert haben',
@@ -3570,6 +3568,7 @@ export const messages: Catalogue = {
 	'tasks.plan.dropHereToTakeIt': 'hier ablegen, um es vom Tag zu entfernen',
 	'tasks.plan.dropJustThisOneOccurrence':
 		'Nur dieses eine Vorkommen entfernen; der Block wiederholt sich weiterhin',
+	'tasks.plan.due': 'Fällig',
 	'tasks.plan.duration': 'Dauer',
 	'tasks.plan.eGDentist': 'z. B. Zahnarzt',
 	'tasks.plan.eGLearnRussian': 'z. B. russisch lernen',
@@ -3657,7 +3656,6 @@ export const messages: Catalogue = {
 	'tasks.plan.startFromATemplate': 'Von einer Vorlage starten',
 	'tasks.plan.stateInactive': 'Inaktiv',
 	'tasks.plan.stateSkipped': 'Übersprungen',
-	'tasks.plan.stillWithoutATime': 'noch ohne Uhrzeit',
 	'tasks.plan.stopSubscribing': 'Abonnement beenden',
 	'tasks.plan.stopSubscribingTo': 'Abonnement von {name} beenden',
 	'tasks.plan.subscribe': 'Abonnieren',
@@ -3674,6 +3672,9 @@ export const messages: Catalogue = {
 	'tasks.plan.today': '· heute',
 	'tasks.plan.today2': 'heute',
 	'tasks.plan.translatex100Translatex8px': 'translateX(-100%) translateX(-8px)',
+	'tasks.plan.trayMore': '{count} weitere — grenze die Liste ein, um sie zu sehen.',
+	'tasks.plan.trayNarrowed': 'Nach Notizbuch oder Label eingegrenzt',
+	'tasks.plan.trayNothingMatches': 'Nichts passt.',
 	'tasks.plan.undoesSnapsTo15min': 'macht rückgängig · rastet auf 15 Min ein',
 	'tasks.plan.untitledBlock': 'Slot',
 	'tasks.plan.urgencyEaseInterest': 'Dringlichkeit, Leichtigkeit, Interesse',
@@ -4035,6 +4036,8 @@ export const messages: Catalogue = {
 	'tour.scopedToWhatItNeeds':
 		'Beschränkt auf das, was gebraucht wird, und von hier aus widerrufbar. Kopieren Sie es, sobald es erscheint — es wird gehasht gespeichert und kann nicht erneut angezeigt werden.',
 	'tour.search': 'Suche',
+	'tour.searchTheTasksWithNoTime':
+		'Aufgaben ohne Zeit und die von heute. Suche, filtere und sortiere sie wie in der Aufgabenliste und zieh eine ins Raster — oder tippe sie an und dann eine Zeit.',
 	'tour.shopping': 'Einkauf',
 	'tour.signOneOutOrAll':
 		'Melden Sie eines ab, oder alle auf einmal, wenn etwas verdächtig aussieht.',
@@ -4099,6 +4102,7 @@ export const messages: Catalogue = {
 		'Bis zu sechs Bilder pro Rezept. Markieren Sie eines mit einem Stern, und es wird das, das die Liste zeigt.',
 	'tour.urgencyEaseInterest': 'Dringlichkeit, Leichtigkeit, Interesse',
 	'tour.whatHappenedInYourWords': 'Was passiert ist, in Ihren Worten',
+	'tour.whatIsWaitingForATime': 'Was auf eine Zeit wartet',
 	'tour.whatIsWorthHearing': 'Was es wert ist, gehört zu werden',
 	'tour.whatTheWeekIsFor': 'Wofür die Woche da ist',
 	'tour.whatTheWeekStartsOn':

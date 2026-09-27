@@ -7,6 +7,11 @@
 	import PeriodNav from '$lib/components/PeriodNav.svelte';
 	import PickOne from '$lib/components/PickOne.svelte';
 	import Picker from '$lib/components/Picker.svelte';
+	import FilterBar from '$lib/components/FilterBar.svelte';
+	import SortControl from '$lib/components/SortControl.svelte';
+	import TagFilterControl from '$lib/components/TagFilter.svelte';
+	import { NO_TAG_FILTER, isTagFiltering, passesTagFilter, type TagFilter } from '$lib/tag-filter';
+	import { compareByPriority } from '$lib/ratings';
 	import { setRoomAction } from '$lib/room-action.svelte';
 	import { resolve } from '$app/paths';
 	import OneLine from '$lib/components/OneLine.svelte';
@@ -813,6 +818,82 @@
 	const dueToday = $derived(
 		data.todos.filter((t: { due: string | null }) => t.due === 'today').length
 	);
+
+	/*
+	 * Narrowing the strip: the header a task list has, over pills rather than
+	 * cards. Eighty tasks as one wrapped paragraph of chips was a wall to hunt
+	 * through; this is the same search, notebook, labels and order the list
+	 * uses, and only the first few of what is left, in a box that scrolls.
+	 */
+	const TRAY_SHOWN = 40;
+	const TRAY_ORDERS = ['due', 'priority', 'created'] as const;
+	type TrayOrder = (typeof TRAY_ORDERS)[number];
+	const TRAY_ORDER_LABELS: Record<TrayOrder, PlainKey> = {
+		due: 'tasks.plan.due',
+		priority: 'todoRows.priority',
+		created: 'todoRows.added'
+	};
+	type TrayTodo = (typeof data.todos)[number];
+
+	let trayLooking = $state('');
+	let trayNotebook = $state('');
+	let trayTags = $state<TagFilter>(NO_TAG_FILTER);
+	let trayOrder = $state<TrayOrder>('due');
+	let trayDirection = $state<'asc' | 'desc'>('desc');
+
+	const trayNarrowed = $derived(trayNotebook !== '' || isTagFiltering(trayTags));
+	const trayNotebooks = $derived([
+		{ value: '', label: t('todoRows.everyNotebook') },
+		{ value: 'none', label: t('todoRows.notInOne') },
+		...[
+			...new Map(
+				data.todos
+					.filter((one: TrayTodo) => one.notebookId !== null)
+					.map((one: TrayTodo) => [String(one.notebookId), one.notebookTitle ?? ''])
+			)
+		].map(([value, label]) => ({ value, label }))
+	]);
+	const trayTagNames = $derived(
+		[...new Set(data.todos.flatMap((one: TrayTodo) => one.tags.map((tag) => tag.name)))].sort()
+	);
+
+	const trayMatches = $derived.by(() => {
+		const wanted = trayLooking.trim().toLowerCase();
+		let rows: TrayTodo[] = data.todos.filter((one: TrayTodo) =>
+			trayNotebook === ''
+				? true
+				: trayNotebook === 'none'
+					? one.notebookId === null
+					: String(one.notebookId) === trayNotebook
+		);
+		rows = rows.filter((one) =>
+			passesTagFilter(
+				one.tags.map((tag) => tag.name),
+				trayTags
+			)
+		);
+		if (wanted)
+			rows = rows.filter(
+				(one) =>
+					one.title.toLowerCase().includes(wanted) ||
+					(one.notes ?? '').toLowerCase().includes(wanted) ||
+					one.tags.some((tag) => tag.name.includes(wanted))
+			);
+		// `desc` is each order's natural way: today first, the best first, the
+		// newest first. The arrow turns it round.
+		const sorted =
+			trayOrder === 'priority'
+				? [...rows].sort(compareByPriority)
+				: trayOrder === 'created'
+					? [...rows].sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+					: rows;
+		return trayDirection === 'desc' ? sorted : [...sorted].reverse();
+	});
+
+	function clearTray() {
+		trayNotebook = '';
+		trayTags = NO_TAG_FILTER;
+	}
 
 	function overTray(jsEvent: Calendar.DomEvent | undefined): boolean {
 		const point = jsEvent as { clientX?: number; clientY?: number } | undefined;
@@ -2554,7 +2635,7 @@
 		already looking at when it reaches for them), what shape and what next on
 		the right. It wraps to two rows on a phone and holds one on a laptop.
 	-->
-	<div class="flex flex-wrap items-center gap-x-4 gap-y-1" data-tour="plan-toolbar">
+	<div class="flex flex-wrap items-center gap-x-4 gap-y-1 py-2" data-tour="plan-toolbar">
 		<!--
 			One block: ← date →, arrows hugging the date they move.
 
@@ -2607,14 +2688,14 @@
 		-->
 		{#if effectiveView === 'week'}
 			<!--
-				Beside the controls rather than centred on a line of its own.
-
-				Centred, it took a whole row on a phone — four rows of chrome
-				between the tabs and the first hour of the day, which is most of
-				what somebody opens this page to look at. It is an adjustment, so
-				it sits with the other adjustments.
+				Centred in the space between the date and the view controls, on the
+				same line — never on a line of its own, which on a phone was four
+				rows of chrome between the tabs and the first hour of the day.
 			-->
-			<div class="flex shrink-0 items-center gap-1" data-tour="plan-week-start">
+			<div
+				class="flex shrink-0 items-center justify-center gap-1 sm:flex-1"
+				data-tour="plan-week-start"
+			>
 				<span class="eyebrow hidden text-gray-500 lg:inline">{t('tasks.plan.weekStarts')}</span>
 				<button
 					type="button"
@@ -3837,115 +3918,192 @@
 		which is what makes the grid somewhere you can change your mind.
 	-->
 	{#if data.todos.length > 0 || draggingBlock}
-		<details
-			bind:open={todosOpen}
+		<section
 			bind:this={trayEl}
-			class="mb-1 {draggingBlock ? t('tasks.plan.borderBorderDashedBorderGray400BgGray50P') : ''}"
+			data-tour="plan-tray"
+			class="mb-1 border bg-white shadow-card {draggingBlock
+				? 'border-dashed border-gray-400'
+				: 'border-gray-200'}"
 		>
-			<summary
-				class="flex cursor-pointer list-none items-center gap-2 text-sm text-gray-600 hover:text-gray-900"
-			>
-				<span class="text-xs text-gray-500">{todosOpen ? '▾' : '▸'}</span>
-				<span class="eyebrow text-gray-600">{t('tasks.plan.toDo')}</span>
-				<span
-					class="tabular border border-gray-300 bg-gray-50 px-1 text-xs text-gray-600 text-gray-700"
+			<div class="flex items-center gap-3 border-b border-gray-200 px-3 py-2">
+				<!-- The fold, with how many are waiting: a staging area, not the plan,
+				     so it starts shut and the grid keeps the top of the page. -->
+				<button
+					type="button"
+					class="flex shrink-0 items-center gap-2 text-sm text-gray-600 hover:text-gray-900"
+					aria-expanded={todosOpen}
+					aria-controls="plan-tray-pills"
+					onclick={() => (todosOpen = !todosOpen)}
 				>
-					{data.todos.length}
-				</span>
-				{#if draggingBlock}
-					<span class="text-xs text-gray-700">{t('tasks.plan.dropHereToTakeIt')}</span>
-				{:else if !todosOpen}
-					<!-- What these are, not how to move them: a chip beside a grid is
-					     something you drag, and nobody needed to be told. -->
-					<span class="text-xs text-gray-500">
-						{dueToday > 0
-							? t('tasks.plan.countForToday', { count: dueToday })
-							: t('tasks.plan.stillWithoutATime')}
+					<Icon name={todosOpen ? 'chevron-down' : 'chevron-right'} size={14} />
+					<span class="eyebrow text-gray-600">{t('tasks.plan.toDo')}</span>
+					<span class="tabular border border-gray-300 bg-gray-50 px-1 text-xs text-gray-700">
+						{data.todos.length}
 					</span>
-				{/if}
-			</summary>
-
-			<div class="mt-2 flex flex-wrap items-center gap-2">
-				<!--
-					The block being dragged, drawn where it would land, before the
-					mouse is released. A drop target that only lights up says
-					"something can go here"; this says what, and it is the same chip
-					it will become.
-				-->
-				{#if draggingBlock && overTrayNow}
-					<span
-						class="border border-dashed border-gray-400 bg-gray-100 px-2 py-1 text-xs text-gray-500 italic"
+				</button>
+				<div class="min-w-0 flex-1">
+					<FilterBar
+						name="plan-tray"
+						on={trayNarrowed}
+						summary={trayNarrowed ? t('tasks.plan.trayNarrowed') : ''}
+						onclear={clearTray}
+						trailing={traySort}
 					>
-						{draggingBlockTitle}
-					</span>
-				{/if}
-				{#each data.todos as todo (todo.id)}
-					<button
-						type="button"
-						draggable="true"
-						onclick={() => (placingTodoId = placingTodoId === todo.id ? null : todo.id)}
-						ondragstart={(e) => {
-							placingTodoId = null;
-							dragTodoId = todo.id;
-							e.dataTransfer?.setData('text/plain', String(todo.id));
-							if (e.dataTransfer) e.dataTransfer.effectAllowed = 'move';
-						}}
-						ondragend={() => {
-							dragTodoId = null;
-							dropPreview = null;
-						}}
-						class="lift cursor-grab px-2 py-1 text-xs shadow-card {placingTodoId === todo.id
-							? 'on-fill'
-							: todo.categoryColor
-								? 'pill'
-								: todo.due
-									? 'border border-gray-400 bg-white font-medium text-gray-900'
-									: 'border border-gray-200 bg-white text-gray-700'} {dragTodoId === todo.id
-							? 'opacity-40'
-							: ''}"
-						style={todo.categoryColor && placingTodoId !== todo.id
-							? pillStyle(todo.categoryColor)
-							: ''}
-						title={t('tasks.plan.dragOntoTheGridOr')}
-					>
-						{todo.title}
-						<!--
-							Said in a word rather than a colour: which of these is for
-							today is the whole reason the strip is worth opening, and a
-							tint alone says it to some people and not others.
-						-->
-						{#if todo.due === 'today'}
-							<span
-								class="pill-quiet ml-1 text-[0.65rem] tracking-wide uppercase {todo.categoryColor
-									? ''
-									: 'text-gray-500'}">{t('tasks.plan.today2')}</span
-							>
-						{:else if todo.due === 'overdue'}
-							<span
-								class="pill-quiet ml-1 text-[0.65rem] tracking-wide uppercase {todo.categoryColor
-									? ''
-									: 'text-gray-500'}">{t('tasks.plan.owed')}</span
-							>
+						{#snippet lead()}
+							<label class="block w-full">
+								<span class="sr-only">{t('todoRows.searchTheseTasks')}</span>
+								<input
+									type="search"
+									bind:value={trayLooking}
+									oninput={() => (todosOpen = true)}
+									placeholder={t('todoRows.searchTheseTasks')}
+									autocomplete="off"
+									class="input input-sm"
+								/>
+							</label>
+						{/snippet}
+						{#snippet count()}
+							<span class="tabular text-xs text-gray-500">
+								{#if draggingBlock}
+									{t('tasks.plan.dropHereToTakeIt')}
+								{:else if dueToday > 0}
+									{t('tasks.plan.countForToday', { count: dueToday })}
+								{:else}
+									{trayMatches.length}
+								{/if}
+							</span>
+						{/snippet}
+						<Picker
+							value={trayNotebook}
+							options={trayNotebooks}
+							onpick={(next) => {
+								trayNotebook = next;
+								todosOpen = true;
+							}}
+							label={t('ui.notebook')}
+							class="min-w-36"
+						/>
+						{#if trayTagNames.length > 0 || isTagFiltering(trayTags)}
+							<TagFilterControl
+								tags={trayTagNames}
+								value={trayTags}
+								onchange={(next) => {
+									trayTags = next;
+									todosOpen = true;
+								}}
+								name="plan-tray-tags"
+								class="min-w-36"
+							/>
 						{/if}
-					</button>
-				{/each}
-				{#if placingTodo}
-					<span class="text-xs text-gray-600"
-						>{t('tasks.plan.nowTapATimeFor', { title: placingTodo.title })}</span
-					>
-					<button
-						type="button"
-						class="text-xs text-gray-500 underline"
-						onclick={() => (placingTodoId = null)}>{t('tasks.plan.cancel')}</button
-					>
-				{:else}
-					<span class="hidden text-xs text-gray-500 sm:inline">
-						{t('tasks.plan.dragOntoTheGridTo')}
-					</span>
-					<span class="text-xs text-gray-500 sm:hidden">{t('tasks.plan.tapOneThenTapA')}</span>
-				{/if}
+					</FilterBar>
+				</div>
 			</div>
-		</details>
+
+			{#if todosOpen || draggingBlock}
+				<!-- A few rows of pills and the rest behind a scroll, so the strip is
+				     never taller than a glance. -->
+				<div id="plan-tray-pills" class="max-h-44 overflow-y-auto p-3">
+					<div class="flex flex-wrap items-stretch gap-2">
+						{#if draggingBlock && overTrayNow}
+							<span
+								class="border border-dashed border-gray-400 bg-gray-100 px-3 py-2 text-sm text-gray-500 italic"
+							>
+								{draggingBlockTitle}
+							</span>
+						{/if}
+						{#each trayMatches.slice(0, TRAY_SHOWN) as todo (todo.id)}
+							<button
+								type="button"
+								draggable="true"
+								onclick={() => (placingTodoId = placingTodoId === todo.id ? null : todo.id)}
+								ondragstart={(e) => {
+									placingTodoId = null;
+									dragTodoId = todo.id;
+									e.dataTransfer?.setData('text/plain', String(todo.id));
+									if (e.dataTransfer) e.dataTransfer.effectAllowed = 'move';
+								}}
+								ondragend={() => {
+									dragTodoId = null;
+									dropPreview = null;
+								}}
+								class="lift flex max-w-72 cursor-grab flex-col items-start gap-1 px-3 py-2 text-left text-sm shadow-card {placingTodoId ===
+								todo.id
+									? 'on-fill'
+									: todo.categoryColor
+										? 'pill-soft'
+										: todo.due
+											? 'border border-gray-400 bg-white text-gray-900'
+											: 'border border-gray-200 bg-white text-gray-800'} {dragTodoId === todo.id
+									? 'opacity-40'
+									: ''}"
+								style={todo.categoryColor && placingTodoId !== todo.id
+									? pillStyle(todo.categoryColor)
+									: ''}
+								title={t('tasks.plan.dragOntoTheGridOr')}
+							>
+								<span class="line-clamp-2 font-medium">{todo.title}</span>
+								<!-- What it is filed under and when it is owed, in words: which
+								     of these is for today is the reason to open the strip. -->
+								<span class="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs opacity-80">
+									{#if todo.due === 'today'}
+										<span class="tracking-wide uppercase">{t('tasks.plan.today2')}</span>
+									{:else if todo.due === 'overdue'}
+										<span class="tracking-wide uppercase">{t('tasks.plan.owed')}</span>
+									{/if}
+									{#if todo.notebookTitle}
+										<span class="inline-flex items-center gap-1">
+											<Icon name="notebook" size={12} />{todo.notebookTitle}
+										</span>
+									{/if}
+									{#each todo.tags as tag (tag.id)}<span>#{tag.name}</span>{/each}
+								</span>
+							</button>
+						{:else}
+							{#if !draggingBlock}
+								<p class="text-sm text-gray-500">{t('tasks.plan.trayNothingMatches')}</p>
+							{/if}
+						{/each}
+					</div>
+					{#if trayMatches.length > TRAY_SHOWN}
+						<p class="mt-2 text-xs text-gray-500">
+							{t('tasks.plan.trayMore', { count: trayMatches.length - TRAY_SHOWN })}
+						</p>
+					{/if}
+					<div class="mt-2 flex flex-wrap items-center gap-2">
+						{#if placingTodo}
+							<span class="text-xs text-gray-600"
+								>{t('tasks.plan.nowTapATimeFor', { title: placingTodo.title })}</span
+							>
+							<button
+								type="button"
+								class="text-xs text-gray-500 underline"
+								onclick={() => (placingTodoId = null)}>{t('tasks.plan.cancel')}</button
+							>
+						{:else}
+							<span class="hidden text-xs text-gray-500 sm:inline">
+								{t('tasks.plan.dragOntoTheGridTo')}
+							</span>
+							<span class="text-xs text-gray-500 sm:hidden">{t('tasks.plan.tapOneThenTapA')}</span>
+						{/if}
+					</div>
+				</div>
+			{/if}
+		</section>
+
+		{#snippet traySort()}
+			<SortControl
+				value={trayOrder}
+				options={TRAY_ORDERS}
+				labels={TRAY_ORDER_LABELS}
+				direction={trayDirection}
+				onpick={(next) => {
+					trayOrder = next;
+					todosOpen = true;
+				}}
+				onflip={() => (trayDirection = trayDirection === 'desc' ? 'asc' : 'desc')}
+				label={t('todoRows.orderTasksBy')}
+			/>
+		{/snippet}
 	{/if}
 
 	<!--

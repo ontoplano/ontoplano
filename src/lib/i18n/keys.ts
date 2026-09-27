@@ -2999,7 +2999,6 @@ export type MessageKey =
 	| 'tasks.plan.backOneUnitPlain'
 	| 'tasks.plan.backToLabel'
 	| 'tasks.plan.backToToDo'
-	| 'tasks.plan.borderBorderDashedBorderGray400BgGray50P'
 	| 'tasks.plan.borderBorderGray300BgWhiteTextGray700Sha'
 	| 'tasks.plan.calendarsYouSubscribeTo'
 	| 'tasks.plan.cancel'
@@ -3025,6 +3024,7 @@ export type MessageKey =
 	| 'tasks.plan.dragToSelectSeveralThen'
 	| 'tasks.plan.dropHereToTakeIt'
 	| 'tasks.plan.dropJustThisOneOccurrence'
+	| 'tasks.plan.due'
 	| 'tasks.plan.duration'
 	| 'tasks.plan.eGDentist'
 	| 'tasks.plan.eGLearnRussian'
@@ -3103,7 +3103,6 @@ export type MessageKey =
 	| 'tasks.plan.startFromATemplate'
 	| 'tasks.plan.stateInactive'
 	| 'tasks.plan.stateSkipped'
-	| 'tasks.plan.stillWithoutATime'
 	| 'tasks.plan.stopSubscribing'
 	| 'tasks.plan.stopSubscribingTo'
 	| 'tasks.plan.subscribe'
@@ -3119,6 +3118,9 @@ export type MessageKey =
 	| 'tasks.plan.today'
 	| 'tasks.plan.today2'
 	| 'tasks.plan.translatex100Translatex8px'
+	| 'tasks.plan.trayMore'
+	| 'tasks.plan.trayNarrowed'
+	| 'tasks.plan.trayNothingMatches'
 	| 'tasks.plan.undoesSnapsTo15min'
 	| 'tasks.plan.untitledBlock'
 	| 'tasks.plan.urgencyEaseInterest'
@@ -3413,6 +3415,7 @@ export type MessageKey =
 	| 'tour.sayWhichKindItIs'
 	| 'tour.scopedToWhatItNeeds'
 	| 'tour.search'
+	| 'tour.searchTheTasksWithNoTime'
 	| 'tour.shopping'
 	| 'tour.signOneOutOrAll'
 	| 'tour.sixViewsOfTheSame'
@@ -3458,6 +3461,7 @@ export type MessageKey =
 	| 'tour.upToSixPicturesPer'
 	| 'tour.urgencyEaseInterest'
 	| 'tour.whatHappenedInYourWords'
+	| 'tour.whatIsWaitingForATime'
 	| 'tour.whatIsWorthHearing'
 	| 'tour.whatTheWeekIsFor'
 	| 'tour.whatTheWeekStartsOn'
@@ -4066,6 +4070,7 @@ export interface MessageValuesFor {
 	'tasks.plan.selected': { size: string | number };
 	'tasks.plan.selectedDragOne': { size: string | number };
 	'tasks.plan.stopSubscribingTo': { name: string | number };
+	'tasks.plan.trayMore': { count: number };
 	'tasks.plan.viewGCycles': { label: string | number };
 	'tasks.review.askAboutTitleAgain': { title: string | number };
 	'tasks.review.done': { count: number };

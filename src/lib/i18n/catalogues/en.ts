@@ -3429,8 +3429,6 @@ export const messages: Catalogue = {
 	'tasks.plan.backOneUnitPlain': 'Back one {unit}',
 	'tasks.plan.backToLabel': 'Back to {label}',
 	'tasks.plan.backToToDo': 'Back to tasks',
-	'tasks.plan.borderBorderDashedBorderGray400BgGray50P':
-		'border border-dashed border-gray-400 bg-gray-50 px-2 py-1',
 	'tasks.plan.borderBorderGray300BgWhiteTextGray700Sha':
 		'border border-gray-300 bg-white text-gray-700 shadow-sm hover:bg-gray-50',
 	'tasks.plan.calendarsYouSubscribeTo': 'Calendars you subscribe to',
@@ -3459,6 +3457,7 @@ export const messages: Catalogue = {
 	'tasks.plan.dragToSelectSeveralThen': 'drag to select several, then drag one to move them all ·',
 	'tasks.plan.dropHereToTakeIt': 'drop here to take it off the day',
 	'tasks.plan.dropJustThisOneOccurrence': 'Drop just this one occurrence; the block still repeats',
+	'tasks.plan.due': 'Due',
 	'tasks.plan.duration': 'Duration',
 	'tasks.plan.eGDentist': 'e.g. dentist',
 	'tasks.plan.eGLearnRussian': 'e.g. learn russian',
@@ -3543,7 +3542,6 @@ export const messages: Catalogue = {
 	'tasks.plan.startFromATemplate': 'Start from a template',
 	'tasks.plan.stateInactive': 'Inactive',
 	'tasks.plan.stateSkipped': 'Skipped',
-	'tasks.plan.stillWithoutATime': 'still without a time',
 	'tasks.plan.stopSubscribing': 'Stop subscribing',
 	'tasks.plan.stopSubscribingTo': 'Stop subscribing to {name}',
 	'tasks.plan.subscribe': 'Subscribe',
@@ -3559,6 +3557,9 @@ export const messages: Catalogue = {
 	'tasks.plan.today': '· today',
 	'tasks.plan.today2': 'today',
 	'tasks.plan.translatex100Translatex8px': 'translateX(-100%) translateX(-8px)',
+	'tasks.plan.trayMore': '{count} more — narrow the list to reach them.',
+	'tasks.plan.trayNarrowed': 'Narrowed by notebook or label',
+	'tasks.plan.trayNothingMatches': 'Nothing here matches.',
 	'tasks.plan.undoesSnapsTo15min': 'undoes · snaps to 15min',
 	'tasks.plan.untitledBlock': 'Slot',
 	'tasks.plan.urgencyEaseInterest': 'Urgency, ease, interest',
@@ -3915,6 +3916,8 @@ export const messages: Catalogue = {
 	'tour.scopedToWhatItNeeds':
 		'Scoped to what it needs, and revokable from here. Copy it when it appears — it is stored hashed and cannot be shown again.',
 	'tour.search': 'Search',
+	'tour.searchTheTasksWithNoTime':
+		"Tasks with no time yet, and today's. Search, filter and sort them like the task list, then drag one onto the grid — or tap it, then tap a time.",
 	'tour.shopping': 'Shopping',
 	'tour.signOneOutOrAll': 'Sign one out, or all of them at once if something looks wrong.',
 	'tour.sixViewsOfTheSame': 'Six views of the same week',
@@ -3978,6 +3981,7 @@ export const messages: Catalogue = {
 		'Up to six pictures per recipe. Star one and it becomes the one the list shows.',
 	'tour.urgencyEaseInterest': 'Urgency, ease, interest',
 	'tour.whatHappenedInYourWords': 'What happened, in your words',
+	'tour.whatIsWaitingForATime': 'What is waiting for a time',
 	'tour.whatIsWorthHearing': 'What is worth hearing',
 	'tour.whatTheWeekIsFor': 'What the week is for',
 	'tour.whatTheWeekStartsOn':
