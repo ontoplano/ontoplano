@@ -32,11 +32,26 @@
 		 * the browser — which is both faster and the only answer that is right.
 		 */
 		seconds = null,
+		/**
+		 * Whether it draws its own play button. A list that keeps the button in
+		 * its rows' rail leaves it off and calls `toggle()` instead.
+		 */
+		button = true,
+		/** Told when it starts or stops, for a button drawn somewhere else. */
+		onplayingchange,
 		class: klass = ''
-	}: { src: string; label?: string; seconds?: number | null; class?: string } = $props();
+	}: {
+		src: string;
+		label?: string;
+		seconds?: number | null;
+		button?: boolean;
+		onplayingchange?: (playing: boolean) => void;
+		class?: string;
+	} = $props();
 
 	let audio = $state<HTMLAudioElement | null>(null);
 	let playing = $state(false);
+	$effect(() => onplayingchange?.(playing));
 	let at = $state(0);
 	let measured = $state(0);
 
@@ -80,7 +95,7 @@
 		return `${String(Math.floor(whole / 60)).padStart(2, '0')}:${String(whole % 60).padStart(2, '0')}`;
 	}
 
-	function toggle() {
+	export function toggle() {
 		if (!audio) return;
 		if (playing) audio.pause();
 		else void audio.play();
@@ -127,15 +142,17 @@
 		}}
 	></audio>
 
-	<button
-		type="button"
-		class="btn btn-sm shrink-0"
-		onclick={toggle}
-		aria-label={playing ? t('audio.pausePlayback') : t('audio.play')}
-		title={label || undefined}
-	>
-		<Icon name={playing ? 'pause' : 'play'} />
-	</button>
+	{#if button}
+		<button
+			type="button"
+			class="btn btn-sm shrink-0"
+			onclick={toggle}
+			aria-label={playing ? t('audio.pausePlayback') : t('audio.play')}
+			title={label || undefined}
+		>
+			<Icon name={playing ? 'pause' : 'play'} />
+		</button>
+	{/if}
 
 	<!--
 		An unknown length draws no position.

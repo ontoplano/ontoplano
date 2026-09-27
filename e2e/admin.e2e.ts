@@ -252,7 +252,7 @@ test('an administrator cannot become somebody else', async ({ page }) => {
 	await page.goto('/admin');
 
 	// Any account's page: the first row the accounts list offers.
-	await page.locator('.account-row a[href^="/admin/"]').first().click();
+	await page.locator('.list-row a[href^="/admin/"]').first().click();
 	await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
 	await expect(page.getByText('Sign in as this account')).toHaveCount(0);
 

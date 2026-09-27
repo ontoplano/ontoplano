@@ -1,0 +1,1 @@
+ALTER TABLE `inventory_categories` ADD `color` text;

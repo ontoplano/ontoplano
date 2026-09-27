@@ -2,6 +2,10 @@
 	import FilterBar from '$lib/components/FilterBar.svelte';
 	import SearchField from '$lib/components/SearchField.svelte';
 	import ShowingCount from '$lib/components/ShowingCount.svelte';
+	import SortControl from '$lib/components/SortControl.svelte';
+	import { browsable } from '$lib/browse.svelte';
+	import { listCursor } from '$lib/actions/list-cursor';
+	import type { PlainKey } from '$lib/i18n/keys';
 	import RoomSurface from '$lib/components/RoomSurface.svelte';
 	import Field from '$lib/components/Field.svelte';
 	import { routeGlyph } from '$lib/glyphs';
@@ -17,7 +21,7 @@
 	import { armed } from '$lib/actions/armed';
 	import { setRoomAction } from '$lib/room-action.svelte';
 	import { useT } from '$lib/i18n';
-	import { instantInWords } from '$lib/services/time';
+	import { momentOf } from '$lib/when';
 	import { useWhen } from '$lib/when-context.svelte';
 	import { audioMarkdown } from '$lib/audio-markdown';
 	import IdeaFields from '$lib/components/fields/IdeaFields.svelte';
@@ -67,11 +71,43 @@
 	/** Finding one by name. */
 	let looking = $state('');
 	const needle = $derived(looking.trim().toLowerCase());
-	const shown = $derived(
-		needle === ''
-			? data.recordings
-			: data.recordings.filter((one) => one.name.toLowerCase().includes(needle))
-	);
+	/** The orders a list of recordings is read in. */
+	const ORDERS = ['recorded', 'name', 'length'] as const;
+	type Order = (typeof ORDERS)[number];
+	const ORDER_LABELS: Record<Order, PlainKey> = {
+		recorded: 'audio.orderRecorded',
+		name: 'audio.orderName',
+		length: 'audio.orderLength'
+	};
+	let order = $state<Order>('recorded');
+	let direction = $state<'asc' | 'desc'>('desc');
+
+	const shown = $derived.by(() => {
+		const found =
+			needle === ''
+				? [...data.recordings]
+				: data.recordings.filter((one) => one.name.toLowerCase().includes(needle));
+		const sign = direction === 'asc' ? 1 : -1;
+		const by: Record<Order, (a: (typeof found)[number], b: (typeof found)[number]) => number> = {
+			recorded: (a, b) => a.createdAt.localeCompare(b.createdAt),
+			name: (a, b) => a.name.localeCompare(b.name),
+			length: (a, b) => (a.seconds ?? 0) - (b.seconds ?? 0)
+		};
+		return found.sort((a, b) => sign * by[order](a, b));
+	});
+
+	/** Where j/k stands, and each row's player so Enter can play it. */
+	let at = $state(-1);
+	const players = $state<Record<number, { toggle: () => void }>>({});
+	let playing = $state<Record<number, boolean>>({});
+
+	browsable(() => ({
+		items: () => shown,
+		cursor: () => at,
+		moveTo: (i) => (at = i),
+		open: (i) => players[shown[i].id]?.toggle(),
+		edit: (i) => (renaming = shown[i].id)
+	}));
 
 	/**
 	 * Recording lives where every room's "new something" lives.
@@ -117,9 +153,9 @@
 		if (said.id) justMade = { id: said.id, name: said.name ?? name };
 	}
 
-	/** When it happened, where the reader is. `$lib/services/time.ts` has why. */
+	/** When it happened, where the reader is, in the app's one date format. */
 	const now = useWhen();
-	const said = (iso: string) => instantInWords(iso, now());
+	const said = (iso: string) => momentOf(iso, now(), { year: undefined });
 
 	function size(bytes: number): string {
 		return t('audio.sizeKB', { size: Math.max(1, Math.ceil(bytes / 1024)) });
@@ -142,6 +178,17 @@
 					total={data.recordings.length}
 					shown={shown.length}
 					said={(count) => t('audio.held', { count })}
+				/>
+			{/snippet}
+			{#snippet trailing()}
+				<SortControl
+					value={order}
+					options={ORDERS}
+					labels={ORDER_LABELS}
+					{direction}
+					onpick={(next) => (order = next)}
+					onflip={() => (direction = direction === 'asc' ? 'desc' : 'asc')}
+					label={t('audio.orderBy')}
 				/>
 			{/snippet}
 		</FilterBar>
@@ -195,24 +242,41 @@
 		<EmptyState filtered onclear={() => (looking = '')} description={t('audio.noneMatch')} />
 	{:else}
 		<ul class="divide-y divide-gray-200">
-			{#each shown as one (one.id)}
-				<li class="list-row flex-wrap">
-					<div class="list-row-main min-w-0 flex-1">
-						<p class="truncate text-sm font-medium text-gray-900">{one.name}</p>
-						<p class="mt-0.5 text-xs text-gray-500">
-							{said(one.createdAt)} · {size(one.byteSize)}
-						</p>
+			{#each shown as one, i (one.id)}
+				<li class="list-row" data-row use:listCursor={i === at}>
+					<!-- Play stands in the rail, where a task keeps its tick: the one
+					     thing a recording is for, first on the row. -->
+					<span class="row-rail">
+						<button
+							type="button"
+							class="icon-btn"
+							onclick={() => players[one.id]?.toggle()}
+							title={playing[one.id] ? t('audio.pausePlayback') : t('audio.play')}
+							aria-label={`${playing[one.id] ? t('audio.pausePlayback') : t('audio.play')} ${one.name}`}
+						>
+							<Icon name={playing[one.id] ? 'pause' : 'play'} />
+						</button>
+					</span>
+					<div class="list-row-main flex flex-wrap items-center gap-x-4 gap-y-1">
+						<div class="min-w-0 flex-1 basis-48">
+							<p class="truncate text-sm font-medium text-gray-900">{one.name}</p>
+							<p class="mt-0.5 text-xs text-gray-500">
+								{said(one.createdAt)} · {size(one.byteSize)}
+							</p>
+						</div>
+						<!-- The app's own transport rather than the browser's, which
+						     arrives at a fixed size in a grey of its own and reads as a
+						     foreign object in the list. See `AudioPlayer`. -->
+						<AudioPlayer
+							bind:this={players[one.id]}
+							onplayingchange={(on) => (playing[one.id] = on)}
+							button={false}
+							src="/media/audio/{one.id}"
+							label={one.name}
+							seconds={one.seconds}
+							class="w-full sm:w-72"
+						/>
 					</div>
-
-					<!-- The app's own transport rather than the browser's, which
-					     arrives at a fixed size in a grey of its own and reads as a
-					     foreign object in the list. See `AudioPlayer`. -->
-					<AudioPlayer
-						src="/media/audio/{one.id}"
-						label={one.name}
-						seconds={one.seconds}
-						class="order-last w-full sm:order-none sm:w-72"
-					/>
 
 					<div class="list-row-actions">
 						<button

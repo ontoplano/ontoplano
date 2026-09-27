@@ -813,6 +813,20 @@
       "when": 1790529337112,
       "tag": "0115_a_retried_create_is_answered_once",
       "breakpoints": true
+    },
+    {
+      "idx": 116,
+      "version": "6",
+      "when": 1790551418434,
+      "tag": "0116_a_habit_can_be_archived",
+      "breakpoints": true
+    },
+    {
+      "idx": 117,
+      "version": "6",
+      "when": 1790551419787,
+      "tag": "0117_an_inventory_category_has_a_colour",
+      "breakpoints": true
     }
   ]
 }

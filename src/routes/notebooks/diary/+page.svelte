@@ -28,10 +28,24 @@
 	import Field from '$lib/components/Field.svelte';
 	import FormGrid from '$lib/components/FormGrid.svelte';
 	import Modal from '$lib/components/Modal.svelte';
-	import { tick } from 'svelte';
+	import { tick, type Snippet } from 'svelte';
 	import type { PageServerData, ActionData } from './$types';
 	import { getAction } from '$lib/shortcuts';
-	import { keepInView } from '$lib/actions/keep-in-view';
+	import { listCursor } from '$lib/actions/list-cursor';
+	import SortControl from '$lib/components/SortControl.svelte';
+	import type { PlainKey } from '$lib/i18n/keys';
+	import {
+		DEFAULT_DIARY_DIRECTION,
+		DEFAULT_DIARY_ORDER,
+		DIARY_DIRECTION_KEY,
+		DIARY_ORDER_KEY,
+		DIARY_ORDERS,
+		isDiaryDirection,
+		isDiaryOrder,
+		orderDiary,
+		type DiaryDirection,
+		type DiaryOrder
+	} from '$lib/diary-order';
 	import { useT } from '$lib/i18n';
 	import { Selection } from '$lib/selection.svelte';
 	import SelectionBar from '$lib/components/SelectionBar.svelte';
@@ -101,16 +115,64 @@
 			.includes(needle);
 	}
 
+	/*
+	 * The order, chosen on the strip and kept in this browser — see
+	 * `$lib/diary-order`. Newest written first until somebody says otherwise.
+	 */
+	let order = $state<DiaryOrder>(DEFAULT_DIARY_ORDER);
+	let direction = $state<DiaryDirection>(DEFAULT_DIARY_DIRECTION);
+	const ORDER_LABELS: Record<DiaryOrder, PlainKey> = {
+		written: 'notebookDetail.orderWritten',
+		day: 'notebooks.diary.orderDay',
+		edited: 'notebookDetail.orderEdited'
+	};
+
+	$effect(() => {
+		try {
+			const kept = localStorage.getItem(DIARY_ORDER_KEY);
+			if (isDiaryOrder(kept)) order = kept;
+			const way = localStorage.getItem(DIARY_DIRECTION_KEY);
+			if (isDiaryDirection(way)) direction = way;
+		} catch {
+			// A private window, or storage refused: the defaults stand.
+		}
+	});
+
+	function remember(key: string, value: string) {
+		try {
+			localStorage.setItem(key, value);
+		} catch {
+			// It still holds for this visit.
+		}
+	}
+
 	const shownEntries = $derived.by(() => {
 		const needle = looking.trim().toLowerCase();
-		return data.entries.filter(
-			(e) =>
-				passesTagFilter(
-					e.tags.map((one) => one.name),
-					tagFilter.current
-				) && matchesSearch(e, needle)
+		return orderDiary(
+			data.entries.filter(
+				(e) =>
+					passesTagFilter(
+						e.tags.map((one) => one.name),
+						tagFilter.current
+					) && matchesSearch(e, needle)
+			),
+			order,
+			direction
 		);
 	});
+
+	/** When it was written, the day it is for, and when it was last changed — one line, one separator. */
+	function metaOf(entry: PageServerData['entries'][number]): string {
+		return [
+			formatDate(entry.createdAt),
+			entry.forDate ? t('notebooks.diary.for', { forDate: civilOf(entry.forDate, now()) }) : '',
+			entry.updatedAt !== entry.createdAt
+				? t('notebooks.diary.edited', { updatedAt: formatDate(entry.updatedAt) })
+				: ''
+		]
+			.filter(Boolean)
+			.join(' · ');
+	}
 	const narrowed = $derived(isTagFiltering(tagFilter.current) || looking.trim() !== '');
 
 	function tagFilterSummary(filter: typeof tagFilter.current): string {
@@ -423,56 +485,22 @@
 	-->
 	<RoomSurface dataTour="diary-list">
 		{#snippet tools()}
-			{#if data.entries.length > 0 || winsEnabled}
-				<FilterBar
-					name="diary"
-					on={narrowed}
-					summary={tagFilterSummary(tagFilter.current)}
-					onclear={() => {
-						tagFilter.current = NO_TAG_FILTER;
-						looking = '';
-						selectedIndex = 0;
-					}}
+			{#if data.entries.length > 0}
+				<!-- "Select many" is the strip's own verb, as on the task list: no
+				     band of its own under the controls. -->
+				<SelectionBar
+					{selection}
+					visible={shownIds}
+					verbs={batchVerbs}
+					selectAllLabel={t('notebookDetail.selectVisibleNotes')}
+					dataTour="diary-selection"
 				>
-					{#snippet lead()}
-						<SearchField bind:value={looking} label={t('notebooks.diary.searchTheDiary')} />
+					{#snippet strip(selectMany)}
+						{@render diaryStrip(selectMany)}
 					{/snippet}
-					{#snippet count()}
-						<!-- Held open at the count of every entry — see `.count-slot`. -->
-						<ShowingCount
-							total={data.entries.length}
-							shown={shownEntries.length}
-							said={(count) => t('notebooks.diary.showingCount', { count })}
-						/>
-					{/snippet}
-					{#snippet verb()}
-						{#if winsEnabled}
-							<StripVerb
-								icon="plus"
-								label={t('notebooks.diary.newWins')}
-								onclick={() => {
-									showWinsForm = true;
-									showForm = false;
-									editingId = null;
-									winInputCount = WINS_TO_START_WITH;
-								}}
-								data-tour="diary-wins"
-							/>
-						{/if}
-					{/snippet}
-					{#if data.allTags.length > 0 || isTagFiltering(tagFilter.current)}
-						<TagFilter
-							tags={data.allTags.map((tag) => tag.name)}
-							value={tagFilter.current}
-							onchange={(next) => {
-								tagFilter.current = next;
-								selectedIndex = 0;
-							}}
-							name="diary-tags"
-							class="min-w-36 flex-1 sm:flex-none"
-						/>
-					{/if}
-				</FilterBar>
+				</SelectionBar>
+			{:else if winsEnabled}
+				{@render diaryStrip()}
 			{/if}
 		{/snippet}
 		{#if data.entries.length === 0}
@@ -482,13 +510,6 @@
 				description={t('notebooks.diary.whateverHappenedTodayInAs')}
 			/>
 		{:else}
-			<SelectionBar
-				{selection}
-				visible={shownIds}
-				verbs={batchVerbs}
-				selectAllLabel={t('notebookDetail.selectVisibleNotes')}
-				dataTour="diary-selection"
-			/>
 			<!-- Inside the surface, so the control that emptied it stays to undo it. -->
 			{#if shownEntries.length === 0}
 				<EmptyState
@@ -515,9 +536,9 @@
 						the foot with the verbs at the end of that line.
 					-->
 					<article
-						use:keepInView={i === selectedIndex}
+						use:listCursor={i === selectedIndex}
 						id="diary-{entry.diarySeq ?? entry.seq}"
-						class="row-card {i === selectedIndex ? 'kb-cursor' : ''}"
+						class="row-card"
 						class:bg-gray-100={selection.selecting && selection.has(entry.id)}
 					>
 						<RowCard quiet={selection.selecting}>
@@ -533,7 +554,9 @@
 								{/if}
 								<!-- The diary's own number, the one another entry points at as
 								     `#12`: the thirtieth entry is #30, not the account's count. -->
-								<span class="tabular min-w-7 text-center text-[11px] text-gray-500"
+								<!-- Flush right, against the words: a column of numbers of
+								     different lengths reads straight on the side they share. -->
+								<span class="tabular w-full text-right text-[11px] text-gray-500"
 									>#{entry.diarySeq ?? entry.seq}</span
 								>
 							{/snippet}
@@ -605,21 +628,15 @@
 								{/if}
 							{/snippet}
 
-							<div class="md text-sm text-gray-900">
+							<!-- A reading measure, and a heading in an entry the size of a
+							     title anywhere else in a list — see the style below. -->
+							<div class="diary-body md max-w-prose text-sm text-gray-900">
 								<!-- `renderMarkdown` escapes every character of the input before it emits a
 								     tag, and emits only attributes it writes itself. See `$lib/markdown.ts`. -->
 								<!-- eslint-disable-next-line svelte/no-at-html-tags -->
 								{@html renderMarkdown(entry.content)}
 							</div>
-							<span class="tabular mt-0.5 text-xs text-gray-500">
-								{formatDate(entry.createdAt)}
-								{#if entry.forDate}
-									· {t('notebooks.diary.for', { forDate: civilOf(entry.forDate, now()) })}
-								{/if}
-								{#if entry.updatedAt !== entry.createdAt}
-									{t('notebooks.diary.edited', { updatedAt: formatDate(entry.updatedAt) })}
-								{/if}
-							</span>
+							<span class="tabular mt-0.5 text-xs text-gray-500">{metaOf(entry)}</span>
 						</RowCard>
 					</article>
 				{/each}
@@ -659,6 +676,81 @@
 	</BatchDialog>
 </div>
 
+{#snippet diaryStrip(selectMany?: Snippet)}
+	<FilterBar
+		name="diary"
+		on={narrowed}
+		summary={tagFilterSummary(tagFilter.current)}
+		onclear={() => {
+			tagFilter.current = NO_TAG_FILTER;
+			looking = '';
+			selectedIndex = 0;
+		}}
+		trailing={data.entries.length > 1 ? sortControl : undefined}
+	>
+		{#snippet lead()}
+			<SearchField bind:value={looking} label={t('notebooks.diary.searchTheDiary')} />
+		{/snippet}
+		{#snippet count()}
+			<!-- Held open at the count of every entry — see `.count-slot`. -->
+			<ShowingCount
+				total={data.entries.length}
+				shown={shownEntries.length}
+				said={(count) => t('notebooks.diary.showingCount', { count })}
+			/>
+		{/snippet}
+		{#snippet verb()}
+			{#if winsEnabled}
+				<StripVerb
+					icon="plus"
+					label={t('notebooks.diary.newWins')}
+					onclick={() => {
+						showWinsForm = true;
+						showForm = false;
+						editingId = null;
+						winInputCount = WINS_TO_START_WITH;
+					}}
+					data-tour="diary-wins"
+				/>
+			{/if}
+			{@render selectMany?.()}
+		{/snippet}
+		{#if data.allTags.length > 0 || isTagFiltering(tagFilter.current)}
+			<TagFilter
+				tags={data.allTags.map((tag) => tag.name)}
+				value={tagFilter.current}
+				onchange={(next) => {
+					tagFilter.current = next;
+					selectedIndex = 0;
+				}}
+				name="diary-tags"
+				class="min-w-36 flex-1 sm:flex-none"
+			/>
+		{/if}
+	</FilterBar>
+{/snippet}
+
+{#snippet sortControl()}
+	<SortControl
+		value={order}
+		options={DIARY_ORDERS}
+		labels={ORDER_LABELS}
+		{direction}
+		onpick={(next) => {
+			order = next;
+			direction = DEFAULT_DIARY_DIRECTION;
+			remember(DIARY_ORDER_KEY, next);
+			remember(DIARY_DIRECTION_KEY, direction);
+			selectedIndex = 0;
+		}}
+		onflip={() => {
+			direction = direction === 'asc' ? 'desc' : 'asc';
+			remember(DIARY_DIRECTION_KEY, direction);
+		}}
+		label={t('notebooks.diary.orderDiaryBy')}
+	/>
+{/snippet}
+
 {#if tooltip.visible}
 	<div
 		class="pointer-events-none fixed z-50 max-w-xs border border-gray-200 bg-white px-3 py-2 text-xs shadow-sm"
@@ -680,5 +772,17 @@
 	}
 	:global(.diary-ref:hover) {
 		text-decoration-thickness: 2px;
+	}
+
+	/*
+	 * A heading written into an entry is its title, drawn the way a title is
+	 * drawn in every other list — the note's, the task's — rather than as a
+	 * page heading that made some entries shout over the rest.
+	 */
+	.diary-body :global(:is(h1, h2, h3, h4, h5, h6)) {
+		margin: 0 0 0.25rem;
+		font-size: inherit;
+		line-height: inherit;
+		font-weight: 500;
 	}
 </style>

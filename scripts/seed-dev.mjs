@@ -3356,8 +3356,7 @@ What has actually changed, as opposed to what I meant to change.
 
 ---
 
-The shopping list turned out to be the thing I use most, which I did not
-expect. It is the only part that goes in my pocket.`
+The shopping list turned out to be the thing I use most, which I did not expect. It is the only part that goes in my pocket.`
 	]
 ];
 
@@ -3365,6 +3364,12 @@ for (const [seq, book, daysAgo, content] of longNotes) {
 	diary(seq, content, [], iso(dayAt(daysAgo)));
 	if (book) inNotebook('diary_entries', 'seq', seq, book);
 }
+// A line break in a paragraph is kept as one, so a seed wrapped for the editor
+// read as a hard-wrapped paragraph. Databases seeded before say it again.
+run(
+	"update diary_entries set content = replace(content, 'did not' || char(10) || 'expect', 'did not expect') where user_id = ? and seq = 12",
+	uid
+);
 
 /*
  * The kitchen notebook opens on the quotes, not on the one-liner.

@@ -2,10 +2,17 @@
 	import { dateOf } from '$lib/when';
 	import { useWhen } from '$lib/when-context.svelte';
 	import { enhance } from '$lib/enhance';
-	import { invalidateAll } from '$app/navigation';
+	import { goto, invalidateAll } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import Card from '$lib/components/Card.svelte';
 	import RoomToolbar from '$lib/components/RoomToolbar.svelte';
+	import FilterBar from '$lib/components/FilterBar.svelte';
+	import SearchField from '$lib/components/SearchField.svelte';
+	import ShowingCount from '$lib/components/ShowingCount.svelte';
+	import SortControl from '$lib/components/SortControl.svelte';
+	import { listCursor } from '$lib/actions/list-cursor';
+	import { getAction } from '$lib/shortcuts';
+	import type { PlainKey } from '$lib/i18n/keys';
 	import EmptyState from '$lib/components/EmptyState.svelte';
 	import Banner from '$lib/components/Banner.svelte';
 	import FormError from '$lib/components/FormError.svelte';
@@ -48,6 +55,54 @@
 
 	const kindLabel = mailKindLabel;
 
+	/*
+	 * The order of the accounts. The server answers newest first; the other
+	 * orders are this page's own, since the list is one page long.
+	 */
+	const ORDERS = ['joined', 'email'] as const;
+	type Order = (typeof ORDERS)[number];
+	const ORDER_LABELS: Record<Order, PlainKey> = {
+		joined: 'admin.orderJoined',
+		email: 'admin.orderAddress'
+	};
+	let order = $state<Order>('joined');
+	let direction = $state<'asc' | 'desc'>('desc');
+	const accounts = $derived.by(() => {
+		const sorted = [...data.accounts].sort((a, b) =>
+			order === 'email' ? a.email.localeCompare(b.email) : a.createdAt.localeCompare(b.createdAt)
+		);
+		return direction === 'desc' ? sorted.reverse() : sorted;
+	});
+
+	/** The one role word every account wears, whatever the role. */
+	function roleLabel(account: { isOwner: boolean; role: string }): string {
+		if (account.isOwner) return t('admin.owner');
+		return account.role === 'admin' ? t('admin.admin') : t('admin.member');
+	}
+
+	let cursor = $state(-1);
+
+	function handleKeydown(e: KeyboardEvent) {
+		if (
+			e.target instanceof HTMLInputElement ||
+			e.target instanceof HTMLTextAreaElement ||
+			e.target instanceof HTMLSelectElement
+		)
+			return;
+		const action = getAction('/admin', e.key);
+		if (action === 'navigate-down' || action === 'navigate-up') {
+			e.preventDefault();
+			if (accounts.length === 0) return;
+			cursor = Math.min(
+				Math.max(cursor + (action === 'navigate-down' ? 1 : -1), 0),
+				accounts.length - 1
+			);
+		} else if (action === 'open' && accounts[cursor]) {
+			e.preventDefault();
+			goto(resolve('/admin/[id]', { id: accounts[cursor].id }));
+		}
+	}
+
 	function when(iso: string): string {
 		return dateOf(iso, now(), {});
 	}
@@ -61,6 +116,20 @@
 		return when(iso);
 	}
 </script>
+
+<svelte:window onkeydown={handleKeydown} />
+
+{#snippet sortControl()}
+	<SortControl
+		value={order}
+		options={ORDERS}
+		labels={ORDER_LABELS}
+		{direction}
+		onpick={(next) => (order = next)}
+		onflip={() => (direction = direction === 'asc' ? 'desc' : 'asc')}
+		label={t('admin.orderAccountsBy')}
+	/>
+{/snippet}
 
 <div class="space-y-4">
 	<FormError message={form?.message} />
@@ -81,130 +150,122 @@
 	{/if}
 
 	<!--
-		The accounts and what is happening to them, as one surface with a seam
-		down the middle — the shape the people and notebooks rooms have — rather
-		than four cards with the page showing between them.
+		The accounts and what is happening to them, one band under another on
+		one surface. Two columns left the accounts' side mostly empty beside a
+		long history.
 	-->
-	<div class="room-surface grid lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
-		<Card title={t('admin.accounts')} flush pane>
-			<RoomToolbar inset>
-				{#snippet tools()}
-					<!-- A plain GET form: the URL is the state, so a search can be kept. -->
-					<form method="get" class="flex min-w-0 flex-1 items-center gap-3">
-						<label class="block w-full sm:max-w-sm">
-							<span class="sr-only">{t('admin.searchAccounts')}</span>
-							<input
-								type="search"
-								name="q"
-								value={data.query}
-								placeholder={t('admin.searchAccounts')}
-								autocomplete="off"
-								class="input input-sm"
-							/>
-						</label>
-						<span class="tabular shrink-0 text-xs text-gray-500"
-							>{t('admin.accountsShowing', { count: data.accounts.length })}</span
+	<div class="room-surface">
+		<div class="divide-y divide-gray-200">
+			<Card title={t('admin.accounts')} flush pane>
+				<RoomToolbar inset>
+					{#snippet tools()}
+						<FilterBar
+							name="accounts"
+							on={!!data.query}
+							onclear={() => goto(resolve('/admin'))}
+							trailing={sortControl}
 						>
-					</form>
-				{/snippet}
-			</RoomToolbar>
+							{#snippet lead()}
+								<!-- A plain GET form: the URL is the state, so a search can be kept. -->
+								<form method="get" class="contents">
+									<SearchField name="q" value={data.query} label={t('admin.searchAccounts')} />
+								</form>
+							{/snippet}
+							{#snippet count()}
+								<ShowingCount
+									total={data.accounts.length}
+									shown={data.accounts.length}
+									said={(count) => t('admin.accountsShowing', { count })}
+								/>
+							{/snippet}
+						</FilterBar>
+					{/snippet}
+				</RoomToolbar>
 
-			{#if data.accounts.length === 0}
-				<EmptyState
-					icon="user"
-					title={data.query ? t('admin.nobodyMatchesThat') : t('admin.noAccountsYet')}
-				/>
-			{:else}
-				<div class="divide-y divide-gray-200">
-					{#each data.accounts as account (account.id)}
-						<div
-							class="list-row account-row"
-							class:is-admin={account.role === 'admin' || account.isOwner}
-						>
-							<a href="{resolve('/admin')}/{account.id}" class="list-row-main group">
-								<span class="block truncate text-sm text-gray-900 group-hover:underline"
-									>{account.email}</span
-								>
-								<span class="block text-xs text-gray-500">
-									{account.name}
-									{t('admin.joined')}
-									{when(account.createdAt)} ·
-									{t('admin.sessionCount', { count: account.sessions })}
-									<!-- Who pays: a family payer and their riders read differently
+				{#if data.accounts.length === 0}
+					{#if data.query}
+						<EmptyState filtered onclear={() => goto(resolve('/admin'))} />
+					{:else}
+						<EmptyState icon="user" title={t('admin.noAccountsYet')} />
+					{/if}
+				{:else}
+					<div class="divide-y divide-gray-200">
+						{#each accounts as account, at (account.id)}
+							<div class="list-row" data-row use:listCursor={cursor === at}>
+								<span class="row-rail"></span>
+								<a href="{resolve('/admin')}/{account.id}" class="list-row-main group">
+									<span class="block truncate text-sm text-gray-900 group-hover:underline"
+										>{account.email}</span
+									>
+									<span class="block text-xs text-gray-500">
+										{account.name}
+										{t('admin.joined')}
+										{when(account.createdAt)} ·
+										{t('admin.sessionCount', { count: account.sessions })}
+										<!-- Who pays: a family payer and their riders read differently
 									     from a plain subscriber. -->
-									· {account.plan}
-									{#if !account.emailVerified}{t('admin.unverified')}{/if}
-								</span>
-							</a>
+										· {account.plan}
+										{#if !account.emailVerified}{t('admin.unverified')}{/if}
+									</span>
+								</a>
 
-							{#if account.isOwner}
-								<span class="pill shrink-0" style="--pill: var(--section-accent)"
-									>{t('admin.owner')}</span
-								>
-							{:else if account.role === 'admin'}
-								<span class="pill shrink-0" style="--pill: var(--section-accent)"
-									>{t('admin.admin')}</span
-								>
-							{:else}
-								<span class="eyebrow shrink-0 text-gray-500">{account.role}</span>
-							{/if}
+								<span class="chip shrink-0">{roleLabel(account)}</span>
 
-							<div class="list-row-actions">
-								{#if account.id === data.me}
-									<!-- Your own keys are not yours to take: an instance whose last
+								<div class="list-row-actions">
+									{#if account.id === data.me}
+										<!-- Your own keys are not yours to take: an instance whose last
 									     administrator demoted themselves has nobody to undo it. -->
-									<span class="text-xs text-gray-500">{t('admin.you')}</span>
-								{:else if account.isOwner}
-									<span class="text-xs text-gray-500">{t('admin.alwaysAnAdmin')}</span>
-								{:else}
-									<!-- Two steps, because an administrator can read and change every
+										<span class="text-xs text-gray-500">{t('admin.you')}</span>
+									{:else if account.isOwner}
+										<span class="text-xs text-gray-500">{t('admin.alwaysAnAdmin')}</span>
+									{:else}
+										<!-- Two steps, because an administrator can read and change every
 									     account, and the button sits in a list you scroll. -->
-									<form method="post" action="?/setRole" use:enhance={confirmed}>
-										<input type="hidden" name="id" value={account.id} />
-										<input
-											type="hidden"
-											name="role"
-											value={account.role === 'member' ? 'admin' : 'member'}
-										/>
-										{#if changing === account.id}
-											<span class="flex items-center gap-1">
-												<button class="btn btn-sm btn-danger" use:armed>
-													{account.role === 'member'
-														? t('admin.yesMakeAdmin')
-														: t('admin.yesRemoveAdmin')}
-												</button>
+										<form method="post" action="?/setRole" use:enhance={confirmed}>
+											<input type="hidden" name="id" value={account.id} />
+											<input
+												type="hidden"
+												name="role"
+												value={account.role === 'member' ? 'admin' : 'member'}
+											/>
+											{#if changing === account.id}
+												<span class="flex items-center gap-1">
+													<button class="btn btn-sm btn-danger" use:armed>
+														{account.role === 'member'
+															? t('admin.yesMakeAdmin')
+															: t('admin.yesRemoveAdmin')}
+													</button>
+													<button
+														type="button"
+														class="icon-btn"
+														title={t('ui.cancel')}
+														aria-label={t('ui.cancel')}
+														onclick={() => (changing = null)}><Icon name="close" /></button
+													>
+												</span>
+											{:else}
 												<button
 													type="button"
 													class="icon-btn"
-													title={t('ui.cancel')}
-													aria-label={t('ui.cancel')}
-													onclick={() => (changing = null)}><Icon name="close" /></button
+													title={account.role === 'member'
+														? t('admin.makeAdmin')
+														: t('admin.removeAdmin')}
+													aria-label={account.role === 'member'
+														? t('admin.makeAdmin')
+														: t('admin.removeAdmin')}
+													onclick={() => (changing = account.id)}><Icon name="shield" /></button
 												>
-											</span>
-										{:else}
-											<button
-												type="button"
-												class="icon-btn"
-												title={account.role === 'member'
-													? t('admin.makeAdmin')
-													: t('admin.removeAdmin')}
-												aria-label={account.role === 'member'
-													? t('admin.makeAdmin')
-													: t('admin.removeAdmin')}
-												onclick={() => (changing = account.id)}><Icon name="shield" /></button
-											>
-										{/if}
-									</form>
-								{/if}
+											{/if}
+										</form>
+									{/if}
+								</div>
 							</div>
-						</div>
-					{/each}
-				</div>
-			{/if}
-		</Card>
+						{/each}
+					</div>
+				{/if}
+			</Card>
 
-		<!-- The narrow column: what went wrong, what happened, what was stopped. -->
-		<div class="divide-y divide-gray-200">
+			<!-- What went wrong, what happened, what was sent in. -->
 			{#if data.mailFailures.length > 0}
 				<!-- Only rendered when something is wrong: an empty "all mail fine"
 				     card would train the eye to skip this spot. -->
@@ -216,7 +277,8 @@
 				>
 					<div class="divide-y divide-gray-200">
 						{#each data.mailFailures as failure (failure.id)}
-							<div class="list-row">
+							<div class="list-row" data-row>
+								<span class="row-rail"></span>
 								<div class="list-row-main">
 									<p class="truncate text-sm text-gray-900">
 										{kindLabel(failure.kind)}
@@ -241,7 +303,7 @@
 												title={t('admin.sendItAgainAsIt')}
 												aria-label={t('admin.sendItAgainAsIt')}
 											>
-												<Icon name="undo" />
+												<Icon name="send" />
 											</button>
 										</form>
 									{/if}
@@ -280,19 +342,18 @@
 						aria-label={t('admin.refresh')}
 						onclick={() => invalidateAll()}
 					>
-						<Icon name="undo" />
+						<Icon name="refresh" />
 					</button>
 				{/snippet}
 				{#if data.events.length === 0}
-					<EmptyState icon="clock" title={t('admin.nothingRecordedYet')} />
+					<EmptyState icon="clock" title={t('admin.nothingRecordedYet')} compact />
 				{:else}
-					<!--
-						Contained and scrollable: on an instance in use this is the one
-						list with no natural end.
-					-->
-					<div class="max-h-96 divide-y divide-gray-200 overflow-y-auto">
+					<!-- Bounded by the server rather than by a scroll box: the page
+					     scrolls, and "Show older" asks for more. -->
+					<div class="divide-y divide-gray-200">
 						{#each data.events as event (event.id)}
-							<div class="list-row">
+							<div class="list-row" data-row>
+								<span class="row-rail"></span>
 								<div class="list-row-main">
 									<p class="truncate text-sm text-gray-900">{event.event.replaceAll('_', ' ')}</p>
 									<p class="truncate text-xs text-gray-500">{event.email}</p>
@@ -330,11 +391,11 @@
 				pane
 			>
 				{#if data.clientErrors.length === 0}
-					<EmptyState icon="info" title={t('admin.nothingReported')} />
+					<EmptyState icon="info" title={t('admin.nothingReported')} compact />
 				{:else}
-					<div class="max-h-96 divide-y divide-gray-200 overflow-y-auto">
+					<div class="divide-y divide-gray-200">
 						{#each data.clientErrors as report (report.id)}
-							<details class="px-4 py-3 text-sm">
+							<details class="sent-in py-3 pr-4 text-sm">
 								<summary class="cursor-pointer list-none">
 									<!-- Somebody sat down and wrote this one, so it reads
 									     differently from a stack trace the app noticed on its own. -->
@@ -354,7 +415,7 @@
 								</summary>
 								{#if report.stack}
 									<pre
-										class="mt-2 max-h-48 overflow-auto border border-gray-200 bg-gray-50 p-2 text-xs whitespace-pre-wrap text-gray-700">{report.stack}</pre>
+										class="mt-2 border border-gray-200 bg-gray-50 p-2 text-xs break-all whitespace-pre-wrap text-gray-700">{report.stack}</pre>
 								{/if}
 								{#if report.build}
 									<!-- The build, not only the version: the version is not bumped
@@ -378,12 +439,8 @@
 </div>
 
 <style>
-	/*
-	 * Administrators are the handful of accounts that can act on the others, so
-	 * "who has the keys" is answerable by looking: a rule down the side, the
-	 * weight the cards' own accent uses, in both themes.
-	 */
-	.account-row.is-admin {
-		box-shadow: inset 3px 0 0 var(--section-accent);
+	/* On the rows' text column, like the lists above it. */
+	.sent-in {
+		padding-inline-start: var(--row-text-x);
 	}
 </style>

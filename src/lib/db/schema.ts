@@ -604,6 +604,13 @@ export const habits = sqliteTable(
 		 * these rows, never the place they live.
 		 */
 		notebookId: integer('notebook_id').references(() => notebooks.id, { onDelete: 'set null' }),
+		/**
+		 * Put away: off the room and today's list, its history kept.
+		 *
+		 * A habit carries months of logged days, so stopping one is an archive
+		 * rather than a delete — the delete is reachable from the archived list.
+		 */
+		archivedAt: text('archived_at'),
 		createdAt: text('created_at')
 			.notNull()
 			.default(sql`(CURRENT_TIMESTAMP)`)
@@ -880,6 +887,8 @@ export const inventoryCategories = sqliteTable(
 		 * Ticked once per category, in settings.
 		 */
 		isFood: integer('is_food', { mode: 'boolean' }).notNull().default(false),
+		/** What the category wears on its cards, as `#rrggbb`. None is the neutral fallback. */
+		color: text('color'),
 		sortOrder: integer('sort_order').notNull().default(0),
 		createdAt: text('created_at')
 			.notNull()

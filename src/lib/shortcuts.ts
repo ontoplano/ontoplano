@@ -245,6 +245,14 @@ export const PAGE_SHORTCUTS: Record<string, PageShortcuts> = {
 			{ key: 'k', action: 'navigate-up', description: 'shortcut.navigateSessions' }
 		]
 	},
+	'/admin': {
+		label: 'admin.accounts',
+		shortcuts: [
+			{ key: 'j', action: 'navigate-down', description: 'shortcut.navigateAccounts' },
+			{ key: 'k', action: 'navigate-up', description: 'shortcut.navigateAccounts' },
+			{ key: 'Enter', action: 'open', description: 'shortcut.openTheOneUnderThe' }
+		]
+	},
 	'/settings/integrations/connections': {
 		label: 'app.integrations',
 		shortcuts: [

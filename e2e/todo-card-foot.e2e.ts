@@ -6,9 +6,9 @@ import { visit } from './helpers/visit';
  * The foot of a task card.
  *
  * The actions sit at the card's bottom-right edge, not halfway down beside a
- * rail taller than the words. From `sm` up the labels share that line, with
- * the add-a-label chip after the last one; on a phone the chip stays in the
- * rail and the labels keep their own line.
+ * rail taller than the words. The add-a-label chip comes after the last
+ * label at every width; from `sm` up the labels share the actions' line, and
+ * on a phone they keep their own. The rail holds the tick and the gauges only.
  */
 async function newTodo(page: Page, title: string, tags: string) {
 	await page.getByRole('button', { name: 'New task' }).click();
@@ -49,18 +49,17 @@ for (const [label, viewport] of [
 
 		const quick = row.locator('.quick-tag');
 		await expect(quick).toHaveCount(1);
+		await expect(row.locator('.task-labels .quick-tag')).toHaveCount(1);
+		await expect(row.locator('.row-card-rail .quick-tag')).toHaveCount(0);
 		if (label === 'desktop') {
 			// After the last label, on the line the buttons are on, and level
 			// with them.
-			await expect(row.locator('.task-labels .quick-tag')).toHaveCount(1);
 			const middle = (b: { y: number; height: number }) => b.y + b.height / 2;
 			const lastChip = await box(row.locator('.task-labels .tag-chip').last());
 			const add = await box(quick);
 			expect(Math.abs(middle(lastChip) - middle(actions))).toBeLessThan(2);
 			expect(Math.abs(middle(add) - middle(actions))).toBeLessThan(2);
 			expect(add.x).toBeGreaterThan(lastChip.x);
-		} else {
-			await expect(row.locator('.row-card-rail .quick-tag')).toHaveCount(1);
 		}
 
 		// "Pull onto today" is gone from the card.
@@ -71,7 +70,7 @@ for (const [label, viewport] of [
 		await row.getByRole('button', { name: 'Delegate to a day' }).click();
 		await page.locator('#delegate-form [name="date"]').fill('2026-10-02');
 		await page.getByRole('button', { name: 'Put on the day' }).click();
-		await expect(row.getByText('2026-10-02')).toBeVisible();
+		await expect(row.getByText('Oct 2')).toBeVisible();
 
 		// And the day's board has it once, as the block: the task itself was
 		// not put on the day, so there is no card beside the block, and nothing

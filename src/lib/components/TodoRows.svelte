@@ -1437,32 +1437,15 @@
 								offering a way to change it, and the way in was two presses
 								through a dialog that opens somewhere else entirely.
 							-->
-								{#if todo.notebookSeq !== null}
-									<span class="tabular text-[11px] text-gray-500" title={whenOf(todo)}>
-										#{todo.notebookSeq}
-									</span>
-								{/if}
 								<!--
-								And the way to add one, at the foot of the rail — level with
-								the labels it adds to, not up under the number.
-
-								Where the cursor already is when somebody reads the row
-								and decides it needs a word. The alternative was the
-								edit dialog, which is five steps and a list that
-								reorders underneath you for one label.
-							-->
-								<!--
-								On a phone only. Anything wider has the chip after the last
-								label, on the card's bottom line — see `labels` below.
-							-->
-								{#if phone.current}
-									<div class="mt-auto">
-										{@render quickTag()}
-									</div>
-								{/if}
+									The tick and the gauges are the whole rail. The number and
+									the add-a-label chip used to stand in it too, which made a
+									one-line task 124px tall with a gap under its title; they
+									lead and end the labels line instead, at every width.
+								-->
 								<button
 									type="button"
-									class="cursor-pointer {phone.current ? '' : 'mt-auto'}"
+									class="mt-auto flex cursor-pointer"
 									onclick={() => startEdit(todo, { atRatings: true })}
 									aria-label={t('todoRows.setTheRatings')}
 								>
@@ -1470,6 +1453,11 @@
 								</button>
 							{/snippet}
 							{#snippet labels()}
+								{#if todo.notebookSeq !== null}
+									<span class="tabular mr-1 text-[11px] text-gray-500" title={whenOf(todo)}>
+										#{todo.notebookSeq}
+									</span>
+								{/if}
 								{#each todo.tags as tag (tag.id)}
 									<!--
 										The chip says when it went on.
@@ -1503,7 +1491,7 @@
 										}}
 									/>
 								{/each}
-								{#if !phone.current}{@render quickTag()}{/if}
+								{@render quickTag()}
 							{/snippet}
 							{#snippet controls()}
 								<!-- First, and only where there is something to read: what the

@@ -11,6 +11,7 @@
 	import Banner from '$lib/components/Banner.svelte';
 	import FormError from '$lib/components/FormError.svelte';
 	import { armed } from '$lib/actions/armed';
+	import { listCursor } from '$lib/actions/list-cursor';
 	import { resolve } from '$app/paths';
 	import { EMPTY_CONFIRMATION, ERASE_CONFIRMATION } from '$lib/danger';
 	import { notify } from '$lib/notify.svelte';
@@ -162,6 +163,8 @@
 		}
 	}
 	let emptying = $state(false);
+	/** The danger zone, closed until it is opened. */
+	let dangerOpen = $state(false);
 
 	let confirmRevoke = $state<string | null>(null);
 	let confirmSignOutAll = $state(false);
@@ -352,54 +355,9 @@
 				description={t('settings.account.oneLinePerSignInAnything')}
 				dataTour="account-sessions"
 			>
-				{#snippet actions()}
-					{#if data.sessions.length > 1}
-						<!-- Both states in one cell, so arming the confirmation does not
-						     move anything beside it. -->
-						<form
-							method="post"
-							action="?/signOutEverywhere"
-							use:enhance={() =>
-								async ({ update }) => {
-									confirmSignOutAll = false;
-									await update();
-								}}
-							class="grid"
-						>
-							<button
-								type="button"
-								onclick={() => (confirmSignOutAll = true)}
-								class="btn btn-sm col-start-1 row-start-1"
-								class:invisible={confirmSignOutAll}
-								>{t('settings.account.signOutEverywhere')}</button
-							>
-							<span
-								class="col-start-1 row-start-1 flex items-center justify-end gap-1"
-								class:invisible={!confirmSignOutAll}
-							>
-								{#if confirmSignOutAll}
-									<button type="submit" class="btn btn-danger btn-sm" use:armed
-										>{t('settings.account.confirm')}</button
-									>
-									<button
-										type="button"
-										onclick={() => (confirmSignOutAll = false)}
-										class="icon-btn"
-										title={t('ui.cancel')}
-										aria-label={t('ui.cancel')}><Icon name="close" /></button
-									>
-								{/if}
-							</span>
-						</form>
-					{/if}
-				{/snippet}
-				{#if confirmSignOutAll}
-					<p class="px-4 py-2 text-sm text-gray-600">
-						{t('settings.account.thisSignsOutEveryDevice')}
-					</p>
-				{/if}
 				{#each shownSessions as s, i (s.id)}
-					<div class="list-row {selected === i ? 'kb-cursor' : ''}">
+					<div class="list-row" data-row use:listCursor={selected === i}>
+						<span class="row-rail text-gray-500"><Icon name="key" size={16} /></span>
 						<div class="list-row-main">
 							<p class="text-sm font-medium text-gray-900">
 								{s.device}
@@ -465,6 +423,52 @@
 							{t('settings.account.allSessions', { count: sortedSessions.length })}
 						</button>
 					</div>
+				{/if}
+				{#if data.sessions.length > 1}
+					<!-- A verb about every row, on a row of its own under them. Both
+					     states in one cell, so arming the confirmation moves nothing. -->
+					<SettingRow
+						label={t('settings.account.signOutEverywhere')}
+						hint={t('settings.account.thisSignsOutEveryDevice')}
+					>
+						{#snippet control()}
+							<form
+								method="post"
+								action="?/signOutEverywhere"
+								use:enhance={() =>
+									async ({ update }) => {
+										confirmSignOutAll = false;
+										await update();
+									}}
+								class="grid"
+							>
+								<button
+									type="button"
+									onclick={() => (confirmSignOutAll = true)}
+									class="btn btn-sm col-start-1 row-start-1"
+									class:invisible={confirmSignOutAll}
+									><Icon name="sign-out" />{t('settings.account.signOutEverywhere')}</button
+								>
+								<span
+									class="col-start-1 row-start-1 flex items-center justify-end gap-1"
+									class:invisible={!confirmSignOutAll}
+								>
+									{#if confirmSignOutAll}
+										<button type="submit" class="btn btn-danger btn-sm" use:armed
+											>{t('settings.account.confirm')}</button
+										>
+										<button
+											type="button"
+											onclick={() => (confirmSignOutAll = false)}
+											class="icon-btn"
+											title={t('ui.cancel')}
+											aria-label={t('ui.cancel')}><Icon name="close" /></button
+										>
+									{/if}
+								</span>
+							</form>
+						{/snippet}
+					</SettingRow>
 				{/if}
 			</SettingGroup>
 		{/if}
@@ -611,6 +615,64 @@
 				{/snippet}
 			</SettingRow>
 		</SettingGroup>
+
+		<!--
+			The irreversible things, last, and closed until somebody opens them:
+			a person who came to change their password should not have to look at
+			two Delete buttons. The same band as every other subject — the words
+			say danger, and each button is the danger button.
+		-->
+		<SettingGroup id="danger-zone" title={t('settings.account.dangerZone')}>
+			{#snippet actions()}
+				<button
+					type="button"
+					class="icon-btn icon-btn-sm"
+					aria-expanded={dangerOpen}
+					title={t('settings.account.dangerZone')}
+					aria-label={t('settings.account.dangerZone')}
+					onclick={() => (dangerOpen = !dangerOpen)}
+				>
+					<Icon name={dangerOpen ? 'chevron-up' : 'chevron-down'} />
+				</button>
+			{/snippet}
+			{#if dangerOpen}
+				<!--
+					Two on a server, one on a device: emptying an account and ending it
+					differ by the address you sign in with afterwards, and a device has
+					none, so there the soft one would be a longer road to the same place.
+				-->
+				{#if !onDevice}
+					<SettingRow
+						label={t('settings.account.deleteEverythingInThisAccount')}
+						hint={t('settings.account.everyTaskNoteHabitGoal')}
+					>
+						{#snippet control()}
+							<button onclick={() => (emptying = true)} class="btn btn-danger btn-sm">
+								<Icon name="trash" />
+								{t('settings.account.deleteEverything')}
+							</button>
+						{/snippet}
+					</SettingRow>
+				{/if}
+				<SettingRow
+					label={onDevice
+						? t('settings.account.deleteThisInstance')
+						: t('admin.id.deleteThisAccount')}
+					hint={onDevice
+						? t('settings.account.everythingOnThisDeviceAnd')
+						: t('settings.account.theDataAndTheAccount')}
+				>
+					{#snippet control()}
+						<button onclick={() => (confirming = true)} class="btn btn-danger btn-sm">
+							<Icon name="trash" />
+							{onDevice
+								? t('settings.account.deleteInstance')
+								: t('settings.account.deleteAccount')}
+						</button>
+					{/snippet}
+				</SettingRow>
+			{/if}
+		</SettingGroup>
 	</RoomSurface>
 
 	{#if !onDevice}
@@ -718,72 +780,6 @@
 			{/snippet}
 		</Modal>
 	{/if}
-
-	<!--
-		The two irreversible things, together, at the bottom, on red.
-
-		Apart they were two ordinary cards in a column of ordinary cards, and the
-		one that ends the account looked like the one that changes the theme.
-		Together and last, under a heading that says what the section is, they
-		read as the part of the page you have to mean.
-	-->
-	<!--
-		Closed until somebody opens it.
-
-		The section is last and framed in red, and it still sat there with two
-		Delete buttons on it every time anybody came to change their password.
-		A thing you have to mean should not be a thing you have to look at.
-	-->
-	<details class="danger-zone">
-		<summary class="danger-zone-title">
-			<Icon name="chevron-right" size={12} class="danger-zone-mark" />
-			{t('settings.account.dangerZone')}
-		</summary>
-
-		<!--
-			Two of these on a server, one on a device.
-
-			Emptying an account and ending it differ by the address you sign in
-			with afterwards, and a device has none: what follows the hard one
-			here is the screen that chooses where your ontoplano lives, where
-			making a new empty one is a press away. So the soft one would reach
-			the same state by a longer road, and offering both would be offering
-			a choice that is not one.
-		-->
-		{#if !onDevice}
-			<div class="danger-zone-row">
-				<div class="min-w-0">
-					<h3 class="text-sm font-semibold text-red-700">
-						{t('settings.account.deleteEverythingInThisAccount')}
-					</h3>
-					<p class="mt-1 max-w-2xl text-sm text-gray-600">
-						{t('settings.account.everyTaskNoteHabitGoal')}
-					</p>
-				</div>
-				<button onclick={() => (emptying = true)} class="btn btn-danger btn-sm shrink-0">
-					<Icon name="trash" />
-					{t('settings.account.deleteEverything')}
-				</button>
-			</div>
-		{/if}
-
-		<div class="danger-zone-row">
-			<div class="min-w-0">
-				<h3 class="text-sm font-semibold text-red-700">
-					{onDevice ? t('settings.account.deleteThisInstance') : t('admin.id.deleteThisAccount')}
-				</h3>
-				<p class="mt-1 max-w-2xl text-sm text-gray-600">
-					{onDevice
-						? t('settings.account.everythingOnThisDeviceAnd')
-						: t('settings.account.theDataAndTheAccount')}
-				</p>
-			</div>
-			<button onclick={() => (confirming = true)} class="btn btn-danger btn-sm shrink-0">
-				<Icon name="trash" />
-				{onDevice ? t('settings.account.deleteInstance') : t('settings.account.deleteAccount')}
-			</button>
-		</div>
-	</details>
 
 	<Modal
 		open={emptying}

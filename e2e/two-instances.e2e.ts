@@ -135,9 +135,9 @@ test('deleting the instance on the device leaves the server account untouched', 
 	await go('/settings/account');
 	// The danger zone is closed until it is opened — it should not draw the eye
 	// on a page people visit for other reasons.
-	const zone = page.locator('details.danger-zone');
+	const zone = page.locator('#danger-zone');
 	await expect(zone).toBeVisible({ timeout: 60_000 });
-	await zone.locator('summary').click();
+	await zone.getByRole('button', { name: 'Danger zone' }).click();
 	const end = zone.getByRole('button', { name: 'Delete instance' });
 	await expect(end).toBeVisible();
 	// And none of the server's cards, which are about a server. Asked of the

@@ -5,6 +5,7 @@
 	import { enhance } from '$lib/enhance';
 	import OneLine from '$lib/components/OneLine.svelte';
 	import { settingsForm } from '$lib/actions/settings-form';
+	import { sliding } from '$lib/actions/sliding';
 	import { armed } from '$lib/actions/armed';
 	import Banner from '$lib/components/Banner.svelte';
 	import CopyBlock from '$lib/components/CopyBlock.svelte';
@@ -112,6 +113,19 @@
 	const SLACK_MS = 60_000;
 	const restartedIntoThisBuild = $derived(
 		new Date(data.build.startedAt).getTime() >= new Date(data.build.builtAt).getTime() - SLACK_MS
+	);
+
+	/** A glyph and a word per state, never a colour: the tick, the warning, the pause. */
+	const STATUS_GLYPH = { running: 'check', stopped: 'warning', off: 'pause' } as const;
+	const STATUS_WORD = {
+		running: 'settings.instance.running',
+		stopped: 'settings.instance.notRunning',
+		off: 'settings.instance.switchedOff'
+	} as const;
+
+	/** The chosen registration mode's sentence, said once under the choice. */
+	const registrationHint = $derived(
+		REGISTRATION_MODES.find((m) => m.key === data.config.registration.mode)?.hint
 	);
 
 	function when(iso: string | null): string {
@@ -247,15 +261,15 @@
 					{#each data.companions as row (row.unit)}
 						<SettingRow label={t(row.label)} hint={row.detail}>
 							{#if row.fix}
-								<code class="tabular mt-1 block text-xs break-all text-gray-600">{row.fix}</code>
+								<code class="tabular fix-command mt-1 block text-xs text-gray-600">{row.fix}</code>
 							{/if}
 							{#snippet control()}
 								<span
-									class="flex items-center gap-1.5 text-sm font-medium text-gray-900"
+									class="flex items-center gap-1.5 text-sm font-medium whitespace-nowrap text-gray-900"
 									title={row.detail}
 								>
-									<Icon name={row.ok ? 'check' : 'warning'} size={16} />
-									{row.ok ? t('settings.instance.running') : t('settings.instance.notRunning')}
+									<Icon name={STATUS_GLYPH[row.status]} size={16} />
+									{t(STATUS_WORD[row.status])}
 								</span>
 							{/snippet}
 						</SettingRow>
@@ -316,31 +330,33 @@
 						</Banner>
 					</div>
 				{/if}
-				<form
-					id="registration-form"
-					method="post"
-					action="?/setRegistration"
-					use:settingsForm={{ notice: t('settings.instance.registrationSaved') }}
-					hidden
-				></form>
-				<!-- Each choice saves itself: a Save under three radios was a second
-				     press for one answer. -->
-				{#each REGISTRATION_MODES as mode (mode.key)}
-					<label class="block cursor-pointer hover:bg-gray-50">
-						<SettingRow label={t(mode.label)} hint={t(mode.hint)}>
-							{#snippet control()}
-								<input
-									type="radio"
+				<!-- One strip of three, like the theme: each choice saves itself, and
+				     what the chosen one means is said once under the question. -->
+				<SettingRow
+					label={t('settings.instance.newAccounts')}
+					hint={registrationHint ? t(registrationHint) : ''}
+				>
+					{#snippet control()}
+						<form
+							method="post"
+							action="?/setRegistration"
+							use:settingsForm={{ notice: t('settings.instance.registrationSaved') }}
+							use:sliding
+							class="seg"
+						>
+							{#each REGISTRATION_MODES as mode (mode.key)}
+								<button
+									type="submit"
 									name="mode"
-									form="registration-form"
 									value={mode.key}
-									checked={data.config.registration.mode === mode.key}
-									onchange={(e) => e.currentTarget.form?.requestSubmit()}
-								/>
-							{/snippet}
-						</SettingRow>
-					</label>
-				{/each}
+									aria-pressed={data.config.registration.mode === mode.key}
+								>
+									{t(mode.label)}
+								</button>
+							{/each}
+						</form>
+					{/snippet}
+				</SettingRow>
 			</SettingGroup>
 
 			{#if data.newsletter}
@@ -436,22 +452,27 @@
 					hint={t('settings.instance.leaveItEmptyAndThey')}
 				>
 					{#snippet control()}
-						<label class="block w-64 max-w-full">
-							<span class="sr-only">{t('settings.instance.sendReportsAndSuggestionsTo')}</span>
+						<div class="controls-sm flex w-80 max-w-full items-center gap-2">
 							<input
 								type="email"
 								name="feedbackEmail"
 								form="reports-form"
 								value={data.config.reports.feedbackEmail}
 								autocomplete="off"
-								class="input input-sm"
+								class="input min-w-0 flex-1"
+								aria-label={t('settings.instance.sendReportsAndSuggestionsTo')}
 								placeholder={t('settings.instance.youExampleCom')}
 							/>
-						</label>
-						<button type="submit" form="reports-form" class="btn btn-sm btn-primary">
-							<Icon name="check" />
-							{t('ui.save')}
-						</button>
+							<button
+								type="submit"
+								form="reports-form"
+								class="btn btn-primary btn-sm"
+								title={t('ui.save')}
+								aria-label={t('ui.save')}
+							>
+								<Icon name="check" />
+							</button>
+						</div>
 					{/snippet}
 				</SettingRow>
 			</SettingGroup>
@@ -486,7 +507,8 @@
 					</div>
 				{/if}
 				{#each [...open, ...used] as invite (invite.id)}
-					<div class="list-row">
+					<div class="list-row" data-row>
+						<span class="row-rail text-gray-500"><Icon name="key" size={16} /></span>
 						<div class="list-row-main">
 							<p class="text-sm text-gray-900">{invite.note || t('settings.instance.noNote')}</p>
 							<p class="text-xs text-gray-500">
@@ -621,3 +643,11 @@
 		</Modal>
 	{/if}
 </div>
+
+<style>
+	/* A command breaks between its words, never inside one. */
+	.fix-command {
+		overflow-wrap: anywhere;
+		word-break: normal;
+	}
+</style>

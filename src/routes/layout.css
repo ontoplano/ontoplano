@@ -4668,22 +4668,26 @@ html button.tab-link {
 }
 
 /*
- * The line under the shelf, and what is behind it.
+ * The shelf's headings — favourites, all of them, the closed ones — one style,
+ * on the shelf's own left edge.
  *
- * A closed notebook is history — a trip that happened, a renovation that
- * ended — and it sat on the same shelf as the ones being written in, only
- * greyer, so a shelf of five became a shelf of twelve over a year. The rule
- * IS the control: pressing the line opens what is under it, so there is no
- * button drawn beside a divider that does nothing.
+ * The closed ones are behind the last of them: it is a button, and pressing it
+ * opens what is under it. The rule above it says the shelf of things being
+ * written in has ended.
  */
-.shelf-fold {
+.shelf-heading {
 	display: flex;
 	align-items: center;
-	gap: 0.625rem;
-	width: 100%;
-	margin: 0.75rem 0 0.25rem;
-	padding: 0.25rem 0.5rem;
+	gap: 0.375rem;
+	padding: 0.75rem 0.75rem 0;
 	color: var(--color-gray-500);
+}
+
+.shelf-fold {
+	width: 100%;
+	margin-top: 0.75rem;
+	border-top: 1px solid var(--color-gray-200);
+	padding-bottom: 0.25rem;
 	cursor: pointer;
 }
 
@@ -4691,53 +4695,18 @@ html button.tab-link {
 	color: var(--color-gray-900);
 }
 
-.shelf-fold-line {
-	flex: 1;
-	height: 1px;
-	background-color: var(--color-gray-200);
-}
-
-.shelf-fold-label {
-	display: inline-flex;
-	align-items: center;
-	gap: 0.25rem;
-	font-size: 0.75rem;
-	font-weight: 500;
-	white-space: nowrap;
-}
-
-/* The name over the favourites' row: the fold's label, standing still. */
-.shelf-heading {
-	display: flex;
-	padding: 0.75rem 0.75rem 0;
-	color: var(--color-gray-500);
-}
-
 /*
- * What is left over, as a bin in the corner of the shelf.
- *
- * Notes whose notebook was deleted are not a notebook, and a row of them at
- * the end of the list read as one — a book on the shelf called "Notes without
- * a notebook". Pinned to the bottom corner, where a bin goes, and out of the
- * sequence somebody is reading.
+ * What is left over: notes whose notebook was deleted, as a named line at the
+ * foot of the shelf rather than one more book on it.
  */
 .shelf-bin {
-	position: sticky;
-	bottom: 0.5rem;
-	z-index: 1;
-	display: inline-flex;
+	display: flex;
 	align-items: center;
-	/* The glyph and its number read as one thing, centred on the same line. */
-	justify-content: center;
-	gap: 0.375rem;
-	align-self: end;
-	margin: 0 0.75rem 0 auto;
-	border-radius: var(--radius, 0);
-	background-color: var(--color-white);
-	padding: 0.5rem 0.75rem;
-	color: var(--color-gray-500);
-	line-height: 1;
-	box-shadow: var(--shadow-card);
+	gap: 0.5rem;
+	border-top: 1px solid var(--color-gray-200);
+	padding: 0.625rem 0.75rem;
+	font-size: 0.75rem;
+	color: var(--color-gray-600);
 }
 
 .shelf-bin:hover,
@@ -4747,19 +4716,35 @@ html button.tab-link {
 }
 
 /* Glued to the cover: the name of the thing directly above it, not a caption. */
+/*
+ * Two lines for the name and two for the tally, reserved whether they are
+ * used or not: a caption that wraps to five lines on one cover and one on the
+ * next leaves every row of the shelf a different height. The whole of both is
+ * the cover's tooltip.
+ */
 .cover-name {
-	display: block;
+	display: -webkit-box;
+	-webkit-box-orient: vertical;
+	-webkit-line-clamp: 2;
+	line-clamp: 2;
+	overflow: hidden;
+	min-height: 2.5em;
 	font-size: 0.8125rem;
 	font-weight: 600;
 	line-height: 1.25;
 	color: var(--color-gray-900);
-	overflow-wrap: anywhere;
+	overflow-wrap: break-word;
 }
 
 .cover-tally {
-	display: block;
-	font-size: 0.6875rem;
-	line-height: 1.2;
+	display: -webkit-box;
+	-webkit-box-orient: vertical;
+	-webkit-line-clamp: 2;
+	line-clamp: 2;
+	overflow: hidden;
+	min-height: 2.8em;
+	font-size: 0.75rem;
+	line-height: 1.4;
 	color: var(--color-gray-500);
 }
 
@@ -4837,6 +4822,13 @@ html button.tab-link {
 	background-color: var(--color-white);
 	box-shadow: var(--shadow-card);
 	overflow: clip;
+}
+
+/* On a phone it runs to both screen edges, so it has no sides — like any card there. */
+@media (width < 40rem) {
+	.room-surface {
+		border-inline-width: 0;
+	}
 }
 
 /*

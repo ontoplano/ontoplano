@@ -67,6 +67,7 @@ export type MessageKey =
 	| 'admin.lately'
 	| 'admin.mailThatDidNotGo'
 	| 'admin.makeAdmin'
+	| 'admin.member'
 	| 'admin.minutesAgo'
 	| 'admin.noAccountsYet'
 	| 'admin.noPage'
@@ -75,6 +76,9 @@ export type MessageKey =
 	| 'admin.notSignedIn'
 	| 'admin.nothingRecordedYet'
 	| 'admin.nothingReported'
+	| 'admin.orderAccountsBy'
+	| 'admin.orderAddress'
+	| 'admin.orderJoined'
 	| 'admin.owner'
 	| 'admin.problemsSomebodyReportedIdeasThey'
 	| 'admin.refresh'
@@ -268,6 +272,10 @@ export type MessageKey =
 	| 'audio.noneDescription'
 	| 'audio.noneMatch'
 	| 'audio.notSupported'
+	| 'audio.orderBy'
+	| 'audio.orderLength'
+	| 'audio.orderName'
+	| 'audio.orderRecorded'
 	| 'audio.pause'
 	| 'audio.pausePlayback'
 	| 'audio.paused'
@@ -728,12 +736,9 @@ export type MessageKey =
 	| 'finance.insights.writeOne'
 	| 'finance.ledgers.aLedgerIsOnePlace'
 	| 'finance.ledgers.addedAlreadyHere'
-	| 'finance.ledgers.andBillsTurnUp'
 	| 'finance.ledgers.andItsLinesGoFor'
 	| 'finance.ledgers.archive'
-	| 'finance.ledgers.archivedCount'
 	| 'finance.ledgers.askEveryTime'
-	| 'finance.ledgers.bill'
 	| 'finance.ledgers.chooseTheFile'
 	| 'finance.ledgers.coffee'
 	| 'finance.ledgers.currentAccount'
@@ -759,11 +764,9 @@ export type MessageKey =
 	| 'finance.ledgers.lastOn'
 	| 'finance.ledgers.leaveTheIdAsNone'
 	| 'finance.ledgers.ledger'
-	| 'finance.ledgers.line'
 	| 'finance.ledgers.lines'
 	| 'finance.ledgers.moneyIn'
 	| 'finance.ledgers.moneyOut'
-	| 'finance.ledgers.moneyYouExpectRatherThan'
 	| 'finance.ledgers.month'
 	| 'finance.ledgers.moveEarlier'
 	| 'finance.ledgers.moveLater'
@@ -775,17 +778,18 @@ export type MessageKey =
 	| 'finance.ledgers.none'
 	| 'finance.ledgers.nothingHereYet'
 	| 'finance.ledgers.orPasteItBelow'
+	| 'finance.ledgers.orderLinesBy'
 	| 'finance.ledgers.pasteExample'
 	| 'finance.ledgers.preselectedWhenImportingIntoThis'
 	| 'finance.ledgers.putItAway'
 	| 'finance.ledgers.readFromTheHeaderChange'
 	| 'finance.ledgers.restore'
 	| 'finance.ledgers.searchDescriptions'
-	| 'finance.ledgers.shown'
+	| 'finance.ledgers.showingCount'
 	| 'finance.ledgers.theBankSOwnId'
 	| 'finance.ledgers.theRulesReadThisSo'
 	| 'finance.ledgers.twoColumnsInstead'
-	| 'finance.ledgers.uncategorized'
+	| 'finance.ledgers.uncategorizedCount'
 	| 'finance.ledgers.usualExport'
 	| 'finance.ledgers.whatItIs'
 	| 'finance.monthlyBars.caption'
@@ -845,6 +849,7 @@ export type MessageKey =
 	| 'gallery.albumsCount'
 	| 'gallery.albumsInside'
 	| 'gallery.allAlbums'
+	| 'gallery.allOf'
 	| 'gallery.anAlbumIsWherePictures'
 	| 'gallery.atMostKilobytes'
 	| 'gallery.delete'
@@ -859,10 +864,15 @@ export type MessageKey =
 	| 'gallery.id.dragAPictureOntoAn'
 	| 'gallery.id.itStaysIn'
 	| 'gallery.id.keepIt'
+	| 'gallery.id.noneMatch'
 	| 'gallery.id.nothingHereYet'
+	| 'gallery.id.orderAdded'
+	| 'gallery.id.orderBy'
+	| 'gallery.id.orderName'
 	| 'gallery.id.removeFromThisAlbum'
 	| 'gallery.id.removeThisPicture'
 	| 'gallery.id.saveTags'
+	| 'gallery.id.searchPictures'
 	| 'gallery.id.tagsCommasOrSpaces'
 	| 'gallery.id.thisIsItsOnlyAlbum'
 	| 'gallery.id.whatIsInThePicture'
@@ -874,6 +884,7 @@ export type MessageKey =
 	| 'gallery.newAlbum'
 	| 'gallery.noAlbumsInside'
 	| 'gallery.noAlbumsYet'
+	| 'gallery.noneMatch'
 	| 'gallery.notebooks'
 	| 'gallery.notebooks.path.aPicture'
 	| 'gallery.notebooks.path.noPicturesInYourNotebooks'
@@ -881,11 +892,15 @@ export type MessageKey =
 	| 'gallery.notebooks.path.putAPictureInA'
 	| 'gallery.notebooks.path.thePicturesInYourNotebooks'
 	| 'gallery.openTheAlbum'
+	| 'gallery.orderBy'
+	| 'gallery.orderName'
+	| 'gallery.orderSize'
 	| 'gallery.pictureIntoAlbum'
 	| 'gallery.picturesCount'
 	| 'gallery.refused'
 	| 'gallery.rename'
 	| 'gallery.renameAlbum'
+	| 'gallery.searchAlbums'
 	| 'gallery.trips'
 	| 'goals.aGoalIsACommitment'
 	| 'goals.abandoned'
@@ -904,6 +919,7 @@ export type MessageKey =
 	| 'goals.closedCount'
 	| 'goals.confirm'
 	| 'goals.countedFrom'
+	| 'goals.countedFromActivity'
 	| 'goals.countedFromYourWorkouts'
 	| 'goals.countsFor'
 	| 'goals.createGoal'
@@ -920,6 +936,8 @@ export type MessageKey =
 	| 'goals.goals'
 	| 'goals.horizon'
 	| 'goals.iKeepThisOneMyself'
+	| 'goals.kindCounted'
+	| 'goals.kindMeasured'
 	| 'goals.linkedTasks'
 	| 'goals.linkedTasksMakeProgress'
 	| 'goals.measuredBy'
@@ -946,6 +964,11 @@ export type MessageKey =
 	| 'goals.oneMore'
 	| 'goals.oneMoreUnit'
 	| 'goals.optionalLeaveItEmptyFor'
+	| 'goals.orderAdded'
+	| 'goals.orderGoalsBy'
+	| 'goals.orderPeriod'
+	| 'goals.orderProgress'
+	| 'goals.orderTitle'
 	| 'goals.partOf'
 	| 'goals.partOf2'
 	| 'goals.progressTowards'
@@ -961,9 +984,11 @@ export type MessageKey =
 	| 'goals.showingCount'
 	| 'goals.standalone'
 	| 'goals.starts'
+	| 'goals.targetNumber'
 	| 'goals.tasks'
 	| 'goals.toDos'
 	| 'goals.towardsThis'
+	| 'goals.unit'
 	| 'goals.week'
 	| 'goals.weekOfDateYear'
 	| 'goals.weeklyBlocks'
@@ -1204,6 +1229,7 @@ export type MessageKey =
 	| 'home.addAnItem'
 	| 'home.aiAmpIntegrations'
 	| 'home.allEntries'
+	| 'home.amountDueOn'
 	| 'home.backToTheDashboard'
 	| 'home.bills'
 	| 'home.blocksCount'
@@ -1213,13 +1239,9 @@ export type MessageKey =
 	| 'home.done'
 	| 'home.dragCard'
 	| 'home.dragTheCardsByThe'
-	| 'home.dueThe'
-	| 'home.edit'
-	| 'home.editRarr'
 	| 'home.everyBlockOnTodaySPlan'
 	| 'home.everythingPaidThisMonth'
 	| 'home.everythingTheDashboardCan'
-	| 'home.first'
 	| 'home.forTheDay'
 	| 'home.freshDemoAccountEverything'
 	| 'home.goToASection'
@@ -1244,6 +1266,7 @@ export type MessageKey =
 	| 'home.leaveTheCardsAsThey'
 	| 'home.left'
 	| 'home.loading'
+	| 'home.markDone'
 	| 'home.mdash'
 	| 'home.menu'
 	| 'home.minutesLeft'
@@ -1282,7 +1305,6 @@ export type MessageKey =
 	| 'home.oneOff'
 	| 'home.onlyWhatBrokeIsSent'
 	| 'home.open'
-	| 'home.openRarr'
 	| 'home.openThePlan'
 	| 'home.paidOfExpected'
 	| 'home.preferences'
@@ -1303,6 +1325,7 @@ export type MessageKey =
 	| 'home.somethingWentWrong'
 	| 'home.staging'
 	| 'home.staging2'
+	| 'home.streakDays'
 	| 'home.tagsCommaSeparated'
 	| 'home.thatCouldNotBeSent'
 	| 'home.thatDidNotWorkReload'
@@ -1313,6 +1336,7 @@ export type MessageKey =
 	| 'home.todaySTasks'
 	| 'home.tomorrow'
 	| 'home.unanswered'
+	| 'home.undoMarkingDone'
 	| 'home.unselectAll'
 	| 'home.updateTheApp'
 	| 'home.weekPlan'
@@ -1698,13 +1722,24 @@ export type MessageKey =
 	| 'notebookDetail.noGoalPointsAtThis'
 	| 'notebookDetail.nothingChosen'
 	| 'notebookDetail.nothingWrittenHereYet'
+	| 'notebookDetail.orderAdded'
 	| 'notebookDetail.orderEdited'
+	| 'notebookDetail.orderName'
 	| 'notebookDetail.orderNotesBy'
+	| 'notebookDetail.orderThisTabBy'
 	| 'notebookDetail.orderTitle'
 	| 'notebookDetail.orderWritten'
 	| 'notebookDetail.people'
 	| 'notebookDetail.saved'
+	| 'notebookDetail.searchTheseBills'
+	| 'notebookDetail.searchTheseGoals'
+	| 'notebookDetail.searchTheseHabits'
+	| 'notebookDetail.searchTheseIdeas'
+	| 'notebookDetail.searchTheseLedgers'
 	| 'notebookDetail.searchTheseNotes'
+	| 'notebookDetail.searchTheseRecipes'
+	| 'notebookDetail.searchTheseThings'
+	| 'notebookDetail.searchTheseWorkouts'
 	| 'notebookDetail.searchThisTab'
 	| 'notebookDetail.sections'
 	| 'notebookDetail.selectNote'
@@ -1726,6 +1761,7 @@ export type MessageKey =
 	| 'notebooks.aSubjectYouWriteAgainst'
 	| 'notebooks.addNamedToFavourites'
 	| 'notebooks.addToFavourites'
+	| 'notebooks.allNotebooks'
 	| 'notebooks.alreadyFiled'
 	| 'notebooks.andFromTheFrontmatter'
 	| 'notebooks.atTheBottomOf'
@@ -1748,6 +1784,8 @@ export type MessageKey =
 	| 'notebooks.diary.for'
 	| 'notebooks.diary.newEntry'
 	| 'notebooks.diary.newWins'
+	| 'notebooks.diary.orderDay'
+	| 'notebooks.diary.orderDiaryBy'
 	| 'notebooks.diary.people'
 	| 'notebooks.diary.postEntry'
 	| 'notebooks.diary.saveWins'
@@ -1830,6 +1868,15 @@ export type MessageKey =
 	| 'notebooks.ideas.appliedNote'
 	| 'notebooks.ideas.appliedOrNot'
 	| 'notebooks.ideas.appliedUndo'
+	| 'notebooks.ideas.batchApply'
+	| 'notebooks.ideas.batchApplyAsk'
+	| 'notebooks.ideas.batchDelete'
+	| 'notebooks.ideas.batchDeleteAsk'
+	| 'notebooks.ideas.batchFavourite'
+	| 'notebooks.ideas.batchFavouriteAsk'
+	| 'notebooks.ideas.batchMove'
+	| 'notebooks.ideas.batchTag'
+	| 'notebooks.ideas.batchUpdated'
 	| 'notebooks.ideas.confirm'
 	| 'notebooks.ideas.editIdea'
 	| 'notebooks.ideas.editNote'
@@ -1846,9 +1893,12 @@ export type MessageKey =
 	| 'notebooks.ideas.notApplied'
 	| 'notebooks.ideas.notFavourite'
 	| 'notebooks.ideas.nothingCapturedYet'
+	| 'notebooks.ideas.orderIdeasBy'
 	| 'notebooks.ideas.removeFavorite'
 	| 'notebooks.ideas.saveIdea'
 	| 'notebooks.ideas.searchTheseIdeas'
+	| 'notebooks.ideas.selectIdea'
+	| 'notebooks.ideas.selectVisible'
 	| 'notebooks.ideas.showingCount'
 	| 'notebooks.ideas.whatDidYouApply'
 	| 'notebooks.ideasCount'
@@ -1902,6 +1952,7 @@ export type MessageKey =
 	| 'notebooks.people.addAPictureOf'
 	| 'notebooks.people.addPerson'
 	| 'notebooks.people.addThePeopleWhoTurn'
+	| 'notebooks.people.allPeople'
 	| 'notebooks.people.birthday'
 	| 'notebooks.people.changeTheirPicture'
 	| 'notebooks.people.editPerson'
@@ -1913,10 +1964,12 @@ export type MessageKey =
 	| 'notebooks.people.mentionsCount'
 	| 'notebooks.people.nbspFor'
 	| 'notebooks.people.newPerson'
+	| 'notebooks.people.nextBirthday'
 	| 'notebooks.people.nobodySelected'
 	| 'notebooks.people.nobodyYet'
 	| 'notebooks.people.nothingWrittenAboutYet'
 	| 'notebooks.people.onTheDay'
+	| 'notebooks.people.orderPeopleBy'
 	| 'notebooks.people.phone'
 	| 'notebooks.people.pickSomebodyToSeeEverything'
 	| 'notebooks.people.removeThePicture'
@@ -1954,6 +2007,7 @@ export type MessageKey =
 	| 'notebooks.tags.noColour'
 	| 'notebooks.tags.noTagsYet'
 	| 'notebooks.tags.oneVocabularyForTheWhole'
+	| 'notebooks.tags.orderTagsBy'
 	| 'notebooks.tags.removeFromThisNotebook'
 	| 'notebooks.tags.removeHere'
 	| 'notebooks.tags.renamingOntoAName'
@@ -1961,6 +2015,7 @@ export type MessageKey =
 	| 'notebooks.tags.showingCount'
 	| 'notebooks.tags.thingCarriesIt'
 	| 'notebooks.tags.thingsCarryIt'
+	| 'notebooks.tags.uses'
 	| 'notebooks.tags.yesDelete'
 	| 'notebooks.tasksCount'
 	| 'notebooks.theirNotebookWas'
@@ -2631,6 +2686,7 @@ export type MessageKey =
 	| 'settings.instance.makeRestartServer'
 	| 'settings.instance.minutesAgo'
 	| 'settings.instance.myBrother'
+	| 'settings.instance.newAccounts'
 	| 'settings.instance.newInvitation'
 	| 'settings.instance.noInvitationsYet'
 	| 'settings.instance.noNote'
@@ -2651,6 +2707,7 @@ export type MessageKey =
 	| 'settings.instance.secondsAgo'
 	| 'settings.instance.sendReportsAndSuggestionsTo'
 	| 'settings.instance.stagingDetail'
+	| 'settings.instance.switchedOff'
 	| 'settings.instance.tables'
 	| 'settings.instance.theAppAnswersRequestsThese'
 	| 'settings.instance.theEnvironmentOverridesThe'
@@ -2982,10 +3039,12 @@ export type MessageKey =
 	| 'shortcut.editTodo'
 	| 'shortcut.editWidget'
 	| 'shortcut.expandCollapse'
+	| 'shortcut.importAStatement'
 	| 'shortcut.markDoneReopen'
 	| 'shortcut.moveBetweenCards'
 	| 'shortcut.moveBetweenColumns'
 	| 'shortcut.moveBetweenTabs'
+	| 'shortcut.navigateAccounts'
 	| 'shortcut.navigateEntries'
 	| 'shortcut.navigateHabits'
 	| 'shortcut.navigateIdeas'
@@ -2998,6 +3057,7 @@ export type MessageKey =
 	| 'shortcut.navigateTokens'
 	| 'shortcut.navigateWidgets'
 	| 'shortcut.newActivity'
+	| 'shortcut.newBill'
 	| 'shortcut.newCard'
 	| 'shortcut.newDiaryEntry'
 	| 'shortcut.newEntry'
@@ -3005,10 +3065,12 @@ export type MessageKey =
 	| 'shortcut.newHabit'
 	| 'shortcut.newIdea'
 	| 'shortcut.newItem'
+	| 'shortcut.newLine'
 	| 'shortcut.newNotebook'
 	| 'shortcut.newOneOffBlock'
 	| 'shortcut.newPerson'
 	| 'shortcut.newRecipe'
+	| 'shortcut.newRule'
 	| 'shortcut.newTodo'
 	| 'shortcut.newToken'
 	| 'shortcut.newWeeklyBlock'
@@ -3938,15 +4000,14 @@ export interface MessageValuesFor {
 	'finance.ledgers.addedAlreadyHere': { added: string | number; skipped: string | number };
 	'finance.ledgers.andItsLinesGoFor': { count: number };
 	'finance.ledgers.archive': { name: string | number };
-	'finance.ledgers.archivedCount': { count: number };
 	'finance.ledgers.delete': { name: string | number };
 	'finance.ledgers.edit': { name: string | number };
 	'finance.ledgers.lastOn': { day: string | number };
 	'finance.ledgers.lines': { count: number };
 	'finance.ledgers.moveEarlier': { name: string | number };
 	'finance.ledgers.moveLater': { name: string | number };
-	'finance.ledgers.shown': { length: string | number };
-	'finance.ledgers.uncategorized': { unsorted: string | number };
+	'finance.ledgers.showingCount': { count: number };
+	'finance.ledgers.uncategorizedCount': { count: number };
 	'finance.rules.colourFor': { name: string | number };
 	'finance.rules.delete': { name: string | number };
 	'finance.rules.edit': { name: string | number };
@@ -3957,6 +4018,7 @@ export interface MessageValuesFor {
 	'finance.rules.uncategorized': { unsorted: string | number };
 	'gallery.albumsCount': { count: number };
 	'gallery.albumsInside': { count: number };
+	'gallery.allOf': { name: string | number };
 	'gallery.atMostKilobytes': { kilobytes: string | number };
 	'gallery.delete': { name: string | number };
 	'gallery.id.alsoIn': { albums: string | number };
@@ -3976,6 +4038,7 @@ export interface MessageValuesFor {
 	'gallery.rename': { name: string | number };
 	'goals.areaColour': { name: string | number };
 	'goals.closedCount': { count: number };
+	'goals.countedFromActivity': { activity: string | number };
 	'goals.countsFor': { period: string | number };
 	'goals.deleteGoalBody': { title: string | number };
 	'goals.doneOfTotal': { done: string | number; total: string | number };
@@ -3992,7 +4055,7 @@ export interface MessageValuesFor {
 	'goals.renameArea': { name: string | number };
 	'goals.showingCount': { count: number };
 	'goals.tasks': { length: string | number };
-	'goals.weekOfDateYear': { date: string | number; year: string | number };
+	'goals.weekOfDateYear': { date: string | number };
 	'health.habits.dayStreak': { count: number };
 	'health.habits.daysClean': { count: number };
 	'health.habits.inAllScroll': { length: string | number };
@@ -4049,11 +4112,11 @@ export interface MessageValuesFor {
 	'health.workouts.stopMeasuring': { activity: string | number };
 	'health.workouts.takeOutTheLineFor': { row: string | number };
 	'health.workouts.writeDownWhatYouDid2': { title: string | number };
+	'home.amountDueOn': { amount: string | number; day: string | number };
 	'home.blocksCount': { count: number };
 	'home.countToGo': { count: number };
 	'home.done': { done: string | number };
 	'home.dragCard': { card: string | number };
-	'home.first': { oldest: string | number };
 	'home.hideCard': { card: string | number };
 	'home.hoursAndMinutesShort': { hours: string | number; minutes: string | number };
 	'home.hoursShort': { hours: string | number };
@@ -4063,6 +4126,7 @@ export interface MessageValuesFor {
 	'home.itIsAndThisInstance': { app: string | number; instance: string | number };
 	'home.lastDone': { date: string | number };
 	'home.ldquoRdquo': { text: string | number };
+	'home.markDone': { name: string | number };
 	'home.mdash': { author: string | number };
 	'home.minutesLeft': { count: number };
 	'home.minutesShort': { minutes: string | number };
@@ -4071,6 +4135,8 @@ export interface MessageValuesFor {
 	'home.more3': { length: string | number };
 	'home.paidOfExpected': { currency: string | number; currency2: string | number };
 	'home.skipped2': { skipped: string | number };
+	'home.streakDays': { count: number };
+	'home.undoMarkingDone': { name: string | number };
 	'instance.enterAnyInstanceUrl': { https: string | number };
 	'inventory.anyValueCount': { count: number };
 	'inventory.archivedCount': { count: number };
@@ -4178,7 +4244,9 @@ export interface MessageValuesFor {
 	'notebooks.id.aPictureFor': { title: string | number };
 	'notebooks.id.sharedBy': { sharedBy: string | number };
 	'notebooks.id.titleWillBeGone': { title: string | number };
+	'notebooks.ideas.batchUpdated': { count: number };
 	'notebooks.ideas.edited': { updatedAt: string | number };
+	'notebooks.ideas.selectIdea': { title: string | number };
 	'notebooks.ideas.showingCount': { count: number };
 	'notebooks.ideasCount': { count: number };
 	'notebooks.inventoryCount': { count: number };
