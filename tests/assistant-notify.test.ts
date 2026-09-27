@@ -95,7 +95,7 @@ describe('the line somebody reads', () => {
 	});
 
 	test('one change is singular', () => {
-		expect(summarise(['finish_block'], 'Claude', en).title).toBe('Claude finished 1 block');
+		expect(summarise(['finish_block'], 'Claude', en).title).toBe('Claude finished 1 task block');
 	});
 
 	test('several kinds are counted, largest first', () => {
@@ -105,7 +105,7 @@ describe('the line somebody reads', () => {
 			en
 		);
 		expect(title).toBe('Claude changed 5 things');
-		expect(body).toBe('changed 3 blocks, added 1 task, wrote 1 entry');
+		expect(body).toBe('changed 3 task blocks, added 1 task, wrote 1 entry');
 	});
 
 	test('a name it cannot read is counted rather than guessed at', () => {

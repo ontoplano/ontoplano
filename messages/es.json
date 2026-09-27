@@ -2023,6 +2023,10 @@
 		"one": "{count} cuaderno",
 		"other": "{count} cuadernos"
 	},
+	"notify.noun.notebookFolder": {
+		"one": "{count} carpeta de cuadernos",
+		"other": "{count} carpetas de cuadernos"
+	},
 	"notify.noun.person": {
 		"one": "{count} persona",
 		"other": "{count} personas"
@@ -2127,6 +2131,7 @@
 	"notify.verb.schedule": "programó",
 	"notify.verb.set": "estableció",
 	"notify.verb.share": "compartió",
+	"notify.verb.skip": "omitió",
 	"notify.verb.tag": "etiquetó",
 	"notify.verb.tick": "marcó",
 	"notify.verb.unarchive": "desarchivó",
@@ -2134,6 +2139,7 @@
 	"notify.verb.unpay": "marcó como no pagado",
 	"notify.verb.unpin": "soltó",
 	"notify.verb.unschedule": "desprogramó",
+	"notify.verb.unskip": "deshizo la omisión de",
 	"notify.verb.untick": "desmarcó",
 	"notify.verb.write": "escribió",
 	"notify.whatTheDayTurnedOut": "Cómo resultó el día, a la hora que elijas.",
@@ -2207,10 +2213,10 @@
 	"recurrence.monthly": "Día {day} de cada mes",
 	"recurrence.weekdays": "Cada semana: {days}",
 	"recurrence.weekly": "Cada semana: {weekday}",
-	"refPicker.pointAtATask": "Señalar una tarea",
-	"refPicker.pointAtANote": "Señalar una nota",
-	"refPicker.search": "Cualquier palabra del título, o su número",
 	"refPicker.nothingMatches": "Nada coincide.",
+	"refPicker.pointAtANote": "Señalar una nota",
+	"refPicker.pointAtATask": "Señalar una tarea",
+	"refPicker.search": "Cualquier palabra del título, o su número",
 	"reminders.aDayAndSomethingTo": "Un día y algo que decir primero",
 	"reminders.aDayAndWhatTo": "Un día y qué decir. No se trata de nada más.",
 	"reminders.aSoundFile": "Un archivo de sonido",

@@ -2192,6 +2192,10 @@ export const messages: Catalogue = {
 	'notify.noun.movement': { one: '{count} Bewegung', other: '{count} Bewegungen' },
 	'notify.noun.note': { one: '{count} Notiz', other: '{count} Notizen' },
 	'notify.noun.notebook': { one: '{count} Notizbuch', other: '{count} Notizbücher' },
+	'notify.noun.notebookFolder': {
+		one: '{count} Notizbuchordner',
+		other: '{count} Notizbuchordner'
+	},
 	'notify.noun.person': { one: '{count} Person', other: '{count} Personen' },
 	'notify.noun.price': { one: '{count} Preis', other: '{count} Preise' },
 	'notify.noun.recipe': { one: '{count} Rezept', other: '{count} Rezepte' },
@@ -2256,6 +2260,7 @@ export const messages: Catalogue = {
 	'notify.verb.schedule': 'geplant',
 	'notify.verb.set': 'gesetzt',
 	'notify.verb.share': 'geteilt',
+	'notify.verb.skip': 'übersprungen',
 	'notify.verb.tag': 'beschriftet',
 	'notify.verb.tick': 'abgehakt',
 	'notify.verb.unarchive': 'zurückgeholt',
@@ -2263,6 +2268,7 @@ export const messages: Catalogue = {
 	'notify.verb.unpay': 'als unbezahlt markiert',
 	'notify.verb.unpin': 'losgelöst',
 	'notify.verb.unschedule': 'abgesetzt',
+	'notify.verb.unskip': 'wieder aufgenommen',
 	'notify.verb.untick': 'abgewählt',
 	'notify.verb.write': 'geschrieben',
 	'notify.whatTheDayTurnedOut': 'Wie der Tag tatsächlich war, zu einer Zeit, die Sie wählen.',

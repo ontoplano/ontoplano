@@ -2170,6 +2170,10 @@ export const messages: Catalogue = {
 	'notify.noun.movement': { one: '{count} movimentação', other: '{count} movimentações' },
 	'notify.noun.note': { one: '{count} nota', other: '{count} notas' },
 	'notify.noun.notebook': { one: '{count} caderno', other: '{count} cadernos' },
+	'notify.noun.notebookFolder': {
+		one: '{count} pasta de cadernos',
+		other: '{count} pastas de cadernos'
+	},
 	'notify.noun.person': { one: '{count} pessoa', other: '{count} pessoas' },
 	'notify.noun.price': { one: '{count} preço', other: '{count} preços' },
 	'notify.noun.recipe': { one: '{count} receita', other: '{count} receitas' },
@@ -2238,6 +2242,7 @@ export const messages: Catalogue = {
 	'notify.verb.schedule': 'agendou',
 	'notify.verb.set': 'definiu',
 	'notify.verb.share': 'compartilhou',
+	'notify.verb.skip': 'pulou',
 	'notify.verb.tag': 'etiquetou',
 	'notify.verb.tick': 'marcou',
 	'notify.verb.unarchive': 'desarquivou',
@@ -2245,6 +2250,7 @@ export const messages: Catalogue = {
 	'notify.verb.unpay': 'marcou como não pago',
 	'notify.verb.unpin': 'desafixou',
 	'notify.verb.unschedule': 'desagendou',
+	'notify.verb.unskip': 'desfez o pulo de',
 	'notify.verb.untick': 'desmarcou',
 	'notify.verb.write': 'escreveu',
 	'notify.whatTheDayTurnedOut': 'Como o dia acabou sendo, na hora que você escolher.',

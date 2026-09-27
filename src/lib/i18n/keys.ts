@@ -1912,6 +1912,7 @@ export type MessageKey =
 	| 'notify.noun.movement'
 	| 'notify.noun.note'
 	| 'notify.noun.notebook'
+	| 'notify.noun.notebookFolder'
 	| 'notify.noun.person'
 	| 'notify.noun.price'
 	| 'notify.noun.recipe'
@@ -1965,6 +1966,7 @@ export type MessageKey =
 	| 'notify.verb.schedule'
 	| 'notify.verb.set'
 	| 'notify.verb.share'
+	| 'notify.verb.skip'
 	| 'notify.verb.tag'
 	| 'notify.verb.tick'
 	| 'notify.verb.unarchive'
@@ -1972,6 +1974,7 @@ export type MessageKey =
 	| 'notify.verb.unpay'
 	| 'notify.verb.unpin'
 	| 'notify.verb.unschedule'
+	| 'notify.verb.unskip'
 	| 'notify.verb.untick'
 	| 'notify.verb.write'
 	| 'notify.whatTheDayTurnedOut'
@@ -3977,6 +3980,7 @@ export interface MessageValuesFor {
 	'notify.noun.movement': { count: number };
 	'notify.noun.note': { count: number };
 	'notify.noun.notebook': { count: number };
+	'notify.noun.notebookFolder': { count: number };
 	'notify.noun.person': { count: number };
 	'notify.noun.price': { count: number };
 	'notify.noun.recipe': { count: number };

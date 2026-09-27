@@ -2129,6 +2129,10 @@ export const messages: Catalogue = {
 	'notify.noun.movement': { one: '{count} movement', other: '{count} movements' },
 	'notify.noun.note': { one: '{count} note', other: '{count} notes' },
 	'notify.noun.notebook': { one: '{count} notebook', other: '{count} notebooks' },
+	'notify.noun.notebookFolder': {
+		one: '{count} notebook folder',
+		other: '{count} notebook folders'
+	},
 	'notify.noun.person': { one: '{count} person', other: '{count} people' },
 	'notify.noun.price': { one: '{count} price', other: '{count} prices' },
 	'notify.noun.recipe': { one: '{count} recipe', other: '{count} recipes' },
@@ -2194,6 +2198,7 @@ export const messages: Catalogue = {
 	'notify.verb.schedule': 'scheduled',
 	'notify.verb.set': 'set',
 	'notify.verb.share': 'shared',
+	'notify.verb.skip': 'skipped',
 	'notify.verb.tag': 'tagged',
 	'notify.verb.tick': 'ticked',
 	'notify.verb.unarchive': 'brought back',
@@ -2201,6 +2206,7 @@ export const messages: Catalogue = {
 	'notify.verb.unpay': 'marked unpaid',
 	'notify.verb.unpin': 'unpinned',
 	'notify.verb.unschedule': 'unscheduled',
+	'notify.verb.unskip': 'un-skipped',
 	'notify.verb.untick': 'unticked',
 	'notify.verb.write': 'wrote',
 	'notify.whatTheDayTurnedOut': 'What the day turned out to be, at a time you choose.',

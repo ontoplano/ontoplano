@@ -2068,6 +2068,10 @@
 		"one": "{count} notebook",
 		"other": "{count} notebooks"
 	},
+	"notify.noun.notebookFolder": {
+		"one": "{count} notebook folder",
+		"other": "{count} notebook folders"
+	},
 	"notify.noun.person": {
 		"one": "{count} person",
 		"other": "{count} people"
@@ -2172,6 +2176,7 @@
 	"notify.verb.schedule": "scheduled",
 	"notify.verb.set": "set",
 	"notify.verb.share": "shared",
+	"notify.verb.skip": "skipped",
 	"notify.verb.tag": "tagged",
 	"notify.verb.tick": "ticked",
 	"notify.verb.unarchive": "brought back",
@@ -2179,6 +2184,7 @@
 	"notify.verb.unpay": "marked unpaid",
 	"notify.verb.unpin": "unpinned",
 	"notify.verb.unschedule": "unscheduled",
+	"notify.verb.unskip": "un-skipped",
 	"notify.verb.untick": "unticked",
 	"notify.verb.write": "wrote",
 	"notify.whatTheDayTurnedOut": "What the day turned out to be, at a time you choose.",
@@ -2252,10 +2258,10 @@
 	"recurrence.monthly": "Day {day} of each month",
 	"recurrence.weekdays": "Every {days}",
 	"recurrence.weekly": "Every {weekday}",
-	"refPicker.pointAtATask": "Point at a task",
-	"refPicker.pointAtANote": "Point at a note",
-	"refPicker.search": "Any word of its title, or its number",
 	"refPicker.nothingMatches": "Nothing here matches.",
+	"refPicker.pointAtANote": "Point at a note",
+	"refPicker.pointAtATask": "Point at a task",
+	"refPicker.search": "Any word of its title, or its number",
 	"reminders.aDayAndSomethingTo": "A day and something to say first",
 	"reminders.aDayAndWhatTo": "A day and what to say. It is about nothing else.",
 	"reminders.aSoundFile": "A sound file",
