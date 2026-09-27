@@ -30,6 +30,7 @@ releases mattered.
 - A task's place in line counts every open task in its notebook, whatever the list is filtered to, and a new task goes behind older ones rated the same.
 - Delete in the task and card editors is the bin alone, so their buttons stay on one line on a phone.
 - A task card keeps its number and the add-a-label button under the tick box, its labels on a line of their own, and its buttons on one line that never wraps.
+- Assistants connected over MCP are told to name a task or note by the number the app shows, not by its internal id.
 
 ## 0.183.14 — 2026-09-26
 

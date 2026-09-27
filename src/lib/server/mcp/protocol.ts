@@ -369,7 +369,10 @@ export function handle(caller: Caller, request: RpcRequest): RpcResponse | null 
 					'`tools/list` says which ones are being held back and the grant each needs, so ask ' +
 					'for the grant rather than working around the gap. An argument a tool accepts is in ' +
 					'its schema; where the answer looks cut short, `verbose` or `fields` is why. ' +
-					'Asked to write a diary entry, write it — keeping their words where you have them. Just never invent one unasked.'
+					'Asked to write a diary entry, write it — keeping their words where you have them. Just never invent one unasked. ' +
+					'When you tell the person about a task or a note, name it by its `seq` — the number the app shows them, ' +
+					'written `TASK:#4` or `#4` — and its title, never by `id`: the id is only for passing back to a tool, ' +
+					'and they cannot see it anywhere.'
 			});
 
 		// A client says it has finished starting up. Nothing to do, and nothing

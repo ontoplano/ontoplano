@@ -56,6 +56,8 @@ describe('the handshake', () => {
 		// how a client ends up calling something that does not answer.
 		expect(Object.keys(answer.result.capabilities)).toEqual(['tools']);
 		expect(answer.result.instructions).toContain('Ontoplano');
+		// The person sees a task's number in its notebook, never its row id.
+		expect(answer.result.instructions).toMatch(/`seq`.*never by `id`/s);
 	});
 
 	it('says nothing at all to a notification', () => {
