@@ -46,6 +46,20 @@
 
 	const phone = phoneWidth();
 
+	/**
+	 * How wide the strip has to be for the filters to sit out in it.
+	 *
+	 * Measured on the strip rather than the window: a notebook's panel is a
+	 * narrow list on a wide screen, and at about 750px its filters wrapped into
+	 * a clogged second line beside the search box while the window said
+	 * "desktop". 56rem at the default type size.
+	 */
+	const INLINE_MIN_PX = 896;
+
+	let width = $state(0);
+	/** Folded into the sheet: the strip is too narrow, or not measured yet on a phone. */
+	const folded = $derived(width > 0 ? width < INLINE_MIN_PX : phone.current);
+
 	const t = useT();
 
 	let {
@@ -141,11 +155,11 @@
 	controls are there: two more permanent lines above the search box, on a
 	screen that has about nine, to answer a question most visits do not ask.
 -->
-{#if banner && !phone.current}
+{#if banner && !folded}
 	<div class="mb-2 flex w-full flex-wrap items-center gap-2">{@render banner()}</div>
 {/if}
 
-<div class="flex w-full flex-wrap items-center gap-2">
+<div class="flex w-full flex-wrap items-center gap-2" bind:clientWidth={width}>
 	<!--
 		The search box, in a slot of a fixed size.
 
@@ -166,9 +180,9 @@
 
 	<!-- How many rows are showing, next to the box that narrows them by name —
 	     on a phone, at the end of the line, after the way back. -->
-	{#if count && !phone.current}<div class="shrink-0">{@render count()}</div>{/if}
+	{#if count && !folded}<div class="shrink-0">{@render count()}</div>{/if}
 
-	{#if phone.current}
+	{#if folded}
 		<!--
 			On a phone the filters are a sheet, because the row is not there.
 
@@ -185,11 +199,13 @@
 			}}
 			aria-haspopup="dialog"
 			aria-pressed={on}
-			class="filter-toggle btn btn-sm btn-quiet shrink-0"
+			class="filter-toggle btn btn-sm shrink-0"
 			title={said}
 			aria-label={said}
 		>
-			<Icon name="filter" size={14} />
+			<!-- The word, not a funnel: it is the one way to the filters at this
+			     width, and a glyph alone was a thing to squint at. -->
+			{t('filters.filters')}
 			{#if on}<span class="filter-dot" aria-hidden="true"></span>{/if}
 		</button>
 	{:else}
@@ -223,11 +239,11 @@
 			title={t('filters.clear')}
 			aria-label={t('filters.clear')}
 		>
-			{#if phone.current}<Icon name="broom" size={14} />{:else}{t('filters.clear')}{/if}
+			{#if folded}<Icon name="broom" size={14} />{:else}{t('filters.clear')}{/if}
 		</button>
 	{/if}
 
-	{#if count && phone.current}<div class="shrink-0">{@render count()}</div>{/if}
+	{#if count && folded}<div class="shrink-0">{@render count()}</div>{/if}
 
 	<!-- On a phone the order is a line of its own, so the first line is the
 	     search and what narrows it, the way a task list draws it. -->
@@ -242,7 +258,7 @@
 	{/if}
 </div>
 
-{#if phone.current}
+{#if folded}
 	<!--
 		The same controls, once, in a sheet.
 
