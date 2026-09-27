@@ -30,7 +30,7 @@
 	import Picker from '$lib/components/Picker.svelte';
 	import { page } from '$app/state';
 	import { goto } from '$app/navigation';
-	import { say } from '$lib/said.svelte';
+	import { notify } from '$lib/notify.svelte';
 	import { useT } from '$lib/i18n';
 
 	const t = useT();
@@ -124,7 +124,10 @@
 		const wanted = name.trim();
 		if (!wanted) return;
 		const failed = await post({ name: wanted, query: narrowingNow() });
-		if (failed) return say(failed);
+		if (failed) {
+			notify.error(failed);
+			return;
+		}
 		naming = false;
 		name = '';
 	}
@@ -162,7 +165,10 @@
 		if (!wanted) return;
 
 		const failed = await post({ name: wanted, query });
-		if (failed) return say(failed);
+		if (failed) {
+			notify.error(failed);
+			return;
+		}
 		if (wanted !== editing.name) await post({ name: editing.name, remove: true });
 
 		editing = null;
@@ -178,7 +184,10 @@
 			return;
 		}
 		const failed = await post({ name: editing.name, remove: true });
-		if (failed) return say(failed);
+		if (failed) {
+			notify.error(failed);
+			return;
+		}
 		const gone = editing.name;
 		editing = null;
 		if (chosen === gone) goTo('');

@@ -3727,6 +3727,8 @@
 	"ui.title": "Título",
 	"ui.today": "Hoje",
 	"ui.undo": "Desfazer",
+	"ui.undid": "Desfeito: {label}",
+	"ui.nothingToUndo": "Nada para desfazer",
 	"ui.unit": "Unidade",
 	"ui.withTheRoom": null,
 	"ui.write": "escrita",

@@ -19,7 +19,7 @@
  *   over there; named here so the three are read together.
  */
 import { afterEach, describe, expect, test, vi } from 'vitest';
-import { SAID_MS, said, say } from '../src/lib/said.svelte';
+import { SAID_MS, actionWindowMs, said, say } from '../src/lib/said.svelte';
 
 afterEach(() => {
 	said.items = [];
@@ -73,9 +73,20 @@ describe('a sentence with something to press', () => {
 		expect(open).toHaveBeenCalledTimes(1);
 	});
 
-	test('goes away on its own like any other', () => {
+	test('holds the undo window, then goes away on its own', () => {
 		vi.useFakeTimers();
 		say('Task added', { label: 'Edit', run: () => {} });
+		// Up for as long as an undo would be, not the plain receipt's moment.
+		vi.advanceTimersByTime(SAID_MS);
+		expect(said.items).toHaveLength(1);
+		expect(said.items[0].window).toBe(actionWindowMs());
+		vi.advanceTimersByTime(actionWindowMs() - SAID_MS);
+		expect(said.items).toHaveLength(0);
+	});
+
+	test('a plain one leaves after its moment', () => {
+		vi.useFakeTimers();
+		say('Saved');
 		vi.advanceTimersByTime(SAID_MS);
 		expect(said.items).toHaveLength(0);
 	});

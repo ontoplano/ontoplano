@@ -46,8 +46,7 @@
 	import NotificationPanel from '$lib/components/NotificationPanel.svelte';
 	import Reminders from '$lib/components/Reminders.svelte';
 	import CommandPalette from '$lib/components/CommandPalette.svelte';
-	import UndoToast from '$lib/components/UndoToast.svelte';
-	import Notifications from '$lib/components/Notifications.svelte';
+	import Toasts from '$lib/components/Toasts.svelte';
 	import { notify } from '$lib/notify.svelte';
 	import ClientErrorPrompt from '$lib/components/ClientErrorPrompt.svelte';
 	import { undo } from '$lib/undo.svelte';
@@ -1728,10 +1727,9 @@
 		</Modal>
 
 		<Reminders />
-		<UndoToast />
+		<Toasts />
 		<!-- Armed for every rendered picture in the app at once. -->
 		<ImageViewer />
-		<Notifications />
 		{#if data.clientErrorReports !== 'off'}
 			<ClientErrorPrompt state={data.clientErrorReports} />
 		{/if}

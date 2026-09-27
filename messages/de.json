@@ -3727,6 +3727,8 @@
 	"ui.title": "Titel",
 	"ui.today": "Heute",
 	"ui.undo": "Rückgängig",
+	"ui.undid": "Rückgängig: {label}",
+	"ui.nothingToUndo": "Nichts rückgängig zu machen",
 	"ui.unit": "Einheit",
 	"ui.withTheRoom": null,
 	"ui.write": "Schreiben",

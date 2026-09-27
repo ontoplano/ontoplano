@@ -13,6 +13,9 @@
  * sitting on top of each other.
  */
 
+import { undo } from '$lib/undo.svelte';
+import { DEFAULT_UNDO_SECONDS } from '$lib/instance-defaults';
+
 /** How long a plain message stays up. Long enough to read, short enough to ignore. */
 export const SAID_MS = 2400;
 
@@ -27,26 +30,46 @@ export const SAID_MS = 2400;
  */
 export type SaidAction = { label: string; run: () => void };
 
-export type Said = { id: number; message: string; action?: SaidAction };
+export type Said = {
+	id: number;
+	message: string;
+	action?: SaidAction;
+	/** When it goes. */
+	until: number;
+	/** How long it was given, so a counted one can show it running down. */
+	window: number;
+};
 
 export const said = $state<{ items: Said[] }>({ items: [] });
 
 let next = 1;
 
 /**
+ * How long a message with something to press stays up: the undo window.
+ *
+ * Offering Edit for two and a half seconds was offering it to nobody, and
+ * the undo beside it counted five. Both are a press on offer, so both hold
+ * the same window — the instance's, or the default where an instance has
+ * turned undo off, since a receipt still wants its Edit.
+ */
+export function actionWindowMs(): number {
+	return (undo.seconds > 0 ? undo.seconds : DEFAULT_UNDO_SECONDS) * 1000;
+}
+
+/**
  * Say something. Replaces whatever is up rather than stacking.
  *
  * Pressing Save four times should not leave four toasts: they all say the same
- * thing, and a column of them is the app shouting. The last one wins and its
- * timer starts again, which reads as one message that keeps being true.
- *
- * `action` is optional and is the difference between "Saved", which has
- * nothing to press, and "Task added", which has an Edit.
+ * thing, and a column of them is the app shouting. The last one wins.
  */
 export function say(message: string, action?: SaidAction): void {
 	const id = next++;
-	said.items = [{ id, message, action }];
-	setTimeout(() => {
-		said.items = said.items.filter((one) => one.id !== id);
-	}, SAID_MS);
+	const ms = action ? actionWindowMs() : SAID_MS;
+	said.items = [{ id, message, action, until: Date.now() + ms, window: ms }];
+	setTimeout(() => unsay(id), ms);
+}
+
+/** Take one down — pressing its action does, before running it. */
+export function unsay(id: number): void {
+	said.items = said.items.filter((one) => one.id !== id);
 }

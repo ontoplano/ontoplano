@@ -26,6 +26,7 @@ releases mattered.
 - The demo's kitchen notebook opens on its tasks, with colour-coded tags and a shopping list; other demo notebooks now hold goals, inventory and ideas.
 - On a phone, a notebook's header and task toolbar are tidier: Open and tags are icons in the corner, the search, filter, clear and count share one line, and the order sits beside Select many.
 - The wheel's room name, its icon and the border around them are the same colour.
+- Every passing message — saved, failed, Task added, Deleted — is one kind of toast in one place. One with a button (Edit or Undo) stays for the undo window and shows it running down.
 
 ## 0.183.14 — 2026-09-26
 

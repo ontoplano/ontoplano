@@ -3784,6 +3784,8 @@
 	"ui.title": "Title",
 	"ui.today": "Today",
 	"ui.undo": "Undo",
+	"ui.undid": "Undid: {label}",
+	"ui.nothingToUndo": "Nothing to undo",
 	"ui.unit": "Unit",
 	"ui.withTheRoom": "with the room",
 	"ui.write": "write",

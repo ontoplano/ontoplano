@@ -3513,6 +3513,7 @@ export type MessageKey =
 	| 'ui.notNow'
 	| 'ui.notebook'
 	| 'ui.notes'
+	| 'ui.nothingToUndo'
 	| 'ui.open'
 	| 'ui.read'
 	| 'ui.remove'
@@ -3528,6 +3529,7 @@ export type MessageKey =
 	| 'ui.tags'
 	| 'ui.title'
 	| 'ui.today'
+	| 'ui.undid'
 	| 'ui.undo'
 	| 'ui.unit'
 	| 'ui.withTheRoom'
@@ -4103,6 +4105,7 @@ export interface MessageValuesFor {
 	'ui.hoursAbbrev': { count: number };
 	'ui.hoursMinutesAbbrev': { hours: string | number; minutes: string | number };
 	'ui.minutesAbbrev': { count: number };
+	'ui.undid': { label: string | number };
 	'welcome.blocksCount': { count: number };
 	'welcome.ofOnThePlanner': { length: string | number; size: string | number };
 	'welcome.stepNumber': { number: string | number; title: string | number };

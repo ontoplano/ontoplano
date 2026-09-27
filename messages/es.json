@@ -3727,6 +3727,8 @@
 	"ui.title": "Título",
 	"ui.today": "Hoy",
 	"ui.undo": "Deshacer",
+	"ui.undid": "Deshecho: {label}",
+	"ui.nothingToUndo": "Nada que deshacer",
 	"ui.unit": "Unidad",
 	"ui.withTheRoom": null,
 	"ui.write": "escritura",

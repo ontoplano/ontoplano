@@ -46,6 +46,7 @@
 	import '@event-calendar/core/index.css';
 	import { useT } from '$lib/i18n';
 	import { WEEKDAYS } from '$lib/bill-summary';
+	import { say } from '$lib/said.svelte';
 	import type { PlainKey } from '$lib/i18n/keys';
 
 	const t = useT();
@@ -1313,7 +1314,6 @@
 
 	const UNDO_LIMIT = 25;
 	let undoStack: UndoStep[] = [];
-	let undoNotice: string | null = $state(null);
 
 	function pushUndo(step: UndoStep) {
 		undoStack.push(step);
@@ -1386,14 +1386,12 @@
 	async function undoLast() {
 		const step = undoStack.pop();
 		if (!step) {
-			undoNotice = 'Nothing to undo';
-			setTimeout(() => (undoNotice = null), 1500);
+			say(t('ui.nothingToUndo'));
 			return;
 		}
 
 		await step.run();
-		undoNotice = `Undid: ${step.label}`;
-		setTimeout(() => (undoNotice = null), 2000);
+		say(t('ui.undid', { label: step.label }));
 		await invalidateAll();
 	}
 
@@ -3988,12 +3986,6 @@
 				class="pointer-events-none absolute z-30 border-2 border-gray-900 bg-gray-900/10"
 				style="left:{marqueeRect.left}px; top:{marqueeRect.top}px; width:{marqueeRect.width}px; height:{marqueeRect.height}px"
 			></div>
-		{/if}
-
-		{#if undoNotice}
-			<div class="on-fill pointer-events-none absolute top-2 left-2 z-30 border px-2 py-1 text-xs">
-				{undoNotice}
-			</div>
 		{/if}
 
 		{#if selectedEventIds.size > 1}
