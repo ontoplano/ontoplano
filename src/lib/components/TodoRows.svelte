@@ -1585,22 +1585,25 @@
 									</span>
 								{/if}
 								<!--
-								And the way to add one, under the number.
+								And the way to add one, at the foot of the rail — level with
+								the labels it adds to, not up under the number.
 
 								Where the cursor already is when somebody reads the row
 								and decides it needs a word. The alternative was the
 								edit dialog, which is five steps and a list that
 								reorders underneath you for one label.
 							-->
-								<QuickTag
-									id={todo.id}
-									action={actions.tag}
-									has={todo.tags.map((one) => one.name)}
-									known={page.data.tagVocabulary ?? []}
-								/>
+								<div class="mt-auto">
+									<QuickTag
+										id={todo.id}
+										action={actions.tag}
+										has={todo.tags.map((one) => one.name)}
+										known={page.data.tagVocabulary ?? []}
+									/>
+								</div>
 								<button
 									type="button"
-									class="mt-auto cursor-pointer"
+									class="cursor-pointer"
 									onclick={() => startEdit(todo, { atRatings: true })}
 									aria-label={t('todoRows.setTheRatings')}
 								>
