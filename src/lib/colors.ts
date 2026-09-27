@@ -177,3 +177,13 @@ export const COLOUR_PALETTE = [
  * a colour makes it look like an answer somebody already gave.
  */
 export const TAG_COLOR_DEFAULT = '#6b7280';
+
+/**
+ * The fill a label wears when nobody has given it a colour.
+ *
+ * It used to be the plain chip, which is also what the add-a-label button is,
+ * so a label and the button beside it read as the same thing. A dark grey
+ * pill says "a label" in every theme — the ramp inverts in the dark one, and
+ * the pill works out its own ink from whatever the fill turns out to be.
+ */
+export const DEFAULT_TAG_FILL = 'var(--color-gray-700)';

@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { pillStyle } from '$lib/pill-ink';
+	import { DEFAULT_TAG_FILL } from '$lib/colors';
 	import { page } from '$app/state';
 
 	/**
@@ -62,17 +63,25 @@
 	 * stylesheet beside the chip's own; the strip that holds them is what
 	 * wraps.
 	 */
+	const fill = $derived(ink ?? DEFAULT_TAG_FILL);
 	const look = $derived(
-		`${ink ? 'pill' : 'chip'} tag-chip ${active ? 'ring-1 ring-gray-900 ring-offset-1' : ''} ${klass}`
+		`pill tag-chip ${active ? 'ring-1 ring-gray-900 ring-offset-1' : ''} ${klass}`
 	);
 </script>
 
 {#if onclick}
-	<button type="button" {onclick} {title} aria-pressed={active} class={look} style={pillStyle(ink)}>
+	<button
+		type="button"
+		{onclick}
+		{title}
+		aria-pressed={active}
+		class={look}
+		style={pillStyle(fill)}
+	>
 		#{name}{#if children}{@render children()}{/if}
 	</button>
 {:else}
-	<span {title} class="{look} inline-flex items-center gap-1" style={pillStyle(ink)}>
+	<span {title} class="{look} inline-flex items-center gap-1" style={pillStyle(fill)}>
 		#{name}{#if children}{@render children()}{/if}
 	</span>
 {/if}

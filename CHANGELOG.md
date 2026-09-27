@@ -35,6 +35,7 @@ releases mattered.
 - Every place wears its own glyph, the same one everywhere: Bills is a receipt, Rules a sorting arrow, Insights a chart, Board a kanban, Habits a target, Inventory a box. Search results and settings tabs carry their place's glyph too.
 - The plan's task strip has the task list's search, notebook, label and order controls, and shows bigger pills with their notebook, labels and due day in a box that scrolls. The week-start arrows sit centred in the toolbar.
 - Filters fold behind a Filters button whenever their strip is too narrow for them — in a notebook's panel as well as on a phone — instead of wrapping into a clogged second line.
+- A label with no colour of its own is a dark pill, so it no longer looks like the add-a-label button beside it.
 
 ## 0.183.14 — 2026-09-26
 
