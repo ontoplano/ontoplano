@@ -53,6 +53,7 @@ type Notifications = {
 	requestPermissions(): Promise<{ display: string }>;
 	getPending(): Promise<{ notifications: { id: number }[] }>;
 	cancel(what: { notifications: { id: number }[] }): Promise<void>;
+	removeAllDeliveredNotifications(): Promise<void>;
 	schedule(what: { notifications: unknown[] }): Promise<unknown>;
 	createChannel(what: {
 		id: string;
@@ -170,6 +171,19 @@ let booked: string | null = null;
  */
 export function alarmsMayHaveChanged(): void {
 	booked = null;
+}
+
+/**
+ * Take this app's notifications out of the phone's tray.
+ *
+ * Android puts a count on the launcher icon for every notification the app
+ * has left in the tray — reminders that rang while it was shut. Nothing took
+ * them out, so the icon said "4" for as long as the phone stayed on, and the
+ * app's own list, which counts what it told you rather than what the system
+ * is still holding, said there was nothing. Opening the app is seeing them.
+ */
+export async function clearDelivered(): Promise<void> {
+	await phoneNotifications()?.removeAllDeliveredNotifications();
 }
 
 /** The plugin, if this is running inside the shell that carries it. */
