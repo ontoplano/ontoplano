@@ -10,6 +10,8 @@
 	import MarkdownBox from '$lib/components/MarkdownBox.svelte';
 	import PictureAttach from '$lib/components/PictureAttach.svelte';
 	import RecordingAttach from '$lib/components/RecordingAttach.svelte';
+	import AttributeFields from '$lib/components/AttributeFields.svelte';
+	import { ATTRIBUTE_FORM, attributePairs, mergeSuggestions } from '$lib/attribute-keys';
 	import { RATINGS, type Rating } from '$lib/ratings';
 	import { useT } from '$lib/i18n';
 
@@ -51,7 +53,9 @@
 		 * on the dashboard is written without one.
 		 */
 		place = undefined,
-		scheduledDate = ''
+		scheduledDate = '',
+		/** What it says about itself: `{ url, room, … }`. See `AttributeFields`. */
+		attributes = {}
 	}: {
 		title?: string;
 		notes?: string;
@@ -65,7 +69,13 @@
 		place?: Snippet;
 		/** The day it sits on, or '' for a task with no day yet. */
 		scheduledDate?: string;
+		attributes?: Record<string, string>;
 	} = $props();
+
+	// Seeded once: the dialog is rebuilt on every opening, as the category is.
+	let attributeRows = $state(untrack(() => attributePairs(attributes)));
+	// What plugins say they read, where the page has loaded their manifests.
+	const attributeKeys = $derived(mergeSuggestions(t, page.data.plugins ?? []));
 
 	/*
 	 * A notebook's category, filled in rather than applied — the same bargain
@@ -99,7 +109,8 @@
 			(chosenCategory ? 1 : 0) +
 			(notebookId ? 1 : 0) +
 			(notes ? 1 : 0) +
-			(tags ? 1 : 0)
+			(tags ? 1 : 0) +
+			(attributeRows.some(([key]) => key.trim()) ? 1 : 0)
 	);
 
 	/*
@@ -166,6 +177,16 @@
 		     diary entry is the same word here. -->
 		<TagInput value={tags} known={knownTags} placeholder={t('fields.todo.tagsExample')} />
 	</Field>
+
+	<!-- What the task says about itself — a link, a room, an order number. The
+	     same fold a task block has, and carried onto the block when this is put
+	     on the plan. -->
+	<AttributeFields
+		fold
+		bind:pairs={attributeRows}
+		present={ATTRIBUTE_FORM.present}
+		suggestions={attributeKeys}
+	/>
 
 	<!--
 		A day, optionally.

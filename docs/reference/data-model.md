@@ -18,10 +18,10 @@ exist.
 | [`api_tokens`](#api_tokens)                                 | 14      | yes               |
 | [`assistant_calls`](#assistant_calls)                       | 9       | yes               |
 | [`audit_events`](#audit_events)                             | 7       | yes               |
-| [`bill_payments`](#bill_payments)                           | 11      | yes               |
+| [`bill_payments`](#bill_payments)                           | 13      | yes               |
 | [`billing_checkouts`](#billing_checkouts)                   | 8       | yes               |
 | [`billing_events`](#billing_events)                         | 8       | —                 |
-| [`bills`](#bills)                                           | 18      | yes               |
+| [`bills`](#bills)                                           | 20      | yes               |
 | [`calendar_feeds`](#calendar_feeds)                         | 9       | yes               |
 | [`categories`](#categories)                                 | 5       | yes               |
 | [`client_errors`](#client_errors)                           | 9       | yes               |
@@ -69,7 +69,7 @@ exist.
 | [`recipe_items`](#recipe_items)                             | 8       | yes               |
 | [`recipes`](#recipes)                                       | 13      | yes               |
 | [`recurring_task_tags`](#recurring_task_tags)               | 5       | yes               |
-| [`recurring_tasks`](#recurring_tasks)                       | 20      | yes               |
+| [`recurring_tasks`](#recurring_tasks)                       | 21      | yes               |
 | [`reminder_sounds`](#reminder_sounds)                       | 7       | yes               |
 | [`reminders`](#reminders)                                   | 12      | yes               |
 | [`ringtones`](#ringtones)                                   | 7       | yes               |
@@ -82,7 +82,7 @@ exist.
 | [`tags`](#tags)                                             | 5       | yes               |
 | [`task_records`](#task_records)                             | 15      | yes               |
 | [`todo_tags`](#todo_tags)                                   | 5       | yes               |
-| [`todo_tasks`](#todo_tasks)                                 | 18      | yes               |
+| [`todo_tasks`](#todo_tasks)                                 | 19      | yes               |
 | [`user`](#user)                                             | 11      | —                 |
 | [`user_settings`](#user_settings)                           | 4       | yes               |
 | [`verification`](#verification)                             | 6       | —                 |
@@ -238,6 +238,8 @@ Indexes:
 | `period`          | text    | not null | —                     | —                           |
 | `amount_expected` | integer | not null | `0`                   | —                           |
 | `amount_paid`     | integer | not null | `0`                   | —                           |
+| `status`          | text    | not null | `'paid'`              | —                           |
+| `automatic`       | integer | not null | `false`               | —                           |
 | `movement_id`     | integer | null     | —                     | → `finance_transactions.id` |
 | `currency`        | text    | null     | —                     | —                           |
 | `paid_at`         | text    | not null | `(CURRENT_TIMESTAMP)` | —                           |
@@ -297,6 +299,8 @@ Indexes:
 | `due_day`         | integer | null     | —                     | —                 |
 | `due_month`       | integer | null     | —                     | —                 |
 | `pay_lead_days`   | integer | not null | `0`                   | —                 |
+| `automatic`       | integer | not null | `false`               | —                 |
+| `settled_through` | text    | null     | —                     | —                 |
 | `flow`            | text    | not null | `'out'`               | —                 |
 | `rhythm`          | text    | not null | `'monthly'`           | —                 |
 | `category_id`     | integer | null     | —                     | → `categories.id` |
@@ -526,7 +530,7 @@ Indexes:
 | `urgency`             | integer | null     | —                     | —                 |
 | `interest`            | integer | null     | —                     | —                 |
 | `ease`                | integer | null     | —                     | —                 |
-| `meta`                | text    | not null | `'{}'`                | —                 |
+| `attributes`          | text    | not null | `'{}'`                | —                 |
 | `recipe_id`           | integer | null     | —                     | → `recipes.id`    |
 | `workout_id`          | integer | null     | —                     | → `workouts.id`   |
 | `created_at`          | text    | not null | `(CURRENT_TIMESTAMP)` | —                 |
@@ -1258,7 +1262,8 @@ Indexes:
 | `urgency`             | integer | null     | —                     | —                 |
 | `interest`            | integer | null     | —                     | —                 |
 | `ease`                | integer | null     | —                     | —                 |
-| `meta`                | text    | not null | `'{}'`                | —                 |
+| `attributes`          | text    | not null | `'{}'`                | —                 |
+| `notebook_id`         | integer | null     | —                     | → `notebooks.id`  |
 | `recipe_id`           | integer | null     | —                     | → `recipes.id`    |
 | `workout_id`          | integer | null     | —                     | → `workouts.id`   |
 | `created_at`          | text    | not null | `(CURRENT_TIMESTAMP)` | —                 |
@@ -1267,6 +1272,7 @@ Indexes:
 Indexes:
 
 - `slots_user_idx` on `user_id`
+- `recurring_tasks_notebook_idx` on `notebook_id`
 - `slots_weekday_idx` on `weekday`
 - `slots_weekday_time_idx` on `weekday`, `start_time`
 
@@ -1538,6 +1544,7 @@ Indexes:
 | `urgency`        | integer | null     | —                     | —                 |
 | `interest`       | integer | null     | —                     | —                 |
 | `ease`           | integer | null     | —                     | —                 |
+| `attributes`     | text    | not null | `'{}'`                | —                 |
 | `created_at`     | text    | not null | `(CURRENT_TIMESTAMP)` | —                 |
 | `updated_at`     | text    | not null | `(CURRENT_TIMESTAMP)` | —                 |
 

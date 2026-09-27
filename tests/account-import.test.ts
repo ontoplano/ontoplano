@@ -247,6 +247,33 @@ describe('what does not travel', () => {
 		expect(result.tables.find((c) => c.name === 'habits')?.rows).toBe(1);
 	});
 
+	test('a task block exported before 0.184 brings its `meta` back as attributes', async () => {
+		await accountImport.importAccount(STRANGER, {
+			exportedAt: now.toISOString(),
+			account: { id: 'x', name: 'x', email: 'a@b.test' },
+			data: {
+				categories: [{ id: 3, userId: 'x', name: 'health', color: '#0f766e' }],
+				recurringTasks: [
+					{
+						id: 9,
+						userId: 'x',
+						weekday: 1,
+						startTime: '07:00',
+						mode: 'category',
+						categoryId: 3,
+						meta: '{"alarm":"true"}'
+					}
+				],
+				todoTasks: [{ id: 4, userId: 'x', title: 'gels', attributes: '{"shop":"run club"}' }]
+			}
+		});
+
+		const slots = await import('../src/lib/services/slots');
+		const [block] = slots.listWeeklySlots(stranger());
+		expect(JSON.parse(block.attributes)).toEqual({ alarm: 'true' });
+		expect(todos.listTodos(stranger())[0].attributes).toEqual({ shop: 'run club' });
+	});
+
 	test('a table this version has never heard of is reported, not refused', async () => {
 		const result = await accountImport.importAccount(STRANGER, {
 			exportedAt: now.toISOString(),

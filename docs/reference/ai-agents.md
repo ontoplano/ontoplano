@@ -328,38 +328,44 @@ _Needs `schedule:write`; writes._
 | `id`      | string | yes      | The block’s id, exactly as `today` gave it — it looks like `slot:42`. |
 | `status`  | string | yes      | What actually happened. One of: `done`, `skipped`, `todo`.            |
 
-### `add_block` — Put a block on a day
+### `add_block` — Put a task block on a day
 
 Add a one-off block to one day: a title, a start time and how long it runs. This is for "deep work from 9 to 11 today" — a thing with an hour. Use `add_task` instead when there is no time attached, and `change_block` to move or rename something already on the day rather than adding a second copy of it. It does not touch the repeating week; this is that day only.
 
 _Needs `schedule:write`; writes._
 
-| Parameter    | Type    | Required | What it is                                                                                                                                                                                             |
-| ------------ | ------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `date`       | string  | yes      | The day, as YYYY-MM-DD.                                                                                                                                                                                |
-| `title`      | string  | yes      | What it is — shown on the block.                                                                                                                                                                       |
-| `start_time` | string  | yes      | When it starts, as HH:MM on a 24-hour clock.                                                                                                                                                           |
-| `minutes`    | integer | —        | How long it runs, in minutes. Default `60`.                                                                                                                                                            |
-| `category`   | string  | —        | Which part of life it belongs to, by name — `categories` lists them. A name that matches nothing is refused, never guessed. The first category is used only when this is left out entirely.            |
-| `urgency`    | integer | —        | How soon it has to happen, 0–5.                                                                                                                                                                        |
-| `interest`   | integer | —        | How much they want to do it, 0–5.                                                                                                                                                                      |
-| `ease`       | integer | —        | How easy it is, 0–5, five being easiest. Replaces `energy`, which asked the opposite question on a scale that began at one.                                                                            |
-| `energy`     | integer | —        | Deprecated — use `ease`, which is this turned round: an energy of 5 is an ease of 1. Still accepted so an assistant written against the old shape keeps working, and removed in 0.190. **Deprecated.** |
+| Parameter    | Type    | Required | What it is                                                                                                                                                                                                                                                                                                         |
+| ------------ | ------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `date`       | string  | yes      | The day, as YYYY-MM-DD.                                                                                                                                                                                                                                                                                            |
+| `title`      | string  | yes      | What it is — shown on the block.                                                                                                                                                                                                                                                                                   |
+| `start_time` | string  | yes      | When it starts, as HH:MM on a 24-hour clock.                                                                                                                                                                                                                                                                       |
+| `minutes`    | integer | —        | How long it runs, in minutes. Default `60`.                                                                                                                                                                                                                                                                        |
+| `category`   | string  | —        | Which part of life it belongs to, by name — `categories` lists them. A name that matches nothing is refused, never guessed. The first category is used only when this is left out entirely.                                                                                                                        |
+| `notebookId` | integer | —        | The notebook it belongs to, as `notebooks` gives its id — the subject it is part of. `0` takes it out of the one it is in.                                                                                                                                                                                         |
+| `urgency`    | integer | —        | How soon it has to happen, 0–5.                                                                                                                                                                                                                                                                                    |
+| `interest`   | integer | —        | How much they want to do it, 0–5.                                                                                                                                                                                                                                                                                  |
+| `ease`       | integer | —        | How easy it is, 0–5, five being easiest. Replaces `energy`, which asked the opposite question on a scale that began at one.                                                                                                                                                                                        |
+| `energy`     | integer | —        | Deprecated — use `ease`, which is this turned round: an energy of 5 is an ease of 1. Still accepted so an assistant written against the old shape keeps working, and removed in 0.190. **Deprecated.**                                                                                                             |
+| `attributes` | object  | —        | Its attributes: key/value pairs such as { "url": "https://…", "room": "B12" }, read by plugins and shown on the task. Keys are lowercase letters, digits and underscores. This replaces the whole set: send every pair to keep, an empty value removes one, and {} removes them all. Left out, they are untouched. |
+| `meta`       | object  | —        | Deprecated — use `attributes`, which is the same thing under the name the app uses. Still accepted so an assistant written against the old shape keeps working, and removed in …. **Deprecated.**                                                                                                                  |
 
-### `change_block` — Move or rename a block
+### `change_block` — Move or rename a task block
 
-Change one block on one day: its time, its day, how long it runs, or what it is called. This is "push the study block to four", "make it two hours", "that was actually client work". Takes the id `today` or `upcoming` gives. Only the fields you pass change. It affects that day only — moving this Thursday’s gym does not move gym — and it never edits the repeating week. Renaming keeps which part of life it belongs to and stops it being the named activity it was, because that is what saying it was something else means.
+Change one task block on one day: its time, its day, how long it runs, or what it is called — and, for a one-off, the notebook it is filed under and its attributes. This is "push the study block to four", "make it two hours", "that was actually client work". Takes the id `today` or `upcoming` gives. Only the fields you pass change. It affects that day only — moving this Thursday’s gym does not move gym — and it never edits the repeating week. Renaming keeps which part of life it belongs to and stops it being the named activity it was, because that is what saying it was something else means.
 
 _Needs `schedule:write`; writes._
 
-| Parameter    | Type    | Required | What it is                                                                                                         |
-| ------------ | ------- | -------- | ------------------------------------------------------------------------------------------------------------------ |
-| `id`         | string  | yes      | The block’s id, exactly as the day gave it — like `slot:42`.                                                       |
-| `date`       | string  | —        | Move it to this day, as YYYY-MM-DD. Leave out to keep the day it is on.                                            |
-| `start_time` | string  | —        | The new start, as HH:MM on a 24-hour clock.                                                                        |
-| `minutes`    | integer | —        | How long it should run, in minutes.                                                                                |
-| `title`      | string  | —        | What it should be called instead.                                                                                  |
-| `category`   | string  | —        | Refile it under this part of life, by name — `categories` lists them. Affects that day only, like everything here. |
+| Parameter    | Type    | Required | What it is                                                                                                                                                                                                                                                                                                         |
+| ------------ | ------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `id`         | string  | yes      | The block’s id, exactly as the day gave it — like `slot:42`.                                                                                                                                                                                                                                                       |
+| `date`       | string  | —        | Move it to this day, as YYYY-MM-DD. Leave out to keep the day it is on.                                                                                                                                                                                                                                            |
+| `start_time` | string  | —        | The new start, as HH:MM on a 24-hour clock.                                                                                                                                                                                                                                                                        |
+| `minutes`    | integer | —        | How long it should run, in minutes.                                                                                                                                                                                                                                                                                |
+| `title`      | string  | —        | What it should be called instead.                                                                                                                                                                                                                                                                                  |
+| `category`   | string  | —        | Refile it under this part of life, by name — `categories` lists them. Affects that day only, like everything here.                                                                                                                                                                                                 |
+| `notebookId` | integer | —        | The notebook it belongs to, as `notebooks` gives its id — the subject it is part of. `0` takes it out of the one it is in.                                                                                                                                                                                         |
+| `attributes` | object  | —        | Its attributes: key/value pairs such as { "url": "https://…", "room": "B12" }, read by plugins and shown on the task. Keys are lowercase letters, digits and underscores. This replaces the whole set: send every pair to keep, an empty value removes one, and {} removes them all. Left out, they are untouched. |
+| `meta`       | object  | —        | Deprecated — use `attributes`, which is the same thing under the name the app uses. Still accepted so an assistant written against the old shape keeps working, and removed in …. **Deprecated.**                                                                                                                  |
 
 ### `cancel_block` — Take a block off the day
 
@@ -459,14 +465,16 @@ Put a task on the todo list. Leave the date off unless the person said when — 
 
 _Needs `tasks:write`; writes._
 
-| Parameter       | Type    | Required | What it is                                                                                                                                                                                                                                                          |
-| --------------- | ------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `title`         | string  | yes      | What the task is, in the person’s own words.                                                                                                                                                                                                                        |
-| `notes`         | string  | —        | Anything else about it.                                                                                                                                                                                                                                             |
-| `scheduledDate` | string  | —        | The day to put it on, as YYYY-MM-DD. Usually omitted.                                                                                                                                                                                                               |
-| `notebookId`    | integer | —        | The notebook this task belongs to, as `notebooks` gives its id. A subject somebody is working through — a renovation, a project — keeps its tasks together, and the app shows them on the notebook itself. The task takes the notebook’s category, when it has one. |
-| `goalId`        | integer | —        | A goal to count this towards, as `goals` gives its id. Breaking a goal into tasks is the ordinary reason to make several at once, and a task linked here moves that goal’s progress when it is finished.                                                            |
-| `tags`          | string  | —        | Labels, comma or space separated — "a1, done". The account’s one vocabulary, the same words a diary entry or an idea is tagged with. Mark your own work with a label of your own where several assistants share a list.                                             |
+| Parameter       | Type    | Required | What it is                                                                                                                                                                                                                                                                                                         |
+| --------------- | ------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `title`         | string  | yes      | What the task is, in the person’s own words.                                                                                                                                                                                                                                                                       |
+| `notes`         | string  | —        | Anything else about it.                                                                                                                                                                                                                                                                                            |
+| `scheduledDate` | string  | —        | The day to put it on, as YYYY-MM-DD. Usually omitted.                                                                                                                                                                                                                                                              |
+| `notebookId`    | integer | —        | The notebook this task belongs to, as `notebooks` gives its id. A subject somebody is working through — a renovation, a project — keeps its tasks together, and the app shows them on the notebook itself. The task takes the notebook’s category, when it has one.                                                |
+| `goalId`        | integer | —        | A goal to count this towards, as `goals` gives its id. Breaking a goal into tasks is the ordinary reason to make several at once, and a task linked here moves that goal’s progress when it is finished.                                                                                                           |
+| `tags`          | string  | —        | Labels, comma or space separated — "a1, done". The account’s one vocabulary, the same words a diary entry or an idea is tagged with. Mark your own work with a label of your own where several assistants share a list.                                                                                            |
+| `attributes`    | object  | —        | Its attributes: key/value pairs such as { "url": "https://…", "room": "B12" }, read by plugins and shown on the task. Keys are lowercase letters, digits and underscores. This replaces the whole set: send every pair to keep, an empty value removes one, and {} removes them all. Left out, they are untouched. |
+| `meta`          | object  | —        | Deprecated — use `attributes`, which is the same thing under the name the app uses. Still accepted so an assistant written against the old shape keeps working, and removed in …. **Deprecated.**                                                                                                                  |
 
 ### `finish_task` — Finish a todo
 
@@ -536,18 +544,20 @@ Rewrite a todo’s title, notes or state. Only the fields given change. Moving i
 
 _Needs `tasks:write`; writes._
 
-| Parameter    | Type    | Required | What it is                                                                                                                                                                                             |
-| ------------ | ------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `id`         | integer | yes      | The todo’s id, as `tasks` gives it.                                                                                                                                                                    |
-| `title`      | string  | —        | The new title, in the person’s own words.                                                                                                                                                              |
-| `notes`      | string  | —        | The new notes.                                                                                                                                                                                         |
-| `status`     | string  | —        | What state it is in: `todo` waiting, `doing` started, `done` finished, `skipped` given up on. Left out, it is untouched. One of: `todo`, `doing`, `done`, `skipped`.                                   |
-| `notebookId` | integer | —        | The notebook to file it under, as `notebooks` gives its id. `0` takes it out of whichever one it is in. `add_task` can file a task at birth; this is how one already made moves.                       |
-| `tags`       | string  | —        | The labels it should carry from now on, comma or space separated — this replaces whatever it had, so include the ones to keep. An empty string takes them all off. Left out, the labels are untouched. |
-| `urgency`    | integer | —        | How soon it has to happen, 0–5.                                                                                                                                                                        |
-| `interest`   | integer | —        | How much they want to do it, 0–5.                                                                                                                                                                      |
-| `ease`       | integer | —        | How easy it is, 0–5, five being easiest. Replaces `energy`, which asked the opposite question on a scale that began at one.                                                                            |
-| `energy`     | integer | —        | Deprecated — use `ease`, which is this turned round: an energy of 5 is an ease of 1. Still accepted so an assistant written against the old shape keeps working, and removed in 0.190. **Deprecated.** |
+| Parameter    | Type    | Required | What it is                                                                                                                                                                                                                                                                                                         |
+| ------------ | ------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `id`         | integer | yes      | The todo’s id, as `tasks` gives it.                                                                                                                                                                                                                                                                                |
+| `title`      | string  | —        | The new title, in the person’s own words.                                                                                                                                                                                                                                                                          |
+| `notes`      | string  | —        | The new notes.                                                                                                                                                                                                                                                                                                     |
+| `status`     | string  | —        | What state it is in: `todo` waiting, `doing` started, `done` finished, `skipped` given up on. Left out, it is untouched. One of: `todo`, `doing`, `done`, `skipped`.                                                                                                                                               |
+| `notebookId` | integer | —        | The notebook to file it under, as `notebooks` gives its id. `0` takes it out of whichever one it is in. `add_task` can file a task at birth; this is how one already made moves.                                                                                                                                   |
+| `tags`       | string  | —        | The labels it should carry from now on, comma or space separated — this replaces whatever it had, so include the ones to keep. An empty string takes them all off. Left out, the labels are untouched.                                                                                                             |
+| `urgency`    | integer | —        | How soon it has to happen, 0–5.                                                                                                                                                                                                                                                                                    |
+| `interest`   | integer | —        | How much they want to do it, 0–5.                                                                                                                                                                                                                                                                                  |
+| `ease`       | integer | —        | How easy it is, 0–5, five being easiest. Replaces `energy`, which asked the opposite question on a scale that began at one.                                                                                                                                                                                        |
+| `energy`     | integer | —        | Deprecated — use `ease`, which is this turned round: an energy of 5 is an ease of 1. Still accepted so an assistant written against the old shape keeps working, and removed in 0.190. **Deprecated.**                                                                                                             |
+| `attributes` | object  | —        | Its attributes: key/value pairs such as { "url": "https://…", "room": "B12" }, read by plugins and shown on the task. Keys are lowercase letters, digits and underscores. This replaces the whole set: send every pair to keep, an empty value removes one, and {} removes them all. Left out, they are untouched. |
+| `meta`       | object  | —        | Deprecated — use `attributes`, which is the same thing under the name the app uses. Still accepted so an assistant written against the old shape keeps working, and removed in …. **Deprecated.**                                                                                                                  |
 
 ### `schedule_task` — Put a todo on a day
 
@@ -950,6 +960,17 @@ _Needs `tags:write` and `destructive`; deletes._
 | --------- | ------- | -------- | ----------------------------------- |
 | `id`      | integer | yes      | The label’s id, as `tags` gives it. |
 
+### `untag_notebook` — Take a label off one notebook
+
+Take a label off everything filed in one notebook — its notes, tasks and ideas — and off nothing outside it. The label stays in the vocabulary while anything else carries it. Answers with how many things lost it. To remove a label everywhere, `remove_tag`.
+
+_Needs `tags:write`; writes._
+
+| Parameter    | Type    | Required | What it is                                 |
+| ------------ | ------- | -------- | ------------------------------------------ |
+| `notebookId` | integer | yes      | The notebook, as `notebooks` gives its id. |
+| `id`         | integer | yes      | The label’s id, as `tags` gives it.        |
+
 ### `shopping_list` — The shopping list
 
 What is to buy and what is already in the cupboard. An item is a thing, not a line: ticking it bought puts it back in the cupboard rather than deleting it. Each carries how many there are and how many are kept, so "what am I short of" is `qty` below `idealQty` — `short: true` asks for exactly those.
@@ -1337,46 +1358,52 @@ _Needs `schedule:read`; read-only._
 
 _Takes no parameters._
 
-### `add_repeating_block` — Put a block on every week
+### `add_repeating_block` — Put a task block on every week
 
 Add a block that comes back — "gym on Tuesdays at seven", "the bins every other Tuesday", "rent on the first". Weekly unless `repeats` says otherwise. This changes every week from now on; `add_block` is the one for a single day. Weekdays count from Monday: 0 is Monday, 6 is Sunday. A block can be a bare category rather than a named thing — leave the title out and it shows as the category itself, which is what "put work in those hours" means.
 
 _Needs `schedule:write`; writes._
 
-| Parameter        | Type    | Required | What it is                                                                                                                                                                                                       |
-| ---------------- | ------- | -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `weekday`        | integer | yes      | 0 is Monday, 6 is Sunday — the week starts on Monday here.                                                                                                                                                       |
-| `title`          | string  | —        | What it is — shown on the block. Leave it out for a block that is just the category.                                                                                                                             |
-| `start_time`     | string  | yes      | When it starts, as HH:MM on a 24-hour clock.                                                                                                                                                                     |
-| `minutes`        | integer | —        | How long it runs, in minutes. Default `60`.                                                                                                                                                                      |
-| `category`       | string  | —        | Which part of life it belongs to, by name — `categories` lists them.                                                                                                                                             |
-| `remind_minutes` | integer | —        | Minutes before each occurrence to be reminded. No reminder if left out.                                                                                                                                          |
-| `repeats`        | string  | —        | How often it comes back. Weekly if left out. `every_n_weeks` and `every_n_days` need `every`; `monthly` needs `month_day` and ignores the weekday. One of: `weekly`, `every_n_weeks`, `every_n_days`, `monthly`. |
-| `every`          | integer | —        | The N in every N weeks or every N days — 2 is "every other".                                                                                                                                                     |
-| `month_day`      | integer | —        | For `monthly`: which day of the month, 1 to 31. A month too short for it uses its last day.                                                                                                                      |
-| `urgency`        | integer | —        | How soon it has to happen, 0–5.                                                                                                                                                                                  |
-| `interest`       | integer | —        | How much they want to do it, 0–5.                                                                                                                                                                                |
-| `ease`           | integer | —        | How easy it is, 0–5, five being easiest. Replaces `energy`, which asked the opposite question on a scale that began at one.                                                                                      |
-| `energy`         | integer | —        | Deprecated — use `ease`, which is this turned round: an energy of 5 is an ease of 1. Still accepted so an assistant written against the old shape keeps working, and removed in 0.190. **Deprecated.**           |
+| Parameter        | Type    | Required | What it is                                                                                                                                                                                                                                                                                                         |
+| ---------------- | ------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `weekday`        | integer | yes      | 0 is Monday, 6 is Sunday — the week starts on Monday here.                                                                                                                                                                                                                                                         |
+| `title`          | string  | —        | What it is — shown on the block. Leave it out for a block that is just the category.                                                                                                                                                                                                                               |
+| `start_time`     | string  | yes      | When it starts, as HH:MM on a 24-hour clock.                                                                                                                                                                                                                                                                       |
+| `minutes`        | integer | —        | How long it runs, in minutes. Default `60`.                                                                                                                                                                                                                                                                        |
+| `category`       | string  | —        | Which part of life it belongs to, by name — `categories` lists them.                                                                                                                                                                                                                                               |
+| `remind_minutes` | integer | —        | Minutes before each occurrence to be reminded. No reminder if left out.                                                                                                                                                                                                                                            |
+| `notebookId`     | integer | —        | The notebook it belongs to, as `notebooks` gives its id — the subject it is part of. `0` takes it out of the one it is in.                                                                                                                                                                                         |
+| `repeats`        | string  | —        | How often it comes back. Weekly if left out. `every_n_weeks` and `every_n_days` need `every`; `monthly` needs `month_day` and ignores the weekday. One of: `weekly`, `every_n_weeks`, `every_n_days`, `monthly`.                                                                                                   |
+| `every`          | integer | —        | The N in every N weeks or every N days — 2 is "every other".                                                                                                                                                                                                                                                       |
+| `month_day`      | integer | —        | For `monthly`: which day of the month, 1 to 31. A month too short for it uses its last day.                                                                                                                                                                                                                        |
+| `urgency`        | integer | —        | How soon it has to happen, 0–5.                                                                                                                                                                                                                                                                                    |
+| `interest`       | integer | —        | How much they want to do it, 0–5.                                                                                                                                                                                                                                                                                  |
+| `ease`           | integer | —        | How easy it is, 0–5, five being easiest. Replaces `energy`, which asked the opposite question on a scale that began at one.                                                                                                                                                                                        |
+| `energy`         | integer | —        | Deprecated — use `ease`, which is this turned round: an energy of 5 is an ease of 1. Still accepted so an assistant written against the old shape keeps working, and removed in 0.190. **Deprecated.**                                                                                                             |
+| `attributes`     | object  | —        | Its attributes: key/value pairs such as { "url": "https://…", "room": "B12" }, read by plugins and shown on the task. Keys are lowercase letters, digits and underscores. This replaces the whole set: send every pair to keep, an empty value removes one, and {} removes them all. Left out, they are untouched. |
+| `meta`           | object  | —        | Deprecated — use `attributes`, which is the same thing under the name the app uses. Still accepted so an assistant written against the old shape keeps working, and removed in …. **Deprecated.**                                                                                                                  |
 
-### `change_repeating_block` — Change a repeating block
+### `change_repeating_block` — Change a repeating task block
 
-Change every future occurrence of a repeating block: its weekday, time, length, how often it comes back, the text on it, its category or its reminder. This is "move gym to Wednesdays" or "make it every other week"; `change_block` is "move this Wednesday’s gym". Only the fields given change. Takes the id `repeating_week` gives.
+Change every future occurrence of a repeating block: its weekday, time, length, how often it comes back, the text on it, its category, its reminder, its notebook or its attributes. This is "move gym to Wednesdays" or "make it every other week"; `change_block` is "move this Wednesday’s gym". Only the fields given change. Takes the id `repeating_week` gives.
 
 _Needs `schedule:write`; writes._
 
-| Parameter        | Type    | Required | What it is                                                                                                                                                                                                       |
-| ---------------- | ------- | -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `id`             | integer | yes      | The repeating block’s id, as `repeating_week` gives it.                                                                                                                                                          |
-| `weekday`        | integer | —        | The new weekday. 0 is Monday, 6 is Sunday.                                                                                                                                                                       |
-| `start_time`     | string  | —        | The new start, as HH:MM.                                                                                                                                                                                         |
-| `minutes`        | integer | —        | The new length, in minutes.                                                                                                                                                                                      |
-| `title`          | string  | —        | The text shown on the block. A block that names an activity stays that activity — this only changes what the block says, which is how "add stretching to the morning routine’s text" is done.                    |
-| `category`       | string  | —        | Refile it under this part of life, by name.                                                                                                                                                                      |
-| `remind_minutes` | integer | —        | The new reminder lead. 0 turns it off.                                                                                                                                                                           |
-| `repeats`        | string  | —        | How often it comes back. Weekly if left out. `every_n_weeks` and `every_n_days` need `every`; `monthly` needs `month_day` and ignores the weekday. One of: `weekly`, `every_n_weeks`, `every_n_days`, `monthly`. |
-| `every`          | integer | —        | The N in every N weeks or every N days — 2 is "every other".                                                                                                                                                     |
-| `month_day`      | integer | —        | For `monthly`: which day of the month, 1 to 31. A month too short for it uses its last day.                                                                                                                      |
+| Parameter        | Type    | Required | What it is                                                                                                                                                                                                                                                                                                         |
+| ---------------- | ------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `id`             | integer | yes      | The repeating block’s id, as `repeating_week` gives it.                                                                                                                                                                                                                                                            |
+| `weekday`        | integer | —        | The new weekday. 0 is Monday, 6 is Sunday.                                                                                                                                                                                                                                                                         |
+| `start_time`     | string  | —        | The new start, as HH:MM.                                                                                                                                                                                                                                                                                           |
+| `minutes`        | integer | —        | The new length, in minutes.                                                                                                                                                                                                                                                                                        |
+| `title`          | string  | —        | The text shown on the block. A block that names an activity stays that activity — this only changes what the block says, which is how "add stretching to the morning routine’s text" is done.                                                                                                                      |
+| `category`       | string  | —        | Refile it under this part of life, by name.                                                                                                                                                                                                                                                                        |
+| `remind_minutes` | integer | —        | The new reminder lead. 0 turns it off.                                                                                                                                                                                                                                                                             |
+| `notebookId`     | integer | —        | The notebook it belongs to, as `notebooks` gives its id — the subject it is part of. `0` takes it out of the one it is in.                                                                                                                                                                                         |
+| `repeats`        | string  | —        | How often it comes back. Weekly if left out. `every_n_weeks` and `every_n_days` need `every`; `monthly` needs `month_day` and ignores the weekday. One of: `weekly`, `every_n_weeks`, `every_n_days`, `monthly`.                                                                                                   |
+| `every`          | integer | —        | The N in every N weeks or every N days — 2 is "every other".                                                                                                                                                                                                                                                       |
+| `month_day`      | integer | —        | For `monthly`: which day of the month, 1 to 31. A month too short for it uses its last day.                                                                                                                                                                                                                        |
+| `attributes`     | object  | —        | Its attributes: key/value pairs such as { "url": "https://…", "room": "B12" }, read by plugins and shown on the task. Keys are lowercase letters, digits and underscores. This replaces the whole set: send every pair to keep, an empty value removes one, and {} removes them all. Left out, they are untouched. |
+| `meta`           | object  | —        | Deprecated — use `attributes`, which is the same thing under the name the app uses. Still accepted so an assistant written against the old shape keeps working, and removed in …. **Deprecated.**                                                                                                                  |
 
 ### `remove_repeating_block` — Take a block out of the week
 
@@ -1919,7 +1946,7 @@ _Takes no parameters._
 
 ### `bills` — Your bills
 
-The bills you expect to pay, and what you have actually paid. Amounts are in minor units (cents): 12000 is R$120,00. Marking one paid records the real amount, which can differ from the expected one.
+The bills you expect to pay, and what you have actually paid. Amounts are in minor units (cents): 12000 is R$120,00. Marking one paid records the real amount, which can differ from the expected one. An `automatic` bill pays itself (a subscription, a direct debit): it is never reminded, and its payment is recorded on each due day.
 
 _Needs `bills:read`; read-only._
 
@@ -1930,7 +1957,17 @@ _Needs `bills:read`; read-only._
 
 ### `bill_payments` — What a bill has cost
 
-Every period a bill has been paid for, with the expected amount and what was actually paid. Amounts in minor units (cents).
+Every period a bill has been settled for, with the expected amount and what was actually paid. `status` is paid or skipped; a skipped period paid nothing. `automatic` marks a payment the app recorded for an automatic bill. Amounts in minor units (cents).
+
+_Needs `bills:read`; read-only._
+
+| Parameter | Type    | Required | What it is     |
+| --------- | ------- | -------- | -------------- |
+| `id`      | integer | yes      | The bill’s id. |
+
+### `bill_history` — A bill’s history and average
+
+One bill’s whole history — every period paid or skipped, newest first — with how many were paid and skipped, the total paid, and the average paid per period (per week, month or year, following the bill’s rhythm; null before anything was paid). Amounts in minor units (cents).
 
 _Needs `bills:read`; read-only._
 
@@ -1950,7 +1987,7 @@ _Needs `bills:read`; read-only._
 
 ### `bills_due` — Bills that want paying
 
-The bills falling due between two dates, each on the day it wants paying (the due day less its lead), with whether that one is already paid. This is what the week shows.
+The bills falling due between two dates, each on the day it wants paying (the due day less its lead), with whether that one is already paid. This is what the week shows. Automatic bills and skipped periods ask for nothing and are left out.
 
 _Needs `bills:read`; read-only._
 
@@ -1972,6 +2009,7 @@ _Needs `bills:write`; writes._
 | `rhythm`          | string  | —        | weekly, monthly, yearly, or once.                                                                                                                                                                              |
 | `due_day`         | integer | —        | Day of the month it falls due, 1-28 (monthly) — the last day it can be paid.                                                                                                                                   |
 | `pay_lead_days`   | integer | —        | Pay it this many days before the due day (0 = on the day). It turns up on the week that day.                                                                                                                   |
+| `automatic`       | boolean | —        | It pays itself — a subscription on a card, a direct debit. Never reminded and never on the week; its payment is recorded on each due day from today on.                                                        |
 | `currency`        | string  | —        | A currency code like BRL. The account’s default if left out.                                                                                                                                                   |
 | `flow`            | string  | —        | 'out' for a bill (the default), 'in' for income.                                                                                                                                                               |
 | `notes`           | string  | —        | Anything else.                                                                                                                                                                                                 |
@@ -1992,6 +2030,7 @@ _Needs `bills:write`; writes._
 | `due_day`         | integer | —        | When it falls due. Monthly: day of the month. Weekly: weekday 1-7 from Monday. Yearly: day of due_month. |
 | `due_month`       | integer | —        | For a yearly bill, the month, 1-12.                                                                      |
 | `pay_lead_days`   | integer | —        | Pay it this many days before the due day (0 = on the day).                                               |
+| `automatic`       | boolean | —        | true when it pays itself, false when somebody pays it. Left alone if not given.                          |
 | `notes`           | string  | —        | Notes, replacing the old ones.                                                                           |
 
 ### `archive_bill` — Put a bill away, or bring it back
@@ -2028,3 +2067,26 @@ _Needs `bills:write`; writes._
 | --------- | ------- | -------- | --------------------------------- |
 | `id`      | integer | yes      | The bill’s id.                    |
 | `period`  | string  | yes      | The period to undo, e.g. 2026-09. |
+
+### `skip_bill` — Skip a bill for a period
+
+Say nothing was owed for a period — the gym frozen for a month, a week with no cleaner. The period reads as settled without a payment, stops asking to be paid, and counts as skipped in the history. Refused on a period already paid: undo that with unpay_bill first. The period defaults to the current one.
+
+_Needs `bills:write`; writes._
+
+| Parameter | Type    | Required | What it is                                                                                      |
+| --------- | ------- | -------- | ----------------------------------------------------------------------------------------------- |
+| `id`      | integer | yes      | The bill’s id.                                                                                  |
+| `period`  | string  | —        | The period: YYYY-Www for weekly, YYYY-MM for monthly, YYYY for yearly. This period if left out. |
+| `notes`   | string  | —        | Why it was skipped.                                                                             |
+
+### `unskip_bill` — Undo a skipped period
+
+Take back a skip, so the period is open and asks to be paid again. The inverse of skip_bill.
+
+_Needs `bills:write`; writes._
+
+| Parameter | Type    | Required | What it is                          |
+| --------- | ------- | -------- | ----------------------------------- |
+| `id`      | integer | yes      | The bill’s id.                      |
+| `period`  | string  | yes      | The period to reopen, e.g. 2026-09. |

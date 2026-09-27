@@ -140,7 +140,7 @@ const slot = (weekday, startTime, durationMinutes, activityId, recurrence = 'wee
 	if (existing) return existing.id;
 	return run(
 		`insert into recurring_tasks
-		 (user_id, weekday, start_time, duration_minutes, mode, activity_id, label, recurrence, meta)
+		 (user_id, weekday, start_time, duration_minutes, mode, activity_id, label, recurrence, attributes)
 		 values (?, ?, ?, ?, 'activity', ?, '', ?, '{}')`,
 		uid,
 		weekday,
@@ -163,7 +163,7 @@ const categorySlot = (weekday, startTime, durationMinutes, categoryId, label) =>
 	if (existing) return existing.id;
 	return run(
 		`insert into recurring_tasks
-		 (user_id, weekday, start_time, duration_minutes, mode, category_id, label, recurrence, meta)
+		 (user_id, weekday, start_time, duration_minutes, mode, category_id, label, recurrence, attributes)
 		 values (?, ?, ?, ?, 'category', ?, ?, 'weekly', '{}')`,
 		uid,
 		weekday,
@@ -184,7 +184,7 @@ const oneOff = (date, startTime, durationMinutes, activityId, label) => {
 	if (existing) return existing.id;
 	return run(
 		`insert into exceptional_tasks
-		 (user_id, date, start_time, duration_minutes, mode, activity_id, label, meta)
+		 (user_id, date, start_time, duration_minutes, mode, activity_id, label, attributes)
 		 values (?, ?, ?, ?, 'activity', ?, ?, '{}')`,
 		uid,
 		date,
@@ -206,7 +206,7 @@ const oneOffInCategory = (date, startTime, durationMinutes, categoryId, label) =
 	if (existing) return existing.id;
 	return run(
 		`insert into exceptional_tasks
-		 (user_id, date, start_time, duration_minutes, mode, category_id, label, meta)
+		 (user_id, date, start_time, duration_minutes, mode, category_id, label, attributes)
 		 values (?, ?, ?, ?, 'category', ?, ?, '{}')`,
 		uid,
 		date,
@@ -1279,6 +1279,31 @@ inNotebook('diary_entries', 'seq', 8, leak);
 inNotebook('goals', 'title', 'read twelve books', readingNotebook);
 
 /*
+ * Attributes, on tasks and on task blocks, and task blocks filed in notebooks —
+ * so the ⓘ on a card, the fold in the forms and the notebook line on the grid
+ * all have something to show.
+ */
+const withAttributes = (table, column, value, attributes) =>
+	run(
+		`update ${table} set attributes = ? where user_id = ? and ${column} = ?`,
+		JSON.stringify(attributes),
+		uid,
+		value
+	);
+withAttributes('todo_tasks', 'title', 'get three quotes for the counter', {
+	url: 'https://example.com/worktops',
+	budget: '1200'
+});
+withAttributes('todo_tasks', 'title', 'plan the trip', { flight: 'TP 1353', seat: '14C' });
+withAttributes('recurring_tasks', 'label', 'errands', { location: 'high street' });
+withAttributes('exceptional_tasks', 'label', 'physio', {
+	location: 'clinic on Rua Augusta',
+	phone: '+351 210 000 000'
+});
+inNotebook('recurring_tasks', 'label', 'errands', kitchen);
+inNotebook('exceptional_tasks', 'label', 'dinner with M', portugal);
+
+/*
  * Two notebooks with a year in them, and two with a page.
  *
  * A demo of notebooks that holds four lines is a demo of the field rather than
@@ -2151,7 +2176,11 @@ manifest(
 	'scale',
 	'Smart scale',
 	'Weighs you, and sets alarms from the plan',
-	JSON.stringify(['alarm', 'remind_min'])
+	// The shape `PUT /api/v1/plugin` stores: a key, what it does, an example.
+	JSON.stringify([
+		{ key: 'alarm', description: 'Ring an alarm for this task block', example: 'true' },
+		{ key: 'remind_min', description: 'Notify this many minutes before', example: '5' }
+	])
 );
 
 // --- Recipes ------------------------------------------------------------------

@@ -5246,6 +5246,32 @@ html .ec .ec-event.og-event .ec-event-time {
 }
 
 /*
+ * The notebook a task block is filed under, under its time: small, one line,
+ * with the notebook glyph the task card's own notebook line wears.
+ */
+html .ec .ec-event.og-event .ec-event-notebook {
+	display: flex;
+	align-items: center;
+	gap: 0.1875rem;
+	min-width: 0;
+	overflow: hidden;
+	font-size: 0.625rem;
+	font-weight: 400;
+	white-space: nowrap;
+	opacity: 0.75;
+}
+
+html .ec .ec-event.og-event .ec-event-notebook svg {
+	flex-shrink: 0;
+}
+
+html .ec .ec-event.og-event .ec-event-notebook span {
+	min-width: 0;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+/*
  * Title and time travel together when a block is half scrolled away.
  *
  * The library makes the title alone `position: sticky`, so a block whose top
@@ -5332,6 +5358,7 @@ html[data-theme='dark'] .ec .ec-day .og-past {
 
 /* Too short for two lines: the name is the one that survives. */
 html .ec .ec-event.og-event.ec-short .ec-event-time,
+html .ec .ec-event.og-event.ec-short .ec-event-notebook,
 html .ec.ec-month-view .ec-event.og-event .ec-event-time {
 	display: none;
 }

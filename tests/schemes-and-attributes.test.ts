@@ -1,11 +1,11 @@
 /**
- * Saving a week and putting one back, and the metadata a block can carry.
+ * Saving a week and putting one back, and the attributes a task block can carry.
  *
  * A scheme is the whole weekly plan photographed: applying one REPLACES what
  * is there, which is the only destructive thing in the planner that is not a
  * delete — so what it copies and what it drops both matter.
  *
- * The metadata is free-form and comes from a form, which is to say it comes
+ * The attributes are free-form and comes from a form, which is to say it comes
  * from anywhere: the parsing has to refuse what it cannot store rather than
  * store a shape nothing can read back.
  */
@@ -19,7 +19,7 @@ afterAll(() => database.remove());
 let schemes: typeof import('../src/lib/services/schemes');
 let slots: typeof import('../src/lib/services/slots');
 let activities: typeof import('../src/lib/services/activities');
-let meta: typeof import('../src/lib/services/meta');
+let attrs: typeof import('../src/lib/services/task-attributes');
 let ctx: { userId: string; now: Date; tz: string };
 let theirs: { userId: string; now: Date; tz: string };
 let work: number;
@@ -28,7 +28,7 @@ beforeAll(async () => {
 	schemes = await import('../src/lib/services/schemes');
 	slots = await import('../src/lib/services/slots');
 	activities = await import('../src/lib/services/activities');
-	meta = await import('../src/lib/services/meta');
+	attrs = await import('../src/lib/services/task-attributes');
 	ctx = { userId: OWNER, now: new Date('2026-08-17T09:00:00'), tz: 'UTC' };
 	theirs = { ...ctx, userId: STRANGER };
 	work = activities.createCategory(ctx, { name: 'Work', color: '#1d4ed8' });
@@ -111,13 +111,16 @@ describe('putting one back', () => {
 	});
 });
 
-describe('the metadata a block carries', () => {
+describe('the attributes a task block carries', () => {
 	test('reads back what was stored', () => {
-		expect(meta.parseMeta('{"room":"B12","tutor":"Ana"}')).toEqual({ room: 'B12', tutor: 'Ana' });
+		expect(attrs.parseAttributes('{"room":"B12","tutor":"Ana"}')).toEqual({
+			room: 'B12',
+			tutor: 'Ana'
+		});
 	});
 
 	test('turns numbers and booleans into strings rather than losing them', () => {
-		expect(meta.parseMeta('{"seats":12,"online":true}')).toEqual({
+		expect(attrs.parseAttributes('{"seats":12,"online":true}')).toEqual({
 			seats: '12',
 			online: 'true'
 		});
@@ -125,60 +128,62 @@ describe('the metadata a block carries', () => {
 
 	test('answers nothing to anything it cannot read, rather than throwing', () => {
 		// It comes out of a column that anything could have written.
-		expect(meta.parseMeta(null)).toEqual({});
-		expect(meta.parseMeta('not json at all')).toEqual({});
-		expect(meta.parseMeta('[1,2,3]')).toEqual({});
-		expect(meta.parseMeta('"a string"')).toEqual({});
+		expect(attrs.parseAttributes(null)).toEqual({});
+		expect(attrs.parseAttributes('not json at all')).toEqual({});
+		expect(attrs.parseAttributes('[1,2,3]')).toEqual({});
+		expect(attrs.parseAttributes('"a string"')).toEqual({});
 	});
 
 	test('serialises an object, and refuses a shape it cannot store', () => {
-		expect(JSON.parse(meta.serialiseMeta({ room: 'B12' }))).toEqual({ room: 'B12' });
-		expect(meta.serialiseMeta(undefined)).toBe('{}');
-		expect(meta.serialiseMeta('')).toBe('{}');
-		expect(() => meta.serialiseMeta([1, 2, 3])).toThrow();
+		expect(JSON.parse(attrs.serialiseAttributes({ room: 'B12' }))).toEqual({ room: 'B12' });
+		expect(attrs.serialiseAttributes(undefined)).toBe('{}');
+		expect(attrs.serialiseAttributes('')).toBe('{}');
+		expect(() => attrs.serialiseAttributes([1, 2, 3])).toThrow();
 	});
 
 	test('refuses a key that is not an identifier', () => {
 		// The keys are shown as columns and read by plugins; one with a space in
 		// it, or starting with a digit, is a key nothing downstream can address.
-		expect(() => meta.serialiseMeta({ 'not a key': 'x' })).toThrow();
-		expect(() => meta.serialiseMeta({ '9lives': 'x' })).toThrow();
+		expect(() => attrs.serialiseAttributes({ 'not a key': 'x' })).toThrow();
+		expect(() => attrs.serialiseAttributes({ '9lives': 'x' })).toThrow();
 	});
 
 	test('but normalises case rather than refusing it', () => {
 		// A form gives you whatever the person typed. `Room` is not a mistake
 		// worth a refusal; it is `room`.
-		expect(JSON.parse(meta.serialiseMeta({ Room: 'B12' }))).toEqual({ room: 'B12' });
+		expect(JSON.parse(attrs.serialiseAttributes({ Room: 'B12' }))).toEqual({ room: 'B12' });
 	});
 
 	test('an emptied value removes the key rather than storing a blank', () => {
-		expect(JSON.parse(meta.serialiseMeta({ room: 'B12', tutor: '' }))).toEqual({ room: 'B12' });
+		expect(JSON.parse(attrs.serialiseAttributes({ room: 'B12', tutor: '' }))).toEqual({
+			room: 'B12'
+		});
 	});
 
 	test('refuses a key or value too long to belong in a column', () => {
-		expect(() => meta.serialiseMeta({ ['k'.repeat(200)]: 'x' })).toThrow(/longer than/);
-		expect(() => meta.serialiseMeta({ room: 'x'.repeat(5000) })).toThrow(/longer than/);
+		expect(() => attrs.serialiseAttributes({ ['k'.repeat(200)]: 'x' })).toThrow(/longer than/);
+		expect(() => attrs.serialiseAttributes({ room: 'x'.repeat(5000) })).toThrow(/longer than/);
 	});
 
 	test('refuses a value that is not something a label could show', () => {
-		expect(() => meta.serialiseMeta({ room: { floor: 2 } })).toThrow(/must be a string/);
+		expect(() => attrs.serialiseAttributes({ room: { floor: 2 } })).toThrow(/must be a string/);
 	});
 
 	test('and a block that carries far too many pairs', () => {
-		// Metadata is a handful of notes on a block, not a table of its own.
+		// Attributes are a handful of notes on a block, not a table of its own.
 		const many: Record<string, string> = {};
 		for (let i = 0; i < 100; i++) many[`k${i}`] = 'x';
-		expect(() => meta.serialiseMeta(many)).toThrow(/at most/);
+		expect(() => attrs.serialiseAttributes(many)).toThrow(/at most/);
 	});
 });
 
-describe('the metadata a form submits', () => {
-	/** The parallel `metaKey`/`metaValue` lists a repeatable editor produces. */
+describe('the attributes a form submits', () => {
+	/** The parallel `attributeKey`/`attributeValue` lists a repeatable editor produces. */
 	function form(pairs: [string, string][], extra?: Record<string, string>) {
 		const data = new FormData();
 		for (const [key, value] of pairs) {
-			data.append('metaKey', key);
-			data.append('metaValue', value);
+			data.append('attributeKey', key);
+			data.append('attributeValue', value);
 		}
 		for (const [k, v] of Object.entries(extra ?? {})) data.set(k, v);
 		return data;
@@ -187,7 +192,7 @@ describe('the metadata a form submits', () => {
 	test('reads the pairs off in order', () => {
 		expect(
 			JSON.parse(
-				meta.metaFromFormData(
+				attrs.attributesFromFormData(
 					form([
 						['room', 'B12'],
 						['tutor', 'Ana']
@@ -198,14 +203,14 @@ describe('the metadata a form submits', () => {
 	});
 
 	test('skips a row where nobody typed a key', () => {
-		expect(JSON.parse(meta.metaFromFormData(form([['', 'orphaned']])))).toEqual({});
+		expect(JSON.parse(attrs.attributesFromFormData(form([['', 'orphaned']])))).toEqual({});
 	});
 
 	test('a key with no value clears that key', () => {
-		expect(JSON.parse(meta.metaFromFormData(form([['room', '']])))).toEqual({});
+		expect(JSON.parse(attrs.attributesFromFormData(form([['room', '']])))).toEqual({});
 	});
 
-	test('a drag that posts only a placement leaves metadata alone', () => {
+	test('a drag that posts only a placement leaves attributes alone', () => {
 		// This is the distinction that matters. Drag and resize post to the same
 		// update action with the placement fields only; returning `{}` would
 		// silently wipe a block's alarm settings every time it was moved.
@@ -213,20 +218,20 @@ describe('the metadata a form submits', () => {
 		dragged.set('weekday', '2');
 		dragged.set('startTime', '09:00');
 
-		expect(meta.metaPatchFromFormData(dragged)).toBeUndefined();
+		expect(attrs.attributesPatchFromFormData(dragged)).toBeUndefined();
 	});
 
 	test('but a form that cleared its last pair says so explicitly', () => {
-		// An empty `metaKey` is still present in the payload, and reads as `{}`.
-		expect(meta.metaPatchFromFormData(form([['', '']]))).toBe('{}');
+		// An empty `attributeKey` is still present in the payload, and reads as `{}`.
+		expect(attrs.attributesPatchFromFormData(form([['', '']]))).toBe('{}');
 
 		const marked = new FormData();
-		marked.set('metaPresent', '1');
-		expect(meta.metaPatchFromFormData(marked)).toBe('{}');
+		marked.set('attributesPresent', '1');
+		expect(attrs.attributesPatchFromFormData(marked)).toBe('{}');
 	});
 
 	test('and a form that submitted pairs patches them', () => {
-		expect(JSON.parse(meta.metaPatchFromFormData(form([['room', 'B12']]))!)).toEqual({
+		expect(JSON.parse(attrs.attributesPatchFromFormData(form([['room', 'B12']]))!)).toEqual({
 			room: 'B12'
 		});
 	});

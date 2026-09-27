@@ -73,6 +73,7 @@
 	import { renderMarkdown } from '$lib/markdown';
 	import { say } from '$lib/said.svelte';
 	import { useT } from '$lib/i18n';
+	import { describeRecurrence, parseRecurrence } from '$lib/recurrence';
 	import type { PlainKey } from '$lib/i18n/keys';
 
 	/** What the picker is given, per module. */
@@ -164,7 +165,17 @@
 		contents?: {
 			entries: Entry[];
 			todos: Todo[];
-			blocks: { id: number; label: string | null; date: string; startTime: string }[];
+			blocks: {
+				id: number;
+				kind: 'weekly' | 'once';
+				label: string | null;
+				/** A one-off's day; null for one that repeats. */
+				date: string | null;
+				/** A repeating one's weekday and rhythm; null for a one-off. */
+				weekday: number | null;
+				recurrence: string | null;
+				startTime: string;
+			}[];
 			/* The whole goal: the tab draws the goals room's own card. */
 			goals: ComponentProps<typeof GoalCard>['goal'][];
 			/* And the whole idea, for the same reason — see `IdeaCard`. */
@@ -1285,12 +1296,16 @@
 				-->
 				{#if contents.blocks.length > 0}
 					<ul class="divide-y divide-gray-200 border-t border-gray-200">
-						{#each contents.blocks as block (`b${block.id}`)}
+						{#each contents.blocks as block (`${block.kind}${block.id}`)}
 							<li class="flex items-center gap-3 px-4 py-2 text-sm">
 								<Icon name="calendar" class="shrink-0 text-gray-500" />
-								<span class="min-w-0 flex-1 truncate text-gray-900">{block.label}</span>
+								<span class="min-w-0 flex-1 truncate text-gray-900"
+									>{block.label || t('tasks.plan.untitledBlock')}</span
+								>
 								<span class="tabular shrink-0 text-xs text-gray-500">
-									{block.date}
+									{block.kind === 'weekly'
+										? describeRecurrence(parseRecurrence(block.recurrence), block.weekday ?? 0, t)
+										: block.date}
 									{block.startTime}
 								</span>
 							</li>

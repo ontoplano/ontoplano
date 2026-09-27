@@ -149,7 +149,16 @@ export function madeRow(ctx: Ctx, kind: RefKind, id: unknown): unknown | null {
  * Only needed where that is not the argument called `id` — a goal's targets
  * are changed by naming the goal as `goalId`, and the goal is the subject.
  */
-export type Ref = { arg: string; kind: RefKind; subject?: boolean };
+export type Ref = {
+	arg: string;
+	kind: RefKind;
+	subject?: boolean;
+	/**
+	 * `0` in this argument means "in none" — `change_task`'s notebookId takes a
+	 * task out of its notebook that way — and names no row, so it passes.
+	 */
+	zeroIsNone?: boolean;
+};
 
 /**
  * Where to look for a thing of a given kind.
@@ -221,6 +230,7 @@ export function assertRefs(
 	for (const ref of refs ?? []) {
 		const raw = args[ref.arg];
 		if (!given(raw)) continue;
+		if (ref.zeroIsNone && (raw === 0 || raw === '0')) continue;
 
 		// A few arguments take a list — the todos being hung on a goal. Every one
 		// of them is an id like any other, and one foreign id in a list of twenty

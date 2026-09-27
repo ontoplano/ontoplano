@@ -24,13 +24,13 @@ test('every notification the app sends has a switch, and the answers stick', asy
 	// whether the list reached the screen.
 	const rows = section.locator('li');
 	expect(await rows.count()).toBeGreaterThanOrEqual(6);
-	await expect(section.getByText('Blocks, as they start')).toBeVisible();
+	await expect(section.getByText('Task blocks, as they start')).toBeVisible();
 	await expect(section.getByText('The end of the day')).toBeVisible();
 	await expect(section.getByText('The weekly review, by email')).toBeVisible();
 
 	// Nothing changes by the screen appearing: what always happened still does,
 	// what never did still does not.
-	const blocks = rows.filter({ hasText: 'Blocks, as they start' });
+	const blocks = rows.filter({ hasText: 'Task blocks, as they start' });
 	const bills = rows.filter({ hasText: 'Bills' }).first();
 	await expect(blocks.locator('input.toggle')).not.toBeChecked();
 	await expect(bills.locator('input.toggle')).toBeChecked();
@@ -39,7 +39,7 @@ test('every notification the app sends has a switch, and the answers stick', asy
 	await blocks.locator('input.toggle').check();
 	await visit(page, '/settings/preferences');
 	await expect(
-		section.locator('li').filter({ hasText: 'Blocks, as they start' }).locator('input.toggle')
+		section.locator('li').filter({ hasText: 'Task blocks, as they start' }).locator('input.toggle')
 	).toBeChecked();
 });
 

@@ -3,6 +3,7 @@ import { clockOfDay } from '$lib/services/time';
 import { pickableNotebooks } from '$lib/services/notebooks';
 import { fail } from '@sveltejs/kit';
 import { ratingsFromForm } from '$lib/ratings';
+import { attributesFromFormData } from '$lib/services/task-attributes';
 import { isStatus, type Status } from '$lib/task-status';
 import { listActivities, listCategories } from '$lib/services/activities';
 import { goalBacklinks, type GoalBacklink } from '$lib/services/backlinks';
@@ -327,7 +328,8 @@ export const actions = {
 				...(formData.has('tags') ? { tags: formData.get('tags') } : {}),
 				scheduledDate: formData.get('scheduledDate'),
 				status: formData.get('status'),
-				ratings: ratingsFromForm(formData)
+				ratings: ratingsFromForm(formData),
+				attributes: attributesFromFormData(formData)
 			});
 			return { success: true };
 		} catch (e) {

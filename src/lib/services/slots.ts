@@ -12,6 +12,7 @@ import {
 	activities,
 	categories,
 	exceptionalTasks,
+	notebooks,
 	recipes,
 	reminders,
 	suppressedSlots,
@@ -22,6 +23,7 @@ import {
 import { localDateOf, type Ctx } from './ctx.js';
 import { NotFoundError, ValidationError } from './errors.js';
 import { createReminder } from './reminders.js';
+import { ownedNotebookId } from './notebooks.js';
 import { created, stamp, stamps } from './time.js';
 import { TIME_PATTERN, num, oneOf, optionalStr, str } from './validate.js';
 import { MAX_BLOCK_NOTES } from '../planner-grid.js';
@@ -77,9 +79,15 @@ export type BlockInput = {
 	 */
 	tags?: unknown;
 	ratings?: Partial<RatingValues>;
-	meta?: string;
+	/** Serialised attributes, as `serialiseAttributes` writes them. */
+	attributes?: string;
 	/** Undefined leaves an existing value alone; a drag posts placement only. */
-	metaPatch?: string | undefined;
+	attributesPatch?: string | undefined;
+	/**
+	 * The notebook it is filed under. Undefined leaves it alone — a drag posts
+	 * placement only — and an empty value takes it out of the one it is in.
+	 */
+	notebookId?: unknown;
 	recurrence?: string;
 };
 
@@ -130,10 +138,13 @@ export function listWeeklySlots(ctx: Ctx) {
 			urgency: recurringTasks.urgency,
 			interest: recurringTasks.interest,
 			ease: recurringTasks.ease,
-			meta: recurringTasks.meta,
+			attributes: recurringTasks.attributes,
+			notebookId: recurringTasks.notebookId,
+			notebookTitle: notebooks.title,
 			active: recurringTasks.active
 		})
 		.from(recurringTasks)
+		.leftJoin(notebooks, eq(recurringTasks.notebookId, notebooks.id))
 		.leftJoin(categories, eq(recurringTasks.categoryId, categories.id))
 		.leftJoin(activities, eq(recurringTasks.activityId, activities.id))
 		.leftJoin(workouts, eq(recurringTasks.workoutId, workouts.id))
@@ -176,12 +187,15 @@ export function listExceptionals(ctx: Ctx, from: string, to: string) {
 			urgency: exceptionalTasks.urgency,
 			interest: exceptionalTasks.interest,
 			ease: exceptionalTasks.ease,
-			meta: exceptionalTasks.meta,
+			attributes: exceptionalTasks.attributes,
+			notebookId: exceptionalTasks.notebookId,
+			notebookTitle: notebooks.title,
 			active: exceptionalTasks.active,
 			// A one-off's status lives on its instance now, not on the block.
 			status: sql<string>`coalesce(${taskRecords.status}, 'todo')`.as('one_off_status')
 		})
 		.from(exceptionalTasks)
+		.leftJoin(notebooks, eq(exceptionalTasks.notebookId, notebooks.id))
 		.leftJoin(categories, eq(exceptionalTasks.categoryId, categories.id))
 		.leftJoin(activities, eq(exceptionalTasks.activityId, activities.id))
 		.leftJoin(workouts, eq(exceptionalTasks.workoutId, workouts.id))
@@ -212,7 +226,8 @@ export function createSlot(ctx: Ctx, raw: BlockInput & { weekday: unknown }): nu
 			...placement,
 			recurrence: raw.recurrence ?? 'weekly',
 			...(raw.ratings ?? {}),
-			meta: raw.meta ?? '{}'
+			...blockNotebook(ctx, raw),
+			attributes: raw.attributes ?? '{}'
 		})
 		.returning({ id: recurringTasks.id })
 		.get();
@@ -240,9 +255,11 @@ export function updateSlot(ctx: Ctx, id: number, raw: BlockInput & { weekday: un
 		.set({
 			weekday,
 			...placement,
-			// `meta` is only touched when the request actually carried it. Drag and
-			// resize post placement fields only, and must not clear it.
-			...(raw.metaPatch !== undefined ? { meta: raw.metaPatch } : {}),
+			// The attributes and the notebook are only touched when the request
+			// actually carried them. Drag and resize post placement fields only,
+			// and must not clear either.
+			...(raw.attributesPatch !== undefined ? { attributes: raw.attributesPatch } : {}),
+			...blockNotebook(ctx, raw),
 			/*
 			 * And the rhythm, on the same rule and for the same reason.
 			 *
@@ -592,7 +609,8 @@ export function createExceptional(
 			// calendar of its own.
 			recipeId: ownedRecipeId(ctx, raw.recipeId),
 			...(raw.ratings ?? {}),
-			meta: raw.meta ?? '{}'
+			...blockNotebook(ctx, raw),
+			attributes: raw.attributes ?? '{}'
 		})
 		.returning({ id: exceptionalTasks.id })
 		.get();
@@ -616,7 +634,8 @@ export function updateExceptional(ctx: Ctx, id: number, raw: BlockInput & { date
 			// actually sent one.
 			...(raw.recurrence !== undefined ? { recurrence: raw.recurrence } : {}),
 			...(raw.ratings ?? {}),
-			...(raw.metaPatch !== undefined ? { meta: raw.metaPatch } : {})
+			...blockNotebook(ctx, raw),
+			...(raw.attributesPatch !== undefined ? { attributes: raw.attributesPatch } : {})
 		})
 		.where(and(eq(exceptionalTasks.id, id), eq(exceptionalTasks.userId, ctx.userId)))
 		.run();
@@ -753,7 +772,8 @@ export function moveOccurrence(
 				urgency: slot.urgency,
 				interest: slot.interest,
 				ease: slot.ease,
-				meta: slot.meta
+				attributes: slot.attributes,
+				notebookId: slot.notebookId
 			})
 			.returning({ id: exceptionalTasks.id })
 			.get();
@@ -806,7 +826,8 @@ export function convertRepeat(ctx: Ctx, id: number, raw: { to: unknown; date: un
 					urgency: one.urgency,
 					interest: one.interest,
 					ease: one.ease,
-					meta: one.meta
+					attributes: one.attributes,
+					notebookId: one.notebookId
 				})
 				.run();
 
@@ -843,7 +864,8 @@ export function convertRepeat(ctx: Ctx, id: number, raw: { to: unknown; date: un
 				urgency: slot.urgency,
 				interest: slot.interest,
 				ease: slot.ease,
-				meta: slot.meta
+				attributes: slot.attributes,
+				notebookId: slot.notebookId
 			})
 			.run();
 
@@ -1023,7 +1045,7 @@ export { ratingsFromForm };
  * Three answers, not two. `undefined` means the form did not mention it at
  * all, and the field is then left alone: a drag or a resize posts placement
  * only, and must not silently take somebody's reminder off a block they were
- * only moving. Same rule as `meta` below.
+ * only moving. Same rule as the attributes and the notebook.
  */
 function parseRemindLead(raw: unknown): number | null | undefined {
 	if (raw === undefined) return undefined;
@@ -1062,6 +1084,14 @@ function parseBlock(ctx: Ctx, raw: BlockInput) {
 		label,
 		...(remindLeadMinutes === undefined ? {} : { remindLeadMinutes })
 	};
+}
+
+/**
+ * `{ notebookId }` when the caller said something about the notebook, nothing
+ * when it did not — a drag posts placement only and must not unfile a block.
+ */
+function blockNotebook(ctx: Ctx, raw: BlockInput) {
+	return raw.notebookId === undefined ? {} : { notebookId: ownedNotebookId(ctx, raw.notebookId) };
 }
 
 /** A workout id from a form is a number until it is checked against the owner. */

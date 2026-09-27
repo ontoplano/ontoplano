@@ -595,7 +595,7 @@ can call it at every startup and the newest version's vocabulary wins.
 
 **DELETE** — requires `plugin:declare`
 
-Withdraw a manifest. The metadata keys keep working; they just lose their label.
+Withdraw a manifest. The attribute keys keep working; they just lose their label.
 
 ### `/api/v1/reminders/upcoming`
 

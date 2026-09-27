@@ -69,7 +69,6 @@ shows up here on the next build.
 | [`media-permission`](#media-permission)          | Whether a caller may see a file, decided by what the file is used for.                                                                                                                                                                                               |
 | [`media-referrers`](#media-referrers)            | What points at a picture or a recording, and where it lives.                                                                                                                                                                                                         |
 | [`media`](#media)                                | Pictures: what is accepted, where they go, and who may see one.                                                                                                                                                                                                      |
-| [`meta`](#meta)                                  | User-defined key/value metadata attached to planner slots.                                                                                                                                                                                                           |
 | [`model-catalog`](#model-catalog)                | What a provider will actually answer to, asked rather than typed.                                                                                                                                                                                                    |
 | [`model-keys`](#model-keys)                      | The model-provider key behind the in-app chat.                                                                                                                                                                                                                       |
 | [`newsletter`](#newsletter)                      | The one channel nobody else can take away.                                                                                                                                                                                                                           |
@@ -111,6 +110,7 @@ shows up here on the next build.
 | [`streams`](#streams)                            | Declare a stream. Idempotent per (user, slug) so producers can call it at every startup.                                                                                                                                                                             |
 | [`subscriptions`](#subscriptions)                | What an account may do, and until when.                                                                                                                                                                                                                              |
 | [`tags`](#tags)                                  | Tags, and the rows that join them to what they tag.                                                                                                                                                                                                                  |
+| [`task-attributes`](#task-attributes)            | A task's attributes: user-defined key/value pairs on a task block or a todo.                                                                                                                                                                                         |
 | [`time`](#time)                                  | Time, in the two shapes this app actually has.                                                                                                                                                                                                                       |
 | [`today`](#today)                                | One day, in one request.                                                                                                                                                                                                                                             |
 | [`todo-actions`](#todo-actions)                  | Everything that can be done to a todo, wherever the row is on screen.                                                                                                                                                                                                |
@@ -1105,6 +1105,12 @@ A bill is archived, never deleted while it has history: its payments are the
 point. `deleteBill` exists for one made by mistake and takes its payments
 with it, on purpose.
 
+A period can also be skipped — the gym frozen for a month — which is a row
+of its own with nothing paid, so the period reads as settled rather than
+overdue. And a bill can be automatic, a subscription on a card: it never
+asks to be paid, and `recordAutomaticPayments` writes its payment on each
+due day so the history is still true.
+
 ### Functions
 
 #### `periodFor(rhythm, when)`
@@ -1119,14 +1125,23 @@ Every bill, active first, newest within each — or one subject's.
 is this room looking at one subject and draws the rows with the same
 component, so it needs exactly what the room needs.
 
+#### `summariseHistory(entries)`
+
+The numbers under a bill's history, from its rows.
+
+#### `billHistory(ctx, billId)`
+
+One bill's history, with automatic payments caught up first.
+
 #### `listBillsThisPeriod(ctx, opts)`
 
-The bills, each saying which period it is in and whether that one is settled.
+The bills, each saying which period it is in and how that one was settled.
 
 The Finance room worked this out in its own `load`, so anywhere else that
 showed a bill — a notebook's Bills tab — had the row without the two things
 the row is about: which period the tick would pay, and whether it is already
-paid. A row drawn without them offers to pay a bill that is paid.
+paid. A row drawn without them offers to pay a bill that is paid. The
+history rides along because the row expands into it, on both screens.
 
 #### `getBill(ctx, id)`
 
@@ -1137,6 +1152,9 @@ paid. A row drawn without them offers to pay a bill that is paid.
 #### `setArchived(ctx, id, archived)`
 
 Archive keeps the history; the bill leaves the active list and its funnel.
+
+Bringing an automatic one back starts its recording from today: the time it
+spent put away was not paid, and catching up across it would say it was.
 
 #### `deleteBill(ctx, id)`
 
@@ -1166,13 +1184,38 @@ sign is dropped.
 
 Undo a payment for a period — it was never paid, or paid in error.
 
+#### `skipPeriod(ctx, billId, input)`
+
+Say a period was skipped on purpose — nothing was owed, nothing was paid.
+
+Refused on a period that is paid: replacing a payment with a skip would lose
+what was paid, and undoing the payment first is one press.
+
+#### `unskipPeriod(ctx, billId, period)`
+
+Take a skip back — the period is open again. The inverse of `skipPeriod`.
+
 #### `listPayments(ctx, billId)`
 
 #### `monthSummary(ctx, month, flow)`
 
 A month, the way the section's first page reads it: what was expected of the
 monthly bills, what has actually been paid this month across all bills, and
-the gap between the two.
+the gap between the two. A monthly bill skipped this month expected nothing.
+
+#### `recordAutomaticPayments(ctx)`
+
+Write the payments automatic bills have made since they were last looked at.
+
+A subscription on a card is paid whether or not anybody says so, so its
+history is written for it: one payment per due day that has come, for the
+expected amount, marked as the app's rather than a person's. From the bill's
+mark forward only, and the mark moves to today — so a payment somebody undid
+stays undone, and a period already paid or skipped by hand is left alone.
+
+Called by every read that shows a bill's settled state, so the device
+instance, which has no job running in the background, is as true as the
+server. Idempotent: calling it twice in a day writes nothing the second time.
 
 #### `billsDueBetween(ctx, from, to)`
 
@@ -1180,8 +1223,10 @@ the gap between the two.
 
 - `Rhythm`
 - `Flow`
+- `PaymentStatus`
 - `Bill`
 - `BillPayment`
+- `BillHistory` — What a bill has cost so far, and what one period of it costs on average.
 - `BillDue` — The bills that want paying between two dates.
 
 ## birthdays
@@ -2818,6 +2863,10 @@ The whole tree, each node carrying how many items sit directly in it.
 
 The chain of names from the root down to this location, for "Living room › chest › drawer".
 
+#### `locationChoices(ctx)`
+
+Every location with its whole path, for a form's location picker.
+
 #### `createLocation(ctx, input)`
 
 #### `updateLocation(ctx, id, input)`
@@ -3142,51 +3191,6 @@ the old one is a constraint failure rather than a swap.
 
 - `Picture`
 - `RecipePicture`
-
-## meta
-
-User-defined key/value metadata attached to planner slots.
-
-Ontoplano stores these and never interprets them. Plugins read them from the
-schedule API and decide what they mean — `alarm: true` and `remind_min: 5`
-make an alarm app ring five minutes early, and a future ontoplano app can act
-on the same pairs without a schema change.
-
-Deliberately constrained rather than free-form JSON: an unbounded blob turns
-into a dumping ground, and a typo like `remind_mins` would silently do
-nothing forever. Flat string→string, validated keys, hard caps.
-
-### Functions
-
-#### `parseMeta(raw)`
-
-#### `serialiseMeta(input)`
-
-Validate and serialise a metadata object for storage.
-
-Accepts either a plain object or the paired `metaKey[]` / `metaValue[]` form
-a form submission produces.
-
-#### `metaFromFormData(formData)`
-
-Build a metadata object from parallel form fields.
-
-Forms submit `metaKey` and `metaValue` as ordered parallel lists, which is
-the shape a repeatable key/value editor produces.
-
-#### `metaPatchFromFormData(formData)`
-
-Metadata patch for an update, distinguishing "not submitted" from "cleared".
-
-Drag and resize in the grid post to the same update action with only the
-placement fields. Those requests must leave metadata alone — returning `{}`
-would silently wipe a slot's alarm settings every time it was moved. A form
-that genuinely clears the last pair submits an empty `metaKey`, which is
-still present in the payload and so reads as an explicit `{}`.
-
-### Types
-
-- `SlotMeta`
 
 ## model-catalog
 
@@ -3930,18 +3934,18 @@ Spent the moment a checkout opens: the choice is the provider's now.
 
 Plugin manifests: what a plugin says it understands.
 
-Slot metadata accepts any key, which is what lets a plugin define its own
+A task's attributes accept any key, which is what lets a plugin define its own
 vocabulary without a schema change here. The price is anonymity — a list of
 keys with nothing saying who reads them. A manifest buys the provenance back
 without closing the vocabulary.
 
 ### Functions
 
-#### `parseMetaKeys(input)`
+#### `parseAttributeKeys(input)`
 
 Validate a declared vocabulary.
 
-Keys must look like metadata keys, because a manifest that describes keys
+Keys must look like attribute names, because a manifest that describes keys
 nobody can actually set is worse than no manifest — it documents something
 that will be rejected on save.
 
@@ -3956,16 +3960,16 @@ drop it, and the manifest it sends is the whole truth about that version.
 
 #### `deleteManifest(userId, source)`
 
-#### `metaKeyOwners(userId)`
+#### `attributeKeyOwners(userId)`
 
-Which plugin claims each key, for the metadata editor.
+Which plugin claims each key, for the attributes editor.
 
 A key claimed by two plugins lists both — that is real, and hiding one would
 misrepresent what happens when it is set.
 
 ### Types
 
-- `PluginMetaKey`
+- `PluginAttributeKey`
 - `PluginManifest`
 
 ## preferences
@@ -4017,6 +4021,15 @@ Whether the chat inside the app may delete things.
 
 A checkbox, so its absence from the form is the answer "no" rather than a
 missing field — which is why this takes the posted value and not a boolean.
+
+#### `saveCaptureSettings(ctx, raw)`
+
+The capture wheel: its wedges, their order, and the notebook it writes into.
+
+At least one wedge, because a wheel with none is a button that does nothing.
+The notebook has to be one this account can file things in — its own, or
+one the family shares — and one it cannot is the same answer as one that
+does not exist.
 
 ## push
 
@@ -5301,6 +5314,15 @@ permissions screen a lie in one place.
 
 #### `setChatMayDelete(userId, may)`
 
+#### `getCaptureSettings(userId)`
+
+Which wedges the capture wheel holds, in what order, and the notebook its
+forms start in. Read leniently — see `$lib/capture-settings`; the notebook
+is checked when it is written, and a form offered one that has since gone
+simply does not find it among the notebooks it lists.
+
+#### `setCaptureSettings(userId, settings)`
+
 ### Types
 
 - `WeekSettings`
@@ -5917,6 +5939,15 @@ during a migration.
 
 The label the account calls this word, if it has one.
 
+#### `untagNotebook(userId, notebookId, tagId)`
+
+Take a label off everything in one notebook, and nothing outside it.
+
+The notebook's own tag list could rename and recolour, which are account-
+wide, but not remove — and removing across the whole account is the Tags
+tab's job, not something to do from inside one subject. A label nothing
+carries any more afterwards goes, as it does when the last thing drops it.
+
 #### `describeTag(userId, id, description)`
 
 What a label means here, in the account's own words.
@@ -5972,6 +6003,71 @@ One notebook's labels — nothing, for a notebook this account never filed anyth
 - `TagRow` — The label as it is stored.
 - `TagUseKind` — What a tag counts towards, in the order a notebook's own tabs run.
 - `NotebookTag` — A label inside one notebook: what it is, and what carries it in there.
+
+## task-attributes
+
+A task's attributes: user-defined key/value pairs on a task block or a todo.
+
+Ontoplano stores these and never interprets them. Plugins read them from the
+schedule API and decide what they mean — `alarm: true` and `remind_min: 5`
+make an alarm app ring five minutes early, and a future ontoplano app can act
+on the same pairs without a schema change.
+
+The same idea as an inventory item's attributes, with a stricter key: a
+plugin reads these by name, so a key is an identifier rather than a word —
+`remind_min`, never `Remind min` — and a typo like `remind_mins` is at least
+refused in the same shape every time. Flat string→string, validated keys,
+hard caps: an unbounded blob turns into a dumping ground.
+
+Called `meta` until 0.184; the schedule API and the plugin manifest still
+answer to the old names until `META_REMOVED_IN`.
+
+### Functions
+
+#### `parseAttributes(raw)`
+
+#### `serialiseAttributes(input)`
+
+Validate and serialise attributes for storage.
+
+Accepts a plain object, or a JSON string of one.
+
+#### `withAttribute(stored, key, value)`
+
+One attribute set, changed or removed, the rest left as they were.
+
+What the ⓘ dialog's pencil posts: one pair, not the whole set, so editing a
+value cannot drop a key somebody else wrote in the meantime. An empty value
+removes the key, the same rule as everywhere else.
+
+#### `attributesFromFormData(formData)`
+
+Attributes from parallel form fields.
+
+Forms submit `attributeKey` and `attributeValue` as ordered parallel lists,
+which is the shape a repeatable key/value editor produces.
+
+#### `attributesPatchFromFormData(formData)`
+
+Attributes for an update, distinguishing "not submitted" from "cleared".
+
+Drag and resize in the grid post to the same update action with only the
+placement fields. Those requests must leave attributes alone — returning
+`{}` would silently wipe a block's alarm settings every time it was moved. A
+form that genuinely clears the last pair still carries the editor's
+`attributesPresent` marker, and so reads as an explicit `{}`.
+
+#### `attributesArg(args)`
+
+The attributes an API or MCP caller sent, from the current spelling or the
+old one, and whether the old one was used.
+
+`attributes` wins when both are given. Undefined means neither was sent,
+which an update reads as "leave them alone".
+
+### Types
+
+- `TaskAttributes`
 
 ## time
 
@@ -6208,7 +6304,7 @@ task — dragging one off the grid would quietly delete every future
 occurrence, which is not what "not today" means. Refused, in words.
 
 What survives is what a todo can hold: the name, the notes, the category, the
-notebook and the three ratings. The date and the hour are what is being
+notebook, the three ratings and the attributes. The date and the hour are what is being
 given up, and the status comes with it — a block ticked off and then pulled
 back is still done.
 
@@ -6257,6 +6353,14 @@ Where the cards sit in a column, after a drag.
 
 Ids the account does not own simply do not match, so a posted list can
 reorder nothing but its own todos.
+
+#### `setTodoAttribute(ctx, id, key, value)`
+
+One attribute on a todo, set or — with an empty value — removed.
+
+Its own verb because the ⓘ dialog edits one value in place: sending the
+whole set back would need the dialog to hold every other pair as it was,
+and would overwrite one somebody changed in the meantime.
 
 #### `setTodoRatings(ctx, id, ratings)`
 

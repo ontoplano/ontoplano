@@ -95,10 +95,13 @@ export const recurringTasks = sqliteTable(
 		urgency: integer('urgency'),
 		interest: integer('interest'),
 		ease: integer('ease'),
-		// User-defined key/value pairs, opaque to ontoplano and surfaced to
-		// plugins via the schedule API — e.g. { "alarm": "true", "remind_min": "5" }.
-		// Stored as a JSON object of string→string. See services/meta.ts.
-		meta: text('meta').notNull().default('{}'),
+		// The block's attributes: user-defined key/value pairs, opaque to
+		// ontoplano and surfaced to plugins via the schedule API — e.g.
+		// { "alarm": "true", "remind_min": "5" }. A JSON object of string→string.
+		// See services/task-attributes.ts. Called `meta` until 0.184.
+		attributes: text('attributes').notNull().default('{}'),
+		// The subject this block belongs to, the same as a one-off's below.
+		notebookId: integer('notebook_id').references(() => notebooks.id, { onDelete: 'set null' }),
 		/**
 		 * The recipe this block is for, when it is a meal.
 		 *
@@ -120,6 +123,7 @@ export const recurringTasks = sqliteTable(
 	},
 	(table) => [
 		index('slots_user_idx').on(table.userId),
+		index('recurring_tasks_notebook_idx').on(table.notebookId),
 		index('slots_weekday_idx').on(table.weekday),
 		index('slots_weekday_time_idx').on(table.weekday, table.startTime),
 		check('slots_urgency_range', sql`${table.urgency} IS NULL OR ${table.urgency} BETWEEN 0 AND 5`),
@@ -713,7 +717,8 @@ export const exceptionalTasks = sqliteTable(
 		urgency: integer('urgency'),
 		interest: integer('interest'),
 		ease: integer('ease'),
-		meta: text('meta').notNull().default('{}'),
+		/** See `recurring_tasks.attributes`. */
+		attributes: text('attributes').notNull().default('{}'),
 
 		/** The recipe this block is for, when it is a meal. See `recurring_tasks`. */
 		recipeId: integer('recipe_id').references(() => recipes.id, { onDelete: 'set null' }),
@@ -812,6 +817,12 @@ export const todoTasks = sqliteTable(
 		urgency: integer('urgency'),
 		interest: integer('interest'),
 		ease: integer('ease'),
+		/**
+		 * The task's attributes, the same shape a block's are: a JSON object of
+		 * string→string. Carried onto the block when the task is put on the
+		 * plan, and back again when the block goes back to the list.
+		 */
+		attributes: text('attributes').notNull().default('{}'),
 		createdAt: text('created_at')
 			.notNull()
 			.default(sql`(CURRENT_TIMESTAMP)`),
@@ -2509,9 +2520,9 @@ export const weeklyReviews = sqliteTable(
 /**
  * What a plugin says about itself.
  *
- * Slot metadata is deliberately open — any key is accepted, so a plugin can
- * invent its own vocabulary without a schema change. The cost is that the keys
- * arrive anonymous: `hard_alarm` next to `location` with nothing saying which
+ * A task block's attributes are deliberately open — any key is accepted, so a
+ * plugin can invent its own vocabulary without a schema change. The cost is
+ * that the keys arrive anonymous: `hard_alarm` next to `location` with nothing saying which
  * program reads which, or what happens if you set it.
  *
  * A manifest is a plugin declaring, through the API and with its own token,
@@ -2538,6 +2549,8 @@ export const pluginManifests = sqliteTable(
 		 * The keys this plugin reads, as JSON:
 		 * [{ key, description, example }]. Stored as a blob because it is the
 		 * plugin's vocabulary, not ours — validated on the way in, never joined on.
+		 *
+		 * `attributeKeys` in the API since 0.184; the column kept its old name.
 		 */
 		metaKeys: text('meta_keys').notNull().default('[]'),
 		updatedAt: text('updated_at')

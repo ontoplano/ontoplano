@@ -201,6 +201,9 @@ function referencesOf(table: never): { column: string; target: string; required:
 	return out;
 }
 
+/** The tables whose `attributes` column was called `meta` in older exports. */
+const TABLES_WITH_LEGACY_META = new Set(['recurringTasks', 'exceptionalTasks']);
+
 /** `recurring_tasks` for the property named `recurringTasks`, and back. */
 function sqlNames(): Map<string, string> {
 	return new Map(
@@ -514,6 +517,15 @@ export async function importAccount(
 				 */
 				if (table.name === 'notebooks' && !('folder' in row) && typeof row.title === 'string')
 					Object.assign(row, splitLegacyTitle(row.title));
+				/*
+				 * An export from before 0.184: a task block's attributes were
+				 * called `meta`. Renamed the way migration 0110 renamed the column,
+				 * or a restore would bring the blocks back without them.
+				 */
+				if (TABLES_WITH_LEGACY_META.has(table.name) && 'meta' in row) {
+					if (!('attributes' in row)) row.attributes = row.meta;
+					delete row.meta;
+				}
 				if (table.name === 'ringtones') {
 					if (!(RINGTONE_TYPES as readonly string[]).includes(String(row.mime)))
 						throw new ValidationError({ key: 'errors.accountImport.theFileCarriesASound' });

@@ -23,7 +23,7 @@ import {
 	undo,
 	undoable
 } from '../src/lib/undo.svelte';
-import { mergeSuggestions, parseSlotMeta, suggestedKeys } from '../src/lib/meta-keys';
+import { mergeSuggestions, parseStoredAttributes, suggestedKeys } from '../src/lib/attribute-keys';
 import { translator } from '../src/lib/i18n';
 import { messages as english } from '../src/lib/i18n/catalogues/en';
 import { commandKey } from '../src/lib/platform';
@@ -326,7 +326,9 @@ describe('the keys a block can carry', () => {
 		const merged = mergeSuggestions(t, [
 			{
 				name: 'scale',
-				metaKeys: [{ key: 'location', description: 'Which room the scale is in', example: 'B12' }]
+				attributeKeys: [
+					{ key: 'location', description: 'Which room the scale is in', example: 'B12' }
+				]
 			}
 		]);
 
@@ -337,8 +339,8 @@ describe('the keys a block can carry', () => {
 
 	test('two plugins claiming one key are both named, not picked between', () => {
 		const merged = mergeSuggestions(t, [
-			{ name: 'scale', metaKeys: [{ key: 'weight', description: 'kg', example: '80' }] },
-			{ name: 'watch', metaKeys: [{ key: 'weight', description: '', example: '' }] }
+			{ name: 'scale', attributeKeys: [{ key: 'weight', description: 'kg', example: '80' }] },
+			{ name: 'watch', attributeKeys: [{ key: 'weight', description: '', example: '' }] }
 		]);
 
 		const weight = merged.find((s) => s.key === 'weight')!;
@@ -349,7 +351,7 @@ describe('the keys a block can carry', () => {
 
 	test('a plugin key the app never suggested is added', () => {
 		const merged = mergeSuggestions(t, [
-			{ name: 'scale', metaKeys: [{ key: 'zzz_last', description: 'd', example: 'e' }] }
+			{ name: 'scale', attributeKeys: [{ key: 'zzz_last', description: 'd', example: 'e' }] }
 		]);
 		expect(merged.map((s) => s.key)).toContain('zzz_last');
 		// Sorted, so the list does not reshuffle as plugins come and go.
@@ -365,7 +367,7 @@ describe('the keys a block can carry', () => {
 
 describe('metadata read back out of storage', () => {
 	test('is a flat set of strings', () => {
-		expect(parseSlotMeta('{"location":"gym","reps":5,"done":true}')).toEqual({
+		expect(parseStoredAttributes('{"location":"gym","reps":5,"done":true}')).toEqual({
 			location: 'gym',
 			reps: '5',
 			done: 'true'
@@ -375,15 +377,15 @@ describe('metadata read back out of storage', () => {
 	test('survives anything that is not that', () => {
 		// It is a column, so it can hold whatever an older version wrote. A block
 		// that throws on render is a block nobody can fix.
-		expect(parseSlotMeta(null)).toEqual({});
-		expect(parseSlotMeta('')).toEqual({});
-		expect(parseSlotMeta('not json')).toEqual({});
-		expect(parseSlotMeta('[1,2]')).toEqual({});
-		expect(parseSlotMeta('"a string"')).toEqual({});
+		expect(parseStoredAttributes(null)).toEqual({});
+		expect(parseStoredAttributes('')).toEqual({});
+		expect(parseStoredAttributes('not json')).toEqual({});
+		expect(parseStoredAttributes('[1,2]')).toEqual({});
+		expect(parseStoredAttributes('"a string"')).toEqual({});
 	});
 
 	test('and drops a value no label could show', () => {
-		expect(parseSlotMeta('{"ok":"yes","nested":{"a":1}}')).toEqual({ ok: 'yes' });
+		expect(parseStoredAttributes('{"ok":"yes","nested":{"a":1}}')).toEqual({ ok: 'yes' });
 	});
 });
 

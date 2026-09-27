@@ -18,6 +18,7 @@ import {
 	notebookFavourites,
 	notebooks,
 	recipes,
+	recurringTasks,
 	todoTasks,
 	workouts
 } from '$lib/db/schema.js';
@@ -157,6 +158,7 @@ const SCOPED: readonly { module: NotebookModule; table: Scopable; stamp: SQLiteC
 	// A todo and a block are the same task at two stages, so they share a count.
 	{ module: 'tasks', table: todoTasks, stamp: todoTasks.updatedAt },
 	{ module: 'tasks', table: exceptionalTasks, stamp: exceptionalTasks.createdAt },
+	{ module: 'tasks', table: recurringTasks, stamp: recurringTasks.updatedAt },
 	{ module: 'goals', table: goals, stamp: goals.updatedAt },
 	{ module: 'ideas', table: ideas, stamp: ideas.updatedAt },
 	{ module: 'inventory', table: inventoryItems, stamp: inventoryItems.updatedAt },
@@ -580,17 +582,35 @@ export function contentsOf(ctx: Ctx, id: number) {
 		// a row there shows — the category, the ratings, whether it is put away.
 		todos: listTodosIn(ctx, id),
 
-		blocks: db
-			.select({
-				id: exceptionalTasks.id,
-				label: exceptionalTasks.label,
-				date: exceptionalTasks.date,
-				startTime: exceptionalTasks.startTime
-			})
-			.from(exceptionalTasks)
-			.where(and(eq(exceptionalTasks.notebookId, id), eq(exceptionalTasks.userId, ctx.userId)))
-			.orderBy(desc(exceptionalTasks.date))
-			.all(),
+		// The task blocks filed here: the ones that repeat, then the one-offs,
+		// newest first. A repeating one has a rhythm where a one-off has a date.
+		blocks: [
+			...db
+				.select({
+					id: recurringTasks.id,
+					label: recurringTasks.label,
+					weekday: recurringTasks.weekday,
+					recurrence: recurringTasks.recurrence,
+					startTime: recurringTasks.startTime
+				})
+				.from(recurringTasks)
+				.where(and(eq(recurringTasks.notebookId, id), eq(recurringTasks.userId, ctx.userId)))
+				.orderBy(asc(recurringTasks.weekday), asc(recurringTasks.startTime))
+				.all()
+				.map((one) => ({ ...one, kind: 'weekly' as const, date: null })),
+			...db
+				.select({
+					id: exceptionalTasks.id,
+					label: exceptionalTasks.label,
+					date: exceptionalTasks.date,
+					startTime: exceptionalTasks.startTime
+				})
+				.from(exceptionalTasks)
+				.where(and(eq(exceptionalTasks.notebookId, id), eq(exceptionalTasks.userId, ctx.userId)))
+				.orderBy(desc(exceptionalTasks.date))
+				.all()
+				.map((one) => ({ ...one, kind: 'once' as const, weekday: null, recurrence: null }))
+		],
 
 		// The whole goal, not a title and a date: the Goals tab draws the same
 		// card the goals room does, which needs the measures, the links and the
@@ -855,7 +875,17 @@ export function deleteNotebook(ctx: Ctx, id: number): void {
 
 		// Everything else a notebook can hold, cut the same way. The rooms keep
 		// their rows; only the pointer at this subject goes.
-		for (const table of [ideas, inventoryItems, ledgers, bills, habits, workouts, recipes]) {
+		for (const table of [
+			ideas,
+			inventoryItems,
+			ledgers,
+			bills,
+			habits,
+			workouts,
+			recipes,
+			exceptionalTasks,
+			recurringTasks
+		]) {
 			tx.update(table)
 				.set({ notebookId: null })
 				.where(and(eq(table.notebookId, id), eq(table.userId, ctx.userId)))

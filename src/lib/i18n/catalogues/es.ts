@@ -44,7 +44,7 @@ export const messages: Catalogue = {
 	'admin.id.deleteThisAccount': 'Eliminar esta cuenta',
 	'admin.id.endPlanThen': 'Terminar el plan entonces',
 	'admin.id.everyBlockEntryNoteGoal':
-		'Se eliminan todos los bloques, movimientos, notas, metas e imágenes que posee esta cuenta, y también desaparece la exportación que podría haberse llevado.',
+		'Se eliminan todos los bloques de tarea, movimientos, notas, metas e imágenes que posee esta cuenta, y también desaparece la exportación que podría haberse llevado.',
 	'admin.id.everythingInItGoesIn':
 		'Todo lo que contiene desaparece, en una sola transacción, sin nada desde donde restaurarlo.',
 	'admin.id.getConfirmationLink': 'Obtener enlace de confirmación',
@@ -114,8 +114,8 @@ export const messages: Catalogue = {
 	'app.bills': 'Facturas',
 	'app.birthdays': 'Cumpleaños',
 	'app.blank': 'En blanco',
-	'app.blocks': 'Bloques',
-	'app.blocksAsTheyStart': 'Bloques, según empiezan',
+	'app.blocks': 'Bloques de tarea',
+	'app.blocksAsTheyStart': 'Bloques de tarea, según empiezan',
 	'app.board': 'Tablero',
 	'app.buy': 'Comprar',
 	'app.byInvitation': 'Por invitación',
@@ -241,6 +241,24 @@ export const messages: Catalogue = {
 	'attach.noneYet': 'Todavía no hay grabaciones.',
 	'attach.recordOne': 'Grabar una',
 	'attach.recording': 'Adjuntar una grabación',
+	'attributeKeys.linkToOpenWithIt': 'Un enlace para abrir con ella',
+	'attributeKeys.whereThisHappens': 'Dónde pasa esto',
+	'attributes.another': '+ Otro',
+	'attributes.beingWritten': 'escribiendo',
+	'attributes.copy': 'Copiar {key}',
+	'attributes.edit': 'Editar {key}',
+	'attributes.emptyRemoves': 'Si se guarda vacío, se quita.',
+	'attributes.namePlaceholder': 'mi atributo',
+	'attributes.needsAName': 'Un atributo necesita un nombre.',
+	'attributes.none': 'Sin atributos.',
+	'attributes.readBy': '{description} — lo lee {plugins}',
+	'attributes.readByPlugins': 'Leído por plugins — p. ej. alarmas',
+	'attributes.remove': 'Eliminar este atributo',
+	'attributes.removeNamed': 'Eliminar el atributo {written}',
+	'attributes.show': 'Ver sus atributos',
+	'attributes.title': 'Atributos',
+	'attributes.valuePlaceholder': 'mi valor',
+	'attributes.valuePlaceholderOptional': 'mi valor (opcional)',
 	'audio.delete': 'Eliminar',
 	'audio.deleteAsk': '¿Eliminar esta grabación?',
 	'audio.deleteForever': 'Esto no se puede deshacer.',
@@ -293,7 +311,7 @@ export const messages: Catalogue = {
 	'card.goalsWhosePeriodCoversToday': 'Metas cuyo período incluye hoy, con su progreso.',
 	'card.oneOfYourOwnQuotes': 'Una de tus propias citas, la misma durante todo el día.',
 	'card.theBlockYouAreIn':
-		'El bloque en el que estás, o el siguiente, y las dos respuestas que pide.',
+		'El bloque de tarea en el que estás, o el siguiente, y las dos respuestas que pide.',
 	'card.theHoursYouHaveTicked': 'Las horas que has completado esta semana, por categoría.',
 	'card.theLastFewIdeasYou': 'Las últimas ideas que tuviste.',
 	'card.theMostRecentThingsYou': 'Lo último que escribiste, lo más reciente primero.',
@@ -380,6 +398,7 @@ export const messages: Catalogue = {
 	'errors.assistantLog.thatMeasureIsAlreadyBack': 'Esa medida ya está de vuelta en la meta.',
 	'errors.assistantLog.thatReminderBelongedToSomething':
 		'Ese recordatorio pertenecía a algo — ponlo de nuevo en la cosa misma.',
+	'errors.attributes.mustBeAnObject': 'attributes tiene que ser un objeto',
 	'errors.audio.aRecordingNeedsAName': 'Una grabación necesita un nombre.',
 	'errors.audio.noSuchRecording': 'Esa grabación no existe.',
 	'errors.audio.thatIsNotARecording': 'Esta instancia no acepta ese tipo de grabación.',
@@ -445,12 +464,14 @@ export const messages: Catalogue = {
 	'errors.imports.tooManyImports':
 		'Demasiadas importaciones con ese nombre — dale a esta un nombre propio',
 	'errors.instance.unknownRegistrationMode': 'Modo de registro desconocido',
-	'errors.instances.invalidBlock': 'Bloque inválido',
+	'errors.instances.aRepeatingBlocksNotebook':
+		'El cuaderno y los atributos de un bloque de tarea que se repite son de todo el patrón: cámbialos en el bloque que se repite.',
+	'errors.instances.invalidBlock': 'Bloque de tarea inválido',
 	'errors.instances.invalidDate': 'Fecha inválida',
 	'errors.instances.invalidStatus': 'Estado inválido',
 	'errors.instances.nothingToChangeSay':
 		'Nada que cambiar — di una hora, día, duración, título o categoría nuevos.',
-	'errors.instances.thatBlockHasNothing': 'Ese bloque no tiene nada que mover.',
+	'errors.instances.thatBlockHasNothing': 'Ese bloque de tarea no tiene nada que mover.',
 	'errors.insufficientScope': 'Esta clave no tiene permiso para eso.',
 	'errors.inventory.invalidPrice': 'Precio inválido',
 	'errors.inventory.onlyReplenishItemsCan': 'Solo los artículos de reposición se pueden reponer',
@@ -477,7 +498,6 @@ export const messages: Catalogue = {
 	'errors.media.thatPictureIsAlready': 'Esa imagen ya está en esta receta.',
 	'errors.mediaUpload.noFileInThatRequest': 'No hay archivo en esa petición.',
 	'errors.mediaUpload.signInFirst': 'Inicia sesión primero.',
-	'errors.meta.metadataMustBeAnObject': 'metadata tiene que ser un objeto',
 	'errors.modelCatalog.aKeyIsNeeded': 'Hace falta una clave para pedir los modelos.',
 	'errors.modelCatalog.unknownProvider': 'Proveedor desconocido',
 	'errors.newsletter.notAvailableHere': 'No disponible aquí.',
@@ -502,10 +522,10 @@ export const messages: Catalogue = {
 	'errors.people.somebodyByThatNameAlready': 'Ya existe alguien con ese nombre',
 	'errors.people.thatIsALot': 'Son demasiadas personas para una sola entrada',
 	'errors.people.unknownRelationship': 'Relación desconocida',
-	'errors.plugins.eachMetadataKeyMust': 'cada clave de metadatos tiene que ser un objeto',
+	'errors.plugins.attributeKeysMustBeAnArray': 'attributeKeys tiene que ser una lista',
+	'errors.plugins.eachAttributeKeyMust': 'cada clave de atributo tiene que ser un objeto',
 	'errors.plugins.homepageMustBeAWeb': 'homepage tiene que ser una dirección web',
 	'errors.plugins.homepageMustBeAnHttp': 'homepage tiene que ser una dirección http o https',
-	'errors.plugins.metakeysMustBeAnArray': 'metaKeys tiene que ser una lista',
 	'errors.plugins.sourceMustBeLowercaseLetters':
 		'source tiene que ser letras minúsculas, dígitos, guiones y guiones bajos, empezando por una letra',
 	'errors.preferences.captureNeedsAWedge': 'Deja al menos una porción en la rueda',
@@ -528,7 +548,7 @@ export const messages: Catalogue = {
 	'errors.registration.thatInvitationCode': 'Ese código de invitación no vale, o ya se usó',
 	'errors.registration.thisInstanceIsNotAccepting': 'Esta instancia no acepta cuentas nuevas',
 	'errors.reminders.noSuchReminder': 'Ese recordatorio no existe',
-	'errors.reminders.thatBlockHasNoTime': 'Ese bloque no tiene hora',
+	'errors.reminders.thatBlockHasNoTime': 'Ese bloque de tarea no tiene hora',
 	'errors.reminders.thatIsNotADay': 'Eso no es un día, ni un día con hora.',
 	'errors.review.invalidStatus': 'Estado inválido',
 	'errors.review.unknownKind': 'Tipo desconocido',
@@ -577,7 +597,8 @@ export const messages: Catalogue = {
 	'errors.todos.invalidBatch': 'Elige una acción en lote válida.',
 	'errors.todos.invalidStatus': 'Estado inválido',
 	'errors.todos.nothingWasChosen': 'No se eligió nada',
-	'errors.todos.onlyOneOffBlocksCan': 'Solo los bloques sueltos pueden volver a la lista de tareas',
+	'errors.todos.onlyOneOffBlocksCan':
+		'Solo los bloques de tarea sueltos pueden volver a la lista de tareas',
 	'errors.todos.thatIsTooManyAtOnce': 'Son más tareas de las que un clic puede cambiar',
 	'errors.tokens.aCalendarLinkReads':
 		'Un enlace de calendario lee tu agenda y nada más — no se puede combinar con otros permisos',
@@ -600,12 +621,7 @@ export const messages: Catalogue = {
 	'fan.accountAndHelp': 'Cuenta y ayuda',
 	'fan.noTourForThisScreen': 'No hay recorrido para esta pantalla',
 	'fan.showMeAround': 'Muéstrame cómo funciona',
-	'fields.buy.anAttributeNeedsAName': 'Un atributo necesita un nombre.',
-	'fields.buy.another': '+ Otro',
-	'fields.buy.attributeName': 'mi atributo',
-	'fields.buy.attributeValue': 'mi valor (opcional)',
 	'fields.buy.attributes': 'Atributos',
-	'fields.buy.beingWritten': 'escribiendo',
 	'fields.buy.howManyYouKeep': 'Cuántos guardas',
 	'fields.buy.item': 'Artículo',
 	'fields.buy.list': 'Lista',
@@ -614,8 +630,6 @@ export const messages: Catalogue = {
 	'fields.buy.location': 'Ubicación',
 	'fields.buy.nowhereInParticular': '— ningún lugar en particular —',
 	'fields.buy.price': 'Precio',
-	'fields.buy.removeTheAttribute': 'Eliminar el atributo {written}',
-	'fields.buy.removeThisAttribute': 'Eliminar este atributo',
 	'fields.buy.restock': 'Reponer',
 	'fields.buy.theCountTheListCompares': 'La cantidad con la que la lista compara.',
 	'fields.buy.whatItUsuallyCosts': 'Lo que suele costar.',
@@ -943,7 +957,7 @@ export const messages: Catalogue = {
 	'goals.eGFitness': 'p. ej. fitness',
 	'goals.eGTrainThreeTimesA': 'p. ej. entrenar tres veces por semana',
 	'goals.editGoal': 'Editar meta',
-	'goals.everyBlockOf': '{name} — cada bloque de esto cuenta a medida que se hace',
+	'goals.everyBlockOf': '{name} — cada bloque de tarea suyo cuenta a medida que se hace',
 	'goals.everyWeekIts': '{name} — cada semana; sus repeticiones cuentan a medida que se hacen',
 	'goals.fitnessStudyMoney': 'Estado físico, estudio, dinero — lo que sea que sigas.',
 	'goals.goal': 'Meta',
@@ -965,7 +979,7 @@ export const messages: Catalogue = {
 	'goals.noGoalsYet': 'Todavía no hay metas',
 	'goals.noMeasureSet': 'Ninguna medida definida',
 	'goals.noOpenTodos': 'No hay tareas abiertas.',
-	'goals.noWeeklyBlocksYet': 'Todavía no hay bloques semanales',
+	'goals.noWeeklyBlocksYet': 'Todavía no hay bloques de tarea semanales',
 	'goals.none': '— ninguna —',
 	'goals.nothingAtThisHorizon': 'Nada en este horizonte.',
 	'goals.nothingCountedYet': 'Nada contado todavía',
@@ -996,7 +1010,7 @@ export const messages: Catalogue = {
 	'goals.towardsThis': 'hacia esto',
 	'goals.week': 'Semana',
 	'goals.weekOfDateYear': 'Semana del {date} {year}',
-	'goals.weeklyBlocks': 'Bloques semanales',
+	'goals.weeklyBlocks': 'Bloques de tarea semanales',
 	'goals.whatCountsTowardsThisGoal': 'Qué cuenta para esta meta',
 	'goals.whatKindOfNumber': 'Qué tipo de número',
 	'goals.year': 'Año',
@@ -1057,7 +1071,7 @@ export const messages: Catalogue = {
 	'health.recipes.id.ingredient': 'Ingrediente',
 	'health.recipes.id.ingredients': 'Ingredientes',
 	'health.recipes.id.itBecomesABlockOn':
-		'Se convierte en un bloque en el plan, como cualquier otra cosa a la que le dediques tiempo.',
+		'Se convierte en un bloque de tarea en el plan, como cualquier otra cosa a la que le dediques tiempo.',
 	'health.recipes.id.itsIngredientsStayOnThe':
 		'Sus ingredientes se quedan en la lista de compras — son cosas que compras, no partes de la receta.',
 	'health.recipes.id.keepIt': 'Conservarla',
@@ -1100,7 +1114,7 @@ export const messages: Catalogue = {
 	'health.recipes.id.writeIt': 'Escribirlo',
 	'health.recipes.ingredients': '{ingredients} ingredientes',
 	'health.recipes.itBecomesABlockOn':
-		'Se convierte en un bloque del plan, como cualquier otra cosa a la que le dedicas tiempo.',
+		'Se convierte en un bloque de tarea del plan, como cualquier otra cosa a la que le dedicas tiempo.',
 	'health.recipes.markdownHeadingsListsNumbersIngredients':
 		'Markdown: encabezados, listas, números. Los ingredientes van después.',
 	'health.recipes.method': 'Preparación',
@@ -1242,7 +1256,7 @@ export const messages: Catalogue = {
 	'home.allEntries': 'Todas las entradas →',
 	'home.backToTheDashboard': 'Volver al panel',
 	'home.bills': 'Facturas',
-	'home.blocksCount': { one: '{count} bloque', other: '{count} bloques' },
+	'home.blocksCount': { one: '{count} bloque de tarea', other: '{count} bloques de tarea' },
 	'home.countToGo': 'quedan {count}',
 	'home.demoVersion': 'Versión de demostración',
 	'home.diary': 'Diario',
@@ -1252,7 +1266,7 @@ export const messages: Catalogue = {
 	'home.dueThe': '· vence el',
 	'home.edit': 'Editar →',
 	'home.editRarr': 'Editar →',
-	'home.everyBlockOnTodaySPlan': 'Todos los bloques del plan de hoy tienen respuesta.',
+	'home.everyBlockOnTodaySPlan': 'Todos los bloques de tarea del plan de hoy tienen respuesta.',
 	'home.everythingPaidThisMonth': 'Todo pagado este mes.',
 	'home.everythingTheDashboardCan':
 		'Todo lo que el panel puede mostrar, por sección. Pulsa uno para ponerlo o quitarlo.',
@@ -1310,7 +1324,7 @@ export const messages: Catalogue = {
 	'home.nothingElseToday': 'Nada más por hoy',
 	'home.nothingHereIsPromisedTo': 'Nada de lo que hay aquí tiene garantizado sobrevivir.',
 	'home.nothingIsPlannedForToday':
-		'No hay nada planificado para hoy. Un bloque es un tiempo que le das a algo.',
+		'No hay nada planificado para hoy. Un bloque de tarea es un tiempo que le das a algo.',
 	'home.nothingLeftToday': 'nada queda por hoy',
 	'home.nothingOnTheListAnything': 'Nada en la lista. Todo lo que aún no tiene día vive aquí.',
 	'home.nothingOnTheWishlist':
@@ -1719,7 +1733,8 @@ export const messages: Catalogue = {
 	'mail.reset.small':
 		'El enlace funciona una sola vez y vence en una hora. Si no fuiste tú, nada ha cambiado y puedes ignorar este mensaje.',
 	'mail.reset.subject': 'Restablece tu contraseña de ontoplano',
-	'mail.review.allAnswered': 'Todos los bloques tienen respuesta — no hay nada esperando por ti.',
+	'mail.review.allAnswered':
+		'Todos los bloques de tarea tienen respuesta — no hay nada esperando por ti.',
 	'mail.review.andMore': { one: ' y {count} más', other: ' y {count} más' },
 	'mail.review.busiest': 'La mayor parte fue {category}: {done} de {planned}.',
 	'mail.review.close': 'Cerrar la semana',
@@ -1728,13 +1743,13 @@ export const messages: Catalogue = {
 	'mail.review.subjectClosed': 'Tu semana: {done} de {planned}',
 	'mail.review.subjectOpen': 'Revisa tu semana: {done} de {planned}',
 	'mail.review.summary':
-		'Tu semana del {span}: hiciste {done} de los {planned} bloques que planeaste — {rate}% — y {hoursDone} de las {hoursPlanned} que reservaste.',
+		'Tu semana del {span}: hiciste {done} de los {planned} bloques de tarea que planeaste — {rate}% — y {hoursDone} de las {hoursPlanned} que reservaste.',
 	'mail.review.threeLines':
 		'Tres líneas sobre la semana son la parte que vale la pena leer dentro de un año.',
 	'mail.review.unanswered': {
-		one: '{count} bloque todavía no tiene respuesta — {titles}{andMore}. Di qué pasó con él, o llévalo a esta semana.',
+		one: '{count} bloque de tarea todavía no tiene respuesta — {titles}{andMore}. Di qué pasó con él, o llévalo a esta semana.',
 		other:
-			'{count} bloques todavía no tienen respuesta — {titles}{andMore}. Di qué pasó con ellos, o llévalos a esta semana.'
+			'{count} bloques de tarea todavía no tienen respuesta — {titles}{andMore}. Di qué pasó con ellos, o llévalos a esta semana.'
 	},
 	'mail.stopThese': 'Detener estos: {url}',
 	'mail.trial.action': 'Gestionar tu plan',
@@ -1791,14 +1806,6 @@ export const messages: Catalogue = {
 	'media.recordingAdded': 'Grabación agregada.',
 	'media.showWhatIsIn': 'Mostrar qué hay en {name}',
 	'media.signInFirst': 'Inicia sesión primero.',
-	'metaEditor.addOption': '+ Agregar opción',
-	'metaEditor.key': 'clave',
-	'metaEditor.options': 'Opciones',
-	'metaEditor.readByPluginsEG': 'Leído por plugins — p. ej. alarmas',
-	'metaEditor.removeOption': 'Quitar opción',
-	'metaEditor.value': 'valor',
-	'metaKeys.linkToOpenWithTheBlock': 'Enlace para abrir con el bloque',
-	'metaKeys.whereThisHappens': 'Dónde pasa esto',
 	'modal.dragToWiden': 'Arrastra para ensanchar; doble clic para volver',
 	'newsletter.off.goToOntoplano': 'Ir a ontoplano',
 	'newsletter.off.nothingMoreWillBeSent': 'No se enviará nada más a {email}.',
@@ -2098,7 +2105,7 @@ export const messages: Catalogue = {
 	'notebooks.tags.noColour': 'Sin color',
 	'notebooks.tags.noTagsYet': 'Aún no hay etiquetas',
 	'notebooks.tags.oneVocabularyForTheWhole':
-		'Un solo conjunto de etiquetas para toda la cuenta — la misma palabra en una tarea, una nota, una idea, un bloque y una foto. Renombrar o quitar una aquí la cambia en todas partes.',
+		'Un solo conjunto de etiquetas para toda la cuenta — la misma palabra en una tarea, una nota, una idea, un bloque de tarea y una foto. Renombrar o quitar una aquí la cambia en todas partes.',
 	'notebooks.tags.removeFromThisNotebook': 'Quitar de este cuaderno',
 	'notebooks.tags.removeHere': 'Quitar aquí',
 	'notebooks.tags.renamingOntoAName':
@@ -2132,7 +2139,7 @@ export const messages: Catalogue = {
 	'notifications.title': 'Notificaciones',
 	'notifications.unread': '{count} sin leer',
 	'notify.everyBlockOnThePlan':
-		'Cada bloque del plan avisa cuando llega su hora. Sin esto, solo avisan los bloques a los que diste un tiempo de anticipación.',
+		'Cada bloque de tarea del plan avisa cuando llega su hora. Sin esto, solo avisan los bloques de tarea a los que diste un tiempo de anticipación.',
 	'notify.labelsAs': 'como {labels}',
 	'notify.labelsOff': '{labels} quitado',
 	'notify.mondayMorningWhatLastWeek':
@@ -2140,11 +2147,11 @@ export const messages: Catalogue = {
 	'notify.noun.activity': { one: '{count} actividad', other: '{count} actividades' },
 	'notify.noun.alarm': { one: '{count} alarma', other: '{count} alarmas' },
 	'notify.noun.beforeBlock': {
-		one: '{count} recordatorio de bloque',
-		other: '{count} recordatorios de bloque'
+		one: '{count} recordatorio de bloque de tarea',
+		other: '{count} recordatorios de bloque de tarea'
 	},
 	'notify.noun.bill': { one: '{count} factura', other: '{count} facturas' },
-	'notify.noun.block': { one: '{count} bloque', other: '{count} bloques' },
+	'notify.noun.block': { one: '{count} bloque de tarea', other: '{count} bloques de tarea' },
 	'notify.noun.bought': { one: '{count} compra', other: '{count} compras' },
 	'notify.noun.dataPoint': { one: '{count} dato', other: '{count} datos' },
 	'notify.noun.entry': { one: '{count} entrada', other: '{count} entradas' },
@@ -2181,8 +2188,8 @@ export const messages: Catalogue = {
 	'notify.noun.recipe': { one: '{count} receta', other: '{count} recetas' },
 	'notify.noun.reminder': { one: '{count} recordatorio', other: '{count} recordatorios' },
 	'notify.noun.repeatingBlock': {
-		one: '{count} bloque repetido',
-		other: '{count} bloques repetidos'
+		one: '{count} bloque de tarea repetido',
+		other: '{count} bloques de tarea repetidos'
 	},
 	'notify.noun.reviewNote': {
 		one: '{count} nota de la revisión',
@@ -2206,7 +2213,7 @@ export const messages: Catalogue = {
 	'notify.onTheMorningForEverybody':
 		'Por la mañana, para todos los que en tu libreta de direcciones tienen una fecha marcada.',
 	'notify.onTheMorningTheWeek':
-		'La mañana en que cambia la semana, mientras la semana pasada todavía tiene bloques sin responder.',
+		'La mañana en que cambia la semana, mientras la semana pasada todavía tiene bloques de tarea sin responder.',
 	'notify.others': { one: '{count} más', other: '{count} más' },
 	'notify.phrase': '{verb} {what}',
 	'notify.theDayOneWantsPaying':
@@ -2352,7 +2359,7 @@ export const messages: Catalogue = {
 	'reminders.birthdayOf': 'Cumpleaños de {name}',
 	'reminders.birthdayTurns': '{name} cumple {age}',
 	'reminders.blocksWithAReminderBirthdays':
-		'Los bloques con recordatorio, los cumpleaños, las facturas y todo lo que configures aquí aparecen en esta lista.',
+		'Los bloques de tarea con recordatorio, los cumpleaños, las facturas y todo lo que configures aquí aparecen en esta lista.',
 	'reminders.callIt': 'Llámalo',
 	'reminders.change': 'Cambiar {message}',
 	'reminders.changeHowFar': 'Cambiar hasta dónde mira',
@@ -2368,8 +2375,8 @@ export const messages: Catalogue = {
 	'reminders.countsAsSecureFromAnother': 'cuenta como seguro; desde otro dispositivo no.',
 	'reminders.day': 'Día',
 	'reminders.dayAllAnswered': {
-		one: 'Ese fue el día — el único bloque está respondido.',
-		other: 'Ese fue el día — los {count} bloques respondidos.'
+		one: 'Ese fue el día — el único bloque de tarea está respondido.',
+		other: 'Ese fue el día — los {count} bloques de tarea respondidos.'
 	},
 	'reminders.daySomeLeft': 'Ese fue el día — {done} de {total} hechos, {left} por responder.',
 	'reminders.dayStartHasAlreadyBeen': '{at} ya pasó hoy.',
@@ -2421,7 +2428,7 @@ export const messages: Catalogue = {
 	'reminders.remove': 'Quitar {message}',
 	'reminders.remove2': 'Quitar {name}',
 	'reminders.removeThisReminder': 'Quitar este recordatorio',
-	'reminders.reviewBlocks': { one: '{count} bloque', other: '{count} bloques' },
+	'reminders.reviewBlocks': { one: '{count} bloque de tarea', other: '{count} bloques de tarea' },
 	'reminders.reviewPending':
 		'Tu revisión semanal está pendiente — {blocks} de la semana pasada sin responder.',
 	'reminders.reviewWeeksOpen':
@@ -2596,7 +2603,7 @@ export const messages: Catalogue = {
 	'search.goal': 'goal:',
 	'search.inKitchen': 'in:kitchen',
 	'search.kind.activity': 'Actividades',
-	'search.kind.block': 'Bloques',
+	'search.kind.block': 'Bloques de tarea',
 	'search.kind.entry': 'Diario',
 	'search.kind.goal': 'Metas',
 	'search.kind.idea': 'Ideas',
@@ -2608,7 +2615,7 @@ export const messages: Catalogue = {
 	'search.narrowIt': 'Acotar:',
 	'search.note': 'note:',
 	'search.notesDiaryEntriesTodosBlocks':
-		'Notas, entradas de diario, tareas, bloques, metas, ideas, personas, compras y actividades — todo a la vez, o un tipo a la vez.',
+		'Notas, entradas de diario, tareas, bloques de tarea, metas, ideas, personas, compras y actividades — todo a la vez, o un tipo a la vez.',
 	'search.nothingMatches': 'Nada coincide con “{q}”',
 	'search.or': '— o',
 	'search.searchOntoplano': 'Buscar · ontoplano',
@@ -2627,7 +2634,7 @@ export const messages: Catalogue = {
 		'Tus fotos, guardadas en álbumes. Una foto existe una sola vez sin importar en cuántos álbumes esté, y una etiqueta las atraviesa todas.',
 	'sections.gallery.label': 'Galería',
 	'sections.goals.blurb':
-		'Aquello hacia lo que trabajas, por horizonte. Un bloque de tu semana puede pertenecer a una meta, para que la meta sepa qué trabajo realmente la hizo avanzar.',
+		'Aquello hacia lo que trabajas, por horizonte. Un bloque de tarea de tu semana puede pertenecer a una meta, para que la meta sepa qué trabajo realmente la hizo avanzar.',
 	'sections.goals.label': 'Metas',
 	'sections.habits.blurb': 'Las cosas diarias, con un año de ellas de un vistazo.',
 	'sections.habits.label': 'Hábitos',
@@ -3324,9 +3331,9 @@ export const messages: Catalogue = {
 	'shortcut.closeForm': 'Cerrar formulario',
 	'shortcut.copyToDaysMultiselect': 'Copiar a días (selección múltiple)',
 	'shortcut.delegate': 'Delegar',
-	'shortcut.deleteBlock': 'Eliminar bloque',
+	'shortcut.deleteBlock': 'Eliminar bloque de tarea',
 	'shortcut.deleteItem': 'Eliminar elemento',
-	'shortcut.editBlock': 'Editar bloque',
+	'shortcut.editBlock': 'Editar bloque de tarea',
 	'shortcut.editEntry': 'Editar entrada',
 	'shortcut.editIdea': 'Editar idea',
 	'shortcut.editItem': 'Editar elemento',
@@ -3357,12 +3364,12 @@ export const messages: Catalogue = {
 	'shortcut.newIdea': 'Nueva idea',
 	'shortcut.newItem': 'Nuevo elemento',
 	'shortcut.newNotebook': 'Nuevo cuaderno',
-	'shortcut.newOneOffBlock': 'Nuevo bloque puntual',
+	'shortcut.newOneOffBlock': 'Nuevo bloque de tarea puntual',
 	'shortcut.newPerson': 'Nueva persona',
 	'shortcut.newRecipe': 'Nueva receta',
 	'shortcut.newTodo': 'Nueva tarea',
 	'shortcut.newToken': 'Nuevo token',
-	'shortcut.newWeeklyBlock': 'Nuevo bloque semanal',
+	'shortcut.newWeeklyBlock': 'Nuevo bloque de tarea semanal',
 	'shortcut.newWins': 'Nuevos logros',
 	'shortcut.nextGoal': 'Meta siguiente',
 	'shortcut.nextPage': 'Página siguiente',
@@ -3488,7 +3495,7 @@ export const messages: Catalogue = {
 	'taskStatus.doing': 'En curso',
 	'taskStatus.pending': 'Pendiente',
 	'tasks.activities.anActivityIsANamed':
-		'Una actividad es algo con nombre que haces — gimnasio, ruso, trabajo profundo. Los bloques de la cuadrícula apuntan a ellas.',
+		'Una actividad es algo con nombre que haces — gimnasio, ruso, trabajo profundo. Los bloques de tarea de la cuadrícula apuntan a ellas.',
 	'tasks.activities.cannotDeleteReferencedByPlanner':
 		'No se puede eliminar: está referenciada por el planificador o el historial',
 	'tasks.activities.categories': 'Categorías',
@@ -3543,9 +3550,9 @@ export const messages: Catalogue = {
 	'tasks.board.starts': 'Empieza',
 	'tasks.board.switchTab': 'cambiar pestaña ·',
 	'tasks.board.thisBlockNamesACategory':
-		'Este bloque nombra una categoría. Indica en qué actividad terminó.',
+		'Este bloque de tarea nombra una categoría. Indica en qué actividad terminó.',
 	'tasks.board.thisOccurrenceOnlyEmptyKeeps':
-		'Solo esta repetición. Vacío conserva el nombre propio del bloque.',
+		'Solo esta repetición. Vacío conserva el nombre propio del bloque de tarea.',
 	'tasks.board.toDo': 'Tareas',
 	'tasks.board.toDoList': 'Tareas',
 	'tasks.board.today': 'hoy ·',
@@ -3556,10 +3563,10 @@ export const messages: Catalogue = {
 	'tasks.board.whichActivity': '¿qué actividad?',
 	'tasks.plan.aDay': 'Un día',
 	'tasks.plan.aSchemeIsYourRepeating':
-		'Un esquema es tu semana repetitiva — los bloques que vuelven cada semana. Lo que pongas\n\t\t\t\t\t\tsolo en un día no forma parte de él, y cargar un esquema los deja donde están.',
+		'Un esquema es tu semana repetitiva — los bloques de tarea que vuelven cada semana. Lo que pongas\n\t\t\t\t\t\tsolo en un día no forma parte de él, y cargar un esquema los deja donde están.',
 	'tasks.plan.activity': 'Actividad',
 	'tasks.plan.addOneOff': 'Añadir puntual',
-	'tasks.plan.addRepeatingBlock': 'Añadir bloque repetido',
+	'tasks.plan.addRepeatingBlock': 'Añadir bloque de tarea repetido',
 	'tasks.plan.alt': 'Alt',
 	'tasks.plan.backOneUnit': 'Retroceder un(a) {unit} ({key})',
 	'tasks.plan.backOneUnitPlain': 'Retroceder un(a) {unit}',
@@ -3585,22 +3592,22 @@ export const messages: Catalogue = {
 	'tasks.plan.deleteSelected': 'Eliminar selección',
 	'tasks.plan.doneUndo': 'Hecho ✓ — deshacer',
 	'tasks.plan.dragAcrossAnEmptyStretch':
-		'Arrastra por un tramo vacío de un día para crear un bloque.',
+		'Arrastra por un tramo vacío de un día para crear un bloque de tarea.',
 	'tasks.plan.dragOntoTheGridOr': 'Arrastra a la cuadrícula, o toca y luego toca una hora',
 	'tasks.plan.dragOntoTheGridTo':
 		'arrastra a la cuadrícula para darle una hora, o de vuelta aquí para quitársela',
 	'tasks.plan.dragToCreateDrag':
-		'Arrastra para crear · arrastra un bloque para moverlo · haz clic para editar, omitir o eliminar · mantén presionado',
+		'Arrastra para crear · arrastra un bloque de tarea para moverlo · haz clic para editar, omitir o eliminar · mantén presionado',
 	'tasks.plan.dragToSelectSeveralThen':
 		'arrastra para seleccionar varios, luego arrastra uno para moverlos todos ·',
 	'tasks.plan.dropHereToTakeIt': 'suelta aquí para quitarlo del día',
 	'tasks.plan.dropJustThisOneOccurrence':
-		'Quita solo esta repetición; el bloque sigue repitiéndose',
+		'Quita solo esta repetición; el bloque de tarea sigue repitiéndose',
 	'tasks.plan.due': 'Vencimiento',
 	'tasks.plan.duration': 'Duración',
 	'tasks.plan.eGDentist': 'p. ej. dentista',
 	'tasks.plan.eGLearnRussian': 'p. ej. aprender ruso',
-	'tasks.plan.editBlock': 'Editar bloque',
+	'tasks.plan.editBlock': 'Editar bloque de tarea',
 	'tasks.plan.every': 'Cada',
 	'tasks.plan.everyNDays': 'Cada N días',
 	'tasks.plan.everyNWeeks': 'Cada N semanas',
@@ -3646,7 +3653,7 @@ export const messages: Catalogue = {
 	'tasks.plan.month': 'Mes',
 	'tasks.plan.newActivity': 'Nueva actividad',
 	'tasks.plan.newActivity2': '+ Nueva actividad...',
-	'tasks.plan.newBlock': 'Nuevo bloque',
+	'tasks.plan.newBlock': 'Nuevo bloque de tarea',
 	'tasks.plan.next7Days': '· próximos 7 días',
 	'tasks.plan.noCalendarsSubscribedYet': 'Todavía no hay calendarios suscritos',
 	'tasks.plan.noSchemesSavedYet': 'Todavía no hay esquemas guardados',
@@ -3656,16 +3663,17 @@ export const messages: Catalogue = {
 	'tasks.plan.on': '{skip} el {selectedDateStr}',
 	'tasks.plan.owed': 'pendiente',
 	'tasks.plan.press': 'Presiona',
-	'tasks.plan.pressAndHoldOnThe': 'Mantén presionado en la cuadrícula para añadir un bloque ahí.',
+	'tasks.plan.pressAndHoldOnThe':
+		'Mantén presionado en la cuadrícula para añadir un bloque de tarea ahí.',
 	'tasks.plan.putItBackToPending': 'Devolverlo a pendiente',
 	'tasks.plan.putThisOccurrenceBack': 'Devolver esta repetición',
 	'tasks.plan.read': 'Leer {t}',
 	'tasks.plan.remindMe': 'Recuérdamelo',
 	'tasks.plan.repeats': 'Se repite',
 	'tasks.plan.replacesYourRepeatingWeekOneOff':
-		'Reemplaza tu semana repetitiva. Los bloques puntuales se mantienen.',
+		'Reemplaza tu semana repetitiva. Los bloques de tarea puntuales se mantienen.',
 	'tasks.plan.resetZoom0': 'Restablecer zoom (0)',
-	'tasks.plan.saveBlock': 'Guardar bloque',
+	'tasks.plan.saveBlock': 'Guardar bloque de tarea',
 	'tasks.plan.saveCurrentPlanAsScheme': 'Guardar el plan actual como esquema',
 	'tasks.plan.savedSchemes': 'Esquemas guardados',
 	'tasks.plan.savedShapesOfAWeek': 'Formas de semana guardadas',
@@ -3688,7 +3696,7 @@ export const messages: Catalogue = {
 	'tasks.plan.takeItOffTheDay': 'Quitarlo del día, conservar la tarea',
 	'tasks.plan.tapOneThenTapA': 'toca uno, luego toca una hora',
 	'tasks.plan.theCalendarSIcalAddress': 'La dirección iCal del calendario',
-	'tasks.plan.theFirstLineIsWhat': 'la primera línea es lo que dice el bloque',
+	'tasks.plan.theFirstLineIsWhat': 'la primera línea es lo que dice el bloque de tarea',
 	'tasks.plan.thisIsYourWeek': 'Esta es tu semana',
 	'tasks.plan.thisReplacesYourPlanContinue': 'Esto reemplaza tu plan. ¿Continuar?',
 	'tasks.plan.time': 'Hora',
@@ -3757,7 +3765,7 @@ export const messages: Catalogue = {
 	'tasks.review.nothingWasPlannedThatWeek': 'No se planeó nada esa semana',
 	'tasks.review.nothingWasSkipped': 'No se saltó nada',
 	'tasks.review.of': 'de',
-	'tasks.review.ofBlocks': 'de {planned} bloques · {rate}%',
+	'tasks.review.ofBlocks': 'de {planned} bloques de tarea · {rate}%',
 	'tasks.review.onTheTodoList': 'En la lista de tareas',
 	'tasks.review.onWhichDay': '¿En qué día?',
 	'tasks.review.ontoTheTodo': '{title}: a la lista de tareas',
@@ -3767,7 +3775,7 @@ export const messages: Catalogue = {
 	'tasks.review.saved': 'Guardado.',
 	'tasks.review.sayIfOneOfThese': 'Di si alguna de estas no pasó en realidad.',
 	'tasks.review.sayWhatHappenedToEach':
-		'Di qué pasó con cada uno. Cualquiera sea la respuesta, sale de esta lista — la próxima semana genera sus propios bloques.',
+		'Di qué pasó con cada uno. Cualquiera sea la respuesta, sale de esta lista — la próxima semana genera sus propios bloques de tarea.',
 	'tasks.review.seeWhatIWroteBefore': 'Ver lo que escribí antes',
 	'tasks.review.settled': '{settled} resueltas.',
 	'tasks.review.skipped': '{title}: omitido',
@@ -3900,6 +3908,9 @@ export const messages: Catalogue = {
 		'Un flujo es una serie que algo más sigue actualizando — un peso, un conteo de pasos — y tiene su propia página en Salud.',
 	'tour.aTagOnAPicture':
 		'Una etiqueta en una foto funciona en todos los álbumes. Quitar una foto de su último álbum la elimina, y la confirmación lo dice.',
+	'tour.aTaskBlockBelongsSomewhere': 'Un bloque de tarea pertenece a algo',
+	'tour.aTaskWithAttributes':
+		'Una tarea con atributos lleva un botón i al principio de su fila. Púlsalo para copiar un valor o cambiarlo ahí mismo; se añaden en el formulario de la tarea, bajo las etiquetas.',
 	'tour.aTitleAndNothingElse':
 		'Un título, y nada más si es todo lo que tienes. Todo lo demás se puede completar después.',
 	'tour.aTokenIsShownOnce': 'Un token se muestra una vez',
@@ -3919,10 +3930,10 @@ export const messages: Catalogue = {
 	'tour.anythingYouThoughtOfAnd':
 		'Cualquier cosa que se te ocurrió y no quieres perder. Sin fecha, sin categoría, sin decisión requerida.',
 	'tour.anythingYouWroteDownAnd':
-		'Cualquier cosa que anotaste y no ubicaste. Se queda aquí hasta que le des una fecha, y entonces es un bloque como cualquier otro.',
+		'Cualquier cosa que anotaste y no ubicaste. Se queda aquí hasta que le des una fecha, y entonces es un bloque de tarea como cualquier otro.',
 	'tour.areasGroupThem': 'Las áreas las agrupan',
 	'tour.attachTheBlocksAndTodos':
-		'Vincula los bloques y tareas que cuentan. Eso es lo que convierte una meta de un deseo en un número que avanza.',
+		'Vincula los bloques de tarea y tareas que cuentan. Eso es lo que convierte una meta de un deseo en un número que avanza.',
 	'tour.beforeItEvaporates': 'Antes de que se evapore',
 	'tour.bills': 'Facturas',
 	'tour.billsABillIsANameAn':
@@ -3934,7 +3945,7 @@ export const messages: Catalogue = {
 	'tour.billsTheHistory': 'El historial',
 	'tour.billsWhatWantsPaying': 'Qué hay que pagar, y cuándo',
 	'tour.blocksYouAskedToBe':
-		'Bloques sobre los que pediste que te avisaran, cumpleaños, facturas por pagar, una semana sin revisar — todo en una lista, lo más próximo primero.',
+		'Bloques de tarea sobre los que pediste que te avisaran, cumpleaños, facturas por pagar, una semana sin revisar — todo en una lista, lo más próximo primero.',
 	'tour.board': 'Tablero',
 	'tour.booksKilosEurosAnything':
 		'Libros, kilos, euros — cualquier cosa contable. Una meta puede querer varias a la vez: tres conciertos tocados y cinco canciones grabadas es una meta con dos números, y avanza tanto como el promedio de ambos.',
@@ -3956,7 +3967,7 @@ export const messages: Catalogue = {
 		'Arrastra una foto a otro álbum para moverla ahí; mantén Ctrl al soltarla para dejarla en ambos.',
 	'tour.dragARoomUpOr':
 		'Arrastra una sección hacia arriba o abajo, guarda una, o dale a su grupo un color diferente. La barra, la rueda y los resultados de búsqueda lo siguen.',
-	'tour.dragToMakeABlock': 'Arrastra para crear un bloque',
+	'tour.dragToMakeABlock': 'Arrastra para crear un bloque de tarea',
 	'tour.eachCardIsOneRoom':
 		'Cada tarjeta es una sección que reporta. Arrástralas al orden que quieras — el asa está junto a la fecha.',
 	'tour.emailPasswordTheDevicesYou':
@@ -3979,7 +3990,7 @@ export const messages: Catalogue = {
 	'tour.everythingYouHaveWrittenIn':
 		'Todo lo que has escrito, en un solo archivo, cuando quieras. Eliminar la cuenta borra todo y no se puede deshacer.',
 	'tour.everythingYouPlannedAndDid':
-		'Todo lo que planeaste y no hiciste recibe una respuesta aquí. La próxima semana genera sus propios bloques de todos modos, así que una lista sin responder no puede convertirse en la semana sin que lo notes.',
+		'Todo lo que planeaste y no hiciste recibe una respuesta aquí. La próxima semana genera sus propios bloques de tarea de todos modos, así que una lista sin responder no puede convertirse en la semana sin que lo notes.',
 	'tour.fKeepsTheGoodOnes':
 		'f mantiene los buenos arriba. a marca uno como aplicado, con una línea sobre lo que resultó — que es la parte que querrás en un año.',
 	'tour.favouritesFirst': 'Favoritos primero',
@@ -3989,7 +4000,7 @@ export const messages: Catalogue = {
 	'tour.giveItANumberIf': 'Dale un número si tiene uno',
 	'tour.goals': 'Metas',
 	'tour.gymRussianReadABlock':
-		'“Gimnasio”, “Ruso”, “Leer”. Un bloque en el plan apunta a uno de estos, así que un año de gimnasio es una sola cosa.',
+		'“Gimnasio”, “Ruso”, “Leer”. Un bloque de tarea en el plan apunta a uno de estos, así que un año de gimnasio es una sola cosa.',
 	'tour.hJKLMove':
 		'h j k l se mueven entre tarjetas y columnas, H y L llevan la tarjeta seleccionada contigo, y c la marca como hecha.',
 	'tour.habits': 'Hábitos',
@@ -4006,7 +4017,7 @@ export const messages: Catalogue = {
 	'tour.inventoryIsWhatRunsOut':
 		'El inventario es lo que se acaba y hay que reponer. La lista de deseos es lo que quizás compres algún día.',
 	'tour.itBecomesABlockOn':
-		'Se convierte en un bloque en el plan, junto a todo lo demás que haces ese día.',
+		'Se convierte en un bloque de tarea en el plan, junto a todo lo demás que haces ese día.',
 	'tour.itFansOutYourAccount':
 		'Despliega tu cuenta y configuración, el tour de la pantalla en la que estás, la documentación, y la forma de avisarle al operador que algo anda mal.',
 	'tour.itOpensTheTourFor':
@@ -4024,7 +4035,7 @@ export const messages: Catalogue = {
 		'La coincidencia es por las palabras mismas, así que un fragmento de una frase que escribiste encuentra la entrada de la que vino.',
 	'tour.movingAndSharing': 'Mover y compartir',
 	'tour.notACalendarOfAppointments':
-		'Los bloques que planeas repetir. Todo lo demás en Tareas se construye a partir de esto.',
+		'Los bloques de tarea que planeas repetir. Todo lo demás en Tareas se construye a partir de esto.',
 	'tour.notJustNotesAndTasks': 'Not just notes and tasks',
 	'tour.notebooks': 'Cuadernos',
 	'tour.nothingCarriesItselfOver': 'Nada se traslada solo',
@@ -4038,6 +4049,8 @@ export const messages: Catalogue = {
 	'tour.ontoplano': 'Ontoplano',
 	'tour.openAPersonToSee':
 		'Abre una persona para ver cada entrada que la mencionó, la más reciente primero.',
+	'tour.openOneToFileIt':
+		'Ábrelo para archivarlo en un cuaderno y darle atributos — un enlace, una sala, cualquier cosa que lea un plugin. El cuaderno aparece en el bloque, bajo su hora.',
 	'tour.pasteThePageIn': 'Pega la página',
 	'tour.people': 'Personas',
 	'tour.picturesLiveInAlbumsPutting':
@@ -4105,11 +4118,11 @@ export const messages: Catalogue = {
 	'tour.theRoomsOpenAroundYour':
 		'Las secciones se abren alrededor de tu dedo y sueltas en la que quieres. Más rápido que leer una lista de diez palabras, una vez que tu mano sabe dónde están.',
 	'tour.theSameBlocksAsThe':
-		'Los mismos bloques que el plan, en la única forma en la que puedes tomar uno y moverlo.',
+		'Los mismos bloques de tarea que el plan, en la única forma en la que puedes tomar uno y moverlo.',
 	'tour.theSameGestureForA':
 		'El mismo gesto, para una tarea, una idea, una nota o algo que comprar — sin decidir antes dónde va.',
 	'tour.theSameWordOnA':
-		'La misma palabra etiqueta una tarea, una nota, una idea, un bloque y una foto. Aquí viven las palabras en sí.',
+		'La misma palabra etiqueta una tarea, una nota, una idea, un bloque de tarea y una foto. Aquí viven las palabras en sí.',
 	'tour.theShapeOfANormal': 'La forma de una semana normal',
 	'tour.theStatementIsTheRecord': 'El extracto es el registro',
 	'tour.theThingsWithoutADay': 'Las cosas que aún no tienen día',
@@ -4140,6 +4153,7 @@ export const messages: Catalogue = {
 	'tour.upToSixPicturesPer':
 		'Hasta seis fotos por receta. Márcala con estrella y se convierte en la que muestra la lista.',
 	'tour.urgencyEaseInterest': 'Urgencia, facilidad, interés',
+	'tour.whatATaskSaysAboutItself': 'Lo que una tarea dice de sí misma',
 	'tour.whatHappenedInYourWords': 'Lo que pasó, en tus palabras',
 	'tour.whatIsWaitingForATime': 'Lo que espera una hora',
 	'tour.whatIsWorthHearing': 'Lo que vale la pena escuchar',
@@ -4155,7 +4169,7 @@ export const messages: Catalogue = {
 	'tour.whichWedgesThePlusWheel':
 		'Qué porciones tiene la rueda del +, en qué orden, y el cuaderno donde empieza lo que escribes desde ella. El engranaje junto a la rueda abierta abre los mismos ajustes.',
 	'tour.workHealthWhateverDividesYour':
-		'Trabajo, salud, lo que sea que divida tu vida. Cada bloque lleva el color de su categoría, en la cuadrícula y en el panel.',
+		'Trabajo, salud, lo que sea que divida tu vida. Cada bloque de tarea lleva el color de su categoría, en la cuadrícula y en el panel.',
 	'tour.workouts': 'Entrenamientos',
 	'tour.workoutsPlannedLikeMeals': 'Entrenamientos, planeados como comidas',
 	'tour.writeItAndMoveOn': 'Escríbelo y sigue. n abre esto desde cualquier parte de la página.',
@@ -4234,11 +4248,11 @@ export const messages: Catalogue = {
 	'webhookEvents.todoCreated': 'se añade una tarea',
 	'welcome.aFewQuestionsAndA':
 		'Unas pocas preguntas y una semana para empezar. Todo se puede editar después.',
-	'welcome.blocksCount': { one: '{count} bloque', other: '{count} bloques' },
+	'welcome.blocksCount': { one: '{count} bloque de tarea', other: '{count} bloques de tarea' },
 	'welcome.claudeOrAnythingThat':
 		'Claude, o cualquier cosa que hable MCP, puede leer tu semana y escribir en ella, con\n\t\t\t\t\t\t\t\t\t\tuna clave que puedes revocar. Te preguntará sobre tu rutina y preparará la semana por\n\t\t\t\t\t\t\t\t\t\tti.',
 	'welcome.createTheKeyAndThe': 'Crear la clave y el prompt',
-	'welcome.noBlocks': 'Sin bloques',
+	'welcome.noBlocks': 'Sin bloques de tarea',
 	'welcome.ofOnThePlanner':
 		'{size} de {length} activados. El planificador y tu semana siempre están aquí.',
 	'welcome.orPressNextSettings':

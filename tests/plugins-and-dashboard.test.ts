@@ -73,40 +73,40 @@ describe('a plugin saying what it is', () => {
 
 describe('the metadata keys a plugin declares', () => {
 	test('are identifiers, with a description beside them', () => {
-		const keys = plugins.parseMetaKeys([
+		const keys = plugins.parseAttributeKeys([
 			{ key: 'room', description: 'Which room', example: 'B12' }
 		]);
 		expect(keys).toEqual([{ key: 'room', description: 'Which room', example: 'B12' }]);
 	});
 
 	test('are lowercased rather than refused for their case', () => {
-		expect(plugins.parseMetaKeys([{ key: 'Room' }])[0].key).toBe('room');
+		expect(plugins.parseAttributeKeys([{ key: 'Room' }])[0].key).toBe('room');
 	});
 
 	test('refuse a key nothing downstream could address', () => {
-		expect(() => plugins.parseMetaKeys([{ key: 'not a key' }])).toThrow();
-		expect(() => plugins.parseMetaKeys([{ key: '9lives' }])).toThrow();
+		expect(() => plugins.parseAttributeKeys([{ key: 'not a key' }])).toThrow();
+		expect(() => plugins.parseAttributeKeys([{ key: '9lives' }])).toThrow();
 	});
 
 	test('refuse the same key declared twice', () => {
 		// Two rows claiming one column is a display that cannot be right.
-		expect(() => plugins.parseMetaKeys([{ key: 'room' }, { key: 'room' }])).toThrow();
+		expect(() => plugins.parseAttributeKeys([{ key: 'room' }, { key: 'room' }])).toThrow();
 	});
 
 	test('refuse a shape that is not a list of objects', () => {
-		expect(() => plugins.parseMetaKeys('room')).toThrow();
-		expect(() => plugins.parseMetaKeys([null])).toThrow();
-		expect(() => plugins.parseMetaKeys(['room'])).toThrow();
+		expect(() => plugins.parseAttributeKeys('room')).toThrow();
+		expect(() => plugins.parseAttributeKeys([null])).toThrow();
+		expect(() => plugins.parseAttributeKeys(['room'])).toThrow();
 	});
 
 	test('are nothing when nothing is declared', () => {
-		expect(plugins.parseMetaKeys(undefined)).toEqual([]);
-		expect(plugins.parseMetaKeys(null)).toEqual([]);
+		expect(plugins.parseAttributeKeys(undefined)).toEqual([]);
+		expect(plugins.parseAttributeKeys(null)).toEqual([]);
 	});
 
 	test('are capped, because a manifest is a description and not a schema', () => {
 		const many = Array.from({ length: 200 }, (_, i) => ({ key: `k${i}` }));
-		expect(() => plugins.parseMetaKeys(many)).toThrow();
+		expect(() => plugins.parseAttributeKeys(many)).toThrow();
 	});
 
 	test('and the app can say which plugin owns which key', () => {
@@ -118,8 +118,40 @@ describe('the metadata keys a plugin declares', () => {
 
 		// A Map keyed by the metadata key, because two plugins can legitimately
 		// declare the same one and the page has to be able to say so.
-		const owners = plugins.metaKeyOwners(OWNER);
+		const owners = plugins.attributeKeyOwners(OWNER);
 		expect(owners.get('weight_unit')?.map((o) => o.name)).toContain('Bathroom scale');
+	});
+
+	test('are declared as `attributeKeys` now, and answered under both names', () => {
+		const saved = plugins.upsertManifest(OWNER, {
+			source: 'alarm',
+			attributeKeys: [{ key: 'alarm', description: 'Ring at the start' }]
+		});
+		expect(saved.attributeKeys.map((k) => k.key)).toEqual(['alarm']);
+		// Until the old name is removed, a plugin reading it still finds the list.
+		expect(saved.metaKeys).toEqual(saved.attributeKeys);
+		expect(saved.warning).toBeUndefined();
+	});
+
+	test('a stored list of bare names reads as keys, not as a broken editor', () => {
+		// What an older seed wrote. The write path refuses it; the read path must
+		// not hand the attributes editor entries with no key to sort by.
+		database.exec(
+			`insert into plugin_manifests (user_id, source, name, description, homepage, meta_keys, updated_at)
+			 values (?, 'bare', 'Bare', '', '', '["alarm", 7, {"nope": 1}]', '2026-09-01T00:00:00Z')`,
+			OWNER
+		);
+		const bare = plugins.listManifests(OWNER).find((m) => m.source === 'bare')!;
+		expect(bare.attributeKeys).toEqual([{ key: 'alarm', description: '', example: '' }]);
+	});
+
+	test('and a manifest still sending `metaKeys` is read, and told', () => {
+		const saved = plugins.upsertManifest(OWNER, {
+			source: 'old-alarm',
+			metaKeys: [{ key: 'snooze_min' }]
+		});
+		expect(saved.attributeKeys.map((k) => k.key)).toEqual(['snooze_min']);
+		expect(saved.warning).toMatch(/deprecated.*attributeKeys/);
 	});
 });
 

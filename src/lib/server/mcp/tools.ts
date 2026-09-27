@@ -201,6 +201,13 @@ import {
 import { getUpcomingSchedule } from '$lib/services/schedule.js';
 import { createExceptional } from '$lib/services/slots.js';
 import {
+	META_REMOVED_IN,
+	META_WARNING,
+	attributesArg,
+	parseAttributes,
+	serialiseAttributes
+} from '$lib/services/task-attributes.js';
+import {
 	cancelOccurrence,
 	changeOccurrence,
 	recordIdOf,
@@ -740,6 +747,7 @@ function briefly(todo: Todo): Record<string, unknown> {
 		Object.entries(todo.ratings).filter(([, value]) => value !== null)
 	);
 	out.ratings = Object.keys(ratings).length > 0 ? ratings : undefined;
+	out.attributes = Object.keys(todo.attributes).length > 0 ? todo.attributes : undefined;
 	return out;
 }
 
@@ -993,6 +1001,65 @@ const gaveARating = (args: Record<string, unknown>) =>
 	args.interest !== undefined ||
 	args.ease !== undefined ||
 	args.energy !== undefined;
+
+/**
+ * A task's or a task block's attributes, and the name they had before.
+ *
+ * `meta` was what a block's key/value pairs were called until 0.184; a caller
+ * written against it is translated and told, the way `energy` is.
+ */
+const attributeArgs = {
+	attributes: {
+		type: 'object',
+		description:
+			'Its attributes: key/value pairs such as { "url": "https://…", "room": "B12" }, read by plugins and shown on the task. Keys are lowercase letters, digits and underscores. This replaces the whole set: send every pair to keep, an empty value removes one, and {} removes them all. Left out, they are untouched.',
+		additionalProperties: { type: 'string' }
+	},
+	meta: {
+		type: 'object',
+		deprecated: true,
+		description: `Deprecated — use \`attributes\`, which is the same thing under the name the app uses. Still accepted so an assistant written against the old shape keeps working, and removed in ${META_REMOVED_IN}.`,
+		additionalProperties: { type: 'string' }
+	}
+};
+
+/** The serialised attributes a call sent, or undefined when it sent none. */
+function attributesSent(args: Record<string, unknown>): string | undefined {
+	const { value } = attributesArg(args);
+	return value === undefined ? undefined : serialiseAttributes(value);
+}
+
+/**
+ * An answer, carrying whatever the call should be told about the spellings it
+ * used — `energy` for `ease`, `meta` for `attributes`, or both.
+ */
+function sayingSpellings(
+	answer: Record<string, unknown>,
+	args: Record<string, unknown>
+): Record<string, unknown> {
+	const warnings = [
+		usedEnergy(args) ? ENERGY_WARNING : null,
+		attributesArg(args).usedMeta ? META_WARNING : null
+	].filter(Boolean);
+	return warnings.length > 0 ? { ...answer, warning: warnings.join(' ') } : answer;
+}
+
+/** The notebook a task block is filed under, for the block tools. */
+const blockNotebookArg = {
+	notebookId: {
+		type: 'integer',
+		description:
+			'The notebook it belongs to, as `notebooks` gives its id — the subject it is part of. `0` takes it out of the one it is in.'
+	}
+};
+
+/** `0` means "in no notebook"; left out means leave it alone. */
+const notebookSent = (args: Record<string, unknown>) =>
+	args.notebookId === undefined
+		? undefined
+		: Number(args.notebookId) === 0
+			? null
+			: args.notebookId;
 
 /*
  * WHAT NEVER GETS A DELETE TOOL
@@ -1367,11 +1434,12 @@ export const TOOLS: Tool[] = [
 		 * failure this exists to stop.
 		 */
 		name: 'add_block',
-		title: 'Put a block on a day',
+		title: 'Put a task block on a day',
 		description:
 			'Add a one-off block to one day: a title, a start time and how long it runs. This is for "deep work from 9 to 11 today" — a thing with an hour. Use `add_task` instead when there is no time attached, and `change_block` to move or rename something already on the day rather than adding a second copy of it. It does not touch the repeating week; this is that day only.',
 		scope: 'schedule:write',
 		writes: true,
+		refs: [{ arg: 'notebookId', kind: 'notebook', zeroIsNone: true }],
 		input: object(
 			{
 				date: text('The day, as YYYY-MM-DD.'),
@@ -1381,7 +1449,9 @@ export const TOOLS: Tool[] = [
 				category: text(
 					'Which part of life it belongs to, by name — `categories` lists them. A name that matches nothing is refused, never guessed. The first category is used only when this is left out entirely.'
 				),
-				...ratingArgs
+				...blockNotebookArg,
+				...ratingArgs,
+				...attributeArgs
 			},
 			['date', 'title', 'start_time']
 		),
@@ -1399,12 +1469,12 @@ export const TOOLS: Tool[] = [
 				label: args.title,
 				startTime: args.start_time,
 				durationMinutes: args.minutes ?? 60,
-				...(gaveARating(args) ? { ratings: ratingsOf(args) } : {})
+				...(gaveARating(args) ? { ratings: ratingsOf(args) } : {}),
+				...(notebookSent(args) === undefined ? {} : { notebookId: notebookSent(args) }),
+				...(attributesSent(args) === undefined ? {} : { attributes: attributesSent(args) })
 			});
 
-			return usedEnergy(args)
-				? { id, category: chosen.name, warning: ENERGY_WARNING }
-				: { id, category: chosen.name };
+			return sayingSpellings({ id, category: chosen.name }, args);
 		}
 	},
 	{
@@ -1422,12 +1492,15 @@ export const TOOLS: Tool[] = [
 		 * somebody's record of their own life.
 		 */
 		name: 'change_block',
-		title: 'Move or rename a block',
+		title: 'Move or rename a task block',
 		description:
-			'Change one block on one day: its time, its day, how long it runs, or what it is called. This is "push the study block to four", "make it two hours", "that was actually client work". Takes the id `today` or `upcoming` gives. Only the fields you pass change. It affects that day only — moving this Thursday\u2019s gym does not move gym — and it never edits the repeating week. Renaming keeps which part of life it belongs to and stops it being the named activity it was, because that is what saying it was something else means.',
+			'Change one task block on one day: its time, its day, how long it runs, or what it is called — and, for a one-off, the notebook it is filed under and its attributes. This is "push the study block to four", "make it two hours", "that was actually client work". Takes the id `today` or `upcoming` gives. Only the fields you pass change. It affects that day only — moving this Thursday\u2019s gym does not move gym — and it never edits the repeating week. Renaming keeps which part of life it belongs to and stops it being the named activity it was, because that is what saying it was something else means.',
 		scope: 'schedule:write',
 		writes: true,
-		refs: [{ arg: 'id', kind: 'block' }],
+		refs: [
+			{ arg: 'id', kind: 'block' },
+			{ arg: 'notebookId', kind: 'notebook', zeroIsNone: true }
+		],
 		input: object(
 			{
 				id: text('The block\u2019s id, exactly as the day gave it — like `slot:42`.'),
@@ -1437,20 +1510,29 @@ export const TOOLS: Tool[] = [
 				title: text('What it should be called instead.'),
 				category: text(
 					'Refile it under this part of life, by name — `categories` lists them. Affects that day only, like everything here.'
-				)
+				),
+				// A one-off's own; a repeating block's belong to the pattern, and
+				// `change_repeating_block` is where those are changed.
+				...blockNotebookArg,
+				...attributeArgs
 			},
 			['id']
 		),
 		run: (ctx, args) =>
-			changeOccurrence(ctx, args.id, {
-				date: args.date,
-				startTime: args.start_time,
-				minutes: args.minutes,
-				title: args.title,
-				...(args.category !== undefined && args.category !== null && args.category !== ''
-					? { categoryId: categoryByName(ctx, args.category).id }
-					: {})
-			})
+			sayingSpellings(
+				changeOccurrence(ctx, args.id, {
+					date: args.date,
+					startTime: args.start_time,
+					minutes: args.minutes,
+					title: args.title,
+					...(args.category !== undefined && args.category !== null && args.category !== ''
+						? { categoryId: categoryByName(ctx, args.category).id }
+						: {}),
+					...(args.notebookId === undefined ? {} : { notebookId: args.notebookId }),
+					...(attributesSent(args) === undefined ? {} : { attributes: attributesSent(args) })
+				}),
+				args
+			)
 	},
 	{
 		name: 'cancel_block',
@@ -1726,7 +1808,8 @@ export const TOOLS: Tool[] = [
 				},
 				tags: text(
 					'Labels, comma or space separated — "a1, done". The account’s one vocabulary, the same words a diary entry or an idea is tagged with. Mark your own work with a label of your own where several assistants share a list.'
-				)
+				),
+				...attributeArgs
 			},
 			['title']
 		),
@@ -1736,7 +1819,8 @@ export const TOOLS: Tool[] = [
 				notes: args.notes ?? '',
 				notebookId: args.notebookId ?? null,
 				tags: args.tags,
-				scheduledDate: args.scheduledDate ? day(args.scheduledDate, 'scheduledDate') : null
+				scheduledDate: args.scheduledDate ? day(args.scheduledDate, 'scheduledDate') : null,
+				attributes: attributesSent(args)
 			});
 			/*
 			 * Linked in the same call, because the alternative is two calls with a
@@ -1746,7 +1830,7 @@ export const TOOLS: Tool[] = [
 			if (args.goalId !== undefined) {
 				addGoalLinks(ctx, Number(args.goalId), { todoIds: [id] });
 			}
-			return { id };
+			return sayingSpellings({ id }, args);
 		}
 	},
 	{
@@ -1884,7 +1968,7 @@ export const TOOLS: Tool[] = [
 		writes: true,
 		refs: [
 			{ arg: 'id', kind: 'todo' },
-			{ arg: 'notebookId', kind: 'notebook' }
+			{ arg: 'notebookId', kind: 'notebook', zeroIsNone: true }
 		],
 		input: object(
 			{
@@ -1913,7 +1997,8 @@ export const TOOLS: Tool[] = [
 				tags: text(
 					'The labels it should carry from now on, comma or space separated — this replaces whatever it had, so include the ones to keep. An empty string takes them all off. Left out, the labels are untouched.'
 				),
-				...ratingArgs
+				...ratingArgs,
+				...attributeArgs
 			},
 			['id']
 		),
@@ -1926,6 +2011,7 @@ export const TOOLS: Tool[] = [
 				categoryId: current.categoryId,
 				// Left out means untouched; `''` means take them all off.
 				...(args.tags === undefined ? {} : { tags: args.tags }),
+				...(attributesSent(args) === undefined ? {} : { attributes: attributesSent(args) }),
 				// `0` empties it on purpose: "take this out of the notebook" needs
 				// a spelling, and omitting the field already means "leave it be".
 				notebookId:
@@ -1949,7 +2035,7 @@ export const TOOLS: Tool[] = [
 			// Its own column, and its own validation: a word that is not one of
 			// the four is refused rather than written.
 			if (args.status !== undefined) setTodoStatus(ctx, current.id, args.status);
-			return usedEnergy(args) ? { ok: true, warning: ENERGY_WARNING } : { ok: true };
+			return sayingSpellings({ ok: true }, args);
 		}
 	},
 	{
@@ -3731,16 +3817,18 @@ export const TOOLS: Tool[] = [
 		run: (ctx) =>
 			listWeeklySlots(ctx).map((slot) => ({
 				...slot,
+				attributes: parseAttributes(slot.attributes),
 				repeats: repeatsInWords(slot.recurrence, slot.weekday)
 			}))
 	},
 	{
 		name: 'add_repeating_block',
-		title: 'Put a block on every week',
+		title: 'Put a task block on every week',
 		description:
 			'Add a block that comes back — "gym on Tuesdays at seven", "the bins every other Tuesday", "rent on the first". Weekly unless `repeats` says otherwise. This changes every week from now on; `add_block` is the one for a single day. Weekdays count from Monday: 0 is Monday, 6 is Sunday. A block can be a bare category rather than a named thing — leave the title out and it shows as the category itself, which is what "put work in those hours" means.',
 		scope: 'schedule:write',
 		writes: true,
+		refs: [{ arg: 'notebookId', kind: 'notebook', zeroIsNone: true }],
 		input: object(
 			{
 				weekday: {
@@ -3757,8 +3845,10 @@ export const TOOLS: Tool[] = [
 					type: 'integer',
 					description: 'Minutes before each occurrence to be reminded. No reminder if left out.'
 				},
+				...blockNotebookArg,
 				...repeatArgs,
-				...ratingArgs
+				...ratingArgs,
+				...attributeArgs
 			},
 			['weekday', 'start_time']
 		),
@@ -3776,21 +3866,24 @@ export const TOOLS: Tool[] = [
 				label: args.title,
 				remindLeadMinutes: args.remind_minutes,
 				recurrence: recurrenceFromArgs(args, anchor),
-				...(gaveARating(args) ? { ratings: ratingsOf(args) } : {})
+				...(gaveARating(args) ? { ratings: ratingsOf(args) } : {}),
+				...(notebookSent(args) === undefined ? {} : { notebookId: notebookSent(args) }),
+				...(attributesSent(args) === undefined ? {} : { attributes: attributesSent(args) })
 			});
-			return usedEnergy(args)
-				? { id, category: chosen.name, warning: ENERGY_WARNING }
-				: { id, category: chosen.name };
+			return sayingSpellings({ id, category: chosen.name }, args);
 		}
 	},
 	{
 		name: 'change_repeating_block',
-		title: 'Change a repeating block',
+		title: 'Change a repeating task block',
 		description:
-			'Change every future occurrence of a repeating block: its weekday, time, length, how often it comes back, the text on it, its category or its reminder. This is "move gym to Wednesdays" or "make it every other week"; `change_block` is "move this Wednesday\u2019s gym". Only the fields given change. Takes the id `repeating_week` gives.',
+			'Change every future occurrence of a repeating block: its weekday, time, length, how often it comes back, the text on it, its category, its reminder, its notebook or its attributes. This is "move gym to Wednesdays" or "make it every other week"; `change_block` is "move this Wednesday\u2019s gym". Only the fields given change. Takes the id `repeating_week` gives.',
 		scope: 'schedule:write',
 		writes: true,
-		refs: [{ arg: 'id', kind: 'repeatingBlock' }],
+		refs: [
+			{ arg: 'id', kind: 'repeatingBlock' },
+			{ arg: 'notebookId', kind: 'notebook', zeroIsNone: true }
+		],
 		input: object(
 			{
 				id: {
@@ -3808,7 +3901,9 @@ export const TOOLS: Tool[] = [
 				),
 				category: text('Refile it under this part of life, by name.'),
 				remind_minutes: { type: 'integer', description: 'The new reminder lead. 0 turns it off.' },
-				...repeatArgs
+				...blockNotebookArg,
+				...repeatArgs,
+				...attributeArgs
 			},
 			['id']
 		),
@@ -3838,9 +3933,11 @@ export const TOOLS: Tool[] = [
 						recFormatDate(nextWeekdayOnOrAfter(ctx.now, args.weekday ?? current.weekday))
 					) ??
 					current.recurrence ??
-					undefined
+					undefined,
+				...(notebookSent(args) === undefined ? {} : { notebookId: notebookSent(args) }),
+				...(attributesSent(args) === undefined ? {} : { attributesPatch: attributesSent(args) })
 			});
-			return { ok: true };
+			return sayingSpellings({ ok: true }, args);
 		}
 	},
 	{

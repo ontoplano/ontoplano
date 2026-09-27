@@ -76,6 +76,10 @@
 		"writes": true,
 		"destroys": false,
 		"params": {
+			"attributes": {
+				"type": "object",
+				"required": false
+			},
 			"category": {
 				"type": "string",
 				"required": false
@@ -97,7 +101,16 @@
 				"type": "integer",
 				"required": false
 			},
+			"meta": {
+				"type": "object",
+				"required": false,
+				"deprecated": true
+			},
 			"minutes": {
+				"type": "integer",
+				"required": false
+			},
+			"notebookId": {
 				"type": "integer",
 				"required": false
 			},
@@ -444,6 +457,10 @@
 		"writes": true,
 		"destroys": false,
 		"params": {
+			"attributes": {
+				"type": "object",
+				"required": false
+			},
 			"category": {
 				"type": "string",
 				"required": false
@@ -465,11 +482,20 @@
 				"type": "integer",
 				"required": false
 			},
+			"meta": {
+				"type": "object",
+				"required": false,
+				"deprecated": true
+			},
 			"minutes": {
 				"type": "integer",
 				"required": false
 			},
 			"month_day": {
+				"type": "integer",
+				"required": false
+			},
+			"notebookId": {
 				"type": "integer",
 				"required": false
 			},
@@ -529,9 +555,18 @@
 		"writes": true,
 		"destroys": false,
 		"params": {
+			"attributes": {
+				"type": "object",
+				"required": false
+			},
 			"goalId": {
 				"type": "integer",
 				"required": false
+			},
+			"meta": {
+				"type": "object",
+				"required": false,
+				"deprecated": true
 			},
 			"notebookId": {
 				"type": "integer",
@@ -851,6 +886,10 @@
 		"writes": true,
 		"destroys": false,
 		"params": {
+			"attributes": {
+				"type": "object",
+				"required": false
+			},
 			"category": {
 				"type": "string",
 				"required": false
@@ -863,7 +902,16 @@
 				"type": "string",
 				"required": true
 			},
+			"meta": {
+				"type": "object",
+				"required": false,
+				"deprecated": true
+			},
 			"minutes": {
+				"type": "integer",
+				"required": false
+			},
+			"notebookId": {
 				"type": "integer",
 				"required": false
 			},
@@ -1153,6 +1201,10 @@
 		"writes": true,
 		"destroys": false,
 		"params": {
+			"attributes": {
+				"type": "object",
+				"required": false
+			},
 			"category": {
 				"type": "string",
 				"required": false
@@ -1165,11 +1217,20 @@
 				"type": "integer",
 				"required": true
 			},
+			"meta": {
+				"type": "object",
+				"required": false,
+				"deprecated": true
+			},
 			"minutes": {
 				"type": "integer",
 				"required": false
 			},
 			"month_day": {
+				"type": "integer",
+				"required": false
+			},
+			"notebookId": {
 				"type": "integer",
 				"required": false
 			},
@@ -1229,6 +1290,10 @@
 		"writes": true,
 		"destroys": false,
 		"params": {
+			"attributes": {
+				"type": "object",
+				"required": false
+			},
 			"ease": {
 				"type": "integer",
 				"required": false
@@ -1245,6 +1310,11 @@
 			"interest": {
 				"type": "integer",
 				"required": false
+			},
+			"meta": {
+				"type": "object",
+				"required": false,
+				"deprecated": true
 			},
 			"notebookId": {
 				"type": "integer",

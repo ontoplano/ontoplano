@@ -11,7 +11,7 @@ own write surface, the way the endpoints in [the API](api.md) are the
 write surface for everything else; both end up calling the same
 [services](services.md).
 
-**63 pages, 195 actions.**
+**63 pages, 197 actions.**
 
 | Page                                 | Actions                                                                                                                                                                                                                                                                                                                                                                             |
 | ------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -69,13 +69,13 @@ write surface for everything else; both end up calling the same
 | `/settings/integrations`             | `save`, `models`, `permissions`, `remove`, `ringOnThisPhone`, `createKey`, `putBack`                                                                                                                                                                                                                                                                                                |
 | `/settings/integrations/connections` | `createToken`, `calendarLink`, `notifyAssistant`, `putBack`, `revokeToken`, `updateStream`, `deleteStream`, `createWebhook`, `deleteWebhook`, `reviveWebhook`                                                                                                                                                                                                                       |
 | `/settings/integrations/widget`      | `connect`                                                                                                                                                                                                                                                                                                                                                                           |
-| `/settings/preferences`              | `setNotification`, `setErrorReports`, `saveCurrency`, `saveGridHours`, `saveMenu`, `resetMenu`, `setLayout`, `resetLayout`, `addQuote`, `importQuotes`, `deleteQuote`, `setStyle`, `setLanguage`, `setClock`, `setTheme`, `saveWeek`                                                                                                                                                |
+| `/settings/preferences`              | `setNotification`, `setErrorReports`, `saveCurrency`, `saveCapture`, `saveGridHours`, `saveMenu`, `resetMenu`, `setLayout`, `resetLayout`, `addQuote`, `importQuotes`, `deleteQuote`, `setStyle`, `setLanguage`, `setClock`, `setTheme`, `saveWeek`                                                                                                                                 |
 | `/start`                             | `checkout`                                                                                                                                                                                                                                                                                                                                                                          |
 | `/tasks/activities`                  | `create`, `update`, `toggleActive`, `delete`, `createCategory`, `updateCategory`, `deleteCategory`                                                                                                                                                                                                                                                                                  |
 | `/tasks/board`                       | `setStatus`, `reorder`, `schedule`, `promote`, `demote`, `createTodo`, `setRatings`, `remind`, `unremind`, `editInstance`, `resolveActivity`, `deleteInstance`, `deleteTodo`                                                                                                                                                                                                        |
 | `/tasks/plan`                        | `create`, `update`, `toggleActive`, `delete`, `bulkDelete`, `copyToWeekdays`, `addCalendar`, `removeCalendar`, `applyTemplate`, `saveScheme`, `loadScheme`, `deleteScheme`, `renameScheme`, `scheduleTodo`, `unscheduleBlock`, `convertRepeat`, `moveOccurrence`, `setStatus`, `suppress`, `unsuppress`, `createExceptional`, `updateExceptional`, `deleteExceptional`, `importCsv` |
 | `/tasks/review`                      | `saveNote`, `keepStale`, `completeStale`, `dropStale`, `resolve`, `reopen`, `settle`, `carry`                                                                                                                                                                                                                                                                                       |
-| `/tasks/todo`                        | `create`, `update`, `archive`, `setStatus`, `schedule`, `tag`, `batch`, `delete`, `delegate`                                                                                                                                                                                                                                                                                        |
+| `/tasks/todo`                        | `create`, `update`, `archive`, `setStatus`, `schedule`, `tag`, `attribute`, `batch`, `delete`, `delegate`                                                                                                                                                                                                                                                                           |
 | `/welcome`                           | `assistantToken`, `setLanguage`, `finish`                                                                                                                                                                                                                                                                                                                                           |
 | `/welcome/password`                  | `default`                                                                                                                                                                                                                                                                                                                                                                           |
 
@@ -534,6 +534,11 @@ Everything on this page belongs to the account, never to the instance (I9).
 **`setNotification`**
 
 One row of the notifications list: whether it happens, and when.
+
+**`saveCapture`**
+
+The capture wheel's wedges and notebook. Posted from this page and from
+the gear beside the wheel itself, which is the same form in a dialog.
 
 **`saveMenu`**
 

@@ -186,11 +186,11 @@ works is a key listed here and the reverse.
 | <kbd>l</kbd> | Switch day                    |
 | <kbd>[</kbd> | Switch week                   |
 | <kbd>]</kbd> | Switch week                   |
-| <kbd>n</kbd> | New weekly block              |
-| <kbd>N</kbd> | New one-off block             |
-| <kbd>e</kbd> | Edit block                    |
+| <kbd>n</kbd> | New weekly task block         |
+| <kbd>N</kbd> | New one-off task block        |
+| <kbd>e</kbd> | Edit task block               |
 | <kbd>d</kbd> | Toggle active                 |
-| <kbd>D</kbd> | Delete block                  |
+| <kbd>D</kbd> | Delete task block             |
 | <kbd>v</kbd> | Toggle multiselect            |
 | <kbd> </kbd> | Select/deselect (multiselect) |
 | <kbd>x</kbd> | Ask to delete selected        |

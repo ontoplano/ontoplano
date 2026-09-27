@@ -224,6 +224,24 @@ export type MessageKey =
 	| 'attach.noneYet'
 	| 'attach.recordOne'
 	| 'attach.recording'
+	| 'attributeKeys.linkToOpenWithIt'
+	| 'attributeKeys.whereThisHappens'
+	| 'attributes.another'
+	| 'attributes.beingWritten'
+	| 'attributes.copy'
+	| 'attributes.edit'
+	| 'attributes.emptyRemoves'
+	| 'attributes.namePlaceholder'
+	| 'attributes.needsAName'
+	| 'attributes.none'
+	| 'attributes.readBy'
+	| 'attributes.readByPlugins'
+	| 'attributes.remove'
+	| 'attributes.removeNamed'
+	| 'attributes.show'
+	| 'attributes.title'
+	| 'attributes.valuePlaceholder'
+	| 'attributes.valuePlaceholderOptional'
 	| 'audio.delete'
 	| 'audio.deleteAsk'
 	| 'audio.deleteForever'
@@ -344,6 +362,7 @@ export type MessageKey =
 	| 'errors.assistantLog.thatGoalIsGoneSo'
 	| 'errors.assistantLog.thatMeasureIsAlreadyBack'
 	| 'errors.assistantLog.thatReminderBelongedToSomething'
+	| 'errors.attributes.mustBeAnObject'
 	| 'errors.audio.aRecordingNeedsAName'
 	| 'errors.audio.noSuchRecording'
 	| 'errors.audio.thatIsNotARecording'
@@ -395,6 +414,7 @@ export type MessageKey =
 	| 'errors.imports.thatIsNotATodoist'
 	| 'errors.imports.tooManyImports'
 	| 'errors.instance.unknownRegistrationMode'
+	| 'errors.instances.aRepeatingBlocksNotebook'
 	| 'errors.instances.invalidBlock'
 	| 'errors.instances.invalidDate'
 	| 'errors.instances.invalidStatus'
@@ -424,7 +444,6 @@ export type MessageKey =
 	| 'errors.media.thatPictureIsAlready'
 	| 'errors.mediaUpload.noFileInThatRequest'
 	| 'errors.mediaUpload.signInFirst'
-	| 'errors.meta.metadataMustBeAnObject'
 	| 'errors.modelCatalog.aKeyIsNeeded'
 	| 'errors.modelCatalog.unknownProvider'
 	| 'errors.newsletter.notAvailableHere'
@@ -448,10 +467,10 @@ export type MessageKey =
 	| 'errors.people.somebodyByThatNameAlready'
 	| 'errors.people.thatIsALot'
 	| 'errors.people.unknownRelationship'
-	| 'errors.plugins.eachMetadataKeyMust'
+	| 'errors.plugins.attributeKeysMustBeAnArray'
+	| 'errors.plugins.eachAttributeKeyMust'
 	| 'errors.plugins.homepageMustBeAWeb'
 	| 'errors.plugins.homepageMustBeAnHttp'
-	| 'errors.plugins.metakeysMustBeAnArray'
 	| 'errors.plugins.sourceMustBeLowercaseLetters'
 	| 'errors.preferences.captureNeedsAWedge'
 	| 'errors.preferences.theDayHasToEnd'
@@ -536,12 +555,7 @@ export type MessageKey =
 	| 'fan.accountAndHelp'
 	| 'fan.noTourForThisScreen'
 	| 'fan.showMeAround'
-	| 'fields.buy.anAttributeNeedsAName'
-	| 'fields.buy.another'
-	| 'fields.buy.attributeName'
-	| 'fields.buy.attributeValue'
 	| 'fields.buy.attributes'
-	| 'fields.buy.beingWritten'
 	| 'fields.buy.howManyYouKeep'
 	| 'fields.buy.item'
 	| 'fields.buy.list'
@@ -550,8 +564,6 @@ export type MessageKey =
 	| 'fields.buy.location'
 	| 'fields.buy.nowhereInParticular'
 	| 'fields.buy.price'
-	| 'fields.buy.removeTheAttribute'
-	| 'fields.buy.removeThisAttribute'
 	| 'fields.buy.restock'
 	| 'fields.buy.theCountTheListCompares'
 	| 'fields.buy.whatItUsuallyCosts'
@@ -1572,14 +1584,6 @@ export type MessageKey =
 	| 'media.recordingAdded'
 	| 'media.showWhatIsIn'
 	| 'media.signInFirst'
-	| 'metaEditor.addOption'
-	| 'metaEditor.key'
-	| 'metaEditor.options'
-	| 'metaEditor.readByPluginsEG'
-	| 'metaEditor.removeOption'
-	| 'metaEditor.value'
-	| 'metaKeys.linkToOpenWithTheBlock'
-	| 'metaKeys.whereThisHappens'
 	| 'modal.dragToWiden'
 	| 'newsletter.off.goToOntoplano'
 	| 'newsletter.off.nothingMoreWillBeSent'
@@ -3355,6 +3359,8 @@ export type MessageKey =
 	| 'tour.aShelfOfSubjects'
 	| 'tour.aStreamIsASeries'
 	| 'tour.aTagOnAPicture'
+	| 'tour.aTaskBlockBelongsSomewhere'
+	| 'tour.aTaskWithAttributes'
 	| 'tour.aTitleAndNothingElse'
 	| 'tour.aTokenIsShownOnce'
 	| 'tour.aWeekYouCanLay'
@@ -3453,6 +3459,7 @@ export type MessageKey =
 	| 'tour.oneSetOfLabelsFor'
 	| 'tour.ontoplano'
 	| 'tour.openAPersonToSee'
+	| 'tour.openOneToFileIt'
 	| 'tour.pasteThePageIn'
 	| 'tour.people'
 	| 'tour.picturesLiveInAlbumsPutting'
@@ -3526,6 +3533,7 @@ export type MessageKey =
 	| 'tour.typeAWordYouRemember'
 	| 'tour.upToSixPicturesPer'
 	| 'tour.urgencyEaseInterest'
+	| 'tour.whatATaskSaysAboutItself'
 	| 'tour.whatHappenedInYourWords'
 	| 'tour.whatIsWaitingForATime'
 	| 'tour.whatIsWorthHearing'
@@ -3662,6 +3670,10 @@ export interface MessageValuesFor {
 	'admin.minutesAgo': { count: number };
 	'assistant.answeringWith': { model: string | number; provider: string | number };
 	'assistant.usedTool': { tool: string | number };
+	'attributes.copy': { key: string | number };
+	'attributes.edit': { key: string | number };
+	'attributes.readBy': { description: string | number; plugins: string | number };
+	'attributes.removeNamed': { written: string | number };
 	'audio.full': { count: number };
 	'audio.held': { count: number };
 	'audio.justRecorded': { name: string | number };
@@ -3676,7 +3688,6 @@ export interface MessageValuesFor {
 		minutes: string | number;
 		minutes2: string | number;
 	};
-	'fields.buy.removeTheAttribute': { written: string | number };
 	'filters.applyFilter': { name: string | number };
 	'filters.forgetFilter': { name: string | number };
 	'filters.sureForget': { name: string | number };

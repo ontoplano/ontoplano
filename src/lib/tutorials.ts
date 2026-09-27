@@ -163,6 +163,11 @@ export const TUTORIALS: Record<string, Tutorial> = {
 				body: 'tour.pullDownAnEmptyStretch'
 			},
 			{
+				target: '[data-tour="plan-grid"]',
+				title: 'tour.aTaskBlockBelongsSomewhere',
+				body: 'tour.openOneToFileIt'
+			},
+			{
 				target: '[data-tour="plan-toolbar"]',
 				title: 'tour.whereYouAreAndWhat',
 				body: 'tour.theWeekAndTheArrows'
@@ -231,6 +236,11 @@ export const TUTORIALS: Record<string, Tutorial> = {
 				target: '[data-tour="todo-list"]',
 				title: 'tour.jAndKMoveE',
 				body: 'tour.handOffATodoWith'
+			},
+			{
+				target: '[data-tour="todo-attributes"]',
+				title: 'tour.whatATaskSaysAboutItself',
+				body: 'tour.aTaskWithAttributes'
 			}
 		]
 	},

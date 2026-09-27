@@ -41,7 +41,7 @@ test.describe('with a finger', () => {
 			clientY: box.y + box.height / 2
 		});
 
-		await expect(page.getByRole('heading', { name: 'New block' })).toBeVisible();
+		await expect(page.getByRole('heading', { name: 'New task block' })).toBeVisible();
 	});
 
 	test('a swipe over the grid is a scroll, not a new block', async ({ page }) => {
@@ -73,7 +73,7 @@ test.describe('with a finger', () => {
 			clientY: y - 80
 		});
 
-		await expect(page.getByRole('heading', { name: 'New block' })).toHaveCount(0);
+		await expect(page.getByRole('heading', { name: 'New task block' })).toHaveCount(0);
 	});
 });
 

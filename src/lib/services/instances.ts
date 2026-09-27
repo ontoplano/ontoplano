@@ -83,7 +83,8 @@ export type Occurrence = {
 	/** Effective ratings: a per-occurrence override where one is set, else the
 	 *  block's own. */
 	ratings: RatingValues;
-	meta: string;
+	/** The block's attributes, as stored. See `services/task-attributes.ts`. */
+	attributes: string;
 };
 
 function pad(n: number): string {
@@ -394,7 +395,7 @@ export function listInstances(ctx: Ctx, from: Date, to: Date): Occurrence[] {
 			slotStartTime: recurringTasks.startTime,
 			slotDuration: recurringTasks.durationMinutes,
 			slotLabel: recurringTasks.label,
-			slotMeta: recurringTasks.meta,
+			slotAttributes: recurringTasks.attributes,
 			slotCategoryId: recurringTasks.categoryId,
 			slotCategoryName: slotCategories.name,
 			slotCategoryColor: slotCategories.color,
@@ -413,7 +414,7 @@ export function listInstances(ctx: Ctx, from: Date, to: Date): Occurrence[] {
 			oneOffStartTime: exceptionalTasks.startTime,
 			oneOffDuration: exceptionalTasks.durationMinutes,
 			oneOffLabel: exceptionalTasks.label,
-			oneOffMeta: exceptionalTasks.meta,
+			oneOffAttributes: exceptionalTasks.attributes,
 			oneOffCategoryId: exceptionalTasks.categoryId,
 			oneOffCategoryName: oneOffCategories.name,
 			oneOffCategoryColor: oneOffCategories.color,
@@ -523,7 +524,7 @@ export function listInstances(ctx: Ctx, from: Date, to: Date): Occurrence[] {
 				interest: r.interestOverride ?? (weekly ? r.slotInterest : r.oneOffInterest) ?? null,
 				ease: r.easeOverride ?? (weekly ? r.slotEnergy : r.oneOffEnergy) ?? null
 			},
-			meta: (weekly ? r.slotMeta : r.oneOffMeta) ?? '{}'
+			attributes: (weekly ? r.slotAttributes : r.oneOffAttributes) ?? '{}'
 		};
 	});
 }
@@ -890,22 +891,37 @@ export function changeOccurrence(
 		title?: unknown;
 		/** Already resolved to an owned category — the caller's job to look up. */
 		categoryId?: number;
+		/**
+		 * The notebook to file it under; `0` or `null` takes it out. A one-off's
+		 * alone: a repeating block's notebook is the whole pattern's.
+		 */
+		notebookId?: unknown;
+		/** Serialised attributes, replacing the set. One-offs only, like the notebook. */
+		attributes?: string;
 	}
 ): { id: string } {
 	const { kind, id } = parseOccurrenceId(occurrenceId);
 
 	const wants = (key: keyof typeof changes) =>
 		changes[key] !== undefined && changes[key] !== null && changes[key] !== '';
+	// Empty is an answer here — "in no notebook", "no attributes" — so only
+	// leaving the field out means leave it alone.
+	const refiling = changes.notebookId !== undefined;
+	const describing = changes.attributes !== undefined;
 
 	if (
 		!wants('date') &&
 		!wants('startTime') &&
 		!wants('minutes') &&
 		!wants('title') &&
-		!wants('categoryId')
+		!wants('categoryId') &&
+		!refiling &&
+		!describing
 	) {
 		throw new ValidationError({ key: 'errors.instances.nothingToChangeSay' });
 	}
+	if (kind !== 'exceptional' && (refiling || describing))
+		throw new ValidationError({ key: 'errors.instances.aRepeatingBlocksNotebook' });
 
 	if (kind === 'exceptional') {
 		const one = db
@@ -934,7 +950,11 @@ export function changeOccurrence(
 			startTime: wants('startTime') ? changes.startTime : one.startTime,
 			durationMinutes: wants('minutes') ? changes.minutes : one.durationMinutes,
 			...filed,
-			label: wants('title') ? changes.title : one.label
+			label: wants('title') ? changes.title : one.label,
+			...(refiling
+				? { notebookId: Number(changes.notebookId) === 0 ? null : changes.notebookId }
+				: {}),
+			...(describing ? { attributesPatch: changes.attributes } : {})
 		});
 
 		return { id: `exceptional:${id}` };

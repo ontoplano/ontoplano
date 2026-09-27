@@ -9,11 +9,13 @@ import {
 	batchTodos,
 	isBatchVerb,
 	scheduleTodo,
+	setTodoAttribute,
 	setTodoStatus,
 	tagTodo,
 	updateTodo
 } from '$lib/services/todos';
 import { ValidationError } from '$lib/services/errors';
+import { attributesPatchFromFormData } from '$lib/services/task-attributes';
 import type { RequestEvent } from '@sveltejs/kit';
 
 /**
@@ -38,6 +40,15 @@ import type { RequestEvent } from '@sveltejs/kit';
  */
 type Event = Pick<RequestEvent, 'request'> & { locals: App.Locals };
 
+/**
+ * `{ attributes }` when the form carried the attributes fold, nothing when it
+ * did not: the board's inline editor has no fold and must not clear them.
+ */
+function attributesFrom(formData: FormData) {
+	const attributes = attributesPatchFromFormData(formData);
+	return attributes === undefined ? {} : { attributes };
+}
+
 export const todoHandlers = {
 	create: async ({ request, locals }: Event) => {
 		const formData = await request.formData();
@@ -51,7 +62,8 @@ export const todoHandlers = {
 				// labels alone, and one with an empty box must clear them.
 				...(formData.has('tags') ? { tags: formData.get('tags') } : {}),
 				scheduledDate: formData.get('scheduledDate'),
-				ratings: ratingsFromForm(formData)
+				ratings: ratingsFromForm(formData),
+				...attributesFrom(formData)
 			});
 			/*
 			 * The id comes back, so the toast can offer a way straight into the
@@ -73,8 +85,28 @@ export const todoHandlers = {
 				categoryId: formData.get('categoryId'),
 				notebookId: formData.get('notebookId'),
 				...(formData.has('tags') ? { tags: formData.get('tags') } : {}),
-				ratings: ratingsFromForm(formData)
+				ratings: ratingsFromForm(formData),
+				...attributesFrom(formData)
 			});
+			return { success: true };
+		} catch (e) {
+			return toActionFailure(e);
+		}
+	},
+
+	/**
+	 * One attribute changed in place — the pencil in the ⓘ dialog. An empty
+	 * value removes it.
+	 */
+	attribute: async ({ request, locals }: Event) => {
+		const formData = await request.formData();
+		try {
+			setTodoAttribute(
+				buildCtx(locals.user!.id),
+				Number(formData.get('id')),
+				formData.get('key'),
+				formData.get('value')
+			);
 			return { success: true };
 		} catch (e) {
 			return toActionFailure(e);

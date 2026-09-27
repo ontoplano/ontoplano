@@ -7,8 +7,9 @@ import { listActivities, listCategories } from '$lib/services/activities';
 import { buildCtx, type Ctx } from '$lib/services/ctx';
 import { ServiceError } from '$lib/services/errors';
 import { toActionFailure } from '$lib/http-errors';
-import { metaFromFormData, metaPatchFromFormData } from '$lib/services/meta';
+import { attributesFromFormData, attributesPatchFromFormData } from '$lib/services/task-attributes';
 import { listManifests } from '$lib/services/plugins';
+import { pickableNotebooks } from '$lib/services/notebooks';
 import { billsDueBetween } from '$lib/services/bills';
 import { ensureSession, listWorkouts, updateSession } from '$lib/services/workouts';
 import {
@@ -142,22 +143,24 @@ function marksFor(ctx: Ctx, from: Date, to: Date): Record<string, 'done' | 'undo
 }
 
 /**
- * Slot metadata, turning a validation failure into a form error rather than
- * letting it escape the action and surface as a 500.
+ * A task block's attributes, turning a validation failure into a form error
+ * rather than letting it escape the action and surface as a 500.
  */
-function readMeta(formData: FormData): { meta: string } | { message: string } {
+function readAttributes(formData: FormData): { attributes: string } | { message: string } {
 	try {
-		return { meta: metaFromFormData(formData) };
+		return { attributes: attributesFromFormData(formData) };
 	} catch (e) {
-		return { message: e instanceof ServiceError ? e.message : 'Invalid options' };
+		return { message: e instanceof ServiceError ? e.message : 'Invalid attributes' };
 	}
 }
 
-function readMetaPatch(formData: FormData): { meta: string | undefined } | { message: string } {
+function readAttributesPatch(
+	formData: FormData
+): { attributes: string | undefined } | { message: string } {
 	try {
-		return { meta: metaPatchFromFormData(formData) };
+		return { attributes: attributesPatchFromFormData(formData) };
 	} catch (e) {
-		return { message: e instanceof ServiceError ? e.message : 'Invalid options' };
+		return { message: e instanceof ServiceError ? e.message : 'Invalid attributes' };
 	}
 }
 
@@ -173,6 +176,9 @@ function blockFields(formData: FormData) {
 			? formData.get('remindLeadMinutes')
 			: undefined,
 		mode: formData.get('mode'),
+		// Only when the form carried the field: a drag posts placement alone and
+		// must not take the block out of its notebook.
+		notebookId: formData.has('notebookId') ? formData.get('notebookId') : undefined,
 		categoryId: formData.get('categoryId'),
 		activityId: formData.get('activityId'),
 		workoutId: formData.get('workoutId'),
@@ -303,8 +309,13 @@ export const load = async ({ locals, url, cookies }: IsolatedEvent) => {
 	};
 
 	return {
-		// So the metadata editor can say which plugin reads which key.
-		plugins: listManifests(ctx.userId).map((m) => ({ name: m.name, metaKeys: m.metaKeys })),
+		// So the attributes editor can say which plugin reads which key.
+		plugins: listManifests(ctx.userId).map((m) => ({
+			name: m.name,
+			attributeKeys: m.attributeKeys
+		})),
+		// What a task block can be filed under, for the form's notebook field.
+		notebooks: pickableNotebooks(ctx),
 		// The stretch of the day this account asked the grid to draw.
 		gridHours: getGridHours(ctx.userId),
 		/*
@@ -376,15 +387,15 @@ export const actions = {
 		const ctx: Ctx = buildCtx(locals.user!.id);
 		const formData = await request.formData();
 
-		const meta = readMeta(formData);
-		if ('message' in meta) return fail(400, { message: meta.message });
+		const attributes = readAttributes(formData);
+		if ('message' in attributes) return fail(400, { message: attributes.message });
 
 		try {
 			const id = createSlot(ctx, {
 				...blockFields(formData),
 				weekday: formData.get('weekday'),
 				recurrence: readRecurrence(formData, ctx.now),
-				meta: meta.meta
+				attributes: attributes.attributes
 			});
 			return { success: true, id };
 		} catch (e) {
@@ -395,8 +406,8 @@ export const actions = {
 	update: async ({ request, locals }: IsolatedEvent) => {
 		const formData = await request.formData();
 
-		const metaPatch = readMetaPatch(formData);
-		if ('message' in metaPatch) return fail(400, { message: metaPatch.message });
+		const patch = readAttributesPatch(formData);
+		if ('message' in patch) return fail(400, { message: patch.message });
 
 		try {
 			updateSlot(buildCtx(locals.user!.id), Number(formData.get('id')), {
@@ -407,7 +418,7 @@ export const actions = {
 				recurrence: formData.has('recurrenceKind')
 					? readRecurrence(formData, buildCtx(locals.user!.id).now)
 					: undefined,
-				metaPatch: metaPatch.meta
+				attributesPatch: patch.attributes
 			});
 			return { success: true };
 		} catch (e) {
@@ -707,14 +718,14 @@ export const actions = {
 	createExceptional: async ({ request, locals }: IsolatedEvent) => {
 		const formData = await request.formData();
 
-		const meta = readMeta(formData);
-		if ('message' in meta) return fail(400, { message: meta.message });
+		const attributes = readAttributes(formData);
+		if ('message' in attributes) return fail(400, { message: attributes.message });
 
 		try {
 			const id = createExceptional(buildCtx(locals.user!.id), {
 				...blockFields(formData),
 				date: formData.get('date'),
-				meta: meta.meta
+				attributes: attributes.attributes
 			});
 			return { success: true, id };
 		} catch (e) {
@@ -727,16 +738,16 @@ export const actions = {
 		const formData = await request.formData();
 
 		// Same rule as `update`: a drag or resize carries placement only, and must
-		// leave any metadata on the block untouched.
-		const metaPatch = readMetaPatch(formData);
-		if ('message' in metaPatch) return fail(400, { message: metaPatch.message });
+		// leave the block's attributes untouched.
+		const patch = readAttributesPatch(formData);
+		if ('message' in patch) return fail(400, { message: patch.message });
 
 		try {
 			updateExceptional(ctx, Number(formData.get('id')), {
 				...blockFields(formData),
 				date: formData.get('date'),
 				recurrence: formData.has('recurrenceKind') ? readRecurrence(formData, ctx.now) : undefined,
-				metaPatch: metaPatch.meta
+				attributesPatch: patch.attributes
 			});
 			return { success: true };
 		} catch (e) {

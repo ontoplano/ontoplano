@@ -41,6 +41,8 @@ releases mattered.
 - A gear beside the open + wheel opens Quick capture settings (also in Settings → Preferences): choose the wheel's wedges and their order, and a main notebook every capture form starts in — a notebook you are reading still wins.
 - Bills can be automatic, like a subscription: no reminder, and the payment is recorded on its due day. A period can be skipped, every bill opens onto its payment history with the average per period, and a notebook's Bills tab edits and deletes bills like the Bills page.
 - A notebook's New item form asks where the item lives, like Inventory's own.
+- Tasks and task blocks carry attributes — a link, a phone number, anything a plugin reads — set in their form under the labels, and read, copied or changed from the ⓘ on a task's card. They were called options.
+- A task block can be filed in a notebook, and says so on the plan under its time; one made from a task keeps the task's notebook.
 - A notebook's Open and Manage tags sit beside its name, apart from the buttons that add to it.
 - The demo's kitchen notebook opens on its tasks, with colour-coded tags and a shopping list; other demo notebooks now hold goals, inventory and ideas.
 - On a phone, a notebook's header and task toolbar are tidier: Open and tags are icons in the corner, the search, filter, clear and count share one line, and the order sits beside Select many.

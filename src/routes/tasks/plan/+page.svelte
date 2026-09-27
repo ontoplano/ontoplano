@@ -16,7 +16,7 @@
 	import { resolve } from '$app/paths';
 	import OneLine from '$lib/components/OneLine.svelte';
 	import Banner from '$lib/components/Banner.svelte';
-	import Icon from '$lib/components/Icon.svelte';
+	import Icon, { ICONS } from '$lib/components/Icon.svelte';
 	import Swatch from '$lib/components/Swatch.svelte';
 	import EmptyState from '$lib/components/EmptyState.svelte';
 	import { armed } from '$lib/actions/armed';
@@ -32,7 +32,8 @@
 	import { browser } from '$app/environment';
 	import { tick } from 'svelte';
 	import type { PageServerData, ActionData } from './$types.js';
-	import MetaEditor from '$lib/components/MetaEditor.svelte';
+	import AttributeFields from '$lib/components/AttributeFields.svelte';
+	import NotebookField from '$lib/components/NotebookField.svelte';
 	import MoreOptions from '$lib/components/MoreOptions.svelte';
 	import RatingPicker from '$lib/components/RatingPicker.svelte';
 	import { RATINGS } from '$lib/ratings.js';
@@ -45,7 +46,12 @@
 		WEEKLY,
 		type Recurrence
 	} from '$lib/recurrence.js';
-	import { parseSlotMeta } from '$lib/meta-keys.js';
+	import {
+		ATTRIBUTE_FORM,
+		attributePairs,
+		mergeSuggestions,
+		parseStoredAttributes
+	} from '$lib/attribute-keys.js';
 	import { getAction } from '$lib/shortcuts';
 	import { Calendar, DayGrid, TimeGrid, Interaction } from '@event-calendar/core';
 	import '@event-calendar/core/index.css';
@@ -401,6 +407,10 @@
 	let formLabel = $state('');
 	let formCategoryId = $state<number | null>(null);
 	let formWorkoutId = $state<number | null>(null);
+	let formNotebookId = $state<number | null>(null);
+	let formAttributes = $state<[string, string][]>([]);
+	/** Counts openings, so the attributes fold is drawn afresh for each block. */
+	let formOpenings = $state(0);
 
 	/*
 	 * What the block form's header says about the block being edited.
@@ -536,6 +546,7 @@
 	}
 
 	function openForm() {
+		formOpenings += 1;
 		showForm = true;
 		confirmingFormDelete = false;
 		/*
@@ -602,6 +613,8 @@
 		formLabel = slot.label ?? '';
 		formCategoryId = slot.categoryId ?? data.categories[0]?.id ?? null;
 		formWorkoutId = slot.workoutId ?? data.workouts[0]?.id ?? null;
+		formNotebookId = slot.notebookId ?? null;
+		formAttributes = attributePairs(parseStoredAttributes(slot.attributes));
 		openForm();
 	}
 
@@ -624,6 +637,8 @@
 		formLabel = exc.label ?? '';
 		formCategoryId = exc.categoryId ?? data.categories[0]?.id ?? null;
 		formWorkoutId = exc.workoutId ?? data.workouts[0]?.id ?? null;
+		formNotebookId = exc.notebookId ?? null;
+		formAttributes = attributePairs(parseStoredAttributes(exc.attributes));
 		openForm();
 	}
 
@@ -654,6 +669,8 @@
 		formLabel = '';
 		formCategoryId = data.categories[0]?.id ?? null;
 		formWorkoutId = data.workouts[0]?.id ?? null;
+		formNotebookId = null;
+		formAttributes = [];
 		openForm();
 	}
 
@@ -1798,11 +1815,6 @@
 
 	/** "30 min", "1 h", "Not at all" — the chips, in the fewest words. */
 
-	const editingBlock = $derived.by((): Slot | Exceptional | null => {
-		if (editingBlockId === null) return null;
-		return editingKind === 'slot' ? findSlot(editingBlockId) : findExceptional(editingBlockId);
-	});
-
 	const formAction = $derived.by(() => {
 		if (editingKind === 'slot') return '?/update';
 		if (editingKind === 'exceptional') return '?/updateExceptional';
@@ -2081,7 +2093,8 @@
 			today: data.today,
 			markOf: markOf,
 			locale: t.locale,
-			twelveHour: wantsTwelveHour(now())
+			twelveHour: wantsTwelveHour(now()),
+			notebookGlyph: ICONS.notebook
 		}),
 		events: gridEvents,
 		editable: true,
@@ -3684,7 +3697,21 @@
 					{/each}
 				</MoreOptions>
 
-				<MetaEditor initial={parseSlotMeta(editingBlock?.meta)} plugins={data.plugins} />
+				<!-- What it is part of: the subject a task in the same notebook is
+				     filed under, which is where a block made from one comes from. -->
+				<FormGrid>
+					<NotebookField notebooks={data.notebooks} bind:value={formNotebookId} span={12} />
+				</FormGrid>
+
+				{#key formOpenings}
+					<AttributeFields
+						fold
+						bind:pairs={formAttributes}
+						present={ATTRIBUTE_FORM.present}
+						suggestions={mergeSuggestions(t, data.plugins)}
+						hint={t('attributes.readByPlugins')}
+					/>
+				{/key}
 			</form>
 
 			<!-- Skip and delete belong to a block that already exists; a new one has
@@ -4277,6 +4304,11 @@
 			{/if}
 			{#if hovered.repeats}
 				<p class="text-xs text-gray-500">{hovered.repeats}</p>
+			{/if}
+			{#if hovered.notebookTitle}
+				<p class="flex items-center gap-1 text-xs text-gray-500">
+					<Icon name="notebook" size={12} />{hovered.notebookTitle}
+				</p>
 			{/if}
 			{#if hovered.state}
 				<p class="mt-0.5 text-xs font-medium text-gray-500">{hovered.state}</p>

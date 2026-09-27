@@ -41,7 +41,7 @@ export const messages: Catalogue = {
 	'admin.id.deleteThisAccount': 'Delete this account',
 	'admin.id.endPlanThen': 'End plan then',
 	'admin.id.everyBlockEntryNoteGoal':
-		'Every block, entry, note, goal and picture this account owns is deleted, and the export it could have taken with it goes too.',
+		'Every task block, entry, note, goal and picture this account owns is deleted, and the export it could have taken with it goes too.',
 	'admin.id.everythingInItGoesIn':
 		'Everything in it goes, in one transaction, with nothing to restore it from.',
 	'admin.id.getConfirmationLink': 'Get confirmation link',
@@ -108,8 +108,8 @@ export const messages: Catalogue = {
 	'app.bills': 'Bills',
 	'app.birthdays': 'Birthdays',
 	'app.blank': 'Blank',
-	'app.blocks': 'Blocks',
-	'app.blocksAsTheyStart': 'Blocks, as they start',
+	'app.blocks': 'Task blocks',
+	'app.blocksAsTheyStart': 'Task blocks, as they start',
 	'app.board': 'Board',
 	'app.buy': 'Buy',
 	'app.byInvitation': 'By invitation',
@@ -235,6 +235,24 @@ export const messages: Catalogue = {
 	'attach.noneYet': 'No recordings yet.',
 	'attach.recordOne': 'Record one',
 	'attach.recording': 'Attach a recording',
+	'attributeKeys.linkToOpenWithIt': 'A link to open with it',
+	'attributeKeys.whereThisHappens': 'Where this happens',
+	'attributes.another': '+ Another',
+	'attributes.beingWritten': 'being written',
+	'attributes.copy': 'Copy {key}',
+	'attributes.edit': 'Edit {key}',
+	'attributes.emptyRemoves': 'Saved empty, it is removed.',
+	'attributes.namePlaceholder': 'my attribute',
+	'attributes.needsAName': 'An attribute needs a name.',
+	'attributes.none': 'No attributes.',
+	'attributes.readBy': '{description} — read by {plugins}',
+	'attributes.readByPlugins': 'Read by plugins — e.g. alarms',
+	'attributes.remove': 'Remove this attribute',
+	'attributes.removeNamed': 'Remove the attribute {written}',
+	'attributes.show': 'Show its attributes',
+	'attributes.title': 'Attributes',
+	'attributes.valuePlaceholder': 'my value',
+	'attributes.valuePlaceholderOptional': 'my value (optional)',
 	'audio.delete': 'Delete',
 	'audio.deleteAsk': 'Delete this recording?',
 	'audio.deleteForever': 'This cannot be undone.',
@@ -285,7 +303,8 @@ export const messages: Catalogue = {
 	'card.currentStreaks': 'Current streaks.',
 	'card.goalsWhosePeriodCoversToday': 'Goals whose period covers today, with progress.',
 	'card.oneOfYourOwnQuotes': 'One of your own quotes, the same one all day.',
-	'card.theBlockYouAreIn': 'The block you are in, or the next one, and the two answers it wants.',
+	'card.theBlockYouAreIn':
+		'The task block you are in, or the next one, and the two answers it wants.',
 	'card.theHoursYouHaveTicked': 'The hours you have ticked off this week, by category.',
 	'card.theLastFewIdeasYou': 'The last few ideas you had.',
 	'card.theMostRecentThingsYou': 'The most recent things you wrote down, newest first.',
@@ -370,6 +389,7 @@ export const messages: Catalogue = {
 	'errors.assistantLog.thatMeasureIsAlreadyBack': 'That measure is already back on the goal.',
 	'errors.assistantLog.thatReminderBelongedToSomething':
 		'That reminder belonged to something — set it again on the thing itself.',
+	'errors.attributes.mustBeAnObject': 'attributes must be an object',
 	'errors.audio.aRecordingNeedsAName': 'A recording needs a name.',
 	'errors.audio.noSuchRecording': 'No such recording.',
 	'errors.audio.thatIsNotARecording': 'That is not a recording this instance takes.',
@@ -431,12 +451,14 @@ export const messages: Catalogue = {
 	'errors.imports.tooManyImports':
 		'Too many imports by that name — give this one a name of its own',
 	'errors.instance.unknownRegistrationMode': 'Unknown registration mode',
-	'errors.instances.invalidBlock': 'Invalid block',
+	'errors.instances.aRepeatingBlocksNotebook':
+		"A repeating task block's notebook and attributes belong to the whole pattern — change them on the repeating block.",
+	'errors.instances.invalidBlock': 'Invalid task block',
 	'errors.instances.invalidDate': 'Invalid date',
 	'errors.instances.invalidStatus': 'Invalid status',
 	'errors.instances.nothingToChangeSay':
 		'Nothing to change — say a new time, day, length, title or category.',
-	'errors.instances.thatBlockHasNothing': 'That block has nothing to move.',
+	'errors.instances.thatBlockHasNothing': 'That task block has nothing to move.',
 	'errors.insufficientScope': 'This key is not allowed to do that.',
 	'errors.inventory.invalidPrice': 'Invalid price',
 	'errors.inventory.onlyReplenishItemsCan': 'Only replenish items can be restocked',
@@ -464,7 +486,6 @@ export const messages: Catalogue = {
 	'errors.media.thatPictureIsAlready': 'That picture is already on this recipe.',
 	'errors.mediaUpload.noFileInThatRequest': 'No file in that request.',
 	'errors.mediaUpload.signInFirst': 'Sign in first.',
-	'errors.meta.metadataMustBeAnObject': 'metadata must be an object',
 	'errors.modelCatalog.aKeyIsNeeded': 'A key is needed to ask for the models.',
 	'errors.modelCatalog.unknownProvider': 'Unknown provider',
 	'errors.newsletter.notAvailableHere': 'Not available here.',
@@ -489,10 +510,10 @@ export const messages: Catalogue = {
 	'errors.people.somebodyByThatNameAlready': 'Somebody by that name already exists',
 	'errors.people.thatIsALot': 'That is a lot of people for one entry',
 	'errors.people.unknownRelationship': 'Unknown relationship',
-	'errors.plugins.eachMetadataKeyMust': 'each metadata key must be an object',
+	'errors.plugins.attributeKeysMustBeAnArray': 'attributeKeys must be an array',
+	'errors.plugins.eachAttributeKeyMust': 'each attribute key must be an object',
 	'errors.plugins.homepageMustBeAWeb': 'homepage must be a web address',
 	'errors.plugins.homepageMustBeAnHttp': 'homepage must be an http or https address',
-	'errors.plugins.metakeysMustBeAnArray': 'metaKeys must be an array',
 	'errors.plugins.sourceMustBeLowercaseLetters':
 		'source must be lowercase letters, digits, hyphens and underscores, starting with a letter',
 	'errors.preferences.captureNeedsAWedge': 'Keep at least one wedge on the wheel',
@@ -515,7 +536,7 @@ export const messages: Catalogue = {
 	'errors.registration.thatInvitationCode': 'That invitation code is not valid, or has been used',
 	'errors.registration.thisInstanceIsNotAccepting': 'This instance is not accepting new accounts',
 	'errors.reminders.noSuchReminder': 'No such reminder',
-	'errors.reminders.thatBlockHasNoTime': 'That block has no time on it',
+	'errors.reminders.thatBlockHasNoTime': 'That task block has no time on it',
 	'errors.reminders.thatIsNotADay': 'That is not a day, or a day and a time.',
 	'errors.review.invalidStatus': 'Invalid status',
 	'errors.review.unknownKind': 'Unknown kind',
@@ -563,7 +584,7 @@ export const messages: Catalogue = {
 	'errors.todos.invalidBatch': 'Choose a valid batch action.',
 	'errors.todos.invalidStatus': 'Invalid status',
 	'errors.todos.nothingWasChosen': 'Nothing was chosen',
-	'errors.todos.onlyOneOffBlocksCan': 'Only one-off blocks can go back to the todo list',
+	'errors.todos.onlyOneOffBlocksCan': 'Only one-off task blocks can go back to the todo list',
 	'errors.todos.thatIsTooManyAtOnce': 'That is more tasks than one press may change',
 	'errors.tokens.aCalendarLinkReads':
 		'A calendar link reads your plan and nothing else — it cannot be combined with other scopes',
@@ -583,12 +604,7 @@ export const messages: Catalogue = {
 	'fan.accountAndHelp': 'Account and help',
 	'fan.noTourForThisScreen': 'No tour for this screen',
 	'fan.showMeAround': 'Show me around',
-	'fields.buy.anAttributeNeedsAName': 'An attribute needs a name.',
-	'fields.buy.another': '+ Another',
-	'fields.buy.attributeName': 'my attribute',
-	'fields.buy.attributeValue': 'my value (optional)',
 	'fields.buy.attributes': 'Attributes',
-	'fields.buy.beingWritten': 'being written',
 	'fields.buy.howManyYouKeep': 'How many you keep',
 	'fields.buy.item': 'Item',
 	'fields.buy.list': 'List',
@@ -597,8 +613,6 @@ export const messages: Catalogue = {
 	'fields.buy.location': 'Location',
 	'fields.buy.nowhereInParticular': '— nowhere in particular —',
 	'fields.buy.price': 'Price',
-	'fields.buy.removeTheAttribute': 'Remove the attribute {written}',
-	'fields.buy.removeThisAttribute': 'Remove this attribute',
 	'fields.buy.restock': 'Restock',
 	'fields.buy.theCountTheListCompares': 'The count the list compares against.',
 	'fields.buy.whatItUsuallyCosts': 'What it usually costs.',
@@ -917,7 +931,7 @@ export const messages: Catalogue = {
 	'goals.eGFitness': 'e.g. fitness',
 	'goals.eGTrainThreeTimesA': 'e.g. train three times a week',
 	'goals.editGoal': 'Edit goal',
-	'goals.everyBlockOf': '{name} — every block of it counts as it is done',
+	'goals.everyBlockOf': '{name} — every task block of it counts as it is done',
 	'goals.everyWeekIts': '{name} — every week; its occurrences count as they are done',
 	'goals.fitnessStudyMoney': 'Fitness, study, money — whatever you track.',
 	'goals.goal': 'Goal',
@@ -939,7 +953,7 @@ export const messages: Catalogue = {
 	'goals.noGoalsYet': 'No goals yet',
 	'goals.noMeasureSet': 'No measure set',
 	'goals.noOpenTodos': 'No open todos.',
-	'goals.noWeeklyBlocksYet': 'No weekly blocks yet',
+	'goals.noWeeklyBlocksYet': 'No weekly task blocks yet',
 	'goals.none': '— none —',
 	'goals.nothingAtThisHorizon': 'Nothing at this horizon.',
 	'goals.nothingCountedYet': 'Nothing counted yet',
@@ -969,7 +983,7 @@ export const messages: Catalogue = {
 	'goals.towardsThis': 'towards this',
 	'goals.week': 'Week',
 	'goals.weekOfDateYear': 'Week of {date} {year}',
-	'goals.weeklyBlocks': 'Weekly blocks',
+	'goals.weeklyBlocks': 'Weekly task blocks',
 	'goals.whatCountsTowardsThisGoal': 'What counts towards this goal',
 	'goals.whatKindOfNumber': 'What kind of number',
 	'goals.year': 'Year',
@@ -1030,7 +1044,7 @@ export const messages: Catalogue = {
 	'health.recipes.id.ingredient': 'Ingredient',
 	'health.recipes.id.ingredients': 'Ingredients',
 	'health.recipes.id.itBecomesABlockOn':
-		'It becomes a block on the plan, like anything else you give time to.',
+		'It becomes a task block on the plan, like anything else you give time to.',
 	'health.recipes.id.itsIngredientsStayOnThe':
 		'Its ingredients stay on the shopping list — they are things you buy, not parts of the recipe.',
 	'health.recipes.id.keepIt': 'Keep it',
@@ -1073,7 +1087,7 @@ export const messages: Catalogue = {
 	'health.recipes.id.writeIt': 'Write it',
 	'health.recipes.ingredients': '{ingredients} ingredients',
 	'health.recipes.itBecomesABlockOn':
-		'It becomes a block on the plan, like anything else you give time to.',
+		'It becomes a task block on the plan, like anything else you give time to.',
 	'health.recipes.markdownHeadingsListsNumbersIngredients':
 		'Markdown: headings, lists, numbers. Ingredients come after.',
 	'health.recipes.method': 'Method',
@@ -1213,7 +1227,7 @@ export const messages: Catalogue = {
 	'home.allEntries': 'All entries →',
 	'home.backToTheDashboard': 'Back to the dashboard',
 	'home.bills': 'Bills',
-	'home.blocksCount': { one: '{count} block', other: '{count} blocks' },
+	'home.blocksCount': { one: '{count} task block', other: '{count} task blocks' },
 	'home.countToGo': '{count} to go',
 	'home.demoVersion': 'Demo version',
 	'home.diary': 'Diary',
@@ -1223,7 +1237,7 @@ export const messages: Catalogue = {
 	'home.dueThe': '· due the',
 	'home.edit': 'Edit →',
 	'home.editRarr': 'Edit →',
-	'home.everyBlockOnTodaySPlan': "Every block on today's plan has an answer.",
+	'home.everyBlockOnTodaySPlan': "Every task block on today's plan has an answer.",
 	'home.everythingPaidThisMonth': 'Everything paid this month.',
 	'home.everythingTheDashboardCan':
 		'Everything the dashboard can show, by room. Press one to put it on or take it off.',
@@ -1280,7 +1294,7 @@ export const messages: Catalogue = {
 	'home.nothingElseToday': 'Nothing else today',
 	'home.nothingHereIsPromisedTo': 'Nothing here is promised to survive.',
 	'home.nothingIsPlannedForToday':
-		'Nothing is planned for today. A block is a time you have given to something.',
+		'Nothing is planned for today. A task block is a time you have given to something.',
 	'home.nothingLeftToday': 'nothing left today',
 	'home.nothingOnTheListAnything': 'Nothing on the list. Anything with no day yet lives here.',
 	'home.nothingOnTheWishlist':
@@ -1683,7 +1697,7 @@ export const messages: Catalogue = {
 	'mail.reset.small':
 		"The link works once and expires in an hour. If this wasn't you, nothing has changed and you can ignore this message.",
 	'mail.reset.subject': 'Reset your ontoplano password',
-	'mail.review.allAnswered': 'Every block has an answer — nothing is waiting on you.',
+	'mail.review.allAnswered': 'Every task block has an answer — nothing is waiting on you.',
 	'mail.review.andMore': { one: ' and {count} more', other: ' and {count} more' },
 	'mail.review.busiest': 'Most of it was {category}: {done} of {planned}.',
 	'mail.review.close': 'Close the week',
@@ -1692,12 +1706,12 @@ export const messages: Catalogue = {
 	'mail.review.subjectClosed': 'Your week: {done} of {planned}',
 	'mail.review.subjectOpen': 'Review your week: {done} of {planned}',
 	'mail.review.summary':
-		'Your week of {span}: you did {done} of the {planned} blocks you planned — {rate}% — and {hoursDone} of the {hoursPlanned} you set aside.',
+		'Your week of {span}: you did {done} of the {planned} task blocks you planned — {rate}% — and {hoursDone} of the {hoursPlanned} you set aside.',
 	'mail.review.threeLines': 'Three lines about the week is the part worth reading in a year.',
 	'mail.review.unanswered': {
-		one: '{count} block has no answer yet — {titles}{andMore}. Say what became of them, or carry them into this week.',
+		one: '{count} task block has no answer yet — {titles}{andMore}. Say what became of them, or carry them into this week.',
 		other:
-			'{count} blocks have no answer yet — {titles}{andMore}. Say what became of them, or carry them into this week.'
+			'{count} task blocks have no answer yet — {titles}{andMore}. Say what became of them, or carry them into this week.'
 	},
 	'mail.stopThese': 'Stop these: {url}',
 	'mail.trial.action': 'Manage your plan',
@@ -1754,14 +1768,6 @@ export const messages: Catalogue = {
 	'media.recordingAdded': 'Recording added.',
 	'media.showWhatIsIn': 'Show what is in {name}',
 	'media.signInFirst': 'Sign in first.',
-	'metaEditor.addOption': '+ Add option',
-	'metaEditor.key': 'key',
-	'metaEditor.options': 'Options',
-	'metaEditor.readByPluginsEG': 'Read by plugins — e.g. alarms',
-	'metaEditor.removeOption': 'Remove option',
-	'metaEditor.value': 'value',
-	'metaKeys.linkToOpenWithTheBlock': 'Link to open with the block',
-	'metaKeys.whereThisHappens': 'Where this happens',
 	'modal.dragToWiden': 'Drag to make it wider; double-click to put it back',
 	'newsletter.off.goToOntoplano': 'Go to ontoplano',
 	'newsletter.off.nothingMoreWillBeSent': 'Nothing more will be sent to {email}.',
@@ -2054,7 +2060,7 @@ export const messages: Catalogue = {
 	'notebooks.tags.noColour': 'No colour',
 	'notebooks.tags.noTagsYet': 'No tags yet',
 	'notebooks.tags.oneVocabularyForTheWhole':
-		'One set of tags for the whole account — the same word on a task, a note, an idea, a block and a picture. Renaming or removing one here changes it everywhere.',
+		'One set of tags for the whole account — the same word on a task, a note, an idea, a task block and a picture. Renaming or removing one here changes it everywhere.',
 	'notebooks.tags.removeFromThisNotebook': 'Remove from this notebook',
 	'notebooks.tags.removeHere': 'Remove here',
 	'notebooks.tags.renamingOntoAName':
@@ -2088,16 +2094,19 @@ export const messages: Catalogue = {
 	'notifications.title': 'Notifications',
 	'notifications.unread': '{count} unread',
 	'notify.everyBlockOnThePlan':
-		'Every block on the plan says so when its time comes. Without this only the blocks you gave a lead time to say anything.',
+		'Every task block on the plan says so when its time comes. Without this only the task blocks you gave a lead time to say anything.',
 	'notify.labelsAs': 'as {labels}',
 	'notify.labelsOff': '{labels} taken off',
 	'notify.mondayMorningWhatLastWeek':
 		'Monday morning: what last week actually was, with the page that closes it one press away.',
 	'notify.noun.activity': { one: '{count} activity', other: '{count} activities' },
 	'notify.noun.alarm': { one: '{count} alarm', other: '{count} alarms' },
-	'notify.noun.beforeBlock': { one: '{count} block reminder', other: '{count} block reminders' },
+	'notify.noun.beforeBlock': {
+		one: '{count} task block reminder',
+		other: '{count} task block reminders'
+	},
 	'notify.noun.bill': { one: '{count} bill', other: '{count} bills' },
-	'notify.noun.block': { one: '{count} block', other: '{count} blocks' },
+	'notify.noun.block': { one: '{count} task block', other: '{count} task blocks' },
 	'notify.noun.bought': { one: '{count} purchase', other: '{count} purchases' },
 	'notify.noun.dataPoint': { one: '{count} data point', other: '{count} data points' },
 	'notify.noun.entry': { one: '{count} entry', other: '{count} entries' },
@@ -2125,8 +2134,8 @@ export const messages: Catalogue = {
 	'notify.noun.recipe': { one: '{count} recipe', other: '{count} recipes' },
 	'notify.noun.reminder': { one: '{count} reminder', other: '{count} reminders' },
 	'notify.noun.repeatingBlock': {
-		one: '{count} repeating block',
-		other: '{count} repeating blocks'
+		one: '{count} repeating task block',
+		other: '{count} repeating task blocks'
 	},
 	'notify.noun.reviewNote': { one: '{count} review note', other: '{count} review notes' },
 	'notify.noun.sortRule': { one: '{count} sorting rule', other: '{count} sorting rules' },
@@ -2147,7 +2156,7 @@ export const messages: Catalogue = {
 	'notify.onTheMorningForEverybody':
 		'On the morning, for everybody in your address book with a date on them.',
 	'notify.onTheMorningTheWeek':
-		'On the morning the week turns over, while last week still has blocks unanswered.',
+		'On the morning the week turns over, while last week still has task blocks unanswered.',
 	'notify.others': { one: '{count} other', other: '{count} others' },
 	'notify.phrase': '{verb} {what}',
 	'notify.theDayOneWantsPaying':
@@ -2292,7 +2301,7 @@ export const messages: Catalogue = {
 	'reminders.birthdayOf': "{name}'s birthday",
 	'reminders.birthdayTurns': '{name} turns {age}',
 	'reminders.blocksWithAReminderBirthdays':
-		'Blocks with a reminder, birthdays, bills and anything you set here all show up in this list.',
+		'Task blocks with a reminder, birthdays, bills and anything you set here all show up in this list.',
 	'reminders.callIt': 'Call it',
 	'reminders.change': 'Change {message}',
 	'reminders.changeHowFar': 'Change how far this looks',
@@ -2308,8 +2317,8 @@ export const messages: Catalogue = {
 	'reminders.countsAsSecureFromAnother': 'counts as secure; from another device it does not.',
 	'reminders.day': 'Day',
 	'reminders.dayAllAnswered': {
-		one: 'That was today — the one block is answered for.',
-		other: 'That was today — all {count} blocks answered for.'
+		one: 'That was today — the one task block is answered for.',
+		other: 'That was today — all {count} task blocks answered for.'
 	},
 	'reminders.daySomeLeft': 'That was today — {done} of {total} done, {left} still to say.',
 	'reminders.dayStartHasAlreadyBeen': '{at} has already been today.',
@@ -2360,7 +2369,7 @@ export const messages: Catalogue = {
 	'reminders.remove': 'Remove {message}',
 	'reminders.remove2': 'Remove {name}',
 	'reminders.removeThisReminder': 'Remove this reminder',
-	'reminders.reviewBlocks': { one: '{count} block', other: '{count} blocks' },
+	'reminders.reviewBlocks': { one: '{count} task block', other: '{count} task blocks' },
 	'reminders.reviewPending':
 		'Your weekly review is pending — {blocks} from last week with no answer.',
 	'reminders.reviewWeeksOpen':
@@ -2531,7 +2540,7 @@ export const messages: Catalogue = {
 	'search.goal': 'goal:',
 	'search.inKitchen': 'in:kitchen',
 	'search.kind.activity': 'Activities',
-	'search.kind.block': 'Blocks',
+	'search.kind.block': 'Task blocks',
 	'search.kind.entry': 'Diary',
 	'search.kind.goal': 'Goals',
 	'search.kind.idea': 'Ideas',
@@ -2543,7 +2552,7 @@ export const messages: Catalogue = {
 	'search.narrowIt': 'Narrow it:',
 	'search.note': 'note:',
 	'search.notesDiaryEntriesTodosBlocks':
-		'Notes, diary entries, todos, blocks, goals, ideas, people, shopping and activities — all of it at once, or one kind at a time.',
+		'Notes, diary entries, todos, task blocks, goals, ideas, people, shopping and activities — all of it at once, or one kind at a time.',
 	'search.nothingMatches': 'Nothing matches “{q}”',
 	'search.or': '— or',
 	'search.searchOntoplano': 'Search · ontoplano',
@@ -2562,7 +2571,7 @@ export const messages: Catalogue = {
 		'Your pictures, kept in albums. A picture lives once however many albums hold it, and a tag cuts across all of them.',
 	'sections.gallery.label': 'Gallery',
 	'sections.goals.blurb':
-		'What you are working towards, by horizon. A block of your week can belong to a goal, so the goal knows which work actually moved it.',
+		'What you are working towards, by horizon. A task block of your week can belong to a goal, so the goal knows which work actually moved it.',
 	'sections.goals.label': 'Goals',
 	'sections.habits.blurb': 'The daily things, with a year of them at a glance.',
 	'sections.habits.label': 'Habits',
@@ -3245,9 +3254,9 @@ export const messages: Catalogue = {
 	'shortcut.closeForm': 'Close form',
 	'shortcut.copyToDaysMultiselect': 'Copy to days (multiselect)',
 	'shortcut.delegate': 'Delegate',
-	'shortcut.deleteBlock': 'Delete block',
+	'shortcut.deleteBlock': 'Delete task block',
 	'shortcut.deleteItem': 'Delete item',
-	'shortcut.editBlock': 'Edit block',
+	'shortcut.editBlock': 'Edit task block',
 	'shortcut.editEntry': 'Edit entry',
 	'shortcut.editIdea': 'Edit idea',
 	'shortcut.editItem': 'Edit item',
@@ -3278,12 +3287,12 @@ export const messages: Catalogue = {
 	'shortcut.newIdea': 'New idea',
 	'shortcut.newItem': 'New item',
 	'shortcut.newNotebook': 'New notebook',
-	'shortcut.newOneOffBlock': 'New one-off block',
+	'shortcut.newOneOffBlock': 'New one-off task block',
 	'shortcut.newPerson': 'New person',
 	'shortcut.newRecipe': 'New recipe',
 	'shortcut.newTodo': 'New task',
 	'shortcut.newToken': 'New token',
-	'shortcut.newWeeklyBlock': 'New weekly block',
+	'shortcut.newWeeklyBlock': 'New weekly task block',
 	'shortcut.newWins': 'New wins',
 	'shortcut.nextGoal': 'Next goal',
 	'shortcut.nextPage': 'Next page',
@@ -3408,7 +3417,7 @@ export const messages: Catalogue = {
 	'taskStatus.doing': 'Doing',
 	'taskStatus.pending': 'Pending',
 	'tasks.activities.anActivityIsANamed':
-		'An activity is a named thing you do — gym, Russian, deep work. Blocks on the grid point at these.',
+		'An activity is a named thing you do — gym, Russian, deep work. Task blocks on the grid point at these.',
 	'tasks.activities.cannotDeleteReferencedByPlanner':
 		'Cannot delete: referenced by planner or history',
 	'tasks.activities.categories': 'Categories',
@@ -3462,9 +3471,9 @@ export const messages: Catalogue = {
 	'tasks.board.starts': 'Starts',
 	'tasks.board.switchTab': 'switch tab ·',
 	'tasks.board.thisBlockNamesACategory':
-		'This block names a category. Say which activity it turned out to be.',
+		'This task block names a category. Say which activity it turned out to be.',
 	'tasks.board.thisOccurrenceOnlyEmptyKeeps':
-		"This occurrence only. Empty keeps the block's own name.",
+		"This occurrence only. Empty keeps the task block's own name.",
 	'tasks.board.toDo': 'Tasks',
 	'tasks.board.toDoList': 'Tasks',
 	'tasks.board.today': 'today ·',
@@ -3475,10 +3484,10 @@ export const messages: Catalogue = {
 	'tasks.board.whichActivity': 'which activity?',
 	'tasks.plan.aDay': 'A day',
 	'tasks.plan.aSchemeIsYourRepeating':
-		'A scheme is your repeating week — the blocks that come back every week. Anything you put\n\t\t\t\t\t\ton one day only is not part of it, and loading a scheme leaves those where they are.',
+		'A scheme is your repeating week — the task blocks that come back every week. Anything you put\n\t\t\t\t\t\ton one day only is not part of it, and loading a scheme leaves those where they are.',
 	'tasks.plan.activity': 'Activity',
 	'tasks.plan.addOneOff': 'Add one-off',
-	'tasks.plan.addRepeatingBlock': 'Add repeating block',
+	'tasks.plan.addRepeatingBlock': 'Add repeating task block',
 	'tasks.plan.alt': 'Alt',
 	'tasks.plan.backOneUnit': 'Back one {unit} ({key})',
 	'tasks.plan.backOneUnitPlain': 'Back one {unit}',
@@ -3503,20 +3512,22 @@ export const messages: Catalogue = {
 	'tasks.plan.deleteIt': 'Delete it?',
 	'tasks.plan.deleteSelected': 'Delete selected',
 	'tasks.plan.doneUndo': 'Done ✓ — undo',
-	'tasks.plan.dragAcrossAnEmptyStretch': 'Drag across an empty stretch of a day to make a block.',
+	'tasks.plan.dragAcrossAnEmptyStretch':
+		'Drag across an empty stretch of a day to make a task block.',
 	'tasks.plan.dragOntoTheGridOr': 'Drag onto the grid, or tap and then tap a time',
 	'tasks.plan.dragOntoTheGridTo':
 		'drag onto the grid to give it a time, or back here to take it off',
 	'tasks.plan.dragToCreateDrag':
-		'Drag to create · drag a block to move · click it to edit, skip or delete · hold',
+		'Drag to create · drag a task block to move · click it to edit, skip or delete · hold',
 	'tasks.plan.dragToSelectSeveralThen': 'drag to select several, then drag one to move them all ·',
 	'tasks.plan.dropHereToTakeIt': 'drop here to take it off the day',
-	'tasks.plan.dropJustThisOneOccurrence': 'Drop just this one occurrence; the block still repeats',
+	'tasks.plan.dropJustThisOneOccurrence':
+		'Drop just this one occurrence; the task block still repeats',
 	'tasks.plan.due': 'Due',
 	'tasks.plan.duration': 'Duration',
 	'tasks.plan.eGDentist': 'e.g. dentist',
 	'tasks.plan.eGLearnRussian': 'e.g. learn russian',
-	'tasks.plan.editBlock': 'Edit block',
+	'tasks.plan.editBlock': 'Edit task block',
 	'tasks.plan.every': 'Every',
 	'tasks.plan.everyNDays': 'Every N days',
 	'tasks.plan.everyNWeeks': 'Every N weeks',
@@ -3562,7 +3573,7 @@ export const messages: Catalogue = {
 	'tasks.plan.month': 'Month',
 	'tasks.plan.newActivity': 'New activity',
 	'tasks.plan.newActivity2': '+ New activity...',
-	'tasks.plan.newBlock': 'New block',
+	'tasks.plan.newBlock': 'New task block',
 	'tasks.plan.next7Days': '· next 7 days',
 	'tasks.plan.noCalendarsSubscribedYet': 'No calendars subscribed yet',
 	'tasks.plan.noSchemesSavedYet': 'No schemes saved yet',
@@ -3572,16 +3583,16 @@ export const messages: Catalogue = {
 	'tasks.plan.on': '{skip} on {selectedDateStr}',
 	'tasks.plan.owed': 'owed',
 	'tasks.plan.press': 'Press',
-	'tasks.plan.pressAndHoldOnThe': 'Press and hold on the grid to add a block there.',
+	'tasks.plan.pressAndHoldOnThe': 'Press and hold on the grid to add a task block there.',
 	'tasks.plan.putItBackToPending': 'Put it back to pending',
 	'tasks.plan.putThisOccurrenceBack': 'Put this occurrence back',
 	'tasks.plan.read': 'Read {t}',
 	'tasks.plan.remindMe': 'Remind me',
 	'tasks.plan.repeats': 'Repeats',
 	'tasks.plan.replacesYourRepeatingWeekOneOff':
-		'Replaces your repeating week. One-off blocks stay.',
+		'Replaces your repeating week. One-off task blocks stay.',
 	'tasks.plan.resetZoom0': 'Reset zoom (0)',
-	'tasks.plan.saveBlock': 'Save block',
+	'tasks.plan.saveBlock': 'Save task block',
 	'tasks.plan.saveCurrentPlanAsScheme': 'Save current plan as scheme',
 	'tasks.plan.savedSchemes': 'Saved schemes',
 	'tasks.plan.savedShapesOfAWeek': 'Saved shapes of a week',
@@ -3603,7 +3614,7 @@ export const messages: Catalogue = {
 	'tasks.plan.takeItOffTheDay': 'Take it off the day, keep the task',
 	'tasks.plan.tapOneThenTapA': 'tap one, then tap a time',
 	'tasks.plan.theCalendarSIcalAddress': "The calendar's iCal address",
-	'tasks.plan.theFirstLineIsWhat': 'the first line is what the block says',
+	'tasks.plan.theFirstLineIsWhat': 'the first line is what the task block says',
 	'tasks.plan.thisIsYourWeek': 'This is your week',
 	'tasks.plan.thisReplacesYourPlanContinue': 'This replaces your plan. Continue?',
 	'tasks.plan.time': 'Time',
@@ -3671,7 +3682,7 @@ export const messages: Catalogue = {
 	'tasks.review.nothingWasPlannedThatWeek': 'Nothing was planned that week',
 	'tasks.review.nothingWasSkipped': 'Nothing was skipped',
 	'tasks.review.of': 'of',
-	'tasks.review.ofBlocks': 'of {planned} blocks · {rate}%',
+	'tasks.review.ofBlocks': 'of {planned} task blocks · {rate}%',
 	'tasks.review.onTheTodoList': 'On the todo list',
 	'tasks.review.onWhichDay': 'On which day?',
 	'tasks.review.ontoTheTodo': '{title}: onto the todo list',
@@ -3681,7 +3692,7 @@ export const messages: Catalogue = {
 	'tasks.review.saved': 'Saved.',
 	'tasks.review.sayIfOneOfThese': 'Say if one of these did not actually happen.',
 	'tasks.review.sayWhatHappenedToEach':
-		'Say what happened to each. Whichever answer you give, it leaves this list — next week generates its own blocks.',
+		'Say what happened to each. Whichever answer you give, it leaves this list — next week generates its own task blocks.',
 	'tasks.review.seeWhatIWroteBefore': 'See what I wrote before',
 	'tasks.review.settled': '{settled} settled.',
 	'tasks.review.skipped': '{title}: skipped',
@@ -3811,6 +3822,9 @@ export const messages: Catalogue = {
 		'A stream is a series something else keeps pushing — a weight, a step count — and it gets a page of its own under Health.',
 	'tour.aTagOnAPicture':
 		'A tag on a picture works across every album. Removing a picture from its last album deletes it, and the confirmation says so.',
+	'tour.aTaskBlockBelongsSomewhere': 'A task block belongs somewhere',
+	'tour.aTaskWithAttributes':
+		'A task with attributes carries an i button first in its row. Press it to copy a value or change one in place; they are added in the task’s own form, under the tags.',
 	'tour.aTitleAndNothingElse':
 		'A title, and nothing else if that is all you have. Everything after it can be filled in later.',
 	'tour.aTokenIsShownOnce': 'A token is shown once',
@@ -3829,10 +3843,10 @@ export const messages: Catalogue = {
 	'tour.anythingYouThoughtOfAnd':
 		'Anything you thought of and do not want to lose. No date, no category, no decision required.',
 	'tour.anythingYouWroteDownAnd':
-		'Anything you wrote down and did not place. It stays here until you give it a date, and then it is a block like any other.',
+		'Anything you wrote down and did not place. It stays here until you give it a date, and then it is a task block like any other.',
 	'tour.areasGroupThem': 'Areas group them',
 	'tour.attachTheBlocksAndTodos':
-		'Attach the blocks and todos that count. That is what turns a goal from a wish into a number that moves.',
+		'Attach the task blocks and todos that count. That is what turns a goal from a wish into a number that moves.',
 	'tour.beforeItEvaporates': 'Before it evaporates',
 	'tour.bills': 'Bills',
 	'tour.billsABillIsANameAn':
@@ -3845,7 +3859,7 @@ export const messages: Catalogue = {
 	'tour.billsTheHistory': 'The history',
 	'tour.billsWhatWantsPaying': 'What wants paying, and when',
 	'tour.blocksYouAskedToBe':
-		'Blocks you asked to be nudged about, birthdays, bills that want paying, a week left unreviewed — all of it in one list, soonest first.',
+		'Task blocks you asked to be nudged about, birthdays, bills that want paying, a week left unreviewed — all of it in one list, soonest first.',
 	'tour.board': 'Board',
 	'tour.booksKilosEurosAnything':
 		'Books, kilos, euros — anything countable. A goal can want several at once: three gigs played and five songs recorded is one goal with two numbers, and it is as far along as they are on average.',
@@ -3867,7 +3881,7 @@ export const messages: Catalogue = {
 		'Drag a picture onto another album to move it there; hold Ctrl while dropping to keep it in both.',
 	'tour.dragARoomUpOr':
 		'Drag a room up or down, put one away, or give its section a different colour. The bar, the wheel and the search results all follow.',
-	'tour.dragToMakeABlock': 'Drag to make a block',
+	'tour.dragToMakeABlock': 'Drag to make a task block',
 	'tour.eachCardIsOneRoom':
 		'Each card is one room reporting in. Drag them into the order you want — the handle is up beside the date.',
 	'tour.emailPasswordTheDevicesYou':
@@ -3890,7 +3904,7 @@ export const messages: Catalogue = {
 	'tour.everythingYouHaveWrittenIn':
 		'Everything you have written, in one file, whenever you want it. Deleting the account removes all of it and cannot be undone.',
 	'tour.everythingYouPlannedAndDid':
-		'Everything you planned and did not do gets an answer here. Next week generates its own blocks either way, so an unanswered list cannot quietly become the week.',
+		'Everything you planned and did not do gets an answer here. Next week generates its own task blocks either way, so an unanswered list cannot quietly become the week.',
 	'tour.fKeepsTheGoodOnes':
 		'f keeps the good ones at the top. a marks one as applied, with a line about what came of it — which is the part you will want in a year.',
 	'tour.favouritesFirst': 'Favourites first',
@@ -3900,7 +3914,7 @@ export const messages: Catalogue = {
 	'tour.giveItANumberIf': 'Give it a number if it has one',
 	'tour.goals': 'Goals',
 	'tour.gymRussianReadABlock':
-		'“Gym”, “Russian”, “Read”. A block on the plan points at one of these, so a year of gym is one thing.',
+		'“Gym”, “Russian”, “Read”. A task block on the plan points at one of these, so a year of gym is one thing.',
 	'tour.hJKLMove':
 		'h j k l move between cards and columns, H and L carry the selected card with you, and c marks it done.',
 	'tour.habits': 'Habits',
@@ -3917,7 +3931,7 @@ export const messages: Catalogue = {
 	'tour.inventoryIsWhatRunsOut':
 		'Inventory is what runs out and has to be replaced. Wishlist is what you might buy one day.',
 	'tour.itBecomesABlockOn':
-		'It becomes a block on the plan, beside everything else you are doing that day.',
+		'It becomes a task block on the plan, beside everything else you are doing that day.',
 	'tour.itFansOutYourAccount':
 		'It fans out your account and settings, the tour for whatever screen you are on, the documentation, and the way to tell the operator something is wrong.',
 	'tour.itOpensTheTourFor':
@@ -3934,7 +3948,7 @@ export const messages: Catalogue = {
 		'Matching is on the words themselves, so a fragment of a sentence you wrote finds the entry it came from.',
 	'tour.movingAndSharing': 'Moving and sharing',
 	'tour.notACalendarOfAppointments':
-		'The blocks you mean to repeat. Everything else in Tasks is built out of this.',
+		'The task blocks you mean to repeat. Everything else in Tasks is built out of this.',
 	'tour.notJustNotesAndTasks': 'Not just notes and tasks',
 	'tour.notebooks': 'Notebooks',
 	'tour.nothingCarriesItselfOver': 'Nothing carries itself over',
@@ -3947,6 +3961,8 @@ export const messages: Catalogue = {
 	'tour.oneSetOfLabelsFor': 'One set of tags for everything',
 	'tour.ontoplano': 'Ontoplano',
 	'tour.openAPersonToSee': 'Open a person to see each entry that named them, newest first.',
+	'tour.openOneToFileIt':
+		'Open one to file it under a notebook and give it attributes — a link, a room, anything a plugin reads. The notebook shows on the block, under its time.',
 	'tour.pasteThePageIn': 'Paste the page in',
 	'tour.people': 'People',
 	'tour.picturesLiveInAlbumsPutting':
@@ -4014,11 +4030,11 @@ export const messages: Catalogue = {
 	'tour.theRoomsOpenAroundYour':
 		'The rooms open around your finger and you release on the one you want. Faster than reading a list of ten words, once your hand knows where they are.',
 	'tour.theSameBlocksAsThe':
-		'The same blocks as the plan, in the one form where you can pick one up and move it.',
+		'The same task blocks as the plan, in the one form where you can pick one up and move it.',
 	'tour.theSameGestureForA':
 		'The same gesture, for a todo, an idea, a note or something to buy — without deciding where it belongs first.',
 	'tour.theSameWordOnA':
-		'The same word tags a task, a note, an idea, a block and a picture. This is where the words themselves live.',
+		'The same word tags a task, a note, an idea, a task block and a picture. This is where the words themselves live.',
 	'tour.theShapeOfANormal': 'The shape of a normal week',
 	'tour.theStatementIsTheRecord': 'The statement is the record',
 	'tour.theThingsWithoutADay': 'The things without a day yet',
@@ -4049,6 +4065,7 @@ export const messages: Catalogue = {
 	'tour.upToSixPicturesPer':
 		'Up to six pictures per recipe. Star one and it becomes the one the list shows.',
 	'tour.urgencyEaseInterest': 'Urgency, ease, interest',
+	'tour.whatATaskSaysAboutItself': 'What a task says about itself',
 	'tour.whatHappenedInYourWords': 'What happened, in your words',
 	'tour.whatIsWaitingForATime': 'What is waiting for a time',
 	'tour.whatIsWorthHearing': 'What is worth hearing',
@@ -4064,7 +4081,7 @@ export const messages: Catalogue = {
 	'tour.whichWedgesThePlusWheel':
 		'Which wedges the + wheel holds, in what order, and the notebook what you write from it starts in. The gear beside the open wheel opens the same settings.',
 	'tour.workHealthWhateverDividesYour':
-		'Work, health, whatever divides your life. Every block wears its category’s colour, on the grid and on the dashboard.',
+		'Work, health, whatever divides your life. Every task block wears its category’s colour, on the grid and on the dashboard.',
 	'tour.workouts': 'Workouts',
 	'tour.workoutsPlannedLikeMeals': 'Workouts, planned like meals',
 	'tour.writeItAndMoveOn': 'Write it and move on. n opens this from anywhere on the page.',
@@ -4143,11 +4160,11 @@ export const messages: Catalogue = {
 	'webhookEvents.todoCreated': 'a todo is added',
 	'welcome.aFewQuestionsAndA':
 		'A few questions and a week to start from. All of it is editable later.',
-	'welcome.blocksCount': { one: '{count} block', other: '{count} blocks' },
+	'welcome.blocksCount': { one: '{count} task block', other: '{count} task blocks' },
 	'welcome.claudeOrAnythingThat':
 		'Claude — or anything that speaks MCP — can read your week and write to it, with\n\t\t\t\t\t\t\t\t\t\ta key you can revoke. It will ask about your routine and set the week up for\n\t\t\t\t\t\t\t\t\t\tyou.',
 	'welcome.createTheKeyAndThe': 'Create the key and the prompt',
-	'welcome.noBlocks': 'No blocks',
+	'welcome.noBlocks': 'No task blocks',
 	'welcome.ofOnThePlanner': '{size} of {length} on. The planner and your week are always here.',
 	'welcome.orPressNextSettings':
 		'Or press Next — Settings → Integrations has this whenever you want it.',

@@ -47,6 +47,12 @@ import { cleanupOrphanTags, optionalTagInput, parseTags, replaceTodoTags } from 
 import { created, stamp, stamps } from './time.js';
 import { host } from './host.js';
 import { TIME_PATTERN, num, oneOf, optionalStr, str } from './validate.js';
+import {
+	parseAttributes,
+	serialiseAttributes,
+	withAttribute,
+	type TaskAttributes
+} from './task-attributes.js';
 
 export type Todo = {
 	id: number;
@@ -67,6 +73,11 @@ export type Todo = {
 	/** When it was last finished, or null. Cleared when it is reopened. */
 	completedAt: string | null;
 	ratings: RatingValues;
+	/**
+	 * Its attributes, parsed: `{ "url": "…", "room": "B12" }`. The same shape a
+	 * task block's are, and carried onto the block when it is put on the plan.
+	 */
+	attributes: TaskAttributes;
 	/**
 	 * The labels on it, from the account's one tag vocabulary.
 	 *
@@ -108,6 +119,7 @@ const SELECTION = {
 	urgency: todoTasks.urgency,
 	interest: todoTasks.interest,
 	ease: todoTasks.ease,
+	attributes: todoTasks.attributes,
 	createdAt: todoTasks.createdAt,
 	updatedAt: todoTasks.updatedAt
 };
@@ -133,6 +145,7 @@ function shape(r: Record<string, unknown>): Todo {
 			interest: (r.interest as number) ?? null,
 			ease: (r.ease as number) ?? null
 		},
+		attributes: parseAttributes(r.attributes as string | null),
 		// Filled in by `withTags`, which reads them for a whole list at once.
 		tags: (r.tags as Tag[]) ?? [],
 		createdAt: r.createdAt as string,
@@ -430,7 +443,9 @@ export function promoteTodo(
 				notebookId: todo.notebookId,
 				urgency: todo.urgency,
 				interest: todo.interest,
-				ease: todo.ease
+				ease: todo.ease,
+				// And what it says about itself: a task's attributes are a block's.
+				attributes: todo.attributes
 			})
 			.returning({ id: exceptionalTasks.id })
 			.get();
@@ -469,7 +484,7 @@ export function promoteTodo(
  * occurrence, which is not what "not today" means. Refused, in words.
  *
  * What survives is what a todo can hold: the name, the notes, the category, the
- * notebook and the three ratings. The date and the hour are what is being
+ * notebook, the three ratings and the attributes. The date and the hour are what is being
  * given up, and the status comes with it — a block ticked off and then pulled
  * back is still done.
  */
@@ -517,9 +532,11 @@ export function demoteToTodo(ctx: Ctx, slotId: number): { ok: true; todoId: numb
 				sortOrder: nextSortOrder(ctx),
 				categoryId: slot.categoryId,
 				notebookId: slot.notebookId,
+				notebookSeq: nextNotebookSeq(ctx, slot.notebookId),
 				urgency: slot.urgency,
 				interest: slot.interest,
-				ease: slot.ease
+				ease: slot.ease,
+				attributes: slot.attributes
 			})
 			.returning({ id: todoTasks.id })
 			.get();
@@ -553,6 +570,11 @@ export type TodoInput = {
 	scheduledDate?: unknown;
 	status?: unknown;
 	ratings?: Partial<RatingValues>;
+	/**
+	 * Its attributes, as an object or already serialised. Left out means leave
+	 * alone on an update — a form with no attributes fold must not clear them.
+	 */
+	attributes?: unknown;
 	/**
 	 * Labels, as typed: "a1, done" or "#a1 #done". Left out means leave alone
 	 * on an update, which matters because not every screen that edits a todo
@@ -614,7 +636,8 @@ export function createTodo(ctx: Ctx, raw: TodoInput): number {
 			scheduledDate: optionalDate(raw.scheduledDate),
 			status: isStatus(raw.status) ? raw.status : 'todo',
 			sortOrder: nextSortOrder(ctx),
-			...(raw.ratings ?? {})
+			...(raw.ratings ?? {}),
+			attributes: serialiseAttributes(raw.attributes)
 		})
 		.run();
 
@@ -653,6 +676,7 @@ export function updateTodo(ctx: Ctx, id: number, raw: TodoInput): void {
 			notebookId,
 			notebookSeq: seq,
 			...(raw.ratings ?? {}),
+			...(raw.attributes === undefined ? {} : { attributes: serialiseAttributes(raw.attributes) }),
 			updatedAt: stamp(ctx)
 		})
 		.where(and(eq(todoTasks.id, id), eq(todoTasks.userId, ctx.userId)))
@@ -822,7 +846,11 @@ export function delegateTodo(
 		throw new ValidationError({ key: 'errors.todos.activityRequired' });
 
 	const todo = db
-		.select({ title: todoTasks.title, notebookId: todoTasks.notebookId })
+		.select({
+			title: todoTasks.title,
+			notebookId: todoTasks.notebookId,
+			attributes: todoTasks.attributes
+		})
 		.from(todoTasks)
 		.where(and(eq(todoTasks.id, id), eq(todoTasks.userId, ctx.userId)))
 		.get();
@@ -844,7 +872,8 @@ export function delegateTodo(
 				remindLeadMinutes: lead,
 				// As with promoting: giving a task a time must not take it out of
 				// the notebook it belongs to.
-				notebookId: todo.notebookId
+				notebookId: todo.notebookId,
+				attributes: todo.attributes
 			})
 			.run();
 
@@ -914,6 +943,29 @@ export function reorderTodos(ctx: Ctx, ids: unknown[]): void {
 	});
 }
 
+/**
+ * One attribute on a todo, set or — with an empty value — removed.
+ *
+ * Its own verb because the ⓘ dialog edits one value in place: sending the
+ * whole set back would need the dialog to hold every other pair as it was,
+ * and would overwrite one somebody changed in the meantime.
+ */
+export function setTodoAttribute(ctx: Ctx, id: number, key: unknown, value: unknown): void {
+	const row = db
+		.select({ attributes: todoTasks.attributes })
+		.from(todoTasks)
+		.where(and(eq(todoTasks.id, id), eq(todoTasks.userId, ctx.userId)))
+		.get();
+	if (!row) throw new NotFoundError('todo');
+
+	const res = db
+		.update(todoTasks)
+		.set({ attributes: withAttribute(row.attributes, key, value), updatedAt: stamp(ctx) })
+		.where(and(eq(todoTasks.id, id), eq(todoTasks.userId, ctx.userId)))
+		.run();
+	if (res.changes === 0) throw new NotFoundError('todo');
+}
+
 export function setTodoRatings(ctx: Ctx, id: number, ratings: Partial<RatingValues>): void {
 	if (Object.keys(ratings).length === 0) return;
 
@@ -943,6 +995,8 @@ export function demoteInstance(ctx: Ctx, instanceId: number): void {
 			easeOverride: taskRecords.easeOverride,
 			label: exceptionalTasks.label,
 			categoryId: exceptionalTasks.categoryId,
+			notebookId: exceptionalTasks.notebookId,
+			attributes: exceptionalTasks.attributes,
 			urgency: exceptionalTasks.urgency,
 			interest: exceptionalTasks.interest,
 			ease: exceptionalTasks.ease
@@ -964,6 +1018,11 @@ export function demoteInstance(ctx: Ctx, instanceId: number): void {
 				title: instance.label || 'Untitled',
 				notes: instance.notes ?? '',
 				categoryId: instance.categoryId,
+				// The same two `demoteToTodo` keeps: going back to the list does
+				// not take it out of its subject or strip what it says about itself.
+				notebookId: instance.notebookId,
+				notebookSeq: nextNotebookSeq(ctx, instance.notebookId),
+				attributes: instance.attributes,
 				status: instance.status,
 				completed: instance.status === 'done',
 				sortOrder,

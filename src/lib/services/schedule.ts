@@ -11,7 +11,7 @@ import {
 } from '$lib/db/schema.js';
 import { generateWeekInstances, getMonday, toLocalISOString, addDays } from './week-generator.js';
 import type { Ctx } from './ctx.js';
-import { parseMeta, type SlotMeta } from './meta.js';
+import { META_REMOVED_IN, parseAttributes, type TaskAttributes } from './task-attributes.js';
 import { num } from './validate.js';
 import { ValidationError } from './errors.js';
 
@@ -45,11 +45,27 @@ export interface ScheduleOccurrence {
 	label: string;
 	status: string;
 	/**
-	 * User-defined key/value pairs from the slot, passed through untouched.
-	 * Ontoplano assigns them no meaning — consumers decide what to do with
-	 * e.g. `alarm` or `remind_min`.
+	 * The block's attributes: user-defined key/value pairs, passed through
+	 * untouched. Ontoplano assigns them no meaning — consumers decide what to
+	 * do with e.g. `alarm` or `remind_min`.
 	 */
-	meta: SlotMeta;
+	attributes: TaskAttributes;
+	/**
+	 * The same object under its old name, so a plugin written against it keeps
+	 * working until `META_REMOVED_IN`. The answer's `warning` says so.
+	 */
+	meta: TaskAttributes;
+}
+
+/** What every schedule answer says while `meta` is still being sent. */
+export const SCHEDULE_META_WARNING =
+	`Each occurrence's \`meta\` is deprecated and will be removed in ${META_REMOVED_IN}. ` +
+	'Read `attributes`, which is the same object.';
+
+/** Both spellings of one parsed object, the new one first. */
+function attributesOf(raw: string | null): Pick<ScheduleOccurrence, 'attributes' | 'meta'> {
+	const attributes = parseAttributes(raw);
+	return { attributes, meta: attributes };
 }
 
 function formatDate(d: Date): string {
@@ -95,7 +111,13 @@ function dayFrom(raw: unknown): Date {
 export function getUpcomingSchedule(
 	ctx: Ctx,
 	opts: { days?: unknown; includeCompleted?: boolean; startingOn?: unknown } = {}
-): { timezone: string; from: string; to: string; occurrences: ScheduleOccurrence[] } {
+): {
+	timezone: string;
+	from: string;
+	to: string;
+	occurrences: ScheduleOccurrence[];
+	warning: string;
+} {
 	const days = opts.days === undefined ? 7 : num(opts.days, 'days', { min: 1, max: 31, int: true });
 
 	/*
@@ -133,7 +155,7 @@ export function getUpcomingSchedule(
 			durationOverride: taskRecords.durationOverride,
 			startTime: recurringTasks.startTime,
 			label: recurringTasks.label,
-			meta: recurringTasks.meta,
+			attributes: recurringTasks.attributes,
 			slotActivityName: slotActivities.name,
 			resolvedActivityName: activities.name,
 			categoryName: categories.name,
@@ -165,7 +187,7 @@ export function getUpcomingSchedule(
 			durationOverride: taskRecords.durationOverride,
 			status: sql<string>`coalesce(${taskRecords.status}, 'todo')`.as('one_off_status'),
 			label: exceptionalTasks.label,
-			meta: exceptionalTasks.meta,
+			attributes: exceptionalTasks.attributes,
 			active: exceptionalTasks.active,
 			activityName: activities.name,
 			categoryName: categories.name,
@@ -212,7 +234,7 @@ export function getUpcomingSchedule(
 			category: t.categoryName ?? t.activityCategoryName ?? null,
 			label: t.label ?? '',
 			status: t.status,
-			meta: parseMeta(t.meta)
+			...attributesOf(t.attributes)
 		});
 	}
 
@@ -231,7 +253,7 @@ export function getUpcomingSchedule(
 			category: e.categoryName ?? e.activityCategoryName ?? null,
 			label: e.label ?? '',
 			status: e.status,
-			meta: parseMeta(e.meta)
+			...attributesOf(e.attributes)
 		});
 	}
 
@@ -245,6 +267,7 @@ export function getUpcomingSchedule(
 		timezone: ctx.tz,
 		from: fromStr,
 		to: toStr,
-		occurrences: filtered
+		occurrences: filtered,
+		warning: SCHEDULE_META_WARNING
 	};
 }

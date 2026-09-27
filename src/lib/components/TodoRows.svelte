@@ -22,6 +22,7 @@
 	import { enhance } from '$lib/enhance';
 	import Backlinks from '$lib/components/Backlinks.svelte';
 	import TodoFields from '$lib/components/fields/TodoFields.svelte';
+	import AttributesDialog from '$lib/components/AttributesDialog.svelte';
 	import Written from '$lib/components/Written.svelte';
 	import EmptyState from '$lib/components/EmptyState.svelte';
 	import Icon from '$lib/components/Icon.svelte';
@@ -191,6 +192,9 @@
 
 	let showForm = $state(false);
 	let editingId: number | null = $state(null);
+	/** Whose attributes the ⓘ dialog is showing, by id, so it follows a reload. */
+	let attributesId: number | null = $state(null);
+	const attributesOf = $derived(todos.find((one: Todo) => one.id === attributesId));
 	/**
 	 * Words to look for, across the titles and the notes.
 	 *
@@ -942,6 +946,7 @@
 			showForm = false;
 			editingId = null;
 			delegatingId = null;
+			attributesId = null;
 			confirmingDelete = null;
 			(document.activeElement as HTMLElement)?.blur?.();
 			return;
@@ -957,7 +962,7 @@
 		)
 			return;
 
-		if (batchVerb || showForm || delegatingId !== null) return;
+		if (batchVerb || showForm || delegatingId !== null || attributesId !== null) return;
 		if (
 			selecting &&
 			e.key === ' ' &&
@@ -1646,6 +1651,22 @@
 								{/each}
 							{/snippet}
 							{#snippet controls()}
+								<!-- First, and only where there is something to read: what the
+								     task says about itself, to copy or to change. Stood down
+								     while a delete is being confirmed, whose two worded buttons
+								     need the room on a phone. -->
+								{#if Object.keys(todo.attributes).length > 0 && confirmingDelete !== todo.id}
+									<button
+										type="button"
+										class="icon-btn"
+										data-tour="todo-attributes"
+										title={t('attributes.show')}
+										aria-label={t('attributes.show')}
+										onclick={() => (attributesId = todo.id)}
+									>
+										<Icon name="info" />
+									</button>
+								{/if}
 								{#if !isDone(todo)}
 									<!--
 										What you are on, said on the list rather than only on the
@@ -2058,6 +2079,7 @@
 				<TodoFields
 					title={editing?.title ?? ''}
 					notes={editing?.notes ?? ''}
+					attributes={editing?.attributes ?? {}}
 					categoryId={editing ? editing.categoryId : undefined}
 					bind:notebookId={formNotebookId}
 					tags={editing?.tags.map((one) => one.name).join(', ') ?? ''}
@@ -2224,4 +2246,15 @@
 			>
 		{/snippet}
 	</Modal>
+
+	{#if attributesOf}
+		<AttributesDialog
+			open={attributesId !== null}
+			title={attributesOf.title}
+			id={attributesOf.id}
+			attributes={attributesOf.attributes}
+			action={actions.attribute}
+			onclose={() => (attributesId = null)}
+		/>
+	{/if}
 </div>

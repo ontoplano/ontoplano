@@ -30,12 +30,13 @@ under the pointer.
 | `/settings/integrations/connections` | tour.integrations | 3     |
 | `/tasks/activities`                  | tour.activities   | 3     |
 | `/tasks/board`                       | tour.board        | 4     |
-| `/tasks/plan`                        | tour.plan         | 7     |
-| `/tasks/todo`                        | tour.toDo         | 4     |
+| `/tasks/plan`                        | tour.plan         | 8     |
+| `/tasks/todo`                        | tour.toDo         | 5     |
 
 Toured as well, though nothing obliges them to be — a screen reached from
 a link rather than from the navigation:
 
+- `/finance/bills` — tour.bills
 - `/finance/ledgers` — tour.ledgers
 - `/health/workouts` — tour.workouts
 - `/media/audios` — tour.recordings
@@ -60,6 +61,12 @@ at the button that reopens it, so it is not listed here.
 6. tour.everythingYouHaveWritten
 7. tour.whatTodayLooksLike
 8. tour.yoursToChange
+
+### `/finance/bills` — tour.bills
+
+1. tour.billsWhatWantsPaying
+2. tour.billsPaidSkippedOrAutomatic
+3. tour.billsTheHistory
 
 ### `/finance/ledgers` — tour.ledgers
 
@@ -170,7 +177,8 @@ at the button that reopens it, so it is not listed here.
 
 1. tour.theAppArrangedYourWay
 2. tour.yourRoomsYourOrderYour
-3. tour.lightDarkOrWhateverThe
+3. tour.quickCaptureYourWay
+4. tour.lightDarkOrWhateverThe
 
 ### `/tasks/activities` — tour.activities
 
@@ -190,10 +198,11 @@ at the button that reopens it, so it is not listed here.
 1. tour.theShapeOfANormal
 2. tour.sixViewsOfTheSame
 3. tour.dragToMakeABlock
-4. tour.whereYouAreAndWhat
-5. tour.whereYourWeekBegins
-6. tour.whatIsWaitingForATime
-7. tour.aWeekYouCanLay
+4. tour.aTaskBlockBelongsSomewhere
+5. tour.whereYouAreAndWhat
+6. tour.whereYourWeekBegins
+7. tour.whatIsWaitingForATime
+8. tour.aWeekYouCanLay
 
 ### `/tasks/review` — tour.review
 
@@ -207,3 +216,4 @@ at the button that reopens it, so it is not listed here.
 2. tour.oneLineIsEnough
 3. todoRows.selectMany
 4. tour.jAndKMoveE
+5. tour.whatATaskSaysAboutItself
