@@ -205,7 +205,9 @@ export const PAGE_SHORTCUTS: Record<string, PageShortcuts> = {
 		// the screen actually does rather than the two halves disagreeing.
 		shortcuts: [
 			...BROWSE_SHORTCUTS,
-			{ key: 'n', action: 'new', description: 'shortcut.newNotebook' }
+			{ key: 'n', action: 'new', description: 'shortcut.newNotebook' },
+			// The notebook open beside the shelf.
+			{ key: 'f', action: 'toggle-favorite', description: 'shortcut.toggleFavorite' }
 		]
 	},
 	'/notebooks/tags': {

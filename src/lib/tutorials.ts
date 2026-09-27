@@ -378,6 +378,11 @@ export const TUTORIALS: Record<string, Tutorial> = {
 				body: 'tour.everyNotebookIsACover'
 			},
 			{
+				target: '[data-tour="notebook-favourite"]',
+				title: 'tour.favouritesFirst',
+				body: 'tour.starANotebook'
+			},
+			{
 				// Skipped until a notebook is open, which is right: there are no
 				// tabs to point at on an empty shelf.
 				target: '[data-tour="notebook-tabs"]',

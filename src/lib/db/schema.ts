@@ -294,6 +294,34 @@ export const notebooks = sqliteTable(
 );
 
 /**
+ * The notebooks somebody keeps at the front of the shelf.
+ *
+ * A row per reader rather than a column on the notebook: a notebook shared into
+ * the family is seen by several people, and which ones each of them reaches for
+ * is their own answer. Deleting the notebook takes its stars with it.
+ */
+export const notebookFavourites = sqliteTable(
+	'notebook_favourites',
+	{
+		id: integer('id').primaryKey({ autoIncrement: true }),
+		userId: text('user_id')
+			.notNull()
+			.references(() => user.id),
+		notebookId: integer('notebook_id')
+			.notNull()
+			.references(() => notebooks.id, { onDelete: 'cascade' }),
+		createdAt: text('created_at')
+			.notNull()
+			.default(sql`(CURRENT_TIMESTAMP)`)
+	},
+	(table) => [
+		index('notebook_favourites_user_idx').on(table.userId),
+		index('notebook_favourites_notebook_idx').on(table.notebookId),
+		uniqueIndex('notebook_favourites_unique').on(table.userId, table.notebookId)
+	]
+);
+
+/**
  * People you know, and the entries that mention them.
  *
  * A person is a subject you accumulate a history about, which is what makes

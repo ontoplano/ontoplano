@@ -16,6 +16,7 @@
 	import type { KeyWithValues } from '$lib/i18n/keys';
 	import { useT } from '$lib/i18n';
 	import type { Snippet } from 'svelte';
+	import Icon from './Icon.svelte';
 
 	const t = useT();
 
@@ -24,12 +25,15 @@
 		href,
 		chosen = false,
 		/** What can be done to it, drawn in the corner of the cover. */
-		actions
+		actions,
+		/** Its star, in the other corner — see `NotebookStar`. */
+		star
 	}: {
 		notebook: Notebook;
 		href: string;
 		chosen?: boolean;
 		actions?: Snippet;
+		star?: Snippet;
 	} = $props();
 
 	/** Its own name: the folder it is in is the shelf's to show. */
@@ -88,6 +92,12 @@
 		{/if}
 
 		<span class="cover-name" class:text-gray-500={notebook.closedAt}>
+			{#if notebook.favourite && !star}
+				<!-- Said on the cover where there is no star button to say it. -->
+				<span class="cover-star" title={t('notebooks.favourites')}>
+					<Icon name="star" size={11} />
+				</span>
+			{/if}
 			{name}
 		</span>
 		<span class="cover-tally">
@@ -110,4 +120,33 @@
 		-->
 		<div class="cover-actions">{@render actions()}</div>
 	{/if}
+	{#if star}
+		<div class="cover-actions cover-actions-start" class:is-held={notebook.favourite}>
+			{@render star()}
+		</div>
+	{/if}
 </div>
+
+<style>
+	.cover-star {
+		display: inline-flex;
+		vertical-align: -1px;
+	}
+	.cover-star :global(path) {
+		fill: currentColor;
+	}
+	/* A star that is on stays showing, so the shelf says which are favourites. */
+	/*
+	 * In the bottom corner of the picture: a cover is one row of buttons wide,
+	 * and the top one is taken. The picture is the shelf's column (6.5rem) less
+	 * the face's padding, at 3:4 — see `.notebook-shelf` and `.cover-art`.
+	 */
+	.cover-actions-start {
+		top: calc(0.375rem + (6.5rem - 0.75rem) * 4 / 3 - 2.25rem - 0.25rem);
+		right: auto;
+		left: 0.625rem;
+	}
+	.cover-actions-start.is-held {
+		opacity: 1;
+	}
+</style>

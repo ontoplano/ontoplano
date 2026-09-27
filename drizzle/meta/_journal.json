@@ -750,6 +750,13 @@
       "when": 1790482607274,
       "tag": "0106_dashed_notebook_names_become_folders",
       "breakpoints": true
+    },
+    {
+      "idx": 107,
+      "version": "6",
+      "when": 1790484746844,
+      "tag": "0107_a_notebook_can_be_a_favourite",
+      "breakpoints": true
     }
   ]
 }

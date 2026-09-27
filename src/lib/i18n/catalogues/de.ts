@@ -28,6 +28,7 @@ export const messages: Catalogue = {
 	'accountImport.thisVersionHasNoSuch': 'diese Version hat keine solche Tabelle',
 	'accountImport.typeToConfirm':
 		'Geben Sie zur Bestätigung {word} ein — dies leert zuerst das Konto.',
+	'accountImport.whatItPointedAtIsNot': 'worauf es verwies, ist nicht in der Datei',
 	'admin.accountDeleted': 'Konto gelöscht',
 	'admin.accounts': 'Konten',
 	'admin.admin': 'admin',
@@ -1844,6 +1845,8 @@ export const messages: Catalogue = {
 		'Switch on whatever else this subject accumulates — its shopping, its bills, the account it is paid from.',
 	'notebooks.aSubjectYouWriteAgainst':
 		'Ein Thema, gegen das Sie ohne Frist schreiben — ein Buch, das Sie lesen, eine Reise, eine Renovierung.\n\t\tNotizen, Aufgaben und Ziele können dazugehören, und alles dazu sammelt sich hier.',
+	'notebooks.addNamedToFavourites': '{title} zu Favoriten hinzufügen',
+	'notebooks.addToFavourites': 'Zu Favoriten hinzufügen',
 	'notebooks.alreadyFiled': { one: '{count} filed', other: '{count} filed' },
 	'notebooks.andFromTheFrontmatter':
 		'und aus dem Frontmatter — mit dem Ordner,\n\t\t\t\tin dem sie war, ebenfalls als Tag. Nichts wird als Datei hochgeladen; die Notizen werden hier gelesen. Das Löschen des Notizbuchs\n\t\t\t\tmacht es rückgängig.',
@@ -1883,6 +1886,7 @@ export const messages: Catalogue = {
 	'notebooks.each': 'Jede',
 	'notebooks.edit': '{title} bearbeiten',
 	'notebooks.family': 'Familie',
+	'notebooks.favourites': 'Favoriten',
 	'notebooks.fields.aboutWhat': 'About what',
 	'notebooks.fields.bank': 'Bank',
 	'notebooks.fields.card': 'Card',
@@ -2054,6 +2058,8 @@ export const messages: Catalogue = {
 	'notebooks.recipesCount': { one: '{count} recipe', other: '{count} recipes' },
 	'notebooks.removeFolder': 'Ordner auflösen',
 	'notebooks.removeFolderMovesUp': 'Seine Notizbücher rücken eine Ebene nach oben.',
+	'notebooks.removeFromFavourites': 'Aus Favoriten entfernen',
+	'notebooks.removeNamedFromFavourites': '{title} aus Favoriten entfernen',
 	'notebooks.renameFolder': 'Ordner umbenennen',
 	'notebooks.renameFolderNamed': 'Ordner {name} umbenennen',
 	'notebooks.reopenIt': 'Wieder öffnen',
@@ -3954,6 +3960,7 @@ export const messages: Catalogue = {
 		'Alles, was Sie geplant, aber nicht erledigt haben, bekommt hier eine Antwort. Die nächste Woche erzeugt ohnehin ihre eigenen Blöcke, sodass eine unbeantwortete Liste nicht stillschweigend zur Woche wird.',
 	'tour.fKeepsTheGoodOnes':
 		'f hält die guten oben. a markiert eine als umgesetzt, mit einer Zeile darüber, was daraus wurde — das ist der Teil, den Sie in einem Jahr haben wollen.',
+	'tour.favouritesFirst': 'Favoriten zuerst',
 	'tour.findItAgainByTag': 'Über den Tag wiederfinden',
 	'tour.forTheThingsThatAre': 'Für die Dinge, die kein Tag sind',
 	'tour.gallery': 'Galerie',
@@ -4050,6 +4057,8 @@ export const messages: Catalogue = {
 	'tour.signOneOutOrAll':
 		'Melden Sie eines ab, oder alle auf einmal, wenn etwas verdächtig aussieht.',
 	'tour.sixViewsOfTheSame': 'Sechs Ansichten derselben Woche',
+	'tour.starANotebook':
+		'Markiere ein Notizbuch mit einem Stern, dann steht es vorn im Regal und in jeder Notizbuchauswahl. In seinem Ordner bleibt es auch.',
 	'tour.starItOrMarkIt': 'Markieren Sie es mit einem Stern, oder als erledigt',
 	'tour.systemFollowsThePhoneOr':
 		'System folgt dem Telefon oder dem Laptop, auch wenn es sich bei Sonnenuntergang ändert.',

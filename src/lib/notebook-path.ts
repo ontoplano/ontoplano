@@ -81,6 +81,20 @@ export function splitLegacyTitle(title: string): { folder: string; title: string
 	return { folder: parts.map((part) => part.trim()).join(FOLDER_SEPARATOR), title: leaf };
 }
 
+/**
+ * The shelf's order with the favourites pulled to the front.
+ *
+ * Favourites lead, then the rest, then whatever is closed — a closed notebook
+ * stays at the back even with a star on it, because it is history. Each group
+ * keeps the order it was given in, which is the path.
+ */
+export function favouritesFirst<T extends { favourite?: boolean; closedAt?: string | null }>(
+	notebooks: readonly T[]
+): T[] {
+	const rank = (one: T) => (one.closedAt ? 2 : one.favourite ? 0 : 1);
+	return [...notebooks].sort((a, b) => rank(a) - rank(b));
+}
+
 /** Every folder the shelf has, ancestors included, in order. */
 export function allFolders(notebooks: readonly { folder?: string | null }[]): string[] {
 	const found = new Set<string>();

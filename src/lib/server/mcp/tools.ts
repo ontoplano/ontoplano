@@ -107,6 +107,7 @@ import {
 	getNotebook,
 	listNotebooks,
 	renameFolder,
+	setNotebookFavourite,
 	setNotebookShared,
 	updateNotebook
 } from '$lib/services/notebooks.js';
@@ -2416,7 +2417,7 @@ export const TOOLS: Tool[] = [
 		name: 'notebooks',
 		title: 'Notebooks',
 		description:
-			'The subjects being written against \u2014 a trip, a renovation, a book \u2014 with the id every other tool means by `notebookId`. Ask for these before writing an entry into one. A key tied to one notebook is answered with that one. `modules` is what each one holds: the tabs it shows, which is also what it will accept being filed under it.',
+			'The subjects being written against \u2014 a trip, a renovation, a book \u2014 with the id every other tool means by `notebookId`. Ask for these before writing an entry into one. A key tied to one notebook is answered with that one. `modules` is what each one holds: the tabs it shows, which is also what it will accept being filed under it. `favourite` is whether the person has starred it; favourites come first.',
 		scope: 'notes:read',
 		writes: false,
 		refs: [{ arg: 'id', kind: 'notebook' }],
@@ -2560,6 +2561,30 @@ export const TOOLS: Tool[] = [
 					`That notebook holds ${held.map(([what, n]) => `${n} ${what}`).join(', ')}. What is filed under it is deleted by the person, in the app — not through a tool.`
 				);
 			deleteNotebook(ctx, Number(args.id));
+			return { ok: true };
+		}
+	},
+	{
+		name: 'favourite_notebook',
+		title: 'Star a notebook',
+		description:
+			'Keep a notebook at the front of the shelf and at the top of every notebook picker, or take the star off with `favourite: false`. The star is the person\u2019s own, so a notebook shared with them can carry one too. `notebooks` says which have one.',
+		scope: 'notes:write',
+		writes: true,
+		refs: [{ arg: 'id', kind: 'notebook' }],
+		input: object(
+			{
+				id: { type: 'integer', description: 'The notebook\u2019s id, as `notebooks` gives it.' },
+				favourite: { type: 'boolean', description: 'False takes the star off. True if left out.' }
+			},
+			['id']
+		),
+		run: (ctx, args) => {
+			setNotebookFavourite(
+				ctx,
+				Number(args.id),
+				args.favourite === undefined ? true : Boolean(args.favourite)
+			);
 			return { ok: true };
 		}
 	},

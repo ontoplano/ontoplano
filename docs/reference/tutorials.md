@@ -21,7 +21,7 @@ under the pointer.
 | `/health/habits`                     | tour.habits       | 3     |
 | `/health/recipes`                    | tour.recipes      | 5     |
 | `/inventory/stock`                   | tour.shopping     | 3     |
-| `/notebooks`                         | tour.notebooks    | 4     |
+| `/notebooks`                         | tour.notebooks    | 5     |
 | `/notebooks/diary`                   | tour.diary        | 4     |
 | `/notebooks/ideas`                   | tour.ideas        | 3     |
 | `/notebooks/people`                  | tour.people       | 3     |
@@ -116,7 +116,8 @@ at the button that reopens it, so it is not listed here.
 1. tour.forTheThingsThatAre
 2. tour.oneNotebookPerSubject
 3. tour.aShelfOfSubjects
-4. tour.notJustNotesAndTasks
+4. tour.favouritesFirst
+5. tour.notJustNotesAndTasks
 
 ### `/notebooks/diary` — tour.diary
 

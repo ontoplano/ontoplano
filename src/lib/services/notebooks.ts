@@ -13,6 +13,7 @@ import {
 	ideas,
 	inventoryItems,
 	ledgers,
+	notebookFavourites,
 	notebooks,
 	recipes,
 	todoTasks,
@@ -43,7 +44,7 @@ import { getHiddenSections, getWeekSettings } from './settings.js';
 import { linkableInto } from './notebook-linking.js';
 import { isHidden } from '../sections.js';
 import { ConflictError, NotFoundError, ValidationError } from './errors.js';
-import { stamp, stamps } from './time.js';
+import { created, stamp, stamps } from './time.js';
 import { num, optionalStr, str } from './validate.js';
 import { optionalTagInput, parseTags } from './tags.js';
 
@@ -80,6 +81,12 @@ export type Notebook = {
 	/** What a new note here starts labelled with. Empty when nothing is set. */
 	defaultTags: string;
 	closedAt: string | null;
+	/**
+	 * Whether this reader keeps it at the front of the shelf. Theirs, not the
+	 * notebook's: somebody a notebook is shared with stars it or not for
+	 * themselves.
+	 */
+	favourite: boolean;
 	/** Whether this account owns it — false for one shared into the family. */
 	mine: boolean;
 	sharedWithFamily: boolean;
@@ -112,7 +119,12 @@ export type Notebook = {
  * exported for the gallery's notebook album, which joins a path into one name.
  */
 export { NOTEBOOK_SEPARATOR } from '../notebook-path.js';
-import { MAX_FOLDER_LENGTH, movedFolder, normaliseFolder } from '../notebook-path.js';
+import {
+	MAX_FOLDER_LENGTH,
+	favouritesFirst,
+	movedFolder,
+	normaliseFolder
+} from '../notebook-path.js';
 
 /**
  * A table whose rows can point at a notebook.
@@ -233,8 +245,9 @@ export function listNotebooks(ctx: Ctx): Notebook[] {
 	const hidden = getHiddenSections(ctx.userId);
 
 	const others = host.familyUserIds(ctx.userId).filter((one) => one !== ctx.userId);
+	const starred = favouriteIds(ctx);
 
-	return db
+	const rows = db
 		.select({
 			id: notebooks.id,
 			title: notebooks.title,
@@ -262,11 +275,29 @@ export function listNotebooks(ctx: Ctx): Notebook[] {
 		.all()
 		.map(({ ownerId, ownerName, ...n }) =>
 			shape(
-				{ ...n, mine: ownerId === ctx.userId, sharedBy: ownerId === ctx.userId ? null : ownerName },
+				{
+					...n,
+					favourite: starred.has(n.id),
+					mine: ownerId === ctx.userId,
+					sharedBy: ownerId === ctx.userId ? null : ownerName
+				},
 				totals,
 				hidden
 			)
 		);
+	return favouritesFirst(rows);
+}
+
+/** The notebooks this reader has starred, by id. */
+function favouriteIds(ctx: Ctx): Set<number> {
+	return new Set(
+		db
+			.select({ id: notebookFavourites.notebookId })
+			.from(notebookFavourites)
+			.where(eq(notebookFavourites.userId, ctx.userId))
+			.all()
+			.map((r) => r.id)
+	);
 }
 
 /**
@@ -323,6 +354,7 @@ function shape(
 		modules: string | null;
 		closedAt: string | null;
 		sharedWithFamily: boolean;
+		favourite: boolean;
 		mine: boolean;
 		sharedBy: string | null;
 	},
@@ -429,6 +461,7 @@ export function getNotebook(ctx: Ctx, id: number): Notebook {
 	return shape(
 		{
 			...rest,
+			favourite: favouriteIds(ctx).has(id),
 			mine: ownerId === ctx.userId,
 			sharedBy: ownerId === ctx.userId ? null : ownerName
 		},
@@ -832,34 +865,38 @@ export function notebookPatch(ctx: Ctx, raw: { notebookId?: unknown }) {
 	return 'notebookId' in raw ? { notebookId: ownedNotebookId(ctx, raw.notebookId) } : {};
 }
 
-/** The open notebooks, for the selector on every form that can point at one. */
+/**
+ * The open notebooks, for the selector on every form that can point at one —
+ * the favourites first, the way the shelf has them.
+ */
 export function pickableNotebooks(ctx: Ctx) {
 	const others = host.familyUserIds(ctx.userId).filter((one) => one !== ctx.userId);
-	return (
-		db
-			// The labels come along: the note form fills them in when a notebook is
-			// picked, which it cannot do by asking the server after every pick.
-			.select({
-				id: notebooks.id,
-				title: notebooks.title,
-				folder: notebooks.folder,
-				defaultTags: notebooks.defaultTags
-			})
-			.from(notebooks)
-			.where(
-				and(
-					others.length === 0
-						? eq(notebooks.userId, ctx.userId)
-						: or(
-								eq(notebooks.userId, ctx.userId),
-								and(inArray(notebooks.userId, others), eq(notebooks.sharedWithFamily, true))
-							)!,
-					isNull(notebooks.closedAt)
-				)
+	const starred = favouriteIds(ctx);
+	const open = db
+		// The labels come along: the note form fills them in when a notebook is
+		// picked, which it cannot do by asking the server after every pick.
+		.select({
+			id: notebooks.id,
+			title: notebooks.title,
+			folder: notebooks.folder,
+			defaultTags: notebooks.defaultTags
+		})
+		.from(notebooks)
+		.where(
+			and(
+				others.length === 0
+					? eq(notebooks.userId, ctx.userId)
+					: or(
+							eq(notebooks.userId, ctx.userId),
+							and(inArray(notebooks.userId, others), eq(notebooks.sharedWithFamily, true))
+						)!,
+				isNull(notebooks.closedAt)
 			)
-			.orderBy(notebooks.folder, notebooks.title)
-			.all()
-	);
+		)
+		.orderBy(notebooks.folder, notebooks.title)
+		.all()
+		.map((one) => ({ ...one, favourite: starred.has(one.id) }));
+	return favouritesFirst(open);
 }
 
 function notebookTitled(ctx: Ctx, folder: string, title: string) {
@@ -944,6 +981,26 @@ export function renameFolder(ctx: Ctx, rawFrom: unknown, rawTo: unknown): number
 				.run();
 	});
 	return moving.length;
+}
+
+/**
+ * Star a notebook, or take the star off.
+ *
+ * Reachable rather than owned: a notebook shared into the family can be one
+ * somebody reaches for every day, and the star is theirs, not the owner's.
+ * Starring twice is one star.
+ */
+export function setNotebookFavourite(ctx: Ctx, id: number, favourite: boolean): void {
+	assertReachable(ctx, id);
+	if (favourite)
+		db.insert(notebookFavourites)
+			.values({ ...created(ctx), userId: ctx.userId, notebookId: id })
+			.onConflictDoNothing()
+			.run();
+	else
+		db.delete(notebookFavourites)
+			.where(and(eq(notebookFavourites.userId, ctx.userId), eq(notebookFavourites.notebookId, id)))
+			.run();
 }
 
 /*

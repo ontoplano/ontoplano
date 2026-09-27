@@ -25,6 +25,7 @@ import {
 	deleteNotebook,
 	renameFolder,
 	setNotebookClosed,
+	setNotebookFavourite,
 	setNotebookShared,
 	updateNotebook
 } from '$lib/services/notebooks';
@@ -114,6 +115,21 @@ export const notebookActions = {
 		try {
 			renameFolder(buildCtx(locals.user!.id), formData.get('from'), formData.get('to') ?? '');
 			return { success: true };
+		} catch (e) {
+			return toActionFailure(e);
+		}
+	},
+
+	/** Keep it at the front of the shelf, or stop. The reader's own star. */
+	setFavourite: async ({ request, locals }) => {
+		const formData = await request.formData();
+		try {
+			setNotebookFavourite(
+				buildCtx(locals.user!.id),
+				Number(formData.get('id')),
+				formData.get('favourite') === 'true'
+			);
+			return { success: true, action: 'setFavourite' };
 		} catch (e) {
 			return toActionFailure(e);
 		}

@@ -4552,6 +4552,13 @@ html button.tab-link {
 	white-space: nowrap;
 }
 
+/* The name over the favourites' row: the fold's label, standing still. */
+.shelf-heading {
+	display: flex;
+	padding: 0.75rem 0.75rem 0;
+	color: var(--color-gray-500);
+}
+
 /*
  * What is left over, as a bin in the corner of the shelf.
  *

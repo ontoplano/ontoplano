@@ -7,7 +7,7 @@ out of the schema — so this page cannot disagree with the schema, and a
 column added without a migration does not appear here because it does not
 exist.
 
-**81 tables.**
+**82 tables.**
 
 | Table                                                       | Columns | Belongs to a user |
 | ----------------------------------------------------------- | ------- | ----------------- |
@@ -54,6 +54,7 @@ exist.
 | [`media_tags`](#media_tags)                                 | 4       | yes               |
 | [`model_provider_keys`](#model_provider_keys)               | 9       | yes               |
 | [`newsletter_issues`](#newsletter_issues)                   | 6       | —                 |
+| [`notebook_favourites`](#notebook_favourites)               | 4       | yes               |
 | [`notebooks`](#notebooks)                                   | 12      | yes               |
 | [`oauth_clients`](#oauth_clients)                           | 7       | —                 |
 | [`oauth_codes`](#oauth_codes)                               | 11      | yes               |
@@ -956,6 +957,21 @@ Indexes:
 Indexes:
 
 - `newsletter_issues_version_unique` on `version` — unique
+
+## notebook_favourites
+
+| Column        | Type    | Null     | Default               | Notes             |
+| ------------- | ------- | -------- | --------------------- | ----------------- |
+| `id`          | integer | not null | —                     | primary key, auto |
+| `user_id`     | text    | not null | —                     | → `user.id`       |
+| `notebook_id` | integer | not null | —                     | → `notebooks.id`  |
+| `created_at`  | text    | not null | `(CURRENT_TIMESTAMP)` | —                 |
+
+Indexes:
+
+- `notebook_favourites_user_idx` on `user_id`
+- `notebook_favourites_notebook_idx` on `notebook_id`
+- `notebook_favourites_unique` on `user_id`, `notebook_id` — unique
 
 ## notebooks
 

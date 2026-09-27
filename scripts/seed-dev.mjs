@@ -1247,6 +1247,19 @@ const republic = notebook(
 	'Books'
 );
 
+/*
+ * Two starred, one of them inside a folder: the shelf draws a Favourites row
+ * above the folders and still shows the kitchen inside Home, and the notebook
+ * pickers list both first.
+ */
+for (const starred of [kitchen, republic])
+	run(
+		'insert or ignore into notebook_favourites (user_id, notebook_id, created_at) values (?, ?, ?)',
+		uid,
+		starred,
+		new Date().toISOString()
+	);
+
 todo('get three quotes for the counter', { urgency: 3, interest: 2, sortOrder: 7 });
 todo('measure the wall properly', { status: 'done', sortOrder: 8 });
 

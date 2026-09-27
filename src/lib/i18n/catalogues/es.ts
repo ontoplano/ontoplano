@@ -25,6 +25,7 @@ export const messages: Catalogue = {
 	'accountImport.theLogIsARecord': 'el registro es el historial de una instancia, no una posesión',
 	'accountImport.thisVersionHasNoSuch': 'esta versión no tiene esa tabla',
 	'accountImport.typeToConfirm': 'Escribe {word} para confirmar — esto vacía la cuenta primero.',
+	'accountImport.whatItPointedAtIsNot': 'lo que señalaba no está en el archivo',
 	'admin.accountDeleted': 'cuenta eliminada',
 	'admin.accounts': 'Cuentas',
 	'admin.admin': 'admin',
@@ -1823,6 +1824,8 @@ export const messages: Catalogue = {
 		'Switch on whatever else this subject accumulates — its shopping, its bills, the account it is paid from.',
 	'notebooks.aSubjectYouWriteAgainst':
 		'Un tema sobre el que escribes sin fecha límite — un libro que estás leyendo, un viaje, una renovación.\n\t\tLas notas, tareas y metas pueden pertenecer a uno, y todo sobre él se junta aquí.',
+	'notebooks.addNamedToFavourites': 'Añadir {title} a favoritos',
+	'notebooks.addToFavourites': 'Añadir a favoritos',
 	'notebooks.alreadyFiled': { one: '{count} filed', other: '{count} filed' },
 	'notebooks.andFromTheFrontmatter':
 		'y del frontmatter — con la carpeta\n\t\t\t\ten la que estaba también como etiqueta. Nada se sube como archivo; las notas se leen aquí. Eliminar el cuaderno\n\t\t\t\tlo deshace.',
@@ -1862,6 +1865,7 @@ export const messages: Catalogue = {
 	'notebooks.each': 'Cada',
 	'notebooks.edit': 'Editar {title}',
 	'notebooks.family': 'familia',
+	'notebooks.favourites': 'Favoritos',
 	'notebooks.fields.aboutWhat': 'About what',
 	'notebooks.fields.bank': 'Bank',
 	'notebooks.fields.card': 'Card',
@@ -2033,6 +2037,8 @@ export const messages: Catalogue = {
 	'notebooks.recipesCount': { one: '{count} recipe', other: '{count} recipes' },
 	'notebooks.removeFolder': 'Quitar carpeta',
 	'notebooks.removeFolderMovesUp': 'Sus cuadernos suben un nivel.',
+	'notebooks.removeFromFavourites': 'Quitar de favoritos',
+	'notebooks.removeNamedFromFavourites': 'Quitar {title} de favoritos',
 	'notebooks.renameFolder': 'Renombrar carpeta',
 	'notebooks.renameFolderNamed': 'Renombrar la carpeta {name}',
 	'notebooks.reopenIt': 'Reabrirlo',
@@ -3928,6 +3934,7 @@ export const messages: Catalogue = {
 		'Todo lo que planeaste y no hiciste recibe una respuesta aquí. La próxima semana genera sus propios bloques de todos modos, así que una lista sin responder no puede convertirse en la semana sin que lo notes.',
 	'tour.fKeepsTheGoodOnes':
 		'f mantiene los buenos arriba. a marca uno como aplicado, con una línea sobre lo que resultó — que es la parte que querrás en un año.',
+	'tour.favouritesFirst': 'Favoritos primero',
 	'tour.findItAgainByTag': 'Encuéntralo de nuevo por etiqueta',
 	'tour.forTheThingsThatAre': 'Para las cosas que no son un día',
 	'tour.gallery': 'Galería',
@@ -4023,6 +4030,8 @@ export const messages: Catalogue = {
 	'tour.shopping': 'Compras',
 	'tour.signOneOutOrAll': 'Cierra la sesión de uno, o de todos a la vez si algo se ve mal.',
 	'tour.sixViewsOfTheSame': 'Seis vistas de la misma semana',
+	'tour.starANotebook':
+		'Marca un cuaderno con estrella y va primero en la estantería y en cada selector de cuadernos. También sigue en su carpeta.',
 	'tour.starItOrMarkIt': 'Márcalo con estrella, o márcalo como hecho',
 	'tour.systemFollowsThePhoneOr':
 		'El sistema sigue al teléfono o al portátil, incluso cuando cambia al atardecer.',

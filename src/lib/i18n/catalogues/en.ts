@@ -23,6 +23,7 @@ export const messages: Catalogue = {
 	'accountImport.theLogIsARecord': 'the log is a record of an instance, not a possession',
 	'accountImport.thisVersionHasNoSuch': 'this version has no such table',
 	'accountImport.typeToConfirm': 'Type {word} to confirm — this empties the account first.',
+	'accountImport.whatItPointedAtIsNot': 'what it pointed at is not in the file',
 	'admin.accountDeleted': 'account deleted',
 	'admin.accounts': 'Accounts',
 	'admin.admin': 'admin',
@@ -1780,6 +1781,8 @@ export const messages: Catalogue = {
 		'Switch on whatever else this subject accumulates — its shopping, its bills, the account it is paid from.',
 	'notebooks.aSubjectYouWriteAgainst':
 		'A subject you write against with no deadline — a book you are reading, a trip, a renovation.\n\t\tNotes, tasks and goals can belong to one, and everything about it collects here.',
+	'notebooks.addNamedToFavourites': 'Add {title} to favourites',
+	'notebooks.addToFavourites': 'Add to favourites',
 	'notebooks.alreadyFiled': { one: '{count} filed', other: '{count} filed' },
 	'notebooks.andFromTheFrontmatter':
 		'and from the frontmatter — with the folder\n\t\t\t\tit was in as a tag too. Nothing is uploaded as a file; the notes are read here. Deleting the notebook\n\t\t\t\tundoes it.',
@@ -1819,6 +1822,7 @@ export const messages: Catalogue = {
 	'notebooks.each': 'Each',
 	'notebooks.edit': 'Edit {title}',
 	'notebooks.family': 'family',
+	'notebooks.favourites': 'Favourites',
 	'notebooks.fields.aboutWhat': 'About what',
 	'notebooks.fields.bank': 'Bank',
 	'notebooks.fields.card': 'Card',
@@ -1989,6 +1993,8 @@ export const messages: Catalogue = {
 	'notebooks.recipesCount': { one: '{count} recipe', other: '{count} recipes' },
 	'notebooks.removeFolder': 'Remove folder',
 	'notebooks.removeFolderMovesUp': 'Its notebooks move up one level.',
+	'notebooks.removeFromFavourites': 'Remove from favourites',
+	'notebooks.removeNamedFromFavourites': 'Remove {title} from favourites',
 	'notebooks.renameFolder': 'Rename folder',
 	'notebooks.renameFolderNamed': 'Rename the folder {name}',
 	'notebooks.reopenIt': 'Reopen it',
@@ -3838,6 +3844,7 @@ export const messages: Catalogue = {
 		'Everything you planned and did not do gets an answer here. Next week generates its own blocks either way, so an unanswered list cannot quietly become the week.',
 	'tour.fKeepsTheGoodOnes':
 		'f keeps the good ones at the top. a marks one as applied, with a line about what came of it — which is the part you will want in a year.',
+	'tour.favouritesFirst': 'Favourites first',
 	'tour.findItAgainByTag': 'Find it again by tag',
 	'tour.forTheThingsThatAre': 'For the things that are not a day',
 	'tour.gallery': 'Gallery',
@@ -3931,6 +3938,8 @@ export const messages: Catalogue = {
 	'tour.shopping': 'Shopping',
 	'tour.signOneOutOrAll': 'Sign one out, or all of them at once if something looks wrong.',
 	'tour.sixViewsOfTheSame': 'Six views of the same week',
+	'tour.starANotebook':
+		'Star a notebook and it leads the shelf and every notebook picker. It stays in its folder too.',
 	'tour.starItOrMarkIt': 'Star it, or mark it done',
 	'tour.systemFollowsThePhoneOr':
 		'System follows the phone or the laptop, including when it changes at sunset.',

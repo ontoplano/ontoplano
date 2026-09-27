@@ -199,6 +199,9 @@ export const USER_TABLES: OwnedTable[] = [
 	// as much somebody's own as the diary is: it leaves with the export and it
 	// goes with the deletion.
 	owned('media', schema.media as never),
+	// Stars on notebooks, before the notebooks. One on a notebook a family
+	// member shared has nothing to point at in the file, and a restore drops it.
+	owned('notebookFavourites', schema.notebookFavourites as never),
 	// Last of the subjects: entries, todos, goals and blocks all point at it.
 	owned('notebooks', schema.notebooks as never),
 	owned('recurringTaskTags', schema.recurringTaskTags as never),

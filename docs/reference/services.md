@@ -3620,7 +3620,8 @@ habit out of its subject.
 
 #### `pickableNotebooks(ctx)`
 
-The open notebooks, for the selector on every form that can point at one.
+The open notebooks, for the selector on every form that can point at one —
+the favourites first, the way the shelf has them.
 
 #### `renameFolder(ctx, rawFrom, rawTo)`
 
@@ -3632,6 +3633,14 @@ to take its contents to the top of the shelf, or the folder's own parent to
 dissolve it into that. Refused when a moved notebook would land on a name
 already in its new folder, and when the folder would go inside itself.
 Answers how many notebooks moved.
+
+#### `setNotebookFavourite(ctx, id, favourite)`
+
+Star a notebook, or take the star off.
+
+Reachable rather than owned: a notebook shared into the family can be one
+somebody reaches for every day, and the star is theirs, not the owner's.
+Starring twice is one star.
 
 #### `assertReachableNotebook(ctx, id)`
 

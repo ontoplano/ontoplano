@@ -11,6 +11,7 @@
 	import NotebookTags from '$lib/components/NotebookTags.svelte';
 	import NotebookPicture from '$lib/components/NotebookPicture.svelte';
 	import NotebookDetail from '$lib/components/NotebookDetail.svelte';
+	import NotebookStar from '$lib/components/NotebookStar.svelte';
 	import { SECTION_COLORS } from '$lib/colors';
 	import type { PageServerData, ActionData } from './$types';
 	import { useT } from '$lib/i18n';
@@ -156,6 +157,8 @@
 					<Icon name="tag" />
 					{t('tags.manageTags')}
 				</button>
+				<!-- The reader's own star, so a notebook shared with them can carry one. -->
+				<NotebookStar notebook={data.notebook} kind="btn btn-sm" />
 				{#if data.notebook.mine && data.onFamilyPlan}
 					<!-- The owner's switch: everybody on the plan reads it and writes
 				     their own entries into it. Entries keep their writers. -->

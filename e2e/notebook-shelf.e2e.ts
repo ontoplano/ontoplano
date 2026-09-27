@@ -103,3 +103,76 @@ test('a notebook page is one card, so its stripe starts at the top', async ({ pa
 	// And nothing inside it draws a second edge of its own.
 	await expect(striped.locator('.detail-header-frame.shadow-card')).toHaveCount(0);
 });
+
+for (const width of [1280, 390]) {
+	test(`a starred notebook leads the shelf and stays in its folder (${width}px)`, async ({
+		page
+	}) => {
+		test.setTimeout(180_000);
+		await page.setViewportSize({ width, height: 900 });
+		await register(page, testEmail(`nb-star-${width}`));
+
+		await makeNotebook(page, 'Countertops', 'Renovation');
+		await makeNotebook(page, 'Reading');
+
+		await visit(page, '/notebooks');
+		await expect(page.locator('[data-favourites]')).toHaveCount(0);
+
+		const star = page.getByRole('button', { name: 'Add Countertops to favourites' });
+		await page.getByRole('button', { name: /what is inside Renovation/ }).click();
+		await page.locator('.notebook-family .notebook-cover').last().hover();
+		await star.click();
+
+		// A row of its own above the folders…
+		const favourites = page.locator('[data-favourites]');
+		await expect(favourites.getByRole('link', { name: /Countertops/ })).toBeVisible();
+		const row = (await favourites.boundingBox())!;
+		const shelf = (await page.locator('[data-tour="notebook-shelf"]').boundingBox())!;
+		expect(row.y).toBeLessThan(shelf.y);
+		// …and still in its folder.
+		await expect(
+			page.locator('.notebook-family').getByRole('link', { name: /Countertops/ })
+		).toBeVisible();
+		await expect(favourites.getByRole('link', { name: /Reading/ })).toHaveCount(0);
+
+		// Nothing on the shelf runs past the edge of a phone.
+		const overflow = await page.evaluate(
+			() => document.documentElement.scrollWidth - document.documentElement.clientWidth
+		);
+		expect(overflow).toBeLessThanOrEqual(0);
+
+		// Taken off from the notebook's own page.
+		await favourites.getByRole('link', { name: /Countertops/ }).click();
+		await page.getByRole('link', { name: 'Open' }).first().click();
+		await page.waitForURL(/\/notebooks\/\d+/);
+		const off = page.getByRole('button', { name: 'Remove Countertops from favourites' });
+		await expect(off).toHaveAttribute('aria-pressed', 'true');
+		await off.click();
+		await expect(
+			page.getByRole('button', { name: 'Add Countertops to favourites' })
+		).toHaveAttribute('aria-pressed', 'false');
+
+		await visit(page, '/notebooks');
+		await expect(page.locator('[data-favourites]')).toHaveCount(0);
+	});
+}
+
+test('f stars the notebook open beside the shelf, and f again takes it off', async ({ page }) => {
+	test.setTimeout(180_000);
+	await page.setViewportSize({ width: 1280, height: 900 });
+	await register(page, testEmail('nb-star-key'));
+
+	await makeNotebook(page, 'Reading');
+	await visit(page, '/notebooks');
+	await page
+		.getByRole('link', { name: /Reading/ })
+		.first()
+		.click();
+	await page.waitForURL(/notebook=\d+/);
+
+	await page.locator('body').click({ position: { x: 1, y: 1 } });
+	await page.keyboard.press('f');
+	await expect(page.locator('[data-favourites]')).toHaveCount(1);
+	await page.keyboard.press('f');
+	await expect(page.locator('[data-favourites]')).toHaveCount(0);
+});

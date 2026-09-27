@@ -1496,6 +1496,21 @@
 			}
 		}
 	},
+	"favourite_notebook": {
+		"scope": "notes:write",
+		"writes": true,
+		"destroys": false,
+		"params": {
+			"favourite": {
+				"type": "boolean",
+				"required": false
+			},
+			"id": {
+				"type": "integer",
+				"required": true
+			}
+		}
+	},
 	"file_inventory_item": {
 		"scope": "inventory:write",
 		"writes": true,

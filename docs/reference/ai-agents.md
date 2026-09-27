@@ -762,7 +762,7 @@ _Needs `notes:write`; writes._
 
 ### `notebooks` — Notebooks
 
-The subjects being written against — a trip, a renovation, a book — with the id every other tool means by `notebookId`. Ask for these before writing an entry into one. A key tied to one notebook is answered with that one. `modules` is what each one holds: the tabs it shows, which is also what it will accept being filed under it.
+The subjects being written against — a trip, a renovation, a book — with the id every other tool means by `notebookId`. Ask for these before writing an entry into one. A key tied to one notebook is answered with that one. `modules` is what each one holds: the tabs it shows, which is also what it will accept being filed under it. `favourite` is whether the person has starred it; favourites come first.
 
 _Needs `notes:read`; read-only._
 
@@ -819,6 +819,17 @@ _Needs `notes:write` and `destructive`; deletes._
 | Parameter | Type    | Required | What it is                                  |
 | --------- | ------- | -------- | ------------------------------------------- |
 | `id`      | integer | yes      | The notebook’s id, as `notebooks` gives it. |
+
+### `favourite_notebook` — Star a notebook
+
+Keep a notebook at the front of the shelf and at the top of every notebook picker, or take the star off with `favourite: false`. The star is the person’s own, so a notebook shared with them can carry one too. `notebooks` says which have one.
+
+_Needs `notes:write`; writes._
+
+| Parameter   | Type    | Required | What it is                                  |
+| ----------- | ------- | -------- | ------------------------------------------- |
+| `id`        | integer | yes      | The notebook’s id, as `notebooks` gives it. |
+| `favourite` | boolean | —        | False takes the star off. True if left out. |
 
 ### `share_notebook` — Share a notebook with the family
 

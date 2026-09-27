@@ -19,6 +19,7 @@ export type MessageKey =
 	| 'accountImport.theLogIsARecord'
 	| 'accountImport.thisVersionHasNoSuch'
 	| 'accountImport.typeToConfirm'
+	| 'accountImport.whatItPointedAtIsNot'
 	| 'admin.accountDeleted'
 	| 'admin.accounts'
 	| 'admin.admin'
@@ -1596,6 +1597,8 @@ export type MessageKey =
 	| 'notebookDetail.yesDelete'
 	| 'notebooks.aNotebookStartsWith'
 	| 'notebooks.aSubjectYouWriteAgainst'
+	| 'notebooks.addNamedToFavourites'
+	| 'notebooks.addToFavourites'
 	| 'notebooks.alreadyFiled'
 	| 'notebooks.andFromTheFrontmatter'
 	| 'notebooks.atTheBottomOf'
@@ -1629,6 +1632,7 @@ export type MessageKey =
 	| 'notebooks.each'
 	| 'notebooks.edit'
 	| 'notebooks.family'
+	| 'notebooks.favourites'
 	| 'notebooks.fields.aboutWhat'
 	| 'notebooks.fields.bank'
 	| 'notebooks.fields.card'
@@ -1791,6 +1795,8 @@ export type MessageKey =
 	| 'notebooks.recipesCount'
 	| 'notebooks.removeFolder'
 	| 'notebooks.removeFolderMovesUp'
+	| 'notebooks.removeFromFavourites'
+	| 'notebooks.removeNamedFromFavourites'
 	| 'notebooks.renameFolder'
 	| 'notebooks.renameFolderNamed'
 	| 'notebooks.reopenIt'
@@ -3358,6 +3364,7 @@ export type MessageKey =
 	| 'tour.everythingYouHaveWrittenIn'
 	| 'tour.everythingYouPlannedAndDid'
 	| 'tour.fKeepsTheGoodOnes'
+	| 'tour.favouritesFirst'
 	| 'tour.findItAgainByTag'
 	| 'tour.forTheThingsThatAre'
 	| 'tour.gallery'
@@ -3429,6 +3436,7 @@ export type MessageKey =
 	| 'tour.shopping'
 	| 'tour.signOneOutOrAll'
 	| 'tour.sixViewsOfTheSame'
+	| 'tour.starANotebook'
 	| 'tour.starItOrMarkIt'
 	| 'tour.systemFollowsThePhoneOr'
 	| 'tour.tags'
@@ -3839,6 +3847,7 @@ export interface MessageValuesFor {
 	'notebookDetail.showArchived': { count: number };
 	'notebookDetail.showingCount': { count: number };
 	'notebookDetail.writeANoteAbout': { title: string | number };
+	'notebooks.addNamedToFavourites': { title: string | number };
 	'notebooks.alreadyFiled': { count: number };
 	'notebooks.billsCount': { count: number };
 	'notebooks.bringNThings': { count: number };
@@ -3864,6 +3873,7 @@ export interface MessageValuesFor {
 	'notebooks.people.changeTheirPicture': { name: string | number };
 	'notebooks.people.nothingWrittenAboutYet': { name: string | number };
 	'notebooks.recipesCount': { count: number };
+	'notebooks.removeNamedFromFavourites': { title: string | number };
 	'notebooks.renameFolderNamed': { name: string | number };
 	'notebooks.rows.dueOnThe': { day: string | number };
 	'notebooks.rows.linesCount': { count: number };

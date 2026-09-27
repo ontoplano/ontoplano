@@ -22,6 +22,7 @@
 	import { SECTION_COLORS } from '$lib/colors';
 	import NotebookCover from '$lib/components/NotebookCover.svelte';
 	import NotebookPicture from '$lib/components/NotebookPicture.svelte';
+	import NotebookStar from '$lib/components/NotebookStar.svelte';
 	import {
 		allFolders,
 		folderSegments,
@@ -112,6 +113,15 @@
 	const shelved = $derived(shelfOf(data.notebooks.filter((one) => !one.closedAt)));
 
 	/*
+	 * The starred ones, in a row of their own above the folders — and still in
+	 * their folders too, because a star is a shortcut to a notebook, not a
+	 * second place for it to live.
+	 */
+	const favourites = $derived(data.notebooks.filter((one) => one.favourite && !one.closedAt));
+	/** Posts the star of whichever notebook is open beside the shelf — the `f` key. */
+	let favouriteForm = $state<HTMLFormElement>();
+
+	/*
 	 * The ones that are finished with, folded away.
 	 *
 	 * A closed notebook is history — a trip that happened, a renovation that
@@ -148,9 +158,13 @@
 			renameOpen = false;
 			return;
 		}
-		if (getAction('/notebooks', e.key) === 'new') {
+		const action = getAction('/notebooks', e.key);
+		if (action === 'new') {
 			e.preventDefault();
 			openCreate();
+		} else if (action === 'toggle-favorite' && selected) {
+			e.preventDefault();
+			favouriteForm?.requestSubmit();
 		}
 	}
 
@@ -237,12 +251,15 @@
 							it. The picture is the object and the name hangs under it, glued
 							on rather than beside it.
 						-->
-						{#snippet cover(node: Notebook)}
+						{#snippet cover(node: Notebook, tour = false)}
 							<NotebookCover
 								notebook={node}
 								href="{resolve('/notebooks')}?notebook={node.id}"
 								chosen={node.id === data.selected}
 							>
+								{#snippet star()}
+									<NotebookStar notebook={node} {tour} />
+								{/snippet}
 								{#snippet actions()}
 									<button
 										onclick={() => openEdit(node)}
@@ -354,9 +371,26 @@
 								{@render folderRow(folder)}
 							{/each}
 							{#each level.notebooks as node (node.id)}
-								{@render cover(node)}
+								{@render cover(
+									node,
+									favourites.length === 0 && node.id === shelved.notebooks[0]?.id
+								)}
 							{/each}
 						{/snippet}
+
+						{#if favourites.length > 0}
+							<div data-favourites>
+								<p class="shelf-fold-label shelf-heading">
+									<Icon name="star" size={14} />
+									{t('notebooks.favourites')}
+								</p>
+								<div class="notebook-shelf">
+									{#each favourites as node, at (node.id)}
+										{@render cover(node, at === 0)}
+									{/each}
+								</div>
+							</div>
+						{/if}
 
 						<div data-tour="notebook-shelf" class="notebook-shelf">
 							{@render shelfContents(shelved)}
@@ -550,6 +584,22 @@
 			{/snippet}
 		</SplitColumns>
 	</div>
+
+	{#if selected}
+		<form
+			method="POST"
+			action="?/setFavourite"
+			class="hidden"
+			bind:this={favouriteForm}
+			use:enhance={() =>
+				async ({ update }) => {
+					await update({ reset: false });
+				}}
+		>
+			<input type="hidden" name="id" value={selected.id} />
+			<input type="hidden" name="favourite" value={selected.favourite ? 'false' : 'true'} />
+		</form>
+	{/if}
 
 	<form
 		method="POST"

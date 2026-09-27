@@ -76,6 +76,7 @@ works is a key listed here and the reverse.
 | <kbd>Enter</kbd> | Open the one under the cursor |
 | <kbd>e</kbd>     | Edit the one under the cursor |
 | <kbd>n</kbd>     | New notebook                  |
+| <kbd>f</kbd>     | Toggle favorite               |
 
 ## Diary — `/notebooks/diary`
 
