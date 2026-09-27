@@ -266,7 +266,7 @@ test('a comma or a space takes the word, and the symbol sits where it is typed',
 	await page.keyboard.type('home,');
 	await page.keyboard.type('urgent ');
 
-	await expect(panel(page).locator('[data-side="include"] .chip')).toHaveCount(2, {
+	await expect(panel(page).locator('[data-side="include"] .tag-chip')).toHaveCount(2, {
 		timeout: 20_000
 	});
 	await expect(face(page)).toContainText('+2');
