@@ -9,6 +9,7 @@
 	import { isLocale, useT } from '$lib/i18n';
 	import { sectionLabel } from '$lib/sections';
 	import ToggleRow from '$lib/components/ToggleRow.svelte';
+	import CaptureSettingsForm from '$lib/components/CaptureSettingsForm.svelte';
 	import { rememberLocaleOnThisDevice } from '$lib/i18n/device';
 	import OneLine from '$lib/components/OneLine.svelte';
 	import { page } from '$app/state';
@@ -1030,6 +1031,22 @@
 				{t('settings.preferences.pickDarkColoursTheLabels')}
 			</p>
 		</form>
+	</section>
+
+	<!--
+		The capture wheel: the same form the gear beside the open wheel opens,
+		so the settings are not only reachable from inside a gesture.
+	-->
+	<section class="border border-gray-200 bg-white p-6 shadow-card">
+		<div class="mb-4">
+			<h2 class="text-sm font-semibold text-gray-900">{t('captureSettings.title')}</h2>
+			<p class="mt-1 text-sm text-gray-500">{t('captureSettings.intro')}</p>
+		</div>
+		<CaptureSettingsForm
+			settings={page.data.captureSettings}
+			hidden={data.hiddenSections}
+			notebooks={data.captureNotebooks}
+		/>
 	</section>
 
 	<section class="border border-gray-200 bg-white p-6 shadow-card">

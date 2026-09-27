@@ -34,8 +34,15 @@
 		capture,
 		/** A failure the page already knows about, from a non-JS submit. */
 		error = null,
+		/** The notebook the form starts in, where the kind has one. */
+		notebookId = null,
 		onclose
-	}: { capture: Capture | null; error?: string | null; onclose: () => void } = $props();
+	}: {
+		capture: Capture | null;
+		error?: string | null;
+		notebookId?: number | null;
+		onclose: () => void;
+	} = $props();
 
 	/**
 	 * How much of what was written the receipt quotes.
@@ -131,7 +138,7 @@
 				};
 			}}
 		>
-			<CaptureForm capture={which} />
+			<CaptureForm capture={which} {notebookId} />
 		</form>
 	{/if}
 

@@ -278,6 +278,17 @@ export const messages: Catalogue = {
 	'capture.diaryNote': 'Nota de diario',
 	'capture.newThing': 'Nuevo {thing}',
 	'captureDialog.notWrittenDown': 'Eso no quedó escrito.',
+	'captureSettings.atLeastOne': 'al menos una',
+	'captureSettings.intro': 'Qué tiene la rueda del +, y adónde va lo que escribes desde ella.',
+	'captureSettings.mainNotebook': 'Cuaderno principal',
+	'captureSettings.mainNotebookHint':
+		'Tareas, notas, ideas y compras empiezan en él. Dentro de un cuaderno, manda ese cuaderno.',
+	'captureSettings.noNotebooksYet': 'Todavía no hay cuadernos.',
+	'captureSettings.save': 'Guardar captura rápida',
+	'captureSettings.saved': 'Captura rápida guardada.',
+	'captureSettings.title': 'Ajustes de captura rápida',
+	'captureSettings.wedges': 'Porciones',
+	'captureSettings.wedgesHint': 'La rueda muestra las marcadas, en este orden.',
 	'card.currentStreaks': 'Rachas actuales.',
 	'card.goalsWhosePeriodCoversToday': 'Metas cuyo período incluye hoy, con su progreso.',
 	'card.oneOfYourOwnQuotes': 'Una de tus propias citas, la misma durante todo el día.',
@@ -496,6 +507,7 @@ export const messages: Catalogue = {
 	'errors.plugins.metakeysMustBeAnArray': 'metaKeys tiene que ser una lista',
 	'errors.plugins.sourceMustBeLowercaseLetters':
 		'source tiene que ser letras minúsculas, dígitos, guiones y guiones bajos, empezando por una letra',
+	'errors.preferences.captureNeedsAWedge': 'Deja al menos una porción en la rueda',
 	'errors.preferences.theDayHasToEnd': 'El día tiene que terminar después de empezar',
 	'errors.preferences.unknownClock': 'Reloj desconocido',
 	'errors.preferences.unknownLanguage': 'Idioma desconocido',
@@ -608,6 +620,7 @@ export const messages: Catalogue = {
 	'fields.buy.whatItUsuallyCosts': 'Lo que suele costar.',
 	'fields.buy.wishlist': 'Lista de deseos',
 	'fields.idea.heading': 'Idea',
+	'fields.idea.notebookAndTags': 'Cuaderno, etiquetas',
 	'fields.idea.separateWithCommasOrSpaces':
 		'Sepáralas con comas o espacios. Un # al inicio está bien.',
 	'fields.idea.tagsExample': 'proyecto, app, música',
@@ -4011,6 +4024,7 @@ export const messages: Catalogue = {
 		'Arrastra hacia abajo un tramo vacío de un día. Mantén Alt mientras arrastras uno para mover solo esa ocurrencia y dejar las demás semanas intactas.',
 	'tour.putARecipeOnThe':
 		'Pon una receta en la semana y todo lo que necesita aparece en la lista de compras, menos lo que ya tienes.',
+	'tour.quickCaptureYourWay': 'Captura rápida a tu manera',
 	'tour.recipes': 'Recetas',
 	'tour.recipesAndWhatTheyCost': 'Recetas, y lo que te cuestan',
 	'tour.recordings': 'Grabaciones',
@@ -4107,6 +4121,8 @@ export const messages: Catalogue = {
 	'tour.whereYouAreAndWhat': 'Dónde estás, y qué forma tiene',
 	'tour.whereYourWeekBegins': 'Dónde empieza tu semana',
 	'tour.whichListAndWhereIt': 'Where it lives',
+	'tour.whichWedgesThePlusWheel':
+		'Qué porciones tiene la rueda del +, en qué orden, y el cuaderno donde empieza lo que escribes desde ella. El engranaje junto a la rueda abierta abre los mismos ajustes.',
 	'tour.workHealthWhateverDividesYour':
 		'Trabajo, salud, lo que sea que divida tu vida. Cada bloque lleva el color de su categoría, en la cuadrícula y en el panel.',
 	'tour.workouts': 'Entrenamientos',

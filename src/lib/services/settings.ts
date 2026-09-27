@@ -18,6 +18,12 @@ import { isClock, type Clock } from '../when.js';
 import { isLocale, type Locale } from '../i18n/locales.js';
 import { SECTIONS } from '../colors.js';
 import { isHexColor } from '../nav-order.js';
+import {
+	CAPTURE_SETTINGS_KEY,
+	parseCaptureSettings,
+	serialiseCaptureSettings,
+	type CaptureSettings
+} from '../capture-settings.js';
 
 export function getUserSetting(userId: string, key: string): string | null {
 	const row = db
@@ -476,4 +482,20 @@ export function getChatMayDelete(userId: string): boolean {
 
 export function setChatMayDelete(userId: string, may: boolean): void {
 	setUserSetting(userId, CHAT_MAY_DELETE_KEY, may ? 'true' : 'false');
+}
+
+// --- The capture wheel ---------------------------------------------------------
+
+/**
+ * Which wedges the capture wheel holds, in what order, and the notebook its
+ * forms start in. Read leniently — see `$lib/capture-settings`; the notebook
+ * is checked when it is written, and a form offered one that has since gone
+ * simply does not find it among the notebooks it lists.
+ */
+export function getCaptureSettings(userId: string): CaptureSettings {
+	return parseCaptureSettings(getUserSetting(userId, CAPTURE_SETTINGS_KEY));
+}
+
+export function setCaptureSettings(userId: string, settings: CaptureSettings): void {
+	setUserSetting(userId, CAPTURE_SETTINGS_KEY, serialiseCaptureSettings(settings));
 }

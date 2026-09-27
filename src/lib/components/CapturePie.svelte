@@ -1,10 +1,25 @@
 <script lang="ts">
-	import { routeGlyph } from '$lib/glyphs';
-	import { CAPTURES, visibleCaptures, type Capture } from '$lib/capture';
+	import {
+		CAPTURES,
+		CAPTURE_SETTINGS_GLYPH,
+		MEDIA_CAPTURES,
+		captureLook,
+		visibleCaptures,
+		type Capture
+	} from '$lib/capture';
+	import {
+		DEFAULT_CAPTURE_SETTINGS,
+		startingNotebook,
+		wheelKinds,
+		type CaptureSettings
+	} from '$lib/capture-settings';
 	import CaptureDialog from '$lib/components/CaptureDialog.svelte';
+	import CaptureSettingsForm from '$lib/components/CaptureSettingsForm.svelte';
+	import Modal from '$lib/components/Modal.svelte';
+	import Icon from '$lib/components/Icon.svelte';
+	import { page } from '$app/state';
 	import RadialMenu from '$lib/components/RadialMenu.svelte';
 	import Recorder from '$lib/components/Recorder.svelte';
-	import { SECTION_COLORS } from '$lib/colors';
 	import { ACCEPTED_TYPES } from '$lib/services/media';
 	import { ACCOUNT_AUDIOS, AUDIO_KILOBYTES } from '$lib/services/media-limits';
 	import { notify } from '$lib/notify.svelte';
@@ -40,8 +55,22 @@
 	 */
 	let {
 		onopenchange,
-		hidden = []
-	}: { onopenchange?: (open: boolean) => void; hidden?: readonly string[] } = $props();
+		hidden = [],
+		/** Which wedges, in what order, and the notebook the forms start in. */
+		settings = DEFAULT_CAPTURE_SETTINGS
+	}: {
+		onopenchange?: (open: boolean) => void;
+		hidden?: readonly string[];
+		settings?: CaptureSettings;
+	} = $props();
+
+	/** The gear beside the wheel has been pressed: its settings are open. */
+	let configuring = $state(false);
+
+	/** Where a form opened from here starts — see `startingNotebook`. */
+	const notebookId = $derived(
+		startingNotebook(settings, { id: page.route.id, params: page.params })
+	);
 
 	let open = $state(false);
 	let dragging = $state(false);
@@ -54,49 +83,6 @@
 	let recording = $state(false);
 	/** Whether the microphone was actually given, so the panel can hold back. */
 	let started = $state(false);
-
-	/**
-	 * The two things the wheel takes in that are not words.
-	 *
-	 * A picture is chosen from the device; a recording is made here. Both end
-	 * up in the Media room, so both wear its colour — and `emphasis` draws them
-	 * harder than the four beside them, because six wedges is enough that the
-	 * eye needs to find the pair without reading every icon.
-	 *
-	 * Two tints of one room's colour rather than two colours: the four capture
-	 * wedges are coloured by where each thing ends up, and borrowing another
-	 * section's colour to tell these two apart would say they go somewhere
-	 * else. Same place, two ways in.
-	 */
-	const MEDIA_TINT = 62;
-	const MEDIA_WEDGES = [
-		// The glyphs of the tabs they land in, from `$lib/glyphs`.
-		{
-			key: 'picture',
-			label: 'app.picture' as const,
-			icon: routeGlyph('/media/gallery')!,
-			tint: 100
-		},
-		{
-			key: 'recording',
-			label: 'app.recording' as const,
-			icon: routeGlyph('/media/audios')!,
-			tint: MEDIA_TINT
-		}
-	];
-
-	const mediaWedges = $derived(
-		MEDIA_WEDGES.map((one) => ({
-			key: one.key,
-			label: t(one.label),
-			icon: one.icon,
-			color:
-				one.tint === 100
-					? SECTION_COLORS.media
-					: `color-mix(in srgb, ${SECTION_COLORS.media} ${one.tint}%, white)`,
-			emphasis: true
-		}))
-	);
 
 	function addMedia(key: string) {
 		open = false;
@@ -157,21 +143,38 @@
 	}
 
 	/*
-	 * The four you write, then the two you add.
+	 * The four you write, then the two you add — unless the account has
+	 * chosen otherwise, in which case its choice and its order.
 	 *
-	 * Appended rather than mixed in, so the writing four keep the order they
-	 * have always had and the pair reads as a pair — which is the other half of
-	 * what `emphasis` is doing.
+	 * The pair is drawn harder than the rest wherever it lands, which is the
+	 * other half of what `emphasis` is doing: it keeps them reading as a pair
+	 * without having to be next to each other.
 	 */
-	const wedges = $derived([
-		...visibleCaptures(hidden).map((c) => ({
-			key: c.key,
-			label: t(c.label),
-			icon: c.icon,
-			color: c.color
-		})),
-		...mediaWedges
+	const available = $derived([
+		...visibleCaptures(hidden).map((c) => c.key),
+		...MEDIA_CAPTURES.map((m) => m.key)
 	]);
+	const wedges = $derived(
+		wheelKinds(settings, available).flatMap((key) => {
+			const look = captureLook(key);
+			return look
+				? [
+						{
+							key,
+							label: t(look.label),
+							icon: look.icon,
+							color: look.color,
+							emphasis: look.media
+						}
+					]
+				: [];
+		})
+	);
+
+	function configure() {
+		open = false;
+		configuring = true;
+	}
 
 	/**
 	 * Opened by whichever trigger the shell is showing.
@@ -213,7 +216,7 @@
 
 	function choose(key: string) {
 		open = false;
-		const media = MEDIA_WEDGES.find((one) => one.key === key);
+		const media = MEDIA_CAPTURES.find((one) => one.key === key);
 		if (media) return addMedia(key);
 		writing = CAPTURES.find((c) => c.key === key) ?? null;
 	}
@@ -236,6 +239,12 @@
 	{origin}
 	{dragging}
 	bottomInset={inset}
+	aside={{
+		icon: CAPTURE_SETTINGS_GLYPH,
+		label: t('captureSettings.title'),
+		tour: 'capture-settings',
+		onpress: configure
+	}}
 	onvisible={(v) => onopenchange?.(v)}
 	onselect={choose}
 	onclose={() => (open = false)}
@@ -284,4 +293,29 @@
 	</div>
 {/if}
 
-<CaptureDialog capture={writing} onclose={() => (writing = null)} />
+<CaptureDialog capture={writing} {notebookId} onclose={() => (writing = null)} />
+
+<Modal
+	open={configuring}
+	onclose={() => (configuring = false)}
+	title={t('captureSettings.title')}
+	size="sm"
+>
+	{#if configuring}
+		<CaptureSettingsForm
+			id="capture-settings-form"
+			{settings}
+			{hidden}
+			saved={() => (configuring = false)}
+		/>
+	{/if}
+
+	{#snippet footer()}
+		<button type="button" class="btn" onclick={() => (configuring = false)}>{t('ui.cancel')}</button
+		>
+		<button type="submit" form="capture-settings-form" class="btn btn-primary">
+			<Icon name="check" />
+			{t('ui.save')}
+		</button>
+	{/snippet}
+</Modal>

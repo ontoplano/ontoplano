@@ -271,6 +271,17 @@ export const messages: Catalogue = {
 	'capture.diaryNote': 'Diary note',
 	'capture.newThing': 'New {thing}',
 	'captureDialog.notWrittenDown': 'That was not written down.',
+	'captureSettings.atLeastOne': 'at least one',
+	'captureSettings.intro': 'What the + wheel holds, and where what you write from it goes.',
+	'captureSettings.mainNotebook': 'Main notebook',
+	'captureSettings.mainNotebookHint':
+		'Tasks, notes, ideas and things to buy start in it. Inside a notebook, that notebook wins.',
+	'captureSettings.noNotebooksYet': 'No notebooks yet.',
+	'captureSettings.save': 'Save quick capture',
+	'captureSettings.saved': 'Quick capture saved.',
+	'captureSettings.title': 'Quick capture settings',
+	'captureSettings.wedges': 'Wedges',
+	'captureSettings.wedgesHint': 'The wheel draws the ticked ones, in this order.',
 	'card.currentStreaks': 'Current streaks.',
 	'card.goalsWhosePeriodCoversToday': 'Goals whose period covers today, with progress.',
 	'card.oneOfYourOwnQuotes': 'One of your own quotes, the same one all day.',
@@ -483,6 +494,7 @@ export const messages: Catalogue = {
 	'errors.plugins.metakeysMustBeAnArray': 'metaKeys must be an array',
 	'errors.plugins.sourceMustBeLowercaseLetters':
 		'source must be lowercase letters, digits, hyphens and underscores, starting with a letter',
+	'errors.preferences.captureNeedsAWedge': 'Keep at least one wedge on the wheel',
 	'errors.preferences.theDayHasToEnd': 'The day has to end after it starts',
 	'errors.preferences.unknownClock': 'Unknown clock',
 	'errors.preferences.unknownLanguage': 'Unknown language',
@@ -591,6 +603,7 @@ export const messages: Catalogue = {
 	'fields.buy.whatItUsuallyCosts': 'What it usually costs.',
 	'fields.buy.wishlist': 'Wishlist',
 	'fields.idea.heading': 'Idea',
+	'fields.idea.notebookAndTags': 'Notebook, tags',
 	'fields.idea.separateWithCommasOrSpaces': 'Separate with commas or spaces. A leading # is fine.',
 	'fields.idea.tagsExample': 'project, app, music',
 	'fields.note.notebookTags': 'Notebook, tags',
@@ -3919,6 +3932,7 @@ export const messages: Catalogue = {
 		'Pull down an empty stretch of a day. Hold Alt while dragging one to move that occurrence only and leave the rest of the weeks alone.',
 	'tour.putARecipeOnThe':
 		'Put a recipe on the week and everything it needs turns up on the shopping list, minus what you already have.',
+	'tour.quickCaptureYourWay': 'Quick capture, your way',
 	'tour.recipes': 'Recipes',
 	'tour.recipesAndWhatTheyCost': 'Recipes, and what they cost you',
 	'tour.recordings': 'Recordings',
@@ -4015,6 +4029,8 @@ export const messages: Catalogue = {
 	'tour.whereYouAreAndWhat': 'Where you are, and what shape',
 	'tour.whereYourWeekBegins': 'Where your week begins',
 	'tour.whichListAndWhereIt': 'Where it lives',
+	'tour.whichWedgesThePlusWheel':
+		'Which wedges the + wheel holds, in what order, and the notebook what you write from it starts in. The gear beside the open wheel opens the same settings.',
 	'tour.workHealthWhateverDividesYour':
 		'Work, health, whatever divides your life. Every block wears its category’s colour, on the grid and on the dashboard.',
 	'tour.workouts': 'Workouts',

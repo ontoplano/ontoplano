@@ -122,6 +122,7 @@
 		parsers = [],
 		currency = 'BRL',
 		pickableNotebooks = [],
+		locations = [],
 		areas = [],
 		workoutMeasures = [],
 		slots = [],
@@ -215,6 +216,8 @@
 		/** For the money a ledger holds and a bill expects. */
 		currency?: Currency;
 		pickableNotebooks?: { id: number; title: string }[];
+		/** Where a thing can live, for the Inventory tab's form. */
+		locations?: { id: number; name: string; path: string }[];
 		areas?: { id: number; name: string }[];
 		workoutMeasures?: { activity: string; unit: string }[];
 		/* What a goal on this notebook can be told to count. */
@@ -2136,6 +2139,8 @@
 				<FormGrid>
 					<BuyFields
 						categories={inventoryCategories}
+						{locations}
+						askLocation
 						notebooks={pickableNotebooks}
 						startingNotebook={notebook.id}
 						showFields

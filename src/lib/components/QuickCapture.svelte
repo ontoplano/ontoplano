@@ -2,6 +2,8 @@
 	import CaptureDialog from '$lib/components/CaptureDialog.svelte';
 	import Icon from '$lib/components/Icon.svelte';
 	import { captureByShortcut, visibleCaptures, type Capture } from '$lib/capture';
+	import { DEFAULT_CAPTURE_SETTINGS, startingNotebook } from '$lib/capture-settings';
+	import { page } from '$app/state';
 	import { useT } from '$lib/i18n';
 
 	const t = useT();
@@ -29,6 +31,14 @@
 	const captures = $derived(visibleCaptures(hidden));
 
 	let open = $state<Capture | null>(null);
+
+	/** The same starting notebook the wheel's forms get. */
+	const notebookId = $derived(
+		startingNotebook(page.data.captureSettings ?? DEFAULT_CAPTURE_SETTINGS, {
+			id: page.route.id,
+			params: page.params
+		})
+	);
 
 	function show(capture: Capture) {
 		open = capture;
@@ -89,4 +99,4 @@
 	</div>
 {/if}
 
-<CaptureDialog capture={open} {error} onclose={() => (open = null)} />
+<CaptureDialog capture={open} {error} {notebookId} onclose={() => (open = null)} />

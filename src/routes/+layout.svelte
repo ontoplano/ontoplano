@@ -1701,7 +1701,12 @@
 		<ReportDialog open={reporting} onclose={() => (reporting = false)} />
 		<Tutorial bind:this={tour} accent={section.accent} ondismiss={tourDismissed} />
 		<CommandPalette hidden={data.hiddenSections} />
-		<CapturePie bind:this={pie} onopenchange={(v) => (pieOpen = v)} hidden={data.hiddenSections} />
+		<CapturePie
+			bind:this={pie}
+			onopenchange={(v) => (pieOpen = v)}
+			hidden={data.hiddenSections}
+			settings={data.captureSettings}
+		/>
 		<NavPie
 			bind:this={rooms}
 			onopenchange={(v) => (roomsOpen = v)}

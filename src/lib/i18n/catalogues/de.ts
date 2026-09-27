@@ -281,6 +281,17 @@ export const messages: Catalogue = {
 	'capture.diaryNote': 'Tagebucheintrag',
 	'capture.newThing': 'Neu: {thing}',
 	'captureDialog.notWrittenDown': 'Das wurde nicht aufgeschrieben.',
+	'captureSettings.atLeastOne': 'mindestens eins',
+	'captureSettings.intro': 'Was das +-Rad enthält und wohin geht, was Sie darüber schreiben.',
+	'captureSettings.mainNotebook': 'Hauptnotizbuch',
+	'captureSettings.mainNotebookHint':
+		'Aufgaben, Notizen, Ideen und Einkäufe beginnen darin. In einem Notizbuch gilt dieses.',
+	'captureSettings.noNotebooksYet': 'Noch keine Notizbücher.',
+	'captureSettings.save': 'Schnellerfassung speichern',
+	'captureSettings.saved': 'Schnellerfassung gespeichert.',
+	'captureSettings.title': 'Schnellerfassung einstellen',
+	'captureSettings.wedges': 'Segmente',
+	'captureSettings.wedgesHint': 'Das Rad zeigt die angehakten, in dieser Reihenfolge.',
 	'card.currentStreaks': 'Aktuelle Serien.',
 	'card.goalsWhosePeriodCoversToday': 'Ziele, deren Zeitraum heute einschließt, mit Fortschritt.',
 	'card.oneOfYourOwnQuotes': 'Eines Ihrer eigenen Zitate, den ganzen Tag über dasselbe.',
@@ -505,6 +516,7 @@ export const messages: Catalogue = {
 	'errors.plugins.metakeysMustBeAnArray': 'metaKeys muss eine Liste sein',
 	'errors.plugins.sourceMustBeLowercaseLetters':
 		'source muss aus Kleinbuchstaben, Ziffern, Bindestrichen und Unterstrichen bestehen und mit einem Buchstaben beginnen',
+	'errors.preferences.captureNeedsAWedge': 'Lassen Sie mindestens ein Segment im Rad',
 	'errors.preferences.theDayHasToEnd': 'Der Tag muss enden, nachdem er beginnt',
 	'errors.preferences.unknownClock': 'Unbekannte Uhr',
 	'errors.preferences.unknownLanguage': 'Unbekannte Sprache',
@@ -617,6 +629,7 @@ export const messages: Catalogue = {
 	'fields.buy.whatItUsuallyCosts': 'Was es normalerweise kostet.',
 	'fields.buy.wishlist': 'Wunschliste',
 	'fields.idea.heading': 'Idee',
+	'fields.idea.notebookAndTags': 'Notizbuch, Schlagwörter',
 	'fields.idea.separateWithCommasOrSpaces':
 		'Mit Kommas oder Leerzeichen trennen. Ein vorangestelltes # ist erlaubt.',
 	'fields.idea.tagsExample': 'Projekt, App, Musik',
@@ -4037,6 +4050,7 @@ export const messages: Catalogue = {
 		'Ziehen Sie einen leeren Abschnitt eines Tages herunter. Halten Sie beim Ziehen Alt gedrückt, um nur dieses Vorkommen zu verschieben und die übrigen Wochen unangetastet zu lassen.',
 	'tour.putARecipeOnThe':
 		'Legen Sie ein Rezept auf die Woche, und alles, was es braucht, taucht auf der Einkaufsliste auf — abzüglich dessen, was Sie schon haben.',
+	'tour.quickCaptureYourWay': 'Schnellerfassung nach Ihrem Geschmack',
 	'tour.recipes': 'Rezepte',
 	'tour.recipesAndWhatTheyCost': 'Rezepte, und was sie Sie kosten',
 	'tour.recordings': 'Aufnahmen',
@@ -4134,6 +4148,8 @@ export const messages: Catalogue = {
 	'tour.whereYouAreAndWhat': 'Wo Sie sind, und in welcher Form',
 	'tour.whereYourWeekBegins': 'Wo deine Woche beginnt',
 	'tour.whichListAndWhereIt': 'Where it lives',
+	'tour.whichWedgesThePlusWheel':
+		'Welche Segmente das +-Rad enthält, in welcher Reihenfolge, und in welchem Notizbuch beginnt, was Sie darüber schreiben. Das Zahnrad neben dem offenen Rad öffnet dieselben Einstellungen.',
 	'tour.workHealthWhateverDividesYour':
 		'Arbeit, Gesundheit, was auch immer Ihr Leben einteilt. Jeder Block trägt die Farbe seiner Kategorie, im Raster und auf dem Dashboard.',
 	'tour.workouts': 'Trainings',

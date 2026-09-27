@@ -596,6 +596,11 @@ export const TUTORIALS: Record<string, Tutorial> = {
 				body: 'tour.dragARoomUpOr'
 			},
 			{
+				target: '[data-tour="prefs-capture"]',
+				title: 'tour.quickCaptureYourWay',
+				body: 'tour.whichWedgesThePlusWheel'
+			},
+			{
 				target: '[data-tour="prefs-theme"]',
 				title: 'tour.lightDarkOrWhateverThe',
 				body: 'tour.systemFollowsThePhoneOr'

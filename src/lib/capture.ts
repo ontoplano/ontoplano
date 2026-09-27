@@ -113,3 +113,55 @@ export function visibleCaptures(hidden: readonly string[]): Capture[] {
 export function captureByShortcut(key: string): Capture | undefined {
 	return CAPTURES.find((c) => c.shortcut === key);
 }
+
+/**
+ * The two things the wheel takes in that are not words.
+ *
+ * A picture is chosen from the device; a recording is made there and then.
+ * Both land in Media, so both wear its colour — at two strengths, `tint` being
+ * how much of it survives the mix with white. Here rather than in the wheel so
+ * that the capture settings can list them beside the four you write.
+ */
+export type MediaCapture = { key: string; label: PlainKey; icon: IconName; tint: number };
+
+export const MEDIA_CAPTURES: MediaCapture[] = [
+	// The glyphs of the tabs they land in.
+	{ key: 'picture', label: 'app.picture', icon: routeGlyph('/media/gallery')!, tint: 100 },
+	{ key: 'recording', label: 'app.recording', icon: routeGlyph('/media/audios')!, tint: 62 }
+];
+
+/** Every wedge the capture wheel can hold, in the order it draws them unless told otherwise. */
+export const CAPTURE_KINDS: readonly string[] = [
+	...CAPTURES.map((c) => c.key),
+	...MEDIA_CAPTURES.map((m) => m.key)
+];
+
+/** A media wedge's colour: the Media room's, at its own strength. */
+export function mediaColor(tint: number): string {
+	return tint === 100
+		? SECTION_COLORS.media
+		: `color-mix(in srgb, ${SECTION_COLORS.media} ${tint}%, white)`;
+}
+
+/**
+ * How a kind is drawn, wherever it is drawn — a wedge, or a row in the
+ * settings that choose the wedges. `media` marks the two that are added
+ * rather than written.
+ */
+export function captureLook(
+	key: string
+): { label: PlainKey; icon: IconName; color: string; media: boolean } | undefined {
+	const written = CAPTURES.find((c) => c.key === key);
+	if (written)
+		return { label: written.label, icon: written.icon, color: written.color, media: false };
+	const added = MEDIA_CAPTURES.find((m) => m.key === key);
+	if (added)
+		return { label: added.label, icon: added.icon, color: mediaColor(added.tint), media: true };
+	return undefined;
+}
+
+/** Where the capture forms' choices come from — see `/api/capture-options`. */
+export const CAPTURE_OPTIONS_URL = '/api/capture-options';
+
+/** The one glyph for the capture wheel's own settings, wherever they are opened from. */
+export const CAPTURE_SETTINGS_GLYPH: IconName = 'settings';

@@ -39,6 +39,7 @@ import {
 	setUserSetting
 } from '$lib/services/settings';
 import {
+	saveCaptureSettings,
 	saveGridHours,
 	saveWeekPreferences,
 	setUserClock,
@@ -47,6 +48,7 @@ import {
 	setUserTheme
 } from '$lib/services/preferences';
 import { LOCALES, LOCALE_NAMES } from '$lib/i18n/locales';
+import { pickableNotebooks } from '$lib/services/notebooks';
 import { untranslatedCount } from '$lib/i18n/coverage';
 
 /** Everything on this page belongs to the account, never to the instance (I9). */
@@ -85,6 +87,8 @@ export const load = async ({ locals }: IsolatedEvent) => {
 		notifications: notificationSettings(ctx, host.capabilities()),
 		sections: HIDEABLE_SECTIONS,
 		hiddenSections,
+		// The notebooks the capture wheel's forms could start in.
+		captureNotebooks: pickableNotebooks(ctx),
 		week: getWeekSettings(ctx.userId),
 		gridHours: getGridHours(ctx.userId),
 		currency: getCurrency(ctx.userId),
@@ -224,6 +228,24 @@ export const actions = {
 
 		setCurrency(locals.user!.id, chosen);
 		return { success: true, action: 'saveCurrency' };
+	},
+
+	/**
+	 * The capture wheel's wedges and notebook. Posted from this page and from
+	 * the gear beside the wheel itself, which is the same form in a dialog.
+	 */
+	saveCapture: async ({ request, locals }: IsolatedEvent) => {
+		const formData = await request.formData();
+		try {
+			saveCaptureSettings(buildCtx(locals.user!.id), {
+				notebookId: formData.get('notebookId'),
+				order: formData.getAll('kind'),
+				on: formData.getAll('on')
+			});
+			return { success: true, action: 'saveCapture' };
+		} catch (e) {
+			return toActionFailure(e);
+		}
 	},
 
 	saveGridHours: async ({ request, locals }: IsolatedEvent) => {

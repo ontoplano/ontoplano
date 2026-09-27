@@ -22,6 +22,7 @@ import {
 	getLocale,
 	getNavOrder,
 	getSectionColors,
+	getCaptureSettings,
 	getTheme,
 	getWeekSettings,
 	hasSeenTutorial
@@ -78,6 +79,7 @@ export async function load(event: IsolatedEvent): Promise<LayoutServerData> {
 		hiddenSections: getHiddenSections(user.id),
 		navOrder: getNavOrder(user.id),
 		sectionColors: getSectionColors(user.id),
+		captureSettings: getCaptureSettings(user.id),
 		/*
 		 * What the app has told this person, on a device that told them itself.
 		 *
