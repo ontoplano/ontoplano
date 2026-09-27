@@ -23,7 +23,7 @@ import {
 import { localDateOf, type Ctx } from './ctx.js';
 import { NotFoundError, ValidationError } from './errors.js';
 import { createReminder } from './reminders.js';
-import { ownedNotebookId } from './notebooks.js';
+import { ownedNotebookId, type FiledRow } from './notebooks.js';
 import { created, stamp, stamps } from './time.js';
 import { TIME_PATTERN, num, oneOf, optionalStr, str } from './validate.js';
 import { MAX_BLOCK_NOTES } from '../planner-grid.js';
@@ -259,7 +259,7 @@ export function updateSlot(ctx: Ctx, id: number, raw: BlockInput & { weekday: un
 			// actually carried them. Drag and resize post placement fields only,
 			// and must not clear either.
 			...(raw.attributesPatch !== undefined ? { attributes: raw.attributesPatch } : {}),
-			...blockNotebook(ctx, raw),
+			...blockNotebook(ctx, raw, { table: recurringTasks, id }),
 			/*
 			 * And the rhythm, on the same rule and for the same reason.
 			 *
@@ -634,7 +634,7 @@ export function updateExceptional(ctx: Ctx, id: number, raw: BlockInput & { date
 			// actually sent one.
 			...(raw.recurrence !== undefined ? { recurrence: raw.recurrence } : {}),
 			...(raw.ratings ?? {}),
-			...blockNotebook(ctx, raw),
+			...blockNotebook(ctx, raw, { table: exceptionalTasks, id }),
 			...(raw.attributesPatch !== undefined ? { attributes: raw.attributesPatch } : {})
 		})
 		.where(and(eq(exceptionalTasks.id, id), eq(exceptionalTasks.userId, ctx.userId)))
@@ -1113,8 +1113,11 @@ function parseBlock(ctx: Ctx, raw: BlockInput) {
  * `{ notebookId }` when the caller said something about the notebook, nothing
  * when it did not — a drag posts placement only and must not unfile a block.
  */
-function blockNotebook(ctx: Ctx, raw: BlockInput) {
-	return raw.notebookId === undefined ? {} : { notebookId: ownedNotebookId(ctx, raw.notebookId) };
+function blockNotebook(ctx: Ctx, raw: BlockInput, was?: FiledRow) {
+	// A block is a task on a day, so it is filed where tasks are.
+	return raw.notebookId === undefined
+		? {}
+		: { notebookId: ownedNotebookId(ctx, raw.notebookId, 'tasks', was) };
 }
 
 /** A workout id from a form is a number until it is checked against the owner. */

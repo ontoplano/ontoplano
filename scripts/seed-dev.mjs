@@ -2060,6 +2060,27 @@ if (!one('select id from webhook_subscriptions where user_id = ?', uid)) {
 }
 apiToken('scratch script', 'streams:read');
 apiToken('Phone widget', 'today:read');
+
+// A notebook widget: the kitchen's open tasks, newest first. Its key is tied to
+// the notebook and reads that one tab, the way Settings → Widgets mints one.
+{
+	const widgetKey = apiToken('Widget · Kitchen', 'tasks:read');
+	run(
+		"update api_tokens set confined_kind = 'notebook', confined_id = ? where id = ?",
+		kitchen,
+		widgetKey
+	);
+	if (!one('select id from phone_widgets where token_id = ?', widgetKey))
+		run(
+			`insert into phone_widgets (user_id, token_id, notebook_id, section, status, sort_by, direction, created_at, updated_at)
+			 values (?, ?, ?, 'tasks', 'open', 'created', 'desc', ?, ?)`,
+			uid,
+			widgetKey,
+			kitchen,
+			stamp(now),
+			stamp(now)
+		);
+}
 // Two calendar links, so /settings/integrations shows the list with its
 // addresses rather than only the empty state. Each printed URL is
 // `<origin>/calendar/<the token above>`, and both are fetchable straight away.
@@ -3556,7 +3577,7 @@ const notebookItem = (notebookId, name, type, extra = {}) => {
 	return id;
 };
 
-holds(kitchen, ['tasks', 'notes', 'inventory', 'recipes']);
+holds(kitchen, ['tasks', 'notes', 'inventory', 'recipes', 'bills']);
 for (const [name, bought, attributes, notes] of [
 	['splashback tiles', false, { finish: 'satin', size: '10x10cm', colour: 'sage' }, '4.5m²'],
 	['cabinet handles', false, { material: 'brass', length: '160mm', count: '14' }, ''],

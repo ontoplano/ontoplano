@@ -31,12 +31,24 @@
 	}: {
 		settings: CaptureSettings;
 		hidden?: readonly string[];
-		notebooks?: { id: number; title: string; folder?: string | null; favourite?: boolean }[];
+		notebooks?: {
+			id: number;
+			title: string;
+			folder?: string | null;
+			favourite?: boolean;
+			modules: readonly string[];
+		}[];
 		id?: string;
 		saved?: () => void;
 	} = $props();
 
-	type Notebook = { id: number; title: string; folder?: string | null; favourite?: boolean };
+	type Notebook = {
+		id: number;
+		title: string;
+		folder?: string | null;
+		favourite?: boolean;
+		modules: readonly string[];
+	};
 
 	let fetched = $state<Notebook[] | null>(null);
 	const offered = $derived(notebooks ?? fetched);
@@ -98,6 +110,7 @@
 				<FormGrid>
 					<NotebookField
 						notebooks={offered}
+						holds="notes"
 						bind:value={notebookId}
 						span={12}
 						label={t('captureSettings.mainNotebook')}

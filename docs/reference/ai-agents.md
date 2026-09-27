@@ -243,7 +243,11 @@ existed, so there is nothing to learn by walking the numbers.
 - **It is stateless.** No session and no event stream: every request carries its
   own key, and a `GET` answers 405.
 - **A refusal is an answer.** "That is not a date" comes back as tool content the
-  model can read and act on, not as a protocol error.
+  model can read and act on, not as a protocol error. Its `structuredContent`
+  carries a `code` software can branch on — the same words the JSON API
+  answers with: `not_found`, `validation_error`, `conflict`, `plan_limit`,
+  `forbidden`, `rate_limited` — beside the sentence, and `details` where the
+  refusal knows more.
 - **Deleting is its own permission.** Tools that remove a row for good need the
   `destructive` grant, and without it they are not offered at all.
 - **Every write answers with what it replaced** — `before` and `after`, and for a
@@ -281,6 +285,18 @@ existed, so there is nothing to learn by walking the numbers.
   rating, an empty string for notes, `{}` for attributes. An argument that
   holds a whole set, such as `tags` on `change_task`, replaces it; `tag_task`
   adds and removes one label at a time.
+- **A change can refuse to overwrite somebody else's.** A `change_*` or
+  `edit_*` tool on a thing that keeps an `updatedAt` takes `ifUpdatedAt`: pass
+  the stamp you read, and if the thing has changed since, nothing is written
+  and the refusal's code is `conflict`, with the current `updatedAt` in its
+  details. Every change on those tools answers with its new `updatedAt`.
+- **A create can be sent again.** Tools that make or count something — every
+  `add_*`, `write_entry`, `log_*`, `record_*`, `tick_habit`, `set_alarm` —
+  take a `requestId` you choose. Sent again with the same arguments within a
+  day, the call answers with the first answer, marked `replayed: true`, and
+  nothing is made twice; so an assistant that lost an answer can retry
+  without asking whether the first one landed. The same id with different
+  arguments is refused as a `conflict`.
 - **A list comes a page at a time.** A tool marked "answers a page" takes
   `limit` and `offset`, and answers with `count` (what is in this answer) and
   `total` (what matched). While more is left the answer also carries
@@ -288,8 +304,8 @@ existed, so there is nothing to learn by walking the numbers.
   `nextOffset` means nothing is left.
 - **A wrong argument is refused before anything runs.** An argument the tool
   does not take, a string where it wants a number, a value outside its enum or
-  its bounds: the answer is a JSON-RPC error `-32602` naming the argument, and
-  nothing is written.
+  its bounds: the answer is a JSON-RPC error `-32602` naming the argument, with
+  `code: "validation_error"` in its `data`, and nothing is written.
 
 ## Common requests
 
@@ -483,6 +499,100 @@ Refused before the tool runs, as a JSON-RPC error `-32602` with the message “`
 
 A misspelt argument is named back, and nothing is written.
 
+**“Put ‘buy light bulbs’ on the list.”**
+
+```json
+{
+	"name": "add_task",
+	"arguments": { "title": "Buy light bulbs", "requestId": "5f1c-bulbs" }
+}
+```
+
+The answer holds, among the rest:
+
+```json
+{ "id": 3 }
+```
+
+`requestId` is any string the assistant picks for this one call.
+
+**“(No answer came back, so the assistant sends the same call again.)”**
+
+```json
+{
+	"name": "add_task",
+	"arguments": { "title": "Buy light bulbs", "requestId": "5f1c-bulbs" }
+}
+```
+
+The answer holds, among the rest:
+
+```json
+{ "id": 3, "replayed": true }
+```
+
+Same `requestId` and arguments within a day: the first answer comes back, marked `replayed`, and there is still one task.
+
+## What an assistant can do, room by room
+
+The common verbs for each kind of thing, and the tools that do them over MCP
+beside what the app itself offers. A blank is a verb neither has; **app only**
+is a gap an assistant cannot fill yet; _app only, on purpose_ is a decision,
+said below — mostly deletions kept for the person. Generated from `src/lib/server/mcp/capabilities.json`,
+which a test holds to the tools the server serves and the actions the app has.
+
+| Room                    | create                                               | read                                                                                          | change                                                                                                           | archive           | unarchive         | delete                                               | reorder          |
+| ----------------------- | ---------------------------------------------------- | --------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- | ----------------- | ----------------- | ---------------------------------------------------- | ---------------- |
+| Tasks                   | `add_task`, `note_to_tasks`                          | `tasks`, `up_next`                                                                            | `change_task`, `tag_task`, `finish_task`, `reopen_task`, `schedule_task`, `unschedule_task`                      | `archive_task`    | `unarchive_task`  | `drop_task`                                          | **app only**     |
+| Blocks                  | `add_block`, `add_repeating_block`                   | `upcoming`, `past`, `repeating_week`                                                          | `change_block`, `finish_block`, `change_repeating_block`                                                         | **app only**      | **app only**      | `cancel_block`, `remove_repeating_block`             |                  |
+| Notes and diary entries | `write_entry`                                        | `diary`, `notebook_notes`                                                                     | `edit_entry`, `pin_note`, `unpin_note`, `move_notes`                                                             | `archive_note`    | `unarchive_note`  | _app only, on purpose_                               |                  |
+| Ideas                   | `add_idea`                                           | `ideas`                                                                                       | `change_idea`, `apply_idea`, `favorite_idea`                                                                     |                   |                   | `remove_idea`                                        |                  |
+| Goals                   | `add_goal`, `add_goal_area`, `add_goal_target`       | `goals`, `goal_areas`                                                                         | `change_goal`, `log_goal_progress`, `link_to_goal`, `unlink_from_goal`, `remove_goal_target`, `change_goal_area` | `close_goal`      | `reopen_goal`     | _app only, on purpose_                               | `move_goal_area` |
+| Habits                  | `add_habit`                                          | `habits`, `all_habits`                                                                        | `change_habit`, `tick_habit`                                                                                     |                   |                   | _app only, on purpose_                               |                  |
+| Inventory               | `add_inventory_item`, `add_inventory_category`       | `shopping_list`, `inventory_categories`                                                       | `file_inventory_item`, `record_price`, `set_item_attributes`, `change_inventory_category` _(in part)_            | `archive_item`    | `unarchive_item`  | `remove_inventory_item`, `remove_inventory_category` |                  |
+| Places                  | `add_location`                                       | `locations`, `where_is`                                                                       | `change_location`, `put_item`                                                                                    |                   |                   | `remove_location`                                    |                  |
+| Shopping list           | `add_inventory_item`                                 | `shopping_list`                                                                               | `tick_bought`, `untick_bought`, `record_price`                                                                   | `archive_item`    | `unarchive_item`  | `remove_inventory_item`                              |                  |
+| Recipes                 | `add_recipe`                                         | `recipes`                                                                                     | `change_recipe`, `cooked_recipe`                                                                                 | `archive_recipe`  | `archive_recipe`  | _app only, on purpose_                               |                  |
+| Workouts                | `add_workout`, `add_workout_category`, `log_workout` | `workouts`, `workout_sessions`, `workout_history`, `workout_activities`, `workout_categories` | `change_workout`, `set_workout_measures`, `change_workout_session`, `workout_done` _(in part)_                   | `archive_workout` | `archive_workout` | `remove_workout_session`, `remove_workout_category`  |                  |
+| Bills                   | `add_bill`                                           | `bills`, `bill_payments`, `bill_history`, `month_bills`, `bills_due`                          | `change_bill`, `pay_bill`, `unpay_bill`, `skip_bill`, `unskip_bill`                                              | `archive_bill`    | `archive_bill`    | _app only, on purpose_                               |                  |
+| Accounts and movements  | `add_ledger`, `record_movement`                      | `ledgers`, `movements`, `statement_months`, `spending_by_category`                            | **app only**                                                                                                     | **app only**      | **app only**      | **app only**                                         | **app only**     |
+| Sorting rules           | `add_sort_rule`                                      | `sort_rules`                                                                                  | `change_sort_rule`                                                                                               |                   |                   | `delete_sort_rule`                                   | **app only**     |
+| People                  | `add_person`                                         | `people`, `upcoming_birthdays`                                                                | `change_person`                                                                                                  |                   |                   | _app only, on purpose_                               |                  |
+| Reminders               | `set_alarm`, `remind_before_block`                   | `reminders`                                                                                   | `change_reminder`, `dismiss_reminder`                                                                            |                   |                   | `cancel_alarm`                                       |                  |
+| Activities              | `add_activity`                                       | `activities`, `categories`                                                                    | `change_activity`                                                                                                | **app only**      | **app only**      | **app only**                                         |                  |
+| Notebooks               | `add_notebook`                                       | `notebooks`                                                                                   | `change_notebook`, `rename_notebook_folder`, `favourite_notebook`, `share_notebook`                              | **app only**      | **app only**      | `remove_notebook`                                    |                  |
+| Labels                  | _app only, on purpose_                               | `tags`, `notebook_tags`                                                                       | `describe_tag`, `rename_tag`, `recolor_tag`, `untag_notebook`                                                    |                   |                   | `remove_tag`                                         |                  |
+
+**Not there yet** — what the app does and an assistant cannot:
+
+- **Tasks, reorder.** A task's place on the board cannot be moved over MCP; `up_next` orders by the ratings instead.
+- **Blocks, archive.** A repeating block cannot be paused over MCP — only changed or removed.
+- **Blocks, unarchive.** A paused repeating block cannot be switched back on over MCP.
+- **Inventory, change.** An item cannot be renamed, or have its notes or type changed, over MCP — only filed, priced and given attributes.
+- **Workouts, change.** A workout category cannot be renamed over MCP.
+- **Accounts and movements, change.** Neither an account nor a movement can be changed over MCP: a mistyped movement cannot be corrected.
+- **Accounts and movements, archive.** An account cannot be archived over MCP.
+- **Accounts and movements, unarchive.** An account cannot be brought back over MCP.
+- **Accounts and movements, delete.** A movement recorded twice cannot be removed over MCP.
+- **Accounts and movements, reorder.** Accounts cannot be reordered over MCP.
+- **Sorting rules, reorder.** A rule's priority cannot be moved over MCP, and priority decides which rule sorts a movement.
+- **Activities, archive.** An activity cannot be switched off over MCP.
+- **Activities, unarchive.** An activity cannot be switched back on over MCP.
+- **Activities, delete.** An activity cannot be removed over MCP.
+- **Notebooks, archive.** A notebook cannot be closed over MCP.
+- **Notebooks, unarchive.** A closed notebook cannot be reopened over MCP.
+
+**Left out on purpose:**
+
+- **Notes and diary entries, delete.** Writing is precious: an assistant archives, and the person deletes in the app.
+- **Goals, delete.** A goal stands for a commitment: closed or abandoned by a tool, deleted only in the app.
+- **Habits, delete.** A habit carries its kept days: deleted only in the app.
+- **Recipes, delete.** A recipe is archived by a tool; deleting one is done in the app.
+- **Workouts, delete.** An exercise carries its sessions: archived by a tool, deleted in the app. Sessions and categories can be removed.
+- **Bills, delete.** A bill carries its payment history: archived by a tool, deleted in the app where that history is in front of the person.
+- **People, delete.** A person's page stands for somebody: deleted only in the app.
+- **Labels, create.** A label comes into being by being used — `tags` on a task, a note or an idea — so there is nothing to make first.
+
 ## Old spellings
 
 The surface is additive within a major version: a tool or a parameter is not
@@ -497,12 +607,13 @@ A deprecated argument keeps working until the release named below. A call
 that uses one is translated, and its answer carries a `warning` naming the
 replacement and the release.
 
-| Old spelling | Use instead   | Removed in | Tools that take it                                                                                      |
-| ------------ | ------------- | ---------- | ------------------------------------------------------------------------------------------------------- |
-| `energy`     | `ease`        | 0.190.0    | `add_block`, `change_task`, `add_repeating_block`                                                       |
-| `meta`       | `attributes`  | 0.190.0    | `add_block`, `change_block`, `add_task`, `change_task`, `add_repeating_block`, `change_repeating_block` |
-| `tag`        | `tags`        | 0.185.0    | `tasks`, `up_next`, `diary`, `notebook_notes`                                                           |
-| `withoutTag` | `withoutTags` | 0.185.0    | `tasks`, `up_next`, `diary`, `notebook_notes`                                                           |
+| Old spelling  | Use instead      | Removed in | Tools that take it                                                                                      |
+| ------------- | ---------------- | ---------- | ------------------------------------------------------------------------------------------------------- |
+| `energy`      | `ease`           | 0.190.0    | `add_block`, `change_task`, `add_repeating_block`                                                       |
+| `meta`        | `attributes`     | 0.190.0    | `add_block`, `change_block`, `add_task`, `change_task`, `add_repeating_block`, `change_repeating_block` |
+| `tag`         | `tags`           | 0.185.0    | `tasks`, `up_next`, `diary`, `notebook_notes`                                                           |
+| `withoutTag`  | `withoutTags`    | 0.185.0    | `tasks`, `up_next`, `diary`, `notebook_notes`                                                           |
+| `ingredients` | `addIngredients` | 0.190.0    | `change_recipe`                                                                                         |
 
 ## The tools
 
@@ -537,11 +648,12 @@ Tick a habit for a day: for something being built, the tick means it was done; f
 
 _Needs `habits:write`; writes; answers with `before` and `after`._
 
-| Parameter | Type    | Required | What it is                                                    |
-| --------- | ------- | -------- | ------------------------------------------------------------- |
-| `id`      | integer | —        | The habit’s id, as `habits` gave it.                          |
-| `name`    | string  | —        | The habit by name, when the id is not to hand — "stretching". |
-| `date`    | string  | —        | The day, as YYYY-MM-DD. Today if left out.                    |
+| Parameter   | Type    | Required | What it is                                                                                                                                                                                                                                                                                  |
+| ----------- | ------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `id`        | integer | —        | The habit’s id, as `habits` gave it.                                                                                                                                                                                                                                                        |
+| `name`      | string  | —        | The habit by name, when the id is not to hand — "stretching".                                                                                                                                                                                                                               |
+| `date`      | string  | —        | The day, as YYYY-MM-DD. Today if left out.                                                                                                                                                                                                                                                  |
+| `requestId` | string  | —        | An id you choose for this call, such as a UUID, so it can be sent again safely: the same `requestId` with the same arguments within a day answers with the first answer, marked `replayed`, and nothing is made twice. Reused for a different call, it is refused with the code `conflict`. |
 
 ### `finish_block` — Mark a block done or skipped
 
@@ -574,6 +686,7 @@ _Needs `schedule:write`; writes; answers with `before` and `after`._
 | `energy`     | integer | —        | Deprecated — use `ease`, which is this turned round: an energy of 5 is an ease of 1. Still accepted so an assistant written against the old shape keeps working, and removed in 0.190.0. **Deprecated** — removed in 0.190.0.                                                                                                                      |
 | `attributes` | object  | —        | Its attributes: key/value pairs such as { "url": "https://…", "room": "B12" }, read by plugins and shown on the task. Keys are lowercase letters, digits and underscores. This replaces the whole set: send every pair to keep, an empty value removes one, and {} removes them all. Left out, they are untouched. Any key, each holding a string. |
 | `meta`       | object  | —        | Deprecated — use `attributes`, which is the same thing under the name the app uses. Still accepted so an assistant written against the old shape keeps working, and removed in 0.190.0. Any key, each holding a string. **Deprecated** — removed in 0.190.0.                                                                                       |
+| `requestId`  | string  | —        | An id you choose for this call, such as a UUID, so it can be sent again safely: the same `requestId` with the same arguments within a day answers with the first answer, marked `replayed`, and nothing is made twice. Reused for a different call, it is refused with the code `conflict`.                                                        |
 
 ### `change_block` — Move or rename a task block
 
@@ -733,6 +846,7 @@ _Needs `tasks:write`; writes; answers with `before` and `after`, `after` being t
 | `tags`          | string  | —        | Labels, comma or space separated — "a1, done". The account’s one vocabulary, the same words a diary entry or an idea is tagged with. Mark your own work with a label of your own where several assistants share a list.                                                                                                                            |
 | `attributes`    | object  | —        | Its attributes: key/value pairs such as { "url": "https://…", "room": "B12" }, read by plugins and shown on the task. Keys are lowercase letters, digits and underscores. This replaces the whole set: send every pair to keep, an empty value removes one, and {} removes them all. Left out, they are untouched. Any key, each holding a string. |
 | `meta`          | object  | —        | Deprecated — use `attributes`, which is the same thing under the name the app uses. Still accepted so an assistant written against the old shape keeps working, and removed in 0.190.0. Any key, each holding a string. **Deprecated** — removed in 0.190.0.                                                                                       |
+| `requestId`     | string  | —        | An id you choose for this call, such as a UUID, so it can be sent again safely: the same `requestId` with the same arguments within a day answers with the first answer, marked `replayed`, and nothing is made twice. Reused for a different call, it is refused with the code `conflict`.                                                        |
 
 ### `finish_task` — Finish a todo
 
@@ -802,20 +916,21 @@ Rewrite a todo’s title, notes or state. Only `id` is needed: a field left out 
 
 _Needs `tasks:write`; writes; answers with `before` and `after`._
 
-| Parameter    | Type    | Required | What it is                                                                                                                                                                                                                                                                                                                                         |
-| ------------ | ------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `id`         | integer | yes      | The todo’s id, as `tasks` gives it.                                                                                                                                                                                                                                                                                                                |
-| `title`      | string  | —        | The new title, in the person’s own words. It cannot be emptied.                                                                                                                                                                                                                                                                                    |
-| `notes`      | string  | —        | The new notes. An empty string clears them.                                                                                                                                                                                                                                                                                                        |
-| `status`     | string  | —        | What state it is in: `todo` waiting, `doing` started, `done` finished, `skipped` given up on. Left out, it is untouched. One of: `todo`, `doing`, `done`, `skipped`.                                                                                                                                                                               |
-| `notebookId` | integer | —        | The notebook to file it under, as `notebooks` gives its id. `0` takes it out of whichever one it is in. `add_task` can file a task at birth; this is how one already made moves.                                                                                                                                                                   |
-| `tags`       | string  | —        | The labels it should carry from now on, comma or space separated — this replaces whatever it had, so include the ones to keep. An empty string takes them all off. Left out, the labels are untouched.                                                                                                                                             |
-| `urgency`    | integer | —        | How soon it has to happen, 0–5. On a change, `null` clears it.                                                                                                                                                                                                                                                                                     |
-| `interest`   | integer | —        | How much they want to do it, 0–5. On a change, `null` clears it.                                                                                                                                                                                                                                                                                   |
-| `ease`       | integer | —        | How easy it is, 0–5, five being easiest. On a change, `null` clears it. Replaces `energy`, which asked the opposite question on a scale that began at one.                                                                                                                                                                                         |
-| `energy`     | integer | —        | Deprecated — use `ease`, which is this turned round: an energy of 5 is an ease of 1. Still accepted so an assistant written against the old shape keeps working, and removed in 0.190.0. **Deprecated** — removed in 0.190.0.                                                                                                                      |
-| `attributes` | object  | —        | Its attributes: key/value pairs such as { "url": "https://…", "room": "B12" }, read by plugins and shown on the task. Keys are lowercase letters, digits and underscores. This replaces the whole set: send every pair to keep, an empty value removes one, and {} removes them all. Left out, they are untouched. Any key, each holding a string. |
-| `meta`       | object  | —        | Deprecated — use `attributes`, which is the same thing under the name the app uses. Still accepted so an assistant written against the old shape keeps working, and removed in 0.190.0. Any key, each holding a string. **Deprecated** — removed in 0.190.0.                                                                                       |
+| Parameter     | Type    | Required | What it is                                                                                                                                                                                                                                                                                                                                         |
+| ------------- | ------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `id`          | integer | yes      | The todo’s id, as `tasks` gives it.                                                                                                                                                                                                                                                                                                                |
+| `title`       | string  | —        | The new title, in the person’s own words. It cannot be emptied.                                                                                                                                                                                                                                                                                    |
+| `notes`       | string  | —        | The new notes. An empty string clears them.                                                                                                                                                                                                                                                                                                        |
+| `status`      | string  | —        | What state it is in: `todo` waiting, `doing` started, `done` finished, `skipped` given up on. Left out, it is untouched. One of: `todo`, `doing`, `done`, `skipped`.                                                                                                                                                                               |
+| `notebookId`  | integer | —        | The notebook to file it under, as `notebooks` gives its id. `0` takes it out of whichever one it is in. `add_task` can file a task at birth; this is how one already made moves.                                                                                                                                                                   |
+| `tags`        | string  | —        | The labels it should carry from now on, comma or space separated — this replaces whatever it had, so include the ones to keep. An empty string takes them all off. Left out, the labels are untouched.                                                                                                                                             |
+| `urgency`     | integer | —        | How soon it has to happen, 0–5. On a change, `null` clears it.                                                                                                                                                                                                                                                                                     |
+| `interest`    | integer | —        | How much they want to do it, 0–5. On a change, `null` clears it.                                                                                                                                                                                                                                                                                   |
+| `ease`        | integer | —        | How easy it is, 0–5, five being easiest. On a change, `null` clears it. Replaces `energy`, which asked the opposite question on a scale that began at one.                                                                                                                                                                                         |
+| `energy`      | integer | —        | Deprecated — use `ease`, which is this turned round: an energy of 5 is an ease of 1. Still accepted so an assistant written against the old shape keeps working, and removed in 0.190.0. **Deprecated** — removed in 0.190.0.                                                                                                                      |
+| `attributes`  | object  | —        | Its attributes: key/value pairs such as { "url": "https://…", "room": "B12" }, read by plugins and shown on the task. Keys are lowercase letters, digits and underscores. This replaces the whole set: send every pair to keep, an empty value removes one, and {} removes them all. Left out, they are untouched. Any key, each holding a string. |
+| `meta`        | object  | —        | Deprecated — use `attributes`, which is the same thing under the name the app uses. Still accepted so an assistant written against the old shape keeps working, and removed in 0.190.0. Any key, each holding a string. **Deprecated** — removed in 0.190.0.                                                                                       |
+| `ifUpdatedAt` | string  | —        | Only change it if nothing has changed it since: the `updatedAt` a read or an earlier change answered with. If something has, nothing is written and the call is refused with the code `conflict`, the current `updatedAt` in its details.                                                                                                          |
 
 ### `schedule_task` — Put a todo on a day
 
@@ -913,6 +1028,7 @@ _Needs `tasks:write`; writes; answers with `before` and `after`._
 | `targets[].measure` | string   | —        | A workout measure this counts, in the word the sessions use — "ran", "deadlifted". Set it and the number is the sum of what the register holds for that activity inside the goal’s period, read rather than typed; `workout_sessions` and `workouts` show what has been measured. Leave it off for a number the person keeps themselves. |
 | `targetValue`       | number   | —        | The number it is aiming at, for a goal that counts one thing.                                                                                                                                                                                                                                                                            |
 | `unit`              | string   | —        | What that number counts — pages, km, sessions. Sent alone, it renames the measure of a goal that counts one thing.                                                                                                                                                                                                                       |
+| `ifUpdatedAt`       | string   | —        | Only change it if nothing has changed it since: the `updatedAt` a read or an earlier change answered with. If something has, nothing is written and the call is refused with the code `conflict`, the current `updatedAt` in its details.                                                                                                |
 
 ### `diary` — Recent diary entries
 
@@ -937,14 +1053,15 @@ _Needs `notes:read`; read-only; answers a page._
 
 Add an entry. Markdown. Writing one when asked is the point of this tool — keep their words and their voice where you have them, and do not invent an entry nobody asked for. Put it in a notebook when it is about one subject; leave the notebook off for an ordinary day.
 
-_Needs `notes:write`; writes; answers with `before` and `after`._
+_Needs `notes:write`; writes; answers with `before` and `after`, `after` being the new note._
 
-| Parameter    | Type    | Required | What it is                                                                                                                                                                |
-| ------------ | ------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `content`    | string  | yes      | The entry, as Markdown.                                                                                                                                                   |
-| `title`      | string  | —        | What to call it. Optional: a note without one is listed by its first line, which is right for an ordinary day and wrong for anything somebody will come back looking for. |
-| `tags`       | string  | —        | Comma-separated tags.                                                                                                                                                     |
-| `notebookId` | integer | —        | The notebook it belongs to, if any.                                                                                                                                       |
+| Parameter    | Type    | Required | What it is                                                                                                                                                                                                                                                                                  |
+| ------------ | ------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `content`    | string  | yes      | The entry, as Markdown.                                                                                                                                                                                                                                                                     |
+| `title`      | string  | —        | What to call it. Optional: a note without one is listed by its first line, which is right for an ordinary day and wrong for anything somebody will come back looking for.                                                                                                                   |
+| `tags`       | string  | —        | Comma-separated tags.                                                                                                                                                                                                                                                                       |
+| `notebookId` | integer | —        | The notebook it belongs to, if any.                                                                                                                                                                                                                                                         |
+| `requestId`  | string  | —        | An id you choose for this call, such as a UUID, so it can be sent again safely: the same `requestId` with the same arguments within a day answers with the first answer, marked `replayed`, and nothing is made twice. Reused for a different call, it is refused with the code `conflict`. |
 
 ### `notebook_notes` — The notes in a notebook
 
@@ -993,12 +1110,13 @@ Rewrite a note or a diary entry — its words, its title, its tags. Only the fie
 
 _Needs `notes:write`; writes; answers with `before` and `after`._
 
-| Parameter | Type    | Required | What it is                                                                                                                             |
-| --------- | ------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------- |
-| `id`      | integer | yes      | The note’s id, as `notebook_notes` gives it.                                                                                           |
-| `content` | string  | —        | The new words, as Markdown. Left out, the writing is untouched.                                                                        |
-| `title`   | string  | —        | What to call it. Left out, the name is untouched; an empty string takes the name off, which is what an ordinary day’s diary entry has. |
-| `tags`    | string  | —        | The tags it should carry from now on, comma or space separated — this replaces the ones it has. Left out, they are untouched.          |
+| Parameter     | Type    | Required | What it is                                                                                                                                                                                                                                |
+| ------------- | ------- | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `id`          | integer | yes      | The note’s id, as `notebook_notes` gives it.                                                                                                                                                                                              |
+| `content`     | string  | —        | The new words, as Markdown. Left out, the writing is untouched.                                                                                                                                                                           |
+| `title`       | string  | —        | What to call it. Left out, the name is untouched; an empty string takes the name off, which is what an ordinary day’s diary entry has.                                                                                                    |
+| `tags`        | string  | —        | The tags it should carry from now on, comma or space separated — this replaces the ones it has. Left out, they are untouched.                                                                                                             |
+| `ifUpdatedAt` | string  | —        | Only change it if nothing has changed it since: the `updatedAt` a read or an earlier change answered with. If something has, nothing is written and the call is refused with the code `conflict`, the current `updatedAt` in its details. |
 
 ### `note_to_tasks` — Make todos out of a checklist note
 
@@ -1006,10 +1124,11 @@ Turn a note that is really a checklist into the tasks it describes. Every `- [ ]
 
 _Needs `tasks:write` and `notes:read`; writes; answers with `before` and `after`._
 
-| Parameter | Type      | Required | What it is                                                                      |
-| --------- | --------- | -------- | ------------------------------------------------------------------------------- |
-| `id`      | integer   | yes      | The note’s id, as `notebook_notes` gives it.                                    |
-| `only`    | integer[] | —        | Which checkboxes to take, counting from 0 down the note. Left out, all of them. |
+| Parameter   | Type      | Required | What it is                                                                                                                                                                                                                                                                                  |
+| ----------- | --------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `id`        | integer   | yes      | The note’s id, as `notebook_notes` gives it.                                                                                                                                                                                                                                                |
+| `only`      | integer[] | —        | Which checkboxes to take, counting from 0 down the note. Left out, all of them.                                                                                                                                                                                                             |
+| `requestId` | string    | —        | An id you choose for this call, such as a UUID, so it can be sent again safely: the same `requestId` with the same arguments within a day answers with the first answer, marked `replayed`, and nothing is made twice. Reused for a different call, it is refused with the code `conflict`. |
 
 ### `archive_note` — Put a note away
 
@@ -1056,7 +1175,7 @@ _Needs `notes:read`; read-only._
 
 Make a notebook — a subject written against with no deadline: a book, a trip, a renovation. `write_entry` files notes into it by name.
 
-_Needs `notes:write`; writes; answers with `before` and `after`._
+_Needs `notes:write`; writes; answers with `before` and `after`, `after` being the new notebook._
 
 | Parameter     | Type   | Required | What it is                                                                                                                                                                                                                                                                                                                    |
 | ------------- | ------ | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -1066,6 +1185,7 @@ _Needs `notes:write`; writes; answers with `before` and `after`._
 | `defaultTags` | string | —        | Labels a new note in it starts with, comma or space separated — the ones writing about this subject always carries, so nobody types them on every note. The person can still take them off a note as they write it.                                                                                                           |
 | `category`    | string | —        | The category a new task in it starts with, by name as `categories` gives them. Left out, none.                                                                                                                                                                                                                                |
 | `modules`     | string | —        | What it holds, comma separated — notes, tasks, goals, ideas, inventory, ledgers, bills, habits, workouts, recipes. Notes and tasks unless this says otherwise, and notes are always in it. Only name what the subject actually accumulates: nine tabs on a reading list is the app deciding what somebody’s subject is about. |
+| `requestId`   | string | —        | An id you choose for this call, such as a UUID, so it can be sent again safely: the same `requestId` with the same arguments within a day answers with the first answer, marked `replayed`, and nothing is made twice. Reused for a different call, it is refused with the code `conflict`.                                   |
 
 ### `change_notebook` — Change a notebook
 
@@ -1082,6 +1202,7 @@ _Needs `notes:write`; writes; answers with `before` and `after`._
 | `defaultTags` | string  | —        | Labels a new note in it starts with, comma or space separated. An empty string clears them; left out, they are untouched.                                                                                                                                                                                           |
 | `category`    | string  | —        | The category a new task in it starts with, by name as `categories` gives them. An empty string clears it; left out, it is untouched.                                                                                                                                                                                |
 | `modules`     | string  | —        | What it holds, comma separated — notes, tasks, goals, ideas, inventory, ledgers, bills, habits, workouts, recipes. The whole list, not an addition. Notes are always in it. Switching one off keeps whatever is already filed under it; it stops being a tab, and stays in its own room. Left out, it is untouched. |
+| `ifUpdatedAt` | string  | —        | Only change it if nothing has changed it since: the `updatedAt` a read or an earlier change answered with. If something has, nothing is written and the call is refused with the code `conflict`, the current `updatedAt` in its details.                                                                           |
 
 ### `rename_notebook_folder` — Rename a notebook folder
 
@@ -1141,13 +1262,14 @@ _Needs `ideas:read`; read-only; answers a page._
 
 Write an idea down without deciding where it belongs. The lowest-friction thing here; prefer it to a todo when the person has not said they will do it.
 
-_Needs `ideas:write`; writes; answers with `before` and `after`._
+_Needs `ideas:write`; writes; answers with `before` and `after`, `after` being the new idea._
 
-| Parameter    | Type    | Required | What it is                                                                                                                                                                                                     |
-| ------------ | ------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `content`    | string  | yes      | The idea.                                                                                                                                                                                                      |
-| `tags`       | string  | —        | Comma-separated tags.                                                                                                                                                                                          |
-| `notebookId` | integer | —        | The notebook this belongs to, as `notebooks` gives its id — a subject somebody is working through, like a renovation. Only when they said so, and only when that notebook’s `modules` list says it holds this. |
+| Parameter    | Type    | Required | What it is                                                                                                                                                                                                                                                                                  |
+| ------------ | ------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `content`    | string  | yes      | The idea.                                                                                                                                                                                                                                                                                   |
+| `tags`       | string  | —        | Comma-separated tags.                                                                                                                                                                                                                                                                       |
+| `notebookId` | integer | —        | The notebook this belongs to, as `notebooks` gives its id — a subject somebody is working through, like a renovation. Only when they said so. A notebook whose `modules` list does not hold this refuses it.                                                                                |
+| `requestId`  | string  | —        | An id you choose for this call, such as a UUID, so it can be sent again safely: the same `requestId` with the same arguments within a day answers with the first answer, marked `replayed`, and nothing is made twice. Reused for a different call, it is refused with the code `conflict`. |
 
 ### `remove_idea` — Delete an idea
 
@@ -1165,11 +1287,12 @@ Rewrite an idea, or retag it — for a misheard word or a better tag, not for tu
 
 _Needs `ideas:write`; writes; answers with `before` and `after`._
 
-| Parameter | Type    | Required | What it is                                                                                                      |
-| --------- | ------- | -------- | --------------------------------------------------------------------------------------------------------------- |
-| `id`      | integer | yes      | The idea’s id, as `ideas` gives it.                                                                             |
-| `content` | string  | —        | The idea, rewritten. It cannot be emptied.                                                                      |
-| `tags`    | string  | —        | Comma-separated tags, replacing the old ones. An empty string takes them all off; left out, they are untouched. |
+| Parameter     | Type    | Required | What it is                                                                                                                                                                                                                                |
+| ------------- | ------- | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `id`          | integer | yes      | The idea’s id, as `ideas` gives it.                                                                                                                                                                                                       |
+| `content`     | string  | —        | The idea, rewritten. It cannot be emptied.                                                                                                                                                                                                |
+| `tags`        | string  | —        | Comma-separated tags, replacing the old ones. An empty string takes them all off; left out, they are untouched.                                                                                                                           |
+| `ifUpdatedAt` | string  | —        | Only change it if nothing has changed it since: the `updatedAt` a read or an earlier change answered with. If something has, nothing is written and the call is refused with the code `conflict`, the current `updatedAt` in its details. |
 
 ### `tags` — The labels
 
@@ -1257,15 +1380,16 @@ _Needs `inventory:read`; read-only._
 
 Put something on the list. If the cupboard already has it, this says so rather than adding a second one.
 
-_Needs `inventory:write`; writes; answers with `before` and `after`._
+_Needs `inventory:write`; writes; answers with `before` and `after`, `after` being the new item._
 
-| Parameter    | Type    | Required | What it is                                                                                                                                                                                                     |
-| ------------ | ------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `name`       | string  | yes      | What to buy.                                                                                                                                                                                                   |
-| `type`       | string  | —        | `replenish` is something the cupboard runs out of and wants again; `someday` is a wishlist item. Default `replenish`. One of: `replenish`, `someday`. Default `replenish`.                                     |
-| `notes`      | string  | —        | Anything else about it.                                                                                                                                                                                        |
-| `section`    | string  | —        | The section to file it under, by name — `inventory_categories` lists them.                                                                                                                                     |
-| `notebookId` | integer | —        | The notebook this belongs to, as `notebooks` gives its id — a subject somebody is working through, like a renovation. Only when they said so, and only when that notebook’s `modules` list says it holds this. |
+| Parameter    | Type    | Required | What it is                                                                                                                                                                                                                                                                                  |
+| ------------ | ------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `name`       | string  | yes      | What to buy.                                                                                                                                                                                                                                                                                |
+| `type`       | string  | —        | `replenish` is something the cupboard runs out of and wants again; `someday` is a wishlist item. Default `replenish`. One of: `replenish`, `someday`. Default `replenish`.                                                                                                                  |
+| `notes`      | string  | —        | Anything else about it.                                                                                                                                                                                                                                                                     |
+| `section`    | string  | —        | The section to file it under, by name — `inventory_categories` lists them.                                                                                                                                                                                                                  |
+| `notebookId` | integer | —        | The notebook this belongs to, as `notebooks` gives its id — a subject somebody is working through, like a renovation. Only when they said so. A notebook whose `modules` list does not hold this refuses it.                                                                                |
+| `requestId`  | string  | —        | An id you choose for this call, such as a UUID, so it can be sent again safely: the same `requestId` with the same arguments within a day answers with the first answer, marked `replayed`, and nothing is made twice. Reused for a different call, it is refused with the code `conflict`. |
 
 ### `tick_bought` — Tick something bought
 
@@ -1331,33 +1455,38 @@ _Needs `kitchen:read`; read-only._
 
 Write a recipe down. Ingredients are one per line — "200 g flour", "2 eggs" — and each becomes a shopping item, so the list knows about them the day the meal is planned.
 
-_Needs `kitchen:write`; writes; answers with `before` and `after`._
+_Needs `kitchen:write`; writes; answers with `before` and `after`, `after` being the new recipe._
 
-| Parameter     | Type    | Required | What it is                                                                                                                                                                                                     |
-| ------------- | ------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `title`       | string  | yes      | What it is called.                                                                                                                                                                                             |
-| `ingredients` | string  | —        | One per line, quantity first.                                                                                                                                                                                  |
-| `method`      | string  | —        | How to make it, as Markdown.                                                                                                                                                                                   |
-| `servings`    | integer | —        | How many it feeds.                                                                                                                                                                                             |
-| `minutes`     | integer | —        | How long it takes.                                                                                                                                                                                             |
-| `source`      | string  | —        | Where it came from.                                                                                                                                                                                            |
-| `notebookId`  | integer | —        | The notebook this belongs to, as `notebooks` gives its id — a subject somebody is working through, like a renovation. Only when they said so, and only when that notebook’s `modules` list says it holds this. |
+| Parameter     | Type    | Required | What it is                                                                                                                                                                                                                                                                                  |
+| ------------- | ------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `title`       | string  | yes      | What it is called.                                                                                                                                                                                                                                                                          |
+| `ingredients` | string  | —        | One per line, quantity first.                                                                                                                                                                                                                                                               |
+| `method`      | string  | —        | How to make it, as Markdown.                                                                                                                                                                                                                                                                |
+| `servings`    | integer | —        | How many it feeds.                                                                                                                                                                                                                                                                          |
+| `minutes`     | integer | —        | How long it takes.                                                                                                                                                                                                                                                                          |
+| `source`      | string  | —        | Where it came from.                                                                                                                                                                                                                                                                         |
+| `notebookId`  | integer | —        | The notebook this belongs to, as `notebooks` gives its id — a subject somebody is working through, like a renovation. Only when they said so. A notebook whose `modules` list does not hold this refuses it.                                                                                |
+| `requestId`   | string  | —        | An id you choose for this call, such as a UUID, so it can be sent again safely: the same `requestId` with the same arguments within a day answers with the first answer, marked `replayed`, and nothing is made twice. Reused for a different call, it is refused with the code `conflict`. |
 
 ### `change_recipe` — Change a recipe
 
-Change a recipe’s title, method, servings, time or source, and add ingredients — one per line, quantity first. Only `id` is needed: a field left out is untouched, and existing ingredients stay. An empty string clears a text field, `0` or `null` clears servings or time. The recipe and its new ingredients land together or not at all.
+Change a recipe’s title, method, servings, time, source or notebook, and its ingredients: `addIngredients` adds lines (one per line, quantity first), `removeIngredients` takes lines out by the ingredient ids `recipes` gives. Only `id` is needed: a field left out is untouched, and ingredients not named stay. An empty string clears a text field, `0` or `null` clears servings or time. The recipe and its ingredients land together or not at all.
 
 _Needs `kitchen:write`; writes; answers with `before` and `after`._
 
-| Parameter     | Type    | Required | What it is                              |
-| ------------- | ------- | -------- | --------------------------------------- |
-| `id`          | integer | yes      | The recipe’s id, as `recipes` gives it. |
-| `title`       | string  | —        | The new name.                           |
-| `method`      | string  | —        | How to make it, as Markdown.            |
-| `ingredients` | string  | —        | Ingredients to add, one per line.       |
-| `servings`    | integer | —        | How many it feeds.                      |
-| `minutes`     | integer | —        | How long it takes.                      |
-| `source`      | string  | —        | Where it came from.                     |
+| Parameter           | Type      | Required | What it is                                                                                                                                                                                                                                |
+| ------------------- | --------- | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `id`                | integer   | yes      | The recipe’s id, as `recipes` gives it.                                                                                                                                                                                                   |
+| `title`             | string    | —        | The new name.                                                                                                                                                                                                                             |
+| `method`            | string    | —        | How to make it, as Markdown.                                                                                                                                                                                                              |
+| `addIngredients`    | string    | —        | Ingredients to add, one per line, quantity first.                                                                                                                                                                                         |
+| `removeIngredients` | integer[] | —        | Ingredient ids to take out of this recipe, as its ingredient list in `recipes` gives them (`itemId`). The shopping item itself stays. Only this recipe’s own ingredients; any other id refuses the whole call.                            |
+| `ingredients`       | string    | —        | Deprecated — use `addIngredients`, which does the same: it adds these lines and keeps the ones already there. Removed in 0.190.0. **Deprecated** — removed in 0.190.0.                                                                    |
+| `servings`          | integer   | —        | How many it feeds.                                                                                                                                                                                                                        |
+| `minutes`           | integer   | —        | How long it takes.                                                                                                                                                                                                                        |
+| `source`            | string    | —        | Where it came from.                                                                                                                                                                                                                       |
+| `notebookId`        | integer   | —        | The notebook it belongs to, as `notebooks` gives its id; `0` takes it out of its notebook.                                                                                                                                                |
+| `ifUpdatedAt`       | string    | —        | Only change it if nothing has changed it since: the `updatedAt` a read or an earlier change answered with. If something has, nothing is written and the call is refused with the code `conflict`, the current `updatedAt` in its details. |
 
 ### `cooked_recipe` — Say a recipe was cooked
 
@@ -1404,12 +1533,13 @@ _Takes no parameters._
 
 Make a new section for the shopping list — and say whether it holds food, because only food sections can feed recipes as ingredients.
 
-_Needs `inventory:write`; writes; answers with `before` and `after`._
+_Needs `inventory:write`; writes; answers with `before` and `after`, `after` being the new inventoryCategory._
 
-| Parameter   | Type    | Required | What it is                                      |
-| ----------- | ------- | -------- | ----------------------------------------------- |
-| `name`      | string  | yes      | The section’s name — "Frozen", "Cleaning".      |
-| `holdsFood` | boolean | —        | Whether what is in it is food. Off if left out. |
+| Parameter   | Type    | Required | What it is                                                                                                                                                                                                                                                                                  |
+| ----------- | ------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `name`      | string  | yes      | The section’s name — "Frozen", "Cleaning".                                                                                                                                                                                                                                                  |
+| `holdsFood` | boolean | —        | Whether what is in it is food. Off if left out.                                                                                                                                                                                                                                             |
+| `requestId` | string  | —        | An id you choose for this call, such as a UUID, so it can be sent again safely: the same `requestId` with the same arguments within a day answers with the first answer, marked `replayed`, and nothing is made twice. Reused for a different call, it is refused with the code `conflict`. |
 
 ### `change_inventory_category` — Rename a shopping section
 
@@ -1440,16 +1570,17 @@ Write down what was paid for a shopping item — "milk was 6,50 today". The list
 
 _Needs `inventory:write`; writes; answers with `before` and `after`._
 
-| Parameter | Type    | Required | What it is                                                             |
-| --------- | ------- | -------- | ---------------------------------------------------------------------- |
-| `id`      | integer | yes      | The item’s id.                                                         |
-| `price`   | string  | yes      | The price, in the account’s own currency — "6,50" or "6.50" both work. |
+| Parameter   | Type    | Required | What it is                                                                                                                                                                                                                                                                                  |
+| ----------- | ------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `id`        | integer | yes      | The item’s id.                                                                                                                                                                                                                                                                              |
+| `price`     | string  | yes      | The price, in the account’s own currency — "6,50" or "6.50" both work.                                                                                                                                                                                                                      |
+| `requestId` | string  | —        | An id you choose for this call, such as a UUID, so it can be sent again safely: the same `requestId` with the same arguments within a day answers with the first answer, marked `replayed`, and nothing is made twice. Reused for a different call, it is refused with the code `conflict`. |
 
 ### `add_goal` — Write down a goal they made
 
 Transcribe a goal the person just committed to, in their own words — "apply to twenty companies this quarter". Never invent one, and never add a goal they did not say: a goal is a commitment, and the commitment is theirs. `goal_areas` lists the areas one can be filed under.
 
-_Needs `tasks:write`; writes; answers with `before` and `after`._
+_Needs `tasks:write`; writes; answers with `before` and `after`, `after` being the new goal._
 
 | Parameter           | Type     | Required | What it is                                                                                                                                                                                                                                                                                                                               |
 | ------------------- | -------- | -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -1465,6 +1596,7 @@ _Needs `tasks:write`; writes; answers with `before` and `after`._
 | `targetValue`       | number   | —        | The number it aims at, when it counts one thing.                                                                                                                                                                                                                                                                                         |
 | `unit`              | string   | —        | What that number counts — applications, km, pages.                                                                                                                                                                                                                                                                                       |
 | `notebookId`        | integer  | —        | The notebook it belongs to, as `notebooks` gives it — a goal that is part of one subject rather than the year in general.                                                                                                                                                                                                                |
+| `requestId`         | string   | —        | An id you choose for this call, such as a UUID, so it can be sent again safely: the same `requestId` with the same arguments within a day answers with the first answer, marked `replayed`, and nothing is made twice. Reused for a different call, it is refused with the code `conflict`.                                              |
 
 ### `log_goal_progress` — Move a goal’s number
 
@@ -1472,12 +1604,13 @@ Record progress on a goal that counts something: pass `value` to set where it st
 
 _Needs `tasks:write`; writes; answers with `before` and `after`._
 
-| Parameter | Type    | Required | What it is                                                                |
-| --------- | ------- | -------- | ------------------------------------------------------------------------- |
-| `id`      | integer | yes      | The goal’s id.                                                            |
-| `value`   | number  | —        | Where it stands now, absolute.                                            |
-| `delta`   | number  | —        | How much just happened, added to where it stands.                         |
-| `unit`    | string  | —        | Which measure moved, by its unit — only needed when the goal has several. |
+| Parameter   | Type    | Required | What it is                                                                                                                                                                                                                                                                                  |
+| ----------- | ------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `id`        | integer | yes      | The goal’s id.                                                                                                                                                                                                                                                                              |
+| `value`     | number  | —        | Where it stands now, absolute.                                                                                                                                                                                                                                                              |
+| `delta`     | number  | —        | How much just happened, added to where it stands.                                                                                                                                                                                                                                           |
+| `unit`      | string  | —        | Which measure moved, by its unit — only needed when the goal has several.                                                                                                                                                                                                                   |
+| `requestId` | string  | —        | An id you choose for this call, such as a UUID, so it can be sent again safely: the same `requestId` with the same arguments within a day answers with the first answer, marked `replayed`, and nothing is made twice. Reused for a different call, it is refused with the code `conflict`. |
 
 ### `add_goal_target` — Add something a goal is measured by
 
@@ -1485,12 +1618,13 @@ Give a goal another measure — "and fifty kilometres run". Leaves the measures 
 
 _Needs `tasks:write`; writes; answers with `before` and `after`._
 
-| Parameter | Type    | Required | What it is                                                                                                                                                                                                                                                                                                                               |
-| --------- | ------- | -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `goalId`  | integer | yes      | The goal’s id, as `goals` gives it.                                                                                                                                                                                                                                                                                                      |
-| `value`   | number  | yes      | How much of it.                                                                                                                                                                                                                                                                                                                          |
-| `unit`    | string  | —        | What is being counted — gigs, songs, km.                                                                                                                                                                                                                                                                                                 |
-| `measure` | string  | —        | A workout measure this counts, in the word the sessions use — "ran", "deadlifted". Set it and the number is the sum of what the register holds for that activity inside the goal’s period, read rather than typed; `workout_sessions` and `workouts` show what has been measured. Leave it off for a number the person keeps themselves. |
+| Parameter   | Type    | Required | What it is                                                                                                                                                                                                                                                                                                                               |
+| ----------- | ------- | -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `goalId`    | integer | yes      | The goal’s id, as `goals` gives it.                                                                                                                                                                                                                                                                                                      |
+| `value`     | number  | yes      | How much of it.                                                                                                                                                                                                                                                                                                                          |
+| `unit`      | string  | —        | What is being counted — gigs, songs, km.                                                                                                                                                                                                                                                                                                 |
+| `measure`   | string  | —        | A workout measure this counts, in the word the sessions use — "ran", "deadlifted". Set it and the number is the sum of what the register holds for that activity inside the goal’s period, read rather than typed; `workout_sessions` and `workouts` show what has been measured. Leave it off for a number the person keeps themselves. |
+| `requestId` | string  | —        | An id you choose for this call, such as a UUID, so it can be sent again safely: the same `requestId` with the same arguments within a day answers with the first answer, marked `replayed`, and nothing is made twice. Reused for a different call, it is refused with the code `conflict`.                                              |
 
 ### `remove_goal_target` — Take a measure off a goal
 
@@ -1517,10 +1651,34 @@ Make a new area to file goals under. Only when the person named one that does no
 
 _Needs `tasks:write`; writes; answers with `before` and `after`._
 
-| Parameter | Type   | Required | What it is                                    |
-| --------- | ------ | -------- | --------------------------------------------- |
-| `name`    | string | yes      | The area’s name.                              |
-| `color`   | string | —        | A hex colour like #1d4ed8, if they chose one. |
+| Parameter   | Type   | Required | What it is                                                                                                                                                                                                                                                                                  |
+| ----------- | ------ | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `name`      | string | yes      | The area’s name.                                                                                                                                                                                                                                                                            |
+| `color`     | string | —        | A hex colour like #1d4ed8, if they chose one.                                                                                                                                                                                                                                               |
+| `requestId` | string | —        | An id you choose for this call, such as a UUID, so it can be sent again safely: the same `requestId` with the same arguments within a day answers with the first answer, marked `replayed`, and nothing is made twice. Reused for a different call, it is refused with the code `conflict`. |
+
+### `change_goal_area` — Rename or recolour a goal area
+
+Rename an area, or change its colour. Only `id` is needed: a field left out is untouched. A name another area already has is refused rather than merged. The goals filed under it stay where they are.
+
+_Needs `tasks:write`; writes; answers with `before` and `after`._
+
+| Parameter | Type    | Required | What it is                               |
+| --------- | ------- | -------- | ---------------------------------------- |
+| `id`      | integer | yes      | The area’s id, as `goal_areas` gives it. |
+| `name`    | string  | —        | The new name.                            |
+| `color`   | string  | —        | A hex colour like #1d4ed8.               |
+
+### `move_goal_area` — Move a goal area up or down
+
+Move an area one place earlier (`delta: -1`) or later (`delta: 1`) in the order `goal_areas` lists them, which is the order the app shows them in. Moving the first one earlier, or the last one later, changes nothing.
+
+_Needs `tasks:write`; writes; answers with `before` and `after`._
+
+| Parameter | Type    | Required | What it is                                      |
+| --------- | ------- | -------- | ----------------------------------------------- |
+| `id`      | integer | yes      | The area’s id, as `goal_areas` gives it.        |
+| `delta`   | integer | yes      | -1 for earlier, 1 for later. One of: `-1`, `1`. |
 
 ### `all_habits` — Every habit
 
@@ -1536,19 +1694,20 @@ Start tracking a habit: something to keep doing (`good`), to avoid (`bad`), or j
 
 _Needs `habits:write`; writes; answers with `before` and `after`._
 
-| Parameter       | Type    | Required | What it is                                                                                                                                                                                                     |
-| --------------- | ------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `name`          | string  | yes      | The habit, in the person’s own words.                                                                                                                                                                          |
-| `type`          | string  | —        | good to keep, bad to avoid, neutral to watch. One of: `bad`, `good`, `neutral`.                                                                                                                                |
-| `description`   | string  | —        | Anything else about it.                                                                                                                                                                                        |
-| `scheduledDays` | string  | —        | The days it is due, in the shape `all_habits` shows. Every day if left out.                                                                                                                                    |
-| `notebookId`    | integer | —        | The notebook this belongs to, as `notebooks` gives its id — a subject somebody is working through, like a renovation. Only when they said so, and only when that notebook’s `modules` list says it holds this. |
+| Parameter       | Type    | Required | What it is                                                                                                                                                                                                                                                                                  |
+| --------------- | ------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `name`          | string  | yes      | The habit, in the person’s own words.                                                                                                                                                                                                                                                       |
+| `type`          | string  | —        | good to keep, bad to avoid, neutral to watch. One of: `bad`, `good`, `neutral`.                                                                                                                                                                                                             |
+| `description`   | string  | —        | Anything else about it.                                                                                                                                                                                                                                                                     |
+| `scheduledDays` | string  | —        | The days it is due, in the shape `all_habits` shows. Every day if left out.                                                                                                                                                                                                                 |
+| `notebookId`    | integer | —        | The notebook this belongs to, as `notebooks` gives its id — a subject somebody is working through, like a renovation. Only when they said so. A notebook whose `modules` list does not hold this refuses it.                                                                                |
+| `requestId`     | string  | —        | An id you choose for this call, such as a UUID, so it can be sent again safely: the same `requestId` with the same arguments within a day answers with the first answer, marked `replayed`, and nothing is made twice. Reused for a different call, it is refused with the code `conflict`. |
 
 ### `change_habit` — Change a habit
 
 Rename a habit or change its type, description or days. Only `id` is needed: a field left out is untouched. An empty `description` clears it; an empty `scheduledDays` clears the days. Its history of kept days stays exactly as it was.
 
-_Needs `habits:write`; writes; answers with `before` and `after`._
+_Needs `habits:write`; writes; answers with `before` and `after`, `after` being the new habit._
 
 | Parameter       | Type    | Required | What it is                                              |
 | --------------- | ------- | -------- | ------------------------------------------------------- |
@@ -1574,11 +1733,12 @@ A time and a sentence, reaching the phone even with the app closed — "take the
 
 _Needs `schedule:write`; writes; answers with `before` and `after`._
 
-| Parameter | Type    | Required | What it is                                                                                                                                                                                                              |
-| --------- | ------- | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `at`      | string  | yes      | When, as YYYY-MM-DDTHH:MM in the person’s own timezone. Seconds allowed and honoured. A bare YYYY-MM-DD means the hour their day starts. It has to be ahead of now — check the year, which is the one people leave out. |
-| `message` | string  | yes      | What it should say, in their words.                                                                                                                                                                                     |
-| `sound`   | boolean | —        | Whether it should make a noise as well as showing. Silent unless asked; do not turn this on unless they said so.                                                                                                        |
+| Parameter   | Type    | Required | What it is                                                                                                                                                                                                                                                                                  |
+| ----------- | ------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `at`        | string  | yes      | When, as YYYY-MM-DDTHH:MM in the person’s own timezone. Seconds allowed and honoured. A bare YYYY-MM-DD means the hour their day starts. It has to be ahead of now — check the year, which is the one people leave out.                                                                     |
+| `message`   | string  | yes      | What it should say, in their words.                                                                                                                                                                                                                                                         |
+| `sound`     | boolean | —        | Whether it should make a noise as well as showing. Silent unless asked; do not turn this on unless they said so.                                                                                                                                                                            |
+| `requestId` | string  | —        | An id you choose for this call, such as a UUID, so it can be sent again safely: the same `requestId` with the same arguments within a day answers with the first answer, marked `replayed`, and nothing is made twice. Reused for a different call, it is refused with the code `conflict`. |
 
 ### `change_reminder` — Change a reminder that is already set
 
@@ -1609,11 +1769,12 @@ Be told some minutes before a block starts — it reaches the phone even with th
 
 _Needs `schedule:write`; writes; answers with `before` and `after`._
 
-| Parameter | Type    | Required | What it is                                                   |
-| --------- | ------- | -------- | ------------------------------------------------------------ |
-| `id`      | string  | yes      | The block’s id, exactly as the day gave it.                  |
-| `minutes` | integer | yes      | How many minutes before the start. 0 is at the start.        |
-| `message` | string  | —        | What the nudge should say. The block’s own name if left out. |
+| Parameter   | Type    | Required | What it is                                                                                                                                                                                                                                                                                  |
+| ----------- | ------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `id`        | string  | yes      | The block’s id, exactly as the day gave it.                                                                                                                                                                                                                                                 |
+| `minutes`   | integer | yes      | How many minutes before the start. 0 is at the start.                                                                                                                                                                                                                                       |
+| `message`   | string  | —        | What the nudge should say. The block’s own name if left out.                                                                                                                                                                                                                                |
+| `requestId` | string  | —        | An id you choose for this call, such as a UUID, so it can be sent again safely: the same `requestId` with the same arguments within a day answers with the first answer, marked `replayed`, and nothing is made twice. Reused for a different call, it is refused with the code `conflict`. |
 
 ### `dismiss_reminder` — Dismiss a reminder
 
@@ -1657,12 +1818,13 @@ _Needs `schedule:write`; writes; answers with `before` and `after`._
 | `energy`         | integer | —        | Deprecated — use `ease`, which is this turned round: an energy of 5 is an ease of 1. Still accepted so an assistant written against the old shape keeps working, and removed in 0.190.0. **Deprecated** — removed in 0.190.0.                                                                                                                      |
 | `attributes`     | object  | —        | Its attributes: key/value pairs such as { "url": "https://…", "room": "B12" }, read by plugins and shown on the task. Keys are lowercase letters, digits and underscores. This replaces the whole set: send every pair to keep, an empty value removes one, and {} removes them all. Left out, they are untouched. Any key, each holding a string. |
 | `meta`           | object  | —        | Deprecated — use `attributes`, which is the same thing under the name the app uses. Still accepted so an assistant written against the old shape keeps working, and removed in 0.190.0. Any key, each holding a string. **Deprecated** — removed in 0.190.0.                                                                                       |
+| `requestId`      | string  | —        | An id you choose for this call, such as a UUID, so it can be sent again safely: the same `requestId` with the same arguments within a day answers with the first answer, marked `replayed`, and nothing is made twice. Reused for a different call, it is refused with the code `conflict`.                                                        |
 
 ### `change_repeating_block` — Change a repeating task block
 
 Change every future occurrence of a repeating block: its weekday, time, length, how often it comes back, the text on it, its category, its reminder, its notebook or its attributes. This is "move gym to Wednesdays" or "make it every other week"; `change_block` is "move this Wednesday’s gym". Only `id` is needed: a field left out is untouched, and nothing is written unless all of it is valid. An empty `title` takes the text off. Takes the id `repeating_week` gives.
 
-_Needs `schedule:write`; writes; answers with `before` and `after`._
+_Needs `schedule:write`; writes; answers with `before` and `after`, `after` being the new repeatingBlock._
 
 | Parameter        | Type    | Required | What it is                                                                                                                                                                                                                                                                                                                                         |
 | ---------------- | ------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -1679,6 +1841,7 @@ _Needs `schedule:write`; writes; answers with `before` and `after`._
 | `month_day`      | integer | —        | For `monthly`: which day of the month, 1 to 31. A month too short for it uses its last day.                                                                                                                                                                                                                                                        |
 | `attributes`     | object  | —        | Its attributes: key/value pairs such as { "url": "https://…", "room": "B12" }, read by plugins and shown on the task. Keys are lowercase letters, digits and underscores. This replaces the whole set: send every pair to keep, an empty value removes one, and {} removes them all. Left out, they are untouched. Any key, each holding a string. |
 | `meta`           | object  | —        | Deprecated — use `attributes`, which is the same thing under the name the app uses. Still accepted so an assistant written against the old shape keeps working, and removed in 0.190.0. Any key, each holding a string. **Deprecated** — removed in 0.190.0.                                                                                       |
+| `ifUpdatedAt`    | string  | —        | Only change it if nothing has changed it since: the `updatedAt` a read or an earlier change answered with. If something has, nothing is written and the call is refused with the code `conflict`, the current `updatedAt` in its details.                                                                                                          |
 
 ### `remove_repeating_block` — Take a block out of the week
 
@@ -1712,24 +1875,26 @@ Add an activity — a named thing inside a category, like "piano" inside "music"
 
 _Needs `schedule:write`; writes; answers with `before` and `after`._
 
-| Parameter     | Type   | Required | What it is                                                     |
-| ------------- | ------ | -------- | -------------------------------------------------------------- |
-| `name`        | string | yes      | What it is called.                                             |
-| `category`    | string | —        | The category it belongs to, by name — `categories` lists them. |
-| `description` | string | —        | A line about it, shown where it is edited.                     |
+| Parameter     | Type   | Required | What it is                                                                                                                                                                                                                                                                                  |
+| ------------- | ------ | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `name`        | string | yes      | What it is called.                                                                                                                                                                                                                                                                          |
+| `category`    | string | —        | The category it belongs to, by name — `categories` lists them.                                                                                                                                                                                                                              |
+| `description` | string | —        | A line about it, shown where it is edited.                                                                                                                                                                                                                                                  |
+| `requestId`   | string | —        | An id you choose for this call, such as a UUID, so it can be sent again safely: the same `requestId` with the same arguments within a day answers with the first answer, marked `replayed`, and nothing is made twice. Reused for a different call, it is refused with the code `conflict`. |
 
 ### `change_activity` — Rename an activity, or say what it is
 
 Change an activity: its name, the line describing it, or which category it belongs to. Takes the id `activities` gives. Only `id` is needed: a field left out is untouched. Blocks that name it follow the change; nothing on any day is moved.
 
-_Needs `schedule:write`; writes; answers with `before` and `after`._
+_Needs `schedule:write`; writes; answers with `before` and `after`, `after` being the new activity._
 
-| Parameter     | Type    | Required | What it is                                             |
-| ------------- | ------- | -------- | ------------------------------------------------------ |
-| `id`          | integer | yes      | The activity’s id, as `activities` gave it.            |
-| `name`        | string  | —        | A new name.                                            |
-| `description` | string  | —        | A new line about it. Pass an empty string to clear it. |
-| `category`    | string  | —        | Move it to this category, by name.                     |
+| Parameter     | Type    | Required | What it is                                                                                                                                                                                                                                |
+| ------------- | ------- | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `id`          | integer | yes      | The activity’s id, as `activities` gave it.                                                                                                                                                                                               |
+| `name`        | string  | —        | A new name.                                                                                                                                                                                                                               |
+| `description` | string  | —        | A new line about it. Pass an empty string to clear it.                                                                                                                                                                                    |
+| `category`    | string  | —        | Move it to this category, by name.                                                                                                                                                                                                        |
+| `ifUpdatedAt` | string  | —        | Only change it if nothing has changed it since: the `updatedAt` a read or an earlier change answered with. If something has, nothing is written and the call is refused with the code `conflict`, the current `updatedAt` in its details. |
 
 ### `people` — The people in their life
 
@@ -1755,32 +1920,34 @@ Keep a page for somebody — name at minimum; birthday as YYYY-MM-DD, or --MM-DD
 
 _Needs `people:write`; writes; answers with `before` and `after`._
 
-| Parameter          | Type    | Required | What it is                                                                                                                             |
-| ------------------ | ------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------- |
-| `name`             | string  | yes      | Their name, as the person says it.                                                                                                     |
-| `relationship`     | string  | —        | The nearest of these — "sister" is family, "landlord" is professional. One of: `family`, `friend`, `partner`, `professional`, `other`. |
-| `birthday`         | string  | —        | YYYY-MM-DD, or --MM-DD without a year.                                                                                                 |
-| `remindOnBirthday` | boolean | —        | Announce the birthday that morning. On if left out.                                                                                    |
-| `phone`            | string  | —        | A phone number.                                                                                                                        |
-| `email`            | string  | —        | An email address.                                                                                                                      |
-| `notes`            | string  | —        | Anything else worth keeping.                                                                                                           |
+| Parameter          | Type    | Required | What it is                                                                                                                                                                                                                                                                                  |
+| ------------------ | ------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `name`             | string  | yes      | Their name, as the person says it.                                                                                                                                                                                                                                                          |
+| `relationship`     | string  | —        | The nearest of these — "sister" is family, "landlord" is professional. One of: `family`, `friend`, `partner`, `professional`, `other`.                                                                                                                                                      |
+| `birthday`         | string  | —        | YYYY-MM-DD, or --MM-DD without a year.                                                                                                                                                                                                                                                      |
+| `remindOnBirthday` | boolean | —        | Announce the birthday that morning. On if left out.                                                                                                                                                                                                                                         |
+| `phone`            | string  | —        | A phone number.                                                                                                                                                                                                                                                                             |
+| `email`            | string  | —        | An email address.                                                                                                                                                                                                                                                                           |
+| `notes`            | string  | —        | Anything else worth keeping.                                                                                                                                                                                                                                                                |
+| `requestId`        | string  | —        | An id you choose for this call, such as a UUID, so it can be sent again safely: the same `requestId` with the same arguments within a day answers with the first answer, marked `replayed`, and nothing is made twice. Reused for a different call, it is refused with the code `conflict`. |
 
 ### `change_person` — Change a person’s page
 
 Correct or extend what is recorded about somebody — a birthday learnt, a number changed. Only `id` is needed: a field left out is untouched, and an empty string clears a birthday, phone, email or notes. Takes the id `people` gives.
 
-_Needs `people:write`; writes; answers with `before` and `after`._
+_Needs `people:write`; writes; answers with `before` and `after`, `after` being the new person._
 
-| Parameter          | Type    | Required | What it is                                                                                          |
-| ------------------ | ------- | -------- | --------------------------------------------------------------------------------------------------- |
-| `id`               | integer | yes      | The person’s id.                                                                                    |
-| `name`             | string  | —        | The new name.                                                                                       |
-| `relationship`     | string  | —        | The new relationship, one of these. One of: `family`, `friend`, `partner`, `professional`, `other`. |
-| `birthday`         | string  | —        | YYYY-MM-DD, or --MM-DD without a year.                                                              |
-| `remindOnBirthday` | boolean | —        | Whether the birthday announces itself.                                                              |
-| `phone`            | string  | —        | The new phone number.                                                                               |
-| `email`            | string  | —        | The new email address.                                                                              |
-| `notes`            | string  | —        | The new notes.                                                                                      |
+| Parameter          | Type    | Required | What it is                                                                                                                                                                                                                                |
+| ------------------ | ------- | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `id`               | integer | yes      | The person’s id.                                                                                                                                                                                                                          |
+| `name`             | string  | —        | The new name.                                                                                                                                                                                                                             |
+| `relationship`     | string  | —        | The new relationship, one of these. One of: `family`, `friend`, `partner`, `professional`, `other`.                                                                                                                                       |
+| `birthday`         | string  | —        | YYYY-MM-DD, or --MM-DD without a year.                                                                                                                                                                                                    |
+| `remindOnBirthday` | boolean | —        | Whether the birthday announces itself.                                                                                                                                                                                                    |
+| `phone`            | string  | —        | The new phone number.                                                                                                                                                                                                                     |
+| `email`            | string  | —        | The new email address.                                                                                                                                                                                                                    |
+| `notes`            | string  | —        | The new notes.                                                                                                                                                                                                                            |
+| `ifUpdatedAt`      | string  | —        | Only change it if nothing has changed it since: the `updatedAt` a read or an earlier change answered with. If something has, nothing is written and the call is refused with the code `conflict`, the current `updatedAt` in its details. |
 
 ### `daily_wins` — Three things that went well
 
@@ -1798,10 +1965,11 @@ Write one of the day’s three good things, in the person’s own words, into th
 
 _Needs `notes:write`; writes; answers with `before` and `after`._
 
-| Parameter | Type   | Required | What it is                                               |
-| --------- | ------ | -------- | -------------------------------------------------------- |
-| `content` | string | yes      | The win, exactly as they said it.                        |
-| `date`    | string | —        | The day it belongs to, as YYYY-MM-DD. Today if left out. |
+| Parameter   | Type   | Required | What it is                                                                                                                                                                                                                                                                                  |
+| ----------- | ------ | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `content`   | string | yes      | The win, exactly as they said it.                                                                                                                                                                                                                                                           |
+| `date`      | string | —        | The day it belongs to, as YYYY-MM-DD. Today if left out.                                                                                                                                                                                                                                    |
+| `requestId` | string | —        | An id you choose for this call, such as a UUID, so it can be sent again safely: the same `requestId` with the same arguments within a day answers with the first answer, marked `replayed`, and nothing is made twice. Reused for a different call, it is refused with the code `conflict`. |
 
 ### `weekly_review` — How a week actually went
 
@@ -1838,12 +2006,13 @@ Write one point into a data stream — "I weigh 82 today", "slept 6 hours". Take
 
 _Needs `streams:write`; writes; answers with `before` and `after`._
 
-| Parameter | Type   | Required | What it is                                             |
-| --------- | ------ | -------- | ------------------------------------------------------ |
-| `stream`  | string | yes      | The stream’s slug, as `data_streams` gives it.         |
-| `value`   | number | yes      | The reading.                                           |
-| `at`      | string | —        | When it was taken, as an ISO instant. Now if left out. |
-| `text`    | string | —        | A word beside the number, if they said one.            |
+| Parameter   | Type   | Required | What it is                                                                                                                                                                                                                                                                                  |
+| ----------- | ------ | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `stream`    | string | yes      | The stream’s slug, as `data_streams` gives it.                                                                                                                                                                                                                                              |
+| `value`     | number | yes      | The reading.                                                                                                                                                                                                                                                                                |
+| `at`        | string | —        | When it was taken, as an ISO instant. Now if left out.                                                                                                                                                                                                                                      |
+| `text`      | string | —        | A word beside the number, if they said one.                                                                                                                                                                                                                                                 |
+| `requestId` | string | —        | An id you choose for this call, such as a UUID, so it can be sent again safely: the same `requestId` with the same arguments within a day answers with the first answer, marked `replayed`, and nothing is made twice. Reused for a different call, it is refused with the code `conflict`. |
 
 ### `apply_idea` — Mark an idea applied
 
@@ -1890,22 +2059,24 @@ Add a location things can live in — a room, a chest, a drawer — optionally i
 
 _Needs `locations:write`; writes; answers with `before` and `after`._
 
-| Parameter   | Type    | Required | What it is                                   |
-| ----------- | ------- | -------- | -------------------------------------------- |
-| `name`      | string  | yes      | What the location is called.                 |
-| `parent_id` | integer | —        | The location it is inside, from `locations`. |
+| Parameter   | Type    | Required | What it is                                                                                                                                                                                                                                                                                  |
+| ----------- | ------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `name`      | string  | yes      | What the location is called.                                                                                                                                                                                                                                                                |
+| `parent_id` | integer | —        | The location it is inside, from `locations`.                                                                                                                                                                                                                                                |
+| `requestId` | string  | —        | An id you choose for this call, such as a UUID, so it can be sent again safely: the same `requestId` with the same arguments within a day answers with the first answer, marked `replayed`, and nothing is made twice. Reused for a different call, it is refused with the code `conflict`. |
 
 ### `change_location` — Rename or move a location
 
 Rename a location, or move it under a different parent. Only `id` is needed: a field left out is untouched, its notes included. `parent_id` of `0` or `null` moves it to the top level. It refuses to be put inside itself.
 
-_Needs `locations:write`; writes; answers with `before` and `after`._
+_Needs `locations:write`; writes; answers with `before` and `after`, `after` being the new location._
 
-| Parameter   | Type    | Required | What it is                                                                               |
-| ----------- | ------- | -------- | ---------------------------------------------------------------------------------------- |
-| `id`        | integer | yes      | The location’s id.                                                                       |
-| `name`      | string  | —        | The name, rewritten.                                                                     |
-| `parent_id` | integer | —        | The new parent. `0` or `null` moves it to the top level; left out, it stays where it is. |
+| Parameter     | Type    | Required | What it is                                                                                                                                                                                                                                |
+| ------------- | ------- | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `id`          | integer | yes      | The location’s id.                                                                                                                                                                                                                        |
+| `name`        | string  | —        | The name, rewritten.                                                                                                                                                                                                                      |
+| `parent_id`   | integer | —        | The new parent. `0` or `null` moves it to the top level; left out, it stays where it is.                                                                                                                                                  |
+| `ifUpdatedAt` | string  | —        | Only change it if nothing has changed it since: the `updatedAt` a read or an earlier change answered with. If something has, nothing is written and the call is refused with the code `conflict`, the current `updatedAt` in its details. |
 
 ### `remove_location` — Remove a location
 
@@ -1981,31 +2152,33 @@ Record that a workout happened, and how much of what was done. Everything but th
 
 _Needs `workouts:write`; writes; answers with `before` and `after`._
 
-| Parameter             | Type     | Required | What it is                                                                                                             |
-| --------------------- | -------- | -------- | ---------------------------------------------------------------------------------------------------------------------- |
-| `workout_id`          | integer  | yes      | Which workout, from `workouts`.                                                                                        |
-| `done_on`             | string   | —        | The day, as YYYY-MM-DD. Today if left off.                                                                             |
-| `notes`               | string   | —        | Anything worth saying about it.                                                                                        |
-| `measures`            | object[] | —        | What was done, a line each. `amount` and `unit` may be left off for something that happened without a number attached. |
-| `measures[].activity` | string   | yes      | What was done: "ran", "deadlifted".                                                                                    |
-| `measures[].amount`   | number   | —        | How much.                                                                                                              |
-| `measures[].unit`     | string   | —        | Of what: "km", "kg", "reps".                                                                                           |
+| Parameter             | Type     | Required | What it is                                                                                                                                                                                                                                                                                  |
+| --------------------- | -------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `workout_id`          | integer  | yes      | Which workout, from `workouts`.                                                                                                                                                                                                                                                             |
+| `done_on`             | string   | —        | The day, as YYYY-MM-DD. Today if left off.                                                                                                                                                                                                                                                  |
+| `notes`               | string   | —        | Anything worth saying about it.                                                                                                                                                                                                                                                             |
+| `measures`            | object[] | —        | What was done, a line each. `amount` and `unit` may be left off for something that happened without a number attached.                                                                                                                                                                      |
+| `measures[].activity` | string   | yes      | What was done: "ran", "deadlifted".                                                                                                                                                                                                                                                         |
+| `measures[].amount`   | number   | —        | How much.                                                                                                                                                                                                                                                                                   |
+| `measures[].unit`     | string   | —        | Of what: "km", "kg", "reps".                                                                                                                                                                                                                                                                |
+| `requestId`           | string   | —        | An id you choose for this call, such as a UUID, so it can be sent again safely: the same `requestId` with the same arguments within a day answers with the first answer, marked `replayed`, and nothing is made twice. Reused for a different call, it is refused with the code `conflict`. |
 
 ### `change_workout_session` — Correct a session
 
 Rewrite a session that was written down wrong. Only `id` is needed: a field left out is untouched. The lines are replaced by the ones given, so send them all; leaving `measures` off keeps the ones it has, and `[]` removes them. An empty `notes` clears the notes. The session and its lines land together or not at all.
 
-_Needs `workouts:write`; writes; answers with `before` and `after`._
+_Needs `workouts:write`; writes; answers with `before` and `after`, `after` being the new workoutSession._
 
-| Parameter             | Type     | Required | What it is                                   |
-| --------------------- | -------- | -------- | -------------------------------------------- |
-| `id`                  | integer  | yes      | The session’s id, from `workout_sessions`.   |
-| `done_on`             | string   | —        | The day it actually happened, as YYYY-MM-DD. |
-| `notes`               | string   | —        | What to say about it instead.                |
-| `measures`            | object[] | —        | The lines, replacing every one it has.       |
-| `measures[].activity` | string   | yes      | What was done: "ran", "deadlifted".          |
-| `measures[].amount`   | number   | —        | How much.                                    |
-| `measures[].unit`     | string   | —        | Of what: "km", "kg", "reps".                 |
+| Parameter             | Type     | Required | What it is                                                                                                                                                                                                                                |
+| --------------------- | -------- | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `id`                  | integer  | yes      | The session’s id, from `workout_sessions`.                                                                                                                                                                                                |
+| `done_on`             | string   | —        | The day it actually happened, as YYYY-MM-DD.                                                                                                                                                                                              |
+| `notes`               | string   | —        | What to say about it instead.                                                                                                                                                                                                             |
+| `measures`            | object[] | —        | The lines, replacing every one it has.                                                                                                                                                                                                    |
+| `measures[].activity` | string   | yes      | What was done: "ran", "deadlifted".                                                                                                                                                                                                       |
+| `measures[].amount`   | number   | —        | How much.                                                                                                                                                                                                                                 |
+| `measures[].unit`     | string   | —        | Of what: "km", "kg", "reps".                                                                                                                                                                                                              |
+| `ifUpdatedAt`         | string   | —        | Only change it if nothing has changed it since: the `updatedAt` a read or an earlier change answered with. If something has, nothing is written and the call is refused with the code `conflict`, the current `updatedAt` in its details. |
 
 ### `remove_workout_session` — Remove a session
 
@@ -2050,9 +2223,10 @@ Add a category to this account’s list — "Swimming", "Physio". Answering with
 
 _Needs `workouts:write`; writes; answers with `before` and `after`._
 
-| Parameter | Type   | Required | What it is                   |
-| --------- | ------ | -------- | ---------------------------- |
-| `name`    | string | yes      | What the category is called. |
+| Parameter   | Type   | Required | What it is                                                                                                                                                                                                                                                                                  |
+| ----------- | ------ | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `name`      | string | yes      | What the category is called.                                                                                                                                                                                                                                                                |
+| `requestId` | string | —        | An id you choose for this call, such as a UUID, so it can be sent again safely: the same `requestId` with the same arguments within a day answers with the first answer, marked `replayed`, and nothing is made twice. Reused for a different call, it is refused with the code `conflict`. |
 
 ### `remove_workout_category` — Remove a category of workout
 
@@ -2068,34 +2242,36 @@ _Needs `workouts:write` and `destructive`; deletes; answers with `before` and `a
 
 Write a workout down: a title, a category (one of the account’s own, from `workout_categories`), a plan as Markdown, and roughly how long it takes. Scheduling it onto a day is a block with its workoutId, the way a meal is a block with a recipe.
 
-_Needs `workouts:write`; writes; answers with `before` and `after`._
+_Needs `workouts:write`; writes; answers with `before` and `after`, `after` being the new workoutCategory._
 
-| Parameter             | Type     | Required | What it is                                                                                                                                                                                                     |
-| --------------------- | -------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `title`               | string   | yes      | What the session is called.                                                                                                                                                                                    |
-| `category_id`         | integer  | —        | Its category, from `workout_categories`.                                                                                                                                                                       |
-| `plan`                | string   | —        | What to do, as Markdown.                                                                                                                                                                                       |
-| `minutes`             | integer  | —        | Roughly how long it takes.                                                                                                                                                                                     |
-| `notes`               | string   | —        | Anything else.                                                                                                                                                                                                 |
-| `measures`            | object[] | —        | What this workout is measured by, in the order a session should be asked for them. Names and units in the person’s own words; no amounts.                                                                      |
-| `measures[].activity` | string   | yes      | What is measured: “ran”, “benched”.                                                                                                                                                                            |
-| `measures[].unit`     | string   | —        | Of what: “km”, “kg”, “reps”.                                                                                                                                                                                   |
-| `notebookId`          | integer  | —        | The notebook this belongs to, as `notebooks` gives its id — a subject somebody is working through, like a renovation. Only when they said so, and only when that notebook’s `modules` list says it holds this. |
+| Parameter             | Type     | Required | What it is                                                                                                                                                                                                                                                                                  |
+| --------------------- | -------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `title`               | string   | yes      | What the session is called.                                                                                                                                                                                                                                                                 |
+| `category_id`         | integer  | —        | Its category, from `workout_categories`.                                                                                                                                                                                                                                                    |
+| `plan`                | string   | —        | What to do, as Markdown.                                                                                                                                                                                                                                                                    |
+| `minutes`             | integer  | —        | Roughly how long it takes.                                                                                                                                                                                                                                                                  |
+| `notes`               | string   | —        | Anything else.                                                                                                                                                                                                                                                                              |
+| `measures`            | object[] | —        | What this workout is measured by, in the order a session should be asked for them. Names and units in the person’s own words; no amounts.                                                                                                                                                   |
+| `measures[].activity` | string   | yes      | What is measured: “ran”, “benched”.                                                                                                                                                                                                                                                         |
+| `measures[].unit`     | string   | —        | Of what: “km”, “kg”, “reps”.                                                                                                                                                                                                                                                                |
+| `notebookId`          | integer  | —        | The notebook this belongs to, as `notebooks` gives its id — a subject somebody is working through, like a renovation. Only when they said so. A notebook whose `modules` list does not hold this refuses it.                                                                                |
+| `requestId`           | string   | —        | An id you choose for this call, such as a UUID, so it can be sent again safely: the same `requestId` with the same arguments within a day answers with the first answer, marked `replayed`, and nothing is made twice. Reused for a different call, it is refused with the code `conflict`. |
 
 ### `change_workout` — Change a workout
 
 Rewrite a workout — for a misheard word or a better plan, not to turn it into a different session. Only `id` is needed: a field left out is untouched. An empty string clears the plan or the notes; `0` or `null` clears `minutes` or `category_id`.
 
-_Needs `workouts:write`; writes; answers with `before` and `after`._
+_Needs `workouts:write`; writes; answers with `before` and `after`, `after` being the new workout._
 
-| Parameter     | Type    | Required | What it is                                |
-| ------------- | ------- | -------- | ----------------------------------------- |
-| `id`          | integer | yes      | The workout’s id, as `workouts` gives it. |
-| `title`       | string  | —        | The title, rewritten.                     |
-| `category_id` | integer | —        | Its category, from `workout_categories`.  |
-| `plan`        | string  | —        | The plan, rewritten.                      |
-| `minutes`     | integer | —        | Roughly how long it takes.                |
-| `notes`       | string  | —        | Notes, replacing the old ones.            |
+| Parameter     | Type    | Required | What it is                                                                                                                                                                                                                                |
+| ------------- | ------- | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `id`          | integer | yes      | The workout’s id, as `workouts` gives it.                                                                                                                                                                                                 |
+| `title`       | string  | —        | The title, rewritten.                                                                                                                                                                                                                     |
+| `category_id` | integer | —        | Its category, from `workout_categories`.                                                                                                                                                                                                  |
+| `plan`        | string  | —        | The plan, rewritten.                                                                                                                                                                                                                      |
+| `minutes`     | integer | —        | Roughly how long it takes.                                                                                                                                                                                                                |
+| `notes`       | string  | —        | Notes, replacing the old ones.                                                                                                                                                                                                            |
+| `ifUpdatedAt` | string  | —        | Only change it if nothing has changed it since: the `updatedAt` a read or an earlier change answered with. If something has, nothing is written and the call is refused with the code `conflict`, the current `updatedAt` in its details. |
 
 ### `archive_workout` — Put a workout away, or bring it back
 
@@ -2132,26 +2308,28 @@ A new place money moves through. `kind` is bank, card, cash or other; `default_p
 
 _Needs `statements:write`; writes; answers with `before` and `after`._
 
-| Parameter        | Type    | Required | What it is                                                                                                                                                                                                     |
-| ---------------- | ------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `name`           | string  | yes      | What it is called — "Nubank", "Visa".                                                                                                                                                                          |
-| `kind`           | string  | —        | bank, card, cash or other.                                                                                                                                                                                     |
-| `default_parser` | string  | —        | An export key like 'nubank:conta_corrente'.                                                                                                                                                                    |
-| `notebookId`     | integer | —        | The notebook this belongs to, as `notebooks` gives its id — a subject somebody is working through, like a renovation. Only when they said so, and only when that notebook’s `modules` list says it holds this. |
+| Parameter        | Type    | Required | What it is                                                                                                                                                                                                                                                                                  |
+| ---------------- | ------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `name`           | string  | yes      | What it is called — "Nubank", "Visa".                                                                                                                                                                                                                                                       |
+| `kind`           | string  | —        | bank, card, cash or other.                                                                                                                                                                                                                                                                  |
+| `default_parser` | string  | —        | An export key like 'nubank:conta_corrente'.                                                                                                                                                                                                                                                 |
+| `notebookId`     | integer | —        | The notebook this belongs to, as `notebooks` gives its id — a subject somebody is working through, like a renovation. Only when they said so. A notebook whose `modules` list does not hold this refuses it.                                                                                |
+| `requestId`      | string  | —        | An id you choose for this call, such as a UUID, so it can be sent again safely: the same `requestId` with the same arguments within a day answers with the first answer, marked `replayed`, and nothing is made twice. Reused for a different call, it is refused with the code `conflict`. |
 
 ### `record_movement` — Put a line in a ledger
 
 One movement, for a plugin that reads a bank the parsers do not, or for a purchase the statement has not published yet. Amounts are signed minor units: negative left the account. Give `external_id` and re-sending the same movement adds nothing.
 
-_Needs `statements:write`; writes; answers with `before` and `after`._
+_Needs `statements:write`; writes; answers with `before` and `after`, `after` being the new ledger._
 
-| Parameter      | Type    | Required | What it is                                                |
-| -------------- | ------- | -------- | --------------------------------------------------------- |
-| `ledger_id`    | integer | yes      | Which ledger, as `ledgers` gives it.                      |
-| `occurred_on`  | string  | yes      | The day it moved, YYYY-MM-DD.                             |
-| `amount_cents` | integer | yes      | Signed minor units — negative when money left.            |
-| `description`  | string  | yes      | What the bank would call it. The sorting rules read this. |
-| `external_id`  | string  | —        | The source's own id for it, if it has one.                |
+| Parameter      | Type    | Required | What it is                                                                                                                                                                                                                                                                                  |
+| -------------- | ------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `ledger_id`    | integer | yes      | Which ledger, as `ledgers` gives it.                                                                                                                                                                                                                                                        |
+| `occurred_on`  | string  | yes      | The day it moved, YYYY-MM-DD.                                                                                                                                                                                                                                                               |
+| `amount_cents` | integer | yes      | Signed minor units — negative when money left.                                                                                                                                                                                                                                              |
+| `description`  | string  | yes      | What the bank would call it. The sorting rules read this.                                                                                                                                                                                                                                   |
+| `external_id`  | string  | —        | The source's own id for it, if it has one.                                                                                                                                                                                                                                                  |
+| `requestId`    | string  | —        | An id you choose for this call, such as a UUID, so it can be sent again safely: the same `requestId` with the same arguments within a day answers with the first answer, marked `replayed`, and nothing is made twice. Reused for a different call, it is refused with the code `conflict`. |
 
 ### `statement_months` — Money in and out, by month
 
@@ -2203,13 +2381,14 @@ _Needs `statements:read`; read-only._
 
 A regular expression that sorts statement lines, applied at read time — past lines included. Categories partition (first match, in position order, wins); tags overlap freely.
 
-_Needs `statements:write`; writes; answers with `before` and `after`._
+_Needs `statements:write`; writes; answers with `before` and `after`, `after` being the new sortRule._
 
-| Parameter | Type   | Required | What it is                                                   |
-| --------- | ------ | -------- | ------------------------------------------------------------ |
-| `kind`    | string | yes      | 'category' or 'tag'.                                         |
-| `name`    | string | yes      | What the category or tag is called.                          |
-| `pattern` | string | yes      | A JavaScript regular expression, matched case-insensitively. |
+| Parameter   | Type   | Required | What it is                                                                                                                                                                                                                                                                                  |
+| ----------- | ------ | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `kind`      | string | yes      | 'category' or 'tag'.                                                                                                                                                                                                                                                                        |
+| `name`      | string | yes      | What the category or tag is called.                                                                                                                                                                                                                                                         |
+| `pattern`   | string | yes      | A JavaScript regular expression, matched case-insensitively.                                                                                                                                                                                                                                |
+| `requestId` | string | —        | An id you choose for this call, such as a UUID, so it can be sent again safely: the same `requestId` with the same arguments within a day answers with the first answer, marked `replayed`, and nothing is made twice. Reused for a different call, it is refused with the code `conflict`. |
 
 ### `delete_sort_rule` — Delete a sorting rule
 
@@ -2287,36 +2466,41 @@ Write down a bill you expect to pay: a name, the expected amount in minor units 
 
 _Needs `bills:write`; writes; answers with `before` and `after`._
 
-| Parameter         | Type    | Required | What it is                                                                                                                                                                                                     |
-| ----------------- | ------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `name`            | string  | yes      | What the bill is called.                                                                                                                                                                                       |
-| `amount_expected` | integer | —        | The expected amount, in minor units (cents).                                                                                                                                                                   |
-| `rhythm`          | string  | —        | weekly, monthly, yearly, or once.                                                                                                                                                                              |
-| `due_day`         | integer | —        | Day of the month it falls due, 1-28 (monthly) — the last day it can be paid.                                                                                                                                   |
-| `pay_lead_days`   | integer | —        | Pay it this many days before the due day (0 = on the day). It turns up on the week that day.                                                                                                                   |
-| `automatic`       | boolean | —        | It pays itself — a subscription on a card, a direct debit. Never reminded and never on the week; its payment is recorded on each due day from today on.                                                        |
-| `currency`        | string  | —        | A currency code like BRL. The account’s default if left out.                                                                                                                                                   |
-| `flow`            | string  | —        | 'out' for a bill (the default), 'in' for income.                                                                                                                                                               |
-| `notes`           | string  | —        | Anything else.                                                                                                                                                                                                 |
-| `notebookId`      | integer | —        | The notebook this belongs to, as `notebooks` gives its id — a subject somebody is working through, like a renovation. Only when they said so, and only when that notebook’s `modules` list says it holds this. |
+| Parameter         | Type    | Required | What it is                                                                                                                                                                                                                                                                                  |
+| ----------------- | ------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `name`            | string  | yes      | What the bill is called.                                                                                                                                                                                                                                                                    |
+| `amount_expected` | integer | —        | The expected amount, in minor units (cents).                                                                                                                                                                                                                                                |
+| `rhythm`          | string  | —        | weekly, monthly, yearly, or once.                                                                                                                                                                                                                                                           |
+| `due_day`         | integer | —        | Day of the month it falls due, 1-28 (monthly) — the last day it can be paid.                                                                                                                                                                                                                |
+| `pay_lead_days`   | integer | —        | Pay it this many days before the due day (0 = on the day). It turns up on the week that day.                                                                                                                                                                                                |
+| `automatic`       | boolean | —        | It pays itself — a subscription on a card, a direct debit. Never reminded and never on the week; its payment is recorded on each due day from today on.                                                                                                                                     |
+| `currency`        | string  | —        | A currency code like BRL. The account’s default if left out.                                                                                                                                                                                                                                |
+| `flow`            | string  | —        | 'out' for a bill (the default), 'in' for income.                                                                                                                                                                                                                                            |
+| `notes`           | string  | —        | Anything else.                                                                                                                                                                                                                                                                              |
+| `notebookId`      | integer | —        | The notebook this belongs to, as `notebooks` gives its id — a subject somebody is working through, like a renovation. Only when they said so. A notebook whose `modules` list does not hold this refuses it.                                                                                |
+| `requestId`       | string  | —        | An id you choose for this call, such as a UUID, so it can be sent again safely: the same `requestId` with the same arguments within a day answers with the first answer, marked `replayed`, and nothing is made twice. Reused for a different call, it is refused with the code `conflict`. |
 
 ### `change_bill` — Change a bill
 
-Rewrite a bill. Only `id` is needed: a field left out is untouched, and nothing is written unless all of it is valid. `0` or `null` clears `due_day` or `due_month`; an empty string clears the notes. Editing the expected amount does not rewrite what past payments recorded — those are snapshots of the day they were paid.
+Rewrite a bill — every field `add_bill` takes. Only `id` is needed: a field left out is untouched, and nothing is written unless all of it is valid. `0` or `null` clears `due_day` or `due_month`; an empty string clears the notes, and an empty `currency` goes back to the account’s default. Editing the amount or the currency does not rewrite what past payments recorded — those are snapshots of the day they were paid.
 
-_Needs `bills:write`; writes; answers with `before` and `after`._
+_Needs `bills:write`; writes; answers with `before` and `after`, `after` being the new bill._
 
-| Parameter         | Type    | Required | What it is                                                                                               |
-| ----------------- | ------- | -------- | -------------------------------------------------------------------------------------------------------- |
-| `id`              | integer | yes      | The bill’s id, as `bills` gives it.                                                                      |
-| `name`            | string  | —        | The name, rewritten.                                                                                     |
-| `amount_expected` | integer | —        | The expected amount, in minor units (cents).                                                             |
-| `rhythm`          | string  | —        | weekly, monthly, yearly, or once.                                                                        |
-| `due_day`         | integer | —        | When it falls due. Monthly: day of the month. Weekly: weekday 1-7 from Monday. Yearly: day of due_month. |
-| `due_month`       | integer | —        | For a yearly bill, the month, 1-12.                                                                      |
-| `pay_lead_days`   | integer | —        | Pay it this many days before the due day (0 = on the day).                                               |
-| `automatic`       | boolean | —        | true when it pays itself, false when somebody pays it. Left alone if not given.                          |
-| `notes`           | string  | —        | Notes, replacing the old ones.                                                                           |
+| Parameter         | Type    | Required | What it is                                                                                                                                                                                                                                |
+| ----------------- | ------- | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `id`              | integer | yes      | The bill’s id, as `bills` gives it.                                                                                                                                                                                                       |
+| `name`            | string  | —        | The name, rewritten.                                                                                                                                                                                                                      |
+| `amount_expected` | integer | —        | The expected amount, in minor units (cents).                                                                                                                                                                                              |
+| `rhythm`          | string  | —        | weekly, monthly, yearly, or once.                                                                                                                                                                                                         |
+| `due_day`         | integer | —        | When it falls due. Monthly: day of the month. Weekly: weekday 1-7 from Monday. Yearly: day of due_month.                                                                                                                                  |
+| `due_month`       | integer | —        | For a yearly bill, the month, 1-12.                                                                                                                                                                                                       |
+| `pay_lead_days`   | integer | —        | Pay it this many days before the due day (0 = on the day).                                                                                                                                                                                |
+| `automatic`       | boolean | —        | true when it pays itself, false when somebody pays it. Left alone if not given.                                                                                                                                                           |
+| `currency`        | string  | —        | A currency code like BRL. An empty string or `null` goes back to the account’s default. Payments already recorded keep the currency they were paid in.                                                                                    |
+| `flow`            | string  | —        | 'out' for a bill, 'in' for income. One of: `out`, `in`.                                                                                                                                                                                   |
+| `notebookId`      | integer | —        | The notebook it belongs to, as `notebooks` gives its id; `0` takes it out of its notebook.                                                                                                                                                |
+| `notes`           | string  | —        | Notes, replacing the old ones.                                                                                                                                                                                                            |
+| `ifUpdatedAt`     | string  | —        | Only change it if nothing has changed it since: the `updatedAt` a read or an earlier change answered with. If something has, nothing is written and the call is refused with the code `conflict`, the current `updatedAt` in its details. |
 
 ### `archive_bill` — Put a bill away, or bring it back
 

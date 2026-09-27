@@ -32,7 +32,7 @@ import ts from 'typescript';
 import * as prettier from 'prettier';
 
 import { anchor } from './lib/anchor.mjs';
-import { literalText, mcpExamples, mcpToolSection } from './lib/mcp-docs.mjs';
+import { literalText, mcpCapabilities, mcpExamples, mcpToolSection } from './lib/mcp-docs.mjs';
 import { REPO, assetNames, downloadUrl, releaseTag, versionOf } from './lib/release-assets.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -1382,6 +1382,11 @@ const FRAGMENTS = {
 		 */
 		return mcpTools().map(mcpToolSection).join('\n\n');
 	},
+	'mcp-capabilities': () =>
+		mcpCapabilities(
+			JSON.parse(readFileSync(join(ROOT, 'src/lib/server/mcp/capabilities.json'), 'utf8')),
+			MCP_MANIFEST
+		),
 	'mcp-examples': () =>
 		mcpExamples(JSON.parse(readFileSync(join(ROOT, 'src/lib/server/mcp/examples.json'), 'utf8'))),
 	'mcp-deprecations': () => {

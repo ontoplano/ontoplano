@@ -34,7 +34,7 @@
 	}: {
 		editing?: Editing;
 		parsers?: { key: string; name: string }[];
-		notebooks?: { id: number; title: string }[];
+		notebooks?: { id: number; title: string; modules: readonly string[] }[];
 		startingNotebook?: number | null;
 	} = $props();
 </script>
@@ -59,7 +59,12 @@
 		</select>
 	</Field>
 
-	<NotebookField {notebooks} value={editing?.notebookId ?? startingNotebook} span={6} />
+	<NotebookField
+		{notebooks}
+		holds="ledgers"
+		value={editing?.notebookId ?? startingNotebook}
+		span={6}
+	/>
 
 	<Field
 		label={t('finance.ledgers.usualExport')}

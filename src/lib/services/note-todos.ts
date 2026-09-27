@@ -1,6 +1,7 @@
 import { checklistItems, withTodoReferences } from '$lib/checklist.js';
 import type { Ctx } from './ctx.js';
 import { getEntry, updateEntry } from './diary.js';
+import { notebookHolds } from './notebooks.js';
 import { createTodo, getTodo, MAX_NOTES_LENGTH, MAX_TITLE_LENGTH, setTodoStatus } from './todos.js';
 
 /**
@@ -43,6 +44,12 @@ export type MadeTodos = { ids: number[]; skipped: number };
 export function makeTodosFromEntry(ctx: Ctx, entryId: number, only?: number[]): MadeTodos {
 	const entry = getEntry(ctx, entryId);
 	const items = checklistItems(entry.content);
+	// Filed with the note only where its notebook has a Tasks tab to show them
+	// in; otherwise they are made unfiled, as from a note in no notebook.
+	const filed =
+		entry.notebookId !== null && notebookHolds(ctx, entry.notebookId, 'tasks')
+			? entry.notebookId
+			: undefined;
 	const wanted = only === undefined ? items.map((_, at) => at) : [...new Set(only)].sort(byNumber);
 
 	const ids: number[] = [];
@@ -62,7 +69,7 @@ export function makeTodosFromEntry(ctx: Ctx, entryId: number, only?: number[]): 
 			// refused for being long.
 			title: item.title.slice(0, MAX_TITLE_LENGTH),
 			notes: joinNotes(item.title.slice(MAX_TITLE_LENGTH).trim(), item.notes),
-			notebookId: entry.notebookId ?? undefined
+			notebookId: filed
 		});
 		if (item.done) setTodoStatus(ctx, id, 'done');
 		ids.push(id);

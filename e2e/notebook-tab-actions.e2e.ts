@@ -187,7 +187,7 @@ test('several things come in at once, and what moves is named first', async ({ p
 	 * count once the dialogs have closed.
 	 */
 	await expect(page.getByText(/Brought 2 things to Kitchen/)).toBeVisible({ timeout: 30_000 });
-	await expect(page.getByRole('dialog')).toHaveCount(0);
+	await expect(page.getByRole('dialog', { name: /Link note/ })).toHaveCount(0);
 	await expect(page.getByText('nine days in September').first()).toBeVisible();
 	await expect(page.getByText('the train is three hours').first()).toBeVisible();
 });

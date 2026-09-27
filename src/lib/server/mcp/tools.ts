@@ -96,9 +96,11 @@ import {
 	createGoal,
 	listAreas,
 	listGoals,
+	moveArea,
 	removeGoalLinks,
 	removeGoalTarget,
 	setTargetProgress,
+	updateArea,
 	updateGoal,
 	type GoalTarget
 } from '$lib/services/goals.js';
@@ -121,6 +123,7 @@ import {
 	importIngredients,
 	ingredientsOf,
 	listRecipes,
+	removeIngredient,
 	setArchived,
 	updateRecipe
 } from '$lib/services/recipes.js';
@@ -1087,6 +1090,17 @@ const ENERGY_REMOVED_IN = '0.190.0';
  */
 const DASHED_TITLE_REMOVED_IN = '0.190.0';
 
+/**
+ * `change_recipe`'s `ingredients`, which added lines while every other set
+ * argument on a change tool replaces its set. Renamed `addIngredients` so the
+ * name says what it does; the old one keeps adding until this release.
+ */
+const RECIPE_INGREDIENTS_REMOVED_IN = '0.190.0';
+
+const RECIPE_INGREDIENTS_WARNING =
+	`\`ingredients\` on \`change_recipe\` is deprecated and will be removed in ${RECIPE_INGREDIENTS_REMOVED_IN}. ` +
+	'Use `addIngredients` (it adds, as this did) and `removeIngredients`. This call was translated.';
+
 const DASHED_TITLE_WARNING =
 	`A \u2014 in a title as a way to file a notebook is deprecated and will be read as part of the name from ${DASHED_TITLE_REMOVED_IN}. ` +
 	'Use `folder`, a slash-separated path such as `Home/Kitchen`. This call was translated.';
@@ -1107,6 +1121,33 @@ function notebookPlace(args: Record<string, unknown>): {
 	}
 	return { title: args.title, folder: args.folder, warning: null };
 }
+
+/**
+ * `requestId`, for a tool whose second identical call would make or count
+ * something twice — see `request-replays.ts`, which is what holds it. A
+ * test fails a create in the capability matrix that does not offer it.
+ */
+const RETRY_ARGS = {
+	requestId: {
+		type: 'string',
+		description:
+			'An id you choose for this call, such as a UUID, so it can be sent again safely: the same `requestId` with the same arguments within a day answers with the first answer, marked `replayed`, and nothing is made twice. Reused for a different call, it is refused with the code `conflict`.'
+	}
+};
+
+/**
+ * `ifUpdatedAt`, for a change tool whose subject keeps an `updated_at` — see
+ * `concurrency.ts`, which is what holds it. A test fails a change tool on
+ * such a subject that does not offer it, and one that offers it on a subject
+ * without the column.
+ */
+const CONCURRENCY_ARGS = {
+	ifUpdatedAt: {
+		type: 'string',
+		description:
+			'Only change it if nothing has changed it since: the `updatedAt` a read or an earlier change answered with. If something has, nothing is written and the call is refused with the code `conflict`, the current `updatedAt` in its details.'
+	}
+};
 
 const ratingArgs = {
 	urgency: {
@@ -1597,7 +1638,8 @@ export const TOOLS: Tool[] = [
 		input: object({
 			id: { type: 'integer', description: 'The habit\u2019s id, as `habits` gave it.' },
 			name: text('The habit by name, when the id is not to hand — "stretching".'),
-			date: text('The day, as YYYY-MM-DD. Today if left out.')
+			date: text('The day, as YYYY-MM-DD. Today if left out.'),
+			...RETRY_ARGS
 		}),
 		subject: habitTick,
 		run: (ctx, args) => {
@@ -1667,7 +1709,8 @@ export const TOOLS: Tool[] = [
 				),
 				...blockNotebookArg,
 				...ratingArgs,
-				...attributeArgs
+				...attributeArgs,
+				...RETRY_ARGS
 			},
 			['date', 'title', 'start_time']
 		),
@@ -2032,7 +2075,8 @@ export const TOOLS: Tool[] = [
 				tags: text(
 					'Labels, comma or space separated — "a1, done". The account’s one vocabulary, the same words a diary entry or an idea is tagged with. Mark your own work with a label of your own where several assistants share a list.'
 				),
-				...attributeArgs
+				...attributeArgs,
+				...RETRY_ARGS
 			},
 			['title']
 		),
@@ -2221,7 +2265,8 @@ export const TOOLS: Tool[] = [
 					'The labels it should carry from now on, comma or space separated — this replaces whatever it had, so include the ones to keep. An empty string takes them all off. Left out, the labels are untouched.'
 				),
 				...ratingArgs,
-				...attributeArgs
+				...attributeArgs,
+				...CONCURRENCY_ARGS
 			},
 			['id']
 		),
@@ -2456,7 +2501,8 @@ export const TOOLS: Tool[] = [
 				},
 				unit: text(
 					'What that number counts — pages, km, sessions. Sent alone, it renames the measure of a goal that counts one thing.'
-				)
+				),
+				...CONCURRENCY_ARGS
 			},
 			['id']
 		),
@@ -2519,6 +2565,7 @@ export const TOOLS: Tool[] = [
 	{
 		name: 'write_entry',
 		title: 'Write a diary entry',
+		creates: 'note' as const,
 		description:
 			'Add an entry. Markdown. Writing one when asked is the point of this tool — keep their words and their voice where you have them, and do not invent an entry nobody asked for. Put it in a notebook when it is about one subject; leave the notebook off for an ordinary day.',
 		scope: 'notes:write',
@@ -2531,7 +2578,8 @@ export const TOOLS: Tool[] = [
 					'What to call it. Optional: a note without one is listed by its first line, which is right for an ordinary day and wrong for anything somebody will come back looking for.'
 				),
 				tags: text('Comma-separated tags.'),
-				notebookId: { type: 'integer', description: 'The notebook it belongs to, if any.' }
+				notebookId: { type: 'integer', description: 'The notebook it belongs to, if any.' },
+				...RETRY_ARGS
 			},
 			['content']
 		),
@@ -2647,7 +2695,8 @@ export const TOOLS: Tool[] = [
 				),
 				tags: text(
 					'The tags it should carry from now on, comma or space separated \u2014 this replaces the ones it has. Left out, they are untouched.'
-				)
+				),
+				...CONCURRENCY_ARGS
 			},
 			['id']
 		),
@@ -2679,7 +2728,8 @@ export const TOOLS: Tool[] = [
 					items: { type: 'integer' },
 					description:
 						'Which checkboxes to take, counting from 0 down the note. Left out, all of them.'
-				}
+				},
+				...RETRY_ARGS
 			},
 			['id']
 		),
@@ -2791,6 +2841,7 @@ export const TOOLS: Tool[] = [
 	{
 		name: 'add_notebook',
 		title: 'Make a notebook',
+		creates: 'notebook' as const,
 		description:
 			'Make a notebook — a subject written against with no deadline: a book, a trip, a renovation. `write_entry` files notes into it by name.',
 		scope: 'notes:write',
@@ -2810,7 +2861,8 @@ export const TOOLS: Tool[] = [
 				),
 				modules: text(
 					'What it holds, comma separated \u2014 notes, tasks, goals, ideas, inventory, ledgers, bills, habits, workouts, recipes. Notes and tasks unless this says otherwise, and notes are always in it. Only name what the subject actually accumulates: nine tabs on a reading list is the app deciding what somebody\u2019s subject is about.'
-				)
+				),
+				...RETRY_ARGS
 			},
 			['title']
 		),
@@ -2853,7 +2905,8 @@ export const TOOLS: Tool[] = [
 				),
 				modules: text(
 					'What it holds, comma separated \u2014 notes, tasks, goals, ideas, inventory, ledgers, bills, habits, workouts, recipes. The whole list, not an addition. Notes are always in it. Switching one off keeps whatever is already filed under it; it stops being a tab, and stays in its own room. Left out, it is untouched.'
-				)
+				),
+				...CONCURRENCY_ARGS
 			},
 			['id']
 		),
@@ -2990,6 +3043,7 @@ export const TOOLS: Tool[] = [
 	{
 		name: 'add_idea',
 		title: 'Catch an idea',
+		creates: 'idea' as const,
 		description:
 			'Write an idea down without deciding where it belongs. The lowest-friction thing here; prefer it to a todo when the person has not said they will do it.',
 		scope: 'ideas:write',
@@ -3002,8 +3056,9 @@ export const TOOLS: Tool[] = [
 				notebookId: {
 					type: 'integer',
 					description:
-						'The notebook this belongs to, as `notebooks` gives its id — a subject somebody is working through, like a renovation. Only when they said so, and only when that notebook’s `modules` list says it holds this.'
-				}
+						'The notebook this belongs to, as `notebooks` gives its id — a subject somebody is working through, like a renovation. Only when they said so. A notebook whose `modules` list does not hold this refuses it.'
+				},
+				...RETRY_ARGS
 			},
 			['content']
 		),
@@ -3051,7 +3106,8 @@ export const TOOLS: Tool[] = [
 				content: text('The idea, rewritten. It cannot be emptied.'),
 				tags: text(
 					'Comma-separated tags, replacing the old ones. An empty string takes them all off; left out, they are untouched.'
-				)
+				),
+				...CONCURRENCY_ARGS
 			},
 			['id']
 		),
@@ -3247,6 +3303,7 @@ export const TOOLS: Tool[] = [
 	{
 		name: 'add_inventory_item',
 		title: 'Add to the shopping list',
+		creates: 'item' as const,
 		description:
 			'Put something on the list. If the cupboard already has it, this says so rather than adding a second one.',
 		scope: 'inventory:write',
@@ -3267,8 +3324,9 @@ export const TOOLS: Tool[] = [
 				notebookId: {
 					type: 'integer',
 					description:
-						'The notebook this belongs to, as `notebooks` gives its id — a subject somebody is working through, like a renovation. Only when they said so, and only when that notebook’s `modules` list says it holds this.'
-				}
+						'The notebook this belongs to, as `notebooks` gives its id — a subject somebody is working through, like a renovation. Only when they said so. A notebook whose `modules` list does not hold this refuses it.'
+				},
+				...RETRY_ARGS
 			},
 			['name']
 		),
@@ -3387,6 +3445,7 @@ export const TOOLS: Tool[] = [
 	{
 		name: 'add_recipe',
 		title: 'Add a recipe',
+		creates: 'recipe' as const,
 		description:
 			'Write a recipe down. Ingredients are one per line — "200 g flour", "2 eggs" — and each becomes a shopping item, so the list knows about them the day the meal is planned.',
 		scope: 'kitchen:write',
@@ -3403,8 +3462,9 @@ export const TOOLS: Tool[] = [
 				notebookId: {
 					type: 'integer',
 					description:
-						'The notebook this belongs to, as `notebooks` gives its id — a subject somebody is working through, like a renovation. Only when they said so, and only when that notebook’s `modules` list says it holds this.'
-				}
+						'The notebook this belongs to, as `notebooks` gives its id — a subject somebody is working through, like a renovation. Only when they said so. A notebook whose `modules` list does not hold this refuses it.'
+				},
+				...RETRY_ARGS
 			},
 			['title']
 		),
@@ -3429,25 +3489,48 @@ export const TOOLS: Tool[] = [
 		/*
 		 * `kitchen:write`\u2019s sentence has promised "add and change recipes"
 		 * since the scope was written; this is the change half. Ingredients are
-		 * additive here — replacing the whole set from a partial list would
-		 * silently delete shopping items other meals point at.
+		 * a collection, changed by naming what to add and what to remove: a
+		 * replacing list sent from a partial read would drop lines nobody meant
+		 * to drop. `ingredients` was the old spelling of `addIngredients`, which
+		 * read like a replacement and appended — it keeps appending, and says so.
 		 */
 		name: 'change_recipe',
 		title: 'Change a recipe',
 		description:
-			'Change a recipe\u2019s title, method, servings, time or source, and add ingredients — one per line, quantity first. Only `id` is needed: a field left out is untouched, and existing ingredients stay. An empty string clears a text field, `0` or `null` clears servings or time. The recipe and its new ingredients land together or not at all.',
+			'Change a recipe\u2019s title, method, servings, time, source or notebook, and its ingredients: `addIngredients` adds lines (one per line, quantity first), `removeIngredients` takes lines out by the ingredient ids `recipes` gives. Only `id` is needed: a field left out is untouched, and ingredients not named stay. An empty string clears a text field, `0` or `null` clears servings or time. The recipe and its ingredients land together or not at all.',
 		scope: 'kitchen:write',
 		writes: true,
-		refs: [{ arg: 'id', kind: 'recipe' }],
+		refs: [
+			{ arg: 'id', kind: 'recipe' },
+			{ arg: 'removeIngredients', kind: 'ingredient' },
+			{ arg: 'notebookId', kind: 'notebook', zeroIsNone: true }
+		],
 		input: object(
 			{
 				id: { type: 'integer', description: 'The recipe\u2019s id, as `recipes` gives it.' },
 				title: text('The new name.'),
 				method: text('How to make it, as Markdown.'),
-				ingredients: text('Ingredients to add, one per line.'),
+				addIngredients: text('Ingredients to add, one per line, quantity first.'),
+				removeIngredients: {
+					type: 'array',
+					items: { type: 'integer' },
+					description:
+						'Ingredient ids to take out of this recipe, as its ingredient list in `recipes` gives them (`itemId`). The shopping item itself stays. Only this recipe\u2019s own ingredients; any other id refuses the whole call.'
+				},
+				ingredients: {
+					type: 'string',
+					deprecated: true,
+					description: `Deprecated — use \`addIngredients\`, which does the same: it adds these lines and keeps the ones already there. Removed in ${RECIPE_INGREDIENTS_REMOVED_IN}.`
+				},
 				servings: { type: 'integer', description: 'How many it feeds.' },
 				minutes: { type: 'integer', description: 'How long it takes.' },
-				source: text('Where it came from.')
+				source: text('Where it came from.'),
+				notebookId: {
+					type: 'integer',
+					description:
+						'The notebook it belongs to, as `notebooks` gives its id; `0` takes it out of its notebook.'
+				},
+				...CONCURRENCY_ARGS
 			},
 			['id']
 		),
@@ -3460,10 +3543,25 @@ export const TOOLS: Tool[] = [
 				notes: current.notes,
 				servings: numberChanged(args.servings, current.servings),
 				minutes: numberChanged(args.minutes, current.minutes),
-				source: args.source ?? current.source
+				source: args.source ?? current.source,
+				...(notebookSent(args) === undefined ? {} : { notebookId: notebookSent(args) })
 			});
-			const added = args.ingredients ? importIngredients(ctx, id, args.ingredients) : 0;
-			return { ok: true, ingredients: added };
+			const removing = ((args.removeIngredients as unknown[] | undefined) ?? []).map(Number);
+			if (removing.length > 0) {
+				const lines = new Map(ingredientsOf(ctx, id).map((line) => [line.itemId, line.id]));
+				for (const itemId of removing) {
+					const line = lines.get(itemId);
+					if (line === undefined)
+						throw new ValidationError(`Ingredient ${itemId} is not in this recipe.`);
+					removeIngredient(ctx, line);
+				}
+			}
+			const adding = [args.addIngredients, args.ingredients].filter(Boolean).join('\n');
+			const added = adding ? importIngredients(ctx, id, adding) : 0;
+			const answer = { ok: true, ingredients: added, removed: removing.length };
+			return args.ingredients === undefined
+				? answer
+				: { ...answer, warning: RECIPE_INGREDIENTS_WARNING };
 		}
 	},
 	{
@@ -3568,6 +3666,7 @@ export const TOOLS: Tool[] = [
 	{
 		name: 'add_inventory_category',
 		title: 'Add a shopping section',
+		creates: 'inventoryCategory' as const,
 		description:
 			'Make a new section for the shopping list — and say whether it holds food, because only food sections can feed recipes as ingredients.',
 		scope: 'inventory:write',
@@ -3578,7 +3677,8 @@ export const TOOLS: Tool[] = [
 				holdsFood: {
 					type: 'boolean',
 					description: 'Whether what is in it is food. Off if left out.'
-				}
+				},
+				...RETRY_ARGS
 			},
 			['name']
 		),
@@ -3646,7 +3746,8 @@ export const TOOLS: Tool[] = [
 		input: object(
 			{
 				id: { type: 'integer', description: 'The item\u2019s id.' },
-				price: text('The price, in the account\u2019s own currency — "6,50" or "6.50" both work.')
+				price: text('The price, in the account\u2019s own currency — "6,50" or "6.50" both work.'),
+				...RETRY_ARGS
 			},
 			['id', 'price']
 		),
@@ -3665,6 +3766,7 @@ export const TOOLS: Tool[] = [
 		 */
 		name: 'add_goal',
 		title: 'Write down a goal they made',
+		creates: 'goal' as const,
 		description:
 			'Transcribe a goal the person just committed to, in their own words — "apply to twenty companies this quarter". Never invent one, and never add a goal they did not say: a goal is a commitment, and the commitment is theirs. `goal_areas` lists the areas one can be filed under.',
 		scope: 'tasks:write',
@@ -3686,7 +3788,8 @@ export const TOOLS: Tool[] = [
 					type: 'integer',
 					description:
 						'The notebook it belongs to, as `notebooks` gives it — a goal that is part of one subject rather than the year in general.'
-				}
+				},
+				...RETRY_ARGS
 			},
 			['title', 'horizon']
 		),
@@ -3734,7 +3837,8 @@ export const TOOLS: Tool[] = [
 				id: { type: 'integer', description: 'The goal\u2019s id.' },
 				value: { type: 'number', description: 'Where it stands now, absolute.' },
 				delta: { type: 'number', description: 'How much just happened, added to where it stands.' },
-				unit: text('Which measure moved, by its unit — only needed when the goal has several.')
+				unit: text('Which measure moved, by its unit — only needed when the goal has several.'),
+				...RETRY_ARGS
 			},
 			['id']
 		),
@@ -3774,7 +3878,8 @@ export const TOOLS: Tool[] = [
 				unit: text('What is being counted — gigs, songs, km.'),
 				measure: text(
 					'A workout measure this counts, in the word the sessions use \u2014 "ran", "deadlifted". Set it and the number is the sum of what the register holds for that activity inside the goal\u2019s period, read rather than typed; `workout_sessions` and `workouts` show what has been measured. Leave it off for a number the person keeps themselves.'
-				)
+				),
+				...RETRY_ARGS
 			},
 			['goalId', 'value']
 		),
@@ -3834,11 +3939,53 @@ export const TOOLS: Tool[] = [
 		input: object(
 			{
 				name: text('The area\u2019s name.'),
-				color: text('A hex colour like #1d4ed8, if they chose one.')
+				color: text('A hex colour like #1d4ed8, if they chose one.'),
+				...RETRY_ARGS
 			},
 			['name']
 		),
 		run: (ctx, args) => ({ id: createArea(ctx, { name: args.name, color: args.color }) })
+	},
+	{
+		name: 'change_goal_area',
+		title: 'Rename or recolour a goal area',
+		description:
+			'Rename an area, or change its colour. Only `id` is needed: a field left out is untouched. A name another area already has is refused rather than merged. The goals filed under it stay where they are.',
+		scope: 'tasks:write',
+		writes: true,
+		refs: [{ arg: 'id', kind: 'goalArea' }],
+		input: object(
+			{
+				id: { type: 'integer', description: 'The area\u2019s id, as `goal_areas` gives it.' },
+				name: text('The new name.'),
+				color: text('A hex colour like #1d4ed8.')
+			},
+			['id']
+		),
+		run: (ctx, args) => {
+			updateArea(ctx, Number(args.id), { name: args.name, color: args.color });
+			return { ok: true };
+		}
+	},
+	{
+		name: 'move_goal_area',
+		title: 'Move a goal area up or down',
+		description:
+			'Move an area one place earlier (`delta: -1`) or later (`delta: 1`) in the order `goal_areas` lists them, which is the order the app shows them in. Moving the first one earlier, or the last one later, changes nothing.',
+		scope: 'tasks:write',
+		writes: true,
+		refs: [{ arg: 'id', kind: 'goalArea' }],
+		input: object(
+			{
+				id: { type: 'integer', description: 'The area\u2019s id, as `goal_areas` gives it.' },
+				delta: { type: 'integer', enum: [-1, 1], description: '-1 for earlier, 1 for later.' }
+			},
+			['id', 'delta']
+		),
+		run: (ctx, args) => {
+			moveArea(ctx, Number(args.id), Number(args.delta));
+			return { ok: true, areas: listAreas(ctx) };
+		}
 	},
 
 	// ── Habits, whole ────────────────────────────────────────────────────────
@@ -3855,6 +4002,7 @@ export const TOOLS: Tool[] = [
 	{
 		name: 'add_habit',
 		title: 'Add a habit',
+		creates: 'habit' as const,
 		description:
 			'Start tracking a habit: something to keep doing (`good`), to avoid (`bad`), or just to watch (`neutral`). Scheduled days come in the same shape `all_habits` shows for existing ones; leave them out for every day.',
 		scope: 'habits:write',
@@ -3875,8 +4023,9 @@ export const TOOLS: Tool[] = [
 				notebookId: {
 					type: 'integer',
 					description:
-						'The notebook this belongs to, as `notebooks` gives its id — a subject somebody is working through, like a renovation. Only when they said so, and only when that notebook’s `modules` list says it holds this.'
-				}
+						'The notebook this belongs to, as `notebooks` gives its id — a subject somebody is working through, like a renovation. Only when they said so. A notebook whose `modules` list does not hold this refuses it.'
+				},
+				...RETRY_ARGS
 			},
 			['name']
 		),
@@ -3959,7 +4108,8 @@ export const TOOLS: Tool[] = [
 					type: 'boolean',
 					description:
 						'Whether it should make a noise as well as showing. Silent unless asked; do not turn this on unless they said so.'
-				}
+				},
+				...RETRY_ARGS
 			},
 			['at', 'message']
 		),
@@ -4037,7 +4187,8 @@ export const TOOLS: Tool[] = [
 					type: 'integer',
 					description: 'How many minutes before the start. 0 is at the start.'
 				},
-				message: text('What the nudge should say. The block\u2019s own name if left out.')
+				message: text('What the nudge should say. The block\u2019s own name if left out.'),
+				...RETRY_ARGS
 			},
 			['id', 'minutes']
 		),
@@ -4085,6 +4236,7 @@ export const TOOLS: Tool[] = [
 	{
 		name: 'add_repeating_block',
 		title: 'Put a task block on every week',
+		creates: 'repeatingBlock' as const,
 		description:
 			'Add a block that comes back — "gym on Tuesdays at seven", "the bins every other Tuesday", "rent on the first". Weekly unless `repeats` says otherwise. This changes every week from now on; `add_block` is the one for a single day. Weekdays count from Monday: 0 is Monday, 6 is Sunday. A block can be a bare category rather than a named thing — leave the title out and it shows as the category itself, which is what "put work in those hours" means.',
 		scope: 'schedule:write',
@@ -4109,7 +4261,8 @@ export const TOOLS: Tool[] = [
 				...blockNotebookArg,
 				...repeatArgs,
 				...ratingArgs,
-				...attributeArgs
+				...attributeArgs,
+				...RETRY_ARGS
 			},
 			['weekday', 'start_time']
 		),
@@ -4164,7 +4317,8 @@ export const TOOLS: Tool[] = [
 				remind_minutes: { type: 'integer', description: 'The new reminder lead. 0 turns it off.' },
 				...blockNotebookArg,
 				...repeatArgs,
-				...attributeArgs
+				...attributeArgs,
+				...CONCURRENCY_ARGS
 			},
 			['id']
 		),
@@ -4248,6 +4402,7 @@ export const TOOLS: Tool[] = [
 	{
 		name: 'add_activity',
 		title: 'Name a new recurring thing',
+		creates: 'activity' as const,
 		description:
 			'Add an activity — a named thing inside a category, like "piano" inside "music" — so blocks can name it instead of the bare category.',
 		scope: 'schedule:write',
@@ -4256,7 +4411,8 @@ export const TOOLS: Tool[] = [
 			{
 				name: text('What it is called.'),
 				category: text('The category it belongs to, by name — `categories` lists them.'),
-				description: text('A line about it, shown where it is edited.')
+				description: text('A line about it, shown where it is edited.'),
+				...RETRY_ARGS
 			},
 			['name']
 		),
@@ -4288,7 +4444,8 @@ export const TOOLS: Tool[] = [
 				id: { type: 'integer', description: 'The activity\u2019s id, as `activities` gave it.' },
 				name: text('A new name.'),
 				description: text('A new line about it. Pass an empty string to clear it.'),
-				category: text('Move it to this category, by name.')
+				category: text('Move it to this category, by name.'),
+				...CONCURRENCY_ARGS
 			},
 			['id']
 		),
@@ -4363,6 +4520,7 @@ export const TOOLS: Tool[] = [
 	{
 		name: 'add_person',
 		title: 'Add a person',
+		creates: 'person' as const,
 		description:
 			'Keep a page for somebody — name at minimum; birthday as YYYY-MM-DD, or --MM-DD when the year is unknown. A birthday written down announces itself on the morning, unless told not to.',
 		scope: 'people:write',
@@ -4382,7 +4540,8 @@ export const TOOLS: Tool[] = [
 				},
 				phone: text('A phone number.'),
 				email: text('An email address.'),
-				notes: text('Anything else worth keeping.')
+				notes: text('Anything else worth keeping.'),
+				...RETRY_ARGS
 			},
 			['name']
 		),
@@ -4422,7 +4581,8 @@ export const TOOLS: Tool[] = [
 				},
 				phone: text('The new phone number.'),
 				email: text('The new email address.'),
-				notes: text('The new notes.')
+				notes: text('The new notes.'),
+				...CONCURRENCY_ARGS
 			},
 			['id']
 		),
@@ -4464,7 +4624,8 @@ export const TOOLS: Tool[] = [
 		input: object(
 			{
 				content: text('The win, exactly as they said it.'),
-				date: text('The day it belongs to, as YYYY-MM-DD. Today if left out.')
+				date: text('The day it belongs to, as YYYY-MM-DD. Today if left out.'),
+				...RETRY_ARGS
 			},
 			['content']
 		),
@@ -4549,7 +4710,8 @@ export const TOOLS: Tool[] = [
 				stream: text('The stream\u2019s slug, as `data_streams` gives it.'),
 				value: { type: 'number', description: 'The reading.' },
 				at: text('When it was taken, as an ISO instant. Now if left out.'),
-				text: text('A word beside the number, if they said one.')
+				text: text('A word beside the number, if they said one.'),
+				...RETRY_ARGS
 			},
 			['stream', 'value']
 		),
@@ -4662,6 +4824,7 @@ export const TOOLS: Tool[] = [
 	{
 		name: 'add_location',
 		title: 'Add a location',
+		creates: 'location' as const,
 		description:
 			'Add a location things can live in — a room, a chest, a drawer — optionally inside another location.',
 		scope: 'locations:write',
@@ -4670,7 +4833,8 @@ export const TOOLS: Tool[] = [
 		input: object(
 			{
 				name: text('What the location is called.'),
-				parent_id: { type: 'integer', description: 'The location it is inside, from `locations`.' }
+				parent_id: { type: 'integer', description: 'The location it is inside, from `locations`.' },
+				...RETRY_ARGS
 			},
 			['name']
 		),
@@ -4695,7 +4859,8 @@ export const TOOLS: Tool[] = [
 					type: 'integer',
 					description:
 						'The new parent. `0` or `null` moves it to the top level; left out, it stays where it is.'
-				}
+				},
+				...CONCURRENCY_ARGS
 			},
 			['id']
 		),
@@ -4863,6 +5028,7 @@ export const TOOLS: Tool[] = [
 	{
 		name: 'log_workout',
 		title: 'Write down a session',
+		creates: 'workoutSession' as const,
 		description:
 			'Record that a workout happened, and how much of what was done. Everything but the workout is optional: a session with no lines is one that happened. Use the person’s own words and units — "ran" and "km", not a normalised distance — because that is what a chart of it will be grouped by. `workout_sessions` shows what they have called things before.',
 		scope: 'workouts:write',
@@ -4886,7 +5052,8 @@ export const TOOLS: Tool[] = [
 						},
 						required: ['activity']
 					}
-				}
+				},
+				...RETRY_ARGS
 			},
 			['workout_id']
 		),
@@ -4923,7 +5090,8 @@ export const TOOLS: Tool[] = [
 						},
 						required: ['activity']
 					}
-				}
+				},
+				...CONCURRENCY_ARGS
 			},
 			['id']
 		),
@@ -5013,11 +5181,12 @@ export const TOOLS: Tool[] = [
 	{
 		name: 'add_workout_category',
 		title: 'Add a category of workout',
+		creates: 'workoutCategory' as const,
 		description:
 			'Add a category to this account\u2019s list — "Swimming", "Physio". Answering with one that already exists returns it rather than making a second.',
 		scope: 'workouts:write',
 		writes: true,
-		input: object({ name: text('What the category is called.') }, ['name']),
+		input: object({ name: text('What the category is called.'), ...RETRY_ARGS }, ['name']),
 		run: (ctx, args) => ({ id: createWorkoutCategory(ctx, args.name) })
 	},
 	{
@@ -5043,6 +5212,7 @@ export const TOOLS: Tool[] = [
 	{
 		name: 'add_workout',
 		title: 'Add a workout',
+		creates: 'workout' as const,
 		description:
 			'Write a workout down: a title, a category (one of the account\u2019s own, from `workout_categories`), a plan as Markdown, and roughly how long it takes. Scheduling it onto a day is a block with its workoutId, the way a meal is a block with a recipe.',
 		scope: 'workouts:write',
@@ -5062,8 +5232,9 @@ export const TOOLS: Tool[] = [
 				notebookId: {
 					type: 'integer',
 					description:
-						'The notebook this belongs to, as `notebooks` gives its id — a subject somebody is working through, like a renovation. Only when they said so, and only when that notebook’s `modules` list says it holds this.'
-				}
+						'The notebook this belongs to, as `notebooks` gives its id — a subject somebody is working through, like a renovation. Only when they said so. A notebook whose `modules` list does not hold this refuses it.'
+				},
+				...RETRY_ARGS
 			},
 			['title']
 		),
@@ -5097,7 +5268,8 @@ export const TOOLS: Tool[] = [
 				category_id: { type: 'integer', description: 'Its category, from `workout_categories`.' },
 				plan: text('The plan, rewritten.'),
 				minutes: { type: 'integer', description: 'Roughly how long it takes.' },
-				notes: text('Notes, replacing the old ones.')
+				notes: text('Notes, replacing the old ones.'),
+				...CONCURRENCY_ARGS
 			},
 			['id']
 		),
@@ -5169,6 +5341,7 @@ export const TOOLS: Tool[] = [
 	{
 		name: 'add_ledger',
 		title: 'Add a ledger',
+		creates: 'ledger' as const,
 		description:
 			'A new place money moves through. `kind` is bank, card, cash or other; `default_parser` preselects an export format when importing into it.',
 		scope: 'statements:write',
@@ -5182,8 +5355,9 @@ export const TOOLS: Tool[] = [
 				notebookId: {
 					type: 'integer',
 					description:
-						'The notebook this belongs to, as `notebooks` gives its id — a subject somebody is working through, like a renovation. Only when they said so, and only when that notebook’s `modules` list says it holds this.'
-				}
+						'The notebook this belongs to, as `notebooks` gives its id — a subject somebody is working through, like a renovation. Only when they said so. A notebook whose `modules` list does not hold this refuses it.'
+				},
+				...RETRY_ARGS
 			},
 			['name']
 		),
@@ -5214,7 +5388,8 @@ export const TOOLS: Tool[] = [
 					description: 'Signed minor units — negative when money left.'
 				},
 				description: text('What the bank would call it. The sorting rules read this.'),
-				external_id: text("The source's own id for it, if it has one.")
+				external_id: text("The source's own id for it, if it has one."),
+				...RETRY_ARGS
 			},
 			['ledger_id', 'occurred_on', 'amount_cents', 'description']
 		),
@@ -5313,6 +5488,7 @@ export const TOOLS: Tool[] = [
 	{
 		name: 'add_sort_rule',
 		title: 'Add a sorting rule',
+		creates: 'sortRule' as const,
 		description:
 			'A regular expression that sorts statement lines, applied at read time — past lines included. Categories partition (first match, in position order, wins); tags overlap freely.',
 		scope: 'statements:write',
@@ -5321,7 +5497,8 @@ export const TOOLS: Tool[] = [
 			{
 				kind: text("'category' or 'tag'."),
 				name: text('What the category or tag is called.'),
-				pattern: text('A JavaScript regular expression, matched case-insensitively.')
+				pattern: text('A JavaScript regular expression, matched case-insensitively.'),
+				...RETRY_ARGS
 			},
 			['kind', 'name', 'pattern']
 		),
@@ -5451,6 +5628,7 @@ export const TOOLS: Tool[] = [
 	{
 		name: 'add_bill',
 		title: 'Add a bill',
+		creates: 'bill' as const,
 		description:
 			'Write down a bill you expect to pay: a name, the expected amount in minor units (cents), and a rhythm (weekly, monthly, yearly, once). A monthly bill can name the day of the month it falls due.',
 		scope: 'bills:write',
@@ -5485,8 +5663,9 @@ export const TOOLS: Tool[] = [
 				notebookId: {
 					type: 'integer',
 					description:
-						'The notebook this belongs to, as `notebooks` gives its id — a subject somebody is working through, like a renovation. Only when they said so, and only when that notebook’s `modules` list says it holds this.'
-				}
+						'The notebook this belongs to, as `notebooks` gives its id — a subject somebody is working through, like a renovation. Only when they said so. A notebook whose `modules` list does not hold this refuses it.'
+				},
+				...RETRY_ARGS
 			},
 			['name']
 		),
@@ -5510,10 +5689,13 @@ export const TOOLS: Tool[] = [
 		name: 'change_bill',
 		title: 'Change a bill',
 		description:
-			'Rewrite a bill. Only `id` is needed: a field left out is untouched, and nothing is written unless all of it is valid. `0` or `null` clears `due_day` or `due_month`; an empty string clears the notes. Editing the expected amount does not rewrite what past payments recorded — those are snapshots of the day they were paid.',
+			'Rewrite a bill — every field `add_bill` takes. Only `id` is needed: a field left out is untouched, and nothing is written unless all of it is valid. `0` or `null` clears `due_day` or `due_month`; an empty string clears the notes, and an empty `currency` goes back to the account\u2019s default. Editing the amount or the currency does not rewrite what past payments recorded — those are snapshots of the day they were paid.',
 		scope: 'bills:write',
 		writes: true,
-		refs: [{ arg: 'id', kind: 'bill' }],
+		refs: [
+			{ arg: 'id', kind: 'bill' },
+			{ arg: 'notebookId', kind: 'notebook', zeroIsNone: true }
+		],
 		input: object(
 			{
 				id: { type: 'integer', description: 'The bill\u2019s id, as `bills` gives it.' },
@@ -5538,7 +5720,23 @@ export const TOOLS: Tool[] = [
 					description:
 						'true when it pays itself, false when somebody pays it. Left alone if not given.'
 				},
-				notes: text('Notes, replacing the old ones.')
+				currency: {
+					type: 'string',
+					description:
+						'A currency code like BRL. An empty string or `null` goes back to the account\u2019s default. Payments already recorded keep the currency they were paid in.'
+				},
+				flow: {
+					type: 'string',
+					enum: ['out', 'in'],
+					description: "'out' for a bill, 'in' for income."
+				},
+				notebookId: {
+					type: 'integer',
+					description:
+						'The notebook it belongs to, as `notebooks` gives its id; `0` takes it out of its notebook.'
+				},
+				notes: text('Notes, replacing the old ones.'),
+				...CONCURRENCY_ARGS
 			},
 			['id']
 		),
@@ -5552,13 +5750,14 @@ export const TOOLS: Tool[] = [
 				dueMonth: numberChanged(args.due_month, current.dueMonth),
 				payLeadDays: args.pay_lead_days ?? current.payLeadDays,
 				automatic: typeof args.automatic === 'boolean' ? args.automatic : current.automatic,
-				currency: current.currency,
+				currency: args.currency === undefined ? current.currency : args.currency,
 				// Left out, the service reads "out": an income changed here
 				// used to come back an expense.
-				flow: current.flow,
+				flow: args.flow ?? current.flow,
 				goalId: current.goalId,
 				categoryId: current.categoryId,
-				notes: args.notes ?? current.notes
+				notes: args.notes ?? current.notes,
+				...(notebookSent(args) === undefined ? {} : { notebookId: notebookSent(args) })
 			});
 			return { ok: true };
 		}

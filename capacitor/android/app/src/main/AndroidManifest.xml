@@ -43,6 +43,39 @@
             </intent-filter>
         </receiver>
 
+        <!--
+            The notebook widget: one tab of one notebook on the home screen.
+            What it shows is chosen on the instance; the setup activity only
+            opens the app there. See NotebookWidget.java.
+        -->
+        <receiver
+            android:name=".NotebookWidget"
+            android:exported="false"
+            android:label="@string/notebook_widget_name">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/notebook_widget_info" />
+        </receiver>
+
+        <service
+            android:name=".NotebookWidgetService"
+            android:exported="false"
+            android:permission="android.permission.BIND_REMOTEVIEWS" />
+
+        <!-- Exported because the launcher starts it to configure a placed widget. -->
+        <activity
+            android:name=".NotebookWidgetSetup"
+            android:exported="true"
+            android:excludeFromRecents="true"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_CONFIGURE" />
+            </intent-filter>
+        </activity>
+
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.fileprovider"

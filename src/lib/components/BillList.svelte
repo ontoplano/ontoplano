@@ -47,7 +47,7 @@
 		bills: Listed[];
 		currency: Currency;
 		actions: BillActionNames;
-		notebooks?: { id: number; title: string }[];
+		notebooks?: { id: number; title: string; modules: readonly string[] }[];
 		startingNotebook?: number | null;
 		onattach?: (id: number) => void;
 		empty?: Snippet;

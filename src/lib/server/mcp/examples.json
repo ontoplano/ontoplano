@@ -93,5 +93,19 @@
 		"arguments": { "id": 2, "urgncy": 3 },
 		"refused": "`urgncy` is not an argument this tool takes.",
 		"note": "A misspelt argument is named back, and nothing is written."
+	},
+	{
+		"ask": "Put ‘buy light bulbs’ on the list.",
+		"tool": "add_task",
+		"arguments": { "title": "Buy light bulbs", "requestId": "5f1c-bulbs" },
+		"answer": { "id": 3 },
+		"note": "`requestId` is any string the assistant picks for this one call."
+	},
+	{
+		"ask": "(No answer came back, so the assistant sends the same call again.)",
+		"tool": "add_task",
+		"arguments": { "title": "Buy light bulbs", "requestId": "5f1c-bulbs" },
+		"answer": { "id": 3, "replayed": true },
+		"note": "Same `requestId` and arguments within a day: the first answer comes back, marked `replayed`, and there is still one task."
 	}
 ]

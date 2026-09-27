@@ -19,11 +19,13 @@ import {
 	ARRIVING_AT,
 	ARRIVING_HOME,
 	ARRIVING_TO_ASK,
+	OPENING_PARAM,
 	RANG_PARAM,
 	SPINNING_PARAM,
 	forgetInstance,
 	inPhoneApp,
 	launchAddress,
+	openingOn,
 	rememberInstance,
 	storedInstance
 } from '$lib/instance-choice';
@@ -75,7 +77,8 @@ if (inPhoneApp() && isIsolatedBuild()) {
 		 * router, in the root layout, where it is one line of `goto`.
 		 */
 		const going = storedInstance();
-		if (going) void openInstance(going);
+		// A widget's tap names the page; the instance is still the one chosen.
+		if (going) void openInstance(going, false, openingOn(going, carried.get(OPENING_PARAM)));
 	}
 }
 
@@ -92,7 +95,11 @@ if (inPhoneApp() && isIsolatedBuild()) {
  * and it is behind a short wait: a launch must not hang on it. If it takes too
  * long the app opens as it always did and the next launch asks again.
  */
-async function openInstance(instance: string, spinning = false): Promise<void> {
+async function openInstance(
+	instance: string,
+	spinning = false,
+	page: string | null = null
+): Promise<void> {
 	let ring = false;
 	try {
 		const already = await Promise.race([
@@ -103,7 +110,7 @@ async function openInstance(instance: string, spinning = false): Promise<void> {
 	} catch {
 		// No shell, or it refused: open the instance and say nothing.
 	}
-	location.replace(launchAddress(instance, { ring, spinning }));
+	location.replace(launchAddress(page ?? instance, { ring, spinning }));
 }
 
 /** Long enough for a native call, short enough not to be a launch somebody notices. */

@@ -390,7 +390,7 @@ export function createOwnedThing(
 }
 
 export function updateItem(ctx: Ctx, id: number, raw: ItemInput): void {
-	const values = parseItem(ctx, raw);
+	const values = parseItem(ctx, raw, id);
 
 	const res = db
 		.update(inventoryItems)
@@ -687,7 +687,7 @@ function ownedItem(ctx: Ctx, id: number) {
 	return row;
 }
 
-function parseItem(ctx: Ctx, raw: ItemInput) {
+function parseItem(ctx: Ctx, raw: ItemInput, id?: number) {
 	return {
 		name: str(raw.name, 'name', { max: MAX_NAME_LENGTH }),
 		type: oneOf(raw.type, 'type', ITEM_TYPES),
@@ -698,7 +698,12 @@ function parseItem(ctx: Ctx, raw: ItemInput) {
 		priceCents: parseMoney(raw.price, getCurrency(ctx.userId)),
 		idealQty: parseIdealQty(raw.idealQty),
 		// Only when the caller mentioned it — see `notebookPatch`.
-		...notebookPatch(ctx, raw)
+		...notebookPatch(
+			ctx,
+			raw,
+			'inventory',
+			id === undefined ? undefined : { table: inventoryItems, id }
+		)
 	};
 }
 

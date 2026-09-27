@@ -48,7 +48,7 @@
 	}: {
 		editing?: Editing;
 		rhythm?: string;
-		notebooks?: { id: number; title: string }[];
+		notebooks?: { id: number; title: string; modules: readonly string[] }[];
 		startingNotebook?: number | null;
 	} = $props();
 
@@ -173,5 +173,10 @@
 		</span>
 	</Field>
 
-	<NotebookField {notebooks} value={editing?.notebookId ?? startingNotebook} span={6} />
+	<NotebookField
+		{notebooks}
+		holds="bills"
+		value={editing?.notebookId ?? startingNotebook}
+		span={6}
+	/>
 </FormGrid>

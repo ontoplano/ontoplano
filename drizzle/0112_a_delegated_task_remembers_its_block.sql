@@ -1,0 +1,1 @@
+ALTER TABLE `todo_tasks` ADD `delegated_slot_id` integer REFERENCES exceptional_tasks(id);

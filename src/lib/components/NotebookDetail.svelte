@@ -71,6 +71,7 @@
 	import WorkoutFields from '$lib/components/fields/WorkoutFields.svelte';
 	import { NOTEBOOK_IDEA_ACTIONS } from '$lib/idea-action-names';
 	import { DEFAULT_MODULES, moduleMeta, type NotebookModule } from '$lib/notebook-modules';
+	import { ITEM_PARAM, TAB_PARAM } from '$lib/notebook-widget';
 	import { moduleGlyph } from '$lib/glyphs';
 	import type { Currency } from '$lib/money';
 	import { NOTEBOOK_TODO_ACTIONS } from '$lib/todo-actions';
@@ -229,7 +230,7 @@
 		parsers?: { key: string; name: string }[];
 		/** For the money a ledger holds and a bill expects. */
 		currency?: Currency;
-		pickableNotebooks?: { id: number; title: string }[];
+		pickableNotebooks?: { id: number; title: string; modules: readonly string[] }[];
 		/** Where a thing can live, for the Inventory tab's form. */
 		locations?: { id: number; name: string; path: string }[];
 		areas?: { id: number; name: string }[];
@@ -720,8 +721,35 @@
 		const subject = showingOrphans ? 'orphans' : String(notebook?.id ?? '');
 		if (subject === subjectOnScreen) return;
 		subjectOnScreen = subject;
-		tab = firstTab;
+		// Unless the address names a tab — a home-screen widget's tap does.
+		const asked = untrack(() => page.url.searchParams.get(TAB_PARAM));
+		const named = TAB_KEYS.find((one) => one === asked);
+		tab = named ?? firstTab;
+		const item = Number(untrack(() => page.url.searchParams.get(ITEM_PARAM)));
+		// A task and a goal open in a form, which is a history entry; on a
+		// first load that has to wait until the router is up.
+		if (named && Number.isInteger(item) && item > 0) setTimeout(() => openItem(named, item));
 	});
+
+	/**
+	 * Put one thing in the tab on screen, opened — what a widget's line was
+	 * pressed for. A note unfolds under the cursor, a task and a goal open in
+	 * their editors; the other tabs have no single thing to open, and showing
+	 * the tab is the answer.
+	 */
+	function openItem(module: Tab, id: number) {
+		if (module === 'notes') {
+			const entry = contents?.entries.find((one) => one.id === id);
+			if (!entry) return;
+			if (entry.archivedAt) showArchivedNotes = true;
+			openNotes.add(id);
+			void tick().then(() => {
+				const at = shownNotes.findIndex((one) => one.id === id);
+				if (at >= 0) cursor = at;
+			});
+		} else if (module === 'tasks') openTodoById?.(id);
+		else if (module === 'goals') openGoalEdit(id);
+	}
 
 	/**
 	 * How far along, where that means something.
@@ -1807,6 +1835,7 @@
 									     the choice of no notebook. -->
 									<NotebookField
 										notebooks={pickableNotebooks}
+										holds="notes"
 										value={notebookId}
 										span={12}
 										noneLabel={t('sections.diary.label')}
@@ -2079,6 +2108,7 @@
 		{#if verb === 'notebook'}
 			<NotebookField
 				notebooks={pickableNotebooks}
+				holds="notes"
 				value={notebook?.id ?? null}
 				span={12}
 				noneLabel={t('sections.diary.label')}

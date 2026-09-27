@@ -1,6 +1,9 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { OWNER, makeDatabase, seedAccounts } from './helpers/db';
 
+/** Every tab a notebook can have, for a subject that files one of each. */
+const EVERY_TAB = 'notes,tasks,goals,ideas,inventory,ledgers,bills,habits,workouts,recipes';
+
 /**
  * A key tied to one notebook.
  *
@@ -69,8 +72,8 @@ beforeAll(async () => {
 	const { createItem } = await import('../src/lib/services/inventory');
 	const idOf = (made: unknown) => (typeof made === 'number' ? made : (made as { id: number }).id);
 
-	mine = idOf(createNotebook(ctx(), { title: 'The flat' }));
-	other = idOf(createNotebook(ctx(), { title: 'Private' }));
+	mine = idOf(createNotebook(ctx(), { title: 'The flat', modules: EVERY_TAB }));
+	other = idOf(createNotebook(ctx(), { title: 'Private', modules: EVERY_TAB }));
 
 	inside.todo = idOf(createTodo(ctx(), { title: 'call the plumber', notebookId: mine }));
 	inside.goal = idOf(
@@ -438,5 +441,46 @@ describe('what is being held back', () => {
 	it('holds nothing back from a key that may do everything', async () => {
 		const { ASSISTANT_SCOPES } = await import('../src/lib/server/mcp/tools');
 		expect(withheldTools({ ctx: ctx(), scopes: [...ASSISTANT_SCOPES, 'destructive'] })).toEqual([]);
+	});
+});
+
+/*
+ * A key tied to a notebook files what it adds into that notebook — so a
+ * notebook without the tab for the kind has to refuse it, rather than take an
+ * idea and show it nowhere. The same refusal the forms and the API get, from
+ * the service underneath all three.
+ */
+describe('a key tied to a notebook without the tab', () => {
+	it('is refused an idea, and told which tab is missing', async () => {
+		const { createNotebook } = await import('../src/lib/services/notebooks');
+		const { listIdeas } = await import('../src/lib/services/ideas');
+		const bare = createNotebook(ctx(), { title: 'Just writing', modules: 'notes,tasks' });
+		const caller = {
+			ctx: ctx(),
+			scopes: Object.keys(SCOPES),
+			confinement: { kind: 'notebook', id: bare }
+		};
+		const before = listIdeas(ctx()).length;
+
+		const answer = handleBody(caller as never, {
+			jsonrpc: '2.0',
+			id: 1,
+			method: 'tools/call',
+			params: { name: 'add_idea', arguments: { content: 'a herb garden' } }
+		}) as { result?: { isError?: boolean; structuredContent?: { code?: string } } };
+
+		expect(answer.result?.isError).toBe(true);
+		expect(answer.result?.structuredContent?.code).toBe('validation_error');
+		expect(JSON.stringify(answer.result)).toContain('“Just writing” has no Ideas tab');
+		expect(listIdeas(ctx())).toHaveLength(before);
+
+		// The same key may still add what the notebook does hold.
+		const task = handleBody(caller as never, {
+			jsonrpc: '2.0',
+			id: 2,
+			method: 'tools/call',
+			params: { name: 'add_task', arguments: { title: 'buy a notebook' } }
+		}) as { result?: { isError?: boolean } };
+		expect(task.result?.isError).toBeFalsy();
 	});
 });

@@ -308,3 +308,71 @@ test('the parent goal list fits a phone and answers the keyboard', async ({ page
 	await expect(field.locator('input[name="parentId"]')).not.toHaveValue('');
 	await expect(face).toContainText('get the band playing again');
 });
+
+/**
+ * An area is renamed, recoloured, reordered and removed from the areas
+ * dialog, at a phone's width and a desktop's. The order is the area filter's.
+ */
+for (const [label, viewport] of [
+	['desktop', { width: 1400, height: 900 }],
+	['phone', { width: 390, height: 844 }]
+] as const) {
+	test(`goal areas are renamed, recoloured and reordered (${label})`, async ({ page }) => {
+		await page.setViewportSize(viewport);
+		await register(page, testEmail(`goal-areas-${label}`));
+		await visit(page, '/goals');
+		const heading = page.locator('[name="heading"]');
+		await pressUntil(page, page.getByRole('button', { name: /New goal/ }).first(), heading);
+		await heading.fill('run a half marathon');
+		await page.getByRole('button', { name: 'Create goal' }).click();
+		await expect(heading).toBeHidden();
+
+		const dialog = page.getByRole('dialog');
+		await pressUntil(page, page.getByRole('button', { name: 'Areas' }), dialog);
+		const field = dialog.locator('[name="label"]');
+		for (const name of ['Helth', 'Career']) {
+			await field.fill(name);
+			await dialog.getByRole('button', { name: 'Add area' }).click();
+			await expect(dialog.locator(`[data-area="${name}"]`)).toBeVisible();
+		}
+		const rows = dialog.locator('[data-area]');
+		await expect(rows.nth(0)).toHaveAttribute('data-area', 'Helth');
+		await expect(rows.nth(1)).toHaveAttribute('data-area', 'Career');
+
+		// Nothing on the row spills past the dialog at this width.
+		const dialogBox = (await dialog.boundingBox())!;
+		const rowBox = (await rows.nth(0).boundingBox())!;
+		expect(rowBox.x + rowBox.width).toBeLessThanOrEqual(dialogBox.x + dialogBox.width + 1);
+
+		// Rename, and a name another area has is refused.
+		await dialog.getByRole('button', { name: 'Rename Helth' }).click();
+		const renaming = rows.nth(0).locator('[name="label"]');
+		await expect(renaming).toBeFocused();
+		await renaming.fill('Career');
+		await rows.nth(0).getByRole('button', { name: 'Save' }).click();
+		await expect(dialog).toContainText('You already have an area with that name');
+		await renaming.fill('Health');
+		await rows.nth(0).getByRole('button', { name: 'Save' }).click();
+		await expect(dialog.locator('[data-area="Health"]')).toBeVisible();
+		await expect(dialog.locator('[data-area="Helth"]')).toHaveCount(0);
+
+		// Recolour: the browser's control, saved as it changes.
+		const colour = dialog.getByLabel('Colour of Health');
+		await colour.fill('#1d4ed8');
+		await expect(colour).toHaveValue('#1d4ed8');
+
+		// Reorder: the first cannot go earlier, the last cannot go later.
+		await expect(dialog.getByRole('button', { name: 'Move Health earlier' })).toBeDisabled();
+		await expect(dialog.getByRole('button', { name: 'Move Career later' })).toBeDisabled();
+		await dialog.getByRole('button', { name: 'Move Career earlier' }).click();
+		await expect(rows.nth(0)).toHaveAttribute('data-area', 'Career');
+		await dialog.getByRole('button', { name: 'Move Career later' }).click();
+		await expect(rows.nth(0)).toHaveAttribute('data-area', 'Health');
+
+		// It all survives a reload, colour included.
+		await page.reload();
+		await pressUntil(page, page.getByRole('button', { name: 'Areas' }), dialog);
+		await expect(rows.nth(0)).toHaveAttribute('data-area', 'Health');
+		await expect(dialog.getByLabel('Colour of Health')).toHaveValue('#1d4ed8');
+	});
+}

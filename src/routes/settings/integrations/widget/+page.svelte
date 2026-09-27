@@ -6,12 +6,13 @@
 	import Card from '$lib/components/Card.svelte';
 	import Icon from '$lib/components/Icon.svelte';
 	import { isStandalone } from '$lib/platform';
-	import type { ActionData } from './$types';
+	import type { ActionData, PageServerData } from './$types';
+	import NotebookWidgets from './NotebookWidgets.svelte';
 	import { useT } from '$lib/i18n';
 
 	const t = useT();
 
-	let { form }: { form: ActionData } = $props();
+	let { data, form }: { data: PageServerData; form: ActionData } = $props();
 
 	/**
 	 * Where the phone app listens. Any app on the phone could claim this scheme,
@@ -61,26 +62,32 @@
 	});
 </script>
 
-{#if form?.message && !form?.success}
-	<Banner kind="error" message={form.message} />
-{/if}
+<div class="space-y-4">
+	<NotebookWidgets widgets={data.widgets} notebooks={data.notebooks} {form} />
 
-<Card
-	title={t('settings.integrations.widget.homeScreenWidget')}
-	description={t('settings.integrations.widget.theWidgetOnThisPhone')}
->
-	{#if handoff && form?.token}
-		<div class="space-y-3">
-			{#if trapped}
-				<Banner
-					kind="warning"
-					message={t('settings.integrations.widget.openedInsideAppLinkComes')}
-				/>
-			{:else}
-				<Banner kind="success" message={t('settings.integrations.widget.connectedTakingYouBack')} />
-			{/if}
+	{#if form?.message && !form?.success && !('created' in form) && !('updated' in form)}
+		<Banner kind="error" message={form.message} />
+	{/if}
 
-			<!--
+	<Card
+		title={t('settings.integrations.widget.homeScreenWidget')}
+		description={t('settings.integrations.widget.theWidgetOnThisPhone')}
+	>
+		{#if handoff && form?.token}
+			<div class="space-y-3">
+				{#if trapped}
+					<Banner
+						kind="warning"
+						message={t('settings.integrations.widget.openedInsideAppLinkComes')}
+					/>
+				{:else}
+					<Banner
+						kind="success"
+						message={t('settings.integrations.widget.connectedTakingYouBack')}
+					/>
+				{/if}
+
+				<!--
 				The key, shown as well as sent.
 
 				The link is at the mercy of which app Android decides should answer
@@ -88,62 +95,63 @@
 				Pasting a key needs no intent, no chooser and no browser, so it is
 				the way that cannot fail — the widget's setup screen has a box for it.
 			-->
-			<div>
-				<p class="eyebrow mb-1 text-gray-600">
-					{t('settings.integrations.widget.theKeyForThisWidget')}
-				</p>
-				<div class="flex items-center gap-2">
-					<code
-						class="tabular flex-1 border border-gray-300 bg-gray-50 px-3 py-2 text-xs break-all"
-					>
-						{form.token}
-					</code>
-					<button type="button" onclick={() => copy(form.token!)} class="btn btn-sm">
-						<Icon name="copy" />
-						{copied ? 'Copied' : 'Copy'}
-					</button>
+				<div>
+					<p class="eyebrow mb-1 text-gray-600">
+						{t('settings.integrations.widget.theKeyForThisWidget')}
+					</p>
+					<div class="flex items-center gap-2">
+						<code
+							class="tabular flex-1 border border-gray-300 bg-gray-50 px-3 py-2 text-xs break-all"
+						>
+							{form.token}
+						</code>
+						<button type="button" onclick={() => copy(form.token!)} class="btn btn-sm">
+							<Icon name="copy" />
+							{copied ? 'Copied' : 'Copy'}
+						</button>
+					</div>
+					<p class="mt-1 text-xs text-gray-500">
+						{t('settings.integrations.widget.pasteItInto')}
+						<strong>{t('settings.integrations.widget.orPasteTheKey')}</strong>
+						{t('settings.integrations.widget.onTheWidgetSSetupScreen')}
+					</p>
 				</div>
-				<p class="mt-1 text-xs text-gray-500">
-					{t('settings.integrations.widget.pasteItInto')}
-					<strong>{t('settings.integrations.widget.orPasteTheKey')}</strong>
-					{t('settings.integrations.widget.onTheWidgetSSetupScreen')}
-				</p>
-			</div>
 
-			{#if !trapped}
-				<!-- eslint-disable svelte/no-navigation-without-resolve -- an app scheme, not a route -->
-				<p class="text-sm text-gray-500">
-					{t('settings.integrations.widget.ifNothingHappens')}
-					<a href={handoff} class="font-medium text-gray-900 underline"
-						>{t('settings.integrations.widget.finishInTheApp')}</a
-					>.
-				</p>
-				<!-- eslint-enable svelte/no-navigation-without-resolve -->
+				{#if !trapped}
+					<!-- eslint-disable svelte/no-navigation-without-resolve -- an app scheme, not a route -->
+					<p class="text-sm text-gray-500">
+						{t('settings.integrations.widget.ifNothingHappens')}
+						<a href={handoff} class="font-medium text-gray-900 underline"
+							>{t('settings.integrations.widget.finishInTheApp')}</a
+						>.
+					</p>
+					<!-- eslint-enable svelte/no-navigation-without-resolve -->
+				{/if}
+			</div>
+		{:else}
+			{#if trapped}
+				<div class="mb-3">
+					<Banner
+						kind="warning"
+						message={t('settings.integrations.widget.openedInsideAppRatherThan')}
+					/>
+				</div>
 			{/if}
-		</div>
-	{:else}
-		{#if trapped}
-			<div class="mb-3">
-				<Banner
-					kind="warning"
-					message={t('settings.integrations.widget.openedInsideAppRatherThan')}
-				/>
-			</div>
-		{/if}
 
-		<form method="post" action="?/connect" use:enhance>
-			<button class="btn btn-primary"
-				>{t('settings.integrations.widget.connectThisPhoneSWidget')}</button
-			>
-		</form>
-		<p class="mt-3 text-sm text-gray-500">
-			{t('settings.integrations.widget.theWidgetComesWithThe')}
-		</p>
-		<p class="mt-2 text-sm text-gray-500">
-			{t('settings.integrations.widget.youCanDisconnectItAny')}
-			<a href={resolve('/settings/integrations')} class="font-medium text-gray-900 underline"
-				>{t('settings.integrations.widget.integrations')}</a
-			>.
-		</p>
-	{/if}
-</Card>
+			<form method="post" action="?/connect" use:enhance>
+				<button class="btn btn-primary"
+					>{t('settings.integrations.widget.connectThisPhoneSWidget')}</button
+				>
+			</form>
+			<p class="mt-3 text-sm text-gray-500">
+				{t('settings.integrations.widget.theWidgetComesWithThe')}
+			</p>
+			<p class="mt-2 text-sm text-gray-500">
+				{t('settings.integrations.widget.youCanDisconnectItAny')}
+				<a href={resolve('/settings/integrations')} class="font-medium text-gray-900 underline"
+					>{t('settings.integrations.widget.integrations')}</a
+				>.
+			</p>
+		{/if}
+	</Card>
+</div>

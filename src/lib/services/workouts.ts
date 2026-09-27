@@ -299,7 +299,7 @@ export function getWorkout(ctx: Ctx, id: number): Workout {
 	return withMeasures([toWorkout(found)])[0];
 }
 
-function fields(ctx: Ctx, input: WorkoutInput) {
+function fields(ctx: Ctx, input: WorkoutInput, id?: number) {
 	return {
 		title: str(input.title, 'title', { max: MAX_TITLE_LENGTH }),
 		categoryId: ownedCategory(ctx, input.categoryId),
@@ -310,7 +310,7 @@ function fields(ctx: Ctx, input: WorkoutInput) {
 				? null
 				: num(input.minutes, 'minutes', { int: true, min: 1 }),
 		// Only when the caller mentioned it — see `notebookPatch`.
-		...notebookPatch(ctx, input)
+		...notebookPatch(ctx, input, 'workouts', id === undefined ? undefined : { table: workouts, id })
 	};
 }
 
@@ -327,7 +327,7 @@ export function createWorkout(ctx: Ctx, input: WorkoutInput): number {
 export function updateWorkout(ctx: Ctx, id: number, input: WorkoutInput): void {
 	getWorkout(ctx, id); // ownership
 	db.update(workouts)
-		.set({ ...fields(ctx, input), updatedAt: stamp(ctx) })
+		.set({ ...fields(ctx, input, id), updatedAt: stamp(ctx) })
 		.where(and(eq(workouts.id, id), eq(workouts.userId, ctx.userId)))
 		.run();
 	if (input.measures !== undefined) setWorkoutMeasures(ctx, id, input.measures);

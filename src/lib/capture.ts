@@ -3,6 +3,7 @@ import { SECTION_COLORS } from '$lib/colors';
 import type { IconName } from '$lib/components/Icon.svelte';
 import type { HideableSection } from '$lib/sections';
 import { routeGlyph } from '$lib/glyphs';
+import type { NotebookModule } from '$lib/notebook-modules';
 
 /**
  * The four things worth writing down before they evaporate.
@@ -49,12 +50,15 @@ export type Capture = {
 	 * thing properly. See `$lib/open-from-url`.
 	 */
 	room: string;
+	/** The notebook tab it is filed under, so it starts only in a notebook that has one. */
+	holds: NotebookModule;
 };
 
 /** Each wears the glyph of the place it lands in, so a capture and its room agree. */
 const DECLARED: Omit<Capture, 'icon'>[] = [
 	{
 		key: 'idea',
+		holds: 'ideas',
 		room: '/notebooks/ideas',
 		shortcut: 'i',
 		label: 'app.idea',
@@ -66,6 +70,7 @@ const DECLARED: Omit<Capture, 'icon'>[] = [
 	},
 	{
 		key: 'todo',
+		holds: 'tasks',
 		room: '/tasks/todo',
 		shortcut: 't',
 		// The singular, because the dialog says "New {thing}": the tab is
@@ -78,6 +83,7 @@ const DECLARED: Omit<Capture, 'icon'>[] = [
 	},
 	{
 		key: 'note',
+		holds: 'notes',
 		room: '/notebooks/diary',
 		shortcut: 'd',
 		label: 'app.note',
@@ -89,6 +95,7 @@ const DECLARED: Omit<Capture, 'icon'>[] = [
 	},
 	{
 		key: 'buy',
+		holds: 'inventory',
 		room: '/inventory',
 		shortcut: 'b',
 		label: 'app.buy',

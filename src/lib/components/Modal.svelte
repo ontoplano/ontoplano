@@ -211,7 +211,7 @@
 
 	/**
 	 * On a phone this is a screen, and a screen answers the system back
-	 * gesture: while it is open it holds one history entry, so Android's back
+	 * gesture: while it is open it holds a history entry, so Android's back
 	 * button closes the form instead of leaving the app. Closing it any other
 	 * way — the arrow, Escape, a saved form — takes the entry back out.
 	 */

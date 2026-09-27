@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="notebook_widget_name">Ontoplano — Notizbuch</string>
+    <string name="notebook_widget_description">Ein Tab eines Notizbuchs: seine Aufgaben, Notizen, Ziele, Ideen oder Einkäufe.</string>
+    <string name="notebook_widget_refresh">Aktualisieren</string>
+    <string name="notebook_widget_set_up">Tippen, um ein Notizbuch zu wählen</string>
+    <string name="notebook_widget_nothing">Nichts hier</string>
+    <string name="notebook_widget_refused">Dieses Widget wurde entfernt oder sein Schlüssel widerrufen. Tippen, um es neu einzurichten.</string>
+    <string name="notebook_widget_unreachable">Deine Instanz war nicht erreichbar. Zum erneuten Versuch auf Aktualisieren tippen.</string>
+    <string name="notebook_widget_section_notes">Notizen</string>
+    <string name="notebook_widget_section_tasks">Aufgaben</string>
+    <string name="notebook_widget_section_goals">Ziele</string>
+    <string name="notebook_widget_section_ideas">Ideen</string>
+    <string name="notebook_widget_section_inventory">Inventar</string>
+</resources>

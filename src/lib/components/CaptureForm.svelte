@@ -1,5 +1,6 @@
 <script lang="ts">
 	import FormGrid from '$lib/components/FormGrid.svelte';
+	import { notebooksHolding } from '$lib/notebook-modules';
 	import RatingBadges from '$lib/components/RatingBadges.svelte';
 	import { compareByPriority, type RatingValues } from '$lib/ratings';
 	import { ordinal } from '$lib/ordinal';
@@ -46,7 +47,13 @@
 	 */
 	type Options = {
 		categories: { id: number; name: string }[];
-		notebooks: { id: number; title: string; categoryId?: number | null; defaultTags?: string }[];
+		notebooks: {
+			id: number;
+			title: string;
+			categoryId?: number | null;
+			defaultTags?: string;
+			modules: readonly string[];
+		}[];
 		inventoryCategories: { id: number; name: string }[];
 		/** The queue a new task would join — see `whereItWouldSit` below. */
 		queue: { ratings: RatingValues; sortOrder: number; createdAt: string }[];
@@ -98,9 +105,14 @@
 		).length + 1
 	);
 
-	/** The starting notebook, once it is known to be one of the account's. */
+	/**
+	 * The starting notebook, once it is known to be one of the account's and
+	 * to have a tab for this kind — the wheel's notebook may not, and then the
+	 * form starts in none rather than in one that would refuse it.
+	 */
 	const start = $derived(
-		notebookId !== null && options.notebooks.some((one) => one.id === notebookId)
+		notebookId !== null &&
+			notebooksHolding(options.notebooks, capture.holds).some((one) => one.id === notebookId)
 			? notebookId
 			: null
 	);

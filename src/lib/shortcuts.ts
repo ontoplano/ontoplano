@@ -244,6 +244,16 @@ export const PAGE_SHORTCUTS: Record<string, PageShortcuts> = {
 			{ key: 'k', action: 'navigate-up', description: 'shortcut.navigateTokens' },
 			{ key: 'n', action: 'new', description: 'shortcut.newToken' }
 		]
+	},
+	'/settings/integrations/widget': {
+		label: 'rooms.integrations.tabs.widgets',
+		shortcuts: [
+			{ key: 'j', action: 'navigate-down', description: 'shortcut.navigateWidgets' },
+			{ key: 'k', action: 'navigate-up', description: 'shortcut.navigateWidgets' },
+			{ key: 'e', action: 'edit', description: 'shortcut.editWidget' },
+			{ key: 'x', action: 'delete', description: 'shortcut.askToDeleteWidget' },
+			{ key: 'n', action: 'new', description: 'shortcut.newWidget' }
+		]
 	}
 };
 

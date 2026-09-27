@@ -9,6 +9,9 @@
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 import { makeDatabase, OWNER, seedAccounts, STRANGER } from './helpers/db';
 
+/** Every tab a notebook can have, for a subject that files one of each. */
+const EVERY_TAB = 'notes,tasks,goals,ideas,inventory,ledgers,bills,habits,workouts,recipes';
+
 const database = makeDatabase();
 seedAccounts(database.path);
 afterAll(() => database.remove());
@@ -38,8 +41,8 @@ beforeAll(async () => {
 	ctx = { userId: OWNER, now: new Date('2026-08-26T12:00:00'), tz: 'UTC' };
 	theirs = { ...ctx, userId: STRANGER };
 
-	kitchen = s.notebooks.createNotebook(ctx, { title: 'Kitchen refit' });
-	garden = s.notebooks.createNotebook(ctx, { title: 'Garden' });
+	kitchen = s.notebooks.createNotebook(ctx, { title: 'Kitchen refit', modules: EVERY_TAB });
+	garden = s.notebooks.createNotebook(ctx, { title: 'Garden', modules: EVERY_TAB });
 
 	s.todos.createTodo(ctx, { title: 'order tiles', notebookId: kitchen });
 	s.todos.createTodo(ctx, { title: 'tiles for the path', notebookId: garden });

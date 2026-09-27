@@ -2,6 +2,9 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { OWNER, STRANGER, makeDatabase, seedAccounts } from './helpers/db';
 import { baselineArgs, withRef } from './helpers/mcp-baseline';
 
+/** Every tab a notebook can have, for a subject that files one of each. */
+const EVERY_TAB = 'notes,tasks,goals,ideas,inventory,ledgers,bills,habits,workouts,recipes';
+
 /**
  * Every reference a tool takes is gated on its own — not only the one the
  * call is about.
@@ -124,8 +127,8 @@ beforeAll(async () => {
 		listItems(c).find((one) => one.name === name)!.id;
 
 	const me = ctx();
-	mine = idOf(createNotebook(me, { title: 'The kitchen' }));
-	other = idOf(createNotebook(me, { title: 'The renovation' }));
+	mine = idOf(createNotebook(me, { title: 'The kitchen', modules: EVERY_TAB }));
+	other = idOf(createNotebook(me, { title: 'The renovation', modules: EVERY_TAB }));
 
 	// The notebook's recipe, whose one ingredient is unfiled — as ingredients
 	// made from a recipe's text are.

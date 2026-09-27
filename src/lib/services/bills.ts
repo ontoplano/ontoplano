@@ -318,7 +318,7 @@ function flag(value: unknown): boolean {
 	return value === true || value === 1 || value === '1' || value === 'true' || value === 'on';
 }
 
-function fields(ctx: Ctx, input: BillInput) {
+function fields(ctx: Ctx, input: BillInput, id?: number) {
 	return {
 		name: str(input.name, 'name', { max: MAX_NAME_LENGTH }),
 		amountExpected: num(input.amountExpected ?? 0, 'amount', { int: true, min: 0 }),
@@ -349,7 +349,7 @@ function fields(ctx: Ctx, input: BillInput) {
 		goalId: ownedGoal(ctx, input.goalId),
 		notes: optionalStr(input.notes, 'notes', { max: MAX_NOTE_LENGTH }) || '',
 		// Only when the caller mentioned it — see `notebookPatch`.
-		...notebookPatch(ctx, input)
+		...notebookPatch(ctx, input, 'bills', id === undefined ? undefined : { table: bills, id })
 	};
 }
 
@@ -383,7 +383,7 @@ export function createBill(ctx: Ctx, input: BillInput): Bill {
 
 export function updateBill(ctx: Ctx, id: number, input: BillInput): Bill {
 	const before = markOf(ctx, id); // ownership
-	const f = fields(ctx, input);
+	const f = fields(ctx, input, id);
 	db.update(bills)
 		.set({
 			...f,

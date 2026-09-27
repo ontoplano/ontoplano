@@ -1,6 +1,5 @@
 <script lang="ts">
 	import { useWhen } from '$lib/when-context.svelte';
-	import Swatch from '$lib/components/Swatch.svelte';
 	import { setRoomAction } from '$lib/room-action.svelte';
 	import RoomToolbar from '$lib/components/RoomToolbar.svelte';
 	import RoomBar from '$lib/components/RoomBar.svelte';
@@ -47,6 +46,8 @@
 	let showAreas = $state(false);
 	/** The area whose removal has been asked for and not yet confirmed. */
 	let removingArea: number | null = $state(null);
+	/** The area being renamed in place. */
+	let renamingArea: number | null = $state(null);
 	let editingId: number | null = $state(null);
 	let linkingId: number | null = $state(null);
 	let areaFilter: number | null = $state(null);
@@ -317,6 +318,10 @@
 
 	<Modal
 		bind:open={showAreas}
+		onclose={() => {
+			renamingArea = null;
+			removingArea = null;
+		}}
 		error={form?.message}
 		title={t('goals.areas')}
 		description={t('goals.fitnessStudyMoney')}
@@ -324,43 +329,129 @@
 	>
 		{#if data.areas.length > 0}
 			<div class="divide-y divide-gray-200 border border-gray-200">
-				{#each data.areas as area (area.id)}
-					<div class="list-row">
-						<div class="list-row-main flex items-center gap-3">
-							<Swatch color={area.color} shape="tall" />
-							<span class="min-w-0 text-sm break-words text-gray-900">{area.name}</span>
-						</div>
-						<!-- Two steps, like every removal: the bin arms it, the worded
-						     button does it, and Cancel sits where the bin was. -->
-						<div class="list-row-actions">
-							{#if removingArea === area.id}
-								<form
-									method="post"
-									action="?/deleteArea"
-									use:enhance={() =>
-										async ({ update }) => {
-											removingArea = null;
-											await update();
-										}}
-								>
-									<input type="hidden" name="id" value={area.id} />
-									<button class="btn btn-sm btn-danger" use:armed>{t('ui.remove')}</button>
-								</form>
-								<button type="button" class="btn btn-sm" onclick={() => (removingArea = null)}
-									>{t('ui.cancel')}</button
-								>
-							{:else}
+				{#each data.areas as area, index (area.id)}
+					<div class="list-row" data-area={area.name}>
+						{#if renamingArea === area.id}
+							<form
+								method="post"
+								action="?/updateArea"
+								use:enhance={() =>
+									async ({ update, result }) => {
+										await update({ reset: false });
+										if (result.type === 'success') renamingArea = null;
+									}}
+								class="flex min-w-0 flex-1 items-center gap-2"
+							>
+								<input type="hidden" name="id" value={area.id} />
+								<OneLine
+									name="label"
+									value={area.name}
+									class="input min-w-0 flex-1"
+									required
+									autofocus
+								/>
+								<button class="icon-btn" title={t('ui.save')} aria-label={t('ui.save')}>
+									<Icon name="check" />
+								</button>
 								<button
 									type="button"
-									class="icon-btn icon-btn-danger"
-									title={t('ui.remove')}
-									aria-label={t('ui.remove')}
-									onclick={() => (removingArea = area.id)}
+									class="icon-btn"
+									title={t('ui.cancel')}
+									aria-label={t('ui.cancel')}
+									onclick={() => (renamingArea = null)}
 								>
-									<Icon name="trash" />
+									<Icon name="close" />
 								</button>
-							{/if}
-						</div>
+							</form>
+						{:else}
+							<div class="list-row-main flex items-center gap-3">
+								<!-- The browser's own colour control, saved as it is let go of:
+								     there is nothing else on the row a Save would cover. -->
+								<form method="post" action="?/updateArea" use:enhance class="flex shrink-0">
+									<input type="hidden" name="id" value={area.id} />
+									<input
+										type="color"
+										name="color"
+										value={area.color}
+										class="h-7 w-8 cursor-pointer border border-gray-300 bg-transparent p-0"
+										title={t('goals.areaColour', { name: area.name })}
+										aria-label={t('goals.areaColour', { name: area.name })}
+										onchange={(e) => e.currentTarget.form?.requestSubmit()}
+									/>
+								</form>
+								<span class="min-w-0 text-sm break-words text-gray-900">{area.name}</span>
+							</div>
+							<!-- Two steps, like every removal: the bin arms it, the worded
+							     button does it, and Cancel sits where the bin was. -->
+							<div class="list-row-actions">
+								{#if removingArea === area.id}
+									<form
+										method="post"
+										action="?/deleteArea"
+										use:enhance={() =>
+											async ({ update }) => {
+												removingArea = null;
+												await update();
+											}}
+									>
+										<input type="hidden" name="id" value={area.id} />
+										<button class="btn btn-sm btn-danger" use:armed>{t('ui.remove')}</button>
+									</form>
+									<button type="button" class="btn btn-sm" onclick={() => (removingArea = null)}
+										>{t('ui.cancel')}</button
+									>
+								{:else}
+									<!-- The order here is the order of the area filter and of
+									     the goal form's list. The end rows keep both arrows,
+									     disabled, so the row does not shift as an area moves. -->
+									<form method="post" action="?/moveArea" use:enhance class="contents">
+										<input type="hidden" name="id" value={area.id} />
+										<input type="hidden" name="delta" value="-1" />
+										<button
+											class="icon-btn"
+											disabled={index === 0}
+											title={t('goals.moveAreaEarlier', { name: area.name })}
+											aria-label={t('goals.moveAreaEarlier', { name: area.name })}
+										>
+											<Icon name="chevron-up" />
+										</button>
+									</form>
+									<form method="post" action="?/moveArea" use:enhance class="contents">
+										<input type="hidden" name="id" value={area.id} />
+										<input type="hidden" name="delta" value="1" />
+										<button
+											class="icon-btn"
+											disabled={index === data.areas.length - 1}
+											title={t('goals.moveAreaLater', { name: area.name })}
+											aria-label={t('goals.moveAreaLater', { name: area.name })}
+										>
+											<Icon name="chevron-down" />
+										</button>
+									</form>
+									<button
+										type="button"
+										class="icon-btn"
+										title={t('ui.rename')}
+										aria-label={t('goals.renameArea', { name: area.name })}
+										onclick={() => {
+											removingArea = null;
+											renamingArea = area.id;
+										}}
+									>
+										<Icon name="edit" />
+									</button>
+									<button
+										type="button"
+										class="icon-btn icon-btn-danger"
+										title={t('ui.remove')}
+										aria-label={t('ui.remove')}
+										onclick={() => (removingArea = area.id)}
+									>
+										<Icon name="trash" />
+									</button>
+								{/if}
+							</div>
+						{/if}
 					</div>
 				{/each}
 			</div>

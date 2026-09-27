@@ -785,6 +785,34 @@
       "when": 1790489329133,
       "tag": "0111_a_repeating_block_lets_its_notebook_go",
       "breakpoints": true
+    },
+    {
+      "idx": 112,
+      "version": "6",
+      "when": 1790528658228,
+      "tag": "0112_a_delegated_task_remembers_its_block",
+      "breakpoints": true
+    },
+    {
+      "idx": 113,
+      "version": "6",
+      "when": 1790528693639,
+      "tag": "0113_a_delegated_task_lets_its_block_go",
+      "breakpoints": true
+    },
+    {
+      "idx": 114,
+      "version": "6",
+      "when": 1790528910841,
+      "tag": "0114_a_widget_shows_one_notebook_tab",
+      "breakpoints": true
+    },
+    {
+      "idx": 115,
+      "version": "6",
+      "when": 1790529337112,
+      "tag": "0115_a_retried_create_is_answered_once",
+      "breakpoints": true
     }
   ]
 }

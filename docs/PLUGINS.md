@@ -254,6 +254,25 @@ two tokens, and a household shares a shopping list — across two different
 instances if that is where the two people live. It is ~150 lines and uses
 nothing above: scoped tokens, the shopping API, self-managed webhooks.
 
+### One tab of a notebook
+
+```http
+GET /api/v1/notebooks/<id>/<tab>?status=open&order=created&direction=desc&tag=walls&limit=30
+→ { "notebook": { "id": 12, "title": "The flat" }, "section": "tasks", "href": "/notebooks/12?tab=tasks",
+    "total": 7, "items": [{ "id": 40, "title": "Buy tiles", "detail": null, "done": false,
+    "href": "/notebooks/12?tab=tasks&item=40" }] }
+```
+
+`<tab>` is `notes`, `tasks`, `goals`, `ideas` or `inventory`, and needs that
+tab's read scope (goals are read with `tasks:read`). The statuses and orders
+each tab takes are listed in `src/lib/notebook-widget.ts`; anything else falls
+back to the tab's first. `href` is where the app opens that line.
+
+A key tied to one notebook reads that notebook here and nowhere else — every
+other endpoint refuses it, because they answer for the whole account. The
+phone's notebook widget holds such a key and reads `GET /api/v1/widget`, which
+answers the same shape for the tab the widget was set up to show.
+
 ---
 
 ## 5. Errors

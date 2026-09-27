@@ -37,7 +37,7 @@
 		editing?: Editing;
 		kind?: 'bad' | 'good' | 'neutral';
 		days?: boolean[];
-		notebooks?: { id: number; title: string }[];
+		notebooks?: { id: number; title: string; modules: readonly string[] }[];
 		startingNotebook?: number | null;
 	} = $props();
 
@@ -99,7 +99,12 @@
 		<OneLine name="description" value={editing?.description ?? ''} class="input" />
 	</Field>
 
-	<NotebookField {notebooks} value={editing?.notebookId ?? startingNotebook} span={6} />
+	<NotebookField
+		{notebooks}
+		holds="habits"
+		value={editing?.notebookId ?? startingNotebook}
+		span={6}
+	/>
 
 	<!-- Only where it means something: a bad habit is not on a schedule, it is
 	     a thing you are counting the days since. -->

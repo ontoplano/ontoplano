@@ -456,6 +456,15 @@ export type MessageKey =
 	| 'errors.notebookMedia.noNotebookPicturesHere'
 	| 'errors.notebooks.aFolderCannotGoInsideItself'
 	| 'errors.notebooks.aNotebookByThatName'
+	| 'errors.notebooks.hasNoBillsTab'
+	| 'errors.notebooks.hasNoGoalsTab'
+	| 'errors.notebooks.hasNoHabitsTab'
+	| 'errors.notebooks.hasNoIdeasTab'
+	| 'errors.notebooks.hasNoInventoryTab'
+	| 'errors.notebooks.hasNoLedgersTab'
+	| 'errors.notebooks.hasNoRecipesTab'
+	| 'errors.notebooks.hasNoTasksTab'
+	| 'errors.notebooks.hasNoWorkoutsTab'
 	| 'errors.notebooks.nameTheFolderToRename'
 	| 'errors.notebooks.noSuchFolder'
 	| 'errors.notebooks.thatFolderPathIsTooLong'
@@ -543,6 +552,7 @@ export type MessageKey =
 	| 'errors.todos.thatIsTooManyAtOnce'
 	| 'errors.tokens.aCalendarLinkReads'
 	| 'errors.tokens.atLeastOneValidScope'
+	| 'errors.tokens.confinedKeyCannotUseThis'
 	| 'errors.tokens.invalidToken'
 	| 'errors.tokens.thatIsNotSomething'
 	| 'errors.tokens.tokenHasBeenRevoked'
@@ -553,6 +563,7 @@ export type MessageKey =
 	| 'errors.webhooks.webhookAddress'
 	| 'errors.webhooks.webhookAddressHasToBeAValid'
 	| 'errors.webhooks.webhookAddressHasToBeHttp'
+	| 'errors.widgets.thatNotebookHasNoSuchTab'
 	| 'errors.workouts.measuresHave'
 	| 'errors.workouts.thatIsNotOne'
 	| 'fan.accountAndHelp'
@@ -842,6 +853,7 @@ export type MessageKey =
 	| 'goals.addMeasure'
 	| 'goals.allAreas'
 	| 'goals.area'
+	| 'goals.areaColour'
 	| 'goals.areas'
 	| 'goals.booksKmGigs'
 	| 'goals.chooseTasks'
@@ -870,6 +882,8 @@ export type MessageKey =
 	| 'goals.measuredBy'
 	| 'goals.measuresCount'
 	| 'goals.missed'
+	| 'goals.moveAreaEarlier'
+	| 'goals.moveAreaLater'
 	| 'goals.newArea'
 	| 'goals.newGoal'
 	| 'goals.noActivitiesYet'
@@ -894,6 +908,7 @@ export type MessageKey =
 	| 'goals.progressTowards'
 	| 'goals.quarter'
 	| 'goals.removeMeasure'
+	| 'goals.renameArea'
 	| 'goals.reopen'
 	| 'goals.saveLinks'
 	| 'goals.saveProgress'
@@ -2198,6 +2213,7 @@ export type MessageKey =
 	| 'rooms.integrations.tabs.ai'
 	| 'rooms.integrations.tabs.chat'
 	| 'rooms.integrations.tabs.connections'
+	| 'rooms.integrations.tabs.widgets'
 	| 'rooms.integrations.title'
 	| 'rooms.media.sections'
 	| 'rooms.media.tabs.audios'
@@ -2845,6 +2861,7 @@ export type MessageKey =
 	| 'shortcut.askToDelete'
 	| 'shortcut.askToDeleteCard'
 	| 'shortcut.askToDeleteSelected'
+	| 'shortcut.askToDeleteWidget'
 	| 'shortcut.captureANote'
 	| 'shortcut.captureATodo'
 	| 'shortcut.captureAnIdea'
@@ -2863,6 +2880,7 @@ export type MessageKey =
 	| 'shortcut.editTag'
 	| 'shortcut.editTheOneUnderThe'
 	| 'shortcut.editTodo'
+	| 'shortcut.editWidget'
 	| 'shortcut.expandCollapse'
 	| 'shortcut.markDoneReopen'
 	| 'shortcut.moveBetweenCards'
@@ -2878,6 +2896,7 @@ export type MessageKey =
 	| 'shortcut.navigateSlots'
 	| 'shortcut.navigateTags'
 	| 'shortcut.navigateTokens'
+	| 'shortcut.navigateWidgets'
 	| 'shortcut.newActivity'
 	| 'shortcut.newCard'
 	| 'shortcut.newDiaryEntry'
@@ -2893,6 +2912,7 @@ export type MessageKey =
 	| 'shortcut.newTodo'
 	| 'shortcut.newToken'
 	| 'shortcut.newWeeklyBlock'
+	| 'shortcut.newWidget'
 	| 'shortcut.newWins'
 	| 'shortcut.nextGoal'
 	| 'shortcut.nextPage'
@@ -3308,6 +3328,7 @@ export type MessageKey =
 	| 'todoRows.confirm'
 	| 'todoRows.createTodo'
 	| 'todoRows.delegateToADay'
+	| 'todoRows.delegatedToThisDay'
 	| 'todoRows.deleteSelectedWarning'
 	| 'todoRows.doing'
 	| 'todoRows.done'
@@ -3467,6 +3488,7 @@ export type MessageKey =
 	| 'tour.notACalendarOfAppointments'
 	| 'tour.notJustNotesAndTasks'
 	| 'tour.noteSelection'
+	| 'tour.notebookNoteSelection'
 	| 'tour.notebooks'
 	| 'tour.nothingCarriesItselfOver'
 	| 'tour.numbersFromElsewhere'
@@ -3564,6 +3586,11 @@ export type MessageKey =
 	| 'tour.whereYourWeekBegins'
 	| 'tour.whichListAndWhereIt'
 	| 'tour.whichWedgesThePlusWheel'
+	| 'tour.widgets'
+	| 'tour.widgetsList'
+	| 'tour.widgetsListBody'
+	| 'tour.widgetsOnThePhone'
+	| 'tour.widgetsOnThePhoneBody'
 	| 'tour.workHealthWhateverDividesYour'
 	| 'tour.workouts'
 	| 'tour.workoutsPlannedLikeMeals'
@@ -3664,6 +3691,42 @@ export type MessageKey =
 	| 'welcome.whichLanguage'
 	| 'welcome.whichLanguageHint'
 	| 'welcome.yourTimezone'
+	| 'widgets.anyTag'
+	| 'widgets.count'
+	| 'widgets.deleteWidget'
+	| 'widgets.deleteWidgetExplained'
+	| 'widgets.direction'
+	| 'widgets.directionAsc'
+	| 'widgets.directionDesc'
+	| 'widgets.disconnected'
+	| 'widgets.doneOpening'
+	| 'widgets.editWidget'
+	| 'widgets.handingOver'
+	| 'widgets.newWidget'
+	| 'widgets.none'
+	| 'widgets.noneHow'
+	| 'widgets.notebook'
+	| 'widgets.notebookWidgets'
+	| 'widgets.notebookWidgetsDescription'
+	| 'widgets.orderBy'
+	| 'widgets.orderName'
+	| 'widgets.orderPeriod'
+	| 'widgets.phoneCouldNotTakeIt'
+	| 'widgets.show'
+	| 'widgets.statusAll'
+	| 'widgets.statusApplied'
+	| 'widgets.statusArchived'
+	| 'widgets.statusBought'
+	| 'widgets.statusClosed'
+	| 'widgets.statusDone'
+	| 'widgets.statusFavourites'
+	| 'widgets.statusOpen'
+	| 'widgets.statusPinned'
+	| 'widgets.statusToBuy'
+	| 'widgets.statusUnapplied'
+	| 'widgets.tab'
+	| 'widgets.withTag'
+	| 'widgets.yesDelete'
 	| 'written.openThePicture'
 	| 'written.showTheRest';
 
@@ -3707,6 +3770,15 @@ export interface MessageValuesFor {
 		minutes: string | number;
 		minutes2: string | number;
 	};
+	'errors.notebooks.hasNoBillsTab': { notebook: string | number };
+	'errors.notebooks.hasNoGoalsTab': { notebook: string | number };
+	'errors.notebooks.hasNoHabitsTab': { notebook: string | number };
+	'errors.notebooks.hasNoIdeasTab': { notebook: string | number };
+	'errors.notebooks.hasNoInventoryTab': { notebook: string | number };
+	'errors.notebooks.hasNoLedgersTab': { notebook: string | number };
+	'errors.notebooks.hasNoRecipesTab': { notebook: string | number };
+	'errors.notebooks.hasNoTasksTab': { notebook: string | number };
+	'errors.notebooks.hasNoWorkoutsTab': { notebook: string | number };
 	'filters.applyFilter': { name: string | number };
 	'filters.forgetFilter': { name: string | number };
 	'filters.sureForget': { name: string | number };
@@ -3769,16 +3841,20 @@ export interface MessageValuesFor {
 	};
 	'gallery.refused': { willRefuse: string | number };
 	'gallery.rename': { name: string | number };
+	'goals.areaColour': { name: string | number };
 	'goals.countsFor': { period: string | number };
 	'goals.deleteGoalBody': { title: string | number };
 	'goals.doneOfTotal': { done: string | number; total: string | number };
 	'goals.everyBlockOf': { name: string | number };
 	'goals.everyWeekIts': { name: string | number };
 	'goals.measuresCount': { count: number };
+	'goals.moveAreaEarlier': { name: string | number };
+	'goals.moveAreaLater': { name: string | number };
 	'goals.oneFewerUnit': { unit: string | number };
 	'goals.oneMoreUnit': { unit: string | number };
 	'goals.partOf2': { title: string | number };
 	'goals.progressTowards': { unit: string | number; value: string | number };
+	'goals.renameArea': { name: string | number };
 	'goals.tasks': { length: string | number };
 	'goals.weekOfDateYear': { date: string | number; year: string | number };
 	'health.habits.dayStreak': { count: number };
@@ -4223,6 +4299,7 @@ export interface MessageValuesFor {
 	'welcome.ofOnThePlanner': { length: string | number; size: string | number };
 	'welcome.stepNumber': { number: string | number; title: string | number };
 	'welcome.stepOf': { length: string | number; step: string | number };
+	'widgets.count': { count: number };
 }
 
 /** A message that takes values — it may not be called without them. */

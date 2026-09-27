@@ -395,6 +395,41 @@ function confinementFrom(
 	return { kind, id };
 }
 
+/**
+ * Change what a live key may read and where, keeping the key itself.
+ *
+ * For a key somebody cannot re-enter: a home-screen widget holds its key and
+ * nothing else, so pointing the widget at another notebook has to move the key
+ * rather than mint a new one the phone would never hear about. The scopes and
+ * the confinement are checked exactly as `createToken` checks them.
+ */
+export function reshapeToken(
+	ctx: Ctx,
+	id: number,
+	input: { scopes: Scope[]; confinedKind?: unknown; confinedId?: unknown }
+): void {
+	const scopes = withNeededReads(
+		[...new Set(input.scopes)].filter((s) => (ALL_SCOPES as string[]).includes(s)),
+		ALL_SCOPES
+	);
+	if (scopes.length === 0) throw new ForbiddenError({ key: 'errors.tokens.atLeastOneValidScope' });
+	if (scopes.includes('calendar:read'))
+		throw new ForbiddenError({ key: 'errors.tokens.aCalendarLinkReads' });
+	const confinement = confinementFrom(ctx, input);
+
+	const res = db
+		.update(apiTokens)
+		.set({
+			scopes: scopes.join(','),
+			confinedKind: confinement?.kind ?? null,
+			confinedId: confinement?.id ?? null,
+			updatedAt: stamps(ctx).updatedAt
+		})
+		.where(and(eq(apiTokens.id, id), eq(apiTokens.userId, ctx.userId), isNull(apiTokens.revokedAt)))
+		.run();
+	if (res.changes === 0) throw new NotFoundError('Token');
+}
+
 export interface TokenSummary {
 	id: number;
 	name: string;

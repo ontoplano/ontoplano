@@ -51,11 +51,7 @@ for (const [label, size] of [
 		const confirm = page.getByRole('dialog', { name: 'Delete this notebook?' });
 		await confirm.getByRole('button', { name: 'Cancel' }).click();
 		await expect(confirm).toBeHidden();
-		// On a phone the edit sheet gives way to the confirmation; reopen it.
-		if (!(await edit.isVisible())) {
-			await cover.hover();
-			await page.getByRole('button', { name: 'Edit Doomed', exact: true }).click();
-		}
+		// The form is still there underneath, on a phone as much as a desktop.
 		await expect(edit).toBeVisible();
 
 		await deleteFromEditDialog(page);

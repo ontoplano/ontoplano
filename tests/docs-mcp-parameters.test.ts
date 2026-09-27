@@ -136,7 +136,7 @@ describe('the generated tools page', () => {
 	});
 
 	test('lists every deprecated argument with its replacement and release', () => {
-		const table = PAGE.slice(PAGE.indexOf('| Old spelling |'));
+		const table = PAGE.slice(PAGE.search(/\| Old spelling +\|/));
 		for (const { spec, path } of everyParam()) {
 			if (!spec.deprecated) continue;
 			const row = table.split('\n').find((line) => line.startsWith(`| \`${path}\``));

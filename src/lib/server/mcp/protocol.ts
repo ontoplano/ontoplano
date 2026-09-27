@@ -16,13 +16,20 @@
  */
 import type { Ctx } from '$lib/services/ctx.js';
 import type { Scope } from '../services/tokens.js';
-import { ForbiddenError, ServiceError } from '$lib/services/errors.js';
+import { ForbiddenError, ServiceError, type ErrorCode } from '$lib/services/errors.js';
 import { translator, type MessageKey, type MessageValues } from '$lib/i18n/core.js';
 import { messages as englishMessages } from '$lib/i18n/catalogues/en.js';
 import { TOOLS, TOOLS_BY_NAME, type Tool } from './tools.js';
 import { argumentProblem, describeProblem } from './arguments.js';
 import { assertRefs, madeRow, resolveRef, type Reach, type Ref } from './refs.js';
 import { confine, reachOf, withinConfinement, type Confinement } from './confinement.js';
+import { assertUnchanged, stampOf, stampedRef } from './concurrency.js';
+import {
+	fingerprintOf,
+	rememberAnswer,
+	replayOf,
+	requestIdOf
+} from '../services/request-replays.js';
 import { changed, type Room } from '../live.js';
 import { spendCallBudget } from '../api/auth.js';
 import { recordAssistantCall } from '../services/assistant-log.js';
@@ -272,6 +279,16 @@ function toolResult(value: unknown, mutation?: { before: unknown; after: unknown
 	};
 }
 
+/** A replayed answer: the first one, word for word, marked as a replay. */
+function replayResult(earlier: Record<string, unknown>) {
+	const structured = { ...earlier, replayed: true };
+	return {
+		content: [{ type: 'text', text: JSON.stringify(structured, null, 2) }],
+		structuredContent: structured,
+		isError: false
+	};
+}
+
 /**
  * The state of the thing a write is about.
  *
@@ -311,10 +328,23 @@ const subjectOfRef =
  * the model can do nothing with it, while a tool that refused — a date it did
  * not like, a scope it did not have — is information the model can act on. So
  * the failure comes back as content the model reads, flagged `isError`.
+ *
+ * The sentence is for the model; `structuredContent` is for the client code
+ * around it, which has to branch without parsing English. `code` is the same
+ * vocabulary the JSON API answers with (`not_found`, `conflict`,
+ * `validation_error`, `plan_limit`, `forbidden`, `rate_limited`, …), and
+ * `details` is whatever the refusal knows beyond its sentence — the row's
+ * current `updatedAt` on a conflict.
  */
-function toolFailure(message: string) {
+function toolFailure(e: ServiceError) {
+	const message = messageOf(e);
 	return {
 		content: [{ type: 'text', text: message }],
+		structuredContent: {
+			code: e.code,
+			message,
+			...(e.details === undefined ? {} : { details: e.details })
+		},
 		isError: true
 	};
 }
@@ -448,6 +478,7 @@ export function handle(caller: Caller, request: RpcRequest): RpcResponse | null 
 		case 'tools/call': {
 			if (typeof params.name !== 'string')
 				return fail(id, INVALID_PARAMS, '`name` is required, and is the tool\u2019s name.', {
+					code: 'validation_error' satisfies ErrorCode,
 					argument: 'name',
 					problem: 'missing'
 				});
@@ -457,6 +488,7 @@ export function handle(caller: Caller, request: RpcRequest): RpcResponse | null 
 
 			if (params.arguments !== undefined && !isPlainObject(params.arguments))
 				return fail(id, INVALID_PARAMS, '`arguments` has to be an object.', {
+					code: 'validation_error' satisfies ErrorCode,
 					argument: 'arguments',
 					problem: 'type',
 					expected: 'object'
@@ -478,7 +510,11 @@ export function handle(caller: Caller, request: RpcRequest): RpcResponse | null 
 				 * wrong and the same request will be refused the same way again.
 				 */
 				const problem = argumentProblem(tool.input, args);
-				if (problem) return fail(id, INVALID_PARAMS, describeProblem(problem), problem);
+				if (problem)
+					return fail(id, INVALID_PARAMS, describeProblem(problem), {
+						code: 'validation_error' satisfies ErrorCode,
+						...problem
+					});
 
 				/*
 				 * A key confined to one thing works on that thing.
@@ -532,9 +568,77 @@ export function handle(caller: Caller, request: RpcRequest): RpcResponse | null 
 				 * A create has no before and a delete no after; both read as null,
 				 * which is the honest answer.
 				 */
+				/*
+				 * A retried create, answered with what the first one got.
+				 *
+				 * After the grant, the arguments, the budget and the references —
+				 * a replay is not a way to hear an answer the key could not ask
+				 * for now — and before anything runs. See `request-replays.ts`.
+				 */
+				const retry =
+					tool.writes && 'requestId' in tool.input.properties && args.requestId != null
+						? {
+								requestId: requestIdOf(args.requestId),
+								fingerprint: fingerprintOf(tool.name, args)
+							}
+						: undefined;
+				if (retry) {
+					const earlier = replayOf(caller.ctx, retry.requestId, retry.fingerprint);
+					if (earlier) return ok(id, replayResult(earlier));
+				}
+
 				const before = tool.writes ? peek(tool, caller.ctx, args, reach) : undefined;
 				// A quiet tool still peeks — the log below wants it — and simply
 				// does not put the two copies in the answer.
+
+				/*
+				 * `ifUpdatedAt`, where the tool offers it: checked inside the same
+				 * transaction as the write, so nothing can land between the check
+				 * and the change, and the answer carries the new stamp to pass
+				 * next time. See `concurrency.ts`.
+				 */
+				const stamped = 'ifUpdatedAt' in tool.input.properties ? stampedRef(tool.refs) : undefined;
+				const settle = () => {
+					if (stamped) assertUnchanged(tool.refs, args);
+					let value = tool.run(caller.ctx, args, {
+						scopes: caller.scopes,
+						confinement: caller.confinement ?? null
+					});
+					if (stamped && isPlainObject(value))
+						value = { ...value, updatedAt: stampOf(stamped, args) };
+					/*
+					 * A create says what it made, and fails if it made nothing.
+					 *
+					 * `peek` reads the *subject* an argument names, which a create has
+					 * not got — so `after` was null on every one of them and nothing
+					 * ever checked that the id being handed back pointed at a row. It
+					 * did not once, and the caller found out by being told the task it
+					 * had just made did not exist.
+					 */
+					const made = tool.creates ? madeRow(caller.ctx, tool.creates, idOf(value)) : undefined;
+					if (tool.creates && made === null)
+						throw new Error(
+							`\`${tool.name}\` answered with an id for a ${tool.creates} that is not there.`
+						);
+					const answer = toolResult(
+						value,
+						tool.writes && !tool.quiet
+							? { before, after: made ?? peek(tool, caller.ctx, args, reach) }
+							: undefined
+					);
+					// In the same transaction as the write: a create that landed and
+					// an answer that was not remembered would make the retry a second
+					// create, which is the whole thing this is for.
+					if (retry)
+						rememberAnswer(
+							caller.ctx,
+							retry.requestId,
+							tool.name,
+							retry.fingerprint,
+							answer.structuredContent
+						);
+					return answer;
+				};
 				/*
 				 * One call, one change: all of it or none of it.
 				 *
@@ -546,33 +650,7 @@ export function handle(caller: Caller, request: RpcRequest): RpcResponse | null 
 				 * same reason as `before` above. The services' own transactions nest
 				 * inside this one as savepoints.
 				 */
-				const invoke = () =>
-					tool.run(caller.ctx, args, {
-						scopes: caller.scopes,
-						confinement: caller.confinement ?? null
-					});
-				const value = tool.writes ? db.transaction(invoke) : invoke();
-				/*
-				 * A create says what it made, and fails if it made nothing.
-				 *
-				 * `peek` reads the *subject* an argument names, which a create has
-				 * not got — so `after` was null on every one of them and nothing
-				 * ever checked that the id being handed back pointed at a row. It
-				 * did not once, and the caller found out by being told the task it
-				 * had just made did not exist.
-				 */
-				const made = tool.creates ? madeRow(caller.ctx, tool.creates, idOf(value)) : undefined;
-				if (tool.creates && made === null)
-					throw new Error(
-						`\`${tool.name}\` answered with an id for a ${tool.creates} that is not there.`
-					);
-
-				const answer = toolResult(
-					value,
-					tool.writes && !tool.quiet
-						? { before, after: made ?? peek(tool, caller.ctx, args, reach) }
-						: undefined
-				);
+				const answer = tool.writes ? db.transaction(settle) : settle();
 
 				/*
 				 * The person's own copy of what just happened.
@@ -607,9 +685,11 @@ export function handle(caller: Caller, request: RpcRequest): RpcResponse | null 
 			} catch (e) {
 				// Everything a service throws is a sentence written for a person, so
 				// it is the sentence the model gets. Anything else is not.
-				if (e instanceof ServiceError) return ok(id, toolFailure(messageOf(e)));
+				if (e instanceof ServiceError) return ok(id, toolFailure(e));
 				console.error(`mcp: ${name} failed:`, e);
-				return fail(id, INTERNAL_ERROR, 'That did not work.');
+				return fail(id, INTERNAL_ERROR, 'That did not work.', {
+					code: 'internal' satisfies ErrorCode
+				});
 			}
 		}
 

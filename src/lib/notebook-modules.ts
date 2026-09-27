@@ -243,3 +243,22 @@ export function moduleChoicesOf(
 			held: notebook.counts[m.id] ?? 0
 		}));
 }
+
+/**
+ * The notebooks a thing of this kind can be filed in: the ones with its tab.
+ *
+ * Every picker that files something goes through here, so none offers a
+ * notebook the server would refuse — one without the tab would take the thing
+ * and show it nowhere. `keep` is where the thing already is, offered even when
+ * that notebook has since lost the tab: switching a tab off takes the tab, not
+ * the things, and an edit must not quietly move one out.
+ */
+export function notebooksHolding<T extends { id: number; modules: readonly string[] }>(
+	notebooks: readonly T[],
+	module: NotebookModule,
+	keep: number | null = null
+): T[] {
+	return notebooks.filter(
+		(one) => module === 'notes' || one.modules.includes(module) || one.id === keep
+	);
+}

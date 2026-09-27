@@ -337,7 +337,11 @@ existed, so there is nothing to learn by walking the numbers.
 - **It is stateless.** No session and no event stream: every request carries its
   own key, and a `GET` answers 405.
 - **A refusal is an answer.** "That is not a date" comes back as tool content the
-  model can read and act on, not as a protocol error.
+  model can read and act on, not as a protocol error. Its `structuredContent`
+  carries a `code` software can branch on — the same words the JSON API
+  answers with: `not_found`, `validation_error`, `conflict`, `plan_limit`,
+  `forbidden`, `rate_limited` — beside the sentence, and `details` where the
+  refusal knows more.
 - **Deleting is its own permission.** Tools that remove a row for good need the
   `destructive` grant, and without it they are not offered at all.
 - **Every write answers with what it replaced** — `before` and `after`, and for a
@@ -375,6 +379,18 @@ existed, so there is nothing to learn by walking the numbers.
   rating, an empty string for notes, `{}` for attributes. An argument that
   holds a whole set, such as `tags` on `change_task`, replaces it; `tag_task`
   adds and removes one label at a time.
+- **A change can refuse to overwrite somebody else's.** A `change_*` or
+  `edit_*` tool on a thing that keeps an `updatedAt` takes `ifUpdatedAt`: pass
+  the stamp you read, and if the thing has changed since, nothing is written
+  and the refusal's code is `conflict`, with the current `updatedAt` in its
+  details. Every change on those tools answers with its new `updatedAt`.
+- **A create can be sent again.** Tools that make or count something — every
+  `add_*`, `write_entry`, `log_*`, `record_*`, `tick_habit`, `set_alarm` —
+  take a `requestId` you choose. Sent again with the same arguments within a
+  day, the call answers with the first answer, marked `replayed: true`, and
+  nothing is made twice; so an assistant that lost an answer can retry
+  without asking whether the first one landed. The same id with different
+  arguments is refused as a `conflict`.
 - **A list comes a page at a time.** A tool marked "answers a page" takes
   `limit` and `offset`, and answers with `count` (what is in this answer) and
   `total` (what matched). While more is left the answer also carries
@@ -382,8 +398,8 @@ existed, so there is nothing to learn by walking the numbers.
   `nextOffset` means nothing is left.
 - **A wrong argument is refused before anything runs.** An argument the tool
   does not take, a string where it wants a number, a value outside its enum or
-  its bounds: the answer is a JSON-RPC error `-32602` naming the argument, and
-  nothing is written.
+  its bounds: the answer is a JSON-RPC error `-32602` naming the argument, with
+  `code: "validation_error"` in its `data`, and nothing is written.
 
 ## Common requests
 
@@ -392,6 +408,16 @@ answer worth reading. They run in this order against a fresh account in the
 test suite, which checks each answer holds what is printed here.
 
 <!-- generated: mcp-examples -->
+
+## What an assistant can do, room by room
+
+The common verbs for each kind of thing, and the tools that do them over MCP
+beside what the app itself offers. A blank is a verb neither has; **app only**
+is a gap an assistant cannot fill yet; _app only, on purpose_ is a decision,
+said below — mostly deletions kept for the person. Generated from `src/lib/server/mcp/capabilities.json`,
+which a test holds to the tools the server serves and the actions the app has.
+
+<!-- generated: mcp-capabilities -->
 
 ## Old spellings
 

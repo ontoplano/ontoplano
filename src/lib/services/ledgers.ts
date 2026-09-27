@@ -73,7 +73,7 @@ function fields(ctx: Ctx, input: LedgerInput, fallback?: Ledger) {
 				? (fallback?.currency ?? null)
 				: str(input.currency, 'currency', { max: 8 }),
 		// Only when the caller mentioned it — see `notebookPatch`.
-		...notebookPatch(ctx, input)
+		...notebookPatch(ctx, input, 'ledgers', fallback && { table: ledgers, id: fallback.id })
 	};
 }
 

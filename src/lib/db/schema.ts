@@ -797,6 +797,18 @@ export const todoTasks = sqliteTable(
 		// A todo is a task without a date yet. Setting this is what "drag it onto
 		// today" does — the same row acquires a day rather than being copied.
 		scheduledDate: text('scheduled_date'),
+		/**
+		 * The block this task was delegated to, when it was.
+		 *
+		 * Delegating keeps the task in the list and puts a block on the plan, so
+		 * it must not set `scheduledDate` — that would put the task on the day's
+		 * board beside its own block, and carry it on as overdue afterwards. The
+		 * card reads the day off the block instead, which follows the block when
+		 * it moves and goes when it is deleted.
+		 */
+		delegatedSlotId: integer('delegated_slot_id').references(() => exceptionalTasks.id, {
+			onDelete: 'set null'
+		}),
 		status: text('status', { enum: ['todo', 'doing', 'done', 'skipped'] })
 			.notNull()
 			.default('todo'),
@@ -1660,6 +1672,37 @@ export const assistantCalls = sqliteTable(
 	(table) => [index('assistant_calls_user_idx').on(table.userId, table.id)]
 );
 
+/**
+ * A create an assistant may send twice, and the answer the first one got.
+ *
+ * An assistant that loses the answer to "add a task" — a timeout, a dropped
+ * connection — cannot tell whether the task was made, and sending it again
+ * makes two. A call that carries a `requestId` is recorded here with its
+ * answer, so the same id sent again within the window is answered from this
+ * row instead of being run. `fingerprint` is the tool and its arguments: the
+ * same id with a different call is refused rather than answered with
+ * something that was not asked for.
+ */
+export const requestReplays = sqliteTable(
+	'request_replays',
+	{
+		id: integer('id').primaryKey({ autoIncrement: true }),
+		userId: text('user_id')
+			.notNull()
+			.references(() => user.id, { onDelete: 'cascade' }),
+		requestId: text('request_id').notNull(),
+		tool: text('tool').notNull(),
+		fingerprint: text('fingerprint').notNull(),
+		/** The answer's structured content, as JSON. */
+		answer: text('answer').notNull(),
+		createdAt: text('created_at').notNull()
+	},
+	(table) => [
+		uniqueIndex('request_replays_user_request_unique').on(table.userId, table.requestId),
+		index('request_replays_user_created_idx').on(table.userId, table.createdAt)
+	]
+);
+
 // --- Instance: invitations ---
 
 /**
@@ -1754,6 +1797,44 @@ export const apiTokens = sqliteTable(
 	(table) => [
 		uniqueIndex('api_tokens_hash_unique').on(table.tokenHash),
 		index('api_tokens_user_idx').on(table.userId)
+	]
+);
+
+/**
+ * A home-screen widget showing one tab of one notebook.
+ *
+ * The phone holds a key and nothing else; what the widget shows — which
+ * notebook, which tab, narrowed how and in which order — lives here, so it can
+ * be changed from any screen and the phone picks it up on its next refresh.
+ * The key it reads with is its own, confined to the notebook and granted the
+ * one read that tab needs; revoking it disconnects the widget, and deleting
+ * the widget revokes it.
+ */
+export const phoneWidgets = sqliteTable(
+	'phone_widgets',
+	{
+		id: integer('id').primaryKey({ autoIncrement: true }),
+		userId: text('user_id')
+			.notNull()
+			.references(() => user.id, { onDelete: 'cascade' }),
+		tokenId: integer('token_id')
+			.notNull()
+			.references(() => apiTokens.id, { onDelete: 'cascade' }),
+		notebookId: integer('notebook_id')
+			.notNull()
+			.references(() => notebooks.id, { onDelete: 'cascade' }),
+		/** A key of `WIDGET_SECTIONS` in `$lib/notebook-widget`. */
+		section: text('section').notNull(),
+		status: text('status').notNull(),
+		sortBy: text('sort_by').notNull(),
+		direction: text('direction', { enum: ['asc', 'desc'] }).notNull(),
+		tag: text('tag'),
+		createdAt: text('created_at').notNull(),
+		updatedAt: text('updated_at').notNull()
+	},
+	(table) => [
+		index('phone_widgets_user_idx').on(table.userId),
+		uniqueIndex('phone_widgets_token_unique').on(table.tokenId)
 	]
 );
 

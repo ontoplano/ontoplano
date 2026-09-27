@@ -93,7 +93,11 @@ describe('an argument of the wrong shape', () => {
 		const answer = call(name, given);
 		expect(answer.result, JSON.stringify(answer)).toBeUndefined();
 		expect(answer.error?.code).toBe(-32602);
-		return answer.error!;
+		// Every refusal carries the same stable code the JSON API uses; the
+		// rest of `data` is what each case below is about.
+		const { code, ...data } = answer.error!.data ?? {};
+		expect(code).toBe('validation_error');
+		return { ...answer.error!, data };
 	};
 
 	it('is refused when the schema does not name it', () => {

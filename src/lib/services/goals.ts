@@ -351,16 +351,72 @@ export function createArea(ctx: Ctx, raw: { name: unknown; color?: unknown }): n
 
 	if (clash) throw new ConflictError({ key: 'errors.goals.youAlreadyHaveAnArea' });
 
+	// Last, so a new area does not jump ahead of an order somebody arranged.
+	const last = listAreas(ctx).at(-1);
 	const result = db
 		.insert(goalAreas)
 		.values({
 			...created(ctx),
 			userId: ctx.userId,
 			name,
-			color
+			color,
+			sortOrder: last ? last.sortOrder + 1 : 0
 		})
 		.run();
 	return Number(result.lastInsertRowid);
+}
+
+/**
+ * Rename an area or change its colour; a field left out is untouched.
+ *
+ * A name another area already has is refused, as it is on create: an area
+ * is a place goals are filed, like a shelf, and two shelves with one label
+ * would be merged by a typo rather than on purpose.
+ */
+export function updateArea(ctx: Ctx, id: number, raw: { name?: unknown; color?: unknown }): void {
+	const set: { name?: string; color?: string } = {};
+	if (raw.name !== undefined && raw.name !== null && raw.name !== '') {
+		set.name = str(raw.name, 'name', { max: MAX_AREA_NAME_LENGTH });
+		const clash = db
+			.select({ id: goalAreas.id })
+			.from(goalAreas)
+			.where(and(eq(goalAreas.userId, ctx.userId), eq(goalAreas.name, set.name)))
+			.get();
+		if (clash && clash.id !== id)
+			throw new ConflictError({ key: 'errors.goals.youAlreadyHaveAnArea' });
+	}
+	const color = parseColor(raw.color);
+	if (color) set.color = color;
+	if (!set.name && !set.color) {
+		ownedAreaId(ctx, id);
+		return;
+	}
+
+	const res = db
+		.update(goalAreas)
+		.set(set)
+		.where(and(eq(goalAreas.id, id), eq(goalAreas.userId, ctx.userId)))
+		.run();
+	if (res.changes === 0) throw new NotFoundError('area');
+}
+
+/** A move is a reinsertion: every area is resequenced around the one moved. */
+export function moveArea(ctx: Ctx, id: number, delta: number): void {
+	const all = listAreas(ctx);
+	const from = all.findIndex((a) => a.id === id);
+	if (from === -1) throw new NotFoundError('area');
+	const to = Math.min(Math.max(from + Math.sign(delta), 0), all.length - 1);
+	if (to === from) return;
+	const [moved] = all.splice(from, 1);
+	all.splice(to, 0, moved);
+	db.transaction((tx) => {
+		all.forEach((a, index) => {
+			tx.update(goalAreas)
+				.set({ sortOrder: index })
+				.where(and(eq(goalAreas.id, a.id), eq(goalAreas.userId, ctx.userId)))
+				.run();
+		});
+	});
 }
 
 /** Goals keep existing without an area rather than disappearing with it. */
@@ -391,7 +447,7 @@ export function createGoal(
 	const anchor = parseAnchor(raw.startDate) ?? ctx.now;
 	const targets = parseTargets(raw.targets) ?? [];
 	const areaId = ownedAreaId(ctx, raw.areaId);
-	const notebookId = ownedNotebookId(ctx, raw.notebookId);
+	const notebookId = ownedNotebookId(ctx, raw.notebookId, 'goals');
 	const parentId = ownedGoalId(ctx, raw.parentId);
 
 	return db.transaction((tx) => {
@@ -463,7 +519,7 @@ export function updateGoal(
 	// emptied list there does mean "no measures".
 	const targets = parseTargets(raw.targets);
 	const areaId = ownedAreaId(ctx, raw.areaId);
-	const notebookId = ownedNotebookId(ctx, raw.notebookId);
+	const notebookId = ownedNotebookId(ctx, raw.notebookId, 'goals', { table: goals, id });
 	const title = str(raw.title, 'title', { max: MAX_TITLE_LENGTH });
 	const notes = optionalStr(raw.notes, 'notes', { max: MAX_NOTES_LENGTH });
 

@@ -403,6 +403,13 @@ export const TUTORIALS: Record<string, Tutorial> = {
 				target: '[data-tour="notebook-tabs"]',
 				title: 'tour.notJustNotesAndTasks',
 				body: 'tour.aNotebookCanHoldWhatever'
+			},
+			{
+				// Only on a notebook with notes in it, which is when there is
+				// anything to select.
+				target: '[data-tour="notebook-note-selection"]',
+				title: 'selection.selectMany',
+				body: 'tour.notebookNoteSelection'
 			}
 		]
 	},
@@ -678,6 +685,21 @@ export const TUTORIALS: Record<string, Tutorial> = {
 				target: '[data-tour="integrations-streams"]',
 				title: 'tour.numbersFromElsewhere',
 				body: 'tour.aStreamIsASeries'
+			}
+		]
+	},
+
+	'/settings/integrations/widget': {
+		label: 'tour.widgets',
+		steps: [
+			{
+				title: 'tour.widgetsOnThePhone',
+				body: 'tour.widgetsOnThePhoneBody'
+			},
+			{
+				target: '[data-tour="widgets-list"]',
+				title: 'tour.widgetsList',
+				body: 'tour.widgetsListBody'
 			}
 		]
 	}

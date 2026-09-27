@@ -72,5 +72,18 @@ for (const [label, viewport] of [
 		await page.locator('#delegate-form [name="date"]').fill('2026-10-02');
 		await page.getByRole('button', { name: 'Put on the day' }).click();
 		await expect(row.getByText('2026-10-02')).toBeVisible();
+
+		// And the day's board has it once, as the block: the task itself was
+		// not put on the day, so there is no card beside the block, and nothing
+		// is carried on to a later board as overdue.
+		const onBoard = (at: string) =>
+			visit(page, `/tasks/board?date=${at}`).then(() =>
+				page
+					.locator('main')
+					.getByText('ring the plumber', { exact: true })
+					.filter({ visible: true })
+			);
+		await expect(await onBoard('2026-10-02')).toHaveCount(1);
+		await expect(await onBoard('2026-10-05')).toHaveCount(0);
 	});
 }

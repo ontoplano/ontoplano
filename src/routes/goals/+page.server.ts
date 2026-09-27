@@ -4,7 +4,15 @@ import type { IsolatedEvent } from '$lib/isolated/routes';
 import { listActivities } from '$lib/services/activities';
 import { buildCtx } from '$lib/services/ctx';
 import { toActionFailure } from '$lib/http-errors';
-import { createArea, deleteArea, linkableSlots, listAreas, listGoals } from '$lib/services/goals';
+import {
+	createArea,
+	deleteArea,
+	linkableSlots,
+	listAreas,
+	listGoals,
+	moveArea,
+	updateArea
+} from '$lib/services/goals';
 import { pickableNotebooks } from '$lib/services/notebooks';
 import { listTodos } from '$lib/services/todos';
 
@@ -51,6 +59,33 @@ export const actions = {
 				name: formData.get('label'),
 				color: formData.get('color')
 			});
+			return { success: true };
+		} catch (e) {
+			return toActionFailure(e);
+		}
+	},
+
+	updateArea: async ({ request, locals }: IsolatedEvent) => {
+		const formData = await request.formData();
+		try {
+			updateArea(buildCtx(locals.user!.id), Number(formData.get('id')), {
+				name: formData.get('label'),
+				color: formData.get('color')
+			});
+			return { success: true };
+		} catch (e) {
+			return toActionFailure(e);
+		}
+	},
+
+	moveArea: async ({ request, locals }: IsolatedEvent) => {
+		const formData = await request.formData();
+		try {
+			moveArea(
+				buildCtx(locals.user!.id),
+				Number(formData.get('id')),
+				Number(formData.get('delta'))
+			);
 			return { success: true };
 		} catch (e) {
 			return toActionFailure(e);

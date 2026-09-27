@@ -11,7 +11,7 @@ own write surface, the way the endpoints in [the API](api.md) are the
 write surface for everything else; both end up calling the same
 [services](services.md).
 
-**63 pages, 198 actions.**
+**64 pages, 203 actions.**
 
 | Page                                 | Actions                                                                                                                                                                                                                                                                                                                                                                             |
 | ------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -27,7 +27,7 @@ write surface for everything else; both end up calling the same
 | `/finance/insights`                  | —                                                                                                                                                                                                                                                                                                                                                                                   |
 | `/finance/ledgers`                   | `createLedger`, `updateLedger`, `moveLedger`, `archiveLedger`, `deleteLedger`, `import`, `addMovement`, `updateMovement`, `deleteMovement`                                                                                                                                                                                                                                          |
 | `/finance/rules`                     | `create`, `update`, `move`, `delete`                                                                                                                                                                                                                                                                                                                                                |
-| `/goals`                             | `createArea`, `deleteArea`, `create`, `update`, `setProgress`, `close`, `setLinks`, `setTodoStatus`, `remove`                                                                                                                                                                                                                                                                       |
+| `/goals`                             | `createArea`, `updateArea`, `moveArea`, `deleteArea`, `create`, `update`, `setProgress`, `close`, `setLinks`, `setTodoStatus`, `remove`                                                                                                                                                                                                                                             |
 | `/health/habits`                     | —                                                                                                                                                                                                                                                                                                                                                                                   |
 | `/health/recipes`                    | —                                                                                                                                                                                                                                                                                                                                                                                   |
 | `/health/recipes/[id]`               | —                                                                                                                                                                                                                                                                                                                                                                                   |
@@ -68,7 +68,7 @@ write surface for everything else; both end up calling the same
 | `/settings/instance`                 | `exportSubscribers`, `setRegistration`, `setEmailChange`, `setClientErrors`, `createInvite`, `revokeInvite`                                                                                                                                                                                                                                                                         |
 | `/settings/integrations`             | `save`, `models`, `permissions`, `remove`, `ringOnThisPhone`, `createKey`, `putBack`                                                                                                                                                                                                                                                                                                |
 | `/settings/integrations/connections` | `createToken`, `calendarLink`, `notifyAssistant`, `putBack`, `revokeToken`, `updateStream`, `deleteStream`, `createWebhook`, `deleteWebhook`, `reviveWebhook`                                                                                                                                                                                                                       |
-| `/settings/integrations/widget`      | `connect`                                                                                                                                                                                                                                                                                                                                                                           |
+| `/settings/integrations/widget`      | `connect`, `createWidget`, `updateWidget`, `deleteWidget`                                                                                                                                                                                                                                                                                                                           |
 | `/settings/preferences`              | `setNotification`, `setErrorReports`, `saveCurrency`, `saveCapture`, `saveGridHours`, `saveMenu`, `resetMenu`, `setLayout`, `resetLayout`, `addQuote`, `importQuotes`, `deleteQuote`, `setStyle`, `setLanguage`, `setClock`, `setTheme`, `saveWeek`                                                                                                                                 |
 | `/start`                             | `checkout`                                                                                                                                                                                                                                                                                                                                                                          |
 | `/tasks/activities`                  | `create`, `update`, `toggleActive`, `delete`, `createCategory`, `updateCategory`, `deleteCategory`                                                                                                                                                                                                                                                                                  |
@@ -78,6 +78,7 @@ write surface for everything else; both end up calling the same
 | `/tasks/todo`                        | `create`, `update`, `archive`, `setStatus`, `schedule`, `tag`, `attribute`, `batch`, `delete`, `delegate`                                                                                                                                                                                                                                                                           |
 | `/welcome`                           | `assistantToken`, `setLanguage`, `finish`                                                                                                                                                                                                                                                                                                                                           |
 | `/welcome/password`                  | `default`                                                                                                                                                                                                                                                                                                                                                                           |
+| `/widget`                            | —                                                                                                                                                                                                                                                                                                                                                                                   |
 
 ## What these pages do
 
@@ -520,12 +521,16 @@ assistant has ever done, which is a notification about last month.
 
 ### `/settings/integrations/widget`
 
-Where the phone widget connects itself.
+Where the phone's widgets are set up, and listed.
 
-The widget used to ask for an address and a pasted token, which is asking a
-person to do a key exchange by hand. Now its Connect button opens this page
-in the browser — where a session already exists — one tap mints the key, and
-the app link on the way back carries it home. Nobody sees a token.
+Two kinds. The Today widget connects itself with one key that reads today.
+A notebook widget shows one tab of one notebook, and its choices live here
+— the phone holds only its key — so they can be changed from any screen.
+
+**`createWidget`**
+
+A notebook widget, and its key — handed back once, for the phone that
+asked (`slot` is the widget's number on that phone's home screen).
 
 ### `/settings/preferences`
 

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="notebook_widget_name">Ontoplano — caderno</string>
+    <string name="notebook_widget_description">Uma aba de um caderno: suas tarefas, notas, metas, ideias ou coisas para comprar.</string>
+    <string name="notebook_widget_refresh">Atualizar</string>
+    <string name="notebook_widget_set_up">Toque para escolher um caderno</string>
+    <string name="notebook_widget_nothing">Nada aqui</string>
+    <string name="notebook_widget_refused">Este widget foi removido ou a chave dele foi revogada. Toque para configurar de novo.</string>
+    <string name="notebook_widget_unreachable">Não foi possível alcançar sua instância. Toque em atualizar para tentar de novo.</string>
+    <string name="notebook_widget_section_notes">Notas</string>
+    <string name="notebook_widget_section_tasks">Tarefas</string>
+    <string name="notebook_widget_section_goals">Metas</string>
+    <string name="notebook_widget_section_ideas">Ideias</string>
+    <string name="notebook_widget_section_inventory">Inventário</string>
+</resources>

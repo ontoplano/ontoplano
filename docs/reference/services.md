@@ -76,12 +76,14 @@ shows up here on the next build.
 | [`note-todos`](#note-todos)                      | Turning a note that is really a checklist into the todos it describes.                                                                                                                                                                                               |
 | [`notebook-linking`](#notebook-linking)          | Putting something that already exists under a subject.                                                                                                                                                                                                               |
 | [`notebook-media`](#notebook-media)              | Every picture that is in a notebook, as a gallery album.                                                                                                                                                                                                             |
+| [`notebook-sections`](#notebook-sections)        | One tab of one notebook, as lines.                                                                                                                                                                                                                                   |
 | [`notebooks`](#notebooks)                        | Notebooks: a subject you write against, with no deadline.                                                                                                                                                                                                            |
 | [`notifications`](#notifications)                | Everything the app will tell you about, in one list.                                                                                                                                                                                                                 |
 | [`oauth`](#oauth)                                | Connecting an assistant without anybody handling a key.                                                                                                                                                                                                              |
 | [`onboarding-templates`](#onboarding-templates)  | The starter weeks, as data.                                                                                                                                                                                                                                          |
 | [`onboarding`](#onboarding)                      | First run.                                                                                                                                                                                                                                                           |
 | [`people`](#people)                              | The people in your life, and where they turn up.                                                                                                                                                                                                                     |
+| [`phone-widgets`](#phone-widgets)                | Home-screen widgets that show one tab of one notebook.                                                                                                                                                                                                               |
 | [`plan-intent`](#plan-intent)                    | Which plan somebody said they wanted, carried from the front page to the card.                                                                                                                                                                                       |
 | [`plugins`](#plugins)                            | Plugin manifests: what a plugin says it understands.                                                                                                                                                                                                                 |
 | [`preferences`](#preferences)                    | The settings a person chooses about themselves.                                                                                                                                                                                                                      |
@@ -94,6 +96,7 @@ shows up here on the next build.
 | [`reminder-delivery`](#reminder-delivery)        | The pass that makes a reminder arrive with the app shut.                                                                                                                                                                                                             |
 | [`reminder-sources`](#reminder-sources)          | The reminders nobody types.                                                                                                                                                                                                                                          |
 | [`reminders`](#reminders)                        | Something that reaches out.                                                                                                                                                                                                                                          |
+| [`request-replays`](#request-replays)            | A create sent twice, answered once.                                                                                                                                                                                                                                  |
 | [`review-mail`](#review-mail)                    | The morning a week begins: what last week actually was, in the inbox.                                                                                                                                                                                                |
 | [`review`](#review)                              | Closing a week.                                                                                                                                                                                                                                                      |
 | [`ringtones`](#ringtones)                        | The sounds a reminder can make.                                                                                                                                                                                                                                      |
@@ -1984,6 +1987,18 @@ every block that had never been given one, which is most of them.
 
 #### `createArea(ctx, raw)`
 
+#### `updateArea(ctx, id, raw)`
+
+Rename an area or change its colour; a field left out is untouched.
+
+A name another area already has is refused, as it is on create: an area
+is a place goals are filed, like a shelf, and two shelves with one label
+would be merged by a typo rather than on purpose.
+
+#### `moveArea(ctx, id, delta)`
+
+A move is a reinsertion: every area is resequenced around the one moved.
+
 #### `deleteArea(ctx, id)`
 
 Goals keep existing without an area rather than disappearing with it.
@@ -3558,6 +3573,27 @@ folder per notebook at the top of the tree.
 
 - `NotebookMediaFolder` — A notebook that has pictures in it, and which ones.
 
+## notebook-sections
+
+One tab of one notebook, as lines.
+
+What a home-screen widget draws, and what `/api/v1/notebooks/:id/:section`
+answers: each row is the tab's own row — read through the same list function
+the tab is drawn from — reduced to what fits on a line, filtered and ordered
+by the choices `$lib/notebook-widget` offers for that tab.
+
+### Functions
+
+#### `sectionItems(ctx, notebookId, q)`
+
+The lines of one tab, or a `NotFoundError` for a notebook this account
+cannot reach — somebody else's and one that does not exist answer alike.
+
+### Types
+
+- `SectionItem`
+- `SectionAnswer`
+
 ## notebooks
 
 Notebooks: a subject you write against, with no deadline.
@@ -3611,6 +3647,10 @@ A module whose room this account has put away is left out altogether. It
 would be a switch that changes nothing on screen, and the honest place to
 answer for it is Preferences, where the room itself was put away.
 
+#### `entriesOf(ctx, id)`
+
+The notes in one notebook this account may reach. See `notebookEntries`.
+
 #### `contentsOf(ctx, id)`
 
 Everything pointed at this notebook, in the three shapes it can arrive in.
@@ -3652,7 +3692,7 @@ and no notebook is one whose notebook was deleted, and that is what puts it
 in `listOrphanedNotes` rather than back in the diary — a note about a
 renovation does not become a journal entry because the renovation is over.
 
-#### `ownedNotebookId(ctx, value)`
+#### `ownedNotebookId(ctx, value, holds, was)`
 
 A notebook id from a form, or null.
 
@@ -3660,7 +3700,22 @@ Every service that lets something belong to a notebook goes through here, so
 "somebody else's notebook" and "no notebook" cannot be confused: an id you do
 not own is a 404, not a silent null (I3).
 
-#### `notebookPatch(ctx, raw)`
+#### `assertNotebookHolds(ctx, notebookId, module)`
+
+A notebook that holds this kind of thing, or a refusal naming the tab it
+lacks.
+
+Filed into a notebook without the tab, a thing is shown nowhere inside it —
+which is worse than refusing, because nothing says where it went. Read from
+what the notebook was told to hold, the same list its tabs come from; a room
+the account has put away does not count against it, since putting a room
+away hides a tab rather than emptying it.
+
+#### `notebookHolds(ctx, notebookId, module)`
+
+Whether a reachable notebook has this tab — for a caller with somewhere else to go.
+
+#### `notebookPatch(ctx, raw, holds, was)`
 
 `{ notebookId }` when the caller named one, and nothing at all when it did not.
 
@@ -3709,7 +3764,9 @@ Share a notebook with the family, or stop. The owner's switch alone.
 ### Types
 
 - `Notebook`
+- `Scopable` — A table whose rows can point at a notebook.
 - `Tally` — One number per module — see `$lib/notebook-modules`.
+- `FiledRow` — A row being changed, so a notebook it is already filed in can be kept.
 
 ## notifications
 
@@ -3940,6 +3997,43 @@ The people each of these entries mentions, keyed by entry id.
 
 - `Person`
 - `Mentioned` — What a mention chip needs: who, and how you know them.
+
+## phone-widgets
+
+Home-screen widgets that show one tab of one notebook.
+
+Each widget is a row here and a key of its own. The key is confined to the
+notebook and granted the single read its tab needs — a widget on the lock
+screen showing the renovation's shopping cannot read the diary, nor another
+notebook's shopping. Editing a widget moves its key; deleting one revokes it.
+
+### Functions
+
+#### `listPhoneWidgets(ctx)`
+
+#### `createPhoneWidget(ctx, raw)`
+
+A new widget and the key it reads with. The key is in the answer once and
+never again — it goes straight to the phone.
+
+#### `updatePhoneWidget(ctx, id, raw)`
+
+Point a widget somewhere else. Its key moves with it; the phone keeps the same one.
+
+#### `deletePhoneWidget(ctx, id)`
+
+Remove a widget and revoke its key, so the phone's copy stops working.
+
+#### `widgetFor(ctx, token)`
+
+What the widget holding this key should draw.
+
+The key names the widget: the phone never says which notebook it wants, so
+it cannot ask for another one. Not found for a key that is no widget's.
+
+### Types
+
+- `PhoneWidget`
 
 ## plan-intent
 
@@ -4747,6 +4841,42 @@ signed-in user and the ids come from its own query.
 
 - `ReminderKind`
 - `Reminder`
+
+## request-replays
+
+A create sent twice, answered once.
+
+An assistant that did not hear back from `add_task` cannot know whether the
+task was made. If it sent a `requestId`, it can send the same call again:
+within the window the first answer comes back and nothing runs a second
+time. After the window the id is forgotten and a resend is a new call —
+a retry is a matter of minutes, and a table of every answer ever given
+would be a second copy of the account.
+
+Keyed per account, not per key: two assistants on one account that pick
+the same id are the same caller as far as the data is concerned, and the
+fingerprint stops either of them being answered for a call it did not make.
+
+### Functions
+
+#### `fingerprintOf(tool, args)`
+
+The call a `requestId` was used for: the tool, and its arguments without the id.
+
+#### `requestIdOf(value)`
+
+The id as sent, refused when it is not one.
+
+#### `replayOf(ctx, requestId, fingerprint)`
+
+The answer this id was given, when it was given within the window — or null.
+
+The same id with a different call is refused: answering "add milk" with the
+answer to "add eggs" would say something was made that was not.
+
+#### `rememberAnswer(ctx, requestId, tool, fingerprint, answer)`
+
+Remembers the answer, and forgets this account's ids that have run out.
 
 ## review-mail
 
@@ -6321,6 +6451,10 @@ The general list: todos not pulled onto a particular day.
 _scheduled_ wants only the ones still waiting, because asking somebody when
 they will do a thing they already did is nonsense.
 
+A task delegated to a block is left out too, while the block exists: its
+day is decided, and the block is what the board and the plan show for it.
+The full list (`listTodos`) still has it, with the day on its card.
+
 #### `listForDate(ctx, date)`
 
 Todos sitting on one day's board.
@@ -6476,6 +6610,15 @@ docs, the sentence is for the owner of the data.
 A calendar link is exactly this one scope — see the note beside it.
 
 #### `createToken(ctx, input)`
+
+#### `reshapeToken(ctx, id, input)`
+
+Change what a live key may read and where, keeping the key itself.
+
+For a key somebody cannot re-enter: a home-screen widget holds its key and
+nothing else, so pointing the widget at another notebook has to move the key
+rather than mint a new one the phone would never hear about. The scopes and
+the confinement are checked exactly as `createToken` checks them.
 
 #### `freeName(ctx, base)`
 

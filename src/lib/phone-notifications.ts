@@ -352,6 +352,15 @@ type Settings = {
 	syncReminders(): Promise<void>;
 	ringerStatus(): Promise<Partial<RingerStatus>>;
 	openExactAlarmSettings(): Promise<void>;
+	/** Hand a home-screen widget its key — see `NotebookWidget.java`. */
+	bindNotebookWidget(what: {
+		slot: number;
+		origin: string;
+		token: string;
+		widget: number;
+	}): Promise<void>;
+	/** Ask every notebook widget on the home screen to read again. */
+	refreshNotebookWidgets(): Promise<void>;
 };
 
 /**
@@ -382,7 +391,7 @@ export type RingerStatus = {
 	channelAudible: boolean;
 };
 
-function shell(): Settings | null {
+export function shell(): Settings | null {
 	if (!inPhoneApp()) return null;
 	const capacitor = (globalThis as { Capacitor?: { Plugins?: Record<string, unknown> } }).Capacitor;
 	const found = capacitor?.Plugins?.OntoplanoSettings;

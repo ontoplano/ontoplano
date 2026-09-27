@@ -34,7 +34,7 @@
 		startingNotebook = null
 	}: {
 		editing?: Editing;
-		notebooks?: { id: number; title: string }[];
+		notebooks?: { id: number; title: string; modules: readonly string[] }[];
 		startingNotebook?: number | null;
 	} = $props();
 </script>
@@ -56,7 +56,12 @@
 		<OneLine name="source" value={editing?.source ?? ''} class="input" />
 	</Field>
 
-	<NotebookField {notebooks} value={editing?.notebookId ?? startingNotebook} span={12} />
+	<NotebookField
+		{notebooks}
+		holds="recipes"
+		value={editing?.notebookId ?? startingNotebook}
+		span={12}
+	/>
 
 	<Field
 		label={t('health.recipes.method')}

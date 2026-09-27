@@ -4,7 +4,7 @@ import { NotFoundError } from '$lib/services/errors.js';
 import { listActivities } from '$lib/services/activities.js';
 import { FLOWS, listBills } from '$lib/services/bills.js';
 import { listEveryEntry } from '$lib/services/diary.js';
-import { listGoals } from '$lib/services/goals.js';
+import { listAreas, listGoals } from '$lib/services/goals.js';
 import { listHabits } from '$lib/services/habits.js';
 import { listIdeas } from '$lib/services/ideas.js';
 import { occurrenceRow } from '$lib/services/instances.js';
@@ -66,6 +66,7 @@ const kinds = <T extends Record<string, Kind>>(table: T): { readonly [K in keyof
 export const KINDS = kinds({
 	todo: { label: 'to-do', rows: (ctx) => listTodos(ctx) },
 	goal: { label: 'goal', rows: (ctx) => listGoals(ctx, { includeClosed: true }) },
+	goalArea: { label: 'goal area', rows: (ctx) => listAreas(ctx) },
 	notebook: { label: 'notebook', rows: (ctx) => listNotebooks(ctx) },
 	note: { label: 'note', rows: (ctx) => listEveryEntry(ctx) },
 	habit: { label: 'habit', rows: (ctx) => listHabits(ctx) },
@@ -319,6 +320,14 @@ export function assertRefs(
  */
 export const ID_ARGUMENT = /^(id|ids|[a-z]+Ids?|[a-z_]+_ids?)$/;
 
+/**
+ * Arguments spelled like an id that name nothing in this app: the caller
+ * makes them up. `requestId` is the retry key every create takes (see
+ * `request-replays.ts`), so it is said once here rather than as `opaque` on
+ * thirty tools.
+ */
+export const CALLER_CHOSEN = new Set(['requestId']);
+
 type SchemaNode = {
 	type?: string | string[];
 	description?: string;
@@ -352,6 +361,7 @@ export function referenceLike(input: unknown, toolNames: ReadonlySet<string>): s
 		for (const [name, child] of Object.entries(node?.properties ?? {})) {
 			const at = path ? `${path}.${name}` : name;
 			const whole = isInteger(child) || (child.type === 'array' && isInteger(child.items));
+			if (CALLER_CHOSEN.has(name)) continue;
 			if (ID_ARGUMENT.test(name) || (whole && points(child.description ?? ''))) found.push(at);
 			if (child.type === 'object') walk(child, at);
 			if (child.type === 'array' && child.items?.type === 'object') walk(child.items, `${at}[]`);

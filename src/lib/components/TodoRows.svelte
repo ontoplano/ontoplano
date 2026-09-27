@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { say } from '$lib/said.svelte';
+	import { notebooksHolding } from '$lib/notebook-modules';
 	import { openFromUrl } from '$lib/open-from-url.svelte';
 	import { discardForm, keptForm } from '$lib/kept-form';
 	import Picker from '$lib/components/Picker.svelte';
@@ -122,7 +123,7 @@
 	}: {
 		todos: Todo[];
 		categories: { id: number; name: string }[];
-		notebooks: { id: number; title: string }[];
+		notebooks: { id: number; title: string; modules: readonly string[] }[];
 		actions: TodoActionNames;
 		goalLinks?: Record<number, GoalBacklink[]>;
 		error?: string | undefined;
@@ -1696,6 +1697,15 @@
 									>
 										{todo.scheduledDate}
 									</span>
+								{:else if todo.delegatedDate}
+									<!-- The day of the block it was delegated to: the task itself
+										stays in the list, and the block is what the day's board shows. -->
+									<span
+										class="tabular border border-gray-200 bg-gray-50 px-1 text-[10px] text-gray-600"
+										title={t('todoRows.delegatedToThisDay')}
+									>
+										{todo.delegatedDate}
+									</span>
 								{/if}
 								{#if todo.archivedAt}
 									<span
@@ -1829,8 +1839,8 @@
 				<Field label={t('ui.notebook')} span={12}>
 					<select name="notebookId" class="select" use:autofocus>
 						<option value="">{t('todoRows.notInOne')}</option>
-						{#each notebooks as notebook (notebook.id)}<option value={notebook.id}
-								>{notebook.title}</option
+						{#each notebooksHolding(notebooks, 'tasks') as notebook (notebook.id)}<option
+								value={notebook.id}>{notebook.title}</option
 							>{/each}
 					</select>
 				</Field>

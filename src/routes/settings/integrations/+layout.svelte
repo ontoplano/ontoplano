@@ -13,6 +13,10 @@
 		{
 			href: resolve('/settings/integrations/connections'),
 			label: t('rooms.integrations.tabs.connections')
+		},
+		{
+			href: resolve('/settings/integrations/widget'),
+			label: t('rooms.integrations.tabs.widgets')
 		}
 	];
 </script>

@@ -105,7 +105,7 @@ beforeAll(async () => {
 	const at = (user: string) => buildCtx(user, { tz: 'UTC', now: new Date('2026-03-14T10:00:00Z') });
 
 	const { createTodo } = await import('../src/lib/services/todos');
-	const { createGoal } = await import('../src/lib/services/goals');
+	const { createArea, createGoal } = await import('../src/lib/services/goals');
 	const { createHabit } = await import('../src/lib/services/habits');
 	const { createNotebook } = await import('../src/lib/services/notebooks');
 	const { createLedger } = await import('../src/lib/services/ledgers');
@@ -142,6 +142,7 @@ beforeAll(async () => {
 
 		o.todo = idOf(createTodo(c, { title: `todo ${m}` }));
 		o.goal = idOf(createGoal(c, { title: `goal ${m}`, horizon: 'week' }));
+		o.goalArea = idOf(createArea(c, { name: `area ${m}` }));
 		o.habit = idOf(createHabit(c, { name: `habit ${m}` }));
 		o.notebook = idOf(createNotebook(c, { title: `notebook ${m}` }));
 		o.note = idOf(createEntry(c, { content: `note ${m}` }));

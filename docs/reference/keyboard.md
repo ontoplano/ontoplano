@@ -129,6 +129,16 @@ works is a key listed here and the reverse.
 | <kbd>k</kbd> | Navigate tokens |
 | <kbd>n</kbd> | New token       |
 
+## Widgets — `/settings/integrations/widget`
+
+| Key          | Does                                     |
+| ------------ | ---------------------------------------- |
+| <kbd>j</kbd> | Navigate widgets                         |
+| <kbd>k</kbd> | Navigate widgets                         |
+| <kbd>e</kbd> | Edit the widget                          |
+| <kbd>x</kbd> | Ask to delete the widget                 |
+| <kbd>n</kbd> | New widget, when the phone sent you here |
+
 ## Activities — `/tasks/activities`
 
 | Key          | Does                   |

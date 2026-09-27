@@ -72,6 +72,14 @@ export type Todo = {
 	notes: string;
 	status: Status;
 	scheduledDate: string | null;
+	/**
+	 * The day of the block it was delegated to, or null.
+	 *
+	 * Not a schedule: the task stays in the list and the block is what sits on
+	 * that day's board. Read off the block, so it follows a moved block and
+	 * clears when the block is deleted.
+	 */
+	delegatedDate: string | null;
 	sortOrder: number;
 	categoryId: number | null;
 	categoryName: string | null;
@@ -120,6 +128,13 @@ const SELECTION = {
 	status: todoTasks.status,
 	completedAt: todoTasks.completedAt,
 	scheduledDate: todoTasks.scheduledDate,
+	// A subquery rather than a join, so every list that selects this shape
+	// gets it without each growing a join of its own.
+	delegatedDate: sql<string | null>`(
+		SELECT ${exceptionalTasks.date} FROM ${exceptionalTasks}
+		WHERE ${exceptionalTasks.id} = ${todoTasks.delegatedSlotId}
+			AND ${exceptionalTasks.userId} = ${todoTasks.userId}
+	)`,
 	sortOrder: todoTasks.sortOrder,
 	categoryId: todoTasks.categoryId,
 	categoryName: categories.name,
@@ -143,6 +158,7 @@ function shape(r: Record<string, unknown>): Todo {
 		notes: (r.notes as string) ?? '',
 		status: r.status as Status,
 		scheduledDate: (r.scheduledDate as string) ?? null,
+		delegatedDate: (r.delegatedDate as string) ?? null,
 		sortOrder: r.sortOrder as number,
 		categoryId: (r.categoryId as number) ?? null,
 		categoryName: (r.categoryName as string) ?? null,
@@ -568,6 +584,10 @@ export function listTodosIn(
  * — its Done column is where they live — but anywhere that offers a todo to be
  * *scheduled* wants only the ones still waiting, because asking somebody when
  * they will do a thing they already did is nonsense.
+ *
+ * A task delegated to a block is left out too, while the block exists: its
+ * day is decided, and the block is what the board and the plan show for it.
+ * The full list (`listTodos`) still has it, with the day on its card.
  */
 export function listUnscheduled(ctx: Ctx, options: { openOnly?: boolean } = {}): Todo[] {
 	const rows = db
@@ -579,6 +599,7 @@ export function listUnscheduled(ctx: Ctx, options: { openOnly?: boolean } = {}):
 			and(
 				eq(todoTasks.userId, ctx.userId),
 				isNull(todoTasks.scheduledDate),
+				isNull(todoTasks.delegatedSlotId),
 				options.openOnly ? notInArray(todoTasks.status, [...CLOSED_STATUSES]) : undefined
 			)
 		)
@@ -748,6 +769,12 @@ export function demoteToTodo(ctx: Ctx, slotId: number): { ok: true; todoId: numb
 		.get();
 	if (!slot) throw new NotFoundError('Block');
 
+	const delegator = delegatedFrom(ctx, slotId);
+	if (delegator !== null) {
+		dropBlock(ctx, slotId);
+		return { ok: true, todoId: delegator };
+	}
+
 	// The instance carries what happened to it: the status, and the notes, which
 	// a block has nowhere else to put.
 	const instance = db
@@ -804,6 +831,30 @@ export function demoteToTodo(ctx: Ctx, slotId: number): { ok: true; todoId: numb
 	});
 
 	return { ok: true, todoId };
+}
+
+/**
+ * The task a one-off block was delegated from, when it still exists.
+ *
+ * That task never left the list, so sending its block back is removing the
+ * block — making a second task of it would put the same thing on the list
+ * twice.
+ */
+function delegatedFrom(ctx: Ctx, slotId: number): number | null {
+	return (
+		db
+			.select({ id: todoTasks.id })
+			.from(todoTasks)
+			.where(and(eq(todoTasks.userId, ctx.userId), eq(todoTasks.delegatedSlotId, slotId)))
+			.get()?.id ?? null
+	);
+}
+
+/** A one-off block gone, its instance by cascade and the task's link by `set null`. */
+function dropBlock(ctx: Ctx, slotId: number): void {
+	db.delete(exceptionalTasks)
+		.where(and(eq(exceptionalTasks.id, slotId), eq(exceptionalTasks.userId, ctx.userId)))
+		.run();
 }
 
 // --- Mutations ----------------------------------------------------------------
@@ -869,7 +920,7 @@ function nextNotebookSeq(ctx: Ctx, notebookId: number | null | undefined): numbe
 
 export function createTodo(ctx: Ctx, raw: TodoInput): number {
 	const title = str(raw.title, 'title', { max: MAX_TITLE_LENGTH });
-	const notebookId = ownedNotebookId(ctx, raw.notebookId);
+	const notebookId = ownedNotebookId(ctx, raw.notebookId, 'tasks');
 	const result = db
 		.insert(todoTasks)
 		.values({
@@ -901,7 +952,7 @@ export function createTodo(ctx: Ctx, raw: TodoInput): number {
 }
 
 export function updateTodo(ctx: Ctx, id: number, raw: TodoInput): void {
-	const notebookId = ownedNotebookId(ctx, raw.notebookId);
+	const notebookId = ownedNotebookId(ctx, raw.notebookId, 'tasks', { table: todoTasks, id });
 	/*
 	 * A task moved into a notebook is numbered there, once.
 	 *
@@ -1110,7 +1161,8 @@ export function delegateTodo(
 	if (!todo) throw new NotFoundError('todo');
 
 	db.transaction((tx) => {
-		tx.insert(exceptionalTasks)
+		const block = tx
+			.insert(exceptionalTasks)
 			.values({
 				...created(ctx),
 				userId: ctx.userId,
@@ -1127,12 +1179,14 @@ export function delegateTodo(
 				notebookId: todo.notebookId,
 				attributes: todo.attributes
 			})
-			.run();
+			.returning({ id: exceptionalTasks.id })
+			.get();
 
-		// The day goes on the task too, so its card says when it is — the same
-		// date pulling it onto a day would have written.
+		// The task remembers the block rather than taking its date: a
+		// `scheduledDate` would put it on that day's board beside the block, and
+		// carry it on as overdue after.
 		tx.update(todoTasks)
-			.set({ completed: true, scheduledDate: date, updatedAt: stamp(ctx) })
+			.set({ completed: true, delegatedSlotId: block.id, updatedAt: stamp(ctx) })
 			.where(and(eq(todoTasks.id, id), eq(todoTasks.userId, ctx.userId)))
 			.run();
 	});
@@ -1262,6 +1316,11 @@ export function demoteInstance(ctx: Ctx, instanceId: number): void {
 
 	if (!instance) throw new ValidationError({ key: 'errors.todos.onlyOneOffBlocksCan' });
 
+	if (delegatedFrom(ctx, instance.exceptionalSlotId!) !== null) {
+		dropBlock(ctx, instance.exceptionalSlotId!);
+		return;
+	}
+
 	const sortOrder = nextSortOrder(ctx);
 
 	db.transaction((tx) => {
@@ -1346,7 +1405,7 @@ export function batchTodos(
 		throw new ValidationError({ key: 'errors.todos.invalidBatch' });
 
 	db.transaction(() => {
-		const notebookId = verb === 'notebook' ? ownedNotebookId(ctx, what.notebookId) : null;
+		const notebookId = verb === 'notebook' ? ownedNotebookId(ctx, what.notebookId, 'tasks') : null;
 		for (const id of ids) {
 			if (verb === 'status') setTodoStatus(ctx, id, what.status);
 			else if (verb === 'tag') tagTodo(ctx, id, { add: what.add, remove: what.remove });

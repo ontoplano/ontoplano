@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="notebook_widget_surface">#F7F7F8</color>
+    <color name="notebook_widget_text">#111827</color>
+    <color name="notebook_widget_dim">#6B7280</color>
+    <color name="notebook_widget_rule">#E5E7EB</color>
+
+    <dimen name="notebook_widget_padding">12dp</dimen>
+    <dimen name="notebook_widget_radius">16dp</dimen>
+    <dimen name="notebook_widget_button">36dp</dimen>
+</resources>

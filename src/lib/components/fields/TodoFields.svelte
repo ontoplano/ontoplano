@@ -63,7 +63,12 @@
 		categoryId?: number | null;
 		notebookId?: number | null;
 		categories?: { id: number; name: string }[];
-		notebooks?: { id: number; title: string; categoryId?: number | null }[];
+		notebooks?: {
+			id: number;
+			title: string;
+			categoryId?: number | null;
+			modules: readonly string[];
+		}[];
 		ratings?: Record<Rating, number | null>;
 		compact?: boolean;
 		place?: Snippet;
@@ -216,7 +221,7 @@
 		</select>
 	</Field>
 
-	<NotebookField {notebooks} bind:value={notebookId} />
+	<NotebookField {notebooks} holds="tasks" bind:value={notebookId} />
 {/snippet}
 
 {#snippet scales()}

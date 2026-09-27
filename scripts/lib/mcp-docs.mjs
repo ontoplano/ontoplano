@@ -317,3 +317,67 @@ export function mcpExamples(examples) {
 		})
 		.join('\n\n');
 }
+
+/**
+ * The capability matrix: each room, and which of the common verbs an
+ * assistant has over MCP beside what the app has.
+ *
+ * The placing of tools comes from `capabilities.json`, and a tool it names
+ * that the manifest has not got stops the build — so the table cannot name
+ * a tool the server does not serve. `tests/mcp-capabilities.test.ts` holds
+ * the rest: every tool placed, every verb agreeing with its manifest entry,
+ * every app action where it says, and every gap explained.
+ *
+ * @typedef {{ name: string, mcp: Record<string, string[]>, app: Record<string, string[]>, missing?: Record<string, string>, withheld?: Record<string, string> }} CapabilityRoom
+ * @param {{ verbs: string[], domains: CapabilityRoom[] }} capabilities
+ * @param {Record<string, unknown>} manifest
+ */
+export function mcpCapabilities(capabilities, manifest) {
+	const { verbs, domains } = capabilities;
+	const unknown = domains.flatMap((d) =>
+		Object.values(d.mcp)
+			.flat()
+			.filter((tool) => !manifest[tool])
+	);
+	if (unknown.length > 0)
+		throw new Error(
+			`capabilities.json names tools the manifest has not got: ${unknown.join(', ')}`
+		);
+
+	/** @param {CapabilityRoom} d @param {string} verb */
+	const cell = (d, verb) => {
+		const tools = d.mcp[verb] ?? [];
+		const inApp = (d.app[verb] ?? []).length > 0;
+		if (tools.length > 0) {
+			const named = tools.map((/** @type {string} */ tool) => `\`${tool}\``).join(', ');
+			const notes = [!inApp && 'MCP only', d.missing?.[verb] && 'in part'].filter(Boolean);
+			return notes.length ? `${named} _(${notes.join(', ')})_` : named;
+		}
+		if (!inApp) return '';
+		return d.withheld?.[verb] ? '_app only, on purpose_' : '**app only**';
+	};
+
+	const table = [
+		`| Room | ${verbs.join(' | ')} |`,
+		`| --- | ${verbs.map(() => '---').join(' | ')} |`,
+		...domains.map((d) => `| ${d.name} | ${verbs.map((verb) => cell(d, verb)).join(' | ')} |`)
+	].join('\n');
+
+	/** @param {'missing' | 'withheld'} key */
+	const listed = (key) =>
+		domains
+			.flatMap((d) =>
+				verbs
+					.filter((verb) => d[key]?.[verb])
+					.map((verb) => `- **${d.name}, ${verb}.** ${d[key]?.[verb]}`)
+			)
+			.join('\n');
+
+	return [
+		table,
+		'**Not there yet** — what the app does and an assistant cannot:',
+		listed('missing'),
+		'**Left out on purpose:**',
+		listed('withheld')
+	].join('\n\n');
+}

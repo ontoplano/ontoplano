@@ -39,7 +39,7 @@ print-%:
 	@echo '$($*)'
 
 
-.PHONY: messages hooks dev-site-fg dev-site-logs dev-site-stop _site-checkout announce _billing-in-build vars print-% badges android-project fdroid _billing-provider package package-check _dev-port _dev-deps _dev-migrated reset-dev help docs docs-site docs-check icons icon help-shots deploy-local doctor dev dev-app dev-docs dev-site dev-all dev-stop dev-logs dev-fg build preview start stop clean install-service install-mail-service uninstall-service db-push db-strangers db-dry-run db-seed db-generate db-migrate db-snapshot db-import db-studio db bdb backup-install backup-status backup-drill lint format test docker-build docker-image docker-up docker-down _docker-safe _docker-audit logs https-local _a-real-workstation android android-all android-store android-install android-install-all _adb-install _apks-are-fresh android-uninstall isolated isolated-preview test-isolated
+.PHONY: messages hooks dev-site-fg dev-site-logs dev-site-stop _site-checkout announce _billing-in-build vars print-% badges android-project fdroid _billing-provider package package-check _dev-port _dev-deps _dev-migrated reset-dev dev-local help docs docs-site docs-check icons icon help-shots deploy-local doctor dev dev-app dev-docs dev-site dev-all dev-stop dev-logs dev-fg build preview start stop clean install-service install-mail-service uninstall-service db-push db-strangers db-dry-run db-seed db-generate db-migrate db-snapshot db-import db-studio db bdb backup-install backup-status backup-drill lint format test docker-build docker-image docker-up docker-down _docker-safe _docker-audit logs https-local _a-real-workstation android android-all android-store android-install android-install-all _adb-install _apks-are-fresh android-uninstall isolated isolated-preview test-isolated
 
 # ─── Development ──────────────────────────────────────────────────────────────
 
@@ -223,15 +223,47 @@ reset-dev:
 	fi; \
 	rm -f "$$db" "$$db"-wal "$$db"-shm "$$db".*; \
 	DATABASE_URL="$$db" node scripts/migrate.mjs >/dev/null && \
-	printf 'ontoplano-dev\n' | DATABASE_URL="$$db" node scripts/make-operator.mjs dev@ontoplano.test >/dev/null && \
-	node scripts/seed-dev.mjs "$$db" dev@ontoplano.test && \
+	printf '%s\n' "$(DEV_PASSWORD)" | DATABASE_URL="$$db" node scripts/make-operator.mjs "$(DEV_EMAIL)" >/dev/null && \
+	node scripts/seed-dev.mjs "$$db" "$(DEV_EMAIL)" && \
 	if [ -n "$$running" ]; then systemctl --user start ontoplano-dev; echo "started ontoplano-dev again"; fi; \
-	echo "clean — sign in as dev@ontoplano.test / ontoplano-dev"
+	echo "clean — sign in as $(DEV_EMAIL) / $(DEV_PASSWORD)"
 
 ## stop that service
 dev-stop:
 	@systemctl --user stop ontoplano-dev
 	@echo "stopped."
+
+# A dev instance that shares nothing with the machine's own: its database and
+# its config.toml live in a directory of their own, so neither the installed
+# instance's closed registration nor its database is what the dev server reads.
+# ORIGIN is set to the port served, because better-auth answers /api/auth only
+# on the origin it was given — an ORIGIN in .env naming another port turns
+# every sign-in into a 404. Migrates, makes sure the dev account exists with
+# the password below (creating it or resetting it), seeds, and runs vite in
+# the foreground.
+#: DEV_LOCAL_DIR=$HOME/.local/share/ontoplano-dev  where dev-local keeps its database and config.toml
+#: DEV_LOCAL_PORT=1493  the port dev-local serves
+#: DEV_EMAIL=dev@ontoplano.test  the dev account dev-local and reset-dev sign in as
+#: DEV_PASSWORD=ontoplano-dev  its password, set again on every dev-local
+DEV_LOCAL_DIR ?= $(HOME)/.local/share/ontoplano-dev
+DEV_LOCAL_PORT ?= $(APP_PORT)
+DEV_EMAIL ?= dev@ontoplano.test
+DEV_PASSWORD ?= ontoplano-dev
+## a seeded dev instance in its own directory, signed in as the dev account
+dev-local: _dev-deps
+	@mkdir -p "$(DEV_LOCAL_DIR)/config"
+	@[ -f "$(DEV_LOCAL_DIR)/config/config.toml" ] || \
+		printf '[registration]\nmode = "open"\n' > "$(DEV_LOCAL_DIR)/config/config.toml"
+	@DATABASE_URL="$(DEV_LOCAL_DIR)/dev.db" node scripts/migrate.mjs >/dev/null
+	@DATABASE_URL="$(DEV_LOCAL_DIR)/dev.db" node scripts/dev-account.mjs "$(DEV_EMAIL)" "$(DEV_PASSWORD)"
+	@node scripts/seed-dev.mjs "$(DEV_LOCAL_DIR)/dev.db" "$(DEV_EMAIL)" >/dev/null
+	@echo "http://localhost:$(DEV_LOCAL_PORT) — sign in as $(DEV_EMAIL) / $(DEV_PASSWORD)"
+	@# A fresh clone has no .env, and better-auth will not start without a secret.
+	@secret=; [ -n "$$BETTER_AUTH_SECRET" ] || grep -q '^BETTER_AUTH_SECRET=.' .env 2>/dev/null || \
+		secret=BETTER_AUTH_SECRET=dev-only-secret-for-a-local-instance; \
+	env DATABASE_URL="$(DEV_LOCAL_DIR)/dev.db" ONTOPLANO_CONFIG_DIR="$(DEV_LOCAL_DIR)/config" \
+		ONTOPLANO_SELF_HOST=true ORIGIN="http://localhost:$(DEV_LOCAL_PORT)" $$secret \
+		yarn -s dev --port $(DEV_LOCAL_PORT) --strictPort
 
 # ─── The other two things this project builds, locally ───────────────────────
 #

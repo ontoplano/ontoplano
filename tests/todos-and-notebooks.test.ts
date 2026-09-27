@@ -19,6 +19,7 @@ let notebooks: typeof import('../src/lib/services/notebooks');
 let diary: typeof import('../src/lib/services/diary');
 let activities: typeof import('../src/lib/services/activities');
 let slots: typeof import('../src/lib/services/slots');
+let instances: typeof import('../src/lib/services/instances');
 let ctx: { userId: string; now: Date; tz: string };
 let theirs: { userId: string; now: Date; tz: string };
 let work: number;
@@ -29,6 +30,7 @@ beforeAll(async () => {
 	diary = await import('../src/lib/services/diary');
 	activities = await import('../src/lib/services/activities');
 	slots = await import('../src/lib/services/slots');
+	instances = await import('../src/lib/services/instances');
 	ctx = { userId: OWNER, now: new Date('2026-08-17T09:00:00'), tz: 'UTC' };
 	theirs = { ...ctx, userId: STRANGER };
 	work = activities.createCategory(ctx, { name: 'Work', color: '#1d4ed8' });
@@ -204,7 +206,13 @@ describe('putting a todo on the calendar', () => {
 		expect(onTheDay.find((one) => one.label === 'water the plants')?.remindLeadMinutes).toBeNull();
 	});
 
-	test('delegating one to a day dates the task as well as the block', () => {
+	/*
+	 * Delegating keeps the task in the list and puts a block on the plan. The
+	 * card says which day, but the task is not scheduled: a scheduled task is
+	 * on that day's board beside its own block, and overdue on every board
+	 * after it.
+	 */
+	test('delegating one to a day dates the card without putting the task on the board', () => {
 		const id = todos.createTodo(ctx, { title: 'book the dentist' });
 		todos.delegateTodo(ctx, id, {
 			date: '2026-08-21',
@@ -213,7 +221,65 @@ describe('putting a todo on the calendar', () => {
 			categoryId: work
 		});
 
-		expect(todos.listTodos(ctx).find((one) => one.id === id)?.scheduledDate).toBe('2026-08-21');
+		const task = todos.listTodos(ctx).find((one) => one.id === id)!;
+		expect(task.delegatedDate).toBe('2026-08-21');
+		expect(task.scheduledDate).toBeNull();
+		// Still in the list, but not offered again as waiting for a day.
+		expect(todos.listUnscheduled(ctx).some((one) => one.id === id)).toBe(false);
+
+		// Once on its day, as the block, and not as a task card beside it.
+		expect(todos.listForDate(ctx, '2026-08-21').some((one) => one.id === id)).toBe(false);
+		const day = new Date('2026-08-21T00:00:00');
+		instances.generateForDate(ctx, day);
+		expect(
+			instances.listForDate(ctx, day).filter((one) => one.label === 'book the dentist')
+		).toHaveLength(1);
+		// And not carried on to later boards as overdue.
+		expect(todos.listForDate(ctx, '2026-08-24').some((one) => one.id === id)).toBe(false);
+	});
+
+	test('a delegated card follows its block, and loses the day with it', () => {
+		const id = todos.createTodo(ctx, { title: 'renew the passport' });
+		todos.delegateTodo(ctx, id, {
+			date: '2026-08-22',
+			startTime: '10:00',
+			mode: 'category',
+			categoryId: work
+		});
+		const block = slots
+			.listExceptionals(ctx, '2026-08-22', '2026-08-23')
+			.find((one) => one.label === 'renew the passport')!;
+
+		slots.deleteExceptional(ctx, block.id);
+
+		const task = todos.listTodos(ctx).find((one) => one.id === id)!;
+		expect(task.delegatedDate).toBeNull();
+		expect(task.scheduledDate).toBeNull();
+		expect(todos.listUnscheduled(ctx).some((one) => one.id === id)).toBe(true);
+	});
+
+	test('sending a delegated block back leaves the one task it came from', () => {
+		const id = todos.createTodo(ctx, { title: 'pay the council' });
+		todos.delegateTodo(ctx, id, {
+			date: '2026-08-23',
+			startTime: '10:00',
+			mode: 'category',
+			categoryId: work
+		});
+		const block = slots
+			.listExceptionals(ctx, '2026-08-23', '2026-08-24')
+			.find((one) => one.label === 'pay the council')!;
+
+		const { todoId } = todos.demoteToTodo(ctx, block.id);
+
+		expect(todoId).toBe(id);
+		const named = todos.listTodos(ctx).filter((one) => one.title === 'pay the council');
+		expect(named).toHaveLength(1);
+		expect(named[0].delegatedDate).toBeNull();
+		expect(todos.listUnscheduled(ctx).some((one) => one.id === id)).toBe(true);
+		expect(
+			slots.listExceptionals(ctx, '2026-08-23', '2026-08-24').some((e) => e.id === block.id)
+		).toBe(false);
 	});
 
 	test('delegating one to a block refuses a time that is not one', () => {
@@ -285,9 +351,9 @@ describe('notebooks', () => {
 	test('a notebook id from elsewhere is refused rather than accepted', () => {
 		// This is the guard every "belongs to" field leans on.
 		const mine = notebooks.listNotebooks(ctx)[0];
-		expect(notebooks.ownedNotebookId(ctx, mine.id)).toBe(mine.id);
-		expect(notebooks.ownedNotebookId(ctx, '')).toBeNull();
-		expect(() => notebooks.ownedNotebookId(theirs, mine.id)).toThrow();
+		expect(notebooks.ownedNotebookId(ctx, mine.id, 'notes')).toBe(mine.id);
+		expect(notebooks.ownedNotebookId(ctx, '', 'notes')).toBeNull();
+		expect(() => notebooks.ownedNotebookId(theirs, mine.id, 'notes')).toThrow();
 	});
 });
 

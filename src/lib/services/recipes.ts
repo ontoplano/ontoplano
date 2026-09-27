@@ -275,7 +275,7 @@ type RecipeInput = {
 	notebookId?: unknown;
 };
 
-function parseRecipe(ctx: Ctx, raw: RecipeInput) {
+function parseRecipe(ctx: Ctx, raw: RecipeInput, id?: number) {
 	const optionalCount = (value: unknown, field: string) =>
 		value === undefined || value === null || value === ''
 			? null
@@ -289,7 +289,7 @@ function parseRecipe(ctx: Ctx, raw: RecipeInput) {
 		minutes: optionalCount(raw.minutes, 'minutes'),
 		source: optionalStr(raw.source, 'source', { max: MAX_SOURCE_LENGTH }),
 		// Only when the caller mentioned it — see `notebookPatch`.
-		...notebookPatch(ctx, raw)
+		...notebookPatch(ctx, raw, 'recipes', id === undefined ? undefined : { table: recipes, id })
 	};
 }
 
@@ -304,7 +304,7 @@ export function createRecipe(ctx: Ctx, raw: RecipeInput): number {
 export function updateRecipe(ctx: Ctx, id: number, raw: RecipeInput): void {
 	const res = db
 		.update(recipes)
-		.set({ ...parseRecipe(ctx, raw), updatedAt: stamp(ctx) })
+		.set({ ...parseRecipe(ctx, raw, id), updatedAt: stamp(ctx) })
 		.where(and(eq(recipes.id, id), eq(recipes.userId, ctx.userId)))
 		.run();
 

@@ -132,7 +132,7 @@ export function createEntry(
 ): number {
 	const content = str(raw.content, 'content', { max: MAX_ENTRY_LENGTH });
 	host.assertEntryWithinLimit(content);
-	const notebookId = ownedNotebookId(ctx, raw.notebookId);
+	const notebookId = ownedNotebookId(ctx, raw.notebookId, 'notes');
 	const entryId = insertEntry(ctx, content, undefined, notebookId, noteTitle(raw.title));
 
 	/*
@@ -172,7 +172,7 @@ export function createWins(
 
 	const forDate = civilDate(ctx, raw.forDate);
 	const content = wins.map((w, i) => `Win ${i + 1}: ${w}`).join('\n');
-	const entryId = insertEntry(ctx, content, forDate, ownedNotebookId(ctx, raw.notebookId));
+	const entryId = insertEntry(ctx, content, forDate, ownedNotebookId(ctx, raw.notebookId, 'notes'));
 
 	const userTags = parseTags(optionalTagInput(raw.tags));
 	const tagIds = ensureTagIds([WINS_TAG, ...userTags.filter((t) => t !== WINS_TAG)], ctx.userId);
@@ -191,7 +191,9 @@ export function updateEntry(
 
 	const current = placeOf(ctx, id);
 	const notebookId =
-		raw.notebookId === undefined ? current.notebookId : ownedNotebookId(ctx, raw.notebookId);
+		raw.notebookId === undefined
+			? current.notebookId
+			: ownedNotebookId(ctx, raw.notebookId, 'notes');
 
 	const res = db
 		.update(diaryEntries)
@@ -397,7 +399,7 @@ export function batchEntries(
 		throw new ValidationError({ key: 'errors.diary.invalidBatch' });
 
 	db.transaction(() => {
-		const notebookId = verb === 'notebook' ? ownedNotebookId(ctx, what.notebookId) : null;
+		const notebookId = verb === 'notebook' ? ownedNotebookId(ctx, what.notebookId, 'notes') : null;
 		for (const id of ids) {
 			if (verb === 'tag') tagEntry(ctx, id, { add: what.add, remove: what.remove });
 			else if (verb === 'archive') archiveEntry(ctx, id, true);

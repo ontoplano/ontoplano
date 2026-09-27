@@ -12,7 +12,7 @@ until somebody writes one in `src/lib/tutorials.ts`. The same gap is visible
 in the app: the `?` button goes red on a screen with no tour and says so
 under the pointer.
 
-**16 of 16 screens have one.**
+**17 of 17 screens have one.**
 
 | Screen                               | Tour              | Steps |
 | ------------------------------------ | ----------------- | ----- |
@@ -21,13 +21,14 @@ under the pointer.
 | `/health/habits`                     | tour.habits       | 3     |
 | `/health/recipes`                    | tour.recipes      | 5     |
 | `/inventory/stock`                   | tour.shopping     | 3     |
-| `/notebooks`                         | tour.notebooks    | 5     |
+| `/notebooks`                         | tour.notebooks    | 6     |
 | `/notebooks/diary`                   | tour.diary        | 5     |
 | `/notebooks/ideas`                   | tour.ideas        | 3     |
 | `/notebooks/people`                  | tour.people       | 3     |
 | `/notebooks/tags`                    | tour.tags         | 2     |
 | `/settings/account`                  | tour.account      | 3     |
 | `/settings/integrations/connections` | tour.integrations | 3     |
+| `/settings/integrations/widget`      | tour.widgets      | 2     |
 | `/tasks/activities`                  | tour.activities   | 3     |
 | `/tasks/board`                       | tour.board        | 4     |
 | `/tasks/plan`                        | tour.plan         | 8     |
@@ -125,6 +126,7 @@ at the button that reopens it, so it is not listed here.
 3. tour.aShelfOfSubjects
 4. tour.favouritesFirst
 5. tour.notJustNotesAndTasks
+6. selection.selectMany
 
 ### `/notebooks/diary` — tour.diary
 
@@ -173,6 +175,11 @@ at the button that reopens it, so it is not listed here.
 1. tour.lettingOtherThingsIn
 2. tour.aTokenIsShownOnce
 3. tour.numbersFromElsewhere
+
+### `/settings/integrations/widget` — tour.widgets
+
+1. tour.widgetsOnThePhone
+2. tour.widgetsList
 
 ### `/settings/preferences` — tour.preferences
 

@@ -897,9 +897,12 @@ describe('editing what was created', () => {
 		);
 		const id = made.result.structuredContent.id as number;
 
-		const changed = rpc(10, 'change_recipe', { id, minutes: 40, ingredients: '100 g parmesan' }, [
-			'kitchen:write'
-		]);
+		const changed = rpc(
+			10,
+			'change_recipe',
+			{ id, minutes: 40, addIngredients: '100 g parmesan' },
+			['kitchen:write']
+		);
 		expect(changed.result.isError).toBe(false);
 
 		const read = rpc(11, 'recipes', { id }, ['kitchen:read']);

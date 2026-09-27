@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="notebook_widget_surface">#1F2023</color>
+    <color name="notebook_widget_text">#F3F4F6</color>
+    <color name="notebook_widget_dim">#9CA3AF</color>
+    <color name="notebook_widget_rule">#374151</color>
+</resources>

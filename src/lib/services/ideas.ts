@@ -95,7 +95,7 @@ export function createIdea(
 			...stamps(ctx),
 			userId: ctx.userId,
 			content,
-			...notebookPatch(ctx, raw),
+			...notebookPatch(ctx, raw, 'ideas'),
 			createdAt: now,
 			updatedAt: now
 		})
@@ -119,7 +119,11 @@ export function updateIdea(
 
 	const res = db
 		.update(ideas)
-		.set({ content, ...notebookPatch(ctx, raw), updatedAt: stamp(ctx) })
+		.set({
+			content,
+			...notebookPatch(ctx, raw, 'ideas', { table: ideas, id }),
+			updatedAt: stamp(ctx)
+		})
 		.where(and(eq(ideas.id, id), eq(ideas.userId, ctx.userId)))
 		.run();
 

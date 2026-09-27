@@ -59,11 +59,26 @@ function phoneApp(): PhoneApp | null {
  * to. The question "is something open over the page" is answerable from the
  * page itself.
  */
+/**
+ * The dialog on top, when one opened over another.
+ *
+ * The first `dialog[open]` in the document is whichever was written first,
+ * which for the delete confirmation over the Edit notebook form is the form —
+ * so back closed the form and left the confirmation standing over nothing.
+ * The modal on top holds the focus; failing that, the last one written.
+ */
+function topDialog(): HTMLDialogElement | null {
+	const focused = document.activeElement?.closest('dialog[open]');
+	if (focused instanceof HTMLDialogElement) return focused;
+	const open = document.querySelectorAll<HTMLDialogElement>('dialog[open]');
+	return open.length ? open[open.length - 1] : null;
+}
+
 export function closeTopOverlay(): boolean {
 	if (typeof document === 'undefined') return false;
 
-	const open = document.querySelector('dialog[open]');
-	if (open instanceof HTMLDialogElement) {
+	const open = topDialog();
+	if (open) {
 		open.close();
 		return true;
 	}

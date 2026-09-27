@@ -76,7 +76,7 @@
 		targets?: FormTarget[];
 		period?: string;
 		areas: { id: number; name: string }[];
-		notebooks: { id: number; title: string }[];
+		notebooks: { id: number; title: string; modules: readonly string[] }[];
 		workoutMeasures: { activity: string; unit: string }[];
 		parentOptions?: ParentOption[];
 		knownUnits?: string[];
@@ -136,7 +136,12 @@
 		/>
 	</Field>
 
-	<NotebookField {notebooks} value={editing?.notebookId ?? startingNotebook} span={4} />
+	<NotebookField
+		{notebooks}
+		holds="goals"
+		value={editing?.notebookId ?? startingNotebook}
+		span={4}
+	/>
 
 	<!--
 		What the goal is measured by, one row per thing. Several of them is

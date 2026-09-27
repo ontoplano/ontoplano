@@ -47,6 +47,7 @@ import { getHiddenSections, getWeekSettings } from './settings.js';
 import { linkableInto } from './notebook-linking.js';
 import { isHidden } from '../sections.js';
 import { ConflictError, NotFoundError, ValidationError } from './errors.js';
+import type { MessageKey } from '../i18n/keys.js';
 import { created, stamp, stamps } from './time.js';
 import { num, optionalStr, str } from './validate.js';
 import { optionalTagInput, parseTags } from './tags.js';
@@ -139,7 +140,11 @@ import {
  * function rather than eleven near-identical queries — which is what this was
  * on the way to becoming.
  */
-type Scopable = SQLiteTable & { notebookId: SQLiteColumn; userId: SQLiteColumn };
+export type Scopable = SQLiteTable & {
+	id: SQLiteColumn;
+	notebookId: SQLiteColumn;
+	userId: SQLiteColumn;
+};
 
 /**
  * Every table a notebook can scope, the module it belongs to, and the column
@@ -522,60 +527,76 @@ function rawModules(ctx: Ctx, id: number): string | null {
 	);
 }
 
+/**
+ * The notes filed in one notebook, as its Notes tab lists them.
+ *
+ * The caller has already asked whether the notebook is reachable — both
+ * callers do, and asking twice is two queries for one answer.
+ */
+function notebookEntries(ctx: Ctx, id: number) {
+	const circle = host.familyUserIds(ctx.userId);
+	return withTagsAndPeople(
+		ctx,
+		db
+			.select({
+				id: diaryEntries.id,
+				// The notebook's own numbering; `seq` counts the whole account and
+				// means nothing to somebody reading one notebook.
+				seq: diaryEntries.notebookSeq,
+				title: diaryEntries.title,
+				content: diaryEntries.content,
+				forDate: diaryEntries.forDate,
+				archivedAt: diaryEntries.archivedAt,
+				pinnedAt: diaryEntries.pinnedAt,
+				createdAt: diaryEntries.createdAt,
+				updatedAt: diaryEntries.updatedAt,
+				ownerId: diaryEntries.userId,
+				authorName: user.name
+			})
+			.from(diaryEntries)
+			.innerJoin(user, eq(diaryEntries.userId, user.id))
+			.where(and(eq(diaryEntries.notebookId, id), inArray(diaryEntries.userId, circle)))
+			/*
+			 * Oldest first, which is not what a list of writing usually wants.
+			 *
+			 * The diary is a log and reads newest first: what happened today is
+			 * the thing to see. A notebook is not a log — it is a subject being
+			 * worked through, and its notes are read in the order they were
+			 * written, the way the pages of a real one are. Newest first put
+			 * the end of the renovation above its beginning.
+			 *
+			 * Above all of it, whatever has been pinned — the measurements, the
+			 * account number, the thing the notebook is actually for — with the
+			 * most recently pinned leading, which is what pinning another one
+			 * means. `pinned_at DESC` puts nulls last in SQLite, so the
+			 * unpinned majority keeps the order it always had.
+			 */
+			.orderBy(desc(diaryEntries.pinnedAt), asc(diaryEntries.createdAt), asc(diaryEntries.id))
+			.all()
+			.map(({ ownerId, authorName, ...entry }) => ({
+				...entry,
+				mine: ownerId === ctx.userId,
+				author: ownerId === ctx.userId ? null : authorName
+			}))
+	);
+}
+
+/** The notes in one notebook this account may reach. See `notebookEntries`. */
+export function entriesOf(ctx: Ctx, id: number) {
+	assertReachable(ctx, id);
+	return notebookEntries(ctx, id);
+}
+
 /** Everything pointed at this notebook, in the three shapes it can arrive in. */
 export function contentsOf(ctx: Ctx, id: number) {
 	assertReachable(ctx, id);
-	const circle = host.familyUserIds(ctx.userId);
 
 	return {
 		// The entries are the shared half: in a shared notebook everybody on the
 		// plan reads everybody's, each carrying its writer's name. Tasks, blocks
 		// and goals below stay each person's own — a notebook shares its writing,
 		// not each other's planners.
-		entries: withTagsAndPeople(
-			ctx,
-			db
-				.select({
-					id: diaryEntries.id,
-					// The notebook's own numbering; `seq` counts the whole account and
-					// means nothing to somebody reading one notebook.
-					seq: diaryEntries.notebookSeq,
-					title: diaryEntries.title,
-					content: diaryEntries.content,
-					forDate: diaryEntries.forDate,
-					archivedAt: diaryEntries.archivedAt,
-					pinnedAt: diaryEntries.pinnedAt,
-					createdAt: diaryEntries.createdAt,
-					updatedAt: diaryEntries.updatedAt,
-					ownerId: diaryEntries.userId,
-					authorName: user.name
-				})
-				.from(diaryEntries)
-				.innerJoin(user, eq(diaryEntries.userId, user.id))
-				.where(and(eq(diaryEntries.notebookId, id), inArray(diaryEntries.userId, circle)))
-				/*
-				 * Oldest first, which is not what a list of writing usually wants.
-				 *
-				 * The diary is a log and reads newest first: what happened today is
-				 * the thing to see. A notebook is not a log — it is a subject being
-				 * worked through, and its notes are read in the order they were
-				 * written, the way the pages of a real one are. Newest first put
-				 * the end of the renovation above its beginning.
-				 *
-				 * Above all of it, whatever has been pinned — the measurements, the
-				 * account number, the thing the notebook is actually for — with the
-				 * most recently pinned leading, which is what pinning another one
-				 * means. `pinned_at DESC` puts nulls last in SQLite, so the
-				 * unpinned majority keeps the order it always had.
-				 */
-				.orderBy(desc(diaryEntries.pinnedAt), asc(diaryEntries.createdAt), asc(diaryEntries.id))
-				.all()
-				.map(({ ownerId, authorName, ...entry }) => ({
-					...entry,
-					mine: ownerId === ctx.userId,
-					author: ownerId === ctx.userId ? null : authorName
-				}))
-		),
+		entries: notebookEntries(ctx, id),
 
 		// The whole todo, not a label and a status: the notebook's Tasks tab
 		// operates on these the way the to-do room does, which needs everything
@@ -919,14 +940,81 @@ export function deleteNotebook(ctx: Ctx, id: number): void {
  * "somebody else's notebook" and "no notebook" cannot be confused: an id you do
  * not own is a 404, not a silent null (I3).
  */
-export function ownedNotebookId(ctx: Ctx, value: unknown): number | null {
+export function ownedNotebookId(
+	ctx: Ctx,
+	value: unknown,
+	holds: NotebookModule,
+	was?: FiledRow
+): number | null {
 	if (value === undefined || value === null || value === '') return null;
 
 	const id = num(value, 'notebook', { int: true, min: 1 });
 	// Reachable, not owned: writing an entry into a family member's shared
 	// notebook is the point of it being shared. The entry stays the writer's.
 	assertReachable(ctx, id);
+	// Staying put is not filing. A notebook whose tab was switched off keeps
+	// what it had, and an edit that posts the notebook back unchanged must not
+	// be refused for it.
+	if (was && filedIn(ctx, was) === id) return id;
+	assertNotebookHolds(ctx, id, holds);
 	return id;
+}
+
+/** A row being changed, so a notebook it is already filed in can be kept. */
+export type FiledRow = { table: Scopable; id: number };
+
+function filedIn(ctx: Ctx, { table, id }: FiledRow): number | null {
+	const row = db
+		.select({ notebookId: table.notebookId })
+		.from(table)
+		.where(and(eq(table.id, id), eq(table.userId, ctx.userId)))
+		.get() as { notebookId: number | null } | undefined;
+	return row?.notebookId ?? null;
+}
+
+/** The refusal for each tab a notebook can lack. Notes is never lacked. */
+const HAS_NO_TAB: Record<Exclude<NotebookModule, 'notes'>, MessageKey> = {
+	tasks: 'errors.notebooks.hasNoTasksTab',
+	goals: 'errors.notebooks.hasNoGoalsTab',
+	ideas: 'errors.notebooks.hasNoIdeasTab',
+	inventory: 'errors.notebooks.hasNoInventoryTab',
+	ledgers: 'errors.notebooks.hasNoLedgersTab',
+	bills: 'errors.notebooks.hasNoBillsTab',
+	habits: 'errors.notebooks.hasNoHabitsTab',
+	workouts: 'errors.notebooks.hasNoWorkoutsTab',
+	recipes: 'errors.notebooks.hasNoRecipesTab'
+};
+
+/**
+ * A notebook that holds this kind of thing, or a refusal naming the tab it
+ * lacks.
+ *
+ * Filed into a notebook without the tab, a thing is shown nowhere inside it —
+ * which is worse than refusing, because nothing says where it went. Read from
+ * what the notebook was told to hold, the same list its tabs come from; a room
+ * the account has put away does not count against it, since putting a room
+ * away hides a tab rather than emptying it.
+ */
+export function assertNotebookHolds(ctx: Ctx, notebookId: number, module: NotebookModule): void {
+	const row = heldBy(ctx, notebookId);
+	if (module === 'notes' || row.modules.includes(module)) return;
+	throw new ValidationError({ key: HAS_NO_TAB[module], values: { notebook: row.title } });
+}
+
+/** Whether a reachable notebook has this tab — for a caller with somewhere else to go. */
+export function notebookHolds(ctx: Ctx, notebookId: number, module: NotebookModule): boolean {
+	return module === 'notes' || heldBy(ctx, notebookId).modules.includes(module);
+}
+
+function heldBy(ctx: Ctx, notebookId: number): { title: string; modules: NotebookModule[] } {
+	assertReachable(ctx, notebookId);
+	const row = db
+		.select({ title: notebooks.title, modules: notebooks.modules })
+		.from(notebooks)
+		.where(eq(notebooks.id, notebookId))
+		.get();
+	if (!row) throw new NotFoundError('notebook');
+	return { title: row.title, modules: parseModules(row.modules) };
 }
 
 /**
@@ -938,8 +1026,15 @@ export function ownedNotebookId(ctx: Ctx, value: unknown): number | null {
  * over MCP says nothing about the notebook and must not be read as taking the
  * habit out of its subject.
  */
-export function notebookPatch(ctx: Ctx, raw: { notebookId?: unknown }) {
-	return 'notebookId' in raw ? { notebookId: ownedNotebookId(ctx, raw.notebookId) } : {};
+export function notebookPatch(
+	ctx: Ctx,
+	raw: { notebookId?: unknown },
+	holds: NotebookModule,
+	was?: FiledRow
+) {
+	return 'notebookId' in raw
+		? { notebookId: ownedNotebookId(ctx, raw.notebookId, holds, was) }
+		: {};
 }
 
 /**
@@ -959,6 +1054,8 @@ export function pickableNotebooks(ctx: Ctx) {
 			defaultTags: notebooks.defaultTags,
 			// The task form fills it in, the way the note form fills the labels.
 			categoryId: notebooks.categoryId,
+			// So each form offers only the notebooks with its tab.
+			modules: notebooks.modules,
 			ownerId: notebooks.userId
 		})
 		.from(notebooks)
@@ -977,6 +1074,7 @@ export function pickableNotebooks(ctx: Ctx) {
 		.all()
 		.map(({ ownerId, ...one }) => ({
 			...one,
+			modules: parseModules(one.modules),
 			// Somebody else's category is not one this account can file under.
 			categoryId: ownerId === ctx.userId ? one.categoryId : null,
 			favourite: starred.has(one.id)

@@ -3720,7 +3720,12 @@
 				<!-- What it is part of: the subject a task in the same notebook is
 				     filed under, which is where a block made from one comes from. -->
 				<FormGrid>
-					<NotebookField notebooks={data.notebooks} bind:value={formNotebookId} span={12} />
+					<NotebookField
+						notebooks={data.notebooks}
+						holds="tasks"
+						bind:value={formNotebookId}
+						span={12}
+					/>
 				</FormGrid>
 
 				{#key formOpenings}

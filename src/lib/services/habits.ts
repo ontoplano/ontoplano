@@ -107,7 +107,7 @@ export function createHabit(ctx: Ctx, raw: HabitInput): number {
 export function updateHabit(ctx: Ctx, id: number, raw: HabitInput): void {
 	const res = db
 		.update(habits)
-		.set(parseHabit(ctx, raw))
+		.set(parseHabit(ctx, raw, id))
 		.where(and(eq(habits.id, id), eq(habits.userId, ctx.userId)))
 		.run();
 
@@ -239,7 +239,7 @@ export function parseScheduledDays(raw: string | null): number[] {
 		.filter((n) => !isNaN(n) && n >= 0 && n <= 6);
 }
 
-function parseHabit(ctx: Ctx, raw: HabitInput) {
+function parseHabit(ctx: Ctx, raw: HabitInput, id?: number) {
 	return {
 		name: str(raw.name, 'name', { max: MAX_NAME_LENGTH }),
 		description: optionalStr(raw.description, 'description', { max: MAX_DESCRIPTION_LENGTH }),
@@ -253,7 +253,7 @@ function parseHabit(ctx: Ctx, raw: HabitInput) {
 		// Only when the caller mentioned it. An update that says nothing about
 		// the notebook must leave it alone, or every assistant renaming a habit
 		// would quietly take it out of the subject it belongs to.
-		...notebookPatch(ctx, raw)
+		...notebookPatch(ctx, raw, 'habits', id === undefined ? undefined : { table: habits, id })
 	};
 }
 

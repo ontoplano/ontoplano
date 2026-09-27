@@ -7,6 +7,9 @@
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 import { makeDatabase, OWNER, seedAccounts, STRANGER } from './helpers/db';
 
+/** Every tab a notebook can have, for a subject that files one of each. */
+const EVERY_TAB = 'notes,tasks,goals,ideas,inventory,ledgers,bills,habits,workouts,recipes';
+
 const database = makeDatabase();
 seedAccounts(database.path);
 afterAll(() => database.remove());
@@ -30,8 +33,12 @@ beforeAll(async () => {
 describe('the words a notebook uses', () => {
 	test('what is filed in it, and what it lends a new note — nothing from elsewhere', () => {
 		const ctx = buildCtx(OWNER, { tz: 'UTC' });
-		const kitchen = notebooks.createNotebook(ctx, { title: 'Kitchen', defaultTags: 'renovation' });
-		const garden = notebooks.createNotebook(ctx, { title: 'Garden' });
+		const kitchen = notebooks.createNotebook(ctx, {
+			title: 'Kitchen',
+			modules: EVERY_TAB,
+			defaultTags: 'renovation'
+		});
+		const garden = notebooks.createNotebook(ctx, { title: 'Garden', modules: EVERY_TAB });
 
 		todos.createTodo(ctx, { title: 'Order tiles', notebookId: kitchen, tags: 'tiles, budget' });
 		diary.createEntry(ctx, { content: 'Measured.', notebookId: kitchen, tags: 'measurements' });

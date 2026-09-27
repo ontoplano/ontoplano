@@ -54,7 +54,7 @@
 		showFields?: boolean;
 		askLocation?: boolean;
 		compact?: boolean;
-		notebooks?: { id: number; title: string }[];
+		notebooks?: { id: number; title: string; modules: readonly string[] }[];
 		startingNotebook?: number | null;
 		notebookId?: number | null;
 	} = $props();
@@ -121,7 +121,7 @@
 		</Field>
 	{/if}
 
-	<NotebookField {notebooks} value={notebookId ?? startingNotebook} span={12} />
+	<NotebookField {notebooks} holds="inventory" value={notebookId ?? startingNotebook} span={12} />
 
 	<Field label={t('ui.notes')} span={8}>
 		<OneLine name="notes" bind:value={notes} class="input" />

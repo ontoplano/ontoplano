@@ -637,6 +637,7 @@
 			{#if verb === 'notebook'}
 				<NotebookField
 					notebooks={data.notebooks}
+					holds="notes"
 					value={null}
 					span={12}
 					noneLabel={t('sections.diary.label')}

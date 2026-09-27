@@ -38,7 +38,13 @@
 		content?: string;
 		tags?: string;
 		compact?: boolean;
-		notebooks?: { id: number; title: string; folder?: string | null; favourite?: boolean }[];
+		notebooks?: {
+			id: number;
+			title: string;
+			folder?: string | null;
+			favourite?: boolean;
+			modules: readonly string[];
+		}[];
 		notebookId?: number | null;
 	} = $props();
 
@@ -71,7 +77,7 @@
 
 {#snippet rest()}
 	{#if notebooks}
-		<NotebookField {notebooks} bind:value={filedIn} span={12} />
+		<NotebookField {notebooks} holds="ideas" bind:value={filedIn} span={12} />
 	{/if}
 	<Field label={t('ui.tags')} span={12} hint={t('fields.idea.separateWithCommasOrSpaces')}>
 		<TagInput

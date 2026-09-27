@@ -88,6 +88,8 @@ export const NOT_PORTABLE: Record<string, PlainKey> = {
 	// Secrets minted by another instance, stored as hashes. They would be
 	// unusable here and would look like live credentials on the tokens page.
 	apiTokens: 'accountImport.aTokenIsASecret',
+	// A widget is its key: without the key above it is a line nothing reads.
+	phoneWidgets: 'accountImport.aTokenIsASecret',
 	pluginManifests: 'accountImport.aManifestBelongsToThe',
 	// A feed address handed out by another instance. Importing it would show a
 	// URL that nothing here answers.
@@ -98,6 +100,9 @@ export const NOT_PORTABLE: Record<string, PlainKey> = {
 	// The record of what happened on the old account, on the old instance. The
 	// import writes one event of its own instead.
 	auditEvents: 'accountImport.theLogIsARecord',
+	// A retry's answer names ids on the old instance; replayed here, it would
+	// point at rows that are numbered differently.
+	requestReplays: 'accountImport.theLogIsARecord',
 	// An address at a push service, tied to one browser and to the key of the
 	// instance it subscribed to. Nothing here could send to it, and permission
 	// given to one site is not permission given to another.

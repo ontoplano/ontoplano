@@ -20,6 +20,11 @@ releases mattered.
 
 ## 0.184.0 — 2026-09-27
 
+- Goal areas can now be renamed, recoloured and moved up or down in the Areas dialog, and that order is the one the area filter shows.
+- Assistants can now safely resend an "add" without making a duplicate, refuse to overwrite a change somebody made in the meantime, change a bill's currency, and take ingredients out of a recipe; every refusal says what kind of refusal it was.
+- A notebook now refuses a task, idea, goal or anything else it has no tab for, naming the missing tab; the notebook pickers only offer notebooks that have it, and an assistant's create now shows what it made.
+- Pressing a link while a save is still going through no longer gets ignored — the app goes where you pressed.
+- Delegating a task to a day shows that day on its card, without also putting the task on that day's board or carrying it on as overdue.
 - The AI agents reference lists, for every MCP tool, the permissions it needs, what its answer carries, the fields inside its arguments with their defaults and limits, and the old argument spellings with the release each is removed in, plus worked examples of common requests.
 - Ideas, inventory, habits, workouts, bills, recipes and notebook notes now use the same card layout as tasks: the tick or count on the left, labels along the bottom, and the buttons in the bottom-right corner.
 - A message shown while a dialog is open appears at the top, clear of the dialog's buttons.

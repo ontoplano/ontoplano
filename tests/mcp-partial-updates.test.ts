@@ -263,6 +263,49 @@ describe('change_recipe', () => {
 	});
 });
 
+describe('change_recipe ingredients', () => {
+	const lines = (id: unknown) =>
+		s.recipes.ingredientsOf(s.ctx, Number(id)).map((one) => one.name.toLowerCase());
+
+	it('adds with addIngredients and takes out with removeIngredients, keeping the rest', () => {
+		const { id } = ok('add_recipe', { title: 'Pancakes', ingredients: '200 g flour\n2 eggs' });
+		const eggs = s.recipes.ingredientsOf(s.ctx, Number(id)).find((one) => /egg/i.test(one.name))!;
+
+		const answer = ok('change_recipe', {
+			id,
+			addIngredients: '300 ml milk',
+			removeIngredients: [eggs.itemId]
+		});
+		expect(answer).toMatchObject({ ingredients: 1, removed: 1 });
+		expect(answer.warning).toBeUndefined();
+		expect(lines(id).some((one) => one.includes('flour'))).toBe(true);
+		expect(lines(id).some((one) => one.includes('milk'))).toBe(true);
+		expect(lines(id).some((one) => one.includes('egg'))).toBe(false);
+		// The shopping item itself stays.
+		expect(s.inventory.listItems(s.ctx).some((one) => one.id === eggs.itemId)).toBe(true);
+	});
+
+	it('still adds under the old `ingredients`, and says it is going', () => {
+		const { id } = ok('add_recipe', { title: 'Toast', ingredients: '2 slices bread' });
+		const answer = ok('change_recipe', { id, ingredients: '1 tbsp butter' });
+		expect(lines(id)).toHaveLength(2);
+		expect(String(answer.warning)).toMatch(/addIngredients.*0\.190\.0|0\.190\.0.*addIngredients/s);
+	});
+
+	it('refuses an ingredient of another recipe, and writes nothing', () => {
+		const { id: dal } = ok('add_recipe', { title: 'Lentil soup', ingredients: '1 onion' });
+		const { id: other } = ok('add_recipe', { title: 'Rice', ingredients: '1 cup rice' });
+		const rice = s.recipes.ingredientsOf(s.ctx, Number(other))[0];
+		refused('change_recipe', {
+			id: dal,
+			title: 'Renamed anyway',
+			removeIngredients: [rice.itemId]
+		});
+		expect(s.recipes.getRecipe(s.ctx, Number(dal)).title).toBe('Lentil soup');
+		expect(lines(other)).toHaveLength(1);
+	});
+});
+
 describe('change_inventory_category', () => {
 	it('keeps whether it holds food when renamed', () => {
 		const { id } = ok('add_inventory_category', { name: 'Pantry', holdsFood: true });
@@ -534,5 +577,22 @@ describe('change_bill', () => {
 
 		ok('change_bill', { id, due_day: null });
 		expect(now().dueDay).toBeNull();
+	});
+
+	it('changes the currency and the direction, and an empty currency is the account default', () => {
+		const { id } = ok('add_bill', { name: 'rent abroad', amount_expected: 90000, currency: 'EUR' });
+		const now = () => s.bills.getBill(s.ctx, Number(id));
+		ok('change_bill', { id, currency: 'USD' });
+		expect([now().currency, now().name, now().amountExpected]).toEqual([
+			'USD',
+			'rent abroad',
+			90000
+		]);
+		ok('change_bill', { id, flow: 'in' });
+		expect([now().flow, now().currency]).toEqual(['in', 'USD']);
+		ok('change_bill', { id, currency: '' });
+		expect(now().currency).toBeNull();
+		refused('change_bill', { id, flow: 'sideways' });
+		expect(now().flow).toBe('in');
 	});
 });
