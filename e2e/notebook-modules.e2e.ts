@@ -59,8 +59,8 @@ test.describe('what a notebook holds', () => {
 
 		// And the tab does the room's work rather than linking to it.
 		await inventoryTab.click();
-		await page.getByRole('button', { name: 'New thing' }).click();
-		await page.getByLabel('Item').fill('Wall tiles');
+		await page.getByRole('button', { name: 'New item' }).click();
+		await page.getByRole('textbox', { name: /^Item\*?$/ }).fill('Wall tiles');
 		await page.getByRole('button', { name: 'Save' }).click();
 		await page.waitForTimeout(600);
 		await expect(page.getByText('Wall tiles')).toBeVisible();
@@ -81,8 +81,8 @@ test.describe('what a notebook holds', () => {
 		await page.waitForTimeout(600);
 
 		await page.getByRole('button', { name: /^Inventory/ }).click();
-		await page.getByRole('button', { name: 'New thing' }).click();
-		await page.getByLabel('Item').fill('Sealant');
+		await page.getByRole('button', { name: 'New item' }).click();
+		await page.getByRole('textbox', { name: /^Item\*?$/ }).fill('Sealant');
 		await page.getByRole('button', { name: 'Save' }).click();
 		await page.waitForTimeout(600);
 

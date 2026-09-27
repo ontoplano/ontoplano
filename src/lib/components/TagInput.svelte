@@ -204,7 +204,7 @@
 	{#if tags.length > 0}
 		<div class="mb-2 flex flex-wrap gap-1.5">
 			{#each tags as tag (tag)}
-				<span class="chip inline-flex items-center gap-1">
+				<span class="chip inline-flex items-center gap-1" data-tag={tag}>
 					{tag}
 					<button
 						type="button"

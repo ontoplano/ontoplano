@@ -77,8 +77,8 @@ test('labels are edited, and an edit that says nothing about them keeps them', a
 	// assembled from those.
 	await page.getByRole('button', { name: 'Edit', exact: true }).first().click();
 	const form = page.locator('#todo-form');
-	await expect(form.locator('.chip').filter({ hasText: 'a1' })).toBeVisible();
-	await expect(form.locator('.chip').filter({ hasText: 'wood' })).toBeVisible();
+	await expect(form.locator('[data-tag]').filter({ hasText: 'a1' })).toBeVisible();
+	await expect(form.locator('[data-tag]').filter({ hasText: 'wood' })).toBeVisible();
 	await expect(form.locator('[name="tags"]')).toHaveValue('a1, wood');
 
 	/*
@@ -93,9 +93,9 @@ test('labels are edited, and an edit that says nothing about them keeps them', a
 	const box = form.locator('input[role="combobox"]');
 	await box.click();
 	await box.press('Backspace');
-	await expect(form.locator('.chip')).toHaveCount(1);
+	await expect(form.locator('[data-tag]')).toHaveCount(1);
 	await box.press('Backspace');
-	await expect(form.locator('.chip')).toHaveCount(0);
+	await expect(form.locator('[data-tag]')).toHaveCount(0);
 
 	await box.fill('a2');
 	await page.getByRole('button', { name: 'Save', exact: true }).click();
@@ -104,7 +104,7 @@ test('labels are edited, and an edit that says nothing about them keeps them', a
 
 	// Taken off altogether, and then the picker goes with them.
 	await page.getByRole('button', { name: 'Edit', exact: true }).first().click();
-	await page.locator('#todo-form .chip').filter({ hasText: 'a2' }).getByRole('button').click();
+	await page.locator('#todo-form [data-tag]').filter({ hasText: 'a2' }).getByRole('button').click();
 	await page.getByRole('button', { name: 'Save', exact: true }).click();
 	await expect(chip(page, '#a2')).toHaveCount(0);
 	await expect(page.locator('[aria-controls="todo-tags-panel"]')).toHaveCount(0);

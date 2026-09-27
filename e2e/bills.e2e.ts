@@ -206,6 +206,11 @@ for (const size of SIZES) {
 		test.setTimeout(120_000);
 		await page.setViewportSize({ width: size.width, height: size.height });
 		await register(page, testEmail(`bills-auto-${size.name}`));
+		// A notebook, so the form draws its notebook field below the box.
+		await page.request.post('/notebooks?/create', {
+			headers: { Origin: new URL(page.url()).origin, 'x-sveltekit-action': 'true' },
+			form: { heading: 'Home' }
+		});
 		await visit(page, '/finance/bills');
 
 		await page
@@ -221,13 +226,19 @@ for (const size of SIZES) {
 		await expect(lead).toBeEnabled();
 		await expect(dialog.getByText("You won't be reminded to pay it.")).toBeHidden();
 
-		// What sits below must not move when the box is ticked.
-		const below = dialog.getByRole('button', { name: 'Notebook', exact: true });
-		const before = await below.boundingBox();
+		// What sits below must not move when the box is ticked — measured from
+		// the name at the top, in one read, once the sheet has finished rising.
+		const gap = () =>
+			dialog.evaluate(async (d) => {
+				await Promise.all(d.getAnimations({ subtree: true }).map((one) => one.finished));
+				const y = (selector: string) => d.querySelector(selector)!.getBoundingClientRect().y;
+				return y('[data-picker="notebookId"]') - y('[name="heading"]');
+			});
+		const before = await gap();
 		await dialog.getByRole('checkbox', { name: 'Automatic' }).check();
 		await expect(lead).toBeDisabled();
 		await expect(dialog.getByText("You won't be reminded to pay it.")).toBeVisible();
-		expect((await below.boundingBox())?.y).toBe(before?.y);
+		expect(await gap()).toBe(before);
 
 		await dialog.getByRole('button', { name: 'Add', exact: true }).click();
 		const row = page.locator('li', { hasText: 'Film streaming' });
@@ -285,7 +296,8 @@ for (const size of SIZES) {
 		await row.getByRole('button', { name: 'Mark Climbing gym paid' }).click();
 		await row.locator('[name="amount"]').fill('150,00');
 		await row.getByRole('button', { name: 'Paid', exact: true }).click();
-		await expect(row.getByText('paid', { exact: true })).toBeVisible();
+		// The row's own mark, not the history table's column of the same word.
+		await expect(row.getByText('paid', { exact: true }).first()).toBeVisible();
 		await expect(history.getByText('Average per month')).toBeVisible();
 		await expect(history.getByText(/150/).first()).toBeVisible();
 
