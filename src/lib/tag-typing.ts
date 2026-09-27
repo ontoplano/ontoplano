@@ -79,7 +79,9 @@ export function endsTag(key: string): boolean {
 export function suggestTags(
 	known: readonly string[],
 	draft: string,
-	chosen: readonly string[] = []
+	chosen: readonly string[] = [],
+	/** A list that scrolls can hold them all; one under a text box stops at a glance. */
+	limit = MAX_SUGGESTIONS
 ): string[] {
 	const taken = new Set(chosen.map((one) => one.toLowerCase()));
 	const wanted = draft.trim().replace(/^#+/, '').toLowerCase();
@@ -89,6 +91,6 @@ export function suggestTags(
 		.map((name) => ({ name, score: matchScore(name, wanted) }))
 		.filter((row): row is { name: string; score: number } => row.score !== null)
 		.sort((a, b) => b.score - a.score || a.name.localeCompare(b.name))
-		.slice(0, MAX_SUGGESTIONS)
+		.slice(0, limit)
 		.map((row) => row.name);
 }

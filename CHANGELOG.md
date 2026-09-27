@@ -28,6 +28,7 @@ releases mattered.
 - Adding a label from a task card suggests from the same list as the task form, so on Android the suggestions no longer linger as a half-drawn ghost.
 - Pressing a picture in a task's or a note's writing opens it over the page instead of in a new tab: pinch or double-tap to zoom, drag to look around, and back closes it.
 - A notebook can have a category: a new task written in it starts with that category, the way a new note starts with the notebook's labels. Add card on the board keeps the notebook and labels you chose.
+- The label filter's suggestions list every label, in a list that scrolls, not just the first six.
 - A notebook's Open and Manage tags sit beside its name, apart from the buttons that add to it.
 - The demo's kitchen notebook opens on its tasks, with colour-coded tags and a shopping list; other demo notebooks now hold goals, inventory and ideas.
 - On a phone, a notebook's header and task toolbar are tidier: Open and tags are icons in the corner, the search, filter, clear and count share one line, and the order sits beside Select many.
