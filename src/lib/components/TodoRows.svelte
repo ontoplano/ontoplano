@@ -1090,6 +1090,60 @@
 	</span>
 {/snippet}
 
+{#snippet selectionTools()}
+	<div class="flex items-center gap-1">
+		<button
+			type="button"
+			class="icon-btn"
+			title={t('todoRows.selectVisible')}
+			aria-label={t('todoRows.selectVisible')}
+			disabled={!visibleTodos.length}
+			onclick={() => {
+				for (const todo of visibleTodos) chosen.add(todo.id);
+			}}><Icon name="select-all" /></button
+		>
+		<button
+			type="button"
+			class="icon-btn"
+			title={t('todoRows.clearSelection')}
+			aria-label={t('todoRows.clearSelection')}
+			disabled={!selectedTodos.length}
+			onclick={() => chosen.clear()}><Icon name="close" /></button
+		>
+	</div>
+	<span
+		class="tabular min-w-24 text-xs text-gray-600"
+		aria-live="polite"
+		class:invisible={!selecting}
+	>
+		{t('todoRows.selectedCount', { count: selectedTodos.length })}
+	</span>
+	<div class="flex items-center gap-1 border-l border-gray-200 pl-2" class:invisible={!selecting}>
+		{#each ['status', 'tag', 'notebook', 'remove'] as verb (verb)}
+			{@const kind = verb as NonNullable<typeof batchVerb>}
+			<button
+				type="button"
+				class="icon-btn"
+				title={t(batchLabels[kind])}
+				aria-label={t(batchLabels[kind])}
+				disabled={!selectedTodos.length}
+				onclick={() => openBatch(kind)}
+			>
+				<Icon
+					name={kind === 'status'
+						? 'play'
+						: kind === 'tag'
+							? 'tag'
+							: kind === 'notebook'
+								? 'notebook'
+								: 'trash'}
+				/>
+			</button>
+		{/each}
+		<kbd class="text-xs" title={t('todoRows.selectionKeys')}></kbd>
+	</div>
+{/snippet}
+
 {#snippet sortControl()}
 	<!-- The same control a notebook's notes use. See `SortControl`. -->
 	<SortControl
@@ -1304,61 +1358,27 @@
 			<!-- On a phone the order shares this line, so the one above is the
 			     search and what narrows it. -->
 			{#if phone.current}<div class="ml-auto">{@render sortControl()}</div>{/if}
-			<div class="flex items-center gap-1" class:invisible={!selecting}>
-				<button
-					type="button"
-					class="icon-btn"
-					title={t('todoRows.selectVisible')}
-					aria-label={t('todoRows.selectVisible')}
-					disabled={!visibleTodos.length}
-					onclick={() => {
-						for (const todo of visibleTodos) chosen.add(todo.id);
-					}}><Icon name="select-all" /></button
-				>
-				<button
-					type="button"
-					class="icon-btn"
-					title={t('todoRows.clearSelection')}
-					aria-label={t('todoRows.clearSelection')}
-					disabled={!selectedTodos.length}
-					onclick={() => chosen.clear()}><Icon name="close" /></button
-				>
-			</div>
-			<span
-				class="tabular min-w-24 text-xs text-gray-600"
-				aria-live="polite"
-				class:invisible={!selecting}
-			>
-				{t('todoRows.selectedCount', { count: selectedTodos.length })}
-			</span>
-			<div
-				class="flex items-center gap-1 border-l border-gray-200 pl-2"
-				class:invisible={!selecting}
-			>
-				{#each ['status', 'tag', 'notebook', 'remove'] as verb (verb)}
-					{@const kind = verb as NonNullable<typeof batchVerb>}
-					<button
-						type="button"
-						class="icon-btn"
-						title={t(batchLabels[kind])}
-						aria-label={t(batchLabels[kind])}
-						disabled={!selectedTodos.length}
-						onclick={() => openBatch(kind)}
-					>
-						<Icon
-							name={kind === 'status'
-								? 'play'
-								: kind === 'tag'
-									? 'tag'
-									: kind === 'notebook'
-										? 'notebook'
-										: 'trash'}
-						/>
-					</button>
-				{/each}
-				<kbd class="text-xs" title={t('todoRows.selectionKeys')}></kbd>
-			</div>
+			<!-- Reserved beside the button on a wide screen, so pressing it
+			     moves nothing. A phone has no room beside it: the tools float
+			     over the foot of the screen instead, and only while selecting. -->
+			{#if !phone.current}
+				<div class="contents {selecting ? '' : '[&>*]:invisible'}">
+					{@render selectionTools()}
+				</div>
+			{/if}
 		</div>
+		{#if phone.current && selecting}
+			<!-- Over the page rather than in it: a bar at the thumb that says how
+			     many are chosen and what can be done to them. -->
+			<div
+				class="float-layer overlay-face fixed inset-x-3 z-40 flex flex-wrap items-center justify-between gap-2 border px-3 py-2 shadow-overlay"
+				style="bottom: calc(var(--safe-bottom) + var(--mobile-nav-height) + 0.75rem)"
+				role="toolbar"
+				aria-label={t('todoRows.selectMany')}
+			>
+				{@render selectionTools()}
+			</div>
+		{/if}
 		{#if visibleTodos.length === 0}
 			<!--
 				Empty because there is nothing, or empty because it is all hidden.
@@ -2032,7 +2052,7 @@
 				<TodoFields
 					title={editing?.title ?? ''}
 					notes={editing?.notes ?? ''}
-					categoryId={editing?.categoryId ?? null}
+					categoryId={editing ? editing.categoryId : undefined}
 					bind:notebookId={formNotebookId}
 					tags={editing?.tags.map((one) => one.name).join(', ') ?? ''}
 					scheduledDate={editing?.scheduledDate ?? ''}
