@@ -648,7 +648,7 @@
 		<div class="pie-hud pointer-events-none" aria-hidden="true">
 			{#if active !== -1}
 				{@const chosen = items[active]}
-				<div class="pie-hud-inner" style="color: {chosen.color}">
+				<div class="pie-hud-inner" style="--hud-room: {chosen.color}">
 					<span class="pie-hud-icon"><Icon name={chosen.icon} size={56} /></span>
 					<!-- The name in an element of its own: it is what a test asks the
 					     wheel for, and the line under it is not part of that answer. -->
@@ -1058,9 +1058,14 @@
 		align-items: center;
 		gap: 0.5rem;
 		border-radius: var(--radius-lg, 0);
+		/* The room's colour lifted towards white on the plate, once, here: the
+		   glyph, the name, the line under it and the edge all inherit it. Mixed
+		   per element, the glyph was left at the raw colour and read as a
+		   different shade from the words beside it. */
+		color: color-mix(in srgb, var(--hud-room) var(--hud-ink), white);
 		/* Edged in the letters' own colour, so the plate belongs to the room it
 		   is naming rather than being a grey card the name landed on. */
-		border: 4px solid color-mix(in srgb, currentColor var(--hud-ink), white);
+		border: 4px solid currentColor;
 		background-color: var(--hud-plate);
 		-webkit-backdrop-filter: blur(var(--hud-blur));
 		backdrop-filter: blur(var(--hud-blur));
@@ -1092,10 +1097,6 @@
 		 * them, so the colour stays the colour.
 		 */
 	.pie-hud-name {
-		/* Lifted towards white on the plate, so it stays the room's colour
-		   rather than becoming white. The inline colour is on the block above,
-		   so this is the first place it can be mixed. */
-		color: color-mix(in srgb, currentColor var(--hud-ink), white);
 		font-size: 2.5rem;
 		text-transform: uppercase;
 		text-shadow: var(--hud-edge);
@@ -1112,10 +1113,6 @@
 	 * move the name every time the pointer crossed a wedge.
 	 */
 	.pie-hud-tabs {
-		/* Lifted towards white on the plate, so it stays the room's colour
-		   rather than becoming white. The inline colour is on the block above,
-		   so this is the first place it can be mixed. */
-		color: color-mix(in srgb, currentColor var(--hud-ink), white);
 		/*
 		 * Small enough that the longest room stays on one line — on a phone
 		 * too, where the line is what has to give.

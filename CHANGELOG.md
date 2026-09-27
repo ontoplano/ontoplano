@@ -25,6 +25,7 @@ releases mattered.
 - A notebook's Open and Manage tags sit beside its name, apart from the buttons that add to it.
 - The demo's kitchen notebook opens on its tasks, with colour-coded tags and a shopping list; other demo notebooks now hold goals, inventory and ideas.
 - On a phone, a notebook's header and task toolbar are tidier: Open and tags are icons in the corner, the search, filter, clear and count share one line, and the order sits beside Select many.
+- The wheel's room name, its icon and the border around them are the same colour.
 
 ## 0.183.14 — 2026-09-26
 

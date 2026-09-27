@@ -79,6 +79,18 @@ test('the phone bar carries home and the raised pie; nothing pulls to refresh', 
 	}
 	expect(named).toContain('Tasks');
 	expect(named, 'Home is a button in the bar, not a wedge').not.toContain('Home');
+
+	// The glyph, the name and the plate's edge are one colour, not three shades of it.
+	const inks = await page.evaluate(() => {
+		const hud = document.querySelector('[data-pie="rooms"] .pie-hud-inner')!;
+		const ink = (el: Element) => getComputedStyle(el).color;
+		return [
+			ink(hud.querySelector('.pie-hud-icon svg')!),
+			ink(hud.querySelector('.pie-hud-name')!),
+			getComputedStyle(hud).borderTopColor
+		];
+	});
+	expect(new Set(inks).size).toBe(1);
 });
 
 test('a dialog on the phone is a screen with a back arrow', async ({ page }) => {
