@@ -69,55 +69,19 @@
 	}
 </script>
 
-{#if open}
-	<form
-		method="post"
-		{action}
-		class="inline-flex items-center gap-1"
-		use:enhance={() =>
-			async ({ update }) => {
-				await update({ reset: false });
-				give();
-			}}
-	>
-		<input type="hidden" name="id" value={id} />
-		<!-- svelte-ignore a11y_autofocus -->
-		<input
-			bind:this={box}
-			bind:value={word}
-			name="add"
-			list={listId}
-			class="input h-7 w-32 py-0 text-xs"
-			placeholder={t('quickTag.placeholder')}
-			aria-label={t('quickTag.addATag')}
-			autocomplete="off"
-			autofocus
-			onkeydown={(key) => {
-				if (key.key === 'Escape') {
-					key.preventDefault();
-					give();
-				}
-			}}
-			onblur={() => {
-				// Given up on rather than submitted: an empty box is somebody
-				// who pressed it and thought better of it, and a field left
-				// hanging open on every row is the strip turned into a form.
-				if (!word.trim()) give();
-			}}
-		/>
-		<datalist id={listId}>
-			{#each offer as one (one)}
-				<option value={one}></option>
-			{/each}
-		</datalist>
-		<button type="submit" class="icon-btn" title={t('ui.save')} aria-label={t('ui.save')}>
-			<Icon name="check" size={14} />
-		</button>
-	</form>
-{:else}
+<!--
+	It opens over itself rather than beside itself.
+
+	The chip sits in a narrow rail under the task's number, and a field opened
+	in line widened the rail and pushed the whole card sideways. The chip keeps
+	its place, made invisible, and the field floats over it.
+-->
+<span class="relative inline-flex">
 	<button
 		type="button"
 		class="chip quick-tag"
+		class:invisible={open}
+		inert={open}
 		onclick={start}
 		title={t('quickTag.addATag')}
 		aria-label={t('quickTag.addATag')}
@@ -125,4 +89,50 @@
 		<Icon name="tag" size={12} />
 		<Icon name="plus" size={12} />
 	</button>
-{/if}
+	{#if open}
+		<form
+			method="post"
+			{action}
+			class="quick-tag-open absolute top-0 left-0 z-20 inline-flex items-center gap-1 border border-gray-200 bg-white p-1 shadow-overlay"
+			use:enhance={() =>
+				async ({ update }) => {
+					await update({ reset: false });
+					give();
+				}}
+		>
+			<input type="hidden" name="id" value={id} />
+			<!-- svelte-ignore a11y_autofocus -->
+			<input
+				bind:this={box}
+				bind:value={word}
+				name="add"
+				list={listId}
+				class="input h-7 w-32 py-0 text-xs"
+				placeholder={t('quickTag.placeholder')}
+				aria-label={t('quickTag.addATag')}
+				autocomplete="off"
+				autofocus
+				onkeydown={(key) => {
+					if (key.key === 'Escape') {
+						key.preventDefault();
+						give();
+					}
+				}}
+				onblur={() => {
+					// Given up on rather than submitted: an empty box is somebody
+					// who pressed it and thought better of it, and a field left
+					// hanging open on every row is the strip turned into a form.
+					if (!word.trim()) give();
+				}}
+			/>
+			<datalist id={listId}>
+				{#each offer as one (one)}
+					<option value={one}></option>
+				{/each}
+			</datalist>
+			<button type="submit" class="icon-btn" title={t('ui.save')} aria-label={t('ui.save')}>
+				<Icon name="check" size={14} />
+			</button>
+		</form>
+	{/if}
+</span>

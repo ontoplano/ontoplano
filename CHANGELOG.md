@@ -29,6 +29,7 @@ releases mattered.
 - Every passing message — saved, failed, Task added, Deleted — is one kind of toast in one place. One with a button (Edit or Undo) stays for the undo window and shows it running down.
 - A task's place in line counts every open task in its notebook, whatever the list is filtered to, and a new task goes behind older ones rated the same.
 - Delete in the task and card editors is the bin alone, so their buttons stay on one line on a phone.
+- A task card keeps its number and the add-a-label button under the tick box, its labels on a line of their own, and its buttons on one line that never wraps.
 
 ## 0.183.14 — 2026-09-26
 

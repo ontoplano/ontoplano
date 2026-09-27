@@ -31,6 +31,7 @@
 	import { getAction, keyFor } from '$lib/shortcuts';
 	import FilterBar from '$lib/components/FilterBar.svelte';
 	import RatingBadges from '$lib/components/RatingBadges.svelte';
+	import RowCard from '$lib/components/RowCard.svelte';
 	import { phoneWidth } from '$lib/breakpoints.svelte';
 	import TagChip from '$lib/components/TagChip.svelte';
 	import QuickTag from '$lib/components/QuickTag.svelte';
@@ -1440,294 +1441,185 @@
 							their own fixed height: what stretches is the column, not the
 							scale, or a taller card would draw a taller 4 than a short one.
 						-->
-						<div class="flex shrink-0 flex-col items-center gap-1 self-stretch">
-							{#if selecting}
+						<RowCard quiet={selecting}>
+							{#snippet rail()}
+								{#if selecting}
+									<button
+										type="button"
+										role="checkbox"
+										aria-checked={chosen.has(todo.id)}
+										aria-label={t('todoRows.selectTask', { title: todo.title })}
+										title={t('todoRows.selectTask', { title: todo.title })}
+										class="-m-1 flex items-start justify-center self-start p-1 pointer-coarse:w-11"
+										onclick={() => toggleSelected(todo.id)}
+									>
+										<span
+											style="border-radius: 50%"
+											class="flex size-7 items-center justify-center border border-gray-500 hover:bg-gray-200"
+											class:bg-gray-200={chosen.has(todo.id)}
+											>{#if chosen.has(todo.id)}<Icon name="check" />{/if}</span
+										>
+									</button>
+								{:else}
+									<form
+										id="toggle-form-{todo.id}"
+										method="post"
+										action={actions.setStatus}
+										use:enhance={deferComplete(todo)}
+										class="flex"
+									>
+										<input type="hidden" name="id" value={todo.id} />
+										<input
+											type="hidden"
+											name="status"
+											value={todo.status === 'done' ? 'todo' : 'done'}
+										/>
+										<!--
+									As tall as the row it belongs to.
+
+									The box was 20px pinned to the top-left of a row that is often
+									three lines tall — notes, a notebook, a column of icons — so it
+									sat in a corner of a lot of nothing and was a small thing to hit
+									besides. The target now runs the height of the row and the
+									square is bigger and centred in it, which fills the space the
+									rest of the row makes and gives the one action every row has the
+									size it deserves.
+								-->
+										<!--
+									At the top of the row, not down the middle of it.
+
+									It was `self-stretch` and centred, so on a task with notes,
+									labels and a gauge under the title the box floated halfway down
+									beside none of them. The thing it ticks is the title, so it
+									stands level with the title.
+
+									And once a task is done it says when: the tick is the only part
+									of the row that knows, and "did I do that this morning or last
+									week" is the question somebody asks of a list they are looking
+									back at.
+								-->
+										<button
+											type="submit"
+											class="-m-1 flex shrink-0 items-start justify-center self-start p-1 pointer-coarse:w-11"
+											aria-label={isDone(todo)
+												? t('todoRows.markIncomplete')
+												: t('todoRows.markComplete')}
+											title={isDone(todo) && todo.completedAt
+												? t('todoRows.doneAgo', {
+														when: momentOf(todo.completedAt, now()),
+														ago: agoOf(todo.completedAt, now())
+													})
+												: undefined}
+										>
+											<!-- Blue while it is the one being worked on, so the state is
+										     on the box that owns it rather than only on the row. -->
+											<span
+												class="flex size-7 items-center justify-center border {isDone(todo)
+													? 'border-gray-400 bg-gray-400'
+													: todo.status === 'doing'
+														? 'doing-box'
+														: 'border-gray-400 bg-white'}"
+											>
+												{#if isDone(todo)}
+													<svg class="h-4 w-4 text-white" viewBox="0 0 20 20" fill="currentColor">
+														<path
+															fill-rule="evenodd"
+															d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+															clip-rule="evenodd"
+														/>
+													</svg>
+												{/if}
+											</span>
+										</button>
+									</form>
+								{/if}
+
+								<!--
+								Under the tick box, stacked.
+
+								They were beside the labels under the title, which is where you
+								read what a task *is*; these three answer what it would cost you.
+								The rail the tick box stands in has the width and nothing under
+								it, and stacked they line up across every row — which is the half
+								of "make sure its aligned" that a row of pills could never do.
+
+								All three, always. Drawing only the answered ones put the same
+								question in a different place on every row, so the eye had to
+								read each card from scratch; an unanswered one is drawn half
+								full and grey, which says "nobody said" rather than "the lowest
+								there is".
+							-->
+								<!--
+								Pressing them opens the form on them.
+
+								They are the one thing on a row that shows a number without
+								offering a way to change it, and the way in was two presses
+								through a dialog that opens somewhere else entirely.
+							-->
+								{#if todo.notebookSeq !== null}
+									<span class="tabular text-[11px] text-gray-500" title={whenOf(todo)}>
+										#{todo.notebookSeq}
+									</span>
+								{/if}
+								<!--
+								And the way to add one, under the number.
+
+								Where the cursor already is when somebody reads the row
+								and decides it needs a word. The alternative was the
+								edit dialog, which is five steps and a list that
+								reorders underneath you for one label.
+							-->
+								<QuickTag
+									id={todo.id}
+									action={actions.tag}
+									has={todo.tags.map((one) => one.name)}
+									known={page.data.tagVocabulary ?? []}
+								/>
 								<button
 									type="button"
-									role="checkbox"
-									aria-checked={chosen.has(todo.id)}
-									aria-label={t('todoRows.selectTask', { title: todo.title })}
-									title={t('todoRows.selectTask', { title: todo.title })}
-									class="-m-1 flex items-start justify-center self-start p-1 pointer-coarse:w-11"
-									onclick={() => toggleSelected(todo.id)}
+									class="mt-auto cursor-pointer"
+									onclick={() => startEdit(todo, { atRatings: true })}
+									aria-label={t('todoRows.setTheRatings')}
 								>
-									<span
-										style="border-radius: 50%"
-										class="flex size-7 items-center justify-center border border-gray-500 hover:bg-gray-200"
-										class:bg-gray-200={chosen.has(todo.id)}
-										>{#if chosen.has(todo.id)}<Icon name="check" />{/if}</span
-									>
+									<RatingBadges values={todo.ratings} stacked />
 								</button>
-							{:else}
-								<form
-									id="toggle-form-{todo.id}"
-									method="post"
-									action={actions.setStatus}
-									use:enhance={deferComplete(todo)}
-									class="flex"
-								>
-									<input type="hidden" name="id" value={todo.id} />
-									<input
-										type="hidden"
-										name="status"
-										value={todo.status === 'done' ? 'todo' : 'done'}
-									/>
+							{/snippet}
+							{#snippet labels()}
+								{#each todo.tags as tag (tag.id)}
 									<!--
-								As tall as the row it belongs to.
-
-								The box was 20px pinned to the top-left of a row that is often
-								three lines tall — notes, a notebook, a column of icons — so it
-								sat in a corner of a lot of nothing and was a small thing to hit
-								besides. The target now runs the height of the row and the
-								square is bigger and centred in it, which fills the space the
-								rest of the row makes and gives the one action every row has the
-								size it deserves.
-							-->
-									<!--
-								At the top of the row, not down the middle of it.
-
-								It was `self-stretch` and centred, so on a task with notes,
-								labels and a gauge under the title the box floated halfway down
-								beside none of them. The thing it ticks is the title, so it
-								stands level with the title.
-
-								And once a task is done it says when: the tick is the only part
-								of the row that knows, and "did I do that this morning or last
-								week" is the question somebody asks of a list they are looking
-								back at.
-							-->
-									<button
-										type="submit"
-										class="-m-1 flex shrink-0 items-start justify-center self-start p-1 pointer-coarse:w-11"
-										aria-label={isDone(todo)
-											? t('todoRows.markIncomplete')
-											: t('todoRows.markComplete')}
-										title={isDone(todo) && todo.completedAt
-											? t('todoRows.doneAgo', {
-													when: momentOf(todo.completedAt, now()),
-													ago: agoOf(todo.completedAt, now())
-												})
+										The chip says when it went on.
+										
+										Which is the whole reason the join carries a date: a
+										list of labels says what is true and says nothing
+										about what is new. Under the pointer rather than
+										beside the word, because the age matters when you go
+										looking for it and would be noise on every row at
+										once. A label from before the column existed simply
+										does not say — an invented date would be read as real.
+									-->
+									<TagChip
+										name={tag.name}
+										active={tagFilter.current.include.includes(tag.name)}
+										title={tag.taggedAt
+											? t('todoRows.taggedAgo', { ago: agoOf(tag.taggedAt, now()) })
 											: undefined}
-									>
-										<!-- Blue while it is the one being worked on, so the state is
-									     on the box that owns it rather than only on the row. -->
-										<span
-											class="flex size-7 items-center justify-center border {isDone(todo)
-												? 'border-gray-400 bg-gray-400'
-												: todo.status === 'doing'
-													? 'doing-box'
-													: 'border-gray-400 bg-white'}"
-										>
-											{#if isDone(todo)}
-												<svg class="h-4 w-4 text-white" viewBox="0 0 20 20" fill="currentColor">
-													<path
-														fill-rule="evenodd"
-														d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-														clip-rule="evenodd"
-													/>
-												</svg>
-											{/if}
-										</span>
-									</button>
-								</form>
-							{/if}
-
-							<!--
-							Under the tick box, stacked.
-
-							They were beside the labels under the title, which is where you
-							read what a task *is*; these three answer what it would cost you.
-							The rail the tick box stands in has the width and nothing under
-							it, and stacked they line up across every row — which is the half
-							of "make sure its aligned" that a row of pills could never do.
-
-							All three, always. Drawing only the answered ones put the same
-							question in a different place on every row, so the eye had to
-							read each card from scratch; an unanswered one is drawn half
-							full and grey, which says "nobody said" rather than "the lowest
-							there is".
-						-->
-							<!--
-							Pressing them opens the form on them.
-
-							They are the one thing on a row that shows a number without
-							offering a way to change it, and the way in was two presses
-							through a dialog that opens somewhere else entirely.
-						-->
-							<button
-								type="button"
-								class="mt-auto cursor-pointer"
-								onclick={() => startEdit(todo, { atRatings: true })}
-								aria-label={t('todoRows.setTheRatings')}
-							>
-								<RatingBadges values={todo.ratings} stacked />
-							</button>
-						</div>
-
-						<!-- One row at every width: the actions are a narrow column of icons
-						     now, which fits beside the title on a phone. -->
-						<!--
-							Wrapping, because the actions below are a full-width line: in a
-							row that cannot wrap they are a sibling competing for the width
-							instead, which squeezes the title to one letter per line.
-						-->
-						<div class="flex min-w-0 flex-1 flex-wrap gap-x-3">
-							<div class="min-w-0 flex-1">
-								<div class="flex flex-wrap items-center gap-2">
-									{#if todo.categoryColor}
-										<span
-											class="h-3 w-1 shrink-0"
-											style="background-color: {todo.categoryColor}"
-											title={todo.categoryName}
-										></span>
-									{/if}
-									<!--
-										`min-w-0` because a flex item will not shrink below its own
-										content by default: a long title stopped being able to wrap,
-										widened the row past the card, and took the whole list off
-										the side of the screen with it. `break-words` so a single
-										long word breaks rather than doing the same thing again.
-									-->
-									<!-- Finished is grey, not struck through: the tick and the
-									     colour say it already, and a line through a title is one
-									     more thing to read past. -->
-									<!--
-										The title is the title. The chevron belongs to the writing.
-
-										It used to sit in front of the title, which put the mark
-										for "there is more of this" on the line that is not the
-										more of it — and indented every title in the list by a
-										glyph most rows had nothing to put in. It is on the first
-										line of the notes now, in their own left margin, with the
-										lines under it hanging to the same place.
-
-										The title still opens a folded row, along with everything
-										else in the block; what shuts one is the chevron and the
-										line beside it. See the notes below.
-									-->
-									<span
-										class="min-w-0 text-sm font-medium break-words {isDone(todo)
-											? 'text-gray-400'
-											: 'text-gray-900'}">{todo.title}</span
-									>
-									{#if todo.scheduledDate}
-										<span
-											class="tabular border border-gray-200 bg-gray-50 px-1 text-[10px] text-gray-600"
-											title={t('todoRows.pulledOntoThisDay')}
-										>
-											{todo.scheduledDate}
-										</span>
-									{/if}
-									{#if todo.archivedAt}
-										<span
-											class="border border-gray-200 bg-gray-50 px-1 text-[10px] text-gray-600"
-											title={t('todoRows.putAway')}
-										>
-											{t('todoRows.archived')}
-										</span>
-									{/if}
-								</div>
-								<!--
-									A recording is a player and a picture is a picture, not the
-									address of either.
-
-									Notes are drawn as a line of text, and both attachments are
-									stored as ordinary markdown — right for the text, wrong on
-									the screen, where the row reads as
-									`[ring the plumber](/media/audio/40)`. `Written` takes them
-									out of the line and draws them under it, the same way an
-									idea's are drawn. They are always there when there are any,
-									so nothing moves when the row is pressed.
-								-->
-								{#if todo.notes}
-									<!--
-										The chevron sits on the first line of the writing, and
-										that line is what folds it.
-
-										Open, the press is the first line and the mark beside it —
-										nothing else. Everything under it is a paragraph somebody
-										is reading, and reading means selecting a word or
-										following a link, both of which used to fold the row away
-										mid-sentence. Which line was pressed is worked out from
-										where the pointer was rather than from an overlay, so the
-										words stay selectable and a link in them stays a link.
-
-										Folded, the whole block opens: the title, the line, a
-										picture in it, any of them. There is nothing to lose by
-										pressing in the wrong place when the only thing that can
-										happen is seeing more.
-
-										A picture or a recording is still its own control — the
-										press is caught here rather than bound to the block, so
-										playing something does not fold the row.
-									-->
-									<!-- svelte-ignore a11y_click_events_have_key_events -->
-									<!-- svelte-ignore a11y_no_static_element_interactions -->
-									<div
-										class="todo-notes {hasMore(todo) ? 'todo-notes-foldable' : ''}"
-										onclick={(press) => foldPress(todo, press)}
-										onpointermove={(move) => foldHover(todo, move)}
-										onpointerleave={(leave) =>
-											(leave.currentTarget as HTMLElement).classList.remove('todo-notes-hot')}
-									>
-										{#if hasMore(todo)}
-											<button
-												type="button"
-												class="todo-fold"
-												onclick={(press) => {
-													press.stopPropagation();
-													toggleNotes(todo.id);
-												}}
-												aria-expanded={openNotes.has(todo.id)}
-												aria-label={todo.title}
-											>
-												<Icon
-													name={openNotes.has(todo.id) ? 'chevron-down' : 'chevron-right'}
-													size={12}
-												/>
-											</button>
-										{/if}
-										<Written
-											content={todo.notes}
-											compact
-											oneLine={!openNotes.has(todo.id)}
-											ontruncate={notesTruncate(todo.id)}
-											todos={todoRefs}
-										/>
-									</div>
-								{/if}
-								<!-- Pressing one narrows the list to it, the way an idea's do:
-								     a label is only useful if reading back one of them is a
-								     press rather than a trip to a filter. -->
-								<!--
-									The three gauges, in the room the tick used to take.
-
-									Under the title rather than in it: the title line is what
-									somebody scans, and three small objects in the middle of it
-									were three things to read past. Here they sit with the
-									labels, which is the other thing you look at when you are
-									choosing what to do rather than reading what it is.
-								-->
-								<Backlinks
-									goals={goalLinks[todo.id]}
-									notebook={notebookId === null && todo.notebookId && todo.notebookTitle
-										? { id: todo.notebookId, title: todo.notebookTitle }
-										: null}
-								/>
-							</div>
-
-							<!--
-								Under the words, not beside them.
-
-								The actions were a block three buttons wide pinned to the
-								right-hand edge, which on a phone took a third of the row and
-								left the title with barely enough space to break a word in —
-								"letters barely have space there to span". A note card has
-								never done that: its buttons sit on a line of their own under
-								the text, pushed right. Same here, at every width, because it
-								reads better on a laptop too.
-							-->
-							<div class="task-actions" inert={selecting} class:opacity-50={selecting}>
+										onclick={() => {
+											// Pressing a label adds it to the ones shown rather
+											// than replacing them, so two presses is two labels.
+											const held = tagFilter.current;
+											tagFilter.current = held.include.includes(tag.name)
+												? { ...held, include: held.include.filter((one) => one !== tag.name) }
+												: {
+														...held,
+														include: [...held.include, tag.name],
+														exclude: held.exclude.filter((one) => one !== tag.name)
+													};
+											selectedIndex = 0;
+										}}
+									/>
+								{/each}
+							{/snippet}
+							{#snippet controls()}
 								{#if !isDone(todo)}
 									<!--
 										What you are on, said on the list rather than only on the
@@ -1860,88 +1752,149 @@
 										<Icon name="trash" />
 									</button>
 								{/if}
-
+							{/snippet}
+							<div class="flex flex-wrap items-center gap-2">
+								{#if todo.categoryColor}
+									<span
+										class="h-3 w-1 shrink-0"
+										style="background-color: {todo.categoryColor}"
+										title={todo.categoryName}
+									></span>
+								{/if}
 								<!--
-									This task's number inside its notebook, quietly, at the end
-									of the row.
-
-									It is what a note points at — `TASK:#4` — and what somebody
-									says out loud when they mean a particular task, so it has to
-									be on the screen: the row id never was, and "the one about
-									the plumber" is the only other way to name one. Bottom right,
-									under the actions, because it is a label rather than a
-									control. A task filed under nothing has no number and shows
-									none.
-								-->
-								<!--
-									The number and then the labels, on the same line.
-
-									The labels used to sit above, under the notes, which put
-									them in the middle of what somebody is reading rather than
-									with the other things a row is filed under. They belong
-									with the number: both of them say how to find this task
-									again rather than what it is.
-								-->
-								<!-- `task-labels`: what the row says, so it keeps its ink while
-								     the buttons beside it are held back — see `.task-actions`. -->
-								<div
-									class="task-labels order-first mr-auto flex min-w-0 flex-wrap items-center gap-1"
-								>
-									{#if todo.notebookSeq !== null}
-										<span class="tabular text-[11px] text-gray-500" title={whenOf(todo)}>
-											#{todo.notebookSeq}
-										</span>
-									{/if}
-									{#each todo.tags as tag (tag.id)}
-										<!--
-											The chip says when it went on.
-											
-											Which is the whole reason the join carries a date: a
-											list of labels says what is true and says nothing
-											about what is new. Under the pointer rather than
-											beside the word, because the age matters when you go
-											looking for it and would be noise on every row at
-											once. A label from before the column existed simply
-											does not say — an invented date would be read as real.
-										-->
-										<TagChip
-											name={tag.name}
-											active={tagFilter.current.include.includes(tag.name)}
-											title={tag.taggedAt
-												? t('todoRows.taggedAgo', { ago: agoOf(tag.taggedAt, now()) })
-												: undefined}
-											onclick={() => {
-												// Pressing a label adds it to the ones shown rather
-												// than replacing them, so two presses is two labels.
-												const held = tagFilter.current;
-												tagFilter.current = held.include.includes(tag.name)
-													? { ...held, include: held.include.filter((one) => one !== tag.name) }
-													: {
-															...held,
-															include: [...held.include, tag.name],
-															exclude: held.exclude.filter((one) => one !== tag.name)
-														};
-												selectedIndex = 0;
-											}}
-										/>
-									{/each}
-									<!--
-										And the way to add one, at the end of the strip.
-
-										Where the cursor already is when somebody reads the row
-										and decides it needs a word. The alternative was the
-										edit dialog, which is five steps and a list that
-										reorders underneath you for one label.
+										`min-w-0` because a flex item will not shrink below its own
+										content by default: a long title stopped being able to wrap,
+										widened the row past the card, and took the whole list off
+										the side of the screen with it. `break-words` so a single
+										long word breaks rather than doing the same thing again.
 									-->
-									<QuickTag
-										id={todo.id}
-										action={actions.tag}
-										has={todo.tags.map((one) => one.name)}
-										known={page.data.tagVocabulary ?? []}
+								<!-- Finished is grey, not struck through: the tick and the
+									     colour say it already, and a line through a title is one
+									     more thing to read past. -->
+								<!--
+										The title is the title. The chevron belongs to the writing.
+
+										It used to sit in front of the title, which put the mark
+										for "there is more of this" on the line that is not the
+										more of it — and indented every title in the list by a
+										glyph most rows had nothing to put in. It is on the first
+										line of the notes now, in their own left margin, with the
+										lines under it hanging to the same place.
+
+										The title still opens a folded row, along with everything
+										else in the block; what shuts one is the chevron and the
+										line beside it. See the notes below.
+									-->
+								<span
+									class="min-w-0 text-sm font-medium break-words {isDone(todo)
+										? 'text-gray-400'
+										: 'text-gray-900'}">{todo.title}</span
+								>
+								{#if todo.scheduledDate}
+									<span
+										class="tabular border border-gray-200 bg-gray-50 px-1 text-[10px] text-gray-600"
+										title={t('todoRows.pulledOntoThisDay')}
+									>
+										{todo.scheduledDate}
+									</span>
+								{/if}
+								{#if todo.archivedAt}
+									<span
+										class="border border-gray-200 bg-gray-50 px-1 text-[10px] text-gray-600"
+										title={t('todoRows.putAway')}
+									>
+										{t('todoRows.archived')}
+									</span>
+								{/if}
+							</div>
+							<!--
+									A recording is a player and a picture is a picture, not the
+									address of either.
+
+									Notes are drawn as a line of text, and both attachments are
+									stored as ordinary markdown — right for the text, wrong on
+									the screen, where the row reads as
+									`[ring the plumber](/media/audio/40)`. `Written` takes them
+									out of the line and draws them under it, the same way an
+									idea's are drawn. They are always there when there are any,
+									so nothing moves when the row is pressed.
+								-->
+							{#if todo.notes}
+								<!--
+										The chevron sits on the first line of the writing, and
+										that line is what folds it.
+
+										Open, the press is the first line and the mark beside it —
+										nothing else. Everything under it is a paragraph somebody
+										is reading, and reading means selecting a word or
+										following a link, both of which used to fold the row away
+										mid-sentence. Which line was pressed is worked out from
+										where the pointer was rather than from an overlay, so the
+										words stay selectable and a link in them stays a link.
+
+										Folded, the whole block opens: the title, the line, a
+										picture in it, any of them. There is nothing to lose by
+										pressing in the wrong place when the only thing that can
+										happen is seeing more.
+
+										A picture or a recording is still its own control — the
+										press is caught here rather than bound to the block, so
+										playing something does not fold the row.
+									-->
+								<!-- svelte-ignore a11y_click_events_have_key_events -->
+								<!-- svelte-ignore a11y_no_static_element_interactions -->
+								<div
+									class="todo-notes {hasMore(todo) ? 'todo-notes-foldable' : ''}"
+									onclick={(press) => foldPress(todo, press)}
+									onpointermove={(move) => foldHover(todo, move)}
+									onpointerleave={(leave) =>
+										(leave.currentTarget as HTMLElement).classList.remove('todo-notes-hot')}
+								>
+									{#if hasMore(todo)}
+										<button
+											type="button"
+											class="todo-fold"
+											onclick={(press) => {
+												press.stopPropagation();
+												toggleNotes(todo.id);
+											}}
+											aria-expanded={openNotes.has(todo.id)}
+											aria-label={todo.title}
+										>
+											<Icon
+												name={openNotes.has(todo.id) ? 'chevron-down' : 'chevron-right'}
+												size={12}
+											/>
+										</button>
+									{/if}
+									<Written
+										content={todo.notes}
+										compact
+										oneLine={!openNotes.has(todo.id)}
+										ontruncate={notesTruncate(todo.id)}
+										todos={todoRefs}
 									/>
 								</div>
-							</div>
-						</div>
+							{/if}
+							<!-- Pressing one narrows the list to it, the way an idea's do:
+								     a label is only useful if reading back one of them is a
+								     press rather than a trip to a filter. -->
+							<!--
+									The three gauges, in the room the tick used to take.
+
+									Under the title rather than in it: the title line is what
+									somebody scans, and three small objects in the middle of it
+									were three things to read past. Here they sit with the
+									labels, which is the other thing you look at when you are
+									choosing what to do rather than reading what it is.
+								-->
+							<Backlinks
+								goals={goalLinks[todo.id]}
+								notebook={notebookId === null && todo.notebookId && todo.notebookTitle
+									? { id: todo.notebookId, title: todo.notebookTitle }
+									: null}
+							/>
+						</RowCard>
 					</div>
 				{/each}
 			</div>

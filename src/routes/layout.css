@@ -2102,16 +2102,11 @@ label:has(> input[type='radio']:not(:disabled)) {
 		width: 100%;
 		display: flex;
 		/*
-		 * The labels take a line of their own rather than being squeezed.
-		 *
-		 * Without this the line could not break, so the only give was in the
-		 * strip of labels: it shrank under the six buttons until each pill was
-		 * narrower than the word inside it, and on a phone every task wore a
-		 * two-line `#done-by-ai` overlapping the first button. The number and
-		 * the labels are `order-first`, so what wraps is the buttons — which
-		 * is the right way round: the labels say what the row is.
+		 * One line that never wraps. The labels used to share it and pushed the
+		 * buttons onto a second, ragged line on a phone; they have a line of
+		 * their own now (`RowCard`), and six buttons fit across any phone.
 		 */
-		flex-wrap: wrap;
+		flex-wrap: nowrap;
 		align-items: center;
 		justify-content: flex-end;
 		gap: 0.25rem;
@@ -2238,13 +2233,10 @@ label:has(> input[type='radio']:not(:disabled)) {
 		}
 
 		/*
-		 * A task's number and its labels share that line with its buttons and
-		 * are not among them: they say what the row is, not what can be done to
-		 * it. Fading the whole line took a label's ink down to a grey nobody
-		 * could read — "this text and border should be black, it was black
-		 * before" — so the fade is on the controls, one by one.
+		 * The controls fade one by one rather than as a line, so a confirm that
+		 * replaces one of them can come back on its own.
 		 */
-		.task-actions > :not(.task-labels) {
+		.task-actions > * {
 			opacity: 0.35;
 		}
 
@@ -2263,9 +2255,9 @@ label:has(> input[type='radio']:not(:disabled)) {
 		 * only the other two, so a task's buttons stayed at a third whatever
 		 * the pointer was doing.
 		 */
-		*:hover > .task-actions > :not(.task-labels),
-		*:focus-within > .task-actions > :not(.task-labels),
-		.task-actions:focus-within > :not(.task-labels) {
+		*:hover > .task-actions > *,
+		*:focus-within > .task-actions > *,
+		.task-actions:focus-within > * {
 			opacity: 1;
 		}
 	}
