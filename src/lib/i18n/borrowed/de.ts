@@ -94,7 +94,6 @@ export const borrowed: ReadonlySet<string> = new Set([
 	'notebooks.newBill',
 	'notebooks.newHabit',
 	'notebooks.newIdea',
-	'notebooks.newItem',
 	'notebooks.newLedger',
 	'notebooks.newRecipe',
 	'notebooks.newWorkout',

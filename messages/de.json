@@ -1817,7 +1817,7 @@
 	"notebooks.newBill": null,
 	"notebooks.newHabit": null,
 	"notebooks.newIdea": null,
-	"notebooks.newItem": null,
+	"notebooks.newItem": "Neuer Gegenstand",
 	"notebooks.newLedger": null,
 	"notebooks.newNotebook": "Neues Notizbuch",
 	"notebooks.newRecipe": null,

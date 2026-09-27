@@ -2044,7 +2044,7 @@ export const messages: Catalogue = {
 	'notebooks.newBill': 'New bill',
 	'notebooks.newHabit': 'New habit',
 	'notebooks.newIdea': 'New idea',
-	'notebooks.newItem': 'New thing',
+	'notebooks.newItem': 'Neuer Gegenstand',
 	'notebooks.newLedger': 'New ledger',
 	'notebooks.newNotebook': 'Neues Notizbuch',
 	'notebooks.newRecipe': 'New recipe',

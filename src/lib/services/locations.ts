@@ -108,6 +108,18 @@ export function pathOf(ctx: Ctx, id: number): string[] {
 	return chain;
 }
 
+/** How a location's path is written: "Living room › White chest". */
+export const LOCATION_PATH_SEPARATOR = ' › ';
+
+/** Every location with its whole path, for a form's location picker. */
+export function locationChoices(ctx: Ctx): { id: number; name: string; path: string }[] {
+	return listLocations(ctx).map((one) => ({
+		id: one.id,
+		name: one.name,
+		path: pathOf(ctx, one.id).join(LOCATION_PATH_SEPARATOR)
+	}));
+}
+
 /** Locations keyed by id, typed once so callers walk the tree without casts. */
 function indexLocations(ctx: Ctx): Map<number, Location> {
 	const byId = new Map<number, Location>();

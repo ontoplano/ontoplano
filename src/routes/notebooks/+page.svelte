@@ -569,6 +569,7 @@
 							parsers={data.parsers}
 							currency={data.currency}
 							pickableNotebooks={data.pickableNotebooks}
+							locations={data.locations}
 							areas={data.areas}
 							workoutMeasures={data.workoutMeasures}
 							slots={data.slots}

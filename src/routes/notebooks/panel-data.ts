@@ -7,6 +7,7 @@ import { linkableSlots, listAreas } from '$lib/services/goals';
 import { pickableNotebooks } from '$lib/services/notebooks';
 import { mediaLimits } from '$lib/services/media';
 import { listPeople } from '$lib/services/people';
+import { locationChoices } from '$lib/services/locations';
 import { listTodos } from '$lib/services/todos';
 import { measuredActivities } from '$lib/services/workouts';
 import type { Ctx } from '$lib/services/ctx';
@@ -51,6 +52,8 @@ export function notebookPanelData(ctx: Ctx, notebookId: number | null) {
 		// read. Same number the server enforces, and here rather than on one
 		// route because both of them draw the picture control now.
 		pictureKilobytes: mediaLimits().maxKilobytes,
+		// Where a thing written in the Inventory tab lives — the room's own question.
+		locations: locationChoices(ctx),
 		// For the People field on a note, which completes rather than duplicates.
 		allPeople: listPeople(ctx),
 		// The Goals tab writes and edits a goal in place, with the same fields
