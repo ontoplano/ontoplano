@@ -37,6 +37,7 @@ releases mattered.
 - Filters fold behind a Filters button whenever their strip is too narrow for them — in a notebook's panel as well as on a phone — instead of wrapping into a clogged second line.
 - A label with no colour of its own is a dark pill, so it no longer looks like the add-a-label button beside it.
 - Notebooks are organised in folders: give one a path like Home/Kitchen and it sits in that folder on the shelf. Rename or move a folder from the shelf and every notebook in it moves too. Notebooks that used to sit inside another one by a dash in their name now sit in a folder named after it.
+- The wheel's room name keeps a margin on a phone, even for Notebooks with its six shelves.
 
 ## 0.183.14 — 2026-09-26
 

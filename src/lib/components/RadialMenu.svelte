@@ -1012,6 +1012,10 @@
 		 */
 		--hud-blur: 4px;
 		--hud-ink: 62%;
+		/* Screen showing either side of the plate on a phone: without it
+		   Notebooks, with six shelves under its name, ran edge to edge and the
+		   plate's border fell off the screen. */
+		--hud-gutter: 1rem;
 
 		position: fixed;
 		/* Well above the ring, which sits under the thumb, and clear of the
@@ -1020,6 +1024,7 @@
 		top: var(--hud-top);
 		left: 0;
 		right: 0;
+		padding-inline: var(--hud-gutter);
 		display: flex;
 		justify-content: center;
 		/* Above the scrim and the wheel; it is the label for both. */
@@ -1069,6 +1074,7 @@
 		background-color: var(--hud-plate);
 		-webkit-backdrop-filter: blur(var(--hud-blur));
 		backdrop-filter: blur(var(--hud-blur));
+		max-width: 100%;
 		padding: 0.875rem 1.5rem 1rem;
 		font-weight: 600;
 		letter-spacing: 0.08em;
@@ -1119,10 +1125,11 @@
 		 *
 		 * At this weight and tracking the words run about thirty-three times
 		 * the font size, and Notebooks is the longest of them at six shelves.
-		 * `2.6vw` is that ratio with a margin either side; the rem caps it,
-		 * because beyond a certain width this is a hint and not a heading.
+		 * `2.2vw` is that ratio leaving room for the plate's own padding and
+		 * the gutter either side of it; the rem caps it, because beyond a
+		 * certain width this is a hint and not a heading.
 		 */
-		font-size: min(0.8125rem, 2.6vw);
+		font-size: min(0.8125rem, 2.2vw);
 		font-weight: 600;
 		letter-spacing: 0.06em;
 		text-transform: uppercase;
