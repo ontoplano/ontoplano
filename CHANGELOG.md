@@ -20,6 +20,15 @@ releases mattered.
 
 ## 0.184.0 — 2026-09-27
 
+- A zoomed-in picture closes with a tap on the dark around it; only dragging it keeps it open.
+- On a phone, going somewhere right after closing a dialog is no longer cancelled by the dialog's own way back.
+- Opening the shopping list or recipes right after signing in no longer fails with a network error.
+- An assistant key tied to one notebook can read that notebook's recipes and tick its habits by name again.
+- Assistants can now correct and delete statement lines, change, archive and reorder ledgers, reorder sorting rules, switch activities off or delete unused ones, close notebooks, pause repeating blocks, rename shopping items and workout categories, and reorder tasks on the board.
+- Renaming a workout category to a name already taken says so instead of failing.
+- A new Android home-screen widget shows one tab of a notebook — its tasks, notes, goals, ideas or things to buy — filtered and ordered as you choose; tap it to open that notebook, or a line to open that item. Widgets are managed under Settings → AI & Integrations → Widgets.
+- A key tied to one notebook can no longer read the rest of the account through the other API endpoints.
+- On a phone, a dialog opened from inside another (like the delete confirmation from Edit notebook) closes on its own — Cancel or back returns to the form underneath.
 - Goal areas can now be renamed, recoloured and moved up or down in the Areas dialog, and that order is the one the area filter shows.
 - Assistants can now safely resend an "add" without making a duplicate, refuse to overwrite a change somebody made in the meantime, change a bill's currency, and take ingredients out of a recipe; every refusal says what kind of refusal it was.
 - A notebook now refuses a task, idea, goal or anything else it has no tab for, naming the missing tab; the notebook pickers only offer notebooks that have it, and an assistant's create now shows what it made.

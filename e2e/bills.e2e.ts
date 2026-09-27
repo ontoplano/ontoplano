@@ -206,10 +206,11 @@ for (const size of SIZES) {
 		test.setTimeout(120_000);
 		await page.setViewportSize({ width: size.width, height: size.height });
 		await register(page, testEmail(`bills-auto-${size.name}`));
-		// A notebook, so the form draws its notebook field below the box.
+		// A notebook with a Bills tab, so the form draws its notebook field below
+		// the box — a notebook without one is not offered.
 		await page.request.post('/notebooks?/create', {
 			headers: { Origin: new URL(page.url()).origin, 'x-sveltekit-action': 'true' },
-			form: { heading: 'Home' }
+			form: { heading: 'Home', modules: 'notes,tasks,bills' }
 		});
 		await visit(page, '/finance/bills');
 

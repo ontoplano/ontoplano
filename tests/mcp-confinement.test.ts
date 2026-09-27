@@ -290,6 +290,107 @@ describe('what it cannot do', () => {
 	});
 });
 
+/*
+ * Two reads that used to answer about the whole account.
+ *
+ * `recipes` without an id listed every recipe, and `tick_habit` by name found
+ * a habit anywhere, so a tied key was not offered either. Both take a
+ * `notebookId` now, which the confinement pins like any other.
+ */
+describe('recipes and habits, narrowed to the notebook', () => {
+	let habitInside = 0;
+	let habitOutside = 0;
+
+	beforeAll(async () => {
+		const { createHabit } = await import('../src/lib/services/habits');
+		const { createRecipe } = await import('../src/lib/services/recipes');
+		habitInside = createHabit(ctx(), { name: 'sweep the dust', notebookId: mine });
+		habitOutside = createHabit(ctx(), { name: 'sweep the dust' });
+		createRecipe(ctx(), { title: 'builders’ tea', notebookId: mine });
+		createRecipe(ctx(), { title: 'a private stew' });
+	});
+
+	const ticked = (habitId: number) =>
+		database
+			.all('select habit_id from habit_occurrences where user_id = ?', OWNER)
+			.some((row) => (row as { habit_id: number }).habit_id === habitId);
+
+	it('lists only the notebook’s recipes, whatever notebook is asked for', () => {
+		for (const args of [{}, { notebookId: other }]) {
+			const answer = call('recipes', args);
+			expect(failed(answer), said(answer)).toBe(false);
+			expect(said(answer)).toContain('builders’ tea');
+			expect(said(answer)).not.toContain('a private stew');
+		}
+	});
+
+	it('ticks the notebook’s habit by name, and never the one of the same name outside', () => {
+		const answer = call('tick_habit', { name: 'sweep the dust', date: '2026-03-14' });
+		expect(failed(answer), said(answer)).toBe(false);
+		expect(ticked(habitInside)).toBe(true);
+		expect(ticked(habitOutside)).toBe(false);
+	});
+
+	it('refuses a habit outside by id, and writes nothing', () => {
+		const answer = call('tick_habit', { id: habitOutside, date: '2026-03-15' });
+		expect(failed(answer)).toBe(true);
+		expect(ticked(habitOutside)).toBe(false);
+	});
+
+	it('a full-account key still lists every recipe, and filters when asked', () => {
+		expect(said(call('recipes', {}, false))).toContain('a private stew');
+		const filtered = said(call('recipes', { notebookId: mine }, false));
+		expect(filtered).toContain('builders’ tea');
+		expect(filtered).not.toContain('a private stew');
+	});
+
+	it('a full-account key refuses an ambiguous name, and narrows with notebookId', () => {
+		expect(failed(call('tick_habit', { name: 'sweep the dust', date: '2026-03-16' }, false))).toBe(
+			true
+		);
+		const answer = call(
+			'tick_habit',
+			{ name: 'sweep the dust', notebookId: other, date: '2026-03-16' },
+			false
+		);
+		// Nothing of that name in the other notebook: refused, not guessed.
+		expect(failed(answer)).toBe(true);
+	});
+});
+
+describe('the lines in its own ledgers', () => {
+	let own = 0;
+	let foreign = 0;
+
+	beforeAll(async () => {
+		const { createLedger } = await import('../src/lib/services/ledgers');
+		const { recordMovement } = await import('../src/lib/services/statements');
+		const line = (ledgerId: number, description: string) =>
+			recordMovement(ctx(), { ledgerId, occurredOn: '2026-03-10', amountCents: -100, description })
+				.id;
+		own = line(createLedger(ctx(), { name: 'flat fund', notebookId: mine }).id, 'PAINT');
+		foreign = line(createLedger(ctx(), { name: 'private account' }).id, 'PRIVATE');
+	});
+
+	const amount = (id: number) =>
+		(
+			database.all('select amount_cents from finance_transactions where id = ?', id)[0] as {
+				amount_cents: number;
+			}
+		).amount_cents;
+
+	it('corrects a line in a ledger filed under the notebook', () => {
+		expect(failed(call('change_movement', { id: own, amount_cents: -250 }))).toBe(false);
+		expect(amount(own)).toBe(-250);
+	});
+
+	it('cannot correct or remove one anywhere else, and writes nothing', () => {
+		expect(failed(call('change_movement', { id: foreign, amount_cents: -1 }))).toBe(true);
+		expect(failed(call('remove_movement', { id: foreign }))).toBe(true);
+		expect(amount(foreign)).toBe(-100);
+	});
+});
+
 describe('a tool that also takes ids from outside', () => {
 	/*
 	 * `link_to_goal` hangs to-dos and repeating blocks on a goal. A notebook

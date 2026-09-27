@@ -33,7 +33,12 @@ async function writeNote(page: Page, title: string) {
 	await page.locator('form[action="?/addEntry"] [name="heading"]').fill(title);
 	await page.locator('form[action="?/addEntry"] textarea[name="content"]').fill(`about ${title}`);
 	await page.getByRole('button', { name: 'Add note' }).click();
-	await expect(page.getByText(title).first()).toBeVisible();
+	// The row in the list, not any text that says the title: "about Suppliers"
+	// is on screen before the save is answered, and a key pressed then walks a
+	// list that does not have the note in it yet.
+	await expect(
+		page.locator('article [data-note-title]').filter({ hasText: new RegExp(`^${title}$`) })
+	).toBeVisible();
 }
 
 test('h and l walk the tabs, j and k walk the notes', async ({ page }) => {

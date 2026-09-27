@@ -100,11 +100,18 @@ export function toggleActivityActive(ctx: Ctx, id: number): void {
 		.get();
 
 	if (!current) throw new NotFoundError('activity');
+	setActivityActive(ctx, id, !current.active);
+}
 
-	db.update(activities)
-		.set({ active: !current.active, updatedAt: stamp(ctx) })
+/** Switched on or off by saying which, for a caller that should not have to read first. */
+export function setActivityActive(ctx: Ctx, id: number, active: boolean): void {
+	const res = db
+		.update(activities)
+		.set({ active, updatedAt: stamp(ctx) })
 		.where(and(eq(activities.id, id), eq(activities.userId, ctx.userId)))
 		.run();
+
+	if (res.changes === 0) throw new NotFoundError('activity');
 }
 
 export function deleteActivity(ctx: Ctx, id: number): void {

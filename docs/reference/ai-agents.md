@@ -541,46 +541,29 @@ is a gap an assistant cannot fill yet; _app only, on purpose_ is a decision,
 said below — mostly deletions kept for the person. Generated from `src/lib/server/mcp/capabilities.json`,
 which a test holds to the tools the server serves and the actions the app has.
 
-| Room                    | create                                               | read                                                                                          | change                                                                                                           | archive           | unarchive         | delete                                               | reorder          |
-| ----------------------- | ---------------------------------------------------- | --------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- | ----------------- | ----------------- | ---------------------------------------------------- | ---------------- |
-| Tasks                   | `add_task`, `note_to_tasks`                          | `tasks`, `up_next`                                                                            | `change_task`, `tag_task`, `finish_task`, `reopen_task`, `schedule_task`, `unschedule_task`                      | `archive_task`    | `unarchive_task`  | `drop_task`                                          | **app only**     |
-| Blocks                  | `add_block`, `add_repeating_block`                   | `upcoming`, `past`, `repeating_week`                                                          | `change_block`, `finish_block`, `change_repeating_block`                                                         | **app only**      | **app only**      | `cancel_block`, `remove_repeating_block`             |                  |
-| Notes and diary entries | `write_entry`                                        | `diary`, `notebook_notes`                                                                     | `edit_entry`, `pin_note`, `unpin_note`, `move_notes`                                                             | `archive_note`    | `unarchive_note`  | _app only, on purpose_                               |                  |
-| Ideas                   | `add_idea`                                           | `ideas`                                                                                       | `change_idea`, `apply_idea`, `favorite_idea`                                                                     |                   |                   | `remove_idea`                                        |                  |
-| Goals                   | `add_goal`, `add_goal_area`, `add_goal_target`       | `goals`, `goal_areas`                                                                         | `change_goal`, `log_goal_progress`, `link_to_goal`, `unlink_from_goal`, `remove_goal_target`, `change_goal_area` | `close_goal`      | `reopen_goal`     | _app only, on purpose_                               | `move_goal_area` |
-| Habits                  | `add_habit`                                          | `habits`, `all_habits`                                                                        | `change_habit`, `tick_habit`                                                                                     |                   |                   | _app only, on purpose_                               |                  |
-| Inventory               | `add_inventory_item`, `add_inventory_category`       | `shopping_list`, `inventory_categories`                                                       | `file_inventory_item`, `record_price`, `set_item_attributes`, `change_inventory_category` _(in part)_            | `archive_item`    | `unarchive_item`  | `remove_inventory_item`, `remove_inventory_category` |                  |
-| Places                  | `add_location`                                       | `locations`, `where_is`                                                                       | `change_location`, `put_item`                                                                                    |                   |                   | `remove_location`                                    |                  |
-| Shopping list           | `add_inventory_item`                                 | `shopping_list`                                                                               | `tick_bought`, `untick_bought`, `record_price`                                                                   | `archive_item`    | `unarchive_item`  | `remove_inventory_item`                              |                  |
-| Recipes                 | `add_recipe`                                         | `recipes`                                                                                     | `change_recipe`, `cooked_recipe`                                                                                 | `archive_recipe`  | `archive_recipe`  | _app only, on purpose_                               |                  |
-| Workouts                | `add_workout`, `add_workout_category`, `log_workout` | `workouts`, `workout_sessions`, `workout_history`, `workout_activities`, `workout_categories` | `change_workout`, `set_workout_measures`, `change_workout_session`, `workout_done` _(in part)_                   | `archive_workout` | `archive_workout` | `remove_workout_session`, `remove_workout_category`  |                  |
-| Bills                   | `add_bill`                                           | `bills`, `bill_payments`, `bill_history`, `month_bills`, `bills_due`                          | `change_bill`, `pay_bill`, `unpay_bill`, `skip_bill`, `unskip_bill`                                              | `archive_bill`    | `archive_bill`    | _app only, on purpose_                               |                  |
-| Accounts and movements  | `add_ledger`, `record_movement`                      | `ledgers`, `movements`, `statement_months`, `spending_by_category`                            | **app only**                                                                                                     | **app only**      | **app only**      | **app only**                                         | **app only**     |
-| Sorting rules           | `add_sort_rule`                                      | `sort_rules`                                                                                  | `change_sort_rule`                                                                                               |                   |                   | `delete_sort_rule`                                   | **app only**     |
-| People                  | `add_person`                                         | `people`, `upcoming_birthdays`                                                                | `change_person`                                                                                                  |                   |                   | _app only, on purpose_                               |                  |
-| Reminders               | `set_alarm`, `remind_before_block`                   | `reminders`                                                                                   | `change_reminder`, `dismiss_reminder`                                                                            |                   |                   | `cancel_alarm`                                       |                  |
-| Activities              | `add_activity`                                       | `activities`, `categories`                                                                    | `change_activity`                                                                                                | **app only**      | **app only**      | **app only**                                         |                  |
-| Notebooks               | `add_notebook`                                       | `notebooks`                                                                                   | `change_notebook`, `rename_notebook_folder`, `favourite_notebook`, `share_notebook`                              | **app only**      | **app only**      | `remove_notebook`                                    |                  |
-| Labels                  | _app only, on purpose_                               | `tags`, `notebook_tags`                                                                       | `describe_tag`, `rename_tag`, `recolor_tag`, `untag_notebook`                                                    |                   |                   | `remove_tag`                                         |                  |
+| Room                    | create                                               | read                                                                                          | change                                                                                                             | archive                  | unarchive                | delete                                               | reorder            |
+| ----------------------- | ---------------------------------------------------- | --------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ | ------------------------ | ------------------------ | ---------------------------------------------------- | ------------------ |
+| Tasks                   | `add_task`, `note_to_tasks`                          | `tasks`, `up_next`                                                                            | `change_task`, `tag_task`, `finish_task`, `reopen_task`, `schedule_task`, `unschedule_task`                        | `archive_task`           | `unarchive_task`         | `drop_task`                                          | `reorder_tasks`    |
+| Blocks                  | `add_block`, `add_repeating_block`                   | `upcoming`, `past`, `repeating_week`                                                          | `change_block`, `finish_block`, `change_repeating_block`                                                           | `change_repeating_block` | `change_repeating_block` | `cancel_block`, `remove_repeating_block`             |                    |
+| Notes and diary entries | `write_entry`                                        | `diary`, `notebook_notes`                                                                     | `edit_entry`, `pin_note`, `unpin_note`, `move_notes`                                                               | `archive_note`           | `unarchive_note`         | _app only, on purpose_                               |                    |
+| Ideas                   | `add_idea`                                           | `ideas`                                                                                       | `change_idea`, `apply_idea`, `favorite_idea`                                                                       |                          |                          | `remove_idea`                                        |                    |
+| Goals                   | `add_goal`, `add_goal_area`, `add_goal_target`       | `goals`, `goal_areas`                                                                         | `change_goal`, `log_goal_progress`, `link_to_goal`, `unlink_from_goal`, `remove_goal_target`, `change_goal_area`   | `close_goal`             | `reopen_goal`            | _app only, on purpose_                               | `move_goal_area`   |
+| Habits                  | `add_habit`                                          | `habits`, `all_habits`                                                                        | `change_habit`, `tick_habit`                                                                                       |                          |                          | _app only, on purpose_                               |                    |
+| Inventory               | `add_inventory_item`, `add_inventory_category`       | `shopping_list`, `inventory_categories`                                                       | `file_inventory_item`, `record_price`, `set_item_attributes`, `change_inventory_category`, `change_inventory_item` | `archive_item`           | `unarchive_item`         | `remove_inventory_item`, `remove_inventory_category` |                    |
+| Places                  | `add_location`                                       | `locations`, `where_is`                                                                       | `change_location`, `put_item`                                                                                      |                          |                          | `remove_location`                                    |                    |
+| Shopping list           | `add_inventory_item`                                 | `shopping_list`                                                                               | `tick_bought`, `untick_bought`, `record_price`, `change_inventory_item`                                            | `archive_item`           | `unarchive_item`         | `remove_inventory_item`                              |                    |
+| Recipes                 | `add_recipe`                                         | `recipes`                                                                                     | `change_recipe`, `cooked_recipe`                                                                                   | `archive_recipe`         | `archive_recipe`         | _app only, on purpose_                               |                    |
+| Workouts                | `add_workout`, `add_workout_category`, `log_workout` | `workouts`, `workout_sessions`, `workout_history`, `workout_activities`, `workout_categories` | `change_workout`, `set_workout_measures`, `change_workout_session`, `workout_done`, `change_workout_category`      | `archive_workout`        | `archive_workout`        | `remove_workout_session`, `remove_workout_category`  |                    |
+| Bills                   | `add_bill`                                           | `bills`, `bill_payments`, `bill_history`, `month_bills`, `bills_due`                          | `change_bill`, `pay_bill`, `unpay_bill`, `skip_bill`, `unskip_bill`                                                | `archive_bill`           | `archive_bill`           | _app only, on purpose_                               |                    |
+| Accounts and movements  | `add_ledger`, `record_movement`                      | `ledgers`, `movements`, `statement_months`, `spending_by_category`                            | `change_ledger`, `change_movement`                                                                                 | `change_ledger`          | `change_ledger`          | `remove_movement`                                    | `change_ledger`    |
+| Sorting rules           | `add_sort_rule`                                      | `sort_rules`                                                                                  | `change_sort_rule`                                                                                                 |                          |                          | `delete_sort_rule`                                   | `change_sort_rule` |
+| People                  | `add_person`                                         | `people`, `upcoming_birthdays`                                                                | `change_person`                                                                                                    |                          |                          | _app only, on purpose_                               |                    |
+| Reminders               | `set_alarm`, `remind_before_block`                   | `reminders`                                                                                   | `change_reminder`, `dismiss_reminder`                                                                              |                          |                          | `cancel_alarm`                                       |                    |
+| Activities              | `add_activity`                                       | `activities`, `categories`                                                                    | `change_activity`                                                                                                  | `change_activity`        | `change_activity`        | `remove_activity`                                    |                    |
+| Notebooks               | `add_notebook`                                       | `notebooks`                                                                                   | `change_notebook`, `rename_notebook_folder`, `favourite_notebook`, `share_notebook`                                | `change_notebook`        | `change_notebook`        | `remove_notebook`                                    |                    |
+| Labels                  | _app only, on purpose_                               | `tags`, `notebook_tags`                                                                       | `describe_tag`, `rename_tag`, `recolor_tag`, `untag_notebook`                                                      |                          |                          | `remove_tag`                                         |                    |
 
 **Not there yet** — what the app does and an assistant cannot:
-
-- **Tasks, reorder.** A task's place on the board cannot be moved over MCP; `up_next` orders by the ratings instead.
-- **Blocks, archive.** A repeating block cannot be paused over MCP — only changed or removed.
-- **Blocks, unarchive.** A paused repeating block cannot be switched back on over MCP.
-- **Inventory, change.** An item cannot be renamed, or have its notes or type changed, over MCP — only filed, priced and given attributes.
-- **Workouts, change.** A workout category cannot be renamed over MCP.
-- **Accounts and movements, change.** Neither an account nor a movement can be changed over MCP: a mistyped movement cannot be corrected.
-- **Accounts and movements, archive.** An account cannot be archived over MCP.
-- **Accounts and movements, unarchive.** An account cannot be brought back over MCP.
-- **Accounts and movements, delete.** A movement recorded twice cannot be removed over MCP.
-- **Accounts and movements, reorder.** Accounts cannot be reordered over MCP.
-- **Sorting rules, reorder.** A rule's priority cannot be moved over MCP, and priority decides which rule sorts a movement.
-- **Activities, archive.** An activity cannot be switched off over MCP.
-- **Activities, unarchive.** An activity cannot be switched back on over MCP.
-- **Activities, delete.** An activity cannot be removed over MCP.
-- **Notebooks, archive.** A notebook cannot be closed over MCP.
-- **Notebooks, unarchive.** A closed notebook cannot be reopened over MCP.
 
 **Left out on purpose:**
 
@@ -590,6 +573,7 @@ which a test holds to the tools the server serves and the actions the app has.
 - **Recipes, delete.** A recipe is archived by a tool; deleting one is done in the app.
 - **Workouts, delete.** An exercise carries its sessions: archived by a tool, deleted in the app. Sessions and categories can be removed.
 - **Bills, delete.** A bill carries its payment history: archived by a tool, deleted in the app where that history is in front of the person.
+- **Accounts and movements, delete.** A ledger takes every line in it when deleted: archived by a tool, deleted in the app. A single line can be removed.
 - **People, delete.** A person's page stands for somebody: deleted only in the app.
 - **Labels, create.** A label comes into being by being used — `tags` on a task, a note or an idea — so there is nothing to make first.
 
@@ -648,12 +632,13 @@ Tick a habit for a day: for something being built, the tick means it was done; f
 
 _Needs `habits:write`; writes; answers with `before` and `after`._
 
-| Parameter   | Type    | Required | What it is                                                                                                                                                                                                                                                                                  |
-| ----------- | ------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `id`        | integer | —        | The habit’s id, as `habits` gave it.                                                                                                                                                                                                                                                        |
-| `name`      | string  | —        | The habit by name, when the id is not to hand — "stretching".                                                                                                                                                                                                                               |
-| `date`      | string  | —        | The day, as YYYY-MM-DD. Today if left out.                                                                                                                                                                                                                                                  |
-| `requestId` | string  | —        | An id you choose for this call, such as a UUID, so it can be sent again safely: the same `requestId` with the same arguments within a day answers with the first answer, marked `replayed`, and nothing is made twice. Reused for a different call, it is refused with the code `conflict`. |
+| Parameter    | Type    | Required | What it is                                                                                                                                                                                                                                                                                  |
+| ------------ | ------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `id`         | integer | —        | The habit’s id, as `habits` gave it.                                                                                                                                                                                                                                                        |
+| `name`       | string  | —        | The habit by name, when the id is not to hand — "stretching".                                                                                                                                                                                                                               |
+| `notebookId` | integer | —        | Look the name up only among the habits filed in this notebook, as `notebooks` gives its id. Left out, every habit is searched.                                                                                                                                                              |
+| `date`       | string  | —        | The day, as YYYY-MM-DD. Today if left out.                                                                                                                                                                                                                                                  |
+| `requestId`  | string  | —        | An id you choose for this call, such as a UUID, so it can be sent again safely: the same `requestId` with the same arguments within a day answers with the first answer, marked `replayed`, and nothing is made twice. Reused for a different call, it is refused with the code `conflict`. |
 
 ### `finish_block` — Mark a block done or skipped
 
@@ -932,6 +917,16 @@ _Needs `tasks:write`; writes; answers with `before` and `after`._
 | `meta`        | object  | —        | Deprecated — use `attributes`, which is the same thing under the name the app uses. Still accepted so an assistant written against the old shape keeps working, and removed in 0.190.0. Any key, each holding a string. **Deprecated** — removed in 0.190.0.                                                                                       |
 | `ifUpdatedAt` | string  | —        | Only change it if nothing has changed it since: the `updatedAt` a read or an earlier change answered with. If something has, nothing is written and the call is refused with the code `conflict`, the current `updatedAt` in its details.                                                                                                          |
 
+### `reorder_tasks` — Put tasks in order on the board
+
+Set the order tasks sit in on the board, the way dragging them does: the ids given, first to last. Tasks not named keep their places. `tasks` answers in this order unless asked for another. It is not a priority — `up_next` orders by the ratings.
+
+_Needs `tasks:write`; writes; answers with `before` and `after`._
+
+| Parameter | Type      | Required | What it is                                                           |
+| --------- | --------- | -------- | -------------------------------------------------------------------- |
+| `ids`     | integer[] | yes      | The tasks’ ids, as `tasks` gives them, in the order they should sit. |
+
 ### `schedule_task` — Put a todo on a day
 
 Give a todo a date, which moves it onto that day’s board. This is what "do it on Thursday" means here.
@@ -1189,7 +1184,7 @@ _Needs `notes:write`; writes; answers with `before` and `after`, `after` being t
 
 ### `change_notebook` — Change a notebook
 
-Rename a notebook, move it to another folder, rewrite the line under its title, set the labels a new note in it starts with or the category a new task in it starts with, or change what it holds. Only `id` is needed: a field left out is untouched, and nothing is written unless all of it is valid.
+Rename a notebook, move it to another folder, rewrite the line under its title, set the labels a new note in it starts with or the category a new task in it starts with, change what it holds, or close and reopen it. Only `id` is needed: a field left out is untouched, and nothing is written unless all of it is valid.
 
 _Needs `notes:write`; writes; answers with `before` and `after`._
 
@@ -1202,6 +1197,7 @@ _Needs `notes:write`; writes; answers with `before` and `after`._
 | `defaultTags` | string  | —        | Labels a new note in it starts with, comma or space separated. An empty string clears them; left out, they are untouched.                                                                                                                                                                                           |
 | `category`    | string  | —        | The category a new task in it starts with, by name as `categories` gives them. An empty string clears it; left out, it is untouched.                                                                                                                                                                                |
 | `modules`     | string  | —        | What it holds, comma separated — notes, tasks, goals, ideas, inventory, ledgers, bills, habits, workouts, recipes. The whole list, not an addition. Notes are always in it. Switching one off keeps whatever is already filed under it; it stops being a tab, and stays in its own room. Left out, it is untouched. |
+| `closed`      | boolean | —        | `true` closes it — a finished subject, off the shelf and out of the pickers, with everything in it kept. `false` reopens it.                                                                                                                                                                                        |
 | `ifUpdatedAt` | string  | —        | Only change it if nothing has changed it since: the `updatedAt` a read or an earlier change answered with. If something has, nothing is written and the call is refused with the code `conflict`, the current `updatedAt` in its details.                                                                           |
 
 ### `rename_notebook_folder` — Rename a notebook folder
@@ -1447,9 +1443,10 @@ Every recipe, with its ingredients. An ingredient here is a shopping item with a
 
 _Needs `kitchen:read`; read-only._
 
-| Parameter | Type    | Required | What it is           |
-| --------- | ------- | -------- | -------------------- |
-| `id`      | integer | —        | One recipe, in full. |
+| Parameter    | Type    | Required | What it is                                                                                    |
+| ------------ | ------- | -------- | --------------------------------------------------------------------------------------------- |
+| `id`         | integer | —        | One recipe, in full.                                                                          |
+| `notebookId` | integer | —        | Only the recipes filed in this notebook, as `notebooks` gives its id. Left out, every recipe. |
 
 ### `add_recipe` — Add a recipe
 
@@ -1520,6 +1517,20 @@ _Needs `inventory:write`; writes; answers with `before` and `after`._
 | --------- | ------- | -------- | --------------------------------------------- |
 | `id`      | integer | yes      | The item’s id, as `shopping_list` gives it.   |
 | `section` | string  | —        | The section, by name. Empty unfiles the item. |
+
+### `change_inventory_item` — Rename a shopping item, or change its notes
+
+Rename an item, change whether it is something to replenish or a someday wish, or rewrite its notes. Takes the id `shopping_list` gives. Only `id` is needed: a field left out is untouched. Its section is `file_inventory_item`, its place `put_item`, its price `record_price`.
+
+_Needs `inventory:write`; writes; answers with `before` and `after`._
+
+| Parameter     | Type    | Required | What it is                                                                                                                                                                                                                                |
+| ------------- | ------- | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `id`          | integer | yes      | The item’s id, as `shopping_list` gives it.                                                                                                                                                                                               |
+| `name`        | string  | —        | A new name.                                                                                                                                                                                                                               |
+| `type`        | string  | —        | `replenish` is something the cupboard runs out of and wants again; `someday` is a wishlist item. One of: `replenish`, `someday`.                                                                                                          |
+| `notes`       | string  | —        | Anything else about it. An empty string clears them.                                                                                                                                                                                      |
+| `ifUpdatedAt` | string  | —        | Only change it if nothing has changed it since: the `updatedAt` a read or an earlier change answered with. If something has, nothing is written and the call is refused with the code `conflict`, the current `updatedAt` in its details. |
 
 ### `inventory_categories` — The shopping list’s sections
 
@@ -1692,7 +1703,7 @@ _Takes no parameters._
 
 Start tracking a habit: something to keep doing (`good`), to avoid (`bad`), or just to watch (`neutral`). Scheduled days come in the same shape `all_habits` shows for existing ones; leave them out for every day.
 
-_Needs `habits:write`; writes; answers with `before` and `after`._
+_Needs `habits:write`; writes; answers with `before` and `after`, `after` being the new habit._
 
 | Parameter       | Type    | Required | What it is                                                                                                                                                                                                                                                                                  |
 | --------------- | ------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -1707,7 +1718,7 @@ _Needs `habits:write`; writes; answers with `before` and `after`._
 
 Rename a habit or change its type, description or days. Only `id` is needed: a field left out is untouched. An empty `description` clears it; an empty `scheduledDays` clears the days. Its history of kept days stays exactly as it was.
 
-_Needs `habits:write`; writes; answers with `before` and `after`, `after` being the new habit._
+_Needs `habits:write`; writes; answers with `before` and `after`._
 
 | Parameter       | Type    | Required | What it is                                              |
 | --------------- | ------- | -------- | ------------------------------------------------------- |
@@ -1798,7 +1809,7 @@ _Takes no parameters._
 
 Add a block that comes back — "gym on Tuesdays at seven", "the bins every other Tuesday", "rent on the first". Weekly unless `repeats` says otherwise. This changes every week from now on; `add_block` is the one for a single day. Weekdays count from Monday: 0 is Monday, 6 is Sunday. A block can be a bare category rather than a named thing — leave the title out and it shows as the category itself, which is what "put work in those hours" means.
 
-_Needs `schedule:write`; writes; answers with `before` and `after`._
+_Needs `schedule:write`; writes; answers with `before` and `after`, `after` being the new repeatingBlock._
 
 | Parameter        | Type    | Required | What it is                                                                                                                                                                                                                                                                                                                                         |
 | ---------------- | ------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -1822,9 +1833,9 @@ _Needs `schedule:write`; writes; answers with `before` and `after`._
 
 ### `change_repeating_block` — Change a repeating task block
 
-Change every future occurrence of a repeating block: its weekday, time, length, how often it comes back, the text on it, its category, its reminder, its notebook or its attributes. This is "move gym to Wednesdays" or "make it every other week"; `change_block` is "move this Wednesday’s gym". Only `id` is needed: a field left out is untouched, and nothing is written unless all of it is valid. An empty `title` takes the text off. Takes the id `repeating_week` gives.
+Change every future occurrence of a repeating block: its weekday, time, length, how often it comes back, the text on it, its category, its reminder, its notebook or its attributes — or pause and resume it. This is "move gym to Wednesdays" or "make it every other week"; `change_block` is "move this Wednesday’s gym". Only `id` is needed: a field left out is untouched, and nothing is written unless all of it is valid. An empty `title` takes the text off. Takes the id `repeating_week` gives.
 
-_Needs `schedule:write`; writes; answers with `before` and `after`, `after` being the new repeatingBlock._
+_Needs `schedule:write`; writes; answers with `before` and `after`._
 
 | Parameter        | Type    | Required | What it is                                                                                                                                                                                                                                                                                                                                         |
 | ---------------- | ------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -1835,6 +1846,7 @@ _Needs `schedule:write`; writes; answers with `before` and `after`, `after` bein
 | `title`          | string  | —        | The text shown on the block. A block that names an activity stays that activity — this only changes what the block says, which is how "add stretching to the morning routine’s text" is done.                                                                                                                                                      |
 | `category`       | string  | —        | Refile it under this part of life, by name.                                                                                                                                                                                                                                                                                                        |
 | `remind_minutes` | integer | —        | The new reminder lead. 0 turns it off.                                                                                                                                                                                                                                                                                                             |
+| `paused`         | boolean | —        | `true` pauses it: it stops coming back until it is resumed, and its past occurrences stay. `false` resumes it.                                                                                                                                                                                                                                     |
 | `notebookId`     | integer | —        | The notebook it belongs to, as `notebooks` gives its id — the subject it is part of. `0` takes it out of the one it is in.                                                                                                                                                                                                                         |
 | `repeats`        | string  | —        | How often it comes back. Weekly if left out. `every_n_weeks` and `every_n_days` need `every`; `monthly` needs `month_day` and ignores the weekday. One of: `weekly`, `every_n_weeks`, `every_n_days`, `monthly`.                                                                                                                                   |
 | `every`          | integer | —        | The N in every N weeks or every N days — 2 is "every other".                                                                                                                                                                                                                                                                                       |
@@ -1873,7 +1885,7 @@ _Takes no parameters._
 
 Add an activity — a named thing inside a category, like "piano" inside "music" — so blocks can name it instead of the bare category.
 
-_Needs `schedule:write`; writes; answers with `before` and `after`._
+_Needs `schedule:write`; writes; answers with `before` and `after`, `after` being the new activity._
 
 | Parameter     | Type   | Required | What it is                                                                                                                                                                                                                                                                                  |
 | ------------- | ------ | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -1884,9 +1896,9 @@ _Needs `schedule:write`; writes; answers with `before` and `after`._
 
 ### `change_activity` — Rename an activity, or say what it is
 
-Change an activity: its name, the line describing it, or which category it belongs to. Takes the id `activities` gives. Only `id` is needed: a field left out is untouched. Blocks that name it follow the change; nothing on any day is moved.
+Change an activity: its name, the line describing it, which category it belongs to, or whether it is switched on. Takes the id `activities` gives. Only `id` is needed: a field left out is untouched. Blocks that name it follow the change; nothing on any day is moved.
 
-_Needs `schedule:write`; writes; answers with `before` and `after`, `after` being the new activity._
+_Needs `schedule:write`; writes; answers with `before` and `after`._
 
 | Parameter     | Type    | Required | What it is                                                                                                                                                                                                                                |
 | ------------- | ------- | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -1894,7 +1906,18 @@ _Needs `schedule:write`; writes; answers with `before` and `after`, `after` bein
 | `name`        | string  | —        | A new name.                                                                                                                                                                                                                               |
 | `description` | string  | —        | A new line about it. Pass an empty string to clear it.                                                                                                                                                                                    |
 | `category`    | string  | —        | Move it to this category, by name.                                                                                                                                                                                                        |
+| `active`      | boolean | —        | `false` switches it off: it stops being offered for new blocks, and every block and record that names it stays as it is. `true` switches it back on.                                                                                      |
 | `ifUpdatedAt` | string  | —        | Only change it if nothing has changed it since: the `updatedAt` a read or an earlier change answered with. If something has, nothing is written and the call is refused with the code `conflict`, the current `updatedAt` in its details. |
+
+### `remove_activity` — Delete an activity nothing uses
+
+Delete an activity that no block, record or todo names — one added by mistake. One that is used is refused: switch it off with `change_activity` and `active: false` instead, which keeps its history.
+
+_Needs `schedule:write` and `destructive`; deletes; answers with `before` and `after`._
+
+| Parameter | Type    | Required | What it is                                  |
+| --------- | ------- | -------- | ------------------------------------------- |
+| `id`      | integer | yes      | The activity’s id, as `activities` gave it. |
 
 ### `people` — The people in their life
 
@@ -1918,7 +1941,7 @@ _Needs `people:read`; read-only._
 
 Keep a page for somebody — name at minimum; birthday as YYYY-MM-DD, or --MM-DD when the year is unknown. A birthday written down announces itself on the morning, unless told not to.
 
-_Needs `people:write`; writes; answers with `before` and `after`._
+_Needs `people:write`; writes; answers with `before` and `after`, `after` being the new person._
 
 | Parameter          | Type    | Required | What it is                                                                                                                                                                                                                                                                                  |
 | ------------------ | ------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -1935,7 +1958,7 @@ _Needs `people:write`; writes; answers with `before` and `after`._
 
 Correct or extend what is recorded about somebody — a birthday learnt, a number changed. Only `id` is needed: a field left out is untouched, and an empty string clears a birthday, phone, email or notes. Takes the id `people` gives.
 
-_Needs `people:write`; writes; answers with `before` and `after`, `after` being the new person._
+_Needs `people:write`; writes; answers with `before` and `after`._
 
 | Parameter          | Type    | Required | What it is                                                                                                                                                                                                                                |
 | ------------------ | ------- | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -2057,7 +2080,7 @@ _Takes no parameters._
 
 Add a location things can live in — a room, a chest, a drawer — optionally inside another location.
 
-_Needs `locations:write`; writes; answers with `before` and `after`._
+_Needs `locations:write`; writes; answers with `before` and `after`, `after` being the new location._
 
 | Parameter   | Type    | Required | What it is                                                                                                                                                                                                                                                                                  |
 | ----------- | ------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -2069,7 +2092,7 @@ _Needs `locations:write`; writes; answers with `before` and `after`._
 
 Rename a location, or move it under a different parent. Only `id` is needed: a field left out is untouched, its notes included. `parent_id` of `0` or `null` moves it to the top level. It refuses to be put inside itself.
 
-_Needs `locations:write`; writes; answers with `before` and `after`, `after` being the new location._
+_Needs `locations:write`; writes; answers with `before` and `after`._
 
 | Parameter     | Type    | Required | What it is                                                                                                                                                                                                                                |
 | ------------- | ------- | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -2150,7 +2173,7 @@ _Needs `workouts:read`; read-only; answers a page._
 
 Record that a workout happened, and how much of what was done. Everything but the workout is optional: a session with no lines is one that happened. Use the person’s own words and units — "ran" and "km", not a normalised distance — because that is what a chart of it will be grouped by. `workout_sessions` shows what they have called things before.
 
-_Needs `workouts:write`; writes; answers with `before` and `after`._
+_Needs `workouts:write`; writes; answers with `before` and `after`, `after` being the new workoutSession._
 
 | Parameter             | Type     | Required | What it is                                                                                                                                                                                                                                                                                  |
 | --------------------- | -------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -2167,7 +2190,7 @@ _Needs `workouts:write`; writes; answers with `before` and `after`._
 
 Rewrite a session that was written down wrong. Only `id` is needed: a field left out is untouched. The lines are replaced by the ones given, so send them all; leaving `measures` off keeps the ones it has, and `[]` removes them. An empty `notes` clears the notes. The session and its lines land together or not at all.
 
-_Needs `workouts:write`; writes; answers with `before` and `after`, `after` being the new workoutSession._
+_Needs `workouts:write`; writes; answers with `before` and `after`._
 
 | Parameter             | Type     | Required | What it is                                                                                                                                                                                                                                |
 | --------------------- | -------- | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -2221,12 +2244,23 @@ _Takes no parameters._
 
 Add a category to this account’s list — "Swimming", "Physio". Answering with one that already exists returns it rather than making a second.
 
-_Needs `workouts:write`; writes; answers with `before` and `after`._
+_Needs `workouts:write`; writes; answers with `before` and `after`, `after` being the new workoutCategory._
 
 | Parameter   | Type   | Required | What it is                                                                                                                                                                                                                                                                                  |
 | ----------- | ------ | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `name`      | string | yes      | What the category is called.                                                                                                                                                                                                                                                                |
 | `requestId` | string | —        | An id you choose for this call, such as a UUID, so it can be sent again safely: the same `requestId` with the same arguments within a day answers with the first answer, marked `replayed`, and nothing is made twice. Reused for a different call, it is refused with the code `conflict`. |
+
+### `change_workout_category` — Rename a category of workout
+
+Rename one of the account’s workout categories. The workouts filed under it stay filed under it.
+
+_Needs `workouts:write`; writes; answers with `before` and `after`._
+
+| Parameter | Type    | Required | What it is                 |
+| --------- | ------- | -------- | -------------------------- |
+| `id`      | integer | yes      | From `workout_categories`. |
+| `name`    | string  | yes      | What it is called now.     |
 
 ### `remove_workout_category` — Remove a category of workout
 
@@ -2242,7 +2276,7 @@ _Needs `workouts:write` and `destructive`; deletes; answers with `before` and `a
 
 Write a workout down: a title, a category (one of the account’s own, from `workout_categories`), a plan as Markdown, and roughly how long it takes. Scheduling it onto a day is a block with its workoutId, the way a meal is a block with a recipe.
 
-_Needs `workouts:write`; writes; answers with `before` and `after`, `after` being the new workoutCategory._
+_Needs `workouts:write`; writes; answers with `before` and `after`, `after` being the new workout._
 
 | Parameter             | Type     | Required | What it is                                                                                                                                                                                                                                                                                  |
 | --------------------- | -------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -2261,7 +2295,7 @@ _Needs `workouts:write`; writes; answers with `before` and `after`, `after` bein
 
 Rewrite a workout — for a misheard word or a better plan, not to turn it into a different session. Only `id` is needed: a field left out is untouched. An empty string clears the plan or the notes; `0` or `null` clears `minutes` or `category_id`.
 
-_Needs `workouts:write`; writes; answers with `before` and `after`, `after` being the new workout._
+_Needs `workouts:write`; writes; answers with `before` and `after`._
 
 | Parameter     | Type    | Required | What it is                                                                                                                                                                                                                                |
 | ------------- | ------- | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -2306,7 +2340,7 @@ _Takes no parameters._
 
 A new place money moves through. `kind` is bank, card, cash or other; `default_parser` preselects an export format when importing into it.
 
-_Needs `statements:write`; writes; answers with `before` and `after`._
+_Needs `statements:write`; writes; answers with `before` and `after`, `after` being the new ledger._
 
 | Parameter        | Type    | Required | What it is                                                                                                                                                                                                                                                                                  |
 | ---------------- | ------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -2316,11 +2350,28 @@ _Needs `statements:write`; writes; answers with `before` and `after`._
 | `notebookId`     | integer | —        | The notebook this belongs to, as `notebooks` gives its id — a subject somebody is working through, like a renovation. Only when they said so. A notebook whose `modules` list does not hold this refuses it.                                                                                |
 | `requestId`      | string  | —        | An id you choose for this call, such as a UUID, so it can be sent again safely: the same `requestId` with the same arguments within a day answers with the first answer, marked `replayed`, and nothing is made twice. Reused for a different call, it is refused with the code `conflict`. |
 
+### `change_ledger` — Change a ledger
+
+Rename a ledger, change its kind, its usual export or its notebook, archive it or bring it back, or move it in the order. Only `id` is needed: a field left out is untouched, and nothing is written unless all of it is valid. Archiving keeps every line in it and its totals.
+
+_Needs `statements:write`; writes; answers with `before` and `after`._
+
+| Parameter        | Type    | Required | What it is                                                                                                                                                                                                                                |
+| ---------------- | ------- | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `id`             | integer | yes      | The ledger’s id, as `ledgers` gives it.                                                                                                                                                                                                   |
+| `name`           | string  | —        | A new name.                                                                                                                                                                                                                               |
+| `kind`           | string  | —        | What sort of place it is. One of: `bank`, `card`, `cash`, `other`.                                                                                                                                                                        |
+| `default_parser` | string  | —        | The export key importing into it preselects, like 'nubank:conta_corrente'. An empty string clears it.                                                                                                                                     |
+| `notebookId`     | integer | —        | The notebook it belongs to, as `notebooks` gives its id. `0` takes it out of the one it is in.                                                                                                                                            |
+| `archived`       | boolean | —        | `true` puts it away with its lines kept; `false` brings it back.                                                                                                                                                                          |
+| `position`       | integer | —        | Its place in the order `ledgers` lists them, counting from 0. Past the end is the end.                                                                                                                                                    |
+| `ifUpdatedAt`    | string  | —        | Only change it if nothing has changed it since: the `updatedAt` a read or an earlier change answered with. If something has, nothing is written and the call is refused with the code `conflict`, the current `updatedAt` in its details. |
+
 ### `record_movement` — Put a line in a ledger
 
 One movement, for a plugin that reads a bank the parsers do not, or for a purchase the statement has not published yet. Amounts are signed minor units: negative left the account. Give `external_id` and re-sending the same movement adds nothing.
 
-_Needs `statements:write`; writes; answers with `before` and `after`, `after` being the new ledger._
+_Needs `statements:write`; writes; answers with `before` and `after`._
 
 | Parameter      | Type    | Required | What it is                                                                                                                                                                                                                                                                                  |
 | -------------- | ------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -2330,6 +2381,30 @@ _Needs `statements:write`; writes; answers with `before` and `after`, `after` be
 | `description`  | string  | yes      | What the bank would call it. The sorting rules read this.                                                                                                                                                                                                                                   |
 | `external_id`  | string  | —        | The source's own id for it, if it has one.                                                                                                                                                                                                                                                  |
 | `requestId`    | string  | —        | An id you choose for this call, such as a UUID, so it can be sent again safely: the same `requestId` with the same arguments within a day answers with the first answer, marked `replayed`, and nothing is made twice. Reused for a different call, it is refused with the code `conflict`. |
+
+### `change_movement` — Correct a statement line
+
+Correct a line in a ledger: what it says, the day, the amount, or which ledger it is in. Takes the id `movements` gives. Only `id` is needed: a field left out is untouched. Amounts are signed minor units — negative when money left.
+
+_Needs `statements:write`; writes; answers with `before` and `after`._
+
+| Parameter      | Type    | Required | What it is                                     |
+| -------------- | ------- | -------- | ---------------------------------------------- |
+| `id`           | integer | yes      | The line’s id, as `movements` gives it.        |
+| `description`  | string  | —        | What it says. The sorting rules read this.     |
+| `occurred_on`  | string  | —        | The day it moved, YYYY-MM-DD.                  |
+| `amount_cents` | integer | —        | Signed minor units — negative when money left. |
+| `ledger_id`    | integer | —        | Move it to this ledger, as `ledgers` gives it. |
+
+### `remove_movement` — Delete a statement line
+
+Delete one line from a ledger — a movement recorded twice, or one that never happened. The answer carries the whole line, so it can be recorded again.
+
+_Needs `statements:write` and `destructive`; deletes; answers with `before` and `after`._
+
+| Parameter | Type    | Required | What it is                              |
+| --------- | ------- | -------- | --------------------------------------- |
+| `id`      | integer | yes      | The line’s id, as `movements` gives it. |
 
 ### `statement_months` — Money in and out, by month
 
@@ -2355,16 +2430,17 @@ _Needs `statements:read`; read-only._
 
 ### `change_sort_rule` — Change a sorting rule
 
-Rewrite a rule’s name, pattern or colour. Only `id` is needed: a field left out is untouched, and a pattern that does not compile is refused before anything is written. The change re-sorts every line at once, past ones included.
+Rewrite a rule’s name, pattern or colour, or move it to another place in the order. Only `id` is needed: a field left out is untouched, and a pattern that does not compile is refused before anything is written. The change re-sorts every line at once, past ones included.
 
 _Needs `statements:write`; writes; answers with `before` and `after`._
 
-| Parameter | Type    | Required | What it is                                                   |
-| --------- | ------- | -------- | ------------------------------------------------------------ |
-| `id`      | integer | yes      | The rule, as `sort_rules` lists it.                          |
-| `name`    | string  | —        | The name, rewritten.                                         |
-| `pattern` | string  | —        | A JavaScript regular expression, matched case-insensitively. |
-| `color`   | string  | —        | A hex colour like #1d4ed8.                                   |
+| Parameter  | Type    | Required | What it is                                                                                                                                                           |
+| ---------- | ------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `id`       | integer | yes      | The rule, as `sort_rules` lists it.                                                                                                                                  |
+| `name`     | string  | —        | The name, rewritten.                                                                                                                                                 |
+| `pattern`  | string  | —        | A JavaScript regular expression, matched case-insensitively.                                                                                                         |
+| `color`    | string  | —        | A hex colour like #1d4ed8.                                                                                                                                           |
+| `position` | integer | —        | Its place among the rules of its kind, counting from 0, in the order `sort_rules` lists them — for categories, the first that matches wins. Past the end is the end. |
 
 ### `movements` — Bank-statement lines
 
@@ -2464,7 +2540,7 @@ _Needs `bills:read`; read-only._
 
 Write down a bill you expect to pay: a name, the expected amount in minor units (cents), and a rhythm (weekly, monthly, yearly, once). A monthly bill can name the day of the month it falls due.
 
-_Needs `bills:write`; writes; answers with `before` and `after`._
+_Needs `bills:write`; writes; answers with `before` and `after`, `after` being the new bill._
 
 | Parameter         | Type    | Required | What it is                                                                                                                                                                                                                                                                                  |
 | ----------------- | ------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -2484,7 +2560,7 @@ _Needs `bills:write`; writes; answers with `before` and `after`._
 
 Rewrite a bill — every field `add_bill` takes. Only `id` is needed: a field left out is untouched, and nothing is written unless all of it is valid. `0` or `null` clears `due_day` or `due_month`; an empty string clears the notes, and an empty `currency` goes back to the account’s default. Editing the amount or the currency does not rewrite what past payments recorded — those are snapshots of the day they were paid.
 
-_Needs `bills:write`; writes; answers with `before` and `after`, `after` being the new bill._
+_Needs `bills:write`; writes; answers with `before` and `after`._
 
 | Parameter         | Type    | Required | What it is                                                                                                                                                                                                                                |
 | ----------------- | ------- | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |

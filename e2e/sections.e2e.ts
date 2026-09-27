@@ -84,10 +84,11 @@ test('saving the menu does not empty the list', async ({ page }) => {
 	// Nothing may repaint the form after the submit — no data reload, so no
 	// re-render to hide a reset behind.
 	await page.route('**/__data.json*', (route) => route.abort());
+	// Listened for before the press: an answer that lands first is otherwise
+	// missed and waited for until the timeout.
+	const saved = page.waitForResponse((r) => r.url().includes('saveMenu'), { timeout: 60_000 });
 	await menu.getByRole('button', { name: 'Save menu' }).click();
-	// The submit is a form post the server answers after writing; on a loaded
-	// runner that is well past the default thirty seconds this test had.
-	await page.waitForResponse((r) => r.url().includes('saveMenu'), { timeout: 60_000 });
+	await saved;
 	await page.waitForTimeout(500);
 
 	// Still put away, and every other room still listed.

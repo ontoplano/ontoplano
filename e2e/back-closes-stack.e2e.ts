@@ -91,11 +91,11 @@ test('the task picker stacks over a maximized notebook (phone)', async ({ page }
 	await expect(page.getByText('measure the wall').first()).toBeVisible();
 
 	await page.getByRole('button', { name: /^Notes \d/ }).click();
+	await page.getByRole('button', { name: 'New note', exact: true }).first().click();
 	await page.getByRole('button', { name: 'The whole screen' }).click();
 	const surface = page.locator('dialog.nb-surface[open]');
 	await expect(surface).toBeVisible();
 
-	await surface.getByRole('button', { name: 'New note', exact: true }).first().click();
 	const box = surface.locator('form[action="?/addEntry"] textarea[name="content"]');
 	await box.click();
 	await page.keyboard.type('see TASK:#');

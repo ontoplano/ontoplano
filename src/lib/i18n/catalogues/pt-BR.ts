@@ -633,6 +633,7 @@ export const messages: Catalogue = {
 	'errors.webhooks.webhookAddressHasToBeHttp': 'O endereço do webhook precisa ser http ou https',
 	'errors.widgets.thatNotebookHasNoSuchTab':
 		'Esse caderno não tem essa aba para um widget mostrar.',
+	'errors.workouts.aCategoryByThatName': 'Já existe uma categoria de treino com esse nome.',
 	'errors.workouts.measuresHave': 'As medidas precisam ser uma lista',
 	'errors.workouts.thatIsNotOne': 'Esse não é um dos seus tipos de treino.',
 	'fan.accountAndHelp': 'Conta e ajuda',
@@ -2262,6 +2263,7 @@ export const messages: Catalogue = {
 	'notify.verb.link': 'vinculou',
 	'notify.verb.log': 'registrou',
 	'notify.verb.madeTasksOutOf': 'criou tarefas a partir de',
+	'notify.verb.move': 'moveu',
 	'notify.verb.pay': 'pagou',
 	'notify.verb.pin': 'fixou',
 	'notify.verb.put': 'guardou',
@@ -2271,6 +2273,7 @@ export const messages: Catalogue = {
 	'notify.verb.remove': 'removeu',
 	'notify.verb.rename': 'renomeou',
 	'notify.verb.reopen': 'reabriu',
+	'notify.verb.reorder': 'reordenou',
 	'notify.verb.schedule': 'agendou',
 	'notify.verb.set': 'definiu',
 	'notify.verb.share': 'compartilhou',

@@ -83,6 +83,7 @@ const WATCHED = [
 	'workout_sessions',
 	'workout_categories',
 	'finance_rules',
+	'finance_transactions',
 	'exceptional_tasks',
 	'recurring_tasks',
 	'task_records'
@@ -126,7 +127,7 @@ beforeAll(async () => {
 	const { createLocation } = await import('../src/lib/services/locations');
 	const { createWorkout, createWorkoutCategory, logWorkout } =
 		await import('../src/lib/services/workouts');
-	const { createRule } = await import('../src/lib/services/statements');
+	const { createRule, recordMovement } = await import('../src/lib/services/statements');
 	const { createBill } = await import('../src/lib/services/bills');
 	const { ensureTagIds } = await import('../src/lib/services/tags');
 
@@ -147,6 +148,12 @@ beforeAll(async () => {
 		o.notebook = idOf(createNotebook(c, { title: `notebook ${m}` }));
 		o.note = idOf(createEntry(c, { content: `note ${m}` }));
 		o.ledger = idOf(createLedger(c, { name: `ledger ${m}` }));
+		o.movement = recordMovement(c, {
+			ledgerId: o.ledger,
+			occurredOn: '2026-03-10',
+			amountCents: -1234,
+			description: `movement ${m}`
+		}).id;
 		o.idea = idOf(createIdea(c, { content: `idea ${m}` }));
 		o.person = idOf(createPerson(c, { name: `person ${m}` }));
 		o.reminder = idOf(createFreeReminder(c, { at: '2026-03-20T09:00', message: `reminder ${m}` }));

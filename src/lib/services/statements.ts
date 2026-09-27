@@ -288,6 +288,32 @@ export function updateMovement(
 		.run();
 }
 
+/** One movement as stored, or null — how an id somebody named is resolved. */
+export function getMovementRow(ctx: Ctx, id: number) {
+	return (
+		db
+			.select()
+			.from(financeTransactions)
+			.where(and(eq(financeTransactions.id, id), eq(financeTransactions.userId, ctx.userId)))
+			.get() ?? null
+	);
+}
+
+/** Every movement as stored, or only those in some ledgers — what a key tied to a notebook reaches. */
+export function listMovementRows(ctx: Ctx, opts: { ledgerIds?: number[] } = {}) {
+	if (opts.ledgerIds?.length === 0) return [];
+	return db
+		.select()
+		.from(financeTransactions)
+		.where(
+			and(
+				eq(financeTransactions.userId, ctx.userId),
+				opts.ledgerIds ? inArray(financeTransactions.ledgerId, opts.ledgerIds) : undefined
+			)
+		)
+		.all();
+}
+
 export function deleteMovement(ctx: Ctx, id: number): void {
 	const gone = db
 		.delete(financeTransactions)
@@ -435,9 +461,23 @@ export function updateRule(
 export function moveRule(ctx: Ctx, id: number, delta: number): void {
 	const found = rawRules(ctx).find((r) => r.id === id);
 	if (!found) throw new NotFoundError('rule');
+	const from = rawRules(ctx)
+		.filter((r) => r.kind === found.kind)
+		.findIndex((r) => r.id === id);
+	placeRule(ctx, id, from + delta);
+}
+
+/**
+ * Put a rule at a place among the rules of its kind, counting from 0 — the
+ * order `listRules` gives them, which for categories is the order they win in.
+ * A place past either end is the end.
+ */
+export function placeRule(ctx: Ctx, id: number, position: number): void {
+	const found = rawRules(ctx).find((r) => r.id === id);
+	if (!found) throw new NotFoundError('rule');
 	const siblings = rawRules(ctx).filter((r) => r.kind === found.kind);
 	const from = siblings.findIndex((r) => r.id === id);
-	const to = Math.min(Math.max(from + delta, 0), siblings.length - 1);
+	const to = Math.min(Math.max(Math.trunc(position), 0), siblings.length - 1);
 	if (to === from) return;
 	const [moved] = siblings.splice(from, 1);
 	siblings.splice(to, 0, moved);

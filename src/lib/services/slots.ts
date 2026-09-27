@@ -464,11 +464,18 @@ export function toggleSlotActive(ctx: Ctx, id: number): void {
 		.get();
 
 	if (!current) throw new NotFoundError('slot');
+	setSlotActive(ctx, id, !current.active);
+}
 
-	db.update(recurringTasks)
-		.set({ active: !current.active, updatedAt: stamp(ctx) })
+/** Paused or running by saying which, for a caller that should not have to read first. */
+export function setSlotActive(ctx: Ctx, id: number, active: boolean): void {
+	const res = db
+		.update(recurringTasks)
+		.set({ active, updatedAt: stamp(ctx) })
 		.where(and(eq(recurringTasks.id, id), eq(recurringTasks.userId, ctx.userId)))
 		.run();
+
+	if (res.changes === 0) throw new NotFoundError('slot');
 }
 
 export function deleteSlots(ctx: Ctx, ids: number[]): void {

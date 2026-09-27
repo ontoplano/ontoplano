@@ -41,7 +41,13 @@ import {
 	updateEntry
 } from '$lib/services/diary.js';
 import { makeTodosFromEntry } from '$lib/services/note-todos.js';
-import { createActivity, listActivities, updateActivity } from '$lib/services/activities.js';
+import {
+	createActivity,
+	deleteActivity,
+	listActivities,
+	setActivityActive,
+	updateActivity
+} from '$lib/services/activities.js';
 import { createHabit, listHabits, updateHabit, HABIT_TYPES } from '$lib/services/habits.js';
 import {
 	createFreeReminder,
@@ -61,7 +67,13 @@ import {
 	pushPoints,
 	serialiseStream
 } from '$lib/services/streams.js';
-import { createSlot, deleteSlots, listWeeklySlots, updateSlot } from '$lib/services/slots.js';
+import {
+	createSlot,
+	deleteSlots,
+	listWeeklySlots,
+	setSlotActive,
+	updateSlot
+} from '$lib/services/slots.js';
 import {
 	describeRecurrence,
 	formatDate as recFormatDate,
@@ -111,6 +123,7 @@ import {
 	getNotebook,
 	listNotebooks,
 	renameFolder,
+	setNotebookClosed,
 	setNotebookFavourite,
 	setNotebookShared,
 	updateNotebook
@@ -137,6 +150,7 @@ import {
 	listWorkoutCategories,
 	createWorkoutCategory,
 	deleteWorkoutCategory,
+	renameWorkoutCategory,
 	setWorkoutMeasures,
 	deleteSession,
 	getSession,
@@ -166,16 +180,28 @@ import {
 import {
 	categorySlices,
 	createRule,
+	deleteMovement,
 	deleteRule,
 	listMovements,
 	listRules,
 	monthlyTotals,
+	placeRule,
 	recordMovement,
+	updateMovement,
 	updateRule
 } from '$lib/services/statements.js';
-import { createLedger, listLedgers } from '$lib/services/ledgers.js';
+import {
+	createLedger,
+	getLedger,
+	LEDGER_KINDS,
+	listLedgers,
+	placeLedger,
+	setLedgerArchived,
+	updateLedger
+} from '$lib/services/ledgers.js';
 import { grouped, search } from '$lib/services/search.js';
 import {
+	changeItem,
 	createCategory as createInventoryCategory,
 	createItem,
 	deleteCategory as deleteShoppingCategory,
@@ -198,6 +224,7 @@ import {
 	deleteTodo,
 	listTodos,
 	queryTodos,
+	reorderTodos,
 	scheduleTodo,
 	setTodoStatus,
 	SORT_DIRECTIONS,
@@ -1319,7 +1346,8 @@ const notebookSent = (args: Record<string, unknown>) =>
  * WHAT NEVER GETS A DELETE TOOL
  *
  * Deletion verbs here exist only for cheap, often-reversed things: blocks and
- * repeating blocks, reminders, ideas, todos, shopping items. Data that
+ * repeating blocks, reminders, ideas, todos, shopping items, a statement line
+ * recorded twice, an activity nothing names. Data that
  * accumulates a story or stands for people and commitments — a person's page,
  * a habit and its kept days, a goal, a goal area — is never deletable through
  * a tool, however symmetric that would look beside its add_*. A
@@ -1381,11 +1409,18 @@ function categoryByName(ctx: Ctx, wanted: unknown): { id: number; name: string }
  * Names are not unique, so an ambiguous one is refused rather than guessed:
  * ticking the wrong habit is a lie in somebody's history.
  */
-function habitByName(ctx: Ctx, wanted: unknown): { id: number; name: string } {
+function habitByName(
+	ctx: Ctx,
+	wanted: unknown,
+	notebookId?: unknown
+): { id: number; name: string } {
 	const said = typeof wanted === 'string' ? wanted.trim().toLowerCase() : '';
 	if (!said) throw new ValidationError('Which habit? Give its name or its id.');
 
-	const all = listHabits(ctx) as { id: number; name: string }[];
+	const all = listHabits(
+		ctx,
+		notebookId === undefined || notebookId === null ? {} : { notebookId: Number(notebookId) }
+	) as { id: number; name: string }[];
 	const exact = all.filter((h) => h.name.toLowerCase() === said);
 	const near = exact.length > 0 ? exact : all.filter((h) => h.name.toLowerCase().includes(said));
 
@@ -1506,7 +1541,7 @@ const billWithPayments = (ctx: Ctx, args: Record<string, unknown>) => {
 };
 /** The tick itself: null before an occurrence exists is what "unticked" is. */
 const habitTick = (ctx: Ctx, args: Record<string, unknown>) => {
-	const habitId = args.id ? Number(args.id) : habitByName(ctx, args.name).id;
+	const habitId = args.id ? Number(args.id) : habitByName(ctx, args.name, args.notebookId).id;
 	const date =
 		typeof args.date === 'string' && args.date ? args.date : localDateOf(ctx.now, ctx.tz);
 	return {
@@ -1634,16 +1669,26 @@ export const TOOLS: Tool[] = [
 			'Tick a habit for a day: for something being built, the tick means it was done; for something being avoided, it means it happened. Name it or give the id `habits` gave; a name that matches two habits is refused rather than guessed. Ticking twice is not an error; the second call takes it back, which is how the app\u2019s own tick behaves.',
 		scope: 'habits:write',
 		writes: true,
-		refs: [{ arg: 'id', kind: 'habit' }],
+		refs: [
+			{ arg: 'id', kind: 'habit' },
+			{ arg: 'notebookId', kind: 'notebook' }
+		],
 		input: object({
 			id: { type: 'integer', description: 'The habit\u2019s id, as `habits` gave it.' },
 			name: text('The habit by name, when the id is not to hand — "stretching".'),
+			notebookId: {
+				type: 'integer',
+				description:
+					'Look the name up only among the habits filed in this notebook, as `notebooks` gives its id. Left out, every habit is searched.'
+			},
 			date: text('The day, as YYYY-MM-DD. Today if left out.'),
 			...RETRY_ARGS
 		}),
 		subject: habitTick,
 		run: (ctx, args) => {
-			const habit = args.id ? { id: args.id, name: '' } : habitByName(ctx, args.name);
+			const habit = args.id
+				? { id: args.id, name: '' }
+				: habitByName(ctx, args.name, args.notebookId);
 			toggleOccurrence(ctx, {
 				habitId: habit.id,
 				date: args.date ?? localDateOf(ctx.now, ctx.tz)
@@ -2304,6 +2349,29 @@ export const TOOLS: Tool[] = [
 		}
 	},
 	{
+		name: 'reorder_tasks',
+		title: 'Put tasks in order on the board',
+		description:
+			'Set the order tasks sit in on the board, the way dragging them does: the ids given, first to last. Tasks not named keep their places. `tasks` answers in this order unless asked for another. It is not a priority — `up_next` orders by the ratings.',
+		scope: 'tasks:write',
+		writes: true,
+		refs: [{ arg: 'ids', kind: 'todo' }],
+		input: object(
+			{
+				ids: {
+					type: 'array',
+					items: { type: 'integer' },
+					description: 'The tasks\u2019 ids, as `tasks` gives them, in the order they should sit.'
+				}
+			},
+			['ids']
+		),
+		run: (ctx, args) => {
+			reorderTodos(ctx, args.ids as unknown[]);
+			return { ok: true };
+		}
+	},
+	{
 		name: 'schedule_task',
 		title: 'Put a todo on a day',
 		description:
@@ -2883,7 +2951,7 @@ export const TOOLS: Tool[] = [
 		name: 'change_notebook',
 		title: 'Change a notebook',
 		description:
-			'Rename a notebook, move it to another folder, rewrite the line under its title, set the labels a new note in it starts with or the category a new task in it starts with, or change what it holds. Only `id` is needed: a field left out is untouched, and nothing is written unless all of it is valid.',
+			'Rename a notebook, move it to another folder, rewrite the line under its title, set the labels a new note in it starts with or the category a new task in it starts with, change what it holds, or close and reopen it. Only `id` is needed: a field left out is untouched, and nothing is written unless all of it is valid.',
 		scope: 'notes:write',
 		writes: true,
 		refs: [{ arg: 'id', kind: 'notebook', subject: true }],
@@ -2906,6 +2974,11 @@ export const TOOLS: Tool[] = [
 				modules: text(
 					'What it holds, comma separated \u2014 notes, tasks, goals, ideas, inventory, ledgers, bills, habits, workouts, recipes. The whole list, not an addition. Notes are always in it. Switching one off keeps whatever is already filed under it; it stops being a tab, and stays in its own room. Left out, it is untouched.'
 				),
+				closed: {
+					type: 'boolean',
+					description:
+						'`true` closes it — a finished subject, off the shelf and out of the pickers, with everything in it kept. `false` reopens it.'
+				},
 				...CONCURRENCY_ARGS
 			},
 			['id']
@@ -2920,6 +2993,7 @@ export const TOOLS: Tool[] = [
 				categoryId: notebookCategory(ctx, args.category),
 				modules: args.modules
 			});
+			if (args.closed !== undefined) setNotebookClosed(ctx, Number(args.id), Boolean(args.closed));
 			return warning ? { id: Number(args.id), warning } : { id: Number(args.id) };
 		}
 	},
@@ -3434,10 +3508,24 @@ export const TOOLS: Tool[] = [
 			'Every recipe, with its ingredients. An ingredient here is a shopping item with an amount, which is what lets a meal on a day fill the shopping list.',
 		scope: 'kitchen:read',
 		writes: false,
-		refs: [{ arg: 'id', kind: 'recipe' }],
-		input: object({ id: { type: 'integer', description: 'One recipe, in full.' } }),
+		refs: [
+			{ arg: 'id', kind: 'recipe' },
+			{ arg: 'notebookId', kind: 'notebook' }
+		],
+		input: object({
+			id: { type: 'integer', description: 'One recipe, in full.' },
+			notebookId: {
+				type: 'integer',
+				description:
+					'Only the recipes filed in this notebook, as `notebooks` gives its id. Left out, every recipe.'
+			}
+		}),
 		run: (ctx, args) => {
-			if (!args.id) return listRecipes(ctx);
+			if (!args.id)
+				return listRecipes(
+					ctx,
+					args.notebookId === undefined ? {} : { notebookId: Number(args.notebookId) }
+				);
 			const id = Number(args.id);
 			return { ...getRecipe(ctx, id), ingredients: ingredientsOf(ctx, id) };
 		}
@@ -3650,6 +3738,34 @@ export const TOOLS: Tool[] = [
 				categoryId = hit.id;
 			}
 			setItemCategory(ctx, Number(args.id), categoryId);
+			return { ok: true };
+		}
+	},
+	{
+		name: 'change_inventory_item',
+		title: 'Rename a shopping item, or change its notes',
+		description:
+			'Rename an item, change whether it is something to replenish or a someday wish, or rewrite its notes. Takes the id `shopping_list` gives. Only `id` is needed: a field left out is untouched. Its section is `file_inventory_item`, its place `put_item`, its price `record_price`.',
+		scope: 'inventory:write',
+		writes: true,
+		refs: [{ arg: 'id', kind: 'item' }],
+		input: object(
+			{
+				id: { type: 'integer', description: 'The item\u2019s id, as `shopping_list` gives it.' },
+				name: text('A new name.'),
+				type: {
+					type: 'string',
+					enum: ['replenish', 'someday'],
+					description:
+						'`replenish` is something the cupboard runs out of and wants again; `someday` is a wishlist item.'
+				},
+				notes: text('Anything else about it. An empty string clears them.'),
+				...CONCURRENCY_ARGS
+			},
+			['id']
+		),
+		run: (ctx, args) => {
+			changeItem(ctx, Number(args.id), { name: args.name, type: args.type, notes: args.notes });
 			return { ok: true };
 		}
 	},
@@ -4291,7 +4407,7 @@ export const TOOLS: Tool[] = [
 		name: 'change_repeating_block',
 		title: 'Change a repeating task block',
 		description:
-			'Change every future occurrence of a repeating block: its weekday, time, length, how often it comes back, the text on it, its category, its reminder, its notebook or its attributes. This is "move gym to Wednesdays" or "make it every other week"; `change_block` is "move this Wednesday\u2019s gym". Only `id` is needed: a field left out is untouched, and nothing is written unless all of it is valid. An empty `title` takes the text off. Takes the id `repeating_week` gives.',
+			'Change every future occurrence of a repeating block: its weekday, time, length, how often it comes back, the text on it, its category, its reminder, its notebook or its attributes — or pause and resume it. This is "move gym to Wednesdays" or "make it every other week"; `change_block` is "move this Wednesday\u2019s gym". Only `id` is needed: a field left out is untouched, and nothing is written unless all of it is valid. An empty `title` takes the text off. Takes the id `repeating_week` gives.',
 		scope: 'schedule:write',
 		writes: true,
 		refs: [
@@ -4315,6 +4431,11 @@ export const TOOLS: Tool[] = [
 				),
 				category: text('Refile it under this part of life, by name.'),
 				remind_minutes: { type: 'integer', description: 'The new reminder lead. 0 turns it off.' },
+				paused: {
+					type: 'boolean',
+					description:
+						'`true` pauses it: it stops coming back until it is resumed, and its past occurrences stay. `false` resumes it.'
+				},
 				...blockNotebookArg,
 				...repeatArgs,
 				...attributeArgs,
@@ -4325,6 +4446,11 @@ export const TOOLS: Tool[] = [
 		run: (ctx, args) => {
 			const current = listWeeklySlots(ctx).find((w) => w.id === Number(args.id));
 			if (!current) throw new NotFoundError('block');
+
+			if (args.paused !== undefined) setSlotActive(ctx, current.id, !args.paused);
+			// Pausing alone rewrites nothing else about the block.
+			if (Object.keys(args).every((key) => ['id', 'paused', 'ifUpdatedAt'].includes(key)))
+				return { ok: true };
 
 			const refiled =
 				args.category !== undefined && args.category !== null && args.category !== ''
@@ -4435,7 +4561,7 @@ export const TOOLS: Tool[] = [
 		name: 'change_activity',
 		title: 'Rename an activity, or say what it is',
 		description:
-			'Change an activity: its name, the line describing it, or which category it belongs to. Takes the id `activities` gives. Only `id` is needed: a field left out is untouched. Blocks that name it follow the change; nothing on any day is moved.',
+			'Change an activity: its name, the line describing it, which category it belongs to, or whether it is switched on. Takes the id `activities` gives. Only `id` is needed: a field left out is untouched. Blocks that name it follow the change; nothing on any day is moved.',
 		scope: 'schedule:write',
 		writes: true,
 		refs: [{ arg: 'id', kind: 'activity' }],
@@ -4445,6 +4571,11 @@ export const TOOLS: Tool[] = [
 				name: text('A new name.'),
 				description: text('A new line about it. Pass an empty string to clear it.'),
 				category: text('Move it to this category, by name.'),
+				active: {
+					type: 'boolean',
+					description:
+						'`false` switches it off: it stops being offered for new blocks, and every block and record that names it stays as it is. `true` switches it back on.'
+				},
 				...CONCURRENCY_ARGS
 			},
 			['id']
@@ -4466,6 +4597,25 @@ export const TOOLS: Tool[] = [
 					args.category === undefined ? current.categoryId : categoryByName(ctx, args.category).id,
 				description: args.description === undefined ? current.description : args.description
 			});
+			if (args.active !== undefined) setActivityActive(ctx, current.id, Boolean(args.active));
+			return { ok: true };
+		}
+	},
+	{
+		name: 'remove_activity',
+		title: 'Delete an activity nothing uses',
+		description:
+			'Delete an activity that no block, record or todo names — one added by mistake. One that is used is refused: switch it off with `change_activity` and `active: false` instead, which keeps its history.',
+		scope: 'schedule:write',
+		writes: true,
+		destroys: true,
+		refs: [{ arg: 'id', kind: 'activity' }],
+		input: object(
+			{ id: { type: 'integer', description: 'The activity\u2019s id, as `activities` gave it.' } },
+			['id']
+		),
+		run: (ctx, args) => {
+			deleteActivity(ctx, Number(args.id));
 			return { ok: true };
 		}
 	},
@@ -5190,6 +5340,26 @@ export const TOOLS: Tool[] = [
 		run: (ctx, args) => ({ id: createWorkoutCategory(ctx, args.name) })
 	},
 	{
+		name: 'change_workout_category',
+		title: 'Rename a category of workout',
+		description:
+			'Rename one of the account\u2019s workout categories. The workouts filed under it stay filed under it.',
+		scope: 'workouts:write',
+		writes: true,
+		refs: [{ arg: 'id', kind: 'workoutCategory' }],
+		input: object(
+			{
+				id: { type: 'integer', description: 'From `workout_categories`.' },
+				name: text('What it is called now.')
+			},
+			['id', 'name']
+		),
+		run: (ctx, args) => {
+			renameWorkoutCategory(ctx, Number(args.id), args.name);
+			return { ok: true };
+		}
+	},
+	{
 		/*
 		 * The way back from add_workout_kind. Cheap on purpose: the workouts
 		 * filed under it keep existing and simply lose their kind, so nothing
@@ -5371,6 +5541,61 @@ export const TOOLS: Tool[] = [
 		})
 	},
 	{
+		name: 'change_ledger',
+		title: 'Change a ledger',
+		description:
+			'Rename a ledger, change its kind, its usual export or its notebook, archive it or bring it back, or move it in the order. Only `id` is needed: a field left out is untouched, and nothing is written unless all of it is valid. Archiving keeps every line in it and its totals.',
+		scope: 'statements:write',
+		writes: true,
+		refs: [
+			{ arg: 'id', kind: 'ledger' },
+			{ arg: 'notebookId', kind: 'notebook', zeroIsNone: true }
+		],
+		input: object(
+			{
+				id: { type: 'integer', description: 'The ledger\u2019s id, as `ledgers` gives it.' },
+				name: text('A new name.'),
+				kind: {
+					type: 'string',
+					enum: [...LEDGER_KINDS],
+					description: 'What sort of place it is.'
+				},
+				default_parser: text(
+					"The export key importing into it preselects, like 'nubank:conta_corrente'. An empty string clears it."
+				),
+				notebookId: {
+					type: 'integer',
+					description:
+						'The notebook it belongs to, as `notebooks` gives its id. `0` takes it out of the one it is in.'
+				},
+				archived: {
+					type: 'boolean',
+					description: '`true` puts it away with its lines kept; `false` brings it back.'
+				},
+				position: {
+					type: 'integer',
+					description:
+						'Its place in the order `ledgers` lists them, counting from 0. Past the end is the end.'
+				},
+				...CONCURRENCY_ARGS
+			},
+			['id']
+		),
+		run: (ctx, args) => {
+			const id = Number(args.id);
+			const notebookId = notebookSent(args);
+			updateLedger(ctx, id, {
+				...(args.name === undefined ? {} : { name: args.name }),
+				...(args.kind === undefined ? {} : { kind: args.kind }),
+				...(args.default_parser === undefined ? {} : { defaultParser: args.default_parser }),
+				...(notebookId === undefined ? {} : { notebookId })
+			});
+			if (args.archived !== undefined) setLedgerArchived(ctx, id, Boolean(args.archived));
+			if (args.position !== undefined) placeLedger(ctx, id, Number(args.position));
+			return { ledger: getLedger(ctx, id) };
+		}
+	},
+	{
 		name: 'record_movement',
 		title: 'Put a line in a ledger',
 		description:
@@ -5402,6 +5627,61 @@ export const TOOLS: Tool[] = [
 				source: 'plugin',
 				externalId: args.external_id
 			})
+	},
+	{
+		name: 'change_movement',
+		title: 'Correct a statement line',
+		description:
+			'Correct a line in a ledger: what it says, the day, the amount, or which ledger it is in. Takes the id `movements` gives. Only `id` is needed: a field left out is untouched. Amounts are signed minor units — negative when money left.',
+		scope: 'statements:write',
+		writes: true,
+		refs: [
+			{ arg: 'id', kind: 'movement' },
+			{ arg: 'ledger_id', kind: 'ledger' }
+		],
+		input: object(
+			{
+				id: { type: 'integer', description: 'The line\u2019s id, as `movements` gives it.' },
+				description: text('What it says. The sorting rules read this.'),
+				occurred_on: text('The day it moved, YYYY-MM-DD.'),
+				amount_cents: {
+					type: 'integer',
+					description: 'Signed minor units — negative when money left.'
+				},
+				ledger_id: {
+					type: 'integer',
+					description: 'Move it to this ledger, as `ledgers` gives it.'
+				}
+			},
+			['id']
+		),
+		run: (ctx, args) => {
+			updateMovement(ctx, Number(args.id), {
+				description: args.description,
+				occurredOn: args.occurred_on,
+				amountCents: args.amount_cents,
+				ledgerId: args.ledger_id
+			});
+			return { ok: true };
+		}
+	},
+	{
+		name: 'remove_movement',
+		title: 'Delete a statement line',
+		description:
+			'Delete one line from a ledger — a movement recorded twice, or one that never happened. The answer carries the whole line, so it can be recorded again.',
+		scope: 'statements:write',
+		writes: true,
+		destroys: true,
+		refs: [{ arg: 'id', kind: 'movement' }],
+		input: object(
+			{ id: { type: 'integer', description: 'The line\u2019s id, as `movements` gives it.' } },
+			['id']
+		),
+		run: (ctx, args) => {
+			deleteMovement(ctx, Number(args.id));
+			return { ok: true };
+		}
 	},
 	{
 		name: 'statement_months',
@@ -5444,7 +5724,7 @@ export const TOOLS: Tool[] = [
 		name: 'change_sort_rule',
 		title: 'Change a sorting rule',
 		description:
-			'Rewrite a rule\u2019s name, pattern or colour. Only `id` is needed: a field left out is untouched, and a pattern that does not compile is refused before anything is written. The change re-sorts every line at once, past ones included.',
+			'Rewrite a rule\u2019s name, pattern or colour, or move it to another place in the order. Only `id` is needed: a field left out is untouched, and a pattern that does not compile is refused before anything is written. The change re-sorts every line at once, past ones included.',
 		scope: 'statements:write',
 		writes: true,
 		refs: [{ arg: 'id', kind: 'sortRule' }],
@@ -5453,17 +5733,21 @@ export const TOOLS: Tool[] = [
 				id: { type: 'integer', description: 'The rule, as `sort_rules` lists it.' },
 				name: text('The name, rewritten.'),
 				pattern: text('A JavaScript regular expression, matched case-insensitively.'),
-				color: text('A hex colour like #1d4ed8.')
+				color: text('A hex colour like #1d4ed8.'),
+				position: {
+					type: 'integer',
+					description:
+						'Its place among the rules of its kind, counting from 0, in the order `sort_rules` lists them — for categories, the first that matches wins. Past the end is the end.'
+				}
 			},
 			['id']
 		),
-		run: (ctx, args) => ({
-			rule: updateRule(ctx, Number(args.id), {
-				name: args.name,
-				pattern: args.pattern,
-				color: args.color
-			})
-		})
+		run: (ctx, args) => {
+			const id = Number(args.id);
+			updateRule(ctx, id, { name: args.name, pattern: args.pattern, color: args.color });
+			if (args.position !== undefined) placeRule(ctx, id, Number(args.position));
+			return { rule: listRules(ctx).find((rule) => rule.id === id) };
+		}
 	},
 	{
 		name: 'movements',

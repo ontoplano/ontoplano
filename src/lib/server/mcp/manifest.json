@@ -974,6 +974,10 @@
 		"writes": true,
 		"destroys": false,
 		"params": {
+			"active": {
+				"type": "boolean",
+				"required": false
+			},
 			"category": {
 				"type": "string",
 				"required": false
@@ -1267,6 +1271,82 @@
 			}
 		}
 	},
+	"change_inventory_item": {
+		"scope": "inventory:write",
+		"writes": true,
+		"destroys": false,
+		"params": {
+			"id": {
+				"type": "integer",
+				"required": true
+			},
+			"ifUpdatedAt": {
+				"type": "string",
+				"required": false
+			},
+			"name": {
+				"type": "string",
+				"required": false
+			},
+			"notes": {
+				"type": "string",
+				"required": false
+			},
+			"type": {
+				"type": "string",
+				"required": false,
+				"enum": [
+					"replenish",
+					"someday"
+				]
+			}
+		}
+	},
+	"change_ledger": {
+		"scope": "statements:write",
+		"writes": true,
+		"destroys": false,
+		"params": {
+			"archived": {
+				"type": "boolean",
+				"required": false
+			},
+			"default_parser": {
+				"type": "string",
+				"required": false
+			},
+			"id": {
+				"type": "integer",
+				"required": true
+			},
+			"ifUpdatedAt": {
+				"type": "string",
+				"required": false
+			},
+			"kind": {
+				"type": "string",
+				"required": false,
+				"enum": [
+					"bank",
+					"card",
+					"cash",
+					"other"
+				]
+			},
+			"name": {
+				"type": "string",
+				"required": false
+			},
+			"notebookId": {
+				"type": "integer",
+				"required": false
+			},
+			"position": {
+				"type": "integer",
+				"required": false
+			}
+		}
+	},
 	"change_location": {
 		"scope": "locations:write",
 		"writes": true,
@@ -1290,6 +1370,33 @@
 			}
 		}
 	},
+	"change_movement": {
+		"scope": "statements:write",
+		"writes": true,
+		"destroys": false,
+		"params": {
+			"amount_cents": {
+				"type": "integer",
+				"required": false
+			},
+			"description": {
+				"type": "string",
+				"required": false
+			},
+			"id": {
+				"type": "integer",
+				"required": true
+			},
+			"ledger_id": {
+				"type": "integer",
+				"required": false
+			},
+			"occurred_on": {
+				"type": "string",
+				"required": false
+			}
+		}
+	},
 	"change_notebook": {
 		"scope": "notes:write",
 		"writes": true,
@@ -1297,6 +1404,10 @@
 		"params": {
 			"category": {
 				"type": "string",
+				"required": false
+			},
+			"closed": {
+				"type": "boolean",
 				"required": false
 			},
 			"defaultTags": {
@@ -1507,6 +1618,10 @@
 				"type": "integer",
 				"required": false
 			},
+			"paused": {
+				"type": "boolean",
+				"required": false
+			},
 			"remind_minutes": {
 				"type": "integer",
 				"required": false
@@ -1554,6 +1669,10 @@
 			},
 			"pattern": {
 				"type": "string",
+				"required": false
+			},
+			"position": {
+				"type": "integer",
 				"required": false
 			}
 		}
@@ -1665,6 +1784,21 @@
 			"title": {
 				"type": "string",
 				"required": false
+			}
+		}
+	},
+	"change_workout_category": {
+		"scope": "workouts:write",
+		"writes": true,
+		"destroys": false,
+		"params": {
+			"id": {
+				"type": "integer",
+				"required": true
+			},
+			"name": {
+				"type": "string",
+				"required": true
 			}
 		}
 	},
@@ -2444,6 +2578,10 @@
 			"id": {
 				"type": "integer",
 				"required": false
+			},
+			"notebookId": {
+				"type": "integer",
+				"required": false
 			}
 		}
 	},
@@ -2566,6 +2704,17 @@
 			}
 		}
 	},
+	"remove_activity": {
+		"scope": "schedule:write",
+		"writes": true,
+		"destroys": true,
+		"params": {
+			"id": {
+				"type": "integer",
+				"required": true
+			}
+		}
+	},
 	"remove_goal_target": {
 		"scope": "tasks:write",
 		"writes": true,
@@ -2616,6 +2765,17 @@
 	},
 	"remove_location": {
 		"scope": "locations:write",
+		"writes": true,
+		"destroys": true,
+		"params": {
+			"id": {
+				"type": "integer",
+				"required": true
+			}
+		}
+	},
+	"remove_movement": {
+		"scope": "statements:write",
 		"writes": true,
 		"destroys": true,
 		"params": {
@@ -2729,6 +2889,20 @@
 			"id": {
 				"type": "integer",
 				"required": true
+			}
+		}
+	},
+	"reorder_tasks": {
+		"scope": "tasks:write",
+		"writes": true,
+		"destroys": false,
+		"params": {
+			"ids": {
+				"type": "array",
+				"required": true,
+				"items": {
+					"type": "integer"
+				}
 			}
 		}
 	},
@@ -3158,6 +3332,10 @@
 				"type": "string",
 				"required": false
 			},
+			"notebookId": {
+				"type": "integer",
+				"required": false
+			},
 			"requestId": {
 				"type": "string",
 				"required": false
@@ -3575,6 +3753,7 @@
 		"scope": "notes:write",
 		"writes": true,
 		"destroys": false,
+		"creates": "note",
 		"params": {
 			"content": {
 				"type": "string",
@@ -3602,7 +3781,6 @@
 		"scope": "tasks:write",
 		"writes": true,
 		"destroys": false,
-		"creates": "note",
 		"params": {
 			"note": {
 				"type": "string",

@@ -118,6 +118,10 @@ beforeAll(async () => {
 	const { createHabit } = await import('../src/lib/services/habits');
 	const { createLedger } = await import('../src/lib/services/ledgers');
 	const { createBill } = await import('../src/lib/services/bills');
+	const { recordMovement } = await import('../src/lib/services/statements');
+	const line = (ledgerId: number, description: string) =>
+		recordMovement(ctx(), { ledgerId, occurredOn: '2026-03-10', amountCents: -500, description })
+			.id;
 	const { createWorkout, createWorkoutCategory } = await import('../src/lib/services/workouts');
 	const { createRecipe, addIngredient } = await import('../src/lib/services/recipes');
 	const { createLocation } = await import('../src/lib/services/locations');
@@ -149,6 +153,7 @@ beforeAll(async () => {
 	inside.item = itemNamed(me, 'flour');
 	inside.habit = idOf(createHabit(me, { name: 'wipe the hob', ...inMine }));
 	inside.ledger = idOf(createLedger(me, { name: 'groceries', ...inMine }));
+	inside.movement = line(inside.ledger, 'the market');
 	inside.bill = idOf(createBill(me, { name: 'gas', dueDay: 9, ...inMine }));
 	inside.workout = idOf(createWorkout(me, { title: 'carry shopping', ...inMine }));
 
@@ -163,6 +168,7 @@ beforeAll(async () => {
 	elsewhere.item = tiles;
 	elsewhere.habit = idOf(createHabit(me, { name: 'sweep up', ...inOther }));
 	elsewhere.ledger = idOf(createLedger(me, { name: 'renovation fund', ...inOther }));
+	elsewhere.movement = line(elsewhere.ledger, 'the builder');
 	elsewhere.bill = idOf(createBill(me, { name: 'builder', dueDay: 5, ...inOther }));
 	elsewhere.workout = idOf(createWorkout(me, { title: 'carry bricks', ...inOther }));
 	elsewhere.recipe = idOf(createRecipe(me, { title: 'site lunch', ...inOther }));
@@ -350,16 +356,28 @@ describe('a key tied to a notebook', () => {
 		).map((tool) => tool.name);
 
 		// Each of these, called without its optional id, answers about the whole
-		// account — `recipes` lists every recipe, `tick_habit` finds a habit by
-		// name anywhere, `movements` reads every ledger.
+		// account — `movements` reads every ledger.
 		for (const name of [
-			'recipes',
-			'tick_habit',
 			'movements',
 			'statement_months',
 			'spending_by_category',
 			'workout_sessions'
 		])
 			expect(offered).not.toContain(name);
+	});
+
+	it('is offered `recipes` and `tick_habit` with their notebook pinned', () => {
+		const offered = TOOLS.filter((tool) =>
+			withinConfinement({ kind: 'notebook', id: mine }, tool)
+		).map((tool) => tool.name);
+		expect(offered).toContain('recipes');
+		expect(offered).toContain('tick_habit');
+
+		for (const name of ['recipes', 'tick_habit']) {
+			const tool = TOOLS.find((one) => one.name === name)!;
+			const args: Record<string, unknown> = { notebookId: other };
+			confine({ kind: 'notebook', id: mine }, tool.refs, tool.input, args);
+			expect(args.notebookId, name).toBe(mine);
+		}
 	});
 });

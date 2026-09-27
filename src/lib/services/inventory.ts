@@ -402,6 +402,35 @@ export function updateItem(ctx: Ctx, id: number, raw: ItemInput): void {
 }
 
 /**
+ * Rename an item, or change its type or notes, touching nothing else.
+ *
+ * `updateItem` takes the whole row, price and section included, which is the
+ * form's shape; a change that names one field sends one. Left out, a field
+ * keeps what it had; an empty `notes` clears them.
+ */
+export function changeItem(
+	ctx: Ctx,
+	id: number,
+	raw: { name?: unknown; type?: unknown; notes?: unknown }
+): void {
+	const values = {
+		...(raw.name === undefined ? {} : { name: str(raw.name, 'name', { max: MAX_NAME_LENGTH }) }),
+		...(raw.type === undefined ? {} : { type: oneOf(raw.type, 'type', ITEM_TYPES) }),
+		...(raw.notes === undefined
+			? {}
+			: { notes: optionalStr(raw.notes, 'notes', { max: MAX_NOTES_LENGTH }) })
+	};
+
+	const res = db
+		.update(inventoryItems)
+		.set({ ...values, updatedAt: stamp(ctx) })
+		.where(itemWhere(ctx, id))
+		.run();
+
+	if (res.changes === 0) throw new NotFoundError('item');
+}
+
+/**
  * File an item into a section, or out of every one, touching nothing else.
  *
  * `updateItem` re-parses the whole row, so filing through it means re-sending

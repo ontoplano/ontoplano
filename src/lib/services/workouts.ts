@@ -25,7 +25,7 @@ import {
 	workouts
 } from '$lib/db/schema.js';
 import type { Ctx } from './ctx.js';
-import { NotFoundError, ValidationError } from './errors.js';
+import { ConflictError, NotFoundError, ValidationError } from './errors.js';
 import { notebookPatch } from './notebooks.js';
 import { stamp, stamps } from './time.js';
 import { num, optionalStr, str } from './validate.js';
@@ -258,6 +258,18 @@ export function createWorkoutCategory(ctx: Ctx, name: unknown): number {
 
 export function renameWorkoutCategory(ctx: Ctx, id: number, name: unknown): void {
 	const clean = str(name, 'name', { max: 60 });
+	const clash = db
+		.select({ id: workoutCategories.id })
+		.from(workoutCategories)
+		.where(
+			and(
+				eq(workoutCategories.userId, ctx.userId),
+				sql`lower(${workoutCategories.name}) = lower(${clean})`
+			)
+		)
+		.get();
+	if (clash && clash.id !== id)
+		throw new ConflictError({ key: 'errors.workouts.aCategoryByThatName' });
 	const res = db
 		.update(workoutCategories)
 		.set({ name: clean })

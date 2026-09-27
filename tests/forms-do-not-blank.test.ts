@@ -81,12 +81,13 @@ it('a note form offers a notebook, and its actions read it', () => {
 });
 
 /**
- * The diary page does not offer a notebook to file a note in.
+ * The diary page does not offer a notebook to file a new note in.
  *
  * It is the day, and a note written *on that page* is a note about the day —
  * offering to file it somewhere else asks a question the page has already
  * answered, and answering it took the note out of the diary the writer was
- * looking at.
+ * looking at. Editing one is different: moving a note somewhere else is a
+ * thing somebody asks for on purpose, so the edit form offers it.
  *
  * The capture form is the other case and used to be pinned here with it. It is
  * not the diary: it is the one place somebody writes a note without having
@@ -94,9 +95,9 @@ it('a note form offers a notebook, and its actions read it', () => {
  * used to go silently. "Diary note" named the destination and hid the only
  * decision there is.
  */
-it('the diary page does not offer a notebook to file a note in', () => {
+it('the diary page does not offer a notebook to file a new note in', () => {
 	expect(readFileSync('src/routes/notebooks/diary/+page.svelte', 'utf8')).toMatch(
-		/notebook=\{false\}/
+		/notebook=\{editingId !== null\}/
 	);
 });
 

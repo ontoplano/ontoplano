@@ -139,29 +139,27 @@
 
 	/*
 	 * The key goes to the phone the only way it can: through the copy of the
-	 * app the phone carries, which has the bridge — see `/widget`.
+	 * app the phone carries, which has the bridge — see `/widget`. An edit
+	 * made from the phone goes back the same way, without a key, so the
+	 * widget reads again.
 	 */
-	let handedOver = '';
-	$effect(() => {
-		const made = form?.created;
-		const changed = form?.updated;
-		let to: URL | null = null;
-		if (made && made.slot) {
-			to = new URL(WIDGET_HANDOFF_PATH, DEVICE_ORIGIN);
+	function handoff(answer: Record<string, unknown> | undefined): string | null {
+		const made = answer?.created as { id: number; token: string; origin: string; slot: string };
+		const changed = answer?.updated as { origin: string; slot: string } | undefined;
+		const to = new URL(WIDGET_HANDOFF_PATH, DEVICE_ORIGIN);
+		if (made?.slot) {
 			to.searchParams.set(HANDOFF_AT, made.origin);
 			to.searchParams.set(HANDOFF_KEY, made.token);
 			to.searchParams.set(HANDOFF_SLOT, made.slot);
 			to.searchParams.set(HANDOFF_WIDGET, String(made.id));
-		} else if (changed && changed.slot) {
-			to = new URL(WIDGET_HANDOFF_PATH, DEVICE_ORIGIN);
-			to.searchParams.set(HANDOFF_AT, changed.origin);
+			return to.href;
 		}
-		// Once per answer: leaving the page wakes things that redraw it, and a
-		// second replace would abort the first.
-		if (!to || to.href === handedOver) return;
-		handedOver = to.href;
-		location.replace(to.href);
-	});
+		if (changed?.slot) {
+			to.searchParams.set(HANDOFF_AT, changed.origin);
+			return to.href;
+		}
+		return null;
+	}
 
 	function statusLabel(value: string): string {
 		return STATUS_LABELS[value] ? t(STATUS_LABELS[value]) : value;
@@ -293,7 +291,12 @@
 		use:enhance={() =>
 			async ({ update, result }) => {
 				await update({ reset: false });
-				if (result.type === 'success') open = false;
+				if (result.type !== 'success') return;
+				// Left open when going to the phone: closing a form goes back in
+				// history, and that would cancel the trip.
+				const to = handoff(result.data);
+				if (to) location.replace(to);
+				else open = false;
 			}}
 	>
 		{#if editing}
@@ -385,7 +388,7 @@
 			action="?/deleteWidget"
 			use:enhance={() =>
 				async ({ update }) => {
-					await update();
+					await update({ reset: false });
 					deleting = null;
 					cursor = 0;
 				}}

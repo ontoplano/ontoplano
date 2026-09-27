@@ -406,6 +406,10 @@ The activities page also wants to know what may be deleted.
 
 Retiring an activity keeps its history; deleting it would not.
 
+#### `setActivityActive(ctx, id, active)`
+
+Switched on or off by saying which, for a caller that should not have to read first.
+
 #### `deleteActivity(ctx, id)`
 
 #### `createCategory(ctx, raw)`
@@ -2685,6 +2689,14 @@ duplicate it.
 
 #### `updateItem(ctx, id, raw)`
 
+#### `changeItem(ctx, id, raw)`
+
+Rename an item, or change its type or notes, touching nothing else.
+
+`updateItem` takes the whole row, price and section included, which is the
+form's shape; a change that names one field sends one. Left out, a field
+keeps what it had; an empty `notes` clears them.
+
 #### `setItemCategory(ctx, id, categoryId)`
 
 File an item into a section, or out of every one, touching nothing else.
@@ -2857,6 +2869,11 @@ beside the confirmation that says how many lines are about to go.
 #### `moveLedger(ctx, id, delta)`
 
 A move is a reinsertion: every ledger is resequenced around the one moved.
+
+#### `placeLedger(ctx, id, position)`
+
+Put a ledger at a place in the order `listLedgers` gives, counting from 0.
+A place past either end is the end.
 
 ### Types
 
@@ -5542,6 +5559,10 @@ to ring about. Only from today: arming yesterday is arming nothing.
 
 #### `toggleSlotActive(ctx, id)`
 
+#### `setSlotActive(ctx, id, active)`
+
+Paused or running by saying which, for a caller that should not have to read first.
+
 #### `deleteSlots(ctx, ids)`
 
 #### `copySlotsToWeekdays(ctx, ids, days)`
@@ -5709,6 +5730,14 @@ already sent adds nothing, provided it names the same `externalId`.
 
 #### `updateMovement(ctx, id, input)`
 
+#### `getMovementRow(ctx, id)`
+
+One movement as stored, or null — how an id somebody named is resolved.
+
+#### `listMovementRows(ctx, opts)`
+
+Every movement as stored, or only those in some ledgers — what a key tied to a notebook reaches.
+
 #### `deleteMovement(ctx, id)`
 
 #### `listRules(ctx)`
@@ -5722,6 +5751,12 @@ already sent adds nothing, provided it names the same `externalId`.
 Move a rule within its kind. A move is a reinsertion and every sibling is
 resequenced around it, so two rules can never share a position and "up"
 always actually moves.
+
+#### `placeRule(ctx, id, position)`
+
+Put a rule at a place among the rules of its kind, counting from 0 — the
+order `listRules` gives them, which for categories is the order they win in.
+A place past either end is the end.
 
 #### `deleteRule(ctx, id)`
 

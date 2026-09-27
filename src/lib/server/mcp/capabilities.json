@@ -16,7 +16,8 @@
 				],
 				"archive": ["archive_task"],
 				"unarchive": ["unarchive_task"],
-				"delete": ["drop_task"]
+				"delete": ["drop_task"],
+				"reorder": ["reorder_tasks"]
 			},
 			"app": {
 				"create": ["src/routes/tasks/todo/+page.server.ts#create"],
@@ -26,9 +27,6 @@
 				"unarchive": ["src/routes/tasks/todo/+page.server.ts#archive"],
 				"delete": ["src/routes/tasks/todo/+page.server.ts#delete"],
 				"reorder": ["src/routes/tasks/board/+page.server.ts#reorder"]
-			},
-			"missing": {
-				"reorder": "A task's place on the board cannot be moved over MCP; `up_next` orders by the ratings instead."
 			}
 		},
 		{
@@ -37,6 +35,8 @@
 				"create": ["add_block", "add_repeating_block"],
 				"read": ["upcoming", "past", "repeating_week"],
 				"change": ["change_block", "finish_block", "change_repeating_block"],
+				"archive": ["change_repeating_block"],
+				"unarchive": ["change_repeating_block"],
 				"delete": ["cancel_block", "remove_repeating_block"]
 			},
 			"app": {
@@ -55,10 +55,6 @@
 					"src/routes/tasks/plan/+page.server.ts#delete",
 					"src/routes/tasks/plan/+page.server.ts#deleteExceptional"
 				]
-			},
-			"missing": {
-				"archive": "A repeating block cannot be paused over MCP — only changed or removed.",
-				"unarchive": "A paused repeating block cannot be switched back on over MCP."
 			}
 		},
 		{
@@ -156,7 +152,8 @@
 					"file_inventory_item",
 					"record_price",
 					"set_item_attributes",
-					"change_inventory_category"
+					"change_inventory_category",
+					"change_inventory_item"
 				],
 				"archive": ["archive_item"],
 				"unarchive": ["unarchive_item"],
@@ -169,9 +166,6 @@
 				"archive": ["src/lib/services/item-actions.ts#toggleSnoozed"],
 				"unarchive": ["src/lib/services/item-actions.ts#toggleSnoozed"],
 				"delete": ["src/lib/services/item-actions.ts#delete"]
-			},
-			"missing": {
-				"change": "An item cannot be renamed, or have its notes or type changed, over MCP — only filed, priced and given attributes."
 			}
 		},
 		{
@@ -194,7 +188,7 @@
 			"mcp": {
 				"create": ["add_inventory_item"],
 				"read": ["shopping_list"],
-				"change": ["tick_bought", "untick_bought", "record_price"],
+				"change": ["tick_bought", "untick_bought", "record_price", "change_inventory_item"],
 				"archive": ["archive_item"],
 				"unarchive": ["unarchive_item"],
 				"delete": ["remove_inventory_item"]
@@ -247,7 +241,8 @@
 					"change_workout",
 					"set_workout_measures",
 					"change_workout_session",
-					"workout_done"
+					"workout_done",
+					"change_workout_category"
 				],
 				"archive": ["archive_workout"],
 				"unarchive": ["archive_workout"],
@@ -263,9 +258,6 @@
 				"archive": ["src/lib/services/workout-actions.ts#archive"],
 				"unarchive": ["src/lib/services/workout-actions.ts#archive"],
 				"delete": ["src/lib/services/workout-actions.ts#delete"]
-			},
-			"missing": {
-				"change": "A workout category cannot be renamed over MCP."
 			},
 			"withheld": {
 				"delete": "An exercise carries its sessions: archived by a tool, deleted in the app. Sessions and categories can be removed."
@@ -296,7 +288,12 @@
 			"name": "Accounts and movements",
 			"mcp": {
 				"create": ["add_ledger", "record_movement"],
-				"read": ["ledgers", "movements", "statement_months", "spending_by_category"]
+				"read": ["ledgers", "movements", "statement_months", "spending_by_category"],
+				"change": ["change_ledger", "change_movement"],
+				"archive": ["change_ledger"],
+				"unarchive": ["change_ledger"],
+				"delete": ["remove_movement"],
+				"reorder": ["change_ledger"]
 			},
 			"app": {
 				"create": [
@@ -316,12 +313,8 @@
 				],
 				"reorder": ["src/routes/finance/ledgers/+page.server.ts#moveLedger"]
 			},
-			"missing": {
-				"change": "Neither an account nor a movement can be changed over MCP: a mistyped movement cannot be corrected.",
-				"archive": "An account cannot be archived over MCP.",
-				"unarchive": "An account cannot be brought back over MCP.",
-				"delete": "A movement recorded twice cannot be removed over MCP.",
-				"reorder": "Accounts cannot be reordered over MCP."
+			"withheld": {
+				"delete": "A ledger takes every line in it when deleted: archived by a tool, deleted in the app. A single line can be removed."
 			}
 		},
 		{
@@ -330,7 +323,8 @@
 				"create": ["add_sort_rule"],
 				"read": ["sort_rules"],
 				"change": ["change_sort_rule"],
-				"delete": ["delete_sort_rule"]
+				"delete": ["delete_sort_rule"],
+				"reorder": ["change_sort_rule"]
 			},
 			"app": {
 				"create": ["src/routes/finance/rules/+page.server.ts#create"],
@@ -338,9 +332,6 @@
 				"change": ["src/routes/finance/rules/+page.server.ts#update"],
 				"delete": ["src/routes/finance/rules/+page.server.ts#delete"],
 				"reorder": ["src/routes/finance/rules/+page.server.ts#move"]
-			},
-			"missing": {
-				"reorder": "A rule's priority cannot be moved over MCP, and priority decides which rule sorts a movement."
 			}
 		},
 		{
@@ -380,7 +371,10 @@
 			"mcp": {
 				"create": ["add_activity"],
 				"read": ["activities", "categories"],
-				"change": ["change_activity"]
+				"change": ["change_activity"],
+				"archive": ["change_activity"],
+				"unarchive": ["change_activity"],
+				"delete": ["remove_activity"]
 			},
 			"app": {
 				"create": ["src/routes/tasks/activities/+page.server.ts#create"],
@@ -389,11 +383,6 @@
 				"archive": ["src/routes/tasks/activities/+page.server.ts#toggleActive"],
 				"unarchive": ["src/routes/tasks/activities/+page.server.ts#toggleActive"],
 				"delete": ["src/routes/tasks/activities/+page.server.ts#delete"]
-			},
-			"missing": {
-				"archive": "An activity cannot be switched off over MCP.",
-				"unarchive": "An activity cannot be switched back on over MCP.",
-				"delete": "An activity cannot be removed over MCP."
 			}
 		},
 		{
@@ -407,6 +396,8 @@
 					"favourite_notebook",
 					"share_notebook"
 				],
+				"archive": ["change_notebook"],
+				"unarchive": ["change_notebook"],
 				"delete": ["remove_notebook"]
 			},
 			"app": {
@@ -416,10 +407,6 @@
 				"archive": ["src/routes/notebooks/actions.ts#setClosed"],
 				"unarchive": ["src/routes/notebooks/actions.ts#setClosed"],
 				"delete": ["src/routes/notebooks/actions.ts#delete"]
-			},
-			"missing": {
-				"archive": "A notebook cannot be closed over MCP.",
-				"unarchive": "A closed notebook cannot be reopened over MCP."
 			}
 		},
 		{

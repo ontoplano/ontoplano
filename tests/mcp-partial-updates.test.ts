@@ -34,6 +34,7 @@ type Services = {
 	locations: typeof import('../src/lib/services/locations');
 	workouts: typeof import('../src/lib/services/workouts');
 	statements: typeof import('../src/lib/services/statements');
+	ledgers: typeof import('../src/lib/services/ledgers');
 	bills: typeof import('../src/lib/services/bills');
 	instances: typeof import('../src/lib/services/instances');
 };
@@ -64,6 +65,7 @@ beforeAll(async () => {
 		locations: await import('../src/lib/services/locations'),
 		workouts: await import('../src/lib/services/workouts'),
 		statements: await import('../src/lib/services/statements'),
+		ledgers: await import('../src/lib/services/ledgers'),
 		bills: await import('../src/lib/services/bills'),
 		instances: await import('../src/lib/services/instances')
 	};
@@ -594,5 +596,257 @@ describe('change_bill', () => {
 		expect(now().currency).toBeNull();
 		refused('change_bill', { id, flow: 'sideways' });
 		expect(now().flow).toBe('in');
+	});
+});
+
+/*
+ * The verbs the capability matrix listed as the app's alone: each one is a
+ * field on the change tool it belongs to, or — where there is no such tool —
+ * a verb of its own. Every one keeps what it is not told about, and a refused
+ * call writes nothing.
+ */
+describe('change_ledger', () => {
+	const ledger = (id: number) =>
+		database.all('select * from ledgers where id = ?', id)[0] as Record<string, unknown>;
+
+	it('renames, archives, brings back and reorders, keeping what it is not told', () => {
+		const first = s.ledgers.createLedger(s.ctx, {
+			name: 'Current',
+			kind: 'bank',
+			defaultParser: 'nubank:conta_corrente'
+		}).id;
+		const second = s.ledgers.createLedger(s.ctx, { name: 'Card', kind: 'card' }).id;
+
+		ok('change_ledger', { id: first, name: 'Everyday' });
+		expect(ledger(first)).toMatchObject({
+			name: 'Everyday',
+			kind: 'bank',
+			default_parser: 'nubank:conta_corrente'
+		});
+
+		ok('change_ledger', { id: first, archived: true });
+		expect(ledger(first)).toMatchObject({ archived: 1, name: 'Everyday' });
+		ok('change_ledger', { id: first, archived: false });
+		expect(ledger(first).archived).toBe(0);
+
+		ok('change_ledger', { id: second, position: 0 });
+		const order = s.ledgers.listLedgers(s.ctx, { includeArchived: true }).map((l) => l.id);
+		expect(order.indexOf(second)).toBeLessThan(order.indexOf(first));
+	});
+
+	it('writes nothing — not the archive, not the move — when the name is taken', () => {
+		const [a, b] = s.ledgers.listLedgers(s.ctx, { includeArchived: true });
+		const before = JSON.stringify(database.all('select * from ledgers order by id'));
+		refused('change_ledger', { id: a.id, name: b.name, archived: true, position: 5 });
+		expect(JSON.stringify(database.all('select * from ledgers order by id'))).toBe(before);
+	});
+});
+
+describe('change_movement and remove_movement', () => {
+	const row = (id: number) =>
+		database.all('select * from finance_transactions where id = ?', id)[0] as
+			| Record<string, unknown>
+			| undefined;
+
+	it('corrects the amount and keeps the rest; writes nothing for a bad date', () => {
+		const ledgerId = s.ledgers.listLedgers(s.ctx, { includeArchived: true })[0].id;
+		const { id } = s.statements.recordMovement(s.ctx, {
+			ledgerId,
+			occurredOn: '2026-03-10',
+			amountCents: -4500,
+			description: 'MERCADO'
+		});
+		ok('change_movement', { id, amount_cents: -450 });
+		expect(row(id)).toMatchObject({
+			amount_cents: -450,
+			occurred_on: '2026-03-10',
+			description: 'MERCADO',
+			ledger_id: ledgerId
+		});
+
+		refused('change_movement', { id, description: 'changed anyway', occurred_on: 'Tuesday' });
+		expect(row(id)).toMatchObject({ description: 'MERCADO', occurred_on: '2026-03-10' });
+	});
+
+	it('removes a line, answering with all of it', () => {
+		const ledgerId = s.ledgers.listLedgers(s.ctx, { includeArchived: true })[0].id;
+		const { id } = s.statements.recordMovement(s.ctx, {
+			ledgerId,
+			occurredOn: '2026-03-11',
+			amountCents: -999,
+			description: 'TWICE'
+		});
+		const answer = ok('remove_movement', { id });
+		expect(JSON.stringify(answer)).toContain('TWICE');
+		expect(row(id)).toBeUndefined();
+		refused('remove_movement', { id });
+	});
+});
+
+describe('change_sort_rule position', () => {
+	it('moves a category rule to the front of its kind, and a refusal moves nothing', () => {
+		for (const name of ['rent', 'fuel', 'pets'])
+			s.statements.createRule(s.ctx, { kind: 'category', name, pattern: name });
+		const names = () =>
+			s.statements
+				.listRules(s.ctx)
+				.filter((r) => r.kind === 'category')
+				.map((r) => r.name);
+		const pets = s.statements.listRules(s.ctx).find((r) => r.name === 'pets')!.id;
+
+		refused('change_sort_rule', { id: pets, pattern: '(', position: 0 });
+		expect(names().indexOf('pets')).toBe(names().length - 1);
+
+		ok('change_sort_rule', { id: pets, position: 0 });
+		expect(names()[0]).toBe('pets');
+		expect(s.statements.listRules(s.ctx).find((r) => r.id === pets)!.pattern).toBe('pets');
+	});
+});
+
+describe('change_activity active, and remove_activity', () => {
+	const activity = (id: number) =>
+		database.all('select * from activities where id = ?', id)[0] as
+			| Record<string, unknown>
+			| undefined;
+
+	it('switches one off and on again, keeping its name', () => {
+		const { id } = ok('add_activity', { name: 'piano', category: 'work' });
+		ok('change_activity', { id, active: false });
+		expect(activity(Number(id))).toMatchObject({ active: 0, name: 'piano' });
+		ok('change_activity', { id, active: true });
+		expect(activity(Number(id))!.active).toBe(1);
+	});
+
+	it('deletes one nothing names, and refuses one a block names', () => {
+		const { id } = ok('add_activity', { name: 'typo', category: 'work' });
+		ok('remove_activity', { id });
+		expect(activity(Number(id))).toBeUndefined();
+
+		const { id: used } = ok('add_activity', { name: 'chess', category: 'work' });
+		s.slots.createSlot(s.ctx, {
+			weekday: 3,
+			startTime: '20:00',
+			durationMinutes: 30,
+			mode: 'activity',
+			activityId: used
+		});
+		refused('remove_activity', { id: used });
+		expect(activity(Number(used))).toBeDefined();
+	});
+});
+
+describe('change_notebook closed', () => {
+	it('closes and reopens it, keeping its name and line', () => {
+		const id = s.notebooks.createNotebook(s.ctx, { title: 'Trip', description: 'June' });
+		const row = () =>
+			database.all('select * from notebooks where id = ?', id)[0] as Record<string, unknown>;
+		ok('change_notebook', { id, closed: true });
+		expect(row().closed_at).toBeTruthy();
+		expect([row().title, row().description]).toEqual(['Trip', 'June']);
+
+		refused('change_notebook', { id, title: '', closed: false });
+		expect(row().closed_at).toBeTruthy();
+
+		ok('change_notebook', { id, closed: false });
+		expect(row().closed_at).toBeNull();
+	});
+});
+
+describe('change_repeating_block paused', () => {
+	it('pauses and resumes without touching the block', () => {
+		const work = s.activities.listCategories(s.ctx)[0] as { id: number };
+		const id = s.slots.createSlot(s.ctx, {
+			weekday: 4,
+			startTime: '06:30',
+			durationMinutes: 20,
+			mode: 'category',
+			categoryId: work.id,
+			label: 'stretch'
+		});
+		const slot = () => s.slots.listWeeklySlots(s.ctx).find((w) => w.id === id)!;
+		const before = { ...slot(), active: undefined };
+
+		ok('change_repeating_block', { id, paused: true });
+		expect(slot().active).toBe(false);
+		expect({ ...slot(), active: undefined }).toEqual(before);
+
+		refused('change_repeating_block', { id, paused: false, start_time: 'dawn' });
+		expect(slot().active).toBe(false);
+
+		ok('change_repeating_block', { id, paused: false });
+		expect(slot().active).toBe(true);
+	});
+});
+
+describe('change_inventory_item', () => {
+	it('renames and retypes, keeping notes, price and section; writes nothing for a bad type', () => {
+		const section = s.inventory.createCategory(s.ctx, { name: 'Tools' });
+		const { id } = s.inventory.createItem(s.ctx, {
+			name: 'drill bits',
+			type: 'replenish',
+			notes: '6mm',
+			price: '12',
+			inventoryCategoryId: section
+		});
+		const row = () =>
+			database.all('select * from inventory_items where id = ?', id)[0] as Record<string, unknown>;
+		const price = row().price_cents;
+
+		ok('change_inventory_item', { id, name: 'masonry bits', type: 'someday' });
+		expect(row()).toMatchObject({
+			name: 'masonry bits',
+			type: 'someday',
+			notes: '6mm',
+			price_cents: price,
+			inventory_category_id: section
+		});
+
+		refused('change_inventory_item', { id, name: 'renamed anyway', type: 'sometimes' });
+		expect(row().name).toBe('masonry bits');
+
+		ok('change_inventory_item', { id, notes: '' });
+		expect(row().notes ?? '').toBe('');
+		expect(row().name).toBe('masonry bits');
+	});
+});
+
+describe('change_workout_category', () => {
+	it('renames it and keeps its workouts in it; refuses an empty name or one taken', () => {
+		const id = s.workouts.createWorkoutCategory(s.ctx, 'Lifting');
+		const workout = s.workouts.createWorkout(s.ctx, { title: 'Deadlift', categoryId: id });
+		ok('change_workout_category', { id, name: 'Barbell' });
+		const name = () =>
+			(database.all('select name from workout_categories where id = ?', id)[0] as { name: string })
+				.name;
+		expect(name()).toBe('Barbell');
+		expect(s.workouts.getWorkout(s.ctx, workout).categoryId).toBe(id);
+
+		refused('change_workout_category', { id, name: '' });
+		const other = s.workouts.createWorkoutCategory(s.ctx, 'Rowing');
+		refused('change_workout_category', { id, name: 'rowing' });
+		expect(other).not.toBe(id);
+		expect(name()).toBe('Barbell');
+	});
+});
+
+describe('reorder_tasks', () => {
+	it('puts the named tasks in the order given', () => {
+		const ids = ['first', 'second', 'third'].map(
+			(title) => ok('add_task', { title: `order ${title}` }).id as number
+		);
+		ok('reorder_tasks', { ids: [ids[2], ids[0], ids[1]] });
+		const order = s.todos
+			.listTodos(s.ctx)
+			.filter((t) => t.title.startsWith('order '))
+			.sort((a, b) => a.sortOrder - b.sortOrder)
+			.map((t) => t.id);
+		expect(order).toEqual([ids[2], ids[0], ids[1]]);
+	});
+
+	it('refuses a list with an id that is not one of them, and moves nothing', () => {
+		const before = JSON.stringify(database.all('select id, sort_order from todo_tasks'));
+		const [one] = s.todos.listTodos(s.ctx);
+		refused('reorder_tasks', { ids: [one.id, 987654] });
+		expect(JSON.stringify(database.all('select id, sort_order from todo_tasks'))).toBe(before);
 	});
 });

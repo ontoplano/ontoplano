@@ -58,10 +58,13 @@ type LedgerInput = {
 };
 
 function fields(ctx: Ctx, input: LedgerInput, fallback?: Ledger) {
+	// Left out, the one it had: a change that names one field keeps the rest.
 	const parser =
-		input.defaultParser === undefined || input.defaultParser === null || input.defaultParser === ''
-			? null
-			: str(input.defaultParser, 'parser', { max: 100 });
+		input.defaultParser === undefined
+			? (fallback?.defaultParser ?? null)
+			: input.defaultParser === null || input.defaultParser === ''
+				? null
+				: str(input.defaultParser, 'parser', { max: 100 });
 	if (parser && !parserFor(parser))
 		throw new ValidationError({ key: 'errors.ledgers.noParserKnowsThatExport' });
 	return {
@@ -197,10 +200,20 @@ export function deleteLedger(ctx: Ctx, id: number): void {
 
 /** A move is a reinsertion: every ledger is resequenced around the one moved. */
 export function moveLedger(ctx: Ctx, id: number, delta: number): void {
+	const from = listLedgers(ctx, { includeArchived: true }).findIndex((l) => l.id === id);
+	if (from === -1) throw new NotFoundError('ledger');
+	placeLedger(ctx, id, from + delta);
+}
+
+/**
+ * Put a ledger at a place in the order `listLedgers` gives, counting from 0.
+ * A place past either end is the end.
+ */
+export function placeLedger(ctx: Ctx, id: number, position: number): void {
 	const all = listLedgers(ctx, { includeArchived: true });
 	const from = all.findIndex((l) => l.id === id);
 	if (from === -1) throw new NotFoundError('ledger');
-	const to = Math.min(Math.max(from + delta, 0), all.length - 1);
+	const to = Math.min(Math.max(Math.trunc(position), 0), all.length - 1);
 	if (to === from) return;
 	const [moved] = all.splice(from, 1);
 	all.splice(to, 0, moved);

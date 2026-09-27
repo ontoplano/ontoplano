@@ -82,7 +82,23 @@ function idle(): Promise<void> {
 	return current.then(() => (current === queue ? undefined : idle()));
 }
 
-function pop(): Promise<void> {
+/*
+ * Whether the page is being left.
+ *
+ * A pop waits its turn in the queue, and by then somebody may already have
+ * pressed a link or typed an address: a `history.back()` fired into a
+ * navigation that has started cancels it, and the press goes nowhere. Once the
+ * page is on its way out there is no entry worth taking back.
+ */
+let leaving = false;
+if (typeof window !== 'undefined') {
+	window.addEventListener('beforeunload', () => (leaving = true));
+	window.addEventListener('pageshow', () => (leaving = false));
+}
+
+function pop(from: string): Promise<void> {
+	// Gone, or already somewhere else: the entry went with the page it was on.
+	if (leaving || location.href !== from) return Promise.resolve();
 	return new Promise((landed) => {
 		const done = () => {
 			clearTimeout(timer);
@@ -95,12 +111,13 @@ function pop(): Promise<void> {
 	});
 }
 
-/** Pop every entry on top whose screen has already closed. */
-async function drain(): Promise<void> {
+/** Pop every entry on top whose screen has already closed, while still on `from`. */
+async function drain(from: string): Promise<void> {
 	for (;;) {
 		const top = stackInHistory().at(-1);
 		if (top === undefined || !released.has(top)) return;
-		await pop();
+		if (leaving || location.href !== from) return;
+		await pop(from);
 		released.delete(top);
 		// A pop that went nowhere would loop here for ever.
 		if (stackInHistory().at(-1) === top) return;
@@ -169,6 +186,7 @@ export class BackCloses {
 		this.#mark = null;
 		this.#held = false;
 		if (mark !== null) released.add(mark);
-		return enqueue(drain).then(idle);
+		const from = location.href;
+		return enqueue(() => drain(from)).then(idle);
 	}
 }

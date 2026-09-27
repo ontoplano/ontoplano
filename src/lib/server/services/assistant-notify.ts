@@ -104,6 +104,7 @@ export const VERB_KEYS = new Set([
 	'finish',
 	'link',
 	'log',
+	'move',
 	'pay',
 	'pin',
 	'put',
@@ -112,6 +113,7 @@ export const VERB_KEYS = new Set([
 	'remind',
 	'remove',
 	'rename',
+	'reorder',
 	'reopen',
 	'schedule',
 	'set',
@@ -146,7 +148,10 @@ export const PHRASE_OVERRIDES: Record<string, Phrase> = {
 	// A star is the same act spelled the other way: "favorited a notebook".
 	favourite_notebook: { verb: 'favorite', noun: 'notebook' },
 	// It takes a label off, so it reads as removing one, not as a notebook.
-	untag_notebook: { verb: 'remove', noun: 'tag' }
+	untag_notebook: { verb: 'remove', noun: 'tag' },
+	// Plural in the name because they take a list; the noun is counted anyway.
+	move_notes: { verb: 'move', noun: 'note' },
+	reorder_tasks: { verb: 'reorder', noun: 'task' }
 };
 
 /** A verb's catalogue key, and the noun it acts on, as the identifier spells it. */

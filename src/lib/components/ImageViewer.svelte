@@ -28,6 +28,8 @@
 	const MAX_SCALE = 6;
 	/** Where a double tap lands, and the other end of it is the whole picture. */
 	const TAP_SCALE = 2.5;
+	/** How far a press on the ground may travel and still be a tap rather than a pan. */
+	const PAN_THRESHOLD_PX = 6;
 
 	/** The picture being looked at, or null when nothing is. */
 	let showing = $state<{ src: string; alt: string } | null>(null);
@@ -110,10 +112,16 @@
 		};
 	});
 
+	/** Where the last press on the ground began, to tell a tap from a pan. */
+	let downAt: { x: number; y: number } | null = null;
+
 	/** The ground closes it, unless the picture is zoomed and it is being panned. */
 	function groundPressed(event: MouseEvent) {
 		if (event.target === picture) return;
-		if (zoom && zoom.getScale() > 1) return;
+		const moved = downAt
+			? Math.hypot(event.clientX - downAt.x, event.clientY - downAt.y) > PAN_THRESHOLD_PX
+			: false;
+		if (moved && zoom && zoom.getScale() > 1) return;
 		close();
 	}
 </script>
@@ -129,6 +137,7 @@
 			event.preventDefault();
 			close();
 		}}
+		onpointerdown={(event) => (downAt = { x: event.clientX, y: event.clientY })}
 		onclick={groundPressed}
 	>
 		<div class="image-viewer-stage">
