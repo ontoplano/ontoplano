@@ -26,7 +26,7 @@ export const load = async ({ locals, params }: IsolatedEvent) => {
 			contents: contentsOf(ctx, id),
 			// The labels on what is filed here, with what carries each of them.
 			notebookTags: tagsInNotebook(ctx.userId, id),
-			...notebookPanelData(ctx),
+			...notebookPanelData(ctx, id),
 			onFamilyPlan: host.familyUserIds(ctx.userId).length > 1
 		};
 	} catch (e) {

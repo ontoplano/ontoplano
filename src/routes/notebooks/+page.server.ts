@@ -44,7 +44,7 @@ export const load = async ({ locals, url }: IsolatedEvent) => {
 		contents: selected ? contentsOf(ctx, selected) : null,
 		// The labels on what is filed in whichever notebook is showing.
 		notebookTags: selected ? tagsInNotebook(ctx.userId, selected) : [],
-		...notebookPanelData(ctx),
+		...notebookPanelData(ctx, selected),
 		// Where this reader dragged the divider between the list and the panel.
 		listPanelRem: getPanelWidth(ctx.userId, NOTEBOOK_PANEL_WIDTH_KEY)
 	};

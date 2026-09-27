@@ -644,7 +644,7 @@ export function setGoalLinks(
 	assertOwnedGoal(ctx, id);
 
 	const slotIds = ownedIds(links.slotIds, ownedSlotIds(ctx));
-	const todoIds = ownedIds(links.todoIds, ownedTodoIds(ctx));
+	const todoIds = ownedIds(links.todoIds, linkableTodoIds(ctx, id));
 	const activityIds = ownedIds(links.activityIds, ownedActivityIds(ctx));
 
 	db.transaction((tx) => {
@@ -684,7 +684,7 @@ export function addGoalLinks(
 	assertOwnedGoal(ctx, id);
 
 	const slotIds = ownedIds(links.slotIds ?? [], ownedSlotIds(ctx));
-	const todoIds = ownedIds(links.todoIds ?? [], ownedTodoIds(ctx));
+	const todoIds = ownedIds(links.todoIds ?? [], linkableTodoIds(ctx, id));
 	const activityIds = ownedIds(links.activityIds ?? [], ownedActivityIds(ctx));
 
 	const existing = db
@@ -817,6 +817,39 @@ function ownedTodoIds(ctx: Ctx): number[] {
 		.where(eq(todoTasks.userId, ctx.userId))
 		.all()
 		.map((r) => r.id);
+}
+
+/**
+ * The tasks a goal may count: in a goal filed under a notebook, that
+ * notebook's own — plus whatever it already counts, so tidying a notebook
+ * never silently unlinks work that was linked before this rule.
+ *
+ * The picker in a notebook offered every task the account has, which is the
+ * notebook failing to be the thing that scopes a subject. Refusing here too
+ * means a form or an assistant cannot get round the picker.
+ */
+function linkableTodoIds(ctx: Ctx, goalId: number): number[] {
+	const goal = db
+		.select({ notebookId: goals.notebookId })
+		.from(goals)
+		.where(and(eq(goals.id, goalId), eq(goals.userId, ctx.userId)))
+		.get();
+	if (!goal || goal.notebookId === null) return ownedTodoIds(ctx);
+
+	const inNotebook = db
+		.select({ id: todoTasks.id })
+		.from(todoTasks)
+		.where(and(eq(todoTasks.userId, ctx.userId), eq(todoTasks.notebookId, goal.notebookId)))
+		.all()
+		.map((r) => r.id);
+	const already = db
+		.select({ id: goalLinks.todoId })
+		.from(goalLinks)
+		.where(and(eq(goalLinks.goalId, goalId), eq(goalLinks.userId, ctx.userId)))
+		.all()
+		.map((r) => r.id)
+		.filter((v): v is number => v !== null);
+	return [...inNotebook, ...already];
 }
 
 function ownedActivityIds(ctx: Ctx): number[] {
