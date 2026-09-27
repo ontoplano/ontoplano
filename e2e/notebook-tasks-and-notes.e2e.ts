@@ -101,3 +101,30 @@ test('a new task in a notebook starts with the notebook’s category', async ({ 
 	await setCategory('— none —');
 	expect(await startsWith()).toBe('— none —');
 });
+
+test('typing TASK:# asks which task, and writes its number', async ({ page }) => {
+	test.setTimeout(120_000);
+	await register(page, testEmail('nb-ref-picker'));
+	await makeNotebook(page, 'Kitchen');
+	await visit(page, '/notebooks');
+
+	await page.getByRole('button', { name: /^Tasks \d/ }).click();
+	await page.getByRole('button', { name: 'New task', exact: true }).click();
+	await page.locator('#todo-form [name="heading"]').fill('measure the wall');
+	await page.getByRole('button', { name: 'Create task' }).click();
+	await expect(page.getByText('measure the wall').first()).toBeVisible();
+
+	await page.getByRole('button', { name: /^Notes \d/ }).click();
+	await page.getByRole('button', { name: 'New note', exact: true }).click();
+	const box = page.locator('form[action="?/addEntry"] textarea[name="content"]');
+	await box.click();
+	await page.keyboard.type('see TASK:#');
+
+	const picker = page.getByRole('dialog', { name: 'Point at a task' });
+	await expect(picker).toBeVisible();
+	await page.keyboard.type('wall');
+	await page.keyboard.press('Enter');
+
+	await expect(picker).toHaveCount(0);
+	await expect(box).toHaveValue('see TASK:#1');
+});

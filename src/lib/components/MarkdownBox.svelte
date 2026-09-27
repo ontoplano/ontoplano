@@ -25,7 +25,8 @@
 	 */
 	import TextBox from './TextBox.svelte';
 	import Written from './Written.svelte';
-	import { renderMarkdown, type TodoRefs } from '$lib/markdown';
+	import { renderMarkdown, type NoteRefs, type TodoRefs } from '$lib/markdown';
+	import RefPicker from './RefPicker.svelte';
 	import { sliding } from '$lib/actions/sliding';
 	import { useT } from '$lib/i18n';
 	import type { HTMLTextareaAttributes } from 'svelte/elements';
@@ -49,6 +50,7 @@
 		preview = 'markdown',
 		start = 'both',
 		todos = undefined,
+		notes = undefined,
 		class: extra = '',
 		...rest
 	}: HTMLTextareaAttributes & {
@@ -85,10 +87,50 @@
 		 * title, so the preview was showing something the note would not be.
 		 */
 		todos?: TodoRefs;
+		/** The notes `NOTE:#12` may name, where the writing has a notebook's notes to hand. */
+		notes?: NoteRefs;
 		class?: string;
 	} = $props();
 
 	const t = useT();
+
+	/*
+	 * Typing `TASK:#` or `NOTE:#` asks which one: a search over what this
+	 * writing can point at, and the number goes in where the cursor is.
+	 * Only where there is something to point at — outside a notebook the
+	 * number would mean nothing.
+	 */
+	let pointing = $state<'task' | 'note' | null>(null);
+	let pickerOpen = $state(false);
+	const REF_PREFIX = /(TASK|NOTE):#$/;
+
+	const pointable = $derived(
+		pointing === 'task'
+			? [...(todos ?? [])].map(([seq, one]) => ({ seq, title: one.title, done: one.done }))
+			: [...(notes ?? [])].map(([seq, one]) => ({ seq, title: one.title }))
+	);
+
+	function offerRef(event: Event) {
+		rest.oninput?.(event as never);
+		const box = element;
+		if (!box) return;
+		const typed = REF_PREFIX.exec(box.value.slice(0, box.selectionStart ?? 0));
+		if (!typed) return;
+		const kind = typed[1] === 'TASK' ? 'task' : 'note';
+		if (!(kind === 'task' ? todos?.size : notes?.size)) return;
+		pointing = kind;
+		pickerOpen = true;
+	}
+
+	function putRef(seq: number) {
+		const box = element;
+		if (!box) return;
+		const at = box.selectionStart ?? box.value.length;
+		box.setRangeText(String(seq), at, at, 'end');
+		// Tell the binding, the autogrow and anything else listening.
+		box.dispatchEvent(new Event('input', { bubbles: true }));
+		box.focus();
+	}
 
 	/**
 	 * Which pane is showing: one of them, or both beside each other.
@@ -280,7 +322,7 @@
 			aria-hidden={showing === 'preview' ? 'true' : undefined}
 			inert={showing === 'preview' ? true : undefined}
 		>
-			<TextBox bind:value={text} bind:element {rows} {maxHeight} {...rest} />
+			<TextBox bind:value={text} bind:element {rows} {maxHeight} {...rest} oninput={offerRef} />
 		</div>
 
 		<!--
@@ -307,8 +349,12 @@
 				<!-- `renderMarkdown` escapes every character of the input before it emits a
 				     tag, and emits only attributes it writes itself. See `$lib/markdown.ts`. -->
 				<!-- eslint-disable-next-line svelte/no-at-html-tags -->
-				{@html renderMarkdown(settled, todos)}
+				{@html renderMarkdown(settled, { tasks: todos, notes })}
 			{/if}
 		</div>
 	</div>
 </div>
+
+{#if pointing}
+	<RefPicker bind:open={pickerOpen} kind={pointing} choices={pointable} onpick={putRef} />
+{/if}

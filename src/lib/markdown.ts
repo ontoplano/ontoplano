@@ -47,7 +47,9 @@ function safeHref(href: string): string | null {
 	return /^(https?:\/\/|mailto:|\/|#)/i.test(href) ? href : null;
 }
 
-function inline(raw: string, todos?: TodoRefs): string {
+function inline(raw: string, refs?: Refs): string {
+	const todos = refs?.tasks;
+	const notes = refs?.notes;
 	let html = escape(raw);
 
 	/*
@@ -141,6 +143,17 @@ function inline(raw: string, todos?: TodoRefs): string {
 	 * passed them: a note rendered without them still gets a link, which is
 	 * what an export or a page that has not loaded the list should show.
 	 */
+	/*
+	 * `NOTE:#12` is the same pointer as `#12`, spelled out — how an assistant
+	 * writes it, and how somebody writes it who wants the kind said. It links
+	 * where `#12` does, and says the note's title where the caller knows it.
+	 */
+	html = html.replace(/(^|[\s(])NOTE:#(\d+)\b/g, (_match, before: string, seq: string) => {
+		const one = notes?.get(Number(seq));
+		const label = one ? escape(one.title) : `NOTE:#${seq}`;
+		return `${before}<a class="diary-ref" data-seq="${seq}" href="#diary-${seq}">${label}</a>`;
+	});
+
 	html = html.replace(/(^|[\s(])(?:TASK|TODO):#(\d+)\b/g, (_match, before: string, seq: string) => {
 		const one = todos?.get(Number(seq));
 		const done = one?.done ? ' is-done' : '';
@@ -241,7 +254,7 @@ function alignments(line: string): Align[] {
 	});
 }
 
-function row(line: string, align: Align[], tag: 'th' | 'td', todos?: TodoRefs): string {
+function row(line: string, align: Align[], tag: 'th' | 'td', todos?: Refs): string {
 	const out = cells(line).map((cell, at) => {
 		const how = align[at] ? ` style="text-align: ${align[at]}"` : '';
 		return `<${tag}${how}>${inline(cell, todos)}</${tag}>`;
@@ -249,7 +262,7 @@ function row(line: string, align: Align[], tag: 'th' | 'td', todos?: TodoRefs): 
 	return `<tr>${out.join('')}</tr>`;
 }
 
-function listItem(line: string, todos?: TodoRefs): string {
+function listItem(line: string, todos?: Refs): string {
 	const task = TASK.exec(line);
 	if (task) {
 		const checked = task[1].toLowerCase() === 'x' ? ' checked' : '';
@@ -270,8 +283,14 @@ function listItem(line: string, todos?: TodoRefs): string {
  * nothing.
  */
 export type TodoRefs = Map<number, { title: string; done: boolean }>;
+/** The notes `NOTE:#N` may name, by their number. */
+export type NoteRefs = Map<number, { title: string }>;
+/** What the references in a piece of writing can be resolved against. */
+export type Refs = { tasks?: TodoRefs; notes?: NoteRefs };
 
-export function renderMarkdown(text: string, todos?: TodoRefs): string {
+export function renderMarkdown(text: string, given?: TodoRefs | Refs): string {
+	// A bare map is the tasks, which is all a reference could be before notes.
+	const todos: Refs | undefined = given instanceof Map ? { tasks: given } : given;
 	const lines = text.replace(/\r\n?/g, '\n').split('\n');
 	const out: string[] = [];
 	let i = 0;

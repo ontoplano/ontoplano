@@ -486,6 +486,15 @@
 		)
 	);
 
+	/** The notes `NOTE:#12` may name here, by their number, as they are listed. */
+	const noteRefs = $derived(
+		new Map(
+			(contents?.entries ?? [])
+				.filter((entry) => entry.seq !== null)
+				.map((entry) => [entry.seq as number, { title: noteName(entry) }])
+		)
+	);
+
 	function openReferencedTodo(press: MouseEvent) {
 		const link = (press.target as HTMLElement).closest('.todo-ref') as HTMLElement | null;
 		if (!link) return;
@@ -1177,6 +1186,7 @@
 							rows={6}
 							required
 							todos={todoRefs}
+							notes={noteRefs}
 							placeholder={t('notebookDetail.writeANoteAbout', { title: notebook.title })}
 						/>
 						<!-- A note written here takes a picture the same way a note written in
@@ -1707,6 +1717,7 @@
 								rows={8}
 								required
 								todos={todoRefs}
+								notes={noteRefs}
 							/>
 							<PictureAttach target={editBox} />
 							<div class="mt-3">
@@ -1788,7 +1799,7 @@
 								<!-- `renderMarkdown` escapes every character of the input before it emits a
 								     tag, and emits only attributes it writes itself. See `$lib/markdown.ts`. -->
 								<!-- eslint-disable-next-line svelte/no-at-html-tags -->
-								{@html renderMarkdown(entry.content, todoRefs)}
+								{@html renderMarkdown(entry.content, { tasks: todoRefs, notes: noteRefs })}
 							</div>
 						{/if}
 						<div class="mt-1 flex flex-wrap items-center gap-2">
