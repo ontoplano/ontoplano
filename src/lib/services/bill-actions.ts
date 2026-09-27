@@ -9,7 +9,9 @@ import {
 	markPaid,
 	markPaidFromMovement,
 	setArchived,
+	skipPeriod,
 	unmarkPaid,
+	unskipPeriod,
 	updateBill
 } from '$lib/services/bills';
 
@@ -35,6 +37,8 @@ export const billHandlers = {
 				dueDay: form.get('dueDay') || null,
 				dueMonth: form.get('dueMonth') || null,
 				payLeadDays: form.get('payLeadDays') || 0,
+				// A checkbox: present when ticked, absent when not.
+				automatic: form.has('automatic'),
 				notes: form.get('notes'),
 				// `has` rather than `get`: the room's form says nothing about a
 				// notebook and must not be read as taking the bill out of one.
@@ -57,6 +61,8 @@ export const billHandlers = {
 				dueDay: form.get('dueDay') || null,
 				dueMonth: form.get('dueMonth') || null,
 				payLeadDays: form.get('payLeadDays') || 0,
+				// A checkbox: present when ticked, absent when not.
+				automatic: form.has('automatic'),
 				notes: form.get('notes'),
 				...(form.has('notebookId') ? { notebookId: form.get('notebookId') } : {})
 			});
@@ -107,6 +113,29 @@ export const billHandlers = {
 		const form = await request.formData();
 		try {
 			unmarkPaid(buildCtx(locals.user!.id), Number(form.get('id')), String(form.get('period')));
+			return { success: true };
+		} catch (e) {
+			return toActionFailure(e);
+		}
+	},
+
+	/** Nothing was owed this period: settled without a payment. */
+	skip: async ({ request, locals }: Event) => {
+		const form = await request.formData();
+		try {
+			skipPeriod(buildCtx(locals.user!.id), Number(form.get('id')), {
+				period: form.get('period') || undefined
+			});
+			return { success: true };
+		} catch (e) {
+			return toActionFailure(e);
+		}
+	},
+
+	unskip: async ({ request, locals }: Event) => {
+		const form = await request.formData();
+		try {
+			unskipPeriod(buildCtx(locals.user!.id), Number(form.get('id')), String(form.get('period')));
 			return { success: true };
 		} catch (e) {
 			return toActionFailure(e);

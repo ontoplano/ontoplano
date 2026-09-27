@@ -2705,6 +2705,22 @@ export const bills = sqliteTable(
 		// 2nd" is one number rather than a second date to keep in step.
 		payLeadDays: integer('pay_lead_days').notNull().default(0),
 		/**
+		 * Paid without anybody doing anything — a subscription on a card, a
+		 * direct debit. It asks for nothing: no reminder, no block on the
+		 * week. Its payments are still written, on the due day, so the history
+		 * says what the money did.
+		 */
+		automatic: integer('automatic', { mode: 'boolean' }).notNull().default(false),
+		/**
+		 * The last civil date automatic payments were written up to.
+		 *
+		 * A mark rather than a scan from the beginning, so a payment somebody
+		 * undid is not written back the next time the page is opened, and a bill
+		 * made automatic today does not invent months of history before it.
+		 * Null when the bill is not automatic.
+		 */
+		settledThrough: text('settled_through'),
+		/**
 		 * Which way the money moves. Income is recorded exactly the way bills
 		 * are — a name, an expected amount, a rhythm, a payment per period —
 		 * so it is the same table with the sign named rather than implied.
@@ -2765,6 +2781,17 @@ export const billPayments = sqliteTable(
 		// actually asked at the time.
 		amountExpected: integer('amount_expected').notNull().default(0),
 		amountPaid: integer('amount_paid').notNull().default(0),
+		/**
+		 * What happened to the period: paid, or skipped on purpose — the gym
+		 * frozen for a month, a holiday with no cleaner. A skip is a row of its
+		 * own so the period reads as settled rather than overdue, and it pays
+		 * nothing: `amount_paid` is 0 and it is left out of every sum.
+		 */
+		status: text('status', { enum: ['paid', 'skipped'] })
+			.notNull()
+			.default('paid'),
+		/** Written by the app on the due day of an automatic bill, not by a person. */
+		automatic: integer('automatic', { mode: 'boolean' }).notNull().default(false),
 		/*
 		 * The line on a statement this payment actually is, when there is one.
 		 *

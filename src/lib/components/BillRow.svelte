@@ -9,19 +9,34 @@
 	 * into one page's markup. The same move as `GoalCard` and `IdeaCard`.
 	 *
 	 * Where it posts is a prop (`$lib/bill-action-names`); what it posts to is
-	 * the same handler either way (`$lib/services/bill-actions`).
+	 * the same handler either way (`$lib/services/bill-actions`). `BillList`
+	 * draws these, with the form and the delete confirmation, on both screens.
 	 */
 	import Icon from '$lib/components/Icon.svelte';
 	import { enhance } from '$lib/enhance';
 	import { autofocus } from '$lib/actions/autofocus';
-	import { asDecimal, summaryOf } from '$lib/bill-summary';
+	import { AVERAGE_LABEL, asDecimal, summaryOf } from '$lib/bill-summary';
 	import type { BillActionNames } from '$lib/bill-action-names';
-	import type { Currency } from '$lib/money';
+	import { formatMoney, type Currency } from '$lib/money';
+	import { dateOf } from '$lib/when';
+	import { useWhen } from '$lib/when-context.svelte';
 	import { useT } from '$lib/i18n';
 
 	const t = useT();
+	const now = useWhen();
 
-	/** What a row needs off a bill — `listBills` gives exactly this. */
+	/** One settled period, as `listPayments` gives it. */
+	type Entry = {
+		id: number;
+		period: string;
+		amountExpected: number;
+		amountPaid: number;
+		status: 'paid' | 'skipped';
+		automatic: boolean;
+		paidAt: string;
+	};
+
+	/** What a row needs off a bill — `listBillsThisPeriod` gives exactly this. */
 	type Shown = {
 		id: number;
 		name: string;
@@ -30,18 +45,29 @@
 		dueDay: number | null;
 		dueMonth: number | null;
 		payLeadDays: number;
+		automatic: boolean;
 		active: boolean;
+		history: {
+			entries: Entry[];
+			paidCount: number;
+			skippedCount: number;
+			totalPaid: number;
+			averagePaid: number | null;
+		};
 	};
 
 	let {
 		bill,
 		currency,
 		actions,
-		/** Which period this row is about, and whether it is settled. */
+		/** Which period this row is about, and how it was settled. */
 		period,
 		paid = false,
-		/** Open the room's edit form. Absent where the screen has none. */
+		skipped = false,
+		/** Open the edit form. */
 		onedit,
+		/** Ask to delete it for good — offered on an archived bill only. */
+		ondelete,
 		/** Point at the statement line that paid it. Finance only. */
 		onattach
 	}: {
@@ -50,115 +76,282 @@
 		actions: BillActionNames;
 		period: string;
 		paid?: boolean;
+		skipped?: boolean;
 		onedit?: (id: number) => void;
+		ondelete?: (id: number) => void;
 		onattach?: (id: number) => void;
 	} = $props();
 
 	/** Whether the amount box is open on this row. */
 	let paying = $state(false);
+	/** Whether the history is open under it. A person's own act, so it may push. */
+	let expanded = $state(false);
+
+	const money = (cents: number) => formatMoney(cents, currency);
 </script>
 
-<li class="list-row">
-	<div class="list-row-main">
-		<div class="flex flex-wrap items-center gap-2">
-			<span class="font-medium break-words text-gray-900">{bill.name}</span>
-			{#if paid}
-				<span class="rounded bg-blue-50 px-1.5 py-0.5 text-xs font-medium text-blue-700">
-					{t('finance.bills.paid')}
-				</span>
+<li>
+	<div class="list-row">
+		<button
+			type="button"
+			class="icon-btn -ml-2 shrink-0"
+			aria-expanded={expanded}
+			aria-controls="bill-history-{bill.id}"
+			title={t('finance.bills.historyOf', { name: bill.name })}
+			aria-label={t('finance.bills.historyOf', { name: bill.name })}
+			data-tour="bill-history"
+			onclick={() => (expanded = !expanded)}
+		>
+			<Icon name={expanded ? 'chevron-down' : 'chevron-right'} />
+		</button>
+
+		<!-- Wide enough that on a phone the actions wrap under the name rather
+		     than squeezing it into a column of short lines. -->
+		<div class="list-row-main min-w-48">
+			<div class="flex flex-wrap items-center gap-2">
+				<span class="font-medium break-words text-gray-900">{bill.name}</span>
+				{#if paid}
+					<span class="rounded bg-blue-50 px-1.5 py-0.5 text-xs font-medium text-blue-700">
+						{t('finance.bills.paid')}
+					</span>
+				{:else if skipped}
+					<span class="rounded bg-gray-100 px-1.5 py-0.5 text-xs font-medium text-gray-600">
+						{t('finance.bills.skipped')}
+					</span>
+				{/if}
+				{#if bill.automatic}
+					<span
+						class="inline-flex items-center gap-1 rounded border border-gray-300 px-1.5 py-0.5 text-xs text-gray-600"
+						title={t('finance.bills.automaticTitle')}
+					>
+						<Icon name="clock" />{t('finance.bills.automatic')}
+					</span>
+				{/if}
+			</div>
+			<div class="text-xs text-gray-500">{summaryOf(t, bill, currency)}</div>
+		</div>
+
+		<div class="ml-auto flex flex-wrap items-center justify-end gap-2">
+			{#if !bill.active}
+				<!-- Put away: nothing is owed any more, so nothing to pay or skip. -->
+			{:else if paid}
+				<form method="post" action={actions.unpay} use:enhance>
+					<input type="hidden" name="id" value={bill.id} />
+					<input type="hidden" name="period" value={period} />
+					<button
+						class="icon-btn"
+						title={t('finance.bills.undoThisPeriodSPayment')}
+						aria-label={t('finance.bills.undoThePaymentFor', { name: bill.name })}
+					>
+						<Icon name="undo" />
+					</button>
+				</form>
+			{:else if skipped}
+				<form method="post" action={actions.unskip} use:enhance>
+					<input type="hidden" name="id" value={bill.id} />
+					<input type="hidden" name="period" value={period} />
+					<button
+						class="icon-btn"
+						title={t('finance.bills.undoThisPeriodSSkip')}
+						aria-label={t('finance.bills.undoTheSkipFor', { name: bill.name })}
+					>
+						<Icon name="undo" />
+					</button>
+				</form>
+			{:else if paying}
+				<form
+					method="post"
+					action={actions.pay}
+					class="flex items-center gap-1"
+					use:enhance={() =>
+						({ result, update }) => {
+							if (result.type === 'success') paying = false;
+							return update();
+						}}
+				>
+					<input type="hidden" name="id" value={bill.id} />
+					<input type="hidden" name="period" value={period} />
+					<input
+						name="amount"
+						inputmode="decimal"
+						use:autofocus
+						class="input w-24"
+						placeholder={asDecimal(bill.amountExpected)}
+						onkeydown={(e) => {
+							if (e.key === 'Escape') paying = false;
+						}}
+					/>
+					<button class="btn btn-primary btn-sm" type="submit">{t('finance.bills.paid2')}</button>
+					<button
+						class="icon-btn"
+						type="button"
+						title={t('ui.cancel')}
+						aria-label={t('ui.cancel')}
+						onclick={() => (paying = false)}
+					>
+						<Icon name="close" />
+					</button>
+				</form>
+			{:else}
+				<button
+					class="icon-btn"
+					title={t('finance.bills.markPaid')}
+					aria-label={t('finance.bills.markPaid2', { name: bill.name })}
+					onclick={() => (paying = true)}
+				>
+					<Icon name="check" />
+				</button>
+				<form method="post" action={actions.skip} use:enhance>
+					<input type="hidden" name="id" value={bill.id} />
+					<input type="hidden" name="period" value={period} />
+					<button
+						class="icon-btn"
+						title={t('finance.bills.skipThisPeriod')}
+						aria-label={t('finance.bills.skipName', { name: bill.name })}
+					>
+						<Icon name="skip" />
+					</button>
+				</form>
+				<!--
+					And the other way to pay one: point at the line that did it.
+
+					The tick is somebody saying a bill was paid; this is the bank saying
+					so, and the amount comes from the statement rather than from what was
+					expected. Both are real — cash, a transfer that has not landed, an
+					account this instance does not import — so neither replaces the
+					other. Only where the statements are: a notebook is not where
+					somebody goes through a bank export.
+				-->
+				{#if onattach}
+					<button
+						class="icon-btn"
+						title={t('finance.bills.attachThePayment')}
+						aria-label={t('finance.bills.attachATransactionTo', { name: bill.name })}
+						onclick={() => onattach(bill.id)}
+					>
+						<Icon name="link" />
+					</button>
+				{/if}
+			{/if}
+
+			{#if onedit}
+				<button
+					class="icon-btn"
+					title={t('ui.edit')}
+					aria-label={t('finance.bills.edit', { name: bill.name })}
+					onclick={() => onedit(bill.id)}
+				>
+					<Icon name="edit" />
+				</button>
+			{/if}
+
+			<form method="post" action={actions.archive} use:enhance>
+				<input type="hidden" name="id" value={bill.id} />
+				<input type="hidden" name="archived" value={bill.active ? 'true' : 'false'} />
+				{#if bill.active}
+					<button
+						class="icon-btn"
+						title={t('finance.bills.putThisBillAway')}
+						aria-label={t('finance.bills.archive', { name: bill.name })}
+					>
+						<Icon name="archive" />
+					</button>
+				{:else}
+					<button
+						class="icon-btn"
+						title={t('finance.bills.restore')}
+						aria-label={t('finance.bills.restore')}
+					>
+						<Icon name="undo" />
+					</button>
+				{/if}
+			</form>
+
+			{#if !bill.active && ondelete}
+				<button
+					class="icon-btn"
+					title={t('ui.delete')}
+					aria-label={t('finance.bills.delete', { name: bill.name })}
+					onclick={() => ondelete(bill.id)}
+				>
+					<Icon name="trash" />
+				</button>
 			{/if}
 		</div>
-		<div class="text-xs text-gray-500">{summaryOf(t, bill, currency)}</div>
 	</div>
 
-	<div class="flex flex-1 flex-wrap items-center justify-end gap-2">
-		{#if paid}
-			<form method="post" action={actions.unpay} use:enhance>
-				<input type="hidden" name="id" value={bill.id} />
-				<input type="hidden" name="period" value={period} />
-				<button
-					class="icon-btn"
-					title={t('finance.bills.undoThisPeriodSPayment')}
-					aria-label={t('finance.bills.undoThePaymentFor', { name: bill.name })}
-				>
-					<Icon name="undo" />
-				</button>
-			</form>
-		{:else if paying}
-			<form
-				method="post"
-				action={actions.pay}
-				class="flex items-center gap-1"
-				use:enhance={() =>
-					({ result, update }) => {
-						if (result.type === 'success') paying = false;
-						return update();
-					}}
-			>
-				<input type="hidden" name="id" value={bill.id} />
-				<input type="hidden" name="period" value={period} />
-				<input
-					name="amount"
-					inputmode="decimal"
-					use:autofocus
-					class="input w-24"
-					placeholder={asDecimal(bill.amountExpected)}
-				/>
-				<button class="btn btn-primary btn-sm" type="submit">{t('finance.bills.paid2')}</button>
-				<button class="btn btn-sm" type="button" onclick={() => (paying = false)}>×</button>
-			</form>
-		{:else}
-			<button
-				class="icon-btn"
-				title={t('finance.bills.markPaid')}
-				aria-label={t('finance.bills.markPaid2', { name: bill.name })}
-				onclick={() => (paying = true)}
-			>
-				<Icon name="check" />
-			</button>
-			<!--
-				And the other way to pay one: point at the line that did it.
+	{#if expanded}
+		<!-- What it has cost so far: every period settled, and one period's average. -->
+		<div id="bill-history-{bill.id}" class="border-t border-gray-100 px-4 pt-2 pb-3 sm:pl-12">
+			{#if bill.history.entries.length === 0}
+				<p class="text-sm text-gray-500">{t('finance.bills.nothingRecordedYet')}</p>
+			{:else}
+				<dl class="flex flex-wrap gap-x-6 gap-y-1 text-sm">
+					<div>
+						<dt class="text-xs text-gray-500">
+							{t(AVERAGE_LABEL[bill.rhythm] ?? AVERAGE_LABEL.once)}
+						</dt>
+						<dd class="font-medium text-gray-900 tabular-nums">
+							{bill.history.averagePaid === null ? '—' : money(bill.history.averagePaid)}
+						</dd>
+					</div>
+					<div>
+						<dt class="text-xs text-gray-500">{t('finance.bills.paidCount')}</dt>
+						<dd class="font-medium text-gray-900 tabular-nums">{bill.history.paidCount}</dd>
+					</div>
+					<div>
+						<dt class="text-xs text-gray-500">{t('finance.bills.skippedCount')}</dt>
+						<dd class="font-medium text-gray-900 tabular-nums">{bill.history.skippedCount}</dd>
+					</div>
+					<div>
+						<dt class="text-xs text-gray-500">{t('finance.bills.totalPaid')}</dt>
+						<dd class="font-medium text-gray-900 tabular-nums">
+							{money(bill.history.totalPaid)}
+						</dd>
+					</div>
+				</dl>
 
-				The tick is somebody saying a bill was paid; this is the bank saying
-				so, and the amount comes from the statement rather than from what was
-				expected. Both are real — cash, a transfer that has not landed, an
-				account this instance does not import — so neither replaces the
-				other. Only where the statements are: a notebook is not where
-				somebody goes through a bank export.
-			-->
-			{#if onattach}
-				<button
-					class="icon-btn"
-					title={t('finance.bills.attachThePayment')}
-					aria-label={t('finance.bills.attachATransactionTo', { name: bill.name })}
-					onclick={() => onattach(bill.id)}
-				>
-					<Icon name="link" />
-				</button>
+				<table class="mt-2 w-full text-sm">
+					<thead>
+						<tr class="text-left text-xs text-gray-500">
+							<th class="py-1 pr-3 font-normal">{t('finance.bills.period')}</th>
+							<th class="py-1 pr-3 font-normal">{t('finance.bills.date')}</th>
+							<th class="py-1 pr-3 text-right font-normal">{t('finance.bills.amount')}</th>
+							<th class="py-1 font-normal"
+								><span class="sr-only">{t('finance.bills.paidCount')}</span></th
+							>
+						</tr>
+					</thead>
+					<tbody class="divide-y divide-gray-100">
+						{#each bill.history.entries as entry (entry.id)}
+							<tr>
+								<td class="py-1 pr-3 text-gray-700 tabular-nums">{entry.period}</td>
+								<td class="py-1 pr-3 text-gray-600 tabular-nums">{dateOf(entry.paidAt, now())}</td>
+								<td class="py-1 pr-3 text-right text-gray-900 tabular-nums">
+									{#if entry.status === 'paid'}
+										{money(entry.amountPaid)}
+										{#if entry.amountPaid !== entry.amountExpected}
+											<span class="block text-xs text-gray-500">
+												{t('finance.bills.expectedAmountShort', {
+													amount: money(entry.amountExpected)
+												})}
+											</span>
+										{/if}
+									{:else}
+										—
+									{/if}
+								</td>
+								<td class="py-1 text-xs text-gray-600">
+									{entry.status === 'paid' ? t('finance.bills.paid') : t('finance.bills.skipped')}
+									{#if entry.automatic}
+										· {t('finance.bills.automatic').toLowerCase()}
+									{/if}
+								</td>
+							</tr>
+						{/each}
+					</tbody>
+				</table>
 			{/if}
-		{/if}
-
-		{#if onedit}
-			<button
-				class="icon-btn"
-				aria-label={t('finance.bills.edit', { name: bill.name })}
-				onclick={() => onedit(bill.id)}
-			>
-				<Icon name="edit" />
-			</button>
-		{/if}
-
-		<form
-			method="post"
-			action={actions.archive}
-			use:enhance
-			title={t('finance.bills.putThisBillAway')}
-		>
-			<input type="hidden" name="id" value={bill.id} />
-			<input type="hidden" name="archived" value={bill.active ? 'true' : 'false'} />
-			<button class="icon-btn" aria-label={t('finance.bills.archive', { name: bill.name })}>
-				<Icon name={bill.active ? 'archive' : 'undo'} />
-			</button>
-		</form>
-	</div>
+		</div>
+	{/if}
 </li>

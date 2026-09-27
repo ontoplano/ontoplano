@@ -1598,11 +1598,14 @@ shoppingItem('extension lead', 'keep', {
 // payments where the paid amount drifts from the expected — the gap the
 // finance section is built to show.
 
+/** The last day the seeded automatic bills have recorded themselves up to. */
+const AUTOMATIC_SEEDED_THROUGH = '2026-08-31';
+
 const bill = (name, amountExpected, extra = {}) => {
 	const existing = one('select id from bills where user_id = ? and name = ?', uid, name);
 	if (existing) return existing.id;
 	return run(
-		'insert into bills (user_id, name, amount_expected, currency, due_day, pay_lead_days, rhythm, active) values (?, ?, ?, ?, ?, ?, ?, ?)',
+		'insert into bills (user_id, name, amount_expected, currency, due_day, pay_lead_days, rhythm, active, automatic, settled_through) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
 		uid,
 		name,
 		amountExpected,
@@ -1610,20 +1613,31 @@ const bill = (name, amountExpected, extra = {}) => {
 		extra.dueDay ?? null,
 		extra.payLeadDays ?? 0,
 		extra.rhythm ?? 'monthly',
-		extra.active === false ? 0 : 1
+		extra.active === false ? 0 : 1,
+		extra.automatic ? 1 : 0,
+		// Seeded as if it had been recording itself up to the end of August;
+		// the first read of the bills catches up whatever has come due since.
+		extra.automatic ? AUTOMATIC_SEEDED_THROUGH : null
 	);
 };
 
-const billPaid = (billId, period, amountExpected, amountPaid) => {
+/** A settled period: paid (by hand, or by an automatic bill) or skipped. */
+const billPaid = (billId, period, amountExpected, amountPaid, how = {}) => {
 	if (one('select id from bill_payments where bill_id = ? and period = ?', billId, period)) return;
+	// Paid early in its month unless told otherwise, so a history reads like one.
+	const on = how.on ?? (/^\d{4}-\d{2}$/.test(period) ? `${period}-04` : null);
+	const paidAt = on ? `${on}T12:00:00.000Z` : new Date().toISOString();
 	run(
-		"insert into bill_payments (user_id, bill_id, period, amount_expected, amount_paid, currency, paid_at) values (?, ?, ?, ?, ?, ?, datetime('now'))",
+		'insert into bill_payments (user_id, bill_id, period, amount_expected, amount_paid, status, automatic, currency, paid_at) values (?, ?, ?, ?, ?, ?, ?, ?, ?)',
 		uid,
 		billId,
 		period,
 		amountExpected,
-		amountPaid,
-		'USD'
+		how.skipped ? 0 : amountPaid,
+		how.skipped ? 'skipped' : 'paid',
+		how.automatic ? 1 : 0,
+		'USD',
+		paidAt
 	);
 };
 
@@ -1636,7 +1650,7 @@ const cleaner = bill('Cleaner', 12000, { rhythm: 'weekly' });
 // vegetables from a smallholding, the climbing gym, the five-a-side, and the
 // standing donation to the app itself.
 bill('Farm box', 22000, { dueDay: 6 });
-bill('Climbing gym', 14000, { dueDay: 8 });
+const climbing = bill('Climbing gym', 14000, { dueDay: 8 });
 bill('Five-a-side', 6000, { dueDay: 11 });
 bill('Ontoplano', 5000, { dueDay: 3 });
 bill('Old gym membership', 12900, { active: false });
@@ -1652,6 +1666,32 @@ billPaid(cleaner, '2026-W36', 12000, 13000);
 // This month, some paid so far.
 billPaid(billRent, '2026-09', 180000, 180000);
 billPaid(billPower, '2026-09', 15000, 15880);
+// Earlier months, so a row's history has an average worth reading.
+billPaid(billRent, '2026-06', 175000, 175000, { on: '2026-06-03' });
+billPaid(billRent, '2026-07', 180000, 180000, { on: '2026-07-03' });
+billPaid(billPower, '2026-06', 15000, 13910, { on: '2026-06-09' });
+billPaid(billPower, '2026-07', 15000, 17420, { on: '2026-07-09' });
+// The gym frozen over a month away: skipped, not unpaid.
+billPaid(climbing, '2026-07', 14000, 14000, { on: '2026-07-06' });
+billPaid(climbing, '2026-08', 14000, 0, { on: '2026-08-06', skipped: true });
+
+// Subscriptions on a card: they never ask to be paid, and their history is the
+// app's own, one payment per due day.
+const streaming = bill('Film streaming', 1599, { dueDay: 14, automatic: true });
+const cloud = bill('Cloud storage', 299, { dueDay: 2, automatic: true });
+for (const month of ['2026-06', '2026-07', '2026-08']) {
+	billPaid(streaming, month, 1599, 1599, { on: `${month}-14`, automatic: true });
+	billPaid(cloud, month, 299, 299, { on: `${month}-02`, automatic: true });
+}
+
+// A bill filed under a subject, so the kitchen's notebook has a Bills tab
+// with something on it: the skip, hired by the month while the work lasts.
+const skipHire = bill('Skip hire', 9500, { dueDay: 15 });
+run('update bills set notebook_id = ? where id = ? and user_id = ?', kitchen, skipHire, uid);
+const kitchenModules = one('select modules from notebooks where id = ?', kitchen)?.modules ?? '';
+if (kitchenModules && !kitchenModules.split(',').includes('bills'))
+	run('update notebooks set modules = ? where id = ?', `${kitchenModules},bills`, kitchen);
+billPaid(skipHire, '2026-08', 9500, 9800, { on: '2026-08-14' });
 
 // --- income, statements and rules (finance) ---------------------------------------
 //

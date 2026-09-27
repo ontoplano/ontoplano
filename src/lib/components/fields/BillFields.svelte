@@ -28,6 +28,7 @@
 		dueDay: number | null;
 		dueMonth: number | null;
 		payLeadDays: number;
+		automatic?: boolean;
 		notebookId?: number | null;
 	} | null;
 
@@ -50,6 +51,18 @@
 		notebooks?: { id: number; title: string }[];
 		startingNotebook?: number | null;
 	} = $props();
+
+	/*
+	 * Whether it pays itself, and how early it wants paying when it does not.
+	 *
+	 * Seeded once from the bill being edited: the form is mounted fresh for
+	 * each bill, and a live link to the prop would undo a tick the moment the
+	 * page reloaded its data underneath.
+	 */
+	// svelte-ignore state_referenced_locally
+	let automatic = $state(editing?.automatic ?? false);
+	// svelte-ignore state_referenced_locally
+	let payLeadDays = $state<number | string | null>(editing?.payLeadDays ?? 0);
 </script>
 
 <FormGrid>
@@ -116,18 +129,48 @@
 		</Field>
 	{/if}
 
-	<Field
-		label={t('finance.bills.payItThisManyDays')}
-		span={6}
-		hint={t('finance.bills.whenItTurnsUpOn')}
-	>
-		<NumberBox
-			name="payLeadDays"
-			min="0"
-			max="27"
-			value={editing?.payLeadDays ?? 0}
-			placeholder="0"
-		/>
+	<!--
+		The lead, with the box that makes it moot beside it.
+
+		A group rather than a label: a label wrapping the checkbox and the number
+		would lend its words to both, and pressing "Pay it this many days before"
+		would tick Automatic. The number is disabled rather than removed, and both
+		hints hold the same cell, so ticking the box moves nothing on the form.
+		A disabled field does not post, so the lead rides in a hidden one and
+		survives the bill being made automatic and back.
+	-->
+	<Field label={t('finance.bills.payItThisManyDays')} span={6} group>
+		<div class="flex items-center gap-3">
+			<label class="flex shrink-0 cursor-pointer items-center gap-2 text-sm text-gray-700">
+				<input
+					type="checkbox"
+					name="automatic"
+					class="h-4 w-4"
+					bind:checked={automatic}
+					data-tour="bill-automatic"
+				/>
+				{t('finance.bills.automatic')}
+			</label>
+			<NumberBox
+				name={automatic ? undefined : 'payLeadDays'}
+				min="0"
+				max="27"
+				bind:value={payLeadDays}
+				placeholder="0"
+				disabled={automatic}
+				aria-label={t('finance.bills.payItThisManyDays')}
+				class="min-w-0 flex-1"
+			/>
+			{#if automatic}<input type="hidden" name="payLeadDays" value={payLeadDays ?? 0} />{/if}
+		</div>
+		<span class="mt-1 grid text-xs text-gray-500">
+			<span class="col-start-1 row-start-1" class:invisible={automatic} aria-hidden={automatic}>
+				{t('finance.bills.whenItTurnsUpOn')}
+			</span>
+			<span class="col-start-1 row-start-1" class:invisible={!automatic} aria-hidden={!automatic}>
+				{t('finance.bills.youWontBeReminded')}
+			</span>
+		</span>
 	</Field>
 
 	<NotebookField {notebooks} value={editing?.notebookId ?? startingNotebook} span={6} />

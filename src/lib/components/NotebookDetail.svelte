@@ -45,7 +45,7 @@
 	import TodoRows from '$lib/components/TodoRows.svelte';
 	import RoomToolbar from '$lib/components/RoomToolbar.svelte';
 	import IdeaCard from '$lib/components/IdeaCard.svelte';
-	import BillRow from '$lib/components/BillRow.svelte';
+	import BillList from '$lib/components/BillList.svelte';
 	import HabitCard from '$lib/components/HabitCard.svelte';
 	import LedgerTile from '$lib/components/LedgerTile.svelte';
 	import RecipeCard from '$lib/components/RecipeCard.svelte';
@@ -57,7 +57,6 @@
 	import { NOTEBOOK_HABIT_ACTIONS } from '$lib/habit-action-names';
 	import { NOTEBOOK_BILL_ACTIONS } from '$lib/bill-action-names';
 	import IdeaFields from '$lib/components/fields/IdeaFields.svelte';
-	import BillFields from '$lib/components/fields/BillFields.svelte';
 	import BuyFields from '$lib/components/fields/BuyFields.svelte';
 	import HabitFields from '$lib/components/fields/HabitFields.svelte';
 	import LedgerFields from '$lib/components/fields/LedgerFields.svelte';
@@ -170,11 +169,8 @@
 			goals: ComponentProps<typeof GoalCard>['goal'][];
 			/* And the whole idea, for the same reason — see `IdeaCard`. */
 			ideas: ComponentProps<typeof IdeaCard>['idea'][];
-			/* And the whole bill, with the period its tick would pay. */
-			bills: (ComponentProps<typeof BillRow>['bill'] & {
-				period: string;
-				paidThisPeriod: boolean;
-			})[];
+			/* And the whole bill, with the period its tick would pay and its history. */
+			bills: ComponentProps<typeof BillList>['bills'];
 			/* And the whole habit, with the days it has been logged. */
 			habits: ComponentProps<typeof HabitCard>['habit'][];
 			habitOccurrences: ComponentProps<typeof HabitCard>['occurrences'];
@@ -623,14 +619,14 @@
 	 * forms now carries, already set to this one.
 	 */
 	let composingModule = $state<NotebookModule | null>(null);
-	let billRhythm = $state('monthly');
+	/** The Bills tab's list, which owns the bill form — see `BillList`. */
+	let billList = $state<ReturnType<typeof BillList>>();
 	let habitKind = $state<'bad' | 'good' | 'neutral'>('bad');
 	let habitDays = $state<boolean[]>([false, false, false, false, false, false, false]);
 	let newMeasures = $state<{ activity: string; unit: string }[]>([{ activity: '', unit: '' }]);
 
 	function openComposer(module: NotebookModule) {
 		// Opened fresh: what the last one was left on is not part of this one.
-		billRhythm = 'monthly';
 		habitKind = 'bad';
 		habitDays = [false, false, false, false, false, false, false];
 		newMeasures = [{ activity: '', unit: '' }];
@@ -681,7 +677,8 @@
 							: // The rest: the room's own form, opened here — see `openComposer`.
 								{
 									label: t(NEW_LABELS[tab] ?? 'ui.add'),
-									run: () => openComposer(tab)
+									// Bills open the list's own form, the one the room uses.
+									run: () => (tab === 'bills' ? billList?.openNew() : openComposer(tab))
 								};
 	});
 
@@ -1476,28 +1473,25 @@
 				{/if}
 			{:else if tab === 'bills'}
 				<!--
-					The Finance room's own row: what it costs, its rhythm, the day it
-					falls due, the tick that pays it and the undo beside it.
+					The Finance room's own list: the rows, the form that edits them and
+					the confirmation that deletes an archived one — see `BillList`.
 				-->
-				{#if contents.bills.length === 0}
-					<EmptyState
-						icon={moduleGlyph('bills')}
-						title={t('notebooks.nothingUnderThisSubjectYet')}
-						compact
-					/>
-				{:else}
-					<ul class="divide-y divide-gray-200">
-						{#each contents.bills as bill (bill.id)}
-							<BillRow
-								{bill}
-								{currency}
-								actions={NOTEBOOK_BILL_ACTIONS}
-								period={bill.period}
-								paid={bill.paidThisPeriod}
-							/>
-						{/each}
-					</ul>
-				{/if}
+				<BillList
+					bind:this={billList}
+					bills={contents.bills}
+					{currency}
+					actions={NOTEBOOK_BILL_ACTIONS}
+					notebooks={pickableNotebooks}
+					startingNotebook={notebook?.id ?? null}
+				>
+					{#snippet empty()}
+						<EmptyState
+							icon={moduleGlyph('bills')}
+							title={t('notebooks.nothingUnderThisSubjectYet')}
+							compact
+						/>
+					{/snippet}
+				</BillList>
 			{/if}
 		{/if}
 	</div>
@@ -2148,12 +2142,6 @@
 				</FormGrid>
 			{:else if module === 'ledgers'}
 				<LedgerFields {parsers} notebooks={pickableNotebooks} startingNotebook={notebook.id} />
-			{:else if module === 'bills'}
-				<BillFields
-					bind:rhythm={billRhythm}
-					notebooks={pickableNotebooks}
-					startingNotebook={notebook.id}
-				/>
 			{:else if module === 'habits'}
 				<HabitFields
 					bind:kind={habitKind}

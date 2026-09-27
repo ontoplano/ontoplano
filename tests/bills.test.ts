@@ -295,3 +295,158 @@ describe('one account cannot reach another’s', () => {
 		expect(bills.listBills(theirs).some((b) => b.id === bill.id)).toBe(false);
 	});
 });
+
+/** A fresh account, so a test's bills are the only ones it sees. */
+function freshAccount(prefix: string, now: string, tz = 'UTC') {
+	const mine = { userId: `${prefix}-${Date.now()}-${Math.random()}`, now: new Date(now), tz };
+	database.exec(
+		`insert into user (id, name, email, email_verified, created_at, updated_at)
+		 values (?, 'F', ?, 1, 0, 0)`,
+		mine.userId,
+		`${mine.userId}@t.test`
+	);
+	return mine;
+}
+
+describe('skipping a period', () => {
+	test('is recorded as skipped, pays nothing, and can be undone', () => {
+		const bill = bills.createBill(ctx, { name: 'Gym', amountExpected: 14000, dueDay: 8 });
+		const skipped = bills.skipPeriod(ctx, bill.id, { period: '2026-09' });
+		expect(skipped.status).toBe('skipped');
+		expect(skipped.amountPaid).toBe(0);
+
+		const listed = bills.listBillsThisPeriod(ctx).find((b) => b.id === bill.id)!;
+		expect(listed.skippedThisPeriod).toBe(true);
+		expect(listed.paidThisPeriod).toBe(false);
+
+		// Undoing a payment does not touch a skip, and unskip does.
+		bills.unmarkPaid(ctx, bill.id, '2026-09');
+		expect(bills.listPayments(ctx, bill.id)).toHaveLength(1);
+		bills.unskipPeriod(ctx, bill.id, '2026-09');
+		expect(bills.listPayments(ctx, bill.id)).toHaveLength(0);
+	});
+
+	test('is refused on a period that is paid, and paying a skipped one replaces the skip', () => {
+		const bill = bills.createBill(ctx, { name: 'Cinema club', amountExpected: 3000 });
+		bills.markPaid(ctx, bill.id, { period: '2026-09' });
+		expect(() => bills.skipPeriod(ctx, bill.id, { period: '2026-09' })).toThrow();
+
+		bills.skipPeriod(ctx, bill.id, { period: '2026-10' });
+		const paid = bills.markPaid(ctx, bill.id, { period: '2026-10', amountPaid: 2500 });
+		expect(paid.status).toBe('paid');
+		expect(paid.amountPaid).toBe(2500);
+	});
+
+	test('takes it off the week and out of the month’s expected total', () => {
+		const mine = freshAccount('bills-skip', '2026-09-06T12:00:00Z');
+		const rent = bills.createBill(mine, { name: 'Rent', amountExpected: 100000, dueDay: 10 });
+		bills.createBill(mine, { name: 'Water', amountExpected: 8000, dueDay: 12 });
+		bills.skipPeriod(mine, rent.id, { period: '2026-09' });
+
+		const due = bills.billsDueBetween(mine, '2026-09-01', '2026-09-30');
+		expect(due.map((d) => d.name)).toEqual(['Water']);
+
+		const month = bills.monthSummary(mine, '2026-09');
+		expect(month.expected).toBe(8000);
+		expect(month.paidCount).toBe(0);
+	});
+});
+
+describe('the history', () => {
+	test('averages what was paid over the periods that were paid', () => {
+		const bill = bills.createBill(ctx, { name: 'Electricity', amountExpected: 10000 });
+		bills.markPaid(ctx, bill.id, { period: '2026-06', amountPaid: 9000 });
+		bills.markPaid(ctx, bill.id, { period: '2026-07', amountPaid: 12000 });
+		bills.skipPeriod(ctx, bill.id, { period: '2026-08' });
+
+		const history = bills.billHistory(ctx, bill.id);
+		expect(history.entries.map((e) => e.period)).toEqual(['2026-08', '2026-07', '2026-06']);
+		expect(history.paidCount).toBe(2);
+		expect(history.skippedCount).toBe(1);
+		expect(history.totalPaid).toBe(21000);
+		expect(history.averagePaid).toBe(10500);
+	});
+
+	test('has no average before anything was paid', () => {
+		expect(bills.summariseHistory([]).averagePaid).toBeNull();
+	});
+});
+
+describe('an automatic bill', () => {
+	test('never lands on the week, and its payments are written on each due day from then on', () => {
+		const mine = freshAccount('bills-auto', '2026-09-06T12:00:00Z');
+		const bill = bills.createBill(mine, {
+			name: 'Streaming',
+			amountExpected: 2990,
+			dueDay: 10,
+			automatic: true
+		});
+		expect(bill.automatic).toBe(true);
+		expect(bills.billsDueBetween(mine, '2026-09-01', '2026-09-30')).toHaveLength(0);
+
+		// Nothing before it was made automatic, and nothing before the due day.
+		expect(bills.recordAutomaticPayments(mine)).toBe(0);
+		expect(bills.listPayments(mine, bill.id)).toHaveLength(0);
+
+		// Two due days later, both are written, as the app's own, for the expected amount.
+		const later = { ...mine, now: new Date('2026-10-20T12:00:00Z') };
+		expect(bills.recordAutomaticPayments(later)).toBe(2);
+		const written = bills.listPayments(later, bill.id);
+		expect(written.map((p) => p.period)).toEqual(['2026-10', '2026-09']);
+		expect(written.every((p) => p.automatic && p.status === 'paid')).toBe(true);
+		expect(written[0].amountPaid).toBe(2990);
+		expect(written[1].paidAt.slice(0, 10)).toBe('2026-09-10');
+
+		// Idempotent, and an undone payment stays undone.
+		bills.unmarkPaid(later, bill.id, '2026-10');
+		expect(bills.recordAutomaticPayments(later)).toBe(0);
+		expect(bills.listPayments(later, bill.id)).toHaveLength(1);
+	});
+
+	test('leaves a period already skipped by hand alone', () => {
+		const mine = freshAccount('bills-auto-skip', '2026-09-06T12:00:00Z');
+		const bill = bills.createBill(mine, {
+			name: 'Gym',
+			amountExpected: 9900,
+			dueDay: 10,
+			automatic: true
+		});
+		bills.skipPeriod(mine, bill.id, { period: '2026-09' });
+		const later = { ...mine, now: new Date('2026-09-15T12:00:00Z') };
+		expect(bills.recordAutomaticPayments(later)).toBe(0);
+		expect(bills.listPayments(later, bill.id)[0].status).toBe('skipped');
+	});
+
+	test('starts fresh when it stops being automatic and becomes it again', () => {
+		const mine = freshAccount('bills-auto-toggle', '2026-09-06T12:00:00Z');
+		const bill = bills.createBill(mine, {
+			name: 'Cloud',
+			amountExpected: 1000,
+			dueDay: 10,
+			automatic: true
+		});
+		const off = { ...mine, now: new Date('2026-09-07T12:00:00Z') };
+		bills.updateBill(off, bill.id, { name: 'Cloud', amountExpected: 1000, dueDay: 10 });
+		const on = { ...mine, now: new Date('2026-11-01T12:00:00Z') };
+		bills.updateBill(on, bill.id, {
+			name: 'Cloud',
+			amountExpected: 1000,
+			dueDay: 10,
+			automatic: true
+		});
+		// September and October passed while it was paid by hand: not invented.
+		expect(bills.recordAutomaticPayments(on)).toBe(0);
+		expect(bills.listPayments(on, bill.id)).toHaveLength(0);
+	});
+});
+
+describe('one account cannot reach another’s skips or history', () => {
+	test('a stranger cannot skip, unskip, or read the history of a bill', () => {
+		const bill = bills.createBill(ctx, { name: 'Private sub', amountExpected: 1000 });
+		bills.skipPeriod(ctx, bill.id, { period: '2026-05' });
+		expect(() => bills.skipPeriod(theirs, bill.id, { period: '2026-06' })).toThrow();
+		expect(() => bills.unskipPeriod(theirs, bill.id, '2026-05')).toThrow();
+		expect(() => bills.billHistory(theirs, bill.id)).toThrow();
+		expect(bills.listPayments(ctx, bill.id)).toHaveLength(1);
+	});
+});

@@ -52,7 +52,8 @@ test('a bill written on a notebook tab is written in the notebook', async ({ pag
 		'Kitchen renovation'
 	);
 
-	await dialog.getByRole('button', { name: 'Save' }).click();
+	// The room's form, so the room's word for writing a new one.
+	await dialog.getByRole('button', { name: 'Add', exact: true }).click();
 	await page.waitForTimeout(600);
 
 	// Still in the notebook, with the bill on its tab.

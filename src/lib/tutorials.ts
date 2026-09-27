@@ -462,6 +462,25 @@ export const TUTORIALS: Record<string, Tutorial> = {
 			}
 		]
 	},
+	'/finance/bills': {
+		label: 'tour.bills',
+		steps: [
+			{
+				title: 'tour.billsWhatWantsPaying',
+				body: 'tour.billsABillIsANameAn'
+			},
+			{
+				target: '[data-tour="bill-list"]',
+				title: 'tour.billsPaidSkippedOrAutomatic',
+				body: 'tour.billsSkipAPeriod'
+			},
+			{
+				target: '[data-tour="bill-history"]',
+				title: 'tour.billsTheHistory',
+				body: 'tour.billsOpenARowToSee'
+			}
+		]
+	},
 	'/inventory/stock': {
 		label: 'tour.shopping',
 		steps: [

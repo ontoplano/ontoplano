@@ -250,7 +250,8 @@ export const load = async ({ locals }: IsolatedEvent) => {
 			// The month somebody is in, which on the first and the last day of one
 			// is not the month UTC is in.
 			const month = localDateOf(ctx.now, ctx.tz).slice(0, 7);
-			const monthly = listBills(ctx).filter((b) => b.rhythm === 'monthly');
+			// An automatic bill pays itself, so it is never one still to pay.
+			const monthly = listBills(ctx).filter((b) => b.rhythm === 'monthly' && !b.automatic);
 			const paid = new Set(
 				monthly
 					.flatMap((b) => listPayments(ctx, b.id))

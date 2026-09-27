@@ -64,6 +64,20 @@ type Summarised = {
 	dueDay: number | null;
 	dueMonth: number | null;
 	payLeadDays: number;
+	/** An automatic bill is never paid by hand, so how early does not apply. */
+	automatic?: boolean;
+};
+
+/**
+ * What one period of a rhythm is called, for "average per …".
+ *
+ * A one-off has no period, so its average is per payment.
+ */
+export const AVERAGE_LABEL: Record<string, PlainKey> = {
+	weekly: 'finance.bills.averagePerWeek',
+	monthly: 'finance.bills.averagePerMonth',
+	yearly: 'finance.bills.averagePerYear',
+	once: 'finance.bills.averagePerPayment'
 };
 
 export function summaryOf(t: Translate, bill: Summarised, currency: Currency): string {
@@ -77,7 +91,7 @@ export function summaryOf(t: Translate, bill: Summarised, currency: Currency): s
 		} else {
 			line += `, due the ${bill.dueDay}`;
 		}
-		if (bill.payLeadDays > 0)
+		if (bill.payLeadDays > 0 && !bill.automatic)
 			line += `, pay ${bill.payLeadDays} ${bill.payLeadDays === 1 ? 'day' : 'days'} before`;
 	}
 	return line;

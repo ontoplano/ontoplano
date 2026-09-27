@@ -412,6 +412,8 @@ export const messages: Catalogue = {
 		'Du hast heute schon zweimal gewechselt. Morgen geht es wieder.',
 	'errors.bills.thatCategoryIsNotYours': 'Diese Kategorie gehört dir nicht.',
 	'errors.bills.thatGoalIsNotYours': 'Dieses Ziel gehört dir nicht.',
+	'errors.bills.thatPeriodIsAlreadyPaid':
+		'Dieser Zeitraum ist bezahlt. Mach die Zahlung zuerst rückgängig.',
 	'errors.clientErrors.errorReportingIsNotEnabled':
 		'Fehlerberichte sind auf diesem Server nicht eingeschaltet',
 	'errors.clientErrors.errorReportingIsNotEnabledForThisAccount':
@@ -665,6 +667,7 @@ export const messages: Catalogue = {
 		'These four controls set four ways, kept under a name. It is the address of the list, so a saved one still works after a control changes.',
 	'filters.sureForget': 'Noch einmal drücken, um {name} zu verwerfen.',
 	'filters.updateToShowing': 'Auf das zeigen lassen, was gerade zu sehen ist',
+	'finance.bills.amount': 'Betrag',
 	'finance.bills.amountOver': '{amount} mehr',
 	'finance.bills.amountUnder': '{amount} weniger',
 	'finance.bills.andItsWholePaymentHistory':
@@ -673,6 +676,13 @@ export const messages: Catalogue = {
 	'finance.bills.archived': 'Archiviert ({length})',
 	'finance.bills.attachATransactionTo': 'Eine Buchung an {name} anhängen',
 	'finance.bills.attachThePayment': 'Die Zahlung anhängen',
+	'finance.bills.automatic': 'Automatisch',
+	'finance.bills.automaticTitle': 'Zahlt sich selbst, wird am Fälligkeitstag eingetragen',
+	'finance.bills.averagePerMonth': 'Durchschnitt pro Monat',
+	'finance.bills.averagePerPayment': 'Durchschnitt pro Zahlung',
+	'finance.bills.averagePerWeek': 'Durchschnitt pro Woche',
+	'finance.bills.averagePerYear': 'Durchschnitt pro Jahr',
+	'finance.bills.date': 'Datum',
 	'finance.bills.delete': '{name} löschen',
 	'finance.bills.deleteThisBill': 'Diese Rechnung löschen?',
 	'finance.bills.difference': 'Differenz',
@@ -684,8 +694,10 @@ export const messages: Catalogue = {
 	'finance.bills.edit': '{name} bearbeiten',
 	'finance.bills.editBill': 'Rechnung bearbeiten',
 	'finance.bills.expectedAmount': 'Erwarteter Betrag',
+	'finance.bills.expectedAmountShort': 'erwartet {amount}',
 	'finance.bills.expectedThisMonth': 'Diesen Monat erwartet',
 	'finance.bills.filterByDescription': 'Nach Beschreibung filtern',
+	'finance.bills.historyOf': 'Verlauf von {name}',
 	'finance.bills.keepIt': 'Behalten',
 	'finance.bills.markPaid': 'Als bezahlt markieren',
 	'finance.bills.markPaid2': '{name} als bezahlt markieren',
@@ -693,25 +705,36 @@ export const messages: Catalogue = {
 	'finance.bills.noBillsYet': 'Noch keine Rechnungen',
 	'finance.bills.nothingInTheLastFew':
 		'In den letzten Wochen passt nichts. Eine Rechnung, die von einem Konto bezahlt wurde, das diese Instanz nicht\n\t\t\t\timportiert, lässt sich trotzdem von Hand abhaken.',
+	'finance.bills.nothingRecordedYet': 'Noch nichts bezahlt oder ausgelassen.',
 	'finance.bills.onPlan': 'im Plan',
 	'finance.bills.paid': 'bezahlt',
 	'finance.bills.paid2': 'Bezahlt',
+	'finance.bills.paidCount': 'Bezahlt',
 	'finance.bills.paidSoFar': 'Bisher bezahlt',
 	'finance.bills.payItThisManyDays': 'So viele Tage vorher bezahlen',
+	'finance.bills.period': 'Zeitraum',
 	'finance.bills.putThisBillAway': 'Diese Rechnung ablegen — ihre Historie bleibt erhalten',
 	'finance.bills.rent': 'Miete',
 	'finance.bills.restore': 'Wiederherstellen',
 	'finance.bills.rhythm': 'Rhythmus',
+	'finance.bills.skipName': '{name} diesen Zeitraum auslassen',
+	'finance.bills.skipThisPeriod': 'Diesen Zeitraum auslassen',
+	'finance.bills.skipped': 'ausgelassen',
+	'finance.bills.skippedCount': 'Ausgelassen',
 	'finance.bills.theAmountComesFromThe':
 		'Der Betrag stammt aus der gewählten Zeile, nicht aus dem, was die Rechnung erwartet hat.',
 	'finance.bills.theBillsYouExpectTo':
 		'Hier liegen die Rechnungen, die Sie erwarten. Markieren Sie eine als bezahlt, und es wird erfasst, was Sie tatsächlich bezahlt haben.',
 	'finance.bills.theLastDayItCan': 'Der letzte Tag, an dem sie bezahlt werden kann.',
+	'finance.bills.totalPaid': 'Insgesamt bezahlt',
 	'finance.bills.undoThePaymentFor': 'Zahlung für {name} rückgängig machen',
+	'finance.bills.undoTheSkipFor': 'Auslassen von {name} rückgängig machen',
 	'finance.bills.undoThisPeriodSPayment': 'Zahlung dieses Zeitraums rückgängig machen',
+	'finance.bills.undoThisPeriodSSkip': 'Auslassen dieses Zeitraums rückgängig machen',
 	'finance.bills.whatPaidIt': 'Womit wurde bezahlt?',
 	'finance.bills.whenItTurnsUpOn':
 		'Wann sie in Ihrer Woche erscheint. 0 ist der Fälligkeitstag selbst.',
+	'finance.bills.youWontBeReminded': 'Du wirst nicht ans Bezahlen erinnert.',
 	'finance.donut.empty': 'In diesem Zeitraum noch nichts ausgegeben.',
 	'finance.donut.heading': 'Ausgaben nach Kategorie',
 	'finance.donut.out': 'ausgegeben',
@@ -3928,6 +3951,16 @@ export const messages: Catalogue = {
 	'tour.attachTheBlocksAndTodos':
 		'Verknüpfen Sie die Blöcke und Aufgaben, die zählen. Das macht aus einem Ziel, das nur ein Wunsch war, eine Zahl, die sich bewegt.',
 	'tour.beforeItEvaporates': 'Bevor es verfliegt',
+	'tour.bills': 'Rechnungen',
+	'tour.billsABillIsANameAn':
+		'Eine Rechnung ist ein Name, ein erwarteter Betrag und ein Rhythmus. Abhaken hält fest, was wirklich bezahlt wurde, damit der Monat die Differenz zeigt.',
+	'tour.billsOpenARowToSee':
+		'Öffne eine Zeile, um jede Zahlung und jedes Auslassen zu sehen, mit dem Durchschnitt pro Zeitraum.',
+	'tour.billsPaidSkippedOrAutomatic': 'Bezahlt, ausgelassen oder automatisch',
+	'tour.billsSkipAPeriod':
+		'Lass einen Zeitraum aus, in dem nichts fällig war. Eine automatische Rechnung will nie bezahlt werden: Die Zahlung wird am Fälligkeitstag eingetragen.',
+	'tour.billsTheHistory': 'Der Verlauf',
+	'tour.billsWhatWantsPaying': 'Was bezahlt werden will, und wann',
 	'tour.blocksYouAskedToBe':
 		'Blöcke, bei denen Sie erinnert werden wollten, Geburtstage, fällige Rechnungen, eine unbesprochene Woche — alles in einer Liste, das Nächste zuerst.',
 	'tour.board': 'Board',

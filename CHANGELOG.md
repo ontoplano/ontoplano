@@ -39,6 +39,7 @@ releases mattered.
 - A task card's add-a-label button sits at the foot of its rail, level with the labels.
 - On a computer, a form dialog can be dragged wider by either side edge — both sides move together — and a double-click on the edge puts it back.
 - A gear beside the open + wheel opens Quick capture settings (also in Settings → Preferences): choose the wheel's wedges and their order, and a main notebook every capture form starts in — a notebook you are reading still wins.
+- Bills can be automatic, like a subscription: no reminder, and the payment is recorded on its due day. A period can be skipped, every bill opens onto its payment history with the average per period, and a notebook's Bills tab edits and deletes bills like the Bills page.
 - A notebook's Open and Manage tags sit beside its name, apart from the buttons that add to it.
 - The demo's kitchen notebook opens on its tasks, with colour-coded tags and a shopping list; other demo notebooks now hold goals, inventory and ideas.
 - On a phone, a notebook's header and task toolbar are tidier: Open and tags are icons in the corner, the search, filter, clear and count share one line, and the order sits beside Select many.

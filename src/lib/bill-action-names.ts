@@ -7,21 +7,36 @@
  * prop, exactly as `$lib/goal-action-names` and `$lib/idea-action-names` do.
  */
 export type BillActionNames = {
+	create: string;
+	update: string;
 	pay: string;
 	unpay: string;
+	skip: string;
+	unskip: string;
 	archive: string;
+	remove: string;
 };
 
 /** The Finance room's Bills tab, where a bill is what the page is about. */
 export const BILL_ROOM_ACTIONS: BillActionNames = {
+	create: '?/create',
+	update: '?/update',
 	pay: '?/pay',
 	unpay: '?/unpay',
-	archive: '?/archive'
+	skip: '?/skip',
+	unskip: '?/unskip',
+	archive: '?/archive',
+	remove: '?/delete'
 };
 
 /** Inside a notebook, where the unprefixed names belong to the notebook. */
 export const NOTEBOOK_BILL_ACTIONS: BillActionNames = {
+	create: '?/billCreate',
+	update: '?/billUpdate',
 	pay: '?/billPay',
 	unpay: '?/billUnpay',
-	archive: '?/billArchive'
+	skip: '?/billSkip',
+	unskip: '?/billUnskip',
+	archive: '?/billArchive',
+	remove: '?/billDelete'
 };

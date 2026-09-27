@@ -1506,6 +1506,38 @@ describe('bills over MCP', () => {
 		expect(after.result.structuredContent.payments).toHaveLength(0);
 	});
 
+	it('skips a period and takes the skip back, and reads the history with its average', () => {
+		const id = rpc(1, 'add_bill', { name: 'Gym', amount_expected: 9000, automatic: true }, [
+			'bills:write'
+		]).result.structuredContent.id as number;
+		expect(
+			rpc(2, 'bills', {}, ['bills:read']).result.structuredContent.bills.find(
+				(b: { id: number }) => b.id === id
+			).automatic
+		).toBe(true);
+
+		rpc(3, 'pay_bill', { id, amount_paid: 8000, period: '2026-07' }, ['bills:write']);
+		const skipped = rpc(4, 'skip_bill', { id, period: '2026-08' }, ['bills:write']);
+		expect(skipped.result.isError, skipped.result.content?.[0]?.text).toBe(false);
+		expect(skipped.result.structuredContent.skipped.status).toBe('skipped');
+
+		const history = rpc(5, 'bill_history', { id }, ['bills:read']).result.structuredContent;
+		expect(history.paidCount).toBe(1);
+		expect(history.skippedCount).toBe(1);
+		expect(history.averagePaid).toBe(8000);
+
+		rpc(6, 'unskip_bill', { id, period: '2026-08' }, ['bills:write']);
+		const after = rpc(7, 'bill_history', { id }, ['bills:read']).result.structuredContent;
+		expect(after.skippedCount).toBe(0);
+
+		rpc(8, 'change_bill', { id, automatic: false }, ['bills:write']);
+		expect(
+			rpc(9, 'bills', {}, ['bills:read']).result.structuredContent.bills.find(
+				(b: { id: number }) => b.id === id
+			).automatic
+		).toBe(false);
+	});
+
 	it('paying the same period twice corrects rather than doubling', () => {
 		const id = rpc(1, 'add_bill', { name: 'Power', amount_expected: 5000 }, ['bills:write']).result
 			.structuredContent.id as number;
