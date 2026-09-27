@@ -25,6 +25,7 @@ releases mattered.
 - Notebooks can be starred: favourites sit in their own row at the top of the shelf, still appear in their folder, and come first in every notebook picker. Press `f` to star the notebook that's open.
 - The notebook picker is a tree: favourites first, then every notebook under its folders, rather than one long name per line.
 - On a phone, the empty space under Select many is gone: the selection tools float over the foot of the screen while you are selecting.
+- Adding a label from a task card suggests from the same list as the task form, so on Android the suggestions no longer linger as a half-drawn ghost.
 - A notebook's Open and Manage tags sit beside its name, apart from the buttons that add to it.
 - The demo's kitchen notebook opens on its tasks, with colour-coded tags and a shopping list; other demo notebooks now hold goals, inventory and ideas.
 - On a phone, a notebook's header and task toolbar are tidier: Open and tags are icons in the corner, the search, filter, clear and count share one line, and the order sits beside Select many.

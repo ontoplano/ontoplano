@@ -21,6 +21,7 @@
 	import { enhance } from '$lib/enhance';
 	import { useT } from '$lib/i18n';
 	import { afterPress } from '$lib/after-press';
+	import TagInput from '$lib/components/TagInput.svelte';
 
 	let {
 		/** What is being labelled, as the action's `id` field. */
@@ -42,20 +43,13 @@
 
 	let open = $state(false);
 	let word = $state('');
-	let box = $state<HTMLInputElement | null>(null);
+	let form = $state<HTMLFormElement | null>(null);
 
 	/*
-	 * Completion is a `datalist`, which is the browser's own.
-	 *
-	 * A hand-built list would have to answer for the keyboard, the screen
-	 * reader and the phone, and the platform already does — see the standing
-	 * preference for native controls. What it is given is the vocabulary
-	 * minus what this thing already carries: offering a label it already has
-	 * is offering to do nothing.
+	 * What the box offers: the vocabulary minus what this thing already
+	 * carries, since offering a label it already has is offering to do nothing.
 	 */
 	const offer = $derived(known.filter((one) => !has.includes(one)));
-
-	const listId = $derived(`quick-tag-${id}`);
 
 	function give() {
 		open = false;
@@ -65,7 +59,7 @@
 	function start() {
 		open = true;
 		// After the field exists, which is the frame after the press.
-		afterPress(() => box?.focus());
+		afterPress(() => form?.querySelector<HTMLInputElement>('input:not([type="hidden"])')?.focus());
 	}
 </script>
 
@@ -93,7 +87,23 @@
 		<form
 			method="post"
 			{action}
+			bind:this={form}
 			class="quick-tag-open absolute top-0 left-0 z-20 inline-flex items-center gap-1 border border-gray-200 bg-white p-1 shadow-overlay"
+			onkeydown={(key) => {
+				// The box closes its own list on Escape first; a second one leaves.
+				if (key.key === 'Escape' && !key.defaultPrevented) {
+					key.preventDefault();
+					give();
+				}
+			}}
+			onfocusout={() => {
+				// Given up on rather than submitted: an empty box is somebody who
+				// pressed it and thought better of it, and a field left hanging
+				// open on every row is the strip turned into a form.
+				setTimeout(() => {
+					if (!form?.contains(document.activeElement) && !word.trim()) give();
+				});
+			}}
 			use:enhance={() =>
 				async ({ update }) => {
 					await update({ reset: false });
@@ -101,35 +111,20 @@
 				}}
 		>
 			<input type="hidden" name="id" value={id} />
-			<!-- svelte-ignore a11y_autofocus -->
-			<input
-				bind:this={box}
-				bind:value={word}
-				name="add"
-				list={listId}
-				class="input h-7 w-32 py-0 text-xs"
-				placeholder={t('quickTag.placeholder')}
-				aria-label={t('quickTag.addATag')}
-				autocomplete="off"
-				autofocus
-				onkeydown={(key) => {
-					if (key.key === 'Escape') {
-						key.preventDefault();
-						give();
-					}
-				}}
-				onblur={() => {
-					// Given up on rather than submitted: an empty box is somebody
-					// who pressed it and thought better of it, and a field left
-					// hanging open on every row is the strip turned into a form.
-					if (!word.trim()) give();
-				}}
-			/>
-			<datalist id={listId}>
-				{#each offer as one (one)}
-					<option value={one}></option>
-				{/each}
-			</datalist>
+			<!--
+				The app's own label box, not an input with a `<datalist>`: on
+				Android the platform draws a datalist's suggestions as a detached
+				layer, and tapping back into the field left it half on screen,
+				transparent but still taking presses.
+			-->
+			<div class="w-48">
+				<TagInput
+					name="add"
+					bind:value={word}
+					known={offer}
+					placeholder={t('quickTag.placeholder')}
+				/>
+			</div>
 			<button type="submit" class="icon-btn" title={t('ui.save')} aria-label={t('ui.save')}>
 				<Icon name="check" size={14} />
 			</button>
