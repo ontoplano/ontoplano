@@ -13,6 +13,7 @@
 	 * inside, and it is the same inside in both places.
 	 */
 	import Field from '$lib/components/Field.svelte';
+	import MarkdownBox from '$lib/components/MarkdownBox.svelte';
 	import FormGrid from '$lib/components/FormGrid.svelte';
 	import Icon from '$lib/components/Icon.svelte';
 	import NotebookField from '$lib/components/NotebookField.svelte';
@@ -269,6 +270,8 @@
 	{/if}
 
 	<Field label={t('ui.notes')} span={12}>
-		<textarea name="notes" rows="3" class="textarea" value={editing?.notes ?? ''}></textarea>
+		<!-- The box every other piece of writing uses: a goal's notes are drawn
+		     with `Written` on its card, so the preview is that drawing. -->
+		<MarkdownBox name="notes" rows={3} value={editing?.notes ?? ''} preview="written" />
 	</Field>
 </FormGrid>

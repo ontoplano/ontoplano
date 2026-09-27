@@ -17,6 +17,7 @@
 	import EmptyState from '$lib/components/EmptyState.svelte';
 	import Icon from '$lib/components/Icon.svelte';
 	import { renderMarkdown } from '$lib/markdown';
+	import MarkdownBox from '$lib/components/MarkdownBox.svelte';
 	import { CATEGORY_FALLBACK_COLOR } from '$lib/colors.js';
 	import { armed } from '$lib/actions/armed';
 	import { useT } from '$lib/i18n';
@@ -771,16 +772,14 @@
 						child text keeps the browser's copy after a save, and what is
 						stored and what is shown drift apart from there.
 					-->
-					<textarea
+					<MarkdownBox
 						id="week-note"
 						name="note"
-						rows="6"
-						autocomplete="off"
+						rows={6}
 						placeholder={t('tasks.review.whatWentWellWhatDid')}
-						class="input w-full resize-y"
 						maxlength={8000}
 						bind:value={noteDraft}
-					></textarea>
+					/>
 
 					<div class="flex items-center justify-end gap-3">
 						{#if form?.saved}

@@ -6,7 +6,6 @@
 	import { resolve } from '$app/paths';
 	import { armed } from '$lib/actions/armed';
 	import { autofocus } from '$lib/actions/autofocus';
-	import { autogrow } from '$lib/actions/autogrow';
 	import Field from '$lib/components/Field.svelte';
 	import FormError from '$lib/components/FormError.svelte';
 	import FormGrid from '$lib/components/FormGrid.svelte';
@@ -17,6 +16,7 @@
 	import CardGrid from '$lib/components/CardGrid.svelte';
 	import DetailHeader from '$lib/components/DetailHeader.svelte';
 	import { renderMarkdown } from '$lib/markdown';
+	import MarkdownBox from '$lib/components/MarkdownBox.svelte';
 	import type { PageServerData, ActionData } from './$types';
 	import { useT } from '$lib/i18n';
 
@@ -555,9 +555,7 @@
 				span={12}
 				hint={t('health.recipes.id.markdownHeadingsListsNumbers')}
 			>
-				<textarea name="method" rows="10" use:autogrow class="textarea"
-					>{data.recipe.method}</textarea
-				>
+				<MarkdownBox name="method" rows={10} value={data.recipe.method ?? ''} />
 			</Field>
 			<Field label={t('ui.notes')} span={12}>
 				<textarea name="notes" rows="2" class="textarea">{data.recipe.notes}</textarea>
