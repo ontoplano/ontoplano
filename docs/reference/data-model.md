@@ -54,7 +54,7 @@ exist.
 | [`media_tags`](#media_tags)                                 | 4       | yes               |
 | [`model_provider_keys`](#model_provider_keys)               | 9       | yes               |
 | [`newsletter_issues`](#newsletter_issues)                   | 6       | —                 |
-| [`notebooks`](#notebooks)                                   | 11      | yes               |
+| [`notebooks`](#notebooks)                                   | 12      | yes               |
 | [`oauth_clients`](#oauth_clients)                           | 7       | —                 |
 | [`oauth_codes`](#oauth_codes)                               | 11      | yes               |
 | [`people`](#people)                                         | 12      | yes               |
@@ -964,6 +964,7 @@ Indexes:
 | `id`                 | integer | not null | —                     | primary key, auto |
 | `user_id`            | text    | not null | —                     | → `user.id`       |
 | `title`              | text    | not null | —                     | —                 |
+| `folder`             | text    | not null | `''`                  | —                 |
 | `description`        | text    | null     | `''`                  | —                 |
 | `picture_id`         | integer | null     | —                     | → `media.id`      |
 | `default_tags`       | text    | not null | `''`                  | —                 |
@@ -976,7 +977,7 @@ Indexes:
 Indexes:
 
 - `notebooks_user_idx` on `user_id`
-- `notebooks_user_title_unique` on `user_id`, `title` — unique
+- `notebooks_user_folder_title_unique` on `user_id`, `folder`, `title` — unique
 
 ## oauth_clients
 

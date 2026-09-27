@@ -459,9 +459,11 @@ export const messages: Catalogue = {
 	'errors.newsletter.theNewsletterIsOff': 'The newsletter is off on this instance.',
 	'errors.notFound': 'Not found.',
 	'errors.notebookMedia.noNotebookPicturesHere': 'No notebook pictures here.',
+	'errors.notebooks.aFolderCannotGoInsideItself': 'A folder cannot go inside itself',
 	'errors.notebooks.aNotebookByThatName': 'A notebook by that name already exists',
-	'errors.notebooks.aNotebookCannotGoInside': 'A notebook cannot go inside itself',
-	'errors.notebooks.thatNameIsTooLong': 'That name is too long for the notebook it goes inside',
+	'errors.notebooks.nameTheFolderToRename': 'Say which folder to rename',
+	'errors.notebooks.noSuchFolder': 'No notebook is in that folder',
+	'errors.notebooks.thatFolderPathIsTooLong': 'That folder path is too long',
 	'errors.notifications.thatIsNotATime': 'That is not a time of day.',
 	'errors.notifications.thatNotificationHasNoTime': 'That notification has no time of its own.',
 	'errors.notifications.thereIsNoSuchNotification': 'There is no such notification.',
@@ -1779,8 +1781,6 @@ export const messages: Catalogue = {
 	'notebooks.aSubjectYouWriteAgainst':
 		'A subject you write against with no deadline — a book you are reading, a trip, a renovation.\n\t\tNotes, tasks and goals can belong to one, and everything about it collects here.',
 	'notebooks.alreadyFiled': { one: '{count} filed', other: '{count} filed' },
-	'notebooks.anEmDashMakesA':
-		'An em dash makes a folder: “Renovation — Kitchen” sits inside “Renovation”.',
 	'notebooks.andFromTheFrontmatter':
 		'and from the frontmatter — with the folder\n\t\t\t\tit was in as a tag too. Nothing is uploaded as a file; the notes are read here. Deleting the notebook\n\t\t\t\tundoes it.',
 	'notebooks.atTheBottomOf': ', at the bottom of the list.',
@@ -1854,6 +1854,13 @@ export const messages: Catalogue = {
 	'notebooks.fileBecomesANoteIn':
 		'file becomes a note in one notebook, keeping its text\n\t\t\t\tand its tags — from',
 	'notebooks.finishedOnesAreNotListed': 'Finished and put-away things are not offered.',
+	'notebooks.folder': 'Folder',
+	'notebooks.folderHint': 'Optional. A slash nests one inside another: Home/Kitchen.',
+	'notebooks.folderNotebooksCount': { one: '{count} notebook', other: '{count} notebooks' },
+	'notebooks.folderPath': 'Path',
+	'notebooks.folderPathHint':
+		'Every notebook in it moves with it. Empty puts them at the top of the shelf.',
+	'notebooks.folderPlaceholder': 'Home/Kitchen',
 	'notebooks.goalsCount': { one: '{count} goal', other: '{count} goals' },
 	'notebooks.habitsCount': { one: '{count} habit', other: '{count} habits' },
 	'notebooks.id.aPictureFor': 'A picture for {title}',
@@ -1903,7 +1910,6 @@ export const messages: Catalogue = {
 	'notebooks.ideasCount': { one: '{count} idea', other: '{count} ideas' },
 	'notebooks.importedFromAnObsidianVault': 'Imported from an Obsidian vault.',
 	'notebooks.inAnotherNotebook': 'in another notebook',
-	'notebooks.inside': 'Inside',
 	'notebooks.inventoryCount': { one: '{count} thing', other: '{count} things' },
 	'notebooks.itsNotesTasksAndGoals':
 		'Its notes, tasks and goals will not be deleted. The tasks and goals stay where they are, in the\n\t\tplanner and in Goals; the notes move to',
@@ -1981,6 +1987,10 @@ export const messages: Catalogue = {
 	'notebooks.pickANotebookToSee': 'Pick a notebook to see everything that belongs to it.',
 	'notebooks.proceed': 'Proceed',
 	'notebooks.recipesCount': { one: '{count} recipe', other: '{count} recipes' },
+	'notebooks.removeFolder': 'Remove folder',
+	'notebooks.removeFolderMovesUp': 'Its notebooks move up one level.',
+	'notebooks.renameFolder': 'Rename folder',
+	'notebooks.renameFolderNamed': 'Rename the folder {name}',
 	'notebooks.reopenIt': 'Reopen it',
 	'notebooks.rows.dueOnThe': 'due on the {day}',
 	'notebooks.rows.favourite': 'favourite',
@@ -3814,7 +3824,7 @@ export const messages: Catalogue = {
 	'tour.everyDeviceThatIsSigned': 'Every device that is signed in',
 	'tour.everyMentionInOnePlace': 'Every mention, in one place',
 	'tour.everyNotebookIsACover':
-		'A cover with its name under it and a count of what is inside. Name one “Renovation — Kitchen” and it sits inside “Renovation”; renaming it is how it moves.',
+		'A cover with its name under it and a count of what is inside. Give a notebook a folder like “Home/Kitchen” and it sits in that folder on the shelf.',
 	'tour.everyTagOnAnEntry':
 		'Every tag on an entry is a filter. Search reaches the words inside them.',
 	'tour.everythingInOneBox': 'Everything, in one box',

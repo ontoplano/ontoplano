@@ -30,7 +30,7 @@ under the pointer.
 | `/settings/integrations/connections` | tour.integrations | 3     |
 | `/tasks/activities`                  | tour.activities   | 3     |
 | `/tasks/board`                       | tour.board        | 4     |
-| `/tasks/plan`                        | tour.plan         | 6     |
+| `/tasks/plan`                        | tour.plan         | 7     |
 | `/tasks/todo`                        | tour.toDo         | 4     |
 
 Toured as well, though nothing obliges them to be — a screen reached from
@@ -191,7 +191,8 @@ at the button that reopens it, so it is not listed here.
 3. tour.dragToMakeABlock
 4. tour.whereYouAreAndWhat
 5. tour.whereYourWeekBegins
-6. tour.aWeekYouCanLay
+6. tour.whatIsWaitingForATime
+7. tour.aWeekYouCanLay
 
 ### `/tasks/review` — tour.review
 

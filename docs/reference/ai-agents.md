@@ -779,23 +779,36 @@ _Needs `notes:write`; writes._
 | Parameter     | Type   | Required | What it is                                                                                                                                                                                                                                                                                                                    |
 | ------------- | ------ | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `title`       | string | yes      | What it is about.                                                                                                                                                                                                                                                                                                             |
+| `folder`      | string | —        | Where it sits on the shelf, a slash-separated path such as `Home/Kitchen`. A folder only groups notebooks; it holds nothing itself. Left out, it goes at the top.                                                                                                                                                             |
 | `description` | string | —        | A line under the title, shown on its page.                                                                                                                                                                                                                                                                                    |
 | `defaultTags` | string | —        | Labels a new note in it starts with, comma or space separated — the ones writing about this subject always carries, so nobody types them on every note. The person can still take them off a note as they write it.                                                                                                           |
 | `modules`     | string | —        | What it holds, comma separated — notes, tasks, goals, ideas, inventory, ledgers, bills, habits, workouts, recipes. Notes and tasks unless this says otherwise, and notes are always in it. Only name what the subject actually accumulates: nine tabs on a reading list is the app deciding what somebody’s subject is about. |
 
 ### `change_notebook` — Change a notebook
 
-Rename a notebook, rewrite the line under its title, set the labels a new note in it starts with, or change what it holds. The title is always sent; the rest change only when given.
+Rename a notebook, move it to another folder, rewrite the line under its title, set the labels a new note in it starts with, or change what it holds. The title is always sent; the rest change only when given.
 
 _Needs `notes:write`; writes._
 
 | Parameter     | Type    | Required | What it is                                                                                                                                                                                                                                                                               |
 | ------------- | ------- | -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `id`          | integer | yes      | The notebook’s id, as `notebooks` gives it.                                                                                                                                                                                                                                              |
-| `title`       | string  | yes      | What it is about. Renaming with the — separator moves it under another.                                                                                                                                                                                                                  |
+| `title`       | string  | yes      | What it is about.                                                                                                                                                                                                                                                                        |
+| `folder`      | string  | —        | The folder it sits in, a slash-separated path such as `Home/Kitchen`; an empty string puts it at the top. Left out, it stays where it is.                                                                                                                                                |
 | `description` | string  | —        | A line under the title, shown on its page.                                                                                                                                                                                                                                               |
 | `defaultTags` | string  | —        | Labels a new note in it starts with, comma or space separated. An empty string clears them; left out, they are untouched.                                                                                                                                                                |
 | `modules`     | string  | —        | What it holds, comma separated — notes, tasks, goals, ideas, inventory, ledgers, bills, habits, workouts, recipes. The whole list, not an addition. Notes are always in it. Switching one off keeps whatever is already filed under it; it stops being a tab, and stays in its own room. |
+
+### `rename_notebook_folder` — Rename a notebook folder
+
+Rename or move a folder of notebooks: every notebook in it, and in the folders inside it, has that part of its path rewritten. `notebooks` gives each notebook its `folder`. Moving a folder into its own parent removes it; nothing is deleted.
+
+_Needs `notes:write`; writes._
+
+| Parameter | Type   | Required | What it is                                                                                                            |
+| --------- | ------ | -------- | --------------------------------------------------------------------------------------------------------------------- |
+| `from`    | string | yes      | The folder as it is now, e.g. `Home/Kitchen`.                                                                         |
+| `to`      | string | yes      | What it becomes, e.g. `Home/Cooking` or `Flat/Kitchen`. An empty string moves what was in it to the top of the shelf. |
 
 ### `remove_notebook` — Remove an empty notebook
 

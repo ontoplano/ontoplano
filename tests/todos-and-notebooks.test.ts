@@ -347,46 +347,96 @@ describe('a note is called something', () => {
 });
 
 /**
- * Notebooks belong to each other, by name.
+ * Notebooks sit in folders.
  *
- * The same em dash the gallery's albums use: `Renovation — Kitchen` sits
- * inside `Renovation`. No parent column to keep in step, and renaming one to
- * `Renovation — Bathroom` moves it, which is what typing that plainly means.
+ * A folder is a path a notebook carries, `Home/Kitchen`, and only a label: it
+ * holds nothing and is not a notebook. Renaming one rewrites the path of every
+ * notebook in it, which is the whole of what a folder can be asked to do.
  */
-describe('notebooks as folders', () => {
-	test('a name with a dash in it hangs off the one before it', () => {
-		notebooks.createNotebook(ctx, { title: 'Renovation' });
-		notebooks.createNotebook(ctx, { title: 'Renovation — Kitchen' });
-		notebooks.createNotebook(ctx, { title: 'Renovation — Bathroom' });
+describe('notebooks in folders', () => {
+	const folderOf = (c: typeof ctx, id: number) =>
+		notebooks.listNotebooks(c).find((n) => n.id === id)!.folder;
 
-		const root = notebooks.notebookTree(ctx).find((n) => n.title === 'Renovation')!;
-		expect(root.depth).toBe(0);
-		expect(root.children.map((c) => c.title).sort()).toEqual([
-			'Renovation — Bathroom',
-			'Renovation — Kitchen'
-		]);
-		expect(root.children[0].depth).toBe(1);
+	test('a notebook carries a folder path, tidied, and none by default', () => {
+		const top = notebooks.createNotebook(ctx, { title: 'Folder top' });
+		const deep = notebooks.createNotebook(ctx, {
+			title: 'Folder deep',
+			folder: ' Home / Kitchen/ '
+		});
+		expect(folderOf(ctx, top)).toBe('');
+		expect(folderOf(ctx, deep)).toBe('Home/Kitchen');
 	});
 
-	test('hangs off the nearest ancestor that exists, not off nothing', () => {
-		notebooks.createNotebook(ctx, { title: 'Trip' });
-		// No `Trip — 2026`: the grandchild still belongs under Trip.
-		notebooks.createNotebook(ctx, { title: 'Trip — 2026 — Lisbon' });
-
-		const trip = notebooks.notebookTree(ctx).find((n) => n.title === 'Trip')!;
-		expect(trip.children.map((c) => c.title)).toEqual(['Trip — 2026 — Lisbon']);
+	test('one name may be used once per folder, and again in another', () => {
+		notebooks.createNotebook(ctx, { title: 'Ideas', folder: 'Folder A' });
+		expect(() => notebooks.createNotebook(ctx, { title: 'Ideas', folder: 'Folder A' })).toThrow();
+		expect(() =>
+			notebooks.createNotebook(ctx, { title: 'Ideas', folder: 'Folder B' })
+		).not.toThrow();
 	});
 
-	test('a folder counts what is under it, not only its own', () => {
-		const parent = notebooks.createNotebook(ctx, { title: 'Reading list' });
-		const child = notebooks.createNotebook(ctx, { title: 'Reading list — Philosophy' });
-		diary.createEntry(ctx, { content: 'one', notebookId: parent });
-		diary.createEntry(ctx, { content: 'two', notebookId: child });
-		diary.createEntry(ctx, { content: 'three', notebookId: child });
+	test('an edit that says nothing about the folder leaves it where it is', () => {
+		const id = notebooks.createNotebook(ctx, { title: 'Stays put', folder: 'Keep/Here' });
+		notebooks.updateNotebook(ctx, id, { title: 'Stays put, renamed' });
+		expect(folderOf(ctx, id)).toBe('Keep/Here');
+		notebooks.updateNotebook(ctx, id, { title: 'Stays put, renamed', folder: '' });
+		expect(folderOf(ctx, id)).toBe('');
+	});
 
-		const root = notebooks.notebookTree(ctx).find((n) => n.title === 'Reading list')!;
-		expect(root.entries).toBe(1);
-		expect(root.totals?.notes).toBe(3);
+	test('renaming a folder rewrites every notebook in it, at any depth', () => {
+		const a = notebooks.createNotebook(ctx, { title: 'Tiles', folder: 'Reno' });
+		const b = notebooks.createNotebook(ctx, { title: 'Sink', folder: 'Reno/Kitchen' });
+		const c = notebooks.createNotebook(ctx, { title: 'Elsewhere', folder: 'Renovated' });
+
+		expect(notebooks.renameFolder(ctx, 'Reno', 'Flat/Works')).toBe(2);
+		expect(folderOf(ctx, a)).toBe('Flat/Works');
+		expect(folderOf(ctx, b)).toBe('Flat/Works/Kitchen');
+		// A folder whose name only starts the same is a different folder.
+		expect(folderOf(ctx, c)).toBe('Renovated');
+	});
+
+	test('moving a folder into its parent removes it, and nothing is deleted', () => {
+		const a = notebooks.createNotebook(ctx, { title: 'Pantry', folder: 'Dissolve/Inner' });
+		const b = notebooks.createNotebook(ctx, { title: 'Shelf', folder: 'Dissolve/Inner/Inner' });
+		notebooks.renameFolder(ctx, 'Dissolve/Inner', 'Dissolve');
+		expect(folderOf(ctx, a)).toBe('Dissolve');
+		expect(folderOf(ctx, b)).toBe('Dissolve/Inner');
+	});
+
+	test('refuses a rename that would put two notebooks of one name together', () => {
+		notebooks.createNotebook(ctx, { title: 'Clash', folder: 'Left' });
+		const moving = notebooks.createNotebook(ctx, { title: 'Clash', folder: 'Right' });
+		expect(() => notebooks.renameFolder(ctx, 'Right', 'Left')).toThrow();
+		expect(folderOf(ctx, moving)).toBe('Right');
+	});
+
+	test('refuses a folder inside itself, and a folder nobody is in', () => {
+		notebooks.createNotebook(ctx, { title: 'Loop', folder: 'Loop' });
+		expect(() => notebooks.renameFolder(ctx, 'Loop', 'Loop/Deeper')).toThrow();
+		expect(() => notebooks.renameFolder(ctx, 'Nowhere at all', 'Somewhere')).toThrow();
+	});
+
+	test("renaming a folder moves only this account's notebooks", () => {
+		const mine = notebooks.createNotebook(ctx, { title: 'Shared name', folder: 'Common' });
+		const other = notebooks.createNotebook(theirs, { title: 'Shared name', folder: 'Common' });
+
+		notebooks.renameFolder(ctx, 'Common', 'Mine now');
+		expect(folderOf(ctx, mine)).toBe('Mine now');
+		expect(folderOf(theirs, other)).toBe('Common');
+
+		// And a stranger asking about a folder only somebody else has gets the
+		// same answer as one that does not exist.
+		const statusOf = (run: () => unknown) => {
+			try {
+				run();
+			} catch (e) {
+				return (e as { status?: number }).status;
+			}
+			return null;
+		};
+		expect(statusOf(() => notebooks.renameFolder(theirs, 'Mine now', 'Taken'))).toBe(404);
+		expect(statusOf(() => notebooks.renameFolder(theirs, 'Never existed', 'Taken'))).toBe(404);
+		expect(folderOf(ctx, mine)).toBe('Mine now');
 	});
 });
 

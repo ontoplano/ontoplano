@@ -56,6 +56,7 @@ import { sha256Hex } from '$lib/services/digest.js';
 import { USER_TABLES, type AccountExport } from '$lib/services/account-data.js';
 import { sniff, tidyFilename } from '$lib/services/media.js';
 import { RINGTONE_TYPES } from '$lib/services/ringtones.js';
+import { splitLegacyTitle } from '$lib/notebook-path.js';
 
 /**
  * Base64 back into bytes, in either world.
@@ -504,6 +505,13 @@ export async function importAccount(
 					if (typeof row.sha256 !== 'string')
 						throw new Error('a picture was not hashed before the import began');
 				}
+				/*
+				 * An export from before folders: the notebook's place was in its
+				 * title, `Home — Kitchen`. Split the same way migration 0106 split
+				 * the database, so a restore lands on the same shelf.
+				 */
+				if (table.name === 'notebooks' && !('folder' in row) && typeof row.title === 'string')
+					Object.assign(row, splitLegacyTitle(row.title));
 				if (table.name === 'ringtones') {
 					if (!(RINGTONE_TYPES as readonly string[]).includes(String(row.mime)))
 						throw new ValidationError({ key: 'errors.accountImport.theFileCarriesASound' });

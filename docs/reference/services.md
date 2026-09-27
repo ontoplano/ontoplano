@@ -3470,9 +3470,9 @@ picture into a second note are all just edits to text, and a table recording
 "picture 12 is in the kitchen notebook" would be wrong within a week.
 
 So this is derived, every time it is asked. The gallery gets a folder per
-notebook that has any pictures, named the way the notebook is named — which
-means a notebook inside a notebook is a folder inside a folder, and
-`Home — Kitchen` in the notebooks room is `Home — Kitchen` here too.
+notebook that has any pictures, inside the shelf folders that notebook is
+filed in — `Countertops` in `Home/Kitchen` on the shelf is
+`Home/Kitchen/Countertops` here too.
 
 Derived also decides what can be done to it: pictures can be looked at,
 named and tagged like any other, but nothing is uploaded _into_ a notebook
@@ -3524,10 +3524,6 @@ deleting a notebook leaves every one of them where it is. That is the whole
 design, and the reason this is not a second task system.
 
 ### Functions
-
-#### `notebookTree(ctx)`
-
-The notebooks as they belong to each other, roots first.
 
 #### `listNotebooks(ctx)`
 
@@ -3626,6 +3622,17 @@ habit out of its subject.
 
 The open notebooks, for the selector on every form that can point at one.
 
+#### `renameFolder(ctx, rawFrom, rawTo)`
+
+Rename a folder, or move it: every notebook of this account's in `from` or
+anywhere inside it has that prefix rewritten to `to`.
+
+A folder has no row, so this is the whole of renaming one. `to` may be ''
+to take its contents to the top of the shelf, or the folder's own parent to
+dissolve it into that. Refused when a moved notebook would land on a name
+already in its new folder, and when the folder would go inside itself.
+Answers how many notebooks moved.
+
 #### `assertReachableNotebook(ctx, id)`
 
 A notebook this account may reach, or a loud refusal.
@@ -3641,7 +3648,6 @@ Share a notebook with the family, or stop. The owner's switch alone.
 ### Types
 
 - `Notebook`
-- `NotebookNode`
 - `Tally` — One number per module — see `$lib/notebook-modules`.
 
 ## notifications

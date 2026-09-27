@@ -198,9 +198,13 @@ function recreate(ctx: Ctx, tool: string, before: Record<string, unknown>): stri
 		}
 
 		case 'remove_notebook': {
-			// Only empty notebooks can be removed over MCP, so the title and the
-			// description are the whole of what was lost.
-			createNotebook(ctx, { title: before.title, description: before.description });
+			// Only empty notebooks can be removed over MCP, so the title, the
+			// folder it was in and the description are the whole of what was lost.
+			createNotebook(ctx, {
+				title: before.title,
+				folder: before.folder,
+				description: before.description
+			});
 			return `the notebook "${String(before.title)}"`;
 		}
 

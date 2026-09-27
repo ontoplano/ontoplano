@@ -340,6 +340,10 @@
 				"type": "string",
 				"required": false
 			},
+			"folder": {
+				"type": "string",
+				"required": false
+			},
 			"modules": {
 				"type": "string",
 				"required": false
@@ -992,6 +996,10 @@
 				"required": false
 			},
 			"description": {
+				"type": "string",
+				"required": false
+			},
+			"folder": {
 				"type": "string",
 				"required": false
 			},
@@ -2106,6 +2114,21 @@
 		"params": {
 			"id": {
 				"type": "integer",
+				"required": true
+			}
+		}
+	},
+	"rename_notebook_folder": {
+		"scope": "notes:write",
+		"writes": true,
+		"destroys": false,
+		"params": {
+			"from": {
+				"type": "string",
+				"required": true
+			},
+			"to": {
+				"type": "string",
 				"required": true
 			}
 		}

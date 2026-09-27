@@ -103,9 +103,9 @@ describe('which pictures a piece of writing points at', () => {
 });
 
 describe('the notebooks album', () => {
-	test('a notebook with pictures is a folder, and one inside it is a folder inside it', async () => {
+	test('a notebook with pictures is a folder, and one filed in its name is a folder inside it', async () => {
 		const kitchen = notebooks.createNotebook(ctx, { title: 'Kitchen' });
-		const tops = notebooks.createNotebook(ctx, { title: 'Kitchen — Countertops' });
+		const tops = notebooks.createNotebook(ctx, { title: 'Countertops', folder: 'Kitchen' });
 		const shelf = await picture('shelf.gif');
 		const granite = await picture('granite.gif');
 
@@ -136,6 +136,24 @@ describe('the notebooks album', () => {
 		const kitchen = folders.find((f) => f.name === 'Kitchen')!;
 		expect(kitchen.pictureIds).toHaveLength(1);
 		expect(kitchen.totalCount).toBe(2);
+	});
+
+	test('a shelf folder with no pictures of its own still holds the notebooks in it', async () => {
+		const lisbon = notebooks.createNotebook(ctx, { title: 'Lisbon', folder: 'Trips/2026' });
+		const tram = await picture('tram.gif');
+		diary.createEntry(ctx, { content: tram.markdown, notebookId: lisbon });
+
+		const top = notebookMedia.notebookMediaView(ctx, '');
+		expect(top.folders.map((f) => f.name)).toContain('Trips');
+		const trips = notebookMedia.notebookMediaView(ctx, 'Trips');
+		expect(trips.pictures).toEqual([]);
+		expect(trips.folders.map((f) => f.leaf)).toEqual(['2026']);
+		expect(
+			notebookMedia.notebookMediaView(ctx, 'Trips — 2026 — Lisbon').pictures.map((p) => p.id)
+		).toEqual([tram.id]);
+		expect(
+			notebookMedia.notebookMediaFolders(ctx).find((f) => f.name === 'Trips')!.totalCount
+		).toBe(1);
 	});
 
 	test('the same picture in two notes of one notebook is one picture', async () => {

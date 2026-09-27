@@ -243,14 +243,24 @@ const todo = (title, extra = {}) => {
 	return id;
 };
 
-const notebook = (title, description, closed = false) => {
+/**
+ * A notebook, in the shelf folder given (a path, `Home/Kitchen`; '' at the top).
+ *
+ * Found by its title wherever it is and moved into `folder`, so a dev database
+ * seeded before folders ends up on the same shelf as a fresh one.
+ */
+const notebook = (title, description, closed = false, folder = '') => {
 	const existing = one('select id from notebooks where user_id = ? and title = ?', uid, title);
-	if (existing) return existing.id;
+	if (existing) {
+		run('update notebooks set folder = ? where id = ?', folder, existing.id);
+		return existing.id;
+	}
 	return run(
-		`insert into notebooks (user_id, title, description, closed_at, created_at, updated_at)
-		 values (?, ?, ?, ?, ?, ?)`,
+		`insert into notebooks (user_id, title, folder, description, closed_at, created_at, updated_at)
+		 values (?, ?, ?, ?, ?, ?, ?)`,
 		uid,
 		title,
+		folder,
 		description,
 		closed ? stamp(dayOffset(-20)) : null,
 		stamp(dayOffset(-60)),
@@ -1213,11 +1223,13 @@ const kitchen = notebook(
 	'Quotes, measurements, and whatever the plumber said last.\n' +
 		'The kitchen is 3.4 by 2.8 metres; the old cabinets come out in the first week, ' +
 		'and the plumber has to be booked before the tiler.\n' +
-		'Budget is whatever is left after the boiler. The three shops worth visiting are in the notes.'
+		'Budget is whatever is left after the boiler. The three shops worth visiting are in the notes.',
+	false,
+	'Home'
 );
 const readingNotebook = notebook('Reading', 'What I am reading, and what I thought of it.');
 const portugal = notebook('Portugal in September', 'Everything for the trip.');
-const leak = notebook('Bathroom leak', 'Two weeks of it. Kept for the invoices.', true);
+const leak = notebook('Bathroom leak', 'Two weeks of it. Kept for the invoices.', true, 'Home');
 
 /**
  * The notebook that shows what a notebook is for.
@@ -1230,7 +1242,9 @@ const leak = notebook('Bathroom leak', 'Two weeks of it. Kept for the invoices.'
  */
 const republic = notebook(
 	'The Republic',
-	'Reading it properly this time, a book at a time. Notes as I go.'
+	'Reading it properly this time, a book at a time. Notes as I go.',
+	false,
+	'Books'
 );
 
 todo('get three quotes for the counter', { urgency: 3, interest: 2, sortOrder: 7 });
@@ -2684,16 +2698,17 @@ const pictureInNote = (seq, mediaId, alt) => {
 };
 
 /*
- * And a notebook inside a notebook, so the folder tree is a tree.
+ * And a folder inside a folder, so the shelf has two levels to draw.
  *
- * `Kitchen renovation — Countertops` is one notebook inside another for the
- * same reason `Birds — Passeriformes` is one album inside another: the
- * separator is the relationship. The gallery draws it as a folder inside a
- * folder, and nothing anywhere had two levels of it to draw.
+ * `Countertops` sits in `Home/Kitchen`, beside nothing else there, while
+ * `Home` holds the kitchen and the leak — a folder holding notebooks and a
+ * folder at once. The gallery draws the same path as folders inside folders.
  */
 const countertops = notebook(
-	'Kitchen renovation — Countertops',
-	'The three quotes, and what each of them actually includes.'
+	'Countertops',
+	'The three quotes, and what each of them actually includes.',
+	false,
+	'Home/Kitchen'
 );
 diary(
 	30,
@@ -2702,9 +2717,9 @@ diary(
 );
 inNotebook('diary_entries', 'seq', 30, countertops);
 
-// Different pictures in the parent and the child, so the folder above counts
-// two and the one inside counts one — a tree with the same photograph twice
-// counts it once and looks like the totals are broken.
+// Different pictures in the kitchen and the countertops, so `Home` in the
+// gallery counts two and `Home/Kitchen` counts one — a tree with the same
+// photograph twice counts it once and looks like the totals are broken.
 pictureInNote(5, kitchenPicture, 'The kitchen shelf');
 pictureInNote(30, pastaPicture, 'The corner they measured');
 pictureInNote(7, horsePicture, 'On the way out of Lisbon');

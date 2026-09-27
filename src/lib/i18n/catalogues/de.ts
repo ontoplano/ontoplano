@@ -481,10 +481,11 @@ export const messages: Catalogue = {
 	'errors.newsletter.theNewsletterIsOff': 'Der Newsletter ist auf dieser Instanz aus.',
 	'errors.notFound': 'Nicht gefunden.',
 	'errors.notebookMedia.noNotebookPicturesHere': 'Hier gibt es keine Notizbuchbilder.',
+	'errors.notebooks.aFolderCannotGoInsideItself': 'Ein Ordner kann nicht in sich selbst liegen',
 	'errors.notebooks.aNotebookByThatName': 'Ein Notizbuch mit diesem Namen gibt es schon',
-	'errors.notebooks.aNotebookCannotGoInside': 'Ein Notizbuch kann nicht in sich selbst liegen',
-	'errors.notebooks.thatNameIsTooLong':
-		'Dieser Name ist zu lang für das Notizbuch, in das er kommt',
+	'errors.notebooks.nameTheFolderToRename': 'Gib an, welcher Ordner umbenannt werden soll',
+	'errors.notebooks.noSuchFolder': 'In diesem Ordner liegt kein Notizbuch',
+	'errors.notebooks.thatFolderPathIsTooLong': 'Dieser Ordnerpfad ist zu lang',
 	'errors.notifications.thatIsNotATime': 'Das ist keine Uhrzeit.',
 	'errors.notifications.thatNotificationHasNoTime': 'Diese Benachrichtigung hat keine eigene Zeit.',
 	'errors.notifications.thereIsNoSuchNotification': 'Diese Benachrichtigung gibt es nicht.',
@@ -1844,8 +1845,6 @@ export const messages: Catalogue = {
 	'notebooks.aSubjectYouWriteAgainst':
 		'Ein Thema, gegen das Sie ohne Frist schreiben — ein Buch, das Sie lesen, eine Reise, eine Renovierung.\n\t\tNotizen, Aufgaben und Ziele können dazugehören, und alles dazu sammelt sich hier.',
 	'notebooks.alreadyFiled': { one: '{count} filed', other: '{count} filed' },
-	'notebooks.anEmDashMakesA':
-		'Ein Gedankenstrich macht einen Ordner: „Renovierung — Küche“ liegt in „Renovierung“.',
 	'notebooks.andFromTheFrontmatter':
 		'und aus dem Frontmatter — mit dem Ordner,\n\t\t\t\tin dem sie war, ebenfalls als Tag. Nichts wird als Datei hochgeladen; die Notizen werden hier gelesen. Das Löschen des Notizbuchs\n\t\t\t\tmacht es rückgängig.',
 	'notebooks.atTheBottomOf': ', unten in der Liste.',
@@ -1919,6 +1918,12 @@ export const messages: Catalogue = {
 	'notebooks.fileBecomesANoteIn':
 		'Datei wird zu einer Notiz in einem Notizbuch und behält ihren Text\n\t\t\t\tund ihre Tags — von',
 	'notebooks.finishedOnesAreNotListed': 'Erledigtes und Weggelegtes wird nicht angeboten.',
+	'notebooks.folder': 'Ordner',
+	'notebooks.folderHint': 'Optional. Ein Schrägstrich verschachtelt: Zuhause/Küche.',
+	'notebooks.folderNotebooksCount': { one: '{count} Notizbuch', other: '{count} Notizbücher' },
+	'notebooks.folderPath': 'Pfad',
+	'notebooks.folderPathHint': 'Jedes Notizbuch darin zieht mit um. Leer stellt sie oben ins Regal.',
+	'notebooks.folderPlaceholder': 'Zuhause/Küche',
 	'notebooks.goalsCount': { one: '{count} Ziel', other: '{count} Ziele' },
 	'notebooks.habitsCount': { one: '{count} habit', other: '{count} habits' },
 	'notebooks.id.aPictureFor': 'Ein Bild für {title}',
@@ -1968,7 +1973,6 @@ export const messages: Catalogue = {
 	'notebooks.ideasCount': { one: '{count} idea', other: '{count} ideas' },
 	'notebooks.importedFromAnObsidianVault': 'Aus einem Obsidian-Tresor importiert.',
 	'notebooks.inAnotherNotebook': 'in another notebook',
-	'notebooks.inside': 'Inside',
 	'notebooks.inventoryCount': { one: '{count} thing', other: '{count} things' },
 	'notebooks.itsNotesTasksAndGoals':
 		'Seine Notizen, Aufgaben und Ziele werden nicht gelöscht. Die Aufgaben und Ziele bleiben, wo sie sind, im\n\t\tPlaner und bei den Zielen; die Notizen wandern zu',
@@ -2048,6 +2052,10 @@ export const messages: Catalogue = {
 		'Wählen Sie ein Notizbuch aus, um alles zu sehen, was dazugehört.',
 	'notebooks.proceed': 'Proceed',
 	'notebooks.recipesCount': { one: '{count} recipe', other: '{count} recipes' },
+	'notebooks.removeFolder': 'Ordner auflösen',
+	'notebooks.removeFolderMovesUp': 'Seine Notizbücher rücken eine Ebene nach oben.',
+	'notebooks.renameFolder': 'Ordner umbenennen',
+	'notebooks.renameFolderNamed': 'Ordner {name} umbenennen',
 	'notebooks.reopenIt': 'Wieder öffnen',
 	'notebooks.rows.dueOnThe': 'due on the {day}',
 	'notebooks.rows.favourite': 'favourite',
@@ -3932,7 +3940,7 @@ export const messages: Catalogue = {
 	'tour.everyDeviceThatIsSigned': 'Jedes Gerät, das angemeldet ist',
 	'tour.everyMentionInOnePlace': 'Jede Erwähnung an einem Ort',
 	'tour.everyNotebookIsACover':
-		'A cover with its name under it and a count of what is inside. Name one “Renovation — Kitchen” and it sits inside “Renovation”; renaming it is how it moves.',
+		'A cover with its name under it and a count of what is inside. Give a notebook a folder like “Home/Kitchen” and it sits in that folder on the shelf.',
 	'tour.everyTagOnAnEntry':
 		'Jeder Tag auf einem Eintrag ist ein Filter. Die Suche reicht bis in die Wörter darin.',
 	'tour.everythingInOneBox': 'Alles, in einem Feld',

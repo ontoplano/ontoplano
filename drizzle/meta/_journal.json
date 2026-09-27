@@ -736,6 +736,20 @@
       "when": 1790285660008,
       "tag": "0104_a_habit_day_can_be_logged_more_than_once",
       "breakpoints": true
+    },
+    {
+      "idx": 105,
+      "version": "6",
+      "when": 1790482603720,
+      "tag": "0105_notebooks_carry_a_folder",
+      "breakpoints": true
+    },
+    {
+      "idx": 106,
+      "version": "6",
+      "when": 1790482607274,
+      "tag": "0106_dashed_notebook_names_become_folders",
+      "breakpoints": true
     }
   ]
 }

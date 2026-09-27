@@ -1,6 +1,7 @@
 <script lang="ts">
 	import Field from './Field.svelte';
 	import Picker from './Picker.svelte';
+	import { notebookPath } from '$lib/notebook-path';
 	import { useT } from '$lib/i18n';
 
 	const t = useT();
@@ -21,7 +22,8 @@
 		label = '',
 		noneLabel = ''
 	}: {
-		notebooks: { id: number; title: string; defaultTags?: string }[];
+		/** With its folder where the caller has it, so two of one name are told apart. */
+		notebooks: { id: number; title: string; folder?: string | null; defaultTags?: string }[];
 		value?: number | null;
 		span?: 3 | 4 | 6 | 8 | 12;
 		name?: string;
@@ -48,7 +50,7 @@
 				{ value: '', label: noneLabel || t('ui.none') },
 				...notebooks.map((notebook) => ({
 					value: String(notebook.id),
-					label: notebook.title
+					label: notebookPath(notebook)
 				}))
 			]}
 			label={label || t('ui.notebook')}

@@ -271,6 +271,7 @@
 		<input type="hidden" name="id" value={data.notebook.id} />
 		<NotebookFields
 			title={data.notebook.title}
+			folder={data.notebook.folder}
 			description={data.notebook.description}
 			defaultTags={data.notebook.defaultTags}
 			notebook={data.notebook}

@@ -23,6 +23,7 @@ import { recipeActions } from '../health/recipes/actions';
 import {
 	createNotebook,
 	deleteNotebook,
+	renameFolder,
 	setNotebookClosed,
 	setNotebookShared,
 	updateNotebook
@@ -63,9 +64,8 @@ export const notebookActions = {
 		try {
 			createNotebook(buildCtx(locals.user!.id), {
 				title: formData.get('heading'),
-				// Where it goes, as its own field: the place is part of the name,
-				// and the service is what puts the two halves together.
-				parent: formData.get('parent'),
+				// Where it sits on the shelf: a path, '' at the top.
+				folder: formData.get('folder') ?? '',
 				description: formData.get('description'),
 				defaultTags: formData.get('defaultTags'),
 				// What it holds, when whoever is making it said. The dialog does
@@ -84,7 +84,8 @@ export const notebookActions = {
 		try {
 			updateNotebook(buildCtx(locals.user!.id), Number(formData.get('id')), {
 				title: formData.get('heading'),
-				parent: formData.get('parent'),
+				// Absent (the inline rename) keeps the folder it is in.
+				folder: formData.get('folder'),
 				description: formData.get('description'),
 				defaultTags: formData.get('defaultTags'),
 				/*
@@ -98,6 +99,20 @@ export const notebookActions = {
 				 */
 				modules: formData.has('modulesPosted') ? formData.getAll('modules') : undefined
 			});
+			return { success: true };
+		} catch (e) {
+			return toActionFailure(e);
+		}
+	},
+
+	/**
+	 * Rename or move a folder: the prefix of every notebook in it is rewritten.
+	 * Moving it into its own parent is how the shelf removes one.
+	 */
+	renameFolder: async ({ request, locals }) => {
+		const formData = await request.formData();
+		try {
+			renameFolder(buildCtx(locals.user!.id), formData.get('from'), formData.get('to') ?? '');
 			return { success: true };
 		} catch (e) {
 			return toActionFailure(e);

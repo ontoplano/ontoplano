@@ -168,12 +168,23 @@ export function search(ctx: Ctx, raw: unknown): Hit[] {
 	}
 
 	for (const row of db
-		.select({ id: notebooks.id, title: notebooks.title, description: notebooks.description })
+		.select({
+			id: notebooks.id,
+			title: notebooks.title,
+			folder: notebooks.folder,
+			description: notebooks.description
+		})
 		.from(notebooks)
 		.where(
 			and(
 				eq(notebooks.userId, ctx.userId),
-				or(matches(notebooks.title), matches(notebooks.description ?? sql`''`))
+				or(
+					matches(notebooks.title),
+					// A folder is found by what is in it: `kitchen` finds the
+					// notebooks filed under Home/Kitchen.
+					matches(notebooks.folder),
+					matches(notebooks.description ?? sql`''`)
+				)
 			)
 		)
 		.limit(PER_KIND)
@@ -182,7 +193,7 @@ export function search(ctx: Ctx, raw: unknown): Hit[] {
 			kind: 'notebook',
 			id: row.id,
 			title: row.title,
-			snippet: firstLine(row.description ?? ''),
+			snippet: [row.folder, firstLine(row.description ?? '')].filter(Boolean).join(' · '),
 			href: `/notebooks/${row.id}`
 		});
 

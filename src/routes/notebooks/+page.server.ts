@@ -1,11 +1,6 @@
 import type { IsolatedEvent } from '$lib/isolated/routes';
 import { buildCtx } from '$lib/services/ctx';
-import {
-	contentsOf,
-	listNotebooks,
-	listOrphanedNotes,
-	notebookTree
-} from '$lib/services/notebooks';
+import { contentsOf, listNotebooks, listOrphanedNotes } from '$lib/services/notebooks';
 import { getPanelWidth, NOTEBOOK_PANEL_WIDTH_KEY } from '$lib/services/settings';
 import { tagsInNotebook } from '$lib/services/tags';
 import { notebookActions } from './actions';
@@ -18,9 +13,6 @@ export const load = async ({ locals, url }: IsolatedEvent) => {
 	const ctx = buildCtx(locals.user!.id);
 	const asked = url.searchParams.get('notebook');
 	const notebooks = listNotebooks(ctx);
-	// The same list, as the folders it makes: a notebook called
-	// `Renovation — Kitchen` belongs inside `Renovation`.
-	const tree = notebookTree(ctx);
 	const orphaned = listOrphanedNotes(ctx);
 
 	// Opening the page with nothing chosen should still show something, so the
@@ -36,8 +28,8 @@ export const load = async ({ locals, url }: IsolatedEvent) => {
 			: fallback;
 
 	return {
+		// The folders are drawn from this on the page — see `$lib/notebook-path`.
 		notebooks,
-		tree,
 		selected,
 		orphaned,
 		orphanedSelected: wantsOrphaned || (selected === null && orphaned.length > 0),

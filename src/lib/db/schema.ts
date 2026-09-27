@@ -220,6 +220,16 @@ export const notebooks = sqliteTable(
 			.notNull()
 			.references(() => user.id),
 		title: text('title').notNull(),
+		/**
+		 * Where it sits on the shelf, as a slash-separated path: `Home/Kitchen`.
+		 *
+		 * A folder is only a label for grouping. It holds nothing and is not a
+		 * notebook, so it has no row of its own: it exists while a notebook
+		 * names it. Empty means the top of the shelf — empty rather than null so
+		 * the unique index below treats two top-level notebooks with one name as
+		 * the clash they are.
+		 */
+		folder: text('folder').notNull().default(''),
 		description: text('description').default(''),
 		/**
 		 * One picture, so a shelf of subjects is a shelf of things.
@@ -279,7 +289,7 @@ export const notebooks = sqliteTable(
 	},
 	(table) => [
 		index('notebooks_user_idx').on(table.userId),
-		uniqueIndex('notebooks_user_title_unique').on(table.userId, table.title)
+		uniqueIndex('notebooks_user_folder_title_unique').on(table.userId, table.folder, table.title)
 	]
 );
 

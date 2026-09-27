@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { untrack } from 'svelte';
 	import { SvelteSet } from 'svelte/reactivity';
 	import { setRoomAction } from '$lib/room-action.svelte';
 	import { getAction, keyFor } from '$lib/shortcuts';
@@ -12,12 +13,24 @@
 	import Icon from '$lib/components/Icon.svelte';
 	import MarkdownImport from '$lib/components/MarkdownImport.svelte';
 	import Modal from '$lib/components/Modal.svelte';
+	import Field from '$lib/components/Field.svelte';
+	import FormGrid from '$lib/components/FormGrid.svelte';
+	import { autofocus } from '$lib/actions/autofocus';
 	import NotebookDetail from '$lib/components/NotebookDetail.svelte';
 	import NotebookTags from '$lib/components/NotebookTags.svelte';
 	import NotebookFields from '$lib/components/fields/NotebookFields.svelte';
 	import { SECTION_COLORS } from '$lib/colors';
 	import NotebookCover from '$lib/components/NotebookCover.svelte';
 	import NotebookPicture from '$lib/components/NotebookPicture.svelte';
+	import {
+		allFolders,
+		folderSegments,
+		parentFolder,
+		shelfOf,
+		MAX_FOLDER_LENGTH,
+		FOLDER_SEPARATOR,
+		type ShelfFolder
+	} from '$lib/notebook-path';
 	import type { PageServerData, ActionData } from './$types';
 	import { useT } from '$lib/i18n';
 
@@ -55,12 +68,36 @@
 	);
 	const selected = $derived(data.notebooks.find((n) => n.id === data.selected) ?? null);
 
-	/** Which folders are open. Closed is the resting state, as in the gallery. */
-	const opened = new SvelteSet<number>();
-	const toggle = (id: number) => {
-		if (opened.has(id)) opened.delete(id);
-		else opened.add(id);
+	/**
+	 * Which folders are open, by path. Closed is the resting state, as in the
+	 * gallery — except the ones the chosen notebook is in, which start open so
+	 * what the panel shows is on the shelf beside it.
+	 */
+	const opened = new SvelteSet<string>(
+		untrack(() => {
+			const parts = folderSegments(selected?.folder ?? '');
+			return parts.map((_, at) => parts.slice(0, at + 1).join(FOLDER_SEPARATOR));
+		})
+	);
+	const toggle = (path: string) => {
+		if (opened.has(path)) opened.delete(path);
+		else opened.add(path);
 	};
+
+	/** The folder being renamed, by the path it has now, and its dialog. */
+	let renamingFolder = $state<string | null>(null);
+	let renameOpen = $state(false);
+	const folderSuggestions = $derived(allFolders(data.notebooks));
+
+	function openRename(path: string) {
+		renamingFolder = path;
+		renameOpen = true;
+	}
+
+	/** Every notebook in a folder, at any depth — what its tile shows. */
+	function insideOf(folder: ShelfFolder<Notebook>): Notebook[] {
+		return [...folder.notebooks, ...folder.folders.flatMap(insideOf)];
+	}
 
 	const orphaned = $derived(data.orphaned);
 
@@ -72,7 +109,7 @@
 	 * the order is about how the shelf reads, and the tree the server builds is
 	 * about what is inside what — two different questions.
 	 */
-	const shelved = $derived(data.tree.filter((node) => !node.closedAt));
+	const shelved = $derived(shelfOf(data.notebooks.filter((one) => !one.closedAt)));
 
 	/*
 	 * The ones that are finished with, folded away.
@@ -82,7 +119,8 @@
 	 * in, only greyer. They are behind a line now, closed to begin with,
 	 * because the shelf is for what you are working on.
 	 */
-	const closed = $derived(data.tree.filter((node) => Boolean(node.closedAt)));
+	const closedOnes = $derived(data.notebooks.filter((one) => Boolean(one.closedAt)));
+	const closed = $derived(shelfOf(closedOnes));
 	let showClosed = $state(false);
 	const showingOrphans = $derived(data.orphanedSelected && !selected);
 
@@ -107,6 +145,7 @@
 		if (e.key === 'Escape') {
 			showForm = false;
 			editingId = null;
+			renameOpen = false;
 			return;
 		}
 		if (getAction('/notebooks', e.key) === 'new') {
@@ -182,12 +221,12 @@
 						</EmptyState>
 					{:else}
 						<!--
-							Notebooks belong to each other.
+							Folders group notebooks.
 
-							A name with an em dash in it is a place: `Renovation — Kitchen`
-							sits inside `Renovation`, the same reading the gallery gives an
-							album and the same tree inventory draws for a location. Nothing
-							to keep in step and nothing new to learn — renaming one moves it.
+							A folder is a path a notebook carries, `Home/Kitchen`, and only a
+							label: it holds nothing of its own and is not a notebook. It is
+							drawn as a tile on the shelf that opens in place, and renaming it
+							rewrites the path of every notebook in it.
 						-->
 						<!--
 							A notebook is its cover.
@@ -198,29 +237,13 @@
 							it. The picture is the object and the name hangs under it, glued
 							on rather than beside it.
 						-->
-						{#snippet cover(node: (typeof data.tree)[number])}
+						{#snippet cover(node: Notebook)}
 							<NotebookCover
 								notebook={node}
 								href="{resolve('/notebooks')}?notebook={node.id}"
 								chosen={node.id === data.selected}
 							>
 								{#snippet actions()}
-									{#if node.children.length > 0}
-										<button
-											class="icon-btn"
-											aria-label={t('notebooks.whatIsInside', {
-												show: opened.has(node.id) ? t('ui.hide') : t('ui.show'),
-												title: node.title
-											})}
-											aria-expanded={opened.has(node.id)}
-											onclick={() => toggle(node.id)}
-										>
-											<Icon
-												name={opened.has(node.id) ? 'chevron-down' : 'chevron-right'}
-												size={14}
-											/>
-										</button>
-									{/if}
 									<button
 										onclick={() => openEdit(node)}
 										class="icon-btn"
@@ -259,33 +282,87 @@
 						<!--
 							An open folder and what is inside it are one block.
 
-							They were flat siblings on one shelf with the children nudged a
+							They were flat siblings on one shelf with the contents nudged a
 							little to the right, so opening a folder produced covers that
 							belonged to it and looked like more of the shelf — the indent is
 							a few pixels and the eye does not count pixels. A ground behind
 							the pair says it instead: the folder and its contents sit on one
 							tint, and a folder inside that one gets a tint of its own.
 						-->
-						{#snippet notebookRow(node: (typeof data.tree)[number])}
-							{#if node.children.length > 0 && opened.has(node.id)}
-								<div class="notebook-family">
-									{@render cover(node)}
-									{#each node.children as child (child.id)}
-										{@render notebookRow(child)}
-									{/each}
+						{#snippet folderTile(folder: ShelfFolder<Notebook>)}
+							{@const open = opened.has(folder.path)}
+							{@const shown = insideOf(folder).slice(0, 4)}
+							<div class="notebook-cover">
+								<button
+									type="button"
+									class="cover-face w-full text-left"
+									aria-expanded={open}
+									aria-label={t('notebooks.whatIsInside', {
+										show: open ? t('ui.hide') : t('ui.show'),
+										title: folder.name
+									})}
+									onclick={() => toggle(folder.path)}
+								>
+									<!-- The folder wears what is in it: up to four of its covers. -->
+									<span class="cover-art cover-folder" data-shows={shown.length} aria-hidden="true">
+										{#each shown as one (one.id)}
+											{#if one.pictureId}
+												<img src="/media/{one.pictureId}" alt="" loading="lazy" />
+											{:else}
+												<span></span>
+											{/if}
+										{/each}
+									</span>
+									<span class="cover-name flex items-center gap-1">
+										<Icon name={open ? 'chevron-down' : 'chevron-right'} size={12} />
+										<span class="min-w-0">{folder.name}</span>
+									</span>
+									<span class="cover-tally">
+										{t('notebooks.folderNotebooksCount', { count: folder.count })}
+									</span>
+								</button>
+								<div class="cover-actions">
+									<button
+										type="button"
+										class="icon-btn"
+										title={t('notebooks.renameFolder')}
+										aria-label={t('notebooks.renameFolderNamed', { name: folder.path })}
+										onclick={() => openRename(folder.path)}
+									>
+										<Icon name="edit" />
+									</button>
+								</div>
+							</div>
+						{/snippet}
+
+						{#snippet folderRow(folder: ShelfFolder<Notebook>)}
+							{#if opened.has(folder.path)}
+								<div class="notebook-family" data-folder={folder.path}>
+									{@render folderTile(folder)}
+									{@render shelfContents(folder)}
 								</div>
 							{:else}
-								{@render cover(node)}
+								{@render folderTile(folder)}
 							{/if}
 						{/snippet}
 
-						<div data-tour="notebook-shelf" class="notebook-shelf">
-							{#each shelved as node (node.id)}
-								{@render notebookRow(node)}
+						{#snippet shelfContents(level: {
+							folders: ShelfFolder<Notebook>[];
+							notebooks: Notebook[];
+						})}
+							{#each level.folders as folder (folder.path)}
+								{@render folderRow(folder)}
 							{/each}
+							{#each level.notebooks as node (node.id)}
+								{@render cover(node)}
+							{/each}
+						{/snippet}
+
+						<div data-tour="notebook-shelf" class="notebook-shelf">
+							{@render shelfContents(shelved)}
 						</div>
 
-						{#if closed.length > 0}
+						{#if closedOnes.length > 0}
 							<!--
 								The line under the shelf, and what is behind it.
 
@@ -302,16 +379,14 @@
 								<span class="shelf-fold-line" aria-hidden="true"></span>
 								<span class="shelf-fold-label">
 									<Icon name={showClosed ? 'chevron-down' : 'chevron-right'} size={14} />
-									{t('notebooks.closedCount', { count: closed.length })}
+									{t('notebooks.closedCount', { count: closedOnes.length })}
 								</span>
 								<span class="shelf-fold-line" aria-hidden="true"></span>
 							</button>
 
 							{#if showClosed}
 								<div class="notebook-shelf">
-									{#each closed as node (node.id)}
-										{@render notebookRow(node)}
-									{/each}
+									{@render shelfContents(closed)}
 								</div>
 							{/if}
 						{/if}
@@ -521,6 +596,7 @@
 
 		<NotebookFields
 			title={editing?.title ?? ''}
+			folder={editing?.folder ?? ''}
 			description={editing?.description ?? ''}
 			defaultTags={editing?.defaultTags ?? ''}
 			notebook={editing}
@@ -571,5 +647,78 @@
 		<button type="submit" form="notebook-form" class="btn btn-primary">
 			{editingId ? t('ui.save') : t('notebooks.createNotebook')}
 		</button>
+	{/snippet}
+</Modal>
+
+<!--
+	Renaming a folder is rewriting a path.
+
+	A folder has no row, so its name is the prefix every notebook in it
+	carries: changing it here moves all of them, and a path under a different
+	folder moves it there. Removing one moves its notebooks up a level — no
+	notebook is deleted, so it asks nothing twice.
+-->
+<Modal
+	bind:open={renameOpen}
+	error={form?.message}
+	onclose={() => (renamingFolder = null)}
+	title={t('notebooks.renameFolder')}
+	size="sm"
+>
+	<form
+		id="folder-form"
+		method="post"
+		action="?/renameFolder"
+		use:enhance={() =>
+			async ({ update, result }) => {
+				await update({ reset: false });
+				if (result.type === 'success') renameOpen = false;
+			}}
+	>
+		<input type="hidden" name="from" value={renamingFolder ?? ''} />
+		<FormGrid>
+			<Field label={t('notebooks.folderPath')} span={12} hint={t('notebooks.folderPathHint')}>
+				<input
+					name="to"
+					value={renamingFolder ?? ''}
+					list="shelf-folders"
+					maxlength={MAX_FOLDER_LENGTH}
+					class="input"
+					use:autofocus
+				/>
+				<datalist id="shelf-folders">
+					{#each folderSuggestions as one (one)}
+						<option value={one}></option>
+					{/each}
+				</datalist>
+			</Field>
+		</FormGrid>
+	</form>
+	<form
+		id="folder-remove-form"
+		method="post"
+		action="?/renameFolder"
+		class="hidden"
+		use:enhance={() =>
+			async ({ update, result }) => {
+				await update({ reset: false });
+				if (result.type === 'success') renameOpen = false;
+			}}
+	>
+		<input type="hidden" name="from" value={renamingFolder ?? ''} />
+		<input type="hidden" name="to" value={parentFolder(renamingFolder ?? '')} />
+	</form>
+
+	{#snippet footer()}
+		<button
+			type="submit"
+			form="folder-remove-form"
+			class="btn mr-auto"
+			title={t('notebooks.removeFolderMovesUp')}
+		>
+			{t('notebooks.removeFolder')}
+		</button>
+		<button type="button" class="btn" onclick={() => (renameOpen = false)}>{t('ui.cancel')}</button>
+		<button type="submit" form="folder-form" class="btn btn-primary">{t('ui.save')}</button>
 	{/snippet}
 </Modal>

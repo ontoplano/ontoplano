@@ -106,9 +106,11 @@ import {
 	deleteNotebook,
 	getNotebook,
 	listNotebooks,
+	renameFolder,
 	setNotebookShared,
 	updateNotebook
 } from '$lib/services/notebooks.js';
+import { NOTEBOOK_SEPARATOR, splitLegacyTitle } from '$lib/notebook-path.js';
 import {
 	cooked,
 	createRecipe,
@@ -882,6 +884,37 @@ const rating = (value: unknown, what: string): number | undefined => {
  * and the schema cannot drift apart.
  */
 const ENERGY_REMOVED_IN = '0.190';
+
+/**
+ * When a title's em dash stops being read as a folder.
+ *
+ * A notebook's place used to be its name — `Home — Kitchen` sat inside
+ * `Home` — and the tools said so, so an assistant may still send one. It is
+ * split into a folder and a name as the migration split the old ones, and the
+ * answer says the spelling is going.
+ */
+const DASHED_TITLE_REMOVED_IN = '0.190';
+
+const DASHED_TITLE_WARNING =
+	`A \u2014 in a title as a way to file a notebook is deprecated and will be read as part of the name from ${DASHED_TITLE_REMOVED_IN}. ` +
+	'Use `folder`, a slash-separated path such as `Home/Kitchen`. This call was translated.';
+
+/** The title and folder a notebook call means, and the warning when it used the old spelling. */
+function notebookPlace(args: Record<string, unknown>): {
+	title: unknown;
+	folder: unknown;
+	warning: string | null;
+} {
+	if (
+		args.folder === undefined &&
+		typeof args.title === 'string' &&
+		args.title.includes(NOTEBOOK_SEPARATOR)
+	) {
+		const split = splitLegacyTitle(args.title);
+		if (split.folder) return { ...split, warning: DASHED_TITLE_WARNING };
+	}
+	return { title: args.title, folder: args.folder, warning: null };
+}
 
 const ratingArgs = {
 	urgency: { type: 'integer', description: 'How soon it has to happen, 0–5.' },
@@ -2409,6 +2442,9 @@ export const TOOLS: Tool[] = [
 		input: object(
 			{
 				title: text('What it is about.'),
+				folder: text(
+					'Where it sits on the shelf, a slash-separated path such as `Home/Kitchen`. A folder only groups notebooks; it holds nothing itself. Left out, it goes at the top.'
+				),
 				description: text('A line under the title, shown on its page.'),
 				defaultTags: text(
 					'Labels a new note in it starts with, comma or space separated \u2014 the ones writing about this subject always carries, so nobody types them on every note. The person can still take them off a note as they write it.'
@@ -2419,27 +2455,33 @@ export const TOOLS: Tool[] = [
 			},
 			['title']
 		),
-		run: (ctx, args) => ({
-			id: createNotebook(ctx, {
-				title: args.title,
+		run: (ctx, args) => {
+			const { title, folder, warning } = notebookPlace(args);
+			const id = createNotebook(ctx, {
+				title,
+				folder,
 				description: args.description,
 				defaultTags: args.defaultTags,
 				modules: args.modules
-			})
-		})
+			});
+			return warning ? { id, warning } : { id };
+		}
 	},
 	{
 		name: 'change_notebook',
 		title: 'Change a notebook',
 		description:
-			'Rename a notebook, rewrite the line under its title, set the labels a new note in it starts with, or change what it holds. The title is always sent; the rest change only when given.',
+			'Rename a notebook, move it to another folder, rewrite the line under its title, set the labels a new note in it starts with, or change what it holds. The title is always sent; the rest change only when given.',
 		scope: 'notes:write',
 		writes: true,
 		refs: [{ arg: 'id', kind: 'notebook', subject: true }],
 		input: object(
 			{
 				id: { type: 'integer', description: 'The notebook\u2019s id, as `notebooks` gives it.' },
-				title: text('What it is about. Renaming with the \u2014 separator moves it under another.'),
+				title: text('What it is about.'),
+				folder: text(
+					'The folder it sits in, a slash-separated path such as `Home/Kitchen`; an empty string puts it at the top. Left out, it stays where it is.'
+				),
 				description: text('A line under the title, shown on its page.'),
 				defaultTags: text(
 					'Labels a new note in it starts with, comma or space separated. An empty string clears them; left out, they are untouched.'
@@ -2451,14 +2493,34 @@ export const TOOLS: Tool[] = [
 			['id', 'title']
 		),
 		run: (ctx, args) => {
+			const { title, folder, warning } = notebookPlace(args);
 			updateNotebook(ctx, Number(args.id), {
-				title: args.title,
+				title,
+				folder,
 				description: args.description,
 				defaultTags: args.defaultTags,
 				modules: args.modules
 			});
-			return { id: Number(args.id) };
+			return warning ? { id: Number(args.id), warning } : { id: Number(args.id) };
 		}
+	},
+	{
+		name: 'rename_notebook_folder',
+		title: 'Rename a notebook folder',
+		description:
+			'Rename or move a folder of notebooks: every notebook in it, and in the folders inside it, has that part of its path rewritten. `notebooks` gives each notebook its `folder`. Moving a folder into its own parent removes it; nothing is deleted.',
+		scope: 'notes:write',
+		writes: true,
+		input: object(
+			{
+				from: text('The folder as it is now, e.g. `Home/Kitchen`.'),
+				to: text(
+					'What it becomes, e.g. `Home/Cooking` or `Flat/Kitchen`. An empty string moves what was in it to the top of the shelf.'
+				)
+			},
+			['from', 'to']
+		),
+		run: (ctx, args) => ({ moved: renameFolder(ctx, args.from, args.to) })
 	},
 	{
 		/*

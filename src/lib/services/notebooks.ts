@@ -72,6 +72,8 @@ export const MAX_DESCRIPTION_LENGTH = 2000;
 export type Notebook = {
 	id: number;
 	title: string;
+	/** Where it sits on the shelf, `Home/Kitchen`; '' at the top. See `$lib/notebook-path`. */
+	folder: string;
 	description: string;
 	/** One picture, the way a person has a face. Null until somebody adds one. */
 	pictureId: number | null;
@@ -105,70 +107,12 @@ export type Notebook = {
 };
 
 /**
- * How a notebook's name says where it belongs.
- *
- * The same em dash the gallery's albums use, for the same reason: a notebook
- * called `Renovation — Kitchen` is a name and a place at once, so there is no
- * parent column to keep in step and renaming one to `Renovation — Bathroom`
- * moves it, which is what typing that plainly means. One idea in the app
- * rather than two.
+ * Where a notebook sits is its folder, a path beside its name — see
+ * `$lib/notebook-path`. The em dash that used to do this job is still
+ * exported for the gallery's notebook album, which joins a path into one name.
  */
 export { NOTEBOOK_SEPARATOR } from '../notebook-path.js';
-import { NOTEBOOK_SEPARATOR, isInsideNotebook, joinNotebookPath } from '../notebook-path.js';
-
-export type NotebookNode = Notebook & {
-	depth: number;
-	children: NotebookNode[];
-	/** Everything under it, so a folder can say what it holds. */
-	totals?: Tally;
-};
-
-/** The notebooks as they belong to each other, roots first. */
-export function notebookTree(ctx: Ctx): NotebookNode[] {
-	const flat = listNotebooks(ctx);
-	const nodes = new Map<string, NotebookNode>(
-		flat.map((n) => [
-			n.title,
-			{ ...n, depth: n.title.split(NOTEBOOK_SEPARATOR).length - 1, children: [] }
-		])
-	);
-
-	const roots: NotebookNode[] = [];
-	for (const node of nodes.values()) {
-		const parts = node.title.split(NOTEBOOK_SEPARATOR);
-		parts.pop();
-		// The nearest ancestor that exists: `a — b — c` with no `a — b` hangs
-		// off `a` rather than off nothing.
-		let parent: NotebookNode | undefined;
-		while (parts.length > 0 && !parent) {
-			parent = nodes.get(parts.join(NOTEBOOK_SEPARATOR));
-			parts.pop();
-		}
-		if (parent) parent.children.push(node);
-		else roots.push(node);
-	}
-
-	// What a folder holds is what is under it: a notebook whose writing all
-	// lives in its children was reading "0 notes", which is true of the row
-	// and false of the thing somebody is looking at.
-	const withTotals = (node: NotebookNode): Tally => {
-		const totals = node.children.reduce(
-			(sum, child) => {
-				const under = withTotals(child);
-				for (const module of NOTEBOOK_MODULES) sum[module.id] += under[module.id];
-				return sum;
-			},
-			// Its own counts first: a folder holds what is under it AND what is
-			// in it, and seeding empty made a notebook with children report zero
-			// of its own notes.
-			{ ...node.counts }
-		);
-		node.totals = totals;
-		return totals;
-	};
-	roots.forEach(withTotals);
-	return roots;
-}
+import { MAX_FOLDER_LENGTH, movedFolder, normaliseFolder } from '../notebook-path.js';
 
 /**
  * A table whose rows can point at a notebook.
@@ -294,6 +238,7 @@ export function listNotebooks(ctx: Ctx): Notebook[] {
 		.select({
 			id: notebooks.id,
 			title: notebooks.title,
+			folder: notebooks.folder,
 			description: notebooks.description,
 			pictureId: notebooks.pictureId,
 			defaultTags: notebooks.defaultTags,
@@ -313,7 +258,7 @@ export function listNotebooks(ctx: Ctx): Notebook[] {
 						and(inArray(notebooks.userId, others), eq(notebooks.sharedWithFamily, true))
 					)!
 		)
-		.orderBy(notebooks.closedAt, notebooks.title)
+		.orderBy(notebooks.closedAt, notebooks.folder, notebooks.title)
 		.all()
 		.map(({ ownerId, ownerName, ...n }) =>
 			shape(
@@ -371,6 +316,7 @@ function shape(
 	row: {
 		id: number;
 		title: string;
+		folder: string;
 		description: string | null;
 		pictureId: number | null;
 		defaultTags: string | null;
@@ -462,6 +408,7 @@ export function getNotebook(ctx: Ctx, id: number): Notebook {
 		.select({
 			id: notebooks.id,
 			title: notebooks.title,
+			folder: notebooks.folder,
 			description: notebooks.description,
 			pictureId: notebooks.pictureId,
 			defaultTags: notebooks.defaultTags,
@@ -651,47 +598,33 @@ export function contentsOf(ctx: Ctx, id: number) {
 }
 
 /**
- * The full title, from the name somebody typed and the notebook they filed it
- * inside.
+ * A folder path from a form or a call, as it is stored.
  *
- * A notebook's place is its name — `Renovation — Kitchen` sits inside
- * `Renovation` — which is one fact rather than two and is why renaming one
- * moves it. The form asks the two halves separately all the same, because
- * typing an em dash is not something anybody should have to know about.
- *
- * `parent` left out entirely means "the name is the whole title", which is
- * what an assistant renaming a notebook over MCP is saying; an empty string
- * means "not inside anything", which is a form that asked.
+ * Null when the caller said nothing, which is different from '': an assistant
+ * renaming a notebook must not be read as taking it out of its folder, while a
+ * form that posts an empty folder is putting it at the top of the shelf.
  */
-function titleUnder(ctx: Ctx, raw: { title: unknown; parent?: unknown }, self?: number): string {
-	const leaf = str(raw.title, 'title', { max: MAX_TITLE_LENGTH });
-	const given = raw.parent;
-	if (given === undefined || given === null || given === '') return leaf;
-
-	const parent = getNotebook(ctx, Number(given));
-	// Its own child is a title that contains itself, which is a notebook that
-	// can never be drawn and a tree that never terminates.
-	if (self !== undefined && isInsideNotebook(parent.title, getNotebook(ctx, self).title))
-		throw new ValidationError({ key: 'errors.notebooks.aNotebookCannotGoInside' });
-
-	const full = joinNotebookPath(parent.title, leaf);
-	if (full.length > MAX_TITLE_LENGTH)
-		throw new ValidationError({ key: 'errors.notebooks.thatNameIsTooLong' });
-	return full;
+function folderInput(raw: unknown): string | null {
+	if (raw === undefined || raw === null) return null;
+	const folder = normaliseFolder(String(raw));
+	if (folder.length > MAX_FOLDER_LENGTH)
+		throw new ValidationError({ key: 'errors.notebooks.thatFolderPathIsTooLong' });
+	return folder;
 }
 
 export function createNotebook(
 	ctx: Ctx,
 	raw: {
 		title: unknown;
-		parent?: unknown;
+		folder?: unknown;
 		description?: unknown;
 		defaultTags?: unknown;
 		modules?: unknown;
 	}
 ): number {
-	const title = titleUnder(ctx, raw);
-	if (notebookTitled(ctx, title))
+	const title = str(raw.title, 'title', { max: MAX_TITLE_LENGTH });
+	const folder = folderInput(raw.folder) ?? '';
+	if (notebookTitled(ctx, folder, title))
 		throw new ConflictError({ key: 'errors.notebooks.aNotebookByThatName' });
 
 	const result = db
@@ -700,6 +633,7 @@ export function createNotebook(
 			...stamps(ctx),
 			userId: ctx.userId,
 			title,
+			folder,
 			description: optionalStr(raw.description, 'description', { max: MAX_DESCRIPTION_LENGTH }),
 			defaultTags: parseTags(optionalTagInput(raw.defaultTags)).join(', '),
 			// Written out rather than left null, so a notebook says what it holds
@@ -717,15 +651,18 @@ export function updateNotebook(
 	id: number,
 	raw: {
 		title: unknown;
-		parent?: unknown;
+		folder?: unknown;
 		description?: unknown;
 		defaultTags?: unknown;
 		modules?: unknown;
 	}
 ): void {
-	const title = titleUnder(ctx, raw, id);
+	const title = str(raw.title, 'title', { max: MAX_TITLE_LENGTH });
+	// Left out, it stays in the folder it is in — which is a read of its own,
+	// and a 404 for a notebook that is not this account's.
+	const folder = folderInput(raw.folder) ?? ownFolderOf(ctx, id);
 
-	const clash = notebookTitled(ctx, title);
+	const clash = notebookTitled(ctx, folder, title);
 	if (clash && clash.id !== id)
 		throw new ConflictError({ key: 'errors.notebooks.aNotebookByThatName' });
 
@@ -735,6 +672,7 @@ export function updateNotebook(
 		.update(notebooks)
 		.set({
 			title,
+			folder,
 			description: optionalStr(raw.description, 'description', { max: MAX_DESCRIPTION_LENGTH }),
 			// Left out entirely, they stay as they were: this takes the whole
 			// form and also one field at a time from an assistant.
@@ -901,7 +839,12 @@ export function pickableNotebooks(ctx: Ctx) {
 		db
 			// The labels come along: the note form fills them in when a notebook is
 			// picked, which it cannot do by asking the server after every pick.
-			.select({ id: notebooks.id, title: notebooks.title, defaultTags: notebooks.defaultTags })
+			.select({
+				id: notebooks.id,
+				title: notebooks.title,
+				folder: notebooks.folder,
+				defaultTags: notebooks.defaultTags
+			})
 			.from(notebooks)
 			.where(
 				and(
@@ -914,17 +857,93 @@ export function pickableNotebooks(ctx: Ctx) {
 					isNull(notebooks.closedAt)
 				)
 			)
-			.orderBy(notebooks.title)
+			.orderBy(notebooks.folder, notebooks.title)
 			.all()
 	);
 }
 
-function notebookTitled(ctx: Ctx, title: string) {
+function notebookTitled(ctx: Ctx, folder: string, title: string) {
 	return db
 		.select({ id: notebooks.id })
 		.from(notebooks)
-		.where(and(eq(notebooks.userId, ctx.userId), eq(notebooks.title, title)))
+		.where(
+			and(
+				eq(notebooks.userId, ctx.userId),
+				eq(notebooks.folder, folder),
+				eq(notebooks.title, title)
+			)
+		)
 		.get();
+}
+
+/** The folder one of this account's own notebooks is in. */
+function ownFolderOf(ctx: Ctx, id: number): string {
+	const found = db
+		.select({ folder: notebooks.folder })
+		.from(notebooks)
+		.where(and(eq(notebooks.id, id), eq(notebooks.userId, ctx.userId)))
+		.get();
+	if (!found) throw new NotFoundError('notebook');
+	return found.folder;
+}
+
+/** Not a character a folder can hold, so a notebook parked under it clashes with nothing. */
+const IN_TRANSIT = '\u0000';
+
+/**
+ * Rename a folder, or move it: every notebook of this account's in `from` or
+ * anywhere inside it has that prefix rewritten to `to`.
+ *
+ * A folder has no row, so this is the whole of renaming one. `to` may be ''
+ * to take its contents to the top of the shelf, or the folder's own parent to
+ * dissolve it into that. Refused when a moved notebook would land on a name
+ * already in its new folder, and when the folder would go inside itself.
+ * Answers how many notebooks moved.
+ */
+export function renameFolder(ctx: Ctx, rawFrom: unknown, rawTo: unknown): number {
+	const from = folderInput(rawFrom) ?? '';
+	const to = folderInput(rawTo) ?? '';
+	if (!from) throw new ValidationError({ key: 'errors.notebooks.nameTheFolderToRename' });
+	if (to !== from && to.startsWith(from + '/'))
+		throw new ValidationError({ key: 'errors.notebooks.aFolderCannotGoInsideItself' });
+
+	const own = db
+		.select({ id: notebooks.id, title: notebooks.title, folder: notebooks.folder })
+		.from(notebooks)
+		.where(eq(notebooks.userId, ctx.userId))
+		.all();
+
+	const moving = own.flatMap((one) => {
+		const next = movedFolder(one.folder, from, to);
+		return next === null ? [] : [{ ...one, next }];
+	});
+	if (moving.length === 0) throw new NotFoundError({ key: 'errors.notebooks.noSuchFolder' });
+	if (to === from) return 0;
+
+	const staying = new Set(
+		own
+			.filter((one) => !moving.some((m) => m.id === one.id))
+			.map((one) => `${one.folder}\n${one.title}`)
+	);
+	if (moving.some((one) => staying.has(`${one.next}\n${one.title}`)))
+		throw new ConflictError({ key: 'errors.notebooks.aNotebookByThatName' });
+
+	db.transaction((tx) => {
+		// Two passes: `A/B` → `A` moves `A/B/B` onto the old `A/B`, and SQLite
+		// checks the unique index row by row, so each goes somewhere nothing can
+		// be first — a path with a character no form can type — and then home.
+		for (const one of moving)
+			tx.update(notebooks)
+				.set({ folder: `${IN_TRANSIT}${one.id}` })
+				.where(and(eq(notebooks.id, one.id), eq(notebooks.userId, ctx.userId)))
+				.run();
+		for (const one of moving)
+			tx.update(notebooks)
+				.set({ folder: one.next, updatedAt: stamp(ctx) })
+				.where(and(eq(notebooks.id, one.id), eq(notebooks.userId, ctx.userId)))
+				.run();
+	});
+	return moving.length;
 }
 
 /*

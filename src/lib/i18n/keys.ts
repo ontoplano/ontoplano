@@ -420,9 +420,11 @@ export type MessageKey =
 	| 'errors.newsletter.theNewsletterIsOff'
 	| 'errors.notFound'
 	| 'errors.notebookMedia.noNotebookPicturesHere'
+	| 'errors.notebooks.aFolderCannotGoInsideItself'
 	| 'errors.notebooks.aNotebookByThatName'
-	| 'errors.notebooks.aNotebookCannotGoInside'
-	| 'errors.notebooks.thatNameIsTooLong'
+	| 'errors.notebooks.nameTheFolderToRename'
+	| 'errors.notebooks.noSuchFolder'
+	| 'errors.notebooks.thatFolderPathIsTooLong'
 	| 'errors.notifications.thatIsNotATime'
 	| 'errors.notifications.thatNotificationHasNoTime'
 	| 'errors.notifications.thereIsNoSuchNotification'
@@ -1595,7 +1597,6 @@ export type MessageKey =
 	| 'notebooks.aNotebookStartsWith'
 	| 'notebooks.aSubjectYouWriteAgainst'
 	| 'notebooks.alreadyFiled'
-	| 'notebooks.anEmDashMakesA'
 	| 'notebooks.andFromTheFrontmatter'
 	| 'notebooks.atTheBottomOf'
 	| 'notebooks.billsCount'
@@ -1662,6 +1663,12 @@ export type MessageKey =
 	| 'notebooks.fields.yearly'
 	| 'notebooks.fileBecomesANoteIn'
 	| 'notebooks.finishedOnesAreNotListed'
+	| 'notebooks.folder'
+	| 'notebooks.folderHint'
+	| 'notebooks.folderNotebooksCount'
+	| 'notebooks.folderPath'
+	| 'notebooks.folderPathHint'
+	| 'notebooks.folderPlaceholder'
 	| 'notebooks.goalsCount'
 	| 'notebooks.habitsCount'
 	| 'notebooks.id.aPictureFor'
@@ -1709,7 +1716,6 @@ export type MessageKey =
 	| 'notebooks.ideasCount'
 	| 'notebooks.importedFromAnObsidianVault'
 	| 'notebooks.inAnotherNotebook'
-	| 'notebooks.inside'
 	| 'notebooks.inventoryCount'
 	| 'notebooks.itsNotesTasksAndGoals'
 	| 'notebooks.kitchenRenovation'
@@ -1783,6 +1789,10 @@ export type MessageKey =
 	| 'notebooks.pickANotebookToSee'
 	| 'notebooks.proceed'
 	| 'notebooks.recipesCount'
+	| 'notebooks.removeFolder'
+	| 'notebooks.removeFolderMovesUp'
+	| 'notebooks.renameFolder'
+	| 'notebooks.renameFolderNamed'
 	| 'notebooks.reopenIt'
 	| 'notebooks.rows.dueOnThe'
 	| 'notebooks.rows.favourite'
@@ -3838,6 +3848,7 @@ export interface MessageValuesFor {
 	'notebooks.diary.for': { forDate: string | number };
 	'notebooks.diary.win': { i: string | number };
 	'notebooks.edit': { title: string | number };
+	'notebooks.folderNotebooksCount': { count: number };
 	'notebooks.goalsCount': { count: number };
 	'notebooks.habitsCount': { count: number };
 	'notebooks.id.aPictureFor': { title: string | number };
@@ -3853,6 +3864,7 @@ export interface MessageValuesFor {
 	'notebooks.people.changeTheirPicture': { name: string | number };
 	'notebooks.people.nothingWrittenAboutYet': { name: string | number };
 	'notebooks.recipesCount': { count: number };
+	'notebooks.renameFolderNamed': { name: string | number };
 	'notebooks.rows.dueOnThe': { day: string | number };
 	'notebooks.rows.linesCount': { count: number };
 	'notebooks.rows.minutesLong': { count: number };

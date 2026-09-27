@@ -11,7 +11,7 @@
 	 * The styles are in `layout.css` under `.notebook-shelf`: a shelf is a grid
 	 * of covers at a fixed size, and both callers put this inside one.
 	 */
-	import { NOTEBOOK_SEPARATOR, type Notebook } from '$lib/services/notebooks';
+	import type { Notebook } from '$lib/services/notebooks';
 	import type { NotebookModule } from '$lib/notebook-modules';
 	import type { KeyWithValues } from '$lib/i18n/keys';
 	import { useT } from '$lib/i18n';
@@ -32,8 +32,8 @@
 		actions?: Snippet;
 	} = $props();
 
-	/** `Renovation — Kitchen` under `Renovation` is called "Kitchen" there. */
-	const name = $derived(notebook.title.split(NOTEBOOK_SEPARATOR).at(-1) ?? notebook.title);
+	/** Its own name: the folder it is in is the shelf's to show. */
+	const name = $derived(notebook.title);
 
 	/** Each of these takes a `count`, so none of them is a `PlainKey`. */
 	type CountKey = Extract<KeyWithValues, `notebooks.${string}Count`>;

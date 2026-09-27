@@ -474,10 +474,11 @@ export const messages: Catalogue = {
 	'errors.newsletter.theNewsletterIsOff': 'A newsletter está desligada nessa instância.',
 	'errors.notFound': 'Não encontrado.',
 	'errors.notebookMedia.noNotebookPicturesHere': 'Nenhuma imagem de caderno aqui.',
+	'errors.notebooks.aFolderCannotGoInsideItself': 'Uma pasta não pode ficar dentro de si mesma',
 	'errors.notebooks.aNotebookByThatName': 'Já existe um caderno com esse nome',
-	'errors.notebooks.aNotebookCannotGoInside': 'Um caderno não pode entrar dentro de si mesmo',
-	'errors.notebooks.thatNameIsTooLong':
-		'Esse nome é comprido demais para o caderno que vai recebê-lo',
+	'errors.notebooks.nameTheFolderToRename': 'Diga qual pasta renomear',
+	'errors.notebooks.noSuchFolder': 'Nenhum caderno está nessa pasta',
+	'errors.notebooks.thatFolderPathIsTooLong': 'Esse caminho de pasta é longo demais',
 	'errors.notifications.thatIsNotATime': 'Isso não é uma hora do dia.',
 	'errors.notifications.thatNotificationHasNoTime': 'Essa notificação não tem horário próprio.',
 	'errors.notifications.thereIsNoSuchNotification': 'Essa notificação não existe.',
@@ -1813,8 +1814,6 @@ export const messages: Catalogue = {
 	'notebooks.aSubjectYouWriteAgainst':
 		'Um assunto sobre o qual você escreve, sem prazo — um livro que está lendo, uma viagem, uma reforma.\n\t\tNotas, tarefas e metas podem pertencer a um, e tudo sobre ele se junta aqui.',
 	'notebooks.alreadyFiled': { one: '{count} filed', other: '{count} filed' },
-	'notebooks.anEmDashMakesA':
-		'Um travessão cria uma pasta: “Reforma — Cozinha” fica dentro de “Reforma”.',
 	'notebooks.andFromTheFrontmatter':
 		'e do frontmatter — com a pasta\n\t\t\t\tem que estava, também como tag. Nada é enviado como arquivo; as notas são lidas aqui. Excluir o caderno\n\t\t\t\tdesfaz isso.',
 	'notebooks.atTheBottomOf': ', no fim da lista.',
@@ -1888,6 +1887,13 @@ export const messages: Catalogue = {
 	'notebooks.fileBecomesANoteIn':
 		'arquivo vira uma nota em um caderno, mantendo seu texto\n\t\t\t\te suas tags — a partir de',
 	'notebooks.finishedOnesAreNotListed': 'Coisas concluídas ou guardadas não aparecem aqui.',
+	'notebooks.folder': 'Pasta',
+	'notebooks.folderHint': 'Opcional. Uma barra aninha uma dentro da outra: Casa/Cozinha.',
+	'notebooks.folderNotebooksCount': { one: '{count} caderno', other: '{count} cadernos' },
+	'notebooks.folderPath': 'Caminho',
+	'notebooks.folderPathHint':
+		'Cada caderno dentro dela vai junto. Vazio, ficam no topo da estante.',
+	'notebooks.folderPlaceholder': 'Casa/Cozinha',
 	'notebooks.goalsCount': { one: '{count} meta', other: '{count} metas' },
 	'notebooks.habitsCount': { one: '{count} habit', other: '{count} habits' },
 	'notebooks.id.aPictureFor': 'Uma imagem para {title}',
@@ -1937,7 +1943,6 @@ export const messages: Catalogue = {
 	'notebooks.ideasCount': { one: '{count} idea', other: '{count} ideas' },
 	'notebooks.importedFromAnObsidianVault': 'Importado de um cofre do Obsidian.',
 	'notebooks.inAnotherNotebook': 'in another notebook',
-	'notebooks.inside': 'Inside',
 	'notebooks.inventoryCount': { one: '{count} thing', other: '{count} things' },
 	'notebooks.itsNotesTasksAndGoals':
 		'Suas notas, tarefas e metas não serão excluídas. As tarefas e metas ficam onde estão, no\n\t\tplanejador e em Metas; as notas vão para',
@@ -2016,6 +2021,10 @@ export const messages: Catalogue = {
 	'notebooks.pickANotebookToSee': 'Escolha um caderno para ver tudo o que pertence a ele.',
 	'notebooks.proceed': 'Proceed',
 	'notebooks.recipesCount': { one: '{count} recipe', other: '{count} recipes' },
+	'notebooks.removeFolder': 'Remover pasta',
+	'notebooks.removeFolderMovesUp': 'Seus cadernos sobem um nível.',
+	'notebooks.renameFolder': 'Renomear pasta',
+	'notebooks.renameFolderNamed': 'Renomear a pasta {name}',
 	'notebooks.reopenIt': 'Reabrir',
 	'notebooks.rows.dueOnThe': 'due on the {day}',
 	'notebooks.rows.favourite': 'favourite',
@@ -3885,7 +3894,7 @@ export const messages: Catalogue = {
 	'tour.everyDeviceThatIsSigned': 'Todo dispositivo conectado',
 	'tour.everyMentionInOnePlace': 'Toda menção, em um só lugar',
 	'tour.everyNotebookIsACover':
-		'A cover with its name under it and a count of what is inside. Name one “Renovation — Kitchen” and it sits inside “Renovation”; renaming it is how it moves.',
+		'A cover with its name under it and a count of what is inside. Give a notebook a folder like “Home/Kitchen” and it sits in that folder on the shelf.',
 	'tour.everyTagOnAnEntry':
 		'Toda tag em uma entrada é um filtro. A busca alcança as palavras dentro delas.',
 	'tour.everythingInOneBox': 'Tudo, em uma caixa',
