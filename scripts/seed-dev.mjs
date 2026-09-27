@@ -2565,11 +2565,16 @@ if (horsePicture) {
  * demonstrates the placeholder. Photographs rather than paintings: a framed
  * oil on a renovation reads as a museum catalogue.
  */
+const twelve = notebook(
+	'Twelve in a year',
+	'Twelve things I said I would do this year. Ten of them are done.'
+);
 for (const [id, file, alt] of [
 	[kitchen, 'cover-kitchen.jpg', 'Stonework, before the scaffolding'],
 	[portugal, 'cover-portugal.jpg', 'A barque at anchor in the bay'],
 	[readingNotebook, 'cover-reading.jpg', 'A long garden and the pavilion at the end of it'],
 	[republic, 'cover-republic.jpg', 'A soldier, photographed in 1859']
+	[twelve, 'cover-twelve.jpg', 'Zoadiac or whatever']
 ]) {
 	const cover = picture(file, alt, demoPicture(file));
 	if (cover && !one('select id from notebooks where id = ? and picture_id is not null', id))
@@ -3415,10 +3420,6 @@ inNotebook('diary_entries', 'seq', KITCHEN_NOTE_SEQ, kitchen);
  * of the twelve things happened. It also fills the "closed" view, which was
  * two rows.
  */
-const twelve = notebook(
-	'Twelve in a year',
-	'Twelve things I said I would do this year. Ten of them are done.'
-);
 
 const DONE_THIS_YEAR = [
 	['learn to make sourdough', 'the third loaf was the one'],
