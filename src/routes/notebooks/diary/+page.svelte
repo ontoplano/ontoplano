@@ -6,7 +6,7 @@
 	import { openFromUrl } from '$lib/open-from-url.svelte';
 	import TagInput from '$lib/components/TagInput.svelte';
 	import TagChip from '$lib/components/TagChip.svelte';
-	import { momentOf, today } from '$lib/when';
+	import { civilOf, dateOf, momentOf, today } from '$lib/when';
 	import { useWhen } from '$lib/when-context.svelte';
 	import { enhance } from '$lib/enhance';
 	import { setRoomAction } from '$lib/room-action.svelte';
@@ -17,7 +17,6 @@
 	import TagFilter from '$lib/components/TagFilter.svelte';
 	import { tagFilterInUrl } from '$lib/tag-filter-url.svelte';
 	import { isTagFiltering, passesTagFilter, NO_TAG_FILTER } from '$lib/tag-filter';
-	import { SECTION_COLORS } from '$lib/colors';
 	import OneLine from '$lib/components/OneLine.svelte';
 	import FormError from '$lib/components/FormError.svelte';
 	import NoteFields from '$lib/components/fields/NoteFields.svelte';
@@ -167,12 +166,11 @@
 	}
 
 	function formatDate(iso: string): string {
-		const d = new Date(iso);
-		return momentOf(d, now(), { weekday: 'short' });
+		return momentOf(iso, now());
 	}
 
 	function formatDateShort(iso: string): string {
-		return iso.slice(0, 10);
+		return dateOf(iso, now());
 	}
 
 	function handleEntriesPointerOver(e: PointerEvent) {
@@ -423,7 +421,7 @@
 		One surface, and an entry is a row on it — the controls along its top
 		and the empty state inside it, the shape a notebook's Notes tab has.
 	-->
-	<RoomSurface accent={SECTION_COLORS.diary} dataTour="diary-list">
+	<RoomSurface dataTour="diary-list">
 		{#snippet tools()}
 			{#if data.entries.length > 0 || winsEnabled}
 				<FilterBar
@@ -494,8 +492,12 @@
 			<!-- Inside the surface, so the control that emptied it stays to undo it. -->
 			{#if shownEntries.length === 0}
 				<EmptyState
-					icon="search"
-					title={t('todoRows.nothingToShow')}
+					filtered
+					onclear={() => {
+						tagFilter.current = NO_TAG_FILTER;
+						looking = '';
+						selectedIndex = 0;
+					}}
 					description={t('tagFilter.nothingMatches')}
 				/>
 			{/if}
@@ -515,7 +517,7 @@
 					<article
 						use:keepInView={i === selectedIndex}
 						id="diary-{entry.diarySeq ?? entry.seq}"
-						class="flex items-stretch gap-x-4 px-4 py-3 {i === selectedIndex ? 'kb-cursor' : ''}"
+						class="row-card {i === selectedIndex ? 'kb-cursor' : ''}"
 						class:bg-gray-100={selection.selecting && selection.has(entry.id)}
 					>
 						<RowCard quiet={selection.selecting}>
@@ -612,7 +614,7 @@
 							<span class="tabular mt-0.5 text-xs text-gray-500">
 								{formatDate(entry.createdAt)}
 								{#if entry.forDate}
-									· {t('notebooks.diary.for', { forDate: entry.forDate })}
+									· {t('notebooks.diary.for', { forDate: civilOf(entry.forDate, now()) })}
 								{/if}
 								{#if entry.updatedAt !== entry.createdAt}
 									{t('notebooks.diary.edited', { updatedAt: formatDate(entry.updatedAt) })}

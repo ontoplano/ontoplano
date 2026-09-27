@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { useWhen } from '$lib/when-context.svelte';
+	import { civilOf } from '$lib/when';
 	import { routeGlyph } from '$lib/glyphs';
 	import ShowingCount from '$lib/components/ShowingCount.svelte';
 	import SearchField from '$lib/components/SearchField.svelte';
@@ -23,6 +25,7 @@
 	import { useT } from '$lib/i18n';
 
 	const t = useT();
+	const now = useWhen();
 
 	let { data, form }: { data: PageServerData; form: ActionData } = $props();
 
@@ -691,7 +694,8 @@
 >
 	{#if confirmDeleteSession}
 		<p class="text-sm text-gray-600">
-			{t('health.workouts.whatYouRecordedOn')} <strong>{confirmDeleteSession.doneOn}</strong>
+			{t('health.workouts.whatYouRecordedOn')}
+			<strong>{civilOf(confirmDeleteSession.doneOn, now())}</strong>
 			{t('health.workouts.isRemovedForGoodThe')}
 		</p>
 	{/if}

@@ -20,7 +20,7 @@
 	 *
 	 * `SortControl` is this plus a direction arrow.
 	 */
-	import Icon from '$lib/components/Icon.svelte';
+	import Icon, { type IconName } from '$lib/components/Icon.svelte';
 	import { afterPress } from '$lib/after-press';
 	import { useT } from '$lib/i18n';
 	import { untrack } from 'svelte';
@@ -45,6 +45,7 @@
 		label,
 		name,
 		required = false,
+		icon,
 		class: klass = ''
 	}: {
 		value?: T;
@@ -82,6 +83,12 @@
 		 */
 		name?: string;
 		required?: boolean;
+		/**
+		 * A glyph in place of the chosen option's word, for a strip with no
+		 * room for the word — the order on a phone. The word is still the
+		 * button's name and tooltip, and the list is unchanged.
+		 */
+		icon?: IconName;
 		class?: string;
 	} = $props();
 
@@ -352,15 +359,20 @@
 	<button
 		bind:this={face}
 		type="button"
-		class="{field ? 'select-face' : 'btn btn-sm'} min-w-0 flex-1 justify-between"
+		class="{field ? 'select-face' : 'btn btn-sm'} min-w-0 {icon ? '' : 'flex-1 justify-between'}"
 		aria-haspopup="listbox"
 		aria-expanded={open}
 		aria-label={label}
+		title={icon ? `${label}: ${many ? saidMany : (chosen?.label ?? '')}` : undefined}
 		onclick={() => (open ? (open = false) : show())}
 		onkeydown={onFaceKey}
 	>
-		<span class="truncate">{many ? saidMany : (chosen?.face ?? chosen?.label ?? '')}</span>
-		<Icon name="chevron-down" size={12} />
+		{#if icon}
+			<Icon name={icon} size={14} />
+		{:else}
+			<span class="truncate">{many ? saidMany : (chosen?.face ?? chosen?.label ?? '')}</span>
+			<Icon name="chevron-down" size={12} />
+		{/if}
 	</button>
 
 	{#if open}

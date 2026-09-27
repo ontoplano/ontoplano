@@ -6,7 +6,7 @@
 	import MarkdownBox from '$lib/components/MarkdownBox.svelte';
 	import { page } from '$app/state';
 	import TagInput from '$lib/components/TagInput.svelte';
-	import { momentOf } from '$lib/when';
+	import { civilOf, momentOf } from '$lib/when';
 	import { useWhen } from '$lib/when-context.svelte';
 	import { tick, untrack, type ComponentProps } from 'svelte';
 	import { enhance } from '$lib/enhance';
@@ -17,6 +17,7 @@
 	import { BackCloses } from '$lib/back-closes';
 	import { isPhone } from '$lib/breakpoints';
 	import { keepInView } from '$lib/actions/keep-in-view';
+	import TabStrip from '$lib/components/TabStrip.svelte';
 	import EmptyState from '$lib/components/EmptyState.svelte';
 	import Field from '$lib/components/Field.svelte';
 	import FormGrid from '$lib/components/FormGrid.svelte';
@@ -26,7 +27,6 @@
 	import Modal from '$lib/components/Modal.svelte';
 	import MoreOptions from '$lib/components/MoreOptions.svelte';
 	import PictureAttach from '$lib/components/PictureAttach.svelte';
-	import { SECTION_COLORS } from '$lib/colors';
 	import { type Horizon } from '$lib/goals';
 	import GoalCard from '$lib/components/GoalCard.svelte';
 	import GoalLinksModal from '$lib/components/GoalLinksModal.svelte';
@@ -1226,53 +1226,40 @@
 				here at every size, because one icon costs nothing and it is the
 				control for the panel rather than for what is in it.
 			-->
-			<div class="flex items-center border-b border-gray-200 pr-2">
-				<div data-tour="notebook-tabs" class="snap-strip min-w-0 flex-1 gap-1 px-2 md:flex">
-					{#each tabs as option (option.key)}
-						<!--
-							The strip gives up its width to the controls beside it, so on a
-							narrow screen the tab you are on can be the one off the end.
-							This scrolls it back — by the smallest amount that works, and
-							never vertically.
-						-->
+			<!-- The same strip a room's tabs are, one level down; the whole-screen
+			     button stands at its far end, as a room's verb does. -->
+			<div class="notebook-tabs">
+				<TabStrip
+					nested
+					label={t('notebookDetail.sections')}
+					dataTour="notebook-tabs"
+					tabs={tabs.map((option) => ({
+						label: t(option.label),
+						icon: moduleGlyph(option.key),
+						count:
+							option.done !== undefined && option.count > 0
+								? `${option.done}/${option.count}`
+								: String(option.count)
+					}))}
+					current={tabs.findIndex((option) => option.key === tab)}
+					onpick={(index) => (tab = tabs[index].key)}
+				>
+					{#snippet trailing()}
 						<button
-							use:keepInView={tab === option.key}
-							onclick={() => (tab = option.key)}
-							class="tab-link inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium whitespace-nowrap transition {tab ===
-							option.key
-								? 'border-b-2 text-gray-900'
-								: 'text-gray-500 hover:text-gray-700'}"
-							style={tab === option.key ? `border-color: ${SECTION_COLORS.diary}` : ''}
+							type="button"
+							onclick={() => (maximized ? leaveMaximized() : enterMaximized())}
+							class="icon-btn ml-auto shrink-0"
+							title={maximized
+								? t('notebookDetail.backToThePage')
+								: t('notebookDetail.theWholeScreen')}
+							aria-label={maximized
+								? t('notebookDetail.backToThePage')
+								: t('notebookDetail.theWholeScreen')}
 						>
-							<!-- The glyph before the word, from `$lib/glyphs` — the same
-						     list the rooms' own strips read, so a notebook's Tasks tab
-						     and the planner in the bar cannot end up wearing two
-						     different pictures of the same idea. -->
-							<Icon name={moduleGlyph(option.key)} size={14} />
-							{t(option.label)}
-							<span class="tabular ml-1 text-xs text-gray-500">
-								{option.done !== undefined && option.count > 0
-									? `${option.done}/${option.count}`
-									: option.count}
-							</span>
+							<Icon name="maximize" />
 						</button>
-					{/each}
-				</div>
-				<div class="flex shrink-0 items-center justify-end gap-2 pl-2">
-					<button
-						type="button"
-						onclick={() => (maximized ? leaveMaximized() : enterMaximized())}
-						class="icon-btn shrink-0"
-						title={maximized
-							? t('notebookDetail.backToThePage')
-							: t('notebookDetail.theWholeScreen')}
-						aria-label={maximized
-							? t('notebookDetail.backToThePage')
-							: t('notebookDetail.theWholeScreen')}
-					>
-						<Icon name="maximize" />
-					</button>
-				</div>
+					{/snippet}
+				</TabStrip>
 			</div>
 
 			{#if tab === 'notes'}
@@ -1302,7 +1289,7 @@
 			{/if}
 
 			{#if moduleTally && moduleTally[0] > 0 && moduleTally[1] === 0}
-				<EmptyState icon="search" title={t('todoRows.nothingToShow')} compact />
+				<EmptyState filtered onclear={() => (moduleSearch = '')} compact />
 			{/if}
 
 			{#if tab === 'notes'}
@@ -1464,7 +1451,7 @@
 								<span class="tabular shrink-0 text-xs text-gray-500">
 									{block.kind === 'weekly'
 										? describeRecurrence(parseRecurrence(block.recurrence), block.weekday ?? 0, t)
-										: block.date}
+										: civilOf(block.date, now())}
 									{block.startTime}
 								</span>
 							</li>
@@ -1491,7 +1478,6 @@
 								{slots}
 								{activities}
 								actions={NOTEBOOK_GOAL_ACTIONS}
-								accent={SECTION_COLORS.home}
 								onedit={(id) => openGoalEdit(id)}
 								onlink={(id) => (linkingGoalId = id)}
 							/>
@@ -1515,7 +1501,7 @@
 				{:else}
 					<div class="divide-y divide-gray-200">
 						{#each shownIdeas as idea (idea.id)}
-							<div class="px-4 py-3">
+							<div>
 								<IdeaCard
 									{idea}
 									actions={NOTEBOOK_IDEA_ACTIONS}
@@ -1545,7 +1531,7 @@
 				{:else}
 					<div class="divide-y divide-gray-200">
 						{#each shownInventory as item (item.id)}
-							<div class="flex items-stretch gap-x-3 px-4 py-3">
+							<div class="row-card">
 								<ItemRow {item} {currency} actions={NOTEBOOK_ITEM_ACTIONS} />
 							</div>
 						{/each}
@@ -1833,7 +1819,7 @@
 		/>
 	{/if}
 	{#if entries.length === 0}
-		<p class="px-4 py-3 text-sm text-gray-500">{t('notebookDetail.nothingWrittenHereYet')}</p>
+		<EmptyState compact icon="note" title={t('notebookDetail.nothingWrittenHereYet')} />
 	{:else}
 		<div class="divide-y divide-gray-200">
 			{#each entries as entry, at (entry.id)}
@@ -1851,10 +1837,9 @@
 				-->
 				<article
 					use:keepInView={notebookId !== null && cursor === at}
-					class="px-4 py-3 {cursor === at ? 'kb-cursor' : ''}"
-					class:flex={editingNoteId !== entry.id}
-					class:items-stretch={editingNoteId !== entry.id}
-					class:gap-x-4={editingNoteId !== entry.id}
+					class="{editingNoteId === entry.id ? 'px-4 py-3' : 'row-card'} {cursor === at
+						? 'kb-cursor'
+						: ''}"
 					class:bg-gray-100={noteSelection.selecting && noteSelection.has(entry.id)}
 					class:is-pinned={'pinnedAt' in entry && entry.pinnedAt}
 				>
@@ -2530,5 +2515,15 @@
 	dialog.nb-surface[open] :global(textarea) {
 		font-size: var(--nb-type);
 		line-height: 1.6;
+	}
+
+	/*
+	 * The panel has no gutter of its own — its toolbar and rows inset
+	 * themselves by a rem — so the first tab's word lines up with those, not
+	 * with a gutter that is not there.
+	 */
+	.notebook-tabs :global(.room-tabs-nested > .seg-track) {
+		margin-inline-start: 0;
+		padding-inline: 0.25rem;
 	}
 </style>

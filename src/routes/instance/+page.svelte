@@ -5,6 +5,7 @@
 	import OneLine from '$lib/components/OneLine.svelte';
 	import { isIsolatedBuild } from '$lib/isolated/mode';
 	import { useT } from '$lib/i18n';
+	import PageTitle from '$lib/components/PageTitle.svelte';
 
 	const t = useT();
 	import {
@@ -253,7 +254,7 @@
 	}
 </script>
 
-<svelte:head><title>{t('instance.whereYourOntoplanoLives')}</title></svelte:head>
+<PageTitle parts={t('instance.whereYourOntoplanoLives')} />
 
 <div class="mx-auto w-full max-w-xl px-4 py-8">
 	<h1 class="text-2xl font-bold tracking-tight text-gray-900">

@@ -381,6 +381,83 @@ html[data-style='playful'] .card-pane {
 }
 
 /*
+ * The same rule wherever two shapes nest or touch: one of them gives up its
+ * corners.
+ *
+ * - A block of a surface — its inset toolbar, the selection bar, the list —
+ *   is square: the surface clips and has the corners. A rounded toolbar sat on
+ *   the square room with its bottom rule hooking up at both ends.
+ * - A lane that holds cards (the board's columns and its to-do rail) is
+ *   square, so the cards in it are the only curves.
+ * - A box inside a square surface (the danger zone, the rows of the menu
+ *   editor) is square like the surface round it.
+ */
+html[data-style='playful'] .room-surface > *,
+html[data-style='playful'] .room-toolbar-inset,
+html[data-style='playful'] .lane,
+html[data-style='playful'] .danger-zone,
+html[data-style='playful'] .danger-zone > *,
+html[data-style='playful'] .toggle-row {
+	border-radius: 0;
+}
+
+/*
+ * The keyboard cursor: which row, card or tile j/k is standing on. One class,
+ * one look, everywhere — the `kb-cursor` class, or `use:listCursor` from
+ * `$lib/actions/list-cursor`, which sets `data-kb-cursor` (an attribute
+ * Svelte's own `class` updates cannot wipe) and keeps the row in view.
+ *
+ * A wash and a small lift, not a rule around it. A two-pixel outline on rows
+ * that sit flush against each other drew a heavy line above and below the
+ * selected one, clipped away on the first row. Saying "this one" by shading
+ * needs no edges at all.
+ *
+ * The wash is an inset shadow rather than a background, so it lands on
+ * anything: a plain row, a row with a wash of its own, and a card that paints
+ * its face in its category's colour — the board's cards used to need a ring
+ * of their own because a background lost to their paint.
+ *
+ * Only where there is a keyboard: on a phone the cursor is the finger, and a
+ * permanently shaded first row reads as meaning something.
+ *
+ * Unlayered, and doubled up in specificity, so a `divide-y` list, the row
+ * washes, `.pill-soft` and the playful style's `.shadow-card { box-shadow:
+ * none }` cannot outrank it. `position: relative` so the lift is
+ * drawn over the row after it rather than under it.
+ */
+:root {
+	/* A literal, not `--shadow-raised`: that is `none` in the playful style,
+	   and `…, none` is not a shadow list — the whole declaration is dropped. */
+	--cursor-lift: 0 2px 4px rgb(15 23 42 / 0.06), 0 4px 12px rgb(15 23 42 / 0.08);
+}
+
+html[data-style='playful'] {
+	--cursor-lift: 0 0 #0000;
+}
+
+:is(.kb-cursor, [data-kb-cursor]) {
+	outline: none;
+}
+
+@media (pointer: fine) {
+	html:root :is(.kb-cursor.kb-cursor, [data-kb-cursor][data-kb-cursor]) {
+		position: relative;
+		z-index: 1;
+		box-shadow:
+			inset 0 0 0 100vmax var(--cursor-wash),
+			var(--cursor-lift);
+	}
+
+	/* A row that is being worked on keeps its spine under the cursor. */
+	html:root :is(.kb-cursor.kb-cursor, [data-kb-cursor][data-kb-cursor]).is-doing {
+		box-shadow:
+			inset 3px 0 0 var(--color-blue-500),
+			inset 0 0 0 100vmax var(--cursor-wash),
+			var(--cursor-lift);
+	}
+}
+
+/*
  * A rounded surface clips its own children.
  *
  * A filled bar sitting flush against a card's edge — a header, a tinted row —
@@ -414,30 +491,6 @@ html[data-style='playful'] .shadow-overlay {
 html[data-style='playful'] .shadow-card,
 html[data-style='playful'] .shadow-raised {
 	box-shadow: none;
-}
-
-/*
- * A card that paints its own face shows the keyboard's cursor another way.
- *
- * The board's cards are `.pill-soft`: they set a background from the
- * category's colour, which wins over the cursor's grey, and the style above
- * takes their shadow away — so j and k moved and nothing on the screen said
- * so ("in tasks/board there is no selection").
- *
- * A ring in the card's own hue and a lift, which is the language the to-do
- * list's cursor already speaks without fighting the paint. Unlayered, like
- * the rule above it: a layered one would lose to that however specific.
- */
-html .pill-soft.kbd-cursor {
-	/*
-	 * The ring alone, and a literal lift rather than `--shadow-raised`: that
-	 * token is `none` in this style, and `0 0 0 2px …, none` is not a shadow
-	 * list — the browser drops the whole declaration and the cursor vanishes
-	 * again, which is how this was found.
-	 */
-	box-shadow:
-		0 0 0 2px color-mix(in srgb, var(--pill) 75%, transparent),
-		0 2px 6px rgb(15 23 42 / 0.12);
 }
 
 /*
@@ -590,10 +643,17 @@ html[data-style='playful'] dialog.as-surface > div {
 	box-shadow: 0 0 0 2px var(--color-gray-900);
 }
 
-/* A section's own colour, at the strength chrome can carry. */
+/*
+ * A header band, in grey.
+ *
+ * It took the section's colour, so the review's bands were blue, a recipe's
+ * green and the shelf's pink — chrome competing with the categories, which
+ * are the only things here that wear colour. The band is the same neutral
+ * wash in every room; the room says which room it is in its tab strip.
+ */
 html[data-style='playful'] .section-tint {
-	background-color: color-mix(in srgb, var(--section-accent) 10%, transparent);
-	border-color: color-mix(in srgb, var(--section-accent) 35%, transparent);
+	background-color: color-mix(in srgb, var(--color-gray-500) 10%, transparent);
+	border-color: var(--color-gray-200);
 }
 
 /*
@@ -1316,7 +1376,8 @@ label:has(> input[type='radio']:not(:disabled)) {
 	 * unrelated rows. Same box, the small buttons' height.
 	 */
 	.input-sm {
-		padding: 0.25rem 0.5rem;
+		height: var(--control-sm);
+		padding: 0 0.5rem;
 		font-size: 0.8125rem;
 		line-height: 1.25rem;
 	}
@@ -1445,9 +1506,8 @@ label:has(> input[type='radio']:not(:disabled)) {
 	}
 
 	.toggle:focus-visible {
-		outline: none;
-		border-color: var(--color-gray-900);
-		box-shadow: 0 0 0 1px var(--color-gray-900);
+		outline: 2px solid var(--focus-ring);
+		outline-offset: 1px;
 	}
 
 	.toggle:disabled {
@@ -1470,18 +1530,53 @@ label:has(> input[type='radio']:not(:disabled)) {
 		border-color: var(--color-gray-400);
 	}
 
+	/*
+	 * One focus ring, on everything that takes focus.
+	 *
+	 * A field in focus drew its border and a shadow in gray-900 — a 2px black
+	 * frame — while a button beside it drew the browser's own ring and a
+	 * switch a third thing. Now all of them draw the same ring a pixel
+	 * outside their edge, in the muted grey, which clears 3:1 against the
+	 * surface in both themes without reading as a frame. `:where` keeps the
+	 * generic half weightless, so a control that draws its own focus — the
+	 * keyboard cursor, a utility's `outline-none` — still does.
+	 */
 	.input:focus,
 	.select:focus,
 	.select-face:focus-visible,
-	.textarea:focus {
-		outline: none;
-		border-color: var(--color-gray-900);
-		box-shadow: 0 0 0 1px var(--color-gray-900);
+	.textarea:focus,
+	:where(button, a, summary, [role='button'], [tabindex]):focus-visible {
+		outline: 2px solid var(--focus-ring);
+		outline-offset: 1px;
 	}
 
+	/* A date or a time draws its value in boxes of its own that run a pixel past
+	   the line every other field is, so a time field stood 39px beside 38px
+	   selects. Held to the line plus the padding and the border. */
+	.input::-webkit-date-and-time-value {
+		min-height: 1.25rem;
+	}
+
+	.input:not(.input-sm):where(
+			[type='date'],
+			[type='time'],
+			[type='datetime-local'],
+			[type='month'],
+			[type='week']
+		) {
+		height: calc(1.25rem + 1rem + 2px);
+	}
+
+	/*
+	 * A placeholder is text somebody has to read — "Search these tasks" is
+	 * the only label a search box has — so it takes the muted text step, which
+	 * clears 4.5:1 on a field in both themes. Gray-400 was 2.6:1. The same
+	 * rule, unlayered, covers every field that is not an `.input`; see below.
+	 */
 	.input::placeholder,
 	.textarea::placeholder {
-		color: var(--color-gray-400);
+		color: var(--color-gray-500);
+		opacity: 1;
 	}
 
 	.textarea {
@@ -1657,35 +1752,32 @@ label:has(> input[type='radio']:not(:disabled)) {
 	}
 
 	/*
-	 * The main action is a raised surface, not a filled block.
+	 * The main action is the one filled button in its row.
 	 *
-	 * It used to be `--color-gray-900` on `--color-gray-900`, which inverts with
-	 * the palette: in the dark theme that is a white slab, and a row of them is
-	 * the brightest thing on the screen by a distance — every Save shouting over
-	 * the content it belongs to.
+	 * It was the same surface as a field — white, bordered, lifted by the card
+	 * shadow — on the reasoning that a row of Saves should not shout. The
+	 * playful style takes that shadow away, and a plain button is filled, so
+	 * a dialog's Create stood white and outlined beside a grey Cancel: the
+	 * secondary looked like the primary ("Create goal", "Add person",
+	 * "Cooked it"). Now it is filled with the ink colour and lettered in the
+	 * ground's, in all four styles.
 	 *
-	 * So it is the same surface and border as a field, lifted by the same
-	 * shadow, with the weight doing the emphasis. A primary button and the
-	 * select above it now read as the same material, which is what they are:
-	 * things you press or open, sitting on the card.
-	 *
-	 * The fill is not gone from the app — `--section-accent` still fills where a
-	 * colour means something, and money buttons have their own shape. What is
-	 * gone is a neutral fill used to mean "this one matters".
+	 * Not the near-white slab the dark theme used to make of it: there the
+	 * fill is a step down from the brightest ink (`--btn-primary-face`, see
+	 * the dark blocks), so it leads without glaring.
 	 */
 	.btn-primary {
-		--btn-ink: var(--color-gray-900);
-		--btn-ink-hover: var(--color-gray-900);
+		--btn-ink: var(--ink-on-fill);
+		--btn-ink-hover: var(--ink-on-fill);
 
-		border-color: var(--color-gray-300);
-		background-color: var(--color-white);
+		border-color: var(--btn-primary-face);
+		background-color: var(--btn-primary-face);
 		font-weight: 600;
-		box-shadow: var(--shadow-card);
 	}
 
 	.btn-primary:hover:not(:disabled) {
-		border-color: var(--color-gray-400);
-		box-shadow: var(--shadow-raised);
+		border-color: var(--btn-primary-hover);
+		background-color: var(--btn-primary-hover);
 	}
 
 	.btn-primary:active {
@@ -1927,7 +2019,7 @@ label:has(> input[type='radio']:not(:disabled)) {
 	 * sets `border-color` on every child — so a bare `.is-doing` had its spine
 	 * painted the divider's grey. The alternating row wash wins the background
 	 * the same way. One step of specificity is enough and is what
-	 * `.pill-soft.kbd-cursor` above does for the same reason.
+	 * `.kb-cursor` does for the same reason.
 	 */
 	html .is-doing {
 		/*
@@ -1948,13 +2040,60 @@ label:has(> input[type='radio']:not(:disabled)) {
 		background-color: color-mix(in srgb, var(--color-blue-500) 20%, transparent);
 	}
 
+	/*
+	 * Where a row's text starts, once.
+	 *
+	 * Every row is `padding · rail · gap · text`: the rail is the column a
+	 * row's tick, number, star or gauges stand in, and it is the same width
+	 * whether it holds a 28px box, "#12" or nothing — so a row with a tick, a
+	 * row with a number and a row with nothing all start their words on the
+	 * same column (`--row-text-x`). It sat at 44, 48, 64, 76, 85, 88, 96 and
+	 * 124 across the rooms, and at three of those inside one room.
+	 *
+	 * The shapes that use it: `.row-card` (the wrapper `RowCard` goes in) and
+	 * `.list-row`, each with a `.row-rail` as its first child — empty when the
+	 * row has nothing to put there.
+	 */
+	:root {
+		--row-pad-x: 1rem;
+		--row-pad-y: 0.75rem;
+		--row-rail: 2rem;
+		--row-gap: 1rem;
+		--row-text-x: calc(var(--row-pad-x) + var(--row-rail) + var(--row-gap));
+	}
+
+	.row-card {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: stretch;
+		column-gap: var(--row-gap);
+		padding: var(--row-pad-y) var(--row-pad-x);
+	}
+
+	.row-rail {
+		display: flex;
+		flex: none;
+		flex-direction: column;
+		align-items: center;
+		align-self: stretch;
+		gap: 0.375rem;
+		width: var(--row-rail);
+	}
+
+	/* A button standing in the rail — a star, a pin — is the rail's width. */
+	.row-rail > .icon-btn,
+	.row-rail > form > .icon-btn {
+		width: var(--row-rail);
+		height: var(--row-rail);
+	}
+
 	.list-row {
 		display: flex;
 		flex-wrap: wrap;
 		align-items: center;
-		column-gap: 0.75rem;
+		column-gap: var(--row-gap);
 		row-gap: 0.5rem;
-		padding: 0.75rem 1rem;
+		padding: var(--row-pad-y) var(--row-pad-x);
 	}
 
 	/*
@@ -1973,9 +2112,14 @@ label:has(> input[type='radio']:not(:disabled)) {
 		flex: 1 1 0;
 	}
 
+	/*
+	 * On the row's last line, at the right — where `RowCard` puts them — so a
+	 * two-line row and a one-line row hold their buttons in the same place.
+	 */
 	.list-row-actions {
 		display: flex;
 		flex: 0 0 auto;
+		align-self: flex-end;
 		align-items: center;
 		justify-content: flex-end;
 		gap: 0.25rem;
@@ -2102,62 +2246,50 @@ label:has(> input[type='radio']:not(:disabled)) {
 		cursor: pointer;
 	}
 
-	.task-actions {
-		--row-action-size: 2.25rem;
-	}
-
 	/*
-	 * Compact with a mouse. A finger keeps the 44px every other control has.
-	 */
-	@media (pointer: fine) {
-		.task-actions {
-			--row-action-size: 1.75rem;
-		}
-
-		.task-actions .icon-btn {
-			width: var(--row-action-size);
-			height: var(--row-action-size);
-		}
-	}
-
-	/*
-	 * Where the keyboard cursor is — and only where there is a keyboard.
+	 * A row's actions: one size, one strength, one order, one place.
 	 *
-	 * Eight lists drew this as `ring-2 ring-gray-900 ring-inset`, and every
-	 * one of them starts at index 0: on a phone, which has no arrow keys to
-	 * move it with, the first row of every list wore a hard white outline
-	 * that looked like a stuck tap. It is a mouse-and-keyboard affordance, so
-	 * it is drawn for a mouse and a keyboard.
+	 * Size: 28px with a mouse, and the 44px every other control has under a
+	 * finger. Strength: held back to a third until the pointer or the focus
+	 * is on the row, so a list of forty reads as forty titles rather than a
+	 * wall of bins — and only where there is a pointer to bring them back.
+	 * A pressed one (the doing toggle, a star) keeps its strength: it is
+	 * saying something. Confirms are `.btn`, not `.icon-btn`, so one that
+	 * replaces an icon comes up at full strength by itself.
+	 *
+	 * Order, which markup has to keep: whatever is particular to the room
+	 * first, then edit · archive · delete, delete always last.
+	 *
+	 * The groups are `.task-actions` (inside `RowCard`) and `.list-row-actions`
+	 * (inside `.list-row`); `.row-actions` is the same for a row that is
+	 * neither — the gallery's tiles.
 	 */
-	.kbd-cursor {
-		background-color: var(--color-gray-100);
-	}
-
-	@media (hover: hover) and (pointer: fine) {
-		.kbd-cursor {
-			box-shadow: inset 0 0 0 2px var(--color-gray-900);
-		}
+	:root {
+		--row-action-size: 1.75rem;
 	}
 
 	@media (pointer: coarse) {
-		.kbd-cursor {
-			background-color: transparent;
+		:root {
+			--row-action-size: var(--control-touch);
 		}
 	}
 
+	:is(.task-actions, .list-row-actions, .row-actions) .icon-btn {
+		width: var(--row-action-size);
+		height: var(--row-action-size);
+	}
+
 	@media (hover: hover) {
-		/*
-		 * The controls fade one by one rather than as a line, so a confirm that
-		 * replaces one of them can come back on its own.
-		 */
-		.task-actions > * {
+		:is(.task-actions, .list-row-actions, .row-actions) .icon-btn:not([aria-pressed='true']) {
 			opacity: 0.35;
 		}
 
-		/* And they come back while the pointer or the focus is on the row. */
-		*:hover > .task-actions > *,
-		*:focus-within > .task-actions > *,
-		.task-actions:focus-within > * {
+		/* Back while the pointer or the focus is anywhere on the row. */
+		:is(.list-row, .row-card, .row-card-body, [data-row]):is(:hover, :focus-within)
+			:is(.task-actions, .list-row-actions, .row-actions)
+			.icon-btn,
+		*:hover > :is(.task-actions, .list-row-actions, .row-actions) .icon-btn,
+		:is(.task-actions, .list-row-actions, .row-actions):focus-within .icon-btn {
 			opacity: 1;
 		}
 	}
@@ -2182,36 +2314,52 @@ label:has(> input[type='radio']:not(:disabled)) {
 	}
 
 	/*
-	 * The keyboard cursor: which row j/k is standing on.
-	 *
-	 * A wash and a small lift, not a rule around it. It was a two-pixel
-	 * outline, which on rows that sit flush against each other drew a heavy
-	 * line above and below the selected one — and the top one was clipped away
-	 * on the first row, so the first selection never looked like the others.
-	 * Boxing a row that has no box of its own was the mistake; saying "this
-	 * one" by shading it needs no edges at all.
-	 *
-	 * Only where there is a keyboard: on a phone the cursor is the finger, and
-	 * a permanently shaded first row reads as meaning something.
-	 *
-	 * `position: relative` so the lift is drawn over the row after it rather
-	 * than under it, which is the difference between a shadow and a smudge.
+	 * `min-height` as well as the padding: an icon alone is shorter than a
+	 * line of text, so an icon-only small button came out 24px beside 28px
+	 * words. The width matches, so it is square.
 	 */
-	.kb-cursor {
-		outline: none;
-	}
-
-	@media (pointer: fine) {
-		.kb-cursor {
-			position: relative;
-			z-index: 1;
-			background: var(--cursor-wash);
-			box-shadow: var(--shadow-raised);
-		}
-	}
-
 	.btn-sm {
+		min-height: var(--control-sm);
+		min-width: var(--control-sm);
 		padding: 0.25rem 0.625rem;
+		font-size: 0.75rem;
+	}
+
+	/*
+	 * A row of controls is one height.
+	 *
+	 * A toolbar is where a search box, a select, a segmented control, an
+	 * icon and the order's arrow stand side by side, and each arrived at its
+	 * own height — 30, 38, 32, 36, 44 in one row. Inside a toolbar row or a
+	 * filter strip they all take `--control-sm`. Any other row of controls
+	 * says so with `.controls-sm` on its container; `.icon-btn-sm` and
+	 * `.seg-sm` are the same thing for one control on its own.
+	 */
+	.icon-btn-sm,
+	:is(.room-toolbar-row, .filter-strip, .controls-sm) .icon-btn:not(.float-layer *) {
+		width: var(--control-sm);
+		height: var(--control-sm);
+	}
+
+	:is(.room-toolbar-row, .filter-strip, .controls-sm) :is(.input, .select):not(textarea) {
+		height: var(--control-sm);
+		padding-top: 0;
+		padding-bottom: 0;
+		font-size: 0.8125rem;
+	}
+
+	:is(.room-toolbar-row, .filter-strip, .controls-sm) .seg > :is(button, a, label),
+	.seg.seg-sm > :is(button, a, label) {
+		min-height: calc(var(--control-sm) - 2 * var(--seg-pad));
+		padding-top: 0;
+		padding-bottom: 0;
+	}
+
+	/* A small button in a row that says it is one, as well as one that says so itself. */
+	.controls-sm .btn {
+		min-height: var(--control-sm);
+		padding-top: 0.25rem;
+		padding-bottom: 0.25rem;
 		font-size: 0.75rem;
 	}
 
@@ -2587,6 +2735,31 @@ label:has(> input[type='radio']:not(:disabled)) {
 		background-color: var(--color-gray-100);
 		border-color: var(--color-gray-400);
 		translate: 0 -1px;
+	}
+
+	/*
+	 * A key, as a key. `Kbd.svelte` is the only thing that writes one; the
+	 * class is here so a button's hover can reach it (below).
+	 */
+	.kbd {
+		display: inline-block;
+		min-width: 1.25rem;
+		border: 1px solid var(--color-gray-300);
+		background-color: var(--color-gray-50);
+		padding: 0 0.25rem;
+		font-family: var(--font-mono);
+		font-size: 0.75rem;
+		font-weight: 500;
+		line-height: 1rem;
+		text-align: center;
+		color: var(--color-gray-700);
+	}
+
+	/* On the header's own dark ground: the outline of a key, in its ink. */
+	.kbd.kbd-chrome {
+		border-color: var(--color-chrome-line);
+		background-color: transparent;
+		color: inherit;
 	}
 
 	/* The keycap on a button joins in when its button is hovered. */
@@ -2973,9 +3146,15 @@ label:has(> input[type='radio']:not(:disabled)) {
 	border-top: 2px solid var(--card-accent);
 }
 
+/*
+ * The same thin rule in the playful style: a 4px stripe down the side was the
+ * loudest thing on the dashboard, eleven bars of section colour competing
+ * with the categories, and it pushed the card's content 3px off its
+ * neighbours'. The rule's corners are squared below, so it does not bend.
+ */
 html[data-style='playful'] .card-accent {
-	border-top: 1px solid var(--color-gray-200);
-	border-left: 4px solid var(--card-accent);
+	border-start-start-radius: 0;
+	border-start-end-radius: 0;
 }
 
 /*
@@ -2983,12 +3162,12 @@ html[data-style='playful'] .card-accent {
  *
  * A thick left border on a rounded shape bends round the corner and thins
  * into the hairline along the top, so the stripe ends in two curved slivers
- * — the accented cards, every banner, the pinned note. One
+ * — every banner, the pinned note. One
  * of the two shapes has to give up its radius, and the stripe cannot bend, so
  * the corner does: anything wearing a stripe carries `.edge-stripe`, or is
  * one of the shared classes below that always wear one.
  */
-html[data-style='playful'] :is(.edge-stripe, .card-accent, .page-intro, .is-pinned) {
+html[data-style='playful'] :is(.edge-stripe, .page-intro, .is-pinned) {
 	border-start-start-radius: 0;
 	border-end-start-radius: 0;
 }
@@ -3427,6 +3606,12 @@ pre,
 	overflow-wrap: normal;
 }
 
+/* Every field's placeholder, `.input` or not: the muted step, never half the ink. */
+::placeholder {
+	color: var(--color-gray-500);
+	opacity: 1;
+}
+
 /* Figures line up in columns when they share a width. */
 .tabular {
 	font-variant-numeric: tabular-nums;
@@ -3531,6 +3716,10 @@ html[data-theme='dark'] {
 
 	/* Above the page *and* above a card, so a button reads on either. */
 	--btn-face: #2f3644;
+
+	/* The primary a step down from the brightest ink: it leads, not glares. */
+	--btn-primary-face: var(--color-gray-700);
+	--btn-primary-hover: var(--color-gray-800);
 
 	/* One step further up in the dark, or it is the card. See the light block. */
 	--gauge-ground: var(--color-gray-300);
@@ -3656,6 +3845,10 @@ html[data-theme='dark'] {
 
 		/* Above the page *and* above a card, so a button reads on either. */
 		--btn-face: #2f3644;
+
+		/* The primary a step down from the brightest ink: it leads, not glares. */
+		--btn-primary-face: var(--color-gray-700);
+		--btn-primary-hover: var(--color-gray-800);
 
 		/* One step further up in the dark, or it is the card. See the light block. */
 		--gauge-ground: var(--color-gray-300);
@@ -3801,11 +3994,27 @@ option {
 	--card-pad-x: 1rem;
 	--card-pad-y: 0.75rem;
 
+	/*
+	 * How tall a control is in a row of controls.
+	 *
+	 * One number for everything a toolbar holds — a small button, a search box,
+	 * a select, a segmented control, an icon, the order's arrow — so a row is
+	 * one height rather than five. A touch screen takes the second one for all
+	 * of them.
+	 */
+	--control-sm: 1.75rem;
+	--control-touch: 2.75rem;
+	/* The one focus ring; see `.input:focus`. */
+	--focus-ring: var(--color-gray-500);
+
 	--control-on: #1d4ed8;
 	/* Ink on a filled control. Dark themes override it; see the dark block. */
 	--ink-on-fill: #ffffff;
 	/* What a plain button is made of. Above the page in every theme. */
 	--btn-face: var(--color-gray-150);
+	/* The primary's fill: the ink, so it is the one filled button in a row. */
+	--btn-primary-face: var(--color-gray-800);
+	--btn-primary-hover: var(--color-gray-900);
 
 	/*
 	 * The box a full set of ratings would fill, behind the gauges.
@@ -4124,8 +4333,24 @@ html[data-keyboard='open'] {
 	[role='button'],
 	select,
 	summary,
-	nav a {
-		min-height: 2.75rem;
+	nav a,
+	.btn {
+		min-height: var(--control-touch);
+	}
+
+	/*
+	 * A toolbar's small squares are a thumb's square here, not a thumb's
+	 * height on a 28px sliver — and the segmented control's track is the
+	 * height of the buttons beside it, not that plus its own padding.
+	 */
+	.icon-btn-sm,
+	:is(.room-toolbar-row, .filter-strip, .controls-sm) .icon-btn:not(.float-layer *),
+	.btn-sm {
+		min-width: var(--control-touch);
+	}
+
+	.seg > :is(button, a, label) {
+		min-height: calc(var(--control-touch) - 2 * var(--seg-pad));
 	}
 
 	/*
@@ -4247,21 +4472,39 @@ html button.tab-link {
  * A second level of tabs, inside a room that already has one.
  *
  * It stands on the surface the outer room put there rather than bringing its
- * own, so it is the top block of that surface with a rule under it — the same
- * place a room's controls sit. No track behind it: one grey strip inside
- * another grey strip is two things where there is one section of one room.
+ * own, so it is the top block of that surface — the same place a room's
+ * controls sit. No track behind it: one grey strip inside another grey strip
+ * is two things where there is one section of one room. The rule is on the
+ * strip itself, under the tabs — on the frame it wrapped the section too and
+ * was a line under the last row.
  */
-.room-frame-nested {
+.room-tabs-nested {
 	border-bottom: 1px solid var(--color-gray-200);
 }
 
-.room-frame-nested .seg-track {
+.room-tabs.room-tabs-nested > .seg-track {
+	--strip-ground: var(--color-white);
 	background-color: transparent;
 	border-radius: 0 !important;
+	/*
+	 * The first tab's word on the content's own left edge: the tab's padding
+	 * hangs into the gutter rather than pushing the strip a rem and a half in
+	 * from everything under it.
+	 */
+	padding-inline: 0;
+	margin-inline-start: -0.75rem;
 }
 
-.room-frame-nested .room-tabs {
-	padding-inline: 0.5rem;
+/* On a phone the surface has no gutter: the first word sits on the rows' own inset. */
+@media (width < 40rem) {
+	.room-tabs.room-tabs-nested > .seg-track {
+		margin-inline-start: 0;
+		padding-inline: 0.25rem;
+	}
+
+	.room-tabs.room-tabs-nested .seg-scroll {
+		padding-inline: 0;
+	}
 }
 
 .room-tabs {
@@ -4658,9 +4901,59 @@ html[data-style='playful'] .room-surface {
 	padding-inline: 0.75rem;
 }
 
-.room-tabs .seg-scroll {
+.room-tabs .tab-strip-view {
+	position: relative;
+	display: flex;
 	flex: 0 1 auto;
 	min-width: 0;
+}
+
+.room-tabs .seg-scroll {
+	flex: 1 1 auto;
+	min-width: 0;
+}
+
+/*
+ * The chevron at an edge that continues: over the faded letters only, so it
+ * covers nothing readable, and a press moves the row on by about a screenful.
+ * Shown by `scrollHints`' own `data-more`, so it cannot disagree with the fade.
+ */
+.tab-strip-more {
+	position: absolute;
+	inset-block: 0;
+	display: none;
+	width: var(--fade-edge, 1.5rem);
+	align-items: center;
+	justify-content: center;
+	/* The strip's own ground, so the chevron is not drawn over letters. */
+	background-color: var(--strip-ground, var(--color-gray-150));
+	color: var(--color-gray-500);
+}
+
+.tab-strip-more:hover {
+	color: var(--color-gray-900);
+}
+
+.tab-strip-more-left {
+	left: 0;
+}
+
+.tab-strip-more-right {
+	right: 0;
+}
+
+.tab-strip-view:has(> .scroll-hints:is([data-more='left'], [data-more='both']))
+	> .tab-strip-more-left,
+.tab-strip-view:has(> .scroll-hints:is([data-more='right'], [data-more='both']))
+	> .tab-strip-more-right {
+	display: flex;
+}
+
+/* A tab's count, beside its word and quieter than it. */
+.tab-count {
+	font-size: 0.75rem;
+	font-weight: 400;
+	color: var(--color-gray-500);
 }
 
 /*
@@ -4670,7 +4963,7 @@ html[data-style='playful'] .room-surface {
  * control sitting in a form and wrong for the names of the places in a room —
  * they were the one thing on the strip somebody reads from across the desk.
  */
-.room-tabs .seg-scroll > a {
+.room-tabs .seg-scroll > :is(a, button) {
 	font-size: 0.875rem;
 	padding-block: 0.5rem;
 	/* The glyph and the word are one label with a space in it, not two
@@ -4820,6 +5113,124 @@ html[data-style='playful'] .room-surface {
 	.room-body .card-grid-bleed {
 		margin-inline: -1rem;
 	}
+}
+
+/*
+ * The last thing a stack draws is the last thing on screen, not the last
+ * element in the markup.
+ *
+ * `space-y-*` spaces every child but the last, and a room's stack ends in the
+ * `<dialog>`s its forms open in — so the surface above them kept a rem of
+ * margin under it, and every room had a band of nothing at its foot.
+ */
+[class*='space-y-'] > :nth-last-child(1 of :not(dialog, [hidden], .hidden, .slide-stage)) {
+	margin-block-end: 0;
+}
+
+/*
+ * And a surface that ends the room ends it: no band of the body's padding
+ * under the last row, and no rule across the foot that reads as a row that
+ * never arrived. Followed down through the wrappers a page puts round it —
+ * "the last thing drawn, of the last thing drawn, …" — as deep as the nested
+ * settings rooms go.
+ */
+.room-body:has(
+	> :is(.room-surface, [class*='shadow-card']):nth-last-child(
+			1 of :not(dialog, [hidden], .hidden, .slide-stage)
+		),
+	> :nth-last-child(1 of :not(dialog, [hidden], .hidden, .slide-stage))
+		> :is(.room-surface, [class*='shadow-card']):nth-last-child(
+			1 of :not(dialog, [hidden], .hidden, .slide-stage)
+		),
+	> :nth-last-child(1 of :not(dialog, [hidden], .hidden, .slide-stage))
+		> :nth-last-child(1 of :not(dialog, [hidden], .hidden, .slide-stage))
+		> :is(.room-surface, [class*='shadow-card']):nth-last-child(
+			1 of :not(dialog, [hidden], .hidden, .slide-stage)
+		),
+	> :nth-last-child(1 of :not(dialog, [hidden], .hidden, .slide-stage))
+		> :nth-last-child(1 of :not(dialog, [hidden], .hidden, .slide-stage))
+		> :nth-last-child(1 of :not(dialog, [hidden], .hidden, .slide-stage))
+		> :is(.room-surface, [class*='shadow-card']):nth-last-child(
+			1 of :not(dialog, [hidden], .hidden, .slide-stage)
+		),
+	> :nth-last-child(1 of :not(dialog, [hidden], .hidden, .slide-stage))
+		> :nth-last-child(1 of :not(dialog, [hidden], .hidden, .slide-stage))
+		> :nth-last-child(1 of :not(dialog, [hidden], .hidden, .slide-stage))
+		> :nth-last-child(1 of :not(dialog, [hidden], .hidden, .slide-stage))
+		> :is(.room-surface, [class*='shadow-card']):nth-last-child(
+			1 of :not(dialog, [hidden], .hidden, .slide-stage)
+		),
+	> :nth-last-child(1 of :not(dialog, [hidden], .hidden, .slide-stage))
+		> :nth-last-child(1 of :not(dialog, [hidden], .hidden, .slide-stage))
+		> :nth-last-child(1 of :not(dialog, [hidden], .hidden, .slide-stage))
+		> :nth-last-child(1 of :not(dialog, [hidden], .hidden, .slide-stage))
+		> :nth-last-child(1 of :not(dialog, [hidden], .hidden, .slide-stage))
+		> :is(.room-surface, [class*='shadow-card']):nth-last-child(
+			1 of :not(dialog, [hidden], .hidden, .slide-stage)
+		),
+	> :nth-last-child(1 of :not(dialog, [hidden], .hidden, .slide-stage))
+		> :nth-last-child(1 of :not(dialog, [hidden], .hidden, .slide-stage))
+		> :nth-last-child(1 of :not(dialog, [hidden], .hidden, .slide-stage))
+		> :nth-last-child(1 of :not(dialog, [hidden], .hidden, .slide-stage))
+		> :nth-last-child(1 of :not(dialog, [hidden], .hidden, .slide-stage))
+		> :nth-last-child(1 of :not(dialog, [hidden], .hidden, .slide-stage))
+		> :is(.room-surface, [class*='shadow-card']):nth-last-child(
+			1 of :not(dialog, [hidden], .hidden, .slide-stage)
+		)
+) {
+	padding-bottom: 0;
+}
+
+.room-body
+	> :is(.room-surface, [class*='shadow-card']):nth-last-child(
+		1 of :not(dialog, [hidden], .hidden, .slide-stage)
+	),
+.room-body
+	> :nth-last-child(1 of :not(dialog, [hidden], .hidden, .slide-stage))
+	> :is(.room-surface, [class*='shadow-card']):nth-last-child(
+		1 of :not(dialog, [hidden], .hidden, .slide-stage)
+	),
+.room-body
+	> :nth-last-child(1 of :not(dialog, [hidden], .hidden, .slide-stage))
+	> :nth-last-child(1 of :not(dialog, [hidden], .hidden, .slide-stage))
+	> :is(.room-surface, [class*='shadow-card']):nth-last-child(
+		1 of :not(dialog, [hidden], .hidden, .slide-stage)
+	),
+.room-body
+	> :nth-last-child(1 of :not(dialog, [hidden], .hidden, .slide-stage))
+	> :nth-last-child(1 of :not(dialog, [hidden], .hidden, .slide-stage))
+	> :nth-last-child(1 of :not(dialog, [hidden], .hidden, .slide-stage))
+	> :is(.room-surface, [class*='shadow-card']):nth-last-child(
+		1 of :not(dialog, [hidden], .hidden, .slide-stage)
+	),
+.room-body
+	> :nth-last-child(1 of :not(dialog, [hidden], .hidden, .slide-stage))
+	> :nth-last-child(1 of :not(dialog, [hidden], .hidden, .slide-stage))
+	> :nth-last-child(1 of :not(dialog, [hidden], .hidden, .slide-stage))
+	> :nth-last-child(1 of :not(dialog, [hidden], .hidden, .slide-stage))
+	> :is(.room-surface, [class*='shadow-card']):nth-last-child(
+		1 of :not(dialog, [hidden], .hidden, .slide-stage)
+	),
+.room-body
+	> :nth-last-child(1 of :not(dialog, [hidden], .hidden, .slide-stage))
+	> :nth-last-child(1 of :not(dialog, [hidden], .hidden, .slide-stage))
+	> :nth-last-child(1 of :not(dialog, [hidden], .hidden, .slide-stage))
+	> :nth-last-child(1 of :not(dialog, [hidden], .hidden, .slide-stage))
+	> :nth-last-child(1 of :not(dialog, [hidden], .hidden, .slide-stage))
+	> :is(.room-surface, [class*='shadow-card']):nth-last-child(
+		1 of :not(dialog, [hidden], .hidden, .slide-stage)
+	),
+.room-body
+	> :nth-last-child(1 of :not(dialog, [hidden], .hidden, .slide-stage))
+	> :nth-last-child(1 of :not(dialog, [hidden], .hidden, .slide-stage))
+	> :nth-last-child(1 of :not(dialog, [hidden], .hidden, .slide-stage))
+	> :nth-last-child(1 of :not(dialog, [hidden], .hidden, .slide-stage))
+	> :nth-last-child(1 of :not(dialog, [hidden], .hidden, .slide-stage))
+	> :nth-last-child(1 of :not(dialog, [hidden], .hidden, .slide-stage))
+	> :is(.room-surface, [class*='shadow-card']):nth-last-child(
+		1 of :not(dialog, [hidden], .hidden, .slide-stage)
+	) {
+	border-bottom-color: transparent;
 }
 
 .scroll-hints {
@@ -5378,6 +5789,16 @@ html .ec.ec-month-view .ec-event {
 	margin-bottom: 1px;
 }
 
+/*
+ * And a month's chip wears its category the way a card does — a face of the
+ * hue with an edge of it (`.pill-soft`) — rather than a three-pixel spine: on
+ * a one-line chip with the playful style's corners, the spine bent round the
+ * curve into a cap, a fifth way of saying the same colour.
+ */
+html .ec.ec-month-view .ec-event.og-event:not(.og-event--inactive, .og-event--tiny) {
+	box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--block) 45%, transparent);
+}
+
 html .ec .ec-event .ec-event-time {
 	font-family: var(--font-mono);
 	font-variant-numeric: tabular-nums;
@@ -5607,7 +6028,9 @@ html[data-pie-open] .float-layer {
 	font-weight: 700;
 	letter-spacing: 0.08em;
 	text-transform: uppercase;
-	color: var(--color-red-700);
+	/* Ink, not red: small red capitals are the one thing a red-green
+	   colourblind reader cannot tell from brown. The words say "danger". */
+	color: var(--color-gray-900);
 }
 
 /* Safari still paints its own marker without this. */
@@ -5662,4 +6085,45 @@ html[data-pie-open] .float-layer {
  */
 [data-untranslated] {
 	color: #dc2626;
+}
+
+/*
+ * A search box's clear button, in the app's ink.
+ *
+ * Chromium draws it in the browser's accent colour, which is blue — a blue ×
+ * in the corner of every search field, the one coloured thing in a toolbar of
+ * grey. The same close glyph `Icon` draws, masked, so it takes `currentColor`.
+ */
+input[type='search']::-webkit-search-cancel-button {
+	-webkit-appearance: none;
+	appearance: none;
+	width: 0.875rem;
+	height: 0.875rem;
+	cursor: pointer;
+	background-color: var(--color-gray-500);
+	mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round'%3E%3Cpath d='M6 6l12 12M18 6L6 18'/%3E%3C/svg%3E")
+		center / contain no-repeat;
+}
+
+input[type='search']::-webkit-search-cancel-button:hover {
+	background-color: var(--color-gray-900);
+}
+
+/*
+ * A progress bar: a track and how far along it is, in ink.
+ *
+ * The fill wore the goal's area colour — a thin red or green line, which is
+ * the one thing a red-green colourblind eye cannot read at that size, and a
+ * second way of saying the area beside the mark that already says it. The
+ * track is a wash of the ink rather than `gray-200`, which vanished into the
+ * surface in the dark theme.
+ */
+.progress-track {
+	display: block;
+	overflow: hidden;
+	background-color: color-mix(in srgb, var(--color-gray-500) 25%, transparent);
+}
+
+.progress-fill {
+	background-color: var(--color-gray-700);
 }

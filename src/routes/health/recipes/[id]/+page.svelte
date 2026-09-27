@@ -1,4 +1,5 @@
 <script lang="ts">
+	import EmptyState from '$lib/components/EmptyState.svelte';
 	import NumberBox from '$lib/components/NumberBox.svelte';
 	import { tick } from 'svelte';
 	import OneLine from '$lib/components/OneLine.svelte';
@@ -624,7 +625,7 @@
 	>
 		<input type="hidden" name="id" value={data.recipe.id} />
 		{#if data.ingredients.length === 0}
-			<p class="text-sm text-gray-500">{t('health.recipes.id.nothingInItYet')}</p>
+			<EmptyState compact icon="shopping" title={t('health.recipes.id.nothingInItYet')} />
 		{:else}
 			<ul class="space-y-1">
 				{#each data.ingredients as ingredient (ingredient.id)}

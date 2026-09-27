@@ -1,4 +1,5 @@
 <script lang="ts">
+	import Kbd from '$lib/components/Kbd.svelte';
 	import CaptureDialog from '$lib/components/CaptureDialog.svelte';
 	import Icon from '$lib/components/Icon.svelte';
 	import { captureByShortcut, visibleCaptures, type Capture } from '$lib/capture';
@@ -58,26 +59,18 @@
 
 {#if inline}
 	<!--
-		Four buttons that were four identical grey pills, distinguishable only by
-		reading them. The one thing that actually tells them apart is where each
-		one writes — and those rooms already have colours. So the glyph carries the
-		section's accent and the row becomes scannable at a glance, while the
-		button itself stays neutral: the colour marks the destination, it does not
-		make four buttons shout.
+		Four buttons told apart by their glyphs and their words. The glyphs wore
+		their rooms' colours once, which put a small red icon in the header of
+		every day — colour belongs to categories, and red is the one hue a
+		red-green colourblind eye cannot place.
 	-->
 	<div class="hidden items-center gap-1 lg:flex">
 		{#each captures as capture (capture.key)}
 			<button type="button" onclick={() => show(capture)} class="btn btn-sm">
-				<span style="color:{capture.color}"><Icon name={capture.icon} /></span>
+				<Icon name={capture.icon} />
 				{t(capture.label)}
-				<!--
-					`kbd-hint` so a touch screen wide enough for this row still drops
-					it: a keystroke is noise where there is no keyboard. `gray-600`
-					rather than `gray-500` because it sits on a button's face, which
-					is lighter than the page — twelve-point type needs 4.5:1 and grey
-					on that ground was 4.27.
-				-->
-				<span class="kbd-hint text-gray-600">({capture.shortcut})</span>
+				<!-- A key cap like every other hint; a touch screen drops it. -->
+				<Kbd keys={capture.shortcut} />
 			</button>
 		{/each}
 	</div>
@@ -89,9 +82,7 @@
 				onclick={() => show(capture)}
 				class="lift flex flex-1 flex-col items-center gap-1 border border-gray-200 bg-white px-2 py-3 text-xs text-gray-700 shadow-card"
 			>
-				<!-- The same accent as the row on a wide screen: these are the same
-				     four buttons and they cannot look like two different ideas. -->
-				<span style="color:{capture.color}"><Icon name={capture.icon} size={18} /></span>
+				<span class="text-gray-500"><Icon name={capture.icon} size={18} /></span>
 				<!-- No keystroke here: this is the phone, where there is no keyboard
 				     to press it on. The desktop row above says it instead. -->
 				<span>{t(capture.label)}</span>

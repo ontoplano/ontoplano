@@ -46,9 +46,7 @@
 	the recipe; the name carries the link and stretches it over the card, and
 	the actions sit above it.
 -->
-<div
-	class="relative flex h-full items-stretch gap-x-4 bg-white px-4 py-3 transition-colors hover:bg-gray-50"
->
+<div class="row-card relative h-full bg-white transition-colors hover:bg-gray-50">
 	<RowCard>
 		{#snippet rail()}
 			<!--

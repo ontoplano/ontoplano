@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { useWhen } from '$lib/when-context.svelte';
+	import { dateOf } from '$lib/when';
 	import { tick } from 'svelte';
 	import { resolve } from '$app/paths';
 	import OneLine from '$lib/components/OneLine.svelte';
@@ -15,6 +17,7 @@
 	import { useT } from '$lib/i18n';
 
 	const t = useT();
+	const now = useWhen();
 
 	/** The ones this card takes: a file, worked out by what is in it. */
 	const fromFiles = IMPORT_KINDS.filter((k) => k.becomes === 'todos');
@@ -387,7 +390,7 @@
 						<p>
 							{#if preview.from}
 								<strong>{preview.from.email}</strong>{t('settings.account.import.sAccountExported')}
-								{preview.from.exportedAt.slice(0, 10)}:
+								{dateOf(preview.from.exportedAt, now())}:
 							{/if}
 							<strong>{preview.total}</strong>
 							{t('settings.account.import.rowsWillLand')}

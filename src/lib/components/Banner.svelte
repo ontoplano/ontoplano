@@ -36,10 +36,10 @@
 		display: flex;
 		align-items: flex-start;
 		gap: 0.6rem;
-		border: 1px solid color-mix(in srgb, var(--accent) 45%, transparent);
-		border-left: 4px solid var(--accent);
+		border: 1px solid var(--color-gray-200);
+		border-left: 2px solid var(--accent);
 		border-radius: var(--radius-sm, 0);
-		background-color: color-mix(in srgb, var(--accent) 8%, var(--color-white));
+		background-color: color-mix(in srgb, var(--color-gray-500) 6%, var(--color-white));
 		padding: 0.85rem 1.1rem;
 		font-size: 0.875rem;
 		line-height: 1.45;
@@ -49,8 +49,8 @@
 	/*
 	 * A banner is a surface standing in the page column, so on a phone it
 	 * reaches the edges like every other one — see the rule in layout.css.
-	 * Its own left bar stays: that is what says which kind of notice it is,
-	 * and it is the one border that carries meaning rather than an outline.
+	 * Its own left rule stays: with the glyph, it says which kind of notice
+	 * it is.
 	 */
 	@media (max-width: 639px) {
 		.banner {
@@ -73,8 +73,13 @@
 		color: var(--accent);
 	}
 
+	/*
+	 * Full ink rather than red: the rule is thin and the icon is small, and
+	 * red in a thin line is exactly what a red-green colourblind eye cannot
+	 * place. The error glyph and the words say which kind this is.
+	 */
 	.error {
-		--accent: var(--color-red-600, #dc2626);
+		--accent: var(--color-gray-900);
 	}
 
 	/*

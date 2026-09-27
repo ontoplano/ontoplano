@@ -144,7 +144,7 @@ test('a bill with a lead lands on the week, and ticking it there pays it', async
 	await add.getByRole('button', { name: 'Add', exact: true }).click();
 
 	// The row says both halves.
-	await expect(page.locator('li', { hasText: 'Rent' }).getByText(/due the 15/)).toBeVisible();
+	await expect(page.locator('li', { hasText: 'Rent' }).getByText(/due the 15th/)).toBeVisible();
 	await expect(page.locator('li', { hasText: 'Rent' }).getByText(/3 days before/)).toBeVisible();
 
 	// It is on the month's plan, on the 12th rather than the 15th.

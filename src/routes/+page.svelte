@@ -1,8 +1,10 @@
 <script lang="ts">
+	import Kbd from '$lib/components/Kbd.svelte';
 	import { page } from '$app/state';
 	import Written from '$lib/components/Written.svelte';
 	import TagInput from '$lib/components/TagInput.svelte';
-	import { dayOf, momentOf, today, weekdayOf } from '$lib/when';
+	import { civilOf, dayOf, momentOf, today, weekdayOf } from '$lib/when';
+	import { ordinal } from '$lib/ordinal';
 	import { useWhen } from '$lib/when-context.svelte';
 	import { resolve } from '$app/paths';
 	import OneLine from '$lib/components/OneLine.svelte';
@@ -11,6 +13,9 @@
 	import Icon from '$lib/components/Icon.svelte';
 	import FrontDoor from '$lib/components/FrontDoor.svelte';
 	import QuickCapture from '$lib/components/QuickCapture.svelte';
+	import RoomBar from '$lib/components/RoomBar.svelte';
+	import PageTitle from '$lib/components/PageTitle.svelte';
+	import { phoneWidth } from '$lib/breakpoints.svelte';
 	import NotebookCover from '$lib/components/NotebookCover.svelte';
 	import WidgetPicker from '$lib/components/WidgetPicker.svelte';
 	import Pie from '$lib/components/Pie.svelte';
@@ -32,6 +37,7 @@
 	import { useT } from '$lib/i18n';
 
 	const t = useT();
+	const phone = phoneWidth();
 	const now = useWhen();
 
 	/** Keep the card a card: the tracker is one click away for the full list. */
@@ -404,86 +410,72 @@
 	<FrontDoor {...data.frontDoor} />
 {:else}
 	<div class="space-y-6">
-		<!-- Padded on a phone, where the page has no gutter and the cards run to
-		     the edges: the date sat against the glass. -->
-		<div class="flex flex-wrap items-center justify-between gap-3 px-4 sm:px-0">
-			<!-- Short on a phone, so the date and the corner share one line rather
-			     than the corner falling to a row of its own under it. -->
-			<h1 class="text-lg font-bold text-gray-900">
-				<span class="sm:hidden"
-					>{dayOf(new Date(), now(), { weekday: 'short', month: 'short' })}</span
-				>
-				<span class="hidden sm:inline"
-					>{dayOf(new Date(), now(), { weekday: 'long', month: 'long' })}</span
-				>
-			</h1>
-			<!--
-				Both states of this corner, in one cell.
-
-				They used to swap: the capture row and the handle, or Cancel and
-				Done. Those are different widths and different heights, and the
-				header wraps on a phone — so pressing the handle re-wrapped the
-				row, the header grew a line, and the whole dashboard jumped down
-				at the moment somebody was looking at where the cards were. Both
-				are drawn on every render and the one that is not in charge is
-				made invisible, so the row is the size of the larger of the two
-				whatever is happening. `inert` because an invisible button is
-				still a tab stop otherwise.
-
-				And the way out is where the way in was: Done sat at the bottom of
-				the card list, past however many cards there are, so on a phone
-				finishing meant scrolling back down through everything that had
-				just been rearranged to find it.
-			-->
-			<div class="dash-corner">
-				<div class="dash-corner-state" class:is-away={arranging} inert={arranging}>
-					<QuickCapture
-						bind:this={capture}
-						error={form?.message}
-						hidden={data.hiddenSections ?? []}
-						inline
-					/>
-					<span class="hidden h-5 w-px bg-gray-300 lg:block"></span>
-					<!-- Arrange is not a fifth thing to write down — it changes what
+		<!--
+			The day is the room's name, in the bar every room has — on a phone the
+			sticky header, on a desktop the same line as every other room's title.
+			Short on a phone, so the name and the corner share one line.
+		-->
+		<!-- The bar's name is the day; the browser tab says where you are. -->
+		<PageTitle parts={t('sections.home.label')} />
+		<RoomBar
+			title={dayOf(
+				new Date(),
+				now(),
+				phone.current ? { weekday: 'short', month: 'short' } : { weekday: 'long', month: 'long' }
+			)}
+			fold={false}
+		>
+			{#snippet actions()}
+				<div class="dash-corner">
+					<div class="dash-corner-state" class:is-away={arranging} inert={arranging}>
+						<QuickCapture
+							bind:this={capture}
+							error={form?.message}
+							hidden={data.hiddenSections ?? []}
+							inline
+						/>
+						<span class="hidden h-5 w-px bg-gray-300 lg:block"></span>
+						<!-- Arrange is not a fifth thing to write down — it changes what
 					     the page is. Set apart by a rule, and the icon alone, so the
 					     row reads as "four things you can write" and then "and you
 					     can rearrange". The glyph is six dots, which at the size the
 					     rest of the icons are drawn was a smudge: this one is a
 					     target you aim at rather than one you read. -->
-					<button
-						onclick={startArranging}
-						class="icon-btn icon-btn-lg"
-						title={t('home.rearrangeTheCards')}
-						aria-label={t('home.rearrangeTheCards')}
-					>
-						<Icon name="drag" size={26} class="icon-heavy" />
-					</button>
-				</div>
-				<div class="dash-corner-state" class:is-away={!arranging} inert={!arranging}>
-					<!-- Words from `sm`; the glyphs alone on a phone, where the row
+						<button
+							onclick={startArranging}
+							class="icon-btn"
+							title={t('home.rearrangeTheCards')}
+							aria-label={t('home.rearrangeTheCards')}
+						>
+							<Icon name="drag" size={20} class="icon-heavy" />
+						</button>
+					</div>
+					<div class="dash-corner-state" class:is-away={!arranging} inert={!arranging}>
+						<!-- Words from `sm`; the glyphs alone on a phone, where the row
 					     has to share its line with the date. -->
-					<button
-						onclick={() => (pickingWidgets = true)}
-						class="btn btn-sm"
-						title={t('home.widgets')}
-						aria-label={t('home.widgets')}
-					>
-						<Icon name="plus" />
-						<span class="hidden sm:inline">{t('home.widgets')}</span>
-					</button>
-					<button
-						onclick={() => (arranging = false)}
-						class="btn btn-sm"
-						title={t('home.leaveTheCardsAsThey')}
-						aria-label={t('ui.cancel')}
-					>
-						<Icon name="close" class="sm:hidden" />
-						<span class="hidden sm:inline">{t('ui.cancel')}</span>
-					</button>
-					<button onclick={saveOrder} class="btn btn-primary btn-sm">{t('ui.done')}</button>
+						<button
+							onclick={() => (pickingWidgets = true)}
+							class="btn btn-sm"
+							title={t('home.widgets')}
+							aria-label={t('home.widgets')}
+						>
+							<Icon name="plus" />
+							<span class="hidden sm:inline">{t('home.widgets')}</span>
+						</button>
+						<button
+							onclick={() => (arranging = false)}
+							class="btn btn-sm"
+							title={t('home.leaveTheCardsAsThey')}
+							aria-label={t('ui.cancel')}
+						>
+							<Icon name="close" class="sm:hidden" />
+							<span class="hidden sm:inline">{t('ui.cancel')}</span>
+						</button>
+						<button onclick={saveOrder} class="btn btn-primary btn-sm">{t('ui.done')}</button>
+					</div>
 				</div>
-			</div>
-		</div>
+			{/snippet}
+		</RoomBar>
 
 		<!--
 			The four tiles that used to sit here are gone from the phone.
@@ -773,12 +765,8 @@
 								<!-- Nothing to count, nothing to draw: an empty track reads as
 							     zero progress rather than as no measure. -->
 								{#if pct !== null}
-									<span class="h-1.5 w-16 shrink-0 bg-gray-200">
-										<span
-											class="block h-full"
-											style="width: {pct}%; background-color: {goal.areaColor ??
-												SECTION_COLORS.goals}"
-										></span>
+									<span class="progress-track h-1.5 w-16 shrink-0">
+										<span class="progress-fill block h-full" style="width: {pct}%"></span>
 									</span>
 									<span class="tabular w-10 shrink-0 text-right text-xs text-gray-500">{pct}%</span>
 								{:else}
@@ -964,10 +952,7 @@
 							<button onclick={openWins} class="btn btn-sm" aria-haspopup="dialog">
 								<Icon name="plus" />
 								{t('home.3Wins')}
-								<kbd
-									class="hidden border border-gray-300 bg-gray-100 px-1 text-xs text-gray-600 sm:inline"
-									>{keyFor('/', 'new-wins')}</kbd
-								>
+								<Kbd keys={keyFor('/', 'new-wins')} class="hidden sm:inline" />
 							</button>
 						{/if}
 						<button onclick={openDiary} class="btn btn-sm" aria-haspopup="dialog">
@@ -1225,7 +1210,7 @@
 										<span class="text-gray-700">{bill.name}</span>
 										<span class="text-xs text-gray-500">
 											{formatMoney(bill.amountExpected, data.billsCard.currency)}{#if bill.dueDay}
-												{t('home.dueThe')} {bill.dueDay}{/if}
+												{t('home.dueThe')} {ordinal(t, bill.dueDay)}{/if}
 										</span>
 									</div>
 								{/each}
@@ -1261,7 +1246,7 @@
 								<span class="text-gray-700">{workout.title}</span>
 								<span class="text-xs text-gray-500">
 									{workout.lastDoneAt
-										? t('home.lastDone', { date: workout.lastDoneAt.slice(0, 10) })
+										? t('home.lastDone', { date: civilOf(workout.lastDoneAt, now()) })
 										: t('home.neverYet')}
 								</span>
 							</div>

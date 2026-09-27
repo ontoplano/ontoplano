@@ -17,8 +17,11 @@
 	 * bottom on a line that never wraps.
 	 *
 	 * The rail runs the height of the card; whatever is last in it sits at
-	 * the bottom (give it `mt-auto`). Goes inside the row's own element, which
-	 * keeps the keyboard cursor, the selection and the padding.
+	 * the bottom (give it `mt-auto`). It is `--row-rail` wide whatever it
+	 * holds, so the words start at `--row-text-x` on every row of every room.
+	 *
+	 * Goes inside a `.row-card` — the row's own element, which keeps the
+	 * keyboard cursor, the selection and the padding.
 	 */
 	import type { Snippet } from 'svelte';
 
@@ -39,7 +42,7 @@
 	} = $props();
 </script>
 
-<div class="row-card-rail flex shrink-0 flex-col items-center gap-1.5 self-stretch">
+<div class="row-card-rail row-rail">
 	{@render rail()}
 </div>
 
@@ -75,14 +78,3 @@
 		{/if}
 	</div>
 </div>
-
-<style>
-	/* Back to full strength while the pointer is anywhere on the words, not
-	   only on the line the buttons are in. */
-	@media (hover: hover) {
-		.row-card-body:hover .task-actions > :global(*),
-		.row-card-body:focus-within .task-actions > :global(*) {
-			opacity: 1;
-		}
-	}
-</style>

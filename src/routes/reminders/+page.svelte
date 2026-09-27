@@ -5,7 +5,7 @@
 	import { timeOf } from '$lib/when';
 	import NumberBox from '$lib/components/NumberBox.svelte';
 	import RingerHealth from '$lib/components/RingerHealth.svelte';
-	import RoomBar from '$lib/components/RoomBar.svelte';
+	import TabbedRoom from '$lib/components/TabbedRoom.svelte';
 	import { glyphFor, routeGlyph } from '$lib/glyphs';
 	import { browser } from '$app/environment';
 	import { enhance } from '$lib/enhance';
@@ -552,18 +552,15 @@
 	{/if}
 {/snippet}
 
-<svelte:head><title>{t('reminders.remindersOntoplano')}</title></svelte:head>
-
 <svelte:window onkeydown={handleKeydown} />
 
 <audio bind:this={audio} class="hidden"></audio>
 
-<div class="space-y-4">
-	<RoomBar title={t('reminders.reminders')} />
+<TabbedRoom title={t('reminders.reminders')} room="reminders" label={t('reminders.reminders')}>
+	<div class="space-y-4">
+		<FormError message={form?.message} />
 
-	<FormError message={form?.message} />
-
-	<!--
+		<!--
 		Whether this phone will actually ring, before anything about reminders.
 
 		It draws nothing outside the app — there is no shell to ask — so on a
@@ -571,9 +568,9 @@
 		the page, because "will this wake me" is the question the rest of the
 		screen assumes the answer to.
 	-->
-	<RingerHealth />
+		<RingerHealth />
 
-	<!--
+		<!--
 		Why nothing arrives, when nothing can.
 		
 		Notifications, service workers and installing as an app all need a secure
@@ -583,18 +580,18 @@
 		so without this the app does nothing, says nothing, and looks broken
 		rather than unsupported.
 	-->
-	{#if insecure}
-		<Banner kind="warning">
-			{t('reminders.nothingCanReachThisBrowser')}
-			<span class="tabular">{origin}</span>{t('reminders.onTheMachineRunning')}
-			<span class="tabular">{t('reminders.localhost')}</span>
-			{t('reminders.countsAsSecureFromAnother')}
-			<span class="tabular">{t('reminders.makeHttpsLocal')}</span>
-			{t('reminders.servesItOverHttpsWith')}
-		</Banner>
-	{/if}
+		{#if insecure}
+			<Banner kind="warning">
+				{t('reminders.nothingCanReachThisBrowser')}
+				<span class="tabular">{origin}</span>{t('reminders.onTheMachineRunning')}
+				<span class="tabular">{t('reminders.localhost')}</span>
+				{t('reminders.countsAsSecureFromAnother')}
+				<span class="tabular">{t('reminders.makeHttpsLocal')}</span>
+				{t('reminders.servesItOverHttpsWith')}
+			</Banner>
+		{/if}
 
-	<!--
+		<!--
 		The one button that makes any of this arrive.
 
 		Only where it can work: an insecure context has no `Notification` to ask,
@@ -602,7 +599,7 @@
 		that would do half the job. It disappears once granted, since permission
 		is permanent and a settled question does not need a row.
 	-->
-	<!--
+		<!--
 		The app, showing an instance that is not the copy it carries.
 
 		This page cannot ask the phone anything — the shell's plugins reach its
@@ -617,46 +614,46 @@
 		instance at all, and a flat contradiction of the Preferences screen ever
 		since.
 	-->
-	{#if !insecure && unreachable && data.ringsOnAPhone}
-		<p class="mb-4 max-w-2xl text-sm leading-relaxed text-gray-500">
-			{t('reminders.remindersFromHereRingOn')}
-			<a href={resolve('/settings/preferences')} class="underline underline-offset-2"
-				>{t('reminders.preferences')}</a
-			>
-			{t('reminders.stopsThatOrSetsIt')}
-		</p>
-	{:else if !insecure && (!allowed || unreachable)}
-		<Banner kind="warning">
-			<div class="flex flex-wrap items-center gap-3">
-				<span>
+		{#if !insecure && unreachable && data.ringsOnAPhone}
+			<p class="mb-4 max-w-2xl text-sm leading-relaxed text-gray-500">
+				{t('reminders.remindersFromHereRingOn')}
+				<a href={resolve('/settings/preferences')} class="underline underline-offset-2"
+					>{t('reminders.preferences')}</a
+				>
+				{t('reminders.stopsThatOrSetsIt')}
+			</p>
+		{:else if !insecure && (!allowed || unreachable)}
+			<Banner kind="warning">
+				<div class="flex flex-wrap items-center gap-3">
+					<span>
+						{#if unreachable}
+							{t('reminders.thisPhoneIsNotSet')}
+						{:else if refused}
+							{t('reminders.androidHasRefusedNotificationsAnd')}
+						{:else if inPhoneApp()}
+							{t('reminders.thisPhoneHasNotBeen')}
+						{:else}
+							{t('reminders.thisBrowserHasNotBeen')}
+						{/if}
+					</span>
 					{#if unreachable}
-						{t('reminders.thisPhoneIsNotSet')}
-					{:else if refused}
-						{t('reminders.androidHasRefusedNotificationsAnd')}
-					{:else if inPhoneApp()}
-						{t('reminders.thisPhoneHasNotBeen')}
-					{:else}
-						{t('reminders.thisBrowserHasNotBeen')}
-					{/if}
-				</span>
-				{#if unreachable}
-					<!-- The one press that arranges it is on Preferences: this page is
+						<!-- The one press that arranges it is on Preferences: this page is
 					     on the instance's origin, where the app's own plugins do not
 					     reach, and the handshake needs the copy the phone carries. -->
-					<a href={resolve('/settings/preferences')} class="btn btn-primary"
-						>{t('reminders.setItUp')}</a
-					>
-				{:else if refused}
-					<button type="button" class="btn btn-primary" onclick={openPhoneNotificationSettings}>
-						{t('reminders.openThePhoneSSettings')}
-					</button>
-				{:else}
-					<button type="button" class="btn btn-primary" onclick={allow} disabled={asking}>
-						{asking ? t('reminders.asking') : t('reminders.allowNotifications')}
-					</button>
-				{/if}
-			</div>
-			<!--
+						<a href={resolve('/settings/preferences')} class="btn btn-primary"
+							>{t('reminders.setItUp')}</a
+						>
+					{:else if refused}
+						<button type="button" class="btn btn-primary" onclick={openPhoneNotificationSettings}>
+							{t('reminders.openThePhoneSSettings')}
+						</button>
+					{:else}
+						<button type="button" class="btn btn-primary" onclick={allow} disabled={asking}>
+							{asking ? t('reminders.asking') : t('reminders.allowNotifications')}
+						</button>
+					{/if}
+				</div>
+				<!--
 				And the sentence about push, which is not the phone app's problem.
 
 				Android's web view has no Push API, so inside the app that line was
@@ -665,15 +662,15 @@
 				Android itself while it is open, and they arrive whether or not it
 				is.
 			-->
-			{#if !pushSupported() && !inPhoneApp()}
-				<p class="mt-2 text-sm">
-					{t('reminders.thisBrowserHasNoPush')}
-				</p>
-			{/if}
-		</Banner>
-	{/if}
+				{#if !pushSupported() && !inPhoneApp()}
+					<p class="mt-2 text-sm">
+						{t('reminders.thisBrowserHasNoPush')}
+					</p>
+				{/if}
+			</Banner>
+		{/if}
 
-	<!--
+		<!--
 		The alarm clock.
 
 		A reminder about nothing: a time and a sentence. It shows wherever
@@ -681,20 +678,20 @@
 		thing that beeps without being asked is a thing whose sound gets turned
 		off for good.
 	-->
-	<!--
+		<!--
 		Setting one is a question, so it is asked in a dialog.
 
 		It was a card at the top of the page: a form you had to scroll past
 		every time you came here to look at what was already set, which is the
 		commoner reason to open this screen by far.
 	-->
-	<Modal
-		bind:open={setting}
-		title={t('reminders.setOne')}
-		description={t('reminders.aDayAndWhatTo')}
-		size="lg"
-	>
-		<!--
+		<Modal
+			bind:open={setting}
+			title={t('reminders.setOne')}
+			description={t('reminders.aDayAndWhatTo')}
+			size="lg"
+		>
+			<!--
 				A day and a time, not one field with six segments in it.
 
 				`datetime-local` renders as `dd/mm/yyyy, --:--` — one control
@@ -703,53 +700,53 @@
 				phone, and let somebody set a time for today without touching the
 				date at all.
 			-->
-		<form
-			method="post"
-			action="?/create"
-			use:enhance={() => {
-				return async ({ result, update }) => {
-					await update({ reset: false });
-					// Cleared by hand rather than by `reset`, which blanks a date
-					// back to nothing — the default is today, and a form that
-					// forgets what day it is asks for it again every time.
-					if (result.type === 'success') {
-						day = data.today;
-						time = '';
-						say = '';
-						audible = false;
-						// And out of the way: the thing you just set is a row on the
-						// list this dialog is sitting on top of, and a page that looks
-						// unchanged after a save is a page that looks broken.
-						setting = false;
-						// Booked with the phone now rather than whenever the app
-						// next happens to be reopened.
-						alarmsChanged();
-					}
-				};
-			}}
-			class="space-y-3"
-		>
-			<FormGrid>
-				<Field label={t('reminders.day')} span={6} required>
-					<input
-						name="day"
-						type="date"
-						required
-						min={earliestDay}
-						autocomplete="off"
-						bind:value={day}
-						onfocus={pick}
-						onclick={pick}
-						title={t('reminders.whichDayItShouldGo')}
-						class="input"
-					/>
-				</Field>
-				<Field
-					label={t('reminders.time')}
-					span={6}
-					hint={t('reminders.emptyMeansDayStart', { at: dayStartSaid })}
-				>
-					<!--
+			<form
+				method="post"
+				action="?/create"
+				use:enhance={() => {
+					return async ({ result, update }) => {
+						await update({ reset: false });
+						// Cleared by hand rather than by `reset`, which blanks a date
+						// back to nothing — the default is today, and a form that
+						// forgets what day it is asks for it again every time.
+						if (result.type === 'success') {
+							day = data.today;
+							time = '';
+							say = '';
+							audible = false;
+							// And out of the way: the thing you just set is a row on the
+							// list this dialog is sitting on top of, and a page that looks
+							// unchanged after a save is a page that looks broken.
+							setting = false;
+							// Booked with the phone now rather than whenever the app
+							// next happens to be reopened.
+							alarmsChanged();
+						}
+					};
+				}}
+				class="space-y-3"
+			>
+				<FormGrid>
+					<Field label={t('reminders.day')} span={6} required>
+						<input
+							name="day"
+							type="date"
+							required
+							min={earliestDay}
+							autocomplete="off"
+							bind:value={day}
+							onfocus={pick}
+							onclick={pick}
+							title={t('reminders.whichDayItShouldGo')}
+							class="input"
+						/>
+					</Field>
+					<Field
+						label={t('reminders.time')}
+						span={6}
+						hint={t('reminders.emptyMeansDayStart', { at: dayStartSaid })}
+					>
+						<!--
 							The browser's own time field, whatever it draws.
 
 							There was a hand-built clock face here for a while, because
@@ -762,56 +759,56 @@
 							real destination is an installed Android app, where this is the
 							good one.
 						-->
-					<!--
+						<!--
 						`min` only on the first day it could be. A time field's `min` is
 						a time of day, not an instant — so on any later day it would
 						forbid the morning for no reason.
 					-->
-					<input
-						id="reminder-time"
-						name="time"
-						type="time"
-						autocomplete="off"
-						bind:value={time}
-						min={day === earliestDay ? floorAt.slice(11, 16) : undefined}
-						title={t('reminders.whatTimeItShouldGo', { dayStart: dayStartSaid })}
-						class="input"
-					/>
-				</Field>
-				<Field label={t('reminders.whatToSay')} span={12} required>
-					<OneLine
-						name="label"
-						required
-						bind:value={say}
-						placeholder={t('reminders.eGTakeTheBreadOut')}
-						class="input"
-					/>
-				</Field>
-			</FormGrid>
+						<input
+							id="reminder-time"
+							name="time"
+							type="time"
+							autocomplete="off"
+							bind:value={time}
+							min={day === earliestDay ? floorAt.slice(11, 16) : undefined}
+							title={t('reminders.whatTimeItShouldGo', { dayStart: dayStartSaid })}
+							class="input"
+						/>
+					</Field>
+					<Field label={t('reminders.whatToSay')} span={12} required>
+						<OneLine
+							name="label"
+							required
+							bind:value={say}
+							placeholder={t('reminders.eGTakeTheBreadOut')}
+							class="input"
+						/>
+					</Field>
+				</FormGrid>
 
-			{@render whyNotThisTime(day, time)}
+				{@render whyNotThisTime(day, time)}
 
-			<div class="flex flex-wrap items-center gap-4">
-				<label
-					class="flex items-center gap-2 text-sm whitespace-nowrap text-gray-700"
-					title={t('reminders.playASoundAsWell')}
-				>
-					<input type="checkbox" name="audible" bind:checked={audible} class="size-4" />
-					{t('reminders.makeASound')}
-				</label>
-				<label
-					class="flex items-center gap-2 text-sm whitespace-nowrap text-gray-700"
-					title={t('reminders.whichSoundThisOnePlays')}
-				>
-					{t('reminders.sound')}
-					<select name="ringtoneId" class="select w-44">
-						<option value="">{t('reminders.default')}</option>
-						{#each data.ringtones as tone (tone.id)}
-							<option value={tone.id}>{tone.name}</option>
-						{/each}
-					</select>
-				</label>
-				<!--
+				<div class="flex flex-wrap items-center gap-4">
+					<label
+						class="flex items-center gap-2 text-sm whitespace-nowrap text-gray-700"
+						title={t('reminders.playASoundAsWell')}
+					>
+						<input type="checkbox" name="audible" bind:checked={audible} class="size-4" />
+						{t('reminders.makeASound')}
+					</label>
+					<label
+						class="flex items-center gap-2 text-sm whitespace-nowrap text-gray-700"
+						title={t('reminders.whichSoundThisOnePlays')}
+					>
+						{t('reminders.sound')}
+						<select name="ringtoneId" class="select w-44">
+							<option value="">{t('reminders.default')}</option>
+							{#each data.ringtones as tone (tone.id)}
+								<option value={tone.id}>{tone.name}</option>
+							{/each}
+						</select>
+					</label>
+					<!--
 						Off until there is something to set.
 
 						It looked pressable with the fields empty, so pressing it did
@@ -819,66 +816,66 @@
 						validation message is easy to miss on a phone, and a control
 						that cannot work should not look like one that can.
 					-->
-				<button
-					type="submit"
-					disabled={!ready}
-					class="btn btn-primary btn-sm ml-auto"
-					title={ready
-						? t('reminders.setThisReminder')
-						: hasBeen(day, time) || isTooSoon(day, time)
-							? t('reminders.thatTimeHasAlreadyBeen2')
-							: t('reminders.aDayAndSomethingTo')}
-				>
-					{t('reminders.setIt')}
-				</button>
-			</div>
-		</form>
-	</Modal>
+					<button
+						type="submit"
+						disabled={!ready}
+						class="btn btn-primary btn-sm ml-auto"
+						title={ready
+							? t('reminders.setThisReminder')
+							: hasBeen(day, time) || isTooSoon(day, time)
+								? t('reminders.thatTimeHasAlreadyBeen2')
+								: t('reminders.aDayAndSomethingTo')}
+					>
+						{t('reminders.setIt')}
+					</button>
+				</div>
+			</form>
+		</Modal>
 
-	<!--
+		<!--
 		What is coming, and how far ahead you are asking.
 
 		The window is in the address bar rather than in a preference: it is a
 		question you ask once — "and what about November?" — not a setting you
 		keep, and this way the answer is a link you can send yourself.
 	-->
-	<!--
+		<!--
 		The list and the controls that choose it, and the settings for how it
 		sounds, as one surface: the window along the top, the list under it,
 		then a band per setting. They were three cards on the page ground, the
 		first wearing a heading that repeated what its own controls said.
 	-->
-	<RoomSurface>
-		<div
-			class="flex flex-wrap items-center gap-2 border-b border-gray-200 p-4"
-			data-tour="reminder-window"
-		>
-			<!--
+		<RoomSurface>
+			<div
+				class="flex flex-wrap items-center gap-2 border-b border-gray-200 p-4"
+				data-tour="reminder-window"
+			>
+				<!--
 				Which way the window points.
 
 				The same number of days, forwards or backwards. It sits first
 				because it changes what every other control in this row means.
 			-->
-			<div use:sliding class="seg" role="group" aria-label={t('reminders.whichWayToLook')}>
-				<button
-					type="button"
-					onclick={() => look(data.days, false)}
-					aria-pressed={!data.past}
-					title={t('reminders.whatIsStillToCome')}
-				>
-					{t('reminders.ahead')}
-				</button>
-				<button
-					type="button"
-					onclick={() => look(data.days, true)}
-					aria-pressed={data.past}
-					title={t('reminders.whatHasAlreadyGoneOff')}
-				>
-					{t('reminders.past')}
-				</button>
-			</div>
+				<div use:sliding class="seg" role="group" aria-label={t('reminders.whichWayToLook')}>
+					<button
+						type="button"
+						onclick={() => look(data.days, false)}
+						aria-pressed={!data.past}
+						title={t('reminders.whatIsStillToCome')}
+					>
+						{t('reminders.ahead')}
+					</button>
+					<button
+						type="button"
+						onclick={() => look(data.days, true)}
+						aria-pressed={data.past}
+						title={t('reminders.whatHasAlreadyGoneOff')}
+					>
+						{t('reminders.past')}
+					</button>
+				</div>
 
-			<!--
+				<!--
 				On a phone: one button saying how far, and a dialog to change it.
 
 				The seven windows, a number box and a Go button are four controls
@@ -888,210 +885,215 @@
 				space; changing it is a question, and questions are asked in dialogs
 				here.
 			-->
-			<button
-				type="button"
-				class="btn btn-sm sm:hidden"
-				onclick={() => (ranging = true)}
-				aria-haspopup="dialog"
-				title={t('reminders.changeHowFar')}
-			>
-				{t('reminders.daysCount', { count: data.days })}
-				<Icon name="chevron-down" />
-			</button>
-
-			<!-- …and on anything wider, where the row fits, all of them at once. -->
-			<div use:sliding class="seg hidden sm:flex" role="group" aria-label={t('reminders.howFar')}>
-				{#each WINDOWS as window (window)}
-					<button
-						type="button"
-						onclick={() => look(window)}
-						aria-pressed={data.days === window}
-						title={data.past
-							? t('reminders.theLastDays', { count: window })
-							: t('reminders.theNextDays', { count: window })}
-					>
-						{window}
-					</button>
-				{/each}
-			</div>
-			<form
-				onsubmit={(e) => {
-					e.preventDefault();
-					look(Number(howFar));
-				}}
-				class="hidden items-center gap-2 sm:flex"
-			>
-				<label class="text-xs whitespace-nowrap text-gray-500" for="how-far"
-					>{t('reminders.or')}</label
+				<button
+					type="button"
+					class="btn btn-sm sm:hidden"
+					onclick={() => (ranging = true)}
+					aria-haspopup="dialog"
+					title={t('reminders.changeHowFar')}
 				>
-				<NumberBox
-					id="how-far"
-					name="days"
-					min="1"
-					max={data.maxDays}
-					bind:value={howFar}
-					autocomplete="off"
-					title={t('reminders.howManyDaysToCover', { maxDays: data.maxDays })}
-					class="w-20"
-				/>
-				<span class="text-xs whitespace-nowrap text-gray-500">{t('reminders.days')}</span>
-				<button type="submit" class="btn btn-sm" title={t('reminders.lookThatFar')}
-					>{t('reminders.go')}</button
-				>
-			</form>
-		</div>
+					{t('reminders.daysCount', { count: data.days })}
+					<Icon name="chevron-down" />
+				</button>
 
-		<!--
-			The same windows, stacked, for the phone's button above.
-
-			One column rather than a grid: each row is a whole sentence — "3 days"
-			— and they are read down, not scanned across. The one in force is
-			marked, so opening this says where you are before it asks where to go.
-		-->
-		<Modal
-			bind:open={ranging}
-			title={t('reminders.howFar')}
-			size="sm"
-			onclosed={() => {
-				// Chosen here rather than in the button, because on a phone this
-				// dialog holds a history entry and gives it back with
-				// `history.back()` — a navigation fired before that pop lands is
-				// undone by it, which is why picking a window used to do nothing.
-				const wanted = chosen;
-				chosen = null;
-				if (wanted !== null) look(wanted);
-			}}
-		>
-			<div class="space-y-1">
-				{#each WINDOWS as window (window)}
-					<button
-						type="button"
-						class="block w-full px-3 py-2.5 text-left text-sm {data.days === window
-							? 'bg-gray-100 font-medium text-gray-900'
-							: 'text-gray-700 hover:bg-gray-50'}"
-						aria-pressed={data.days === window}
-						onclick={() => {
-							chosen = window;
-							ranging = false;
-						}}
-					>
-						{t('reminders.daysCount', { count: window })}
-					</button>
-				{/each}
-
+				<!-- …and on anything wider, where the row fits, all of them at once. -->
+				<div use:sliding class="seg hidden sm:flex" role="group" aria-label={t('reminders.howFar')}>
+					{#each WINDOWS as window (window)}
+						<button
+							type="button"
+							onclick={() => look(window)}
+							aria-pressed={data.days === window}
+							title={data.past
+								? t('reminders.theLastDays', { count: window })
+								: t('reminders.theNextDays', { count: window })}
+						>
+							{window}
+						</button>
+					{/each}
+				</div>
 				<form
 					onsubmit={(e) => {
 						e.preventDefault();
-						chosen = Number(howFar);
-						ranging = false;
+						look(Number(howFar));
 					}}
-					class="flex items-center gap-2 border-t border-gray-200 pt-3"
+					class="hidden items-center gap-2 sm:flex"
 				>
-					<label class="sr-only" for="how-far-phone">{t('reminders.somethingElse')}</label>
+					<label class="text-xs whitespace-nowrap text-gray-500" for="how-far"
+						>{t('reminders.or')}</label
+					>
 					<NumberBox
-						id="how-far-phone"
+						id="how-far"
 						name="days"
 						min="1"
 						max={data.maxDays}
 						bind:value={howFar}
 						autocomplete="off"
 						title={t('reminders.howManyDaysToCover', { maxDays: data.maxDays })}
-						class="w-24"
+						class="w-20"
 					/>
-					<span class="flex-1 text-xs text-gray-500">{t('reminders.days')}</span>
-					<button type="submit" class="btn btn-sm">{t('reminders.go')}</button>
+					<span class="text-xs whitespace-nowrap text-gray-500">{t('reminders.days')}</span>
+					<button type="submit" class="btn btn-sm" title={t('reminders.lookThatFar')}
+						>{t('reminders.go')}</button
+					>
 				</form>
 			</div>
-		</Modal>
 
-		{#if upcoming.length === 0}
-			<EmptyState
-				icon={glyphFor('reminders')!}
-				title={data.past ? t('reminders.nothingWentOff') : t('reminders.nothingWaiting')}
-				description={data.past
-					? t('reminders.remindersThatHaveAlreadyFired')
-					: t('reminders.blocksWithAReminderBirthdays')}
-			/>
-		{:else}
-			<ul class="divide-y divide-gray-200">
-				{#each upcoming as reminder (reminder.key)}
-					<li class="px-4 py-3">
-						<div class="flex items-center gap-3">
-							<span class="shrink-0 text-gray-500" title={t(kindOf(reminder.subjectKind).label)}>
-								<Icon name={kindOf(reminder.subjectKind).icon} size={14} />
-							</span>
-							<span class="min-w-0 flex-1">
-								<span class="block truncate text-sm text-gray-900">{reminder.message}</span>
-								<span class="flex items-center gap-1.5 text-xs text-gray-500">
-									{t(kindOf(reminder.subjectKind).label)}
-									<!-- On a phone the time rides here, so the sentence keeps the width. -->
-									<span class="tabular sm:hidden">· {when(reminder.remindAt)}</span>
-									{#if reminder.shown}{t('reminders.alreadyShown')}{/if}
-									<!-- The one thing about a reminder you want to know before it
-								     happens rather than after. -->
-									{#if reminder.audible}
-										<span class="text-gray-700" title={t('reminders.thisOneMakesASound')}>
-											<Icon name="sound" size={12} />
-										</span>
-									{/if}
+			<!--
+			The same windows, stacked, for the phone's button above.
+
+			One column rather than a grid: each row is a whole sentence — "3 days"
+			— and they are read down, not scanned across. The one in force is
+			marked, so opening this says where you are before it asks where to go.
+		-->
+			<Modal
+				bind:open={ranging}
+				title={t('reminders.howFar')}
+				size="sm"
+				onclosed={() => {
+					// Chosen here rather than in the button, because on a phone this
+					// dialog holds a history entry and gives it back with
+					// `history.back()` — a navigation fired before that pop lands is
+					// undone by it, which is why picking a window used to do nothing.
+					const wanted = chosen;
+					chosen = null;
+					if (wanted !== null) look(wanted);
+				}}
+			>
+				<div class="space-y-1">
+					{#each WINDOWS as window (window)}
+						<button
+							type="button"
+							class="block w-full px-3 py-2.5 text-left text-sm {data.days === window
+								? 'bg-gray-100 font-medium text-gray-900'
+								: 'text-gray-700 hover:bg-gray-50'}"
+							aria-pressed={data.days === window}
+							onclick={() => {
+								chosen = window;
+								ranging = false;
+							}}
+						>
+							{t('reminders.daysCount', { count: window })}
+						</button>
+					{/each}
+
+					<form
+						onsubmit={(e) => {
+							e.preventDefault();
+							chosen = Number(howFar);
+							ranging = false;
+						}}
+						class="flex items-center gap-2 border-t border-gray-200 pt-3"
+					>
+						<label class="sr-only" for="how-far-phone">{t('reminders.somethingElse')}</label>
+						<NumberBox
+							id="how-far-phone"
+							name="days"
+							min="1"
+							max={data.maxDays}
+							bind:value={howFar}
+							autocomplete="off"
+							title={t('reminders.howManyDaysToCover', { maxDays: data.maxDays })}
+							class="w-24"
+						/>
+						<span class="flex-1 text-xs text-gray-500">{t('reminders.days')}</span>
+						<button type="submit" class="btn btn-sm">{t('reminders.go')}</button>
+					</form>
+				</div>
+			</Modal>
+
+			{#if upcoming.length === 0}
+				<EmptyState
+					icon={glyphFor('reminders')!}
+					title={data.past ? t('reminders.nothingWentOff') : t('reminders.nothingWaiting')}
+					description={data.past
+						? t('reminders.remindersThatHaveAlreadyFired')
+						: t('reminders.blocksWithAReminderBirthdays')}
+				/>
+			{:else}
+				<ul class="divide-y divide-gray-200">
+					{#each upcoming as reminder (reminder.key)}
+						<li class="px-4 py-3">
+							<div class="flex items-center gap-3">
+								<span class="shrink-0 text-gray-500" title={t(kindOf(reminder.subjectKind).label)}>
+									<Icon name={kindOf(reminder.subjectKind).icon} size={14} />
 								</span>
-							</span>
-							<span class="tabular hidden shrink-0 text-xs text-gray-500 sm:block"
-								>{when(reminder.remindAt)}</span
-							>
+								<span class="min-w-0 flex-1">
+									<span class="block truncate text-sm text-gray-900">{reminder.message}</span>
+									<span class="flex items-center gap-1.5 text-xs text-gray-500">
+										{t(kindOf(reminder.subjectKind).label)}
+										<!-- On a phone the time rides here, so the sentence keeps the width. -->
+										<span class="tabular sm:hidden">· {when(reminder.remindAt)}</span>
+										{#if reminder.shown}{t('reminders.alreadyShown')}{/if}
+										<!-- The one thing about a reminder you want to know before it
+								     happens rather than after. -->
+										{#if reminder.audible}
+											<span class="text-gray-700" title={t('reminders.thisOneMakesASound')}>
+												<Icon name="sound" size={12} />
+											</span>
+										{/if}
+									</span>
+								</span>
+								<span class="tabular hidden shrink-0 text-xs text-gray-500 sm:block"
+									>{when(reminder.remindAt)}</span
+								>
 
-							{#if reminder.id === null}
-								<!-- Nothing to change or remove: it is not a row, it is a date
+								{#if reminder.id === null}
+									<!-- Nothing to change or remove: it is not a row, it is a date
 							     in the address book or on a bill. -->
-								<span class="hidden w-14 shrink-0 sm:block"></span>
-							{:else if confirmingDelete === reminder.id}
-								<form
-									method="post"
-									action="?/remove"
-									use:enhance={() =>
-										async ({ update }) => {
-											await update();
-											// A reminder that is gone must stop being an alarm.
-											alarmsChanged();
-										}}
-									class="flex shrink-0 gap-1"
-								>
-									<input type="hidden" name="id" value={reminder.id} />
-									<button type="submit" class="btn btn-sm btn-danger" use:armed
-										>{t('reminders.confirm')}</button
+									<span
+										class="hidden shrink-0 sm:block"
+										style="width: calc(2 * var(--row-action-size) + 0.25rem)"
+									></span>
+								{:else if confirmingDelete === reminder.id}
+									<form
+										method="post"
+										action="?/remove"
+										use:enhance={() =>
+											async ({ update }) => {
+												await update();
+												// A reminder that is gone must stop being an alarm.
+												alarmsChanged();
+											}}
+										class="flex shrink-0 gap-1"
 									>
-									<button
-										type="button"
-										onclick={() => (confirmingDelete = null)}
-										class="btn btn-sm"
-									>
-										{t('ui.cancel')}
-									</button>
-								</form>
-							{:else}
-								<button
-									type="button"
-									onclick={() => (editing === reminder.id ? (editing = null) : edit(reminder))}
-									class="icon-btn shrink-0"
-									title={t('reminders.changeThisReminder')}
-									aria-label={t('reminders.change', { message: reminder.message })}
-									aria-expanded={editing === reminder.id}
-								>
-									<Icon name="edit" />
-								</button>
-								<button
-									type="button"
-									onclick={() => (confirmingDelete = reminder.id)}
-									class="icon-btn icon-btn-danger shrink-0"
-									title={t('reminders.removeThisReminder')}
-									aria-label={t('reminders.remove', { message: reminder.message })}
-								>
-									<Icon name="trash" />
-								</button>
-							{/if}
-						</div>
+										<input type="hidden" name="id" value={reminder.id} />
+										<button type="submit" class="btn btn-sm btn-danger" use:armed
+											>{t('reminders.confirm')}</button
+										>
+										<button
+											type="button"
+											onclick={() => (confirmingDelete = null)}
+											class="btn btn-sm"
+										>
+											{t('ui.cancel')}
+										</button>
+									</form>
+								{:else}
+									<div class="list-row-actions">
+										<button
+											type="button"
+											onclick={() => (editing === reminder.id ? (editing = null) : edit(reminder))}
+											class="icon-btn shrink-0"
+											title={t('reminders.changeThisReminder')}
+											aria-label={t('reminders.change', { message: reminder.message })}
+											aria-expanded={editing === reminder.id}
+										>
+											<Icon name="edit" />
+										</button>
+										<button
+											type="button"
+											onclick={() => (confirmingDelete = reminder.id)}
+											class="icon-btn icon-btn-danger shrink-0"
+											title={t('reminders.removeThisReminder')}
+											aria-label={t('reminders.remove', { message: reminder.message })}
+										>
+											<Icon name="trash" />
+										</button>
+									</div>
+								{/if}
+							</div>
 
-						<!--
+							<!--
 							The same four questions, opened on the row itself.
 
 							Behind a press rather than always drawn: a list of twenty
@@ -1099,7 +1101,7 @@
 							move anything above it, which is why it grows downward inside
 							its own row.
 						-->
-						<!--
+							<!--
 							`reminder.id !== null` first, and it is the whole bug.
 
 							A bill's date and a birthday are rows in this list with no
@@ -1109,63 +1111,63 @@
 							opened with an edit form under every derived row it could
 							show. Nothing was being edited; they all just looked like it.
 						-->
-						{#if reminder.id !== null && editing === reminder.id}
-							<form
-								method="post"
-								action="?/edit"
-								use:enhance={() => {
-									return async ({ result, update }) => {
-										await update({ reset: false });
-										if (result.type === 'success') {
-											editing = null;
-											alarmsChanged();
-										}
-									};
-								}}
-								class="mt-3 space-y-3 border-t border-gray-200 pt-3"
-							>
-								<input type="hidden" name="id" value={reminder.id} />
-								<FormGrid>
-									<Field label={t('reminders.day')} span={6} required>
-										<input
-											name="day"
-											type="date"
-											required
-											min={data.today}
-											autocomplete="off"
-											bind:value={editDay}
-											onfocus={pick}
-											onclick={pick}
-											class="input"
-										/>
-									</Field>
-									<Field
-										label={t('reminders.time')}
-										span={6}
-										hint={t('reminders.emptyMeansAt', { at: dayStartSaid })}
-									>
-										<input
-											name="time"
-											type="time"
-											autocomplete="off"
-											bind:value={editTime}
-											class="input"
-										/>
-									</Field>
-									<Field label={t('reminders.whatToSay')} span={12} required>
-										<OneLine name="label" required bind:value={editSay} class="input" />
-									</Field>
-								</FormGrid>
+							{#if reminder.id !== null && editing === reminder.id}
+								<form
+									method="post"
+									action="?/edit"
+									use:enhance={() => {
+										return async ({ result, update }) => {
+											await update({ reset: false });
+											if (result.type === 'success') {
+												editing = null;
+												alarmsChanged();
+											}
+										};
+									}}
+									class="mt-3 space-y-3 border-t border-gray-200 pt-3"
+								>
+									<input type="hidden" name="id" value={reminder.id} />
+									<FormGrid>
+										<Field label={t('reminders.day')} span={6} required>
+											<input
+												name="day"
+												type="date"
+												required
+												min={data.today}
+												autocomplete="off"
+												bind:value={editDay}
+												onfocus={pick}
+												onclick={pick}
+												class="input"
+											/>
+										</Field>
+										<Field
+											label={t('reminders.time')}
+											span={6}
+											hint={t('reminders.emptyMeansAt', { at: dayStartSaid })}
+										>
+											<input
+												name="time"
+												type="time"
+												autocomplete="off"
+												bind:value={editTime}
+												class="input"
+											/>
+										</Field>
+										<Field label={t('reminders.whatToSay')} span={12} required>
+											<OneLine name="label" required bind:value={editSay} class="input" />
+										</Field>
+									</FormGrid>
 
-								{@render whyNotThisTime(editDay, editTime)}
+									{@render whyNotThisTime(editDay, editTime)}
 
-								<div class="flex flex-wrap items-center gap-4">
-									<label
-										class="flex items-center gap-2 text-sm whitespace-nowrap text-gray-700"
-										title={t('reminders.whetherThisOneMakesA')}
-									>
-										{t('reminders.sound')}
-										<!--
+									<div class="flex flex-wrap items-center gap-4">
+										<label
+											class="flex items-center gap-2 text-sm whitespace-nowrap text-gray-700"
+											title={t('reminders.whetherThisOneMakesA')}
+										>
+											{t('reminders.sound')}
+											<!--
 											Three answers, because a row has three.
 
 											A checkbox can only say yes or no, and the commonest state
@@ -1173,65 +1175,65 @@
 											does whatever that kind of reminder is set to. Ticking a
 											box would quietly turn that into an answer of its own.
 										-->
-										<select name="sound" bind:value={editSound} class="select w-36">
-											<option value="kind">{t('reminders.followTheKind')}</option>
-											<option value="on">{t('reminders.makeASound')}</option>
-											<option value="off">{t('reminders.silent')}</option>
-										</select>
-									</label>
-									<label
-										class="flex items-center gap-2 text-sm whitespace-nowrap text-gray-700"
-										title={t('reminders.whichSoundThisOnePlays')}
-									>
-										{t('reminders.which')}
-										<select
-											name="ringtoneId"
-											bind:value={editTone}
-											disabled={editSound !== 'on'}
-											class="select w-40"
+											<select name="sound" bind:value={editSound} class="select w-36">
+												<option value="kind">{t('reminders.followTheKind')}</option>
+												<option value="on">{t('reminders.makeASound')}</option>
+												<option value="off">{t('reminders.silent')}</option>
+											</select>
+										</label>
+										<label
+											class="flex items-center gap-2 text-sm whitespace-nowrap text-gray-700"
+											title={t('reminders.whichSoundThisOnePlays')}
 										>
-											<option value="">{t('reminders.default')}</option>
-											{#each data.ringtones as tone (tone.id)}
-												<option value={String(tone.id)}>{tone.name}</option>
-											{/each}
-										</select>
-									</label>
-									<div class="ml-auto flex gap-2">
-										<button type="button" onclick={() => (editing = null)} class="btn btn-sm">
-											{t('ui.cancel')}
-										</button>
-										<button
-											type="submit"
-											disabled={hasBeen(editDay, editTime) || isTooSoon(editDay, editTime)}
-											class="btn btn-primary btn-sm"
-											title={hasBeen(editDay, editTime)
-												? t('reminders.thatTimeHasAlreadyBeen2')
-												: t('reminders.saveThisReminder')}
-										>
-											{t('ui.save')}
-										</button>
+											{t('reminders.which')}
+											<select
+												name="ringtoneId"
+												bind:value={editTone}
+												disabled={editSound !== 'on'}
+												class="select w-40"
+											>
+												<option value="">{t('reminders.default')}</option>
+												{#each data.ringtones as tone (tone.id)}
+													<option value={String(tone.id)}>{tone.name}</option>
+												{/each}
+											</select>
+										</label>
+										<div class="ml-auto flex gap-2">
+											<button type="button" onclick={() => (editing = null)} class="btn btn-sm">
+												{t('ui.cancel')}
+											</button>
+											<button
+												type="submit"
+												disabled={hasBeen(editDay, editTime) || isTooSoon(editDay, editTime)}
+												class="btn btn-primary btn-sm"
+												title={hasBeen(editDay, editTime)
+													? t('reminders.thatTimeHasAlreadyBeen2')
+													: t('reminders.saveThisReminder')}
+											>
+												{t('ui.save')}
+											</button>
+										</div>
 									</div>
-								</div>
-							</form>
-						{/if}
-					</li>
-				{/each}
-			</ul>
-		{/if}
+								</form>
+							{/if}
+						</li>
+					{/each}
+				</ul>
+			{/if}
 
-		<!--
+			<!--
 		Which kinds are worth hearing.
 
 		Silent unless asked, for every kind: an alarm probably is worth a noise
 		and a birthday probably is not, and that is a judgement nobody else can
 		make for you.
 	-->
-		<SettingGroup
-			title={t('reminders.whatMakesASound')}
-			description={t('reminders.everythingShowsOnlyTheseAre')}
-			dataTour="reminder-sounds"
-		>
-			<!--
+			<SettingGroup
+				title={t('reminders.whatMakesASound')}
+				description={t('reminders.everythingShowsOnlyTheseAre')}
+				dataTour="reminder-sounds"
+			>
+				<!--
 				A kind, whether it makes a noise, and which noise.
 
 				This was one wrapping row per kind — name, a checkbox, a fixed-width
@@ -1249,98 +1251,99 @@
 				button you also have to remember to press is a row people leave
 				half-set. See `settings/preferences`.
 			-->
-			{#each data.sounds as choice (choice.kind)}
-				<div class="px-4 py-3">
-					<form
-						method="post"
-						action="?/setSound"
-						use:enhance
-						class="grid grid-cols-[1fr_auto] items-center gap-x-3 gap-y-2 sm:grid-cols-[1fr_14rem_auto]"
-					>
-						<input type="hidden" name="kind" value={choice.kind} />
+				{#each data.sounds as choice (choice.kind)}
+					<div class="px-4 py-3">
+						<form
+							method="post"
+							action="?/setSound"
+							use:enhance
+							class="grid grid-cols-[1fr_auto] items-center gap-x-3 gap-y-2 sm:grid-cols-[1fr_14rem_auto]"
+						>
+							<input type="hidden" name="kind" value={choice.kind} />
 
-						<span class="flex min-w-0 items-center gap-2 text-sm text-gray-900">
-							<span class="shrink-0 text-gray-500">
-								<Icon name={kindOf(choice.kind).icon} size={14} />
+							<span class="flex min-w-0 items-center gap-2 text-sm text-gray-900">
+								<span class="shrink-0 text-gray-500">
+									<Icon name={kindOf(choice.kind).icon} size={14} />
+								</span>
+								<span class="truncate">{t(kindOf(choice.kind).label)}</span>
 							</span>
-							<span class="truncate">{t(kindOf(choice.kind).label)}</span>
-						</span>
 
-						<!--
+							<!--
 								The switch sits last on a wide row and first-line-right on a
 								phone, which is why it is ordered rather than placed: it is
 								the answer to the question the name asks, so it stays beside
 								the name at every width.
 							-->
-						<input
-							type="checkbox"
-							name="audible"
-							value="on"
-							class="toggle justify-self-end sm:order-last"
-							checked={choice.audible}
-							aria-label={t('reminders.sound')}
-							onchange={(e) => e.currentTarget.form?.requestSubmit()}
-						/>
+							<input
+								type="checkbox"
+								name="audible"
+								value="on"
+								class="toggle justify-self-end sm:order-last"
+								checked={choice.audible}
+								aria-label={t('reminders.sound')}
+								onchange={(e) => e.currentTarget.form?.requestSubmit()}
+							/>
 
-						<select
-							name="ringtoneId"
-							class="select col-span-2 w-full sm:col-span-1"
-							aria-label={t('reminders.whatMakesASound')}
-							onchange={(e) => e.currentTarget.form?.requestSubmit()}
-						>
-							<option value="" selected={choice.ringtoneId === null}>
-								{t('reminders.default')}
-							</option>
-							{#each data.ringtones as tone (tone.id)}
-								<option value={tone.id} selected={choice.ringtoneId === tone.id}>{tone.name}</option
-								>
-							{/each}
-						</select>
-					</form>
-				</div>
-			{/each}
-		</SettingGroup>
-
-		<!-- The sounds themselves. -->
-		<SettingGroup
-			title={t('reminders.yourSounds')}
-			description={t('reminders.upToRingtonesKbEach', {
-				ringtones: data.limits.ringtones,
-				kilobytes: data.limits.kilobytes
-			})}
-		>
-			{#each data.ringtones as tone (tone.id)}
-				<div class="list-row">
-					<span class="list-row-main truncate text-sm text-gray-900">{tone.name}</span>
-					<span class="tabular shrink-0 text-xs text-gray-500"
-						>{t('reminders.kb', { bytes: Math.round(tone.bytes / 1024) })}</span
-					>
-					<div class="list-row-actions">
-						<button
-							type="button"
-							onclick={() => preview(`/api/ringtones/${tone.id}`)}
-							class="icon-btn"
-							title={t('reminders.hearIt')}
-							aria-label={t('reminders.hear', { name: tone.name })}
-						>
-							<Icon name="play" />
-						</button>
-						<form method="post" action="?/removeSound" use:enhance>
-							<input type="hidden" name="id" value={tone.id} />
-							<button
-								type="submit"
-								class="icon-btn icon-btn-danger"
-								title={t('ui.remove')}
-								aria-label={t('reminders.remove2', { name: tone.name })}
-								use:armed
+							<select
+								name="ringtoneId"
+								class="select col-span-2 w-full sm:col-span-1"
+								aria-label={t('reminders.whatMakesASound')}
+								onchange={(e) => e.currentTarget.form?.requestSubmit()}
 							>
-								<Icon name="trash" />
-							</button>
+								<option value="" selected={choice.ringtoneId === null}>
+									{t('reminders.default')}
+								</option>
+								{#each data.ringtones as tone (tone.id)}
+									<option value={tone.id} selected={choice.ringtoneId === tone.id}
+										>{tone.name}</option
+									>
+								{/each}
+							</select>
 						</form>
 					</div>
-				</div>
-			{/each}
-			<!--
+				{/each}
+			</SettingGroup>
+
+			<!-- The sounds themselves. -->
+			<SettingGroup
+				title={t('reminders.yourSounds')}
+				description={t('reminders.upToRingtonesKbEach', {
+					ringtones: data.limits.ringtones,
+					kilobytes: data.limits.kilobytes
+				})}
+			>
+				{#each data.ringtones as tone (tone.id)}
+					<div class="list-row">
+						<span class="list-row-main truncate text-sm text-gray-900">{tone.name}</span>
+						<span class="tabular shrink-0 text-xs text-gray-500"
+							>{t('reminders.kb', { bytes: Math.round(tone.bytes / 1024) })}</span
+						>
+						<div class="list-row-actions">
+							<button
+								type="button"
+								onclick={() => preview(`/api/ringtones/${tone.id}`)}
+								class="icon-btn"
+								title={t('reminders.hearIt')}
+								aria-label={t('reminders.hear', { name: tone.name })}
+							>
+								<Icon name="play" />
+							</button>
+							<form method="post" action="?/removeSound" use:enhance>
+								<input type="hidden" name="id" value={tone.id} />
+								<button
+									type="submit"
+									class="icon-btn icon-btn-danger"
+									title={t('ui.remove')}
+									aria-label={t('reminders.remove2', { name: tone.name })}
+									use:armed
+								>
+									<Icon name="trash" />
+								</button>
+							</form>
+						</div>
+					</div>
+				{/each}
+				<!--
 				Adding one: a name, then the file. Choosing the file is the submit —
 				a second button to press after picking one is a step nobody needs —
 				so the name comes first, where it is typed before the picker opens.
@@ -1350,36 +1353,37 @@
 				before it will show a file picker. The server checks the type either
 				way; this only decides what the picker offers.
 			-->
-			<SettingRow label={t('reminders.aSoundFile')} hint={t('reminders.leaveTheNameEmptyAnd')}>
-				{#snippet control()}
-					<form
-						method="post"
-						action="?/addSound"
-						enctype="multipart/form-data"
-						use:enhance
-						class="flex flex-wrap items-center justify-end gap-2"
-					>
-						<OneLine
-							name="label"
-							placeholder={t('reminders.nameOptional')}
-							ariaLabel={t('reminders.callIt')}
-							class="input input-sm w-44"
-						/>
-						<label class="btn btn-sm cursor-pointer">
-							<Icon name="plus" />
-							{t('reminders.chooseAFile')}
-							<input
-								name="sound"
-								type="file"
-								accept=".mp3,.ogg,.wav"
-								required
-								class="sr-only"
-								onchange={(e) => (e.currentTarget as HTMLInputElement).form?.requestSubmit()}
+				<SettingRow label={t('reminders.aSoundFile')} hint={t('reminders.leaveTheNameEmptyAnd')}>
+					{#snippet control()}
+						<form
+							method="post"
+							action="?/addSound"
+							enctype="multipart/form-data"
+							use:enhance
+							class="flex flex-wrap items-center justify-end gap-2"
+						>
+							<OneLine
+								name="label"
+								placeholder={t('reminders.nameOptional')}
+								ariaLabel={t('reminders.callIt')}
+								class="input input-sm w-44"
 							/>
-						</label>
-					</form>
-				{/snippet}
-			</SettingRow>
-		</SettingGroup>
-	</RoomSurface>
-</div>
+							<label class="btn btn-sm cursor-pointer">
+								<Icon name="plus" />
+								{t('reminders.chooseAFile')}
+								<input
+									name="sound"
+									type="file"
+									accept=".mp3,.ogg,.wav"
+									required
+									class="sr-only"
+									onchange={(e) => (e.currentTarget as HTMLInputElement).form?.requestSubmit()}
+								/>
+							</label>
+						</form>
+					{/snippet}
+				</SettingRow>
+			</SettingGroup>
+		</RoomSurface>
+	</div>
+</TabbedRoom>

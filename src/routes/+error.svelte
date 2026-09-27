@@ -2,6 +2,7 @@
 	import { page } from '$app/state';
 	import { resolve } from '$app/paths';
 	import { useT } from '$lib/i18n';
+	import PageTitle from '$lib/components/PageTitle.svelte';
 
 	const t = useT();
 
@@ -70,7 +71,7 @@
 	});
 </script>
 
-<svelte:head><title>{t('home.ontoplano', { status: page.status })}</title></svelte:head>
+<PageTitle parts={String(page.status)} />
 
 <!--
 	Centred in what is left of the screen, at a size somebody can read.

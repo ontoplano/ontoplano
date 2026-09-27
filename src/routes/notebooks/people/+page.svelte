@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { routeGlyph } from '$lib/glyphs';
-	import { dateOf } from '$lib/when';
+	import { civilOf, momentOf } from '$lib/when';
 	import { useWhen } from '$lib/when-context.svelte';
 	import { resolve } from '$app/paths';
 	import { setRoomAction } from '$lib/room-action.svelte';
@@ -21,7 +21,6 @@
 	import Icon from '$lib/components/Icon.svelte';
 	import Modal from '$lib/components/Modal.svelte';
 	import { birthdayLabel, RELATIONSHIPS, RELATIONSHIP_LABELS } from '$lib/people';
-	import { SECTION_COLORS } from '$lib/colors';
 	import type { PageServerData, ActionData } from './$types';
 	import { keepInView } from '$lib/actions/keep-in-view';
 	import Written from '$lib/components/Written.svelte';
@@ -114,7 +113,7 @@
 	}
 
 	function when(iso: string): string {
-		return dateOf(iso, now(), {});
+		return momentOf(iso, now());
 	}
 
 	/* This screen's one verb, drawn by the room's bar — see $lib/room-action. */
@@ -146,10 +145,7 @@
 		notebooks page and the inventory room have. `pane` is what takes each
 		card's own edge away.
 	-->
-	<div
-		class="card-accent room-surface grid lg:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)]"
-		style="--card-accent: {SECTION_COLORS.diary}"
-	>
+	<div class="room-surface grid lg:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)]">
 		<Card flush pane>
 			{#if data.people.length === 0}
 				<EmptyState
@@ -184,7 +180,7 @@
 					{/snippet}
 				</RoomToolbar>
 				{#if shownPeople.length === 0}
-					<EmptyState icon="search" title={t('todoRows.nothingToShow')} />
+					<EmptyState filtered onclear={() => (looking = '')} />
 				{/if}
 				<div class="divide-y divide-gray-200" data-tour="people-list">
 					{#each shownPeople as person, i (person.id)}
@@ -354,7 +350,7 @@
 								<Written content={entry.content} />
 								<p class="tabular mt-1 text-xs text-gray-500">
 									{when(entry.createdAt)}{#if entry.forDate}{t('notebooks.people.nbspFor')}
-										{entry.forDate}{/if}
+										{civilOf(entry.forDate, now())}{/if}
 								</p>
 							</article>
 						{/each}

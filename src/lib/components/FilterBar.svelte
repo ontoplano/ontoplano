@@ -26,12 +26,16 @@
 	 *
 	 * One order, at both widths:
 	 *
-	 *     search   count   [ the filters ]   clear   ——   sort   direction
+	 *     search   count   [ the filters ]   clear   ——   verb   sort
 	 *
-	 * The slack in the row goes to the filters, which is the one thing in the
-	 * strip whose width nothing else is measured from — so a tab with four of
-	 * them and a tab with one draw every other control in the same place, and
-	 * changing tab moves nothing.
+	 * On one line at both widths: a phone folds the filters into a button and
+	 * the order into a square (`SortControl` reads that from the strip), and
+	 * nothing drops to a line of its own. The slack goes after Clear, so the
+	 * way back sits against the last filter rather than across the row from it.
+	 *
+	 * A filter that should stay out on a phone — the only one a list has, say
+	 * — goes in `inline` rather than in the children: a sheet holding one
+	 * control is a press in front of a control there was room for.
 	 *
 	 * What stays out at both widths is what you do not press: the search box
 	 * (`lead`) is typed into, and the count and the order are read.
@@ -40,6 +44,7 @@
 	import Modal from '$lib/components/Modal.svelte';
 	import { phoneWidth } from '$lib/breakpoints.svelte';
 	import { useT } from '$lib/i18n';
+	import { setFilterStrip } from '$lib/filter-strip';
 	import { afterNavigate, goto } from '$app/navigation';
 	import { navigating, page } from '$app/state';
 	import type { Snippet } from 'svelte';
@@ -59,6 +64,12 @@
 	let width = $state(0);
 	/** Folded into the sheet: the strip is too narrow, or not measured yet on a phone. */
 	const folded = $derived(width > 0 ? width < INLINE_MIN_PX : phone.current);
+
+	setFilterStrip({
+		get folded() {
+			return folded;
+		}
+	});
 
 	const t = useT();
 
@@ -80,6 +91,7 @@
 		count,
 		verb,
 		trailing,
+		inline,
 		children
 	}: {
 		name: string;
@@ -109,15 +121,25 @@
 		/**
 		 * One secondary verb about the whole list — Areas, Categories.
 		 *
-		 * On the first line at every width, pushed to the right end of it. It
-		 * was left to `trailing`, which a phone puts on a line of its own, so
-		 * each room with one found its own way round that: an icon beside the
-		 * search box on one screen, inside the Filters sheet on the next, where
-		 * pressing it opened a dialog over a dialog.
+		 * On the first line at every width, just before the order. Rooms used
+		 * to find their own place for it — an icon beside the search box on one
+		 * screen, inside the Filters sheet on the next, where pressing it opened
+		 * a dialog over a dialog. `StripVerb` draws it.
 		 */
 		verb?: Snippet;
-		/** The sort order and its direction, at the far end. */
+		/**
+		 * The order: a `SortControl`, at the far end of the first line at every
+		 * width. It goes compact by itself while the strip is folded.
+		 */
 		trailing?: Snippet;
+		/**
+		 * Filters that stay out on the strip at every width, before the rest.
+		 *
+		 * For a list with one or two of them, where the phone's sheet would
+		 * hide a single control behind a press. Whatever is in `children` still
+		 * folds; a list whose filters are all here gets no Filters button.
+		 */
+		inline?: Snippet;
 		/**
 		 * The filters. A list with none — a search box and a count, nothing
 		 * else — leaves this out, and a phone gets no Filters button to open an
@@ -175,7 +197,7 @@
 	<div class="mb-2 flex w-full flex-wrap items-center gap-2">{@render banner()}</div>
 {/if}
 
-<div class="flex w-full flex-wrap items-center gap-2" bind:clientWidth={width}>
+<div class="filter-strip flex w-full flex-wrap items-center gap-2" bind:clientWidth={width}>
 	<!--
 		The search box, in a slot of a fixed size.
 
@@ -185,25 +207,24 @@
 		was 405px wide on one and 235px on the other. Everything after it moved
 		when you changed tab: the button, the count, all of it.
 
-		On a phone it takes what the row has left after the filter button, the
-		broom and the count, so all four share the first line.
+		On a phone it takes what the row has left, so everything shares the
+		first line.
 	-->
 	{#if lead}
-		<div class="min-w-24 flex-1 sm:w-56 sm:flex-none sm:shrink-0">
+		<div class="filter-lead min-w-24 flex-1 sm:w-56 sm:flex-none sm:shrink-0">
 			{@render lead()}
 		</div>
 	{/if}
 
-	<!-- How many rows are showing, next to the box that narrows them by name —
-	     on a phone, at the end of the line, after the way back. -->
-	{#if count && (!folded || !children)}<div class="shrink-0">{@render count()}</div>{/if}
+	<!-- How many rows are showing, next to the box that narrows them by name,
+	     at both widths. -->
+	{#if count}<div class="filter-count shrink-0">{@render count()}</div>{/if}
 
-	{#if !children}
-		<!-- Nothing to narrow by but the box: the slack goes here, as it would
-		     to the filters, so the verb and the order still sit at the end. Not
-		     on a phone, where the box itself takes the slack. -->
-		<div class="hidden flex-1 sm:block"></div>
-	{:else if folded}
+	{#if inline}
+		<div class="flex min-w-0 items-center gap-2">{@render inline()}</div>
+	{/if}
+
+	{#if children && folded}
 		<!--
 			On a phone the filters are a sheet, because the row is not there.
 
@@ -229,18 +250,17 @@
 			{t('filters.filters')}
 			{#if on}<span class="filter-dot" aria-hidden="true"></span>{/if}
 		</button>
-	{:else}
+	{:else if children}
 		<!--
 			On anything wider they are simply there.
 
 			They were behind a disclosure at every width, which is a press
 			between somebody and the control they can already see room for — and
 			opening it moved whatever the fold pushed down. Filtering is a loop:
-			narrow, look, adjust. The controls stay out where the loop is short,
-			and the slack in the row goes here so that nothing else in the strip
-			moves when a tab has more of them than the tab beside it.
+			narrow, look, adjust. The controls stay out where the loop is short.
+			Their own width and no more, so Clear stands against the last one.
 		-->
-		<div id="{name}-filters" class="flex min-w-0 flex-1 flex-wrap items-center gap-2">
+		<div id="{name}-filters" class="flex min-w-0 flex-wrap items-center gap-2">
 			{@render children()}
 		</div>
 	{/if}
@@ -264,21 +284,12 @@
 		</button>
 	{/if}
 
-	{#if count && folded && children}<div class="shrink-0">{@render count()}</div>{/if}
-
-	{#if verb}
-		<div class="ml-auto flex shrink-0 items-center gap-2">{@render verb()}</div>
-	{/if}
-
-	<!-- On a phone the order is a line of its own, so the first line is the
-	     search and what narrows it, the way a task list draws it. -->
-	{#if trailing}
-		<div
-			class="flex shrink-0 items-center justify-end gap-2 {phone.current
-				? 'basis-full'
-				: ''} {verb && !phone.current ? '' : 'ml-auto'}"
-		>
-			{@render trailing()}
+	<!-- The verb and the order, pushed to the end of the first line at every
+	     width. The slack in the row is the space before them. -->
+	{#if verb || trailing}
+		<div class="ml-auto flex shrink-0 items-center gap-2">
+			{#if verb}{@render verb()}{/if}
+			{#if trailing}{@render trailing()}{/if}
 		</div>
 	{/if}
 </div>

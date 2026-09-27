@@ -13,7 +13,6 @@
 	import NotebookDetail from '$lib/components/NotebookDetail.svelte';
 	import NotebookDelete from '$lib/components/NotebookDelete.svelte';
 	import NotebookStar from '$lib/components/NotebookStar.svelte';
-	import { SECTION_COLORS } from '$lib/colors';
 	import type { PageServerData, ActionData } from './$types';
 	import { useT } from '$lib/i18n';
 
@@ -76,7 +75,7 @@
 		page — under the title it was supposed to be colouring. One surface, one
 		edge: the header is a pane of it and so is everything below.
 	-->
-	<Card flush accent={SECTION_COLORS.diary} class="min-w-0">
+	<Card flush class="min-w-0">
 		<!--
 		The header stands on a surface of its own.
 

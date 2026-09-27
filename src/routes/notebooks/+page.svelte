@@ -20,7 +20,6 @@
 	import NotebookDetail from '$lib/components/NotebookDetail.svelte';
 	import NotebookTags from '$lib/components/NotebookTags.svelte';
 	import NotebookFields from '$lib/components/fields/NotebookFields.svelte';
-	import { SECTION_COLORS } from '$lib/colors';
 	import NotebookCover from '$lib/components/NotebookCover.svelte';
 	import NotebookPicture from '$lib/components/NotebookPicture.svelte';
 	import NotebookStar from '$lib/components/NotebookStar.svelte';
@@ -214,7 +213,7 @@
 	-->
 	<!-- The room's colour down the side, the same as every other tab in it: the
 	     shelf was the one page here standing on a card with no accent. -->
-	<Card flush accent={SECTION_COLORS.diary}>
+	<Card flush>
 		<!-- The shelf's own floor: one cover wide. A list of names cannot go this
 		     narrow and a grid of covers can — see `NOTEBOOK_PANEL_MIN`. -->
 		<SplitColumns

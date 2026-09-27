@@ -1,7 +1,9 @@
 <script lang="ts">
+	import { useWhen } from '$lib/when-context.svelte';
+	import { civilOf } from '$lib/when';
 	import Picker from '$lib/components/Picker.svelte';
 	import { enhance } from '$lib/enhance';
-	import Swatch from '$lib/components/Swatch.svelte';
+	import CategoryMark from '$lib/components/CategoryMark.svelte';
 	import RoomSurface from '$lib/components/RoomSurface.svelte';
 	import EmptyState from '$lib/components/EmptyState.svelte';
 	import Field from '$lib/components/Field.svelte';
@@ -21,6 +23,7 @@
 	import { useT } from '$lib/i18n';
 
 	const t = useT();
+	const now = useWhen();
 
 	let { data, form }: { data: PageServerData; form: ActionData } = $props();
 
@@ -152,8 +155,7 @@
 						{#each group.rules as rule, index (rule.id)}
 							<li class="list-row">
 								<div class="list-row-main flex min-w-0 items-center gap-2">
-									<Swatch color={rule.color} shape="dot" />
-									<span class="shrink-0 text-sm font-medium text-gray-900">{rule.name}</span>
+									<CategoryMark name={rule.name} color={rule.color} />
 									<code class="min-w-0 flex-1 truncate text-xs text-gray-500" title={rule.pattern}>
 										/{rule.pattern}/i
 									</code>
@@ -266,7 +268,9 @@
 							class="flex items-baseline gap-3 px-4 py-2"
 							style={line.categoryColor ? `background-color: ${line.categoryColor}2b` : ''}
 						>
-							<span class="tabular shrink-0 text-xs text-gray-500">{line.occurredOn}</span>
+							<span class="tabular shrink-0 text-xs text-gray-500"
+								>{civilOf(line.occurredOn, now())}</span
+							>
 							<span class="min-w-0 flex-1 truncate text-sm text-gray-900">{line.description}</span>
 							{#if line.ledgerName}
 								<span class="shrink-0 text-xs text-gray-500">{line.ledgerName}</span>

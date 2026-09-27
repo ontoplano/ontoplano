@@ -1,4 +1,5 @@
 <script lang="ts">
+	import Kbd from '$lib/components/Kbd.svelte';
 	import { page } from '$app/state';
 	import { afterNavigate } from '$app/navigation';
 	import { enhance } from '$lib/enhance';
@@ -219,7 +220,7 @@
 			<button type="button" class="btn btn-sm" onclick={openNew}>
 				<Icon name="plus" />
 				{t('widgets.newWidget')}
-				<kbd>{keyFor(PAGE, 'new')}</kbd>
+				<Kbd keys={keyFor(PAGE, 'new')} />
 			</button>
 		{/if}
 	{/snippet}
@@ -228,13 +229,13 @@
 		{#if widgets.length > 0}
 			<p class="px-4 py-2 text-xs text-gray-500">
 				{t('widgets.count', { count: widgets.length })} ·
-				<kbd>{keyFor(PAGE, 'navigate-down')}</kbd>/<kbd>{keyFor(PAGE, 'navigate-up')}</kbd>
-				<kbd>{keyFor(PAGE, 'edit')}</kbd>
+				<Kbd keys={keyFor(PAGE, 'navigate-down')} />/<Kbd keys={keyFor(PAGE, 'navigate-up')} />
+				<Kbd keys={keyFor(PAGE, 'edit')} />
 			</p>
 		{/if}
 		{#each widgets as widget, at (widget.id)}
 			<div
-				class="list-row {cursor === at ? 'kbd-cursor' : ''}"
+				class="list-row {cursor === at ? 'kb-cursor' : ''}"
 				use:keepInView={cursor === at}
 				data-widget-row
 			>

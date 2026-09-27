@@ -21,6 +21,10 @@ test('dragging a side edge widens the dialog from both sides', async ({ page }) 
 	const dialog = page.locator('dialog[open]').first();
 	await expect(dialog).toBeVisible();
 	const before = (await dialog.boundingBox())!;
+	// It hangs below the site header, with its top corners on the screen.
+	const panel = (await dialog.locator('.panel').boundingBox())!;
+	const header = (await page.locator('header').first().boundingBox())!;
+	expect(panel.y).toBeGreaterThanOrEqual(header.y + header.height);
 
 	const edge = dialog.locator('.widen-edge.right');
 	const box = (await edge.boundingBox())!;

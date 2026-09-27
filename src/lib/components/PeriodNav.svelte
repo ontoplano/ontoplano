@@ -67,11 +67,11 @@
 		onpointerenter={() => onwarm?.('prev')}
 		onfocus={() => onwarm?.('prev')}
 		disabled={prevDisabled}
-		class="icon-btn -ml-2 h-11 w-11 shrink-0 disabled:opacity-30 sm:ml-0"
+		class="icon-btn icon-btn-sm shrink-0 disabled:opacity-30"
 		title={t('tasks.plan.backOneUnit', { unit, key: keys[0] })}
 		aria-label={t('tasks.plan.backOneUnitPlain', { unit })}
 	>
-		<Icon name="arrow-left" size={22} />
+		<Icon name="arrow-left" />
 	</button>
 
 	<!--
@@ -97,11 +97,11 @@
 		onclick={onnext}
 		onpointerenter={() => onwarm?.('next')}
 		onfocus={() => onwarm?.('next')}
-		class="icon-btn -mr-2 h-11 w-11 shrink-0 sm:mr-0"
+		class="icon-btn icon-btn-sm shrink-0"
 		title={t('tasks.plan.forwardOneUnit', { unit, key: keys[1] })}
 		aria-label={t('tasks.plan.forwardOneUnitPlain', { unit })}
 	>
-		<Icon name="arrow-right" size={22} />
+		<Icon name="arrow-right" />
 	</button>
 
 	<!--

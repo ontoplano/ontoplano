@@ -13,7 +13,7 @@
 	import RemindLead from '$lib/components/RemindLead.svelte';
 	import { NO_TAG_FILTER, UNTAGGED, isTagFiltering, passesTagFilter } from '$lib/tag-filter';
 	import SortControl from '$lib/components/SortControl.svelte';
-	import { agoOf, momentOf } from '$lib/when';
+	import { agoOf, civilOf, momentOf } from '$lib/when';
 	import { compareByPriority, type RatingValues } from '$lib/ratings';
 	import { useWhen } from '$lib/when-context.svelte';
 	import { deleteLater, isLeaving } from '$lib/undo.svelte';
@@ -41,6 +41,8 @@
 	import FilterBar from '$lib/components/FilterBar.svelte';
 	import RatingBadges from '$lib/components/RatingBadges.svelte';
 	import RowCard from '$lib/components/RowCard.svelte';
+	import CategoryMark from '$lib/components/CategoryMark.svelte';
+	import TickBox from '$lib/components/TickBox.svelte';
 	import { phoneWidth } from '$lib/breakpoints.svelte';
 	import TagChip from '$lib/components/TagChip.svelte';
 	import QuickTag from '$lib/components/QuickTag.svelte';
@@ -1100,31 +1102,45 @@
 					narrowing the list is named on the button while it is shut, and
 					the way back to everything stands beside it.
 				-->
-				<FilterBar
-					name="tasks"
-					on={narrowed || showCompleted || showArchived}
-					summary={narrowing()}
-					onclear={clearFilters}
-					trailing={phone.current ? undefined : sortControl}
+				<!--
+					"Select many" is the strip's verb rather than a band of its own:
+					one button was costing a whole line above the list. While
+					choosing, its tools cover the strip beside it.
+				-->
+				<SelectionBar
+					{selection}
+					visible={visibleTodos.map((todo) => todo.id)}
+					verbs={batchVerbs}
+					selectAllLabel={t('todoRows.selectVisible')}
+					dataTour="todo-selection"
 				>
-					{#snippet banner()}
-						<!-- The narrowings this screen has kept, on a line of their own
+					{#snippet strip(selectMany)}
+						<FilterBar
+							name="tasks"
+							on={narrowed || showCompleted || showArchived}
+							summary={narrowing()}
+							onclear={clearFilters}
+							verb={selectMany}
+							trailing={sortControl}
+						>
+							{#snippet banner()}
+								<!-- The narrowings this screen has kept, on a line of their own
 						     above the controls that make one. They are a different
 						     question from "which rows" and were crowding the answer to
 						     it off the strip. See `SavedFilters`. -->
-						<SavedFilters
-							surface="/tasks/todo"
-							narrowed={narrowed || showCompleted || showArchived}
-						/>
-					{/snippet}
-					{#snippet lead()}
-						<!-- The box fills the slot; how wide that slot is belongs to
+								<SavedFilters
+									surface="/tasks/todo"
+									narrowed={narrowed || showCompleted || showArchived}
+								/>
+							{/snippet}
+							{#snippet lead()}
+								<!-- The box fills the slot; how wide that slot is belongs to
 						     `FilterBar`, so this tab and the Notes tab beside it are
 						     the same shape. -->
-						<SearchField bind:value={looking} label={t('todoRows.searchTheseTasks')} />
-					{/snippet}
-					{#snippet count()}
-						<!--
+								<SearchField bind:value={looking} label={t('todoRows.searchTheseTasks')} />
+							{/snippet}
+							{#snippet count()}
+								<!--
 					How many rows are on screen right now, beside the button that
 					narrowed them.
 
@@ -1133,7 +1149,7 @@
 					notebook and a label gave no number at all for the thing you are
 					actually looking at.
 				-->
-						<!--
+								<!--
 							In a slot wide enough for the longest it can be.
 
 							"1 task showing" and "0 tasks showing" are different widths,
@@ -1141,7 +1157,7 @@
 							words are the content; the room they take is not allowed to
 							be.
 						-->
-						<!--
+								<!--
 							In a slot as wide as the longest it can be.
 
 							Held open by the same sentence at the count of the whole list —
@@ -1149,13 +1165,13 @@
 							already narrowed — so it is the largest it can say and does not
 							change when a filter does. See `.count-slot`.
 						-->
-						<ShowingCount
-							total={todos.length}
-							shown={visibleTodos.length}
-							said={(count) => t('todoRows.showingCount', { count })}
-						/>
-					{/snippet}
-					<!--
+								<ShowingCount
+									total={todos.length}
+									shown={visibleTodos.length}
+									said={(count) => t('todoRows.showingCount', { count })}
+								/>
+							{/snippet}
+							<!--
 						One label, whichever way it is set.
 
 						It read "Show completed (1)" and became "Hide completed", so
@@ -1166,27 +1182,28 @@
 						are, which does not change when you press it; how many are
 						*showing* is the count beside the search box.
 					-->
-					<button
-						onclick={() => filters.set('done', showCompleted ? '' : 'show')}
-						aria-pressed={showCompleted}
-						class="btn btn-sm shrink-0"
-					>
-						<span class="sm:hidden">{t('todoRows.completed')}</span>
-						<span class="hidden sm:inline">{t('todoRows.completedCount', { count: finished })}</span
-						>
-					</button>
-					<!-- Named with its number so a put-away task is never quietly gone:
+							<button
+								onclick={() => filters.set('done', showCompleted ? '' : 'show')}
+								aria-pressed={showCompleted}
+								class="btn btn-sm shrink-0"
+							>
+								<span class="sm:hidden">{t('todoRows.completed')}</span>
+								<span class="hidden sm:inline"
+									>{t('todoRows.completedCount', { count: finished })}</span
+								>
+							</button>
+							<!-- Named with its number so a put-away task is never quietly gone:
 				     nothing is hidden without the list saying how much. -->
-					<button
-						onclick={() => filters.set('away', showArchived ? '' : 'show')}
-						aria-pressed={showArchived}
-						class="btn btn-sm"
-						hidden={putAway === 0 && !showArchived}
-					>
-						{t('todoRows.archivedCount', { count: putAway })}
-					</button>
-					{#if notebookId === null}
-						<!-- "Not in one" is an answer, not the absence of a filter: a task
+							<button
+								onclick={() => filters.set('away', showArchived ? '' : 'show')}
+								aria-pressed={showArchived}
+								class="btn btn-sm"
+								hidden={putAway === 0 && !showArchived}
+							>
+								{t('todoRows.archivedCount', { count: putAway })}
+							</button>
+							{#if notebookId === null}
+								<!-- "Not in one" is an answer, not the absence of a filter: a task
 					     nobody has placed is the thing people go looking for.
 
 					     A `Picker` rather than a `<select>`: a form field dropped into
@@ -1194,29 +1211,29 @@
 					     two narrow what is on screen rather than submitting anything.
 					     Wide enough for the word — two controls both squeezed to
 					     "Ever…" are two controls nobody can tell apart. -->
-						<Picker
-							value={notebookFilter}
-							options={notebookChoices}
-							onpick={(next) => filters.set('notebook', next)}
-							label={t('ui.notebook')}
-							class="min-w-36 flex-1 sm:flex-none"
-						/>
-					{/if}
-					<!-- Only where there is something to pick: a list nobody has labelled
+								<Picker
+									value={notebookFilter}
+									options={notebookChoices}
+									onpick={(next) => filters.set('notebook', next)}
+									label={t('ui.notebook')}
+									class="min-w-36 flex-1 sm:flex-none"
+								/>
+							{/if}
+							<!-- Only where there is something to pick: a list nobody has labelled
 				     gets no control for labels. -->
-					{#if tagsInUse.length > 0 || isTagFiltering(tagFilter.current)}
-						<TagFilter
-							tags={tagsInUse}
-							value={tagFilter.current}
-							onchange={(next) => {
-								tagFilter.current = next;
-								selectedIndex = 0;
-							}}
-							name="todo-tags"
-							class="min-w-36 flex-1 sm:flex-none"
-						/>
-					{/if}
-					<!--
+							{#if tagsInUse.length > 0 || isTagFiltering(tagFilter.current)}
+								<TagFilter
+									tags={tagsInUse}
+									value={tagFilter.current}
+									onchange={(next) => {
+										tagFilter.current = next;
+										selectedIndex = 0;
+									}}
+									name="todo-tags"
+									class="min-w-36 flex-1 sm:flex-none"
+								/>
+							{/if}
+							<!--
 					Pushed to the right end, but only where there is a right end.
 
 					`ml-auto` at every width made it wrap onto a line of its own on a
@@ -1226,7 +1243,7 @@
 					away from the filters above that, where the distance says what it
 					is — one of these hides rows, the other reorders them.
 				-->
-					<!--
+							<!--
 					Looking for one, rather than choosing a kind.
 
 					The controls beside this answer "which kind" — finished, put
@@ -1235,17 +1252,11 @@
 					with three hundred tasks is actually asking. It narrows as you
 					type and the count beside it says what is left.
 				-->
-				</FilterBar>
+						</FilterBar>
+					{/snippet}
+				</SelectionBar>
 			{/snippet}
 		</RoomToolbar>
-		<SelectionBar
-			{selection}
-			visible={visibleTodos.map((todo) => todo.id)}
-			verbs={batchVerbs}
-			selectAllLabel={t('todoRows.selectVisible')}
-			dataTour="todo-selection"
-			aside={sortControl}
-		/>
 		{#if visibleTodos.length === 0}
 			<!--
 				Empty because there is nothing, or empty because it is all hidden.
@@ -1254,8 +1265,11 @@
 			-->
 			{#if narrowed}
 				<EmptyState
-					icon="search"
-					title={t('todoRows.nothingToShow')}
+					filtered
+					onclear={() => {
+						looking = '';
+						clearFilters();
+					}}
 					description={t('todoRows.noneMatchTheseFilters', { count: inScope.length })}
 				/>
 			{:else if hiddenHere > 0}
@@ -1307,10 +1321,9 @@
 						data-todo-id={todo.id}
 						class:bg-gray-100={selection.selecting && selection.has(todo.id)}
 						use:keepInView={shortcutRoom !== null && selectedIndex === i}
-						class="flex flex-wrap items-stretch gap-x-4 px-4 py-3 {shortcutRoom &&
-						selectedIndex === i
-							? 'kb-cursor'
-							: ''} {isDone(todo) ? 'opacity-50' : ''} {todo.status === 'doing' ? 'is-doing' : ''}"
+						class="row-card {shortcutRoom && selectedIndex === i ? 'kb-cursor' : ''} {isDone(todo)
+							? 'opacity-50'
+							: ''} {todo.status === 'doing' ? 'is-doing' : ''}"
 					>
 						<!--
 							The tick box and the three gauges are one column.
@@ -1397,23 +1410,7 @@
 										>
 											<!-- Blue while it is the one being worked on, so the state is
 										     on the box that owns it rather than only on the row. -->
-											<span
-												class="flex size-7 items-center justify-center border {isDone(todo)
-													? 'border-gray-400 bg-gray-400'
-													: todo.status === 'doing'
-														? 'doing-box'
-														: 'border-gray-400 bg-white'}"
-											>
-												{#if isDone(todo)}
-													<svg class="h-4 w-4 text-white" viewBox="0 0 20 20" fill="currentColor">
-														<path
-															fill-rule="evenodd"
-															d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-															clip-rule="evenodd"
-														/>
-													</svg>
-												{/if}
-											</span>
+											<TickBox done={isDone(todo)} doing={todo.status === 'doing'} />
 										</button>
 									</form>
 								{/if}
@@ -1635,13 +1632,6 @@
 								{/if}
 							{/snippet}
 							<div class="flex flex-wrap items-center gap-2">
-								{#if todo.categoryColor}
-									<span
-										class="h-3 w-1 shrink-0"
-										style="background-color: {todo.categoryColor}"
-										title={todo.categoryName}
-									></span>
-								{/if}
 								<!--
 										`min-w-0` because a flex item will not shrink below its own
 										content by default: a long title stopped being able to wrap,
@@ -1671,12 +1661,17 @@
 										? 'text-gray-400'
 										: 'text-gray-900'}">{todo.title}</span
 								>
+								<!-- Its category, worn after the title rather than as a bar in
+								     front of it, which pushed the title off the row's column. -->
+								{#if todo.categoryColor && todo.categoryName}
+									<CategoryMark name={todo.categoryName} color={todo.categoryColor} />
+								{/if}
 								{#if todo.scheduledDate}
 									<span
 										class="tabular border border-gray-200 bg-gray-50 px-1 text-[10px] text-gray-600"
 										title={t('todoRows.pulledOntoThisDay')}
 									>
-										{todo.scheduledDate}
+										{civilOf(todo.scheduledDate, now())}
 									</span>
 								{:else if todo.delegatedDate}
 									<!-- The day of the block it was delegated to: the task itself
@@ -1685,7 +1680,7 @@
 										class="tabular border border-gray-200 bg-gray-50 px-1 text-[10px] text-gray-600"
 										title={t('todoRows.delegatedToThisDay')}
 									>
-										{todo.delegatedDate}
+										{civilOf(todo.delegatedDate, now())}
 									</span>
 								{/if}
 								{#if todo.archivedAt}

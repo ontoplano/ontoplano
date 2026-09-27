@@ -65,7 +65,6 @@
 		slots,
 		activities,
 		actions,
-		accent,
 		onedit,
 		onlink,
 		selected = false
@@ -77,8 +76,6 @@
 		slots: { id: number; name: string; startTime: string }[];
 		activities: { id: number; name: string }[];
 		actions: GoalActionNames;
-		/** The colour a bar takes where the goal's area has none. */
-		accent: string;
 		/* By id: the page holds the whole goal already, and handing back a
 		   narrowed copy of it would make the caller widen it again. */
 		onedit: (id: number) => void;
@@ -176,9 +173,7 @@
 -->
 <div
 	id="goal-{goal.id}"
-	class="goal-row flex flex-wrap items-stretch gap-x-4 px-4 py-3 target:bg-yellow-50 {selected
-		? 'kbd-cursor'
-		: ''}"
+	class="goal-row row-card target:bg-yellow-50 {selected ? 'kb-cursor' : ''}"
 >
 	<RowCard>
 		{#snippet rail()}
@@ -309,11 +304,8 @@
 		     absence of one. -->
 		<div class="mt-2 flex items-center gap-3">
 			{#if pct !== null}
-				<div class="h-1.5 min-w-16 flex-1 bg-gray-200 sm:max-w-xs">
-					<div
-						class="h-full"
-						style="width: {pct}%; background-color: {goal.areaColor ?? accent}"
-					></div>
+				<div class="progress-track h-1.5 min-w-16 flex-1 sm:max-w-xs">
+					<div class="progress-fill h-full" style="width: {pct}%"></div>
 				</div>
 			{/if}
 			<span class="tabular shrink-0 text-xs text-gray-600">
@@ -374,11 +366,10 @@
 							/ {target.targetValue}
 							{target.unit}
 						</span>
-						<div class="h-1 w-16 shrink-0 bg-gray-200">
+						<div class="progress-track h-1 w-16 shrink-0">
 							<div
-								class="h-full"
-								style="width: {Math.round(target.fraction * 100)}%;
-									background-color: {goal.areaColor ?? accent}"
+								class="progress-fill h-full"
+								style="width: {Math.round(target.fraction * 100)}%"
 							></div>
 						</div>
 					</div>

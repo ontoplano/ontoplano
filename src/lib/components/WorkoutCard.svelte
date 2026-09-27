@@ -1,4 +1,5 @@
 <script lang="ts">
+	import EmptyState from '$lib/components/EmptyState.svelte';
 	/**
 	 * One workout, wherever a workout is shown.
 	 *
@@ -98,7 +99,7 @@
 	its tick, the name beside it, the verbs along the foot. The plan and its
 	register unfold under the whole card.
 -->
-<li class="flex flex-wrap items-stretch gap-x-4 px-4 py-3">
+<li class="row-card">
 	<RowCard>
 		{#snippet rail()}
 			<form method="post" action={actions.done} use:enhance class="flex">
@@ -142,22 +143,22 @@
 			<button
 				type="button"
 				class="icon-btn"
-				title={t('ui.edit')}
-				aria-label={t('health.workouts.edit', { title: workout.title })}
-				onclick={() => onedit?.(workout.id)}
-			>
-				<Icon name="edit" />
-			</button>
-
-			<button
-				type="button"
-				class="icon-btn"
 				title={open ? t('health.habits.collapse') : t('health.habits.expand')}
 				aria-label={t('health.workouts.showThePlanFor', { title: workout.title })}
 				aria-expanded={open}
 				onclick={toggleExpanded}
 			>
 				<Icon name={open ? 'chevron-up' : 'chevron-down'} />
+			</button>
+
+			<button
+				type="button"
+				class="icon-btn"
+				title={t('ui.edit')}
+				aria-label={t('health.workouts.edit', { title: workout.title })}
+				onclick={() => onedit?.(workout.id)}
+			>
+				<Icon name="edit" />
 			</button>
 
 			<form method="post" action={actions.archive} use:enhance>
@@ -211,9 +212,11 @@
 				</div>
 
 				{#if history.length === 0}
-					<p class="text-sm text-gray-500">
-						{t('health.workouts.nothingWrittenDownYetRecord')}
-					</p>
+					<EmptyState
+						compact
+						icon="note"
+						title={t('health.workouts.nothingWrittenDownYetRecord')}
+					/>
 				{:else}
 					<ul class="divide-y divide-gray-100 border-t border-gray-100">
 						{#each history as session (session.id)}

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import EmptyState from '$lib/components/EmptyState.svelte';
 	import AudioPlayer from '$lib/components/AudioPlayer.svelte';
 	import Icon from '$lib/components/Icon.svelte';
 	import Modal from '$lib/components/Modal.svelte';
@@ -128,7 +129,7 @@
 	{#if trouble}
 		<p class="text-sm text-red-600">{trouble}</p>
 	{:else if held.length === 0}
-		<p class="text-sm text-gray-500">{t('attach.noneYet')}</p>
+		<EmptyState compact icon="sound" title={t('attach.noneYet')} />
 	{:else}
 		<ul class="divide-y divide-gray-200">
 			{#each held as one (one.id)}

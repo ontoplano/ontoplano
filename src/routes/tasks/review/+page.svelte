@@ -1,11 +1,11 @@
 <script lang="ts">
 	import { useWhen } from '$lib/when-context.svelte';
 	import { sliding } from '$lib/actions/sliding';
-	import { dayOf, weekdayOf } from '$lib/when';
+	import { civilOf, dayOf, rangeOf, weekdayOf } from '$lib/when';
 	import type { PlainKey } from '$lib/i18n/keys';
 	import { enhance } from '$lib/enhance';
 	import PeriodNav from '$lib/components/PeriodNav.svelte';
-	import Swatch from '$lib/components/Swatch.svelte';
+	import CategoryMark from '$lib/components/CategoryMark.svelte';
 	import Pie from '$lib/components/Pie.svelte';
 	import { formatDuration } from '$lib/duration';
 	import { goto } from '$app/navigation';
@@ -208,7 +208,7 @@
 				{t('tasks.review.week', { number: String(data.week.number), year: data.week.year })}
 			</h2>
 			<p class="truncate text-sm text-gray-500">
-				{pretty(data.reading.weekStart)} — {pretty(data.reading.weekEnd)}
+				{rangeOf(data.reading.weekStart, data.reading.weekEnd, now())}
 				{#if data.week.isCurrent}
 					{t('tasks.review.stillRunning')}
 				{/if}
@@ -239,10 +239,10 @@
 							>
 						</div>
 
-						<div class="h-1.5 w-full bg-gray-200">
+						<div class="progress-track h-1.5 w-full">
 							<div
-								class="h-full transition-all"
-								style="width: {Math.round(rate * 100)}%; background-color: var(--section-accent)"
+								class="progress-fill h-full transition-all"
+								style="width: {Math.round(rate * 100)}%"
 							></div>
 						</div>
 
@@ -305,8 +305,9 @@
 						<ul class="min-w-48 flex-1 space-y-2">
 							{#each data.reading.byCategory as cat (cat.id ?? 'none')}
 								<li class="flex items-center gap-2 text-sm">
-									<Swatch color={cat.color ?? CATEGORY_FALLBACK_COLOR} />
-									<span class="min-w-0 flex-1 truncate text-gray-700">{cat.name}</span>
+									<span class="min-w-0 flex-1"
+										><CategoryMark name={cat.name} color={cat.color} /></span
+									>
 									<span class="tabular shrink-0 text-xs text-gray-500">
 										{formatDuration(t, cat.minutesDone)} · {cat.done}/{cat.planned}
 									</span>
@@ -468,9 +469,7 @@
 					<div class="grid grid-cols-[minmax(0,1fr)] lg:grid-cols-2">
 						<div class="min-w-0" data-tour="review-loose">
 							{#if undecided.length === 0}
-								<p class="px-4 py-6 text-center text-sm text-gray-500">
-									{t('tasks.review.everyOneOfThemHas')}
-								</p>
+								<EmptyState compact icon="check" title={t('tasks.review.everyOneOfThemHas')} />
 							{/if}
 							{#each looseByDay as day (day.date)}
 								{@render dayBand(day)}
@@ -555,9 +554,7 @@
 							</div>
 
 							{#if decided.length === 0}
-								<p class="px-4 py-6 text-center text-sm text-gray-500">
-									{t('tasks.review.answerOneAndItMoves')}
-								</p>
+								<EmptyState compact icon="check" title={t('tasks.review.answerOneAndItMoves')} />
 							{:else}
 								<ul class="divide-y divide-gray-200">
 									{#each decided as item (item.id)}
@@ -634,7 +631,8 @@
 								<div class="list-row-main">
 									<p class="truncate text-sm text-gray-900">{thing.title}</p>
 									<p class="text-xs text-gray-500">
-										{t(SORT_LABELS[thing.sort])} · <span class="tabular">{thing.since}</span>
+										{t(SORT_LABELS[thing.sort])} ·
+										<span class="tabular">{civilOf(thing.since, now())}</span>
 									</p>
 								</div>
 
@@ -832,11 +830,17 @@
 	</div>
 {/snippet}
 
-<!-- A block's name, with its category's colour beside it. -->
-{#snippet blockName(item: { title: string; categoryColor: string | null })}
+<!-- A block's name, with its category worn beside it. -->
+{#snippet blockName(item: {
+	title: string;
+	categoryName: string | null;
+	categoryColor: string | null;
+})}
 	<div class="list-row-main flex items-center gap-3">
-		<Swatch color={item.categoryColor ?? CATEGORY_FALLBACK_COLOR} />
-		<span class="min-w-0 flex-1 truncate text-sm text-gray-900">{item.title}</span>
+		<span class="min-w-0 truncate text-sm text-gray-900">{item.title}</span>
+		{#if item.categoryName}
+			<CategoryMark name={item.categoryName} color={item.categoryColor} />
+		{/if}
 	</div>
 {/snippet}
 

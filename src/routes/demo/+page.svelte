@@ -5,6 +5,7 @@
 	import { onMount } from 'svelte';
 	import type { ActionData, PageServerData } from './$types';
 	import { useT } from '$lib/i18n';
+	import PageTitle from '$lib/components/PageTitle.svelte';
 
 	const t = useT();
 
@@ -35,9 +36,7 @@
 	});
 </script>
 
-<svelte:head>
-	<title>{t('demo.openingTheDemoOntoplano')}</title>
-</svelte:head>
+<PageTitle parts={t('titles.openingTheDemo')} />
 
 <div class="mx-auto flex min-h-[60vh] max-w-md flex-col items-center justify-center gap-6 px-4">
 	{#if form?.busy}

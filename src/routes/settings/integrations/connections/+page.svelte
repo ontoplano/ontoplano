@@ -1,4 +1,7 @@
 <script lang="ts">
+	import { useWhen } from '$lib/when-context.svelte';
+	import { dateOf, momentOf } from '$lib/when';
+	import Kbd from '$lib/components/Kbd.svelte';
 	import NumberBox from '$lib/components/NumberBox.svelte';
 	import { getAction, keyFor } from '$lib/shortcuts';
 	import OneLine from '$lib/components/OneLine.svelte';
@@ -23,6 +26,7 @@
 	import { useT } from '$lib/i18n';
 
 	const t = useT();
+	const now = useWhen();
 
 	let { data, form }: { data: PageServerData; form: ActionData } = $props();
 
@@ -287,13 +291,13 @@ Token: ${token}`;
 				>
 					<Icon name="plus" />
 					{t('settings.integrations.connections.newToken')}
-					<kbd>{keyFor('/settings/integrations/connections', 'new')}</kbd>
+					<Kbd keys={keyFor('/settings/integrations/connections', 'new')} />
 				</button>
 			{/snippet}
 			{#each data.tokens as token, i (token.id)}
 				<div
 					use:keepInView={selectedIndex === i}
-					class="list-row {selectedIndex === i ? 'kbd-cursor' : ''}"
+					class="list-row {selectedIndex === i ? 'kb-cursor' : ''}"
 				>
 					<div class="list-row-main">
 						<p class="truncate text-sm font-medium text-gray-900">{token.name}</p>
@@ -329,12 +333,12 @@ Token: ${token}`;
 								t('settings.integrations.connections.noScopes')}
 							{#if token.lastUsedAt}
 								{t('settings.integrations.connections.lastUsed')}
-								{token.lastUsedAt.slice(0, 16).replace('T', ' ')}
+								{momentOf(token.lastUsedAt, now())}
 							{:else}
 								{t('settings.integrations.connections.neverUsed')}
 							{/if}
 							{#if token.expiresAt}
-								{t('settings.integrations.connections.expires')} {token.expiresAt.slice(0, 10)}
+								{t('settings.integrations.connections.expires')} {dateOf(token.expiresAt, now())}
 							{/if}
 						</p>
 					</div>
@@ -412,7 +416,7 @@ Token: ${token}`;
 					<div class="list-row">
 						<div class="list-row-main flex flex-wrap items-baseline gap-x-3 gap-y-0.5">
 							<span class="tabular shrink-0 text-xs text-gray-500">
-								{one.createdAt.slice(0, 16).replace('T', ' ')}
+								{momentOf(one.createdAt, now())}
 							</span>
 							<code class="shrink-0 font-mono text-xs text-gray-900">{one.tool}</code>
 							<span class="min-w-0 flex-1 truncate text-sm text-gray-700">
@@ -468,7 +472,7 @@ Token: ${token}`;
 							{t('settings.integrations.connections.points')}
 							{#if stream.stats.latest}
 								{t('settings.integrations.connections.latest')}
-								{stream.stats.latest.at.slice(0, 10)}
+								{dateOf(stream.stats.latest.at, now())}
 							{/if}
 						</p>
 					</div>
@@ -582,7 +586,7 @@ Token: ${token}`;
 								>
 							{:else if hook.lastDeliveryAt}
 								{t('settings.integrations.connections.lastDelivery')}
-								{hook.lastDeliveryAt.slice(0, 16).replace('T', ' ')}
+								{momentOf(hook.lastDeliveryAt, now())}
 								({hook.lastStatus ?? t('settings.integrations.connections.unreachable')})
 							{:else}
 								{t('settings.integrations.connections.nothingDeliveredYet')}

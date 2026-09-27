@@ -13,7 +13,7 @@
 	import TagChip from '$lib/components/TagChip.svelte';
 	import TagRows from '$lib/components/TagRows.svelte';
 	import TextBox from '$lib/components/TextBox.svelte';
-	import { SECTION_COLORS, TAG_COLOR_DEFAULT } from '$lib/colors';
+	import { TAG_COLOR_DEFAULT } from '$lib/colors';
 	import { getAction } from '$lib/shortcuts';
 	import { useT } from '$lib/i18n';
 	import type { PageServerData, ActionData } from './$types';
@@ -90,8 +90,6 @@
 	}
 </script>
 
-<svelte:head><title>{t('notebooks.tags.tagsOntoplano')}</title></svelte:head>
-
 <svelte:window onkeydown={handleKeydown} />
 
 <div class="space-y-4">
@@ -104,7 +102,7 @@
 		week as well — so it sits under the search, where it is read before
 		anything is changed.
 	-->
-	<RoomSurface accent={SECTION_COLORS.diary}>
+	<RoomSurface>
 		{#snippet tools()}
 			{#if data.tags.length > 0}
 				<FilterBar name="tags">
@@ -131,7 +129,7 @@
 				description={t('notebooks.tags.aTagIsMadeBy')}
 			/>
 		{:else if shownTags.length === 0}
-			<EmptyState icon="search" title={t('todoRows.nothingToShow')} />
+			<EmptyState filtered onclear={() => (looking = '')} />
 		{:else}
 			<TagRows
 				bind:this={rows}

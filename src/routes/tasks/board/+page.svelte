@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { pillStyle } from '$lib/pill-ink';
+	import Kbd from '$lib/components/Kbd.svelte';
 	import ShowingCount from '$lib/components/ShowingCount.svelte';
 	import SearchField from '$lib/components/SearchField.svelte';
 	import { sliding } from '$lib/actions/sliding';
@@ -7,13 +7,14 @@
 	import TodoFields from '$lib/components/fields/TodoFields.svelte';
 	import PeriodNav from '$lib/components/PeriodNav.svelte';
 	import PickOne from '$lib/components/PickOne.svelte';
-	import Swatch from '$lib/components/Swatch.svelte';
+	import CategoryMark from '$lib/components/CategoryMark.svelte';
+	import EmptyState from '$lib/components/EmptyState.svelte';
+	import TodoCard from '$lib/components/TodoCard.svelte';
 	import { setRoomAction } from '$lib/room-action.svelte';
 	import RoomSurface from '$lib/components/RoomSurface.svelte';
 	import FilterBar from '$lib/components/FilterBar.svelte';
 	import Picker from '$lib/components/Picker.svelte';
 	import SortControl from '$lib/components/SortControl.svelte';
-	import { phoneWidth } from '$lib/breakpoints.svelte';
 	import { dayOf } from '$lib/when';
 	import { useWhen } from '$lib/when-context.svelte';
 	import type { PlainKey } from '$lib/i18n/keys';
@@ -46,7 +47,6 @@
 
 	const t = useT();
 	const now = useWhen();
-	const phone = phoneWidth();
 
 	let { data, form }: { data: PageServerData; form: ActionData } = $props();
 
@@ -210,6 +210,10 @@
 	const railCards = $derived(
 		data.generalCards.filter((c) => !CLOSED_STATUSES.includes(c.status) && matches(c))
 	);
+	/** Whether the search is what emptied the rail, rather than there being nothing. */
+	const railHidden = $derived(
+		narrowed && data.generalCards.some((c) => !CLOSED_STATUSES.includes(c.status))
+	);
 
 	/**
 	 * Which column a card is drawn in right now.
@@ -272,7 +276,9 @@
 	const columns = $derived(
 		STATUSES.filter((s) => showDone || s !== 'skipped').map((status) => ({
 			status,
-			cards: visible(status)
+			cards: visible(status),
+			/** Whether a search or a filter is what emptied it. */
+			hidden: narrowed && cards.some((c) => shownStatus(c) === status)
 		}))
 	);
 
@@ -688,6 +694,95 @@
 	}));
 </script>
 
+{#snippet cardActions(card: Card)}
+	<!-- Pick it up. A drag is a mouse gesture and does not exist under a
+	     finger, so the move a board is for needs a press: this arms the card
+	     and the next press on a column puts it there. -->
+	<button
+		type="button"
+		onclick={(e) => {
+			e.stopPropagation();
+			movingUid = movingUid === card.uid ? null : card.uid;
+		}}
+		aria-pressed={movingUid === card.uid}
+		class="icon-btn"
+		title={t('tasks.board.moveThisToAColumn')}
+		aria-label={t('tasks.board.moveThisToAColumn')}
+	>
+		<Icon name="drag" />
+	</button>
+	<button
+		type="button"
+		onclick={(e) => {
+			e.stopPropagation();
+			openEditor(card);
+		}}
+		class="icon-btn"
+		title={t('ui.edit')}
+		aria-label={t('tasks.board.edit', { title: card.title })}
+	>
+		<Icon name="edit" />
+	</button>
+	{#if card.kind === 'todo'}
+		<!-- Arms the confirmation under the card, as `x` does. -->
+		<button
+			type="button"
+			onclick={(e) => {
+				e.stopPropagation();
+				confirmingDelete = card.uid;
+			}}
+			class="icon-btn icon-btn-danger"
+			title={t('ui.delete')}
+			aria-label={t('ui.delete')}
+		>
+			<Icon name="trash" />
+		</button>
+	{/if}
+{/snippet}
+
+<!--
+	What the bin and `x` arm. The key does not delete on its own — a keystroke
+	that destroys a row is one you make by accident — it opens this, and the
+	button ignores its own first moments, so the press that armed it cannot
+	also confirm it. Escape backs out, as everywhere else here.
+-->
+{#snippet confirmDelete(card: Card)}
+	{#if confirmingDelete === card.uid}
+		<form
+			method="post"
+			action="?/deleteTodo"
+			use:enhance={() =>
+				async ({ update }) => {
+					confirmingDelete = null;
+					await update();
+				}}
+			class="mt-1.5 flex items-center gap-2 border-t border-gray-200 pt-1.5"
+		>
+			<input type="hidden" name="id" value={card.id} />
+			<input type="hidden" name="kind" value={card.kind} />
+			<span class="text-[11px] text-gray-600">{t('tasks.board.deleteThis')}</span>
+			<button
+				class="btn btn-danger btn-sm ml-auto"
+				use:armed
+				use:focusHere
+				onclick={(e) => e.stopPropagation()}
+			>
+				{t('ui.delete')}
+			</button>
+			<button
+				type="button"
+				class="btn btn-sm"
+				onclick={(e) => {
+					e.stopPropagation();
+					confirmingDelete = null;
+				}}
+			>
+				{t('ui.cancel')}
+			</button>
+		</form>
+	{/if}
+{/snippet}
+
 {#snippet opened(card: Card)}
 	<!--
 		What a card says when it is opened, wherever it is sitting.
@@ -798,7 +893,7 @@
 				on={narrowed || showDone}
 				summary={narrowing()}
 				onclear={clearFilters}
-				trailing={phone.current ? undefined : sortControl}
+				trailing={sortControl}
 			>
 				{#snippet lead()}
 					<SearchField bind:value={looking} label={t('tasks.board.searchCards')} />
@@ -827,11 +922,6 @@
 					label={t('tasks.board.easeFrom')}
 					class="min-w-36 flex-1 sm:flex-none"
 				/>
-				<!-- On a phone the order goes into the sheet with the filters, so
-				     the strip above the columns stays one line. -->
-				{#if phone.current}
-					{@render sortControl()}
-				{/if}
 			</FilterBar>
 		{/snippet}
 
@@ -927,7 +1017,7 @@
 					>
 						{#each columns as column, ci (column.status)}
 							<section
-								class="flex min-h-64 w-[86%] shrink-0 snap-start flex-col border bg-gray-50 md:w-auto {dragOverColumn ===
+								class="lane flex min-h-64 w-[86%] shrink-0 snap-start flex-col border bg-gray-50 md:w-auto {dragOverColumn ===
 								column.status
 									? 'border-gray-900'
 									: 'border-gray-200'}"
@@ -996,7 +1086,7 @@
 									one Move this to a column Edit bin this one", and anything
 									looking for the edit control found the whole card first.
 								-->
-										<article
+										<TodoCard
 											draggable="true"
 											ondragstart={(e) => onDragStart(card, e)}
 											ondragend={onDragEnd}
@@ -1009,228 +1099,91 @@
 											}}
 											onkeydown={() => {}}
 											role="button"
-											tabindex="0"
+											tabindex={0}
 											aria-expanded={openCards.has(card.uid)}
 											aria-label={t('tasks.board.readThisCard', { title: card.title })}
-											class="pill-soft cursor-grab px-2 py-1.5 shadow-card {focusCol === ci &&
-											focusRow === ri
-												? 'kbd-cursor'
+											class="cursor-grab {focusCol === ci && focusRow === ri
+												? 'kb-cursor'
 												: ''} {dragging?.uid === card.uid || movingUid === card.uid
 												? 'opacity-40'
 												: ''}"
-											style={pillStyle(card.categoryColor ?? CATEGORY_FALLBACK_COLOR)}
-											title={card.categoryName ?? t('tasks.board.noCategory')}
+											title={card.title}
+											hint={card.categoryName ?? t('tasks.board.noCategory')}
+											color={card.categoryColor}
+											done={shownStatus(card) === 'done'}
+											doing={shownStatus(card) === 'doing'}
+											tickLabel={shownStatus(card) === 'done'
+												? t('tasks.board.markNotDone', { title: card.title })
+												: t('tasks.board.markDone', { title: card.title })}
+											ontick={() => move(card, shownStatus(card) === 'done' ? 'todo' : 'done')}
 										>
-											<div class="flex items-start gap-2">
+											{#snippet actions()}
+												{@render cardActions(card)}
+											{/snippet}
+											{#snippet meta()}
 												<!--
-											Done, with a thumb.
-
-											Dragging is a mouse gesture: it does not exist on a touch
-											screen, which left a phone with no way at all to move a card
-											out of a column. This is the one move that matters, it is the
-											same box as the todo list's, and it is held for the undo
-											window rather than sent — so a mis-tap costs nothing.
-
-											The box is 20px; the thing you tap is 44.
-										-->
-												<button
-													type="button"
-													onclick={(e) => {
-														e.stopPropagation();
-														move(card, shownStatus(card) === 'done' ? 'todo' : 'done');
-													}}
-													class="-m-1 flex shrink-0 items-center justify-center p-1 pointer-coarse:w-11"
-													title={shownStatus(card) === 'done'
-														? t('tasks.board.markNotDone', { title: card.title })
-														: t('tasks.board.markDone', { title: card.title })}
-													aria-label={shownStatus(card) === 'done'
-														? t('tasks.board.markNotDone', { title: card.title })
-														: t('tasks.board.markDone', { title: card.title })}
-												>
-													<span
-														class="flex h-4 w-4 items-center justify-center border border-gray-400 {shownStatus(
-															card
-														) === 'done'
-															? 'bg-gray-400 text-white'
-															: 'bg-white'}"
-													>
-														{#if shownStatus(card) === 'done'}
-															<Icon name="check" size={11} />
-														{/if}
+													The second line, whether or not there is anything on it:
+													always here and always the same height, so the titles start
+													at the same place and the cards end at the same place.
+												-->
+												{#if card.startTime}
+													<!-- Full strength: this is ten pixels on a tinted ground,
+													     where anything held back stops clearing 4.5:1. -->
+													<span class="tabular shrink-0 font-mono text-[10px] text-gray-900">
+														{card.startTime}
 													</span>
-												</button>
-												<div class="min-w-0 flex-1">
-													<!--
-												The time belongs beside the title, not under it.
-												This card used to spend four lines on a title, a gap, a
-												time and a row of badges, so a column held five of them
-												on a laptop. A card with nothing to say is one line now.
-											-->
-													<div class="flex items-baseline gap-1.5">
-														<p class="min-w-0 flex-1 truncate text-sm text-gray-900">
-															{card.title}
-														</p>
-														<!-- Pick it up. A drag is a mouse gesture and does not
-												     exist under a finger, so the move a board is for
-												     needs a press: this arms the card and the next
-												     press on a column puts it there. -->
-														<button
-															type="button"
-															onclick={(e) => {
-																e.stopPropagation();
-																movingUid = movingUid === card.uid ? null : card.uid;
-															}}
-															aria-pressed={movingUid === card.uid}
-															class="shrink-0 self-start opacity-70 transition hover:opacity-100"
-															title={t('tasks.board.moveThisToAColumn')}
-															aria-label={t('tasks.board.moveThisToAColumn')}
-														>
-															<Icon name="drag" size={14} />
-														</button>
+												{/if}
+												{#if badges}
+													{#if needsResolution(card)}
 														<button
 															type="button"
 															onclick={(e) => {
 																e.stopPropagation();
 																openEditor(card);
 															}}
-															class="shrink-0 self-start opacity-70 transition hover:opacity-100"
-															aria-label={t('tasks.board.edit', { title: card.title })}
+															class="border border-current px-1 text-[10px]"
 														>
-															<Icon name="edit" size={14} />
+															{t('tasks.board.whichActivity')}
 														</button>
-													</div>
-													<!--
-												The second line, whether or not there is anything on it.
-
-												The time used to sit in front of the title, which cost
-												the title five characters on every card that had one and
-												left the ones without a time reading differently from
-												the ones with. And the line only existed when a card had
-												a badge, so a card wearing one label stood taller than
-												its neighbours. It is always here and always the same
-												height: the titles start at the same place and the cards
-												end at the same place.
-											-->
-													<div
-														class="mt-0.5 flex min-h-4 flex-wrap items-center gap-2 text-gray-500"
-													>
-														{#if card.startTime}
-															<!-- Full strength: this is ten pixels, and anything held
-													     back from a tinted ground at that size stops clearing
-													     4.5:1. The size carries the hierarchy. -->
-															<span class="tabular shrink-0 font-mono text-[10px] text-gray-900">
-																{card.startTime}
-															</span>
-														{/if}
-														{#if badges}
-															{#if needsResolution(card)}
-																<button
-																	type="button"
-																	onclick={(e) => {
-																		e.stopPropagation();
-																		openEditor(card);
-																	}}
-																	class="border border-current px-1 text-[10px]"
-																>
-																	{t('tasks.board.whichActivity')}
-																</button>
-															{/if}
-															{#if card.kind === 'todo' && card.scheduledDate && card.scheduledDate < data.date}
-																<span class="text-[10px]">{t('tasks.board.carriedOver')}</span>
-															{/if}
-															<RatingBadges values={card.ratings} muted={card.status === 'done'} />
-															<!--
-													Why this card exists, in one glyph. A kanban card is
-													scanned rather than read, so the goal's name would cost
-													more room than it is worth here — the editor spells it
-													out, and so does the todo list.
-												-->
-															{#if card.goals.length}
-																<span
-																	class="text-gray-500"
-																	title={card.goals.map((g) => g.title).join(' · ')}
-																>
-																	<Icon name="goals" size={11} />
-																</span>
-															{/if}
-														{/if}
-													</div>
-												</div>
-											</div>
-
+													{/if}
+													{#if card.kind === 'todo' && card.scheduledDate && card.scheduledDate < data.date}
+														<span class="text-[10px]">{t('tasks.board.carriedOver')}</span>
+													{/if}
+													<RatingBadges values={card.ratings} muted={card.status === 'done'} />
+													<!-- Why this card exists, in one glyph; the editor and the
+													     todo list spell the goal out. -->
+													{#if card.goals.length}
+														<span title={card.goals.map((g) => g.title).join(' · ')}>
+															<Icon name="goals" size={11} />
+														</span>
+													{/if}
+												{/if}
+											{/snippet}
 											<!--
-										What is written on it, for whoever pressed it.
-
-										Its notes, the pictures and recordings in them, and the goals
-										it belongs to by name rather than by the one glyph the folded
-										card has room for. Reading a card should not mean opening the
-										form that edits it and pressing Cancel.
-									-->
+												What is written on it, for whoever pressed it: its notes and the
+												goals it belongs to by name. Reading a card should not mean
+												opening the form that edits it and pressing Cancel.
+											-->
 											{#if openCards.has(card.uid)}
-												<!--
-											A wash, not a rule.
-											
-											This was a `border-t` across a card with rounded
-											corners, which drew a straight line stopping short of
-											both edges — a single-sided border that reads as a
-											mistake rather than as a division. A shade of its own
-											says "this part opened" without drawing anything.
-										-->
 												{@render opened(card)}
 											{/if}
-
-											<!--
-										What `x` arms. The key does not delete on its own — a keystroke
-										that destroys a row is one you make by accident — it opens this,
-										and the button ignores its own first moments, so the press that
-										armed it cannot also confirm it. Escape backs out, as everywhere
-										else here.
-									-->
-											{#if confirmingDelete === card.uid}
-												<form
-													method="post"
-													action="?/deleteTodo"
-													use:enhance={() =>
-														async ({ update }) => {
-															confirmingDelete = null;
-															await update();
-														}}
-													class="mt-1.5 flex items-center gap-2 border-t border-gray-200 pt-1.5"
-												>
-													<input type="hidden" name="id" value={card.id} />
-													<input type="hidden" name="kind" value={card.kind} />
-													<span class="text-[11px] text-gray-600"
-														>{t('tasks.board.deleteThis')}</span
-													>
-													<button
-														class="btn btn-danger btn-sm ml-auto"
-														use:armed
-														use:focusHere
-														onclick={(e) => e.stopPropagation()}
-													>
-														{t('ui.delete')}
-													</button>
-													<button
-														type="button"
-														class="btn btn-sm"
-														onclick={(e) => {
-															e.stopPropagation();
-															confirmingDelete = null;
-														}}
-													>
-														{t('ui.cancel')}
-													</button>
-												</form>
-											{/if}
-										</article>
+											{@render confirmDelete(card)}
+										</TodoCard>
 									{/each}
 
 									{#if column.cards.length === 0}
-										<p class="px-1 py-4 text-center text-xs text-gray-500">
-											{dragOverColumn === column.status
+										{@const dropping = dragOverColumn === column.status}
+										<EmptyState
+											compact
+											filtered={column.hidden && !dropping}
+											onclear={clearFilters}
+											icon={dropping ? 'drag' : column.hidden ? undefined : 'check'}
+											title={dropping
 												? t('tasks.board.dropHere')
-												: t('tasks.board.nothingHere')}
-										</p>
+												: column.hidden
+													? undefined
+													: t('tasks.board.nothingHere')}
+										/>
 									{/if}
 								</div>
 							</section>
@@ -1243,7 +1196,7 @@
 			     interact: drag one across and it becomes a scheduled task. -->
 					<aside
 						aria-label={t('tasks.board.toDoList')}
-						class="w-full shrink-0 border bg-gray-50 md:w-64 lg:w-72 xl:w-80 {railOver
+						class="lane w-full shrink-0 border bg-gray-50 md:w-64 lg:w-72 xl:w-80 {railOver
 							? 'border-gray-900'
 							: 'border-gray-200'}"
 						ondragover={(e) => {
@@ -1272,7 +1225,7 @@
 						</header>
 						<div class="space-y-2 p-2">
 							{#each railCards as card (card.uid)}
-								<article
+								<TodoCard
 									draggable="true"
 									ondragstart={(e) => onDragStart(card, e)}
 									ondragend={onDragEnd}
@@ -1280,48 +1233,45 @@
 									onclick={() => readCard(card)}
 									onkeydown={() => {}}
 									role="button"
-									tabindex="0"
+									tabindex={0}
 									aria-expanded={openCards.has(card.uid)}
-									class="pill-soft lift cursor-grab p-2 shadow-card {dragging?.uid === card.uid ||
-									movingUid === card.uid
+									aria-label={t('tasks.board.readThisCard', { title: card.title })}
+									class="lift cursor-grab {dragging?.uid === card.uid || movingUid === card.uid
 										? 'opacity-40'
 										: ''}"
-									style={pillStyle(card.categoryColor ?? CATEGORY_FALLBACK_COLOR)}
-									title={card.categoryName ?? t('tasks.board.noCategory')}
+									title={card.title}
+									hint={card.categoryName ?? t('tasks.board.noCategory')}
+									color={card.categoryColor}
+									done={shownStatus(card) === 'done'}
+									doing={shownStatus(card) === 'doing'}
+									tickLabel={t('tasks.board.markDone', { title: card.title })}
+									ontick={() => move(card, 'done')}
 								>
-									<div class="flex items-start gap-2">
-										<div class="min-w-0 flex-1">
-											<p class="truncate text-sm">{card.title}</p>
-											<RatingBadges
-												values={card.ratings}
-												muted={card.status === 'done'}
-												class="mt-1"
-											/>
-										</div>
-										<button
-											type="button"
-											onclick={(e) => {
-												e.stopPropagation();
-												movingUid = movingUid === card.uid ? null : card.uid;
-											}}
-											aria-pressed={movingUid === card.uid}
-											class="shrink-0 self-start opacity-70 transition hover:opacity-100"
-											title={t('tasks.board.moveThisToAColumn')}
-											aria-label={t('tasks.board.moveThisToAColumn')}
-										>
-											<Icon name="drag" size={14} />
-										</button>
-									</div>
+									{#snippet actions()}
+										{@render cardActions(card)}
+									{/snippet}
+									{#snippet meta()}
+										<RatingBadges values={card.ratings} muted={card.status === 'done'} />
+									{/snippet}
 									{#if openCards.has(card.uid)}
 										{@render opened(card)}
 									{/if}
-								</article>
+									{@render confirmDelete(card)}
+								</TodoCard>
 							{/each}
 
 							{#if railCards.length === 0}
-								<p class="px-1 py-6 text-center text-xs text-gray-500">
-									{railOver ? t('tasks.board.dropToSendBack') : t('tasks.board.nothingWaiting')}
-								</p>
+								<EmptyState
+									compact
+									filtered={railHidden && !railOver}
+									onclear={clearFilters}
+									icon={railOver ? 'drag' : railHidden ? undefined : 'check'}
+									title={railOver
+										? t('tasks.board.dropToSendBack')
+										: railHidden
+											? undefined
+											: t('tasks.board.nothingWaiting')}
+								/>
 							{/if}
 						</div>
 					</aside>
@@ -1341,8 +1291,7 @@
 			<div class="flex flex-wrap items-center gap-x-5 gap-y-2 border-t border-gray-200 px-4 py-3">
 				{#each dayTotals as total (total.name)}
 					<span class="flex items-center gap-2 text-sm">
-						<Swatch color={total.color} />
-						<span class="text-gray-700">{total.name}</span>
+						<CategoryMark name={total.name} color={total.color} />
 						<span class="tabular text-gray-500">{formatDuration(t, total.minutes)}</span>
 					</span>
 				{/each}
@@ -1609,43 +1558,23 @@
 	</Modal>
 
 	<p class="kbd-hint text-xs text-gray-500">
-		<kbd class="border border-gray-300 bg-gray-50 px-1 text-gray-700"
-			>{keyFor('/tasks/board', 'prev-column')}</kbd
-		>
-		<kbd class="border border-gray-300 bg-gray-50 px-1 text-gray-700"
-			>{keyFor('/tasks/board', 'next-card')}</kbd
-		>
-		<kbd class="border border-gray-300 bg-gray-50 px-1 text-gray-700"
-			>{keyFor('/tasks/board', 'prev-card')}</kbd
-		>
-		<kbd class="border border-gray-300 bg-gray-50 px-1 text-gray-700"
-			>{keyFor('/tasks/board', 'next-column')}</kbd
-		>
+		<Kbd keys={keyFor('/tasks/board', 'prev-column')} />
+		<Kbd keys={keyFor('/tasks/board', 'next-card')} />
+		<Kbd keys={keyFor('/tasks/board', 'prev-card')} />
+		<Kbd keys={keyFor('/tasks/board', 'next-column')} />
 		{t('tasks.board.move')}
-		<kbd class="border border-gray-300 bg-gray-50 px-1 text-gray-700"
-			>{keyFor('/tasks/board', 'carry-left')}</kbd
-		>
-		<kbd class="border border-gray-300 bg-gray-50 px-1 text-gray-700"
-			>{keyFor('/tasks/board', 'carry-right')}</kbd
-		>
+		<Kbd keys={keyFor('/tasks/board', 'carry-left')} />
+		<Kbd keys={keyFor('/tasks/board', 'carry-right')} />
 		{t('tasks.board.carryCard')}
-		<kbd class="border border-gray-300 bg-gray-50 px-1 text-gray-700"
-			>{keyFor('/tasks/board', 'toggle-done')}</kbd
-		>
+		<Kbd keys={keyFor('/tasks/board', 'toggle-done')} />
 		{t('tasks.board.done')}
-		<kbd class="border border-gray-300 bg-gray-50 px-1 text-gray-700"
-			>{keyFor('/tasks/board', 'toggle-today')}</kbd
-		>
+		<Kbd keys={keyFor('/tasks/board', 'toggle-today')} />
 		{t('tasks.board.today')}
-		<kbd class="border border-gray-300 bg-gray-50 px-1 text-gray-700"
-			>{keyFor('/tasks/board', 'switch-tab')}</kbd
-		>
+		<Kbd keys={keyFor('/tasks/board', 'switch-tab')} />
 		{t('tasks.board.switchTab')}
-		<kbd class="border border-gray-300 bg-gray-50 px-1 text-gray-700">1-5</kbd>
+		<Kbd keys="1-5" />
 		{t('tasks.board.rateWhich', { rating: t(RATING_LABELS[ratingKey]) })}
-		<kbd class="border border-gray-300 bg-gray-50 px-1 text-gray-700"
-			>{keyFor('/tasks/board', 'delete')}</kbd
-		>
+		<Kbd keys={keyFor('/tasks/board', 'delete')} />
 		{t('tasks.board.delete')}
 	</p>
 </div>

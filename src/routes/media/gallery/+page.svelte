@@ -265,7 +265,7 @@
 	inside it.
 -->
 {#snippet albumCard(node: PageServerData['tree'][number])}
-	<li class="group relative overflow-hidden rounded-lg border border-gray-200">
+	<li data-row class="group relative overflow-hidden rounded-lg border border-gray-200">
 		<a href="{resolve('/media/gallery')}/{node.id}" class="block">
 			<span class="block aspect-square bg-gray-50">
 				{#if node.coverId}
@@ -300,7 +300,7 @@
 				</span>
 			</span>
 		</a>
-		<span class="absolute top-1.5 right-1.5 flex gap-1">
+		<span class="row-actions absolute top-1.5 right-1.5 flex gap-1">
 			<button
 				class="icon-btn bg-white/80"
 				title={t('gallery.rename', { name: node.name })}

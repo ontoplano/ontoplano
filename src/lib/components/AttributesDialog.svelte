@@ -1,4 +1,5 @@
 <script lang="ts">
+	import EmptyState from '$lib/components/EmptyState.svelte';
 	/**
 	 * A task's attributes, read, copied and changed one at a time.
 	 *
@@ -82,7 +83,7 @@
 		<p class="truncate text-sm font-medium text-gray-900">{title}</p>
 	{/snippet}
 	{#if rows.length === 0}
-		<p class="text-sm text-gray-500">{t('attributes.none')}</p>
+		<EmptyState compact icon="info" title={t('attributes.none')} />
 	{:else}
 		<ul class="divide-y divide-gray-200 border border-gray-200" data-tour="attributes-list">
 			{#each rows as [key, value] (key)}

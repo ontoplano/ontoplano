@@ -209,6 +209,35 @@ test.describe('the strip itself', () => {
 		await strip.getByRole('link', { name: 'Weekly notes' }).click();
 		await expect(page).toHaveURL(/\/notebooks\/weekly/);
 	});
+
+	/**
+	 * The tab you are on is on screen, and the edge that continues says so.
+	 *
+	 * Tags is the last of Notebooks' tabs: it arrived past the right edge of
+	 * its own strip, so the strip said nothing about where you were.
+	 */
+	test('the tab you are on is scrolled into view, with a way back along', async ({ page }) => {
+		test.setTimeout(180_000);
+		await register(page, testEmail('tabs-reveal'));
+		await visit(page, '/notebooks/tags');
+
+		const strip = page.getByRole('navigation', { name: 'Notebooks sections' });
+		const current = strip.locator('[aria-current="page"]');
+		await expect(current).toHaveText('Tags');
+		await expect
+			.poll(async () => {
+				const [s, c] = await Promise.all([strip.boundingBox(), current.boundingBox()]);
+				return c!.x >= s!.x - 1 && c!.x + c!.width <= s!.x + s!.width + 1;
+			})
+			.toBe(true);
+
+		await expect(strip).toHaveAttribute('data-more', /left|both/);
+		const back = page.locator('.tab-strip-more-left');
+		await expect(back).toBeVisible();
+		const before = await strip.evaluate((el) => el.scrollLeft);
+		await back.click();
+		await expect.poll(() => strip.evaluate((el) => el.scrollLeft)).toBeLessThan(before);
+	});
 });
 
 /**

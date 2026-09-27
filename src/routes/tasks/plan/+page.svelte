@@ -1,10 +1,10 @@
 <script lang="ts">
+	import Kbd from '$lib/components/Kbd.svelte';
 	import Card from '$lib/components/Card.svelte';
 	import ShowingCount from '$lib/components/ShowingCount.svelte';
 	import SearchField from '$lib/components/SearchField.svelte';
-	import { pillStyle } from '$lib/pill-ink';
 	import RemindLead from '$lib/components/RemindLead.svelte';
-	import { dayOf, wantsTwelveHour } from '$lib/when';
+	import { dayOf, momentOf, wantsTwelveHour } from '$lib/when';
 	import { useWhen } from '$lib/when-context.svelte';
 	import NumberBox from '$lib/components/NumberBox.svelte';
 	import PeriodNav from '$lib/components/PeriodNav.svelte';
@@ -13,7 +13,6 @@
 	import FilterBar from '$lib/components/FilterBar.svelte';
 	import RoomSurface from '$lib/components/RoomSurface.svelte';
 	import { sliding } from '$lib/actions/sliding';
-	import { phoneWidth } from '$lib/breakpoints.svelte';
 	import SortControl from '$lib/components/SortControl.svelte';
 	import TagFilterControl from '$lib/components/TagFilter.svelte';
 	import { NO_TAG_FILTER, isTagFiltering, passesTagFilter, type TagFilter } from '$lib/tag-filter';
@@ -24,6 +23,8 @@
 	import Icon, { ICONS } from '$lib/components/Icon.svelte';
 	import Swatch from '$lib/components/Swatch.svelte';
 	import EmptyState from '$lib/components/EmptyState.svelte';
+	import TodoCard from '$lib/components/TodoCard.svelte';
+	import RatingBadges from '$lib/components/RatingBadges.svelte';
 	import { armed } from '$lib/actions/armed';
 	import { enhance } from '$lib/enhance';
 	import { deserialize } from '$app/forms';
@@ -838,7 +839,6 @@
 	let trayEl: HTMLElement | undefined = $state();
 	/** The strip's own row in the toolbar: a drop there counts too. */
 	let trayHeadEl: HTMLElement | undefined = $state();
-	const phone = phoneWidth();
 	let draggingBlock = $state(false);
 	/** The name of the block in the air, so the strip can show it arriving. */
 	let draggingBlockTitle = $state('');
@@ -1007,6 +1007,14 @@
 	 */
 	let placingTodoId: number | null = $state(null);
 	const placingTodo = $derived(data.todos.find((t: { id: number }) => t.id === placingTodoId));
+
+	/** A todo in the tray ticked off where it stands, as the list would. */
+	async function tickTrayTodo(todoId: number) {
+		const body = new FormData();
+		body.set('id', String(todoId));
+		body.set('status', 'done');
+		if (await postGridAction('setTodoStatus', body, t('errors.unexpected'))) await invalidateAll();
+	}
 
 	async function scheduleTodoAt(todoId: number, target: { date: string; startTime: string }) {
 		const body = new FormData();
@@ -2663,7 +2671,7 @@
 					<li>{t('tasks.plan.dragAcrossAnEmptyStretch')}</li>
 					<li>
 						{t('tasks.plan.press')}
-						<kbd class="border border-gray-300 bg-gray-50 px-1 text-gray-700">?</kbd>
+						<Kbd keys="?" />
 						{t('tasks.plan.forEverythingTheKeyboardCan')}
 					</li>
 				</ul>
@@ -2860,7 +2868,7 @@
 							on={trayNarrowed}
 							summary={trayNarrowed ? t('tasks.plan.trayNarrowed') : ''}
 							onclear={clearTray}
-							trailing={phone.current ? undefined : traySort}
+							trailing={traySort}
 						>
 							{#snippet lead()}
 								<SearchField
@@ -2906,9 +2914,6 @@
 									class="min-w-36 flex-1 sm:flex-none"
 								/>
 							{/if}
-							{#if phone.current}
-								{@render traySort()}
-							{/if}
 						</FilterBar>
 					</div>
 				</div>
@@ -2920,7 +2925,7 @@
 				<!-- A few rows of pills and the rest behind a scroll, so the strip is
 				     never taller than a glance. -->
 				<div id="plan-tray-pills" class="max-h-44 overflow-y-auto p-3">
-					<div class="flex flex-wrap items-stretch gap-2">
+					<div class="grid grid-cols-[repeat(auto-fill,minmax(14rem,1fr))] items-start gap-2">
 						{#if draggingBlock && overTrayNow}
 							<span
 								class="border border-dashed border-gray-400 bg-gray-100 px-3 py-2 text-sm text-gray-500 italic"
@@ -2929,10 +2934,17 @@
 							</span>
 						{/if}
 						{#each trayMatches.slice(0, TRAY_SHOWN) as todo (todo.id)}
-							<button
-								type="button"
+							<!-- The todo card the board's rail draws — see `TodoCard`. Pressing
+							     it picks it up for a tap on the grid; dragging drops it there. -->
+							<TodoCard
 								draggable="true"
 								onclick={() => (placingTodoId = placingTodoId === todo.id ? null : todo.id)}
+								onkeydown={(e) => {
+									if (e.key === 'Enter' || e.key === ' ') {
+										e.preventDefault();
+										placingTodoId = placingTodoId === todo.id ? null : todo.id;
+									}
+								}}
 								ondragstart={(e) => {
 									placingTodoId = null;
 									dragTodoId = todo.id;
@@ -2943,41 +2955,46 @@
 									dragTodoId = null;
 									dropPreview = null;
 								}}
-								class="lift flex max-w-72 cursor-grab flex-col items-start gap-1 px-3 py-2 text-left text-sm shadow-card {placingTodoId ===
-								todo.id
-									? 'on-fill'
-									: todo.categoryColor
-										? 'pill-soft'
-										: todo.due
-											? 'border border-gray-400 bg-white text-gray-900'
-											: 'border border-gray-200 bg-white text-gray-800'} {dragTodoId === todo.id
-									? 'opacity-40'
-									: ''}"
-								style={todo.categoryColor && placingTodoId !== todo.id
-									? pillStyle(todo.categoryColor)
-									: ''}
-								title={t('tasks.plan.dragOntoTheGridOr')}
+								role="button"
+								tabindex={0}
+								aria-pressed={placingTodoId === todo.id}
+								class="lift cursor-grab text-left {placingTodoId === todo.id
+									? 'outline-2 outline-offset-2 outline-gray-900'
+									: ''} {dragTodoId === todo.id ? 'opacity-40' : ''}"
+								title={todo.title}
+								hint={t('tasks.plan.dragOntoTheGridOr')}
+								color={todo.categoryColor}
+								doing={todo.status === 'doing'}
+								tickLabel={t('todoRows.markComplete')}
+								ontick={() => tickTrayTodo(todo.id)}
 							>
-								<span class="line-clamp-2 font-medium">{todo.title}</span>
-								<!-- What it is filed under and when it is owed, in words: which
-								     of these is for today is the reason to open the strip. -->
-								<span class="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs opacity-80">
+								{#snippet meta()}
+									<!-- What it is filed under and when it is owed, in words: which
+									     of these is for today is the reason to open the strip. -->
 									{#if todo.due === 'today'}
-										<span class="tracking-wide uppercase">{t('tasks.plan.today2')}</span>
+										<span class="font-medium">{t('tasks.plan.today2')}</span>
 									{:else if todo.due === 'overdue'}
-										<span class="tracking-wide uppercase">{t('tasks.plan.owed')}</span>
+										<span class="font-medium">{t('tasks.plan.owed')}</span>
 									{/if}
+									<RatingBadges values={todo.ratings} />
 									{#if todo.notebookTitle}
 										<span class="inline-flex items-center gap-1">
 											<Icon name="notebook" size={12} />{todo.notebookTitle}
 										</span>
 									{/if}
-									{#each todo.tags as tag (tag.id)}<span>#{tag.name}</span>{/each}
-								</span>
-							</button>
+									{#each todo.tags as tag (tag.id)}<span>{tag.name}</span>{/each}
+								{/snippet}
+							</TodoCard>
 						{:else}
 							{#if !draggingBlock}
-								<p class="text-sm text-gray-500">{t('tasks.plan.trayNothingMatches')}</p>
+								<EmptyState
+									compact
+									filtered
+									onclear={() => {
+										trayLooking = '';
+										clearTray();
+									}}
+								/>
 							{/if}
 						{/each}
 					</div>
@@ -3109,30 +3126,19 @@
 			</p>
 			<p class="kbd-hint min-w-0 flex-1 text-xs text-gray-500">
 				{t('tasks.plan.dragToCreateDrag')}
-				<kbd class="border border-gray-300 bg-gray-50 px-1 text-gray-700"
-					>{t('tasks.plan.ctrl')}</kbd
-				>
+				<Kbd keys={t('tasks.plan.ctrl')} />
 				{t('tasks.plan.whileDraggingToDuplicateOr')}
-				<kbd class="border border-gray-300 bg-gray-50 px-1 text-gray-700">{t('tasks.plan.alt')}</kbd
-				>
+				<Kbd keys={t('tasks.plan.alt')} />
 				{t('tasks.plan.toMoveOrResizeJust')}
-				<kbd class="border border-gray-300 bg-gray-50 px-1 text-gray-700"
-					>{t('tasks.plan.shift')}</kbd
-				>
+				<Kbd keys={t('tasks.plan.shift')} />
 				{t('tasks.plan.dragToSelectSeveralThen')}
-				<kbd class="border border-gray-300 bg-gray-50 px-1 text-gray-700"
-					>{t('tasks.plan.ctrl')}</kbd
-				>+<kbd class="border border-gray-300 bg-gray-50 px-1 text-gray-700">Z</kbd>
+				<Kbd keys={t('tasks.plan.ctrl')} />+<Kbd keys="Z" />
 				{t('tasks.plan.undoesSnapsTo15min')}
 			</p>
 			<div class="flex shrink-0 items-center gap-1">
 				<span class="mr-1 text-xs whitespace-nowrap text-gray-500">
 					{t('tasks.plan.zoom')}
-					<span class="kbd-hint"
-						>(<kbd class="border border-gray-300 bg-gray-50 px-1 text-gray-700"
-							>{t('tasks.plan.ctrl')}</kbd
-						>{t('tasks.plan.scroll')}</span
-					>
+					<span class="kbd-hint">(<Kbd keys={t('tasks.plan.ctrl')} />{t('tasks.plan.scroll')}</span>
 				</span>
 				<!--
 					The design pass replaced white-with-a-border-and-a-shadow everywhere
@@ -3409,7 +3415,7 @@
 										{:else if feed.fetchedAt}
 											<p class="text-xs text-gray-500">
 												{t('tasks.plan.read', {
-													t: feed.fetchedAt.slice(0, 16).replace('T', ' ')
+													t: momentOf(feed.fetchedAt, now())
 												})}
 											</p>
 										{/if}
@@ -4211,9 +4217,8 @@
 							<button
 								type="submit"
 								title={ticked ? t('tasks.plan.putItBackToPending') : t('tasks.plan.itHappened')}
-								class="border px-3 py-2 text-sm font-medium transition {ticked
-									? 'border-blue-200 bg-blue-50 text-blue-800 hover:bg-blue-100'
-									: 'border-blue-700 bg-blue-700 text-white hover:bg-blue-800'}"
+								class="btn {ticked ? '' : 'btn-primary'}"
+								aria-pressed={ticked}
 							>
 								{ticked ? t('tasks.plan.doneUndo') : t('tasks.plan.markAsDone')}
 							</button>

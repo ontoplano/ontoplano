@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { useWhen } from '$lib/when-context.svelte';
+	import { civilOf } from '$lib/when';
 	/**
 	 * One habit, wherever a habit is shown.
 	 *
@@ -13,6 +15,7 @@
 	 */
 	import Icon from '$lib/components/Icon.svelte';
 	import RowCard from '$lib/components/RowCard.svelte';
+	import CategoryMark from '$lib/components/CategoryMark.svelte';
 	import OneLine from '$lib/components/OneLine.svelte';
 	import Counter from '$lib/components/Counter.svelte';
 	import { enhance } from '$lib/enhance';
@@ -41,6 +44,7 @@
 	import { useT } from '$lib/i18n';
 
 	const t = useT();
+	const now = useWhen();
 
 	/** What a card needs off a habit — `listHabits` gives exactly this. */
 	type Shown = {
@@ -163,19 +167,13 @@
 	}
 </script>
 
-<div
-	style="border-left-width: 4px; border-left-color: {isBad
-		? HABIT_BAD_ACCENT
-		: isNeutral
-			? HABIT_NEUTRAL_ACCENT
-			: HABIT_GOOD_ACCENT}"
->
+<div>
 	<!--
 		The card a task is drawn on — `RowCard`: the mark that logs today where a
 		task has its tick, the name and its streak beside it, the verbs along the
 		foot. The year unfolds under the whole card, which is the width it needs.
 	-->
-	<div class="flex items-stretch gap-x-4 px-4 py-3">
+	<div class="row-card">
 		<RowCard>
 			{#snippet rail()}
 				{#if todayLogged}
@@ -211,7 +209,7 @@
 						aria-label={logLabel(habit)}
 						class="-m-1 flex shrink-0 items-start justify-center self-start p-1 pointer-coarse:w-11"
 					>
-						<!-- Grey whatever the kind: the edge down the card already says
+						<!-- Grey whatever the kind: the pill under the name already says
 						     which kind it is, and a small red glyph is one a red-green
 						     colourblind reader cannot tell from the blue one. -->
 						<span
@@ -266,15 +264,6 @@
 				</span>
 				<button
 					type="button"
-					title={t('ui.edit')}
-					aria-label={t('ui.edit')}
-					onclick={() => onedit?.(habit.id)}
-					class="icon-btn"
-				>
-					<Icon name="edit" />
-				</button>
-				<button
-					type="button"
 					onclick={toggleExpanded}
 					class="icon-btn"
 					title={open ? t('health.habits.collapse') : t('health.habits.expand')}
@@ -282,6 +271,15 @@
 					aria-expanded={open}
 				>
 					<Icon name={open ? 'chevron-up' : 'chevron-down'} />
+				</button>
+				<button
+					type="button"
+					title={t('ui.edit')}
+					aria-label={t('ui.edit')}
+					onclick={() => onedit?.(habit.id)}
+					class="icon-btn"
+				>
+					<Icon name="edit" />
 				</button>
 				{#if confirmingDelete}
 					<form method="post" action={actions.remove} use:enhance>
@@ -309,6 +307,12 @@
 			<p class="text-sm leading-snug font-medium break-words text-gray-900">{habit.name}</p>
 			<!-- Where it stands, on the line a task's notebook sits on. -->
 			<div class="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-gray-500">
+				<!-- Which kind it is, worn the way a category is — see `CategoryMark`.
+				     It was a 4px bar down the card's edge, a colour with no word. -->
+				<CategoryMark
+					name={isBad ? t('app.bad') : isNeutral ? t('app.neutral') : t('app.good')}
+					color={isBad ? HABIT_BAD_ACCENT : isNeutral ? HABIT_NEUTRAL_ACCENT : HABIT_GOOD_ACCENT}
+				/>
 				{#if todayLogged}
 					<span class="font-medium {isNeutral ? 'text-gray-600' : 'text-blue-700'}">
 						{todayCount > 1
@@ -477,7 +481,9 @@
 					{#each occ as occurrence (occurrence.id)}
 						<div class="flex items-center justify-between py-1.5">
 							<div class="flex items-center gap-2">
-								<span class="text-xs font-medium text-gray-600">{occurrence.date}</span>
+								<span class="text-xs font-medium text-gray-600"
+									>{civilOf(occurrence.date, now())}</span
+								>
 								<form
 									method="post"
 									action={actions.updateOccurrence}
@@ -488,7 +494,7 @@
 									<OneLine
 										name="notes"
 										placeholder={t('health.habits.addNote')}
-										ariaLabel={t('health.habits.noteOn', { date: occurrence.date })}
+										ariaLabel={t('health.habits.noteOn', { date: civilOf(occurrence.date, now()) })}
 										value={occurrence.notes ?? ''}
 										class="input input-sm w-40"
 									/>

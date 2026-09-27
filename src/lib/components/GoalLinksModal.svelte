@@ -159,7 +159,7 @@
 								>
 							</label>
 						{:else}
-							<p class="text-xs text-gray-500">{t('goals.noOpenTodos')}</p>
+							<EmptyState compact icon="check" title={t('goals.noOpenTodos')} />
 						{/each}
 					</div>
 					{#if !showDoneTodos}

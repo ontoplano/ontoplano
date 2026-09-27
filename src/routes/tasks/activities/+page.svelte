@@ -3,7 +3,7 @@
 	import ShowingCount from '$lib/components/ShowingCount.svelte';
 	import SearchField from '$lib/components/SearchField.svelte';
 	import StripVerb from '$lib/components/StripVerb.svelte';
-	import Swatch from '$lib/components/Swatch.svelte';
+	import CategoryMark from '$lib/components/CategoryMark.svelte';
 	import { setRoomAction } from '$lib/room-action.svelte';
 	import RoomSurface from '$lib/components/RoomSurface.svelte';
 	import FilterBar from '$lib/components/FilterBar.svelte';
@@ -19,14 +19,11 @@
 	import Modal from '$lib/components/Modal.svelte';
 	import type { PageServerData, ActionData } from './$types';
 	import { CATEGORY_FALLBACK_COLOR, CATEGORY_DEFAULT_NEW } from '$lib/colors.js';
-	import { pillStyle } from '$lib/pill-ink';
 	import { getAction, keyFor } from '$lib/shortcuts';
 	import { keepInView } from '$lib/actions/keep-in-view';
-	import { phoneWidth } from '$lib/breakpoints.svelte';
 	import { useT } from '$lib/i18n';
 
 	const t = useT();
-	const phone = phoneWidth();
 	const ROOM = '/tasks/activities';
 
 	let { data, form }: { data: PageServerData; form: ActionData } = $props();
@@ -208,19 +205,10 @@
 		{#if shown.length === 0}
 			{#if narrowed}
 				<EmptyState
-					icon="search"
-					title={t('todoRows.nothingToShow')}
+					filtered
+					onclear={clearFilters}
 					description={t('tasks.activities.noActivitiesMatchTheSelected')}
-				>
-					{#snippet action()}
-						<!-- On a phone the strip's own Clear is behind the filter sheet. -->
-						{#if phone.current}
-							<button type="button" class="btn btn-sm" onclick={clearFilters}>
-								{t('filters.clear')}
-							</button>
-						{/if}
-					{/snippet}
-				</EmptyState>
+				/>
 			{:else}
 				<EmptyState
 					icon="planner"
@@ -240,15 +228,16 @@
 				{#each shown as activity, i (activity.id)}
 					<div
 						use:keepInView={i === selectedIndex}
-						class="list-row {i === selectedIndex ? 'kbd-cursor' : ''}"
+						class="list-row {i === selectedIndex ? 'kb-cursor' : ''}"
 						data-activity-id={activity.id}
 					>
 						<div class="list-row-main {activity.active ? '' : 'opacity-60'}">
 							<div class="flex flex-wrap items-center gap-x-2 gap-y-1">
 								<span class="text-sm font-medium text-gray-900">{activity.name}</span>
-								<span class="pill" style={pillStyle(catColor(activity.categoryId))}
-									>{activity.categoryName}</span
-								>
+								<CategoryMark
+									name={activity.categoryName ?? ''}
+									color={catColor(activity.categoryId)}
+								/>
 								{#if !activity.active}
 									<span class="text-xs text-gray-600">{t('tasks.activities.disabled')}</span>
 								{/if}
@@ -376,8 +365,7 @@
 						</button>
 					</form>
 				{:else}
-					<Swatch color={cat.color} shape="tall" />
-					<span class="min-w-0 flex-1 truncate text-sm text-gray-900">{cat.name}</span>
+					<span class="min-w-0 flex-1"><CategoryMark name={cat.name} color={cat.color} /></span>
 					{#if confirmingDelete === `cat-${cat.id}`}
 						<form
 							method="post"

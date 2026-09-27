@@ -376,13 +376,13 @@ export const messages: Catalogue = {
 	'demo.nobodyElseCanSeeIt':
 		'Mais ninguém consegue ver, e é apagado algumas horas depois que você fecha a aba.',
 	'demo.openTheDemo': 'Abrir a demonstração',
-	'demo.openingTheDemoOntoplano': 'Abrindo a demonstração · ontoplano',
 	'demo.settingUpACopyFor': 'Preparando uma cópia para você',
 	'demo.thatIsALotOf': 'Isso é muita cópia vindo de um lugar só.',
 	'demo.theDemoHandsOutAn':
 		'A demonstração entrega {demoAccountsPerAddress} por hora por endereço. Outra em cerca de {minutes} {minutes2}.',
 	'demo.theDemoIsFullRight': 'A demonstração está cheia agora.',
 	'demo.tryAgain': 'Tentar de novo',
+	'emptyState.noneMatch': 'Nothing matches',
 	'errors.accountImport.thatFile': 'Esse arquivo não é uma exportação do ontoplano.',
 	'errors.accountImport.thatFileHasNoAccount': 'Esse arquivo não tem dados de conta dentro.',
 	'errors.accountImport.thatFileIsNotJson': 'Esse arquivo não é JSON.',
@@ -733,6 +733,8 @@ export const messages: Catalogue = {
 	'finance.bills.dueEveryWeekday': ', toda {weekday}',
 	'finance.bills.dueMonth': 'Mês de vencimento',
 	'finance.bills.dueOn': 'Vence em',
+	'finance.bills.dueOnDay': ', due {day}',
+	'finance.bills.dueTheNth': ', due the {nth}',
 	'finance.bills.edit': 'Editar {name}',
 	'finance.bills.editBill': 'Editar conta',
 	'finance.bills.expectedAmount': 'Valor esperado',
@@ -754,6 +756,10 @@ export const messages: Catalogue = {
 	'finance.bills.paid2': 'Paga',
 	'finance.bills.paidCount': 'Pagas',
 	'finance.bills.paidSoFar': 'Pago até agora',
+	'finance.bills.payDaysBefore': {
+		one: ', pay {count} day before',
+		other: ', pay {count} days before'
+	},
 	'finance.bills.payItThisManyDays': 'Pagar com esta quantidade de dias de antecedência',
 	'finance.bills.period': 'Período',
 	'finance.bills.putThisBillAway': 'Guardar esta conta — o histórico permanece',
@@ -1427,7 +1433,6 @@ export const messages: Catalogue = {
 	'home.offersToPayForYour': 'oferece pagar pela sua conta.',
 	'home.oneOff': 'avulso',
 	'home.onlyWhatBrokeIsSent': 'Só o que quebrou é enviado, nunca o que você escreveu.',
-	'home.ontoplano': '{status} · ontoplano',
 	'home.open': 'Abrir →',
 	'home.openRarr': 'Abrir →',
 	'home.openThePlan': 'Abrir o plano',
@@ -1645,7 +1650,6 @@ export const messages: Catalogue = {
 	'legal.privacy.payment': 'Pagamento.',
 	'legal.privacy.plugins': 'Plugins.',
 	'legal.privacy.privacy': 'Privacidade',
-	'legal.privacy.privacyOntoplano': 'Privacidade · ontoplano',
 	'legal.privacy.settingsAccountExportsEverything':
 		'Configurações → Conta exporta tudo como um único arquivo JSON, e exclui a conta. A exclusão é\n\timediata e completa: cada linha pertencente à conta, incluindo seu histórico, em uma única\n\ttransação. Não há um período de carência de trinta dias em que ela ainda esteja lá.',
 	'legal.privacy.takingItWithYouAnd': 'Levando com você, e se livrando dela',
@@ -1689,7 +1693,6 @@ export const messages: Catalogue = {
 	'legal.refunds.paymentIsHandledByAs':
 		'O pagamento é processado pela {provider} como merchant of record: ela recebe o pagamento e emite a nota fiscal, então o reembolso é feito por meio dela e volta para o mesmo cartão.',
 	'legal.refunds.refunds': 'Reembolsos',
-	'legal.refunds.refundsOntoplano': 'Reembolsos · ontoplano',
 	'legal.refunds.shortVersionYouGetDays':
 		'Resumindo: você tem {trialDays} dias grátis antes de qualquer cobrança, pode cancelar a qualquer momento, e se foi cobrado por algo que não queria, é reembolsado.',
 	'legal.refunds.theSevenDaysAfterA': 'Os sete dias após um pagamento',
@@ -1734,7 +1737,6 @@ export const messages: Catalogue = {
 	'legal.terms.storeAnythingIllegalWhereThis':
 		'Guardar qualquer coisa ilegal no local onde esta instância é operada.',
 	'legal.terms.terms': 'Termos',
-	'legal.terms.termsOntoplano': 'Termos · ontoplano',
 	'legal.terms.theAccountIsYours': 'A conta é sua',
 	'legal.terms.theBoringPart': 'A parte chata',
 	'legal.terms.theSoftware': 'O software',
@@ -1866,7 +1868,6 @@ export const messages: Catalogue = {
 	'mail.weeklyReview.off.noMoreMondayMessagesYour':
 		'Chega de mensagens de segunda-feira. Sua conta e tudo nela continua intacto, e você pode ligá-las\n\t\tde novo em Configurações → Conta.',
 	'mail.weeklyReview.off.turnedOff': 'Desativado',
-	'mail.weeklyReview.off.weeklyReviewTurnedOff': 'Revisão semanal desativada · ontoplano',
 	'manifest.description':
 		'Administre sua vida como um negócio: planos, tarefas, metas e o registro do que você realmente fez.',
 	'manifest.goalsAndProgress': 'Metas e progresso',
@@ -1898,7 +1899,6 @@ export const messages: Catalogue = {
 	'modal.dragToWiden': 'Arraste para alargar; clique duas vezes para voltar',
 	'newsletter.off.goToOntoplano': 'Ir para o ontoplano',
 	'newsletter.off.nothingMoreWillBeSent': 'Nada mais será enviado para {email}.',
-	'newsletter.off.unsubscribedOntoplano': 'Inscrição cancelada · ontoplano',
 	'notebookDetail.addNote': 'Adicionar nota',
 	'notebookDetail.addWithTodos': {
 		one: 'Adicionar com {count} tarefa',
@@ -1948,6 +1948,7 @@ export const messages: Catalogue = {
 	'notebookDetail.saved': 'Salvo',
 	'notebookDetail.searchTheseNotes': 'Buscar nestas notas',
 	'notebookDetail.searchThisTab': 'Search this tab',
+	'notebookDetail.sections': 'What this notebook holds',
 	'notebookDetail.selectNote': 'Selecionar {title}',
 	'notebookDetail.selectVisibleNotes': 'Selecionar todas as notas visíveis',
 	'notebookDetail.separateWithCommasOrSpaces':
@@ -2228,7 +2229,6 @@ export const messages: Catalogue = {
 		'Renomear para um nome que você já usa funde as duas etiquetas em uma.',
 	'notebooks.tags.searchTags': 'Search tags',
 	'notebooks.tags.showingCount': { one: '{count} tag showing', other: '{count} tags showing' },
-	'notebooks.tags.tagsOntoplano': 'Etiquetas · Ontoplano',
 	'notebooks.tags.thingCarriesIt': 'coisa a carrega',
 	'notebooks.tags.thingsCarryIt': 'coisas a carregam',
 	'notebooks.tags.yesDelete': 'Sim, excluir',
@@ -2246,7 +2246,6 @@ export const messages: Catalogue = {
 	'notebooks.weekly.openThatWeek': 'Abrir aquela semana',
 	'notebooks.weekly.searchTheWeeks': 'Search the weeks',
 	'notebooks.weekly.showingCount': { one: '{count} week showing', other: '{count} weeks showing' },
-	'notebooks.weekly.weeklyNotesOntoplano': 'Notas semanais · Ontoplano',
 	'notebooks.whatIsInside': '{show} o que há dentro de {title}',
 	'notebooks.whatItHolds': 'What it holds',
 	'notebooks.whatItIsFor': 'Para que serve',
@@ -2401,7 +2400,6 @@ export const messages: Catalogue = {
 	'oauth.youCanTakeThisBack':
 		'Ele aparece em Configurações → IA e integrações, onde você pode revogá-lo quando quiser.',
 	'offline.noConnection': 'Sem conexão',
-	'offline.offlineOntoplano': 'Offline · Ontoplano',
 	'offline.ontoplanoNeedsTheNetworkFor':
 		'O Ontoplano precisa de rede para esta página. O que você já abriu continua legível.',
 	'offline.tryAgain': 'Tentar de novo',
@@ -2548,7 +2546,6 @@ export const messages: Catalogue = {
 	'reminders.reminders': 'Lembretes',
 	'reminders.remindersFromHereRingOn':
 		'Os lembretes daqui tocam neste telefone, com o ontoplano fechado.',
-	'reminders.remindersOntoplano': 'Lembretes · Ontoplano',
 	'reminders.remindersThatHaveAlreadyFired':
 		'Lembretes que já dispararam aparecem aqui, incluindo os dispensados.',
 	'reminders.remove': 'Remover {message}',
@@ -2746,7 +2743,6 @@ export const messages: Catalogue = {
 	'search.nothingMatches': 'Nada corresponde a “{q}”',
 	'search.or': '— ou',
 	'search.resultsFor': { one: '{count} result for “{q}”', other: '{count} results for “{q}”' },
-	'search.searchOntoplano': 'Buscar · ontoplano',
 	'search.todo': 'todo:',
 	'search.whatAreYouLookingFor': 'O que você está procurando?',
 	'sections.audios.blurb':
@@ -3574,8 +3570,12 @@ export const messages: Catalogue = {
 	'shortcut.toggleSomedayFilter': 'Alternar filtro de algum dia',
 	'shortcut.zoomInGrid': 'Aumentar zoom (grade)',
 	'shortcut.zoomOutGrid': 'Diminuir zoom (grade)',
+	'sort.ascending': 'Ascending',
 	'sort.ascendingPressForDescending': 'Crescente — toque para decrescente',
+	'sort.descending': 'Descending',
 	'sort.descendingPressForAscending': 'Decrescente — toque para crescente',
+	'sort.direction': 'Direction',
+	'sort.order': 'Order',
 	'staging.body': 'Uma cópia do Ontoplano para experimentar. Nada aqui tem garantia de sobreviver.',
 	'staging.heading': 'Homologação.',
 	'start.1Account': '1 conta',
@@ -3893,7 +3893,6 @@ export const messages: Catalogue = {
 	'tasks.plan.translatex100Translatex8px': 'translateX(-100%) translateX(-8px)',
 	'tasks.plan.trayMore': 'Mais {count} — filtre a lista para chegar a elas.',
 	'tasks.plan.trayNarrowed': 'Filtrado por caderno ou etiqueta',
-	'tasks.plan.trayNothingMatches': 'Nada corresponde.',
 	'tasks.plan.undoesSnapsTo15min': 'desfaz · encaixa em 15min',
 	'tasks.plan.untitledBlock': 'Bloco',
 	'tasks.plan.urgencyEaseInterest': 'Urgência, facilidade, interesse',
@@ -3989,6 +3988,14 @@ export const messages: Catalogue = {
 	'tasks.review.whereItWent': 'Para onde foi',
 	'tasks.review.whichHalf': 'Qual metade da semana',
 	'tasks.review.writeSomethingAboutHowThis': 'Escreva algo sobre como foi esta semana.',
+	'titles.chooseAPassword': 'Escolha uma senha',
+	'titles.offline': 'Offline',
+	'titles.openingTheDemo': 'Abrindo a demonstração',
+	'titles.privacy': 'Privacidade',
+	'titles.refunds': 'Reembolsos',
+	'titles.terms': 'Termos',
+	'titles.unsubscribed': 'Inscrição cancelada',
+	'titles.weeklyReviewTurnedOff': 'Revisão semanal desativada',
 	'todoRows.aToDoIsATask':
 		'Uma tarefa é algo sem dia marcado. Coloque uma aqui e arraste para o quadro quando ela tiver um dia.',
 	'todoRows.addLabels': 'Etiquetas a adicionar',
@@ -4452,7 +4459,6 @@ export const messages: Catalogue = {
 		'{size} de {length} ativados. O planejador e sua semana estão sempre aqui.',
 	'welcome.orPressNextSettings':
 		'Ou pressione Avançar — Configurações → Integrações tem isso sempre que você quiser.',
-	'welcome.password.chooseAPasswordOntoplano': 'Escolha uma senha — Ontoplano',
 	'welcome.password.chooseYourPassword': 'Escolha sua senha',
 	'welcome.password.confirmPassword': 'Confirmar senha',
 	'welcome.password.continue': 'Continuar',

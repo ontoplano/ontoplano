@@ -29,6 +29,21 @@ test('each room names itself in the tab', async ({ page }) => {
 	await expect(page).toHaveTitle(/^Notebooks · Ontoplano/);
 
 	/*
+	 * Settings pages are Settings, not the section they are filed under; and
+	 * the rooms that wrote their own title — Search, Reminders — end in the
+	 * same instance name as everything else.
+	 */
+	const suffix = (await page.title()).replace(/^Notebooks/, '');
+	await visit(page, '/settings/account');
+	await expect(page).toHaveTitle(`Account · Settings${suffix}`);
+	await visit(page, '/search');
+	await expect(page).toHaveTitle(`Search${suffix}`);
+	await visit(page, '/reminders');
+	await expect(page).toHaveTitle(`Reminders${suffix}`);
+	await visit(page, '/');
+	await expect(page).toHaveTitle(`Home${suffix}`);
+
+	/*
 	 * And the instance's own name is what ends it — "Ontoplano", or the marked
 	 * one a staging, demo or dev build wears, which is what the suite runs
 	 * against.

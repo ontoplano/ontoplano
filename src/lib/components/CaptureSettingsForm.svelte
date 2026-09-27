@@ -1,4 +1,5 @@
 <script lang="ts">
+	import EmptyState from '$lib/components/EmptyState.svelte';
 	import { untrack } from 'svelte';
 	import Field from '$lib/components/Field.svelte';
 	import FormGrid from '$lib/components/FormGrid.svelte';
@@ -119,7 +120,7 @@
 				<p class="mt-1 text-xs text-gray-500">{t('captureSettings.mainNotebookHint')}</p>
 			{:else}
 				<input type="hidden" name="notebookId" value="" />
-				<p class="text-sm text-gray-500">{t('captureSettings.noNotebooksYet')}</p>
+				<EmptyState compact icon="notebook" title={t('captureSettings.noNotebooksYet')} />
 			{/if}
 		</div>
 

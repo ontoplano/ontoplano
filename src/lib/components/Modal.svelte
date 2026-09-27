@@ -468,17 +468,37 @@
 		}
 	}
 
+	/*
+	 * Anywhere wider, a card below the site header with room around it.
+	 *
+	 * The dialog is fixed with all four insets at zero, so `height: auto`
+	 * stretches it to the whole window rather than shrinking it to the card —
+	 * and the card sat in its top-left corner, at y=0, over the header, with
+	 * its top corners cut off by the edge. The dialog is the full-height
+	 * layer (its empty part is the backdrop that closes it), and the card
+	 * hangs from a fixed distance below the top: fixed rather than centred, so
+	 * a form that grows — More options opening — grows downwards and nothing
+	 * already on it moves.
+	 */
 	@media (min-width: 640px) {
 		dialog {
+			--modal-top: clamp(4.5rem, 10dvh, 7rem);
+			--modal-foot: 2rem;
 			inset: 0;
-			margin: auto;
+			margin: 0 auto;
 			width: min(100% - 2rem, var(--modal-width));
-			height: auto;
+			height: 100dvh;
+			padding-top: var(--modal-top);
+		}
+
+		dialog[open] {
+			display: flex;
+			flex-direction: column;
 		}
 
 		.panel {
 			height: auto;
-			max-height: 85dvh;
+			max-height: calc(100dvh - var(--modal-top) - var(--modal-foot));
 			border-width: 1px;
 			padding-top: 0;
 		}
@@ -497,6 +517,7 @@
 			margin: 0;
 			height: 100dvh;
 			width: min(100% - 2rem, var(--modal-width));
+			padding-top: 0;
 		}
 
 		dialog.docked::backdrop {

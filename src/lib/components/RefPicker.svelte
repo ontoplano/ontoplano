@@ -1,4 +1,5 @@
 <script lang="ts">
+	import EmptyState from '$lib/components/EmptyState.svelte';
 	/**
 	 * Find the task or note a reference should point at, by what it says.
 	 *
@@ -89,7 +90,7 @@
 		/>
 	</label>
 	{#if found.length === 0}
-		<p class="mt-3 text-sm text-gray-500">{t('refPicker.nothingMatches')}</p>
+		<EmptyState compact filtered title={t('refPicker.nothingMatches')} />
 	{:else}
 		<ul class="mt-3 max-h-80 divide-y divide-gray-200 overflow-y-auto">
 			{#each found as one, i (one.seq)}

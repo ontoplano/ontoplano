@@ -29,12 +29,13 @@ export type Destination = {
 };
 
 /**
- * The two places that belong to the shell rather than to a room, and what
+ * The places that belong to the shell rather than to a room, and what
  * they wear. Declared here with the rest of the places; `$lib/glyphs` reads it.
  */
 export const SHELL_ROUTES = {
 	'/': 'home',
-	'/search': 'search'
+	'/search': 'search',
+	'/settings': 'settings'
 } as const satisfies Record<string, IconName>;
 
 /**

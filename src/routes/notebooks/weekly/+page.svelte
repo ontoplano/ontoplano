@@ -6,7 +6,7 @@
 	import Icon from '$lib/components/Icon.svelte';
 	import { routeGlyph } from '$lib/glyphs';
 	import { useWhen } from '$lib/when-context.svelte';
-	import { dayOf } from '$lib/when';
+	import { rangeOf } from '$lib/when';
 	import { resolve } from '$app/paths';
 	import EmptyState from '$lib/components/EmptyState.svelte';
 	import type { PageServerData } from './$types';
@@ -39,12 +39,9 @@
 		const monday = new Date(`${weekStart}T00:00:00Z`);
 		const sunday = new Date(monday.getTime() + 6 * 86_400_000);
 		// Built out of UTC parts above, so it is read as UTC here too.
-		const short = (d: Date) => dayOf(d, { ...now(), tz: 'UTC' });
-		return `${short(monday)} – ${short(sunday)} ${sunday.getUTCFullYear()}`;
+		return rangeOf(monday, sunday, { ...now(), tz: 'UTC' });
 	}
 </script>
-
-<svelte:head><title>{t('notebooks.weekly.weeklyNotesOntoplano')}</title></svelte:head>
 
 <!--
 	No second heading: the room's name is above and the Weekly notes tab is
@@ -54,7 +51,7 @@
 	One surface, and a week is a row on it — the search and the count along
 	its top, the way a notebook's Notes tab opens.
 -->
-<RoomSurface accent="var(--section-accent)">
+<RoomSurface>
 	{#snippet tools()}
 		{#if data.weeks.length > 0}
 			<FilterBar name="weekly">
@@ -78,7 +75,7 @@
 			description={t('notebooks.weekly.everyWeekYouWriteAbout')}
 		/>
 	{:else if shownWeeks.length === 0}
-		<EmptyState icon="search" title={t('todoRows.nothingToShow')} />
+		<EmptyState filtered onclear={() => (looking = '')} />
 	{:else}
 		<div class="divide-y divide-gray-200">
 			{#each shownWeeks as week (week.weekStart)}

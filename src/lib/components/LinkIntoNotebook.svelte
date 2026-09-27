@@ -134,7 +134,7 @@
 		{#if candidates.items.length === 0}
 			<EmptyState icon="link" title={t('notebooks.nothingLeftToLink')} compact />
 		{:else if shown.length === 0}
-			<p class="px-1 py-3 text-sm text-gray-500">{t('notebooks.nothingMatchesThat')}</p>
+			<EmptyState compact filtered title={t('notebooks.nothingMatchesThat')} />
 		{:else}
 			<ul class="max-h-80 divide-y divide-gray-100 overflow-y-auto">
 				{#each shown as one (one.id)}

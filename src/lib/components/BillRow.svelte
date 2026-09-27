@@ -1,4 +1,5 @@
 <script lang="ts">
+	import EmptyState from '$lib/components/EmptyState.svelte';
 	/**
 	 * One bill, wherever a bill is shown.
 	 *
@@ -97,7 +98,7 @@
 		task has its tick, the name beside it, the verbs along the foot. The
 		history unfolds under the whole card.
 	-->
-	<div class="flex items-stretch gap-x-4 px-4 py-3">
+	<div class="row-card">
 		<RowCard>
 			{#snippet rail()}
 				{#if !bill.active}
@@ -302,7 +303,7 @@
 		<!-- What it has cost so far: every period settled, and one period's average. -->
 		<div id="bill-history-{bill.id}" class="border-t border-gray-100 px-4 pt-2 pb-3 sm:pl-15">
 			{#if bill.history.entries.length === 0}
-				<p class="text-sm text-gray-500">{t('finance.bills.nothingRecordedYet')}</p>
+				<EmptyState compact icon="clock" title={t('finance.bills.nothingRecordedYet')} />
 			{:else}
 				<dl class="flex flex-wrap gap-x-6 gap-y-1 text-sm">
 					<div>

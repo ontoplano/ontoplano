@@ -47,6 +47,7 @@ import {
 	updateSlot
 } from '$lib/services/slots';
 import { demoteToTodo, listForDate, listUnscheduled, promoteTodo } from '$lib/services/todos';
+import { todoHandlers } from '$lib/services/todo-actions';
 import { listInstances, setStatusOn } from '$lib/services/instances';
 import { addDays } from '$lib/services/week-generator';
 import { getGridHours } from '$lib/services/settings';
@@ -636,6 +637,9 @@ export const actions = {
 	 * that ends with "oh — that did happen". Same service the board's tick
 	 * uses, addressed by block and date because that is what the grid knows.
 	 */
+	/** A todo in the tray ticked off where it stands — the list's own handler. */
+	setTodoStatus: todoHandlers.setStatus,
+
 	setStatus: async ({ request, locals }: IsolatedEvent) => {
 		const formData = await request.formData();
 		try {

@@ -4,6 +4,8 @@ import {
 	dayOf,
 	isClock,
 	agoOf,
+	civilOf,
+	rangeOf,
 	momentOf,
 	monthOf,
 	timeOf,
@@ -133,5 +135,20 @@ describe('the shapes', () => {
 		// Better a gap than "Invalid Date" printed into somebody's diary.
 		expect(timeOf('not a time', london())).toBe('');
 		expect(dateOf('', london())).toBe('');
+	});
+});
+
+describe('the shapes nobody should build by hand', () => {
+	const en: When = { locale: 'en', tz: 'America/Sao_Paulo', clock: 'auto' };
+
+	test('a civil date is read, never printed as stored', () => {
+		expect(civilOf('2026-09-12', en)).toBe('Sep 12, 2026');
+		// The day, in any zone: a civil date has none to shift by.
+		expect(civilOf('2026-09-12', { ...en, tz: 'Pacific/Kiritimati' })).toBe('Sep 12, 2026');
+	});
+
+	test('a span says the month and the year once, with the comma', () => {
+		expect(rangeOf('2026-09-07', '2026-09-13', en)).toMatch(/^Sep 7\s?–\s?13, 2026$/);
+		expect(rangeOf('2026-08-31', '2026-09-06', en)).toMatch(/^Aug 31\s?–\s?Sep 6, 2026$/);
 	});
 });

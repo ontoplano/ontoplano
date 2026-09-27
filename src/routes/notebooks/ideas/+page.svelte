@@ -11,7 +11,6 @@
 	import { tagFilterInUrl } from '$lib/tag-filter-url.svelte';
 	import { isTagFiltering, passesTagFilter, NO_TAG_FILTER } from '$lib/tag-filter';
 	import RoomSurface from '$lib/components/RoomSurface.svelte';
-	import { SECTION_COLORS } from '$lib/colors';
 	import { setRoomAction } from '$lib/room-action.svelte';
 	import FormError from '$lib/components/FormError.svelte';
 	import IdeaFields from '$lib/components/fields/IdeaFields.svelte';
@@ -263,7 +262,7 @@
 		The controls and the ideas are one object — see `RoomSurface` — with the
 		strip a notebook's Notes tab has: search, count, what narrows, clear.
 	-->
-	<RoomSurface accent={SECTION_COLORS.diary} dataTour="idea-list">
+	<RoomSurface dataTour="idea-list">
 		{#snippet tools()}
 			{#if data.ideas.length > 0}{@render ideaFilters()}{/if}
 		{/snippet}
@@ -276,8 +275,8 @@
 		{:else if filteredIdeas.length === 0}
 			<!-- Inside the surface, so the controls that emptied it stay to undo it. -->
 			<EmptyState
-				icon="search"
-				title={t('todoRows.nothingToShow')}
+				filtered
+				onclear={clearFilters}
 				description={t('notebooks.ideas.noIdeasMatchTheCurrent')}
 			/>
 		{:else}
@@ -285,7 +284,7 @@
 				{#each filteredIdeas as idea, i (idea.id)}
 					<div
 						use:keepInView={i === clampedSelectedIndex}
-						class="px-4 py-3 {i === clampedSelectedIndex ? 'kb-cursor' : ''}"
+						class={i === clampedSelectedIndex ? 'kb-cursor' : ''}
 					>
 						<!--
 							The card is a component, so a notebook's Ideas tab shows the

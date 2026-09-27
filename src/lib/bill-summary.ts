@@ -1,6 +1,11 @@
 import { formatMoney, type Currency } from './money.js';
 import type { PlainKey } from './i18n/keys.js';
 import type { Translate } from './i18n/index.js';
+import { ordinal } from './ordinal.js';
+import { dayOf } from './when.js';
+
+/** Any year will do to name a day of a month; a leap one, so the 29th of February exists. */
+const CIVIL_YEAR = 2000;
 
 /**
  * What a bill is, in one line.
@@ -87,12 +92,18 @@ export function summaryOf(t: Translate, bill: Summarised, currency: Currency): s
 			const weekday = WEEKDAYS.find((d) => d.value === bill.dueDay);
 			line += t('finance.bills.dueEveryWeekday', { weekday: weekday ? t(weekday.label) : '' });
 		} else if (bill.rhythm === 'yearly') {
-			line += `, due ${MONTHS[(bill.dueMonth ?? 1) - 1]} ${bill.dueDay}`;
+			// A day of a month with no year: written the way `$lib/when` writes a
+			// day, from a civil date whose year is never shown.
+			const month = String(bill.dueMonth ?? 1).padStart(2, '0');
+			const day = String(bill.dueDay).padStart(2, '0');
+			line += t('finance.bills.dueOnDay', {
+				day: dayOf(`${CIVIL_YEAR}-${month}-${day}`, { locale: t.locale, tz: 'UTC', clock: 'auto' })
+			});
 		} else {
-			line += `, due the ${bill.dueDay}`;
+			line += t('finance.bills.dueTheNth', { nth: ordinal(t, bill.dueDay) });
 		}
 		if (bill.payLeadDays > 0 && !bill.automatic)
-			line += `, pay ${bill.payLeadDays} ${bill.payLeadDays === 1 ? 'day' : 'days'} before`;
+			line += t('finance.bills.payDaysBefore', { count: bill.payLeadDays });
 	}
 	return line;
 }

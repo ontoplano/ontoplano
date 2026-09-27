@@ -15,6 +15,7 @@
 	 */
 	import Icon from '$lib/components/Icon.svelte';
 	import RowCard from '$lib/components/RowCard.svelte';
+	import TickBox from '$lib/components/TickBox.svelte';
 	import Counter from '$lib/components/Counter.svelte';
 	import { resolve } from '$app/paths';
 	import { enhance } from '$lib/enhance';
@@ -124,18 +125,17 @@
 			-->
 			<form method="POST" action={actions.toggleBought} use:enhance={onsubmit ?? (() => {})}>
 				<input type="hidden" name="id" value={item.id} />
+				<!-- The same box a task is ticked with — see `TickBox`. -->
 				<button
 					type="submit"
 					aria-pressed={item.bought}
-					class="flex size-5 items-center justify-center border transition {item.bought
-						? 'border-blue-600 bg-blue-600 text-white'
-						: 'border-gray-400 bg-white text-transparent hover:border-gray-600'}"
+					class="-m-1 flex p-1 pointer-coarse:w-11 pointer-coarse:justify-center"
 					title={item.bought ? t('inventory.putItBackOnThe') : t('tasks.plan.gotIt')}
 					aria-label="{item.bought
 						? t('inventory.putBackOnTheList')
 						: t('tasks.plan.gotIt')}: {item.name}"
 				>
-					<Icon name="check" size={14} />
+					<TickBox done={item.bought} />
 				</button>
 			</form>
 		{:else}
@@ -167,7 +167,7 @@
 				moreLabel={t('inventory.oneMore2', { name: item.name })}
 				valueClass={(qty) =>
 					qty >= Math.max(item.idealQty, 1) ? 'text-blue-700' : 'text-gray-900'}
-				class="w-9 shrink-0 leading-none"
+				class="w-full shrink-0 leading-none"
 			>
 				{#snippet suffix()}
 					{#if item.idealQty > 1}<span class="text-xs text-gray-500">/{item.idealQty}</span>{/if}
@@ -223,6 +223,12 @@
 	{/snippet}
 
 	{#snippet controls()}
+		<button
+			onclick={() => onedit?.(item.id)}
+			class="icon-btn"
+			title={t('ui.edit')}
+			aria-label={t('inventory.edit', { name: item.name })}><Icon name="edit" /></button
+		>
 		<form method="POST" action={actions.toggleSnoozed} use:enhance={onsubmit ?? (() => {})}>
 			<input type="hidden" name="id" value={item.id} />
 			<button
@@ -237,12 +243,6 @@
 				<Icon name={item.snoozed ? 'undo' : 'archive'} />
 			</button>
 		</form>
-		<button
-			onclick={() => onedit?.(item.id)}
-			class="icon-btn"
-			title={t('ui.edit')}
-			aria-label={t('inventory.edit', { name: item.name })}><Icon name="edit" /></button
-		>
 		{#if asking}
 			<form
 				method="POST"

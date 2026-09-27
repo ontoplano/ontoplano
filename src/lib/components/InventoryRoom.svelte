@@ -881,7 +881,7 @@
 	<li
 		class="flex items-center {location === id ? 'bg-gray-100' : 'hover:bg-gray-50'} {dragOver ===
 		(id ?? -1)
-			? 'kbd-cursor'
+			? 'kb-cursor'
 			: ''}"
 	>
 		<button
@@ -976,7 +976,7 @@
 				class="flex min-w-0 flex-1 items-center gap-2 py-2 pr-2 pl-2 text-left text-sm transition {location ===
 				node.id
 					? 'font-medium text-gray-900'
-					: 'text-gray-700'} {dragOver === node.id ? 'kbd-cursor' : ''}"
+					: 'text-gray-700'} {dragOver === node.id ? 'kb-cursor' : ''}"
 			>
 				<span class="truncate" title={node.name}>{node.name}</span>
 				<span
@@ -1397,7 +1397,7 @@
 																dragOver = null;
 																stopFollowing();
 															}}
-															class="flex cursor-grab items-stretch gap-x-3 px-4 py-2 {item.snoozed
+															class="row-card cursor-grab {item.snoozed
 																? 'bg-gray-50 opacity-50'
 																: item.bought
 																	? 'bg-blue-50'
@@ -1459,17 +1459,10 @@
 								</EmptyState>
 							{:else}
 								<EmptyState
-									icon="search"
-									title={t('todoRows.nothingToShow')}
+									filtered
+									onclear={narrowing ? clearFilters : undefined}
 									description={t('inventory.nothingHereMatchesTheCurrent')}
-								>
-									{#snippet action()}
-										{#if narrowing}
-											<button onclick={clearFilters} class="btn btn-sm">{t('filters.clear')}</button
-											>
-										{/if}
-									{/snippet}
-								</EmptyState>
+								/>
 							{/if}
 						{/if}
 					</div>

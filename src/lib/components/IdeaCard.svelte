@@ -71,7 +71,7 @@
 	}
 
 	function formatDate(iso: string): string {
-		return momentOf(new Date(iso), now(), { weekday: 'short' });
+		return momentOf(iso, now());
 	}
 </script>
 
@@ -80,7 +80,7 @@
 	the words beside it, the tags and the verbs along the foot. The row around
 	it keeps the padding and the cursor.
 -->
-<div class="flex items-stretch gap-x-4">
+<div class="row-card">
 	<RowCard>
 		{#snippet rail()}
 			<form
@@ -136,16 +136,6 @@
 					{t('ui.cancel')}
 				</button>
 			{:else}
-				<button
-					type="button"
-					title={t('ui.edit')}
-					aria-label={t('ui.edit')}
-					onclick={() => onedit?.(idea.id)}
-					class="icon-btn"
-				>
-					<Icon name="edit" />
-				</button>
-
 				<form
 					method="post"
 					action={actions.toggleApplied}
@@ -173,6 +163,16 @@
 						<Icon name="check" />
 					</button>
 				</form>
+
+				<button
+					type="button"
+					title={t('ui.edit')}
+					aria-label={t('ui.edit')}
+					onclick={() => onedit?.(idea.id)}
+					class="icon-btn"
+				>
+					<Icon name="edit" />
+				</button>
 
 				<button
 					title={t('ui.delete')}

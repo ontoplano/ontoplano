@@ -345,12 +345,12 @@ export type MessageKey =
 	| 'demo.everyCopyIsInUse'
 	| 'demo.nobodyElseCanSeeIt'
 	| 'demo.openTheDemo'
-	| 'demo.openingTheDemoOntoplano'
 	| 'demo.settingUpACopyFor'
 	| 'demo.thatIsALotOf'
 	| 'demo.theDemoHandsOutAn'
 	| 'demo.theDemoIsFullRight'
 	| 'demo.tryAgain'
+	| 'emptyState.noneMatch'
 	| 'errors.accountImport.thatFile'
 	| 'errors.accountImport.thatFileHasNoAccount'
 	| 'errors.accountImport.thatFileIsNotJson'
@@ -654,6 +654,8 @@ export type MessageKey =
 	| 'finance.bills.dueEveryWeekday'
 	| 'finance.bills.dueMonth'
 	| 'finance.bills.dueOn'
+	| 'finance.bills.dueOnDay'
+	| 'finance.bills.dueTheNth'
 	| 'finance.bills.edit'
 	| 'finance.bills.editBill'
 	| 'finance.bills.expectedAmount'
@@ -674,6 +676,7 @@ export type MessageKey =
 	| 'finance.bills.paid2'
 	| 'finance.bills.paidCount'
 	| 'finance.bills.paidSoFar'
+	| 'finance.bills.payDaysBefore'
 	| 'finance.bills.payItThisManyDays'
 	| 'finance.bills.period'
 	| 'finance.bills.putThisBillAway'
@@ -1278,7 +1281,6 @@ export type MessageKey =
 	| 'home.offersToPayForYour'
 	| 'home.oneOff'
 	| 'home.onlyWhatBrokeIsSent'
-	| 'home.ontoplano'
 	| 'home.open'
 	| 'home.openRarr'
 	| 'home.openThePlan'
@@ -1470,7 +1472,6 @@ export type MessageKey =
 	| 'legal.privacy.payment'
 	| 'legal.privacy.plugins'
 	| 'legal.privacy.privacy'
-	| 'legal.privacy.privacyOntoplano'
 	| 'legal.privacy.settingsAccountExportsEverything'
 	| 'legal.privacy.takingItWithYouAnd'
 	| 'legal.privacy.theAddressYouConnectedFrom'
@@ -1501,7 +1502,6 @@ export type MessageKey =
 	| 'legal.refunds.nothingIsDeleted'
 	| 'legal.refunds.paymentIsHandledByAs'
 	| 'legal.refunds.refunds'
-	| 'legal.refunds.refundsOntoplano'
 	| 'legal.refunds.shortVersionYouGetDays'
 	| 'legal.refunds.theSevenDaysAfterA'
 	| 'legal.refunds.thisInstanceIsSomebodySOwn'
@@ -1532,7 +1532,6 @@ export type MessageKey =
 	| 'legal.terms.resellAccessToSomebodyElseS'
 	| 'legal.terms.storeAnythingIllegalWhereThis'
 	| 'legal.terms.terms'
-	| 'legal.terms.termsOntoplano'
 	| 'legal.terms.theAccountIsYours'
 	| 'legal.terms.theBoringPart'
 	| 'legal.terms.theSoftware'
@@ -1635,7 +1634,6 @@ export type MessageKey =
 	| 'mail.weeklyReview.off.goToOntoplano'
 	| 'mail.weeklyReview.off.noMoreMondayMessagesYour'
 	| 'mail.weeklyReview.off.turnedOff'
-	| 'mail.weeklyReview.off.weeklyReviewTurnedOff'
 	| 'manifest.description'
 	| 'manifest.goalsAndProgress'
 	| 'manifest.newDiaryEntry'
@@ -1664,7 +1662,6 @@ export type MessageKey =
 	| 'modal.dragToWiden'
 	| 'newsletter.off.goToOntoplano'
 	| 'newsletter.off.nothingMoreWillBeSent'
-	| 'newsletter.off.unsubscribedOntoplano'
 	| 'notebookDetail.addNote'
 	| 'notebookDetail.addWithTodos'
 	| 'notebookDetail.alreadyDone'
@@ -1709,6 +1706,7 @@ export type MessageKey =
 	| 'notebookDetail.saved'
 	| 'notebookDetail.searchTheseNotes'
 	| 'notebookDetail.searchThisTab'
+	| 'notebookDetail.sections'
 	| 'notebookDetail.selectNote'
 	| 'notebookDetail.selectVisibleNotes'
 	| 'notebookDetail.separateWithCommasOrSpaces'
@@ -1961,7 +1959,6 @@ export type MessageKey =
 	| 'notebooks.tags.renamingOntoAName'
 	| 'notebooks.tags.searchTags'
 	| 'notebooks.tags.showingCount'
-	| 'notebooks.tags.tagsOntoplano'
 	| 'notebooks.tags.thingCarriesIt'
 	| 'notebooks.tags.thingsCarryIt'
 	| 'notebooks.tags.yesDelete'
@@ -1975,7 +1972,6 @@ export type MessageKey =
 	| 'notebooks.weekly.openThatWeek'
 	| 'notebooks.weekly.searchTheWeeks'
 	| 'notebooks.weekly.showingCount'
-	| 'notebooks.weekly.weeklyNotesOntoplano'
 	| 'notebooks.whatIsInside'
 	| 'notebooks.whatItHolds'
 	| 'notebooks.whatItIsFor'
@@ -2096,7 +2092,6 @@ export type MessageKey =
 	| 'oauth.whatItDeletesIsGone'
 	| 'oauth.youCanTakeThisBack'
 	| 'offline.noConnection'
-	| 'offline.offlineOntoplano'
 	| 'offline.ontoplanoNeedsTheNetworkFor'
 	| 'offline.tryAgain'
 	| 'onboarding.blankDescription'
@@ -2224,7 +2219,6 @@ export type MessageKey =
 	| 'reminders.preferences'
 	| 'reminders.reminders'
 	| 'reminders.remindersFromHereRingOn'
-	| 'reminders.remindersOntoplano'
 	| 'reminders.remindersThatHaveAlreadyFired'
 	| 'reminders.remove'
 	| 'reminders.remove2'
@@ -2391,7 +2385,6 @@ export type MessageKey =
 	| 'search.nothingMatches'
 	| 'search.or'
 	| 'search.resultsFor'
-	| 'search.searchOntoplano'
 	| 'search.todo'
 	| 'search.whatAreYouLookingFor'
 	| 'sections.audios.blurb'
@@ -3053,8 +3046,12 @@ export type MessageKey =
 	| 'shortcut.toggleSomedayFilter'
 	| 'shortcut.zoomInGrid'
 	| 'shortcut.zoomOutGrid'
+	| 'sort.ascending'
 	| 'sort.ascendingPressForDescending'
+	| 'sort.descending'
 	| 'sort.descendingPressForAscending'
+	| 'sort.direction'
+	| 'sort.order'
 	| 'staging.body'
 	| 'staging.heading'
 	| 'start.1Account'
@@ -3341,7 +3338,6 @@ export type MessageKey =
 	| 'tasks.plan.translatex100Translatex8px'
 	| 'tasks.plan.trayMore'
 	| 'tasks.plan.trayNarrowed'
-	| 'tasks.plan.trayNothingMatches'
 	| 'tasks.plan.undoesSnapsTo15min'
 	| 'tasks.plan.untitledBlock'
 	| 'tasks.plan.urgencyEaseInterest'
@@ -3427,6 +3423,14 @@ export type MessageKey =
 	| 'tasks.review.whereItWent'
 	| 'tasks.review.whichHalf'
 	| 'tasks.review.writeSomethingAboutHowThis'
+	| 'titles.chooseAPassword'
+	| 'titles.offline'
+	| 'titles.openingTheDemo'
+	| 'titles.privacy'
+	| 'titles.refunds'
+	| 'titles.terms'
+	| 'titles.unsubscribed'
+	| 'titles.weeklyReviewTurnedOff'
 	| 'todoRows.aToDoIsATask'
 	| 'todoRows.addLabels'
 	| 'todoRows.added'
@@ -3788,7 +3792,6 @@ export type MessageKey =
 	| 'welcome.noBlocks'
 	| 'welcome.ofOnThePlanner'
 	| 'welcome.orPressNextSettings'
-	| 'welcome.password.chooseAPasswordOntoplano'
 	| 'welcome.password.chooseYourPassword'
 	| 'welcome.password.confirmPassword'
 	| 'welcome.password.continue'
@@ -3910,10 +3913,13 @@ export interface MessageValuesFor {
 	'finance.bills.attachATransactionTo': { name: string | number };
 	'finance.bills.delete': { name: string | number };
 	'finance.bills.dueEveryWeekday': { weekday: string | number };
+	'finance.bills.dueOnDay': { day: string | number };
+	'finance.bills.dueTheNth': { nth: string | number };
 	'finance.bills.edit': { name: string | number };
 	'finance.bills.expectedAmountShort': { amount: string | number };
 	'finance.bills.historyOf': { name: string | number };
 	'finance.bills.markPaid2': { name: string | number };
+	'finance.bills.payDaysBefore': { count: number };
 	'finance.bills.showingCount': { count: number };
 	'finance.bills.skipName': { name: string | number };
 	'finance.bills.undoThePaymentFor': { name: string | number };
@@ -4063,7 +4069,6 @@ export interface MessageValuesFor {
 	'home.more': { todoPreview: string | number };
 	'home.more2': { goalPreview: string | number };
 	'home.more3': { length: string | number };
-	'home.ontoplano': { status: string | number };
 	'home.paidOfExpected': { currency: string | number; currency2: string | number };
 	'home.skipped2': { skipped: string | number };
 	'instance.enterAnyInstanceUrl': { https: string | number };

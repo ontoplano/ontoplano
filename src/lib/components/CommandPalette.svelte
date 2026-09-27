@@ -1,4 +1,5 @@
 <script lang="ts">
+	import Kbd from '$lib/components/Kbd.svelte';
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import Icon from '$lib/components/Icon.svelte';
@@ -199,28 +200,22 @@
 				class="kbd-hint flex items-center gap-3 border-t border-gray-200 px-4 py-2 text-xs text-gray-500"
 			>
 				<span
-					><kbd class="border border-gray-300 bg-gray-50 px-1 text-gray-700">↑↓</kbd>
+					><Kbd keys="↑↓" />
 					{t('commandPalette.move')}</span
 				>
 				<span
-					><kbd class="border border-gray-300 bg-gray-50 px-1 text-gray-700">↵</kbd>
+					><Kbd keys="↵" />
 					{t('commandPalette.open')}</span
 				>
 				<span
-					><kbd class="border border-gray-300 bg-gray-50 px-1 text-gray-700"
-						>{t('commandPalette.esc')}</kbd
-					>
+					><Kbd keys={t('commandPalette.esc')} />
 					{t('commandPalette.close')}</span
 				>
 				<!-- The same syntax the search page teaches, where somebody typing is
 				     most likely to want it. -->
 				<span class="ml-auto"
-					><kbd class="border border-gray-300 bg-gray-50 px-1 text-gray-700"
-						>{t('commandPalette.todo')}</kbd
-					>
-					<kbd class="border border-gray-300 bg-gray-50 px-1 text-gray-700"
-						>{t('commandPalette.in')}</kbd
-					>
+					><Kbd keys={t('commandPalette.todo')} />
+					<Kbd keys={t('commandPalette.in')} />
 					{t('commandPalette.narrow')}</span
 				>
 			</div>

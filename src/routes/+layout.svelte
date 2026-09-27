@@ -1,4 +1,5 @@
 <script lang="ts">
+	import Kbd from '$lib/components/Kbd.svelte';
 	import './layout.css';
 	import { sliding } from '$lib/actions/sliding';
 	// Generated beside the masks it names: scripts/build-eink-masks.mjs.
@@ -15,6 +16,7 @@
 	import type { LayoutData } from './$types';
 	import { NAV_DROPDOWN_ITEM, SECTIONS, sectionFor } from '$lib/colors.js';
 	import { roomTabs, type RoomTab } from '$lib/room-tabs.svelte';
+	import { declaredTitle, roomTitle, titleOf } from '$lib/page-title.svelte';
 	import { NAV_PLACES } from '$lib/sections-nav';
 	import { accentsWith, placesFor } from '$lib/nav-order';
 	import { provideSwipeSurface } from '$lib/swipe-surface';
@@ -362,13 +364,13 @@
 			.filter((tab: RoomTab) => here === tab.href || here.startsWith(`${tab.href}/`))
 			.sort((a: RoomTab, b: RoomTab) => b.href.length - a.href.length)[0];
 
-		// `SECTIONS` already carries each room's name as a catalogue key — the
-		// same one the nav draws — so the tab and the nav cannot disagree.
-		const room = t(SECTIONS[sectionKey].name);
-		// A room whose first tab carries the room's own name — Notebooks inside
-		// Notebooks — says it once.
-		const said = [inside?.label === room ? '' : inside?.label, room].filter(Boolean).join(' · ');
-		return said ? `${said} · ${data.appName}` : data.appName;
+		// The name the room's own bar shows, so Settings is "Settings" and not
+		// the section it happens to be filed under; the section's name — the
+		// one the nav draws — where no bar is on screen.
+		const room = roomTitle() ?? t(SECTIONS[sectionKey].name);
+		// Built by the one builder: a page outside the rooms says what it is,
+		// and a repeated part — Notebooks inside Notebooks — is said once.
+		return titleOf(declaredTitle() ?? [inside?.label, room], data.appName);
 	});
 
 	function isNavActive(href: string): boolean {
@@ -1216,15 +1218,16 @@
 					     word reads as an afterthought on a 2000px header. -->
 					<button
 						onclick={() => (palette.open = true)}
-						class="flex w-40 items-center gap-2 border border-chrome-line bg-chrome-raised px-3 py-1.5 text-sm text-chrome-muted transition hover:text-chrome-ink hover:brightness-125 min-[1460px]:w-72"
+						class="flex h-8 w-40 items-center gap-2 border border-chrome-line bg-chrome-raised px-3 text-sm text-chrome-muted transition hover:text-chrome-ink hover:brightness-125 min-[1460px]:w-72"
 						data-tour="search"
 					>
 						<Icon name="search" size={14} />
 						{t('ui.search')}
-						<kbd
-							class="kbd-hint ml-auto hidden border border-chrome-line px-1 text-xs min-[1460px]:inline-block"
-							>{key} K</kbd
-						>
+						<Kbd
+							keys={`${key} K`}
+							tone="chrome"
+							class="kbd-hint ml-auto hidden min-[1460px]:inline-block"
+						/>
 					</button>
 					<!-- Capture, beside search: the two things you reach for without
 					     having decided where you are going. -->
@@ -1241,6 +1244,10 @@
 					</button>
 					<!-- To the right of the plus and left of the name: it belongs with
 					     the things the bar does rather than with who you are. -->
+					<!-- Help, in the header rather than over the page: the corner it
+					     used to be fixed in sat over the right edge of every room. A
+					     wide screen's affordance; on a phone the fan carries it. -->
+					<HelpDock onstart={() => tour?.start(true)} />
 					<NotificationBell
 						held={data.notifications ?? []}
 						unread={data.unreadNotifications ?? 0}
@@ -1442,7 +1449,7 @@
 
 		<main
 			bind:this={scroller}
-			class="page-gutter relative z-10 mx-auto w-full max-w-page flex-1 overflow-y-auto overscroll-y-contain pt-[calc(var(--safe-top)+1rem)] pb-[calc(var(--mobile-nav-height)+var(--safe-bottom)+var(--help-dock-height)+var(--bar-mark-rise)+0.75rem)] lg:overflow-visible lg:pt-6 lg:pb-[calc(var(--help-dock-height)+1.5rem)]"
+			class="page-gutter relative z-10 mx-auto w-full max-w-page flex-1 overflow-y-auto overscroll-y-contain pt-[calc(var(--safe-top)+1rem)] pb-[calc(var(--mobile-nav-height)+var(--safe-bottom)+var(--help-dock-height)+var(--bar-mark-rise)+0.75rem)] lg:overflow-visible lg:pt-6 lg:pb-6"
 		>
 			<!-- `.slide-frame` clips the movement between rooms, and gives the page
 			     gutter back first so a card that bleeds to the screen edge still
@@ -1685,11 +1692,6 @@
 			</div>
 		{/if}
 
-		<!-- The dock is a wide screen's affordance now: on a phone its square
-		     sat over the corner of every page, and the fan replaced it. -->
-		<div class="hidden lg:contents">
-			<HelpDock demo={data.demo} onstart={() => tour?.start(true)} />
-		</div>
 		<FanMenu
 			items={fanItems}
 			open={fanOpen}

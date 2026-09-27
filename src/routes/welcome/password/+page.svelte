@@ -4,15 +4,14 @@
 	import { MIN_PASSWORD_LENGTH, PASSWORD_RULE } from '$lib/passwords';
 	import type { ActionData } from './$types';
 	import { useT } from '$lib/i18n';
+	import PageTitle from '$lib/components/PageTitle.svelte';
 
 	const t = useT();
 
 	let { form }: { form: ActionData } = $props();
 </script>
 
-<svelte:head>
-	<title>{t('welcome.password.chooseAPasswordOntoplano')}</title>
-</svelte:head>
+<PageTitle parts={t('titles.chooseAPassword')} />
 
 <div class="solo-screen bg-gray-100">
 	<div class="solo-card sm:max-w-md">

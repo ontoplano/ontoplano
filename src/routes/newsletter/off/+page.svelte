@@ -1,12 +1,13 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
 	import { useT } from '$lib/i18n';
+	import PageTitle from '$lib/components/PageTitle.svelte';
 
 	const t = useT();
 	let { data } = $props();
 </script>
 
-<svelte:head><title>{t('newsletter.off.unsubscribedOntoplano')}</title></svelte:head>
+<PageTitle parts={t('titles.unsubscribed')} />
 
 <div class="mx-auto max-w-md p-8 text-center">
 	<h1 class="text-lg font-semibold text-gray-900">{t('ui.done')}</h1>

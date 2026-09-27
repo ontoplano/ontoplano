@@ -1083,7 +1083,7 @@
 						{#if card}
 							{@const on = isOn(id)}
 							<div
-								class="flex items-center gap-3 border px-3 py-2 text-sm {on
+								class="toggle-row flex items-center gap-3 border px-3 py-2 text-sm {on
 									? 'border-gray-200'
 									: 'border-dashed border-gray-300 bg-gray-50'}"
 							>

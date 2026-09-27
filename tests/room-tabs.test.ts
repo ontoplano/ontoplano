@@ -106,11 +106,12 @@ describe("the notebooks room's tabs", () => {
  * that are not in the bar.
  */
 describe('a room of the bar', () => {
-	/** Rooms reached from the account menu, not the bar. */
+	/** Rooms reached from the account menu or the search box, not the bar. */
 	const NOT_IN_THE_BAR = [
 		'src/routes/settings/+layout.svelte',
 		'src/routes/settings/integrations/+layout.svelte',
-		'src/routes/admin/+layout.svelte'
+		'src/routes/admin/+layout.svelte',
+		'src/routes/search/+page.svelte'
 	];
 
 	const drawers = readdirSync('src', { recursive: true, encoding: 'utf8' })

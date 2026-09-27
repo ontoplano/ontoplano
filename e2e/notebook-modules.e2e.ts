@@ -152,7 +152,7 @@ test.describe('what a notebook holds', () => {
 		await page.reload();
 		const strip = page.locator('[data-tour="notebook-tabs"] button');
 		await expect(strip.first()).toContainText('Tasks');
-		await expect(strip.first()).toHaveClass(/border-b-2/);
+		await expect(strip.first()).toHaveAttribute('aria-current', 'page');
 	});
 
 	test('the tabs keep their ticks across a save', async ({ page }) => {

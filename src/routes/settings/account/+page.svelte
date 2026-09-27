@@ -1,4 +1,5 @@
 <script lang="ts">
+	import EmptyState from '$lib/components/EmptyState.svelte';
 	import { momentOf } from '$lib/when';
 	import { page } from '$app/state';
 	import { useWhen } from '$lib/when-context.svelte';
@@ -398,7 +399,7 @@
 					</p>
 				{/if}
 				{#each shownSessions as s, i (s.id)}
-					<div class="list-row {selected === i ? 'kbd-cursor' : ''}">
+					<div class="list-row {selected === i ? 'kb-cursor' : ''}">
 						<div class="list-row-main">
 							<p class="text-sm font-medium text-gray-900">
 								{s.device}
@@ -450,7 +451,7 @@
 						{/if}
 					</div>
 				{:else}
-					<p class="px-4 py-3 text-sm text-gray-500">{t('settings.account.noOtherSessions')}</p>
+					<EmptyState compact icon="check" title={t('settings.account.noOtherSessions')} />
 				{/each}
 				{#if sortedSessions.length > SESSIONS_SHOWN}
 					<div class="px-4 py-2">

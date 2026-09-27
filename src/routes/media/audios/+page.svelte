@@ -192,11 +192,7 @@
 			description={t('audio.noneDescription')}
 		/>
 	{:else if shown.length === 0}
-		<EmptyState
-			icon="search"
-			title={t('todoRows.nothingToShow')}
-			description={t('audio.noneMatch')}
-		/>
+		<EmptyState filtered onclear={() => (looking = '')} description={t('audio.noneMatch')} />
 	{:else}
 		<ul class="divide-y divide-gray-200">
 			{#each shown as one (one.id)}
@@ -222,20 +218,20 @@
 						<button
 							type="button"
 							class="icon-btn"
-							title={t('audio.rename')}
-							aria-label={t('audio.renameName', { name: one.name })}
-							onclick={() => (renaming = one.id)}
-						>
-							<Icon name="edit" />
-						</button>
-						<button
-							type="button"
-							class="icon-btn"
 							title={t('audio.makeAnIdea')}
 							aria-label={t('audio.makeAnIdea')}
 							onclick={() => (ideaOf = { id: one.id, name: one.name })}
 						>
 							<Icon name="ideas" />
+						</button>
+						<button
+							type="button"
+							class="icon-btn"
+							title={t('audio.rename')}
+							aria-label={t('audio.renameName', { name: one.name })}
+							onclick={() => (renaming = one.id)}
+						>
+							<Icon name="edit" />
 						</button>
 						<button
 							type="button"

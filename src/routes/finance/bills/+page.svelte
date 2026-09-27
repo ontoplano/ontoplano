@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { useWhen } from '$lib/when-context.svelte';
+	import { dayOf } from '$lib/when';
 	import { routeGlyph } from '$lib/glyphs';
 	import { setRoomAction } from '$lib/room-action.svelte';
 	import { enhance } from '$lib/enhance';
@@ -16,6 +18,7 @@
 	import { useT } from '$lib/i18n';
 
 	const t = useT();
+	const now = useWhen();
 
 	let { data }: { data: PageServerData } = $props();
 
@@ -138,8 +141,11 @@
 		{#snippet empty()}
 			{#if needle !== ''}
 				<EmptyState
-					icon="search"
-					title={t('todoRows.nothingToShow')}
+					filtered
+					onclear={() => {
+						looking = '';
+						showArchived = false;
+					}}
 					description={t('finance.bills.noneMatch')}
 				/>
 			{:else}
@@ -207,7 +213,7 @@
 								class="flex w-full items-baseline gap-2 px-3 py-2 text-left text-sm hover:bg-gray-50"
 							>
 								<span class="shrink-0 text-xs text-gray-500 tabular-nums">
-									{movement.occurredOn.slice(5)}
+									{dayOf(movement.occurredOn, now())}
 								</span>
 								<span class="min-w-0 flex-1 truncate text-gray-900">{movement.description}</span>
 								<span class="shrink-0 text-xs text-gray-700 tabular-nums">

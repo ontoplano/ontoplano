@@ -3,7 +3,7 @@
 	import { afterNavigate, beforeNavigate, goto } from '$app/navigation';
 	import { navigating, page } from '$app/state';
 	import RoomBar from '$lib/components/RoomBar.svelte';
-	import { scrollHints } from '$lib/actions/scroll-hints';
+	import TabStrip from '$lib/components/TabStrip.svelte';
 	import RoomVerb from '$lib/components/RoomVerb.svelte';
 	import { phoneWidth } from '$lib/breakpoints.svelte';
 	import { onSwipe } from '$lib/swipe';
@@ -20,7 +20,6 @@
 	import { hintMarkSpin } from '$lib/mark-spin';
 	import { resolve } from '$app/paths';
 	import { visibleRoomTabs } from '$lib/sections';
-	import Icon from '$lib/components/Icon.svelte';
 	import type { NavKey } from '$lib/sections-nav';
 	import type { IconName } from '$lib/components/Icon.svelte';
 	import { useT } from '$lib/i18n';
@@ -38,6 +37,7 @@
 	 */
 	let {
 		title,
+		glyph,
 		room,
 		tabs: given = [],
 		extra = [],
@@ -48,6 +48,8 @@
 		children
 	}: {
 		title: string;
+		/** The room's glyph, where its path does not say it; see `RoomBar`. */
+		glyph?: IconName;
 		/**
 		 * Which room of the bar this is. Its tabs then come from `ROOM_TABS` —
 		 * the same list the wheel and the palette read — less whatever the
@@ -85,7 +87,7 @@
 	 * menu before, which is a different list with a different order and holes
 	 * in it where a room has no menu entries at all.
 	 */
-	const tabs = $derived(
+	const listed = $derived(
 		room
 			? [
 					...visibleRoomTabs(room, page.data.hiddenSections ?? []).map((tab) => ({
@@ -99,6 +101,19 @@
 					...extra
 				]
 			: given
+	);
+
+	/*
+	 * A room with one page is a room with one tab: itself.
+	 *
+	 * Goals, Reminders and Search drew only the bar, so their surface started a
+	 * strip higher than every other room's and floated on the page ground with
+	 * its own corners. With the one tab they have the same anatomy as the rest
+	 * — bar, strip with the verb at its end, surface — and the strip still says
+	 * where you are.
+	 */
+	const tabs = $derived(
+		listed.length > 0 ? listed : [{ href: page.url.pathname, label: title, icon: undefined }]
 	);
 
 	$effect(() => {
@@ -131,7 +146,6 @@
 	}
 
 	const at = $derived(tabFor(page.url.pathname));
-	const here = (index: number) => index === at;
 
 	/** The panel that moves. Its content is `body`, which is what is replaced. */
 	let pane = $state<HTMLElement>();
@@ -253,59 +267,16 @@
 
 {#snippet strip()}
 	<!--
-		The tabs and the room's verb, on one line and on one ground.
-
-			They were a row of underlined words with nothing behind them and the
-			verb up on the title line a rule away, which reads as three loose
-			things rather than as one strip. The tabs are the same control the
-			markdown box uses now — a track with a tile that travels to the place
-			you are on — and the verb stands at the far end of it.
-
-			`sliding` measures whichever child carries `aria-current="page"`, the
-			convention this strip already used, so nothing here had to learn how
-			the tile works.
-		-->
-	<div class="room-tabs">
-		<!--
-				The track and the strip that scrolls inside it are two elements.
-
-				The fade that says "there is more this way" is a mask, and a mask
-				takes the background with it — so masking the track itself made
-				its own surface dissolve at the end and showed the room's colour
-				through, which reads as a smudge rather than as a row that
-				continues. The track keeps its surface and its corner; the row of
-				tabs inside it is the thing that fades.
-			-->
-		<div class="seg seg-track min-w-0">
-			<nav use:scrollHints class="seg-scroll scroll-hints" aria-label={label} data-tour={dataTour}>
-				<!-- Resolved by whoever described the tabs: a stream's slug is a
-					     route parameter, and the rule cannot see through it. -->
-				<!-- eslint-disable svelte/no-navigation-without-resolve -->
-				{#each tabs as tab, index (tab.href)}
-					<!-- The glyph before the word, where the one list has one for this
-					     tab. A room whose tabs it has never heard of draws words, which
-					     is what every strip did before. -->
-					<a href={tab.href} aria-current={here(index) ? 'page' : undefined}>
-						{#if tab.icon}<Icon name={tab.icon} size={14} />{/if}
-						{tab.label}
-					</a>
-				{/each}
-				<!-- eslint-enable svelte/no-navigation-without-resolve -->
-			</nav>
-			<!--
-					The verb stands on the same ground as the tabs.
-
-					It was a sibling of the track, so it sat on the page behind with
-					the track's surface stopping short of it — two objects on one
-					line rather than one strip with a button at the end.
-
-					On a phone it goes back up beside the room's name: there is no
-					room for it here across 390px, where the tabs would have to give
-					way and half of them would end up behind the fade.
-				-->
-			{#if !phone.current}<RoomVerb />{/if}
-		</div>
-	</div>
+		The tabs and the room's verb, on one line and on one ground: the verb
+		stands at the far end of the track. On a phone it goes back up beside the
+		room's name, where there is room for it; across 390px the tabs would have
+		to give way and half of them would end up behind the fade.
+	-->
+	<TabStrip {tabs} current={at} {label} {dataTour} {nested}>
+		{#snippet trailing()}
+			{#if !phone.current && !nested}<RoomVerb />{/if}
+		{/snippet}
+	</TabStrip>
 {/snippet}
 
 <div class="room-frame {nested ? 'room-frame-nested' : ''}">
@@ -321,7 +292,7 @@
 		-->
 		{@render strip()}
 	{:else}
-		<RoomBar {title} {actions} verbInTabs={!phone.current}>
+		<RoomBar {title} {glyph} {actions} verbInTabs={!phone.current}>
 			{@render strip()}
 		</RoomBar>
 	{/if}

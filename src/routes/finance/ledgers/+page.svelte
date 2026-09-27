@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { routeGlyph } from '$lib/glyphs';
 	import Picker from '$lib/components/Picker.svelte';
-	import { dayStamp, monthOf } from '$lib/when';
+	import { civilOf, dayOf as dayOfWhen, dayStamp, monthOf } from '$lib/when';
 	import { useWhen } from '$lib/when-context.svelte';
 	import { enhance } from '$lib/enhance';
 	import TagChip from '$lib/components/TagChip.svelte';
@@ -9,7 +9,7 @@
 	import FilterBar from '$lib/components/FilterBar.svelte';
 	import ShowingCount from '$lib/components/ShowingCount.svelte';
 	import SearchField from '$lib/components/SearchField.svelte';
-	import { pillStyle } from '$lib/pill-ink';
+	import CategoryMark from '$lib/components/CategoryMark.svelte';
 	import RoomToolbar from '$lib/components/RoomToolbar.svelte';
 	import { setRoomAction } from '$lib/room-action.svelte';
 	import { CSV_PARSER_KEY, sniffCsv, type CsvMapping } from '$lib/bank-parsers';
@@ -34,16 +34,6 @@
 	let { data, form }: { data: PageServerData; form: ActionData } = $props();
 
 	const currency = $derived(data.currency as Currency);
-
-	/**
-	 * How much of its category's colour a line's row carries.
-	 *
-	 * A category is meant to be legible as a wash across the whole row, not
-	 * only as the dot beside its name. Hex alpha rather than an opacity: the
-	 * text on the row must not fade with the background. It was 8%, which is
-	 * invisible on a dark screen.
-	 */
-	const CATEGORY_WASH_ALPHA = '2b';
 
 	/** `2026-02` as somebody would say it. */
 	const monthName = (key: string) => monthOf(key, now(), { month: 'long', year: 'numeric' });
@@ -127,13 +117,14 @@
 		});
 	}
 
-	const dayOf = (iso: string) => `${iso.slice(8, 10)}/${iso.slice(5, 7)}`;
+	/* A row's day the app's one way: `Sep 12`. The band above says the year. */
+	const dayOf = (iso: string) => dayOfWhen(iso, now());
 
 	/*
 	 * Which rows start a year.
 	 *
-	 * A statement is read as DD/MM and nothing on the row says which year —
-	 * fine until the list crosses new year's, where 31/12 sits above 01/01
+	 * A row says its day and month and nothing says which year — fine until
+	 * the list crosses new year's, where Dec 31 sits above Jan 1
 	 * and they are twelve months apart. A band across the list says which
 	 * year the rows under it belong to, the way a bank statement does. The
 	 * first row gets one too: the newest year is a fact worth stating rather
@@ -258,7 +249,7 @@
 				<span class="text-sm font-semibold text-gray-900">{current.name}</span>
 				<span class="text-xs text-gray-500">
 					{t(LEDGER_KIND_LABELS[current.kind])}{current.lastOn
-						? ` · ${t('finance.ledgers.lastOn', { day: current.lastOn })}`
+						? ` · ${t('finance.ledgers.lastOn', { day: civilOf(current.lastOn, now()) })}`
 						: ''}
 				</span>
 				{#if data.unsorted > 0}
@@ -389,8 +380,8 @@
 			{#if data.movements.length === 0}
 				{#if data.query || data.month}
 					<EmptyState
-						icon="search"
-						title={t('todoRows.nothingToShow')}
+						filtered
+						onclear={() => filter({ q: '', month: '' })}
 						description={t('finance.ledgers.noLinesMatch')}
 					/>
 				{:else}
@@ -421,12 +412,7 @@
 								{yearBands.get(m.id)}
 							</li>
 						{/if}
-						<li
-							class="px-4 py-2.5"
-							style={m.categoryColor
-								? `background-color: ${m.categoryColor}${CATEGORY_WASH_ALPHA}`
-								: ''}
-						>
+						<li class="px-4 py-2.5">
 							<div class="flex items-baseline gap-2">
 								<span class="shrink-0 text-xs text-gray-500 tabular-nums">
 									{dayOf(m.occurredOn)}
@@ -444,7 +430,7 @@
 							</div>
 							<div class="mt-1 flex items-center gap-2">
 								{#if m.category}
-									<span class="pill shrink-0" style={pillStyle(m.categoryColor)}>{m.category}</span>
+									<CategoryMark name={m.category} color={m.categoryColor} />
 								{/if}
 								<span class="flex min-w-0 flex-1 flex-wrap gap-1">
 									{#each m.tags as tag (tag.name)}
@@ -496,11 +482,7 @@
 										</td>
 									</tr>
 								{/if}
-								<tr
-									style={m.categoryColor
-										? `background-color: ${m.categoryColor}${CATEGORY_WASH_ALPHA}`
-										: ''}
-								>
+								<tr>
 									<td class="px-3 py-2 whitespace-nowrap text-gray-500 tabular-nums">
 										{dayOf(m.occurredOn)}
 									</td>
@@ -509,9 +491,7 @@
 									</td>
 									<td class="px-3 py-2 whitespace-nowrap">
 										{#if m.category}
-											<span class="pill shrink-0" style={pillStyle(m.categoryColor)}
-												>{m.category}</span
-											>
+											<CategoryMark name={m.category} color={m.categoryColor} />
 										{:else}
 											<span class="text-xs text-gray-500">—</span>
 										{/if}
@@ -981,13 +961,10 @@
 
 <style>
 	/*
-	 * A washed line is one band, not a row of tiles.
-	 *
-	 * The category colour is set on the row, and a browser paints a row's
-	 * background cell by cell — so every corner the playful style rounds cuts a
-	 * notch out of the colour, and a categorised line came out as five rounded
-	 * blocks with the page showing through between them. The row is what carries
-	 * the colour, so the cells inside it have no corners of their own.
+	 * A line is one band, not a row of tiles: a browser paints a row's
+	 * background cell by cell, so a hovered or selected line came out as
+	 * rounded blocks with the page showing through where the playful style
+	 * rounded each cell. The row carries it; the cells have no corners.
 	 */
 	.statement :is(td, th) {
 		border-radius: 0;

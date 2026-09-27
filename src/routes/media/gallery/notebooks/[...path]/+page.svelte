@@ -8,6 +8,7 @@
 	import { NOTEBOOK_SEPARATOR } from '$lib/notebook-path';
 	import type { PageServerData } from './$types';
 	import { useT } from '$lib/i18n';
+	import PageTitle from '$lib/components/PageTitle.svelte';
 
 	const t = useT();
 
@@ -48,9 +49,7 @@
 	);
 </script>
 
-<svelte:head
-	><title>{t('gallery.notebooks.path.pictures', { title: data.title })}</title></svelte:head
->
+<PageTitle parts={t('gallery.notebooks.path.pictures', { title: data.title })} />
 
 <!-- One surface, the same shape an album has: where you are along the top,
      then the folders and the pictures. -->

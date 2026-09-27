@@ -4,7 +4,7 @@
 	import { monthOf } from '$lib/when';
 	import { useWhen } from '$lib/when-context.svelte';
 	import { goto } from '$app/navigation';
-	import Swatch from '$lib/components/Swatch.svelte';
+	import CategoryMark from '$lib/components/CategoryMark.svelte';
 	import { resolve } from '$app/paths';
 	import CategoryDonut from '$lib/components/CategoryDonut.svelte';
 	import EmptyState from '$lib/components/EmptyState.svelte';
@@ -154,8 +154,7 @@
 				<div class="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-xs">
 					{#each data.byCategory.categories as c (c.name)}
 						<span class="flex items-center gap-1.5 text-gray-600">
-							<Swatch color={c.color} shape="dot" />
-							{c.name}
+							<CategoryMark name={c.name} color={c.color} />
 							<span class="text-gray-500 tabular-nums">{money(c.totalCents)}</span>
 						</span>
 					{/each}

@@ -4,6 +4,7 @@
 	import TabbedRoom from '$lib/components/TabbedRoom.svelte';
 	import Icon from '$lib/components/Icon.svelte';
 	import { settingsTabs } from '$lib/settings-tabs';
+	import { glyphFor } from '$lib/glyphs';
 	import { useT } from '$lib/i18n';
 	import type { Snippet } from 'svelte';
 	import type { LayoutServerData } from './$types';
@@ -23,6 +24,7 @@
 -->
 <TabbedRoom
 	title={t('rooms.settings.title')}
+	glyph={glyphFor('/settings')}
 	tabs={settingsTabs(t, data)}
 	label={t('rooms.settings.sections')}
 >

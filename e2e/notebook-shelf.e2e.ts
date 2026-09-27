@@ -74,7 +74,7 @@ test('renaming a folder moves every notebook in it', async ({ page }) => {
 	await expect(page.getByRole('button', { name: /what is inside Kitchen$/ })).toBeVisible();
 });
 
-test('a notebook page is one card, so its stripe starts at the top', async ({ page }) => {
+test('a notebook page is one card, starting above its title', async ({ page }) => {
 	test.setTimeout(120_000);
 	await page.setViewportSize({ width: 1280, height: 900 });
 	await register(page, testEmail('nb-stripe'));
@@ -89,19 +89,20 @@ test('a notebook page is one card, so its stripe starts at the top', async ({ pa
 	await page.waitForURL(/\/notebooks\/\d+/);
 
 	/*
-	 * The header and the tabs were two bordered cards with a gap between them,
-	 * so the accent down the side belonged to the lower one and the rule began
-	 * half way down the page — under the title it was there to colour.
+	 * The header and the tabs were two bordered cards with a gap between them.
+	 * They are one surface now, starting above the title — and it wears no
+	 * section stripe: the room's tab strip already says which room this is.
 	 */
-	const striped = page.locator('.card-accent').first();
-	await expect(striped).toBeVisible();
+	const surface = page.locator('section.shadow-card').filter({ hasText: 'Renovation' }).first();
+	await expect(surface).toBeVisible();
+	await expect(page.locator('main .card-accent')).toHaveCount(0);
 
-	const card = (await striped.boundingBox())!;
+	const card = (await surface.boundingBox())!;
 	const title = (await page.getByRole('heading', { name: 'Renovation' }).boundingBox())!;
 	expect(card.y).toBeLessThan(title.y);
 
 	// And nothing inside it draws a second edge of its own.
-	await expect(striped.locator('.detail-header-frame.shadow-card')).toHaveCount(0);
+	await expect(surface.locator('.detail-header-frame.shadow-card')).toHaveCount(0);
 });
 
 for (const width of [1280, 390]) {
