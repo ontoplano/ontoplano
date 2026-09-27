@@ -346,6 +346,16 @@
 				</p>
 			{/if}
 
+			<!-- The cook's own notes, under the method they are about: what to
+			     change next time, what the oven actually needed. -->
+			{#if data.recipe.notes}
+				<div class="md mt-4 border-t border-gray-200 pt-3 text-sm text-gray-700">
+					<p class="eyebrow mb-1 text-gray-600">{t('ui.notes')}</p>
+					<!-- eslint-disable-next-line svelte/no-at-html-tags -->
+					{@html renderMarkdown(data.recipe.notes)}
+				</div>
+			{/if}
+
 			{#if data.recipe.source}
 				<p class="mt-4 border-t border-gray-200 pt-3 text-xs text-gray-500">
 					{t('health.recipes.id.from', { source: data.recipe.source })}
@@ -558,7 +568,7 @@
 				<MarkdownBox name="method" rows={10} value={data.recipe.method ?? ''} />
 			</Field>
 			<Field label={t('ui.notes')} span={12}>
-				<textarea name="notes" rows="2" class="textarea">{data.recipe.notes}</textarea>
+				<MarkdownBox name="notes" rows={2} value={data.recipe.notes ?? ''} />
 			</Field>
 		</FormGrid>
 	</form>
