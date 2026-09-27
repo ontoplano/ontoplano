@@ -20,6 +20,7 @@ releases mattered.
 
 ## 0.184.0 — 2026-09-27
 
+- Tag suggestions no longer vanish when you step out of the tag box and straight back in.
 - Demo tags and inventory attributes now come in distinct colours.
 - Editing a task, note or idea with long notes opens the text box at the full length of the writing, level with its preview.
 - Notebooks can be starred: favourites sit in their own row at the top of the shelf, still appear in their folder, and come first in every notebook picker. Press `f` to star the notebook that's open.

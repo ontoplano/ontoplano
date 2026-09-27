@@ -172,8 +172,16 @@
 		}
 	}
 
+	/*
+	 * Late, so a press on the list lands first — and only if the box has not
+	 * been gone back to in the meantime: coming back within the delay used to
+	 * find the list taken away while the box had the focus.
+	 */
+	const BLUR_DELAY_MS = 150;
 	function onBlur() {
-		setTimeout(() => (focused = false), 150);
+		setTimeout(() => {
+			if (document.activeElement !== box) focused = false;
+		}, BLUR_DELAY_MS);
 	}
 
 	/*
