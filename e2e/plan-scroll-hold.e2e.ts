@@ -24,10 +24,13 @@ test('the arrows keep the page where it is', async ({ page }) => {
 	const pageBefore = await page.evaluate(() => window.scrollY);
 	expect(pageBefore).toBeGreaterThan(0);
 
+	// Pressed where it is. Playwright's own click scrolls a button into view
+	// first, and at this depth the arrows sit just above the viewport — so the
+	// test was the one throwing the page to the top.
 	await page
 		.getByRole('button', { name: /^Forward one/ })
 		.first()
-		.click();
+		.evaluate((button: HTMLElement) => button.click());
 	await page.waitForURL(/from=/, { timeout: 15_000 });
 	await page.waitForTimeout(900);
 
