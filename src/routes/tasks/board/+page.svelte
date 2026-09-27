@@ -1301,7 +1301,7 @@
 													{#if card.kind === 'todo' && card.scheduledDate && card.scheduledDate < data.date}
 														<span class="text-[10px]">{t('tasks.board.carriedOver')}</span>
 													{/if}
-													<RatingBadges values={card.ratings} />
+													<RatingBadges values={card.ratings} muted={card.status === 'done'} />
 													<!--
 													Why this card exists, in one glyph. A kanban card is
 													scanned rather than read, so the goal's name would cost
@@ -1453,7 +1453,7 @@
 							<div class="flex items-start gap-2">
 								<div class="min-w-0 flex-1">
 									<p class="truncate text-sm">{card.title}</p>
-									<RatingBadges values={card.ratings} class="mt-1" />
+									<RatingBadges values={card.ratings} muted={card.status === 'done'} class="mt-1" />
 								</div>
 								<button
 									type="button"

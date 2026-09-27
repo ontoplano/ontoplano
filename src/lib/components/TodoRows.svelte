@@ -1601,7 +1601,7 @@
 									onclick={() => startEdit(todo, { atRatings: true })}
 									aria-label={t('todoRows.setTheRatings')}
 								>
-									<RatingBadges values={todo.ratings} stacked />
+									<RatingBadges values={todo.ratings} stacked muted={isDone(todo)} />
 								</button>
 							{/snippet}
 							{#snippet labels()}

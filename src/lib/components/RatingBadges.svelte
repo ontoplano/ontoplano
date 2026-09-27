@@ -91,8 +91,15 @@
 		values,
 		/** Kept for the callers that ask for it; the group is drawn the same way. */
 		stacked = false,
+		/** Grey, for something finished: the shapes still read, the colour is gone. */
+		muted = false,
 		class: className = ''
-	}: { values: Partial<RatingValues>; stacked?: boolean; class?: string } = $props();
+	}: {
+		values: Partial<RatingValues>;
+		stacked?: boolean;
+		muted?: boolean;
+		class?: string;
+	} = $props();
 
 	/**
 	 * What the three say, in words.
@@ -122,7 +129,9 @@
 </script>
 
 <span
-	class="rating-bars {stacked ? 'rating-bars-stacked' : ''} {className}"
+	class="rating-bars {stacked ? 'rating-bars-stacked' : ''} {muted
+		? 'rating-bars-muted'
+		: ''} {className}"
 	role="img"
 	title={said}
 	aria-label={said}
@@ -197,6 +206,23 @@
 	 * crescent out of the sliver behind it, at exactly the height where two
 	 * slivers are compared. See the note above.
 	 */
+	/*
+	 * A finished task's bars in three greys rather than one, each darker than
+	 * the ground, so the three heights still stand apart from each other and
+	 * from the grey behind them.
+	 */
+	.rating-bars-muted [data-rating='urgency'] {
+		--rating-ink: var(--color-gray-600);
+	}
+
+	.rating-bars-muted [data-rating='ease'] {
+		--rating-ink: var(--color-gray-500);
+	}
+
+	.rating-bars-muted [data-rating='interest'] {
+		--rating-ink: var(--color-gray-400);
+	}
+
 	.rating-bar {
 		position: absolute;
 		right: 0;
