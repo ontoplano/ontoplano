@@ -35,6 +35,7 @@ releases mattered.
 - A finished task's rating bars turn three shades of grey, so their heights still read without the colour.
 - In a notebook, typing TASK:# or NOTE:# opens a search of its tasks or notes and writes the number of the one you pick; NOTE:# links to the note and shows its title.
 - A recipe's notes show under its method, and are written in the same box as the method.
+- A notebook's task filters no longer show as on — the dot and Clear — when nothing is filtering them.
 - A notebook's Open and Manage tags sit beside its name, apart from the buttons that add to it.
 - The demo's kitchen notebook opens on its tasks, with colour-coded tags and a shopping list; other demo notebooks now hold goals, inventory and ideas.
 - On a phone, a notebook's header and task toolbar are tidier: Open and tags are icons in the corner, the search, filter, clear and count share one line, and the order sits beside Select many.

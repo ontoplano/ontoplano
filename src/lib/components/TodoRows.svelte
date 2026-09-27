@@ -226,9 +226,12 @@
 	 * `''` is all of them, `'none'` the ones filed under nothing — which is a
 	 * real answer and not the absence of one: a task nobody has placed is
 	 * exactly what somebody goes looking for. Not offered inside a notebook,
-	 * where the answer is already fixed.
+	 * where the answer is already fixed — and not read there either: the
+	 * notebooks page names the open notebook with the same `?notebook=`, which
+	 * made every notebook's task list think it was filtered, lighting the
+	 * filter dot and Clear with nothing to clear.
 	 */
-	const notebookFilter = $derived(filters.get('notebook'));
+	const notebookFilter = $derived(notebookId === null ? filters.get('notebook') : '');
 	/**
 	 * Which labels to show and which to hide — see `$lib/tag-filter`.
 	 *
