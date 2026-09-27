@@ -29,6 +29,10 @@
 		folder = '',
 		description = '',
 		defaultTags = '',
+		/** The category a new task here starts with; null for none. */
+		categoryId = null,
+		/** The account's categories, to choose it from. */
+		categories = [],
 		/**
 		 * The notebook being edited, when one exists.
 		 *
@@ -57,6 +61,8 @@
 		folder?: string;
 		description?: string;
 		defaultTags?: string;
+		categoryId?: number | null;
+		categories?: { id: number; name: string }[];
 		notebook?: {
 			id: number;
 			title: string;
@@ -184,6 +190,19 @@
 	<Field label={t('ui.tags')} span={12} hint={t('notebooks.id.everyNewNoteStartsWith')}>
 		<TagInput name="defaultTags" value={defaultTags} known={page.data.tagVocabulary ?? []} />
 	</Field>
+
+	<!-- The same for a task: its category, filled into the task form — see
+	     TodoFields. Not on a notebook somebody shared: it is the owner's. -->
+	{#if notebook?.mine !== false}
+		<Field label={t('ui.category')} span={12} hint={t('notebooks.everyNewTaskStartsWith')}>
+			<select name="categoryId" class="select">
+				<option value="">{t('fields.todo.none')}</option>
+				{#each categories as cat (cat.id)}
+					<option value={String(cat.id)} selected={categoryId === cat.id}>{cat.name}</option>
+				{/each}
+			</select>
+		</Field>
+	{/if}
 
 	<!--
 		What this subject accumulates, beside what is written about it.

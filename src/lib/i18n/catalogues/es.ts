@@ -1864,6 +1864,7 @@ export const messages: Catalogue = {
 	'notebooks.diary.wins': 'Logros',
 	'notebooks.each': 'Cada',
 	'notebooks.edit': 'Editar {title}',
+	'notebooks.everyNewTaskStartsWith': 'Una tarea añadida aquí empieza con esta',
 	'notebooks.family': 'familia',
 	'notebooks.favourites': 'Favoritos',
 	'notebooks.fields.aboutWhat': 'About what',

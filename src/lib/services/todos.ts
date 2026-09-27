@@ -40,7 +40,7 @@ import { UNTAGGED, isTagFiltering, type TagFilter } from '../tag-filter.js';
 import type { RatingValues } from '../ratings.js';
 import type { Ctx } from './ctx.js';
 import { NotFoundError, ValidationError } from './errors.js';
-import { ownedNotebookId } from './notebooks.js';
+import { defaultCategoryOf, ownedNotebookId } from './notebooks.js';
 import { fileUnderNotebook } from './notebook-linking.js';
 import { getUserSetting, setUserSetting } from './settings.js';
 import { cleanupOrphanTags, optionalTagInput, parseTags, replaceTodoTags } from './tags.js';
@@ -595,6 +595,7 @@ function nextNotebookSeq(ctx: Ctx, notebookId: number | null | undefined): numbe
 
 export function createTodo(ctx: Ctx, raw: TodoInput): number {
 	const title = str(raw.title, 'title', { max: MAX_TITLE_LENGTH });
+	const notebookId = ownedNotebookId(ctx, raw.notebookId);
 	const result = db
 		.insert(todoTasks)
 		.values({
@@ -602,9 +603,14 @@ export function createTodo(ctx: Ctx, raw: TodoInput): number {
 			userId: ctx.userId,
 			title,
 			notes: optionalStr(raw.notes, 'notes', { max: MAX_NOTES_LENGTH }),
-			categoryId: ownedCategoryId(ctx, raw.categoryId),
-			notebookId: ownedNotebookId(ctx, raw.notebookId),
-			notebookSeq: nextNotebookSeq(ctx, ownedNotebookId(ctx, raw.notebookId)),
+			// Unsaid, it is the notebook's — what the form would have filled in.
+			// An empty one from a form is somebody choosing none.
+			categoryId:
+				raw.categoryId === undefined
+					? defaultCategoryOf(ctx, notebookId)
+					: ownedCategoryId(ctx, raw.categoryId),
+			notebookId,
+			notebookSeq: nextNotebookSeq(ctx, notebookId),
 			scheduledDate: optionalDate(raw.scheduledDate),
 			status: isStatus(raw.status) ? raw.status : 'todo',
 			sortOrder: nextSortOrder(ctx),

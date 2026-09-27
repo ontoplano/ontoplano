@@ -70,3 +70,34 @@ test('a note can be put away and taken back out', async ({ page }) => {
 	await page.getByRole('button', { name: 'Take it back out' }).first().click();
 	await expect(page.getByText('Restaurants').first()).toBeVisible();
 });
+
+test('a new task in a notebook starts with the notebook’s category', async ({ page }) => {
+	test.setTimeout(120_000);
+	await register(page, testEmail('nb-category'));
+	await makeNotebook(page, 'Kitchen');
+	await visit(page, '/notebooks');
+
+	const setCategory = async (label: string) => {
+		await page.locator('.notebook-cover').first().hover();
+		await page.getByRole('button', { name: 'Edit Kitchen' }).click();
+		await page.locator('#notebook-form select[name="categoryId"]').selectOption({ label });
+		await page.getByRole('button', { name: 'Save', exact: true }).click();
+		await expect(page.locator('#notebook-form')).toHaveCount(0);
+	};
+	const startsWith = async () => {
+		await page.getByRole('button', { name: 'New task', exact: true }).click();
+		const chosen = await page
+			.locator('#todo-form select[name="categoryId"]')
+			.evaluate((one: HTMLSelectElement) => one.options[one.selectedIndex].text);
+		await page.keyboard.press('Escape');
+		return chosen;
+	};
+
+	await setCategory('health');
+	await page.getByRole('button', { name: /^Tasks \d/ }).click();
+	expect(await startsWith()).toBe('health');
+
+	// Cleared, a new task starts with none again.
+	await setCategory('— none —');
+	expect(await startsWith()).toBe('— none —');
+});

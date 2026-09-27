@@ -408,6 +408,11 @@ Retiring an activity keeps its history; deleting it would not.
 
 #### `updateCategory(ctx, id, raw)`
 
+#### `ownedCategory(ctx, value)`
+
+A category id from a form or a call, or null for none — one of this
+account's own, or a 404.
+
 #### `deleteCategory(ctx, id)`
 
 ## admin
@@ -3581,6 +3586,13 @@ The labels a new note in this notebook should start with.
 Empty for a note filed nowhere, and empty for a notebook nobody set any on,
 which is the same answer and wants no distinction. Reads the column rather
 than the whole notebook: this runs on every note written.
+
+#### `defaultCategoryOf(ctx, notebookId)`
+
+The category a new task in this notebook starts with, or null.
+
+Only a category of the writer's own: a notebook shared into the family
+carries its owner's, which means nothing on somebody else's week.
 
 #### `setNotebookClosed(ctx, id, closed)`
 

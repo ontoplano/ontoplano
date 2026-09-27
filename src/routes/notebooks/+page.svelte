@@ -649,6 +649,8 @@
 			folder={editing?.folder ?? ''}
 			description={editing?.description ?? ''}
 			defaultTags={editing?.defaultTags ?? ''}
+			categoryId={editing?.categoryId ?? null}
+			categories={data.categories}
 			notebook={editing}
 			notebooks={data.notebooks}
 			pictureKilobytes={data.pictureKilobytes}

@@ -69,6 +69,7 @@ export const notebookActions = {
 				folder: formData.get('folder') ?? '',
 				description: formData.get('description'),
 				defaultTags: formData.get('defaultTags'),
+				categoryId: formData.get('categoryId'),
 				// What it holds, when whoever is making it said. The dialog does
 				// not ask — a notebook is made in one field and answered for
 				// afterwards — so this is usually the default.
@@ -89,6 +90,8 @@ export const notebookActions = {
 				folder: formData.get('folder'),
 				description: formData.get('description'),
 				defaultTags: formData.get('defaultTags'),
+				// Absent where the form does not ask, which leaves it as it was.
+				categoryId: formData.has('categoryId') ? formData.get('categoryId') : undefined,
 				/*
 				 * What it holds, when the form asked about it.
 				 *

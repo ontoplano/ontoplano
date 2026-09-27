@@ -1885,6 +1885,7 @@ export const messages: Catalogue = {
 	'notebooks.diary.wins': 'Erfolge',
 	'notebooks.each': 'Jede',
 	'notebooks.edit': '{title} bearbeiten',
+	'notebooks.everyNewTaskStartsWith': 'Eine Aufgabe hier beginnt mit dieser',
 	'notebooks.family': 'Familie',
 	'notebooks.favourites': 'Favoriten',
 	'notebooks.fields.aboutWhat': 'About what',

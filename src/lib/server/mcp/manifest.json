@@ -332,6 +332,10 @@
 		"writes": true,
 		"destroys": false,
 		"params": {
+			"category": {
+				"type": "string",
+				"required": false
+			},
 			"defaultTags": {
 				"type": "string",
 				"required": false
@@ -991,6 +995,10 @@
 		"writes": true,
 		"destroys": false,
 		"params": {
+			"category": {
+				"type": "string",
+				"required": false
+			},
 			"defaultTags": {
 				"type": "string",
 				"required": false

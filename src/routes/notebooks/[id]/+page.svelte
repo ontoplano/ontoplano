@@ -277,6 +277,8 @@
 			folder={data.notebook.folder}
 			description={data.notebook.description}
 			defaultTags={data.notebook.defaultTags}
+			categoryId={data.notebook.categoryId}
+			categories={data.categories}
 			notebook={data.notebook}
 			notebooks={data.pickableNotebooks}
 			pictureKilobytes={data.pictureKilobytes}

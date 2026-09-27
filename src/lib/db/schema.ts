@@ -254,6 +254,15 @@ export const notebooks = sqliteTable(
 		 */
 		defaultTags: text('default_tags').notNull().default(''),
 		/**
+		 * The category a new task filed here starts with.
+		 *
+		 * The same bargain the labels above make: a suggestion the form fills
+		 * in, not a rule applied to what is already here. Null for none.
+		 * Added by `ALTER TABLE`, which gives it no delete action, so deleting
+		 * the category clears it in `deleteCategory`.
+		 */
+		categoryId: integer('category_id').references(() => categories.id),
+		/**
 		 * Opt-in, per notebook, by its owner: everybody on the owner's family
 		 * plan can read it and write their own entries into it. The rows keep
 		 * their writers' user_id — sharing widens who may look, never who owns.

@@ -1631,6 +1631,7 @@ export type MessageKey =
 	| 'notebooks.diary.wins'
 	| 'notebooks.each'
 	| 'notebooks.edit'
+	| 'notebooks.everyNewTaskStartsWith'
 	| 'notebooks.family'
 	| 'notebooks.favourites'
 	| 'notebooks.fields.aboutWhat'

@@ -757,6 +757,13 @@
       "when": 1790484746844,
       "tag": "0107_a_notebook_can_be_a_favourite",
       "breakpoints": true
+    },
+    {
+      "idx": 108,
+      "version": "6",
+      "when": 1790486569714,
+      "tag": "0108_a_notebook_can_carry_a_category",
+      "breakpoints": true
     }
   ]
 }

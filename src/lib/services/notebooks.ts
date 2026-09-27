@@ -3,9 +3,11 @@ import type { SQLiteColumn, SQLiteTable } from 'drizzle-orm/sqlite-core';
 
 import { db } from '$lib/db/index.js';
 import { user } from '$lib/db/auth.schema.js';
+import { ownedCategory } from './activities.js';
 import { host } from './host.js';
 import {
 	bills,
+	categories,
 	diaryEntries,
 	exceptionalTasks,
 	goals,
@@ -80,6 +82,9 @@ export type Notebook = {
 	pictureId: number | null;
 	/** What a new note here starts labelled with. Empty when nothing is set. */
 	defaultTags: string;
+	/** The category a new task here starts with, and its name; null for none. */
+	categoryId: number | null;
+	categoryName: string | null;
 	closedAt: string | null;
 	/**
 	 * Whether this reader keeps it at the front of the shelf. Theirs, not the
@@ -255,6 +260,8 @@ export function listNotebooks(ctx: Ctx): Notebook[] {
 			description: notebooks.description,
 			pictureId: notebooks.pictureId,
 			defaultTags: notebooks.defaultTags,
+			categoryId: notebooks.categoryId,
+			categoryName: categories.name,
 			modules: notebooks.modules,
 			closedAt: notebooks.closedAt,
 			sharedWithFamily: notebooks.sharedWithFamily,
@@ -263,6 +270,7 @@ export function listNotebooks(ctx: Ctx): Notebook[] {
 		})
 		.from(notebooks)
 		.innerJoin(user, eq(notebooks.userId, user.id))
+		.leftJoin(categories, eq(notebooks.categoryId, categories.id))
 		.where(
 			others.length === 0
 				? eq(notebooks.userId, ctx.userId)
@@ -351,6 +359,8 @@ function shape(
 		description: string | null;
 		pictureId: number | null;
 		defaultTags: string | null;
+		categoryId: number | null;
+		categoryName: string | null;
 		modules: string | null;
 		closedAt: string | null;
 		sharedWithFamily: boolean;
@@ -444,6 +454,8 @@ export function getNotebook(ctx: Ctx, id: number): Notebook {
 			description: notebooks.description,
 			pictureId: notebooks.pictureId,
 			defaultTags: notebooks.defaultTags,
+			categoryId: notebooks.categoryId,
+			categoryName: categories.name,
 			modules: notebooks.modules,
 			closedAt: notebooks.closedAt,
 			sharedWithFamily: notebooks.sharedWithFamily,
@@ -452,6 +464,7 @@ export function getNotebook(ctx: Ctx, id: number): Notebook {
 		})
 		.from(notebooks)
 		.innerJoin(user, eq(notebooks.userId, user.id))
+		.leftJoin(categories, eq(notebooks.categoryId, categories.id))
 		.where(eq(notebooks.id, id))
 		.get();
 
@@ -652,6 +665,7 @@ export function createNotebook(
 		folder?: unknown;
 		description?: unknown;
 		defaultTags?: unknown;
+		categoryId?: unknown;
 		modules?: unknown;
 	}
 ): number {
@@ -669,6 +683,7 @@ export function createNotebook(
 			folder,
 			description: optionalStr(raw.description, 'description', { max: MAX_DESCRIPTION_LENGTH }),
 			defaultTags: parseTags(optionalTagInput(raw.defaultTags)).join(', '),
+			categoryId: ownedCategory(ctx, raw.categoryId),
 			// Written out rather than left null, so a notebook says what it holds
 			// from the day it is made and a change to the default later does not
 			// silently rearrange notebooks people already have.
@@ -687,6 +702,7 @@ export function updateNotebook(
 		folder?: unknown;
 		description?: unknown;
 		defaultTags?: unknown;
+		categoryId?: unknown;
 		modules?: unknown;
 	}
 ): void {
@@ -712,6 +728,8 @@ export function updateNotebook(
 			...(raw.defaultTags === undefined
 				? {}
 				: { defaultTags: parseTags(optionalTagInput(raw.defaultTags)).join(', ') }),
+			// The same: '' or null clears it, left out leaves it.
+			...(raw.categoryId === undefined ? {} : { categoryId: ownedCategory(ctx, raw.categoryId) }),
 			// The same rule for the modules: renaming a notebook over MCP must
 			// not empty its tabs down to the default.
 			...(wanted === null ? {} : { modules: keepingHidden(ctx, id, wanted) }),
@@ -738,6 +756,24 @@ export function defaultTagsOf(ctx: Ctx, notebookId: number | null): string {
 		.where(eq(notebooks.id, notebookId))
 		.get();
 	return found?.defaultTags ?? '';
+}
+
+/**
+ * The category a new task in this notebook starts with, or null.
+ *
+ * Only a category of the writer's own: a notebook shared into the family
+ * carries its owner's, which means nothing on somebody else's week.
+ */
+export function defaultCategoryOf(ctx: Ctx, notebookId: number | null): number | null {
+	if (notebookId === null) return null;
+	return (
+		db
+			.select({ id: categories.id })
+			.from(notebooks)
+			.innerJoin(categories, eq(notebooks.categoryId, categories.id))
+			.where(and(eq(notebooks.id, notebookId), eq(categories.userId, ctx.userId)))
+			.get()?.id ?? null
+	);
 }
 
 /**
@@ -879,7 +915,10 @@ export function pickableNotebooks(ctx: Ctx) {
 			id: notebooks.id,
 			title: notebooks.title,
 			folder: notebooks.folder,
-			defaultTags: notebooks.defaultTags
+			defaultTags: notebooks.defaultTags,
+			// The task form fills it in, the way the note form fills the labels.
+			categoryId: notebooks.categoryId,
+			ownerId: notebooks.userId
 		})
 		.from(notebooks)
 		.where(
@@ -895,7 +934,12 @@ export function pickableNotebooks(ctx: Ctx) {
 		)
 		.orderBy(notebooks.folder, notebooks.title)
 		.all()
-		.map((one) => ({ ...one, favourite: starred.has(one.id) }));
+		.map(({ ownerId, ...one }) => ({
+			...one,
+			// Somebody else's category is not one this account can file under.
+			categoryId: ownerId === ctx.userId ? one.categoryId : null,
+			favourite: starred.has(one.id)
+		}));
 	return favouritesFirst(open);
 }
 

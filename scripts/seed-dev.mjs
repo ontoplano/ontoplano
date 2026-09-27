@@ -1247,6 +1247,11 @@ const republic = notebook(
 	'Books'
 );
 
+// A category each for the two subjects that have tasks, so a new task written
+// in either starts with it — and the rest none, which is the usual answer.
+run('update notebooks set category_id = ? where id = ?', home, kitchen);
+run('update notebooks set category_id = ? where id = ?', learning, republic);
+
 /*
  * Two starred, one of them inside a folder: the shelf draws a Favourites row
  * above the folders and still shows the kitchen inside Home, and the notebook

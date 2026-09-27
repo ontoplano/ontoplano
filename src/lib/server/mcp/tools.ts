@@ -1013,6 +1013,16 @@ const gaveARating = (args: Record<string, unknown>) =>
  * message is not the place to hand over the names that the read grant is
  * what gates. The tool it points at is gated properly.
  */
+/**
+ * A notebook's category from a call: left out is untouched, '' is none, and a
+ * name is looked up the way a block's is.
+ */
+function notebookCategory(ctx: Ctx, wanted: unknown): number | null | undefined {
+	if (wanted === undefined) return undefined;
+	if (typeof wanted !== 'string' || !wanted.trim()) return null;
+	return categoryByName(ctx, wanted).id;
+}
+
 function categoryByName(ctx: Ctx, wanted: unknown): { id: number; name: string } {
 	const all = listCategories(ctx) as { id: number; name: string }[];
 	if (all.length === 0)
@@ -1702,7 +1712,7 @@ export const TOOLS: Tool[] = [
 				notebookId: {
 					type: 'integer',
 					description:
-						'The notebook this task belongs to, as `notebooks` gives its id. A subject somebody is working through — a renovation, a project — keeps its tasks together, and the app shows them on the notebook itself.'
+						'The notebook this task belongs to, as `notebooks` gives its id. A subject somebody is working through — a renovation, a project — keeps its tasks together, and the app shows them on the notebook itself. The task takes the notebook’s category, when it has one.'
 				},
 				goalId: {
 					type: 'integer',
@@ -2450,6 +2460,9 @@ export const TOOLS: Tool[] = [
 				defaultTags: text(
 					'Labels a new note in it starts with, comma or space separated \u2014 the ones writing about this subject always carries, so nobody types them on every note. The person can still take them off a note as they write it.'
 				),
+				category: text(
+					'The category a new task in it starts with, by name as `categories` gives them. Left out, none.'
+				),
 				modules: text(
 					'What it holds, comma separated \u2014 notes, tasks, goals, ideas, inventory, ledgers, bills, habits, workouts, recipes. Notes and tasks unless this says otherwise, and notes are always in it. Only name what the subject actually accumulates: nine tabs on a reading list is the app deciding what somebody\u2019s subject is about.'
 				)
@@ -2463,6 +2476,7 @@ export const TOOLS: Tool[] = [
 				folder,
 				description: args.description,
 				defaultTags: args.defaultTags,
+				categoryId: notebookCategory(ctx, args.category),
 				modules: args.modules
 			});
 			return warning ? { id, warning } : { id };
@@ -2472,7 +2486,7 @@ export const TOOLS: Tool[] = [
 		name: 'change_notebook',
 		title: 'Change a notebook',
 		description:
-			'Rename a notebook, move it to another folder, rewrite the line under its title, set the labels a new note in it starts with, or change what it holds. The title is always sent; the rest change only when given.',
+			'Rename a notebook, move it to another folder, rewrite the line under its title, set the labels a new note in it starts with or the category a new task in it starts with, or change what it holds. The title is always sent; the rest change only when given.',
 		scope: 'notes:write',
 		writes: true,
 		refs: [{ arg: 'id', kind: 'notebook', subject: true }],
@@ -2487,6 +2501,9 @@ export const TOOLS: Tool[] = [
 				defaultTags: text(
 					'Labels a new note in it starts with, comma or space separated. An empty string clears them; left out, they are untouched.'
 				),
+				category: text(
+					'The category a new task in it starts with, by name as `categories` gives them. An empty string clears it; left out, it is untouched.'
+				),
 				modules: text(
 					'What it holds, comma separated \u2014 notes, tasks, goals, ideas, inventory, ledgers, bills, habits, workouts, recipes. The whole list, not an addition. Notes are always in it. Switching one off keeps whatever is already filed under it; it stops being a tab, and stays in its own room.'
 				)
@@ -2500,6 +2517,7 @@ export const TOOLS: Tool[] = [
 				folder,
 				description: args.description,
 				defaultTags: args.defaultTags,
+				categoryId: notebookCategory(ctx, args.category),
 				modules: args.modules
 			});
 			return warning ? { id: Number(args.id), warning } : { id: Number(args.id) };

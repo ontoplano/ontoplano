@@ -55,7 +55,7 @@ exist.
 | [`model_provider_keys`](#model_provider_keys)               | 9       | yes               |
 | [`newsletter_issues`](#newsletter_issues)                   | 6       | —                 |
 | [`notebook_favourites`](#notebook_favourites)               | 4       | yes               |
-| [`notebooks`](#notebooks)                                   | 12      | yes               |
+| [`notebooks`](#notebooks)                                   | 13      | yes               |
 | [`oauth_clients`](#oauth_clients)                           | 7       | —                 |
 | [`oauth_codes`](#oauth_codes)                               | 11      | yes               |
 | [`people`](#people)                                         | 12      | yes               |
@@ -984,6 +984,7 @@ Indexes:
 | `description`        | text    | null     | `''`                  | —                 |
 | `picture_id`         | integer | null     | —                     | → `media.id`      |
 | `default_tags`       | text    | not null | `''`                  | —                 |
+| `category_id`        | integer | null     | —                     | → `categories.id` |
 | `shared_with_family` | integer | not null | `false`               | —                 |
 | `modules`            | text    | null     | —                     | —                 |
 | `closed_at`          | text    | null     | —                     | —                 |

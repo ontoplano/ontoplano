@@ -3,7 +3,7 @@ import { json } from '@sveltejs/kit';
 import { buildCtx } from '$lib/services/ctx';
 import { listCategories as listPlannerCategories } from '$lib/services/activities';
 import { listCategories as listInventoryCategories } from '$lib/services/inventory';
-import { listNotebooks } from '$lib/services/notebooks';
+import { pickableNotebooks } from '$lib/services/notebooks';
 import { listTodos } from '$lib/services/todos';
 
 /**
@@ -21,7 +21,8 @@ export const GET = async ({ locals }: IsolatedEvent) => {
 	const ctx = buildCtx(locals.user.id);
 	return json({
 		categories: listPlannerCategories(ctx).map((c) => ({ id: c.id, name: c.name })),
-		notebooks: listNotebooks(ctx).map((n) => ({ id: n.id, title: n.title })),
+		// Open ones, favourites first, each with what its forms start with.
+		notebooks: pickableNotebooks(ctx),
 		inventoryCategories: listInventoryCategories(ctx).map((c) => ({ id: c.id, name: c.name })),
 		/*
 		 * The queue a new task would join, as the three numbers that order it.

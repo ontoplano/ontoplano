@@ -459,14 +459,14 @@ Put a task on the todo list. Leave the date off unless the person said when — 
 
 _Needs `tasks:write`; writes._
 
-| Parameter       | Type    | Required | What it is                                                                                                                                                                                                              |
-| --------------- | ------- | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `title`         | string  | yes      | What the task is, in the person’s own words.                                                                                                                                                                            |
-| `notes`         | string  | —        | Anything else about it.                                                                                                                                                                                                 |
-| `scheduledDate` | string  | —        | The day to put it on, as YYYY-MM-DD. Usually omitted.                                                                                                                                                                   |
-| `notebookId`    | integer | —        | The notebook this task belongs to, as `notebooks` gives its id. A subject somebody is working through — a renovation, a project — keeps its tasks together, and the app shows them on the notebook itself.              |
-| `goalId`        | integer | —        | A goal to count this towards, as `goals` gives its id. Breaking a goal into tasks is the ordinary reason to make several at once, and a task linked here moves that goal’s progress when it is finished.                |
-| `tags`          | string  | —        | Labels, comma or space separated — "a1, done". The account’s one vocabulary, the same words a diary entry or an idea is tagged with. Mark your own work with a label of your own where several assistants share a list. |
+| Parameter       | Type    | Required | What it is                                                                                                                                                                                                                                                          |
+| --------------- | ------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `title`         | string  | yes      | What the task is, in the person’s own words.                                                                                                                                                                                                                        |
+| `notes`         | string  | —        | Anything else about it.                                                                                                                                                                                                                                             |
+| `scheduledDate` | string  | —        | The day to put it on, as YYYY-MM-DD. Usually omitted.                                                                                                                                                                                                               |
+| `notebookId`    | integer | —        | The notebook this task belongs to, as `notebooks` gives its id. A subject somebody is working through — a renovation, a project — keeps its tasks together, and the app shows them on the notebook itself. The task takes the notebook’s category, when it has one. |
+| `goalId`        | integer | —        | A goal to count this towards, as `goals` gives its id. Breaking a goal into tasks is the ordinary reason to make several at once, and a task linked here moves that goal’s progress when it is finished.                                                            |
+| `tags`          | string  | —        | Labels, comma or space separated — "a1, done". The account’s one vocabulary, the same words a diary entry or an idea is tagged with. Mark your own work with a label of your own where several assistants share a list.                                             |
 
 ### `finish_task` — Finish a todo
 
@@ -782,11 +782,12 @@ _Needs `notes:write`; writes._
 | `folder`      | string | —        | Where it sits on the shelf, a slash-separated path such as `Home/Kitchen`. A folder only groups notebooks; it holds nothing itself. Left out, it goes at the top.                                                                                                                                                             |
 | `description` | string | —        | A line under the title, shown on its page.                                                                                                                                                                                                                                                                                    |
 | `defaultTags` | string | —        | Labels a new note in it starts with, comma or space separated — the ones writing about this subject always carries, so nobody types them on every note. The person can still take them off a note as they write it.                                                                                                           |
+| `category`    | string | —        | The category a new task in it starts with, by name as `categories` gives them. Left out, none.                                                                                                                                                                                                                                |
 | `modules`     | string | —        | What it holds, comma separated — notes, tasks, goals, ideas, inventory, ledgers, bills, habits, workouts, recipes. Notes and tasks unless this says otherwise, and notes are always in it. Only name what the subject actually accumulates: nine tabs on a reading list is the app deciding what somebody’s subject is about. |
 
 ### `change_notebook` — Change a notebook
 
-Rename a notebook, move it to another folder, rewrite the line under its title, set the labels a new note in it starts with, or change what it holds. The title is always sent; the rest change only when given.
+Rename a notebook, move it to another folder, rewrite the line under its title, set the labels a new note in it starts with or the category a new task in it starts with, or change what it holds. The title is always sent; the rest change only when given.
 
 _Needs `notes:write`; writes._
 
@@ -797,6 +798,7 @@ _Needs `notes:write`; writes._
 | `folder`      | string  | —        | The folder it sits in, a slash-separated path such as `Home/Kitchen`; an empty string puts it at the top. Left out, it stays where it is.                                                                                                                                                |
 | `description` | string  | —        | A line under the title, shown on its page.                                                                                                                                                                                                                                               |
 | `defaultTags` | string  | —        | Labels a new note in it starts with, comma or space separated. An empty string clears them; left out, they are untouched.                                                                                                                                                                |
+| `category`    | string  | —        | The category a new task in it starts with, by name as `categories` gives them. An empty string clears it; left out, it is untouched.                                                                                                                                                     |
 | `modules`     | string  | —        | What it holds, comma separated — notes, tasks, goals, ideas, inventory, ledgers, bills, habits, workouts, recipes. The whole list, not an addition. Notes are always in it. Switching one off keeps whatever is already filed under it; it stops being a tab, and stays in its own room. |
 
 ### `rename_notebook_folder` — Rename a notebook folder
