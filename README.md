@@ -11,7 +11,7 @@
 [![licence AGPL-3.0](.github/badges/licence.svg)](LICENSE)
 [![host it yourself](.github/badges/host-it.svg)](#running-it)
 
-[ontoplano.com](https://ontoplano.com) · [official instance](https://app.ontoplano.com) · [documentation](https://docs.ontoplano.com)
+[demo](https://demo.ontoplano.com) · [ontoplano.com](https://ontoplano.com) · [official instance](https://app.ontoplano.com) · [documentation](https://docs.ontoplano.com)
 
 `.deb` · `.rpm` · Arch · Docker · Android
 
@@ -31,7 +31,9 @@ You can [Connect with an AI agent](https://docs.ontoplano.com/ai-agents) (or not
 scope all your tasks, recipes, inventory, notes, bills etc. in specific notebooks.
 
 <div align="center">
+
 [![Try the demo](.github/badges/try-the-demo.svg)](https://demo.ontoplano.com)
+
 </div>
 
 
