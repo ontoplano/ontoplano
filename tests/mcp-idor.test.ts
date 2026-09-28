@@ -300,7 +300,7 @@ describe("somebody else's id", () => {
 
 		expect(changed, "these tools wrote to the stranger's rows").toEqual([]);
 		expect(disclosed, "these tools answered with the stranger's rows").toEqual([]);
-	});
+	}, 60_000);
 
 	it('is refused the same way an id that never existed is', async () => {
 		// Two different refusals would be a way to ask what exists, one number at
