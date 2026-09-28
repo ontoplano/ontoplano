@@ -19,9 +19,13 @@ test('a route change turns the mark at least once, however quick it is', async (
 	await register(page, testEmail('mark-turn'));
 	await visit(page, '/');
 
-	// The header's mark, which is the one a desktop sees.
-	const mark = page.locator('header [data-mark] .mark-turn').first();
+	// The header's mark, which is the one a desktop sees. It turns whole.
+	const mark = page.locator('header [data-mark]').first();
 	await expect(mark).toBeAttached();
+	// The load's own turn lands first, so the one below is the navigation's.
+	await expect
+		.poll(async () => mark.evaluate((el) => (el as HTMLElement).style.rotate), { timeout: 5000 })
+		.toBe('');
 
 	/** Every angle the mark is painted at while something is happening. */
 	const watch = async (ms: number) => {
@@ -52,43 +56,51 @@ test('a route change turns the mark at least once, however quick it is', async (
 });
 
 /**
- * And nothing else on the page turns with it.
+ * The octagon turns with its ground, and the bird inside stays upright.
  *
  * The phone bar draws an octagon of flat colour behind the mark's button, a
- * hair larger, so the clipped button has an edge to end at. It used to be
- * turned along with the mark — correct while the whole mark turned, and wrong
- * ever since the turn became a disc inside the ring: an octagon revolving
- * behind one that is standing still swings its corners out past the rim, and
- * the ground is a colour meant never to be seen as a shape.
- *
- * Asked of the page rather than of that one element, because the rule is the
- * general one: the medallion turns and nothing else does, whatever else a
- * caller hands to `startMarkSpin`.
+ * hair larger, so the clipped button has an edge to end at. Standing still
+ * behind a turning mark it would show the mark's corners sweeping past it, so
+ * the two turn together, by the same angle. The bird is turned back by the
+ * same angle in CSS, which is what keeps it still.
  */
-test('and nothing behind it turns', async ({ page }) => {
+test('the octagon and its ground turn together, and the bird does not', async ({ page }) => {
 	await page.setViewportSize({ width: 390, height: 844 });
 	await register(page, testEmail('mark-ground'));
 	// Somewhere other than home, so the bar's home link is a navigation.
 	await visit(page, '/goals');
 
-	/** Everything the turn has written a `rotate` on, medallion or not. */
+	/** Every element the turn has written a `rotate` on, with the bird's net angle. */
 	const turned = async () =>
 		page.evaluate(() =>
-			[...document.querySelectorAll<HTMLElement>('[style*="rotate"]')]
+			[...document.querySelectorAll<HTMLElement>('nav [data-mark]')]
 				.filter((el) => el.style.rotate)
-				.map((el) => (el.classList.contains('mark-turn') ? 'medallion' : el.tagName.toLowerCase()))
+				.map((el) => {
+					const bird = el.querySelector<HTMLElement>('.mark-still');
+					const net = bird
+						? parseFloat(el.style.rotate) + parseFloat(getComputedStyle(bird).rotate || '0')
+						: 0;
+					return { tag: el.tagName.toLowerCase(), angle: parseFloat(el.style.rotate), net };
+				})
 		);
 
 	const going = page.getByRole('link', { name: 'Home' }).click();
 
-	const seen = new Set<string>();
+	const tags = new Set<string>();
+	let apart = 0;
+	let birdTurned = 0;
 	const until = Date.now() + 1500;
-	while (Date.now() < until) for (const one of await turned()) seen.add(one);
+	while (Date.now() < until) {
+		const now = await turned();
+		for (const one of now) {
+			tags.add(one.tag);
+			birdTurned = Math.max(birdTurned, Math.abs(one.net));
+		}
+		if (now.length === 2) apart = Math.max(apart, Math.abs(now[0].angle - now[1].angle));
+	}
 	await going;
 
-	// The medallion, and nothing else. Both halves matter: without the first
-	// this passes on a bar that never turned at all.
-	expect([...seen].sort(), 'the medallion did not turn, or something else did').toEqual([
-		'medallion'
-	]);
+	expect([...tags].sort(), 'the button or its ground did not turn').toEqual(['button', 'span']);
+	expect(apart, 'the ground and the mark turned out of step').toBeLessThan(0.01);
+	expect(birdTurned, 'the bird turned with the octagon').toBeLessThan(0.01);
 });

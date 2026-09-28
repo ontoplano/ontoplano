@@ -20,17 +20,15 @@
 	/*
 	 * What the mark carries inside, as its own layer, with a hole beneath it.
 	 *
-	 * The mark is drawn twice: the rim, and a disc cut inside it that can turn
-	 * while the rim stands still. A disc turns in place, and the circle it is
-	 * cut on is flat dark field, the same at any angle, so the seam does not
-	 * show. `$lib/mark-spin` turns it while a navigation drags.
+	 * The mark is drawn twice: the rim with a disc taken out of it, and that
+	 * disc on top. While a navigation drags, `$lib/mark-spin` turns the whole
+	 * mark and turns the disc back by the same angle, so the octagon goes round
+	 * the bird and the bird stays upright. The circle the two are cut on is
+	 * flat dark field, the same at any angle, so the seam does not show.
 	 *
-	 * The layer underneath has that same disc taken out of it. It used to be
-	 * the whole picture, on the reasoning that identical pixels over identical
-	 * pixels change nothing to look at — true only while the top layer is at
-	 * rest. The moment it turned there were two puffins, one standing still
-	 * under the other, which is what the instance chooser shows for as long as
-	 * it takes to answer it.
+	 * The layer underneath has the disc taken out rather than being the whole
+	 * picture: identical pixels over identical pixels change nothing only while
+	 * both are at rest, and the moment one turned there were two puffins.
 	 *
 	 * The radius is a fraction of the half width. `circle()` percentages
 	 * resolve against the side, hence the halving; a radial gradient sized to
@@ -150,7 +148,7 @@
 		height={fill ? undefined : size}
 		style="-webkit-mask-image: {TURN_HOLE}; mask-image: {TURN_HOLE}"
 	/>
-	<img class="mark-turn" src={artwork} alt="" aria-hidden="true" style="clip-path: {TURN_CLIP}" />
+	<img class="mark-still" src={artwork} alt="" aria-hidden="true" style="clip-path: {TURN_CLIP}" />
 </span>
 
 <style>
@@ -169,8 +167,10 @@
 		}
 	}
 
-	.ontoplano-logo :global(.mark-turn) {
+	/* Turned back by whatever `$lib/mark-spin` turns the mark by. */
+	.ontoplano-logo :global(.mark-still) {
 		position: absolute;
 		inset: 0;
+		rotate: calc(-1 * var(--mark-turn, 0deg));
 	}
 </style>

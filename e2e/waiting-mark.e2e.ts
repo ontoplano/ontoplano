@@ -28,7 +28,7 @@ test('the header mark turns while a navigation drags, then finishes its turn upr
 	});
 	await visit(page, '/tasks/todo');
 
-	const mark = page.locator('header [data-tour=rooms] .mark-turn');
+	const mark = page.locator('header [data-tour=rooms]');
 	await expect(mark).toBeVisible();
 
 	const angle = () =>
@@ -36,8 +36,9 @@ test('the header mark turns while a navigation drags, then finishes its turn upr
 			(el as HTMLElement).style.rotate ? parseFloat((el as HTMLElement).style.rotate) : null
 		);
 
-	// Nothing in flight: the mark stands still, wearing no rotation at all.
-	expect(await angle()).toBeNull();
+	// Once the load's own turn has landed, the mark stands still, wearing no
+	// rotation at all.
+	await expect.poll(angle, { timeout: 5000 }).toBeNull();
 
 	let release: () => void = () => {};
 	const held = new Promise<void>((resolve) => (release = resolve));
@@ -63,25 +64,42 @@ test('the header mark turns while a navigation drags, then finishes its turn upr
 test.describe('on a phone', () => {
 	test.use({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
 
-	test('only the medallion turns in the bar; the button stands still', async ({ page }) => {
+	test('the octagon turns in the bar and the bird stays where it is', async ({ page }) => {
 		await register(page, testEmail('bar-turn'));
 		await visit(page, '/tasks/todo');
 
 		const button = page.locator('nav [data-tour=rooms]');
 		await expect(button).toBeVisible();
-		const medallion = button.locator('.mark-turn');
-		await expect(medallion).toHaveCount(1);
-		// A disc: the one shape that turns without clipping or revealing.
-		expect(await medallion.evaluate((el) => (el as HTMLElement).style.clipPath)).toContain(
-			'circle'
-		);
+		const bird = button.locator('.mark-still');
+		await expect(bird).toHaveCount(1);
+		// A disc: the one shape that can be turned back inside a turning octagon
+		// without its edge showing.
+		expect(await bird.evaluate((el) => (el as HTMLElement).style.clipPath)).toContain('circle');
 
-		// Turning the medallion moves nothing: not itself off-centre, and not
-		// the button around it.
+		// Turned as the spin turns it: the button about its own centre, and the
+		// bird back by as much, so it ends where it began.
 		const before = await button.boundingBox();
-		await medallion.evaluate((el) => ((el as HTMLElement).style.rotate = '137deg'));
+		const birdBefore = await bird.boundingBox();
+		await button.evaluate((el) => {
+			(el as HTMLElement).style.rotate = '137deg';
+			(el as HTMLElement).style.setProperty('--mark-turn', '137deg');
+		});
+		await expect.poll(() => bird.evaluate((el) => getComputedStyle(el).rotate)).toBe('-137deg');
+		const birdDuring = await bird.boundingBox();
 		const during = await button.boundingBox();
-		expect(Math.abs(during!.x - before!.x)).toBeLessThan(1);
-		expect(Math.abs(during!.y - before!.y)).toBeLessThan(1);
+		const centre = (b: { x: number; y: number; width: number; height: number }) => [
+			b.x + b.width / 2,
+			b.y + b.height / 2
+		];
+		for (const [was, now] of [
+			[before!, during!],
+			[birdBefore!, birdDuring!]
+		]) {
+			const [ax, ay] = centre(was);
+			const [bx, by] = centre(now);
+			expect(Math.abs(ax - bx)).toBeLessThan(1);
+			expect(Math.abs(ay - by)).toBeLessThan(1);
+		}
+		expect(Math.abs(birdDuring!.width - birdBefore!.width)).toBeLessThan(1);
 	});
 });

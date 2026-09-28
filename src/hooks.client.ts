@@ -155,17 +155,19 @@ const RINGER_ASK_MS = 400;
  * there: the layout stops the turn as soon as it is not waiting for anything,
  * and `stopMarkSpin` finishes the circle rather than cutting it.
  *
- * The word comes off the address straight away. It describes one arrival, and
- * a reload should not turn the mark for a load that already happened.
+ * Every load turns it now, so the word only has to come off the address, where
+ * it would otherwise be copied along with the link.
  */
 {
 	const url = new URL(location.href);
 	if (url.searchParams.get(SPINNING_PARAM) === '1') {
 		url.searchParams.delete(SPINNING_PARAM);
 		history.replaceState(history.state, '', url);
-		const marks = [...document.querySelectorAll<HTMLElement>('[data-mark]')];
-		if (marks.length > 0) startMarkSpin(marks, 0);
 	}
+	// Every load turns it, not only one the chooser handed over: the layout's
+	// first `afterNavigate` lands it, so even the quickest load goes round once.
+	const marks = [...document.querySelectorAll<HTMLElement>('[data-mark]')];
+	if (marks.length > 0) startMarkSpin(marks, 0);
 }
 
 if (isIsolated()) {

@@ -38,12 +38,16 @@ const SPIN_UP_MS = 1000;
 const SLOWEST = 0.5;
 const DECEL_DEGREES = 90;
 
+/** The most one frame may advance the turn by, however long it really took. */
+const LONGEST_FRAME_MS = 1000 / 30;
+
 /** Ease-out: quick at first, gentler as it approaches the top. */
 const eased = (t: number) => 1 - (1 - t) * (1 - t);
 
 /** Everybody waiting for the turn to land. See `stopMarkSpin`. */
 let landed: (() => void)[] = [];
 
+/** What turns: the mark's own octagon, and anything shaped like it behind it. */
 let els: HTMLElement[] = [];
 let raf = 0;
 let angle = 0;
@@ -65,8 +69,49 @@ export function hintMarkSpin(direction: number): void {
 /** Where the wind-down rests: the next full turn, in the turn's own direction. */
 let restAt = 0;
 
+/** The app's own marks carry this, so a turn can find them before anything hydrates. */
+const MARK_SELECTOR = '[data-mark]';
+
 function paint(deg: number): void {
-	for (const el of els) el.style.rotate = `${deg}deg`;
+	/*
+	 * Asked afresh each frame. A load's turn starts on the marks the server
+	 * rendered, and hydration can put new nodes in their place — on a phone,
+	 * after the layout has already said it is done — and a stale list turned
+	 * the detached ones while the ones on screen stood upright: the mark
+	 * stopping dead mid-turn. The bird's layer is looked up again for the
+	 * same reason.
+	 */
+	const found = document.querySelectorAll<HTMLElement>(MARK_SELECTOR);
+	els = els.filter((el) => el.isConnected);
+	for (const el of found) {
+		if (els.includes(el)) continue;
+		el.style.transition = 'none';
+		els.push(el);
+	}
+	// The bird's layer turns back by `--mark-turn` in the Logo's own CSS, so a
+	// layer hydration swaps in mid-turn is right from its first frame.
+	for (const el of els) {
+		el.style.rotate = `${deg}deg`;
+		el.style.setProperty('--mark-turn', `${deg}deg`);
+	}
+}
+
+/*
+ * Taking the turn off without it showing.
+ *
+ * A root can carry a utility transition that covers `rotate` — the header's
+ * mark does — and dropping the angle and the `transition: none` in one go
+ * lets that transition play the angle back to zero: a quick turn backwards,
+ * which is the flick at the end of a load. So the angle goes first, the style
+ * is flushed, and only then does the transition come back.
+ */
+function settle(list: HTMLElement[]): void {
+	for (const el of list) {
+		el.style.removeProperty('rotate');
+		el.style.removeProperty('--mark-turn');
+	}
+	if (list.length > 0) void list[0].offsetWidth;
+	for (const el of list) el.style.removeProperty('transition');
 }
 
 function rest(): void {
@@ -76,10 +121,7 @@ function rest(): void {
 	last = 0;
 	windingDown = false;
 	hint = 0;
-	for (const el of els) {
-		el.style.removeProperty('rotate');
-		el.style.removeProperty('transition');
-	}
+	settle(els);
 	els = [];
 	// Whoever was waiting for it to come to rest — the chooser leaves when it
 	// has, so that the turn is finished rather than cut off by a navigation.
@@ -90,7 +132,9 @@ function rest(): void {
 
 function frame(now: number): void {
 	if (!last) last = now;
-	const dt = now - last;
+	// A long frame — a load hydrating — slows the turn rather than skipping a
+	// piece of it, so it never jumps round to upright and calls that landing.
+	const dt = Math.min(now - last, LONGEST_FRAME_MS);
 	last = now;
 
 	/*
@@ -118,7 +162,7 @@ function frame(now: number): void {
 /**
  * The wait is on: turn these, the way the screens are moving.
  *
- * `direction` is the navigation's own — the medallion turns with the rooms
+ * `direction` is the navigation's own — the octagon turns with the rooms
  * rather than always the one way. Calling again mid-wind-down keeps the turn,
  * taking the new direction with it.
  */
@@ -130,21 +174,23 @@ export function startMarkSpin(
 		return;
 
 	/*
-	 * Only the medallion turns — the rim of the mark stands still.
+	 * The octagon turns and the bird inside it stands still.
 	 *
-	 * The layer is the Logo's own (`.mark-turn`), and a root that has not got
-	 * one turns nothing at all. It used to turn whole, which is right for a
-	 * mark and wrong for everything else that might be handed in: the phone
-	 * bar's ground is an octagon of flat colour a little larger than the
-	 * button, and turning it swept its corners out past a mark that was
-	 * standing still.
+	 * Each root turns whole — the rim, and the octagon the phone bar's button
+	 * is clipped to, so the clip goes round with the drawing instead of cutting
+	 * its corners off — and the medallion inside it (the Logo's `.mark-still`)
+	 * is turned back by the same angle in the same frame. A root without one,
+	 * the bar's ground behind the button, just turns with the rest.
+	 *
+	 * Calling again mid-turn adds whatever is new and keeps the angle, so a
+	 * mark that was re-rendered picks the turn up where it was rather than
+	 * starting upright while the old one is taken off.
 	 */
-	els = marks
-		.map((el) => el?.querySelector<HTMLElement>('.mark-turn'))
-		.filter((el): el is HTMLElement => Boolean(el));
-	// The turn writes `rotate` every frame; a utility transition covering the
-	// rotate property would smear each step into the next.
+	const roots = marks.filter((el): el is HTMLElement => Boolean(el));
+	for (const el of roots) if (!els.includes(el)) els.push(el);
+	els = els.filter((el) => el.isConnected || roots.includes(el));
 	for (const el of els) el.style.transition = 'none';
+	if (raf) paint(angle);
 
 	// The rooms' direction wins; a tab's hint speaks when the rooms did not
 	// move; with neither, the turn keeps its old clockwise.

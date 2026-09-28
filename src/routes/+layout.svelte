@@ -566,10 +566,11 @@
 		 * carries it round to the next upright however early it is asked —
 		 * which from a standing start is one whole turn.
 		 *
-		 * `-changedRoom`, so the medallion turns the way the rooms are sweeping;
+		 * `-changedRoom`, so the octagon turns the way the rooms are sweeping;
 		 * zero where nothing slid, which spins it the one way it always did.
 		 */
-		if (navigation.to && !navigation.willUnload) startMarkSpin([deskMark, barMark], -changedRoom);
+		if (navigation.to && !navigation.willUnload)
+			startMarkSpin([deskMark, barMark, barGround], -changedRoom);
 
 		// Named again rather than left to `slides`: the same test, in the shape
 		// that tells the compiler these three are really here.
@@ -778,9 +779,10 @@
 	 * navigation quick enough to be over inside one flush was never seen as a
 	 * wait — which on a desktop is most of them.
 	 */
-	/* The two marks the spin turns: the header's and the phone bar's. */
+	/* What the spin turns: the header's mark, the phone bar's, and its ground. */
 	let deskMark = $state<HTMLElement>();
 	let barMark = $state<HTMLElement>();
+	let barGround = $state<HTMLElement>();
 	/*
 	 * The turn is started and stopped by the navigation itself — see
 	 * `beforeNavigate` and `afterNavigate` above. This is only the giving up:
@@ -823,7 +825,7 @@
 	 */
 	$effect(() => {
 		if (!busy()) return;
-		startMarkSpin([deskMark, barMark], 0);
+		startMarkSpin([deskMark, barMark, barGround], 0);
 		return () => void stopMarkSpin();
 	});
 
@@ -1563,19 +1565,18 @@
 						larger, which gives the mark an edge to end at.
 					-->
 					<!--
-						And it stands still while the mark turns.
+						And it turns with the mark, round the mark's own centre.
 
-						It used to turn with it, from back when the whole mark turned:
-						two octagons out of step leave a rim that thins and thickens
-						eight times a turn, and holding them together fixed that. What
-						turns now is the medallion inside the ring, a disc, so there is
-						nothing left to keep in step with — and a second octagon turning
-						behind one that is not swings its corners out past the rim, in a
-						colour meant never to be seen as a shape.
+						The two are one octagon and a hair: turned apart, or about
+						centres a fraction of a rem out of line, the rim thins and
+						thickens eight times a turn. `data-mark` puts it in the turn
+						from the first frame of a load, before any of this hydrates.
 					-->
 					<span
+						bind:this={barGround}
+						data-mark
 						aria-hidden="true"
-						style="clip-path: {MARK_CLIP_PATH}; top: calc(-1 * var(--bar-mark-ground-rise)); height: var(--bar-mark-ground); width: var(--bar-mark-ground); background: {barField}"
+						style="clip-path: {MARK_CLIP_PATH}; top: calc(-1 * var(--bar-mark-ground-rise)); height: var(--bar-mark-ground); width: var(--bar-mark-ground); transform-origin: 50% calc(var(--bar-mark-ground-rise) - var(--bar-mark-rise) + var(--bar-mark) / 2); background: {barField}"
 						class="pointer-events-none absolute left-1/2 -translate-x-1/2"
 					></span>
 					<!-- `data-mark` names it for code that runs before this component
