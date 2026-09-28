@@ -507,7 +507,7 @@
 		{#snippet openLink(href: string)}
 			<!-- Every caller passes a resolved path. -->
 			<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -->
-			<a {href} class="text-xs whitespace-nowrap text-gray-500 hover:text-gray-900"
+			<a {href} class="text-xs whitespace-nowrap text-gray-600 hover:text-gray-900"
 				>{t('home.open')}</a
 			>
 		{/snippet}

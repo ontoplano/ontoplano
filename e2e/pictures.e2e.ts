@@ -60,8 +60,9 @@ test('an over-large picture is refused in words, and the page survives', async (
 	await gallery.locator('input[type="file"]').setInputFiles(HUGE);
 
 	// The sentence names both numbers, and it is on the page rather than on a
-	// 500 screen: nothing was sent, so nothing could fail to parse.
-	await expect(page.getByText(/at most \d+KB, and huge\.png is \d+KB/)).toBeVisible();
+	// 500 screen: nothing was sent, so nothing could fail to parse. The
+	// numbers are grouped the reader's way, so 1100 reads 1,100.
+	await expect(page.getByText(/at most [\d,.]+KB, and huge\.png is [\d,.]+KB/)).toBeVisible();
 	await expect(page).toHaveURL(/\/health\/recipes\/\d+/);
 	await expect(gallery.locator('img')).toHaveCount(0);
 
@@ -85,7 +86,7 @@ test('a note takes one too, and says why when it will not', async ({ page }) => 
 	// Too big: the writing is left exactly as it was, with no half-written
 	// placeholder for a picture that never arrived.
 	await page.locator('input[type="file"]').first().setInputFiles(HUGE);
-	await expect(page.getByText(/at most \d+KB, and huge\.png is \d+KB/)).toBeVisible();
+	await expect(page.getByText(/at most [\d,.]+KB, and huge\.png is [\d,.]+KB/)).toBeVisible();
 	await expect(box).toHaveValue('A note.');
 
 	// And one that fits writes itself into the text as markdown.
@@ -163,6 +164,8 @@ test('a person’s face is the way in to their picture', async ({ page }) => {
 	await page.getByRole('button', { name: /add person/i }).click();
 	await expect(page.getByRole('link', { name: /^Ana/ })).toBeVisible();
 
+	// The face at the head of their page, which is where picking them leads.
+	await page.getByRole('link', { name: /^Ana/ }).click();
 	await page.getByRole('button', { name: /add a picture of ana/i }).click();
 	await page.locator('input[name="file"]').setInputFiles(SMALL);
 	await expect(page.locator('[data-tour="people-list"] img')).toHaveCount(1, { timeout: 20000 });

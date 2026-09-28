@@ -2967,6 +2967,7 @@ export const messages: Catalogue = {
 	'settings.account.import.tags': '#Tags',
 	'settings.account.import.thatFileIsNotJson': 'Diese Datei ist kein JSON.',
 	'settings.account.import.thatIsJsonButNotAnExport': 'Das ist JSON, aber kein ontoplano-Export.',
+	'settings.account.import.theExportFile': 'Die Exportdatei',
 	'settings.account.import.theRestoreWouldRefuseThis':
 		'Die Wiederherstellung würde diese Datei ablehnen:',
 	'settings.account.import.this': 'Das',
@@ -3649,6 +3650,7 @@ export const messages: Catalogue = {
 	'shortcut.newWeeklyBlock': 'Neuer wöchentlicher Aufgabenblock',
 	'shortcut.newWidget': 'Neues Widget, wenn das Telefon dich hergeschickt hat',
 	'shortcut.newWins': 'Neue Erfolge',
+	'shortcut.newWorkout': 'New workout',
 	'shortcut.nextGoal': 'Nächstes Ziel',
 	'shortcut.nextPage': 'Nächste Seite',
 	'shortcut.nextPlaceInRoom': 'Nächster Ort in diesem Raum',
@@ -3811,6 +3813,7 @@ export const messages: Catalogue = {
 	'tasks.board.carriedOver': 'übertragen',
 	'tasks.board.carryCard': 'Karte übertragen ·',
 	'tasks.board.delete': 'löschen',
+	'tasks.board.deleteCard': '{title} löschen',
 	'tasks.board.deleteThis': 'Das löschen?',
 	'tasks.board.done': 'erledigt ·',
 	'tasks.board.dropHere': 'Hier ablegen',
@@ -3949,6 +3952,7 @@ export const messages: Catalogue = {
 	'tasks.plan.makeItOnceOnly': 'Nur einmalig machen',
 	'tasks.plan.makeItRecurrent': 'Wiederkehrend machen',
 	'tasks.plan.markAsDone': 'Als erledigt markieren',
+	'tasks.plan.markBlockAsDone': '{title} als erledigt markieren',
 	'tasks.plan.minutes': 'Minuten',
 	'tasks.plan.minutesBeforeItStarts': 'Minuten vor Beginn',
 	'tasks.plan.minutesBeforeItStartsEvery':
@@ -3972,6 +3976,7 @@ export const messages: Catalogue = {
 	'tasks.plan.press': 'Drücken',
 	'tasks.plan.pressAndHoldOnThe':
 		'Auf dem Raster gedrückt halten, um dort einen Aufgabenblock hinzuzufügen.',
+	'tasks.plan.putBlockBackToPending': '{title} zurück auf ausstehend setzen',
 	'tasks.plan.putItBackToPending': 'Zurück auf ausstehend setzen',
 	'tasks.plan.putThisOccurrenceBack': 'Dieses Vorkommen zurücklegen',
 	'tasks.plan.read': '{t} lesen',

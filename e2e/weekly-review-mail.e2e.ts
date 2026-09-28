@@ -17,20 +17,21 @@ test('the weekly review is off until it is asked for', async ({ page }) => {
 
 	// Scoped by the form rather than by the card's markup: the card is a
 	// component and its wrapper is its own business.
-	const toggle = page.locator('form[action="?/setWeeklyReviewMail"] button');
+	const toggle = page.locator('form[action="?/setWeeklyReviewMail"] input[type="checkbox"]');
 
 	// Off is what a new account gets: mail nobody asked for is spam however
 	// useful it is.
 	await expect(page.getByText(/^Off\./)).toBeVisible();
-	await expect(toggle).toHaveText('Turn on');
+	await expect(toggle).not.toBeChecked();
 
 	await toggle.click();
 	await expect(page.getByText(/One message on a Monday at \d\d:00/)).toBeVisible();
-	await expect(toggle).toHaveText('Turn off');
+	await expect(toggle).toBeChecked();
 
 	// And back, because a switch that only goes one way is a trap.
 	await toggle.click();
-	await expect(toggle).toHaveText('Turn on');
+	await expect(page.getByText(/^Off\./)).toBeVisible();
+	await expect(toggle).not.toBeChecked();
 });
 
 test('an unsigned unsubscribe link is a 404, not a way in', async ({ page }) => {

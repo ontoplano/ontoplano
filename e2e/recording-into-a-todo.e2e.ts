@@ -96,7 +96,8 @@ test('an older recording can be made into an idea too', async ({ page }) => {
 
 	// Waved away: the recording is kept, the offer goes, nothing was blocked.
 	await page.getByRole('button', { name: 'Dismiss' }).click();
-	await expect(page.getByText(/^Recorded /)).toHaveCount(0);
+	// The offer's sentence, not the sort control, which is also labelled Recorded.
+	await expect(page.getByText(/^Recorded .+\.$/)).toHaveCount(0);
 	await expect(page.locator('#audio-idea-form')).toHaveCount(0);
 
 	// And the row offers the same thing afterwards, so an old recording is not

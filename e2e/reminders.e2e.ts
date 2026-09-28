@@ -257,7 +257,9 @@ test.describe('on a phone', () => {
 		const before = (await howFar.boundingBox())!;
 
 		await seven.click();
-		await expect(page.getByText(/The next 7 days/)).toBeVisible({ timeout: 15_000 });
+		// The button says the window it is showing, once the list has come back.
+		await expect(page).toHaveURL(/days=7\b/, { timeout: 15_000 });
+		await expect(howFar).toHaveText(/^7 days/);
 		await page.waitForTimeout(400);
 
 		// These were links, and a link is a navigation, which puts you back at
@@ -406,7 +408,8 @@ test('a reminder that has already been is not "coming up"', async ({ page }) => 
 	// to read past. Scoped to that card: a reminder whose time has been is also
 	// *due*, so it correctly appears in the notification it fires as — which is
 	// a thing you dismiss, not a thing that is coming.
-	const comingUp = page.locator('section', { hasText: 'Coming up' }).first();
+	const comingUp = page.getByRole('region', { name: 'Coming up' });
+	await expect(comingUp).toBeVisible();
 	await expect(comingUp.getByText('long gone')).toHaveCount(0);
 });
 
@@ -430,12 +433,13 @@ test('a reminder that has been is still there to look at', async ({ page }) => {
 	await visit(page, '/reminders?days=7&past=1');
 	await expect(page.locator('main')).toBeVisible();
 
-	const past = page.locator('section', { hasText: 'Already been' }).first();
+	const past = page.getByRole('region', { name: 'Already been' });
 	await expect(past.getByText('long gone')).toBeVisible();
 
 	// And going back the other way still hides it.
 	await visit(page, '/reminders?days=7');
-	const comingUp = page.locator('section', { hasText: 'Coming up' }).first();
+	const comingUp = page.getByRole('region', { name: 'Coming up' });
+	await expect(comingUp).toBeVisible();
 	await expect(comingUp.getByText('long gone')).toHaveCount(0);
 });
 
@@ -485,10 +489,12 @@ test('a reminder that is already set can be moved, reworded and given a sound', 
 	await expect(page.getByText('take the bread out')).toHaveCount(0);
 	// The hour the way this reader's clock writes it — "08:15" or "8:15 AM"
 	// depending on the language, both of which contain this.
-	await expect(page.getByText(/8:15/).first()).toBeVisible();
+	// A phone carries it under the message and anything wider beside it: one
+	// of the two is drawn, whichever width this is.
+	const changed = page.locator('li', { hasText: 'take the loaf out' });
+	await expect(changed.getByText(/8:15/).filter({ visible: true })).toHaveCount(1);
 
 	// And the sound it was just given is visible before it goes off.
-	const changed = page.locator('li', { hasText: 'take the loaf out' });
 	await expect(changed.getByTitle('This one makes a sound')).toBeVisible();
 
 	// Silencing it again is the way back, and it is a different answer from

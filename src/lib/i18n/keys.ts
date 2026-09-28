@@ -2550,6 +2550,7 @@ export type MessageKey =
 	| 'settings.account.import.tags'
 	| 'settings.account.import.thatFileIsNotJson'
 	| 'settings.account.import.thatIsJsonButNotAnExport'
+	| 'settings.account.import.theExportFile'
 	| 'settings.account.import.theRestoreWouldRefuseThis'
 	| 'settings.account.import.this'
 	| 'settings.account.import.todoist'
@@ -3083,6 +3084,7 @@ export type MessageKey =
 	| 'shortcut.newWeeklyBlock'
 	| 'shortcut.newWidget'
 	| 'shortcut.newWins'
+	| 'shortcut.newWorkout'
 	| 'shortcut.nextGoal'
 	| 'shortcut.nextPage'
 	| 'shortcut.nextPlaceInRoom'
@@ -3228,6 +3230,7 @@ export type MessageKey =
 	| 'tasks.board.carriedOver'
 	| 'tasks.board.carryCard'
 	| 'tasks.board.delete'
+	| 'tasks.board.deleteCard'
 	| 'tasks.board.deleteThis'
 	| 'tasks.board.done'
 	| 'tasks.board.dropHere'
@@ -3351,6 +3354,7 @@ export type MessageKey =
 	| 'tasks.plan.makeItOnceOnly'
 	| 'tasks.plan.makeItRecurrent'
 	| 'tasks.plan.markAsDone'
+	| 'tasks.plan.markBlockAsDone'
 	| 'tasks.plan.minutes'
 	| 'tasks.plan.minutesBeforeItStarts'
 	| 'tasks.plan.minutesBeforeItStartsEvery'
@@ -3372,6 +3376,7 @@ export type MessageKey =
 	| 'tasks.plan.owed'
 	| 'tasks.plan.press'
 	| 'tasks.plan.pressAndHoldOnThe'
+	| 'tasks.plan.putBlockBackToPending'
 	| 'tasks.plan.putItBackToPending'
 	| 'tasks.plan.putThisOccurrenceBack'
 	| 'tasks.plan.read'
@@ -4481,6 +4486,7 @@ export interface MessageValuesFor {
 	'tags.uses.pictures': { count: number };
 	'tags.uses.tasks': { count: number };
 	'tasks.activities.showingCount': { count: number };
+	'tasks.board.deleteCard': { title: string | number };
 	'tasks.board.easeAtLeast': { value: string | number };
 	'tasks.board.edit': { title: string | number };
 	'tasks.board.markDone': { title: string | number };
@@ -4505,9 +4511,11 @@ export interface MessageValuesFor {
 	'tasks.plan.leadHours': { count: number };
 	'tasks.plan.leadHoursMinutes': { hours: string | number; minutes: string | number };
 	'tasks.plan.leadMinutes': { count: number };
+	'tasks.plan.markBlockAsDone': { title: string | number };
 	'tasks.plan.newBlockOn': { day: string | number };
 	'tasks.plan.nowTapATimeFor': { title: string | number };
 	'tasks.plan.on': { selectedDateStr: string | number; skip: string | number };
+	'tasks.plan.putBlockBackToPending': { title: string | number };
 	'tasks.plan.read': { t: string | number };
 	'tasks.plan.selected': { size: string | number };
 	'tasks.plan.selectedDragOne': { size: string | number };

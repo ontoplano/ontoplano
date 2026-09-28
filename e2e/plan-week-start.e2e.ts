@@ -33,11 +33,25 @@ async function startOn(page: import('@playwright/test').Page, weekday: string) {
 	await page.getByRole('option', { name: weekday }).click();
 }
 
-/** The weekday a "Sep 19 — Sep 25" span starts on, as the picker names it. */
+/**
+ * The weekday a "Sep 19 — Sep 25" span starts on, as the picker names it.
+ *
+ * In the year it is really in — the span is the week around today, so that is
+ * this year or the one either side — since `dates` reads every span in a
+ * fixed leap year, where the same date falls on another weekday.
+ */
 function weekdayOf(value: string, shift: number): string {
-	const [first] = dates(value);
+	const [month, day] = value.split(' — ')[0].split(' ');
+	const now = new Date();
+	const date = [now.getFullYear() - 1, now.getFullYear(), now.getFullYear() + 1]
+		.map((one) => new Date(`${month} ${day}, ${one}`))
+		.reduce((best, one) =>
+			Math.abs(one.getTime() - now.getTime()) < Math.abs(best.getTime() - now.getTime())
+				? one
+				: best
+		);
 	const names = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-	return names[(new Date(first).getUTCDay() + shift + 7) % 7];
+	return names[(date.getDay() + shift + 7) % 7];
 }
 
 /** The two dates in a span, with a shared leap year so month ends are real. */

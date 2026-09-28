@@ -722,7 +722,7 @@
 			}}
 			class="icon-btn icon-btn-danger"
 			title={t('ui.delete')}
-			aria-label={t('ui.delete')}
+			aria-label={t('tasks.board.deleteCard', { title: card.title })}
 		>
 			<Icon name="trash" />
 		</button>

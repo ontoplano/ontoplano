@@ -44,10 +44,13 @@ test('a card can be carried to another column without a drag', async ({ page }) 
 	// And the columns say they will take it.
 	await expect(page.locator('.is-landing').first()).toBeVisible();
 
-	// Put it down. On a phone the names above the columns are the target.
-	await page.getByRole('button', { name: /^Doing/ }).click();
+	// Put it down. On a phone the columns are stacked, and a press anywhere on
+	// one is the target — its header is the part somebody aims at.
+	const doing = page.locator('section.lane', { has: page.locator('header', { hasText: 'Doing' }) });
+	await doing.locator('header').click();
 	await expect(page.getByText(/Moving /)).toHaveCount(0);
-	await expect(page.getByRole('button', { name: /^Doing\s*1/ })).toBeVisible();
+	await expect(doing.locator('header')).toContainText('1');
+	await expect(doing.getByText('ring the plumber', { exact: true })).toBeVisible();
 });
 
 test('the move can be put back down without going anywhere', async ({ page }) => {

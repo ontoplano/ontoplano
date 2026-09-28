@@ -1001,225 +1001,232 @@
 				</div>
 			</Modal>
 
-			{#if upcoming.length === 0}
-				<EmptyState
-					icon={glyphFor('reminders')!}
-					title={data.past ? t('reminders.nothingWentOff') : t('reminders.nothingWaiting')}
-					description={data.past
-						? t('reminders.remindersThatHaveAlreadyFired')
-						: t('reminders.blocksWithAReminderBirthdays')}
-				/>
-			{:else}
-				<ul class="divide-y divide-gray-200">
-					{#each upcoming as reminder (reminder.key)}
-						<li class="px-4 py-3">
-							<div class="flex items-center gap-3">
-								<span class="shrink-0 text-gray-500" title={t(kindOf(reminder.subjectKind).label)}>
-									<Icon name={kindOf(reminder.subjectKind).icon} size={14} />
-								</span>
-								<span class="min-w-0 flex-1">
-									<span class="block truncate text-sm text-gray-900">{reminder.message}</span>
-									<span class="flex items-center gap-1.5 text-xs text-gray-500">
-										{t(kindOf(reminder.subjectKind).label)}
-										<!-- On a phone the time rides here, so the sentence keeps the width. -->
-										<span class="tabular sm:hidden">· {when(reminder.remindAt)}</span>
-										{#if reminder.shown}{t('reminders.alreadyShown')}{/if}
-										<!-- The one thing about a reminder you want to know before it
-								     happens rather than after. -->
-										{#if reminder.audible}
-											<span class="text-gray-700" title={t('reminders.thisOneMakesASound')}>
-												<Icon name="sound" size={12} />
-											</span>
-										{/if}
-									</span>
-								</span>
-								<span class="tabular hidden shrink-0 text-xs text-gray-500 sm:block"
-									>{when(reminder.remindAt)}</span
-								>
-
-								{#if reminder.id === null}
-									<!-- Nothing to change or remove: it is not a row, it is a date
-							     in the address book or on a bill. -->
+			<!-- Named for which way it looks, so the list can be found by what it is. -->
+			<section aria-label={data.past ? t('reminders.alreadyBeen') : t('reminders.comingUp')}>
+				{#if upcoming.length === 0}
+					<EmptyState
+						icon={glyphFor('reminders')!}
+						title={data.past ? t('reminders.nothingWentOff') : t('reminders.nothingWaiting')}
+						description={data.past
+							? t('reminders.remindersThatHaveAlreadyFired')
+							: t('reminders.blocksWithAReminderBirthdays')}
+					/>
+				{:else}
+					<ul class="divide-y divide-gray-200">
+						{#each upcoming as reminder (reminder.key)}
+							<li class="px-4 py-3">
+								<div class="flex items-center gap-3">
 									<span
-										class="hidden shrink-0 sm:block"
-										style="width: calc(2 * var(--row-action-size) + 0.25rem)"
-									></span>
-								{:else if confirmingDelete === reminder.id}
-									<form
-										method="post"
-										action="?/remove"
-										use:enhance={() =>
-											async ({ update }) => {
-												await update();
-												// A reminder that is gone must stop being an alarm.
-												alarmsChanged();
-											}}
-										class="flex shrink-0 gap-1"
+										class="shrink-0 text-gray-500"
+										title={t(kindOf(reminder.subjectKind).label)}
 									>
-										<input type="hidden" name="id" value={reminder.id} />
-										<button type="submit" class="btn btn-sm btn-danger" use:armed
-											>{t('reminders.confirm')}</button
-										>
-										<button
-											type="button"
-											onclick={() => (confirmingDelete = null)}
-											class="btn btn-sm"
-										>
-											{t('ui.cancel')}
-										</button>
-									</form>
-								{:else}
-									<div class="list-row-actions">
-										<button
-											type="button"
-											onclick={() => (editing === reminder.id ? (editing = null) : edit(reminder))}
-											class="icon-btn shrink-0"
-											title={t('reminders.changeThisReminder')}
-											aria-label={t('reminders.change', { message: reminder.message })}
-											aria-expanded={editing === reminder.id}
-										>
-											<Icon name="edit" />
-										</button>
-										<button
-											type="button"
-											onclick={() => (confirmingDelete = reminder.id)}
-											class="icon-btn icon-btn-danger shrink-0"
-											title={t('reminders.removeThisReminder')}
-											aria-label={t('reminders.remove', { message: reminder.message })}
-										>
-											<Icon name="trash" />
-										</button>
-									</div>
-								{/if}
-							</div>
+										<Icon name={kindOf(reminder.subjectKind).icon} size={14} />
+									</span>
+									<span class="min-w-0 flex-1">
+										<span class="block truncate text-sm text-gray-900">{reminder.message}</span>
+										<span class="flex items-center gap-1.5 text-xs text-gray-500">
+											{t(kindOf(reminder.subjectKind).label)}
+											<!-- On a phone the time rides here, so the sentence keeps the width. -->
+											<span class="tabular sm:hidden">· {when(reminder.remindAt)}</span>
+											{#if reminder.shown}{t('reminders.alreadyShown')}{/if}
+											<!-- The one thing about a reminder you want to know before it
+									     happens rather than after. -->
+											{#if reminder.audible}
+												<span class="text-gray-700" title={t('reminders.thisOneMakesASound')}>
+													<Icon name="sound" size={12} />
+												</span>
+											{/if}
+										</span>
+									</span>
+									<span class="tabular hidden shrink-0 text-xs text-gray-500 sm:block"
+										>{when(reminder.remindAt)}</span
+									>
 
-							<!--
-							The same four questions, opened on the row itself.
-
-							Behind a press rather than always drawn: a list of twenty
-							reminders is a list, not twenty forms. What it must not do is
-							move anything above it, which is why it grows downward inside
-							its own row.
-						-->
-							<!--
-							`reminder.id !== null` first, and it is the whole bug.
-
-							A bill's date and a birthday are rows in this list with no
-							reminder behind them yet, so their id is null — and `editing`
-							starts as null too. `editing === reminder.id` was therefore
-							`null === null` for every one of them, which is true: the page
-							opened with an edit form under every derived row it could
-							show. Nothing was being edited; they all just looked like it.
-						-->
-							{#if reminder.id !== null && editing === reminder.id}
-								<form
-									method="post"
-									action="?/edit"
-									use:enhance={() => {
-										return async ({ result, update }) => {
-											await update({ reset: false });
-											if (result.type === 'success') {
-												editing = null;
-												alarmsChanged();
-											}
-										};
-									}}
-									class="mt-3 space-y-3 border-t border-gray-200 pt-3"
-								>
-									<input type="hidden" name="id" value={reminder.id} />
-									<FormGrid>
-										<Field label={t('reminders.day')} span={6} required>
-											<input
-												name="day"
-												type="date"
-												required
-												min={data.today}
-												autocomplete="off"
-												bind:value={editDay}
-												onfocus={pick}
-												onclick={pick}
-												class="input"
-											/>
-										</Field>
-										<Field
-											label={t('reminders.time')}
-											span={6}
-											hint={t('reminders.emptyMeansAt', { at: dayStartSaid })}
+									{#if reminder.id === null}
+										<!-- Nothing to change or remove: it is not a row, it is a date
+								     in the address book or on a bill. -->
+										<span
+											class="hidden shrink-0 sm:block"
+											style="width: calc(2 * var(--row-action-size) + 0.25rem)"
+										></span>
+									{:else if confirmingDelete === reminder.id}
+										<form
+											method="post"
+											action="?/remove"
+											use:enhance={() =>
+												async ({ update }) => {
+													await update();
+													// A reminder that is gone must stop being an alarm.
+													alarmsChanged();
+												}}
+											class="flex shrink-0 gap-1"
 										>
-											<input
-												name="time"
-												type="time"
-												autocomplete="off"
-												bind:value={editTime}
-												class="input"
-											/>
-										</Field>
-										<Field label={t('reminders.whatToSay')} span={12} required>
-											<OneLine name="label" required bind:value={editSay} class="input" />
-										</Field>
-									</FormGrid>
-
-									{@render whyNotThisTime(editDay, editTime)}
-
-									<div class="flex flex-wrap items-center gap-4">
-										<label
-											class="flex items-center gap-2 text-sm whitespace-nowrap text-gray-700"
-											title={t('reminders.whetherThisOneMakesA')}
-										>
-											{t('reminders.sound')}
-											<!--
-											Three answers, because a row has three.
-
-											A checkbox can only say yes or no, and the commonest state
-											of a nudge before a block is neither: it says nothing and
-											does whatever that kind of reminder is set to. Ticking a
-											box would quietly turn that into an answer of its own.
-										-->
-											<select name="sound" bind:value={editSound} class="select w-36">
-												<option value="kind">{t('reminders.followTheKind')}</option>
-												<option value="on">{t('reminders.makeASound')}</option>
-												<option value="off">{t('reminders.silent')}</option>
-											</select>
-										</label>
-										<label
-											class="flex items-center gap-2 text-sm whitespace-nowrap text-gray-700"
-											title={t('reminders.whichSoundThisOnePlays')}
-										>
-											{t('reminders.which')}
-											<select
-												name="ringtoneId"
-												bind:value={editTone}
-												disabled={editSound !== 'on'}
-												class="select w-40"
+											<input type="hidden" name="id" value={reminder.id} />
+											<button type="submit" class="btn btn-sm btn-danger" use:armed
+												>{t('reminders.confirm')}</button
 											>
-												<option value="">{t('reminders.default')}</option>
-												{#each data.ringtones as tone (tone.id)}
-													<option value={String(tone.id)}>{tone.name}</option>
-												{/each}
-											</select>
-										</label>
-										<div class="ml-auto flex gap-2">
-											<button type="button" onclick={() => (editing = null)} class="btn btn-sm">
+											<button
+												type="button"
+												onclick={() => (confirmingDelete = null)}
+												class="btn btn-sm"
+											>
 												{t('ui.cancel')}
 											</button>
+										</form>
+									{:else}
+										<div class="list-row-actions">
 											<button
-												type="submit"
-												disabled={hasBeen(editDay, editTime) || isTooSoon(editDay, editTime)}
-												class="btn btn-primary btn-sm"
-												title={hasBeen(editDay, editTime)
-													? t('reminders.thatTimeHasAlreadyBeen2')
-													: t('reminders.saveThisReminder')}
+												type="button"
+												onclick={() =>
+													editing === reminder.id ? (editing = null) : edit(reminder)}
+												class="icon-btn shrink-0"
+												title={t('reminders.changeThisReminder')}
+												aria-label={t('reminders.change', { message: reminder.message })}
+												aria-expanded={editing === reminder.id}
 											>
-												{t('ui.save')}
+												<Icon name="edit" />
+											</button>
+											<button
+												type="button"
+												onclick={() => (confirmingDelete = reminder.id)}
+												class="icon-btn icon-btn-danger shrink-0"
+												title={t('reminders.removeThisReminder')}
+												aria-label={t('reminders.remove', { message: reminder.message })}
+											>
+												<Icon name="trash" />
 											</button>
 										</div>
-									</div>
-								</form>
-							{/if}
-						</li>
-					{/each}
-				</ul>
-			{/if}
+									{/if}
+								</div>
+
+								<!--
+								The same four questions, opened on the row itself.
+
+								Behind a press rather than always drawn: a list of twenty
+								reminders is a list, not twenty forms. What it must not do is
+								move anything above it, which is why it grows downward inside
+								its own row.
+							-->
+								<!--
+								`reminder.id !== null` first, and it is the whole bug.
+
+								A bill's date and a birthday are rows in this list with no
+								reminder behind them yet, so their id is null — and `editing`
+								starts as null too. `editing === reminder.id` was therefore
+								`null === null` for every one of them, which is true: the page
+								opened with an edit form under every derived row it could
+								show. Nothing was being edited; they all just looked like it.
+							-->
+								{#if reminder.id !== null && editing === reminder.id}
+									<form
+										method="post"
+										action="?/edit"
+										use:enhance={() => {
+											return async ({ result, update }) => {
+												await update({ reset: false });
+												if (result.type === 'success') {
+													editing = null;
+													alarmsChanged();
+												}
+											};
+										}}
+										class="mt-3 space-y-3 border-t border-gray-200 pt-3"
+									>
+										<input type="hidden" name="id" value={reminder.id} />
+										<FormGrid>
+											<Field label={t('reminders.day')} span={6} required>
+												<input
+													name="day"
+													type="date"
+													required
+													min={data.today}
+													autocomplete="off"
+													bind:value={editDay}
+													onfocus={pick}
+													onclick={pick}
+													class="input"
+												/>
+											</Field>
+											<Field
+												label={t('reminders.time')}
+												span={6}
+												hint={t('reminders.emptyMeansAt', { at: dayStartSaid })}
+											>
+												<input
+													name="time"
+													type="time"
+													autocomplete="off"
+													bind:value={editTime}
+													class="input"
+												/>
+											</Field>
+											<Field label={t('reminders.whatToSay')} span={12} required>
+												<OneLine name="label" required bind:value={editSay} class="input" />
+											</Field>
+										</FormGrid>
+
+										{@render whyNotThisTime(editDay, editTime)}
+
+										<div class="flex flex-wrap items-center gap-4">
+											<label
+												class="flex items-center gap-2 text-sm whitespace-nowrap text-gray-700"
+												title={t('reminders.whetherThisOneMakesA')}
+											>
+												{t('reminders.sound')}
+												<!--
+												Three answers, because a row has three.
+
+												A checkbox can only say yes or no, and the commonest state
+												of a nudge before a block is neither: it says nothing and
+												does whatever that kind of reminder is set to. Ticking a
+												box would quietly turn that into an answer of its own.
+											-->
+												<select name="sound" bind:value={editSound} class="select w-36">
+													<option value="kind">{t('reminders.followTheKind')}</option>
+													<option value="on">{t('reminders.makeASound')}</option>
+													<option value="off">{t('reminders.silent')}</option>
+												</select>
+											</label>
+											<label
+												class="flex items-center gap-2 text-sm whitespace-nowrap text-gray-700"
+												title={t('reminders.whichSoundThisOnePlays')}
+											>
+												{t('reminders.which')}
+												<select
+													name="ringtoneId"
+													bind:value={editTone}
+													disabled={editSound !== 'on'}
+													class="select w-40"
+												>
+													<option value="">{t('reminders.default')}</option>
+													{#each data.ringtones as tone (tone.id)}
+														<option value={String(tone.id)}>{tone.name}</option>
+													{/each}
+												</select>
+											</label>
+											<div class="ml-auto flex gap-2">
+												<button type="button" onclick={() => (editing = null)} class="btn btn-sm">
+													{t('ui.cancel')}
+												</button>
+												<button
+													type="submit"
+													disabled={hasBeen(editDay, editTime) || isTooSoon(editDay, editTime)}
+													class="btn btn-primary btn-sm"
+													title={hasBeen(editDay, editTime)
+														? t('reminders.thatTimeHasAlreadyBeen2')
+														: t('reminders.saveThisReminder')}
+												>
+													{t('ui.save')}
+												</button>
+											</div>
+										</div>
+									</form>
+								{/if}
+							</li>
+						{/each}
+					</ul>
+				{/if}
+			</section>
 
 			<!--
 		Which kinds are worth hearing.

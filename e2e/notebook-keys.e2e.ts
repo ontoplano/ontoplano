@@ -82,23 +82,22 @@ test('h and l walk the tabs, j and k walk the notes', async ({ page }) => {
 	await expect(page.locator('form[action="?/updateEntry"]')).toBeVisible();
 	await page.keyboard.press('Escape');
 
-	// And the tabs, which stop at the ends too.
-	await expect(page.getByRole('button', { name: /^Notes \d/ })).toHaveAttribute(
-		'class',
-		/border-b-2/
-	);
+	// And the tabs, which stop at the ends too. The one you are on is the one
+	// the strip marks as current.
+	const tab = (name: RegExp) =>
+		page
+			.getByRole('navigation', { name: 'What this notebook holds' })
+			.getByRole('button', { name });
+	await expect(tab(/^Notes \d/)).toHaveAttribute('aria-current', 'page');
 	await page.keyboard.press('l');
-	await expect(page.getByRole('button', { name: /^Tasks/ })).toHaveAttribute('class', /border-b-2/);
+	await expect(tab(/^Tasks/)).toHaveAttribute('aria-current', 'page');
 	await page.keyboard.press('l');
-	await expect(page.getByRole('button', { name: /^Goals/ })).toHaveAttribute('class', /border-b-2/);
+	await expect(tab(/^Goals/)).toHaveAttribute('aria-current', 'page');
 	await page.keyboard.press('l');
-	await expect(page.getByRole('button', { name: /^Goals/ })).toHaveAttribute('class', /border-b-2/);
+	await expect(tab(/^Goals/)).toHaveAttribute('aria-current', 'page');
 	await page.keyboard.press('h');
 	await page.keyboard.press('h');
-	await expect(page.getByRole('button', { name: /^Notes \d/ })).toHaveAttribute(
-		'class',
-		/border-b-2/
-	);
+	await expect(tab(/^Notes \d/)).toHaveAttribute('aria-current', 'page');
 });
 
 test('the keys keep out of the way of somebody writing', async ({ page }) => {

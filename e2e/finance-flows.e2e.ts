@@ -55,15 +55,22 @@ test('a ledger, its statement, the rules and the plots', async ({ page }) => {
 	// rewritten afterwards, which re-sorts it again.
 	await page.getByRole('link', { name: 'Rules', exact: true }).click();
 	const categories = page.locator('section', { hasText: 'Categories' }).last();
-	await categories.locator('[name="heading"]').fill('Groceries');
-	await categories.locator('[name="pattern"]').fill('mercado');
-	await categories.getByRole('button', { name: 'Add' }).click();
+	// New and edit are one form, in a dialog.
+	await categories.getByRole('button', { name: 'New category' }).click();
+	const adding = page.getByRole('dialog', { name: 'New rule' });
+	await expect(adding.locator('[name="kind"]')).toHaveValue('category');
+	await adding.locator('[name="heading"]').fill('Groceries');
+	await adding.locator('[name="pattern"]').fill('mercado');
+	await adding.getByRole('button', { name: 'Add', exact: true }).click();
+	await expect(adding).toBeHidden();
 	await expect(categories.getByText('/mercado/i')).toBeVisible();
 
 	await categories.getByRole('button', { name: 'Edit Groceries' }).click();
-	await categories.locator('[name="heading"]').first().fill('Food');
-	await categories.locator('[name="pattern"]').first().fill('mercado|padaria');
-	await categories.getByRole('button', { name: 'Save' }).click();
+	const editing = page.getByRole('dialog', { name: 'Edit rule' });
+	await editing.locator('[name="heading"]').fill('Food');
+	await editing.locator('[name="pattern"]').fill('mercado|padaria');
+	await editing.getByRole('button', { name: 'Save', exact: true }).click();
+	await expect(editing).toBeHidden();
 	await expect(categories.getByText('/mercado|padaria/i')).toBeVisible();
 
 	/*

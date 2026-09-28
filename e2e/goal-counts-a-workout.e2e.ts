@@ -42,7 +42,7 @@ test('a goal can count a workout measure, and the number is read not typed', asy
 	// Offered only because something has actually been measured.
 	const counted = page.locator('#goal-form [data-picker="targetMeasure"]').first();
 	await expect(counted).toBeVisible();
-	await choose(page.locator('#goal-form'), 'targetMeasure', /^ran/);
+	await choose(page.locator('#goal-form'), 'targetMeasure', /^Counted from ran/);
 	// Choosing one takes the unit from the register, so two spellings of one
 	// unit do not become two units.
 	await expect(page.locator('#goal-form [name="targetUnit"]').first()).toHaveValue('km');

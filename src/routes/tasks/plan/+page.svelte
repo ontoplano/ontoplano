@@ -2312,7 +2312,10 @@
 			locale: t.locale,
 			twelveHour: wantsTwelveHour(now()),
 			notebookGlyph: ICONS.notebook,
-			markLabels: { done: t('tasks.plan.putItBackToPending'), undone: t('tasks.plan.markAsDone') },
+			markLabels: {
+				done: (title) => t('tasks.plan.putBlockBackToPending', { title }),
+				undone: (title) => t('tasks.plan.markBlockAsDone', { title })
+			},
 			firstDay: (data.weekFirstDay + 1) % 7
 		}),
 		events: gridEvents,
@@ -3205,11 +3208,11 @@
 													class="-m-1 flex shrink-0 p-1"
 													aria-pressed={item.mark === 'done'}
 													title={item.mark === 'done'
-														? t('tasks.plan.putItBackToPending')
-														: t('tasks.plan.markAsDone')}
+														? t('tasks.plan.putBlockBackToPending', { title: item.title })
+														: t('tasks.plan.markBlockAsDone', { title: item.title })}
 													aria-label={item.mark === 'done'
-														? t('tasks.plan.putItBackToPending')
-														: t('tasks.plan.markAsDone')}
+														? t('tasks.plan.putBlockBackToPending', { title: item.title })
+														: t('tasks.plan.markBlockAsDone', { title: item.title })}
 													onclick={() => toggleMark(item.kind, item.refId, day.date)}
 												>
 													<TickBox done={item.mark === 'done'} />

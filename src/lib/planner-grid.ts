@@ -681,8 +681,11 @@ export function baseGridOptions(
 		 * is plain TypeScript the tests import on their own.
 		 */
 		notebookGlyph?: string;
-		/** What the corner mark is called, as a control: tick it, untick it. */
-		markLabels?: { done: string; undone: string };
+		/**
+		 * What the corner mark is called, as a control: tick it, untick it —
+		 * naming the block, since a week of them each carries one.
+		 */
+		markLabels?: { done: (title: string) => string; undone: (title: string) => string };
 		/** The first column of a month, Sunday-based as the library counts. */
 		firstDay?: number;
 	} = {}
@@ -732,8 +735,9 @@ export function baseGridOptions(
 		if (!props.kind || typeof props.refId !== 'number') return '';
 		const mark = markOf(props.kind, props.refId, dateOf(info.event.start));
 		if (!mark) return '';
+		const title = typeof info.event.title === 'string' ? info.event.title : '';
 		const said = escapeHtml(
-			(mark === 'done' ? opts.markLabels?.done : opts.markLabels?.undone) ?? ''
+			(mark === 'done' ? opts.markLabels?.done(title) : opts.markLabels?.undone(title)) ?? ''
 		);
 		return `<span class="ec-event-mark ec-event-mark--${mark}" role="button" title="${said}" aria-label="${said}">${
 			mark === 'done' ? '✓' : '☐'

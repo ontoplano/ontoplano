@@ -16,7 +16,9 @@ test('the three theme words fit inside the menu', async ({ page }) => {
 	await register(page, testEmail('theme-row'));
 	await visit(page, '/');
 
-	await page.locator('header button[aria-label], header button[aria-expanded]').last().click();
+	// By its name: the header gained the help and the bell to its right in the
+	// markup, so "the last labelled button" is no longer the menu.
+	await page.getByRole('button', { name: 'Menu', exact: true }).click();
 	const dark = page.getByRole('button', { name: 'Dark', exact: true });
 	await expect(dark).toBeVisible();
 

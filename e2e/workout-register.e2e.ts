@@ -48,14 +48,15 @@ test('a session is written down, read back, corrected and removed', async ({ pag
 	await expect(page.getByRole('dialog').locator('[name="measureAmount"]').first()).toHaveValue('');
 	await page.getByRole('dialog').getByRole('button', { name: 'Cancel' }).click();
 
-	// Corrected: the lines are replaced by what the form now says.
-	await page.getByRole('button', { name: 'Correct the session on 2026-09-10' }).click();
+	// Corrected: the lines are replaced by what the form now says. The day is
+	// named the way the reader's language writes it, not as the stored string.
+	await page.getByRole('button', { name: /^Correct the session on Sep\w* 10\b/ }).click();
 	await page.getByRole('dialog').locator('[name="measureAmount"]').first().fill('125');
 	await page.getByRole('dialog').getByRole('button', { name: 'Save' }).click();
 	await expect(page.getByText('deadlifted 125 kg')).toBeVisible();
 
 	// And removed, behind its own confirmation.
-	await page.getByRole('button', { name: 'Remove the session on 2026-09-10' }).click();
+	await page.getByRole('button', { name: /^Remove the session on Sep\w* 10\b/ }).click();
 	await page.getByRole('dialog').getByRole('button', { name: 'Remove' }).click();
 	await expect(page.getByText('deadlifted 125 kg')).toHaveCount(0);
 });

@@ -195,7 +195,17 @@ test.describe('the strip itself', () => {
 		await visit(page, '/notebooks/ideas');
 
 		const strip = page.getByRole('navigation', { name: 'Notebooks sections' });
-		await expect(strip).toHaveAttribute('data-more', 'right');
+		// It continues to the right. It may continue to the left as well: the
+		// tab you are on is brought clear of the fade, which on a strip this
+		// narrow scrolls it along.
+		await expect(strip).toHaveAttribute('data-more', /^(right|both)$/);
+		const current = strip.locator('[aria-current="page"]');
+		await expect
+			.poll(async () => {
+				const [s, c] = await Promise.all([strip.boundingBox(), current.boundingBox()]);
+				return c!.x >= s!.x - 1 && c!.x + c!.width <= s!.x + s!.width + 1;
+			})
+			.toBe(true);
 
 		const painted = await strip.evaluate((el) => {
 			const mask = getComputedStyle(el).maskImage;

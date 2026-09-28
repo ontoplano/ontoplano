@@ -330,6 +330,7 @@ export const borrowed: ReadonlySet<string> = new Set([
 	'shortcut.importAStatement',
 	'shortcut.navigateAccounts',
 	'shortcut.newLine',
+	'shortcut.newWorkout',
 	'sort.ascending',
 	'sort.descending',
 	'sort.direction',

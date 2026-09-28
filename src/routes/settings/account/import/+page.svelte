@@ -373,7 +373,7 @@
 					type="file"
 					accept=".json,application/json"
 					class="input"
-					aria-label={t('settings.account.import.restoreAnExport')}
+					aria-label={t('settings.account.import.theExportFile')}
 					onchange={readRestore}
 				/>
 				<input type="hidden" name="text" value={restoreText} />

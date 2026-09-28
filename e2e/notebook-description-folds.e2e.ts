@@ -32,7 +32,9 @@ async function openIt(page: Page, title: string) {
 		.getByRole('link', { name: new RegExp(title) })
 		.first()
 		.getAttribute('href');
-	const id = (href ?? '').split('=')[1] ?? '';
+	// Which address a cover links to depends on the width — its own page on a
+	// phone, `?notebook=` beside the shelf — so the id is read from either.
+	const id = (href ?? '').match(/(?:notebook=|\/notebooks\/)(\d+)/)?.[1] ?? '';
 	await visit(page, `/notebooks/${id}`);
 }
 

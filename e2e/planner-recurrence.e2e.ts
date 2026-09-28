@@ -155,8 +155,38 @@ test('a monthly block lands on its date and nowhere else', async ({ page }) => {
 	// The week that contains its date draws it once, wherever in the week that
 	// date falls — and the month, exactly once.
 	expect(await countIn(page, `/tasks/plan?from=${dayAfter(start, 0)}`, 'the-rent')).toBe(1);
-	expect(await countIn(page, `/tasks/plan?view=month&from=${target}`, 'the-rent')).toBe(1);
+	// The month grid runs whole weeks from the account's first weekday, so its
+	// leading and trailing days belong to the months either side — and the
+	// next month's occurrence is rightly drawn there. Its own days hold it once.
+	await countIn(page, `/tasks/plan?view=month&from=${target}`, 'the-rent');
+	expect(await inMonthOwnDays(page, 'the-rent')).toBe(1);
 });
+
+/**
+ * How many times a block is drawn on the month's own days.
+ *
+ * The month grid draws its blocks in a layer over the day cells rather than
+ * inside them, so which day a block is on is read from where it is drawn.
+ */
+async function inMonthOwnDays(page: Page, label: string): Promise<number> {
+	return page.evaluate((label) => {
+		const days = [...document.querySelectorAll<HTMLElement>('.ec-day')].map((day) => ({
+			rect: day.getBoundingClientRect(),
+			own: !day.classList.contains('ec-other-month')
+		}));
+		return [...document.querySelectorAll<HTMLElement>('.ec-event')]
+			.filter((event) => event.innerText.split('\n').some((line) => line.trim() === label))
+			.filter((event) => {
+				const box = event.getBoundingClientRect();
+				const x = box.left + box.width / 2;
+				const y = box.top + box.height / 2;
+				const day = days.find(
+					({ rect }) => x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom
+				);
+				return day?.own === true;
+			}).length;
+	}, label);
+}
 
 test('skipping one occurrence leaves the block’s other days alone', async ({ page }) => {
 	test.setTimeout(180_000);

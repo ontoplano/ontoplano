@@ -114,9 +114,9 @@ test('a notebook on screen wins over the main one', async ({ page }) => {
 
 	await visit(page, '/notebooks');
 	await page.getByText('Garden').first().click();
-	// The shelf opens it in place, naming it in the address.
-	await page.waitForURL(/[?&]notebook=\d+/);
-	const garden = new URL(page.url()).searchParams.get('notebook')!;
+	// On a phone the shelf opens it on its own page, named in the address.
+	await page.waitForURL(/\/notebooks\/\d+/);
+	const garden = new URL(page.url()).pathname.split('/').pop()!;
 
 	await openWheel(page);
 	await page.locator('[data-wedge="note"]').click();

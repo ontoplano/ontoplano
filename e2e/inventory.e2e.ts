@@ -505,6 +505,11 @@ test.describe('what the filters are hiding', () => {
 		await register(page, testEmail('inv-hidden'));
 		await visit(page, '/inventory');
 		await aHouse(page);
+		// The stock shows full things too, so one has to be full for Short to
+		// have anything to leave out.
+		const written = page.waitForResponse((r) => r.url().includes('setQty'));
+		await page.getByRole('button', { name: 'One more Olive oil' }).click();
+		await written;
 
 		const count = page.getByText(/^\d+ things? showing$/).last();
 		const panel = page.getByRole('heading', { name: 'Where things live' });

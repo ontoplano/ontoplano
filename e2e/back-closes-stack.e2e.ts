@@ -83,6 +83,9 @@ test('the task picker stacks over a maximized notebook (phone)', async ({ page }
 	await register(page, testEmail('back-stack-picker'));
 	await makeNotebook(page, 'Kitchen');
 	await visit(page, '/notebooks');
+	// A phone opens a notebook on its own page rather than beside the shelf.
+	await page.getByRole('link', { name: /^Kitchen/ }).click();
+	await page.waitForURL(/\/notebooks\/\d+/);
 
 	await page.getByRole('button', { name: /^Tasks \d/ }).click();
 	await page.getByRole('button', { name: 'New task', exact: true }).click();

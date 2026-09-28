@@ -206,6 +206,10 @@ export const PAGE_SHORTCUTS: Record<string, PageShortcuts> = {
 			{ key: 'Enter', action: 'toggle-expand', description: 'shortcut.expandCollapse' }
 		]
 	},
+	'/health/workouts': {
+		label: 'app.workouts',
+		shortcuts: [{ key: 'n', action: 'new', description: 'shortcut.newWorkout' }]
+	},
 	'/notebooks': {
 		label: 'app.notebooks',
 		// `BROWSE_SHORTCUTS` is the set `$lib/browse` answers for any screen that

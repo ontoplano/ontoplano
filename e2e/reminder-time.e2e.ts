@@ -18,8 +18,8 @@ test('the time a reminder was set for is the time it is listed at', async ({ pag
 	// An account whose zone is not the machine's, which is what the bug needed.
 	await visit(page, '/settings/preferences');
 	const zone = page.locator('select[name="timezone"]');
+	// The week's fields save on change; the notice is what says it stored.
 	await zone.selectOption('Asia/Tokyo');
-	await page.locator('form', { has: zone }).getByRole('button', { name: 'Save' }).click();
 	await expect(page.getByText('Week saved.')).toBeVisible();
 
 	/*

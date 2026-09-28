@@ -73,6 +73,12 @@ works is a key listed here and the reverse.
 | ------------ | ---------- |
 | <kbd>n</kbd> | New recipe |
 
+## Workouts — `/health/workouts`
+
+| Key          | Does        |
+| ------------ | ----------- |
+| <kbd>n</kbd> | New workout |
+
 ## To buy — `/inventory/stock`
 
 | Key          | Does                 |

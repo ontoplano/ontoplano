@@ -211,7 +211,12 @@ test.describe('the board on a phone', () => {
 		const title = 'A card that should end up Doing';
 		await newCard(page, title);
 
-		await page.getByRole('button', { name: 'Move this to another column' }).first().click();
+		// A new account's day already holds the starter week's cards, so the
+		// grip is the one on this card rather than the first on the board.
+		await page
+			.getByRole('button', { name: `Read ${title}` })
+			.getByRole('button', { name: 'Move this to another column' })
+			.click();
 		await page.locator('[data-tour="board-columns"] section').nth(1).click();
 		await page.waitForTimeout(900);
 
