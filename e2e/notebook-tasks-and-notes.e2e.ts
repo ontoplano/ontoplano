@@ -44,7 +44,7 @@ test('a notebook’s tasks are operated on where they are', async ({ page }) => 
 
 	// And ticked off, which the tab count says out loud.
 	await page.getByRole('button', { name: 'Mark complete' }).first().click();
-	await expect(page.getByRole('button', { name: 'Tasks 1/1' })).toBeVisible();
+	await expect(page.getByRole('button', { name: 'Tasks 1' })).toBeVisible();
 });
 
 test('a note can be put away and taken back out', async ({ page }) => {

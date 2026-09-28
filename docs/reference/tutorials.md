@@ -12,11 +12,13 @@ until somebody writes one in `src/lib/tutorials.ts`. The same gap is visible
 in the app: the `?` button goes red on a screen with no tour and says so
 under the pointer.
 
-**17 of 17 screens have one.**
+**19 of 20 screens have one.**
 
 | Screen                               | Tour              | Steps |
 | ------------------------------------ | ----------------- | ----- |
 | `/`                                  | tour.ontoplano    | 8     |
+| `/admin`                             | **none**          | —     |
+| `/finance/ledgers`                   | tour.ledgers      | 3     |
 | `/goals`                             | tour.goals        | 4     |
 | `/health/habits`                     | tour.habits       | 3     |
 | `/health/recipes`                    | tour.recipes      | 5     |
@@ -32,20 +34,19 @@ under the pointer.
 | `/tasks/activities`                  | tour.activities   | 3     |
 | `/tasks/board`                       | tour.board        | 4     |
 | `/tasks/plan`                        | tour.plan         | 8     |
+| `/tasks/review`                      | tour.review       | 3     |
 | `/tasks/todo`                        | tour.toDo         | 5     |
 
 Toured as well, though nothing obliges them to be — a screen reached from
 a link rather than from the navigation:
 
 - `/finance/bills` — tour.bills
-- `/finance/ledgers` — tour.ledgers
 - `/health/workouts` — tour.workouts
 - `/media/audios` — tour.recordings
 - `/media/gallery` — tour.gallery
 - `/reminders` — tour.reminders
 - `/search` — tour.search
 - `/settings/preferences` — tour.preferences
-- `/tasks/review` — tour.review
 
 ## What each one says
 

@@ -26,7 +26,12 @@ test('a ledger, its statement, the rules and the plots', async ({ page }) => {
 	await page.locator('[name="heading"]').fill('Current account');
 	await page.locator('[name="defaultParser"]').selectOption('nubank:conta_corrente');
 	await page.getByRole('button', { name: 'Create', exact: true }).click();
-	await expect(page.getByRole('button', { name: /^Current account Account/ })).toBeVisible();
+	// It is a tab along the top of the statement, with its balance beside it.
+	await expect(
+		page
+			.getByRole('navigation', { name: 'Ledgers' })
+			.getByRole('button', { name: /^Current account/ })
+	).toBeVisible();
 
 	// Its statement, pasted. The parser is already the ledger's own.
 	await page.getByRole('button', { name: 'Import', exact: true }).click();
@@ -74,7 +79,7 @@ test('a ledger, its statement, the rules and the plots', async ({ page }) => {
 	await page.getByRole('button', { name: 'Close' }).click();
 	await expect(page.getByText('Mercado Bom Preço')).toHaveCount(0);
 
-	// The line wears the category now — in its own column, and washing the row.
+	// The line wears the category now, in its own column.
 	await page.getByRole('link', { name: 'Ledgers', exact: true }).click();
 	await page.waitForURL(/\/finance\/ledgers/);
 	await expect(

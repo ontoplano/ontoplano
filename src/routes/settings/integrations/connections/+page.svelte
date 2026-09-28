@@ -22,7 +22,9 @@
 	import FormGrid from '$lib/components/FormGrid.svelte';
 	import Modal from '$lib/components/Modal.svelte';
 	import type { PageServerData, ActionData } from './$types';
-	import { keepInView } from '$lib/actions/keep-in-view';
+	import { listCursor } from '$lib/actions/list-cursor';
+	import type { StreamDisplay } from '$lib/services/streams';
+	import type { PlainKey } from '$lib/i18n/keys';
 	import { useT } from '$lib/i18n';
 
 	const t = useT();
@@ -70,6 +72,29 @@
 		confirmRevoke = null;
 		confirmDeleteStream = null;
 		confirmDeleteWebhook = null;
+	}
+
+	/** How a stream can be drawn, in words rather than its stored value. */
+	const DISPLAY_LABELS: Record<StreamDisplay, PlainKey> = {
+		line_chart: 'settings.integrations.connections.displayLine',
+		bar_chart: 'settings.integrations.connections.displayBars',
+		calendar_heatmap: 'settings.integrations.connections.displayCalendar',
+		latest_value: 'settings.integrations.connections.displayLatest',
+		list: 'settings.integrations.connections.displayList'
+	};
+
+	/*
+	 * A stream's settings are sent a moment after the last change rather than
+	 * on each one: a held arrow on the days box is a change per step.
+	 */
+	const SAVE_AFTER_MS = 500;
+	const pending = new WeakMap<HTMLFormElement, ReturnType<typeof setTimeout>>();
+	function saveSoon(form: HTMLFormElement) {
+		clearTimeout(pending.get(form));
+		pending.set(
+			form,
+			setTimeout(() => form.requestSubmit(), SAVE_AFTER_MS)
+		);
 	}
 
 	const eventLabel = (key: string) => {
@@ -295,10 +320,7 @@ Token: ${token}`;
 				</button>
 			{/snippet}
 			{#each data.tokens as token, i (token.id)}
-				<div
-					use:keepInView={selectedIndex === i}
-					class="list-row {selectedIndex === i ? 'kb-cursor' : ''}"
-				>
+				<div class="list-row" data-row use:listCursor={selectedIndex === i}>
 					<div class="list-row-main">
 						<p class="truncate text-sm font-medium text-gray-900">{token.name}</p>
 						<!--
@@ -328,7 +350,7 @@ Token: ${token}`;
 								<strong class="font-semibold">{token.tiedTo}</strong>
 							</p>
 						{/if}
-						<p class="mt-1 text-xs text-gray-500">
+						<p class="mt-1 max-w-3xl text-xs text-gray-500">
 							{token.scopes.map(scopeSentence).join(' · ') ||
 								t('settings.integrations.connections.noScopes')}
 							{#if token.lastUsedAt}
@@ -377,6 +399,22 @@ Token: ${token}`;
 					/>
 				</div>
 			{/each}
+			<!-- What every token shares, under the tokens rather than as a band
+			     at the foot of the page. -->
+			<div class="max-w-3xl space-y-1 px-4 py-3 text-xs text-gray-500">
+				<p>{t('settings.integrations.connections.theLimitsATokenMay')}</p>
+				<p>
+					{t('settings.integrations.connections.writingAPluginSee')}
+					<a
+						href="https://github.com/ontoplano/ontoplano/blob/master/docs/PLUGINS.md"
+						rel="external"
+						class="underline underline-offset-2 hover:text-gray-900"
+					>
+						{t('settings.integrations.connections.docsPluginsMd')}
+					</a>
+					{t('settings.integrations.connections.onGithub')}
+				</p>
+			</div>
 		</SettingGroup>
 
 		<!--
@@ -476,11 +514,19 @@ Token: ${token}`;
 							{/if}
 						</p>
 					</div>
+					<!--
+						Saved as it is changed, like every other setting: a tick of its
+						own on each row was a second step nobody expected.
+					-->
 					<form
 						method="post"
 						action="?/updateStream"
-						use:enhance
-						class="flex flex-wrap items-center justify-end gap-x-3 gap-y-2"
+						use:enhance={() =>
+							async ({ update }) => {
+								await update({ reset: false });
+							}}
+						onchange={(e) => saveSoon(e.currentTarget)}
+						class="controls-sm flex flex-wrap items-center justify-end gap-x-3 gap-y-2"
 					>
 						<input type="hidden" name="id" value={stream.id} />
 						<input type="hidden" name="label" value={stream.name} />
@@ -490,7 +536,9 @@ Token: ${token}`;
 							aria-label={t('settings.integrations.connections.display')}
 						>
 							{#each data.displays as display (display)}
-								<option value={display} selected={stream.display === display}>{display}</option>
+								<option value={display} selected={stream.display === display}
+									>{t(DISPLAY_LABELS[display])}</option
+								>
 							{/each}
 						</select>
 						<label class="flex items-center gap-1.5 text-sm text-gray-700">
@@ -511,9 +559,6 @@ Token: ${token}`;
 							/>
 							{t('settings.integrations.connections.days')}
 						</label>
-						<button type="submit" class="icon-btn" title={t('ui.save')} aria-label={t('ui.save')}
-							><Icon name="check" /></button
-						>
 					</form>
 					<form method="post" action="?/deleteStream" use:enhance class="list-row-actions">
 						<input type="hidden" name="id" value={stream.id} />
@@ -652,21 +697,6 @@ Token: ${token}`;
 				</div>
 			{/each}
 		</SettingGroup>
-
-		<div class="space-y-1 border-t border-gray-200 px-4 py-3 text-xs text-gray-500">
-			<p>{t('settings.integrations.connections.theLimitsATokenMay')}</p>
-			<p>
-				{t('settings.integrations.connections.writingAPluginSee')}
-				<a
-					href="https://github.com/ontoplano/ontoplano/blob/master/docs/PLUGINS.md"
-					rel="external"
-					class="underline underline-offset-2 hover:text-gray-900"
-				>
-					{t('settings.integrations.connections.docsPluginsMd')}
-				</a>
-				{t('settings.integrations.connections.onGithub')}
-			</p>
-		</div>
 	</RoomSurface>
 
 	<Modal

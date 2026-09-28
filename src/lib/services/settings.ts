@@ -428,6 +428,20 @@ export const PANEL_WIDTH = { min: 13, max: 34, fallback: 17 } as const;
 
 export const LOCATION_PANEL_WIDTH_KEY = 'inventory.location_panel_rem';
 export const NOTEBOOK_PANEL_WIDTH_KEY = 'notebooks.list_panel_rem';
+export const PEOPLE_PANEL_WIDTH_KEY = 'notebooks.people_panel_rem';
+
+/**
+ * Where the list of people starts, before anybody has dragged it.
+ *
+ * A person's row is a face, a name and a line about them beside two row
+ * buttons; at the general default the line under the name wrapped into three.
+ */
+export const PEOPLE_PANEL_FALLBACK = 22;
+
+/** Where this particular panel starts. See `PEOPLE_PANEL_FALLBACK`. */
+export function panelWidthFallback(key: string): number {
+	return key === PEOPLE_PANEL_WIDTH_KEY ? PEOPLE_PANEL_FALLBACK : PANEL_WIDTH.fallback;
+}
 
 /**
  * The narrowest the shelf of notebooks goes: one cover, and the padding round
@@ -451,11 +465,11 @@ export function panelWidthMin(key: string): number {
 
 export function getPanelWidth(userId: string, key: string): number {
 	const raw = getUserSetting(userId, key);
-	if (raw === null || raw.trim() === '') return PANEL_WIDTH.fallback;
+	if (raw === null || raw.trim() === '') return panelWidthFallback(key);
 	const rem = Number(raw);
 	return Number.isFinite(rem) && rem >= panelWidthMin(key) && rem <= PANEL_WIDTH.max
 		? rem
-		: PANEL_WIDTH.fallback;
+		: panelWidthFallback(key);
 }
 
 export function setPanelWidth(userId: string, key: string, rem: number): void {

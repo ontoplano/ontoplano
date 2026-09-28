@@ -213,6 +213,12 @@ bearer_token_env_var = "ONTOPLANO_KEY"
 
 	let using = $state('words');
 	const chosen = $derived(clients.find((c) => c.id === using) ?? clients[0]);
+	/* One assistant's answer as blocks: Claude's three ways, or the one snippet. */
+	const blocks = $derived(
+		chosen.ways ?? [
+			{ name: '', note: chosen.note ?? '', wrap: chosen.wrap, text: chosen.text ?? '' }
+		]
+	);
 
 	/** One legible line per call: whatever names the thing, never the raw JSON. */
 	function callLine(one: {
@@ -352,35 +358,31 @@ bearer_token_env_var = "ONTOPLANO_KEY"
 						Claude has three — the plugin, the command line, the desktop app —
 						and they are blocks under one choice rather than three choices.
 					-->
-					{#if chosen.ways}
-						<div class="mt-3 max-w-3xl space-y-5">
-							{#each chosen.ways as way (way.name)}
+					<!--
+						What it is beside the text to paste: the words in a column of
+						their own, the block in the width that is left, so a short
+						snippet does not leave half the row empty beside it.
+					-->
+					<div class="mt-3 space-y-5">
+						{#each blocks as way (way.name)}
+							<div class="snippet grid gap-2 lg:gap-6">
 								<div>
-									<h4 class="eyebrow text-gray-600">{way.name}</h4>
-									<p class="mt-1 max-w-2xl text-sm leading-relaxed text-gray-500">{way.note}</p>
-									<div class="mt-2">
-										<CopyBlock
-											text={way.text}
-											wrap={way.wrap}
-											label={t('settings.integrations.copyThis')}
-										/>
-									</div>
+									{#if way.name}<h4 class="eyebrow text-gray-600">{way.name}</h4>{/if}
+									<p class="text-sm leading-relaxed text-gray-500" class:mt-1={way.name}>
+										{way.note}
+									</p>
 								</div>
-							{/each}
-						</div>
-					{:else}
-						<p class="mt-3 max-w-2xl text-sm leading-relaxed text-gray-500">{chosen.note}</p>
-						<div class="mt-2 max-w-3xl">
-							<CopyBlock
-								text={chosen.text}
-								wrap={chosen.wrap}
-								label={t('settings.integrations.copyThis')}
-							/>
-						</div>
-					{/if}
+								<CopyBlock
+									text={way.text}
+									wrap={way.wrap}
+									label={t('settings.integrations.copyThis')}
+								/>
+							</div>
+						{/each}
+					</div>
 					<!-- Each snippet is the shortest correct version; what makes each
 					     client keep it is a page of its own in the docs. -->
-					<p class="mt-3 max-w-2xl text-sm leading-relaxed text-gray-500">
+					<p class="mt-3 text-sm leading-relaxed text-gray-500">
 						<a
 							href="{data.links.docs}/ai-agents#connect-it"
 							rel="external"
@@ -598,3 +600,11 @@ bearer_token_env_var = "ONTOPLANO_KEY"
 		{/snippet}
 	</Modal>
 </div>
+
+<style>
+	@media (width >= 64rem) {
+		.snippet {
+			grid-template-columns: minmax(0, 18rem) minmax(0, 1fr);
+		}
+	}
+</style>

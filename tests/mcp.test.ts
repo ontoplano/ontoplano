@@ -238,7 +238,8 @@ describe('a tool that runs', () => {
 			['remind_before_block', ['dismiss_reminder']],
 			['apply_idea', ['apply_idea']],
 			['favorite_idea', ['favorite_idea']],
-			['archive_recipe', ['archive_recipe']]
+			['archive_recipe', ['archive_recipe']],
+			['archive_habit', ['unarchive_habit']]
 			// add_goal, add_goal_area, add_habit and add_person have no delete
 			// on purpose — see the block comment in tools.ts: precious data is
 			// deleted by the person, in the app.

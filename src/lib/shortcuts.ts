@@ -223,7 +223,8 @@ export const PAGE_SHORTCUTS: Record<string, PageShortcuts> = {
 		shortcuts: [
 			{ key: 'j', action: 'navigate-down', description: 'shortcut.navigateTags' },
 			{ key: 'k', action: 'navigate-up', description: 'shortcut.navigateTags' },
-			{ key: 'e', action: 'edit', description: 'shortcut.editTag' }
+			{ key: 'e', action: 'edit', description: 'shortcut.editTag' },
+			{ key: 'Enter', action: 'toggle-expand', description: 'shortcut.expandCollapse' }
 		]
 	},
 	'/notebooks/people': {
@@ -231,7 +232,19 @@ export const PAGE_SHORTCUTS: Record<string, PageShortcuts> = {
 		shortcuts: [
 			{ key: 'j', action: 'navigate-down', description: 'shortcut.navigatePeople' },
 			{ key: 'k', action: 'navigate-up', description: 'shortcut.navigatePeople' },
-			{ key: 'n', action: 'new', description: 'shortcut.newPerson' }
+			{ key: 'n', action: 'new', description: 'shortcut.newPerson' },
+			{ key: 'Enter', action: 'open', description: 'shortcut.openTheOneUnderThe' },
+			{ key: 'e', action: 'edit', description: 'shortcut.editTheOneUnderThe' }
+		]
+	},
+	'/finance/ledgers': {
+		label: 'rooms.finance.tabs.ledgers',
+		// h/l walk the ledgers, the strip across the top of the statement.
+		shortcuts: [
+			...BROWSE_SHORTCUTS,
+			{ key: 'n', action: 'new', description: 'shortcut.newLine' },
+			{ key: 'i', action: 'import', description: 'shortcut.importAStatement' },
+			{ key: 'x', action: 'delete', description: 'shortcut.askToDelete' }
 		]
 	},
 	'/health/recipes': {

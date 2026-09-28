@@ -13,6 +13,8 @@ export type HabitActionNames = {
 	toggleOccurrence: string;
 	updateOccurrence: string;
 	deleteOccurrence: string;
+	archive: string;
+	unarchive: string;
 	remove: string;
 };
 
@@ -23,6 +25,8 @@ export const HABIT_ROOM_ACTIONS: HabitActionNames = {
 	toggleOccurrence: '?/toggleOccurrence',
 	updateOccurrence: '?/updateOccurrence',
 	deleteOccurrence: '?/deleteOccurrence',
+	archive: '?/archive',
+	unarchive: '?/unarchive',
 	remove: '?/delete'
 };
 
@@ -33,5 +37,7 @@ export const NOTEBOOK_HABIT_ACTIONS: HabitActionNames = {
 	toggleOccurrence: '?/habitToggleOccurrence',
 	updateOccurrence: '?/habitUpdateOccurrence',
 	deleteOccurrence: '?/habitDeleteOccurrence',
+	archive: '?/habitArchive',
+	unarchive: '?/habitUnarchive',
 	remove: '?/habitDelete'
 };

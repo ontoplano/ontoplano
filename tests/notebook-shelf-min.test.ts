@@ -29,7 +29,8 @@ function rems(pattern: RegExp, from: string): number {
 
 describe('the shelf of notebooks', () => {
 	it('can be squeezed to exactly one cover and its padding', () => {
-		const cover = rems(/repeat\(auto-fill,\s*([\d.]+)rem\)/, shelf);
+		// The narrowest a column may be, however the spare width is shared out.
+		const cover = rems(/repeat\(auto-fill,\s*(?:minmax\()?([\d.]+)rem/, shelf);
 		const padding = rems(/padding:\s*([\d.]+)rem/, shelf);
 		const floor = rems(/NOTEBOOK_PANEL_MIN = ([\d.]+)/, settings);
 

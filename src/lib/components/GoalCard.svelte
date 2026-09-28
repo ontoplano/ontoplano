@@ -19,7 +19,8 @@
 	import Written from '$lib/components/Written.svelte';
 	import Counter from '$lib/components/Counter.svelte';
 	import Modal from '$lib/components/Modal.svelte';
-	import { pillStyle } from '$lib/pill-ink';
+	import CategoryMark from '$lib/components/CategoryMark.svelte';
+	import { listCursor } from '$lib/actions/list-cursor';
 	import { enhance } from '$lib/enhance';
 	import { invalidateAll } from '$app/navigation';
 	import { armed } from '$lib/actions/armed';
@@ -109,6 +110,13 @@
 	/** The bar's width, or nothing where there is nothing to count. */
 	const pct = $derived(percent(goal));
 
+	/*
+	 * One bar per goal. When its whole progress is one measure, the bar sits
+	 * on that measure's line rather than on a line of its own above it that
+	 * says the same numbers again.
+	 */
+	const barOnMeasure = $derived(!goal.progress.total && goal.targets.length === 1);
+
 	function progressLabel(g: Shown): string {
 		// The tasks, when there are any: the measures under them say the rest.
 		if (g.progress.total)
@@ -171,10 +179,7 @@
 	the tasks that count towards it read as one kind of thing. The padding is
 	the row's own, so the hover wash and the cursor reach the card's edges.
 -->
-<div
-	id="goal-{goal.id}"
-	class="goal-row row-card target:bg-yellow-50 {selected ? 'kb-cursor' : ''}"
->
+<div id="goal-{goal.id}" class="goal-row row-card target:bg-yellow-50" use:listCursor={selected}>
 	<RowCard>
 		{#snippet rail()}
 			<!--
@@ -205,7 +210,7 @@
 						<span
 							class="flex size-7 items-center justify-center border border-gray-400 bg-gray-400 text-white"
 						>
-							<Icon name={goal.status === 'achieved' ? 'check' : 'close'} />
+							<Icon name={goal.status === 'achieved' ? 'check' : 'skip'} />
 						</span>
 					</button>
 				</form>
@@ -218,7 +223,7 @@
 			     actions stand on is not a line of nothing else. -->
 			<span class="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-gray-500">
 				{#if goal.areaName}
-					<span class="pill" style={pillStyle(goal.areaColor)}>{goal.areaName}</span>
+					<CategoryMark name={goal.areaName} color={goal.areaColor} />
 				{/if}
 				{#if !open && isGoalStatus(goal.status)}
 					<span class="eyebrow text-gray-600"
@@ -260,7 +265,7 @@
 					aria-label={t('goals.missed')}
 					onclick={() => closeLater('missed')}
 				>
-					<Icon name="close" />
+					<Icon name="skip" />
 				</button>
 			{/if}
 			<button
@@ -302,16 +307,16 @@
 		<!-- No bar without a measure. An empty track under a goal with nothing to
 		     count reads as "0%", which is a claim about progress rather than the
 		     absence of one. -->
-		<div class="mt-2 flex items-center gap-3">
-			{#if pct !== null}
-				<div class="progress-track h-1.5 min-w-16 flex-1 sm:max-w-xs">
-					<div class="progress-fill h-full" style="width: {pct}%"></div>
-				</div>
-			{/if}
-			<span class="tabular shrink-0 text-xs text-gray-600">
-				{progressLabel(goal)}{pct !== null ? ` · ${pct}%` : ''}
-			</span>
-		</div>
+		{#if !barOnMeasure}
+			<div class="mt-2 flex items-center gap-3">
+				{#if pct !== null}
+					{@render bar(pct)}
+				{/if}
+				<span class="tabular shrink-0 text-xs text-gray-600">
+					{progressLabel(goal)}{pct !== null ? ` · ${pct}%` : ''}
+				</span>
+			</div>
+		{/if}
 		<!--
 			Every measure the goal was given, each with the number it stands at. A
 			goal counted from linked tasks keeps them visible and editable: they are
@@ -319,59 +324,64 @@
 			loses the record.
 		-->
 		{#if goal.targets.length > 0}
-			<div class="mt-1.5 space-y-1">
+			<div class="goal-measures mt-1.5 space-y-1">
 				{#each goal.targets as target (target.id)}
-					<div class="flex flex-wrap items-center gap-2">
-						<!--
-							A measure counted from the workouts is read, not typed: the
-							sum of what the register holds for that activity inside the
-							goal's period. A box here would let somebody write a total
-							their own sessions contradict.
-						-->
-						{#if target.measureActivity}
-							<span class="chip shrink-0" title={t('goals.countedFromYourWorkouts')}>
-								<Icon name={routeGlyph('/health/workouts')!} size={12} class="mr-1" />
-								{target.measureActivity}
-							</span>
-							<span class="tabular text-xs text-gray-700">
-								{target.currentValue}
-							</span>
-						{:else}
+					<div class="flex flex-wrap items-center gap-x-3 gap-y-1">
+						<span class="flex items-center gap-2">
 							<!--
-								Counted or measured, the number answers the press at once and
-								is sent when the pressing stops — see `Counter`. A measured
-								one is typed as often as it is nudged, so it takes decimals.
+								A measure counted from the workouts is read, not typed: the
+								sum of what the register holds for that activity inside the
+								goal's period. A box here would let somebody write a total
+								their own sessions contradict.
 							-->
-							<Counter
-								value={target.currentValue}
-								action={actions.setProgress}
-								name="currentValue"
-								fields={{ targetId: target.id }}
-								step={COUNT_STEP}
-								whole={target.whole}
-								label={t('goals.progressTowards', {
-									value: target.targetValue,
-									unit: target.unit
-								}).trim()}
-								lessLabel={t('goals.oneFewerUnit', {
-									unit: target.unit || t('goals.towardsThis')
-								}).trim()}
-								moreLabel={t('goals.oneMoreUnit', {
-									unit: target.unit || t('goals.towardsThis')
-								}).trim()}
-								class="text-gray-700"
-							/>
-						{/if}
-						<span class="tabular text-xs text-gray-500">
-							/ {target.targetValue}
-							{target.unit}
+							{#if target.measureActivity}
+								<span class="chip shrink-0" title={t('goals.countedFromYourWorkouts')}>
+									<Icon name={routeGlyph('/health/workouts')!} size={12} class="mr-1" />
+									{target.measureActivity}
+								</span>
+								<span class="tabular text-sm text-gray-700">
+									{target.currentValue}
+								</span>
+							{:else}
+								<!--
+									Counted or measured, the number answers the press at once and
+									is sent when the pressing stops — see `Counter`. A measured
+									one is typed as often as it is nudged, so it takes decimals.
+								-->
+								<Counter
+									value={target.currentValue}
+									action={actions.setProgress}
+									name="currentValue"
+									fields={{ targetId: target.id }}
+									step={COUNT_STEP}
+									whole={target.whole}
+									label={t('goals.progressTowards', {
+										value: target.targetValue,
+										unit: target.unit
+									}).trim()}
+									lessLabel={t('goals.oneFewerUnit', {
+										unit: target.unit || t('goals.towardsThis')
+									}).trim()}
+									moreLabel={t('goals.oneMoreUnit', {
+										unit: target.unit || t('goals.towardsThis')
+									}).trim()}
+									class="goal-counter text-gray-700"
+								/>
+							{/if}
+							<span class="tabular text-xs text-gray-600">
+								/ {target.targetValue}
+								{target.unit}
+							</span>
 						</span>
-						<div class="progress-track h-1 w-16 shrink-0">
-							<div
-								class="progress-fill h-full"
-								style="width: {Math.round(target.fraction * 100)}%"
-							></div>
-						</div>
+						{#if barOnMeasure}
+							{@render bar(Math.round(target.fraction * 100))}
+							<span class="tabular shrink-0 text-xs text-gray-600"
+								>{Math.round(target.fraction * 100)}%</span
+							>
+						{:else}
+							<span class="tabular text-xs text-gray-500">{Math.round(target.fraction * 100)}%</span
+							>
+						{/if}
 					</div>
 				{/each}
 			</div>
@@ -428,6 +438,12 @@
 	</RowCard>
 </div>
 
+{#snippet bar(width: number)}
+	<div class="progress-track h-1.5 min-w-16 flex-1 sm:max-w-xs">
+		<div class="progress-fill h-full" style="width: {width}%"></div>
+	</div>
+{/snippet}
+
 <Modal bind:open={confirmingDelete} title={t('goals.deleteGoal')} size="sm">
 	<p class="text-sm text-gray-700">{t('goals.deleteGoalBody', { title: goal.title })}</p>
 
@@ -467,6 +483,14 @@
 	.goal-fold:hover {
 		color: var(--color-gray-900);
 		text-decoration: underline;
+	}
+
+	/*
+	 * The minus glyph stands on the text column rather than the button's
+	 * edge, so the counter lines up with the title above it.
+	 */
+	.goal-measures :global(.goal-counter) {
+		margin-inline-start: calc((0.875rem - 2.25rem) / 2);
 	}
 
 	/* A rule down one side is a line, not a box: it has no corners to round. */

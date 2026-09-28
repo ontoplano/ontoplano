@@ -27,6 +27,28 @@ works is a key listed here and the reverse.
 | <kbd>n</kbd> | New diary entry          |
 | <kbd>w</kbd> | New wins                 |
 
+## Accounts — `/admin`
+
+| Key              | Does                          |
+| ---------------- | ----------------------------- |
+| <kbd>j</kbd>     | Navigate accounts             |
+| <kbd>k</kbd>     | Navigate accounts             |
+| <kbd>Enter</kbd> | Open the one under the cursor |
+
+## Ledgers — `/finance/ledgers`
+
+| Key              | Does                          |
+| ---------------- | ----------------------------- |
+| <kbd>h</kbd>     | Move between tabs             |
+| <kbd>l</kbd>     | Move between tabs             |
+| <kbd>j</kbd>     | Navigate list                 |
+| <kbd>k</kbd>     | Navigate list                 |
+| <kbd>Enter</kbd> | Open the one under the cursor |
+| <kbd>e</kbd>     | Edit the one under the cursor |
+| <kbd>n</kbd>     | New line                      |
+| <kbd>i</kbd>     | Import a statement            |
+| <kbd>x</kbd>     | Ask to delete                 |
+
 ## Goals — `/goals`
 
 | Key          | Does                          |
@@ -100,19 +122,22 @@ works is a key listed here and the reverse.
 
 ## People — `/notebooks/people`
 
-| Key          | Does            |
-| ------------ | --------------- |
-| <kbd>j</kbd> | Navigate people |
-| <kbd>k</kbd> | Navigate people |
-| <kbd>n</kbd> | New person      |
+| Key              | Does                          |
+| ---------------- | ----------------------------- |
+| <kbd>j</kbd>     | Navigate people               |
+| <kbd>k</kbd>     | Navigate people               |
+| <kbd>n</kbd>     | New person                    |
+| <kbd>Enter</kbd> | Open the one under the cursor |
+| <kbd>e</kbd>     | Edit the one under the cursor |
 
 ## Tags — `/notebooks/tags`
 
-| Key          | Does                          |
-| ------------ | ----------------------------- |
-| <kbd>j</kbd> | Navigate tags                 |
-| <kbd>k</kbd> | Navigate tags                 |
-| <kbd>e</kbd> | Edit the tag under the cursor |
+| Key              | Does                          |
+| ---------------- | ----------------------------- |
+| <kbd>j</kbd>     | Navigate tags                 |
+| <kbd>k</kbd>     | Navigate tags                 |
+| <kbd>e</kbd>     | Edit the tag under the cursor |
+| <kbd>Enter</kbd> | Expand/collapse               |
 
 ## Account — `/settings/account`
 
@@ -141,20 +166,21 @@ works is a key listed here and the reverse.
 
 ## Activities — `/tasks/activities`
 
-| Key          | Does                   |
-| ------------ | ---------------------- |
-| <kbd>j</kbd> | Navigate list          |
-| <kbd>k</kbd> | Navigate list          |
-| <kbd>n</kbd> | New activity           |
-| <kbd>1</kbd> | Toggle category filter |
-| <kbd>2</kbd> | Toggle category filter |
-| <kbd>3</kbd> | Toggle category filter |
-| <kbd>4</kbd> | Toggle category filter |
-| <kbd>5</kbd> | Toggle category filter |
-| <kbd>6</kbd> | Toggle category filter |
-| <kbd>7</kbd> | Toggle category filter |
-| <kbd>8</kbd> | Toggle category filter |
-| <kbd>9</kbd> | Toggle category filter |
+| Key          | Does                          |
+| ------------ | ----------------------------- |
+| <kbd>j</kbd> | Navigate list                 |
+| <kbd>k</kbd> | Navigate list                 |
+| <kbd>n</kbd> | New activity                  |
+| <kbd>e</kbd> | Edit the one under the cursor |
+| <kbd>1</kbd> | Toggle category filter        |
+| <kbd>2</kbd> | Toggle category filter        |
+| <kbd>3</kbd> | Toggle category filter        |
+| <kbd>4</kbd> | Toggle category filter        |
+| <kbd>5</kbd> | Toggle category filter        |
+| <kbd>6</kbd> | Toggle category filter        |
+| <kbd>7</kbd> | Toggle category filter        |
+| <kbd>8</kbd> | Toggle category filter        |
+| <kbd>9</kbd> | Toggle category filter        |
 
 ## Board — `/tasks/board`
 
@@ -205,6 +231,13 @@ works is a key listed here and the reverse.
 | <kbd> </kbd> | Select/deselect (multiselect) |
 | <kbd>x</kbd> | Ask to delete selected        |
 | <kbd>p</kbd> | Copy to days (multiselect)    |
+
+## Review — `/tasks/review`
+
+| Key          | Does        |
+| ------------ | ----------- |
+| <kbd>[</kbd> | Switch week |
+| <kbd>]</kbd> | Switch week |
 
 ## Tasks — `/tasks/todo`
 

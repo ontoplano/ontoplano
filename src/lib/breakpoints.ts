@@ -15,3 +15,12 @@ export const PHONE_MEDIA = `(max-width: ${PHONE_BREAKPOINT - 1}px)`;
 export function isPhone(): boolean {
 	return typeof window !== 'undefined' && window.matchMedia(PHONE_MEDIA).matches;
 }
+
+/**
+ * Where a list and what it opens stand side by side — Tailwind's `lg`, which
+ * `SplitColumns` switches on. Below it the second column is under the first.
+ */
+export const SPLIT_BREAKPOINT = 1024;
+
+/** The media query for "the columns are side by side", matching the CSS `lg:` side. */
+export const SPLIT_MEDIA = `(min-width: ${SPLIT_BREAKPOINT}px)`;

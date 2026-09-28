@@ -1157,10 +1157,12 @@ export type MessageKey =
 	| 'health.workouts.keepIt'
 	| 'health.workouts.km'
 	| 'health.workouts.lastDone'
+	| 'health.workouts.lastDoneOn'
 	| 'health.workouts.markDone'
 	| 'health.workouts.measureSomethingElse'
 	| 'health.workouts.min'
 	| 'health.workouts.minutes'
+	| 'health.workouts.minutesAbout'
 	| 'health.workouts.moveDown'
 	| 'health.workouts.moveUp'
 	| 'health.workouts.nbspLastDone'
@@ -1172,6 +1174,7 @@ export type MessageKey =
 	| 'health.workouts.noWorkoutsYet'
 	| 'health.workouts.noneMatch'
 	| 'health.workouts.nothingWrittenDownYetRecord'
+	| 'health.workouts.orderBy'
 	| 'health.workouts.plan'
 	| 'health.workouts.planOntoADay'
 	| 'health.workouts.pushDay'
@@ -1190,6 +1193,7 @@ export type MessageKey =
 	| 'health.workouts.search'
 	| 'health.workouts.showThePlanFor'
 	| 'health.workouts.showingCount'
+	| 'health.workouts.sortLastDone'
 	| 'health.workouts.stopMeasuring'
 	| 'health.workouts.suggestedWhenYouWriteA'
 	| 'health.workouts.swimming'
@@ -2790,6 +2794,11 @@ export type MessageKey =
 	| 'settings.integrations.connections.daysEmptyMeansNever'
 	| 'settings.integrations.connections.deleteStream'
 	| 'settings.integrations.connections.display'
+	| 'settings.integrations.connections.displayBars'
+	| 'settings.integrations.connections.displayCalendar'
+	| 'settings.integrations.connections.displayLatest'
+	| 'settings.integrations.connections.displayLine'
+	| 'settings.integrations.connections.displayList'
 	| 'settings.integrations.connections.docsPluginsMd'
 	| 'settings.integrations.connections.eachDeliveryIsSignedWith'
 	| 'settings.integrations.connections.expires'
@@ -3057,7 +3066,6 @@ export type MessageKey =
 	| 'shortcut.navigateTokens'
 	| 'shortcut.navigateWidgets'
 	| 'shortcut.newActivity'
-	| 'shortcut.newBill'
 	| 'shortcut.newCard'
 	| 'shortcut.newDiaryEntry'
 	| 'shortcut.newEntry'
@@ -3070,7 +3078,6 @@ export type MessageKey =
 	| 'shortcut.newOneOffBlock'
 	| 'shortcut.newPerson'
 	| 'shortcut.newRecipe'
-	| 'shortcut.newRule'
 	| 'shortcut.newTodo'
 	| 'shortcut.newToken'
 	| 'shortcut.newWeeklyBlock'
@@ -3244,6 +3251,8 @@ export type MessageKey =
 	| 'tasks.board.nothingWrittenOnThisOne'
 	| 'tasks.board.numberKeysSet'
 	| 'tasks.board.orderCardsBy'
+	| 'tasks.board.putOnDay'
+	| 'tasks.board.putOnToday'
 	| 'tasks.board.rate'
 	| 'tasks.board.rateWhich'
 	| 'tasks.board.readThisCard'
@@ -3273,6 +3282,7 @@ export type MessageKey =
 	| 'tasks.plan.activity'
 	| 'tasks.plan.addOneOff'
 	| 'tasks.plan.addRepeatingBlock'
+	| 'tasks.plan.allDay'
 	| 'tasks.plan.alt'
 	| 'tasks.plan.backOneUnit'
 	| 'tasks.plan.backOneUnitPlain'
@@ -3349,13 +3359,16 @@ export type MessageKey =
 	| 'tasks.plan.newActivity'
 	| 'tasks.plan.newActivity2'
 	| 'tasks.plan.newBlock'
+	| 'tasks.plan.newBlockOn'
 	| 'tasks.plan.next7Days'
 	| 'tasks.plan.noCalendarsSubscribedYet'
 	| 'tasks.plan.noSchemesSavedYet'
 	| 'tasks.plan.notAtAll'
+	| 'tasks.plan.nothingPlanned'
 	| 'tasks.plan.nowTapATimeFor'
 	| 'tasks.plan.ofEachMonth'
 	| 'tasks.plan.on'
+	| 'tasks.plan.openTheDay'
 	| 'tasks.plan.owed'
 	| 'tasks.plan.press'
 	| 'tasks.plan.pressAndHoldOnThe'
@@ -3398,6 +3411,8 @@ export type MessageKey =
 	| 'tasks.plan.today'
 	| 'tasks.plan.today2'
 	| 'tasks.plan.translatex100Translatex8px'
+	| 'tasks.plan.trayAll'
+	| 'tasks.plan.trayFewer'
 	| 'tasks.plan.trayMore'
 	| 'tasks.plan.trayNarrowed'
 	| 'tasks.plan.undoesSnapsTo15min'
@@ -3407,6 +3422,7 @@ export type MessageKey =
 	| 'tasks.plan.viewGCycles'
 	| 'tasks.plan.week'
 	| 'tasks.plan.weekStarts'
+	| 'tasks.plan.weekStartsOn'
 	| 'tasks.plan.whichDay'
 	| 'tasks.plan.whileDraggingToDuplicateOr'
 	| 'tasks.plan.wonTComeBackNextWeek'
@@ -4099,7 +4115,9 @@ export interface MessageValuesFor {
 	'health.workouts.delete': { title: string | number };
 	'health.workouts.edit': { title: string | number };
 	'health.workouts.lastDone': { date: string | number };
+	'health.workouts.lastDoneOn': { date: string | number };
 	'health.workouts.markDone': { title: string | number };
+	'health.workouts.minutesAbout': { minutes: string | number };
 	'health.workouts.moveDown': { activity: string | number };
 	'health.workouts.moveUp': { activity: string | number };
 	'health.workouts.planOntoADay': { title: string | number };
@@ -4469,6 +4487,7 @@ export interface MessageValuesFor {
 	'tasks.board.markNotDone': { title: string | number };
 	'tasks.board.minutesFull': { count: number };
 	'tasks.board.movingPickAColumn': { title: string | number };
+	'tasks.board.putOnDay': { day: string | number };
 	'tasks.board.rateWhich': { rating: string | number };
 	'tasks.board.readThisCard': { title: string | number };
 	'tasks.board.removeTheReminderAt': { slice: string | number };
@@ -4486,6 +4505,7 @@ export interface MessageValuesFor {
 	'tasks.plan.leadHours': { count: number };
 	'tasks.plan.leadHoursMinutes': { hours: string | number; minutes: string | number };
 	'tasks.plan.leadMinutes': { count: number };
+	'tasks.plan.newBlockOn': { day: string | number };
 	'tasks.plan.nowTapATimeFor': { title: string | number };
 	'tasks.plan.on': { selectedDateStr: string | number; skip: string | number };
 	'tasks.plan.read': { t: string | number };
@@ -4493,6 +4513,7 @@ export interface MessageValuesFor {
 	'tasks.plan.selectedDragOne': { size: string | number };
 	'tasks.plan.startsOn': { day: string | number };
 	'tasks.plan.stopSubscribingTo': { name: string | number };
+	'tasks.plan.trayAll': { count: number };
 	'tasks.plan.trayMore': { count: number };
 	'tasks.plan.viewGCycles': { label: string | number };
 	'tasks.review.answersNotWritten': { count: number };

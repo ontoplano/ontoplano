@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { useWhen } from '$lib/when-context.svelte';
-	import { civilOf } from '$lib/when';
+	import { civilOf, today } from '$lib/when';
 	import { routeGlyph } from '$lib/glyphs';
 	import ShowingCount from '$lib/components/ShowingCount.svelte';
 	import SearchField from '$lib/components/SearchField.svelte';
@@ -9,6 +9,11 @@
 	import { setRoomAction } from '$lib/room-action.svelte';
 	import RoomSurface from '$lib/components/RoomSurface.svelte';
 	import FilterBar from '$lib/components/FilterBar.svelte';
+	import SortControl from '$lib/components/SortControl.svelte';
+	import CategoryMark from '$lib/components/CategoryMark.svelte';
+	import { listCursor } from '$lib/actions/list-cursor';
+	import { browsable } from '$lib/browse.svelte';
+	import { getAction, keyFor } from '$lib/shortcuts';
 	import Picker from '$lib/components/Picker.svelte';
 	import Field from '$lib/components/Field.svelte';
 	import FormGrid from '$lib/components/FormGrid.svelte';
@@ -32,6 +37,7 @@
 	/** Where "put it on a day" starts, before anybody changes it. */
 	const DEFAULT_START = '09:00';
 	const DEFAULT_MINUTES = 60;
+	const ROOM = '/health/workouts';
 
 	/*
 	 * What narrows the list: a name typed, a category picked. The archived
@@ -57,12 +63,47 @@
 		return true;
 	}
 
+	/*
+	 * The order, the same control every list has. By name is how the loader
+	 * sends them; "last done" ascending puts the one most overdue at the top,
+	 * which is the question a training week asks.
+	 */
+	const SORTS = ['title', 'lastDone', 'category', 'minutes'] as const;
+	type Sort = (typeof SORTS)[number];
+	const SORT_LABELS = {
+		title: 'ui.name',
+		lastDone: 'health.workouts.sortLastDone',
+		category: 'health.workouts.category',
+		minutes: 'health.workouts.minutes'
+	} as const;
+	let sortBy = $state<Sort>('title');
+	let sortDir = $state<'asc' | 'desc'>('asc');
+
+	type Workout = (typeof data.workouts)[number];
+	const categoryRank = $derived(new Map(data.categories.map((c, i) => [c.id, i])));
+
+	/** One comparison per order; ties fall back to the name, so the list never shuffles. */
+	function compare(a: Workout, b: Workout): number {
+		let by = 0;
+		if (sortBy === 'lastDone') by = (a.lastDoneAt ?? '').localeCompare(b.lastDoneAt ?? '');
+		else if (sortBy === 'category')
+			by =
+				(categoryRank.get(a.categoryId ?? -1) ?? data.categories.length) -
+				(categoryRank.get(b.categoryId ?? -1) ?? data.categories.length);
+		else if (sortBy === 'minutes') by = (a.minutes ?? 0) - (b.minutes ?? 0);
+		if (by !== 0) return sortDir === 'asc' ? by : -by;
+		const named = a.title.localeCompare(b.title);
+		return sortBy === 'title' && sortDir === 'desc' ? -named : named;
+	}
+
 	const narrowed = $derived(looking.trim() !== '' || categoryFilter !== 'all');
 	const allActive = $derived(data.workouts.filter((w) => !w.archived));
-	const active = $derived(allActive.filter(matches));
+	const active = $derived(allActive.filter(matches).sort(compare));
 	const allArchived = $derived(data.workouts.filter((w) => w.archived));
-	const archived = $derived(allArchived.filter(matches));
+	const archived = $derived(allArchived.filter(matches).sort(compare));
 	const showing = $derived(active.length + (showArchived ? archived.length : 0));
+	/** Every row on screen, in order — what j/k walks. */
+	const rows = $derived(showArchived ? [...active, ...archived] : active);
 
 	function clearFilters() {
 		looking = '';
@@ -85,10 +126,9 @@
 	/** The workout being put on a day. */
 	let scheduling: (typeof data.workouts)[number] | null = $state(null);
 
+	/** Today where the account lives, for the date fields' starting value. */
 	function todayStr(): string {
-		const d = new Date();
-		const pad = (n: number) => String(n).padStart(2, '0');
-		return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+		return today(now());
 	}
 
 	/*
@@ -121,6 +161,36 @@
 	let addingCategory = $state(false);
 	let editingCategory = $state<number | null>(null);
 	let confirmDeleteCategory = $state<number | null>(null);
+
+	/** Where j/k stands: an index into `rows`, or -1 before the first press. */
+	let cursor = $state(-1);
+	browsable(() => ({
+		items: () => rows,
+		cursor: () => cursor,
+		moveTo: (i) => (cursor = i),
+		open: (i) => {
+			const id = rows[i].id;
+			expanded = expanded === id ? null : id;
+		},
+		edit: (i) => openEdit(rows[i])
+	}));
+
+	function onkeydown(event: KeyboardEvent) {
+		if (event.metaKey || event.ctrlKey || event.altKey) return;
+		const target = event.target;
+		if (
+			document.querySelector('dialog[open]') ||
+			target instanceof HTMLInputElement ||
+			target instanceof HTMLTextAreaElement ||
+			target instanceof HTMLSelectElement ||
+			(target instanceof HTMLElement && target.isContentEditable)
+		)
+			return;
+		if (getAction(ROOM, event.key) === 'new') {
+			event.preventDefault();
+			openNew();
+		}
+	}
 
 	/*
 	 * The register: what was actually done, and how much of it.
@@ -280,19 +350,27 @@
 		if (lines.length === 0) lines.push(blankLine());
 	}
 
-	/**
-	 * The day a session happened, as a person would say it.
-	 *
-	 * `2026-09-10` is what the database holds, and a column of them is a column
-	 * to decode. The year is dropped inside the current one, where it is the
-	 * same on every row and says nothing.
-	 */
 	/* This screen's one verb, drawn by the room's bar — see $lib/room-action. */
 	setRoomAction(() => ({
 		label: t('health.workouts.newWorkout'),
-		run: openNew
+		run: openNew,
+		kbd: keyFor(ROOM, 'new')
 	}));
 </script>
+
+<svelte:window {onkeydown} />
+
+{#snippet sortControl()}
+	<SortControl
+		value={sortBy}
+		options={SORTS}
+		labels={SORT_LABELS}
+		direction={sortDir}
+		onpick={(next) => (sortBy = next)}
+		onflip={() => (sortDir = sortDir === 'asc' ? 'desc' : 'asc')}
+		label={t('health.workouts.orderBy')}
+	/>
+{/snippet}
 
 <!-- The controls and the workouts are one object — see `RoomSurface` — with
      the task list's strip along its top. -->
@@ -305,6 +383,7 @@
 				? ''
 				: (categoryChoices.find((c) => c.value === categoryFilter)?.label ?? '')}
 			onclear={clearFilters}
+			trailing={sortControl}
 		>
 			{#snippet lead()}
 				<SearchField bind:value={looking} label={t('health.workouts.search')} />
@@ -312,7 +391,7 @@
 			<!-- What the category picker picks from, at the end of the strip. -->
 			{#snippet verb()}
 				<StripVerb
-					icon="tag"
+					icon="blocks"
 					label={t('health.workouts.categories')}
 					onclick={() => (showCategories = true)}
 					aria-haspopup="dialog"
@@ -327,51 +406,46 @@
 					said={(count) => t('health.workouts.showingCount', { count })}
 				/>
 			{/snippet}
-			{#if data.categories.length > 0}
-				<Picker
-					value={categoryFilter}
-					options={categoryChoices}
-					onpick={(next) => (categoryFilter = next)}
-					label={t('health.workouts.category')}
-					class="min-w-36 flex-1 sm:flex-none"
-				/>
-			{/if}
-			<!-- Named with its number, so a put-away workout is never quietly gone. -->
-			<button
-				onclick={() => (showArchived = !showArchived)}
-				aria-pressed={showArchived}
-				class="btn btn-sm"
-				hidden={allArchived.length === 0 && !showArchived}
-			>
-				{t('health.workouts.archived', { length: allArchived.length })}
-			</button>
+			<!-- Two filters, so they stay out on a phone rather than behind a sheet. -->
+			{#snippet inline()}
+				{#if data.categories.length > 0}
+					<Picker
+						value={categoryFilter}
+						options={categoryChoices}
+						onpick={(next) => (categoryFilter = next)}
+						label={t('health.workouts.category')}
+					/>
+				{/if}
+				<!-- Named with its number, so a put-away workout is never quietly gone. -->
+				<button
+					onclick={() => (showArchived = !showArchived)}
+					aria-pressed={showArchived}
+					class="btn btn-sm shrink-0"
+					hidden={allArchived.length === 0 && !showArchived}
+				>
+					{t('health.workouts.archived', { length: allArchived.length })}
+				</button>
+			{/snippet}
 		</FilterBar>
 	{/snippet}
 
-	{#if allActive.length === 0 && !showArchived}
-		<EmptyState
-			icon={routeGlyph('/health/workouts')!}
-			title={t('health.workouts.noWorkoutsYet')}
-			description={t('health.workouts.writeAWorkoutDown')}
-		>
-			{#snippet action()}
-				<button onclick={openNew} class="btn btn-primary">
-					<Icon name="plus" />
-					{t('health.workouts.newWorkout')}
-				</button>
-			{/snippet}
-		</EmptyState>
-	{:else if showing === 0}
-		<EmptyState icon="search" title={t('health.workouts.noneMatch')}>
-			{#snippet action()}
-				<button onclick={clearFilters} class="btn">{t('filters.clear')}</button>
-			{/snippet}
-		</EmptyState>
+	{#if showing === 0}
+		<!-- None yet, or none that match: saying the first when the second is
+		     true reads as a list that lost something. -->
+		{#if narrowed}
+			<EmptyState filtered onclear={clearFilters} title={t('health.workouts.noneMatch')} />
+		{:else}
+			<EmptyState
+				icon={routeGlyph('/health/workouts')!}
+				title={t('health.workouts.noWorkoutsYet')}
+				description={t('health.workouts.writeAWorkoutDown')}
+			/>
+		{/if}
 	{/if}
 
 	{#if active.length > 0}
 		<ul class="divide-y divide-gray-200">
-			{#each active as workout (workout.id)}
+			{#each active as workout, i (workout.id)}
 				<!--
 					The card is a component, so a workout filed under a notebook is the
 					same workout this room shows — its plan, and the register of what
@@ -382,6 +456,7 @@
 					sessions={data.sessions}
 					actions={WORKOUT_ROOM_ACTIONS}
 					expanded={expanded === workout.id}
+					cursor={cursor === i}
 					onexpand={(id) => (expanded = expanded === id ? null : id)}
 					onedit={() => openEdit(workout)}
 					onlog={() => startLog(workout)}
@@ -401,13 +476,20 @@
 	{#if showArchived && archived.length > 0}
 		<!-- Put away, under the rest: back onto the list, or gone for good. -->
 		<ul class="divide-y divide-gray-200 {active.length > 0 ? 'border-t border-gray-200' : ''}">
-			{#each archived as workout (workout.id)}
-				<li class="list-row opacity-60 focus-within:opacity-100 hover:opacity-100">
+			{#each archived as workout, i (workout.id)}
+				<li
+					class="list-row opacity-60 focus-within:opacity-100 hover:opacity-100"
+					data-row
+					use:listCursor={cursor === active.length + i}
+				>
+					<span class="row-rail"></span>
 					<span class="list-row-main">
 						<span class="block text-sm font-medium break-words text-gray-900">{workout.title}</span>
-						<span class="block text-xs text-gray-500"
-							>{workout.categoryName ?? t('health.workouts.noCategory2')}</span
-						>
+						{#if workout.categoryName}
+							<span class="mt-1 flex"
+								><CategoryMark name={workout.categoryName} color={null} /></span
+							>
+						{/if}
 					</span>
 					<span class="list-row-actions">
 						<form method="post" action="?/archive" use:enhance>

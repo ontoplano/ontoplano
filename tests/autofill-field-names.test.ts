@@ -118,6 +118,9 @@ describe('form field names', () => {
 			for (const magnet of MAGNETS) {
 				const at = source.indexOf(`name="${magnet}"`);
 				if (at === -1) continue;
+				// A glyph is named too — `<Icon name="phone" />` — and is no field.
+				const tag = /<([A-Za-z][\w.]*)[^<]*$/.exec(source.slice(0, at))?.[1];
+				if (tag === 'Icon') continue;
 				// A hidden field carries no keyboard and no suggestion list, and
 				// several of them legitimately pass a name back to an action.
 				const nearby = source.slice(Math.max(0, at - 200), at);

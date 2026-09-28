@@ -108,10 +108,7 @@ export function describePeriod(t: Translate, when: When, horizon: Horizon, start
 		case 'day':
 			return dateOf(start, when);
 		case 'week':
-			return t('goals.weekOfDateYear', {
-				date: dayOf(start, when),
-				year: y
-			});
+			return t('goals.weekOfDateYear', { date: dateOf(start, when) });
 		case 'month':
 			return dayOf(start, when, { day: undefined, month: 'long', year: 'numeric' });
 		case 'quarter':

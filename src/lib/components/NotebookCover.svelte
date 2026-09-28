@@ -80,6 +80,7 @@
 	<a
 		{href}
 		class="cover-face {chosen ? 'is-chosen' : ''}"
+		title="{name} · {tally}"
 		aria-current={chosen ? 'true' : undefined}
 	>
 		<!-- A cover with no picture is a blank cover, not a cover with a notebook

@@ -9,9 +9,15 @@
 	import FilterBar from '$lib/components/FilterBar.svelte';
 	import ShowingCount from '$lib/components/ShowingCount.svelte';
 	import SearchField from '$lib/components/SearchField.svelte';
+	import SortControl from '$lib/components/SortControl.svelte';
+	import StripVerb from '$lib/components/StripVerb.svelte';
+	import TabStrip from '$lib/components/TabStrip.svelte';
 	import CategoryMark from '$lib/components/CategoryMark.svelte';
 	import RoomToolbar from '$lib/components/RoomToolbar.svelte';
 	import { setRoomAction } from '$lib/room-action.svelte';
+	import { browsable } from '$lib/browse.svelte';
+	import { listCursor } from '$lib/actions/list-cursor';
+	import { getAction, keyFor } from '$lib/shortcuts';
 	import { CSV_PARSER_KEY, sniffCsv, type CsvMapping } from '$lib/bank-parsers';
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
@@ -24,12 +30,15 @@
 	import FormError from '$lib/components/FormError.svelte';
 	import { armed } from '$lib/actions/armed';
 	import { formatMoney, type Currency } from '$lib/money';
+	import type { PlainKey } from '$lib/i18n/keys';
 	import type { PageServerData, ActionData } from './$types';
-	import LedgerTile from '$lib/components/LedgerTile.svelte';
 	import { useT } from '$lib/i18n';
 
 	const t = useT();
 	const now = useWhen();
+
+	/** Where this screen's keys are registered — `$lib/shortcuts`. */
+	const ROOM = '/finance/ledgers';
 
 	let { data, form }: { data: PageServerData; form: ActionData } = $props();
 
@@ -48,7 +57,8 @@
 	let showNewLedger = $state(false);
 	let editingLedger: Ledger | null = $state(null);
 	let deletingLedger: Ledger | null = $state(null);
-	let showArchived = $state(false);
+	/** The dialog that holds everything done to a ledger rather than to a line. */
+	let managing = $state(false);
 
 	let showImport = $state(false);
 	let statementText = $state('');
@@ -95,20 +105,24 @@
 		importForm?.requestSubmit();
 	}
 
-	function show(ledgerId: number) {
-		// The path is resolved; the rule cannot see through the appended query.
-		// eslint-disable-next-line svelte/no-navigation-without-resolve
-		void goto(`${resolve('/finance/ledgers')}?ledger=${ledgerId}`, { noScroll: true });
+	/** The ledger's own default, or the generic reader. */
+	function openImport() {
+		source = data.current?.defaultParser || CSV_PARSER_KEY;
+		showImport = true;
 	}
 
 	/** The filters ride the URL, so a view can be kept open or shared. */
-	function filter(changes: { q?: string; month?: string }) {
+	function filter(changes: { ledger?: number; q?: string; month?: string; loose?: boolean }) {
 		const params: [string, string][] = [];
-		if (data.current) params.push(['ledger', String(data.current.id)]);
+		const ledger = changes.ledger ?? data.current?.id;
 		const q = changes.q ?? data.query;
 		const month = changes.month ?? data.month;
+		const loose = changes.loose ?? data.loose;
+		if (ledger) params.push(['ledger', String(ledger)]);
 		if (q) params.push(['q', String(q)]);
 		if (month) params.push(['month', String(month)]);
+		if (loose) params.push(['uncategorized', '1']);
+		cursor = -1;
 		// The path is resolved; the rule cannot see through the appended query.
 		// eslint-disable-next-line svelte/no-navigation-without-resolve
 		void goto(`${resolve('/finance/ledgers')}?${new URLSearchParams(params)}`, {
@@ -116,6 +130,37 @@
 			keepFocus: true
 		});
 	}
+
+	/** Whether this ledger has lines no category claims, so the toggle is offered. */
+	const hasLoose = $derived(data.unsorted > 0 || data.loose);
+	const narrowed = $derived(Boolean(data.query || data.month || data.loose));
+	const clearFilters = () => filter({ q: '', month: '', loose: false });
+
+	/*
+	 * The order the lines are read in.
+	 *
+	 * A statement is newest first, and that stays the default; by amount is
+	 * "what were the big ones", by description groups one shop's lines.
+	 */
+	const ORDERS = ['day', 'amount', 'description'] as const;
+	type Order = (typeof ORDERS)[number];
+	const ORDER_LABELS: Record<Order, PlainKey> = {
+		day: 'finance.ledgers.day',
+		amount: 'ui.amount',
+		description: 'ui.description'
+	};
+	let order = $state<Order>('day');
+	let direction = $state<'asc' | 'desc'>('desc');
+
+	const lines = $derived.by(() => {
+		const sign = direction === 'asc' ? 1 : -1;
+		const by: Record<Order, (a: Movement, b: Movement) => number> = {
+			day: (a, b) => a.occurredOn.localeCompare(b.occurredOn) || a.id - b.id,
+			amount: (a, b) => a.amountCents - b.amountCents,
+			description: (a, b) => a.description.localeCompare(b.description)
+		};
+		return [...data.movements].sort((a, b) => sign * by[order](a, b));
+	});
 
 	/* A row's day the app's one way: `Sep 12`. The band above says the year. */
 	const dayOf = (iso: string) => dayOfWhen(iso, now());
@@ -126,33 +171,135 @@
 	 * A row says its day and month and nothing says which year — fine until
 	 * the list crosses new year's, where Dec 31 sits above Jan 1
 	 * and they are twelve months apart. A band across the list says which
-	 * year the rows under it belong to, the way a bank statement does. The
-	 * first row gets one too: the newest year is a fact worth stating rather
-	 * than leaving to be inferred from the ones below.
+	 * year the rows under it belong to, the way a bank statement does. Only
+	 * while the lines run by day: in any other order a band would split one
+	 * year into dozens.
 	 */
 	const yearBands = $derived(
-		new Map(
-			data.movements
-				.map((m, i) => [
-					m.id,
-					i === 0 || m.occurredOn.slice(0, 4) !== data.movements[i - 1].occurredOn.slice(0, 4)
-						? m.occurredOn.slice(0, 4)
-						: null
-				])
-				.filter((entry): entry is [number, string] => entry[1] !== null)
-		)
+		order !== 'day'
+			? new Map<number, string>()
+			: new Map(
+					lines
+						.map((m, i) => [
+							m.id,
+							i === 0 || m.occurredOn.slice(0, 4) !== lines[i - 1].occurredOn.slice(0, 4)
+								? m.occurredOn.slice(0, 4)
+								: null
+						])
+						.filter((entry): entry is [number, string] => entry[1] !== null)
+				)
 	);
 	const asDecimal = (cents: number) => (Math.abs(cents) / 100).toFixed(2);
 	// The reader's own day: `toISOString` is UTC, which is tomorrow for the
 	// last hours of every evening in São Paulo.
 	const today = $derived(dayStamp(new Date(), now()));
 
-	/* This screen's one verb, drawn by the room's bar — see $lib/room-action. */
-	setRoomAction(() => ({
-		label: t('finance.ledgers.newLedger'),
-		run: () => (showNewLedger = true)
+	/*
+	 * This screen's one verb, drawn by the room's bar — see $lib/room-action.
+	 *
+	 * Writing a line is what a ledger is opened for most days; making another
+	 * ledger happens a handful of times ever, and lives with the ledgers.
+	 */
+	setRoomAction(() =>
+		data.current
+			? {
+					label: t('finance.ledgers.newLine'),
+					run: () => (showNewMovement = true),
+					kbd: keyFor(ROOM, 'new')
+				}
+			: { label: t('finance.ledgers.newLedger'), run: () => (showNewLedger = true) }
+	);
+
+	/* j/k down the lines, h/l across the ledgers, e to correct one. */
+	let cursor = $state(-1);
+	browsable(() => ({
+		items: () => lines,
+		cursor: () => cursor,
+		moveTo: (i) => (cursor = i),
+		tabs: {
+			of: active.map((l) => String(l.id)),
+			current: () => String(data.current?.id ?? ''),
+			go: (id) => filter({ ledger: Number(id), q: '', month: '', loose: false })
+		},
+		open: (i) => (editingId = lines[i].id),
+		edit: (i) => (editingId = lines[i].id)
 	}));
+
+	function onkeydown(event: KeyboardEvent) {
+		if (event.metaKey || event.ctrlKey || event.altKey) return;
+		const target = event.target;
+		if (
+			document.querySelector('dialog[open]') ||
+			target instanceof HTMLInputElement ||
+			target instanceof HTMLTextAreaElement ||
+			target instanceof HTMLSelectElement ||
+			(target instanceof HTMLElement && target.isContentEditable)
+		)
+			return;
+		if (!data.current) return;
+		const action = getAction(ROOM, event.key);
+		if (action === 'new') {
+			event.preventDefault();
+			showNewMovement = true;
+		} else if (action === 'import') {
+			event.preventDefault();
+			openImport();
+		} else if (action === 'delete' && cursor >= 0 && cursor < lines.length) {
+			// Arms the confirmation; it never deletes on its own.
+			event.preventDefault();
+			deletingMovement = lines[cursor];
+		}
+	}
+
+	/** The strip: each ledger with its balance, the way the tiles had it. */
+	const ledgerTabs = $derived(
+		active.map((l) => ({
+			label: l.name,
+			count: money(l.balanceCents)
+		}))
+	);
 </script>
+
+{#snippet monthPicker()}
+	<!--
+		The months this ledger has, not a date field.
+
+		`input type="month"` is a picker in Chromium and a bare text box
+		in Firefox, where typing "2" filters to nothing and the box
+		explains nothing. A list of the months there is something to
+		look at is native everywhere, and shorter.
+	-->
+	<Picker
+		value={data.month ?? ''}
+		options={[
+			{ value: '', label: t('finance.ledgers.everyMonth') },
+			...data.months.map((m) => ({ value: m, label: monthName(m) }))
+		]}
+		onpick={(next) => filter({ month: next })}
+		label={t('finance.ledgers.month')}
+	/>
+{/snippet}
+
+<!--
+	With the uncategorized toggle there are two filters, and a phone's strip has
+	no room for both beside the search box, so they fold into the sheet; the
+	month alone stays out.
+-->
+{#snippet bothFilters()}
+	{@render monthPicker()}
+	<!-- The lines no category claims, as a narrowing of this list: the Rules tab
+	     is where they get one. Same label pressed or not. -->
+	<button
+		type="button"
+		class="btn btn-sm shrink-0"
+		aria-pressed={data.loose}
+		onclick={() => filter({ loose: !data.loose })}
+	>
+		{t('finance.ledgers.uncategorizedCount', { count: data.unsorted })}
+	</button>
+{/snippet}
+
+<svelte:window {onkeydown} />
 
 <FormError message={form?.message} />
 
@@ -166,75 +313,35 @@
 	</RoomSurface>
 {:else}
 	<!--
-		One surface, top to bottom, rather than things in a field.
-
-		Which ledger, what it is and what can be done to it, what narrows it and
-		the lines themselves are one statement read downwards: the switcher along
-		the top, a rule under each band, the lines edge to edge.
+		One surface, top to bottom: which ledger (a strip of them, the way a
+		room's tabs are, each with its balance), what narrows its lines, and
+		the lines themselves. What is done to a ledger rather than to a line —
+		rename it, move it along, put it away — is in the Ledgers dialog at the
+		end of the strip; importing its statement sits beside it.
 	-->
 	<RoomSurface>
-		{#snippet tools()}
-			<div class="flex w-full flex-wrap items-center gap-2">
-				{#each active as ledger (ledger.id)}
-					<!--
-						The tile is a component, so a ledger filed under a notebook reads
-						the same way it does here — see `LedgerTile`.
-					-->
-					<LedgerTile
-						{ledger}
-						{currency}
-						current={data.current?.id === ledger.id}
-						onpick={(id) => show(id)}
-					/>
-				{/each}
-				<!-- One label, whichever way it is set: pressing it must not change
-				     its width. -->
-				{#if archived.length > 0}
-					<button
-						type="button"
-						class="btn btn-sm ml-auto"
-						aria-pressed={showArchived}
-						onclick={() => (showArchived = !showArchived)}
-						>{t('finance.ledgers.archivedCount', { count: archived.length })}</button
-					>
-				{/if}
-			</div>
-		{/snippet}
-
-		{#if showArchived && archived.length > 0}
-			<ul class="divide-y divide-gray-200 border-b border-gray-200">
-				{#each archived as ledger (ledger.id)}
-					<li class="list-row">
-						<span class="list-row-main truncate text-sm text-gray-600">{ledger.name}</span>
-						<span class="tabular text-xs text-gray-500"
-							>{t('finance.ledgers.lines', { count: ledger.count })}</span
-						>
-						<span class="list-row-actions">
-							<form method="post" action="?/archiveLedger" use:enhance>
-								<input type="hidden" name="id" value={ledger.id} />
-								<input type="hidden" name="archived" value="false" />
-								<button
-									class="icon-btn"
-									type="submit"
-									title={t('finance.ledgers.restore')}
-									aria-label={t('finance.ledgers.restore')}
-								>
-									<Icon name="undo" />
-								</button>
-							</form>
-							<button
-								class="icon-btn icon-btn-danger"
-								title={t('ui.delete')}
-								aria-label={t('finance.ledgers.delete', { name: ledger.name })}
-								onclick={() => (deletingLedger = ledger)}
-							>
-								<Icon name="trash" />
-							</button>
-						</span>
-					</li>
-				{/each}
-			</ul>
-		{/if}
+		<div class="ledger-strip">
+			<TabStrip
+				nested
+				label={t('rooms.finance.tabs.ledgers')}
+				tabs={ledgerTabs}
+				current={active.findIndex((l) => l.id === data.current?.id)}
+				onpick={(i) => filter({ ledger: active[i].id, q: '', month: '', loose: false })}
+			>
+				{#snippet trailing()}
+					<div class="ml-auto flex shrink-0 items-center gap-2">
+						{#if data.current}
+							<StripVerb icon="download" label={t('finance.ledgers.import')} onclick={openImport} />
+						{/if}
+						<StripVerb
+							icon="bank"
+							label={t('rooms.finance.tabs.ledgers')}
+							onclick={() => (managing = true)}
+						/>
+					</div>
+				{/snippet}
+			</TabStrip>
+		</div>
 
 		{#if !data.current}
 			<EmptyState
@@ -244,103 +351,22 @@
 			/>
 		{:else}
 			{@const current = data.current}
-			<!-- What this ledger is, and what can be done to it. -->
-			<div class="flex flex-wrap items-center gap-x-3 gap-y-2 border-b border-gray-200 px-4 py-3">
-				<span class="text-sm font-semibold text-gray-900">{current.name}</span>
-				<span class="text-xs text-gray-500">
-					{t(LEDGER_KIND_LABELS[current.kind])}{current.lastOn
-						? ` · ${t('finance.ledgers.lastOn', { day: civilOf(current.lastOn, now()) })}`
-						: ''}
-				</span>
-				{#if data.unsorted > 0}
-					<a href={resolve('/finance/rules')} class="btn btn-sm btn-quiet"
-						>{t('finance.ledgers.uncategorized', { unsorted: data.unsorted })}</a
-					>
-				{/if}
-				<!-- On a phone these are the row, not an afterthought pushed right. -->
-				<span class="flex w-full flex-wrap items-center gap-1 sm:ml-auto sm:w-auto">
-					<!-- The ledger's own default, or the generic reader: opening the
-					     screen with nothing chosen would make the first thing anybody
-					     does be choosing something they have no opinion about yet. -->
-					<button
-						class="btn btn-sm"
-						onclick={() => {
-							source = data.current?.defaultParser || CSV_PARSER_KEY;
-							showImport = true;
-						}}
-					>
-						<Icon name="download" />
-						{t('finance.ledgers.import')}
-					</button>
-					<button class="btn btn-sm" onclick={() => (showNewMovement = true)}>
-						<Icon name="plus" />
-						{t('finance.ledgers.line')}
-					</button>
-					<span class="ml-auto flex items-center gap-1">
-						<button
-							class="icon-btn"
-							title={t('ui.edit')}
-							aria-label={t('finance.ledgers.edit', { name: current.name })}
-							onclick={() => (editingLedger = current)}
-						>
-							<Icon name="edit" />
-						</button>
-						<!-- Earlier and later along the switcher above, which runs sideways. -->
-						<form method="post" action="?/moveLedger" use:enhance>
-							<input type="hidden" name="id" value={current.id} />
-							<input type="hidden" name="delta" value="-1" />
-							<button
-								class="icon-btn"
-								title={t('finance.ledgers.moveEarlier', { name: current.name })}
-								aria-label={t('finance.ledgers.moveEarlier', { name: current.name })}
-							>
-								<Icon name="chevron-left" />
-							</button>
-						</form>
-						<form method="post" action="?/moveLedger" use:enhance>
-							<input type="hidden" name="id" value={current.id} />
-							<input type="hidden" name="delta" value="1" />
-							<button
-								class="icon-btn"
-								title={t('finance.ledgers.moveLater', { name: current.name })}
-								aria-label={t('finance.ledgers.moveLater', { name: current.name })}
-							>
-								<Icon name="chevron-right" />
-							</button>
-						</form>
-						<form method="post" action="?/archiveLedger" use:enhance>
-							<input type="hidden" name="id" value={current.id} />
-							<input type="hidden" name="archived" value="true" />
-							<button
-								class="icon-btn"
-								aria-label={t('finance.ledgers.archive', { name: current.name })}
-								title={t('finance.ledgers.putItAway')}
-							>
-								<Icon name="archive" />
-							</button>
-						</form>
-						<button
-							class="icon-btn icon-btn-danger"
-							title={t('ui.delete')}
-							aria-label={t('finance.ledgers.delete', { name: current.name })}
-							onclick={() => (deletingLedger = current)}
-						>
-							<Icon name="trash" />
-						</button>
-					</span>
-				</span>
-			</div>
-
 			<!-- Finding one line among a year of them. -->
 			<RoomToolbar inset>
 				{#snippet tools()}
 					<FilterBar
 						name="movements"
-						on={Boolean(data.query || data.month)}
-						summary={[data.query, data.month ? monthName(data.month) : '']
+						on={narrowed}
+						summary={[
+							data.query,
+							data.month ? monthName(data.month) : '',
+							data.loose ? t('finance.ledgers.uncategorizedCount', { count: data.unsorted }) : ''
+						]
 							.filter(Boolean)
 							.join(', ')}
-						onclear={() => filter({ q: '', month: '' })}
+						onclear={clearFilters}
+						inline={hasLoose ? undefined : monthPicker}
+						children={hasLoose ? bothFilters : undefined}
 					>
 						{#snippet lead()}
 							<SearchField
@@ -353,35 +379,36 @@
 							<ShowingCount
 								total={current.count}
 								shown={data.movements.length}
-								said={(count) => t('finance.ledgers.shown', { length: count })}
+								said={(count) => t('finance.ledgers.showingCount', { count })}
 							/>
 						{/snippet}
-						<!--
-							The months this ledger has, not a date field.
 
-							`input type="month"` is a picker in Chromium and a bare text box in
-							Firefox, where typing "2" filters to nothing and the box explains
-							nothing. A list of the months there is something to look at is
-							native everywhere, and shorter.
-						-->
-						<Picker
-							value={data.month ?? ''}
-							options={[
-								{ value: '', label: t('finance.ledgers.everyMonth') },
-								...data.months.map((m) => ({ value: m, label: monthName(m) }))
-							]}
-							onpick={(next) => filter({ month: next })}
-							label={t('finance.ledgers.month')}
-						/>
+						{#snippet trailing()}
+							<SortControl
+								value={order}
+								options={ORDERS}
+								labels={ORDER_LABELS}
+								{direction}
+								onpick={(next) => {
+									order = next;
+									cursor = -1;
+								}}
+								onflip={() => {
+									direction = direction === 'asc' ? 'desc' : 'asc';
+									cursor = -1;
+								}}
+								label={t('finance.ledgers.orderLinesBy')}
+							/>
+						{/snippet}
 					</FilterBar>
 				{/snippet}
 			</RoomToolbar>
 
-			{#if data.movements.length === 0}
-				{#if data.query || data.month}
+			{#if lines.length === 0}
+				{#if narrowed}
 					<EmptyState
 						filtered
-						onclear={() => filter({ q: '', month: '' })}
+						onclear={clearFilters}
 						description={t('finance.ledgers.noLinesMatch')}
 					/>
 				{:else}
@@ -392,36 +419,27 @@
 					/>
 				{/if}
 			{:else}
-				<!-- The list scrolls inside itself: a year of a card's statement is
-				     hundreds of rows, and the ledger switcher must stay reachable. -->
 				<!--
 					A statement is a table on a desktop and a list on a phone.
+
 					Six columns across 390px squeezed the amount off the right and
-					stood the tag chips on their heads — "# p ix" down the side of
-					the screen. The same rows, laid out twice: the table below the
-					`sm` breakpoint is replaced by a block per movement, with the
-					day and the description on the first line and everything that
-					sorts it on the second.
+					stood the tag chips on their heads. The same rows, laid out twice:
+					below `sm` a block per movement, the description and the amount on
+					the first line and the day and everything that sorts it on the
+					second. Neither scrolls inside itself — the page does.
 				-->
-				<ul class="max-h-[70vh] divide-y divide-gray-100 overflow-y-auto sm:hidden">
-					{#each data.movements as m (m.id)}
+				<ul class="divide-y divide-gray-200 sm:hidden">
+					{#each lines as m, i (m.id)}
 						{#if yearBands.has(m.id)}
-							<li
-								class="bg-gray-50 px-4 py-1 text-center text-xs font-medium tracking-widest text-gray-500 tabular-nums"
-							>
-								{yearBands.get(m.id)}
-							</li>
+							<li class="year-band">{yearBands.get(m.id)}</li>
 						{/if}
-						<li class="px-4 py-2.5">
-							<div class="flex items-baseline gap-2">
-								<span class="shrink-0 text-xs text-gray-500 tabular-nums">
-									{dayOf(m.occurredOn)}
-								</span>
-								<span class="min-w-0 flex-1 truncate text-gray-900" title={m.description}>
+						<li class="px-4 py-2.5" data-row use:listCursor={i === cursor}>
+							<div class="flex items-start gap-3">
+								<span class="line-clamp-2 min-w-0 flex-1 text-sm text-gray-900">
 									{m.description}
 								</span>
 								<span
-									class="shrink-0 tabular-nums {m.amountCents >= 0
+									class="tabular shrink-0 text-sm {m.amountCents >= 0
 										? 'text-blue-700'
 										: 'text-gray-900'}"
 								>
@@ -429,88 +447,82 @@
 								</span>
 							</div>
 							<div class="mt-1 flex items-center gap-2">
-								{#if m.category}
-									<CategoryMark name={m.category} color={m.categoryColor} />
-								{/if}
-								<span class="flex min-w-0 flex-1 flex-wrap gap-1">
+								<span class="tabular shrink-0 text-xs text-gray-500">{dayOf(m.occurredOn)}</span>
+								<span class="flex min-w-0 flex-1 flex-wrap items-center gap-1">
+									{#if m.category}
+										<CategoryMark name={m.category} color={m.categoryColor} />
+									{/if}
 									{#each m.tags as tag (tag.name)}
 										<TagChip name={tag.name} color={tag.color} />
 									{/each}
 								</span>
-								<button
-									class="icon-btn shrink-0"
-									title={t('finance.ledgers.editThisLine')}
-									aria-label={t('finance.ledgers.editThisLine')}
-									onclick={() => (editingId = m.id)}
-								>
-									<Icon name="edit" />
-								</button>
-								<button
-									class="icon-btn icon-btn-danger shrink-0"
-									title={t('finance.ledgers.deleteThisLine')}
-									aria-label={t('finance.ledgers.deleteThisLine')}
-									onclick={() => (deletingMovement = m)}
-								>
-									<Icon name="trash" />
-								</button>
+								<span class="row-actions inline-flex shrink-0 items-center gap-1">
+									<button
+										class="icon-btn"
+										title={t('finance.ledgers.editThisLine')}
+										aria-label={t('finance.ledgers.editThisLine')}
+										onclick={() => (editingId = m.id)}
+									>
+										<Icon name="edit" />
+									</button>
+									<button
+										class="icon-btn icon-btn-danger"
+										title={t('finance.ledgers.deleteThisLine')}
+										aria-label={t('finance.ledgers.deleteThisLine')}
+										onclick={() => (deletingMovement = m)}
+									>
+										<Icon name="trash" />
+									</button>
+								</span>
 							</div>
 						</li>
 					{/each}
 				</ul>
 
-				<div class="hidden max-h-[60vh] overflow-y-auto sm:block">
-					<table class="statement w-full text-sm">
-						<thead class="sticky top-0 bg-white">
-							<tr class="border-b border-gray-200 text-left text-xs text-gray-500">
-								<th class="px-3 py-2 font-medium">{t('finance.ledgers.day')}</th>
-								<th class="px-3 py-2 font-medium">{t('ui.description')}</th>
-								<th class="px-3 py-2 font-medium">{t('ui.category')}</th>
-								<th class="px-3 py-2 font-medium">{t('ui.tags')}</th>
-								<th class="px-3 py-2 text-right font-medium">{t('ui.amount')}</th>
-								<th class="px-3 py-2"><span class="sr-only">{t('ui.actions')}</span></th>
-							</tr>
-						</thead>
-						<tbody class="divide-y divide-gray-100">
-							{#each data.movements as m (m.id)}
-								{#if yearBands.has(m.id)}
-									<tr class="bg-gray-50">
-										<td
-											colspan="6"
-											class="px-3 py-1 text-center text-xs font-medium tracking-widest text-gray-500 tabular-nums"
-										>
-											{yearBands.get(m.id)}
-										</td>
-									</tr>
-								{/if}
-								<tr>
-									<td class="px-3 py-2 whitespace-nowrap text-gray-500 tabular-nums">
-										{dayOf(m.occurredOn)}
-									</td>
-									<td class="max-w-xs truncate px-3 py-2 text-gray-900" title={m.description}>
-										{m.description}
-									</td>
-									<td class="px-3 py-2 whitespace-nowrap">
-										{#if m.category}
-											<CategoryMark name={m.category} color={m.categoryColor} />
-										{:else}
-											<span class="text-xs text-gray-500">—</span>
-										{/if}
-									</td>
-									<td class="px-3 py-2">
-										<span class="flex flex-wrap gap-1">
-											{#each m.tags as tag (tag.name)}
-												<TagChip name={tag.name} color={tag.color} />
-											{/each}
-										</span>
-									</td>
-									<td
-										class="px-3 py-2 text-right whitespace-nowrap tabular-nums {m.amountCents >= 0
-											? 'text-blue-700'
-											: 'text-gray-900'}"
-									>
-										{money(m.amountCents)}
-									</td>
-									<td class="px-3 py-2 text-right whitespace-nowrap">
+				<table class="statement hidden w-full text-sm sm:table">
+					<thead>
+						<tr class="border-b border-gray-200 text-left text-xs text-gray-500">
+							<th class="py-2 font-medium">{t('finance.ledgers.day')}</th>
+							<th class="py-2 font-medium">{t('ui.description')}</th>
+							<th class="py-2 font-medium">{t('ui.category')}</th>
+							<th class="py-2 font-medium">{t('ui.tags')}</th>
+							<th class="py-2 text-right font-medium">{t('ui.amount')}</th>
+							<th class="py-2"><span class="sr-only">{t('ui.actions')}</span></th>
+						</tr>
+					</thead>
+					<tbody class="divide-y divide-gray-200">
+						{#each lines as m, i (m.id)}
+							{#if yearBands.has(m.id)}
+								<tr><td colspan="6" class="year-band">{yearBands.get(m.id)}</td></tr>
+							{/if}
+							<tr data-row use:listCursor={i === cursor}>
+								<td class="tabular py-2 whitespace-nowrap text-gray-500">
+									{dayOf(m.occurredOn)}
+								</td>
+								<td class="py-2 text-gray-900">{m.description}</td>
+								<td class="py-2 whitespace-nowrap">
+									{#if m.category}
+										<CategoryMark name={m.category} color={m.categoryColor} />
+									{:else}
+										<span class="text-xs text-gray-500">—</span>
+									{/if}
+								</td>
+								<td class="py-2">
+									<span class="flex flex-wrap gap-1">
+										{#each m.tags as tag (tag.name)}
+											<TagChip name={tag.name} color={tag.color} />
+										{/each}
+									</span>
+								</td>
+								<td
+									class="tabular py-2 text-right whitespace-nowrap {m.amountCents >= 0
+										? 'text-blue-700'
+										: 'text-gray-900'}"
+								>
+									{money(m.amountCents)}
+								</td>
+								<td class="py-2 text-right whitespace-nowrap">
+									<span class="row-actions inline-flex shrink-0 items-center gap-1">
 										<button
 											class="icon-btn"
 											title={t('finance.ledgers.editThisLine')}
@@ -527,23 +539,139 @@
 										>
 											<Icon name="trash" />
 										</button>
-									</td>
-								</tr>
-							{/each}
-						</tbody>
-					</table>
-				</div>
+									</span>
+								</td>
+							</tr>
+						{/each}
+					</tbody>
+				</table>
 			{/if}
 		{/if}
 	</RoomSurface>
 {/if}
 
-<p class="mt-3 text-xs text-gray-500">
-	{t('finance.ledgers.moneyYouExpectRatherThan')}
-	<a href={resolve('/finance/bills')} class="underline">{t('finance.ledgers.bill')}</a>{t(
-		'finance.ledgers.andBillsTurnUp'
-	)}
-</p>
+<!--
+	The ledgers themselves: what each is, in the order the strip shows them,
+	and what can be done to one. A list rather than arrows on the strip —
+	arrows beside a statement read as paging through it.
+-->
+<Modal bind:open={managing} title={t('rooms.finance.tabs.ledgers')} size="sm">
+	<ul class="-mx-4 -my-4 divide-y divide-gray-200 border-y border-gray-200 sm:-mx-5">
+		{#each [...active, ...archived] as ledger, index (ledger.id)}
+			<li class="list-row">
+				<span class="list-row-main min-w-0">
+					<span
+						class="block truncate text-sm font-medium {ledger.archived
+							? 'text-gray-600'
+							: 'text-gray-900'}">{ledger.name}</span
+					>
+					<span class="block text-xs text-gray-500">
+						{[
+							t(LEDGER_KIND_LABELS[ledger.kind]),
+							t('finance.ledgers.lines', { count: ledger.count }),
+							money(ledger.balanceCents),
+							ledger.lastOn
+								? t('finance.ledgers.lastOn', { day: civilOf(ledger.lastOn, now()) })
+								: ''
+						]
+							.filter(Boolean)
+							.join(' · ')}
+					</span>
+				</span>
+				<span class="list-row-actions">
+					{#if !ledger.archived}
+						<form method="post" action="?/moveLedger" use:enhance>
+							<input type="hidden" name="id" value={ledger.id} />
+							<input type="hidden" name="delta" value="-1" />
+							<button
+								class="icon-btn"
+								disabled={index === 0}
+								title={t('finance.ledgers.moveEarlier', { name: ledger.name })}
+								aria-label={t('finance.ledgers.moveEarlier', { name: ledger.name })}
+							>
+								<Icon name="chevron-up" />
+							</button>
+						</form>
+						<form method="post" action="?/moveLedger" use:enhance>
+							<input type="hidden" name="id" value={ledger.id} />
+							<input type="hidden" name="delta" value="1" />
+							<button
+								class="icon-btn"
+								disabled={index === active.length - 1}
+								title={t('finance.ledgers.moveLater', { name: ledger.name })}
+								aria-label={t('finance.ledgers.moveLater', { name: ledger.name })}
+							>
+								<Icon name="chevron-down" />
+							</button>
+						</form>
+					{/if}
+					<button
+						class="icon-btn"
+						title={t('ui.edit')}
+						aria-label={t('finance.ledgers.edit', { name: ledger.name })}
+						onclick={() => {
+							managing = false;
+							editingLedger = ledger;
+						}}
+					>
+						<Icon name="edit" />
+					</button>
+					<form method="post" action="?/archiveLedger" use:enhance>
+						<input type="hidden" name="id" value={ledger.id} />
+						<input type="hidden" name="archived" value={ledger.archived ? 'false' : 'true'} />
+						{#if ledger.archived}
+							<button
+								class="icon-btn"
+								title={t('finance.ledgers.restore')}
+								aria-label={t('finance.ledgers.restore')}
+							>
+								<Icon name="undo" />
+							</button>
+						{:else}
+							<button
+								class="icon-btn"
+								title={t('finance.ledgers.putItAway')}
+								aria-label={t('finance.ledgers.archive', { name: ledger.name })}
+							>
+								<Icon name="archive" />
+							</button>
+						{/if}
+					</form>
+					<!-- Deleting takes the history with it, so only a put-away ledger offers it. -->
+					{#if ledger.archived}
+						<button
+							class="icon-btn icon-btn-danger"
+							title={t('ui.delete')}
+							aria-label={t('finance.ledgers.delete', { name: ledger.name })}
+							onclick={() => {
+								managing = false;
+								deletingLedger = ledger;
+							}}
+						>
+							<Icon name="trash" />
+						</button>
+					{/if}
+				</span>
+			</li>
+		{/each}
+	</ul>
+	{#snippet footer()}
+		<button
+			class="btn"
+			type="button"
+			onclick={() => {
+				managing = false;
+				showNewLedger = true;
+			}}
+		>
+			<Icon name="plus" />
+			{t('finance.ledgers.newLedger')}
+		</button>
+		<button class="btn btn-primary" type="button" onclick={() => (managing = false)}
+			>{t('ui.done')}</button
+		>
+	{/snippet}
+</Modal>
 
 <!-- New ledger. -->
 <Modal
@@ -968,5 +1096,37 @@
 	 */
 	.statement :is(td, th) {
 		border-radius: 0;
+		padding-inline: 0.75rem;
+	}
+
+	/* The table's edges on the surface's own gutter, like every row's. */
+	.statement :is(td, th):first-child {
+		padding-inline-start: var(--row-pad-x);
+	}
+
+	.statement :is(td, th):last-child {
+		padding-inline-end: var(--row-pad-x);
+	}
+
+	/* The strip's rule runs the surface's full width, like the toolbar's under it. */
+	.ledger-strip {
+		padding-inline: var(--row-pad-x);
+		border-bottom: 1px solid var(--color-gray-200);
+	}
+
+	.ledger-strip :global(.room-tabs-nested) {
+		border-bottom: 0;
+	}
+
+	/* Which year the rows under it belong to, the way a bank statement says. */
+	.year-band {
+		background-color: var(--color-gray-50);
+		padding: 0.25rem 1rem;
+		text-align: center;
+		font-size: 0.75rem;
+		font-weight: 500;
+		letter-spacing: 0.1em;
+		color: var(--color-gray-500);
+		font-variant-numeric: tabular-nums;
 	}
 </style>

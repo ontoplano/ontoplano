@@ -38,23 +38,25 @@ export function parsePeople(raw: string): string[] {
 	];
 }
 
+/** A leap year, so a birthday on the twenty-ninth of February is a day. */
+const STAND_IN_YEAR = '2000';
+
 /**
- * A birthday, written the way somebody says it.
+ * A birthday as a day the date formatter can read: `2000-03-14`.
  *
  * Stored as it was given — `1990-03-14` when the year is known and `--03-14`
  * when it is not, which is what an address book needs and a date type cannot
- * hold. On a card that shape is unreadable: "--01-08" is a string, "Jan 8" is
- * a birthday. The year is not shown even where it is known, because the card
- * is answering "when", not "how old".
+ * hold.
+ *
+ * The year is a stand-in because the card says when, not how old, and the
+ * words for the day belong to `$lib/when` like every other date the app prints.
  */
-const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-
-export function birthdayLabel(birthday: string | null | undefined): string | null {
+export function birthdayDay(birthday: string | null | undefined): string | null {
 	if (!birthday) return null;
 	const match = /(\d{2})-(\d{2})$/.exec(birthday);
 	if (!match) return null;
-	const month = MONTHS[Number(match[1]) - 1];
+	const month = Number(match[1]);
 	const day = Number(match[2]);
-	if (!month || !day) return null;
-	return `${month} ${day}`;
+	if (month < 1 || month > 12 || day < 1 || day > 31) return null;
+	return `${STAND_IN_YEAR}-${match[1]}-${match[2]}`;
 }

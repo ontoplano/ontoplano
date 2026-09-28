@@ -131,12 +131,16 @@
 			"mcp": {
 				"create": ["add_habit"],
 				"read": ["habits", "all_habits"],
-				"change": ["change_habit", "tick_habit"]
+				"change": ["change_habit", "tick_habit"],
+				"archive": ["archive_habit"],
+				"unarchive": ["unarchive_habit"]
 			},
 			"app": {
 				"create": ["src/lib/services/habit-actions.ts#create"],
 				"read": ["src/routes/health/habits/+page.server.ts#load"],
 				"change": ["src/lib/services/habit-actions.ts#update"],
+				"archive": ["src/lib/services/habit-actions.ts#archive"],
+				"unarchive": ["src/lib/services/habit-actions.ts#unarchive"],
 				"delete": ["src/lib/services/habit-actions.ts#delete"]
 			},
 			"withheld": {
@@ -153,6 +157,7 @@
 					"record_price",
 					"set_item_attributes",
 					"change_inventory_category",
+					"move_inventory_category",
 					"change_inventory_item"
 				],
 				"archive": ["archive_item"],

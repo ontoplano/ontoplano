@@ -64,6 +64,33 @@ describe('categories', () => {
 		inventory.setCategoryFood(ctx, id, true);
 		expect(inventory.listCategories(ctx).find((c) => c.id === id)!.isFood).toBe(true);
 	});
+
+	test('a colour is set, checked, and taken off again', () => {
+		inventory.setCategoryColor(ctx, pantry, '#aabbcc');
+		expect(inventory.listCategories(ctx).find((c) => c.id === pantry)!.color).toBe('#aabbcc');
+		expect(() => inventory.setCategoryColor(ctx, pantry, 'red; x:')).toThrow();
+		inventory.setCategoryColor(ctx, pantry, '');
+		expect(inventory.listCategories(ctx).find((c) => c.id === pantry)!.color).toBeNull();
+	});
+
+	test('moves one place at a time, and stops at either end', () => {
+		const names = () => inventory.listCategories(ctx).map((c) => c.name);
+		const before = names();
+		const last = inventory.listCategories(ctx).at(-1)!;
+		inventory.moveCategory(ctx, last.id, -1);
+		expect(names().at(-2)).toBe(last.name);
+		inventory.moveCategory(ctx, last.id, 1);
+		expect(names()).toEqual(before);
+		inventory.moveCategory(ctx, last.id, 1);
+		expect(names()).toEqual(before);
+	});
+
+	test('a stranger can neither colour nor move one, and it does not change', () => {
+		const before = inventory.listCategories(ctx);
+		expect(() => inventory.setCategoryColor(theirs, pantry, '#000000')).toThrow(/not found/i);
+		expect(() => inventory.moveCategory(theirs, pantry, 1)).toThrow(/not found/i);
+		expect(inventory.listCategories(ctx)).toEqual(before);
+	});
 });
 
 describe('ownership', () => {

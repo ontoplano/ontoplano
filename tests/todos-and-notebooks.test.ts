@@ -366,17 +366,18 @@ describe('notebooks', () => {
  */
 describe('a birthday, as a card shows it', () => {
 	test('reads as a date, with or without the year behind it', async () => {
-		const { birthdayLabel } = await import('../src/lib/people');
-		expect(birthdayLabel('1990-03-14')).toBe('Mar 14');
-		expect(birthdayLabel('--01-08')).toBe('Jan 8');
-		expect(birthdayLabel('2001-12-01')).toBe('Dec 1');
+		const { birthdayDay } = await import('../src/lib/people');
+		expect(birthdayDay('1990-03-14')).toBe('2000-03-14');
+		expect(birthdayDay('--01-08')).toBe('2000-01-08');
+		expect(birthdayDay('--02-29')).toBe('2000-02-29');
 	});
 
 	test('and says nothing at all when there is nothing to say', async () => {
-		const { birthdayLabel } = await import('../src/lib/people');
-		expect(birthdayLabel(null)).toBeNull();
-		expect(birthdayLabel('')).toBeNull();
-		expect(birthdayLabel('not a date')).toBeNull();
+		const { birthdayDay } = await import('../src/lib/people');
+		expect(birthdayDay(null)).toBeNull();
+		expect(birthdayDay('')).toBeNull();
+		expect(birthdayDay('not a date')).toBeNull();
+		expect(birthdayDay('--13-01')).toBeNull();
 	});
 });
 

@@ -1,9 +1,9 @@
-import { and, desc, eq, gte } from 'drizzle-orm';
+import { and, desc, eq, gte, isNull } from 'drizzle-orm';
 
 import { db } from '$lib/db/index.js';
 import { habitOccurrences, habits } from '$lib/db/schema.js';
 import { localDateOf, type Ctx } from './ctx.js';
-import { created } from './time.js';
+import { created, stamp } from './time.js';
 import { NotFoundError } from './errors.js';
 import { notebookPatch } from './notebooks.js';
 import { MAX_DAY_COUNT } from '$lib/habit-heatmap';
@@ -42,8 +42,15 @@ export type HabitInput = {
  * `notebookId` narrows rather than changing the shape: the notebook's Habits
  * tab is this room looking at one subject, and it draws the rows with the same
  * component, so it needs exactly what the room needs.
+ *
+ * Archived habits are left out unless asked for: they keep their history for
+ * the room's archived list, and nothing else — today, a notebook, an
+ * assistant ticking by name — should offer them.
  */
-export function listHabits(ctx: Ctx, scope: { notebookId?: number } = {}) {
+export function listHabits(
+	ctx: Ctx,
+	scope: { notebookId?: number; includeArchived?: boolean } = {}
+) {
 	const rows = db
 		.select({
 			id: habits.id,
@@ -52,13 +59,16 @@ export function listHabits(ctx: Ctx, scope: { notebookId?: number } = {}) {
 			type: habits.type,
 			scheduledDays: habits.scheduledDays,
 			notebookId: habits.notebookId,
+			archivedAt: habits.archivedAt,
 			createdAt: habits.createdAt
 		})
 		.from(habits)
 		.where(
-			scope.notebookId === undefined
-				? eq(habits.userId, ctx.userId)
-				: and(eq(habits.userId, ctx.userId), eq(habits.notebookId, scope.notebookId))
+			and(
+				eq(habits.userId, ctx.userId),
+				scope.notebookId === undefined ? undefined : eq(habits.notebookId, scope.notebookId),
+				scope.includeArchived ? undefined : isNull(habits.archivedAt)
+			)
 		)
 		.orderBy(habits.name)
 		.all();
@@ -110,6 +120,17 @@ export function updateHabit(ctx: Ctx, id: number, raw: HabitInput): void {
 	const res = db
 		.update(habits)
 		.set(parseHabit(ctx, raw, id))
+		.where(and(eq(habits.id, id), eq(habits.userId, ctx.userId)))
+		.run();
+
+	if (res.changes === 0) throw new NotFoundError('habit');
+}
+
+/** Put a habit away, or bring it back. Its history stays either way. */
+export function setHabitArchived(ctx: Ctx, id: number, archived: boolean): void {
+	const res = db
+		.update(habits)
+		.set({ archivedAt: archived ? stamp(ctx) : null })
 		.where(and(eq(habits.id, id), eq(habits.userId, ctx.userId)))
 		.run();
 

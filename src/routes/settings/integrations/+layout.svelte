@@ -28,14 +28,16 @@
 	Settings put there — it used to draw the whole of a room again, which gave
 	the page two bars, two titles and two bands of page ground between them.
 -->
-<TabbedRoom
-	nested
-	title={t('rooms.integrations.title')}
-	{tabs}
-	label={t('rooms.integrations.sections')}
->
-	<div class="integrations-body">{@render children()}</div>
-</TabbedRoom>
+<div class="integrations">
+	<TabbedRoom
+		nested
+		title={t('rooms.integrations.title')}
+		{tabs}
+		label={t('rooms.integrations.sections')}
+	>
+		<div class="integrations-body">{@render children()}</div>
+	</TabbedRoom>
+</div>
 
 <style>
 	/*
@@ -47,6 +49,12 @@
 	 * it while Account and Preferences ran edge to edge.
 	 */
 	@media (width >= 40rem) {
+		/* Its rule runs edge to edge under the tabs, like the surface under it. */
+		.integrations :global(.room-tabs-nested) {
+			margin-inline: -1rem;
+			padding-inline: 1rem;
+		}
+
 		.integrations-body :global(.room-surface) {
 			margin-inline: -1rem;
 			border-inline-width: 0;

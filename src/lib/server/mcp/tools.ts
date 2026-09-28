@@ -48,7 +48,13 @@ import {
 	setActivityActive,
 	updateActivity
 } from '$lib/services/activities.js';
-import { createHabit, listHabits, updateHabit, HABIT_TYPES } from '$lib/services/habits.js';
+import {
+	createHabit,
+	listHabits,
+	setHabitArchived,
+	updateHabit,
+	HABIT_TYPES
+} from '$lib/services/habits.js';
 import {
 	createFreeReminder,
 	editReminder,
@@ -208,8 +214,10 @@ import {
 	deleteItem,
 	listItems,
 	listCategories as listInventoryCategories,
+	moveCategory as moveInventoryCategory,
 	recordPaid,
 	renameCategory,
+	setCategoryColor,
 	setBought,
 	setCategoryFood,
 	setCategoryShared,
@@ -3806,7 +3814,7 @@ export const TOOLS: Tool[] = [
 		name: 'change_inventory_category',
 		title: 'Rename a shopping section',
 		description:
-			'Rename a section, or change whether it holds food. Only `id` is needed: a field left out is untouched, and the change lands whole or not at all — a refused share leaves the name as it was. The items filed under it stay exactly where they are.',
+			'Rename a section, recolour it, or change whether it holds food. Only `id` is needed: a field left out is untouched, and the change lands whole or not at all — a refused share leaves the name as it was. The items filed under it stay exactly where they are.',
 		scope: 'inventory:write',
 		writes: true,
 		refs: [{ arg: 'id', kind: 'inventoryCategory' }],
@@ -3822,18 +3830,43 @@ export const TOOLS: Tool[] = [
 					type: 'boolean',
 					description:
 						'Share the section with everybody on the family plan, or stop. Only its owner\u2019s to flip.'
-				}
+				},
+				color: text(
+					'The colour its cards wear, as `#rrggbb`. An empty string takes it off, back to the neutral one.'
+				)
 			},
 			['id']
 		),
 		run: (ctx, args) => {
 			if (args.name !== undefined && args.name !== null && args.name !== '')
 				renameCategory(ctx, Number(args.id), args.name);
+			if (args.color !== undefined && args.color !== null)
+				setCategoryColor(ctx, Number(args.id), args.color);
 			if (args.holdsFood !== undefined && args.holdsFood !== null)
 				setCategoryFood(ctx, Number(args.id), Boolean(args.holdsFood));
 			if (args.shareWithFamily !== undefined && args.shareWithFamily !== null)
 				setCategoryShared(ctx, Number(args.id), Boolean(args.shareWithFamily));
 			return { ok: true };
+		}
+	},
+	{
+		name: 'move_inventory_category',
+		title: 'Move a shopping section up or down',
+		description:
+			'Move one of the person\u2019s own sections one place earlier (`-1`) or later (`1`) in the order the inventory draws them. Its way back is the opposite move.',
+		scope: 'inventory:write',
+		writes: true,
+		refs: [{ arg: 'id', kind: 'inventoryCategory' }],
+		input: object(
+			{
+				id: { type: 'integer', description: 'The section\u2019s id.' },
+				delta: { type: 'integer', enum: [-1, 1], description: '-1 for earlier, 1 for later.' }
+			},
+			['id', 'delta']
+		),
+		run: (ctx, args) => {
+			moveInventoryCategory(ctx, Number(args.id), Number(args.delta));
+			return { ok: true, categories: listInventoryCategories(ctx) };
 		}
 	},
 	{
@@ -4109,11 +4142,11 @@ export const TOOLS: Tool[] = [
 		name: 'all_habits',
 		title: 'Every habit',
 		description:
-			'The full list of habits, due today or not — id, name, type and which days each is scheduled. `habits` is today\u2019s view with streaks; this is the one to read before adding or changing one.',
+			'The full list of habits, due today or not — id, name, type and which days each is scheduled. `habits` is today\u2019s view with streaks; this is the one to read before adding or changing one. Archived habits are left out unless `includeArchived` is set; those carry an `archivedAt`.',
 		scope: 'habits:read',
 		writes: false,
-		input: object({}),
-		run: (ctx) => listHabits(ctx)
+		input: object({ includeArchived: { type: 'boolean', default: false } }),
+		run: (ctx, args) => listHabits(ctx, { includeArchived: Boolean(args.includeArchived) })
 	},
 	{
 		name: 'add_habit',
@@ -4174,7 +4207,9 @@ export const TOOLS: Tool[] = [
 			['id']
 		),
 		run: (ctx, args) => {
-			const current = listHabits(ctx).find((h) => h.id === Number(args.id));
+			const current = listHabits(ctx, { includeArchived: true }).find(
+				(h) => h.id === Number(args.id)
+			);
 			if (!current) throw new NotFoundError('habit');
 			updateHabit(ctx, current.id, {
 				name: args.name ?? current.name,
@@ -4182,6 +4217,40 @@ export const TOOLS: Tool[] = [
 				description: args.description ?? current.description,
 				scheduledDays: args.scheduledDays ?? current.scheduledDays
 			});
+			return { ok: true };
+		}
+	},
+	{
+		name: 'archive_habit',
+		title: 'Put a habit away',
+		description:
+			'Stop tracking a habit without losing it: it leaves today\u2019s list and the room, and every logged day is kept. `unarchive_habit` brings it back.',
+		scope: 'habits:write',
+		writes: true,
+		refs: [{ arg: 'id', kind: 'habit' }],
+		input: object(
+			{ id: { type: 'integer', description: 'The habit\u2019s id, as `all_habits` gives it.' } },
+			['id']
+		),
+		run: (ctx, args) => {
+			setHabitArchived(ctx, Number(args.id), true);
+			return { ok: true };
+		}
+	},
+	{
+		name: 'unarchive_habit',
+		title: 'Bring a habit back',
+		description:
+			'Start tracking an archived habit again, with its history as it was. `all_habits` with `includeArchived` lists the archived ones.',
+		scope: 'habits:write',
+		writes: true,
+		refs: [{ arg: 'id', kind: 'habit' }],
+		input: object(
+			{ id: { type: 'integer', description: 'The habit\u2019s id, as `all_habits` gives it.' } },
+			['id']
+		),
+		run: (ctx, args) => {
+			setHabitArchived(ctx, Number(args.id), false);
 			return { ok: true };
 		}
 	},

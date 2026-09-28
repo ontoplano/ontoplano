@@ -46,10 +46,11 @@ const NEXT_DAYS = 3;
 /**
  * How many notebooks the notebooks card shows.
  *
- * Three covers is one row of them at the width of a half card, and a shelf is
- * read by looking rather than by scrolling.
+ * Enough to fill one row at the widest the card gets. The card draws one row
+ * of covers and as many of these as fit in it, so a narrow card shows three
+ * and a wide one is not three covers beside a band of nothing.
  */
-const RECENT_NOTEBOOKS = 3;
+const RECENT_NOTEBOOKS = 8;
 
 /**
  * The dashboard, for whoever is signed in — which on an isolated instance is
@@ -292,8 +293,7 @@ export const load = async ({ locals }: IsolatedEvent) => {
 		/**
 		 * The notebooks last written in, for the card that shows their covers.
 		 *
-		 * Three, because the card is half a row wide and a shelf of covers is
-		 * read by looking rather than by scrolling.
+		 * One row of covers, however many fit in it (see RECENT_NOTEBOOKS).
 		 */
 		recentNotebooks: recentlyEditedNotebooks(ctx, RECENT_NOTEBOOKS),
 		/** Set when last week had blocks in it and nobody has written it up yet. */

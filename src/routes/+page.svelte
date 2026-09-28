@@ -1,5 +1,4 @@
 <script lang="ts">
-	import Kbd from '$lib/components/Kbd.svelte';
 	import { page } from '$app/state';
 	import Written from '$lib/components/Written.svelte';
 	import TagInput from '$lib/components/TagInput.svelte';
@@ -19,7 +18,8 @@
 	import NotebookCover from '$lib/components/NotebookCover.svelte';
 	import WidgetPicker from '$lib/components/WidgetPicker.svelte';
 	import Pie from '$lib/components/Pie.svelte';
-	import Swatch from '$lib/components/Swatch.svelte';
+	import CategoryMark from '$lib/components/CategoryMark.svelte';
+	import TickBox from '$lib/components/TickBox.svelte';
 	import TagChip from '$lib/components/TagChip.svelte';
 	import { enhance } from '$lib/enhance';
 	import FormError from '$lib/components/FormError.svelte';
@@ -33,7 +33,7 @@
 	import { deserialize } from '$app/forms';
 	import { invalidateAll } from '$app/navigation';
 	import { cancelFor, changeNow, isPending } from '$lib/undo.svelte';
-	import { getAction, keyFor } from '$lib/shortcuts';
+	import { getAction } from '$lib/shortcuts';
 	import { useT } from '$lib/i18n';
 
 	const t = useT();
@@ -42,6 +42,8 @@
 
 	/** Keep the card a card: the tracker is one click away for the full list. */
 	const TODO_PREVIEW = 5;
+	/** How many rows the latest-todos and ideas cards show before "+N more". */
+	const LIST_PREVIEW = 6;
 	const GOAL_PREVIEW = 4;
 	/** How many blocks a day column shows before it says how many more. */
 	const DAY_PREVIEW = 5;
@@ -409,7 +411,7 @@
 	-->
 	<FrontDoor {...data.frontDoor} />
 {:else}
-	<div class="space-y-6">
+	<div class="dash space-y-6 max-sm:space-y-4">
 		<!--
 			The day is the room's name, in the bar every room has — on a phone the
 			sticky header, on a desktop the same line as every other room's title.
@@ -426,7 +428,7 @@
 			fold={false}
 		>
 			{#snippet actions()}
-				<div class="dash-corner">
+				<div class="dash-corner controls-sm">
 					<div class="dash-corner-state" class:is-away={arranging} inert={arranging}>
 						<QuickCapture
 							bind:this={capture}
@@ -443,7 +445,7 @@
 					     target you aim at rather than one you read. -->
 						<button
 							onclick={startArranging}
-							class="icon-btn"
+							class="icon-btn icon-btn-sm"
 							title={t('home.rearrangeTheCards')}
 							aria-label={t('home.rearrangeTheCards')}
 						>
@@ -471,7 +473,9 @@
 							<Icon name="close" class="sm:hidden" />
 							<span class="hidden sm:inline">{t('ui.cancel')}</span>
 						</button>
-						<button onclick={saveOrder} class="btn btn-primary btn-sm">{t('ui.done')}</button>
+						<!-- Save, not Done: the next-up card's own "Done" is on screen at
+						     the same time and means something else entirely. -->
+						<button onclick={saveOrder} class="btn btn-primary btn-sm">{t('ui.save')}</button>
 					</div>
 				</div>
 			{/snippet}
@@ -496,6 +500,18 @@
 	"No goals running." on its own is a dead end on the one screen a new
 	account opens first.
 -->
+		<!--
+			Every card's way in: the same words in the same corner. It said
+			"Edit →" on two cards and "Open →" on the rest.
+		-->
+		{#snippet openLink(href: string)}
+			<!-- Every caller passes a resolved path. -->
+			<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -->
+			<a {href} class="text-xs whitespace-nowrap text-gray-500 hover:text-gray-900"
+				>{t('home.open')}</a
+			>
+		{/snippet}
+
 		{#snippet nothingYet(text: string, href: string, action: string)}
 			<p class="text-sm text-gray-500">{text}</p>
 			<!-- Every caller passes a resolved path; a snippet parameter is as far
@@ -555,7 +571,7 @@
 			{#if data.now || data.taskSummary.total > 0}
 				{@const now = data.now}
 				<section
-					class="card-accent now-card flex flex-col border border-gray-200 bg-white p-4 shadow-card sm:flex-row sm:items-center sm:gap-6"
+					class="card-accent now-card flex items-center gap-4 border border-gray-200 bg-white p-4 shadow-card sm:gap-6"
 					style="--card-accent: {now?.task.categoryColor ?? SECTION_COLORS.planner}"
 				>
 					<div class="min-w-0 flex-1">
@@ -607,28 +623,36 @@
 						its height either way, because answering the last block of the day
 						used to empty this card and jump everything under it — the list
 						the person had just pressed something in — up the screen.
+
+						Beside the words at every width, glyphs alone on a phone: under
+						them, the pair (invisible once the day is answered) was a band of
+						nothing at the bottom of the first card on the screen.
 					-->
 					<div
-						class="mt-3 flex shrink-0 items-center gap-2 sm:mt-0 {now ? '' : 'invisible'}"
+						class="flex shrink-0 items-center gap-2 {now ? '' : 'invisible'}"
 						aria-hidden={now ? undefined : 'true'}
 					>
 						<button
 							type="button"
 							class="btn btn-primary"
 							disabled={!now}
+							title={t('ui.done')}
+							aria-label={t('ui.done')}
 							onclick={() => now && answerLater(now.task, 'done')}
 						>
 							<Icon name="check" />
-							{t('ui.done')}
+							<span class="max-sm:hidden">{t('ui.done')}</span>
 						</button>
 						<button
 							type="button"
 							class="btn"
 							disabled={!now}
+							title={t('home.skipped')}
+							aria-label={t('home.skipped')}
 							onclick={() => now && answerLater(now.task, 'skipped')}
 						>
 							<Icon name="skip" />
-							{t('home.skipped')}
+							<span class="max-sm:hidden">{t('home.skipped')}</span>
 						</button>
 					</div>
 				</section>
@@ -638,9 +662,7 @@
 		{#snippet card_todayTasks()}
 			<Card title={t('home.todaySTasks')} accent={SECTION_COLORS.planner}>
 				{#snippet actions()}
-					<a href={resolve('/tasks/board')} class="text-xs text-gray-500 hover:text-gray-900">
-						{t('home.open')}
-					</a>
+					{@render openLink(resolve('/tasks/board'))}
 				{/snippet}
 				{#if data.taskSummary.total === 0}
 					{@render nothingYet(
@@ -662,59 +684,51 @@
 					</div>
 
 					{#if todoRows.length > 0}
-						<ul class="mt-3 divide-y divide-gray-100 border-t border-gray-100">
+						<ul class="dash-rows mt-3">
 							{#each todoRows.slice(0, TODO_PREVIEW) as task (`${task.kind}-${task.id}`)}
 								{@const pending = isPending(`instance:${task.id}`)}
-								<li class="flex items-center gap-3 py-1.5">
+								<li class="dash-row">
 									<!--
-										Finishing something from the screen you are already on. It
-										used to be a list you could only read, and then a form that
-										wrote the moment it was pressed.
+										Finishing something from the screen you are already on.
 
-										Held for a few seconds now, like the card above and like
-										everything else in the app that changes a day: a checkbox
-										beside eight lines of small type is the easiest thing on
-										this page to tick by accident, and it is somebody's record
-										of what they actually did. Pressing it again inside the
-										window means the same as pressing Undo.
+										Held for a few seconds, like the card above and like
+										everything else in the app that changes a day: a box beside
+										a line of small type is the easiest thing on this page to
+										tick by accident, and it is somebody's record of what they
+										actually did. Pressing it again inside the window means the
+										same as pressing Undo.
 									-->
 									<button
 										type="button"
 										onclick={() => answerLater({ id: task.id, name: task.name }, 'done')}
-										class="-m-1 flex shrink-0 items-center justify-center p-1 pointer-coarse:w-11"
-										title={pending ? 'Undo' : 'Done'}
+										class="flex shrink-0 items-center justify-center pointer-coarse:w-11"
+										title={pending ? t('ui.undo') : t('ui.done')}
 										aria-label={pending
-											? `Undo marking ${task.name} done`
-											: `Mark ${task.name} done`}
+											? t('home.undoMarkingDone', { name: task.name })
+											: t('home.markDone', { name: task.name })}
 									>
-										<span
-											class="flex h-4 w-4 items-center justify-center border {pending
-												? 'on-fill'
-												: 'border-gray-400 bg-white'}"
-										>
-											{#if pending}<Icon name="check" size={12} />{/if}
-										</span>
+										<TickBox done={pending} />
 									</button>
+									<span class="dash-time">{task.startTime}</span>
 									<span
-										class="w-1 shrink-0 self-stretch"
-										style="background-color: {task.categoryColor ?? CATEGORY_FALLBACK_COLOR}"
-									></span>
-									<span class="tabular w-12 shrink-0 font-mono text-xs text-gray-500"
-										>{task.startTime}</span
-									>
-									<span class="truncate text-sm {pending ? 'text-gray-500' : 'text-gray-900'}"
+										class="min-w-0 flex-1 truncate {pending ? 'text-gray-500 line-through' : ''}"
 										>{task.name}</span
 									>
 									{#if task.kind === 'once'}
-										<span class="eyebrow ml-auto shrink-0 text-gray-500">
-											{t('home.oneOff')}
-										</span>
+										<span class="dash-value">{t('home.oneOff')}</span>
+									{/if}
+									{#if task.categoryName}
+										<CategoryMark
+											name={task.categoryName}
+											color={task.categoryColor}
+											class="max-w-32 max-sm:hidden"
+										/>
 									{/if}
 								</li>
 							{/each}
 						</ul>
 						{#if todoRows.length > TODO_PREVIEW}
-							<p class="mt-1 text-xs text-gray-500">
+							<p class="dash-more">
 								{t('home.more', { todoPreview: todoRows.length - TODO_PREVIEW })}
 							</p>
 						{/if}
@@ -744,39 +758,39 @@
 		{#snippet card_goals()}
 			<Card title={t('home.goals')} accent={SECTION_COLORS.goals}>
 				{#snippet actions()}
-					<a href={resolve('/goals')} class="text-xs text-gray-500 hover:text-gray-900"
-						>{t('home.openRarr')}</a
-					>
+					{@render openLink(resolve('/goals'))}
 				{/snippet}
 				{#if data.activeGoals.length === 0}
 					{@render nothingYet(t('home.noGoalsForThisPeriod'), '/goals', t('goals.newGoal'))}
 				{:else}
-					<ul class="space-y-2">
+					<ul class="dash-rows">
 						{#each data.activeGoals.slice(0, GOAL_PREVIEW) as goal (goal.id)}
 							{@const pct =
 								goal.progress.fraction === null ? null : Math.round(goal.progress.fraction * 100)}
-							<li class="flex items-center gap-3">
-								<span
-									class="h-4 w-1 shrink-0"
-									style="background-color: {goal.areaColor ?? CATEGORY_FALLBACK_COLOR}"
-									title={goal.areaName ?? t('home.noArea')}
-								></span>
-								<span class="min-w-0 flex-1 truncate text-sm text-gray-900">{goal.title}</span>
+							<li class="dash-row">
+								<span class="min-w-0 flex-1 truncate">{goal.title}</span>
+								{#if goal.areaName}
+									<CategoryMark
+										name={goal.areaName}
+										color={goal.areaColor}
+										class="max-w-32 max-sm:hidden"
+									/>
+								{/if}
 								<!-- Nothing to count, nothing to draw: an empty track reads as
 							     zero progress rather than as no measure. -->
 								{#if pct !== null}
 									<span class="progress-track h-1.5 w-16 shrink-0">
 										<span class="progress-fill block h-full" style="width: {pct}%"></span>
 									</span>
-									<span class="tabular w-10 shrink-0 text-right text-xs text-gray-500">{pct}%</span>
+									<span class="dash-value w-10 text-right">{pct}%</span>
 								{:else}
-									<span class="shrink-0 text-xs text-gray-500">{t('home.noMeasure')}</span>
+									<span class="dash-value">{t('home.noMeasure')}</span>
 								{/if}
 							</li>
 						{/each}
 					</ul>
 					{#if data.activeGoals.length > GOAL_PREVIEW}
-						<p class="mt-2 text-xs text-gray-500">
+						<p class="dash-more">
 							{t('home.more2', { goalPreview: data.activeGoals.length - GOAL_PREVIEW })}
 						</p>
 					{/if}
@@ -787,9 +801,7 @@
 		{#snippet card_habits()}
 			<Card title={t('home.habits')} accent={SECTION_COLORS.health}>
 				{#snippet actions()}
-					<a href={resolve('/health/habits')} class="text-xs text-gray-500 hover:text-gray-900">
-						{t('home.open')}
-					</a>
+					{@render openLink(resolve('/health/habits'))}
 				{/snippet}
 				{#if data.habitStreaks.length === 0}
 					{@render nothingYet(
@@ -798,20 +810,14 @@
 						t('health.habits.newHabit')
 					)}
 				{:else}
-					<div class="space-y-2">
+					<ul class="dash-rows">
 						{#each data.habitStreaks as habit (habit.id)}
-							<div class="flex items-center justify-between">
-								<span class="text-sm text-gray-700">{habit.name}</span>
-								<span
-									class="tabular text-xs {habit.streak > 0
-										? 'font-medium text-gray-900'
-										: 'text-gray-500'}"
-								>
-									{habit.streak}d
-								</span>
-							</div>
+							<li class="dash-row">
+								<span class="min-w-0 flex-1 truncate">{habit.name}</span>
+								<span class="dash-value">{t('home.streakDays', { count: habit.streak })}</span>
+							</li>
 						{/each}
-					</div>
+					</ul>
 				{/if}
 			</Card>
 		{/snippet}
@@ -832,9 +838,7 @@
 		{#snippet card_nextDays()}
 			<Card title={t('home.nextThreeDays')} accent={SECTION_COLORS.planner}>
 				{#snippet actions()}
-					<a href={resolve('/tasks/plan')} class="text-xs text-gray-500 hover:text-gray-900"
-						>{t('home.edit')}</a
-					>
+					{@render openLink(resolve('/tasks/plan'))}
 				{/snippet}
 				<div class="grid gap-3 sm:grid-cols-3">
 					{#each data.nextDays as day, ahead (day.date)}
@@ -850,30 +854,28 @@
 							{#if day.blocks.length === 0}
 								<p class="mt-2 text-xs text-gray-500">{t('home.nothingPlanned')}</p>
 							{:else}
-								<ul class="mt-2 space-y-1.5">
+								<!--
+									Each block as the plan draws it: a small face in its
+									category's colour, the ink computed from that colour. The
+									hairline bar that stood beside each line was a sixth way of
+									wearing a category.
+								-->
+								<ul class="mt-2 flex flex-col gap-1">
 									{#each shown as block (block.id)}
-										<li class="flex items-baseline gap-2 text-xs leading-tight">
-											<!-- The category's colour as a mark beside the words, never
-											     as the words' own ink: the user picks that colour and a
-											     pale one is unreadable on a light page. -->
-											<span
-												class="mt-1 h-3 w-0.5 shrink-0 rounded-full"
-												style="background-color: {block.categoryColor || CATEGORY_FALLBACK_COLOR}"
-											></span>
-											<span class="tabular shrink-0 text-gray-500"
-												>{block.startTime.slice(0, 5)}</span
-											>
-											<span
-												class="min-w-0 flex-1 truncate {block.status === 'done'
-													? 'text-gray-500'
-													: 'text-gray-700'}"
-												title={block.name}>{block.name}</span
-											>
+										<li
+											class="day-block pill-soft {block.status === 'done' ? 'is-done' : ''}"
+											style="--pill: {block.categoryColor || CATEGORY_FALLBACK_COLOR}"
+											title={block.categoryName
+												? `${block.name} · ${block.categoryName}`
+												: block.name}
+										>
+											<span class="tabular pill-quiet shrink-0">{block.startTime.slice(0, 5)}</span>
+											<span class="min-w-0 flex-1 truncate">{block.name}</span>
 										</li>
 									{/each}
 								</ul>
 								{#if day.blocks.length > shown.length}
-									<p class="mt-1.5 text-xs text-gray-500">
+									<p class="dash-more">
 										{t('home.more3', { length: day.blocks.length - shown.length })}
 									</p>
 								{/if}
@@ -899,9 +901,7 @@
 			{@const named = slices.slice(0, PIE_LEGEND)}
 			<Card title={t('home.whereTheWeekWent')} accent={SECTION_COLORS.planner}>
 				{#snippet actions()}
-					<a href={resolve('/tasks/review')} class="text-xs text-gray-500 hover:text-gray-900"
-						>{t('home.open')}</a
-					>
+					{@render openLink(resolve('/tasks/review'))}
 				{/snippet}
 				{#if data.weekSoFar.minutesDone === 0}
 					<p class="text-sm text-gray-500">{t('home.nothingTickedOffThisWeek')}</p>
@@ -916,18 +916,20 @@
 							label={hoursAndMinutes(data.weekSoFar.minutesDone)}
 							size={116}
 						/>
-						<ul class="min-w-40 flex-1 space-y-1.5">
+						<!--
+							Names and hours in two columns as wide as their longest entry,
+							beside the ring: stretched across the card, each hour sat
+							450px from the category it belonged to.
+						-->
+						<ul class="week-legend">
 							{#each named as cat (cat.id ?? 'none')}
-								<li class="flex items-center gap-2 text-xs">
-									<Swatch color={cat.color ?? CATEGORY_FALLBACK_COLOR} />
-									<span class="min-w-0 flex-1 truncate text-gray-700">{cat.name}</span>
-									<span class="tabular shrink-0 text-gray-500">
-										{hoursAndMinutes(cat.minutesDone)}
-									</span>
+								<li class="contents">
+									<CategoryMark name={cat.name} color={cat.color} />
+									<span class="dash-value">{hoursAndMinutes(cat.minutesDone)}</span>
 								</li>
 							{/each}
 							{#if slices.length > named.length}
-								<li class="text-xs text-gray-500">
+								<li class="dash-more col-span-2 !mt-0">
 									{t('home.more3', { length: slices.length - named.length })}
 								</li>
 							{/if}
@@ -941,27 +943,32 @@
 			<Card title={t('home.diary')} accent={SECTION_COLORS.diary}>
 				{#snippet actions()}
 					<!--
-						The same corner every card has — "Open →" — and the two things
-						you write here as the quiet buttons every card uses. They were
-						hand-drawn boxes whose words turned into "Cancel" while an inline
-						form opened under them and pushed the entry down; writing opens a
-						dialog now, and the buttons never change.
+						The same corner every card has — "Open →" — and the things you
+						write here as icons beside it, pulled into the header's own line
+						(`.card-verb`) so this header is as tall as every other card's.
 					-->
 					<div class="flex items-center gap-2">
 						{#if winsEnabled}
-							<button onclick={openWins} class="btn btn-sm" aria-haspopup="dialog">
-								<Icon name="plus" />
-								{t('home.3Wins')}
-								<Kbd keys={keyFor('/', 'new-wins')} class="hidden sm:inline" />
+							<button
+								onclick={openWins}
+								class="icon-btn icon-btn-sm card-verb"
+								aria-haspopup="dialog"
+								title={t('home.3Wins')}
+								aria-label={t('home.3Wins')}
+							>
+								<Icon name="star" />
 							</button>
 						{/if}
-						<button onclick={openDiary} class="btn btn-sm" aria-haspopup="dialog">
-							<Icon name="plus" />
-							{t('notebooks.diary.newEntry')}
-						</button>
-						<a href={resolve('/notebooks/diary')} class="text-xs text-gray-500 hover:text-gray-900"
-							>{t('home.open')}</a
+						<button
+							onclick={openDiary}
+							class="icon-btn icon-btn-sm card-verb"
+							aria-haspopup="dialog"
+							title={t('notebooks.diary.newEntry')}
+							aria-label={t('notebooks.diary.newEntry')}
 						>
+							<Icon name="plus" />
+						</button>
+						{@render openLink(resolve('/notebooks/diary'))}
 					</div>
 				{/snippet}
 
@@ -1094,15 +1101,15 @@
 									// It still flips for this visit; only the memory is lost.
 								}
 							}}
-							class="text-xs text-gray-500 hover:text-gray-900"
+							class="icon-btn icon-btn-sm card-verb"
 							title={todosNewestFirst ? t('home.showingNewestFirst') : t('home.showingOldestFirst')}
-							>{t('home.first', {
-								oldest: todosNewestFirst ? t('todoRows.newest') : t('todoRows.oldest')
-							})}</button
+							aria-label={todosNewestFirst
+								? t('home.showingNewestFirst')
+								: t('home.showingOldestFirst')}
 						>
-						<a href={resolve('/tasks/todo')} class="text-xs text-gray-500 hover:text-gray-900"
-							>{t('home.open')}</a
-						>
+							<Icon name={todosNewestFirst ? 'arrow-down' : 'arrow-up'} />
+						</button>
+						{@render openLink(resolve('/tasks/todo'))}
 					</div>
 				{/snippet}
 				{#if sortedTodos.length === 0}
@@ -1112,21 +1119,25 @@
 						t('home.addATodo')
 					)}
 				{:else}
-					<div class="space-y-1">
-						{#each sortedTodos.slice(0, 6) as todo (todo.id)}
-							<div class="flex items-baseline gap-2">
-								<span class="min-w-0 flex-1 truncate text-sm text-gray-700">{todo.title}</span>
+					<ul class="dash-rows">
+						{#each sortedTodos.slice(0, LIST_PREVIEW) as todo (todo.id)}
+							<li class="dash-row">
+								<span class="min-w-0 flex-1 truncate">{todo.title}</span>
 								{#if todo.categoryName}
-									<span class="shrink-0 text-[10px] text-gray-500">{todo.categoryName}</span>
+									<CategoryMark
+										name={todo.categoryName}
+										color={todo.categoryColor}
+										class="max-w-32 max-sm:hidden"
+									/>
 								{/if}
-							</div>
+							</li>
 						{/each}
-						{#if sortedTodos.length > 6}
-							<span class="text-xs text-gray-500"
-								>{t('home.more3', { length: sortedTodos.length - 6 })}</span
-							>
-						{/if}
-					</div>
+					</ul>
+					{#if sortedTodos.length > LIST_PREVIEW}
+						<p class="dash-more">
+							{t('home.more3', { length: sortedTodos.length - LIST_PREVIEW })}
+						</p>
+					{/if}
 				{/if}
 			</Card>
 		{/snippet}
@@ -1134,9 +1145,7 @@
 		{#snippet card_ideas()}
 			<Card title={t('home.ideas')} accent={SECTION_COLORS.ideas}>
 				{#snippet actions()}
-					<a href={resolve('/notebooks/ideas')} class="text-xs text-gray-500 hover:text-gray-900"
-						>{t('home.open')}</a
-					>
+					{@render openLink(resolve('/notebooks/ideas'))}
 				{/snippet}
 				{#if (data.latestIdeas ?? []).length === 0}
 					{@render nothingYet(
@@ -1145,16 +1154,15 @@
 						t('health.workouts.writeOneDown')
 					)}
 				{:else}
-					<div class="space-y-1">
-						{#each (data.latestIdeas ?? []).slice(0, 5) as idea (idea.id)}
-							<Written content={idea.content} oneLine />
+					{@const ideas = data.latestIdeas ?? []}
+					<ul class="dash-rows">
+						{#each ideas.slice(0, LIST_PREVIEW) as idea (idea.id)}
+							<li class="dash-row"><Written content={idea.content} oneLine /></li>
 						{/each}
-						{#if (data.latestIdeas ?? []).length > 5}
-							<span class="text-xs text-gray-500"
-								>{t('home.more3', { length: (data.latestIdeas ?? []).length - 5 })}</span
-							>
-						{/if}
-					</div>
+					</ul>
+					{#if ideas.length > LIST_PREVIEW}
+						<p class="dash-more">{t('home.more3', { length: ideas.length - LIST_PREVIEW })}</p>
+					{/if}
 				{/if}
 			</Card>
 		{/snippet}
@@ -1162,9 +1170,7 @@
 		{#snippet card_notebooks()}
 			<Card title={t('app.notebooks')} accent={SECTION_COLORS.diary}>
 				{#snippet actions()}
-					<a href={resolve('/notebooks')} class="text-xs text-gray-500 hover:text-gray-900"
-						>{t('home.open')}</a
-					>
+					{@render openLink(resolve('/notebooks'))}
 				{/snippet}
 				{#if (data.recentNotebooks ?? []).length === 0}
 					{@render nothingYet(
@@ -1173,9 +1179,10 @@
 						t('notebooks.newNotebook')
 					)}
 				{:else}
-					<!-- The same shelf the room draws, three covers of it: a notebook is
+					<!-- The same shelf the room draws, one row of it: as many covers
+					     as fit across the card, spread over its width. A notebook is
 					     picked by looking at it, here as much as there. -->
-					<div class="notebook-shelf !p-0">
+					<div class="notebook-shelf dash-shelf !p-0">
 						{#each data.recentNotebooks ?? [] as notebook (notebook.id)}
 							<NotebookCover {notebook} href="{resolve('/notebooks')}?notebook={notebook.id}" />
 						{/each}
@@ -1187,41 +1194,39 @@
 		{#snippet card_bills()}
 			<Card title={t('home.bills')} accent={SECTION_COLORS.finance}>
 				{#snippet actions()}
-					<a href={resolve('/finance/bills')} class="text-xs text-gray-500 hover:text-gray-900"
-						>{t('home.open')}</a
-					>
+					{@render openLink(resolve('/finance/bills'))}
 				{/snippet}
 				{#if data.billsCard.summary.billCount === 0}
 					{@render nothingYet(t('home.noBillsYetWriteDown'), '/finance/bills', t('home.addABill'))}
 				{:else}
-					<div class="space-y-2">
-						<div class="text-sm text-gray-700">
-							{t('home.paidOfExpected', {
-								currency: formatMoney(data.billsCard.summary.paid, data.billsCard.currency),
-								currency2: formatMoney(data.billsCard.summary.expected, data.billsCard.currency)
-							})}
-						</div>
-						{#if data.billsCard.open.length === 0}
-							<span class="text-xs text-gray-500">{t('home.everythingPaidThisMonth')}</span>
-						{:else}
-							<div class="space-y-1">
-								{#each data.billsCard.open.slice(0, 5) as bill (bill.id)}
-									<div class="flex items-center justify-between gap-2 text-sm">
-										<span class="text-gray-700">{bill.name}</span>
-										<span class="text-xs text-gray-500">
-											{formatMoney(bill.amountExpected, data.billsCard.currency)}{#if bill.dueDay}
-												{t('home.dueThe')} {ordinal(t, bill.dueDay)}{/if}
-										</span>
-									</div>
-								{/each}
-								{#if data.billsCard.open.length > 5}
-									<span class="text-xs text-gray-500"
-										>{t('home.more3', { length: data.billsCard.open.length - 5 })}</span
-									>
-								{/if}
-							</div>
+					<p class="text-sm text-gray-900">
+						{t('home.paidOfExpected', {
+							currency: formatMoney(data.billsCard.summary.paid, data.billsCard.currency),
+							currency2: formatMoney(data.billsCard.summary.expected, data.billsCard.currency)
+						})}
+					</p>
+					{#if data.billsCard.open.length === 0}
+						<p class="dash-more">{t('home.everythingPaidThisMonth')}</p>
+					{:else}
+						<ul class="dash-rows mt-2">
+							{#each data.billsCard.open.slice(0, LIST_PREVIEW) as bill (bill.id)}
+								{@const amount = formatMoney(bill.amountExpected, data.billsCard.currency)}
+								<li class="dash-row">
+									<span class="min-w-0 flex-1 truncate">{bill.name}</span>
+									<span class="dash-value">
+										{bill.dueDay
+											? t('home.amountDueOn', { amount, day: ordinal(t, bill.dueDay) })
+											: amount}
+									</span>
+								</li>
+							{/each}
+						</ul>
+						{#if data.billsCard.open.length > LIST_PREVIEW}
+							<p class="dash-more">
+								{t('home.more3', { length: data.billsCard.open.length - LIST_PREVIEW })}
+							</p>
 						{/if}
-					</div>
+					{/if}
 				{/if}
 			</Card>
 		{/snippet}
@@ -1229,9 +1234,7 @@
 		{#snippet card_workouts()}
 			<Card title={t('home.workouts')} accent={SECTION_COLORS.health}>
 				{#snippet actions()}
-					<a href={resolve('/health/workouts')} class="text-xs text-gray-500 hover:text-gray-900"
-						>{t('home.open')}</a
-					>
+					{@render openLink(resolve('/health/workouts'))}
 				{/snippet}
 				{#if data.workoutsCard.length === 0}
 					{@render nothingYet(
@@ -1240,18 +1243,18 @@
 						t('home.addAWorkout')
 					)}
 				{:else}
-					<div class="space-y-1">
-						{#each data.workoutsCard.slice(0, 5) as workout (workout.id)}
-							<div class="flex items-center justify-between gap-2 text-sm">
-								<span class="text-gray-700">{workout.title}</span>
-								<span class="text-xs text-gray-500">
+					<ul class="dash-rows">
+						{#each data.workoutsCard.slice(0, LIST_PREVIEW) as workout (workout.id)}
+							<li class="dash-row">
+								<span class="min-w-0 flex-1 truncate">{workout.title}</span>
+								<span class="dash-value">
 									{workout.lastDoneAt
 										? t('home.lastDone', { date: civilOf(workout.lastDoneAt, now()) })
 										: t('home.neverYet')}
 								</span>
-							</div>
+							</li>
 						{/each}
-					</div>
+					</ul>
 				{/if}
 			</Card>
 		{/snippet}
@@ -1268,9 +1271,7 @@
 		{#snippet card_shopping()}
 			<Card title={t('home.shopping')} accent={SECTION_COLORS.inventory}>
 				{#snippet actions()}
-					<a href={resolve('/inventory/stock')} class="text-xs text-gray-500 hover:text-gray-900"
-						>{t('home.open')}</a
-					>
+					{@render openLink(resolve('/inventory/stock'))}
 				{/snippet}
 				{#if data.shoppingCard.lines.length === 0}
 					{@render nothingYet(
@@ -1279,18 +1280,18 @@
 						t('home.addAnItem')
 					)}
 				{:else}
-					<ul class="space-y-1">
+					<ul class="dash-rows">
 						{#each data.shoppingCard.lines.slice(0, SHOPPING_PREVIEW) as line (line.id)}
-							<li class="flex items-baseline gap-2 text-sm">
-								<span class="min-w-0 flex-1 truncate text-gray-700">{line.name}</span>
+							<li class="dash-row">
+								<span class="min-w-0 flex-1 truncate">{line.name}</span>
 								{#if line.needed > 1}
-									<span class="tabular shrink-0 text-xs text-gray-500">×{line.needed}</span>
+									<span class="dash-value">×{line.needed}</span>
 								{/if}
 							</li>
 						{/each}
 					</ul>
 					{#if data.shoppingCard.lines.length > SHOPPING_PREVIEW}
-						<p class="mt-1 text-xs text-gray-500">
+						<p class="dash-more">
 							{t('home.more3', { length: data.shoppingCard.lines.length - SHOPPING_PREVIEW })}
 						</p>
 					{/if}
@@ -1301,9 +1302,7 @@
 		{#snippet card_wishlist()}
 			<Card title={t('home.wishlist')} accent={SECTION_COLORS.inventory}>
 				{#snippet actions()}
-					<a href={resolve('/inventory/wishlist')} class="text-xs text-gray-500 hover:text-gray-900"
-						>{t('home.open')}</a
-					>
+					{@render openLink(resolve('/inventory/wishlist'))}
 				{/snippet}
 				{#if data.shoppingCard.wishlist.length === 0}
 					{@render nothingYet(
@@ -1312,13 +1311,13 @@
 						t('home.addAnItem')
 					)}
 				{:else}
-					<ul class="space-y-1">
+					<ul class="dash-rows">
 						{#each data.shoppingCard.wishlist.slice(0, SHOPPING_PREVIEW) as item (item.id)}
-							<li class="text-sm text-gray-700"><span class="truncate">{item.name}</span></li>
+							<li class="dash-row"><span class="min-w-0 flex-1 truncate">{item.name}</span></li>
 						{/each}
 					</ul>
 					{#if data.shoppingCard.wishlist.length > SHOPPING_PREVIEW}
-						<p class="mt-1 text-xs text-gray-500">
+						<p class="dash-more">
 							{t('home.more3', { length: data.shoppingCard.wishlist.length - SHOPPING_PREVIEW })}
 						</p>
 					{/if}
@@ -1329,10 +1328,7 @@
 		{#snippet card_quote()}
 			<Card title={t('ui.today')} accent={SECTION_COLORS.home}>
 				{#snippet actions()}
-					<a
-						href={resolve('/settings/preferences')}
-						class="text-xs text-gray-500 hover:text-gray-900">{t('home.editRarr')}</a
-					>
+					{@render openLink(resolve('/settings/preferences'))}
 				{/snippet}
 				{#if data.quote}
 					<blockquote class="text-sm text-gray-900 italic">
@@ -1377,7 +1373,7 @@
 		difference is a screen of empty space or none.
 	-->
 		<div
-			class="grid grid-flow-row-dense grid-cols-1 gap-4 md:grid-cols-2 2xl:grid-cols-3"
+			class="grid grid-flow-row-dense grid-cols-1 items-start gap-4 md:grid-cols-2 2xl:grid-cols-3"
 			data-tour="dash-cards"
 		>
 			{#each layout as id (id)}
@@ -1545,14 +1541,93 @@
 	 * difference between the three columns that has to be visible at a glance.
 	 */
 	/*
-	 * A card fills its grid cell.
+	 * A card is as tall as what is in it.
 	 *
-	 * Two half-width cards share a row, and the shorter one stopped where its
-	 * content did — a white card with a band of page ground under it beside a
-	 * taller one. The cell already stretches; the card now does too.
+	 * It used to stretch to the taller card beside it, which on a sparse
+	 * account was a card with its content in the top half and a white field
+	 * under it — a ring beside a list of five, a list of six beside a shelf.
+	 * The cells start together (`items-start`) and each stops where it ends.
 	 */
-	[data-card] > :global(section) {
-		height: 100%;
+
+	/* On a phone the first card meets the bar, as a room's surface does. */
+	@media (max-width: 639px) {
+		.dash > :global(.room-bar) + :global(*) {
+			margin-top: 0;
+		}
+	}
+
+	/* One list shape for every card: one size of type, one row height, one
+	   way of putting a figure at the end of the line. */
+	.dash-rows {
+		display: flex;
+		flex-direction: column;
+		gap: 0.25rem;
+	}
+
+	.dash-row {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		min-height: 1.5rem;
+		font-size: 0.875rem;
+		color: var(--color-gray-900);
+	}
+
+	.dash-value,
+	.dash-time {
+		flex: none;
+		font-size: 0.75rem;
+		font-variant-numeric: tabular-nums;
+		color: var(--color-gray-500);
+	}
+
+	.dash-time {
+		width: 2.75rem;
+	}
+
+	.dash-more {
+		margin-top: 0.5rem;
+		font-size: 0.75rem;
+		color: var(--color-gray-500);
+	}
+
+	/* A button in a card's header, pulled into the header's own line so the
+	   header is as tall as every other card's. */
+	.card-verb {
+		margin-block: calc((var(--control-sm) - 1rem) / -2);
+	}
+
+	/* The ring's legend: two columns as wide as their entries. */
+	.week-legend {
+		display: grid;
+		grid-template-columns: auto auto;
+		align-items: center;
+		justify-content: start;
+		gap: 0.375rem 1.5rem;
+	}
+
+	/* One row of covers, spread across the card, the rest clipped. */
+	.dash-shelf {
+		grid-template-columns: repeat(auto-fit, minmax(6.5rem, 1fr));
+		grid-template-rows: auto;
+		grid-auto-rows: 0;
+		row-gap: 0;
+		overflow: hidden;
+	}
+
+	/* A block in a day column, drawn as the plan draws it. */
+	.day-block {
+		display: flex;
+		align-items: baseline;
+		gap: 0.5rem;
+		padding: 0.125rem 0.5rem;
+		font-size: 0.8125rem;
+		line-height: 1.25rem;
+	}
+
+	.day-block.is-done {
+		text-decoration: line-through;
+		opacity: 0.6;
 	}
 
 	.day-column {

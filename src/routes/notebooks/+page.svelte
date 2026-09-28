@@ -7,7 +7,8 @@
 	import { resolve } from '$app/paths';
 	import Card from '$lib/components/Card.svelte';
 	import SplitColumns from '$lib/components/SplitColumns.svelte';
-	import { NOTEBOOK_PANEL_MIN } from '$lib/services/settings';
+	import { NOTEBOOK_PANEL_MIN, PANEL_WIDTH } from '$lib/services/settings';
+	import { SPLIT_MEDIA } from '$lib/breakpoints';
 	import EmptyState from '$lib/components/EmptyState.svelte';
 	import FormError from '$lib/components/FormError.svelte';
 	import Icon from '$lib/components/Icon.svelte';
@@ -21,7 +22,8 @@
 	import NotebookTags from '$lib/components/NotebookTags.svelte';
 	import NotebookFields from '$lib/components/fields/NotebookFields.svelte';
 	import NotebookCover from '$lib/components/NotebookCover.svelte';
-	import NotebookPicture from '$lib/components/NotebookPicture.svelte';
+	import NotebookHeader from '$lib/components/NotebookHeader.svelte';
+	import DetailHeader from '$lib/components/DetailHeader.svelte';
 	import NotebookStar from '$lib/components/NotebookStar.svelte';
 	import {
 		allFolders,
@@ -66,8 +68,43 @@
 	// svelte-ignore state_referenced_locally
 	let panelRem = $state(data.listPanelRem);
 	let panelForm = $state<HTMLFormElement>();
+
+	/*
+	 * Until somebody drags it, the shelf grows with a wide screen rather than
+	 * staying two covers wide beside a column of notes 1700px across. The first
+	 * drag hands the width to them, from wherever the handle is.
+	 */
+	// svelte-ignore state_referenced_locally
+	let fluid = $state(!data.listPanelSet);
+	// svelte-ignore state_referenced_locally
+	const seededRem = panelRem;
+	$effect(() => {
+		if (panelRem !== seededRem) fluid = false;
+	});
+
+	/*
+	 * Whether the notebook opens beside the shelf. Below that width it would
+	 * open under the whole shelf, a long way down the page with nothing
+	 * changing on screen — so a cover goes to the notebook's own page instead.
+	 */
+	let sideBySide = $state(true);
+	$effect(() => {
+		const query = window.matchMedia(SPLIT_MEDIA);
+		sideBySide = query.matches;
+		const answer = (e: MediaQueryListEvent) => (sideBySide = e.matches);
+		query.addEventListener('change', answer);
+		return () => query.removeEventListener('change', answer);
+	});
+
+	function coverHref(id: number): string {
+		return sideBySide
+			? `${resolve('/notebooks')}?notebook=${id}`
+			: resolve('/notebooks/[id]', { id: String(id) });
+	}
 	/** The New button for whichever tab the panel is showing — see NotebookDetail. */
-	let newAction = $state<{ label: string; run?: () => void; href?: string } | undefined>(undefined);
+	let newAction = $state<
+		{ label: string; labels: string[]; run?: () => void; href?: string } | undefined
+	>(undefined);
 	/** The Link button beside it — see NotebookDetail. */
 	let linkAction = $state<{ label: string; run: () => void } | undefined>(undefined);
 
@@ -214,31 +251,36 @@
 	<!-- The room's colour down the side, the same as every other tab in it: the
 	     shelf was the one page here standing on a card with no accent. -->
 	<Card flush>
-		<!-- The shelf's own floor: one cover wide. A list of names cannot go this
-		     narrow and a grid of covers can — see `NOTEBOOK_PANEL_MIN`. -->
-		<SplitColumns
-			bind:rem={panelRem}
-			min={NOTEBOOK_PANEL_MIN}
-			label={t('notebooks.widenOrNarrowTheList')}
-			onsettle={() => panelForm?.requestSubmit()}
+		<div
+			class="shelf-split"
+			class:is-fluid={fluid}
+			style="--shelf-floor: {PANEL_WIDTH.fallback}rem; --shelf-ceiling: {PANEL_WIDTH.max}rem"
 		>
-			{#snippet left()}
-				<Card flush pane>
-					{#if data.notebooks.length === 0}
-						<EmptyState
-							icon="notebook"
-							title={t('notebooks.noNotebooksYet')}
-							description={t('notebooks.startOneForSomethingYou')}
-						>
-							{#snippet action()}
-								<button onclick={openCreate} class="btn btn-primary">
-									<Icon name="plus" />
-									{t('notebooks.newNotebook')}
-								</button>
-							{/snippet}
-						</EmptyState>
-					{:else}
-						<!--
+			<!-- The shelf's own floor: one cover wide. A list of names cannot go this
+		     narrow and a grid of covers can — see `NOTEBOOK_PANEL_MIN`. -->
+			<SplitColumns
+				bind:rem={panelRem}
+				min={NOTEBOOK_PANEL_MIN}
+				label={t('notebooks.widenOrNarrowTheList')}
+				onsettle={() => panelForm?.requestSubmit()}
+			>
+				{#snippet left()}
+					<Card flush pane>
+						{#if data.notebooks.length === 0}
+							<EmptyState
+								icon="notebook"
+								title={t('notebooks.noNotebooksYet')}
+								description={t('notebooks.startOneForSomethingYou')}
+							>
+								{#snippet action()}
+									<button onclick={openCreate} class="btn btn-primary">
+										<Icon name="plus" />
+										{t('notebooks.newNotebook')}
+									</button>
+								{/snippet}
+							</EmptyState>
+						{:else}
+							<!--
 							Folders group notebooks.
 
 							A folder is a path a notebook carries, `Home/Kitchen`, and only a
@@ -246,7 +288,7 @@
 							drawn as a tile on the shelf that opens in place, and renaming it
 							rewrites the path of every notebook in it.
 						-->
-						<!--
+							<!--
 							A notebook is its cover.
 
 							They were rows with a stamp of a picture at the front, which is a
@@ -255,52 +297,48 @@
 							it. The picture is the object and the name hangs under it, glued
 							on rather than beside it.
 						-->
-						{#snippet cover(node: Notebook, tour = false)}
-							<NotebookCover
-								notebook={node}
-								href="{resolve('/notebooks')}?notebook={node.id}"
-								chosen={node.id === data.selected}
-							>
-								{#snippet star()}
-									<NotebookStar notebook={node} {tour} />
-								{/snippet}
-								{#snippet actions()}
-									<button
-										onclick={() => openEdit(node)}
-										class="icon-btn"
-										aria-label={t('notebooks.edit', { title: node.title })}
-									>
-										<Icon name="edit" />
-									</button>
-									<form
-										method="post"
-										action="?/setClosed"
-										use:enhance={() =>
-											async ({ update }) => {
-												await update({ reset: false });
-											}}
-									>
-										<input type="hidden" name="id" value={node.id} />
-										<input type="hidden" name="closed" value={node.closedAt ? 'false' : 'true'} />
+							{#snippet cover(node: Notebook, tour = false)}
+								<NotebookCover
+									notebook={node}
+									href={coverHref(node.id)}
+									chosen={node.id === data.selected}
+								>
+									{#snippet star()}
+										<NotebookStar notebook={node} {tour} />
+									{/snippet}
+									{#snippet actions()}
 										<button
+											onclick={() => openEdit(node)}
 											class="icon-btn"
-											title={node.closedAt ? t('notebooks.reopenIt') : t('notebooks.closeIt')}
-											aria-label="{node.closedAt
-												? t('notebooks.reopenIt')
-												: t('notebooks.closeIt')} {node.title}"
+											aria-label={t('notebooks.edit', { title: node.title })}
 										>
-											{#if node.closedAt}
-												<Icon name="undo" />
-											{:else}
-												<Icon name="check" />
-											{/if}
+											<Icon name="edit" />
 										</button>
-									</form>
-								{/snippet}
-							</NotebookCover>
-						{/snippet}
+										<form
+											method="post"
+											action="?/setClosed"
+											use:enhance={() =>
+												async ({ update }) => {
+													await update({ reset: false });
+												}}
+										>
+											<input type="hidden" name="id" value={node.id} />
+											<input type="hidden" name="closed" value={node.closedAt ? 'false' : 'true'} />
+											<button
+												class="icon-btn"
+												title={node.closedAt ? t('notebooks.reopenIt') : t('notebooks.closeIt')}
+												aria-label="{node.closedAt
+													? t('notebooks.reopenIt')
+													: t('notebooks.closeIt')} {node.title}"
+											>
+												<Icon name={node.closedAt ? 'undo' : 'archive'} />
+											</button>
+										</form>
+									{/snippet}
+								</NotebookCover>
+							{/snippet}
 
-						<!--
+							<!--
 							An open folder and what is inside it are one block.
 
 							They were flat siblings on one shelf with the contents nudged a
@@ -310,126 +348,137 @@
 							the pair says it instead: the folder and its contents sit on one
 							tint, and a folder inside that one gets a tint of its own.
 						-->
-						{#snippet folderTile(folder: ShelfFolder<Notebook>)}
-							{@const open = opened.has(folder.path)}
-							{@const shown = insideOf(folder).slice(0, 4)}
-							<div class="notebook-cover">
-								<button
-									type="button"
-									class="cover-face w-full text-left"
-									aria-expanded={open}
-									aria-label={t('notebooks.whatIsInside', {
-										show: open ? t('ui.hide') : t('ui.show'),
-										title: folder.name
-									})}
-									onclick={() => toggle(folder.path)}
-								>
-									<!-- The folder wears what is in it: up to four of its covers. -->
-									<span class="cover-art cover-folder" data-shows={shown.length} aria-hidden="true">
-										{#each shown as one (one.id)}
-											{#if one.pictureId}
-												<img src="/media/{one.pictureId}" alt="" loading="lazy" />
-											{:else}
-												<span></span>
-											{/if}
-										{/each}
-									</span>
-									<span class="cover-name flex items-center gap-1">
-										<Icon name={open ? 'chevron-down' : 'chevron-right'} size={12} />
-										<span class="min-w-0">{folder.name}</span>
-									</span>
-									<span class="cover-tally">
-										{t('notebooks.folderNotebooksCount', { count: folder.count })}
-									</span>
-								</button>
-								<div class="cover-actions">
+							{#snippet folderTile(folder: ShelfFolder<Notebook>)}
+								{@const open = opened.has(folder.path)}
+								{@const shown = insideOf(folder).slice(0, 4)}
+								<div class="notebook-cover">
 									<button
 										type="button"
-										class="icon-btn"
-										title={t('notebooks.renameFolder')}
-										aria-label={t('notebooks.renameFolderNamed', { name: folder.path })}
-										onclick={() => openRename(folder.path)}
+										class="cover-face w-full text-left"
+										aria-expanded={open}
+										aria-label={t('notebooks.whatIsInside', {
+											show: open ? t('ui.hide') : t('ui.show'),
+											title: folder.name
+										})}
+										onclick={() => toggle(folder.path)}
 									>
-										<Icon name="edit" />
+										<!-- The folder wears what is in it: up to four of its covers. -->
+										<span
+											class="cover-art cover-folder"
+											data-shows={shown.length}
+											aria-hidden="true"
+										>
+											{#each shown as one (one.id)}
+												{#if one.pictureId}
+													<img src="/media/{one.pictureId}" alt="" loading="lazy" />
+												{:else}
+													<span></span>
+												{/if}
+											{/each}
+										</span>
+										<span class="cover-name flex items-center gap-1">
+											<Icon name={open ? 'chevron-down' : 'chevron-right'} size={12} />
+											<span class="min-w-0">{folder.name}</span>
+										</span>
+										<span class="cover-tally">
+											{t('notebooks.folderNotebooksCount', { count: folder.count })}
+										</span>
 									</button>
+									<div class="cover-actions">
+										<button
+											type="button"
+											class="icon-btn"
+											title={t('notebooks.renameFolder')}
+											aria-label={t('notebooks.renameFolderNamed', { name: folder.path })}
+											onclick={() => openRename(folder.path)}
+										>
+											<Icon name="edit" />
+										</button>
+									</div>
 								</div>
-							</div>
-						{/snippet}
+							{/snippet}
 
-						{#snippet folderRow(folder: ShelfFolder<Notebook>)}
-							{#if opened.has(folder.path)}
-								<div class="notebook-family" data-folder={folder.path}>
+							{#snippet folderRow(folder: ShelfFolder<Notebook>)}
+								{#if opened.has(folder.path)}
+									<div class="notebook-family" data-folder={folder.path}>
+										{@render folderTile(folder)}
+										{@render shelfContents(folder)}
+									</div>
+								{:else}
 									{@render folderTile(folder)}
-									{@render shelfContents(folder)}
-								</div>
-							{:else}
-								{@render folderTile(folder)}
-							{/if}
-						{/snippet}
+								{/if}
+							{/snippet}
 
-						{#snippet shelfContents(level: {
-							folders: ShelfFolder<Notebook>[];
-							notebooks: Notebook[];
-						})}
-							{#each level.folders as folder (folder.path)}
-								{@render folderRow(folder)}
-							{/each}
-							{#each level.notebooks as node (node.id)}
-								{@render cover(
-									node,
-									favourites.length === 0 && node.id === shelved.notebooks[0]?.id
-								)}
-							{/each}
-						{/snippet}
+							{#snippet shelfContents(level: {
+								folders: ShelfFolder<Notebook>[];
+								notebooks: Notebook[];
+							})}
+								{#each level.folders as folder (folder.path)}
+									{@render folderRow(folder)}
+								{/each}
+								{#each level.notebooks as node (node.id)}
+									{@render cover(
+										node,
+										favourites.length === 0 && node.id === shelved.notebooks[0]?.id
+									)}
+								{/each}
+							{/snippet}
 
-						{#if favourites.length > 0}
-							<div data-favourites>
-								<p class="shelf-fold-label shelf-heading">
-									<Icon name="star" size={14} />
-									{t('notebooks.favourites')}
-								</p>
-								<div class="notebook-shelf">
-									{#each favourites as node, at (node.id)}
-										{@render cover(node, at === 0)}
-									{/each}
-								</div>
-							</div>
-						{/if}
-
-						<div data-tour="notebook-shelf" class="notebook-shelf">
-							{@render shelfContents(shelved)}
-						</div>
-
-						{#if closedOnes.length > 0}
 							<!--
+							Every part of the shelf is named the same way: a small heading
+							on the shelf's own left edge, with its glyph. The closed ones
+							are one more of these, pressed to open.
+						-->
+							{#if favourites.length > 0}
+								<div data-favourites>
+									<h2 class="shelf-heading eyebrow">
+										<Icon name="star" size={14} />
+										{t('notebooks.favourites')}
+									</h2>
+									<div class="notebook-shelf">
+										{#each favourites as node, at (node.id)}
+											{@render cover(node, at === 0)}
+										{/each}
+									</div>
+								</div>
+								<h2 class="shelf-heading eyebrow">
+									<Icon name="notebook" size={14} />
+									{t('notebooks.allNotebooks')}
+								</h2>
+							{/if}
+
+							<div data-tour="notebook-shelf" class="notebook-shelf">
+								{@render shelfContents(shelved)}
+							</div>
+
+							{#if closedOnes.length > 0}
+								<!--
 								The line under the shelf, and what is behind it.
 
 								Pressing the line is what opens it — the rule and its label
 								are one control, so there is nothing to hunt for and nothing
 								drawn that is not the thing itself.
 							-->
-							<button
-								type="button"
-								class="shelf-fold"
-								onclick={() => (showClosed = !showClosed)}
-								aria-expanded={showClosed}
-							>
-								<span class="shelf-fold-line" aria-hidden="true"></span>
-								<span class="shelf-fold-label">
-									<Icon name={showClosed ? 'chevron-down' : 'chevron-right'} size={14} />
-									{t('notebooks.closedCount', { count: closedOnes.length })}
-								</span>
-								<span class="shelf-fold-line" aria-hidden="true"></span>
-							</button>
+								<h2>
+									<button
+										type="button"
+										class="shelf-heading shelf-fold eyebrow"
+										onclick={() => (showClosed = !showClosed)}
+										aria-expanded={showClosed}
+									>
+										<Icon name={showClosed ? 'chevron-down' : 'chevron-right'} size={14} />
+										{t('notebooks.closedCount', { count: closedOnes.length })}
+									</button>
+								</h2>
 
-							{#if showClosed}
-								<div class="notebook-shelf">
-									{@render shelfContents(closed)}
-								</div>
+								{#if showClosed}
+									<div class="notebook-shelf">
+										{@render shelfContents(closed)}
+									</div>
+								{/if}
 							{/if}
-						{/if}
 
-						<!--
+							<!--
 							What is left over, as a bin in the corner.
 
 							Notes whose notebook was deleted are not a notebook, and a row
@@ -437,157 +486,83 @@
 							shelf called "Notes without a notebook". It is a small thing
 							pinned to the bottom corner of the panel, where a bin goes.
 						-->
-						{#if orphaned.length > 0}
-							<a
-								href="{resolve('/notebooks')}?notebook=orphaned"
-								class="shelf-bin {showingOrphans ? 'is-chosen' : ''}"
-								title={t('notebooks.theirNotebookWas', {
-									length: orphaned.length,
-									notes: orphaned.length === 1 ? 'note' : 'notes'
-								})}
-								aria-label={t('notebooks.notesWithoutANotebook')}
-							>
-								<Icon name="recycle" size={16} />
-								<span class="tabular text-xs">{orphaned.length}</span>
-							</a>
+							{#if orphaned.length > 0}
+								<a
+									href="{resolve('/notebooks')}?notebook=orphaned"
+									class="shelf-bin {showingOrphans ? 'is-chosen' : ''}"
+									aria-current={showingOrphans ? 'true' : undefined}
+									title={t('notebooks.theirNotebookWas', {
+										length: orphaned.length,
+										notes: orphaned.length === 1 ? 'note' : 'notes'
+									})}
+								>
+									<Icon name="recycle" size={14} />
+									<span class="min-w-0 flex-1 truncate">{t('notebooks.notesWithoutANotebook')}</span
+									>
+									<span class="tabular">{orphaned.length}</span>
+								</a>
+							{/if}
 						{/if}
-					{/if}
-				</Card>
-			{/snippet}
+					</Card>
+				{/snippet}
 
-			<!--
+				<!--
 				The second column is the one you picked, and on a phone there is no
 				second column — there is what is under your thumb. An account with
 				nothing in it showed "no notebooks yet" and then, under it, two more
 				panels saying nothing was chosen.
 			-->
-			{#snippet right()}
-				<div class:hidden={!selected && !showingOrphans} class="contents lg:!block">
-					<Card
-						title={showingOrphans
-							? t('notebooks.notesWithoutANotebook')
-							: (selected?.title ?? t('notebookDetail.nothingChosen'))}
-						description={showingOrphans
-							? t('notebooks.theirNotebookWasDeletedThe')
-							: selected
-								? (selected.description ?? '')
-								: t('notebooks.pickANotebookToSee')}
-						foldDescription={!!selected && !showingOrphans}
-						flush
-						pane
-					>
-						{#snippet lead()}
-							<!-- The notebook's own picture, beside its name — and pressing it
-							     is how you change it, the same control the shelf and the two
-							     Edit notebook dialogues use. -->
+				{#snippet right()}
+					<div class:hidden={!showingOrphans} class="contents lg:!block">
+						<Card flush pane>
 							{#if selected && !showingOrphans}
-								<NotebookPicture
+								<!-- The same header the notebook's own page has — see `NotebookHeader`. -->
+								<NotebookHeader
 									notebook={selected}
-									kilobytes={data.pictureKilobytes}
-									size="size-16"
-									onpress={() => openEdit(selected)}
+									pictureKilobytes={data.pictureKilobytes}
+									onFamilyPlan={data.onFamilyPlan}
+									open={resolve('/notebooks/[id]', { id: String(selected.id) })}
+									link={linkAction}
+									fill={newAction}
+									onedit={() => openEdit(selected)}
+									ontags={() => (managingTags = true)}
 								/>
+							{:else if showingOrphans}
+								<DetailHeader surface pane title={t('notebooks.notesWithoutANotebook')}>
+									{#snippet meta()}
+										<p class="text-sm text-gray-500">{t('notebooks.theirNotebookWasDeletedThe')}</p>
+									{/snippet}
+								</DetailHeader>
 							{/if}
-						{/snippet}
-						{#snippet titleActions()}
-							{#if selected}
-								<!-- The way to the notebook's own page, beside its name. -->
-								<a
-									href={resolve('/notebooks/[id]', { id: String(selected.id) })}
-									class="btn btn-sm"
-									title={t('ui.open')}
-									aria-label={t('ui.open')}
-								>
-									<span class="hidden sm:inline">{t('ui.open')}</span>
-									<Icon name="arrow-right" />
-								</a>
-								<!-- This subject's own words, rather than the whole account's. -->
-								<button
-									onclick={() => (managingTags = true)}
-									class="btn btn-sm"
-									title={t('tags.manageTags')}
-									aria-label={t('tags.manageTags')}
-								>
-									<!-- The glyph alone, as on the notebook's own page. -->
-									<Icon name="tag" />
-								</button>
-							{/if}
-						{/snippet}
-						{#snippet actions()}
-							{#if selected}
-								<!--
-									Filling the notebook: the two ways to put something in it,
-									with the primary verb at the end where a hand comes from.
-									Leaving it — its labels and its own page — sits by the name.
-								-->
-								<div class="flex flex-col items-end gap-2">
-									<div class="flex flex-wrap items-center justify-end gap-2">
-										{#if linkAction}
-											<!-- The other way to fill a tab: take something that is
-											     already there. See `LinkIntoNotebook`. -->
-											<button onclick={linkAction.run} class="btn btn-sm">
-												<Icon name="link" />
-												{linkAction.label}
-											</button>
-										{/if}
-										<!--
-											Writing, where deleting the whole notebook used to be.
 
-											This is a page for browsing notebooks, and the thing most
-											often wanted from one on screen is another note in it —
-											not destroying it, one press away, beside a list you are
-											moving through. Deleting a notebook is on the notebook's
-											own page, which is a place you go to on purpose.
-
-											What it says follows the tab below it: it read "New note"
-											while the Tasks tab was showing, which is a button
-											offering the wrong thing about the list under it.
-										-->
-										{#if newAction?.href}
-											<!-- Already resolved: NotebookDetail builds this with `resolve()`. -->
-											<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -->
-											<a href={newAction.href} class="btn btn-sm btn-primary">
-												<Icon name="plus" />
-												{newAction.label}
-											</a>
-										{:else if newAction}
-											<button onclick={newAction.run} class="btn btn-sm btn-primary">
-												<Icon name="plus" />
-												{newAction.label}
-											</button>
-										{/if}
-									</div>
-								</div>
-							{/if}
-						{/snippet}
-
-						<NotebookDetail
-							notebook={selected}
-							contents={data.contents}
-							{orphaned}
-							{showingOrphans}
-							allPeople={data.allPeople}
-							categories={data.categories}
-							inventoryCategories={data.inventoryCategories}
-							workoutCategories={data.workoutCategories}
-							parsers={data.parsers}
-							currency={data.currency}
-							pickableNotebooks={data.pickableNotebooks}
-							locations={data.locations}
-							areas={data.areas}
-							workoutMeasures={data.workoutMeasures}
-							slots={data.slots}
-							todos={data.todos}
-							allTodos={data.allTodos}
-							activities={data.activities}
-							bind:composing
-							bind:newAction
-							bind:linkAction
-						/>
-					</Card>
-				</div>
-			{/snippet}
-		</SplitColumns>
+							<NotebookDetail
+								notebook={selected}
+								contents={data.contents}
+								{orphaned}
+								{showingOrphans}
+								allPeople={data.allPeople}
+								categories={data.categories}
+								inventoryCategories={data.inventoryCategories}
+								workoutCategories={data.workoutCategories}
+								parsers={data.parsers}
+								currency={data.currency}
+								pickableNotebooks={data.pickableNotebooks}
+								locations={data.locations}
+								areas={data.areas}
+								workoutMeasures={data.workoutMeasures}
+								slots={data.slots}
+								todos={data.todos}
+								allTodos={data.allTodos}
+								activities={data.activities}
+								bind:composing
+								bind:newAction
+								bind:linkAction
+							/>
+						</Card>
+					</div>
+				{/snippet}
+			</SplitColumns>
+		</div>
 	</Card>
 
 	{#if selected}
@@ -806,3 +781,19 @@
 		<button type="submit" form="folder-form" class="btn btn-primary">{t('ui.save')}</button>
 	{/snippet}
 </Modal>
+
+<style>
+	/*
+	 * The shelf's width while nobody has chosen one: its usual width on a
+	 * laptop, gaining three rems for every eight the screen has past 90rem, up
+	 * to the widest the handle allows. `!important` because the handle writes
+	 * the width inline; the first drag takes this class away.
+	 */
+	.shelf-split.is-fluid > :global(div) {
+		--split-left: clamp(
+			var(--shelf-floor),
+			calc(var(--shelf-floor) + (100vw - 90rem) * 0.375),
+			var(--shelf-ceiling)
+		) !important;
+	}
+</style>

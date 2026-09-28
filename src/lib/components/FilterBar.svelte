@@ -92,6 +92,7 @@
 		verb,
 		trailing,
 		inline,
+		inlineBelow = false,
 		children
 	}: {
 		name: string;
@@ -140,6 +141,12 @@
 		 * folds; a list whose filters are all here gets no Filters button.
 		 */
 		inline?: Snippet;
+		/**
+		 * While the strip is folded, the `inline` filters take a line of their
+		 * own under the first, rather than squeezing the search box — for two
+		 * of them, which do not fit beside it on a phone.
+		 */
+		inlineBelow?: boolean;
 		/**
 		 * The filters. A list with none — a search box and a count, nothing
 		 * else — leaves this out, and a phone gets no Filters button to open an
@@ -221,7 +228,9 @@
 	{#if count}<div class="filter-count shrink-0">{@render count()}</div>{/if}
 
 	{#if inline}
-		<div class="flex min-w-0 items-center gap-2">{@render inline()}</div>
+		<div class="flex min-w-0 items-center gap-2" class:filter-inline-below={folded && inlineBelow}>
+			{@render inline()}
+		</div>
 	{/if}
 
 	{#if children && folded}
@@ -332,6 +341,17 @@
 {/if}
 
 <style>
+	/* Its own line, last, the controls sharing it as they would a row. */
+	.filter-inline-below {
+		order: 1;
+		width: 100%;
+	}
+
+	.filter-inline-below > :global(*) {
+		flex: 1 1 0;
+		min-width: 0;
+	}
+
 	/* The mark that says a filter is on while the strip is shut. */
 	.filter-toggle {
 		position: relative;

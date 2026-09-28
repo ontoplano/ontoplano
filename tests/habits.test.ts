@@ -15,11 +15,13 @@ seedAccounts(database.path);
 afterAll(() => database.remove());
 
 let habits: typeof import('../src/lib/services/habits');
+let NotFoundError: typeof import('../src/lib/services/errors').NotFoundError;
 let ctx: { userId: string; now: Date; tz: string };
 let theirs: { userId: string; now: Date; tz: string };
 
 beforeAll(async () => {
 	habits = await import('../src/lib/services/habits');
+	({ NotFoundError } = await import('../src/lib/services/errors'));
 	// A Monday, so weekday arithmetic in the schedule is easy to read.
 	ctx = { userId: OWNER, now: new Date('2026-08-17T09:00:00'), tz: 'UTC' };
 	theirs = { ...ctx, userId: STRANGER };
@@ -52,6 +54,28 @@ describe('keeping habits', () => {
 		const mine = habits.listHabits(ctx)[0];
 		expect(() => habits.updateHabit(theirs, mine.id, { name: 'taken', type: 'bad' })).toThrow();
 		expect(() => habits.deleteHabit(theirs, mine.id)).toThrow();
+	});
+});
+
+describe('putting a habit away', () => {
+	test('an archived habit leaves the list and keeps its days', () => {
+		const id = habits.createHabit(ctx, { name: 'stretch', type: 'good' });
+		habits.logOccurrence(ctx, { habitId: id, date: '2026-08-16' });
+
+		habits.setHabitArchived(ctx, id, true);
+		expect(habits.listHabits(ctx).some((h) => h.id === id)).toBe(false);
+		const kept = habits.listHabits(ctx, { includeArchived: true }).find((h) => h.id === id)!;
+		expect(kept.archivedAt).toMatch(/Z$/);
+		expect(habits.listOccurrences(ctx).filter((o) => o.habitId === id)).toHaveLength(1);
+
+		habits.setHabitArchived(ctx, id, false);
+		expect(habits.listHabits(ctx).find((h) => h.id === id)?.archivedAt).toBeNull();
+	});
+
+	test('another account cannot archive one, and it stays as it was', () => {
+		const id = habits.createHabit(ctx, { name: 'floss', type: 'good' });
+		expect(() => habits.setHabitArchived(theirs, id, true)).toThrow(NotFoundError);
+		expect(habits.listHabits(ctx).find((h) => h.id === id)?.archivedAt).toBeNull();
 	});
 });
 

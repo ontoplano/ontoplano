@@ -8,7 +8,7 @@
 	import TagInput from '$lib/components/TagInput.svelte';
 	import { civilOf, momentOf } from '$lib/when';
 	import { useWhen } from '$lib/when-context.svelte';
-	import { tick, untrack, type ComponentProps } from 'svelte';
+	import { tick, untrack, type ComponentProps, type Snippet } from 'svelte';
 	import { enhance } from '$lib/enhance';
 	import { SvelteSet } from 'svelte/reactivity';
 	import OneLine from '$lib/components/OneLine.svelte';
@@ -244,7 +244,7 @@
 		activities?: { id: number; name: string }[];
 		/** Whether the composer is open, so a page can put the button elsewhere. */
 		composing?: boolean;
-		newAction?: { label: string; run?: () => void; href?: string } | undefined;
+		newAction?: { label: string; labels: string[]; run?: () => void; href?: string } | undefined;
 		linkAction?: { label: string; run: () => void } | undefined;
 	} = $props();
 
@@ -601,6 +601,18 @@
 		recipes: 'recipe'
 	};
 
+	/** What each tab's search box says, in the words the Notes and Tasks tabs use. */
+	const SEARCH_LABEL: Partial<Record<NotebookModule, PlainKey>> = {
+		goals: 'notebookDetail.searchTheseGoals',
+		ideas: 'notebookDetail.searchTheseIdeas',
+		inventory: 'notebookDetail.searchTheseThings',
+		ledgers: 'notebookDetail.searchTheseLedgers',
+		bills: 'notebookDetail.searchTheseBills',
+		habits: 'notebookDetail.searchTheseHabits',
+		workouts: 'notebookDetail.searchTheseWorkouts',
+		recipes: 'notebookDetail.searchTheseRecipes'
+	};
+
 	const NEW_LABELS: Partial<Record<NotebookModule, PlainKey>> = {
 		inventory: 'notebooks.newItem',
 		ledgers: 'notebooks.newLedger',
@@ -659,7 +671,7 @@
 			newAction = undefined;
 			return;
 		}
-		newAction =
+		const action =
 			tab === 'notes'
 				? {
 						label: composing ? t('ui.cancel') : t('notebookDetail.newNote'),
@@ -701,7 +713,29 @@
 									// Bills open the list's own form, the one the room uses.
 									run: () => (tab === 'bills' ? billList?.openNew() : openComposer(tab))
 								};
+		newAction = { ...action, labels: newLabels };
 	});
+
+	/**
+	 * Every word the New button can say on this notebook's tabs, and Cancel.
+	 *
+	 * So whoever draws it can make it as wide as the longest of them: a button
+	 * that changes width when the tab does moves everything beside it.
+	 */
+	const newLabels = $derived([
+		...TAB_KEYS.map((key) =>
+			key === 'notes'
+				? t('notebookDetail.newNote')
+				: key === 'tasks'
+					? t('notebookDetail.newTask')
+					: key === 'ideas'
+						? t('notebooks.newIdea')
+						: key === 'goals'
+							? t('notebookDetail.newGoal')
+							: t(NEW_LABELS[key] ?? 'ui.add')
+		),
+		t('ui.cancel')
+	]);
 
 	/*
 	 * Whichever notebook you move to opens on its own first tab, not on
@@ -845,6 +879,12 @@
 	 * Tasks tabs each open on a search strip, and a Goals tab that opened on
 	 * its first card read as a different kind of screen.
 	 */
+	function clearNoteFilters() {
+		noteTagFilter = [];
+		showArchivedNotes = false;
+		noteSearch = '';
+	}
+
 	let moduleSearch = $state('');
 	$effect(() => {
 		void tab;
@@ -864,11 +904,45 @@
 		return words.join('\n').toLowerCase();
 	}
 
-	/** A module tab's list, narrowed by its search box. */
+	/**
+	 * How every other tab is ordered: when it was added, or by name.
+	 *
+	 * The Notes and Tasks tabs each have an order control at the end of the
+	 * strip; a tab without one was the same strip missing its last control.
+	 */
+	const MODULE_ORDERS = ['added', 'name'] as const;
+	type ModuleOrder = (typeof MODULE_ORDERS)[number];
+	const MODULE_ORDER_LABELS: Record<ModuleOrder, PlainKey> = {
+		added: 'notebookDetail.orderAdded',
+		name: 'notebookDetail.orderName'
+	};
+	let moduleOrder = $state<ModuleOrder>('added');
+	let moduleDirection = $state<'asc' | 'desc'>('asc');
+
+	/** What a module's thing is called, whichever field its room keeps that in. */
+	function nameOf(item: Record<string, unknown>): string {
+		for (const field of ['title', 'name', 'content'])
+			if (typeof item[field] === 'string') return item[field] as string;
+		return '';
+	}
+
+	/** A module tab's list, narrowed by its search box and put in its order. */
 	function searched<T>(items: readonly T[]): T[] {
 		const needle = moduleSearch.trim().toLowerCase();
-		if (!needle) return [...items];
-		return items.filter((item) => wordsOf(item as Record<string, unknown>).includes(needle));
+		const out = needle
+			? items.filter((item) => wordsOf(item as Record<string, unknown>).includes(needle))
+			: [...items];
+		const sign = moduleDirection === 'asc' ? 1 : -1;
+		return out.sort((a, b) => {
+			const one = a as Record<string, unknown>;
+			const two = b as Record<string, unknown>;
+			return (
+				sign *
+				(moduleOrder === 'name'
+					? nameOf(one).localeCompare(nameOf(two))
+					: Number(one.id ?? 0) - Number(two.id ?? 0))
+			);
+		});
 	}
 
 	const shownGoals = $derived(searched(contents?.goals ?? []));
@@ -981,77 +1055,31 @@
 	 * The strip: one entry per module this notebook holds, in the app's order.
 	 *
 	 * Built from the same list the body switches on, so a tab can never be
-	 * drawn with nothing behind it. Notes, tasks and goals count themselves
-	 * because they are drawn here; everything else is counted through
-	 * `rowsFor`, which is what the tab itself draws — so the number beside a
-	 * tab is exactly how many lines pressing it shows.
+	 * drawn with nothing behind it. The number beside a tab is how many lines
+	 * pressing it shows — one number, because "3/8" beside a word does not say
+	 * which of the two is which.
 	 */
-	const tabs = $derived<{ key: Tab; label: PlainKey; count: number; done?: number }[]>(
+	const tabs = $derived<{ key: Tab; label: PlainKey; count: number }[]>(
 		TAB_KEYS.map((key) => {
 			if (key === 'notes') return { key, label: 'app.notes' as PlainKey, count: shownNotes.length };
 			if (key === 'tasks')
 				return {
 					key,
 					label: 'app.tasks' as PlainKey,
-					count: (contents?.todos.length ?? 0) + (contents?.blocks.length ?? 0),
-					// A block on the grid is a thing that happens rather than a thing
-					// to finish, so only the todos are counted as done or not.
-					done: contents?.todos.filter((todo) => CLOSED_STATUSES.includes(todo.status)).length ?? 0
+					count: (contents?.todos.length ?? 0) + (contents?.blocks.length ?? 0)
 				};
 			if (key === 'goals')
-				return {
-					key,
-					label: 'app.goals' as PlainKey,
-					count: contents?.goals.length ?? 0,
-					done: contents?.goals.filter((goal) => goal.status !== 'open').length ?? 0
-				};
-			if (key === 'ideas')
-				return {
-					key,
-					label: moduleMeta(key).name,
-					count: contents?.ideas.length ?? 0,
-					done: contents?.ideas.filter((idea) => idea.isApplied).length ?? 0
-				};
-			if (key === 'inventory')
-				return {
-					key,
-					label: moduleMeta(key).name,
-					count: contents?.inventory.length ?? 0,
-					// Got it, which is what the tick on a row says.
-					done: contents?.inventory.filter((item) => item.bought).length ?? 0
-				};
-			if (key === 'workouts')
-				return { key, label: moduleMeta(key).name, count: contents?.workouts.length ?? 0 };
-			if (key === 'recipes')
-				return { key, label: moduleMeta(key).name, count: contents?.recipes.length ?? 0 };
-			if (key === 'ledgers')
-				return { key, label: moduleMeta(key).name, count: contents?.ledgers.length ?? 0 };
-			if (key === 'habits')
-				return {
-					key,
-					label: moduleMeta(key).name,
-					count: contents?.habits.length ?? 0,
-					// Done today, which is the one thing a habit row is pressed for.
-					done:
-						contents?.habits.filter((habit) =>
-							contents.habitOccurrences.some(
-								(one) => one.habitId === habit.id && one.date === contents.today
-							)
-						).length ?? 0
-				};
-			if (key === 'bills')
-				return {
-					key,
-					label: moduleMeta(key).name,
-					count: contents?.bills.length ?? 0,
-					// Put away, not paid: a bill comes round again, and whether this
-					// month's is settled is the mark on the row rather than a tally.
-					done: contents?.bills.filter((bill) => !bill.active).length ?? 0
-				};
-
-			// Every module above names itself; this is the compiler's proof that
-			// none is missing rather than a fallback anybody reaches.
-			return { key, label: moduleMeta(key).name, count: 0 };
+				return { key, label: 'app.goals' as PlainKey, count: contents?.goals.length ?? 0 };
+			const counted: Partial<Record<NotebookModule, number>> = {
+				ideas: contents?.ideas.length,
+				inventory: contents?.inventory.length,
+				workouts: contents?.workouts.length,
+				recipes: contents?.recipes.length,
+				ledgers: contents?.ledgers.length,
+				habits: contents?.habits.length,
+				bills: contents?.bills.length
+			};
+			return { key, label: moduleMeta(key).name, count: counted[key] ?? 0 };
 		})
 	);
 
@@ -1191,11 +1219,13 @@
 
 	<div class="nb-body">
 		{#if showingOrphans}
-			<!-- Notes whose notebook was deleted: no tabs here, so the order
-			     control gets the row the tab strip would have been. -->
-			<div class="flex items-center justify-end gap-1 border-b border-gray-200 px-4 py-1.5">
-				{@render orderControl()}
-			</div>
+			<!-- Notes whose notebook was deleted: no tabs, and the same strip
+			     the Notes tab opens on. -->
+			<RoomToolbar inset>
+				{#snippet tools()}
+					{@render noteControls()}
+				{/snippet}
+			</RoomToolbar>
 			{@render noteList(shownNotes, null)}
 		{:else if !notebook || !contents}
 			<!--
@@ -1236,10 +1266,7 @@
 					tabs={tabs.map((option) => ({
 						label: t(option.label),
 						icon: moduleGlyph(option.key),
-						count:
-							option.done !== undefined && option.count > 0
-								? `${option.done}/${option.count}`
-								: String(option.count)
+						count: String(option.count)
 					}))}
 					current={tabs.findIndex((option) => option.key === tab)}
 					onpick={(index) => (tab = tabs[index].key)}
@@ -1720,10 +1747,27 @@
 	     nothing else to narrow by. -->
 	<FilterBar name="notebook-module">
 		{#snippet lead()}
-			<SearchField bind:value={moduleSearch} label={t('notebookDetail.searchThisTab')} />
+			<SearchField
+				bind:value={moduleSearch}
+				label={t(SEARCH_LABEL[tab] ?? 'notebookDetail.searchThisTab')}
+			/>
 		{/snippet}
 		{#snippet count()}
 			<ShowingCount {total} {shown} said={(count) => t('notebookDetail.itemsShowing', { count })} />
+		{/snippet}
+		{#snippet trailing()}
+			<SortControl
+				value={moduleOrder}
+				options={MODULE_ORDERS}
+				labels={MODULE_ORDER_LABELS}
+				direction={moduleDirection}
+				onpick={(next) => {
+					moduleOrder = next;
+					moduleDirection = 'asc';
+				}}
+				onflip={() => (moduleDirection = moduleDirection === 'asc' ? 'desc' : 'asc')}
+				label={t('notebookDetail.orderThisTabBy')}
+			/>
 		{/snippet}
 	</FilterBar>
 {/snippet}
@@ -1738,15 +1782,32 @@
 		boiler" on the Tasks tab and not on the Notes tab beside it. The controls
 		differ because notes and tasks differ. The shape does not.
 	-->
+	<!-- "Select many" is the strip's verb, as on the to-do list, rather than a
+	     band of its own above the notes. -->
+	{#if (contents?.entries ?? orphaned).length > 0}
+		<SelectionBar
+			selection={noteSelection}
+			visible={selectableNotes.map((entry) => entry.id)}
+			verbs={noteBatchVerbs}
+			selectAllLabel={t('notebookDetail.selectVisibleNotes')}
+			dataTour="notebook-note-selection"
+		>
+			{#snippet strip(selectMany)}
+				{@render noteFilters(selectMany)}
+			{/snippet}
+		</SelectionBar>
+	{:else}
+		{@render noteFilters()}
+	{/if}
+{/snippet}
+
+{#snippet noteFilters(selectMany?: Snippet)}
 	<FilterBar
 		name="notes"
+		verb={selectMany}
 		on={noteTagFilter.length > 0 || showArchivedNotes || noteSearch.trim() !== ''}
 		summary={noteTagFilter.map((one) => `#${one}`).join(', ')}
-		onclear={() => {
-			noteTagFilter = [];
-			showArchivedNotes = false;
-			noteSearch = '';
-		}}
+		onclear={clearNoteFilters}
 	>
 		{#snippet lead()}
 			<!-- The box fills the slot; how wide that slot is belongs to
@@ -1794,31 +1855,23 @@
 {/snippet}
 
 {#snippet orderControl()}
-	{#if shownNotes.length > 1 || noteOrder !== DEFAULT_NOTE_ORDER}
-		<!-- The same control the task list uses. See `SortControl`. -->
-		<SortControl
-			value={noteOrder}
-			options={NOTE_ORDERS}
-			labels={ORDER_LABELS}
-			direction={noteDirection}
-			onpick={pickOrder}
-			onflip={flipDirection}
-			label={t('notebookDetail.orderNotesBy')}
-		/>
-	{/if}
+	<!-- The same control the task list uses, always in the same place. See `SortControl`. -->
+	<SortControl
+		value={noteOrder}
+		options={NOTE_ORDERS}
+		labels={ORDER_LABELS}
+		direction={noteDirection}
+		onpick={pickOrder}
+		onflip={flipDirection}
+		label={t('notebookDetail.orderNotesBy')}
+	/>
 {/snippet}
 
 {#snippet noteList(entries: Entry[], notebookId: number | null)}
-	{#if (contents?.entries ?? orphaned).length > 0}
-		<SelectionBar
-			selection={noteSelection}
-			visible={selectableNotes.map((entry) => entry.id)}
-			verbs={noteBatchVerbs}
-			selectAllLabel={t('notebookDetail.selectVisibleNotes')}
-			dataTour="notebook-note-selection"
-		/>
-	{/if}
-	{#if entries.length === 0}
+	{#if entries.length === 0 && (contents?.entries ?? orphaned).length > 0}
+		<!-- Hidden, not absent: the strip says what is narrowing it. -->
+		<EmptyState compact filtered onclear={clearNoteFilters} />
+	{:else if entries.length === 0}
 		<EmptyState compact icon="note" title={t('notebookDetail.nothingWrittenHereYet')} />
 	{:else}
 		<div class="divide-y divide-gray-200">

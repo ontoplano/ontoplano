@@ -7,6 +7,7 @@ import {
 	deleteOccurrence,
 	logOccurrence,
 	setDayCount,
+	setHabitArchived,
 	toggleOccurrence,
 	updateHabit,
 	updateOccurrence
@@ -53,6 +54,27 @@ export const habitHandlers = {
 				scheduledDays: formData.get('scheduledDays'),
 				...(formData.has('notebookId') ? { notebookId: formData.get('notebookId') } : {})
 			});
+			return { success: true };
+		} catch (e) {
+			return toActionFailure(e);
+		}
+	},
+
+	/** Put away: off the room and today's list, every logged day kept. */
+	archive: async ({ request, locals }: Event) => {
+		const formData = await request.formData();
+		try {
+			setHabitArchived(buildCtx(locals.user!.id), Number(formData.get('id')), true);
+			return { success: true };
+		} catch (e) {
+			return toActionFailure(e);
+		}
+	},
+
+	unarchive: async ({ request, locals }: Event) => {
+		const formData = await request.formData();
+		try {
+			setHabitArchived(buildCtx(locals.user!.id), Number(formData.get('id')), false);
 			return { success: true };
 		} catch (e) {
 			return toActionFailure(e);

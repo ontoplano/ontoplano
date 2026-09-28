@@ -541,27 +541,27 @@ is a gap an assistant cannot fill yet; _app only, on purpose_ is a decision,
 said below — mostly deletions kept for the person. Generated from `src/lib/server/mcp/capabilities.json`,
 which a test holds to the tools the server serves and the actions the app has.
 
-| Room                    | create                                               | read                                                                                          | change                                                                                                             | archive                  | unarchive                | delete                                               | reorder            |
-| ----------------------- | ---------------------------------------------------- | --------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ | ------------------------ | ------------------------ | ---------------------------------------------------- | ------------------ |
-| Tasks                   | `add_task`, `note_to_tasks`                          | `tasks`, `up_next`                                                                            | `change_task`, `tag_task`, `finish_task`, `reopen_task`, `schedule_task`, `unschedule_task`                        | `archive_task`           | `unarchive_task`         | `drop_task`                                          | `reorder_tasks`    |
-| Blocks                  | `add_block`, `add_repeating_block`                   | `upcoming`, `past`, `repeating_week`                                                          | `change_block`, `finish_block`, `change_repeating_block`                                                           | `change_repeating_block` | `change_repeating_block` | `cancel_block`, `remove_repeating_block`             |                    |
-| Notes and diary entries | `write_entry`                                        | `diary`, `notebook_notes`                                                                     | `edit_entry`, `pin_note`, `unpin_note`, `move_notes`                                                               | `archive_note`           | `unarchive_note`         | _app only, on purpose_                               |                    |
-| Ideas                   | `add_idea`                                           | `ideas`                                                                                       | `change_idea`, `apply_idea`, `favorite_idea`                                                                       |                          |                          | `remove_idea`                                        |                    |
-| Goals                   | `add_goal`, `add_goal_area`, `add_goal_target`       | `goals`, `goal_areas`                                                                         | `change_goal`, `log_goal_progress`, `link_to_goal`, `unlink_from_goal`, `remove_goal_target`, `change_goal_area`   | `close_goal`             | `reopen_goal`            | _app only, on purpose_                               | `move_goal_area`   |
-| Habits                  | `add_habit`                                          | `habits`, `all_habits`                                                                        | `change_habit`, `tick_habit`                                                                                       |                          |                          | _app only, on purpose_                               |                    |
-| Inventory               | `add_inventory_item`, `add_inventory_category`       | `shopping_list`, `inventory_categories`                                                       | `file_inventory_item`, `record_price`, `set_item_attributes`, `change_inventory_category`, `change_inventory_item` | `archive_item`           | `unarchive_item`         | `remove_inventory_item`, `remove_inventory_category` |                    |
-| Places                  | `add_location`                                       | `locations`, `where_is`                                                                       | `change_location`, `put_item`                                                                                      |                          |                          | `remove_location`                                    |                    |
-| Shopping list           | `add_inventory_item`                                 | `shopping_list`                                                                               | `tick_bought`, `untick_bought`, `record_price`, `change_inventory_item`                                            | `archive_item`           | `unarchive_item`         | `remove_inventory_item`                              |                    |
-| Recipes                 | `add_recipe`                                         | `recipes`                                                                                     | `change_recipe`, `cooked_recipe`                                                                                   | `archive_recipe`         | `archive_recipe`         | _app only, on purpose_                               |                    |
-| Workouts                | `add_workout`, `add_workout_category`, `log_workout` | `workouts`, `workout_sessions`, `workout_history`, `workout_activities`, `workout_categories` | `change_workout`, `set_workout_measures`, `change_workout_session`, `workout_done`, `change_workout_category`      | `archive_workout`        | `archive_workout`        | `remove_workout_session`, `remove_workout_category`  |                    |
-| Bills                   | `add_bill`                                           | `bills`, `bill_payments`, `bill_history`, `month_bills`, `bills_due`                          | `change_bill`, `pay_bill`, `unpay_bill`, `skip_bill`, `unskip_bill`                                                | `archive_bill`           | `archive_bill`           | _app only, on purpose_                               |                    |
-| Accounts and movements  | `add_ledger`, `record_movement`                      | `ledgers`, `movements`, `statement_months`, `spending_by_category`                            | `change_ledger`, `change_movement`                                                                                 | `change_ledger`          | `change_ledger`          | `remove_movement`                                    | `change_ledger`    |
-| Sorting rules           | `add_sort_rule`                                      | `sort_rules`                                                                                  | `change_sort_rule`                                                                                                 |                          |                          | `delete_sort_rule`                                   | `change_sort_rule` |
-| People                  | `add_person`                                         | `people`, `upcoming_birthdays`                                                                | `change_person`                                                                                                    |                          |                          | _app only, on purpose_                               |                    |
-| Reminders               | `set_alarm`, `remind_before_block`                   | `reminders`                                                                                   | `change_reminder`, `dismiss_reminder`                                                                              |                          |                          | `cancel_alarm`                                       |                    |
-| Activities              | `add_activity`                                       | `activities`, `categories`                                                                    | `change_activity`                                                                                                  | `change_activity`        | `change_activity`        | `remove_activity`                                    |                    |
-| Notebooks               | `add_notebook`                                       | `notebooks`                                                                                   | `change_notebook`, `rename_notebook_folder`, `favourite_notebook`, `share_notebook`                                | `change_notebook`        | `change_notebook`        | `remove_notebook`                                    |                    |
-| Labels                  | _app only, on purpose_                               | `tags`, `notebook_tags`                                                                       | `describe_tag`, `rename_tag`, `recolor_tag`, `untag_notebook`                                                      |                          |                          | `remove_tag`                                         |                    |
+| Room                    | create                                               | read                                                                                          | change                                                                                                                                        | archive                  | unarchive                | delete                                               | reorder            |
+| ----------------------- | ---------------------------------------------------- | --------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------ | ------------------------ | ---------------------------------------------------- | ------------------ |
+| Tasks                   | `add_task`, `note_to_tasks`                          | `tasks`, `up_next`                                                                            | `change_task`, `tag_task`, `finish_task`, `reopen_task`, `schedule_task`, `unschedule_task`                                                   | `archive_task`           | `unarchive_task`         | `drop_task`                                          | `reorder_tasks`    |
+| Blocks                  | `add_block`, `add_repeating_block`                   | `upcoming`, `past`, `repeating_week`                                                          | `change_block`, `finish_block`, `change_repeating_block`                                                                                      | `change_repeating_block` | `change_repeating_block` | `cancel_block`, `remove_repeating_block`             |                    |
+| Notes and diary entries | `write_entry`                                        | `diary`, `notebook_notes`                                                                     | `edit_entry`, `pin_note`, `unpin_note`, `move_notes`                                                                                          | `archive_note`           | `unarchive_note`         | _app only, on purpose_                               |                    |
+| Ideas                   | `add_idea`                                           | `ideas`                                                                                       | `change_idea`, `apply_idea`, `favorite_idea`                                                                                                  |                          |                          | `remove_idea`                                        |                    |
+| Goals                   | `add_goal`, `add_goal_area`, `add_goal_target`       | `goals`, `goal_areas`                                                                         | `change_goal`, `log_goal_progress`, `link_to_goal`, `unlink_from_goal`, `remove_goal_target`, `change_goal_area`                              | `close_goal`             | `reopen_goal`            | _app only, on purpose_                               | `move_goal_area`   |
+| Habits                  | `add_habit`                                          | `habits`, `all_habits`                                                                        | `change_habit`, `tick_habit`                                                                                                                  | `archive_habit`          | `unarchive_habit`        | _app only, on purpose_                               |                    |
+| Inventory               | `add_inventory_item`, `add_inventory_category`       | `shopping_list`, `inventory_categories`                                                       | `file_inventory_item`, `record_price`, `set_item_attributes`, `change_inventory_category`, `move_inventory_category`, `change_inventory_item` | `archive_item`           | `unarchive_item`         | `remove_inventory_item`, `remove_inventory_category` |                    |
+| Places                  | `add_location`                                       | `locations`, `where_is`                                                                       | `change_location`, `put_item`                                                                                                                 |                          |                          | `remove_location`                                    |                    |
+| Shopping list           | `add_inventory_item`                                 | `shopping_list`                                                                               | `tick_bought`, `untick_bought`, `record_price`, `change_inventory_item`                                                                       | `archive_item`           | `unarchive_item`         | `remove_inventory_item`                              |                    |
+| Recipes                 | `add_recipe`                                         | `recipes`                                                                                     | `change_recipe`, `cooked_recipe`                                                                                                              | `archive_recipe`         | `archive_recipe`         | _app only, on purpose_                               |                    |
+| Workouts                | `add_workout`, `add_workout_category`, `log_workout` | `workouts`, `workout_sessions`, `workout_history`, `workout_activities`, `workout_categories` | `change_workout`, `set_workout_measures`, `change_workout_session`, `workout_done`, `change_workout_category`                                 | `archive_workout`        | `archive_workout`        | `remove_workout_session`, `remove_workout_category`  |                    |
+| Bills                   | `add_bill`                                           | `bills`, `bill_payments`, `bill_history`, `month_bills`, `bills_due`                          | `change_bill`, `pay_bill`, `unpay_bill`, `skip_bill`, `unskip_bill`                                                                           | `archive_bill`           | `archive_bill`           | _app only, on purpose_                               |                    |
+| Accounts and movements  | `add_ledger`, `record_movement`                      | `ledgers`, `movements`, `statement_months`, `spending_by_category`                            | `change_ledger`, `change_movement`                                                                                                            | `change_ledger`          | `change_ledger`          | `remove_movement`                                    | `change_ledger`    |
+| Sorting rules           | `add_sort_rule`                                      | `sort_rules`                                                                                  | `change_sort_rule`                                                                                                                            |                          |                          | `delete_sort_rule`                                   | `change_sort_rule` |
+| People                  | `add_person`                                         | `people`, `upcoming_birthdays`                                                                | `change_person`                                                                                                                               |                          |                          | _app only, on purpose_                               |                    |
+| Reminders               | `set_alarm`, `remind_before_block`                   | `reminders`                                                                                   | `change_reminder`, `dismiss_reminder`                                                                                                         |                          |                          | `cancel_alarm`                                       |                    |
+| Activities              | `add_activity`                                       | `activities`, `categories`                                                                    | `change_activity`                                                                                                                             | `change_activity`        | `change_activity`        | `remove_activity`                                    |                    |
+| Notebooks               | `add_notebook`                                       | `notebooks`                                                                                   | `change_notebook`, `rename_notebook_folder`, `favourite_notebook`, `share_notebook`                                                           | `change_notebook`        | `change_notebook`        | `remove_notebook`                                    |                    |
+| Labels                  | _app only, on purpose_                               | `tags`, `notebook_tags`                                                                       | `describe_tag`, `rename_tag`, `recolor_tag`, `untag_notebook`                                                                                 |                          |                          | `remove_tag`                                         |                    |
 
 **Not there yet** — what the app does and an assistant cannot:
 
@@ -1554,16 +1554,28 @@ _Needs `inventory:write`; writes; answers with `before` and `after`, `after` bei
 
 ### `change_inventory_category` — Rename a shopping section
 
-Rename a section, or change whether it holds food. Only `id` is needed: a field left out is untouched, and the change lands whole or not at all — a refused share leaves the name as it was. The items filed under it stay exactly where they are.
+Rename a section, recolour it, or change whether it holds food. Only `id` is needed: a field left out is untouched, and the change lands whole or not at all — a refused share leaves the name as it was. The items filed under it stay exactly where they are.
 
 _Needs `inventory:write`; writes; answers with `before` and `after`._
 
-| Parameter         | Type    | Required | What it is                                                                              |
-| ----------------- | ------- | -------- | --------------------------------------------------------------------------------------- |
-| `id`              | integer | yes      | The section’s id, as `inventory_categories` gives it.                                   |
-| `name`            | string  | —        | The new name.                                                                           |
-| `holdsFood`       | boolean | —        | Whether what is in it is food.                                                          |
-| `shareWithFamily` | boolean | —        | Share the section with everybody on the family plan, or stop. Only its owner’s to flip. |
+| Parameter         | Type    | Required | What it is                                                                                      |
+| ----------------- | ------- | -------- | ----------------------------------------------------------------------------------------------- |
+| `id`              | integer | yes      | The section’s id, as `inventory_categories` gives it.                                           |
+| `name`            | string  | —        | The new name.                                                                                   |
+| `holdsFood`       | boolean | —        | Whether what is in it is food.                                                                  |
+| `shareWithFamily` | boolean | —        | Share the section with everybody on the family plan, or stop. Only its owner’s to flip.         |
+| `color`           | string  | —        | The colour its cards wear, as `#rrggbb`. An empty string takes it off, back to the neutral one. |
+
+### `move_inventory_category` — Move a shopping section up or down
+
+Move one of the person’s own sections one place earlier (`-1`) or later (`1`) in the order the inventory draws them. Its way back is the opposite move.
+
+_Needs `inventory:write`; writes; answers with `before` and `after`._
+
+| Parameter | Type    | Required | What it is                                      |
+| --------- | ------- | -------- | ----------------------------------------------- |
+| `id`      | integer | yes      | The section’s id.                               |
+| `delta`   | integer | yes      | -1 for earlier, 1 for later. One of: `-1`, `1`. |
 
 ### `remove_inventory_category` — Delete a shopping section
 
@@ -1693,11 +1705,13 @@ _Needs `tasks:write`; writes; answers with `before` and `after`._
 
 ### `all_habits` — Every habit
 
-The full list of habits, due today or not — id, name, type and which days each is scheduled. `habits` is today’s view with streaks; this is the one to read before adding or changing one.
+The full list of habits, due today or not — id, name, type and which days each is scheduled. `habits` is today’s view with streaks; this is the one to read before adding or changing one. Archived habits are left out unless `includeArchived` is set; those carry an `archivedAt`.
 
 _Needs `habits:read`; read-only._
 
-_Takes no parameters._
+| Parameter         | Type    | Required | What it is       |
+| ----------------- | ------- | -------- | ---------------- |
+| `includeArchived` | boolean | —        | Default `false`. |
 
 ### `add_habit` — Add a habit
 
@@ -1727,6 +1741,26 @@ _Needs `habits:write`; writes; answers with `before` and `after`._
 | `type`          | string  | —        | good, bad or neutral. One of: `bad`, `good`, `neutral`. |
 | `description`   | string  | —        | The new description.                                    |
 | `scheduledDays` | string  | —        | The new days, in the shape `all_habits` shows.          |
+
+### `archive_habit` — Put a habit away
+
+Stop tracking a habit without losing it: it leaves today’s list and the room, and every logged day is kept. `unarchive_habit` brings it back.
+
+_Needs `habits:write`; writes; answers with `before` and `after`._
+
+| Parameter | Type    | Required | What it is                                |
+| --------- | ------- | -------- | ----------------------------------------- |
+| `id`      | integer | yes      | The habit’s id, as `all_habits` gives it. |
+
+### `unarchive_habit` — Bring a habit back
+
+Start tracking an archived habit again, with its history as it was. `all_habits` with `includeArchived` lists the archived ones.
+
+_Needs `habits:write`; writes; answers with `before` and `after`._
+
+| Parameter | Type    | Required | What it is                                |
+| --------- | ------- | -------- | ----------------------------------------- |
+| `id`      | integer | yes      | The habit’s id, as `all_habits` gives it. |
 
 ### `reminders` — What will reach out, and when
 

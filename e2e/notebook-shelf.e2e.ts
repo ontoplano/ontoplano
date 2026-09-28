@@ -143,8 +143,10 @@ for (const width of [1280, 390]) {
 		expect(overflow).toBeLessThanOrEqual(0);
 
 		// Taken off from the notebook's own page.
+		// Beside the shelf on a desktop, then to its page; a phone's cover goes
+		// straight to the page, since the panel would open far below the shelf.
 		await favourites.getByRole('link', { name: /Countertops/ }).click();
-		await page.getByRole('link', { name: 'Open' }).first().click();
+		if (width > 1024) await page.getByRole('link', { name: 'Open' }).first().click();
 		await page.waitForURL(/\/notebooks\/\d+/);
 		const off = page.getByRole('button', { name: 'Remove Countertops from favourites' });
 		await expect(off).toHaveAttribute('aria-pressed', 'true');

@@ -148,82 +148,84 @@
 		the ordinary case for a big goal — three gigs played and five songs
 		recorded — and each keeps its own number.
 	-->
-	<div class="col-span-12">
-		<span class="eyebrow text-gray-600">{t('goals.measuredBy')}</span>
-		<div class="mt-1 space-y-2">
+	<Field label={t('goals.measuredBy')} group hint={t('goals.optionalLeaveItEmptyFor')}>
+		<div class="space-y-3">
 			{#each targets as target, i (i)}
-				<div class="flex items-center gap-2">
-					<input type="hidden" name="targetId" value={target.id ?? ''} />
-					<!--
-						Counted or measured, before the number itself.
+				<div class="space-y-2">
+					<div class="flex items-center gap-2">
+						<input type="hidden" name="targetId" value={target.id ?? ''} />
+						<!--
+							Counted or measured, before the number itself.
 
-						It decides what the goal's own card offers later — a plus
-						and a minus, or a field — so it sits where the number is
-						being decided rather than somewhere in a settings screen.
-					-->
-					<label class="shrink-0">
-						<span class="sr-only">{t('goals.whatKindOfNumber')}</span>
+							It decides what the goal's own card offers later — a plus
+							and a minus, or a field — so it sits where the number is
+							being decided rather than somewhere in a settings screen.
+						-->
 						<Picker
 							name="targetWhole"
-							class="w-16 shrink-0"
+							class="w-28 shrink-0"
 							value={String(target.whole)}
 							options={NUMBER_KINDS.map((kind) => ({
 								value: String(kind.whole),
-								label: kind.symbol
+								label: t(kind.word)
 							}))}
 							onpick={(next) => (target.whole = next === 'true')}
 							label={t('goals.whatKindOfNumber')}
 						/>
-					</label>
-					<NumberBox
-						autocomplete="off"
-						name="targetValue"
-						min="0"
-						step={target.whole ? COUNT_STEP : 'any'}
-						inputmode={target.whole ? 'numeric' : 'decimal'}
-						placeholder={exampleNumber(target.whole, t.locale)}
-						bind:value={target.value}
-						class="w-24 shrink-0"
-					/>
-					<input
-						autocomplete="off"
-						name="targetUnit"
-						list="goal-units"
-						placeholder={t('goals.booksKmGigs')}
-						bind:value={target.unit}
-						class="input min-w-0 flex-1"
-					/>
-					<button
-						type="button"
-						class="icon-btn icon-btn-danger"
-						title={t('goals.removeMeasure')}
-						aria-label={t('goals.removeMeasure')}
-						onclick={() => (targets = targets.filter((_, at) => at !== i))}
-					>
-						<Icon name="trash" />
-					</button>
-				</div>
-				<!--
-					Counted from the workouts, or kept by hand.
+						<NumberBox
+							autocomplete="off"
+							name="targetValue"
+							min="0"
+							step={target.whole ? COUNT_STEP : 'any'}
+							inputmode={target.whole ? 'numeric' : 'decimal'}
+							placeholder={exampleNumber(target.whole, t.locale)}
+							bind:value={target.value}
+							aria-label={t('goals.targetNumber')}
+							class="w-24 shrink-0"
+						/>
+						<input
+							autocomplete="off"
+							name="targetUnit"
+							list="goal-units"
+							placeholder={t('goals.booksKmGigs')}
+							aria-label={t('goals.unit')}
+							bind:value={target.unit}
+							class="input min-w-0 flex-1"
+						/>
+						<button
+							type="button"
+							class="icon-btn icon-btn-danger"
+							title={t('goals.removeMeasure')}
+							aria-label={t('goals.removeMeasure')}
+							onclick={() => (targets = targets.filter((_, at) => at !== i))}
+						>
+							<Icon name="trash" />
+						</button>
+					</div>
+					<!--
+						Counted from the workouts, or kept by hand — the options say
+						which, so the picker needs no label of its own beside it.
 
-					Only where there is something to count: an account that has
-					never logged a measure gets no picker for one, rather than an
-					empty dropdown saying nothing. Choosing one takes the unit
-					from the register too, because "km" was already typed there
-					and two spellings of one unit are two units.
-				-->
-				{#if workoutMeasures.length > 0}
-					<label class="mt-1 flex items-center gap-2 pl-1">
-						<span class="eyebrow shrink-0 text-gray-500">{t('goals.countedFrom')}</span>
+						Only where there is something to count: an account that has
+						never logged a measure gets no picker for one, rather than an
+						empty dropdown saying nothing. Choosing one takes the unit
+						from the register too, because "km" was already typed there
+						and two spellings of one unit are two units.
+					-->
+					{#if workoutMeasures.length > 0}
 						<Picker
 							name="targetMeasure"
-							class="min-w-0 flex-1"
+							class="w-full"
 							value={target.measureActivity ?? ''}
 							options={[
 								{ value: '', label: t('goals.iKeepThisOneMyself') },
 								...workoutMeasures.map((measure: { activity: string; unit: string }) => ({
 									value: measure.activity,
-									label: `${measure.activity}${measure.unit ? ` (${measure.unit})` : ''}`
+									label: t('goals.countedFromActivity', {
+										activity: measure.unit
+											? `${measure.activity} (${measure.unit})`
+											: measure.activity
+									})
 								}))
 							]}
 							label={t('goals.countedFrom')}
@@ -235,8 +237,8 @@
 								if (found?.unit) target.unit = found.unit;
 							}}
 						/>
-					</label>
-				{/if}
+					{/if}
+				</div>
 			{/each}
 		</div>
 		<datalist id="goal-units">
@@ -252,10 +254,7 @@
 			<Icon name="plus" />
 			{t('goals.addMeasure')}
 		</button>
-		<span class="mt-1 block text-xs text-gray-500">
-			{t('goals.optionalLeaveItEmptyFor')}
-		</span>
-	</div>
+	</Field>
 
 	{#if !editingId}
 		<Field label={t('goals.partOf')} span={4}>

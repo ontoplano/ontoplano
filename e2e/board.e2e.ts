@@ -180,87 +180,48 @@ test.describe('undo on a card ticked off', () => {
 /**
  * The board on a phone.
  *
- * It was a sideways snapping strip of columns, all as tall as the tallest, so
- * getting from Pending to Done meant scrolling past a full-height Doing. Three
- * columns are a board, and a board you can only see one column of is a list
- * with a tab strip — so the phone slides sideways, and the names above it jump
- * the strip to a column rather than swapping which one exists.
+ * It was a sideways strip — a scroll box inside the page — with a row of
+ * column names above it that was a second way to change column. The columns
+ * are stacked now, each as tall as what is in it, and the page scrolls.
  */
 test.describe('the board on a phone', () => {
 	test.use({ viewport: { width: 390, height: 844 } });
 
-	test('slides sideways, and the names jump to a column', async ({ page }) => {
+	test('stacks its columns, with nothing scrolling sideways', async ({ page }) => {
 		await register(page, testEmail('board-phone'));
-		const title = 'A card to find under Done';
+		const title = 'A card on a stacked board';
 		await newCard(page, title);
-
-		// Pending is what a phone opens on, and the card is on the screen.
-		await expect(page.getByRole('button', { name: /^Pending/ })).toHaveAttribute(
-			'aria-pressed',
-			'true'
-		);
 		await expect(page.getByText(title, { exact: true })).toBeVisible();
 
-		// The columns are all there — side by side, in a strip that scrolls.
 		const strip = page.locator('[data-tour="board-columns"]');
-		const room = await strip.evaluate((s) => s.scrollWidth - s.clientWidth);
-		expect(room, 'the columns have somewhere to slide to').toBeGreaterThan(50);
+		expect(await strip.evaluate((s) => s.scrollWidth - s.clientWidth)).toBeLessThan(2);
 
-		const was = await strip.evaluate((s) => s.scrollLeft);
-		await page.getByRole('button', { name: /^Done/ }).click();
-		await expect(page.getByRole('button', { name: /^Done/ })).toHaveAttribute(
-			'aria-pressed',
-			'true'
+		// Every column is on the page, one under the other, with its own header.
+		const lanes = strip.locator('section');
+		await expect(lanes).toHaveCount(3);
+		const boxes = await lanes.evaluateAll((all) =>
+			all.map((one) => one.getBoundingClientRect()).map((r) => ({ top: r.top, bottom: r.bottom }))
 		);
-		await expect
-			.poll(() => strip.evaluate((s) => s.scrollLeft), { timeout: 5000 })
-			.toBeGreaterThan(was);
+		expect(boxes[1].top).toBeGreaterThanOrEqual(boxes[0].bottom);
+		expect(boxes[2].top).toBeGreaterThanOrEqual(boxes[1].bottom);
 	});
-});
 
-/**
- * Where a card goes when the column it should go to is not on the screen.
- *
- * On a phone the board shows one column, so there is nothing to drag a card
- * *to*. The names above it are the target: they light up while a card is being
- * dragged, and dropping on one moves the card and follows it — a card that
- * moved somewhere invisible has, as far as the screen is concerned, vanished.
- */
-test.describe('dropping on the column switcher', () => {
-	test.use({ viewport: { width: 390, height: 844 } });
-
-	test('moves the card there and follows it', async ({ page }) => {
+	test('moves a card with the grip and a press on a column', async ({ page }) => {
 		await register(page, testEmail('board-switch'));
 		const title = 'A card that should end up Doing';
 		await newCard(page, title);
 
-		const doing = page.getByRole('button', { name: /^Doing/ });
-		const card = page.getByText(title, { exact: true });
-
-		// A real HTML5 drag, which is what the desktop and a mouse-driven narrow
-		// window do. The touch path is the tick box and the card editor.
-		await card.dispatchEvent('dragstart', { dataTransfer: await makeDataTransfer(page) });
-		await doing.dispatchEvent('dragover', { dataTransfer: await makeDataTransfer(page) });
-		await doing.dispatchEvent('drop', { dataTransfer: await makeDataTransfer(page) });
+		await page.getByRole('button', { name: 'Move this to another column' }).first().click();
+		await page.locator('[data-tour="board-columns"] section').nth(1).click();
 		await page.waitForTimeout(900);
 
-		// It followed the card: Doing is the column on screen now, with the card
-		// in it.
-		await expect(doing).toHaveAttribute('aria-pressed', 'true');
-		await expect(page.getByText(title, { exact: true })).toBeVisible();
-
-		// And it really moved, rather than only appearing to.
 		await page.reload({ waitUntil: 'load' });
 		await page.waitForSelector('html[data-ready]');
-		await page.getByRole('button', { name: /^Doing/ }).click();
-		await expect(page.getByText(title, { exact: true })).toBeVisible();
+		await expect(
+			page.locator('[data-tour="board-columns"] section').nth(1).getByText(title, { exact: true })
+		).toBeVisible();
 	});
 });
-
-/** A DataTransfer the page owns, which a synthetic drag event needs. */
-function makeDataTransfer(page: import('@playwright/test').Page) {
-	return page.evaluateHandle(() => new DataTransfer());
-}
 
 /**
  * The keyboard drives the board.

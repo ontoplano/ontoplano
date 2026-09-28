@@ -786,6 +786,13 @@ The things themselves are untouched otherwise — this removes a fact about
 them, not any of them. It is the destructive end of the screen, so the
 caller asks first.
 
+#### `removeAttributeValue(ctx, key, value)`
+
+Take one value of an attribute off every thing that says it.
+
+The rest of each thing's attributes stay, and so does the attribute on the
+things that say something else — "length: 2m" goes, "length: 5m" does not.
+
 #### `setAttributeColor(ctx, key, value, color, opts)`
 
 Give an attribute, or one of its values, a colour.
@@ -2088,6 +2095,10 @@ The habits, all of them or one subject's.
 tab is this room looking at one subject, and it draws the rows with the same
 component, so it needs exactly what the room needs.
 
+Archived habits are left out unless asked for: they keep their history for
+the room's archived list, and nothing else — today, a notebook, an
+assistant ticking by name — should offer them.
+
 #### `listOccurrences(ctx)`
 
 A year of history, which is what the heatmap draws.
@@ -2098,9 +2109,22 @@ A year of history, which is what the heatmap draws.
 
 #### `updateHabit(ctx, id, raw)`
 
+#### `setHabitArchived(ctx, id, archived)`
+
+Put a habit away, or bring it back. Its history stays either way.
+
 #### `deleteHabit(ctx, id)`
 
 #### `logOccurrence(ctx, raw)`
+
+#### `setDayCount(ctx, raw)`
+
+A day's count, set outright.
+
+What the counter on a card sends once the pressing stops: the number the
+day should hold, never a step, so a repeated or late write cannot count
+twice. Going up adds blank occurrences; going down takes the newest ones
+back, which are the ones the presses just added.
 
 #### `toggleOccurrence(ctx, raw)`
 
@@ -2269,10 +2293,18 @@ The note beside an applied idea, which is not the idea. See `toggleApplied`.
 
 Starring an idea is not editing it either. See `toggleApplied`.
 
+#### `isIdeaBatchVerb(value)`
+
+#### `batchIdeas(ctx, verb, rawIds, what)`
+
+Do one thing to each of these ideas, or to none of them: an idea that is
+not this account's refuses the whole press, as `batchEntries` does.
+
 ### Types
 
 - `IdeaTag`
 - `Idea`
+- `IdeaBatchVerb`
 
 ## import-vault
 
@@ -2658,6 +2690,17 @@ has to be marked by hand, and the television has to be marked as not.
 Deleting a category unfiles its items rather than taking them along: the
 category is organisation, the items are somebody's cupboard, and removing a
 shelf label must not empty the shelf.
+
+#### `setCategoryColor(ctx, id, raw)`
+
+A category's colour, or none (empty) for the neutral one. The owner's alone.
+
+#### `moveCategory(ctx, id, delta)`
+
+One place up or down the order the cards are drawn in.
+
+Only the account's own categories are renumbered: a family member's shared
+shelf is ordered by its owner, and moving one of those is a not-found.
 
 #### `setCategoryFood(ctx, id, isFood)`
 
@@ -5481,6 +5524,10 @@ checked at both ends rather than trusted at either.
 #### `isOnboarded(userId)`
 
 #### `markOnboarded(userId)`
+
+#### `panelWidthFallback(key)`
+
+Where this particular panel starts. See `PEOPLE_PANEL_FALLBACK`.
 
 #### `panelWidthMin(key)`
 

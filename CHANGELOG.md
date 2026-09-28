@@ -20,6 +20,16 @@ releases mattered.
 
 ## 0.184.0 — 2026-09-27
 
+- Every room is laid out the same way: one surface, a filter strip along its top with search, count, filters and order in the same places, rows with their buttons in the same order, one empty-state message, and every control in a strip the same height.
+- Room titles sit in the same place on every screen, the dashboard has a room bar on a phone, and the tab you are on stays in view with a hint when more tabs continue.
+- The help button lives in the header and never covers a row; dialogs open below the header on a computer, with the filled button as the one to press.
+- Dates read the same everywhere — "Sep 12", "Sep 7 – 13, 2026", "due the 2nd" — and no screen prints a raw date any more.
+- Chrome is quiet: category colour is worn as a labelled pill, and banners, headers and progress bars no longer carry colour of their own. Switches show their knob again in light theme.
+- On a phone the plan's week is a list of the seven days, each opening its own day; the week's first day is one picker, and the hours follow your 12- or 24-hour clock.
+- The board stacks its columns on a phone, every card can be put on today with one press, and the To-do tab counts only what was finished today.
+- A ledger's everyday action, New line, is the room's own button; ledgers are tabs, uncategorised lines are one filter, and the page scrolls rather than a box inside it.
+- A notebook's New note (or task, or thing) is the room's button with n, and on a phone a notebook on the shelf opens its own page.
+- An account whose export holds voice recordings can be imported again; it used to be refused as "not a picture".
 - Plus and minus on an inventory count or a goal's progress answer immediately and save once you stop pressing, and the number itself can be typed — ten more is one edit, not ten presses.
 - A zoomed-in picture closes with a tap on the dark around it; only dragging it keeps it open.
 - On a phone, going somewhere right after closing a dialog is no longer cancelled by the dialog's own way back.

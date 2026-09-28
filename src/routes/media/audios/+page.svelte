@@ -328,7 +328,7 @@
 			action="?/rename"
 			use:enhance={() =>
 				async ({ result, update }) => {
-					await update();
+					await update({ reset: false });
 					if (result.type === 'success') renaming = null;
 				}}
 		>

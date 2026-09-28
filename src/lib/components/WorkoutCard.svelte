@@ -16,9 +16,12 @@
 	 */
 	import Icon from '$lib/components/Icon.svelte';
 	import RowCard from '$lib/components/RowCard.svelte';
+	import TickBox from '$lib/components/TickBox.svelte';
+	import CategoryMark from '$lib/components/CategoryMark.svelte';
 	import Written from '$lib/components/Written.svelte';
 	import { enhance } from '$lib/enhance';
-	import { dateOf, dayOf as shortDay } from '$lib/when';
+	import { listCursor } from '$lib/actions/list-cursor';
+	import { civilOf, dayOf as shortDay, today } from '$lib/when';
 	import { useWhen } from '$lib/when-context.svelte';
 	import type { WorkoutActionNames } from '$lib/workout-action-names';
 	import { useT } from '$lib/i18n';
@@ -61,7 +64,9 @@
 		 * because only one workout is open there at a time.
 		 */
 		expanded = null,
-		onexpand
+		onexpand,
+		/** Whether the list's j/k cursor stands on this card. */
+		cursor = false
 	}: {
 		workout: Shown;
 		sessions: Session[];
@@ -73,6 +78,7 @@
 		ondeletesession?: (sessionId: number) => void;
 		expanded?: boolean | null;
 		onexpand?: (id: number) => void;
+		cursor?: boolean;
 	} = $props();
 
 	let ownExpanded = $state(false);
@@ -87,10 +93,9 @@
 
 	/** The day a session was done, short — the year is almost always this one. */
 	function dayOf(iso: string): string {
-		const day = new Date(`${iso}T00:00:00`);
-		if (Number.isNaN(day.getTime())) return iso;
-		const thisYear = day.getFullYear() === new Date().getFullYear();
-		return thisYear ? shortDay(day, now()) : dateOf(day, now());
+		const day = iso.slice(0, 10);
+		const thisYear = day.slice(0, 4) === today(now()).slice(0, 4);
+		return thisYear ? shortDay(day, now()) : civilOf(day, now());
 	}
 </script>
 
@@ -99,7 +104,7 @@
 	its tick, the name beside it, the verbs along the foot. The plan and its
 	register unfold under the whole card.
 -->
-<li class="row-card">
+<li class="row-card" data-row use:listCursor={cursor}>
 	<RowCard>
 		{#snippet rail()}
 			<form method="post" action={actions.done} use:enhance class="flex">
@@ -109,13 +114,25 @@
 					title={t('health.workouts.doneJustNow')}
 					aria-label={t('health.workouts.markDone', { title: workout.title })}
 				>
-					<span
-						class="flex size-7 items-center justify-center border border-gray-400 bg-white text-gray-500 hover:border-gray-600"
-					>
-						<Icon name="check" size={14} />
-					</span>
+					<TickBox />
 				</button>
 			</form>
+		{/snippet}
+
+		{#snippet labels()}
+			{#if workout.categoryName}
+				<CategoryMark name={workout.categoryName} color={null} />
+			{/if}
+			{#if workout.minutes}
+				<span class="tabular text-xs text-gray-500"
+					>{t('health.workouts.minutesAbout', { minutes: workout.minutes })}</span
+				>
+			{/if}
+			{#if workout.lastDoneAt}
+				<span class="text-xs text-gray-500"
+					>{t('health.workouts.lastDoneOn', { date: dayOf(workout.lastDoneAt) })}</span
+				>
+			{/if}
 		{/snippet}
 
 		{#snippet controls()}
@@ -175,18 +192,10 @@
 		{/snippet}
 
 		<p class="text-sm leading-snug font-medium break-words text-gray-900">{workout.title}</p>
-		<span class="mt-0.5 block text-xs text-gray-500">
-			{workout.categoryName ?? t('health.workouts.noCategory2')}{#if workout.minutes}{t(
-					'health.workouts.aboutMinutes',
-					{ minutes: workout.minutes }
-				)}{/if}{#if workout.lastDoneAt}{t('health.workouts.lastDone', {
-					date: dayOf(workout.lastDoneAt.slice(0, 10))
-				})}{/if}
-		</span>
 	</RowCard>
 
 	{#if open}
-		<div class="mt-3 w-full space-y-3 border-t border-gray-200 pt-3">
+		<div class="workout-plan mt-3 w-full space-y-3 border-t border-gray-200 pt-3">
 			<div class="text-sm whitespace-pre-wrap text-gray-700">
 				{#if workout.plan}{workout.plan}{:else}<span class="text-gray-500"
 						>{t('health.workouts.noPlanWrittenYet')}</span
@@ -220,7 +229,7 @@
 				{:else}
 					<ul class="divide-y divide-gray-100 border-t border-gray-100">
 						{#each history as session (session.id)}
-							<li class="flex items-start gap-3 py-2 text-sm">
+							<li class="flex items-start gap-3 py-2 text-sm" data-row>
 								<span class="tabular w-20 shrink-0 text-gray-500">{dayOf(session.doneOn)}</span>
 								<div class="min-w-0 flex-1">
 									{#if session.measures.length === 0}
@@ -254,12 +263,12 @@
 										<Written content={session.notes} compact />
 									{/if}
 								</div>
-								<div class="flex shrink-0 items-center gap-1">
+								<div class="row-actions flex shrink-0 items-center gap-0.5">
 									<button
 										class="icon-btn"
 										title={t('health.workouts.correctThis')}
 										aria-label={t('health.workouts.correctTheSessionOn', {
-											doneOn: session.doneOn
+											doneOn: civilOf(session.doneOn, now())
 										})}
 										onclick={() => onsession?.(workout.id, session.id)}
 									>
@@ -269,7 +278,7 @@
 										class="icon-btn icon-btn-danger"
 										title={t('health.workouts.removeThis')}
 										aria-label={t('health.workouts.removeTheSessionOn', {
-											doneOn: session.doneOn
+											doneOn: civilOf(session.doneOn, now())
 										})}
 										onclick={() => ondeletesession?.(session.id)}
 									>
@@ -284,3 +293,10 @@
 		</div>
 	{/if}
 </li>
+
+<style>
+	/* The plan unfolds on the words' column, under the title it belongs to. */
+	.workout-plan {
+		padding-left: calc(var(--row-rail) + var(--row-gap));
+	}
+</style>

@@ -14,6 +14,7 @@ import {
 	recordMovement,
 	monthsWithLines,
 	uncategorizedCount,
+	UNCATEGORIZED,
 	updateMovement
 } from '$lib/services/statements';
 
@@ -33,6 +34,8 @@ export const load = async ({ locals, url }: IsolatedEvent) => {
 
 	const query = url.searchParams.get('q') ?? '';
 	const month = url.searchParams.get('month') ?? '';
+	// Only the lines no category claims — the ones the Rules tab is for.
+	const loose = url.searchParams.get('uncategorized') === '1';
 	const filter = current
 		? { ledgerId: current.id, query: query || undefined, month: month || undefined }
 		: null;
@@ -47,7 +50,14 @@ export const load = async ({ locals, url }: IsolatedEvent) => {
 		current,
 		query,
 		month,
-		movements: filter ? listMovements(ctx, { ...filter, limit: 500 }) : [],
+		loose,
+		movements: filter
+			? listMovements(ctx, {
+					...filter,
+					limit: 500,
+					...(loose ? { category: UNCATEGORIZED, direction: 'out' as const } : {})
+				})
+			: [],
 		months: current ? monthsWithLines(ctx, current.id) : [],
 		unsorted: filter ? uncategorizedCount(ctx, filter) : 0
 	};

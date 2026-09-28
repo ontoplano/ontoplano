@@ -11,6 +11,9 @@
 	import { resolve } from '$app/paths';
 	import { goto } from '$app/navigation';
 	import Picker from '$lib/components/Picker.svelte';
+	import SortControl from '$lib/components/SortControl.svelte';
+	import type { PlainKey } from '$lib/i18n/keys';
+	import { CATEGORY_FALLBACK_COLOR } from '$lib/colors';
 	import OneLine from '$lib/components/OneLine.svelte';
 	import { getAction, keyFor } from '$lib/shortcuts';
 	import { enhance } from '$lib/enhance';
@@ -108,35 +111,89 @@
 			.join(', ')
 	);
 
-	/** One column per horizon, so the year and the week sit side by side. */
-	const byHorizon = $derived(
-		HORIZONS.map((h) => {
-			const of = visible.filter((g) => g.horizon === h);
-			/*
-			 * A goal about a subject sits below the ones about the life.
-			 *
-			 * Filing a goal under a notebook scopes it — "read twelve books" is
-			 * a goal you hold; "finish the kitchen tiling" belongs to the
-			 * renovation and is only a goal while that is going on. Mixed into
-			 * one list they read as the same kind of thing, so the loose ones
-			 * come first and each notebook's own are grouped under its name.
-			 */
+	/*
+	 * The order inside each group. Kept per browser, like the task list's:
+	 * it is how somebody likes to read, not a fact about the goals.
+	 */
+	const ORDERS = ['period', 'title', 'progress', 'created'] as const;
+	type Order = (typeof ORDERS)[number];
+	const ORDER_LABELS: Record<Order, PlainKey> = {
+		period: 'goals.orderPeriod',
+		title: 'goals.orderTitle',
+		progress: 'goals.orderProgress',
+		created: 'goals.orderAdded'
+	};
+	const ORDER_KEY = 'goals.order';
+	let order = $state<Order>('period');
+	let direction = $state<'asc' | 'desc'>('asc');
+	$effect(() => {
+		try {
+			const kept = JSON.parse(localStorage.getItem(ORDER_KEY) ?? 'null');
+			if (kept && ORDERS.includes(kept.order)) order = kept.order;
+			if (kept?.direction === 'asc' || kept?.direction === 'desc') direction = kept.direction;
+		} catch {
+			/* A private window keeps nothing; the default order stands. */
+		}
+	});
+	function keepOrder() {
+		try {
+			localStorage.setItem(ORDER_KEY, JSON.stringify({ order, direction }));
+		} catch {
+			/* As above. */
+		}
+	}
+
+	/** How far along a goal is, 0–1; one with nothing counted sorts first. */
+	function progressOf(g: Goal): number {
+		return g.progress.fraction ?? -1;
+	}
+	const sorted = $derived(
+		[...visible].sort((a, b) => {
+			const by =
+				order === 'title'
+					? a.title.localeCompare(b.title)
+					: order === 'progress'
+						? progressOf(a) - progressOf(b)
+						: order === 'created'
+							? a.id - b.id
+							: a.periodStart.localeCompare(b.periodStart) || a.title.localeCompare(b.title);
+			return direction === 'asc' ? by : -by;
+		})
+	);
+
+	/**
+	 * One band per horizon, and one per notebook inside it.
+	 *
+	 * A goal about a subject sits below the ones about the life. Filing a goal
+	 * under a notebook scopes it — "read twelve books" is a goal you hold;
+	 * "finish the kitchen tiling" belongs to the renovation and is only a goal
+	 * while that is going on — so the loose ones come first and each
+	 * notebook's own follow under a band of the same kind that names it.
+	 */
+	const groups = $derived(
+		HORIZONS.flatMap((h) => {
+			const of = sorted.filter((g) => g.horizon === h);
 			const loose = of.filter((g) => g.notebookId === null);
 			const filed = [...new Set(of.filter((g) => g.notebookId !== null).map((g) => g.notebookId))]
 				.map((id) => ({
-					id: id as number,
-					title: of.find((g) => g.notebookId === id)?.notebookTitle ?? '',
+					horizon: h,
+					notebook: {
+						id: id as number,
+						title: of.find((g) => g.notebookId === id)?.notebookTitle ?? ''
+					},
 					goals: of.filter((g) => g.notebookId === id)
 				}))
-				.sort((a, b) => a.title.localeCompare(b.title));
-			return { horizon: h, goals: of, loose, filed };
-		}).filter((c) => c.goals.length > 0)
+				.sort((a, b) => a.notebook.title.localeCompare(b.notebook.title));
+			return [
+				...(loose.length > 0 ? [{ horizon: h, notebook: null, goals: loose }] : []),
+				...filed
+			];
+		})
 	);
 
 	/** Every goal in the order it is drawn, which is the order j and k walk. */
-	const ordered = $derived(
-		byHorizon.flatMap((c) => [...c.loose, ...c.filed.flatMap((b) => b.goals)])
-	);
+	const ordered = $derived(groups.flatMap((g) => g.goals));
+
 	const cursorId = $derived(ordered[Math.min(selectedIndex, ordered.length - 1)]?.id ?? null);
 
 	/** The area filter as the picker holds it: a string, 'all' for none. */
@@ -277,9 +334,6 @@
 				return;
 			}
 			selectedIndex = Math.min(Math.max(selectedIndex + (action === 'next' ? 1 : -1), 0), max);
-			document.getElementById(`goal-${ordered[selectedIndex].id}`)?.scrollIntoView({
-				block: 'nearest'
-			});
 			return;
 		}
 		if (action === 'edit') {
@@ -462,7 +516,12 @@
 						<OneLine name="label" placeholder={t('goals.eGFitness')} class="input" required />
 					</Field>
 					<Field label={t('ui.colour')} span={4}>
-						<input name="color" type="color" value="#6b7280" class="input h-9 p-1" />
+						<input
+							name="color"
+							type="color"
+							value={CATEGORY_FALLBACK_COLOR}
+							class="input h-9 p-1"
+						/>
 					</Field>
 				</FormGrid>
 			</form>
@@ -544,6 +603,7 @@
 			{#snippet tools()}
 				<FilterBar
 					name="goals"
+					inlineBelow
 					on={narrowed || data.includeClosed}
 					{summary}
 					onclear={clearFilters}
@@ -555,7 +615,7 @@
 				     far end of the strip, where another room keeps its order. -->
 					{#snippet verb()}
 						<StripVerb
-							icon="tag"
+							icon="sliders"
 							label={t('goals.areas')}
 							onclick={() => (showAreas = true)}
 							data-tour="goal-areas"
@@ -569,25 +629,45 @@
 							said={(count) => t('goals.showingCount', { count })}
 						/>
 					{/snippet}
-					{#if data.areas.length > 0}
-						<Picker
-							value={areaFilter === null ? ALL_AREAS : String(areaFilter)}
-							options={areaOptions}
-							onpick={(next) => (areaFilter = next === ALL_AREAS ? null : Number(next))}
-							label={t('goals.area')}
-							class="min-w-36 flex-1 sm:flex-none"
+					{#snippet trailing()}
+						<SortControl
+							value={order}
+							options={ORDERS}
+							labels={ORDER_LABELS}
+							{direction}
+							onpick={(next) => {
+								order = next;
+								keepOrder();
+							}}
+							onflip={() => {
+								direction = direction === 'asc' ? 'desc' : 'asc';
+								keepOrder();
+							}}
+							label={t('goals.orderGoalsBy')}
 						/>
-					{/if}
-					<!-- One label either way, with the number of goals it puts away. -->
-					<button
-						type="button"
-						class="btn btn-sm shrink-0"
-						aria-pressed={data.includeClosed}
-						onclick={toggleClosed}
-						hidden={data.closedCount === 0 && !data.includeClosed}
-					>
-						{t('goals.closedCount', { count: data.closedCount })}
-					</button>
+					{/snippet}
+					<!-- Two filters: out on the strip at every width, not a sheet of two. -->
+					{#snippet inline()}
+						{#if data.areas.length > 0}
+							<Picker
+								value={areaFilter === null ? ALL_AREAS : String(areaFilter)}
+								options={areaOptions}
+								onpick={(next) => (areaFilter = next === ALL_AREAS ? null : Number(next))}
+								label={t('goals.area')}
+								class="sm:w-36"
+							/>
+						{/if}
+						<!-- One label either way, with the number of goals it puts away. -->
+						<button
+							type="button"
+							class="btn btn-sm shrink-0"
+							aria-pressed={data.includeClosed}
+							onclick={toggleClosed}
+							hidden={data.closedCount === 0 && !data.includeClosed}
+						>
+							{t('goals.closedCount', { count: data.closedCount })}
+						</button>
+					{/snippet}
 				</FilterBar>
 			{/snippet}
 
@@ -611,43 +691,35 @@
 				{/if}
 			{:else}
 				<!--
-				One group per horizon, headed the way the review heads its days: a
-				quiet band with the name and how many, the rows edge to edge under it.
+				One band per group, headed the way the review heads its days: a quiet
+				band with the name and how many, the rows edge to edge under it. A
+				notebook's own goals get the same band, naming the horizon and the
+				notebook — the name is a link, since the notebook holds the rest.
 			-->
 				<div class="divide-y divide-gray-200">
-					{#each byHorizon as column (column.horizon)}
-						<section aria-labelledby="horizon-{column.horizon}">
+					{#each groups as group (`${group.horizon}:${group.notebook?.id ?? ''}`)}
+						{@const headId = `goals-${group.horizon}-${group.notebook?.id ?? 'loose'}`}
+						<section aria-labelledby={headId}>
 							<h2
-								id="horizon-{column.horizon}"
-								class="eyebrow flex items-center justify-between gap-4 border-b border-gray-200 bg-gray-50 px-4 py-1.5 text-gray-600"
+								id={headId}
+								class="eyebrow flex items-center gap-2 border-b border-gray-200 bg-gray-50 px-4 py-1.5 text-gray-600"
 							>
-								{t(HORIZON_LABELS[column.horizon])}
-								<span class="tabular">{column.goals.length}</span>
+								<span>{t(HORIZON_LABELS[group.horizon])}</span>
+								{#if group.notebook}
+									<span aria-hidden="true">·</span>
+									<a
+										href={resolve('/notebooks/[id]', { id: String(group.notebook.id) })}
+										class="inline-flex min-w-0 items-center gap-1 hover:text-gray-900 hover:underline"
+									>
+										<Icon name="notebook" size={12} />
+										<span class="truncate">{group.notebook.title}</span>
+									</a>
+								{/if}
+								<span class="tabular ml-auto">{group.goals.length}</span>
 							</h2>
 							<div class="divide-y divide-gray-200">
-								{#each column.loose as goal (goal.id)}
+								{#each group.goals as goal (goal.id)}
 									{@render card(goal)}
-								{/each}
-								<!--
-								A notebook's own goals, under its name, so the list says which
-								of these are about a subject and which are not. The name is a
-								link: the notebook is where the rest of it is.
-							-->
-								{#each column.filed as book (book.id)}
-									<div>
-										<a
-											href={resolve('/notebooks/[id]', { id: String(book.id) })}
-											class="flex items-center gap-1.5 px-4 pt-2.5 pb-1 text-xs font-medium text-gray-600 hover:text-gray-900 hover:underline"
-										>
-											<Icon name="notebook" size={12} />
-											{book.title}
-										</a>
-										<div class="divide-y divide-gray-200">
-											{#each book.goals as goal (goal.id)}
-												{@render card(goal)}
-											{/each}
-										</div>
-									</div>
 								{/each}
 							</div>
 						</section>

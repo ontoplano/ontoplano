@@ -738,5 +738,10 @@ export function hasTutorial(path: string): boolean {
  * on this list: they are read, not learned.
  */
 export function screensNeedingTutorials(): string[] {
-	return [...new Set([...NAV_PLACES.map((p) => p.href), ...Object.keys(PAGE_SHORTCUTS)])].sort();
+	return [...new Set([...NAV_PLACES.map((p) => p.href), ...Object.keys(PAGE_SHORTCUTS)])]
+		.filter((path) => !READ_NOT_LEARNED.some((prefix) => path.startsWith(prefix)))
+		.sort();
 }
+
+/** The places above that keep keys of their own without being learned — see why. */
+const READ_NOT_LEARNED = ['/admin'];

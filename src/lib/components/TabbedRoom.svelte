@@ -44,6 +44,8 @@
 		label,
 		dataTour,
 		nested = false,
+		back,
+		backLabel,
 		actions,
 		children
 	}: {
@@ -77,6 +79,13 @@
 		 * stacked whole is two rooms on one screen.
 		 */
 		nested?: boolean;
+		/**
+		 * A page inside one of the room's tabs — one album — goes back to it
+		 * from the bar, where the glyph is, and the bar says the page's name.
+		 * See `RoomBar`.
+		 */
+		back?: string;
+		backLabel?: string;
 		actions?: import('svelte').Snippet;
 		children: import('svelte').Snippet;
 	} = $props();
@@ -292,7 +301,7 @@
 		-->
 		{@render strip()}
 	{:else}
-		<RoomBar {title} {glyph} {actions} verbInTabs={!phone.current}>
+		<RoomBar {title} {glyph} {back} {backLabel} {actions} verbInTabs={!phone.current}>
 			{@render strip()}
 		</RoomBar>
 	{/if}

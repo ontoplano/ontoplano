@@ -26,23 +26,15 @@ import { join } from 'node:path';
 /** file → how many uses are there on purpose, and what they are. */
 const ALLOWED: Record<string, number> = {
 	// Icons.
-	'src/lib/components/EmptyState.svelte': 1,
 	'src/lib/components/RatingPicker.svelte': 1,
-	'src/routes/media/gallery/+page.svelte': 3,
-	'src/routes/media/gallery/[id]/+page.svelte': 1,
-	'src/routes/reminders/+page.svelte': 2,
-	'src/routes/finance/rules/+page.svelte': 1,
-	'src/routes/finance/ledgers/+page.svelte': 3,
 	// Finished, hidden, or not the chosen one — dimmed on purpose.
 	'src/lib/components/Backlinks.svelte': 1,
 	'src/lib/components/GoalLinksModal.svelte': 1,
-	'src/lib/components/NotebookDetail.svelte': 2,
-	// One chevron, and two greyings of a finished task.
-	'src/lib/components/TodoRows.svelte': 3,
-	'src/routes/+page.svelte': 2,
+	// The greying of a finished task, and the pages below.
+	'src/lib/components/TodoRows.svelte': 1,
 	'src/routes/demo/+page.svelte': 1,
 	'src/routes/instance/+page.svelte': 1,
-	'src/lib/components/InventoryRoom.svelte': 3,
+	'src/lib/components/InventoryRoom.svelte': 2,
 	'src/routes/start/+page.svelte': 2,
 	// The in-app chat, which is switched off — see `$lib/features`.
 	'src/routes/assistant/+page.svelte': 2

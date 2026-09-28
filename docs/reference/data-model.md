@@ -40,11 +40,11 @@ exist.
 | [`goal_targets`](#goal_targets)                             | 9       | yes               |
 | [`goals`](#goals)                                           | 14      | yes               |
 | [`habit_occurrences`](#habit_occurrences)                   | 6       | yes               |
-| [`habits`](#habits)                                         | 8       | yes               |
+| [`habits`](#habits)                                         | 9       | yes               |
 | [`idea_tags`](#idea_tags)                                   | 4       | yes               |
 | [`ideas`](#ideas)                                           | 9       | yes               |
 | [`inventory_attribute_colors`](#inventory_attribute_colors) | 5       | yes               |
-| [`inventory_categories`](#inventory_categories)             | 7       | yes               |
+| [`inventory_categories`](#inventory_categories)             | 8       | yes               |
 | [`inventory_items`](#inventory_items)                       | 17      | yes               |
 | [`invites`](#invites)                                       | 9       | —                 |
 | [`ledgers`](#ledgers)                                       | 11      | yes               |
@@ -704,6 +704,7 @@ Indexes:
 | `type`           | text    | not null | `'bad'`               | —                 |
 | `scheduled_days` | text    | null     | `''`                  | —                 |
 | `notebook_id`    | integer | null     | —                     | → `notebooks.id`  |
+| `archived_at`    | text    | null     | —                     | —                 |
 | `created_at`     | text    | not null | `(CURRENT_TIMESTAMP)` | —                 |
 
 Indexes:
@@ -770,6 +771,7 @@ Indexes:
 | `name`               | text    | not null | —                     | —                 |
 | `shared_with_family` | integer | not null | `false`               | —                 |
 | `is_food`            | integer | not null | `false`               | —                 |
+| `color`              | text    | null     | —                     | —                 |
 | `sort_order`         | integer | not null | `0`                   | —                 |
 | `created_at`         | text    | not null | `(CURRENT_TIMESTAMP)` | —                 |
 

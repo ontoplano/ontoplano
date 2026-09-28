@@ -11,6 +11,7 @@ import { locationChoices } from '$lib/services/locations';
 import { listTodos } from '$lib/services/todos';
 import { measuredActivities } from '$lib/services/workouts';
 import type { Ctx } from '$lib/services/ctx';
+import { host } from '$lib/services/host';
 
 /**
  * Everything the notebook panel needs besides the notebook itself.
@@ -75,6 +76,8 @@ export function notebookPanelData(ctx: Ctx, notebookId: number | null) {
 		activities: listActivities(ctx, { activeOnly: true }).map((a) => ({
 			id: a.id,
 			name: a.name
-		}))
+		})),
+		// Whether the owner can share a notebook into the family, from either header.
+		onFamilyPlan: host.familyUserIds(ctx.userId).length > 1
 	};
 }

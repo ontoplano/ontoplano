@@ -793,7 +793,13 @@
 		"scope": "habits:read",
 		"writes": false,
 		"destroys": false,
-		"params": {}
+		"params": {
+			"includeArchived": {
+				"type": "boolean",
+				"required": false,
+				"default": false
+			}
+		}
 	},
 	"apply_idea": {
 		"scope": "ideas:write",
@@ -819,6 +825,17 @@
 				"type": "boolean",
 				"required": false
 			},
+			"id": {
+				"type": "integer",
+				"required": true
+			}
+		}
+	},
+	"archive_habit": {
+		"scope": "habits:write",
+		"writes": true,
+		"destroys": false,
+		"params": {
 			"id": {
 				"type": "integer",
 				"required": true
@@ -1253,6 +1270,10 @@
 		"writes": true,
 		"destroys": false,
 		"params": {
+			"color": {
+				"type": "string",
+				"required": false
+			},
 			"holdsFood": {
 				"type": "boolean",
 				"required": false
@@ -2348,6 +2369,25 @@
 			}
 		}
 	},
+	"move_inventory_category": {
+		"scope": "inventory:write",
+		"writes": true,
+		"destroys": false,
+		"params": {
+			"delta": {
+				"type": "integer",
+				"required": true,
+				"enum": [
+					"-1",
+					"1"
+				]
+			},
+			"id": {
+				"type": "integer",
+				"required": true
+			}
+		}
+	},
 	"move_notes": {
 		"scope": "notes:write",
 		"writes": true,
@@ -3347,6 +3387,17 @@
 		"writes": false,
 		"destroys": false,
 		"params": {}
+	},
+	"unarchive_habit": {
+		"scope": "habits:write",
+		"writes": true,
+		"destroys": false,
+		"params": {
+			"id": {
+				"type": "integer",
+				"required": true
+			}
+		}
 	},
 	"unarchive_item": {
 		"scope": "inventory:write",

@@ -15,7 +15,9 @@
 	import FilterBar from '$lib/components/FilterBar.svelte';
 	import Picker from '$lib/components/Picker.svelte';
 	import SortControl from '$lib/components/SortControl.svelte';
-	import { dayOf } from '$lib/when';
+	import TagFilter from '$lib/components/TagFilter.svelte';
+	import { NO_TAG_FILTER, isTagFiltering, passesTagFilter } from '$lib/tag-filter';
+	import { dayOf, timeOf } from '$lib/when';
 	import { useWhen } from '$lib/when-context.svelte';
 	import type { PlainKey } from '$lib/i18n/keys';
 	import { resolve } from '$app/paths';
@@ -52,7 +54,7 @@
 
 	type Card = PageServerData['todayCards'][number];
 
-	let tab: 'today' | 'general' = $state('today');
+	let tab = $state<'today' | 'general'>('today');
 	let minEase: number | null = $state(null);
 	let showDone = $state(false);
 	/** What the search box holds; narrows the columns and the rail by title. */
@@ -95,12 +97,48 @@
 		}))
 	]);
 
+	/*
+	 * The To-do tab's cards are the task list's todos, so they narrow the way
+	 * the list does: by notebook and by label. The Today tab's blocks carry
+	 * neither, so the two pickers are the To-do tab's only.
+	 */
+	let notebookFilter = $state('');
+	let tagFilter = $state({ ...NO_TAG_FILTER });
+
+	const notebookChoices = $derived([
+		{ value: '', label: t('todoRows.everyNotebook') },
+		{ value: 'none', label: t('todoRows.notInOne') },
+		...data.notebooks.map((book: { id: number; title: string }) => ({
+			value: String(book.id),
+			label: book.title
+		}))
+	]);
+	const tagsInUse = $derived(
+		[...new Set(data.generalCards.flatMap((c) => c.tags))].sort((a, b) => a.localeCompare(b))
+	);
+
 	function matches(card: Card): boolean {
 		const query = looking.trim().toLowerCase();
 		return query === '' || card.title.toLowerCase().includes(query);
 	}
 
-	const narrowed = $derived(looking.trim() !== '' || minEase !== null);
+	/** The To-do tab's two extra narrowings; a Today card always passes them. */
+	function inList(card: Card): boolean {
+		if (tab !== 'general') return true;
+		if (notebookFilter === 'none' && card.notebookId !== null) return false;
+		if (
+			notebookFilter !== '' &&
+			notebookFilter !== 'none' &&
+			String(card.notebookId) !== notebookFilter
+		)
+			return false;
+		return passesTagFilter(card.tags, tagFilter);
+	}
+
+	const listNarrowed = $derived(
+		tab === 'general' && (notebookFilter !== '' || isTagFiltering(tagFilter))
+	);
+	const narrowed = $derived(looking.trim() !== '' || minEase !== null || listNarrowed);
 
 	/** What is narrowing the board, in words, for the phone's filter button. */
 	function narrowing(): string {
@@ -108,13 +146,18 @@
 		if (looking.trim()) parts.push(`“${looking.trim()}”`);
 		if (minEase !== null) parts.push(t('tasks.board.easeAtLeast', { value: minEase }));
 		if (showDone) parts.push(t(STATUS_LABELS.skipped));
-		return parts.join(', ');
+		if (tab === 'general' && notebookFilter !== '')
+			parts.push(notebookChoices.find((one) => one.value === notebookFilter)?.label ?? '');
+		if (tab === 'general') for (const one of tagFilter.include) parts.push(`#${one}`);
+		return parts.filter(Boolean).join(', ');
 	}
 
 	function clearFilters() {
 		looking = '';
 		minEase = null;
 		showDone = false;
+		notebookFilter = '';
+		tagFilter = { ...NO_TAG_FILTER };
 	}
 
 	// Keyboard focus is a (column, row) pair rather than a flat index, because
@@ -228,7 +271,7 @@
 	}
 
 	function visible(status: Status): Card[] {
-		let out = cards.filter((c) => shownStatus(c) === status && matches(c));
+		let out = cards.filter((c) => shownStatus(c) === status && matches(c) && inList(c));
 
 		// An unrated card is never hidden: the filter is for choosing among what
 		// you have described, not for burying what you have not.
@@ -282,85 +325,6 @@
 		}))
 	);
 
-	/**
-	 * On a phone the board slides sideways.
-	 *
-	 * A board is columns; one column at a time is a list with a tab strip, and
-	 * moving a card between two things you cannot see at once is a gesture
-	 * nobody can aim. The columns are side by side now and the strip snaps, so
-	 * a drag can carry a card to the edge and the strip follows it.
-	 *
-	 * Each column is most of the screen wide rather than all of it: the sliver
-	 * of the next one is what says there is a next one.
-	 */
-	let strip: HTMLElement | undefined = $state();
-
-	/** Which column the strip is showing, for the names above it. */
-	let phoneColumn: Status = $state('todo');
-
-	// Hiding Skipped while it is the one on screen would leave a blank board.
-	$effect(() => {
-		if (!columns.some((c) => c.status === phoneColumn)) phoneColumn = 'todo';
-	});
-
-	/** Bring a column into view, from the names above or after a drop. */
-	function showColumn(status: Status) {
-		phoneColumn = status;
-		const at = columns.findIndex((c) => c.status === status);
-		const child = strip?.children[at] as HTMLElement | undefined;
-		child?.scrollIntoView({ behavior: 'smooth', inline: 'start', block: 'nearest' });
-	}
-
-	/**
-	 * …and the other direction: the strip tells the names where it got to.
-	 *
-	 * Pressing a name scrolled the strip, and that was the only thing that ever
-	 * moved `phoneColumn` — so swiping the board, which is how anybody actually
-	 * changes column on a phone, left the strip showing Done while "Pending"
-	 * was still lit above it. A control that lies about what is on screen is
-	 * worse than no control.
-	 *
-	 * Whichever column's left edge is nearest the scroll position wins, rather
-	 * than arithmetic on a column width: the columns are a percentage of the
-	 * screen with a gap between them, and the last one stops short because the
-	 * strip runs out. Measuring where they actually are cannot drift from that.
-	 */
-	function followScroll() {
-		if (!strip) return;
-		const children = [...strip.children] as HTMLElement[];
-		if (children.length === 0) return;
-
-		const from = strip.getBoundingClientRect().left;
-		let closest = 0;
-		let best = Infinity;
-		children.forEach((child, i) => {
-			const off = Math.abs(child.getBoundingClientRect().left - from);
-			if (off < best) {
-				best = off;
-				closest = i;
-			}
-		});
-
-		const status = columns[closest]?.status;
-		if (status && status !== phoneColumn) phoneColumn = status;
-	}
-
-	/**
-	 * A card carried to the edge takes the board with it.
-	 *
-	 * Without this the only way to reach the far column mid-drag is to let go,
-	 * scroll, and pick the card up again — which is not a gesture, it is three.
-	 * The zone is a thumb's width and the step is one frame's worth.
-	 */
-	const EDGE_ZONE = 56;
-	const EDGE_STEP = 18;
-	function scrollAtEdge(event: DragEvent) {
-		if (!strip) return;
-		const box = strip.getBoundingClientRect();
-		if (event.clientX < box.left + EDGE_ZONE) strip.scrollLeft -= EDGE_STEP;
-		else if (event.clientX > box.right - EDGE_ZONE) strip.scrollLeft += EDGE_STEP;
-	}
-
 	const focusedCard = $derived(columns[focusCol]?.cards[focusRow] ?? null);
 
 	function post(action: string, fields: Record<string, string | string[]>) {
@@ -399,7 +363,12 @@
 	function placeIn(status: Status) {
 		const card = moving;
 		movingUid = null;
-		if (card) void move(card, status);
+		if (!card) return;
+		// A todo off the list put into one of the day's columns goes on the
+		// day, as dropping it there does.
+		if (tab === 'today' && card.kind === 'todo' && !card.scheduledDate)
+			void promote(card, data.date, status);
+		else void move(card, status);
 	}
 
 	/**
@@ -695,6 +664,26 @@
 </script>
 
 {#snippet cardActions(card: Card)}
+	{#if card.kind === 'todo' && !card.scheduledDate}
+		<!-- Onto the board's day: the drag's and `t`'s move, as a press — the
+		     one way there is on a phone, where the list is its own tab. -->
+		{@const onto =
+			data.date === data.today
+				? t('tasks.board.putOnToday')
+				: t('tasks.board.putOnDay', { day: dayOf(data.date, now()) })}
+		<button
+			type="button"
+			onclick={(e) => {
+				e.stopPropagation();
+				void promote(card, data.date, 'todo');
+			}}
+			class="icon-btn"
+			title={onto}
+			aria-label={onto}
+		>
+			<Icon name="calendar" />
+		</button>
+	{/if}
 	<!-- Pick it up. A drag is a mouse gesture and does not exist under a
 	     finger, so the move a board is for needs a press: this arms the card
 	     and the next press on a column puts it there. -->
@@ -841,15 +830,31 @@
 	<RoomSurface>
 		{#snippet tools()}
 			<!--
-				The day, then the shape — the plan's order, because it is the same
-				room. On the To-do tab there is no day: on a desktop the navigator is
-				held invisible so nothing in the row moves, and on a phone, where the
-				switch sits above it, it goes, rather than leave a blank row.
+				What is on the board, then which day: the switch at the start of
+				the line at every width, so it is in one place on a phone and a
+				desktop, and the day beside it. The To-do tab has no day; the
+				navigator is held invisible there so the switch does not move.
 			-->
 			<div
-				class="w-full min-w-0 sm:-ml-3 sm:w-auto sm:flex-none {tab === 'today'
-					? 'flex'
-					: 'hidden sm:invisible sm:flex'}"
+				use:sliding
+				class="seg shrink-0"
+				role="group"
+				aria-label={t('tasks.board.whatToShow')}
+				data-tour="board-tabs"
+			>
+				{#each [{ v: 'today', l: t('ui.today') }, { v: 'general', l: t('tasks.board.toDoTab') }] as opt (opt.v)}
+					<button
+						onclick={() => {
+							tab = opt.v as typeof tab;
+							focusRow = 0;
+						}}
+						aria-pressed={tab === opt.v}>{opt.l}</button
+					>
+				{/each}
+			</div>
+
+			<div
+				class="flex min-w-0 flex-1 sm:flex-none {tab === 'today' ? '' : 'invisible'}"
 				inert={tab !== 'today'}
 			>
 				<PeriodNav
@@ -866,24 +871,6 @@
 							>{/if}
 					</span>
 				</PeriodNav>
-			</div>
-
-			<div
-				use:sliding
-				class="seg order-first sm:order-none sm:ml-auto"
-				role="group"
-				aria-label={t('tasks.board.whatToShow')}
-				data-tour="board-tabs"
-			>
-				{#each [{ v: 'today', l: t('ui.today') }, { v: 'general', l: t('tasks.board.toDoTab') }] as opt (opt.v)}
-					<button
-						onclick={() => {
-							tab = opt.v as typeof tab;
-							focusRow = 0;
-						}}
-						aria-pressed={tab === opt.v}>{opt.l}</button
-					>
-				{/each}
 			</div>
 		{/snippet}
 
@@ -907,21 +894,43 @@
 					/>
 				{/snippet}
 
-				<button
-					type="button"
-					onclick={() => (showDone = !showDone)}
-					aria-pressed={showDone}
-					class="btn btn-sm shrink-0"
-				>
-					{t('tasks.board.skippedCount', { count: skippedCount })}
-				</button>
-				<Picker
-					value={minEase === null ? '' : String(minEase)}
-					options={easeChoices}
-					onpick={(next) => (minEase = next === '' ? null : Number(next))}
-					label={t('tasks.board.easeFrom')}
-					class="min-w-36 flex-1 sm:flex-none"
-				/>
+				{#snippet inline()}
+					<!-- Nothing to bring back is nothing to press. -->
+					<button
+						type="button"
+						onclick={() => (showDone = !showDone)}
+						aria-pressed={showDone}
+						disabled={skippedCount === 0 && !showDone}
+						class="btn btn-sm shrink-0"
+					>
+						{t('tasks.board.skippedCount', { count: skippedCount })}
+					</button>
+					<Picker
+						value={minEase === null ? '' : String(minEase)}
+						options={easeChoices}
+						onpick={(next) => (minEase = next === '' ? null : Number(next))}
+						label={t('tasks.board.easeFrom')}
+						class="min-w-36 sm:flex-none"
+					/>
+				{/snippet}
+				{#if tab === 'general'}
+					<Picker
+						value={notebookFilter}
+						options={notebookChoices}
+						onpick={(next) => (notebookFilter = next)}
+						label={t('ui.notebook')}
+						class="min-w-36 flex-1 sm:flex-none"
+					/>
+					{#if tagsInUse.length > 0 || isTagFiltering(tagFilter)}
+						<TagFilter
+							tags={tagsInUse}
+							value={tagFilter}
+							onchange={(next) => (tagFilter = next)}
+							name="board-tags"
+							class="min-w-36 flex-1 sm:flex-none"
+						/>
+					{/if}
+				{/if}
 			</FilterBar>
 		{/snippet}
 
@@ -948,77 +957,20 @@
 				</div>
 			{/if}
 
-			<div class="flex flex-col gap-3 md:flex-row">
-				<div class="min-w-0 flex-1">
-					<!-- Which column the phone is looking at. Above md every column is on
-			     screen at once and this is not drawn at all. -->
+			<div class="flex flex-col gap-3 md:flex-row md:items-start">
+				<div class="board-columns min-w-0 flex-1" style="--lanes: {columns.length}">
 					<!--
-				The switcher, which is also where you drop.
-
-				With one column on the screen there is nowhere to drag a card *to* —
-				the column it should go in is the one that is not visible. So the
-				names above are the target: they light up the moment a drag starts,
-				and dropping on one moves the card there and follows it, which is
-				the only way the gesture makes sense when you cannot see where it
-				landed.
-			-->
+						Stacked on a phone, side by side from md up — never a strip that
+						scrolls sideways inside the page. Each column is as tall as what
+						is in it: an empty one is its empty state, not a slab of grey.
+					-->
 					<div
-						use:sliding
-						class="seg mb-3 flex w-full md:hidden {dragging || movingUid
-							? 'ring-2 ring-gray-900'
-							: ''}"
-					>
-						{#each columns as column (column.status)}
-							<button
-								type="button"
-								onclick={() => {
-									// On a phone the column a card should go in is the one that is
-									// not on the screen, so these names are where you put it down
-									// as well as where you go. It follows the card, because a move
-									// you cannot see land is a move you cannot trust.
-									if (movingUid) placeIn(column.status);
-									showColumn(column.status);
-								}}
-								aria-pressed={phoneColumn === column.status}
-								ondragover={(e) => {
-									e.preventDefault();
-									dragOverColumn = column.status;
-								}}
-								ondragleave={() => {
-									if (dragOverColumn === column.status) dragOverColumn = null;
-								}}
-								ondrop={async (e) => {
-									const card = dragging;
-									await onDropInColumn(column.status, e);
-									// Follow it: the card has moved, and the board should be
-									// looking at where it went.
-									if (card) showColumn(column.status);
-								}}
-								class="flex-1 gap-1.5 {dragging && dragOverColumn === column.status
-									? 'on-fill'
-									: ''}"
-							>
-								{t(STATUS_LABELS[column.status])}
-								<span
-									class="tabular text-xs {dragging && dragOverColumn === column.status
-										? 'text-gray-300'
-										: 'text-gray-500'}">{column.cards.length}</span
-								>
-							</button>
-						{/each}
-					</div>
-
-					<div
-						bind:this={strip}
-						ondragover={scrollAtEdge}
-						onscroll={followScroll}
-						class="-mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-1 md:mx-0 md:grid md:auto-cols-fr md:grid-flow-col md:overflow-visible md:px-0"
+						class="flex flex-col gap-3 md:grid md:auto-cols-fr md:grid-flow-col md:items-start"
 						data-tour="board-columns"
 					>
 						{#each columns as column, ci (column.status)}
 							<section
-								class="lane flex min-h-64 w-[86%] shrink-0 snap-start flex-col border bg-gray-50 md:w-auto {dragOverColumn ===
-								column.status
+								class="lane flex flex-col border bg-gray-50 {dragOverColumn === column.status
 									? 'border-gray-900'
 									: 'border-gray-200'}"
 								ondragover={(e) => {
@@ -1041,14 +993,12 @@
 								class:is-landing={movingUid !== null}
 							>
 								<!--
-							The switcher above says both of these on a phone.
-
-							It lights up while a card is being dragged, like the switcher
-							does: a column is a drop target for its whole height, and the
-							header is the part somebody aims at.
+							It lights up while a card is being dragged: a column is a drop
+							target for its whole height, and the header is the part
+							somebody aims at.
 						-->
 								<header
-									class="hidden items-center justify-between border-b px-3 py-2 md:flex {dragging &&
+									class="flex items-center justify-between border-b px-3 py-2 {dragging &&
 									dragOverColumn === column.status
 										? 'on-fill'
 										: 'border-gray-200 bg-white'}"
@@ -1193,10 +1143,13 @@
 
 				{#if tab === 'today'}
 					<!-- The todo list stays visible beside Today so the two can actually
-			     interact: drag one across and it becomes a scheduled task. -->
+			     interact: drag one across and it becomes a scheduled task. As wide
+			     as a column, at every width. On a phone there is no dragging and
+			     no room beside the day; the list is the To-do tab, one press
+			     away, and each of its cards goes on the day with its own button. -->
 					<aside
 						aria-label={t('tasks.board.toDoList')}
-						class="lane w-full shrink-0 border bg-gray-50 md:w-64 lg:w-72 xl:w-80 {railOver
+						class="board-rail lane hidden border bg-gray-50 md:block {railOver
 							? 'border-gray-900'
 							: 'border-gray-200'}"
 						ondragover={(e) => {
@@ -1421,11 +1374,11 @@
 								class="chip flex items-center gap-1 text-gray-700"
 								title={t('tasks.board.removeThisReminder')}
 								aria-label={t('tasks.board.removeTheReminderAt', {
-									slice: reminder.remindAt.slice(11, 16)
+									slice: timeOf(reminder.remindAt, now())
 								})}
 							>
 								<Icon name="clock" size={12} />
-								<span class="tabular">{reminder.remindAt.slice(11, 16)}</span>
+								<span class="tabular">{timeOf(reminder.remindAt, now())}</span>
 								<Icon name="close" size={12} />
 							</button>
 						</form>
@@ -1602,5 +1555,21 @@
 	.card-opened {
 		background: var(--hover-wash);
 		color: inherit;
+	}
+
+	/*
+	 * The rail is one more column. Fluid columns beside a fixed rail drew
+	 * them 329px against 320 and further apart the wider the screen; the
+	 * basis below leaves each column and the rail the same share.
+	 */
+	@media (min-width: 48rem) {
+		.board-columns {
+			flex: var(--lanes) 1 calc((var(--lanes) - 1) * 0.75rem);
+		}
+
+		.board-rail {
+			flex: 1 1 0;
+			min-width: 0;
+		}
 	}
 </style>

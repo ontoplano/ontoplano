@@ -113,7 +113,7 @@ test('a list emptied by its own filters says so rather than saying there is noth
 	// The tab says there is one task; the panel used to say "Nothing waiting —
 	// a to-do is a task with no day on it", which is the app claiming an empty
 	// notebook while its own tab counts a task in it.
-	await expect(page.getByRole('button', { name: 'Tasks 1/1' })).toBeVisible();
+	await expect(page.getByRole('button', { name: 'Tasks 1' })).toBeVisible();
 	await expect(page.getByText('Nothing waiting')).toHaveCount(0);
 	await expect(page.getByText('1 hidden by the filters.')).toBeVisible();
 	await expect(page.getByRole('button', { name: 'Completed (1)' })).toBeVisible();

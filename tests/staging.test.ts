@@ -90,7 +90,10 @@ describe('who may ask', () => {
 			for (const name of readdirSync(dir)) {
 				const path = join(dir, name);
 				if (statSync(path).isDirectory()) {
-					walk(path);
+					// The message catalogues are words, generated from messages/*.json:
+					// the instance page names the variable to a person, which is not
+					// a branch on it.
+					if (relative(root, path) !== join('src', 'lib', 'i18n', 'catalogues')) walk(path);
 					continue;
 				}
 				if (!/\.(ts|svelte)$/.test(name) || name.includes('.test.')) continue;

@@ -49,8 +49,8 @@ import {
 import { demoteToTodo, listForDate, listUnscheduled, promoteTodo } from '$lib/services/todos';
 import { todoHandlers } from '$lib/services/todo-actions';
 import { listInstances, setStatusOn } from '$lib/services/instances';
-import { addDays } from '$lib/services/week-generator';
-import { getGridHours } from '$lib/services/settings';
+import { addDays, startOfWeek } from '$lib/services/week-generator';
+import { getGridHours, getWeekSettings } from '$lib/services/settings';
 
 /**
  * What the browser last knew about its own width.
@@ -96,11 +96,9 @@ function parseAnchor(param: string | null, today: Date): Date {
 	return today;
 }
 
-/** The Monday on or before the first of this date's month. */
-function monthGridStart(date: Date): Date {
-	const first = new Date(date.getFullYear(), date.getMonth(), 1);
-	first.setDate(first.getDate() - ((first.getDay() + 6) % 7));
-	return first;
+/** The account's first weekday on or before the first of this date's month. */
+function monthGridStart(date: Date, firstDay: number): Date {
+	return startOfWeek(new Date(date.getFullYear(), date.getMonth(), 1), firstDay);
 }
 
 /**
@@ -246,15 +244,19 @@ export const load = async ({ locals, url, cookies }: IsolatedEvent) => {
 	// than being clamped forward to today like a plan you are still writing.
 	//
 	// The anchor is any date INSIDE the month being shown, and it matters that
-	// it stays one: the grid starts on the Monday on or before the 1st, which
+	// it stays one: the grid starts on the first weekday on or before the 1st, which
 	// is usually a date in the PREVIOUS month — so an anchor derived from the
 	// grid's own edges names the wrong month, and navigation snaps back. June
 	// 2026 found it: June starts on a Monday, its grid start IS June 1, and
 	// "next" pointed at July's grid start, June 29 — a June date, so following
 	// it landed on June again and the forward arrow did nothing.
 	const anchor = parseAnchor(url.searchParams.get('from'), today);
+	// The account's first weekday, Monday-indexed: where a month's rows begin.
+	const { firstDay } = getWeekSettings(ctx.userId);
 	const from =
-		view === 'month' ? monthGridStart(anchor) : parseFromParam(url.searchParams.get('from'), today);
+		view === 'month'
+			? monthGridStart(anchor, firstDay)
+			: parseFromParam(url.searchParams.get('from'), today);
 	const to = addDays(from, span);
 
 	// Before anything is read, so a stale copy is not what gets drawn. A failure
@@ -333,6 +335,7 @@ export const load = async ({ locals, url, cookies }: IsolatedEvent) => {
 		range,
 		view,
 		viewExplicit,
+		weekFirstDay: firstDay,
 		categories: listCategories(ctx),
 		activities: listActivities(ctx, { activeOnly: true }),
 		schemes: listSchemes(ctx),

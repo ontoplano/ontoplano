@@ -7,7 +7,7 @@ import { visit } from './helpers/visit';
  *
  * Where the week begins: the arrows beside the date step a whole week, so
  * they always land on the same weekday and can never answer *which day does
- * my week start on*. Two small buttons slide the first day one at a time.
+ * my week start on*. A picker beside them slides the first day to a weekday.
  *
  * And the hover card, which used to outlive the block it was about. Opening a
  * block puts a dialog over the grid, so `eventMouseLeave` never fires; delete
@@ -15,10 +15,29 @@ import { visit } from './helpers/visit';
  * hour the block used to be, with nothing underneath it.
  */
 
-/** The date range the toolbar is naming, e.g. "Sep 19 — Sep 25". */
+/**
+ * The date range the toolbar is naming, as "Sep 19 — Sep 25" whichever way it
+ * is printed: "Sep 19 – 25, 2026" or "Sep 27 – Oct 3, 2026".
+ */
 async function span(page: import('@playwright/test').Page): Promise<string> {
-	const text = await page.locator('[data-tour="plan-toolbar"]').innerText();
-	return /([A-Z][a-z]{2} \d+ — [A-Z][a-z]{2} \d+)/.exec(text.replace(/\n/g, ' '))?.[1] ?? text;
+	const text = (await page.locator('[data-tour="plan-toolbar"]').innerText()).replace(/\s+/g, ' ');
+	const found = /([A-Z][a-z]{2}) (\d+)\s*[–—-]\s*(?:([A-Z][a-z]{2}) )?(\d+)/.exec(text);
+	if (!found) return text;
+	const [, month, day, endMonth, endDay] = found;
+	return `${month} ${day} — ${endMonth ?? month} ${endDay}`;
+}
+
+/** Slide the week so it starts on this weekday, through the toolbar's picker. */
+async function startOn(page: import('@playwright/test').Page, weekday: string) {
+	await page.getByRole('button', { name: 'Week starts on' }).click();
+	await page.getByRole('option', { name: weekday }).click();
+}
+
+/** The weekday a "Sep 19 — Sep 25" span starts on, as the picker names it. */
+function weekdayOf(value: string, shift: number): string {
+	const [first] = dates(value);
+	const names = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+	return names[(new Date(first).getUTCDay() + shift + 7) % 7];
 }
 
 /** The two dates in a span, with a shared leap year so month ends are real. */
@@ -62,7 +81,7 @@ test('the week can be started a day earlier or a day later', async ({ page }) =>
 	const started = await span(page);
 	expect(started).toMatch(/— /);
 
-	await page.getByRole('button', { name: 'Start the week a day earlier' }).click();
+	await startOn(page, weekdayOf(started, -1));
 	await expect.poll(() => span(page)).not.toBe(started);
 	const back = await span(page);
 
@@ -72,21 +91,22 @@ test('the week can be started a day earlier or a day later', async ({ page }) =>
 	expect(dayDifference(startedFirst, backFirst)).toBe(-1);
 	expect(dayDifference(startedLast, backLast)).toBe(-1);
 
-	await page.getByRole('button', { name: 'Start the week a day later' }).click();
+	await startOn(page, weekdayOf(started, 0));
 	await expect.poll(() => span(page)).toBe(started);
 });
 
-test('the buttons are not offered where there is no week to start', async ({ page }) => {
+test('the picker is not offered where there is no week to start', async ({ page }) => {
 	test.setTimeout(150_000);
 	await register(page, testEmail('plan-week-start-views'));
 	await visit(page, '/tasks/plan?view=week');
-	await expect(page.getByRole('button', { name: 'Start the week a day earlier' })).toBeVisible();
+	await expect(page.getByRole('button', { name: 'Week starts on' })).toBeVisible();
 
 	// A single day is the arrow beside it, and a month has no first day to slide.
+	// The control keeps its place, invisible, so changing view moves nothing.
 	await visit(page, '/tasks/plan?view=day');
-	await expect(page.getByRole('button', { name: 'Start the week a day earlier' })).toHaveCount(0);
+	await expect(page.getByRole('button', { name: 'Week starts on' })).toBeHidden();
 	await visit(page, '/tasks/plan?view=month');
-	await expect(page.getByRole('button', { name: 'Start the week a day earlier' })).toHaveCount(0);
+	await expect(page.getByRole('button', { name: 'Week starts on' })).toBeHidden();
 });
 
 test('a deleted block does not leave its hover card standing in the grid', async ({ page }) => {

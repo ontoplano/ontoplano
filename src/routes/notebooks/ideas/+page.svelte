@@ -19,10 +19,21 @@
 	import Modal from '$lib/components/Modal.svelte';
 	import type { PageServerData, ActionData } from './$types';
 	import { getAction } from '$lib/shortcuts';
-	import { keepInView } from '$lib/actions/keep-in-view';
+	import { listCursor } from '$lib/actions/list-cursor';
+	import SortControl from '$lib/components/SortControl.svelte';
+	import SelectionBar from '$lib/components/SelectionBar.svelte';
+	import BatchDialog from '$lib/components/BatchDialog.svelte';
+	import NotebookField from '$lib/components/NotebookField.svelte';
+	import Field from '$lib/components/Field.svelte';
+	import OneLine from '$lib/components/OneLine.svelte';
+	import { Selection } from '$lib/selection.svelte';
+	import type { IdeaBatchVerb } from '$lib/services/ideas';
+	import type { PlainKey } from '$lib/i18n/keys';
+	import { NOTE_ORDERS, orderNotes, type NoteDirection, type NoteOrder } from '$lib/note-order';
 	import IdeaCard from '$lib/components/IdeaCard.svelte';
 	import { IDEA_ROOM_ACTIONS } from '$lib/idea-action-names';
 	import { useT } from '$lib/i18n';
+	import type { Snippet } from 'svelte';
 
 	const t = useT();
 
@@ -88,7 +99,71 @@
 		selectedIndex = 0;
 	}
 
-	let filteredIdeas = $derived.by(() =>
+	/*
+	 * The order, kept in this browser like a notebook's notes — the same three
+	 * orders and the same comparison (`$lib/note-order`). Newest first until
+	 * somebody says otherwise; a title reads A to Z.
+	 */
+	const ORDER_KEY = 'ontoplano:ideas-order';
+	const DIRECTION_KEY = 'ontoplano:ideas-direction';
+	const DEFAULT_ORDER: NoteOrder = 'written';
+	const ORDER_LABELS: Record<NoteOrder, PlainKey> = {
+		written: 'notebookDetail.orderWritten',
+		title: 'notebookDetail.orderTitle',
+		edited: 'notebookDetail.orderEdited'
+	};
+	const directionFor = (one: NoteOrder): NoteDirection => (one === 'title' ? 'asc' : 'desc');
+	let order = $state<NoteOrder>(DEFAULT_ORDER);
+	let direction = $state<NoteDirection>(directionFor(DEFAULT_ORDER));
+
+	$effect(() => {
+		try {
+			const kept = localStorage.getItem(ORDER_KEY);
+			if ((NOTE_ORDERS as readonly string[]).includes(kept ?? '')) order = kept as NoteOrder;
+			const way = localStorage.getItem(DIRECTION_KEY);
+			if (way === 'asc' || way === 'desc') direction = way;
+		} catch {
+			// A private window, or storage refused: the defaults stand.
+		}
+	});
+
+	function remember(key: string, value: string) {
+		try {
+			localStorage.setItem(key, value);
+		} catch {
+			// It still holds for this visit.
+		}
+	}
+
+	/*
+	 * Several at once, with the task list's own selection — see `SelectionBar`.
+	 */
+	const selection = new Selection<IdeaBatchVerb>();
+	const BATCH_LABELS = {
+		favorite: 'notebooks.ideas.batchFavourite',
+		apply: 'notebooks.ideas.batchApply',
+		notebook: 'notebooks.ideas.batchMove',
+		tag: 'notebooks.ideas.batchTag',
+		remove: 'notebooks.ideas.batchDelete'
+	} as const;
+	const batchVerbs = $derived(
+		(
+			[
+				['favorite', 'star'],
+				['apply', 'check'],
+				['notebook', 'notebook'],
+				['tag', 'tag'],
+				['remove', 'trash']
+			] as const
+		).map(([key, icon]) => ({ key, icon, label: t(BATCH_LABELS[key]) }))
+	);
+
+	let filteredIdeas = $derived.by(() => orderNotes(filteredUnordered(), order, direction));
+	const shownIds = $derived(filteredIdeas.map((idea) => idea.id));
+	const chosenIds = $derived(shownIds.filter((id) => selection.has(id)));
+	$effect(() => selection.keep(shownIds));
+
+	const filteredUnordered = () =>
 		data.ideas
 			.filter((idea) =>
 				passesTagFilter(
@@ -113,8 +188,7 @@
 					.join('\n')
 					.toLowerCase()
 					.includes(needle);
-			})
-	);
+			});
 
 	let clampedSelectedIndex = $derived(
 		Math.min(selectedIndex, Math.max(filteredIdeas.length - 1, 0))
@@ -162,6 +236,7 @@
 			// A `<dialog>` closes itself on Escape; `preventDefault()` here cancels
 			// that. Nothing on this page needs the key while one is open.
 			if (document.querySelector('dialog[open]')) return;
+			if (selection.handleKey(e, () => undefined)) return;
 
 			e.preventDefault();
 			closeForms();
@@ -177,6 +252,8 @@
 			return;
 
 		const items = filteredIdeas;
+		if (document.querySelector('dialog[open]')) return;
+		if (selection.handleKey(e, () => items[clampedSelectedIndex]?.id)) return;
 		const action = getAction('/notebooks/ideas', e.key);
 		if (!action) return;
 		e.preventDefault();
@@ -264,7 +341,20 @@
 	-->
 	<RoomSurface dataTour="idea-list">
 		{#snippet tools()}
-			{#if data.ideas.length > 0}{@render ideaFilters()}{/if}
+			{#if data.ideas.length > 0}
+				<!-- "Select many" is the strip's own verb, as on the task list. -->
+				<SelectionBar
+					{selection}
+					visible={shownIds}
+					verbs={batchVerbs}
+					selectAllLabel={t('notebooks.ideas.selectVisible')}
+					dataTour="idea-selection"
+				>
+					{#snippet strip(selectMany)}
+						{@render ideaFilters(selectMany)}
+					{/snippet}
+				</SelectionBar>
+			{/if}
 		{/snippet}
 		{#if data.ideas.length === 0}
 			<EmptyState
@@ -282,10 +372,7 @@
 		{:else}
 			<div class="divide-y divide-gray-200">
 				{#each filteredIdeas as idea, i (idea.id)}
-					<div
-						use:keepInView={i === clampedSelectedIndex}
-						class={i === clampedSelectedIndex ? 'kb-cursor' : ''}
-					>
+					<div use:listCursor={i === clampedSelectedIndex}>
 						<!--
 							The card is a component, so a notebook's Ideas tab shows the
 							same idea this room does — see `IdeaCard`.
@@ -305,6 +392,9 @@
 								selectedIndex = 0;
 							}}
 							onedit={(id) => openIdeaForm(id)}
+							selecting={selection.selecting}
+							chosen={selection.has(idea.id)}
+							ontoggle={() => selection.toggle(idea.id)}
 						/>
 					</div>
 				{/each}
@@ -313,8 +403,15 @@
 	</RoomSurface>
 </div>
 
-{#snippet ideaFilters()}
-	<FilterBar name="ideas" on={narrowed} summary={narrowing()} onclear={clearFilters}>
+{#snippet ideaFilters(selectMany: Snippet)}
+	<FilterBar
+		name="ideas"
+		on={narrowed}
+		summary={narrowing()}
+		onclear={clearFilters}
+		verb={selectMany}
+		trailing={data.ideas.length > 1 ? sortControl : undefined}
+	>
 		{#snippet lead()}
 			<SearchField bind:value={looking} label={t('notebooks.ideas.searchTheseIdeas')} />
 		{/snippet}
@@ -360,3 +457,53 @@
 		{/if}
 	</FilterBar>
 {/snippet}
+
+{#snippet sortControl()}
+	<SortControl
+		value={order}
+		options={NOTE_ORDERS}
+		labels={ORDER_LABELS}
+		{direction}
+		onpick={(next) => {
+			order = next;
+			direction = directionFor(next);
+			remember(ORDER_KEY, next);
+			remember(DIRECTION_KEY, direction);
+			selectedIndex = 0;
+		}}
+		onflip={() => {
+			direction = direction === 'asc' ? 'desc' : 'asc';
+			remember(DIRECTION_KEY, direction);
+		}}
+		label={t('notebooks.ideas.orderIdeasBy')}
+	/>
+{/snippet}
+
+<BatchDialog
+	{selection}
+	ids={chosenIds}
+	action="?/batch"
+	id="idea-batch-form"
+	title={selection.verb ? t(BATCH_LABELS[selection.verb]) : ''}
+	destructive={selection.verb === 'remove'}
+	done={(count) => t('notebooks.ideas.batchUpdated', { count })}
+>
+	{#snippet fields(verb)}
+		{#if verb === 'notebook'}
+			<NotebookField notebooks={data.notebooks} holds="ideas" value={null} span={12} />
+		{:else if verb === 'tag'}
+			<Field label={t('todoRows.addLabels')} span={12}
+				><OneLine name="add" class="input" autofocus /></Field
+			>
+			<Field label={t('todoRows.removeLabels')} span={12}
+				><OneLine name="remove" class="input" /></Field
+			>
+		{:else if verb === 'favorite'}
+			<p class="col-span-12 text-sm text-gray-700">{t('notebooks.ideas.batchFavouriteAsk')}</p>
+		{:else if verb === 'apply'}
+			<p class="col-span-12 text-sm text-gray-700">{t('notebooks.ideas.batchApplyAsk')}</p>
+		{:else}
+			<p class="col-span-12 text-sm text-gray-700">{t('notebooks.ideas.batchDeleteAsk')}</p>
+		{/if}
+	{/snippet}
+</BatchDialog>

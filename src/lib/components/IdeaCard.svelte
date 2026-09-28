@@ -16,6 +16,7 @@
 	import Icon from '$lib/components/Icon.svelte';
 	import RowCard from '$lib/components/RowCard.svelte';
 	import OneLine from '$lib/components/OneLine.svelte';
+	import SelectBox from '$lib/components/SelectBox.svelte';
 	import TagChip from '$lib/components/TagChip.svelte';
 	import Written from '$lib/components/Written.svelte';
 	import { enhance } from '$lib/enhance';
@@ -52,13 +53,23 @@
 		selected = false,
 		/** Pressing a tag filters by it, where the screen has a filter. */
 		ontag,
-		onedit
+		onedit,
+		/**
+		 * Choosing several at once: the rail holds the box instead of the star,
+		 * and the row's own verbs step back — see `SelectionBar`.
+		 */
+		selecting = false,
+		chosen = false,
+		ontoggle
 	}: {
 		idea: Shown;
 		actions: IdeaActionNames;
 		selected?: boolean;
 		ontag?: (name: string) => void;
 		onedit?: (id: number) => void;
+		selecting?: boolean;
+		chosen?: boolean;
+		ontoggle?: () => void;
 	} = $props();
 
 	let editingNote = $state(false);
@@ -73,6 +84,19 @@
 	function formatDate(iso: string): string {
 		return momentOf(iso, now());
 	}
+
+	/** When, whether applied, and when last changed — one line, one separator. */
+	const meta = $derived(
+		[
+			formatDate(idea.createdAt),
+			idea.isApplied ? t('notebooks.ideas.applied2') : '',
+			idea.updatedAt !== idea.createdAt
+				? t('notebooks.ideas.edited', { updatedAt: formatDate(idea.updatedAt) })
+				: ''
+		]
+			.filter(Boolean)
+			.join(' · ')
+	);
 </script>
 
 <!--
@@ -80,33 +104,41 @@
 	the words beside it, the tags and the verbs along the foot. The row around
 	it keeps the padding and the cursor.
 -->
-<div class="row-card">
-	<RowCard>
+<div class="row-card" class:bg-gray-100={selecting && chosen}>
+	<RowCard quiet={selecting}>
 		{#snippet rail()}
-			<form
-				method="post"
-				action={actions.toggleFavorite}
-				data-favorite-toggle-id={idea.id}
-				use:enhance
-			>
-				<input type="hidden" name="id" value={idea.id} />
-				<!-- The star a notebook wears on the shelf: the same outline, filled
-				     when it is on, so pressing it does not change its size. -->
-				<button
-					type="submit"
-					class="icon-btn idea-star"
-					class:is-on={idea.favorite}
-					aria-pressed={idea.favorite}
-					title={idea.favorite
-						? t('notebooks.ideas.removeFavorite')
-						: t('notebooks.ideas.markAsFavorite')}
-					aria-label={idea.favorite
-						? t('notebooks.ideas.removeFavorite')
-						: t('notebooks.ideas.markAsFavorite')}
+			{#if selecting}
+				<SelectBox
+					checked={chosen}
+					label={t('notebooks.ideas.selectIdea', { title: idea.content.slice(0, 60) })}
+					ontoggle={() => ontoggle?.()}
+				/>
+			{:else}
+				<form
+					method="post"
+					action={actions.toggleFavorite}
+					data-favorite-toggle-id={idea.id}
+					use:enhance
 				>
-					<Icon name="star" />
-				</button>
-			</form>
+					<input type="hidden" name="id" value={idea.id} />
+					<!-- The star a notebook wears on the shelf: the same outline, filled
+				     when it is on, so pressing it does not change its size. -->
+					<button
+						type="submit"
+						class="icon-btn idea-star"
+						class:is-on={idea.favorite}
+						aria-pressed={idea.favorite}
+						title={idea.favorite
+							? t('notebooks.ideas.removeFavorite')
+							: t('notebooks.ideas.markAsFavorite')}
+						aria-label={idea.favorite
+							? t('notebooks.ideas.removeFavorite')
+							: t('notebooks.ideas.markAsFavorite')}
+					>
+						<Icon name="star" />
+					</button>
+				</form>
+			{/if}
 		{/snippet}
 
 		{#snippet labels()}
@@ -186,19 +218,12 @@
 			{/if}
 		{/snippet}
 
-		<Written content={idea.content} />
+		<!-- The idea is its own title: the weight a task's or a note's title has. -->
+		<Written content={idea.content} class="font-medium" />
 
 		<!-- When it was written, and whether it was applied: the line a task's
 		     notebook sits on. -->
-		<div class="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-gray-500">
-			<span>{formatDate(idea.createdAt)}</span>
-			{#if idea.isApplied}
-				<span class="font-medium text-gray-700">· {t('notebooks.ideas.applied2')}</span>
-			{/if}
-			{#if idea.updatedAt !== idea.createdAt}
-				<span>{t('notebooks.ideas.edited', { updatedAt: formatDate(idea.updatedAt) })}</span>
-			{/if}
-		</div>
+		<span class="tabular mt-0.5 text-xs text-gray-500">{meta}</span>
 
 		{#if idea.isApplied && selected}
 			<div class="mt-3 border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-900">
@@ -270,5 +295,12 @@
 	/* Filled when it is on, like a notebook's star on the shelf. */
 	.idea-star.is-on :global(path) {
 		fill: currentColor;
+	}
+
+	/* The fill is the pressed state: no square appearing behind it, so the
+	   control keeps its shape either way. */
+	.idea-star[aria-pressed='true'] {
+		background-color: transparent;
+		box-shadow: none;
 	}
 </style>

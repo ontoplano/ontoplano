@@ -1,7 +1,7 @@
 import type { IsolatedEvent } from '$lib/isolated/routes';
 import { buildCtx } from '$lib/services/ctx';
 import { contentsOf, listNotebooks, listOrphanedNotes } from '$lib/services/notebooks';
-import { getPanelWidth, NOTEBOOK_PANEL_WIDTH_KEY } from '$lib/services/settings';
+import { getPanelWidth, getUserSetting, NOTEBOOK_PANEL_WIDTH_KEY } from '$lib/services/settings';
 import { tagsInNotebook } from '$lib/services/tags';
 import { notebookActions } from './actions';
 import { notebookPanelData } from './panel-data';
@@ -38,7 +38,9 @@ export const load = async ({ locals, url }: IsolatedEvent) => {
 		notebookTags: selected ? tagsInNotebook(ctx.userId, selected) : [],
 		...notebookPanelData(ctx, selected),
 		// Where this reader dragged the divider between the list and the panel.
-		listPanelRem: getPanelWidth(ctx.userId, NOTEBOOK_PANEL_WIDTH_KEY)
+		listPanelRem: getPanelWidth(ctx.userId, NOTEBOOK_PANEL_WIDTH_KEY),
+		// Whether they ever did: until then the shelf grows with a wide screen.
+		listPanelSet: getUserSetting(ctx.userId, NOTEBOOK_PANEL_WIDTH_KEY) !== null
 	};
 };
 

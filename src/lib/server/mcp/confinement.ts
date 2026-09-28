@@ -87,7 +87,7 @@ export const CONFINEMENTS: Record<string, Confinable> = Object.freeze({
 			note: (ctx, id) => listEveryEntry(ctx).filter((one) => one.notebookId === id),
 			idea: (ctx, id) => listIdeas(ctx, { notebookId: id }),
 			item: (ctx, id) => listItems(ctx, { notebookId: id }),
-			habit: (ctx, id) => listHabits(ctx, { notebookId: id }),
+			habit: (ctx, id) => listHabits(ctx, { notebookId: id, includeArchived: true }),
 			ledger: (ctx, id) => listLedgers(ctx, { notebookId: id, includeArchived: true }),
 			// The lines in its own ledgers, and no other account's.
 			movement: (ctx, id) =>
