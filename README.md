@@ -15,6 +15,8 @@
 
 `.deb` · `.rpm` · Arch · Docker · Android
 
+</div>
+
 > This software was released on September 5th, 2026. It's still maturing, and
 > it may contain bugs. LLMs are used extensively during development; their
 > output is reviewed and tested before it lands.
@@ -28,9 +30,10 @@ simple enough to be able to add a task or a note in your phone with one finger m
 You can [Connect with an AI agent](https://docs.ontoplano.com/ai-agents) (or not), and
 scope all your tasks, recipes, inventory, notes, bills etc. in specific notebooks.
 
+<div align="center">
 [![Try the demo](.github/badges/try-the-demo.svg)](https://demo.ontoplano.com)
-
 </div>
+
 
 ---
 
