@@ -1038,6 +1038,7 @@ export type MessageKey =
 	| 'health.habits.showingCount'
 	| 'health.habits.timesToday'
 	| 'health.habits.total'
+	| 'health.recipes.allRecipes'
 	| 'health.recipes.at'
 	| 'health.recipes.canMakeCount'
 	| 'health.recipes.countsAs'
@@ -1066,7 +1067,6 @@ export type MessageKey =
 	| 'health.recipes.id.itBecomesABlockOn'
 	| 'health.recipes.id.itsIngredientsStayOnThe'
 	| 'health.recipes.id.keepIt'
-	| 'health.recipes.id.larrAllRecipes'
 	| 'health.recipes.id.lastCooked'
 	| 'health.recipes.id.main'
 	| 'health.recipes.id.makeThisTheMainPicture'
@@ -1096,7 +1096,6 @@ export type MessageKey =
 	| 'health.recipes.id.thatIsAsManyAs'
 	| 'health.recipes.id.titleWillBeGone'
 	| 'health.recipes.id.toBuy'
-	| 'health.recipes.id.upToKb'
 	| 'health.recipes.id.uploading'
 	| 'health.recipes.id.whatItIs'
 	| 'health.recipes.id.whereItCameFrom'
@@ -3768,7 +3767,16 @@ export type MessageKey =
 	| 'tour.renamingOntoALabelYou'
 	| 'tour.retireOneWithoutLosingIt'
 	| 'tour.review'
+	| 'tour.rulesCategoriesTakeTurns'
+	| 'tour.rulesCategoriesTakeTurnsBody'
 	| 'tour.rulesDoTheSorting'
+	| 'tour.rulesRoom'
+	| 'tour.rulesSortWhatArrives'
+	| 'tour.rulesSortWhatArrivesBody'
+	| 'tour.rulesTagsPileUp'
+	| 'tour.rulesTagsPileUpBody'
+	| 'tour.rulesTheCountOpensTheLines'
+	| 'tour.rulesTheCountOpensTheLinesBody'
 	| 'tour.saveTheShapeYouAre'
 	| 'tour.sayItInYourOwn'
 	| 'tour.sayItInsteadOfTyping'
@@ -4156,7 +4164,6 @@ export interface MessageValuesFor {
 	'health.recipes.id.ranOutOf': { name: string | number };
 	'health.recipes.id.serves2': { servings: string | number };
 	'health.recipes.id.titleWillBeGone': { title: string | number };
-	'health.recipes.id.upToKb': { kilobytes: string | number };
 	'health.recipes.ingredients': { ingredients: string | number };
 	'health.recipes.min': { minutes: string | number };
 	'health.recipes.missingCount': { count: number };

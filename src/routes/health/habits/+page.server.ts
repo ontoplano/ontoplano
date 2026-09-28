@@ -11,7 +11,9 @@ export const load = async ({ locals }: IsolatedEvent) => {
 		// The subject a thing belongs to, asked in the room's own form: the
 		// notebook's tab opens this same form with its own notebook chosen.
 		notebooks: pickableNotebooks(ctx),
-		habits: listHabits(ctx),
+		// The archived ones too: the room's Archived toggle is where they are
+		// brought back, and the only place one can be deleted.
+		habits: listHabits(ctx, { includeArchived: true }),
 		occurrences: listOccurrences(ctx),
 		today: today(ctx)
 	};

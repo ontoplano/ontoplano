@@ -91,68 +91,75 @@
 	/>
 {/if}
 
-<div class="space-y-4">
-	<DetailHeader
-		title={data.recipe.title}
-		back={{ href: resolve('/health/recipes'), label: t('health.recipes.id.larrAllRecipes') }}
-	>
-		{#snippet meta()}
-			<p class="flex flex-wrap items-center gap-3 text-sm text-gray-500">
-				{#if data.recipe.minutes}<span class="tabular"
-						>{t('health.recipes.id.min', { minutes: data.recipe.minutes })}</span
-					>{/if}
-				{#if data.recipe.servings}<span class="tabular"
-						>{t('health.recipes.id.serves2', { servings: data.recipe.servings })}</span
-					>{/if}
-				{#if data.recipe.lastCookedAt}
-					<span
-						>{t('health.recipes.id.lastCooked', {
-							slice: dateOf(new Date(`${data.recipe.lastCookedAt.slice(0, 10)}T00:00:00`), now())
-						})}</span
-					>
-				{/if}
-			</p>
-		{/snippet}
+<div class="space-y-4 pb-4">
+	<!--
+		On the cards' own edge rather than a card's padding inside it: the name
+		and the cards under it start on one line. The way back to the list is
+		the room bar's arrow — see `HealthRoom`.
+	-->
+	<div class="sm:[--card-pad-x:0]">
+		<DetailHeader title={data.recipe.title}>
+			{#snippet meta()}
+				<p class="flex flex-wrap items-center gap-3 text-sm text-gray-500">
+					{#if data.recipe.minutes}<span class="tabular"
+							>{t('health.recipes.id.min', { minutes: data.recipe.minutes })}</span
+						>{/if}
+					{#if data.recipe.servings}<span class="tabular"
+							>{t('health.recipes.id.serves2', { servings: data.recipe.servings })}</span
+						>{/if}
+					{#if data.recipe.lastCookedAt}
+						<span
+							>{t('health.recipes.id.lastCooked', {
+								slice: dateOf(new Date(`${data.recipe.lastCookedAt.slice(0, 10)}T00:00:00`), now())
+							})}</span
+						>
+					{/if}
+				</p>
+			{/snippet}
 
-		{#snippet actions()}
-			<button
-				onclick={() => (cookMode = true)}
-				class="btn btn-sm"
-				title={t('health.recipes.id.cookItNow')}
-			>
-				<Icon name="flame" />
-				{t('health.recipes.id.cook')}
-			</button>
-			<!-- The word goes on a phone, where five buttons do not fit one line;
+			{#snippet actions()}
+				<!-- One height across the row: the icons are the buttons' size. -->
+				<div class="controls-sm flex flex-wrap items-center gap-2">
+					<button
+						onclick={() => (cookMode = true)}
+						class="btn btn-sm"
+						title={t('health.recipes.id.cookItNow')}
+					>
+						<Icon name="flame" />
+						{t('health.recipes.id.cook')}
+					</button>
+					<!-- The word goes on a phone, where five buttons do not fit one line;
 			     the glyph and the tooltip keep saying it. -->
-			<button
-				onclick={() => (scheduling = true)}
-				class="btn btn-sm"
-				title={t('health.recipes.id.putItOnADay')}
-			>
-				<Icon name="calendar" />
-				<span class="max-sm:sr-only">{t('health.recipes.id.putItOnADay')}</span>
-			</button>
-			<button onclick={() => (cooking = true)} class="btn btn-primary btn-sm">
-				<Icon name="check" />
-				{t('health.recipes.id.cookedIt')}
-			</button>
-			<button
-				onclick={() => (editing = true)}
-				class="icon-btn"
-				title={t('ui.edit')}
-				aria-label={t('ui.edit')}
-			>
-				<Icon name="edit" />
-			</button>
-			<button
-				onclick={() => (confirmingDelete = true)}
-				class="icon-btn icon-btn-danger"
-				title={t('ui.delete')}
-				aria-label={t('ui.delete')}><Icon name="trash" /></button
-			>
-		{/snippet}
-	</DetailHeader>
+					<button
+						onclick={() => (scheduling = true)}
+						class="btn btn-sm"
+						title={t('health.recipes.id.putItOnADay')}
+					>
+						<Icon name="calendar" />
+						<span class="max-sm:sr-only">{t('health.recipes.id.putItOnADay')}</span>
+					</button>
+					<button onclick={() => (cooking = true)} class="btn btn-primary btn-sm">
+						<Icon name="check" />
+						{t('health.recipes.id.cookedIt')}
+					</button>
+					<button
+						onclick={() => (editing = true)}
+						class="icon-btn"
+						title={t('ui.edit')}
+						aria-label={t('ui.edit')}
+					>
+						<Icon name="edit" />
+					</button>
+					<button
+						onclick={() => (confirmingDelete = true)}
+						class="icon-btn icon-btn-danger"
+						title={t('ui.delete')}
+						aria-label={t('ui.delete')}><Icon name="trash" /></button
+					>
+				</div>
+			{/snippet}
+		</DetailHeader>
+	</div>
 
 	<FormError message={form?.message} />
 
@@ -237,14 +244,19 @@
 						}}
 				>
 					<input type="hidden" name="recipeId" value={data.recipe.id} />
-					<div class="flex flex-wrap gap-2">
-						<NumberBox
+					<!-- One height across the row, and the amount a plain field: an
+					     amount is typed, and arrows beside "2" were a second control
+					     for something nobody nudges. -->
+					<div class="controls-sm flex flex-wrap gap-2">
+						<input
+							type="number"
 							autocomplete="off"
+							inputmode="decimal"
 							name="quantity"
 							step="any"
 							min="0"
 							placeholder="2"
-							class="w-20"
+							class="input amount w-20"
 							aria-label={t('ui.amount')}
 						/>
 						<input
@@ -270,7 +282,7 @@
 								<option value={item.name}></option>
 							{/each}
 						</datalist>
-						<button class="btn btn-sm"><Icon name="plus" /> {t('ui.add')}</button>
+						<button class="btn btn-sm shrink-0"><Icon name="plus" /> {t('ui.add')}</button>
 					</div>
 				</form>
 
@@ -347,7 +359,8 @@
 			</div>
 		</Card>
 
-		<Card title={t('health.recipes.id.method')} class="lg:row-span-2">
+		<!-- As tall as what is written, not as the column beside it. -->
+		<Card title={t('health.recipes.id.method')} class="lg:row-span-2 lg:self-start">
 			{#if data.recipe.method}
 				<div class="md text-sm text-gray-900">
 					<!-- `renderMarkdown` escapes everything before it emits a tag. -->
@@ -418,7 +431,7 @@
 								</span>
 							{/if}
 
-							<div class="mt-1 flex items-center justify-between gap-1">
+							<div class="mt-1 flex items-center gap-1">
 								{#if !picture.isMain}
 									<form method="post" action="?/setMainPicture" use:enhance>
 										<input type="hidden" name="recipeId" value={data.recipe.id} />
@@ -430,8 +443,6 @@
 											><Icon name="star" /></button
 										>
 									</form>
-								{:else}
-									<span></span>
 								{/if}
 
 								<!--
@@ -536,13 +547,10 @@
 							}}
 						/>
 					</label>
-					{#if uploading}
-						<span class="text-xs text-gray-500">{t('health.recipes.id.uploading')}</span>
-					{:else}
-						<span class="text-xs text-gray-500"
-							>{t('health.recipes.id.upToKb', { kilobytes: data.pictureLimits.kilobytes })}</span
-						>
-					{/if}
+					<!-- The size limit is the card header's to say, once. -->
+					<span class="text-xs text-gray-500 {uploading ? '' : 'invisible'}"
+						>{t('health.recipes.id.uploading')}</span
+					>
 				</form>
 				{#if pictureProblem}
 					<div class="mt-2"><Banner kind="error">{pictureProblem}</Banner></div>
@@ -740,3 +748,16 @@
 		>
 	{/snippet}
 </Modal>
+
+<style>
+	/* Chrome's arrows come off with the appearance; Firefox's with textfield. */
+	.amount {
+		appearance: textfield;
+	}
+
+	.amount::-webkit-outer-spin-button,
+	.amount::-webkit-inner-spin-button {
+		appearance: none;
+		margin: 0;
+	}
+</style>

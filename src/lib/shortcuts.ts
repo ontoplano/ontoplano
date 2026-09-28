@@ -211,6 +211,7 @@ export const PAGE_SHORTCUTS: Record<string, PageShortcuts> = {
 			{ key: 'j', action: 'navigate-down', description: 'shortcut.navigateHabits' },
 			{ key: 'k', action: 'navigate-up', description: 'shortcut.navigateHabits' },
 			{ key: 'n', action: 'new', description: 'shortcut.newHabit' },
+			{ key: 'e', action: 'edit', description: 'shortcut.editTheOneUnderThe' },
 			{ key: 'Enter', action: 'toggle-expand', description: 'shortcut.expandCollapse' }
 		]
 	},
@@ -269,9 +270,31 @@ export const PAGE_SHORTCUTS: Record<string, PageShortcuts> = {
 			{ key: 'x', action: 'delete', description: 'shortcut.askToDelete' }
 		]
 	},
+	'/finance/bills': {
+		label: 'rooms.finance.tabs.bills',
+		shortcuts: [
+			...BROWSE_SHORTCUTS.slice(2, 4),
+			{ key: 'e', action: 'browse-edit', description: 'shortcut.editTheOneUnderThe' },
+			{ key: 'n', action: 'new', description: 'finance.bills.newBill' }
+		]
+	},
+	'/finance/rules': {
+		label: 'rooms.finance.tabs.rules',
+		shortcuts: [
+			...BROWSE_SHORTCUTS.slice(2),
+			{ key: 'n', action: 'new', description: 'finance.rules.newRule' },
+			{ key: 'x', action: 'delete', description: 'shortcut.askToDelete' }
+		]
+	},
 	'/health/recipes': {
 		label: 'app.recipes',
-		shortcuts: [{ key: 'n', action: 'new', description: 'shortcut.newRecipe' }]
+		shortcuts: [
+			{ key: 'j', action: 'navigate-down', description: 'shortcut.navigateList' },
+			{ key: 'k', action: 'navigate-up', description: 'shortcut.navigateList' },
+			{ key: 'n', action: 'new', description: 'shortcut.newRecipe' },
+			{ key: 'e', action: 'edit', description: 'shortcut.editTheOneUnderThe' },
+			{ key: 'Enter', action: 'open', description: 'shortcut.openTheOneUnderThe' }
+		]
 	},
 	'/settings/account': {
 		label: 'app.account',

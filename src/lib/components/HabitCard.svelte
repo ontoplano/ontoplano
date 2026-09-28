@@ -18,8 +18,8 @@
 	import CategoryMark from '$lib/components/CategoryMark.svelte';
 	import OneLine from '$lib/components/OneLine.svelte';
 	import Counter from '$lib/components/Counter.svelte';
+	import TickBox from '$lib/components/TickBox.svelte';
 	import { enhance } from '$lib/enhance';
-	import { invalidateAll } from '$app/navigation';
 	import { armed } from '$lib/actions/armed';
 	import { MediaQuery } from 'svelte/reactivity';
 	import {
@@ -54,6 +54,8 @@
 		type: string;
 		scheduledDays: string | null;
 		streak: number;
+		/** Put away: history kept, no logging, and the only place it can be deleted. */
+		archivedAt?: string | null;
 	};
 
 	type Occurrence = { id: number; habitId: number; date: string; notes: string | null };
@@ -119,12 +121,20 @@
 	const todayLogged = $derived(todayCount > 0);
 	const isBad = $derived(habit.type === 'bad');
 	const isNeutral = $derived(habit.type === 'neutral');
+	const archived = $derived(Boolean(habit.archivedAt));
+
+	/*
+	 * A day pressed in the heatmap, shown as the press left it before the
+	 * server has answered — the square changes on the press, not a round trip
+	 * later. Cleared once the page's own data has caught up.
+	 */
+	let pressedDays = $state<Record<string, number>>({});
 
 	/** How many times each day was logged, for the heatmap's shading. */
 	const counts = $derived.by(() => {
 		const out: Record<string, number> = {};
 		for (const one of occ) out[one.date] = (out[one.date] ?? 0) + 1;
-		return out;
+		return { ...out, ...pressedDays };
 	});
 
 	/*
@@ -157,40 +167,55 @@
 		return dayLabelsFrom(firstDay);
 	}
 
-	/** Clicking a day in the heatmap: log it, or take it back. */
-	async function toggleOccurrence(habitId: number, date: string) {
-		const body = new FormData();
-		body.set('habitId', String(habitId));
-		body.set('date', date);
-		await fetch(actions.toggleOccurrence, { method: 'POST', body });
-		await invalidateAll();
-	}
+	/**
+	 * Clicking a day in the heatmap: log it, or take one back.
+	 *
+	 * A form action like every other press on the card, answered on the
+	 * screen first: a day with nothing gets one, a day with some loses one —
+	 * the same arithmetic `toggleOccurrence` does on the server.
+	 */
+	const toggleDay: import('@sveltejs/kit').SubmitFunction = ({ formData }) => {
+		const day = String(formData.get('date'));
+		const had = counts[day] ?? 0;
+		pressedDays = { ...pressedDays, [day]: had > 0 ? had - 1 : 1 };
+		return async ({ update }) => {
+			await update({ reset: false });
+			const rest = { ...pressedDays };
+			delete rest[day];
+			pressedDays = rest;
+		};
+	};
 </script>
 
 <div>
 	<!--
-		The card a task is drawn on — `RowCard`: the mark that logs today where a
-		task has its tick, the name and its streak beside it, the verbs along the
-		foot. The year unfolds under the whole card, which is the width it needs.
+		The card a task is drawn on — `RowCard`: the box that logs today where a
+		task has its tick, the name beside it, where it stands on the foot line
+		with the verbs, as a task's notebook and labels are. The year unfolds
+		under the whole card, which is the width it needs.
 	-->
 	<div class="row-card">
 		<RowCard>
 			{#snippet rail()}
-				{#if todayLogged}
+				{#if archived}
+					<!-- Put away: nothing to log, and the box says so by not being one. -->
+					<span class="flex">
+						<span class="-m-1 flex shrink-0 items-start justify-center self-start p-1 opacity-50">
+							<TickBox done={todayLogged} />
+						</span>
+					</span>
+				{:else if todayLogged}
 					<!--
-						Once today is logged, the mark that logs it is not there.
+						Once today is logged, the box that logs it is not a button.
 
 						Which is the whole of the double-tap answer: a second press lands
-						on a filled square rather than on the control, so one day cannot
-						be counted twice by accident. Logging it again is a press of its
-						own in the actions — deliberate, and nowhere near where the first
-						press landed.
+						on a filled box rather than on the control, so one day cannot be
+						counted twice by accident. Logging it again is the counter's plus
+						— deliberate, and nowhere near where the first press landed.
 					-->
-					<span
-						class="-m-1 flex shrink-0 items-start justify-center self-start p-1 pointer-coarse:w-11"
-					>
+					<span class="flex">
 						<span
-							class="tabular flex size-7 items-center justify-center border border-gray-400 bg-gray-400 text-xs font-medium text-white"
+							class="-m-1 flex shrink-0 items-start justify-center self-start p-1 pointer-coarse:w-11"
 							role="img"
 							aria-label={todayCount > 1
 								? t('health.habits.loggedTodayTimes', { count: todayCount })
@@ -198,70 +223,75 @@
 									? t('health.habits.loggedToday')
 									: t('health.habits.doneToday')}
 						>
-							{#if todayCount > 1}×{todayCount}{:else}<Icon name="check" size={14} />{/if}
+							{#if todayCount > 1}
+								<TickBox done
+									><span class="tabular text-xs font-medium">×{todayCount}</span></TickBox
+								>
+							{:else}
+								<TickBox done />
+							{/if}
 						</span>
 					</span>
 				{:else}
-					<button
-						type="submit"
-						form="habit-log-{habit.id}"
-						title={logLabel(habit)}
-						aria-label={logLabel(habit)}
-						class="-m-1 flex shrink-0 items-start justify-center self-start p-1 pointer-coarse:w-11"
-					>
-						<!-- Grey whatever the kind: the pill under the name already says
-						     which kind it is, and a small red glyph is one a red-green
-						     colourblind reader cannot tell from the blue one. -->
-						<span
-							class="flex size-7 items-center justify-center border border-gray-400 bg-white text-gray-600 transition hover:border-gray-600 hover:bg-gray-50"
+					<!-- The same box a task is ticked with, whatever the kind: the pill on
+					     the foot line says which kind it is. -->
+					<form method="post" action={actions.logOccurrence} use:enhance class="flex">
+						<input type="hidden" name="habitId" value={habit.id} />
+						<input type="hidden" name="date" value={today} />
+						<button
+							type="submit"
+							title={logLabel(habit)}
+							aria-label={logLabel(habit)}
+							class="-m-1 flex shrink-0 items-start justify-center self-start p-1 pointer-coarse:w-11"
 						>
-							<Icon name="target" size={16} />
-						</span>
-					</button>
+							<TickBox />
+						</button>
+					</form>
 				{/if}
 			{/snippet}
 
-			{#snippet controls()}
-				<!--
-					Today's count once there is one, and a word on today before.
-
-					Both drawn in one cell, the absent one invisible, so logging the day
-					does not change how wide the actions are and move the buttons after
-					it. The count is a `Counter`: a run of presses is one write of where
-					it ended up, and minus takes back the one pressed by mistake.
-				-->
-				<span class="grid items-center">
-					<span class="[grid-area:1/1] {todayLogged ? '' : 'invisible'}" inert={!todayLogged}>
-						<Counter
-							value={todayCount}
-							action={actions.setDayCount}
-							name="count"
-							fields={{ habitId: habit.id, date: today }}
-							max={MAX_DAY_COUNT}
-							label={t('health.habits.timesToday', { name: habit.name })}
-							lessLabel={t('health.habits.oneFewerToday')}
-							moreLabel={t('health.habits.logItAgain')}
-						/>
-					</span>
-					<!-- The form the mark in the rail sends, with a word on today. -->
-					<form
-						method="post"
-						action={actions.logOccurrence}
-						use:enhance
-						id="habit-log-{habit.id}"
-						class="[grid-area:1/1] {todayLogged ? 'invisible' : ''}"
-						inert={todayLogged}
-					>
-						<input type="hidden" name="habitId" value={habit.id} />
-						<input type="hidden" name="date" value={today} />
-						<OneLine
-							name="notes"
-							placeholder={t('health.habits.note')}
-							ariaLabel={t('health.habits.note')}
-							class="input input-sm w-24"
-						/>
-					</form>
+			{#snippet labels()}
+				<!-- Which kind it is, worn the way a category is — see `CategoryMark`. -->
+				<span class="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-gray-500">
+					<CategoryMark
+						name={isBad ? t('app.bad') : isNeutral ? t('app.neutral') : t('app.good')}
+						color={isBad ? HABIT_BAD_ACCENT : isNeutral ? HABIT_NEUTRAL_ACCENT : HABIT_GOOD_ACCENT}
+					/>
+					{#if archived}
+						<span class="eyebrow text-gray-600">{t('todoRows.archived')}</span>
+					{/if}
+					{#if habit.streak > 0}
+						<span class="font-medium text-gray-700">
+							{isBad
+								? t('health.habits.daysClean', { count: habit.streak })
+								: t('health.habits.dayStreak', { count: habit.streak })}
+						</span>
+					{/if}
+					<span class="tabular">{t('health.habits.total', { length: occ.length })}</span>
+					{#if !isBad}
+						<span>{formatScheduledDays(habit.scheduledDays)}</span>
+					{/if}
 				</span>
+			{/snippet}
+
+			{#snippet controls()}
+				{#if !archived}
+					<!--
+						Today's count, on every habit, in the one place: a run of presses
+						is one write of where it ended up, and minus takes back the one
+						pressed by mistake. See `Counter`.
+					-->
+					<Counter
+						value={todayCount}
+						action={actions.setDayCount}
+						name="count"
+						fields={{ habitId: habit.id, date: today }}
+						max={MAX_DAY_COUNT}
+						label={t('health.habits.timesToday', { name: habit.name })}
+						lessLabel={t('health.habits.oneFewerToday')}
+						moreLabel={t('health.habits.logItAgain')}
+					/>
+				{/if}
 				<button
 					type="button"
 					onclick={toggleExpanded}
@@ -281,59 +311,52 @@
 				>
 					<Icon name="edit" />
 				</button>
-				{#if confirmingDelete}
-					<form method="post" action={actions.remove} use:enhance>
-						<input type="hidden" name="id" value={habit.id} />
-						<button type="submit" class="btn btn-sm btn-danger" use:armed>
-							{t('health.habits.confirm')}
-						</button>
-					</form>
-					<button type="button" onclick={() => (confirmingDelete = false)} class="btn btn-sm">
-						{t('ui.cancel')}
-					</button>
-				{:else}
+				<!-- Away and back, without asking: every logged day is kept either way. -->
+				<form method="post" action={archived ? actions.unarchive : actions.archive} use:enhance>
+					<input type="hidden" name="id" value={habit.id} />
 					<button
-						type="button"
-						title={t('ui.delete')}
-						aria-label={t('ui.delete')}
-						onclick={() => (confirmingDelete = true)}
-						class="icon-btn icon-btn-danger"
+						type="submit"
+						class="icon-btn"
+						title={archived ? t('todoRows.takeItBackOut') : t('finance.ledgers.putItAway')}
+						aria-label={archived ? t('todoRows.takeItBackOut') : t('finance.ledgers.putItAway')}
 					>
-						<Icon name="trash" />
+						<Icon name={archived ? 'undo' : 'archive'} />
 					</button>
+				</form>
+				<!-- A year of logged days is not one press from gone: deleting is for
+				     a habit already put away. -->
+				{#if archived}
+					{#if confirmingDelete}
+						<form method="post" action={actions.remove} use:enhance>
+							<input type="hidden" name="id" value={habit.id} />
+							<button type="submit" class="btn btn-sm btn-danger" use:armed>
+								{t('health.habits.confirm')}
+							</button>
+						</form>
+						<button type="button" onclick={() => (confirmingDelete = false)} class="btn btn-sm">
+							{t('ui.cancel')}
+						</button>
+					{:else}
+						<button
+							type="button"
+							title={t('ui.delete')}
+							aria-label={t('ui.delete')}
+							onclick={() => (confirmingDelete = true)}
+							class="icon-btn icon-btn-danger"
+						>
+							<Icon name="trash" />
+						</button>
+					{/if}
 				{/if}
 			{/snippet}
 
-			<p class="text-sm leading-snug font-medium break-words text-gray-900">{habit.name}</p>
-			<!-- Where it stands, on the line a task's notebook sits on. -->
-			<div class="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-gray-500">
-				<!-- Which kind it is, worn the way a category is — see `CategoryMark`.
-				     It was a 4px bar down the card's edge, a colour with no word. -->
-				<CategoryMark
-					name={isBad ? t('app.bad') : isNeutral ? t('app.neutral') : t('app.good')}
-					color={isBad ? HABIT_BAD_ACCENT : isNeutral ? HABIT_NEUTRAL_ACCENT : HABIT_GOOD_ACCENT}
-				/>
-				{#if todayLogged}
-					<span class="font-medium {isNeutral ? 'text-gray-600' : 'text-blue-700'}">
-						{todayCount > 1
-							? t('health.habits.loggedTodayTimes', { count: todayCount })
-							: isBad
-								? t('health.habits.loggedToday')
-								: t('health.habits.doneToday')}
-					</span>
-				{/if}
-				{#if habit.streak > 0}
-					<span class="font-medium {isNeutral ? 'text-gray-600' : 'text-blue-700'}">
-						{isBad
-							? t('health.habits.daysClean', { count: habit.streak })
-							: t('health.habits.dayStreak', { count: habit.streak })}
-					</span>
-				{/if}
-				<span class="tabular">{t('health.habits.total', { length: occ.length })}</span>
-				{#if !isBad}
-					<span>{formatScheduledDays(habit.scheduledDays)}</span>
-				{/if}
-			</div>
+			<p
+				class="text-sm leading-snug font-medium break-words {archived
+					? 'text-gray-500'
+					: 'text-gray-900'}"
+			>
+				{habit.name}
+			</p>
 			{#if habit.description}
 				<p class="mt-0.5 text-xs break-words text-gray-500">{habit.description}</p>
 			{/if}
@@ -362,7 +385,13 @@
 							it was seven lines of nine-pixel text beside seven squares of
 							some other size, drifting further apart the wider the card got.
 						-->
-			<div class="overflow-x-auto">
+			<form
+				method="post"
+				action={actions.toggleOccurrence}
+				use:enhance={toggleDay}
+				class="overflow-x-auto"
+			>
+				<input type="hidden" name="habitId" value={habit.id} />
 				<div class="flex items-stretch gap-1">
 					<div
 						class="grid min-w-0 flex-1 gap-px"
@@ -373,8 +402,10 @@
 								{#each week as day, di (di)}
 									{#if day}
 										<button
-											type="button"
-											onclick={() => toggleOccurrence(habit.id, day)}
+											type="submit"
+											name="date"
+											value={day}
+											disabled={archived}
 											class="heat-day cursor-pointer {isBad
 												? badHeatmapColor(counts[day] || 0)
 												: isNeutral
@@ -395,7 +426,7 @@
 						{/each}
 					</div>
 				</div>
-			</div>
+			</form>
 			<div class="mt-2 flex items-center gap-2 text-xs text-gray-500">
 				<span>{t('ui.less')}</span>
 				<div class="flex gap-px">

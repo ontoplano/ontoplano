@@ -661,7 +661,10 @@ export function mealsBetween(ctx: Ctx, from: string, to: string) {
 }
 
 /** Recipes ordered by how much of them you already have. */
-export function withMissingCounts(ctx: Ctx, options: { notebookId?: number } = {}) {
+export function withMissingCounts(
+	ctx: Ctx,
+	options: { notebookId?: number; includeArchived?: boolean } = {}
+) {
 	const counts = db
 		.select({
 			recipeId: recipeItems.recipeId,

@@ -14,6 +14,8 @@
 	 */
 	import Icon from '$lib/components/Icon.svelte';
 	import RowCard from '$lib/components/RowCard.svelte';
+	import { enhance } from '$lib/enhance';
+	import { armed } from '$lib/actions/armed';
 	import { resolve } from '$app/paths';
 	import { useT } from '$lib/i18n';
 
@@ -28,16 +30,30 @@
 		ingredients: number;
 		missing: number;
 		mainPicture?: number | null;
+		archivedAt?: string | null;
 	};
 
 	let {
 		recipe,
 		/** Put it on a day, without opening it first. Absent where there is no planner to hand. */
-		onplan
+		onplan,
+		/** Open the recipe's edit form. Absent where the screen has none. */
+		onedit,
+		/**
+		 * Put away, brought back, and deleted — the last only once put away.
+		 * Posts to the recipe room's own actions; absent where the screen does
+		 * not mount them.
+		 */
+		manage = false
 	}: {
 		recipe: Shown;
 		onplan?: (recipe: { id: number; title: string; minutes: number | null }) => void;
+		onedit?: (id: number) => void;
+		manage?: boolean;
 	} = $props();
+
+	const archived = $derived(Boolean(recipe.archivedAt));
+	let confirmingDelete = $state(false);
 </script>
 
 <!--
@@ -46,30 +62,48 @@
 	the recipe; the name carries the link and stretches it over the card, and
 	the actions sit above it.
 -->
-<div class="row-card relative h-full bg-white transition-colors hover:bg-gray-50">
+<div class="row-card relative transition-colors hover:bg-gray-50">
 	<RowCard>
 		{#snippet rail()}
 			<!--
 				The picture, when there is one: a cookbook you recognise by sight
-				rather than by reading forty titles. A square of one size whatever the
-				picture's own shape, and the same square empty without one, so every
-				name starts at the same x.
+				rather than by reading forty titles. The rail's own width, whatever
+				the picture's shape, and the same square empty without one, so every
+				name starts where a task's does.
 			-->
 			{#if recipe.mainPicture}
 				<img
 					src="/media/{recipe.mainPicture}"
 					alt=""
 					loading="lazy"
-					class="block size-16 shrink-0 border border-gray-200 bg-white object-cover"
+					class="block size-8 shrink-0 border border-gray-200 bg-white object-cover"
 				/>
 			{:else}
 				<span
-					class="flex size-16 shrink-0 items-center justify-center border border-gray-200 bg-gray-50 text-gray-500"
+					class="flex size-8 shrink-0 items-center justify-center border border-gray-200 bg-gray-50 text-gray-500"
 					aria-hidden="true"
 				>
-					<Icon name="utensils" />
+					<Icon name="utensils" size={14} />
 				</span>
 			{/if}
+		{/snippet}
+
+		{#snippet labels()}
+			<!-- What the cupboard says, on the foot line beside the verbs. -->
+			<span class="text-xs">
+				{#if recipe.ingredients === 0}
+					<span class="text-gray-500">{t('health.recipes.nothingInItYet')}</span>
+				{:else if recipe.missing === 0}
+					<!-- Blue for the good news and grey for the rest, never green and
+					     amber: a small word in either is one a red-green colourblind
+					     reader cannot tell apart. -->
+					<span class="font-medium text-blue-700">{t('health.recipes.youHaveEverything')}</span>
+				{:else}
+					<span class="font-medium text-gray-700"
+						>{t('health.recipes.missingCount', { count: recipe.missing })}</span
+					>
+				{/if}
+			</span>
 		{/snippet}
 
 		{#snippet controls()}
@@ -80,7 +114,7 @@
 				recipe is already being looked at. Above the card's own link rather
 				than inside it, because a button inside an anchor is neither.
 			-->
-			{#if onplan}
+			{#if onplan && !archived}
 				<button
 					type="button"
 					onclick={() =>
@@ -92,15 +126,71 @@
 					<Icon name="calendar" />
 				</button>
 			{/if}
+			{#if onedit}
+				<button
+					type="button"
+					onclick={() => onedit(recipe.id)}
+					title={t('ui.edit')}
+					aria-label={t('ui.edit')}
+					class="icon-btn relative z-10"
+				>
+					<Icon name="edit" />
+				</button>
+			{/if}
+			{#if manage}
+				<!-- Away and back, without asking: nothing is lost either way. -->
+				<form method="post" action="?/setArchived" use:enhance class="relative z-10">
+					<input type="hidden" name="id" value={recipe.id} />
+					<input type="hidden" name="archived" value={archived ? 'false' : 'true'} />
+					<button
+						type="submit"
+						class="icon-btn"
+						title={archived ? t('todoRows.takeItBackOut') : t('finance.ledgers.putItAway')}
+						aria-label={archived ? t('todoRows.takeItBackOut') : t('finance.ledgers.putItAway')}
+					>
+						<Icon name={archived ? 'undo' : 'archive'} />
+					</button>
+				</form>
+				<!-- Deleting is for a recipe already put away. -->
+				{#if archived}
+					{#if confirmingDelete}
+						<form method="post" action="?/delete" use:enhance class="relative z-10">
+							<input type="hidden" name="id" value={recipe.id} />
+							<button type="submit" class="btn btn-sm btn-danger" use:armed>
+								{t('todoRows.confirm')}
+							</button>
+						</form>
+						<button
+							type="button"
+							onclick={() => (confirmingDelete = false)}
+							class="btn btn-sm relative z-10"
+						>
+							{t('ui.cancel')}
+						</button>
+					{:else}
+						<button
+							type="button"
+							onclick={() => (confirmingDelete = true)}
+							title={t('ui.delete')}
+							aria-label={t('ui.delete')}
+							class="icon-btn icon-btn-danger relative z-10"
+						>
+							<Icon name="trash" />
+						</button>
+					{/if}
+				{/if}
+			{/if}
 		{/snippet}
 
 		<a
 			href={resolve('/health/recipes/[id]', { id: String(recipe.id) })}
-			class="text-sm leading-snug font-medium break-words text-gray-900 after:absolute after:inset-0"
-			>{recipe.title}</a
+			class="text-sm leading-snug font-medium break-words after:absolute after:inset-0 {archived
+				? 'text-gray-500'
+				: 'text-gray-900'}">{recipe.title}</a
 		>
 
 		<span class="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-gray-500">
+			{#if archived}<span class="eyebrow text-gray-600">{t('todoRows.archived')}</span>{/if}
 			{#if recipe.minutes}<span class="tabular"
 					>{t('health.recipes.min', { minutes: recipe.minutes })}</span
 				>{/if}
@@ -110,21 +200,6 @@
 			<span class="tabular"
 				>{t('health.recipes.ingredients', { ingredients: recipe.ingredients })}</span
 			>
-		</span>
-
-		<span class="mt-1 block text-xs">
-			{#if recipe.ingredients === 0}
-				<span class="text-gray-500">{t('health.recipes.nothingInItYet')}</span>
-			{:else if recipe.missing === 0}
-				<!-- Blue for the good news and grey for the rest, never green and
-				     amber: a small word in either is one a red-green colourblind
-				     reader cannot tell apart. -->
-				<span class="font-medium text-blue-700">{t('health.recipes.youHaveEverything')}</span>
-			{:else}
-				<span class="font-medium text-gray-700"
-					>{t('health.recipes.missingCount', { count: recipe.missing })}</span
-				>
-			{/if}
 		</span>
 	</RowCard>
 </div>

@@ -1,6 +1,7 @@
 <script lang="ts">
 	import TabbedRoom from '$lib/components/TabbedRoom.svelte';
 	import { resolve } from '$app/paths';
+	import { page } from '$app/state';
 	import type { Snippet } from 'svelte';
 	import { useT } from '$lib/i18n';
 
@@ -34,6 +35,15 @@
 	const streams = $derived(
 		data.streams.map((s) => ({ href: resolve('/data/[slug]', { slug: s.slug }), label: s.name }))
 	);
+
+	/*
+	 * One recipe is a page inside the Recipes tab: the way back to the list is
+	 * the bar's, where the glyph was — a full-size target, not a line of small
+	 * text over the page.
+	 */
+	const back = $derived(
+		page.route.id === '/health/recipes/[id]' ? resolve('/health/recipes') : undefined
+	);
 </script>
 
 <TabbedRoom
@@ -41,6 +51,8 @@
 	room="health"
 	extra={streams}
 	label={t('rooms.health.sections')}
+	{back}
+	backLabel={t('health.recipes.allRecipes')}
 >
 	{@render children()}
 </TabbedRoom>

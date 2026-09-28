@@ -1123,6 +1123,7 @@ export const messages: Catalogue = {
 	'health.habits.showingCount': { one: '{count} habit showing', other: '{count} habits showing' },
 	'health.habits.timesToday': 'How many times today: {name}',
 	'health.habits.total': '{length} total',
+	'health.recipes.allRecipes': 'All recipes',
 	'health.recipes.at': 'At',
 	'health.recipes.canMakeCount': 'Can make now ({count})',
 	'health.recipes.countsAs': 'Counts as',
@@ -1155,7 +1156,6 @@ export const messages: Catalogue = {
 	'health.recipes.id.itsIngredientsStayOnThe':
 		'Its ingredients stay on the shopping list — they are things you buy, not parts of the recipe.',
 	'health.recipes.id.keepIt': 'Keep it',
-	'health.recipes.id.larrAllRecipes': '← All recipes',
 	'health.recipes.id.lastCooked': 'last cooked {slice}',
 	'health.recipes.id.main': 'Main',
 	'health.recipes.id.makeThisTheMainPicture': 'Make this the main picture',
@@ -1188,7 +1188,6 @@ export const messages: Catalogue = {
 		'That is as many as this instance allows. Remove one to add another.',
 	'health.recipes.id.titleWillBeGone': '“{title}” will be gone.',
 	'health.recipes.id.toBuy': 'to buy',
-	'health.recipes.id.upToKb': 'up to {kilobytes}KB',
 	'health.recipes.id.uploading': 'uploading…',
 	'health.recipes.id.whatItIs': 'What it is',
 	'health.recipes.id.whereItCameFrom': 'Where it came from',
@@ -4325,7 +4324,20 @@ export const messages: Catalogue = {
 		'Renaming onto a tag you already use merges the two. A colour is worn by the tag wherever it is drawn; removing one takes it off everything that carried it.',
 	'tour.retireOneWithoutLosingIt': 'Retire one without losing it',
 	'tour.review': 'Review',
+	'tour.rulesCategoriesTakeTurns': 'Categories take turns',
+	'tour.rulesCategoriesTakeTurnsBody':
+		'A line gets the first category whose pattern matches, so the order decides ties. Move a rule up or down to change which one wins.',
 	'tour.rulesDoTheSorting': 'Rules do the sorting',
+	'tour.rulesRoom': 'Rules',
+	'tour.rulesSortWhatArrives': 'Rules sort what arrives',
+	'tour.rulesSortWhatArrivesBody':
+		"Each rule is a pattern looked for in a statement line's description. Every line is sorted by them when it is imported, and again whenever a rule changes.",
+	'tour.rulesTagsPileUp': 'Tags pile up',
+	'tour.rulesTagsPileUpBody':
+		'A line gets every tag that matches. Insights shows what one tag costs, month by month.',
+	'tour.rulesTheCountOpensTheLines': 'The count opens the lines',
+	'tour.rulesTheCountOpensTheLinesBody':
+		'Press the number beside a rule to see which lines it claims. Uncategorized, at the top, shows the ones nothing claims yet.',
 	'tour.saveTheShapeYouAre':
 		'Save the shape you are looking at as a scheme — a term-time week, a holiday week — and apply it to any week later.',
 	'tour.sayItInYourOwn': 'Say it in your own words',
