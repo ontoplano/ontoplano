@@ -1504,6 +1504,15 @@ for (let back = 0; back < 40; back++) {
 }
 logHabit(doomscroll, iso(dayOffset(-9)), 'an hour before bed, again');
 
+// One put away, so the archived list has something in it.
+const putAway = habit('morning stretches', 'good', '0,2,4');
+for (let back = 60; back < 90; back += 2) logHabit(putAway, iso(dayOffset(-back)));
+run(
+	'update habits set archived_at = ? where id = ? and archived_at is null',
+	new Date().toISOString(),
+	putAway
+);
+
 // --- shopping ---------------------------------------------------------------------
 
 const pantry = shoppingCategory('pantry', 0);
@@ -3713,43 +3722,34 @@ console.log(`  ${attributeKeys.length} inventory attributes coloured`);
 /*
  * A few short recordings, so Media → Recordings is a list with its player,
  * its rename and its delete rather than an empty state. Each is a second or
- * two of a plain tone written as a WAV — nobody's voice, and small enough to
- * sit in the database beside the pictures.
+ * two of silent MP3 — nobody's voice, one of the formats the recordings
+ * service accepts (so an export of the dev account imports again), and small
+ * enough to sit in the database beside the pictures.
  */
-const RECORDING_RATE = 8000;
-const tone = (hz, seconds) => {
-	const samples = Math.round(RECORDING_RATE * seconds);
-	const bytes = Buffer.alloc(44 + samples);
-	bytes.write('RIFF', 0);
-	bytes.writeUInt32LE(36 + samples, 4);
-	bytes.write('WAVEfmt ', 8);
-	bytes.writeUInt32LE(16, 16);
-	bytes.writeUInt16LE(1, 20); // PCM
-	bytes.writeUInt16LE(1, 22); // mono
-	bytes.writeUInt32LE(RECORDING_RATE, 24);
-	bytes.writeUInt32LE(RECORDING_RATE, 28);
-	bytes.writeUInt16LE(1, 32);
-	bytes.writeUInt16LE(8, 34);
-	bytes.write('data', 36);
-	bytes.writeUInt32LE(samples, 40);
-	for (let i = 0; i < samples; i++)
-		bytes[44 + i] = Math.round(128 + 60 * Math.sin((2 * Math.PI * hz * i) / RECORDING_RATE));
+/** MPEG-1 Layer III, 128 kbit/s, 44.1 kHz, mono: a frame is 417 bytes and 1152 samples. */
+const MP3_FRAME_HEADER = [0xff, 0xfb, 0x90, 0xc4];
+const MP3_FRAME_BYTES = 417;
+const MP3_FRAMES_PER_SECOND = 44100 / 1152;
+const silence = (seconds) => {
+	const frames = Math.round(seconds * MP3_FRAMES_PER_SECOND);
+	const bytes = Buffer.alloc(frames * MP3_FRAME_BYTES);
+	for (let f = 0; f < frames; f++) bytes.set(MP3_FRAME_HEADER, f * MP3_FRAME_BYTES);
 	return bytes;
 };
 const recordings = [
-	['Idea for the kitchen shelves', 440, 2, 3],
-	['What the plumber said', 330, 1.5, 9],
-	['Birdsong at the park', 660, 2.5, 20]
+	['Idea for the kitchen shelves', 2, 3],
+	['What the plumber said', 1.5, 9],
+	['Birdsong at the park', 2.5, 20]
 ];
-for (const [name, hz, seconds, daysBack] of recordings) {
-	const bytes = tone(hz, seconds);
+for (const [name, seconds, daysBack] of recordings) {
+	const bytes = silence(seconds);
 	const sha = createHash('sha256').update(bytes).digest('hex');
 	if (one('select id from media where user_id = ? and sha256 = ?', uid, sha)) continue;
 	const at = new Date(now);
 	at.setDate(at.getDate() - daysBack);
 	run(
 		`insert into media (user_id, mime, filename, alt, byte_size, seconds, bytes, sha256, created_at)
-		 values (?, 'audio/wav', ?, '', ?, ?, ?, ?, ?)`,
+		 values (?, 'audio/mpeg', ?, '', ?, ?, ?, ?, ?)`,
 		uid,
 		name,
 		bytes.length,

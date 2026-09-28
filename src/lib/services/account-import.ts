@@ -55,6 +55,7 @@ import { ValidationError } from '$lib/services/errors.js';
 import { sha256Hex } from '$lib/services/digest.js';
 import { USER_TABLES, type AccountExport } from '$lib/services/account-data.js';
 import { sniff, tidyFilename } from '$lib/services/media.js';
+import { sniffAudio } from '$lib/services/audio.js';
 import { RINGTONE_TYPES } from '$lib/services/ringtones.js';
 import { splitLegacyTitle } from '$lib/notebook-path.js';
 
@@ -300,13 +301,26 @@ export function previewImport(payload: unknown): ImportPreview {
 	};
 }
 
+/**
+ * What one stored file is: a picture or a recording, read from its bytes.
+ *
+ * Both live in `media`, so an export carries both, and a file that only knew
+ * pictures refused every account that had ever recorded anything.
+ */
+function mediaKind(bytes: Uint8Array): { mime: string; extension: string; audio: boolean } | null {
+	const picture = sniff(bytes);
+	if (picture) return { ...picture, audio: false };
+	const recording = sniffAudio(bytes);
+	return recording ? { ...recording, audio: true } : null;
+}
+
 /** Whether one media or ringtone row is something this app would serve. */
 function acceptableBytes(name: string, raw: unknown): boolean {
 	if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return true;
 	const row = raw as Record<string, unknown>;
 	if (name === 'media') {
 		const bytes = typeof row.bytes === 'string' ? fromBase64(row.bytes) : null;
-		return bytes !== null && sniff(bytes) !== null;
+		return bytes !== null && mediaKind(bytes) !== null;
 	}
 	if (name === 'ringtones') return (RINGTONE_TYPES as readonly string[]).includes(String(row.mime));
 	return true;
@@ -505,11 +519,13 @@ export async function importAccount(
 					// `Uint8Array`, not `Buffer`: a Buffer is one of those, and the
 					// decode above returns the plain kind so a device — which has no
 					// Buffer at all — reaches this line with something real in it.
-					const kind = row.bytes instanceof Uint8Array ? sniff(row.bytes) : null;
+					const kind = row.bytes instanceof Uint8Array ? mediaKind(row.bytes) : null;
 					if (!kind)
 						throw new ValidationError({ key: 'errors.accountImport.theFileCarriesAPicture' });
 					row.mime = kind.mime;
-					row.filename = tidyFilename(String(row.filename ?? '')) || `picture.${kind.extension}`;
+					row.filename =
+						tidyFilename(String(row.filename ?? '')) ||
+						`${kind.audio ? 'recording' : 'picture'}.${kind.extension}`;
 					row.byteSize = (row.bytes as Uint8Array).length;
 					row.sha256 = fingerprints.get(asGiven);
 					if (typeof row.sha256 !== 'string')
