@@ -173,8 +173,11 @@
 		const wanted = chosenLocation;
 		chosenLocation = undefined;
 		// BackCloses has popped the entry; wait for the router to finish that
-		// navigation before replacing its old query with the chosen one.
-		await navigating.complete;
+		// navigation before replacing its old query with the chosen one. A
+		// filter picked just before Done is still loading when the pop lands,
+		// and the pop aborts it: `complete` rejects, and the chosen query is
+		// put back below all the same.
+		await navigating.complete?.catch(() => undefined);
 		if (!wanted || wanted.pathname !== page.url.pathname || wanted.href === page.url.href) return;
 		// Same resolved route; only its filter query is being restored.
 		// eslint-disable-next-line svelte/no-navigation-without-resolve

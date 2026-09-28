@@ -20,6 +20,7 @@ releases mattered.
 
 ## 0.184.1 — 2026-09-28
 
+- On a phone, a filter picked just before pressing Done in the filters sheet stays on; before, it could be dropped.
 - An administrator moving an ended plan's date into the future brings the plan back; before, the account stayed on the pay page.
 
 ## 0.184.0 — 2026-09-27
