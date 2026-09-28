@@ -15,7 +15,14 @@
  */
 const KEY = 'shopping.pendingTicks';
 
-export type Tick = { id: number; action: 'toggleBought' | 'toggleSnoozed' | 'restock' };
+/**
+ * One press, waiting for a signal. `setQty` carries the count it set — the
+ * shopping list's tick fills the cupboard back up to what is kept — and is the
+ * one action that is a value rather than a flip.
+ */
+export type Tick =
+	| { id: number; action: 'toggleBought' | 'toggleSnoozed' | 'restock' }
+	| { id: number; action: 'setQty'; qty: number };
 
 function read(): Tick[] {
 	if (typeof localStorage === 'undefined') return [];
@@ -44,9 +51,13 @@ export function restore(): void {
 
 export function remember(tick: Tick): void {
 	// The same item twice is the same intention: the last one wins, and two
-	// toggles of the same button cancel out.
+	// toggles of the same button cancel out. A count is not a toggle: the
+	// newer one replaces the older.
 	const without = ticks.pending.filter((t) => !(t.id === tick.id && t.action === tick.action));
-	ticks.pending = without.length === ticks.pending.length ? [...without, tick] : without;
+	ticks.pending =
+		without.length === ticks.pending.length || tick.action === 'setQty'
+			? [...without, tick]
+			: without;
 	write(ticks.pending);
 }
 
@@ -67,6 +78,7 @@ export async function flush(): Promise<number> {
 		try {
 			const body = new FormData();
 			body.set('id', String(tick.id));
+			if (tick.action === 'setQty') body.set('qty', String(tick.qty));
 
 			const res = await fetch(`/inventory?/${tick.action}`, { method: 'POST', body });
 			if (res.ok) sent++;

@@ -13,7 +13,23 @@
 	import SearchField from '$lib/components/SearchField.svelte';
 	import Picker from '$lib/components/Picker.svelte';
 	import RoomSurface from '$lib/components/RoomSurface.svelte';
-	import { inventoryPanels } from '$lib/inventory-panels.svelte';
+	import StripVerb from '$lib/components/StripVerb.svelte';
+	import SortControl from '$lib/components/SortControl.svelte';
+	import TabStrip from '$lib/components/TabStrip.svelte';
+	import TickBox from '$lib/components/TickBox.svelte';
+	import ColorWell from '$lib/components/ColorWell.svelte';
+	import {
+		ITEM_DIRECTION_KEY,
+		ITEM_ORDER_KEY,
+		ITEM_ORDER_LABELS,
+		ITEM_ORDERS,
+		DEFAULT_ITEM_ORDER,
+		compareItems,
+		isItemOrder,
+		itemDirectionFor,
+		type ItemDirection,
+		type ItemOrder
+	} from '$lib/item-order';
 	import Icon from '$lib/components/Icon.svelte';
 	import { armed } from '$lib/actions/armed';
 	import Field from '$lib/components/Field.svelte';
@@ -142,15 +158,23 @@
 			// A browser that will not keep it is not a reason to fail to draw.
 		}
 	});
+	/** How far each level of the house steps in: one rem, on the spacing scale. */
+	const PLACE_INDENT_REM = 1;
+	/** Whether the house is unfolded on a phone, where it sits above the things. */
+	let treeOpen = $state(false);
 	let addingLocation = $state(false);
 	let editingLocation = $state<{ id: number; name: string; parentId: number | null } | null>(null);
 	let confirmDeleteLocation = $state<number | null>(null);
 	/** The item being dragged, and the location it is over. */
 	let dragging = $state<number | null>(null);
 	let dragOver = $state<number | null>(null);
-	let editingAttribute = $state<string | null>(null);
-	let editingValue = $state<string | null>(null);
-	let confirmRemoveAttribute = $state<string | null>(null);
+	/** The attribute, or `key\u0000value`, being edited or asking to be removed. */
+	let editingVocab = $state<string | null>(null);
+	let confirmRemoveVocab = $state<string | null>(null);
+	/** What a colour well shows before anything was chosen: the neutral grey. */
+	const NEUTRAL_WELL = '#6b7280';
+	/** A category row's buttons: up, down, edit, delete — the header keeps their room. */
+	const ORGANISE_ACTION_SLOTS = ['up', 'down', 'edit', 'delete'] as const;
 	/** Which attribute value the list is narrowed to, as `key\u0000value`. */
 	let attributeFilter = $state<string | null>(null);
 	/** Counts the list is narrowed by: empty means no ceiling and no floor. */
@@ -271,7 +295,7 @@
 	let online = $state(true);
 
 	const tick =
-		(action: Tick['action']): SubmitFunction =>
+		(action: Exclude<Tick['action'], 'setQty'>): SubmitFunction =>
 		({ formData, cancel }) => {
 			if (online) return;
 
@@ -286,13 +310,14 @@
 			const waiting = ticks.pending.filter((t) => t.id === item.id);
 			if (waiting.length === 0) return item;
 
-			let { bought, snoozed } = item;
+			let { bought, snoozed, qty } = item;
 			for (const t of waiting) {
 				if (t.action === 'toggleBought') bought = !bought;
 				if (t.action === 'toggleSnoozed') snoozed = !snoozed;
 				if (t.action === 'restock') bought = false;
+				if (t.action === 'setQty') qty = t.qty;
 			}
-			return { ...item, bought, snoozed };
+			return { ...item, bought, snoozed, qty };
 		})
 	);
 
@@ -327,27 +352,80 @@
 		};
 	});
 
-	/**
-	 * What the list will cost, near enough.
-	 *
-	 * Only what is still to buy, only what has a price, and said as "about" —
-	 * a total assembled from remembered prices is an estimate and pretending
-	 * otherwise is how somebody gets a surprise at the till.
+	/*
+	 * The order of the rows inside each card. Kept in the browser: it is a way
+	 * of looking at the list, not a fact about the account. See `$lib/item-order`.
 	 */
-	const toBuy = $derived.by(() => {
-		if (list === 'replenish')
-			return {
-				count: data.run.lines.length,
-				cents: data.run.totalCents,
-				unpriced: data.run.unpriced
-			};
-		const wanted = items.filter((i) => i.type === 'someday' && !i.bought && !i.snoozed);
-		return {
-			count: wanted.length,
-			cents: wanted.reduce((sum, i) => sum + (i.priceCents ?? 0), 0),
-			unpriced: wanted.filter((i) => i.priceCents === null).length
-		};
+	let order = $state<ItemOrder>(DEFAULT_ITEM_ORDER);
+	let direction = $state<ItemDirection>(itemDirectionFor(DEFAULT_ITEM_ORDER));
+
+	onMount(() => {
+		try {
+			const kept = localStorage.getItem(ITEM_ORDER_KEY);
+			if (isItemOrder(kept)) order = kept;
+			const way = localStorage.getItem(ITEM_DIRECTION_KEY);
+			if (way === 'asc' || way === 'desc') direction = way;
+		} catch {
+			// A private window, or storage refused: the defaults stand.
+		}
 	});
+
+	function rememberOrder() {
+		try {
+			localStorage.setItem(ITEM_ORDER_KEY, order);
+			localStorage.setItem(ITEM_DIRECTION_KEY, direction);
+		} catch {
+			// It still holds for this visit.
+		}
+	}
+
+	/** Which of the room's two managing screens is up, and on which tab. */
+	let organising = $state(false);
+	let organiseTab = $state<'categories' | 'attributes'>('categories');
+
+	/*
+	 * The trip, as a list you tick in the shop.
+	 *
+	 * The lines are the ones there were when the list was opened, and a line
+	 * that is ticked stays where it is, struck through, rather than leaving:
+	 * a list that closes up under the thumb is a list where the next press
+	 * lands on the wrong thing. Ticking a line fills the cupboard back up to
+	 * what you keep; unticking puts back the count it had.
+	 */
+	let shopping = $state(false);
+	let tripLines = $state<RoomData['run']['lines']>([]);
+	let tripWishes = $state<RoomData['run']['wishlist']>([]);
+	/** What each ticked line's count was before the tick, to untick it. */
+	let basket = $state<Record<number, number>>({});
+
+	function openShopping() {
+		tripLines = data.run.lines;
+		tripWishes = data.run.wishlist;
+		basket = {};
+		shopping = true;
+	}
+
+	/** A wish is in the basket when it is bought, by what the page now knows. */
+	function wishInBasket(id: number): boolean {
+		return items.find((one) => one.id === id)?.bought ?? false;
+	}
+
+	/**
+	 * Ticking a line of the trip: the count goes up to what is kept, and back
+	 * to what it was when it is unticked. Offline, it waits with the others.
+	 */
+	const tripTick =
+		(id: number, qty: number, was: number): SubmitFunction =>
+		({ cancel }) => {
+			if (id in basket) delete basket[id];
+			else basket[id] = was;
+			if (!online) {
+				cancel();
+				remember({ id, action: 'setQty', qty });
+				return;
+			}
+			return async ({ update }) => update({ reset: false });
+		};
 
 	let defaultInventoryCategoryId = $derived.by(() => {
 		const otherCategory = data.inventoryCategories.find((category) => category.name === 'Other');
@@ -495,13 +573,23 @@
 
 	/** "4 things, 1 here and 3 in what is inside it" — said, not inferred. */
 	function countTitle(name: string, count: { here: number; total: number }): string {
-		const things = (n: number) => `${n} ${n === 1 ? 'thing' : 'things'}`;
-		if (count.total === 0) return `Nothing in ${name} yet`;
-		if (count.total === count.here) return `${things(count.total)} in ${name}`;
-		return `${things(count.total)} in ${name}: ${count.here} here and ${
-			count.total - count.here
-		} in what is inside it`;
+		if (count.total === 0) return t('inventory.placeEmpty', { name });
+		if (count.total === count.here) return t('inventory.placeHolds', { count: count.total, name });
+		return t('inventory.placeHoldsSplit', {
+			count: count.total,
+			name,
+			here: count.here,
+			inside: count.total - count.here
+		});
 	}
+	/** The place that is open, in words, for the folded panel on a phone. */
+	const placeName = $derived(
+		location === null
+			? t('inventory.everything')
+			: location === 0
+				? t('app.notFiledAnywhere')
+				: (locationPaths.get(location) ?? t('inventory.everything'))
+	);
 	const unfiledCount = $derived(allowedItems.filter((i) => i.locationId == null).length);
 
 	/**
@@ -580,7 +668,9 @@
 	}
 
 	/** Every row on screen is on this tab's list, so the two lists group alike. */
-	let replenishItems = $derived(filteredItems);
+	let replenishItems = $derived(
+		[...filteredItems].sort((a, b) => compareItems(a, b, order, direction))
+	);
 	/** Items grouped into category cards, in the order the categories are kept. */
 	function byCategory(rows: typeof replenishItems) {
 		const catOrder = new Map(data.inventoryCategories.map((c) => [c.name, c.sortOrder]));
@@ -594,7 +684,7 @@
 			.sort((a, b) => (catOrder.get(a[0]) ?? 999) - (catOrder.get(b[0]) ?? 999))
 			.map(([name, items]) => {
 				const cat = data.inventoryCategories.find((c) => c.name === name);
-				return { name, id: cat?.id ?? null, items };
+				return { name, id: cat?.id ?? null, color: cat?.color ?? null, items };
 			});
 	}
 
@@ -692,6 +782,24 @@
 	 * saying so above each is a line repeating the panel.
 	 */
 	const showPlaces = $derived(replenishByPlace.length > 1);
+
+	/**
+	 * How many columns a place's cards are worth.
+	 *
+	 * Columns only pay when the cards are of comparable length: one card
+	 * holding most of the rows beside a short one leaves the short one's
+	 * column empty for the whole of the long one, which is the stretched-cell
+	 * waste in another shape. So the cards stack, full width, unless no card
+	 * holds more than `COLUMN_SHARE` of the rows.
+	 */
+	const COLUMN_SHARE = 2 / 3;
+	const MAX_COLUMNS = 3;
+	function columnsFor(categories: { items: unknown[] }[]): number {
+		if (categories.length < 2) return 1;
+		const total = categories.reduce((sum, one) => sum + one.items.length, 0);
+		const largest = Math.max(...categories.map((one) => one.items.length));
+		return largest > total * COLUMN_SHARE ? 1 : Math.min(categories.length, MAX_COLUMNS);
+	}
 
 	/** The rows in the order they are drawn, which is the order j and k walk. */
 	const shownItems = $derived(
@@ -877,119 +985,109 @@
 	the row's own "where does it live" is the path there, and it is also the
 	path for anybody not using a mouse.
 -->
-{#snippet locationRow(id: number | null, label: string, count: number, depth: number)}
-	<li
-		class="flex items-center {location === id ? 'bg-gray-100' : 'hover:bg-gray-50'} {dragOver ===
-		(id ?? -1)
-			? 'kb-cursor'
-			: ''}"
+{#snippet locationRow(id: number | null, label: string, count: number)}
+	<li>
+		{@render placeRow({
+			id,
+			label,
+			count,
+			title: undefined,
+			depth: 0,
+			fold: null,
+			actions: false
+		})}
+	</li>
+{/snippet}
+
+<!--
+	One row of the house: `indent · chevron · name ——— count · actions`.
+
+	Every row has every column, so the names step in by one rem a level and the
+	counts stand in one column whatever the row can do. Where a pointer can
+	hover, the actions lie over the end of the name and take no room; on a
+	touch screen they have room of their own, kept on every row.
+-->
+{#snippet placeRow(row: {
+	id: number | null;
+	label: string;
+	count: number;
+	title: string | undefined;
+	depth: number;
+	/** The node this row folds, or null for a row that cannot. */
+	fold: RoomData['locationTree'][number] | null;
+	actions: boolean;
+})}
+	{@const target = row.id ?? -1}
+	<div
+		class="group relative flex items-center pr-4 {location === row.id
+			? 'bg-gray-100'
+			: 'hover:bg-gray-50'} {dragOver === target ? 'kb-cursor' : ''}"
+		style="padding-left: {row.depth * PLACE_INDENT_REM}rem"
 	>
+		{#if row.fold && row.fold.children.length > 0}
+			{@const node = row.fold}
+			{@const said = folded.has(node.id)
+				? t('inventory.showWhatIsIn', { place: node.name })
+				: t('inventory.fold', { place: node.name })}
+			<button
+				onclick={() => toggleFold(node.id)}
+				class="relative z-10 flex h-9 w-9 shrink-0 items-center justify-center text-gray-500 transition hover:text-gray-900"
+				aria-expanded={!folded.has(node.id)}
+				title={said}
+				aria-label={said}
+			>
+				<Icon
+					name="chevron-down"
+					class="size-4 transition-transform {folded.has(node.id) ? '-rotate-90' : ''}"
+				/>
+			</button>
+		{:else}
+			<span class="w-9 shrink-0" aria-hidden="true"></span>
+		{/if}
 		<button
-			onclick={() => (location = id)}
+			onclick={() => {
+				location = row.id;
+				treeOpen = false;
+			}}
 			ondragover={(e) => {
 				if (dragging === null) return;
 				e.preventDefault();
-				dragOver = id ?? -1;
+				dragOver = target;
 			}}
 			ondragleave={() => (dragOver = null)}
 			ondrop={(e) => {
 				e.preventDefault();
 				dragOver = null;
-				if (dragging !== null) void drop(dragging, id === 0 ? null : id);
+				if (dragging !== null) void drop(dragging, row.id === 0 ? null : row.id);
 				dragging = null;
 			}}
-			class="flex min-w-0 flex-1 items-center gap-2 py-2 pr-2 text-left text-sm transition {location ===
-			id
+			aria-current={location === row.id ? 'true' : undefined}
+			class="flex min-w-0 flex-1 items-center gap-2 py-2 text-left text-sm transition {location ===
+			row.id
 				? 'font-medium text-gray-900'
 				: 'text-gray-700'}"
-			style="padding-left: {0.25 + depth * 0.9}rem"
 		>
-			<!-- Where a foldable row keeps its chevron. Drawn on every row, so a
-			     location gaining children never shifts any name sideways, and the
-			     rows that can never fold still line up with the ones that can. -->
-			<span class="invisible size-4 shrink-0"><Icon name="chevron-down" /></span>
 			<!-- Its own name as the tooltip: the column is as wide as the reader
 			     left it and a name can always be longer than that. -->
-			<span class="truncate" title={label}>{label}</span>
-			<span class="tabular ml-auto shrink-0 text-xs text-gray-500">{count}</span>
-		</button>
-		<!-- The room a location's own buttons take, kept on the rows that have
-		     none, so every count in the column sits at the same x. -->
-		<div class="invisible flex shrink-0 items-center gap-1 pr-2" aria-hidden="true">
-			<span class="icon-btn"><Icon name="edit" /></span>
-			<span class="icon-btn"><Icon name="trash" /></span>
-		</div>
-	</li>
-{/snippet}
-
-<!--
-	A location and everything under it.
-
-	Foldable, because a house with a row per drawer makes the panel taller than
-	the things it is meant to help you find. Folding hides what is inside a
-	location, never the location itself, and its number still counts the whole
-	subtree — so a folded branch says how much is in there without listing it.
--->
-{#snippet branch(node: RoomData['locationTree'][number], depth: number)}
-	<li>
-		<div
-			class="group flex items-center {location === node.id ? 'bg-gray-100' : 'hover:bg-gray-50'}"
-		>
-			<!-- Its own control, outside the row button: pressing it must fold the
-			     branch, not open the location. -->
-			{#if node.children.length > 0}
-				<button
-					onclick={() => toggleFold(node.id)}
-					class="shrink-0 py-2 pl-1 text-gray-500 transition hover:text-gray-900"
-					style="margin-left: {depth * 0.9}rem"
-					aria-expanded={!folded.has(node.id)}
-					title={folded.has(node.id)
-						? t('inventory.showWhatIsIn', { place: node.name })
-						: t('inventory.fold', { place: node.name })}
-					aria-label={folded.has(node.id)
-						? t('inventory.showWhatIsIn', { place: node.name })
-						: t('inventory.fold', { place: node.name })}
-				>
-					<Icon
-						name="chevron-down"
-						class="size-4 transition-transform {folded.has(node.id) ? '-rotate-90' : ''}"
-					/>
-				</button>
-			{:else}
-				<span class="invisible size-4 shrink-0 py-2 pl-1" style="margin-left: {depth * 0.9}rem"
-				></span>
-			{/if}
-			<button
-				onclick={() => (location = node.id)}
-				ondragover={(e) => {
-					if (dragging === null) return;
-					e.preventDefault();
-					dragOver = node.id;
-				}}
-				ondragleave={() => (dragOver = null)}
-				ondrop={(e) => {
-					e.preventDefault();
-					dragOver = null;
-					if (dragging !== null) void drop(dragging, node.id);
-					dragging = null;
-				}}
-				class="flex min-w-0 flex-1 items-center gap-2 py-2 pr-2 pl-2 text-left text-sm transition {location ===
-				node.id
-					? 'font-medium text-gray-900'
-					: 'text-gray-700'} {dragOver === node.id ? 'kb-cursor' : ''}"
+			<span class="min-w-0 flex-1 truncate" title={row.label}>{row.label}</span>
+			<span
+				class="tabular w-8 shrink-0 text-right text-xs font-normal text-gray-500"
+				title={row.title}>{row.count}</span
 			>
-				<span class="truncate" title={node.name}>{node.name}</span>
-				<span
-					class="tabular ml-auto shrink-0 text-xs text-gray-500"
-					title={countTitle(node.name, countsByLocation.get(node.id) ?? { here: 0, total: 0 })}
-				>
-					{countsByLocation.get(node.id)?.total ?? 0}
-				</span>
-			</button>
-			<!-- Out of the way until the row is pointed at, where a pointer can
-			     point; always there for a finger, which has no hover. -->
+		</button>
+		<!--
+			Out of the way until the row is pointed at, where a pointer can point:
+			there they lie over the end of the name, on the row's own fill, so the
+			names keep the width. A finger has no hover, so on a touch screen they
+			are always there, in room of their own.
+		-->
+		{#if row.actions && row.fold}
+			{@const node = row.fold}
 			<div
-				class="flex shrink-0 items-center gap-1 pr-2 transition-opacity [@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-focus-within:opacity-100 [@media(hover:hover)]:group-hover:opacity-100"
+				class="place-actions relative z-10 flex shrink-0 items-center gap-1 transition-opacity [@media(hover:hover)]:absolute [@media(hover:hover)]:right-12 [@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-focus-within:opacity-100 [@media(hover:hover)]:group-hover:opacity-100 {location ===
+				row.id
+					? 'bg-gray-100'
+					: 'bg-gray-50'}"
 			>
 				<button
 					onclick={() =>
@@ -1006,7 +1104,36 @@
 					aria-label={t('inventory.remove', { name: node.name })}><Icon name="trash" /></button
 				>
 			</div>
-		</div>
+		{:else}
+			<!-- The room a place's buttons take on a touch screen, kept on the
+			     rows that have none so every count stands in one column. -->
+			<div class="invisible flex shrink-0 gap-1 [@media(hover:hover)]:hidden" aria-hidden="true">
+				<span class="icon-btn"></span><span class="icon-btn"></span>
+			</div>
+		{/if}
+	</div>
+{/snippet}
+
+<!--
+	A location and everything under it.
+
+	Foldable, because a house with a row per drawer makes the panel taller than
+	the things it is meant to help you find. Folding hides what is inside a
+	location, never the location itself, and its number still counts the whole
+	subtree — so a folded branch says how much is in there without listing it.
+-->
+{#snippet branch(node: RoomData['locationTree'][number], depth: number)}
+	{@const count = countsByLocation.get(node.id) ?? { here: 0, total: 0 }}
+	<li>
+		{@render placeRow({
+			id: node.id,
+			label: node.name,
+			count: count.total,
+			title: countTitle(node.name, count),
+			depth,
+			fold: node,
+			actions: true
+		})}
 		{#if node.children.length > 0 && !folded.has(node.id)}
 			<ul>
 				{#each node.children as child (child.id)}
@@ -1148,47 +1275,25 @@
 	-->
 	<RoomSurface>
 		<!--
-			The strip every list in the app has: find, how many are showing, the
-			toggles and filters, and the way back to everything.
-
-			What the list will cost rides above it, as information rather than as
-			a control — said once, with padding, instead of crammed under the tabs.
+			The strip every list in the app has: search, how many are showing,
+			the toggles and filters, the way back to everything — then the room's
+			two other screens and the order. What the trip will cost is on the
+			shopping list itself, where it is read.
 		-->
 		{#snippet tools()}
 			<FilterBar name="inventory" on={narrowing} summary={narrowingSaid()} onclear={clearFilters}>
-				{#snippet banner()}
-					{#if toBuy.count > 0}
-						<p class="flex flex-wrap items-baseline gap-x-2 text-sm text-gray-500">
-							<span class="eyebrow text-gray-500">{t('inventory.toBuy')}</span>
-							<span>
-								{toBuy.cents > 0
-									? t('inventory.toBuyTotal', {
-											count: toBuy.count,
-											total: formatMoney(toBuy.cents, data.currency)
-										})
-									: t('inventory.toBuyCount', { count: toBuy.count })}
-							</span>
-							{#if toBuy.unpriced > 0}
-								<span class="text-xs">·</span>
-								<span class="text-xs"
-									>{t('inventory.withoutAPrice', { count: toBuy.unpriced })}</span
-								>
-							{/if}
-						</p>
-					{/if}
-				{/snippet}
 				{#snippet lead()}
 					<SearchField
 						name="find"
 						bind:value={find}
-						placeholder={t('inventory.find')}
-						label={t('inventory.find2')}
+						placeholder={t('inventory.searchTheseThings')}
+						label={t('inventory.searchTheseThings')}
 					/>
 				{/snippet}
 				{#snippet count()}
 					<!-- Held open by the sentence at the whole tab's count, so
-						     narrowing the list never moves the controls after it.
-						     See `.count-slot`. -->
+					     narrowing the list never moves the controls after it.
+					     See `.count-slot`. -->
 					<ShowingCount
 						total={onThisTab.length}
 						shown={filteredItems.length}
@@ -1199,11 +1304,11 @@
 					/>
 				{/snippet}
 				<!--
-						"Short" is a question asked of the cupboard — fewer of something
-						than you keep — so it is a filter beside the others rather than a
-						list of its own. The wishlist has no count to be under, and the
-						cupboard shows what you have anyway, so "bought" is the wishlist's.
-					-->
+					The same slots on both tabs, so changing tab moves nothing: the
+					first toggle is the tab's own question — "short" of the cupboard,
+					"bought" of the wishlist — and the count range is the cupboard's,
+					kept as an empty slot on the wishlist where there is no count.
+				-->
 				{#if list === 'replenish'}
 					<button
 						onclick={() => (onlyShort = !onlyShort)}
@@ -1226,7 +1331,7 @@
 					onclick={() => (showSnoozed = !showSnoozed)}
 					aria-pressed={showSnoozed}
 					class="btn btn-sm shrink-0"
-					hidden={archivedHere === 0 && !showSnoozed}
+					disabled={archivedHere === 0 && !showSnoozed}
 					title={t('inventory.showWhatYouPutAway', {
 						snoozed: keyFor('/inventory/stock', 'toggle-show-snoozed')
 					})}>{t('inventory.archivedCount', { count: archivedHere })}</button
@@ -1240,33 +1345,80 @@
 						class="min-w-36 flex-1 sm:flex-none"
 					/>
 				{/if}
-				<!-- How many, as a range: either end may be left open. -->
-				{#if list === 'replenish'}
-					<span class="flex shrink-0 items-center gap-1 text-xs text-gray-500">
-						<label class="flex items-center gap-1">
-							<span>{t('inventory.atLeast')}</span>
-							<input
-								type="number"
-								min="0"
-								inputmode="numeric"
-								value={atLeast}
-								oninput={(e) => (atLeast = e.currentTarget.value)}
-								class="input input-sm w-14"
-							/>
-						</label>
-						<label class="flex items-center gap-1">
-							<span>{t('inventory.atMost')}</span>
-							<input
-								type="number"
-								min="0"
-								inputmode="numeric"
-								value={atMost}
-								oninput={(e) => (atMost = e.currentTarget.value)}
-								class="input input-sm w-14"
-							/>
-						</label>
-					</span>
-				{/if}
+				<!-- How many, as a range: either end may be left open. The pair is
+				     named as one question, and each box says which end it is. -->
+				<div
+					role="group"
+					aria-labelledby="inventory-how-many"
+					class="flex shrink-0 items-center gap-1.5 {list === 'replenish' ? '' : 'invisible'}"
+					inert={list !== 'replenish'}
+				>
+					<span id="inventory-how-many" class="text-sm text-gray-600">{t('inventory.howMany')}</span
+					>
+					<input
+						type="number"
+						min="0"
+						inputmode="numeric"
+						placeholder={t('inventory.atLeastShort')}
+						aria-label={t('inventory.atLeastLabel')}
+						title={t('inventory.atLeastLabel')}
+						value={atLeast}
+						oninput={(e) => (atLeast = e.currentTarget.value)}
+						class="input input-sm w-16"
+					/>
+					<span class="text-gray-500" aria-hidden="true">–</span>
+					<input
+						type="number"
+						min="0"
+						inputmode="numeric"
+						placeholder={t('inventory.atMostShort')}
+						aria-label={t('inventory.atMostLabel')}
+						title={t('inventory.atMostLabel')}
+						value={atMost}
+						oninput={(e) => (atMost = e.currentTarget.value)}
+						class="input input-sm w-16"
+					/>
+				</div>
+				{#snippet verb()}
+					<!-- Named for the half most visits want; the dialog's second tab is
+					     the attributes. A phone's strip has room for one verb beside
+					     the order, and that is the shopping list: there this one
+					     stands on the house's line instead. -->
+					<StripVerb
+						icon="sliders"
+						label={t('inventory.categories')}
+						title={t('inventory.categoriesAndAttributes')}
+						class="btn btn-sm shrink-0 max-sm:hidden"
+						onclick={() => (organising = true)}
+					/>
+					<StripVerb
+						icon="shopping"
+						label={data.run.lines.length > 0
+							? t('inventory.shoppingListCount', { count: data.run.lines.length })
+							: t('inventory.shoppingList')}
+						data-tour="inventory-shopping"
+						onclick={openShopping}
+					/>
+				{/snippet}
+				{#snippet trailing()}
+					<SortControl
+						value={order}
+						options={ITEM_ORDERS}
+						labels={ITEM_ORDER_LABELS}
+						{direction}
+						onpick={(next) => {
+							order = next;
+							direction = itemDirectionFor(next);
+							rememberOrder();
+							selectedIndex = -1;
+						}}
+						onflip={() => {
+							direction = direction === 'asc' ? 'desc' : 'asc';
+							rememberOrder();
+						}}
+						label={t('inventory.orderThingsBy')}
+					/>
+				{/snippet}
 			</FilterBar>
 		{/snippet}
 
@@ -1277,70 +1429,93 @@
 				onsettle={() => panelForm?.requestSubmit()}
 			>
 				{#snippet left()}
-					<section class="self-start">
+					<section class="place-panel self-start max-lg:border-b max-lg:border-gray-200">
 						<header
-							class="flex flex-wrap items-center justify-between gap-2 border-b border-gray-200 px-4 py-2"
+							class="flex items-center justify-between gap-2 border-gray-200 px-4 lg:border-b"
 						>
-							<h2 class="eyebrow text-gray-600">{t('inventory.whereThingsLive')}</h2>
+							<h2 class="eyebrow py-3 text-gray-600 max-lg:hidden">
+								{t('inventory.whereThingsLive')}
+							</h2>
+							<!--
+								On a phone the house folds away under one line saying which
+								place is open, so the things come first: a panel of twenty
+								drawers above them put the first thing a screen and a half
+								down, in a box that scrolled on its own.
+							-->
+							<button
+								type="button"
+								class="flex min-w-0 flex-1 items-center gap-2 py-3 text-left lg:hidden"
+								aria-expanded={treeOpen}
+								aria-controls="inventory-places"
+								onclick={() => (treeOpen = !treeOpen)}
+							>
+								<Icon
+									name="chevron-down"
+									class="size-4 shrink-0 text-gray-500 transition-transform {treeOpen
+										? ''
+										: '-rotate-90'}"
+								/>
+								<span class="eyebrow shrink-0 text-gray-600">{t('inventory.whereThingsLive')}</span>
+								<span class="truncate text-sm text-gray-900">{placeName}</span>
+							</button>
+							<button
+								onclick={() => (organising = true)}
+								class="icon-btn shrink-0 sm:hidden"
+								title={t('inventory.categoriesAndAttributes')}
+								aria-label={t('inventory.categories')}><Icon name="sliders" /></button
+							>
 							<button
 								onclick={() => (addingLocation = true)}
-								class="icon-btn"
+								class="icon-btn shrink-0"
 								title={t('inventory.newLocation')}
 								aria-label={t('inventory.newLocation')}><Icon name="plus" /></button
 							>
 						</header>
 
-						<!-- Capped on a phone, where the panel sits above the list rather than
-			     beside it: a house with twenty drawers would otherwise push the
-			     things themselves off the bottom of the screen. -->
-						<ul class="max-h-64 overflow-y-auto py-1 lg:max-h-none lg:overflow-visible">
-							{@render locationRow(null, t('inventory.everything'), allowedItems.length, 0)}
-							{#each data.locationTree as root (root.id)}
-								{@render branch(root, 0)}
-							{/each}
-							{#if unfiledCount > 0}
-								{@render locationRow(0, t('app.notFiledAnywhere'), unfiledCount, 0)}
-							{/if}
-						</ul>
+						<div id="inventory-places" class={treeOpen ? '' : 'max-lg:hidden'}>
+							<ul class="py-1">
+								{@render locationRow(null, t('inventory.everything'), allowedItems.length)}
+								{#each data.locationTree as root (root.id)}
+									{@render branch(root, 0)}
+								{/each}
+								{#if unfiledCount > 0}
+									{@render locationRow(0, t('app.notFiledAnywhere'), unfiledCount)}
+								{/if}
+							</ul>
 
-						<p class="border-t border-gray-200 px-4 py-2 text-xs text-gray-500">
-							{t('inventory.dragAThingOntoA')}
-						</p>
+							<p class="border-t border-gray-200 px-4 py-2 text-xs text-gray-500">
+								{t('inventory.dragAThingOntoA')}
+							</p>
+						</div>
 					</section>
 				{/snippet}
 
 				{#snippet right()}
-					<div class="min-w-0 space-y-4 p-4">
+					<div class="min-w-0 space-y-4 py-4 sm:px-4">
 						{#if replenishItems.length > 0}
 							<!-- No heading of its own: the tab above says which list this is,
-						     and saying it twice is the room repeating itself. -->
+							     and saying it twice is the room repeating itself. -->
 							<div data-tour="inventory-list">
-								<!--
-				One category per card, flowing into columns.
-
-				As one tall list this was a metre of scrolling with a name at the left
-				edge and its buttons a screen-width away at the right. Columns rather
-				than a grid because the categories are of wildly different lengths and
-				a grid would leave a row as tall as its longest cell.
-			-->
 								{#each replenishByPlace as place (place.id)}
 									{#if showPlaces}
 										<!--
-									The address, root down, the same string the panel shows —
-									and the same fold. Pressing it puts the place away with
-									everything under it, which is what the panel's chevron does
-									to the tree; one state, so the two halves cannot disagree
-									about what is open. "Not filed anywhere" is not a place and
-									has nothing to fold.
-								-->
-										<h3 class="mt-4 mb-2 flex items-center gap-2 text-sm text-gray-700 first:mt-0">
+											The address, root down, the same string the panel shows —
+											and the same fold. Pressing it puts the place away with
+											everything under it, which is what the panel's chevron does
+											to the tree; one state, so the two halves cannot disagree
+											about what is open. "Not filed anywhere" is not a place and
+											has nothing to fold.
+										-->
+										<h3
+											class="mt-4 mb-2 flex items-center gap-2 text-sm text-gray-700 first:mt-0 max-sm:px-4"
+										>
 											{#if place.id === 0}
-												<Icon name="shopping" class="size-4 shrink-0 text-gray-400" />
+												<Icon name="shopping" class="size-4 shrink-0 text-gray-500" />
 												<span class="font-medium">{place.label ?? t('app.notFiledAnywhere')}</span>
 											{:else}
 												<button
 													type="button"
-													class="flex items-center gap-2 text-left transition hover:text-gray-900"
+													class="flex min-h-8 items-center gap-2 text-left transition hover:text-gray-900"
 													aria-expanded={!place.folded}
 													title={place.folded
 														? t('inventory.showWhatIsIn', {
@@ -1353,7 +1528,7 @@
 												>
 													<Icon
 														name="chevron-down"
-														class="size-4 shrink-0 text-gray-400 transition-transform {place.folded
+														class="size-4 shrink-0 text-gray-500 transition-transform {place.folded
 															? '-rotate-90'
 															: ''}"
 													/>
@@ -1366,24 +1541,41 @@
 											{/if}
 										</h3>
 									{/if}
-									<!-- A grid rather than newspaper columns: each place is its own
-						     block now, so a place with one category was a quarter-width
-						     strip beside three quarters of nothing. -->
-									<div class="grid gap-4 md:grid-cols-2 2xl:grid-cols-3">
+									<!--
+										Cards flow down columns rather than across a grid: a grid row is
+										as tall as its tallest card, which left a short category holding
+										hundreds of pixels of empty body beside a long one. A place with
+										one category takes the whole width, rather than half of it beside
+										nothing, and the columns only appear once there are cards to
+										fill them.
+									-->
+									<div
+										class="item-cards {columnsFor(place.categories) > 1
+											? 'md:columns-2'
+											: ''} {columnsFor(place.categories) > 2 ? '2xl:columns-3' : ''}"
+									>
 										{#each place.categories as category (category.name)}
-											<section class="border border-gray-200 bg-white shadow-card">
-												<h4 class="eyebrow border-b border-gray-200 px-4 py-2 text-gray-500">
-													{category.name}
+											<section
+												class="item-card mb-4 break-inside-avoid border border-gray-300 bg-white max-sm:border-x-0 sm:shadow-card"
+											>
+												<h4 class="border-b border-gray-200 px-4 py-2">
+													{#if category.color}
+														<span class="pill" style={pillStyle(category.color) ?? ''}
+															>{category.name}</span
+														>
+													{:else}
+														<span class="eyebrow text-gray-500">{category.name}</span>
+													{/if}
 												</h4>
 												<div class="divide-y divide-gray-200">
 													{#each category.items as item (item.id)}
 														{@const globalIdx = shownItems.indexOf(item)}
 														<!--
-									Still to buy is the normal state of a shopping list, and a wash of
-									alarm colour behind every row spends the one signal that should
-									mean something is wrong. The unticked box already says it. Only
-									what you have — blue — and what you put away — dimmed — are marked.
-								-->
+															Only what you put away is marked, dimmed: what is at
+															its target already says so in its count, and a wash
+															behind the row was a third highlight next to the cursor
+															and the hover.
+														-->
 														<div
 															use:keepInView={globalIdx === selectedIndex}
 															draggable="true"
@@ -1398,24 +1590,14 @@
 																stopFollowing();
 															}}
 															class="row-card cursor-grab {item.snoozed
-																? 'bg-gray-50 opacity-50'
-																: item.bought
-																	? 'bg-blue-50'
-																	: ''} {globalIdx === selectedIndex ? 'kb-cursor' : ''}"
+																? 'opacity-50'
+																: ''} {globalIdx === selectedIndex ? 'kb-cursor' : ''}"
 														>
 															<!--
-										The count down the left edge, where the thumb already is
-										and where the tick used to be. Stacked rather than in a
-										line: three controls across the front of a row is forty
-										pixels of width on a phone that the name then does not
-										have, and a name that has run out of width breaks one
-										letter per line.
-									-->
-															<!--
-															The row is a component, so a thing filed under a notebook is the
-															same thing this room shows — its count, its price, its own fields
-															and the recipes that use it. See `ItemRow`.
-														-->
+																The row is a component, so a thing filed under a notebook is the
+																same thing this room shows — its count, its price, its own fields
+																and the recipes that use it. See `ItemRow`.
+															-->
 															<ItemRow
 																{item}
 																currency={data.currency}
@@ -1442,8 +1624,8 @@
 
 						{#if filteredItems.length === 0}
 							<!-- Empty because there is nothing, or because the filters hid it:
-						     saying the first when the second is true reads as a list
-						     that lost things. -->
+							     saying the first when the second is true reads as a list
+							     that lost things. -->
 							{#if onThisTab.length === 0}
 								<EmptyState
 									icon="shopping"
@@ -1483,373 +1665,586 @@
 </div>
 
 <!--
-	Which categories hold food.
-
-	The category decides what can be an ingredient, so this is the one screen
-	that makes recipes work — and it is one tick per category, done once, not a
-	label on every tin of tomatoes.
+	A thing's attribute, drawn the way the rows draw it: a soft wash of the
+	colour it was given, so a row of three reads as three facts rather than as
+	three alarms, and the grey chip where it was given none.
 -->
-<!--
-	Everything the things say about themselves, in one place.
+{#snippet attributeChip(text: string, color: string | null | undefined)}
+	<span class="chip {color ? 'pill-soft' : ''} max-w-full" style={color ? `--pill:${color}` : ''}
+		><span class="truncate">{text}</span></span
+	>
+{/snippet}
 
-	An attribute is not a row — it is a name somebody typed into an item — which
-	is the point, and also why this screen has to exist: nothing else can merge
-	"Colour" with "colour", say what values `length` actually takes, or give one
-	of them a colour to read a list by.
+<!--
+	The room's two managing screens, as two tabs of one dialog: the categories
+	its things are filed under, and the attributes they describe themselves
+	with. Both are vocabulary of the whole room, so one verb reaches both.
+
+	Everything saves as it lands and every row manages itself, so there is no
+	Save — the dialog's own × is the one way out.
 -->
 <Modal
-	bind:open={inventoryPanels.attributes}
+	bind:open={organising}
 	error={form?.message}
-	title={t('inventory.attributes')}
-	description={t('inventory.whatYourThingsSayAbout')}
+	title={t('inventory.categoriesAndAttributes')}
 	size="md"
 >
-	{#if data.attributes.length === 0}
-		<EmptyState icon="tag" title={t('inventory.nothingSaysAnythingYet')} compact />
-	{:else}
-		<ul class="space-y-4">
-			{#each data.attributes as attribute (attribute.key)}
-				<li>
-					<div class="flex flex-wrap items-center gap-2">
-						{#if editingAttribute === attribute.key}
-							<form
-								method="post"
-								action="?/renameAttribute"
-								use:enhance={() =>
-									async ({ update, result }) => {
-										await update({ reset: false });
-										if (result.type === 'success') editingAttribute = null;
-									}}
-								class="flex flex-1 items-center gap-2"
-							>
-								<input type="hidden" name="from" value={attribute.key} />
-								<OneLine name="to" value={attribute.key} class="input flex-1" required autofocus />
-								<button class="btn btn-primary btn-sm">{t('ui.save')}</button>
-								<button type="button" class="btn btn-sm" onclick={() => (editingAttribute = null)}
-									>{t('ui.cancel')}</button
-								>
-							</form>
-						{:else}
-							<span
-								class={attribute.color ? 'pill' : 'chip'}
-								style={pillStyle(attribute.color) ?? ''}>{attribute.key}</span
-							>
-							<span class="tabular text-xs text-gray-500">{attribute.count}</span>
+	<TabStrip
+		nested
+		label={t('inventory.categoriesAndAttributes')}
+		tabs={[
+			{
+				label: t('inventory.categories'),
+				icon: 'blocks',
+				count: String(data.inventoryCategories.length)
+			},
+			{ label: t('inventory.attributes'), icon: 'sliders', count: String(data.attributes.length) }
+		]}
+		current={organiseTab === 'categories' ? 0 : 1}
+		onpick={(index) => (organiseTab = index === 0 ? 'categories' : 'attributes')}
+	/>
 
-							<!--
-								A colour, from the browser's own control. It saves as it is
-								let go of rather than behind a button: there is nothing else
-								on this row to save.
-							-->
+	{#if organiseTab === 'categories'}
+		<!--
+			Which categories hold food — the category decides what can be an
+			ingredient, so this is the switch that makes recipes work — and the
+			order and colour the cards are drawn in.
+		-->
+		<p class="mt-3 text-sm text-gray-500">{t('inventory.tickTheOnesThatHold')}</p>
+
+		<div
+			class="mt-3 flex items-center gap-3 border-b border-gray-200 pb-1 text-xs text-gray-500"
+			aria-hidden="true"
+		>
+			<span class="flex-1">{t('ui.name')}</span>
+			<span class="w-10 text-center">{t('inventory.foodColumn')}</span>
+			{#if data.onFamilyPlan}<span class="w-10 text-center">{t('inventory.family2')}</span>{/if}
+			<span class="invisible flex gap-1">
+				{#each ORGANISE_ACTION_SLOTS as slot (slot)}<span class="icon-btn"></span>{/each}
+			</span>
+		</div>
+		<ul class="divide-y divide-gray-200">
+			{#each data.inventoryCategories as category, index (category.id)}
+				<li class="flex min-h-12 items-center gap-3 py-2 text-sm text-gray-900">
+					{#if editingCategory === category.id}
+						<!-- The colour saves as it is let go of; the name with its tick. -->
+						<form method="post" action="?/setCategoryColor" use:enhance class="flex gap-1">
+							<input type="hidden" name="id" value={category.id} />
+							<ColorWell
+								name="color"
+								value={category.color ?? NEUTRAL_WELL}
+								label={t('inventory.aColourForThisCategory')}
+								onchange={(e) => e.currentTarget.form?.requestSubmit()}
+							/>
+							<button
+								name="color"
+								value=""
+								class="icon-btn"
+								disabled={!category.color}
+								title={t('inventory.noColour')}
+								aria-label={t('inventory.noColour')}><Icon name="close" /></button
+							>
+						</form>
+						<form
+							method="post"
+							action="?/renameCategory"
+							use:enhance={() =>
+								async ({ update, result }) => {
+									await update({ reset: false });
+									if (result.type === 'success') editingCategory = null;
+								}}
+							class="flex min-w-0 flex-1 items-center gap-1"
+						>
+							<input type="hidden" name="id" value={category.id} />
+							<OneLine
+								name="name"
+								value={category.name}
+								ariaLabel={t('ui.name')}
+								class="input input-sm min-w-0 flex-1"
+								required
+								autofocus
+							/>
+							<button
+								class="icon-btn"
+								title={t('inventory.saveTheName')}
+								aria-label={t('inventory.saveTheName')}
+							>
+								<Icon name="check" />
+							</button>
+							<button
+								type="button"
+								class="icon-btn"
+								title={t('inventory.keepTheOldName')}
+								aria-label={t('inventory.keepTheOldName')}
+								onclick={() => (editingCategory = null)}
+							>
+								<Icon name="undo" />
+							</button>
+						</form>
+					{:else}
+						<span class="min-w-0 flex-1">
+							{#if category.color}
+								<span class="pill max-w-full" style={pillStyle(category.color) ?? ''}
+									><span class="truncate">{category.name}</span></span
+								>
+							{:else}
+								<span class="break-words">{category.name}</span>
+							{/if}
+						</span>
+						{#if category.mine}
 							<form
 								method="post"
-								action="?/setAttributeColor"
-								use:enhance
-								class="flex items-center gap-1"
+								action="?/setCategoryFood"
+								use:enhance={() =>
+									async ({ update }) => {
+										await update({ reset: false });
+									}}
+								class="flex w-10 justify-center"
 							>
-								<input type="hidden" name="key" value={attribute.key} />
-								<input type="hidden" name="value" value="" />
+								<input type="hidden" name="id" value={category.id} />
+								<input type="hidden" name="isFood" value={category.isFood ? 'false' : 'true'} />
+								<!-- The name is for tests and tools that find the switch by what
+								     it means; the value rides the hidden field beside it. -->
 								<input
-									type="color"
-									name="color"
-									value={attribute.color ?? '#6b7280'}
-									class="h-6 w-8 cursor-pointer border border-gray-300 bg-transparent p-0"
-									title={t('inventory.aColourForThisAttribute')}
+									type="checkbox"
+									class="toggle"
+									name="food"
+									value={category.id}
+									checked={category.isFood}
+									aria-label={t('inventory.holdsFood', { name: category.name })}
 									onchange={(e) => e.currentTarget.form?.requestSubmit()}
 								/>
 							</form>
-
-							<div class="ml-auto flex items-center gap-1">
-								<button
-									class="icon-btn"
-									title={t('inventory.renameThisAttribute')}
-									aria-label={t('inventory.renameThisAttribute')}
-									onclick={() => (editingAttribute = attribute.key)}><Icon name="edit" /></button
+							{#if data.onFamilyPlan}
+								<form
+									method="post"
+									action="?/setCategoryShared"
+									use:enhance={() =>
+										async ({ update }) => {
+											await update({ reset: false });
+										}}
+									class="flex w-10 justify-center"
 								>
-								{#if confirmRemoveAttribute === attribute.key}
-									<form method="post" action="?/removeAttribute" use:enhance>
-										<input type="hidden" name="key" value={attribute.key} />
-										<button class="btn btn-danger btn-sm" use:armed>{t('inventory.confirm')}</button
-										>
-									</form>
-								{:else}
-									<button
-										class="icon-btn icon-btn-danger"
-										title={t('inventory.takeThisAttributeOffEverything')}
-										aria-label={t('inventory.takeThisAttributeOffEverything')}
-										onclick={() => (confirmRemoveAttribute = attribute.key)}
-										><Icon name="trash" /></button
-									>
-								{/if}
-							</div>
-						{/if}
-					</div>
-
-					<!-- What it is actually set to, which is the half a list of names
-					     cannot answer. -->
-					<ul class="mt-2 ml-1 space-y-1 border-l border-gray-200 pl-3">
-						{#each attribute.values as one (one.value)}
-							<li class="flex flex-wrap items-center gap-2 text-sm">
-								{#if editingValue === `${attribute.key}\u0000${one.value}`}
+									<input type="hidden" name="id" value={category.id} />
+									<input
+										type="hidden"
+										name="shared"
+										value={category.sharedWithFamily ? 'false' : 'true'}
+									/>
+									<input
+										type="checkbox"
+										class="toggle"
+										checked={category.sharedWithFamily}
+										title={t('inventory.everybodyOnYourFamilyPlan')}
+										aria-label={t('inventory.sharedWithFamily', { name: category.name })}
+										onchange={(e) => e.currentTarget.form?.requestSubmit()}
+									/>
+								</form>
+							{/if}
+							<!-- The buttons and the question that replaces them share one
+							     cell, so asking moves nothing beside it. -->
+							<div class="grid shrink-0 justify-items-end">
+								{#if confirmDeleteCategory === category.id}
 									<form
 										method="post"
-										action="?/renameAttributeValue"
+										action="?/deleteCategory"
 										use:enhance={() =>
-											async ({ update, result }) => {
+											async ({ update }) => {
+												confirmDeleteCategory = null;
 												await update({ reset: false });
-												if (result.type === 'success') editingValue = null;
 											}}
-										class="flex flex-1 items-center gap-2"
+										class="flex items-center justify-end gap-1 [grid-area:1/1]"
 									>
-										<input type="hidden" name="key" value={attribute.key} />
-										<input type="hidden" name="from" value={one.value} />
-										<OneLine name="to" value={one.value} class="input flex-1" autofocus />
-										<button class="btn btn-primary btn-sm">{t('ui.save')}</button>
-										<button type="button" class="btn btn-sm" onclick={() => (editingValue = null)}
-											>{t('ui.cancel')}</button
+										<input type="hidden" name="id" value={category.id} />
+										<button
+											type="button"
+											class="btn btn-sm"
+											onclick={() => (confirmDeleteCategory = null)}
 										>
+											{t('inventory.keep')}
+										</button>
+										<!-- Its items stay, unfiled — the shelf label goes, not the shelf. -->
+										<button class="btn btn-danger btn-sm" use:armed>{t('ui.delete')}</button>
 									</form>
-								{:else}
-									<span class={one.color ? 'pill' : 'chip'} style={pillStyle(one.color) ?? ''}
-										>{one.value || t('inventory.noValue')}</span
-									>
-									<span class="tabular text-xs text-gray-500">{one.count}</span>
-									<form
-										method="post"
-										action="?/setAttributeColor"
-										use:enhance
-										class="flex items-center gap-1"
-									>
-										<input type="hidden" name="key" value={attribute.key} />
-										<input type="hidden" name="value" value={one.value} />
-										<input
-											type="color"
-											name="color"
-											value={one.color ?? attribute.color ?? '#6b7280'}
-											class="h-5 w-7 cursor-pointer border border-gray-300 bg-transparent p-0"
-											title={t('inventory.aColourForThisValue')}
-											onchange={(e) => e.currentTarget.form?.requestSubmit()}
-										/>
-									</form>
-									<button
-										class="icon-btn ml-auto"
-										title={t('inventory.renameThisValue')}
-										aria-label={t('inventory.renameThisValue')}
-										onclick={() => (editingValue = `${attribute.key}\u0000${one.value}`)}
-										><Icon name="edit" /></button
-									>
 								{/if}
-							</li>
-						{/each}
-					</ul>
+								<div
+									class="flex items-center justify-end gap-1 [grid-area:1/1] {confirmDeleteCategory ===
+									category.id
+										? 'invisible'
+										: ''}"
+									inert={confirmDeleteCategory === category.id}
+								>
+									{#each [-1, 1] as const as delta (delta)}
+										<form method="post" action="?/moveCategory" use:enhance>
+											<input type="hidden" name="id" value={category.id} />
+											<input type="hidden" name="delta" value={delta} />
+											<button
+												class="icon-btn"
+												disabled={delta < 0
+													? index === 0
+													: index === data.inventoryCategories.length - 1}
+												title={delta < 0 ? t('inventory.moveUp') : t('inventory.moveDown')}
+												aria-label={delta < 0
+													? t('inventory.moveUpNamed', { name: category.name })
+													: t('inventory.moveDownNamed', { name: category.name })}
+											>
+												<Icon name={delta < 0 ? 'chevron-up' : 'chevron-down'} />
+											</button>
+										</form>
+									{/each}
+									<button
+										type="button"
+										class="icon-btn"
+										title={t('ui.edit')}
+										aria-label={t('inventory.rename', { name: category.name })}
+										onclick={() => (editingCategory = category.id)}
+									>
+										<Icon name="edit" />
+									</button>
+									<button
+										type="button"
+										class="icon-btn icon-btn-danger"
+										title={t('ui.delete')}
+										aria-label={t('inventory.delete', { name: category.name })}
+										onclick={() => (confirmDeleteCategory = category.id)}
+									>
+										<Icon name="trash" />
+									</button>
+								</div>
+							</div>
+						{:else}
+							<!-- A shelf shared into this list: fill it, but its switches
+							     belong to whoever owns it. -->
+							<span class="eyebrow shrink-0 text-gray-500">{t('inventory.family')}</span>
+						{/if}
+					{/if}
 				</li>
 			{/each}
 		</ul>
-	{/if}
-</Modal>
 
-<Modal
-	bind:open={inventoryPanels.categories}
-	error={form?.message}
-	title={t('inventory.categories')}
-	description={t('inventory.tickTheOnesThatHold')}
-	size="sm"
->
-	<!-- Every tick saves as it lands and every row manages itself — there is
-	     nothing here a Save button would add, so Close only closes. -->
-	<ul class="space-y-1">
-		{#each data.inventoryCategories as category (category.id)}
-			<li class="flex items-center gap-2 text-sm text-gray-900">
-				{#if editingCategory === category.id}
-					<form
-						method="post"
-						action="?/renameCategory"
-						use:enhance={() =>
-							async ({ update, result }) => {
-								await update({ reset: false });
-								if (result.type === 'success') editingCategory = null;
-							}}
-						class="flex flex-1 items-center gap-2"
-					>
-						<input type="hidden" name="id" value={category.id} />
-						<OneLine name="name" value={category.name} class="input flex-1" required autofocus />
-						<button
-							class="icon-btn"
-							title={t('inventory.saveTheName')}
-							aria-label={t('inventory.saveTheName')}
-						>
-							<Icon name="check" size={14} />
-						</button>
-						<button
-							type="button"
-							class="icon-btn"
-							title={t('inventory.keepTheOldName')}
-							aria-label={t('inventory.keepTheOldName')}
-							onclick={() => (editingCategory = null)}
-						>
-							<Icon name="close" size={14} />
-						</button>
-					</form>
-				{:else if !category.mine}
-					<!-- A shelf shared into this list: fill it, tick it, but its
-					     switches belong to whoever owns it. The chip sits where the
-					     buttons sit on your own rows, so the columns line up. -->
-					<span class="flex-1">{category.name}</span>
-					<span class="eyebrow shrink-0 text-gray-500">{t('inventory.family')}</span>
-				{:else}
-					<form
-						method="post"
-						action="?/setCategoryFood"
-						use:enhance={() =>
-							async ({ update }) => {
-								await update({ reset: false });
-							}}
-						class="contents"
-					>
-						<input type="hidden" name="id" value={category.id} />
-						<input type="hidden" name="isFood" value={category.isFood ? 'false' : 'true'} />
-						<label class="flex flex-1 items-center gap-2">
-							<!-- The name is for tests and tools that find the tick by what
-							     it means; the value rides the hidden field beside it. -->
-							<input
-								type="checkbox"
-								name="food"
-								value={category.id}
-								checked={category.isFood}
-								onchange={(e) => e.currentTarget.form?.requestSubmit()}
-							/>
-							{category.name}
-						</label>
-					</form>
-					{#if data.onFamilyPlan}
-						<form
-							method="post"
-							action="?/setCategoryShared"
-							use:enhance={() =>
-								async ({ update }) => {
-									await update({ reset: false });
-								}}
-							class="contents"
-						>
-							<input type="hidden" name="id" value={category.id} />
-							<input
-								type="hidden"
-								name="shared"
-								value={category.sharedWithFamily ? 'false' : 'true'}
-							/>
-							<label
-								class="flex shrink-0 items-center gap-1 text-xs text-gray-500"
-								title={t('inventory.everybodyOnYourFamilyPlan')}
-							>
-								<input
-									type="checkbox"
-									checked={category.sharedWithFamily}
-									onchange={(e) => e.currentTarget.form?.requestSubmit()}
-								/>
-								{t('inventory.family2')}
-							</label>
-						</form>
-					{/if}
-					{#if confirmDeleteCategory === category.id}
-						<form
-							method="post"
-							action="?/deleteCategory"
-							use:enhance={() =>
-								async ({ update }) => {
-									confirmDeleteCategory = null;
-									await update({ reset: false });
-								}}
-							class="flex shrink-0 items-center gap-1"
-						>
-							<input type="hidden" name="id" value={category.id} />
-							<button
-								type="button"
-								class="btn btn-sm"
-								onclick={() => (confirmDeleteCategory = null)}
-							>
-								{t('inventory.keep')}
-							</button>
-							<!-- Its items stay, unfiled — the shelf label goes, not the shelf. -->
-							<button class="btn btn-danger btn-sm" use:armed>{t('ui.delete')}</button>
-						</form>
-					{:else}
-						<button
-							type="button"
-							class="icon-btn shrink-0"
-							title={t('ui.rename')}
-							aria-label={t('inventory.rename', { name: category.name })}
-							onclick={() => (editingCategory = category.id)}
-						>
-							<Icon name="edit" />
-						</button>
-						<button
-							type="button"
-							class="icon-btn icon-btn-danger shrink-0"
-							title={t('ui.delete')}
-							aria-label={t('inventory.delete', { name: category.name })}
-							onclick={() => (confirmDeleteCategory = category.id)}
-						>
-							<Icon name="trash" />
-						</button>
-					{/if}
-				{/if}
-			</li>
-		{/each}
-	</ul>
-
-	<!-- Its own form and its own button, behind a disclosure: making a category
-	     and saying which categories hold food are two acts, and one Save cannot
-	     mean both. -->
-	<div class="mt-4 border-t border-gray-200 pt-4">
-		{#if !addingCategory}
-			<button onclick={() => (addingCategory = true)} class="btn btn-sm">
-				<Icon name="plus" />
-				{t('inventory.newCategory')}
-			</button>
-		{/if}
-	</div>
-
-	{#if addingCategory}
-		<form
-			method="post"
-			action="?/createCategory"
-			use:enhance={() =>
-				async ({ update, result }) => {
-					await update({ reset: result.type === 'success' });
-					if (result.type === 'success') addingCategory = false;
-				}}
-			class="mt-2"
-		>
-			<label class="block">
-				<span class="eyebrow text-gray-600">{t('inventory.newCategory')}</span>
-				<OneLine name="label" placeholder={t('inventory.frozen')} class="input mt-1" required />
-			</label>
-			<div class="mt-2 flex flex-wrap items-center justify-between gap-2">
-				<label class="flex items-center gap-2 text-sm text-gray-600">
-					<input type="checkbox" name="isFood" value="true" />
-					{t('inventory.itHoldsFood')}
-				</label>
-				<div class="flex items-center gap-2">
+		<!-- Its own form and its own button: making a category and saying which
+		     categories hold food are two acts, and one Save cannot mean both. -->
+		<div class="mt-3 border-t border-gray-200 pt-3">
+			{#if addingCategory}
+				<form
+					method="post"
+					action="?/createCategory"
+					use:enhance={() =>
+						async ({ update, result }) => {
+							await update({ reset: result.type === 'success' });
+							if (result.type === 'success') addingCategory = false;
+						}}
+					class="flex flex-wrap items-center gap-2"
+				>
+					<OneLine
+						name="label"
+						placeholder={t('inventory.frozen')}
+						ariaLabel={t('inventory.newCategory')}
+						class="input input-sm min-w-40 flex-1"
+						required
+						autofocus
+					/>
+					<label class="flex items-center gap-2 text-sm text-gray-600">
+						<input type="checkbox" class="toggle" name="isFood" value="true" />
+						{t('inventory.itHoldsFood')}
+					</label>
 					<button type="button" class="btn btn-sm" onclick={() => (addingCategory = false)}>
 						{t('ui.cancel')}
 					</button>
-					<button
-						class="btn btn-primary btn-sm"
-						title={t('ui.add')}
-						aria-label={t('inventory.addTheCategory')}
-					>
-						<Icon name="plus" />
-					</button>
-				</div>
-			</div>
-		</form>
-	{/if}
+					<button class="btn btn-primary btn-sm">{t('inventory.addTheCategory')}</button>
+				</form>
+			{:else}
+				<button onclick={() => (addingCategory = true)} class="btn btn-sm">
+					<Icon name="plus" />
+					{t('inventory.newCategory')}
+				</button>
+			{/if}
+		</div>
+	{:else}
+		<!--
+			Everything the things say about themselves, in one place.
 
-	{#snippet footer()}
-		<button type="button" class="btn" onclick={() => (inventoryPanels.categories = false)}
-			>{t('ui.close')}</button
-		>
-	{/snippet}
+			An attribute is not a row — it is a name somebody typed into an item —
+			which is the point, and also why this screen has to exist: nothing else
+			can merge "Colour" with "colour", say what values `length` actually
+			takes, or give one of them a colour to read a list by.
+		-->
+		<p class="mt-3 text-sm text-gray-500">{t('inventory.whatYourThingsSayAbout')}</p>
+		{#if data.attributes.length === 0}
+			<EmptyState icon="tag" title={t('inventory.nothingSaysAnythingYet')} compact />
+		{:else}
+			<ul class="mt-3 divide-y divide-gray-200 border-t border-gray-200">
+				{#each data.attributes as attribute (attribute.key)}
+					<li class="py-2">
+						{@render vocabRow({
+							key: attribute.key,
+							value: null,
+							text: attribute.key,
+							color: attribute.color,
+							count: attribute.count
+						})}
+						<!-- What it is actually set to, which is the half a list of names
+						     cannot answer. -->
+						<ul class="mt-1 ml-3 border-l border-gray-200 pl-3">
+							{#each attribute.values as one (one.value)}
+								<li>
+									{@render vocabRow({
+										key: attribute.key,
+										value: one.value,
+										text: one.value || t('inventory.noValue'),
+										color: one.color ?? attribute.color,
+										count: one.count
+									})}
+								</li>
+							{/each}
+						</ul>
+					</li>
+				{/each}
+			</ul>
+		{/if}
+	{/if}
+</Modal>
+
+<!--
+	One attribute, or one of its values: `chip ——— count · edit · delete`, the
+	same columns at both levels so the buttons stand in one line down the list.
+	Editing it is its name and its colour in place.
+-->
+{#snippet vocabRow(row: {
+	key: string;
+	value: string | null;
+	text: string;
+	color: string | null;
+	count: number;
+})}
+	{@const id = row.value === null ? row.key : `${row.key}\u0000${row.value}`}
+	<div class="relative flex min-h-10 items-center gap-2 text-sm">
+		{#if editingVocab === id}
+			<form method="post" action="?/setAttributeColor" use:enhance class="flex gap-1">
+				<input type="hidden" name="key" value={row.key} />
+				<input type="hidden" name="value" value={row.value ?? ''} />
+				<ColorWell
+					name="color"
+					value={row.color ?? NEUTRAL_WELL}
+					label={row.value === null
+						? t('inventory.aColourForThisAttribute')
+						: t('inventory.aColourForThisValue')}
+					onchange={(e) => e.currentTarget.form?.requestSubmit()}
+				/>
+				<button
+					name="color"
+					value=""
+					class="icon-btn"
+					disabled={!row.color}
+					title={t('inventory.noColour')}
+					aria-label={t('inventory.noColour')}><Icon name="close" /></button
+				>
+			</form>
+			<form
+				method="post"
+				action={row.value === null ? '?/renameAttribute' : '?/renameAttributeValue'}
+				use:enhance={() =>
+					async ({ update, result }) => {
+						await update({ reset: false });
+						if (result.type === 'success') editingVocab = null;
+					}}
+				class="flex min-w-0 flex-1 items-center gap-1"
+			>
+				{#if row.value === null}
+					<input type="hidden" name="from" value={row.key} />
+				{:else}
+					<input type="hidden" name="key" value={row.key} />
+					<input type="hidden" name="from" value={row.value} />
+				{/if}
+				<OneLine
+					name="to"
+					value={row.value ?? row.key}
+					ariaLabel={t('ui.name')}
+					class="input input-sm min-w-0 flex-1"
+					required={row.value === null}
+					autofocus
+				/>
+				<button class="icon-btn" title={t('ui.save')} aria-label={t('ui.save')}>
+					<Icon name="check" />
+				</button>
+				<button
+					type="button"
+					class="icon-btn"
+					title={t('ui.cancel')}
+					aria-label={t('ui.cancel')}
+					onclick={() => (editingVocab = null)}><Icon name="undo" /></button
+				>
+			</form>
+		{:else}
+			<span class="min-w-0 flex-1">{@render attributeChip(row.text, row.color)}</span>
+			<span class="tabular w-8 shrink-0 text-right text-xs text-gray-500">{row.count}</span>
+			<!-- The question lies over the count and the buttons rather than
+			     taking room of its own, so asking moves nothing on the row. -->
+			{#if confirmRemoveVocab === id}
+				<form
+					method="post"
+					action={row.value === null ? '?/removeAttribute' : '?/removeAttributeValue'}
+					use:enhance={() =>
+						async ({ update }) => {
+							confirmRemoveVocab = null;
+							await update({ reset: false });
+						}}
+					class="absolute inset-y-0 right-0 flex items-center gap-1 bg-white pl-2"
+				>
+					<input type="hidden" name="key" value={row.key} />
+					{#if row.value !== null}<input type="hidden" name="value" value={row.value} />{/if}
+					<button type="button" class="btn btn-sm" onclick={() => (confirmRemoveVocab = null)}
+						>{t('inventory.keep')}</button
+					>
+					<button class="btn btn-danger btn-sm" use:armed>{t('ui.remove')}</button>
+				</form>
+			{/if}
+			<div class="flex shrink-0 items-center gap-1" inert={confirmRemoveVocab === id}>
+				<button
+					class="icon-btn"
+					title={row.value === null
+						? t('inventory.renameThisAttribute')
+						: t('inventory.renameThisValue')}
+					aria-label={row.value === null
+						? t('inventory.renameThisAttribute')
+						: t('inventory.renameThisValue')}
+					onclick={() => (editingVocab = id)}><Icon name="edit" /></button
+				>
+				<button
+					class="icon-btn icon-btn-danger"
+					title={row.value === null
+						? t('inventory.takeThisAttributeOffEverything')
+						: t('inventory.takeThisValueOffEverything')}
+					aria-label={row.value === null
+						? t('inventory.takeThisAttributeOffEverything')
+						: t('inventory.takeThisValueOffEverything')}
+					onclick={() => (confirmRemoveVocab = id)}><Icon name="trash" /></button
+				>
+			</div>
+		{/if}
+	</div>
+{/snippet}
+
+<!--
+	The trip, as a list you tick in the shop: what has run low and how much of
+	it, then the someday list under the total rather than in it — what you would
+	buy if the trip went well, not what you came for. One row drawing for both.
+
+	A modal on a desktop and the app's own sheet on a phone, which is what
+	`Modal` already is down there — this is a thing you hold up in a shop, so
+	it takes the whole screen where the screen is small.
+-->
+{#snippet tripRow(row: {
+	id: number;
+	name: string;
+	detail: string | null;
+	needed: number | null;
+	cents: number | null;
+	ticked: boolean;
+	action: string;
+	qty: number | null;
+	enhanced: SubmitFunction;
+})}
+	<li class="list-row">
+		<form method="POST" action={row.action} use:enhance={row.enhanced} class="row-rail">
+			<input type="hidden" name="id" value={row.id} />
+			{#if row.qty !== null}<input type="hidden" name="qty" value={row.qty} />{/if}
+			<button
+				type="submit"
+				aria-pressed={row.ticked}
+				class="-m-1 flex p-1 pointer-coarse:w-11 pointer-coarse:justify-center"
+				title={row.ticked ? t('inventory.putBackOnTheList') : t('tasks.plan.gotIt')}
+				aria-label="{row.ticked
+					? t('inventory.putBackOnTheList')
+					: t('tasks.plan.gotIt')}: {row.name}"
+			>
+				<TickBox done={row.ticked} />
+			</button>
+		</form>
+		<p class="list-row-main text-sm {row.ticked ? 'text-gray-500 line-through' : 'text-gray-900'}">
+			{#if row.needed !== null}<span class="tabular text-gray-500">{row.needed}×</span>{/if}
+			<span class="font-medium">{row.name}</span>
+			{#if row.detail}<span class="ml-1 text-xs text-gray-500">{row.detail}</span>{/if}
+		</p>
+		<!-- "about", because a last known price is not a price. -->
+		<span class="tabular shrink-0 text-right text-sm text-gray-600">
+			{#if row.cents === null}
+				<span class="text-xs text-gray-500">{t('inventory.noPriceYet')}</span>
+			{:else}
+				{formatMoney(row.cents, data.currency)}
+			{/if}
+		</span>
+	</li>
+{/snippet}
+
+<Modal bind:open={shopping} title={t('inventory.shoppingList')} size="md">
+	{#if tripLines.length === 0 && tripWishes.length === 0}
+		<EmptyState
+			icon="shopping"
+			title={t('inventory.nothingHasRunLow')}
+			description={t('inventory.anItemJoinsThisList')}
+			compact
+		/>
+	{:else}
+		{#if tripLines.length > 0}
+			<ul class="-mx-4 -mt-4 divide-y divide-gray-200 border-b border-gray-200 sm:-mx-5">
+				{#each tripLines as line (line.id)}
+					{@const item = items.find((one) => one.id === line.id)}
+					{@const ticked = line.id in basket}
+					{@const was = item?.qty ?? 0}
+					{@render tripRow({
+						id: line.id,
+						name: line.name,
+						detail: line.category,
+						needed: line.needed,
+						cents: line.lineCents,
+						ticked,
+						action: '?/setQty',
+						qty: ticked ? basket[line.id] : Math.max(item?.idealQty ?? 0, was),
+						enhanced: tripTick(
+							line.id,
+							ticked ? basket[line.id] : Math.max(item?.idealQty ?? 0, was),
+							was
+						)
+					})}
+				{/each}
+			</ul>
+
+			<p class="mt-3 flex items-baseline justify-between gap-3 text-sm">
+				<span class="font-semibold text-gray-900">{t('inventory.about')}</span>
+				<span class="tabular text-lg font-bold text-gray-900"
+					>{formatMoney(data.run.totalCents, data.currency)}</span
+				>
+			</p>
+			{#if data.run.unpriced > 0}
+				<p class="text-xs text-gray-500">
+					{t('inventory.noPriceYetSo', {
+						unpriced: data.run.unpriced,
+						have: data.run.unpriced === 1 ? t('inventory.lineHas') : t('inventory.linesHave')
+					})}
+				</p>
+			{/if}
+		{/if}
+
+		{#if tripWishes.length > 0}
+			<h3 class="eyebrow mt-6 mb-2 text-gray-500">{t('inventory.ifTheTripGoesWell')}</h3>
+			<ul class="-mx-4 divide-y divide-gray-200 border-y border-gray-200 sm:-mx-5">
+				{#each tripWishes as want (want.id)}
+					{@render tripRow({
+						id: want.id,
+						name: want.name,
+						detail: want.notes || null,
+						needed: null,
+						cents: want.priceCents,
+						ticked: wishInBasket(want.id),
+						action: '?/toggleBought',
+						qty: null,
+						enhanced: tick('toggleBought')
+					})}
+				{/each}
+			</ul>
+		{/if}
+	{/if}
 </Modal>
 
 <!-- A location, new or being changed. -->
@@ -1955,3 +2350,21 @@
 		</form>
 	{/snippet}
 </Modal>
+
+<style>
+	/*
+	 * On a phone a card runs edge to edge, as the task list's rows do, and a
+	 * corner needs somewhere to be a corner: the playful style's rounding of
+	 * every section is taken back there.
+	 */
+	@media (max-width: 639.98px) {
+		:global(html[data-style='playful']) .item-card {
+			border-radius: 0;
+		}
+	}
+
+	/* The house is one of the surface's panes, never a card of its own. */
+	:global(html[data-style='playful']) .place-panel {
+		border-radius: 0;
+	}
+</style>

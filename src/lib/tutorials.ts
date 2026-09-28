@@ -539,6 +539,11 @@ export const TUTORIALS: Record<string, Tutorial> = {
 				target: '[data-tour="inventory-list"]',
 				title: 'tour.boughtAndBackAgain',
 				body: 'tour.tickingSomethingOffInventoryStarts'
+			},
+			{
+				target: '[data-tour="inventory-shopping"]',
+				title: 'tour.inventoryTheTrip',
+				body: 'tour.inventoryTheTripBody'
 			}
 		]
 	},

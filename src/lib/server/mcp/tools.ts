@@ -224,6 +224,14 @@ import {
 	setSnoozed,
 	setItemCategory
 } from '$lib/services/inventory.js';
+import {
+	listAttributes,
+	removeAttribute,
+	removeAttributeValue,
+	renameAttribute,
+	renameAttributeValue,
+	setAttributeColor
+} from '$lib/services/attributes.js';
 import { getTodayBoard } from '$lib/services/today.js';
 import {
 	archiveTodo,
@@ -1557,6 +1565,19 @@ const habitTick = (ctx: Ctx, args: Record<string, unknown>) => {
 		date,
 		ticked: listOccurrences(ctx).some((o) => o.habitId === habitId && o.date === date)
 	};
+};
+/**
+ * An attribute as it stands, and which things say what — so a rename or a
+ * removal can be put back from the answer alone.
+ */
+const attributeSubject = (ctx: Ctx, args: Record<string, unknown>) => {
+	const key = String(args.key ?? '');
+	const attribute = listAttributes(ctx).find((one) => one.key === key) ?? null;
+	const carriers = listItems(ctx)
+		.map((item) => ({ id: item.id, attributes: parseAttributes(item.attributes) }))
+		.filter((item) => key in item.attributes)
+		.map((item) => ({ id: item.id, value: item.attributes[key] }));
+	return { attribute, items: carriers };
 };
 const winsOfDay = (ctx: Ctx, args: Record<string, unknown>) => {
 	const date = args.date ? day(args.date, 'date') : localDateOf(ctx.now, ctx.tz);
@@ -5165,6 +5186,68 @@ export const TOOLS: Tool[] = [
 		),
 		run: (ctx, args) => {
 			setItemAttributes(ctx, Number(args.id), (args.attributes ?? {}) as Record<string, string>);
+			return { ok: true };
+		}
+	},
+	{
+		name: 'inventory_attributes',
+		title: 'What the things say about themselves',
+		description:
+			'Every attribute the account\u2019s things carry — "length", "brand" — with how many things carry it, the values it takes, and any colour given to either. Read it before renaming or removing one.',
+		scope: 'inventory:read',
+		writes: false,
+		input: object({}),
+		run: (ctx) => listAttributes(ctx)
+	},
+	{
+		name: 'change_inventory_attribute',
+		title: 'Rename or recolour an attribute',
+		description:
+			'Rename an attribute on every thing that carries it — or merge it into another by renaming onto that name — or, with `value`, rename or recolour just that value of it. `color` is `#rrggbb`; an empty string takes the colour off. Its way back is the opposite rename.',
+		scope: 'inventory:write',
+		writes: true,
+		subject: attributeSubject,
+		input: object(
+			{
+				key: text('The attribute, as `inventory_attributes` spells it.'),
+				value: text(
+					'One of its values, to act on that value alone. Left out, the attribute itself.'
+				),
+				rename: text('The new name for the attribute, or for the value when `value` is given.'),
+				color: text('A colour, `#rrggbb`, or an empty string for none.')
+			},
+			['key']
+		),
+		run: (ctx, args) => {
+			const value = typeof args.value === 'string' ? args.value : null;
+			if (args.color !== undefined && args.color !== null)
+				setAttributeColor(ctx, args.key, value ?? '', args.color);
+			if (args.rename !== undefined && args.rename !== null) {
+				if (value === null) renameAttribute(ctx, args.key, args.rename);
+				else renameAttributeValue(ctx, args.key, value, args.rename);
+			}
+			return { ok: true };
+		}
+	},
+	{
+		name: 'remove_inventory_attribute',
+		title: 'Take an attribute off everything',
+		description:
+			'Take an attribute off every thing that carries it, or with `value`, only off the things that say that value. The things themselves stay. `set_item_attributes` puts one back on a thing.',
+		scope: 'inventory:write',
+		writes: true,
+		destroys: true,
+		subject: attributeSubject,
+		input: object(
+			{
+				key: text('The attribute, as `inventory_attributes` spells it.'),
+				value: text('One of its values, to take off only the things that say it.')
+			},
+			['key']
+		),
+		run: (ctx, args) => {
+			if (typeof args.value === 'string') removeAttributeValue(ctx, args.key, args.value);
+			else removeAttribute(ctx, args.key);
 			return { ok: true };
 		}
 	},

@@ -20,6 +20,7 @@ releases mattered.
 
 ## 0.184.1 — 2026-09-28
 
+- Inventory: tick the shopping list off in the shop (offline too), sort each list, reorder and colour categories, delete a single attribute value, and on a phone the list of places folds away so your things come first.
 - While a page loads, the octagon turns round a still puffin and always finishes a whole turn; on a phone it no longer stops dead mid-turn, and every load now turns it at least once.
 - Weekly notes can be written, edited and deleted from Notebooks → Weekly notes; that list and Tags can be sorted, and a tag's count sits in a column of its own.
 - Activities you no longer do are archived rather than disabled, and one nothing has used can be deleted from the archived list.

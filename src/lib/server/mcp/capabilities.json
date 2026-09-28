@@ -151,18 +151,23 @@
 			"name": "Inventory",
 			"mcp": {
 				"create": ["add_inventory_item", "add_inventory_category"],
-				"read": ["shopping_list", "inventory_categories"],
+				"read": ["shopping_list", "inventory_categories", "inventory_attributes"],
 				"change": [
 					"file_inventory_item",
 					"record_price",
 					"set_item_attributes",
+					"change_inventory_attribute",
 					"change_inventory_category",
 					"move_inventory_category",
 					"change_inventory_item"
 				],
 				"archive": ["archive_item"],
 				"unarchive": ["unarchive_item"],
-				"delete": ["remove_inventory_item", "remove_inventory_category"]
+				"delete": [
+					"remove_inventory_item",
+					"remove_inventory_category",
+					"remove_inventory_attribute"
+				]
 			},
 			"app": {
 				"create": ["src/lib/services/item-actions.ts#create"],

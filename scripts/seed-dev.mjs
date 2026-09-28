@@ -2233,6 +2233,16 @@ for (const [name, isFood] of [
 		db.prepare('update inventory_categories set is_food = ? where id = ?').run(isFood, found.id);
 }
 
+// One category wearing a colour, so its cards show what a coloured one looks
+// like; the others stay neutral. Only where nobody has chosen one yet.
+{
+	const fresh = shoppingCategoryNamed('fresh');
+	if (fresh)
+		db.prepare(
+			"update inventory_categories set color = '#3b6fb6' where id = ? and color is null"
+		).run(fresh.id);
+}
+
 const priced = (name, cents) => {
 	const item = one('select id from inventory_items where user_id = ? and name = ?', uid, name);
 	if (item)

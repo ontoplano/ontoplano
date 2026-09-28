@@ -21,7 +21,6 @@
 	import { enhance } from '$lib/enhance';
 	import { armed } from '$lib/actions/armed';
 	import { formatMoney, type Currency } from '$lib/money';
-	import { pillStyle } from '$lib/pill-ink';
 	import type { ItemActionNames } from '$lib/item-action-names';
 	import type { SubmitFunction } from '@sveltejs/kit';
 	import { useT } from '$lib/i18n';
@@ -191,7 +190,7 @@
 					{#each usedIn as recipe, i (recipe.id)}
 						<a
 							href={resolve('/health/recipes/[id]', { id: String(recipe.id) })}
-							class="text-xs text-gray-500 hover:text-gray-900 hover:underline"
+							class="-my-1 py-1 text-xs text-gray-500 hover:text-gray-900 hover:underline pointer-coarse:-my-2 pointer-coarse:py-2"
 						>
 							{recipe.title}{#if i < usedIn.length - 1}<span aria-hidden="true">,</span>{/if}
 						</a>
@@ -211,9 +210,10 @@
 				<span class="flex flex-wrap items-center gap-1">
 					{#each pairs as [key, value] (key)}
 						{@const color = chipColor?.(key, value)}
-						<!-- `.pill` when there is a colour: it computes its own ink, so a
-						     pale tag is readable instead of white on white. -->
-						<span class={color ? 'pill' : 'chip'} style={pillStyle(color) ?? ''}
+						<!-- A soft wash of the colour it was given rather than the full
+						     strength: three facts on one row read as facts, not as a
+						     rainbow of alarms. The ink is computed from the wash. -->
+						<span class="chip {color ? 'pill-soft' : ''}" style={color ? `--pill:${color}` : ''}
 							>{value ? `${key}: ${value}` : key}</span
 						>
 					{/each}
@@ -275,7 +275,7 @@
 
 	<p class="leading-snug">
 		<span
-			class="text-sm break-words {item.type === 'someday' && item.bought
+			class="text-sm font-medium break-words {item.type === 'someday' && item.bought
 				? 'text-gray-500 line-through'
 				: 'text-gray-900'}">{item.name}</span
 		>

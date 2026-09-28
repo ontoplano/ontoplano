@@ -681,6 +681,9 @@ export type MessageKey =
 	| 'finance.bills.nothingInTheLastFew'
 	| 'finance.bills.nothingRecordedYet'
 	| 'finance.bills.onPlan'
+	| 'finance.bills.orderAmount'
+	| 'finance.bills.orderDue'
+	| 'finance.bills.orderName'
 	| 'finance.bills.paid'
 	| 'finance.bills.paid2'
 	| 'finance.bills.paidCount'
@@ -793,6 +796,7 @@ export type MessageKey =
 	| 'finance.ledgers.uncategorizedCount'
 	| 'finance.ledgers.usualExport'
 	| 'finance.ledgers.whatItIs'
+	| 'finance.monthBars.newest'
 	| 'finance.monthlyBars.caption'
 	| 'finance.rules.aCategory'
 	| 'finance.rules.aLineBelongsToThe'
@@ -809,8 +813,6 @@ export type MessageKey =
 	| 'finance.rules.ecmascriptMatchedCaseInsensitivelyAndUna'
 	| 'finance.rules.edit'
 	| 'finance.rules.editRule'
-	| 'finance.rules.everyLedger'
-	| 'finance.rules.everyOutgoingLineHasA'
 	| 'finance.rules.everyTagThatMatchesApplies'
 	| 'finance.rules.findsItAnywhereInThe'
 	| 'finance.rules.isADigitAndA'
@@ -818,7 +820,6 @@ export type MessageKey =
 	| 'finance.rules.javascriptRegularExpressions'
 	| 'finance.rules.keepIt'
 	| 'finance.rules.kind'
-	| 'finance.rules.lastMonths'
 	| 'finance.rules.mercado'
 	| 'finance.rules.moveDown'
 	| 'finance.rules.moveUp'
@@ -833,13 +834,13 @@ export type MessageKey =
 	| 'finance.rules.pattern'
 	| 'finance.rules.patternHint'
 	| 'finance.rules.patternsAre'
+	| 'finance.rules.searchRules'
+	| 'finance.rules.showingCount'
 	| 'finance.rules.stopsClaimingTheLineIt'
 	| 'finance.rules.tagExample'
 	| 'finance.rules.tagPatternExample'
 	| 'finance.rules.tags'
 	| 'finance.rules.theFullSyntax'
-	| 'finance.rules.uncategorized'
-	| 'finance.rules.whereItWent'
 	| 'finance.rules.whichLinesThisClaims'
 	| 'finance.stackedMonths.caption'
 	| 'frontDoor.createAnAccount'
@@ -1027,6 +1028,11 @@ export type MessageKey =
 	| 'health.habits.nothingTrackedYet'
 	| 'health.habits.onWhichDays'
 	| 'health.habits.oneFewerToday'
+	| 'health.habits.orderCreated'
+	| 'health.habits.orderHabitsBy'
+	| 'health.habits.orderName'
+	| 'health.habits.orderStreak'
+	| 'health.habits.orderTotal'
 	| 'health.habits.search'
 	| 'health.habits.showAllHabits'
 	| 'health.habits.showingCount'
@@ -1109,6 +1115,11 @@ export type MessageKey =
 	| 'health.recipes.nothingInItYet'
 	| 'health.recipes.nothingYouCanMakeRight'
 	| 'health.recipes.onTheRecipePageSelect'
+	| 'health.recipes.orderCooked'
+	| 'health.recipes.orderMinutes'
+	| 'health.recipes.orderMissing'
+	| 'health.recipes.orderRecipesBy'
+	| 'health.recipes.orderTitle'
 	| 'health.recipes.pasteThePageHere'
 	| 'health.recipes.putItOnADay'
 	| 'health.recipes.putItOnThePlan'
@@ -3707,6 +3718,8 @@ export type MessageKey =
 	| 'tour.ingredientsStepsAndACook'
 	| 'tour.integrations'
 	| 'tour.inventoryIsWhatRunsOut'
+	| 'tour.inventoryTheTrip'
+	| 'tour.inventoryTheTripBody'
 	| 'tour.itBecomesABlockOn'
 	| 'tour.itFansOutYourAccount'
 	| 'tour.itOpensTheTourFor'
@@ -4066,14 +4079,14 @@ export interface MessageValuesFor {
 	'finance.ledgers.moveLater': { name: string | number };
 	'finance.ledgers.showingCount': { count: number };
 	'finance.ledgers.uncategorizedCount': { count: number };
+	'finance.monthBars.newest': { shown: string | number; total: string | number };
 	'finance.rules.colourFor': { name: string | number };
 	'finance.rules.delete': { name: string | number };
 	'finance.rules.edit': { name: string | number };
-	'finance.rules.lastMonths': { w: string | number };
 	'finance.rules.moveDown': { name: string | number };
 	'finance.rules.moveUp': { name: string | number };
+	'finance.rules.showingCount': { count: number };
 	'finance.rules.stopsClaimingTheLineIt': { matches: string | number; s: string | number };
-	'finance.rules.uncategorized': { unsorted: string | number };
 	'gallery.albumsCount': { count: number };
 	'gallery.albumsInside': { count: number };
 	'gallery.allOf': { name: string | number };

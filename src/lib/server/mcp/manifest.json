@@ -1265,6 +1265,29 @@
 			}
 		}
 	},
+	"change_inventory_attribute": {
+		"scope": "inventory:write",
+		"writes": true,
+		"destroys": false,
+		"params": {
+			"color": {
+				"type": "string",
+				"required": false
+			},
+			"key": {
+				"type": "string",
+				"required": true
+			},
+			"rename": {
+				"type": "string",
+				"required": false
+			},
+			"value": {
+				"type": "string",
+				"required": false
+			}
+		}
+	},
 	"change_inventory_category": {
 		"scope": "inventory:write",
 		"writes": true,
@@ -2179,6 +2202,12 @@
 			}
 		}
 	},
+	"inventory_attributes": {
+		"scope": "inventory:read",
+		"writes": false,
+		"destroys": false,
+		"params": {}
+	},
 	"inventory_categories": {
 		"scope": "inventory:read",
 		"writes": false,
@@ -2778,6 +2807,21 @@
 			"id": {
 				"type": "integer",
 				"required": true
+			}
+		}
+	},
+	"remove_inventory_attribute": {
+		"scope": "inventory:write",
+		"writes": true,
+		"destroys": true,
+		"params": {
+			"key": {
+				"type": "string",
+				"required": true
+			},
+			"value": {
+				"type": "string",
+				"required": false
 			}
 		}
 	},
