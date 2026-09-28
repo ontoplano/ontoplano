@@ -7,6 +7,7 @@
  * router starts, which is what makes it the right place and the layout the
  * wrong one.
  */
+import type { HandleClientError } from '@sveltejs/kit';
 import { isIsolated, isIsolatedBuild } from '$lib/isolated/mode';
 import { sendOutsideLinksToTheBrowser } from '$lib/outside-links';
 import { backGestureGoesBack } from '$lib/phone-back';
@@ -202,3 +203,21 @@ function optional(what: string, start: () => unknown): void {
 
 optional('opening outside links in the browser', sendOutsideLinksToTheBrowser);
 optional('the back gesture', backGestureGoesBack);
+
+/*
+ * A load cut off because the page is being left is not an error.
+ *
+ * Leaving while a navigation is still fetching — a phone's plan switching
+ * itself to the day, somebody typing an address before it lands — makes the
+ * browser cancel the request, and the fetch rejects with "Failed to fetch".
+ * SvelteKit's default hook logs that as an error about a page nobody is
+ * looking at any more. Anything else is still logged.
+ */
+let leaving = false;
+addEventListener('pagehide', () => (leaving = true));
+addEventListener('pageshow', () => (leaving = false));
+
+export const handleError: HandleClientError = ({ error, message }) => {
+	if (!(leaving && error instanceof TypeError)) console.error(error);
+	return { message };
+};

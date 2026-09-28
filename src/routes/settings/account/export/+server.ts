@@ -17,7 +17,12 @@ export const GET: RequestHandler = async ({ locals, url }) => {
 
 	let data;
 	try {
-		data = exportAccount(locals.user!.id, new Date(), { withoutPictures });
+		// `?once=` names the press, so a request the browser repeats is not
+		// charged twice.
+		data = exportAccount(locals.user!.id, new Date(), {
+			withoutPictures,
+			key: url.searchParams.get('once')
+		});
 	} catch (e) {
 		// Two a day; the message says when the next one unlocks.
 		return toJsonError(e);

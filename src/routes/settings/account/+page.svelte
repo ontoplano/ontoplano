@@ -112,10 +112,16 @@
 		}, EXPORT_LIMIT_MS);
 
 		try {
-			const res = await fetch(
-				resolve('/settings/account/export') + (withPictures ? '' : '?pictures=no'),
-				{ signal: giveUp.signal }
-			);
+			// Names this press, so a request the browser repeats is charged once.
+			// Not `randomUUID`: that needs a secure context, and a self-hosted
+			// instance may be served over plain http.
+			const once = Array.from(crypto.getRandomValues(new Uint8Array(12)), (b) =>
+				b.toString(16).padStart(2, '0')
+			).join('');
+			const query = `once=${once}${withPictures ? '' : '&pictures=no'}`;
+			const res = await fetch(`${resolve('/settings/account/export')}?${query}`, {
+				signal: giveUp.signal
+			});
 
 			if (!res.ok) {
 				/*

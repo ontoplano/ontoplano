@@ -68,6 +68,19 @@ describe('the export', () => {
 		expect(JSON.stringify(account.exportAccount(OWNER, ctx.now))).not.toContain('not yours');
 	});
 
+	test('charges a press once, however many times the browser sends it', () => {
+		// Chromium repeats a GET whose answer never arrived; the page sent one.
+		const at = new Date('2026-08-20T09:00:00Z');
+		const before = account.exportAllowance(STRANGER, at).remaining;
+
+		account.exportAccount(STRANGER, at, { key: 'press-one-aaaa' });
+		account.exportAccount(STRANGER, new Date(at.getTime() + 33), { key: 'press-one-aaaa' });
+		expect(account.exportAllowance(STRANGER, at).remaining).toBe(before - 1);
+
+		account.exportAccount(STRANGER, new Date(at.getTime() + 60_000), { key: 'press-two-bbbb' });
+		expect(account.exportAllowance(STRANGER, at).remaining).toBe(before - 2);
+	});
+
 	test('is rationed per day', () => {
 		const allowed = account.exportsAllowedFor(OWNER, ctx.now);
 		expect(allowed).toBeGreaterThan(0);

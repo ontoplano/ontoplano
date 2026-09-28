@@ -33,6 +33,7 @@ releases mattered.
 - Plus and minus on an inventory count or a goal's progress answer immediately and save once you stop pressing, and the number itself can be typed — ten more is one edit, not ten presses.
 - A zoomed-in picture closes with a tap on the dark around it; only dragging it keeps it open.
 - On a phone, going somewhere right after closing a dialog is no longer cancelled by the dialog's own way back.
+- One press of Download spends one of the day's exports, even when a shaky connection makes the browser send the request twice.
 - Opening the shopping list or recipes right after signing in no longer fails with a network error.
 - An assistant key tied to one notebook can read that notebook's recipes and tick its habits by name again.
 - Assistants can now correct and delete statement lines, change, archive and reorder ledgers, reorder sorting rules, switch activities off or delete unused ones, close notebooks, pause repeating blocks, rename shopping items and workout categories, and reorder tasks on the board.
