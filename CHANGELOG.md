@@ -18,6 +18,10 @@ the shape of the data changing. Bumping the minor per batch is what ran this
 file to 0.161 in a few months, which tells a reader nothing about which
 releases mattered.
 
+## 0.184.1 — 2026-09-28
+
+- An administrator moving an ended plan's date into the future brings the plan back; before, the account stayed on the pay page.
+
 ## 0.184.0 — 2026-09-27
 
 - Every room is laid out the same way: one surface, a filter strip along its top with search, count, filters and order in the same places, rows with their buttons in the same order, one empty-state message, and every control in a strip the same height.

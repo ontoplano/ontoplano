@@ -202,21 +202,51 @@ export function setPlanEnd(actorId: string, subjectId: string, endsAt: string): 
 	const iso = date.toISOString();
 
 	const row = db
-		.select({ id: subscriptions.id, status: subscriptions.status })
+		.select({
+			id: subscriptions.id,
+			plan: subscriptions.plan,
+			status: subscriptions.status,
+			provider: subscriptions.provider,
+			trialEndsAt: subscriptions.trialEndsAt
+		})
 		.from(subscriptions)
 		.where(eq(subscriptions.userId, subjectId))
 		.get();
 	if (!row) throw new NotFoundError({ key: 'errors.admin.thisAccountHasNoPlan' });
 
+	// The nightly reconcile marks a run-out row `none`/`expired`, and a date
+	// alone does not undo that: moved into the future, the row gets its plan
+	// back in the shape it had — a trial, an invitation, or a paid period
+	// that ends on the date.
+	const now = new Date().toISOString();
+	const revived =
+		iso > now && (row.plan === 'none' || row.status === 'expired')
+			? {
+					plan: 'pro' as const,
+					status: row.trialEndsAt
+						? ('trialing' as const)
+						: row.provider === 'invited'
+							? ('active' as const)
+							: ('canceled' as const)
+				}
+			: null;
+	const trialing = (revived?.status ?? row.status) === 'trialing';
+
 	db.update(subscriptions)
 		.set({
+			...revived,
 			currentPeriodEnd: iso,
-			...(row.status === 'trialing' ? { trialEndsAt: iso } : {}),
-			updatedAt: new Date().toISOString()
+			...(trialing ? { trialEndsAt: iso } : {}),
+			updatedAt: now
 		})
 		.where(eq(subscriptions.id, row.id))
 		.run();
 	record(subjectId, 'plan_end_set', { actorId, detail: { endsAt: iso } });
+	if (revived)
+		record(subjectId, 'plan_changed', {
+			actorId,
+			detail: { to: revived.plan, status: revived.status, until: iso }
+		});
 }
 
 /** When the current plan runs out, for the operator's clock. */
