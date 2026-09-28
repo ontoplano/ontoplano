@@ -1,0 +1,1 @@
+ALTER TABLE `habits` ADD `archived_at` text;

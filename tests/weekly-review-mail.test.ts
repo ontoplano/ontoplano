@@ -249,7 +249,7 @@ describe('what it says', () => {
 		// A block is still waiting for an answer, so this is the one with
 		// something to do in it.
 		expect(sent.subject).toBe('Review your week: 1 of 2');
-		expect(sent.text).toContain('1 of the 2 blocks');
+		expect(sent.text).toContain('1 of the 2 task blocks');
 		expect(sent.text).toContain('no answer yet');
 		expect(sent.text).toContain(`/tasks/review?week=${LAST_WEEK}`);
 	});

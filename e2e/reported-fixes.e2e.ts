@@ -16,7 +16,9 @@ test('the three theme words fit inside the menu', async ({ page }) => {
 	await register(page, testEmail('theme-row'));
 	await visit(page, '/');
 
-	await page.locator('header button[aria-label], header button[aria-expanded]').last().click();
+	// By its name: the header gained the help and the bell to its right in the
+	// markup, so "the last labelled button" is no longer the menu.
+	await page.getByRole('button', { name: 'Menu', exact: true }).click();
 	const dark = page.getByRole('button', { name: 'Dark', exact: true });
 	await expect(dark).toBeVisible();
 
@@ -32,15 +34,16 @@ test('the danger zone is closed until it is opened', async ({ page }) => {
 	await register(page, testEmail('danger-fold'));
 	await visit(page, '/settings/account');
 
-	const zone = page.locator('details.danger-zone');
+	const zone = page.locator('#danger-zone');
+	const opener = zone.getByRole('button', { name: 'Danger zone' });
 	await expect(zone).toBeVisible();
-	await expect(zone).not.toHaveAttribute('open', /.*/);
+	await expect(opener).toHaveAttribute('aria-expanded', 'false');
 	// Nothing that ends an account is on screen until somebody asks for it.
 	await expect(page.getByRole('button', { name: /Delete account|Delete everything/ })).toHaveCount(
 		0
 	);
 
-	await zone.locator('summary').click();
+	await opener.click();
 	await expect(page.getByRole('button', { name: /Delete account/ })).toBeVisible();
 });
 

@@ -51,3 +51,40 @@ describe('what the back gesture closes first', () => {
 		expect(closeTopOverlay()).toBe(false);
 	});
 });
+
+describe('which dialog is on top', () => {
+	beforeEach(() => {
+		document.body.innerHTML = '';
+	});
+
+	function stub(dialog: HTMLDialogElement) {
+		dialog.close = vi.fn(() => dialog.removeAttribute('open'));
+		return dialog;
+	}
+
+	/*
+	 * The delete confirmation over the Edit notebook form: the form comes
+	 * first in the document, and closing it left the confirmation over nothing.
+	 */
+	it('closes the dialog holding the focus, not the first one written', () => {
+		document.body.innerHTML =
+			'<dialog open id="edit"><input id="a" /></dialog><dialog open id="confirm"><button id="b">x</button></dialog>';
+		const edit = stub(document.getElementById('edit') as HTMLDialogElement);
+		const confirm = stub(document.getElementById('confirm') as HTMLDialogElement);
+		(document.getElementById('b') as HTMLElement).focus();
+
+		expect(closeTopOverlay()).toBe(true);
+		expect(confirm.close).toHaveBeenCalled();
+		expect(edit.close).not.toHaveBeenCalled();
+	});
+
+	it('falls back to the last one written', () => {
+		document.body.innerHTML = '<dialog open id="edit"></dialog><dialog open id="confirm"></dialog>';
+		const edit = stub(document.getElementById('edit') as HTMLDialogElement);
+		const confirm = stub(document.getElementById('confirm') as HTMLDialogElement);
+
+		expect(closeTopOverlay()).toBe(true);
+		expect(confirm.close).toHaveBeenCalled();
+		expect(edit.close).not.toHaveBeenCalled();
+	});
+});

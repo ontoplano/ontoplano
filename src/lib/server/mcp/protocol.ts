@@ -16,15 +16,24 @@
  */
 import type { Ctx } from '$lib/services/ctx.js';
 import type { Scope } from '../services/tokens.js';
-import { ForbiddenError, ServiceError } from '$lib/services/errors.js';
+import { ForbiddenError, ServiceError, type ErrorCode } from '$lib/services/errors.js';
 import { translator, type MessageKey, type MessageValues } from '$lib/i18n/core.js';
 import { messages as englishMessages } from '$lib/i18n/catalogues/en.js';
 import { TOOLS, TOOLS_BY_NAME, type Tool } from './tools.js';
+import { argumentProblem, describeProblem } from './arguments.js';
 import { assertRefs, madeRow, resolveRef, type Reach, type Ref } from './refs.js';
 import { confine, reachOf, withinConfinement, type Confinement } from './confinement.js';
+import { assertUnchanged, stampOf, stampedRef } from './concurrency.js';
+import {
+	fingerprintOf,
+	rememberAnswer,
+	replayOf,
+	requestIdOf
+} from '../services/request-replays.js';
 import { changed, type Room } from '../live.js';
 import { spendCallBudget } from '../api/auth.js';
 import { recordAssistantCall } from '../services/assistant-log.js';
+import { db } from '$lib/db/index.js';
 
 /** The revision this server speaks. Echoed back at whatever asks. */
 export const PROTOCOL_VERSION = '2025-06-18';
@@ -44,8 +53,8 @@ export const SERVER_INFO = {
 };
 
 /** JSON-RPC's own codes, plus the one for a method that does not exist. */
-const PARSE_ERROR = -32700;
-const INVALID_REQUEST = -32600;
+export const PARSE_ERROR = -32700;
+export const INVALID_REQUEST = -32600;
 const METHOD_NOT_FOUND = -32601;
 const INVALID_PARAMS = -32602;
 const INTERNAL_ERROR = -32603;
@@ -270,6 +279,16 @@ function toolResult(value: unknown, mutation?: { before: unknown; after: unknown
 	};
 }
 
+/** A replayed answer: the first one, word for word, marked as a replay. */
+function replayResult(earlier: Record<string, unknown>) {
+	const structured = { ...earlier, replayed: true };
+	return {
+		content: [{ type: 'text', text: JSON.stringify(structured, null, 2) }],
+		structuredContent: structured,
+		isError: false
+	};
+}
+
 /**
  * The state of the thing a write is about.
  *
@@ -309,10 +328,23 @@ const subjectOfRef =
  * the model can do nothing with it, while a tool that refused — a date it did
  * not like, a scope it did not have — is information the model can act on. So
  * the failure comes back as content the model reads, flagged `isError`.
+ *
+ * The sentence is for the model; `structuredContent` is for the client code
+ * around it, which has to branch without parsing English. `code` is the same
+ * vocabulary the JSON API answers with (`not_found`, `conflict`,
+ * `validation_error`, `plan_limit`, `forbidden`, `rate_limited`, …), and
+ * `details` is whatever the refusal knows beyond its sentence — the row's
+ * current `updatedAt` on a conflict.
  */
-function toolFailure(message: string) {
+function toolFailure(e: ServiceError) {
+	const message = messageOf(e);
 	return {
 		content: [{ type: 'text', text: message }],
+		structuredContent: {
+			code: e.code,
+			message,
+			...(e.details === undefined ? {} : { details: e.details })
+		},
 		isError: true
 	};
 }
@@ -333,6 +365,44 @@ function messageOf(e: unknown): string {
 	return 'Something went wrong.';
 }
 
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+	return value !== null && typeof value === 'object' && !Array.isArray(value);
+}
+
+/** An id JSON-RPC allows: a string, a whole number, or null. */
+function validId(id: unknown): id is Id | undefined {
+	return (
+		id === undefined ||
+		id === null ||
+		typeof id === 'string' ||
+		(typeof id === 'number' && Number.isSafeInteger(id))
+	);
+}
+
+/** The members a request may have; anything else is not one. */
+const ENVELOPE = new Set(['jsonrpc', 'id', 'method', 'params']);
+
+/**
+ * What is wrong with a message as a JSON-RPC 2.0 request, or null.
+ *
+ * The envelope is checked whole before anything reads it: a `method` that
+ * is a number, `params` that are a list, an id that is an object. Each used
+ * to fall through to a default — an empty method, empty params — which
+ * answered a question the client had not asked.
+ */
+function envelopeProblem(request: unknown): string | null {
+	if (!isPlainObject(request)) return 'A JSON-RPC message is an object.';
+	if (request.jsonrpc !== '2.0') return 'Not a JSON-RPC 2.0 message.';
+	const extra = Object.keys(request).find((key) => !ENVELOPE.has(key));
+	if (extra) return `\`${extra}\` is not part of a JSON-RPC request.`;
+	if (!validId(request.id)) return 'An id is a string, a whole number or null.';
+	if (typeof request.method !== 'string' || !request.method)
+		return '`method` is required, and is a string.';
+	if (request.params !== undefined && !isPlainObject(request.params))
+		return '`params` has to be an object.';
+	return null;
+}
+
 /**
  * One JSON-RPC message in, one out — or nothing, for a notification.
  *
@@ -341,13 +411,15 @@ function messageOf(e: unknown): string {
  * for a reply to something it never asked about.
  */
 export function handle(caller: Caller, request: RpcRequest): RpcResponse | null {
+	const refused = envelopeProblem(request);
+	// A message that is not a request is answered, notification or not, and
+	// with a null id unless the id it carried was a legal one (JSON-RPC 2.0 §5).
+	if (refused)
+		return fail(validId(request.id) ? (request.id ?? null) : null, INVALID_REQUEST, refused);
+
 	const id = request.id ?? null;
 	const isNotification = request.id === undefined;
-
-	if (request.jsonrpc !== '2.0')
-		return isNotification ? null : fail(id, INVALID_REQUEST, 'Not a JSON-RPC 2.0 message.');
-
-	const method = typeof request.method === 'string' ? request.method : '';
+	const method = request.method as string;
 	const params = (request.params ?? {}) as Record<string, unknown>;
 
 	switch (method) {
@@ -369,7 +441,10 @@ export function handle(caller: Caller, request: RpcRequest): RpcResponse | null 
 					'`tools/list` says which ones are being held back and the grant each needs, so ask ' +
 					'for the grant rather than working around the gap. An argument a tool accepts is in ' +
 					'its schema; where the answer looks cut short, `verbose` or `fields` is why. ' +
-					'Asked to write a diary entry, write it — keeping their words where you have them. Just never invent one unasked.'
+					'Asked to write a diary entry, write it — keeping their words where you have them. Just never invent one unasked. ' +
+					'When you tell the person about a task or a note, name it by its `seq` — the number the app shows them, ' +
+					'written `TASK:#4` or `#4` — and its title, never by `id`: the id is only for passing back to a tool, ' +
+					'and they cannot see it anywhere.'
 			});
 
 		// A client says it has finished starting up. Nothing to do, and nothing
@@ -401,14 +476,45 @@ export function handle(caller: Caller, request: RpcRequest): RpcResponse | null 
 		}
 
 		case 'tools/call': {
-			const name = typeof params.name === 'string' ? params.name : '';
+			if (typeof params.name !== 'string')
+				return fail(id, INVALID_PARAMS, '`name` is required, and is the tool\u2019s name.', {
+					code: 'validation_error' satisfies ErrorCode,
+					argument: 'name',
+					problem: 'missing'
+				});
+			const name = params.name;
 			const tool = TOOLS_BY_NAME.get(name);
 			if (!tool) return fail(id, INVALID_PARAMS, `No tool called \`${name}\`.`);
 
+			if (params.arguments !== undefined && !isPlainObject(params.arguments))
+				return fail(id, INVALID_PARAMS, '`arguments` has to be an object.', {
+					code: 'validation_error' satisfies ErrorCode,
+					argument: 'arguments',
+					problem: 'type',
+					expected: 'object'
+				});
 			const args = (params.arguments ?? {}) as Record<string, unknown>;
 			const reach = caller.confinement ? reachOf(caller.confinement) : undefined;
 			try {
 				assertAllowed(caller, tool);
+
+				/*
+				 * The arguments are the ones the schema advertised, or nothing runs.
+				 *
+				 * Checked after the grant — a key that may not call the tool is
+				 * told that, not how to spell its arguments — and before
+				 * anything else: the confinement, the references, the budget and
+				 * the tool all read arguments that are the shape they were
+				 * promised. A protocol error rather than a tool failure, with the
+				 * argument named in `data`, because it is the request that is
+				 * wrong and the same request will be refused the same way again.
+				 */
+				const problem = argumentProblem(tool.input, args);
+				if (problem)
+					return fail(id, INVALID_PARAMS, describeProblem(problem), {
+						code: 'validation_error' satisfies ErrorCode,
+						...problem
+					});
 
 				/*
 				 * A key confined to one thing works on that thing.
@@ -426,6 +532,19 @@ export function handle(caller: Caller, request: RpcRequest): RpcResponse | null 
 					confine(caller.confinement, tool.refs, tool.input, args);
 
 				/*
+				 * The same budget a plugin spends on the REST API: reads are cheap
+				 * and writes grow the database, so "make a thousand goals" is told
+				 * to slow down after the sixtieth, not obeyed at machine speed.
+				 *
+				 * Spent before the references are resolved, which is the costly
+				 * part of a refused call: each id is looked up among the rows the
+				 * caller can list, and a caller guessing at ids pays for every
+				 * guess rather than only for the ones that landed.
+				 */
+				if (caller.tokenId !== undefined)
+					spendCallBudget(caller.tokenId, caller.ctx.userId, tool.writes);
+
+				/*
 				 * Every id it was handed belongs to whoever is calling.
 				 *
 				 * Each tool declares which of its arguments name a thing and what
@@ -437,13 +556,6 @@ export function handle(caller: Caller, request: RpcRequest): RpcResponse | null 
 				 * through, so no tool can be written that skips it.
 				 */
 				assertRefs(caller.ctx, tool.refs, args, reach);
-				/*
-				 * The same budget a plugin spends on the REST API: reads are cheap
-				 * and writes grow the database, so "make a thousand goals" is told
-				 * to slow down after the sixtieth, not obeyed at machine speed.
-				 */
-				if (caller.tokenId !== undefined)
-					spendCallBudget(caller.tokenId, caller.ctx.userId, tool.writes);
 
 				/*
 				 * Every mutation answers with what it replaced.
@@ -456,34 +568,89 @@ export function handle(caller: Caller, request: RpcRequest): RpcResponse | null 
 				 * A create has no before and a delete no after; both read as null,
 				 * which is the honest answer.
 				 */
+				/*
+				 * A retried create, answered with what the first one got.
+				 *
+				 * After the grant, the arguments, the budget and the references —
+				 * a replay is not a way to hear an answer the key could not ask
+				 * for now — and before anything runs. See `request-replays.ts`.
+				 */
+				const retry =
+					tool.writes && 'requestId' in tool.input.properties && args.requestId != null
+						? {
+								requestId: requestIdOf(args.requestId),
+								fingerprint: fingerprintOf(tool.name, args)
+							}
+						: undefined;
+				if (retry) {
+					const earlier = replayOf(caller.ctx, retry.requestId, retry.fingerprint);
+					if (earlier) return ok(id, replayResult(earlier));
+				}
+
 				const before = tool.writes ? peek(tool, caller.ctx, args, reach) : undefined;
 				// A quiet tool still peeks — the log below wants it — and simply
 				// does not put the two copies in the answer.
-				const value = tool.run(caller.ctx, args, {
-					scopes: caller.scopes,
-					confinement: caller.confinement ?? null
-				});
-				/*
-				 * A create says what it made, and fails if it made nothing.
-				 *
-				 * `peek` reads the *subject* an argument names, which a create has
-				 * not got — so `after` was null on every one of them and nothing
-				 * ever checked that the id being handed back pointed at a row. It
-				 * did not once, and the caller found out by being told the task it
-				 * had just made did not exist.
-				 */
-				const made = tool.creates ? madeRow(caller.ctx, tool.creates, idOf(value)) : undefined;
-				if (tool.creates && made === null)
-					throw new Error(
-						`\`${tool.name}\` answered with an id for a ${tool.creates} that is not there.`
-					);
 
-				const answer = toolResult(
-					value,
-					tool.writes && !tool.quiet
-						? { before, after: made ?? peek(tool, caller.ctx, args, reach) }
-						: undefined
-				);
+				/*
+				 * `ifUpdatedAt`, where the tool offers it: checked inside the same
+				 * transaction as the write, so nothing can land between the check
+				 * and the change, and the answer carries the new stamp to pass
+				 * next time. See `concurrency.ts`.
+				 */
+				const stamped = 'ifUpdatedAt' in tool.input.properties ? stampedRef(tool.refs) : undefined;
+				const settle = () => {
+					if (stamped) assertUnchanged(tool.refs, args);
+					let value = tool.run(caller.ctx, args, {
+						scopes: caller.scopes,
+						confinement: caller.confinement ?? null
+					});
+					if (stamped && isPlainObject(value))
+						value = { ...value, updatedAt: stampOf(stamped, args) };
+					/*
+					 * A create says what it made, and fails if it made nothing.
+					 *
+					 * `peek` reads the *subject* an argument names, which a create has
+					 * not got — so `after` was null on every one of them and nothing
+					 * ever checked that the id being handed back pointed at a row. It
+					 * did not once, and the caller found out by being told the task it
+					 * had just made did not exist.
+					 */
+					const made = tool.creates ? madeRow(caller.ctx, tool.creates, idOf(value)) : undefined;
+					if (tool.creates && made === null)
+						throw new Error(
+							`\`${tool.name}\` answered with an id for a ${tool.creates} that is not there.`
+						);
+					const answer = toolResult(
+						value,
+						tool.writes && !tool.quiet
+							? { before, after: made ?? peek(tool, caller.ctx, args, reach) }
+							: undefined
+					);
+					// In the same transaction as the write: a create that landed and
+					// an answer that was not remembered would make the retry a second
+					// create, which is the whole thing this is for.
+					if (retry)
+						rememberAnswer(
+							caller.ctx,
+							retry.requestId,
+							tool.name,
+							retry.fingerprint,
+							answer.structuredContent
+						);
+					return answer;
+				};
+				/*
+				 * One call, one change: all of it or none of it.
+				 *
+				 * A change tool often writes more than one row — a todo's words and
+				 * then its state, a recipe and then its ingredients, a session and
+				 * then its lines — and a refusal from the second half used to leave
+				 * the first half written, so an assistant told "invalid status" had
+				 * in fact rewritten the title. Here rather than in each tool for the
+				 * same reason as `before` above. The services' own transactions nest
+				 * inside this one as savepoints.
+				 */
+				const answer = tool.writes ? db.transaction(settle) : settle();
 
 				/*
 				 * The person's own copy of what just happened.
@@ -518,9 +685,11 @@ export function handle(caller: Caller, request: RpcRequest): RpcResponse | null 
 			} catch (e) {
 				// Everything a service throws is a sentence written for a person, so
 				// it is the sentence the model gets. Anything else is not.
-				if (e instanceof ServiceError) return ok(id, toolFailure(messageOf(e)));
+				if (e instanceof ServiceError) return ok(id, toolFailure(e));
 				console.error(`mcp: ${name} failed:`, e);
-				return fail(id, INTERNAL_ERROR, 'That did not work.');
+				return fail(id, INTERNAL_ERROR, 'That did not work.', {
+					code: 'internal' satisfies ErrorCode
+				});
 			}
 		}
 
@@ -566,8 +735,27 @@ function roomsOf(tool: { scope: string }): Room[] {
 	}
 }
 
+/** The largest request body the endpoint reads — the same 256 KB every other endpoint takes, batch included. */
+export const MAX_MCP_BODY_BYTES = 256 * 1024;
+
 /** How many messages one JSON-RPC batch may carry. */
 const MAX_BATCH = 50;
+
+/**
+ * How much one batch may answer with, all messages together, in bytes of JSON.
+ *
+ * Fifty messages is a small request and can be a large answer: fifty
+ * `tools/list` calls, or fifty pages of two hundred tasks, are built in
+ * memory before any of it is sent. Once the answers so far pass this, the
+ * rest of the batch is not run — each is refused, by id, with a sentence
+ * saying to send it on its own — so nothing is done that nobody will hear
+ * about. A single message is always answered whole: its size is bounded by
+ * the tool's own page ceilings, and a file by the media limit.
+ */
+export const MAX_BATCH_ANSWER_BYTES = 2 * 1024 * 1024;
+
+/** The code for a message left unrun because its batch had said enough. */
+const BATCH_TOO_LARGE = -32000;
 
 export function handleBody(caller: Caller, body: unknown): RpcResponse | RpcResponse[] | null {
 	if (Array.isArray(body)) {
@@ -581,14 +769,31 @@ export function handleBody(caller: Caller, body: unknown): RpcResponse | RpcResp
 		 */
 		if (body.length > MAX_BATCH)
 			return fail(null, INVALID_REQUEST, `A batch may hold at most ${MAX_BATCH} messages.`);
-		const answers = body
-			.map((one) => handle(caller, (one ?? {}) as RpcRequest))
-			.filter((a): a is RpcResponse => a !== null);
+		const answers: RpcResponse[] = [];
+		let spent = 0;
+		for (const one of body) {
+			if (spent > MAX_BATCH_ANSWER_BYTES) {
+				const request = isPlainObject(one) ? one : {};
+				// A notification skipped is still not answered.
+				if (request.id === undefined) continue;
+				answers.push(
+					fail(
+						validId(request.id) ? (request.id ?? null) : null,
+						BATCH_TOO_LARGE,
+						`Not run: this batch\u2019s answers already passed ${MAX_BATCH_ANSWER_BYTES} bytes. Send it on its own.`
+					)
+				);
+				continue;
+			}
+			const answer = handle(caller, one as RpcRequest);
+			if (answer === null) continue;
+			spent += JSON.stringify(answer).length;
+			answers.push(answer);
+		}
 		return answers.length > 0 ? answers : null;
 	}
 
-	if (!body || typeof body !== 'object')
-		return fail(null, PARSE_ERROR, 'The body is not a JSON-RPC message.');
+	if (!isPlainObject(body)) return fail(null, INVALID_REQUEST, 'A JSON-RPC message is an object.');
 
 	return handle(caller, body as RpcRequest);
 }

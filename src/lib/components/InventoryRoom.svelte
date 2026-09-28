@@ -8,7 +8,12 @@
 	import BuyFields from '$lib/components/fields/BuyFields.svelte';
 	import FormError from '$lib/components/FormError.svelte';
 	import EmptyState from '$lib/components/EmptyState.svelte';
-	import NumberBox from '$lib/components/NumberBox.svelte';
+	import FilterBar from '$lib/components/FilterBar.svelte';
+	import ShowingCount from '$lib/components/ShowingCount.svelte';
+	import SearchField from '$lib/components/SearchField.svelte';
+	import Picker from '$lib/components/Picker.svelte';
+	import RoomSurface from '$lib/components/RoomSurface.svelte';
+	import { inventoryPanels } from '$lib/inventory-panels.svelte';
 	import Icon from '$lib/components/Icon.svelte';
 	import { armed } from '$lib/actions/armed';
 	import Field from '$lib/components/Field.svelte';
@@ -143,20 +148,73 @@
 	/** The item being dragged, and the location it is over. */
 	let dragging = $state<number | null>(null);
 	let dragOver = $state<number | null>(null);
-	let showCategories = $state(false);
-	let showAttributes = $state(false);
 	let editingAttribute = $state<string | null>(null);
 	let editingValue = $state<string | null>(null);
 	let confirmRemoveAttribute = $state<string | null>(null);
-	let showFilters = $state(false);
 	/** Which attribute value the list is narrowed to, as `key\u0000value`. */
 	let attributeFilter = $state<string | null>(null);
 	/** Counts the list is narrowed by: empty means no ceiling and no floor. */
 	let atLeast = $state('');
 	let atMost = $state('');
 
-	/** Whether the filters modal is holding anything back. */
-	const narrowing = $derived(attributeFilter !== null || atLeast !== '' || atMost !== '');
+	/** Whether anything is narrowing the list, the find box included. */
+	const narrowing = $derived(
+		onlyShort ||
+			showBought ||
+			showSnoozed ||
+			find.trim() !== '' ||
+			attributeFilter !== null ||
+			atLeast !== '' ||
+			atMost !== ''
+	);
+
+	/** What is narrowing it, in words, for the phone's filter button. */
+	function narrowingSaid(): string {
+		const said: string[] = [];
+		if (onlyShort) said.push(t('inventory.short'));
+		if (showBought) said.push(t('inventory.boughtWord'));
+		if (showSnoozed) said.push(t('inventory.archivedWord'));
+		if (attributeFilter !== null) said.push(attributeFilter.replace('\u0000', ': '));
+		if (atLeast !== '') said.push(`≥ ${atLeast}`);
+		if (atMost !== '') said.push(`≤ ${atMost}`);
+		return said.join(', ');
+	}
+
+	function clearFilters() {
+		onlyShort = false;
+		showBought = false;
+		showSnoozed = false;
+		find = '';
+		attributeFilter = null;
+		atLeast = '';
+		atMost = '';
+		selectedIndex = -1;
+	}
+
+	/**
+	 * The attribute filter's choices: each attribute, then its values under it.
+	 *
+	 * The attribute on its own is the first choice in its group — "has a
+	 * length at all" is the commonest question, and a list of values cannot
+	 * ask it.
+	 */
+	const attributeChoices = $derived([
+		{ value: '', label: t('inventory.anyAttribute') },
+		...data.attributes.flatMap((attribute) => [
+			{
+				value: attribute.key,
+				label: t('inventory.anyValueCount', { count: attribute.count }),
+				path: [attribute.key],
+				face: attribute.key
+			},
+			...attribute.values.map((one) => ({
+				value: `${attribute.key}\u0000${one.value}`,
+				label: `${one.value || t('inventory.noValue')} (${one.count})`,
+				path: [attribute.key],
+				face: `${attribute.key}: ${one.value || t('inventory.noValue')}`
+			}))
+		])
+	]);
 
 	/** Which attribute a chip should be drawn in, by name and by value. */
 	const attributeColors = $derived.by(() => {
@@ -276,9 +334,20 @@
 	 * a total assembled from remembered prices is an estimate and pretending
 	 * otherwise is how somebody gets a surprise at the till.
 	 */
-	const needed = $derived(items.filter((i) => !i.bought && !i.snoozed));
-	const totalCents = $derived(needed.reduce((sum, i) => sum + (i.priceCents ?? 0), 0));
-	const pricedCount = $derived(needed.filter((i) => i.priceCents !== null).length);
+	const toBuy = $derived.by(() => {
+		if (list === 'replenish')
+			return {
+				count: data.run.lines.length,
+				cents: data.run.totalCents,
+				unpriced: data.run.unpriced
+			};
+		const wanted = items.filter((i) => i.type === 'someday' && !i.bought && !i.snoozed);
+		return {
+			count: wanted.length,
+			cents: wanted.reduce((sum, i) => sum + (i.priceCents ?? 0), 0),
+			unpriced: wanted.filter((i) => i.priceCents === null).length
+		};
+	});
 
 	let defaultInventoryCategoryId = $derived.by(() => {
 		const otherCategory = data.inventoryCategories.find((category) => category.name === 'Other');
@@ -446,6 +515,9 @@
 	 */
 	const onThisTab = $derived(items.filter((item) => item.type === list));
 	const notShowing = $derived(onThisTab.filter(inChosenLocation).length - filteredItems.length);
+	/** How many the two toggles would bring back, so nothing is hidden unsaid. */
+	const boughtHere = $derived(onThisTab.filter((item) => item.bought).length);
+	const archivedHere = $derived(onThisTab.filter((item) => item.snoozed).length);
 
 	/**
 	 * The page follows a drag towards an edge.
@@ -507,8 +579,8 @@
 		await invalidateAll();
 	}
 
-	let somedayItems = $derived(filteredItems.filter((i) => i.type === 'someday'));
-	let replenishItems = $derived(filteredItems.filter((i) => i.type === 'replenish'));
+	/** Every row on screen is on this tab's list, so the two lists group alike. */
+	let replenishItems = $derived(filteredItems);
 	/** Items grouped into category cards, in the order the categories are kept. */
 	function byCategory(rows: typeof replenishItems) {
 		const catOrder = new Map(data.inventoryCategories.map((c) => [c.name, c.sortOrder]));
@@ -621,6 +693,11 @@
 	 */
 	const showPlaces = $derived(replenishByPlace.length > 1);
 
+	/** The rows in the order they are drawn, which is the order j and k walk. */
+	const shownItems = $derived(
+		replenishByPlace.flatMap((place) => place.categories.flatMap((category) => category.items))
+	);
+
 	const locationChoices = $derived(
 		data.locations.map((one) => ({ ...one, path: locationPaths.get(one.id) ?? one.name }))
 	);
@@ -706,7 +783,7 @@
 		)
 			return;
 
-		const items = filteredItems;
+		const items = shownItems;
 		const action = getAction('/inventory/stock', e.key);
 		if (!action) return;
 		e.preventDefault();
@@ -801,7 +878,12 @@
 	path for anybody not using a mouse.
 -->
 {#snippet locationRow(id: number | null, label: string, count: number, depth: number)}
-	<li>
+	<li
+		class="flex items-center {location === id ? 'bg-gray-100' : 'hover:bg-gray-50'} {dragOver ===
+		(id ?? -1)
+			? 'kb-cursor'
+			: ''}"
+	>
 		<button
 			onclick={() => (location = id)}
 			ondragover={(e) => {
@@ -816,9 +898,10 @@
 				if (dragging !== null) void drop(dragging, id === 0 ? null : id);
 				dragging = null;
 			}}
-			class="flex w-full items-center gap-2 py-2 pr-3 text-left text-sm transition {location === id
-				? 'bg-gray-100 font-medium text-gray-900'
-				: 'text-gray-700 hover:bg-gray-50'} {dragOver === (id ?? -1) ? 'kbd-cursor' : ''}"
+			class="flex min-w-0 flex-1 items-center gap-2 py-2 pr-2 text-left text-sm transition {location ===
+			id
+				? 'font-medium text-gray-900'
+				: 'text-gray-700'}"
 			style="padding-left: {0.25 + depth * 0.9}rem"
 		>
 			<!-- Where a foldable row keeps its chevron. Drawn on every row, so a
@@ -830,6 +913,12 @@
 			<span class="truncate" title={label}>{label}</span>
 			<span class="tabular ml-auto shrink-0 text-xs text-gray-500">{count}</span>
 		</button>
+		<!-- The room a location's own buttons take, kept on the rows that have
+		     none, so every count in the column sits at the same x. -->
+		<div class="invisible flex shrink-0 items-center gap-1 pr-2" aria-hidden="true">
+			<span class="icon-btn"><Icon name="edit" /></span>
+			<span class="icon-btn"><Icon name="trash" /></span>
+		</div>
 	</li>
 {/snippet}
 
@@ -851,7 +940,7 @@
 			{#if node.children.length > 0}
 				<button
 					onclick={() => toggleFold(node.id)}
-					class="shrink-0 py-2 pl-1 text-gray-400 transition hover:text-gray-700"
+					class="shrink-0 py-2 pl-1 text-gray-500 transition hover:text-gray-900"
 					style="margin-left: {depth * 0.9}rem"
 					aria-expanded={!folded.has(node.id)}
 					title={folded.has(node.id)
@@ -887,7 +976,7 @@
 				class="flex min-w-0 flex-1 items-center gap-2 py-2 pr-2 pl-2 text-left text-sm transition {location ===
 				node.id
 					? 'font-medium text-gray-900'
-					: 'text-gray-700'} {dragOver === node.id ? 'kbd-cursor' : ''}"
+					: 'text-gray-700'} {dragOver === node.id ? 'kb-cursor' : ''}"
 			>
 				<span class="truncate" title={node.name}>{node.name}</span>
 				<span
@@ -897,7 +986,11 @@
 					{countsByLocation.get(node.id)?.total ?? 0}
 				</span>
 			</button>
-			<div class="flex shrink-0 items-center gap-1 pr-2">
+			<!-- Out of the way until the row is pointed at, where a pointer can
+			     point; always there for a finger, which has no hover. -->
+			<div
+				class="flex shrink-0 items-center gap-1 pr-2 transition-opacity [@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-focus-within:opacity-100 [@media(hover:hover)]:group-hover:opacity-100"
+			>
 				<button
 					onclick={() =>
 						(editingLocation = { id: node.id, name: node.name, parentId: node.parentId })}
@@ -950,20 +1043,6 @@
 				{t('inventory.whatYouTickWillBe')}
 			{/if}
 		</Banner>
-	{/if}
-
-	{#if totalCents > 0}
-		<p class="text-sm text-gray-500">
-			{t('inventory.about')}
-			<span class="tabular font-medium text-gray-900">{formatMoney(totalCents, data.currency)}</span
-			>
-			{t('inventory.forWhatIsStillTo')}
-			{#if pricedCount < needed.length}
-				<span class="text-xs text-gray-500"
-					>{t('inventory.ofThemHaveNo', { pricedCount: needed.length - pricedCount })}</span
-				>
-			{/if}
-		</p>
 	{/if}
 
 	<FormError message={form?.message} />
@@ -1067,130 +1146,176 @@
 		leaves the scroll where the reader left it; the cards reflow under the
 		heading, which is what a fold is supposed to look like.
 	-->
-	<div class="[overflow-anchor:none]">
+	<RoomSurface>
 		<!--
-			Three kinds of thing, so they look like three: which list you are in
-			(one setting, one track), what it hides (two quiet toggles), and a way
-			to search it. The one thing you came to do is in the bar above.
+			The strip every list in the app has: find, how many are showing, the
+			toggles and filters, and the way back to everything.
+
+			What the list will cost rides above it, as information rather than as
+			a control — said once, with padding, instead of crammed under the tabs.
 		-->
-		<div class="space-y-2 border-b border-gray-200 p-4">
-			<div class="flex flex-wrap items-center gap-2">
+		{#snippet tools()}
+			<FilterBar name="inventory" on={narrowing} summary={narrowingSaid()} onclear={clearFilters}>
+				{#snippet banner()}
+					{#if toBuy.count > 0}
+						<p class="flex flex-wrap items-baseline gap-x-2 text-sm text-gray-500">
+							<span class="eyebrow text-gray-500">{t('inventory.toBuy')}</span>
+							<span>
+								{toBuy.cents > 0
+									? t('inventory.toBuyTotal', {
+											count: toBuy.count,
+											total: formatMoney(toBuy.cents, data.currency)
+										})
+									: t('inventory.toBuyCount', { count: toBuy.count })}
+							</span>
+							{#if toBuy.unpriced > 0}
+								<span class="text-xs">·</span>
+								<span class="text-xs"
+									>{t('inventory.withoutAPrice', { count: toBuy.unpriced })}</span
+								>
+							{/if}
+						</p>
+					{/if}
+				{/snippet}
+				{#snippet lead()}
+					<SearchField
+						name="find"
+						bind:value={find}
+						placeholder={t('inventory.find')}
+						label={t('inventory.find2')}
+					/>
+				{/snippet}
+				{#snippet count()}
+					<!-- Held open by the sentence at the whole tab's count, so
+						     narrowing the list never moves the controls after it.
+						     See `.count-slot`. -->
+					<ShowingCount
+						total={onThisTab.length}
+						shown={filteredItems.length}
+						said={(count) => t('inventory.showingCount', { count })}
+						title={notShowing > 0
+							? t('inventory.hiddenByTheFilters', { count: notShowing })
+							: undefined}
+					/>
+				{/snippet}
 				<!--
-					"Short" is a question asked of the cupboard — fewer of something
-					than you keep — so it is a filter beside the others rather than a
-					fourth list. The wishlist has no idea of short: there is no count
-					to be under.
-				-->
+						"Short" is a question asked of the cupboard — fewer of something
+						than you keep — so it is a filter beside the others rather than a
+						list of its own. The wishlist has no count to be under, and the
+						cupboard shows what you have anyway, so "bought" is the wishlist's.
+					-->
 				{#if list === 'replenish'}
 					<button
 						onclick={() => (onlyShort = !onlyShort)}
 						aria-pressed={onlyShort}
-						class="btn btn-sm btn-quiet"
+						class="btn btn-sm shrink-0"
 						title={t('inventory.onlyWhatYouHaveFewer')}>{t('inventory.short')}</button
 					>
+				{:else}
+					<button
+						onclick={() => (showBought = !showBought)}
+						aria-pressed={showBought}
+						class="btn btn-sm shrink-0"
+						title={t('inventory.showWhatYouAlreadyHave', {
+							bought: keyFor('/inventory/stock', 'toggle-show-bought')
+						})}>{t('inventory.boughtCount', { count: boughtHere })}</button
+					>
 				{/if}
-				<button
-					onclick={() => (showBought = !showBought)}
-					aria-pressed={showBought}
-					class="btn btn-sm btn-quiet"
-					title={t('inventory.showWhatYouAlreadyHave', {
-						bought: keyFor('/inventory/stock', 'toggle-show-bought')
-					})}>{t('inventory.bought', { show: showBought ? t('ui.hide') : t('ui.show') })}</button
-				>
+				<!-- Named with its number, so a thing put away is never quietly gone. -->
 				<button
 					onclick={() => (showSnoozed = !showSnoozed)}
 					aria-pressed={showSnoozed}
-					class="btn btn-sm btn-quiet"
+					class="btn btn-sm shrink-0"
+					hidden={archivedHere === 0 && !showSnoozed}
 					title={t('inventory.showWhatYouPutAway', {
 						snoozed: keyFor('/inventory/stock', 'toggle-show-snoozed')
-					})}>{t('inventory.archived', { show: showSnoozed ? t('ui.hide') : t('ui.show') })}</button
+					})}>{t('inventory.archivedCount', { count: archivedHere })}</button
 				>
-				<label class="sr-only" for="inventory-find">{t('inventory.find2')}</label>
-				<OneLine
-					id="inventory-find"
-					name="find"
-					bind:value={find}
-					placeholder={t('inventory.find')}
-					class="input min-w-32 flex-1 py-1 text-sm"
-				/>
-				<button onclick={() => (showCategories = true)} class="btn btn-sm btn-quiet"
-					>{t('inventory.categories')}</button
-				>
-				<button onclick={() => (showAttributes = true)} class="btn btn-sm btn-quiet"
-					>{t('inventory.attributes')}</button
-				>
-				<button
-					onclick={() => (showFilters = true)}
-					aria-pressed={narrowing}
-					class="btn btn-sm btn-quiet"
-					>{narrowing ? t('inventory.filtersOn') : t('inventory.filters')}</button
-				>
-			</div>
+				{#if data.attributes.length > 0 || attributeFilter !== null}
+					<Picker
+						value={attributeFilter ?? ''}
+						options={attributeChoices}
+						onpick={(next) => (attributeFilter = next === '' ? null : next)}
+						label={t('inventory.attributes')}
+						class="min-w-36 flex-1 sm:flex-none"
+					/>
+				{/if}
+				<!-- How many, as a range: either end may be left open. -->
+				{#if list === 'replenish'}
+					<span class="flex shrink-0 items-center gap-1 text-xs text-gray-500">
+						<label class="flex items-center gap-1">
+							<span>{t('inventory.atLeast')}</span>
+							<input
+								type="number"
+								min="0"
+								inputmode="numeric"
+								value={atLeast}
+								oninput={(e) => (atLeast = e.currentTarget.value)}
+								class="input input-sm w-14"
+							/>
+						</label>
+						<label class="flex items-center gap-1">
+							<span>{t('inventory.atMost')}</span>
+							<input
+								type="number"
+								min="0"
+								inputmode="numeric"
+								value={atMost}
+								oninput={(e) => (atMost = e.currentTarget.value)}
+								class="input input-sm w-14"
+							/>
+						</label>
+					</span>
+				{/if}
+			</FilterBar>
+		{/snippet}
 
-			<!--
-				What the filters are keeping off the screen, in the layout whether or
-				not there is anything to say. Rendered invisible rather than removed: a
-				line that appears and disappears as filters are switched would move
-				every card under it each time.
-			-->
-			<p
-				class="text-xs text-gray-500 {notShowing > 0 ? '' : 'invisible'}"
-				aria-hidden={notShowing > 0 ? undefined : 'true'}
+		<div class="[overflow-anchor:none]">
+			<SplitColumns
+				bind:rem={panelRem}
+				label={t('inventory.widenOrNarrowTheLocations')}
+				onsettle={() => panelForm?.requestSubmit()}
 			>
-				{t('inventory.notShowing', {
-					notShowing: notShowing,
-					items: notShowing === 1 ? 'item' : 'items'
-				})}
-			</p>
-		</div>
-
-		<SplitColumns
-			bind:rem={panelRem}
-			label={t('inventory.widenOrNarrowTheLocations')}
-			onsettle={() => panelForm?.requestSubmit()}
-		>
-			{#snippet left()}
-				<section class="self-start">
-					<header
-						class="flex flex-wrap items-center justify-between gap-2 border-b border-gray-200 px-4 py-2"
-					>
-						<h2 class="eyebrow text-gray-600">{t('inventory.whereThingsLive')}</h2>
-						<button
-							onclick={() => (addingLocation = true)}
-							class="icon-btn"
-							title={t('inventory.newLocation')}
-							aria-label={t('inventory.newLocation')}><Icon name="plus" /></button
+				{#snippet left()}
+					<section class="self-start">
+						<header
+							class="flex flex-wrap items-center justify-between gap-2 border-b border-gray-200 px-4 py-2"
 						>
-					</header>
+							<h2 class="eyebrow text-gray-600">{t('inventory.whereThingsLive')}</h2>
+							<button
+								onclick={() => (addingLocation = true)}
+								class="icon-btn"
+								title={t('inventory.newLocation')}
+								aria-label={t('inventory.newLocation')}><Icon name="plus" /></button
+							>
+						</header>
 
-					<!-- Capped on a phone, where the panel sits above the list rather than
+						<!-- Capped on a phone, where the panel sits above the list rather than
 			     beside it: a house with twenty drawers would otherwise push the
 			     things themselves off the bottom of the screen. -->
-					<ul
-						class="max-h-64 divide-y divide-gray-200 overflow-y-auto lg:max-h-none lg:overflow-visible"
-					>
-						{@render locationRow(null, 'Everything', allowedItems.length, 0)}
-						{#each data.locationTree as root (root.id)}
-							{@render branch(root, 0)}
-						{/each}
-						{#if unfiledCount > 0}
-							{@render locationRow(0, t('app.notFiledAnywhere'), unfiledCount, 0)}
-						{/if}
-					</ul>
+						<ul class="max-h-64 overflow-y-auto py-1 lg:max-h-none lg:overflow-visible">
+							{@render locationRow(null, t('inventory.everything'), allowedItems.length, 0)}
+							{#each data.locationTree as root (root.id)}
+								{@render branch(root, 0)}
+							{/each}
+							{#if unfiledCount > 0}
+								{@render locationRow(0, t('app.notFiledAnywhere'), unfiledCount, 0)}
+							{/if}
+						</ul>
 
-					<p class="border-t border-gray-200 px-4 py-2 text-xs text-gray-500">
-						{t('inventory.dragAThingOntoA')}
-					</p>
-				</section>
-			{/snippet}
+						<p class="border-t border-gray-200 px-4 py-2 text-xs text-gray-500">
+							{t('inventory.dragAThingOntoA')}
+						</p>
+					</section>
+				{/snippet}
 
-			{#snippet right()}
-				<div class="min-w-0 space-y-4 p-4">
-					{#if replenishItems.length > 0}
-						<!-- No heading of its own: the tab above says which list this is,
+				{#snippet right()}
+					<div class="min-w-0 space-y-4 p-4">
+						{#if replenishItems.length > 0}
+							<!-- No heading of its own: the tab above says which list this is,
 						     and saying it twice is the room repeating itself. -->
-						<div data-tour="inventory-list">
-							<!--
+							<div data-tour="inventory-list">
+								<!--
 				One category per card, flowing into columns.
 
 				As one tall list this was a metre of scrolling with a name at the left
@@ -1198,9 +1323,9 @@
 				than a grid because the categories are of wildly different lengths and
 				a grid would leave a row as tall as its longest cell.
 			-->
-							{#each replenishByPlace as place (place.id)}
-								{#if showPlaces}
-									<!--
+								{#each replenishByPlace as place (place.id)}
+									{#if showPlaces}
+										<!--
 									The address, root down, the same string the panel shows —
 									and the same fold. Pressing it puts the place away with
 									everything under it, which is what the panel's chevron does
@@ -1208,80 +1333,77 @@
 									about what is open. "Not filed anywhere" is not a place and
 									has nothing to fold.
 								-->
-									<h3 class="mt-4 mb-2 flex items-center gap-2 text-sm text-gray-700 first:mt-0">
-										{#if place.id === 0}
-											<Icon name="shopping" class="size-4 shrink-0 text-gray-400" />
-											<span class="font-medium">{place.label ?? t('app.notFiledAnywhere')}</span>
-										{:else}
-											<button
-												type="button"
-												class="flex items-center gap-2 text-left transition hover:text-gray-900"
-												aria-expanded={!place.folded}
-												title={place.folded
-													? t('inventory.showWhatIsIn', {
-															place: place.label ?? t('app.notFiledAnywhere')
-														})
-													: t('inventory.fold', {
-															place: place.label ?? t('app.notFiledAnywhere')
-														})}
-												onclick={() => toggleFold(place.id)}
-											>
-												<Icon
-													name="chevron-down"
-													class="size-4 shrink-0 text-gray-400 transition-transform {place.folded
-														? '-rotate-90'
-														: ''}"
-												/>
+										<h3 class="mt-4 mb-2 flex items-center gap-2 text-sm text-gray-700 first:mt-0">
+											{#if place.id === 0}
+												<Icon name="shopping" class="size-4 shrink-0 text-gray-400" />
 												<span class="font-medium">{place.label ?? t('app.notFiledAnywhere')}</span>
-												{#if place.folded}
-													<span class="tabular text-xs text-gray-500">{place.held}</span>
-												{/if}
-											</button>
-										{/if}
-									</h3>
-								{/if}
-								<!-- A grid rather than newspaper columns: each place is its own
+											{:else}
+												<button
+													type="button"
+													class="flex items-center gap-2 text-left transition hover:text-gray-900"
+													aria-expanded={!place.folded}
+													title={place.folded
+														? t('inventory.showWhatIsIn', {
+																place: place.label ?? t('app.notFiledAnywhere')
+															})
+														: t('inventory.fold', {
+																place: place.label ?? t('app.notFiledAnywhere')
+															})}
+													onclick={() => toggleFold(place.id)}
+												>
+													<Icon
+														name="chevron-down"
+														class="size-4 shrink-0 text-gray-400 transition-transform {place.folded
+															? '-rotate-90'
+															: ''}"
+													/>
+													<span class="font-medium">{place.label ?? t('app.notFiledAnywhere')}</span
+													>
+													{#if place.folded}
+														<span class="tabular text-xs text-gray-500">{place.held}</span>
+													{/if}
+												</button>
+											{/if}
+										</h3>
+									{/if}
+									<!-- A grid rather than newspaper columns: each place is its own
 						     block now, so a place with one category was a quarter-width
 						     strip beside three quarters of nothing. -->
-								<div class="grid gap-4 md:grid-cols-2 2xl:grid-cols-3">
-									{#each place.categories as category (category.name)}
-										<section
-											class="mb-4 break-inside-avoid border border-gray-200 bg-white shadow-card"
-										>
-											<h4 class="eyebrow border-b border-gray-200 px-4 py-2 text-gray-500">
-												{category.name}
-											</h4>
-											<div class="divide-y divide-gray-200">
-												{#each category.items as item (item.id)}
-													{@const globalIdx = filteredItems.indexOf(item)}
-													<!--
+									<div class="grid gap-4 md:grid-cols-2 2xl:grid-cols-3">
+										{#each place.categories as category (category.name)}
+											<section class="border border-gray-200 bg-white shadow-card">
+												<h4 class="eyebrow border-b border-gray-200 px-4 py-2 text-gray-500">
+													{category.name}
+												</h4>
+												<div class="divide-y divide-gray-200">
+													{#each category.items as item (item.id)}
+														{@const globalIdx = shownItems.indexOf(item)}
+														<!--
 									Still to buy is the normal state of a shopping list, and a wash of
 									alarm colour behind every row spends the one signal that should
 									mean something is wrong. The unticked box already says it. Only
 									what you have — blue — and what you put away — dimmed — are marked.
 								-->
-													<div
-														use:keepInView={globalIdx === selectedIndex}
-														draggable="true"
-														ondragstart={(e) => {
-															dragging = item.id;
-															// Firefox refuses to start a drag with no payload set.
-															e.dataTransfer?.setData('text/plain', String(item.id));
-														}}
-														ondragend={() => {
-															dragging = null;
-															dragOver = null;
-															stopFollowing();
-														}}
-														class="flex cursor-grab items-center gap-x-3 px-4 py-2 {item.snoozed
-															? 'bg-gray-50 opacity-50'
-															: item.bought
-																? 'bg-blue-50'
-																: ''} {globalIdx === selectedIndex
-															? 'ring-2 ring-gray-400 ring-inset'
-															: ''}"
-													>
-														<!--
+														<div
+															use:keepInView={globalIdx === selectedIndex}
+															draggable="true"
+															ondragstart={(e) => {
+																dragging = item.id;
+																// Firefox refuses to start a drag with no payload set.
+																e.dataTransfer?.setData('text/plain', String(item.id));
+															}}
+															ondragend={() => {
+																dragging = null;
+																dragOver = null;
+																stopFollowing();
+															}}
+															class="row-card cursor-grab {item.snoozed
+																? 'bg-gray-50 opacity-50'
+																: item.bought
+																	? 'bg-blue-50'
+																	: ''} {globalIdx === selectedIndex ? 'kb-cursor' : ''}"
+														>
+															<!--
 										The count down the left edge, where the thumb already is
 										and where the tick used to be. Stacked rather than in a
 										line: three controls across the front of a row is forty
@@ -1289,121 +1411,75 @@
 										have, and a name that has run out of width breaks one
 										letter per line.
 									-->
-														<!--
+															<!--
 															The row is a component, so a thing filed under a notebook is the
 															same thing this room shows — its count, its price, its own fields
 															and the recipes that use it. See `ItemRow`.
 														-->
-														<ItemRow
-															{item}
-															currency={data.currency}
-															actions={ITEM_ROOM_ACTIONS}
-															usedIn={data.usedIn[item.id] ?? []}
-															{chipColor}
-															onedit={() => startEdit(item)}
-															onsubmit={tick(
-																item.type === 'someday' ? 'toggleBought' : 'toggleSnoozed'
-															)}
-															ondeletesubmit={(one) => deferDelete(one.id, one.name)}
-															confirming={confirmingDelete === item.id}
-															onconfirm={(id) => (confirmingDelete = id)}
-														/>
-													</div>
-												{/each}
-											</div>
-										</section>
-									{/each}
-								</div>
-							{/each}
-						</div>
-					{/if}
-
-					{#if somedayItems.length > 0}
-						<div data-tour="inventory-list">
-							<!-- The same column width as a category, so the two halves of the page
-			     line up instead of one running the full width of the screen. -->
-							<div
-								class="divide-y divide-gray-200 border border-gray-200 bg-white shadow-card lg:w-1/2 xl:w-1/3 2xl:w-1/4"
-							>
-								{#each somedayItems as item (item.id)}
-									{@const globalIdx = filteredItems.indexOf(item)}
-									<div
-										use:keepInView={globalIdx === selectedIndex}
-										draggable="true"
-										ondragstart={(e) => {
-											dragging = item.id;
-											// Firefox refuses to start a drag with no payload set.
-											e.dataTransfer?.setData('text/plain', String(item.id));
-										}}
-										ondragend={() => {
-											dragging = null;
-											dragOver = null;
-											stopFollowing();
-										}}
-										class="flex cursor-grab items-center gap-x-3 px-4 py-2 {globalIdx ===
-										selectedIndex
-											? 'bg-gray-50'
-											: ''} {item.snoozed ? 'opacity-50' : ''}"
-									>
-										<!--
-											The row is a component, so a thing filed under a notebook is the
-											same thing this room shows — its count, its price, its own fields
-											and the recipes that use it. See `ItemRow`.
-										-->
-										<ItemRow
-											{item}
-											currency={data.currency}
-											actions={ITEM_ROOM_ACTIONS}
-											usedIn={data.usedIn[item.id] ?? []}
-											{chipColor}
-											onedit={() => startEdit(item)}
-											onsubmit={tick(item.type === 'someday' ? 'toggleBought' : 'toggleSnoozed')}
-											ondeletesubmit={(one) => deferDelete(one.id, one.name)}
-											confirming={confirmingDelete === item.id}
-											onconfirm={(id) => (confirmingDelete = id)}
-										/>
+															<ItemRow
+																{item}
+																currency={data.currency}
+																actions={ITEM_ROOM_ACTIONS}
+																usedIn={data.usedIn[item.id] ?? []}
+																{chipColor}
+																onedit={() => startEdit(item)}
+																onsubmit={tick(
+																	item.type === 'someday' ? 'toggleBought' : 'toggleSnoozed'
+																)}
+																ondeletesubmit={(one) => deferDelete(one.id, one.name)}
+																confirming={confirmingDelete === item.id}
+																onconfirm={(id) => (confirmingDelete = id)}
+															/>
+														</div>
+													{/each}
+												</div>
+											</section>
+										{/each}
 									</div>
 								{/each}
 							</div>
-						</div>
-					{/if}
+						{/if}
 
-					{#if filteredItems.length === 0}
-						<div class="py-12 text-center text-sm text-gray-500">
-							{#if items.length === 0}
+						{#if filteredItems.length === 0}
+							<!-- Empty because there is nothing, or because the filters hid it:
+						     saying the first when the second is true reads as a list
+						     that lost things. -->
+							{#if onThisTab.length === 0}
 								<EmptyState
 									icon="shopping"
 									title={t('inventory.theListIsEmpty')}
 									description={t('inventory.inventoryIsWhatYouKeep')}
 								>
 									{#snippet action()}
-										<button onclick={() => (showForm = true)} class="btn btn-primary">
+										<button onclick={openCreateForm} class="btn btn-primary">
 											<Icon name="plus" />
 											{t('inventory.newItem')}
 										</button>
 									{/snippet}
 								</EmptyState>
-							{:else if notShowing > 0}
-								{t('inventory.nothingHereMatchesTheCurrent')}
 							{:else}
-								{t('inventory.noItemsMatchTheCurrent')}
+								<EmptyState
+									filtered
+									onclear={narrowing ? clearFilters : undefined}
+									description={t('inventory.nothingHereMatchesTheCurrent')}
+								/>
 							{/if}
-						</div>
-					{/if}
-				</div>
-			{/snippet}
-		</SplitColumns>
+						{/if}
+					</div>
+				{/snippet}
+			</SplitColumns>
 
-		<form
-			method="POST"
-			action="?/setLocationPanelWidth"
-			class="hidden"
-			bind:this={panelForm}
-			use:enhance={() => async () => {}}
-		>
-			<input type="hidden" name="rem" value={panelRem} />
-		</form>
-	</div>
+			<form
+				method="POST"
+				action="?/setLocationPanelWidth"
+				class="hidden"
+				bind:this={panelForm}
+				use:enhance={() => async () => {}}
+			>
+				<input type="hidden" name="rem" value={panelRem} />
+			</form>
+		</div>
+	</RoomSurface>
 </div>
 
 <!--
@@ -1422,7 +1498,7 @@
 	of them a colour to read a list by.
 -->
 <Modal
-	bind:open={showAttributes}
+	bind:open={inventoryPanels.attributes}
 	error={form?.message}
 	title={t('inventory.attributes')}
 	description={t('inventory.whatYourThingsSayAbout')}
@@ -1572,106 +1648,8 @@
 	{/if}
 </Modal>
 
-<!--
-	How many, and what it says about itself.
-
-	Both are questions about the thing rather than about which list it is on,
-	which is why they are here and not in the row of segments: "the USB cables"
-	is something you ask once, not a view you keep switching between.
--->
 <Modal
-	bind:open={showFilters}
-	title={t('inventory.filters')}
-	description={t('inventory.narrowTheListToWhat')}
-	size="sm"
->
-	<div class="space-y-4">
-		<div>
-			<span class="eyebrow text-gray-500">{t('inventory.howMany')}</span>
-			<div class="mt-1 flex flex-wrap items-center gap-2 text-sm">
-				<label class="flex items-center gap-2">
-					{t('inventory.atLeast')}
-					<NumberBox name="atLeast" min="0" bind:value={atLeast} class="w-20" />
-				</label>
-				<label class="flex items-center gap-2">
-					{t('inventory.atMost')}
-					<NumberBox name="atMost" min="0" bind:value={atMost} class="w-20" />
-				</label>
-			</div>
-		</div>
-
-		{#if data.attributes.length > 0}
-			<div>
-				<span class="eyebrow text-gray-500">{t('inventory.attributes')}</span>
-				<!--
-					The same tree the Attributes screen draws, because it is the same
-					thing being read.
-
-					A flat row of every name-and-value in the account is unreadable by
-					the time there are thirty of them, and it cannot answer the
-					commonest question at all: "everything that has a length", whatever
-					the length is. So the attribute itself is the first thing you can
-					press, and its values are under it.
-				-->
-				<ul class="mt-1 space-y-2">
-					{#each data.attributes as attribute (attribute.key)}
-						<li>
-							<button
-								type="button"
-								class={attributeFilter === attribute.key ? 'pill' : 'chip'}
-								aria-pressed={attributeFilter === attribute.key}
-								style={attributeFilter === attribute.key
-									? (pillStyle(attribute.color) ?? '--pill:var(--control-on)')
-									: ''}
-								onclick={() =>
-									(attributeFilter = attributeFilter === attribute.key ? null : attribute.key)}
-							>
-								{attribute.key}
-								<span class="tabular pill-quiet text-xs">{attribute.count}</span>
-							</button>
-
-							<div class="mt-1 ml-1 flex flex-wrap gap-1 border-l border-gray-200 pl-3">
-								{#each attribute.values as one (one.value)}
-									{@const key = `${attribute.key}\u0000${one.value}`}
-									<button
-										type="button"
-										class={attributeFilter === key ? 'pill' : 'chip'}
-										aria-pressed={attributeFilter === key}
-										style={attributeFilter === key
-											? (pillStyle(one.color ?? attribute.color) ?? '--pill:var(--control-on)')
-											: ''}
-										onclick={() => (attributeFilter = attributeFilter === key ? null : key)}
-									>
-										{one.value || t('inventory.noValue')}
-										<span class="tabular pill-quiet text-xs">{one.count}</span>
-									</button>
-								{/each}
-							</div>
-						</li>
-					{/each}
-				</ul>
-			</div>
-		{/if}
-	</div>
-
-	{#snippet footer()}
-		<button
-			type="button"
-			class="btn"
-			onclick={() => {
-				attributeFilter = null;
-				atLeast = '';
-				atMost = '';
-			}}>{t('inventory.clearThem')}</button
-		>
-		<button type="button" class="btn btn-primary" onclick={() => (showFilters = false)}
-			>{t('ui.done')}</button
-		>
-	{/snippet}
-</Modal>
-
-<Modal
-	bind:open={showCategories}
+	bind:open={inventoryPanels.categories}
 	error={form?.message}
 	title={t('inventory.categories')}
 	description={t('inventory.tickTheOnesThatHold')}
@@ -1696,7 +1674,7 @@
 						<input type="hidden" name="id" value={category.id} />
 						<OneLine name="name" value={category.name} class="input flex-1" required autofocus />
 						<button
-							class="btn btn-sm"
+							class="icon-btn"
 							title={t('inventory.saveTheName')}
 							aria-label={t('inventory.saveTheName')}
 						>
@@ -1704,7 +1682,7 @@
 						</button>
 						<button
 							type="button"
-							class="btn btn-sm"
+							class="icon-btn"
 							title={t('inventory.keepTheOldName')}
 							aria-label={t('inventory.keepTheOldName')}
 							onclick={() => (editingCategory = null)}
@@ -1797,21 +1775,21 @@
 					{:else}
 						<button
 							type="button"
-							class="btn btn-sm shrink-0"
+							class="icon-btn shrink-0"
 							title={t('ui.rename')}
 							aria-label={t('inventory.rename', { name: category.name })}
 							onclick={() => (editingCategory = category.id)}
 						>
-							<Icon name="edit" size={14} />
+							<Icon name="edit" />
 						</button>
 						<button
 							type="button"
-							class="btn btn-sm shrink-0"
+							class="icon-btn icon-btn-danger shrink-0"
 							title={t('ui.delete')}
 							aria-label={t('inventory.delete', { name: category.name })}
 							onclick={() => (confirmDeleteCategory = category.id)}
 						>
-							<Icon name="trash" size={14} />
+							<Icon name="trash" />
 						</button>
 					{/if}
 				{/if}
@@ -1868,7 +1846,7 @@
 	{/if}
 
 	{#snippet footer()}
-		<button type="button" class="btn" onclick={() => (showCategories = false)}
+		<button type="button" class="btn" onclick={() => (inventoryPanels.categories = false)}
 			>{t('ui.close')}</button
 		>
 	{/snippet}

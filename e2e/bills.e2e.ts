@@ -144,7 +144,7 @@ test('a bill with a lead lands on the week, and ticking it there pays it', async
 	await add.getByRole('button', { name: 'Add', exact: true }).click();
 
 	// The row says both halves.
-	await expect(page.locator('li', { hasText: 'Rent' }).getByText(/due the 15/)).toBeVisible();
+	await expect(page.locator('li', { hasText: 'Rent' }).getByText(/due the 15th/)).toBeVisible();
 	await expect(page.locator('li', { hasText: 'Rent' }).getByText(/3 days before/)).toBeVisible();
 
 	// It is on the month's plan, on the 12th rather than the 15th.
@@ -186,4 +186,182 @@ test('an archived bill can still be corrected', async ({ page }) => {
 	await edit.getByRole('button', { name: 'Save' }).click();
 
 	await expect(page.getByText('Old service (cancelled)')).toBeVisible();
+});
+
+/** The two sizes this ships at: the phone app is the same code. */
+const SIZES = [
+	{ name: 'phone', width: 390, height: 844 },
+	{ name: 'desktop', width: 1400, height: 900 }
+] as const;
+
+for (const size of SIZES) {
+	/**
+	 * A subscription on a card asks for nothing.
+	 *
+	 * Ticking Automatic disables the lead beside it and says so under it, and
+	 * moves nothing on the form — the field is disabled rather than removed and
+	 * the two hints share a cell. The bill then never turns up on the week.
+	 */
+	test(`an automatic bill is never asked for (${size.name})`, async ({ page }) => {
+		test.setTimeout(120_000);
+		await page.setViewportSize({ width: size.width, height: size.height });
+		await register(page, testEmail(`bills-auto-${size.name}`));
+		// A notebook with a Bills tab, so the form draws its notebook field below
+		// the box — a notebook without one is not offered.
+		await page.request.post('/notebooks?/create', {
+			headers: { Origin: new URL(page.url()).origin, 'x-sveltekit-action': 'true' },
+			form: { heading: 'Home', modules: 'notes,tasks,bills' }
+		});
+		await visit(page, '/finance/bills');
+
+		await page
+			.getByRole('button', { name: /New bill/ })
+			.first()
+			.click();
+		const dialog = page.getByRole('dialog', { name: 'New bill' });
+		await dialog.locator('[name="heading"]').fill('Film streaming');
+		await dialog.locator('[name="amount"]').fill('15,99');
+		await dialog.locator('[name="dueDay"]').fill('14');
+
+		const lead = dialog.getByRole('spinbutton', { name: 'Pay it this many days before' });
+		await expect(lead).toBeEnabled();
+		await expect(dialog.getByText("You won't be reminded to pay it.")).toBeHidden();
+
+		// What sits below must not move when the box is ticked — measured from
+		// the name at the top, in one read, once the sheet has finished rising.
+		const gap = () =>
+			dialog.evaluate(async (d) => {
+				await Promise.all(d.getAnimations({ subtree: true }).map((one) => one.finished));
+				const y = (selector: string) => d.querySelector(selector)!.getBoundingClientRect().y;
+				return y('[data-picker="notebookId"]') - y('[name="heading"]');
+			});
+		const before = await gap();
+		await dialog.getByRole('checkbox', { name: 'Automatic' }).check();
+		await expect(lead).toBeDisabled();
+		await expect(dialog.getByText("You won't be reminded to pay it.")).toBeVisible();
+		expect(await gap()).toBe(before);
+
+		await dialog.getByRole('button', { name: 'Add', exact: true }).click();
+		const row = page.locator('li', { hasText: 'Film streaming' });
+		await expect(row.getByText('Automatic')).toBeVisible();
+		await page.screenshot({ path: `test-results/bills-automatic-${size.name}.png` });
+
+		// Editing it opens with the box ticked, and unticking it gives the lead back.
+		await row.getByRole('button', { name: 'Edit Film streaming' }).click();
+		const edit = page.getByRole('dialog', { name: 'Edit bill' });
+		await expect(edit.getByRole('checkbox', { name: 'Automatic' })).toBeChecked();
+		await edit.getByRole('button', { name: 'Cancel' }).click();
+
+		// Not on the week: it pays itself.
+		await visit(page, '/tasks/plan?view=month');
+		await expect(page.getByText('Pay Film streaming')).toHaveCount(0);
+	});
+
+	/**
+	 * A period can be skipped, and a row opens onto its history.
+	 *
+	 * Skipped is its own state — not paid, not overdue — and undoing it is one
+	 * press. The history lists each period with its amount and whether it was
+	 * paid or skipped, with the average per period over the ones paid.
+	 */
+	test(`a period can be skipped, undone, and read back in the history (${size.name})`, async ({
+		page
+	}) => {
+		test.setTimeout(120_000);
+		await page.setViewportSize({ width: size.width, height: size.height });
+		await register(page, testEmail(`bills-skip-${size.name}`));
+		await visit(page, '/finance/bills');
+
+		await page
+			.getByRole('button', { name: /New bill/ })
+			.first()
+			.click();
+		const add = page.getByRole('dialog', { name: 'New bill' });
+		await add.locator('[name="heading"]').fill('Climbing gym');
+		await add.locator('[name="amount"]').fill('140,00');
+		await add.getByRole('button', { name: 'Add', exact: true }).click();
+
+		const row = page.locator('li', { hasText: 'Climbing gym' });
+		await row.getByRole('button', { name: 'Skip Climbing gym this period' }).click();
+		await expect(row.getByText('skipped', { exact: true })).toBeVisible();
+
+		// The history says so, and nothing was paid.
+		await row.getByRole('button', { name: 'History of Climbing gym' }).click();
+		const history = row.locator('[id^="bill-history-"]');
+		await expect(history.getByText('Skipped', { exact: true })).toBeVisible();
+		await page.screenshot({ path: `test-results/bills-history-${size.name}.png` });
+
+		// Undo the skip, then pay it: the average is what was paid.
+		await row.getByRole('button', { name: 'Undo the skip for Climbing gym' }).click();
+		await expect(row.getByText('skipped', { exact: true })).toHaveCount(0);
+		await row.getByRole('button', { name: 'Mark Climbing gym paid' }).click();
+		await row.locator('[name="amount"]').fill('150,00');
+		await row.getByRole('button', { name: 'Paid', exact: true }).click();
+		// The row's own mark, not the history table's column of the same word.
+		await expect(row.getByText('paid', { exact: true }).first()).toBeVisible();
+		await expect(history.getByText('Average per month')).toBeVisible();
+		await expect(history.getByText(/150/).first()).toBeVisible();
+
+		// Nothing sideways at this size.
+		const overflow = await page.evaluate(
+			() => document.documentElement.scrollWidth > document.documentElement.clientWidth
+		);
+		expect(overflow).toBe(false);
+	});
+}
+
+/**
+ * A notebook's Bills tab is the room's list: the same row, the same form.
+ *
+ * It had pay, undo and archive but no edit — the room's form lived in the
+ * room's page. Now edit, skip, and delete from the archived list are there too.
+ */
+test('a bill in a notebook can be edited, skipped, archived and deleted there', async ({
+	page
+}) => {
+	test.setTimeout(150_000);
+	await register(page, testEmail('bills-notebook'));
+
+	await visit(page, '/notebooks');
+	await page.getByRole('button', { name: 'New notebook' }).first().click();
+	await page.getByLabel('Title').fill('Flat');
+	await page.getByRole('button', { name: 'Create notebook' }).click();
+	await page.waitForTimeout(600);
+	await page.getByRole('link', { name: 'Flat' }).first().click();
+	await page.waitForURL(/\?notebook=\d+/);
+	const id = new URL(page.url()).searchParams.get('notebook');
+	await visit(page, `/notebooks/${id}`);
+	await page.getByRole('button', { name: 'Rename' }).click();
+	await page.getByRole('checkbox', { name: 'Bills' }).check();
+	await page.getByRole('button', { name: 'Save' }).click();
+	await page.waitForTimeout(600);
+
+	await page.getByRole('button', { name: /^Bills/ }).click();
+	await page.getByRole('button', { name: 'New bill' }).click();
+	const add = page.getByRole('dialog', { name: 'New bill' });
+	await add.getByLabel('Name').fill('Service charge');
+	await add.locator('[name="amount"]').fill('90,00');
+	await add.getByRole('button', { name: 'Add', exact: true }).click();
+
+	const row = page.locator('li', { hasText: 'Service charge' });
+	await row.getByRole('button', { name: 'Edit Service charge' }).click();
+	const edit = page.getByRole('dialog', { name: 'Edit bill' });
+	await edit.getByLabel('Name').fill('Service charge (block B)');
+	await edit.getByRole('button', { name: 'Save', exact: true }).click();
+	const renamed = page.locator('li', { hasText: 'Service charge (block B)' });
+	await expect(renamed).toBeVisible();
+
+	await renamed.getByRole('button', { name: 'Skip Service charge (block B) this period' }).click();
+	await expect(renamed.getByText('skipped', { exact: true })).toBeVisible();
+
+	await renamed.getByRole('button', { name: 'Archive Service charge (block B)' }).click();
+	await page.getByRole('button', { name: /Archived/ }).click();
+	await page
+		.locator('li', { hasText: 'Service charge (block B)' })
+		.getByRole('button', { name: 'Delete Service charge (block B)' })
+		.click();
+	const confirm = page.getByRole('dialog', { name: 'Delete this bill?' });
+	await page.waitForTimeout(600);
+	await confirm.getByRole('button', { name: 'Delete', exact: true }).click();
+	await expect(page.getByText('Service charge (block B)')).toHaveCount(0);
 });

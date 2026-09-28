@@ -4,7 +4,13 @@
 	import { enhance } from '$lib/enhance';
 	import OneLine from '$lib/components/OneLine.svelte';
 	import Banner from '$lib/components/Banner.svelte';
-	import Card from '$lib/components/Card.svelte';
+	import CopyBlock from '$lib/components/CopyBlock.svelte';
+	import Field from '$lib/components/Field.svelte';
+	import FormGrid from '$lib/components/FormGrid.svelte';
+	import Modal from '$lib/components/Modal.svelte';
+	import RoomSurface from '$lib/components/RoomSurface.svelte';
+	import SettingGroup from '$lib/components/SettingGroup.svelte';
+	import SettingRow from '$lib/components/SettingRow.svelte';
 	import EmptyState from '$lib/components/EmptyState.svelte';
 	import FormError from '$lib/components/FormError.svelte';
 	import Icon from '$lib/components/Icon.svelte';
@@ -14,17 +20,6 @@
 
 	const t = useT();
 	const now = useWhen();
-
-	/**
-	 * Where the address goes in the sentence asking for it.
-	 *
-	 * The sentence is one message so a translator sees it whole, and it is split
-	 * here so the address can be drawn in bold wherever that language puts it.
-	 * What goes into the placeholder is the placeholder, which is the one value
-	 * certain not to appear in the words around it.
-	 */
-	const EMAIL_SLOT = '{email}';
-	const askedFor = t('admin.id.typeEmailToConfirm', { email: EMAIL_SLOT }).split(EMAIL_SLOT);
 
 	let { data, form }: { data: PageServerData; form: ActionData } = $props();
 
@@ -61,204 +56,236 @@
 </script>
 
 <!-- Only one of these, ever: `FormError` renders any message it is given, so
-     handing it a successful one printed the same sentence twice, once in red. -->
-<FormError message={form?.success ? null : form?.message} />
+     handing it a successful one printed the same sentence twice. -->
+<div class="space-y-4">
+	<FormError message={form?.success ? null : form?.message} />
 
-{#if form?.success && form.message}
-	<Banner kind="success">
-		<p>{form.message}</p>
-		{#if form.link}
-			<p class="tabular mt-2 border border-gray-200 bg-white px-2 py-1 text-xs break-all">
-				{form.link}
-			</p>
-		{/if}
-	</Banner>
-{/if}
-
-<div class="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)]">
-	<Card title={data.account.email} description={data.account.name}>
-		<dl class="space-y-2 text-sm">
-			<div class="flex justify-between gap-4">
-				<dt class="text-gray-500">{t('admin.id.joined')}</dt>
-				<dd class="tabular text-gray-900">{when(data.account.createdAt)}</dd>
-			</div>
-			<div class="flex justify-between gap-4">
-				<dt class="text-gray-500">{t('admin.id.addressConfirmed')}</dt>
-				<dd class="text-gray-900">{data.account.emailVerified ? 'yes' : 'no'}</dd>
-			</div>
-			<div class="flex justify-between gap-4">
-				<dt class="text-gray-500">{t('admin.id.role')}</dt>
-				<dd class="text-gray-900">{data.account.role}</dd>
-			</div>
-			<div class="flex justify-between gap-4">
-				<dt class="text-gray-500">{t('admin.id.signedInDevices')}</dt>
-				<dd class="tabular text-gray-900">{data.account.sessions}</dd>
-			</div>
-			<div class="flex justify-between gap-4">
-				<dt class="text-gray-500">{t('admin.id.plan')}</dt>
-				<dd class="text-gray-900">{data.account.plan ?? 'free'}</dd>
-			</div>
-		</dl>
-
-		<div class="mt-4 flex flex-wrap gap-2 border-t border-gray-200 pt-4">
-			{#if data.account.canGrantTrial}
-				<!-- Only for an account with no plan history at all — one that
-				     predates billing. Not offered otherwise: a second trial is
-				     a discount, and discounts belong to the payment provider. -->
-				<form method="post" action="?/grantTrial" use:enhance>
-					<button class="btn btn-sm">
-						<Icon name="calendar" />
-						{t('admin.id.startATrial')}
-					</button>
-				</form>
+	{#if form?.success && form.message}
+		<Banner kind="success">
+			<p>{form.message}</p>
+			{#if form.link}
+				<div class="mt-2"><CopyBlock text={form.link} label={t('ui.copy')} /></div>
 			{/if}
+		</Banner>
+	{/if}
 
-			{#if data.account.canEndPlan}
-				<!-- The operator's clock: yesterday shows the lapsed view, a date
-				     ahead stretches a test trial. Local dates only, provider
-				     billing untouched. -->
-				<form method="post" action="?/setPlanEnd" use:enhance class="flex items-center gap-2">
-					<input
-						type="date"
-						name="endsAt"
-						required
-						value={data.account.planEndsAt ? data.account.planEndsAt.slice(0, 10) : ''}
-						class="input input-sm"
-					/>
-					<button class="btn btn-sm shrink-0 whitespace-nowrap">
-						<Icon name="clock" />
-						{t('admin.id.endPlanThen')}
-					</button>
-				</form>
-			{/if}
-
-			{#if !data.account.emailVerified}
-				<form method="post" action="?/resendVerification" use:enhance>
-					<button class="btn btn-sm">
-						<Icon name="link" />
-						{data.emailConfigured
-							? t('admin.id.resendConfirmation')
-							: t('admin.id.getConfirmationLink')}
-					</button>
-				</form>
-			{/if}
-
-			{#if !data.self}
-				<!--
-					A role change is two steps, like deleting is.
-
-					It sat in this row as one ordinary small button between "Start a
-					trial" and "Resend confirmation", so a slipped click handed
-					somebody every power this page has — including deleting every
-					other account. The confirm is armed, so the second half of a
-					double-click lands on nothing, and Cancel takes the place the
-					trigger was in.
-				-->
-				{#if changingRole}
-					<form
-						method="post"
-						action="?/setRole"
-						use:enhance={() => {
-							changingRole = false;
-							return ({ update }) => update();
-						}}
-						class="flex flex-wrap items-center gap-2"
+	<!--
+		One surface, the shape every settings screen has: the account's facts as
+		rows, each with the verb that changes it at its right end, and its history
+		under them. The verbs sat in one row of mixed buttons under the facts, so
+		"Make admin" was a slipped click away from "Resend confirmation".
+	-->
+	<RoomSurface>
+		<SettingGroup
+			title={t('admin.id.theAccount')}
+			description={data.account.name
+				? `${data.account.email} · ${data.account.name}`
+				: data.account.email}
+		>
+			<SettingRow label={t('admin.id.joined')}>
+				{#snippet control()}
+					<span class="tabular text-sm text-gray-900">{when(data.account.createdAt)}</span>
+				{/snippet}
+			</SettingRow>
+			<SettingRow
+				label={t('admin.id.addressConfirmed')}
+				hint={!data.account.emailVerified && !data.emailConfigured
+					? t('admin.id.thisInstanceHasNoMail')
+					: ''}
+			>
+				{#snippet control()}
+					{#if !data.account.emailVerified}
+						<form method="post" action="?/resendVerification" use:enhance>
+							<button class="btn btn-sm">
+								<Icon name="link" />
+								{data.emailConfigured
+									? t('admin.id.resendConfirmation')
+									: t('admin.id.getConfirmationLink')}
+							</button>
+						</form>
+					{/if}
+					<span class="text-sm text-gray-900"
+						>{data.account.emailVerified ? t('admin.id.yes') : t('admin.id.no')}</span
 					>
-						<input type="hidden" name="role" value={nextRole} />
-						<button type="button" class="btn btn-sm" onclick={() => (changingRole = false)}>
-							{t('ui.cancel')}
+				{/snippet}
+			</SettingRow>
+			<SettingRow label={t('admin.id.role')}>
+				{#snippet control()}
+					{#if !data.self}
+						<!-- Two steps: granting admin hands somebody the power to delete
+						     every account here, so it is asked in a dialog of its own. -->
+						<button class="btn btn-sm" onclick={() => (changingRole = true)}>
+							<Icon name="shield" />
+							{data.account.role === 'admin' ? t('admin.id.removeAdmin') : t('admin.id.makeAdmin')}
 						</button>
-						<span class="text-sm text-gray-700">
-							{#if nextRole === 'admin'}
-								<strong class="font-semibold text-gray-900">{data.account.email}</strong>
-								{t('admin.id.willBeAbleToRead')}
-							{:else}
-								<strong class="font-semibold text-gray-900">{data.account.email}</strong>
-								{t('admin.id.keepsTheAccountAndLoses')}
+					{/if}
+					<span class="text-sm text-gray-900">{data.account.role}</span>
+				{/snippet}
+			</SettingRow>
+			<SettingRow label={t('admin.id.signedInDevices')}>
+				{#snippet control()}
+					<span class="tabular text-sm text-gray-900">{data.account.sessions}</span>
+				{/snippet}
+			</SettingRow>
+			<SettingRow label={t('admin.id.plan')}>
+				{#snippet control()}
+					{#if data.account.canGrantTrial}
+						<!-- Only for an account with no plan history at all — one that
+						     predates billing. A second trial is a discount, and discounts
+						     belong to the payment provider. -->
+						<form method="post" action="?/grantTrial" use:enhance>
+							<button class="btn btn-sm">
+								<Icon name="calendar" />
+								{t('admin.id.startATrial')}
+							</button>
+						</form>
+					{/if}
+					{#if data.account.canEndPlan}
+						<!-- The operator's clock: yesterday shows the lapsed view, a date
+						     ahead stretches a test trial. Provider billing untouched. -->
+						<form method="post" action="?/setPlanEnd" use:enhance class="flex items-center gap-2">
+							<input
+								type="date"
+								name="endsAt"
+								required
+								aria-label={t('admin.id.endPlanThen')}
+								value={data.account.planEndsAt ? data.account.planEndsAt.slice(0, 10) : ''}
+								class="input input-sm w-auto"
+							/>
+							<button class="btn btn-sm shrink-0 whitespace-nowrap">
+								<Icon name="clock" />
+								{t('admin.id.endPlanThen')}
+							</button>
+						</form>
+					{/if}
+					<span class="text-sm text-gray-900">{data.account.plan ?? t('admin.id.noPlan')}</span>
+				{/snippet}
+			</SettingRow>
+		</SettingGroup>
+
+		<SettingGroup title={t('admin.id.history')} description={t('admin.id.whatThisAccountDidAnd')}>
+			{#each data.events as event (event.id)}
+				<div class="list-row">
+					<div class="list-row-main">
+						<p class="text-sm text-gray-900">
+							{event.event.replaceAll('_', ' ')}
+							{#if event.actorId}
+								<span class="text-xs font-medium text-gray-600">
+									{t('admin.id.byAnAdministrator')}</span
+								>
 							{/if}
-						</span>
-						<button class="btn btn-danger btn-sm" use:armed>
-							{nextRole === 'admin' ? t('admin.id.makeAdmin') : t('admin.id.removeAdmin')}
-						</button>
-					</form>
-				{:else}
-					<button class="btn btn-sm" onclick={() => (changingRole = true)}>
-						{data.account.role === 'admin' ? t('admin.id.removeAdmin') : t('admin.id.makeAdmin')}
-					</button>
-				{/if}
-			{/if}
-		</div>
+						</p>
+						{#if describe(event.detail)}
+							<p class="text-xs break-all text-gray-500">{describe(event.detail)}</p>
+						{/if}
+					</div>
+					<span class="tabular shrink-0 text-xs text-gray-500">{when(event.createdAt)}</span>
+				</div>
+			{:else}
+				<EmptyState icon="clock" title={t('admin.id.nothingRecordedYet')} />
+			{/each}
+		</SettingGroup>
+	</RoomSurface>
 
-		{#if !data.emailConfigured}
-			<p class="mt-3 text-xs text-gray-500">
-				{t('admin.id.thisInstanceHasNoMail')}
-			</p>
-		{/if}
-	</Card>
-
+	<!-- The same closed red section the account page ends with. -->
 	{#if !data.self && !data.account.isOwner}
-		<Card title={t('admin.id.deleteThisAccount')} description={t('admin.id.everythingInItGoesIn')}>
-			{#if !deleting}
-				<button class="btn btn-danger btn-sm" onclick={() => ((deleting = true), (typed = ''))}>
+		<details class="danger-zone">
+			<summary class="danger-zone-title">
+				<Icon name="chevron-right" size={12} class="danger-zone-mark" />
+				{t('settings.account.dangerZone')}
+			</summary>
+			<div class="danger-zone-row">
+				<div class="min-w-0">
+					<h3 class="text-sm font-semibold text-gray-900">{t('admin.id.deleteThisAccount')}</h3>
+					<p class="mt-1 max-w-2xl text-sm text-gray-600">{t('admin.id.everythingInItGoesIn')}</p>
+				</div>
+				<button
+					class="btn btn-danger btn-sm shrink-0"
+					onclick={() => ((deleting = true), (typed = ''))}
+				>
 					<Icon name="trash" />
 					{t('admin.id.deleteThisAccount')}
 				</button>
-			{:else}
-				<form method="post" action="?/deleteAccount" use:enhance class="space-y-3">
-					<!-- The ask is one sentence with the address in it: assembled from
-					     "Type" and "to confirm" around it, the verb came out as the
-					     noun in three languages. -->
-					<p class="text-sm text-gray-700">
-						{askedFor[0]}<strong class="text-gray-900">{data.account.email}</strong>{askedFor[1] ??
-							''}.
-						{t('admin.id.everyBlockEntryNoteGoal')}
-					</p>
-					<div class="flex flex-wrap items-center gap-2">
-						<!--
-							`off` on every autofill hint: the browser offering to fill in an
-							address here would be filling in the confirmation for you, which
-							is the whole of what this box is for.
-						-->
+			</div>
+		</details>
+
+		<!--
+			Deleting is typing the address, not a second click: a confirmation where
+			the first press was is one a double-click walks straight through, and
+			the address catches the real mistake — having the wrong account open.
+		-->
+		<Modal
+			open={deleting}
+			onclose={() => (deleting = false)}
+			title={t('admin.id.deleteThisAccount')}
+			description={t('admin.id.everyBlockEntryNoteGoal')}
+			size="sm"
+		>
+			<form id="delete-account-form" method="post" action="?/deleteAccount" use:enhance>
+				<FormGrid>
+					<!-- One sentence with the address in it: assembled from "Type" and
+					     "to confirm" around it, the verb came out as the noun. -->
+					<Field
+						label={t('admin.id.typeEmailToConfirm', { email: data.account.email })}
+						span={12}
+						required
+					>
+						<!-- The browser offering to fill in an address here would be
+						     filling in the confirmation for you. -->
 						<OneLine
 							name="confirmEmail"
 							placeholder={data.account.email}
 							bind:value={typed}
-							class="input min-w-0 flex-1 sm:max-w-sm"
-							ariaLabel="The address of the account being deleted"
+							class="input"
 							autocapitalize="none"
+							autofocus
 						/>
-						<button class="btn btn-danger btn-sm" disabled={!matches}
-							>{t('admin.id.deleteForGood')}</button
-						>
-						<button type="button" class="btn btn-sm" onclick={() => (deleting = false)}>
-							{t('ui.cancel')}
-						</button>
-					</div>
-				</form>
-			{/if}
-		</Card>
+					</Field>
+				</FormGrid>
+			</form>
+			{#snippet footer()}
+				<button type="button" class="btn" onclick={() => (deleting = false)}
+					>{t('ui.cancel')}</button
+				>
+				<button type="submit" form="delete-account-form" class="btn btn-danger" disabled={!matches}
+					>{t('admin.id.deleteForGood')}</button
+				>
+			{/snippet}
+		</Modal>
 	{/if}
 
-	<Card title={t('admin.id.history')} description={t('admin.id.whatThisAccountDidAnd')} flush>
-		{#if data.events.length === 0}
-			<EmptyState icon="clock" title={t('admin.id.nothingRecordedYet')} />
-		{:else}
-			<div class="divide-y divide-gray-200">
-				{#each data.events as event (event.id)}
-					<div class="flex items-baseline gap-3 px-4 py-2 text-sm">
-						<span class="min-w-0 flex-1">
-							<span class="text-gray-900">{event.event.replaceAll('_', ' ')}</span>
-							{#if event.actorId}
-								<span class="text-xs text-amber-700"> {t('admin.id.byAnAdministrator')}</span>
-							{/if}
-							{#if describe(event.detail)}
-								<span class="block text-xs text-gray-500">{describe(event.detail)}</span>
-							{/if}
-						</span>
-						<span class="tabular shrink-0 text-xs text-gray-500">{when(event.createdAt)}</span>
-					</div>
-				{/each}
-			</div>
-		{/if}
-	</Card>
+	{#if !data.self}
+		<Modal
+			open={changingRole}
+			onclose={() => (changingRole = false)}
+			title={nextRole === 'admin' ? t('admin.id.makeAdmin') : t('admin.id.removeAdmin')}
+			size="sm"
+		>
+			<p class="text-sm text-gray-700">
+				<strong class="font-semibold text-gray-900">{data.account.email}</strong>
+				{nextRole === 'admin'
+					? t('admin.id.willBeAbleToRead')
+					: t('admin.id.keepsTheAccountAndLoses')}
+			</p>
+			<form
+				id="role-form"
+				method="post"
+				action="?/setRole"
+				use:enhance={() => {
+					changingRole = false;
+					return ({ update }) => update();
+				}}
+			>
+				<input type="hidden" name="role" value={nextRole} />
+			</form>
+			{#snippet footer()}
+				<button type="button" class="btn" onclick={() => (changingRole = false)}
+					>{t('ui.cancel')}</button
+				>
+				<button type="submit" form="role-form" class="btn btn-danger" use:armed>
+					{nextRole === 'admin' ? t('admin.id.makeAdmin') : t('admin.id.removeAdmin')}
+				</button>
+			{/snippet}
+		</Modal>
+	{/if}
 </div>

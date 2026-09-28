@@ -1,11 +1,12 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
 	import { useT } from '$lib/i18n';
+	import PageTitle from '$lib/components/PageTitle.svelte';
 
 	const t = useT();
 </script>
 
-<svelte:head><title>{t('mail.weeklyReview.off.weeklyReviewTurnedOff')}</title></svelte:head>
+<PageTitle parts={t('titles.weeklyReviewTurnedOff')} />
 
 <div class="mx-auto max-w-md p-8 text-center">
 	<h1 class="text-lg font-semibold text-gray-900">{t('mail.weeklyReview.off.turnedOff')}</h1>

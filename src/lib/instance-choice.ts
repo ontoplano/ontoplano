@@ -80,6 +80,34 @@ export const SPINNING_PARAM = 'spinning';
  */
 export const RANG_PARAM = 'rang';
 
+/**
+ * What a launch from a home-screen widget carries: the page it was pressed for.
+ *
+ * The shell does not know which instance the app opens — that is kept in this
+ * origin's storage — so a widget's tap arrives here, on the copy of the app
+ * the phone carries, and is sent on from here like any other launch.
+ */
+export const OPENING_PARAM = 'open';
+
+/**
+ * The address to open on `instance` for what a launch asked, or null.
+ *
+ * A path is taken as a page of that instance; a whole address only when it is
+ * that instance's own. Anything else is refused rather than followed: the
+ * activity a widget launches can be started by any app on the phone, and it
+ * must not be a way to put somebody else's page inside this one.
+ */
+export function openingOn(instance: string, asked: string | null): string | null {
+	if (!asked) return null;
+	try {
+		const home = new URL(instance);
+		const there = new URL(asked, home);
+		return there.origin === home.origin ? there.href : null;
+	} catch {
+		return null;
+	}
+}
+
 /** The mark saying the answer is this phone. */
 export const ARRIVING_HOME = 'here';
 

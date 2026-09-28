@@ -104,6 +104,7 @@ export const VERB_KEYS = new Set([
 	'finish',
 	'link',
 	'log',
+	'move',
 	'pay',
 	'pin',
 	'put',
@@ -112,15 +113,18 @@ export const VERB_KEYS = new Set([
 	'remind',
 	'remove',
 	'rename',
+	'reorder',
 	'reopen',
 	'schedule',
 	'set',
 	'share',
+	'skip',
 	'tag',
 	'tick',
 	'unarchive',
 	'unlink',
 	'unpin',
+	'unskip',
 	'unpay',
 	'unschedule',
 	'untick',
@@ -140,7 +144,14 @@ export const VERB_KEYS = new Set([
 export const PHRASE_OVERRIDES: Record<string, Phrase> = {
 	workout_done: { verb: 'finish', noun: 'workout' },
 	cooked_recipe: { verb: 'cooked', noun: 'recipe' },
-	note_to_tasks: { verb: 'madeTasksOutOf', noun: 'note' }
+	note_to_tasks: { verb: 'madeTasksOutOf', noun: 'note' },
+	// A star is the same act spelled the other way: "favorited a notebook".
+	favourite_notebook: { verb: 'favorite', noun: 'notebook' },
+	// It takes a label off, so it reads as removing one, not as a notebook.
+	untag_notebook: { verb: 'remove', noun: 'tag' },
+	// Plural in the name because they take a list; the noun is counted anyway.
+	move_notes: { verb: 'move', noun: 'note' },
+	reorder_tasks: { verb: 'reorder', noun: 'task' }
 };
 
 /** A verb's catalogue key, and the noun it acts on, as the identifier spells it. */
@@ -199,6 +210,7 @@ export const NOUN_KEYS = new Set([
 	'movement',
 	'note',
 	'notebook',
+	'notebookFolder',
 	'person',
 	'price',
 	'recipe',

@@ -4,7 +4,7 @@ import { pickableNotebooks } from '$lib/services/notebooks';
 import { billHandlers } from '$lib/services/bill-actions';
 import { getCurrency } from '$lib/services/settings';
 import { listMovements } from '$lib/services/statements';
-import { listBills, listPayments, monthSummary, periodFor, type Rhythm } from '$lib/services/bills';
+import { listBillsThisPeriod, monthSummary } from '$lib/services/bills';
 
 /**
  * Bills are not the finance section any more — transactions are, and they
@@ -28,17 +28,9 @@ const MOVEMENT_PICKER_LIMIT = 200;
 
 export const load = async ({ locals }: IsolatedEvent) => {
 	const ctx = buildCtx(locals.user!.id);
-	const bills = listBills(ctx, { includeArchived: true });
+	// Also writes what automatic bills have paid since the page was last read.
+	const bills = listBillsThisPeriod(ctx, { includeArchived: true });
 	const month = thisMonth(ctx.now);
-	const periods = Object.fromEntries(
-		bills.map((b) => [b.id, periodFor(b.rhythm as Rhythm, ctx.now)])
-	);
-	const paid = new Set(
-		bills
-			.flatMap((b) => listPayments(ctx, b.id))
-			.filter((p) => p.period === periods[p.billId])
-			.map((p) => p.billId)
-	);
 
 	/*
 	 * Recent money leaving, to attach a bill to.
@@ -56,9 +48,8 @@ export const load = async ({ locals }: IsolatedEvent) => {
 		notebooks: pickableNotebooks(ctx),
 		currency: getCurrency(ctx.userId),
 		month,
-		bills: bills.map((b) => ({ ...b, paidThisPeriod: paid.has(b.id), period: periods[b.id] })),
+		bills,
 		summary: monthSummary(ctx, month),
-		periods,
 		recentMovements: listMovements(ctx, {
 			from: since.toISOString().slice(0, 10),
 			direction: 'out',

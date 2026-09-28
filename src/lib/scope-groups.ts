@@ -86,3 +86,25 @@ export function groupsOf<T extends { key: string }>(
 		choices: offered.filter((one) => (group.scopes as readonly string[]).includes(one.key))
 	})).filter((group) => group.choices.length > 0);
 }
+
+/**
+ * The read grant a write grant needs, or null when it stands alone.
+ *
+ * Writing needs reading: a key that could change a room without seeing it was
+ * given back what it changed anyway — every edit answers with the thing
+ * before and after — so "write but not read" was never really true, only
+ * confusing. `x:write` brings `x:read` wherever that grant exists.
+ */
+export function readNeededBy(scope: string): string | null {
+	return scope.endsWith(':write') ? scope.replace(/:write$/, ':read') : null;
+}
+
+/** These grants, and every read grant one of them needs, from the ones that exist. */
+export function withNeededReads<T extends string>(scopes: readonly T[], known: readonly T[]): T[] {
+	const out = new Set<T>(scopes);
+	for (const scope of scopes) {
+		const read = readNeededBy(scope) as T | null;
+		if (read && known.includes(read)) out.add(read);
+	}
+	return [...out];
+}

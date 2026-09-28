@@ -12,13 +12,23 @@ import { notify } from '$lib/notify.svelte';
  * Capture phase, so it wins over the form's own submit handling the way
  * `armed` does.
  */
-export function namedAttributes(node: HTMLElement, message: () => string) {
+export function namedAttributes(
+	node: HTMLElement,
+	{
+		message,
+		names: fields
+	}: {
+		message: () => string;
+		/** The two parallel fields the rows post — see `AttributeFields.svelte`. */
+		names: { key: string; value: string };
+	}
+) {
 	const form = node.closest('form');
 	if (!form) return;
 
 	function orphan(): HTMLInputElement | null {
-		const names = [...form!.querySelectorAll<HTMLInputElement>('[name="fieldName"]')];
-		const values = [...form!.querySelectorAll<HTMLInputElement>('[name="fieldValue"]')];
+		const names = [...form!.querySelectorAll<HTMLInputElement>(`[name="${fields.key}"]`)];
+		const values = [...form!.querySelectorAll<HTMLInputElement>(`[name="${fields.value}"]`)];
 		const at = values.findIndex((value, i) => value.value.trim() && !names[i]?.value.trim());
 		return at === -1 ? null : (names[at] ?? null);
 	}

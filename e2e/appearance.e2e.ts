@@ -51,17 +51,14 @@ async function paint(page: Page, theme: string, style: string): Promise<void> {
 }
 
 /**
- * The board's only checkbox lives behind its Filters button.
+ * A plain checkbox that is on screen without pressing anything.
  *
- * "Show skipped" is a filter, and the board folds those away at every width —
- * a filter is something you go and change, not something to look at while you
- * work. These are tests about how a checkbox is drawn, so any real one will
- * do; it just has to be on screen first.
+ * These are tests about how a checkbox is drawn, so any real one will do; the
+ * import page's "bring finished tasks too" is drawn unconditionally.
  */
-async function theBoardsCheckbox(page: import('@playwright/test').Page) {
-	await visit(page, '/tasks/board');
-	await page.getByRole('button', { name: 'Filters' }).click();
-	const box = page.locator('input[type=checkbox]').first();
+async function aPlainCheckbox(page: import('@playwright/test').Page) {
+	await visit(page, '/settings/account/import');
+	const box = page.locator('input[type=checkbox][name=includeDone]');
 	await expect(box).toBeVisible();
 	return box;
 }
@@ -69,7 +66,7 @@ async function theBoardsCheckbox(page: import('@playwright/test').Page) {
 test('the tick on a ticked box can be seen', async ({ page }) => {
 	await register(page, testEmail('tick'));
 
-	const box = await theBoardsCheckbox(page);
+	const box = await aPlainCheckbox(page);
 	await box.check();
 
 	for (const { theme, style } of COMBINATIONS) {
@@ -97,7 +94,7 @@ test('the tick on a ticked box can be seen', async ({ page }) => {
 test('a checkbox is a square, in every style', async ({ page }) => {
 	await register(page, testEmail('shapes'));
 
-	const box = await theBoardsCheckbox(page);
+	const box = await aPlainCheckbox(page);
 
 	for (const { theme, style } of COMBINATIONS) {
 		await paint(page, theme, style);
@@ -117,7 +114,7 @@ test('a checkbox is a square, in every style', async ({ page }) => {
 test('an unticked box is not the same colour as the page', async ({ page }) => {
 	await register(page, testEmail('empty'));
 
-	const box = await theBoardsCheckbox(page);
+	const box = await aPlainCheckbox(page);
 	await box.uncheck();
 
 	for (const { theme, style } of COMBINATIONS) {

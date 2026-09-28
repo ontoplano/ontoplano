@@ -16,9 +16,11 @@ import {
 	isDemo as isDemoInstance,
 	isStaging,
 	appName,
-	getClock
+	getClock,
+	getCaptureSettings
 } from '$lib/server/settings';
 import type { HideableSection } from '$lib/sections';
+import { DEFAULT_CAPTURE_SETTINGS, type CaptureSettings } from '$lib/capture-settings';
 import { clientErrorState } from '$lib/server/services/client-errors';
 import { needsFirstRun } from '$lib/services/onboarding';
 import { listCategories } from '$lib/services/activities';
@@ -133,6 +135,7 @@ export const load: LayoutServerLoad = async (event) => {
 	let hiddenSections: HideableSection[] = [];
 	let navOrder: string[] = [];
 	let sectionColors: Record<string, string> = {};
+	let captureSettings: CaptureSettings = DEFAULT_CAPTURE_SETTINGS;
 	let tutorialPending = false;
 	/*
 	 * What the app has told this account, and how much of it is unread.
@@ -166,6 +169,7 @@ export const load: LayoutServerLoad = async (event) => {
 		hiddenSections = getHiddenSections(ctx.userId);
 		navOrder = getNavOrder(ctx.userId);
 		sectionColors = getSectionColors(ctx.userId);
+		captureSettings = getCaptureSettings(ctx.userId);
 		notifications = listSent(ctx);
 		unreadNotifications = unreadSent(ctx);
 		/*
@@ -248,6 +252,8 @@ export const load: LayoutServerLoad = async (event) => {
 		// one list and have to agree about it.
 		navOrder,
 		sectionColors,
+		// The capture wheel's wedges and the notebook its forms start in.
+		captureSettings,
 		notifications,
 		unreadNotifications,
 		// The public demo says so on every page: a copy of your own, deleted

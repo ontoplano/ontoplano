@@ -11,6 +11,7 @@
  */
 import { and, desc, eq, gte, inArray } from 'drizzle-orm';
 
+import { COLOUR_PALETTE } from '../colors.js';
 import { db } from '$lib/db/index.js';
 import { financeRules, financeTransactions, ledgers } from '$lib/db/schema.js';
 import {
@@ -46,24 +47,8 @@ export const MAX_RULE_NAME_LENGTH = 100;
 /** How far back the plots look by default. Far enough for a shape. */
 export const DEFAULT_MONTHS = 12;
 
-/**
- * The colours a new rule is given, in order.
- *
- * Distinguishable from each other and readable as a pale row wash, which is
- * what a category does to its line. Changeable per rule afterwards.
- */
-export const RULE_PALETTE = [
-	'#1d4ed8',
-	'#b45309',
-	'#0f766e',
-	'#7c2d12',
-	'#6d28d9',
-	'#9d174d',
-	'#155e63',
-	'#4d7c0f',
-	'#a16207',
-	'#be123c'
-] as const;
+/** The colours a new rule is given, in order. Changeable per rule afterwards. */
+export const RULE_PALETTE = COLOUR_PALETTE;
 
 /** What a line is filed under when no category rule claims it. */
 export const UNCATEGORIZED = 'Uncategorized';
@@ -303,6 +288,32 @@ export function updateMovement(
 		.run();
 }
 
+/** One movement as stored, or null — how an id somebody named is resolved. */
+export function getMovementRow(ctx: Ctx, id: number) {
+	return (
+		db
+			.select()
+			.from(financeTransactions)
+			.where(and(eq(financeTransactions.id, id), eq(financeTransactions.userId, ctx.userId)))
+			.get() ?? null
+	);
+}
+
+/** Every movement as stored, or only those in some ledgers — what a key tied to a notebook reaches. */
+export function listMovementRows(ctx: Ctx, opts: { ledgerIds?: number[] } = {}) {
+	if (opts.ledgerIds?.length === 0) return [];
+	return db
+		.select()
+		.from(financeTransactions)
+		.where(
+			and(
+				eq(financeTransactions.userId, ctx.userId),
+				opts.ledgerIds ? inArray(financeTransactions.ledgerId, opts.ledgerIds) : undefined
+			)
+		)
+		.all();
+}
+
 export function deleteMovement(ctx: Ctx, id: number): void {
 	const gone = db
 		.delete(financeTransactions)
@@ -450,9 +461,23 @@ export function updateRule(
 export function moveRule(ctx: Ctx, id: number, delta: number): void {
 	const found = rawRules(ctx).find((r) => r.id === id);
 	if (!found) throw new NotFoundError('rule');
+	const from = rawRules(ctx)
+		.filter((r) => r.kind === found.kind)
+		.findIndex((r) => r.id === id);
+	placeRule(ctx, id, from + delta);
+}
+
+/**
+ * Put a rule at a place among the rules of its kind, counting from 0 — the
+ * order `listRules` gives them, which for categories is the order they win in.
+ * A place past either end is the end.
+ */
+export function placeRule(ctx: Ctx, id: number, position: number): void {
+	const found = rawRules(ctx).find((r) => r.id === id);
+	if (!found) throw new NotFoundError('rule');
 	const siblings = rawRules(ctx).filter((r) => r.kind === found.kind);
 	const from = siblings.findIndex((r) => r.id === id);
-	const to = Math.min(Math.max(from + delta, 0), siblings.length - 1);
+	const to = Math.min(Math.max(Math.trunc(position), 0), siblings.length - 1);
 	if (to === from) return;
 	const [moved] = siblings.splice(from, 1);
 	siblings.splice(to, 0, moved);

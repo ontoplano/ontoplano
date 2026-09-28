@@ -12,8 +12,8 @@
  * "whole number" and "decimal" do not.
  */
 export const NUMBER_KINDS = [
-	{ whole: true, symbol: 'ℤ', label: 'app.wholeNumbersCountedWith' },
-	{ whole: false, symbol: 'ℚ', label: 'app.fractionsMeasuredTypedIn' }
+	{ whole: true, symbol: 'ℤ', word: 'goals.kindCounted', label: 'app.wholeNumbersCountedWith' },
+	{ whole: false, symbol: 'ℚ', word: 'goals.kindMeasured', label: 'app.fractionsMeasuredTypedIn' }
 ] as const;
 
 /** The symbol for one of them, for a control that shows the current choice. */

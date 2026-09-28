@@ -43,6 +43,23 @@ export const KIND_LABELS: Record<SearchKind, PlainKey> = {
 	activity: 'search.kind.activity'
 };
 
+/**
+ * The place each kind lives in, as a key of `$lib/glyphs` — so a hit wears
+ * the glyph of the room or tab it came from, and nothing new is drawn for it.
+ */
+export const KIND_PLACES: Record<SearchKind, string> = {
+	entry: '/notebooks/diary',
+	note: 'notebook/notes',
+	notebook: '/notebooks',
+	todo: '/tasks/todo',
+	block: '/tasks/plan',
+	goal: 'goals',
+	idea: '/notebooks/ideas',
+	person: '/notebooks/people',
+	inventory: 'inventory',
+	activity: '/tasks/activities'
+};
+
 /** Enough to be worth a query; a single letter matches everything. */
 export const MIN_QUERY = 2;
 

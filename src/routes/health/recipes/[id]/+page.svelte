@@ -1,4 +1,5 @@
 <script lang="ts">
+	import EmptyState from '$lib/components/EmptyState.svelte';
 	import NumberBox from '$lib/components/NumberBox.svelte';
 	import { tick } from 'svelte';
 	import OneLine from '$lib/components/OneLine.svelte';
@@ -6,7 +7,6 @@
 	import { resolve } from '$app/paths';
 	import { armed } from '$lib/actions/armed';
 	import { autofocus } from '$lib/actions/autofocus';
-	import { autogrow } from '$lib/actions/autogrow';
 	import Field from '$lib/components/Field.svelte';
 	import FormError from '$lib/components/FormError.svelte';
 	import FormGrid from '$lib/components/FormGrid.svelte';
@@ -17,10 +17,19 @@
 	import CardGrid from '$lib/components/CardGrid.svelte';
 	import DetailHeader from '$lib/components/DetailHeader.svelte';
 	import { renderMarkdown } from '$lib/markdown';
+	import MarkdownBox from '$lib/components/MarkdownBox.svelte';
+	import Banner from '$lib/components/Banner.svelte';
+	import { dateOf } from '$lib/when';
+	import { useWhen } from '$lib/when-context.svelte';
 	import type { PageServerData, ActionData } from './$types';
 	import { useT } from '$lib/i18n';
 
 	const t = useT();
+	const now = useWhen();
+
+	/** Where "put it on a day" starts, before anybody changes it. */
+	const DEFAULT_START = '19:00';
+	const DEFAULT_MINUTES = 45;
 
 	let { data, form }: { data: PageServerData; form: ActionData } = $props();
 
@@ -98,7 +107,7 @@
 				{#if data.recipe.lastCookedAt}
 					<span
 						>{t('health.recipes.id.lastCooked', {
-							slice: data.recipe.lastCookedAt.slice(0, 10)
+							slice: dateOf(new Date(`${data.recipe.lastCookedAt.slice(0, 10)}T00:00:00`), now())
 						})}</span
 					>
 				{/if}
@@ -114,9 +123,15 @@
 				<Icon name="flame" />
 				{t('health.recipes.id.cook')}
 			</button>
-			<button onclick={() => (scheduling = true)} class="btn btn-sm">
+			<!-- The word goes on a phone, where five buttons do not fit one line;
+			     the glyph and the tooltip keep saying it. -->
+			<button
+				onclick={() => (scheduling = true)}
+				class="btn btn-sm"
+				title={t('health.recipes.id.putItOnADay')}
+			>
 				<Icon name="calendar" />
-				{t('health.recipes.id.putItOnADay')}
+				<span class="max-sm:sr-only">{t('health.recipes.id.putItOnADay')}</span>
 			</button>
 			<button onclick={() => (cooking = true)} class="btn btn-primary btn-sm">
 				<Icon name="check" />
@@ -124,7 +139,7 @@
 			</button>
 			<button
 				onclick={() => (editing = true)}
-				class="btn btn-sm"
+				class="icon-btn"
 				title={t('ui.edit')}
 				aria-label={t('ui.edit')}
 			>
@@ -132,7 +147,7 @@
 			</button>
 			<button
 				onclick={() => (confirmingDelete = true)}
-				class="btn btn-danger btn-sm"
+				class="icon-btn icon-btn-danger"
 				title={t('ui.delete')}
 				aria-label={t('ui.delete')}><Icon name="trash" /></button
 			>
@@ -151,7 +166,7 @@
 		<Card title={t('health.recipes.id.ingredients')} flush>
 			{#snippet actions()}
 				{#if missing.length > 0}
-					<span class="text-xs text-amber-700"
+					<span class="text-xs text-gray-600"
 						>{t('health.recipes.id.notInTheCupboard', { length: missing.length })}</span
 					>
 				{/if}
@@ -172,7 +187,9 @@
 							</span>
 							<span class="list-row-actions">
 								{#if !ingredient.inStock}
-									<span class="chip mr-1 text-amber-700">{t('health.recipes.id.toBuy')}</span>
+									<span class="mr-1 text-xs font-medium text-gray-600"
+										>{t('health.recipes.id.toBuy')}</span
+									>
 								{/if}
 								<!-- Every ingredient is a shopping item; this is the way to it,
 							     for when you want to check the price or tick it off. -->
@@ -346,6 +363,16 @@
 				</p>
 			{/if}
 
+			<!-- The cook's own notes, under the method they are about: what to
+			     change next time, what the oven actually needed. -->
+			{#if data.recipe.notes}
+				<div class="md mt-4 border-t border-gray-200 pt-3 text-sm text-gray-700">
+					<p class="eyebrow mb-1 text-gray-600">{t('ui.notes')}</p>
+					<!-- eslint-disable-next-line svelte/no-at-html-tags -->
+					{@html renderMarkdown(data.recipe.notes)}
+				</div>
+			{/if}
+
 			{#if data.recipe.source}
 				<p class="mt-4 border-t border-gray-200 pt-3 text-xs text-gray-500">
 					{t('health.recipes.id.from', { source: data.recipe.source })}
@@ -379,7 +406,7 @@
 								src="/media/{picture.id}"
 								alt={picture.alt || picture.filename}
 								loading="lazy"
-								class="aspect-square w-full rounded-md border border-gray-200 bg-white object-cover"
+								class="aspect-square w-full border border-gray-200 bg-white object-cover"
 							/>
 
 							{#if picture.isMain}
@@ -496,7 +523,11 @@
 								pictureProblem = '';
 								if (!file) return;
 								if (file.size > data.pictureLimits.kilobytes * 1024) {
-									pictureProblem = `Pictures here are at most ${data.pictureLimits.kilobytes}KB, and ${file.name} is ${Math.ceil(file.size / 1024)}KB.`;
+									pictureProblem = t('health.recipes.id.pictureTooBig', {
+										most: data.pictureLimits.kilobytes,
+										name: file.name,
+										size: Math.ceil(file.size / 1024)
+									});
 									field.value = '';
 									return;
 								}
@@ -514,7 +545,7 @@
 					{/if}
 				</form>
 				{#if pictureProblem}
-					<p class="mt-1 text-xs text-red-700">{pictureProblem}</p>
+					<div class="mt-2"><Banner kind="error">{pictureProblem}</Banner></div>
 				{/if}
 			{:else}
 				<p class="mt-3 text-xs text-gray-500">
@@ -555,12 +586,10 @@
 				span={12}
 				hint={t('health.recipes.id.markdownHeadingsListsNumbers')}
 			>
-				<textarea name="method" rows="10" use:autogrow class="textarea"
-					>{data.recipe.method}</textarea
-				>
+				<MarkdownBox name="method" rows={10} value={data.recipe.method ?? ''} />
 			</Field>
 			<Field label={t('ui.notes')} span={12}>
-				<textarea name="notes" rows="2" class="textarea">{data.recipe.notes}</textarea>
+				<MarkdownBox name="notes" rows={2} value={data.recipe.notes ?? ''} />
 			</Field>
 		</FormGrid>
 	</form>
@@ -596,7 +625,7 @@
 	>
 		<input type="hidden" name="id" value={data.recipe.id} />
 		{#if data.ingredients.length === 0}
-			<p class="text-sm text-gray-500">{t('health.recipes.id.nothingInItYet')}</p>
+			<EmptyState compact icon="shopping" title={t('health.recipes.id.nothingInItYet')} />
 		{:else}
 			<ul class="space-y-1">
 				{#each data.ingredients as ingredient (ingredient.id)}
@@ -681,7 +710,7 @@
 					name="startTime"
 					type="time"
 					required
-					value="19:00"
+					value={DEFAULT_START}
 					class="input"
 				/>
 			</Field>
@@ -691,7 +720,7 @@
 					name="durationMinutes"
 					min="5"
 					step="5"
-					value={data.recipe.minutes ?? 45}
+					value={data.recipe.minutes ?? DEFAULT_MINUTES}
 				/>
 			</Field>
 			<Field label={t('health.recipes.id.countsAs')} span={6}>

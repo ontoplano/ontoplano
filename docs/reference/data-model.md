@@ -7,7 +7,7 @@ out of the schema — so this page cannot disagree with the schema, and a
 column added without a migration does not appear here because it does not
 exist.
 
-**81 tables.**
+**84 tables.**
 
 | Table                                                       | Columns | Belongs to a user |
 | ----------------------------------------------------------- | ------- | ----------------- |
@@ -18,10 +18,10 @@ exist.
 | [`api_tokens`](#api_tokens)                                 | 14      | yes               |
 | [`assistant_calls`](#assistant_calls)                       | 9       | yes               |
 | [`audit_events`](#audit_events)                             | 7       | yes               |
-| [`bill_payments`](#bill_payments)                           | 11      | yes               |
+| [`bill_payments`](#bill_payments)                           | 13      | yes               |
 | [`billing_checkouts`](#billing_checkouts)                   | 8       | yes               |
 | [`billing_events`](#billing_events)                         | 8       | —                 |
-| [`bills`](#bills)                                           | 18      | yes               |
+| [`bills`](#bills)                                           | 20      | yes               |
 | [`calendar_feeds`](#calendar_feeds)                         | 9       | yes               |
 | [`categories`](#categories)                                 | 5       | yes               |
 | [`client_errors`](#client_errors)                           | 9       | yes               |
@@ -40,11 +40,11 @@ exist.
 | [`goal_targets`](#goal_targets)                             | 9       | yes               |
 | [`goals`](#goals)                                           | 14      | yes               |
 | [`habit_occurrences`](#habit_occurrences)                   | 6       | yes               |
-| [`habits`](#habits)                                         | 8       | yes               |
+| [`habits`](#habits)                                         | 9       | yes               |
 | [`idea_tags`](#idea_tags)                                   | 4       | yes               |
 | [`ideas`](#ideas)                                           | 9       | yes               |
 | [`inventory_attribute_colors`](#inventory_attribute_colors) | 5       | yes               |
-| [`inventory_categories`](#inventory_categories)             | 7       | yes               |
+| [`inventory_categories`](#inventory_categories)             | 8       | yes               |
 | [`inventory_items`](#inventory_items)                       | 17      | yes               |
 | [`invites`](#invites)                                       | 9       | —                 |
 | [`ledgers`](#ledgers)                                       | 11      | yes               |
@@ -54,10 +54,12 @@ exist.
 | [`media_tags`](#media_tags)                                 | 4       | yes               |
 | [`model_provider_keys`](#model_provider_keys)               | 9       | yes               |
 | [`newsletter_issues`](#newsletter_issues)                   | 6       | —                 |
-| [`notebooks`](#notebooks)                                   | 11      | yes               |
+| [`notebook_favourites`](#notebook_favourites)               | 4       | yes               |
+| [`notebooks`](#notebooks)                                   | 13      | yes               |
 | [`oauth_clients`](#oauth_clients)                           | 7       | —                 |
 | [`oauth_codes`](#oauth_codes)                               | 11      | yes               |
 | [`people`](#people)                                         | 12      | yes               |
+| [`phone_widgets`](#phone_widgets)                           | 11      | yes               |
 | [`plan_members`](#plan_members)                             | 5       | —                 |
 | [`planning_schemes`](#planning_schemes)                     | 5       | yes               |
 | [`plugin_manifests`](#plugin_manifests)                     | 8       | yes               |
@@ -68,9 +70,10 @@ exist.
 | [`recipe_items`](#recipe_items)                             | 8       | yes               |
 | [`recipes`](#recipes)                                       | 13      | yes               |
 | [`recurring_task_tags`](#recurring_task_tags)               | 5       | yes               |
-| [`recurring_tasks`](#recurring_tasks)                       | 20      | yes               |
+| [`recurring_tasks`](#recurring_tasks)                       | 21      | yes               |
 | [`reminder_sounds`](#reminder_sounds)                       | 7       | yes               |
 | [`reminders`](#reminders)                                   | 12      | yes               |
+| [`request_replays`](#request_replays)                       | 7       | yes               |
 | [`ringtones`](#ringtones)                                   | 7       | yes               |
 | [`scheme_slots`](#scheme_slots)                             | 11      | yes               |
 | [`sent_notifications`](#sent_notifications)                 | 8       | yes               |
@@ -81,7 +84,7 @@ exist.
 | [`tags`](#tags)                                             | 5       | yes               |
 | [`task_records`](#task_records)                             | 15      | yes               |
 | [`todo_tags`](#todo_tags)                                   | 5       | yes               |
-| [`todo_tasks`](#todo_tasks)                                 | 18      | yes               |
+| [`todo_tasks`](#todo_tasks)                                 | 20      | yes               |
 | [`user`](#user)                                             | 11      | —                 |
 | [`user_settings`](#user_settings)                           | 4       | yes               |
 | [`verification`](#verification)                             | 6       | —                 |
@@ -237,6 +240,8 @@ Indexes:
 | `period`          | text    | not null | —                     | —                           |
 | `amount_expected` | integer | not null | `0`                   | —                           |
 | `amount_paid`     | integer | not null | `0`                   | —                           |
+| `status`          | text    | not null | `'paid'`              | —                           |
+| `automatic`       | integer | not null | `false`               | —                           |
 | `movement_id`     | integer | null     | —                     | → `finance_transactions.id` |
 | `currency`        | text    | null     | —                     | —                           |
 | `paid_at`         | text    | not null | `(CURRENT_TIMESTAMP)` | —                           |
@@ -296,6 +301,8 @@ Indexes:
 | `due_day`         | integer | null     | —                     | —                 |
 | `due_month`       | integer | null     | —                     | —                 |
 | `pay_lead_days`   | integer | not null | `0`                   | —                 |
+| `automatic`       | integer | not null | `false`               | —                 |
+| `settled_through` | text    | null     | —                     | —                 |
 | `flow`            | text    | not null | `'out'`               | —                 |
 | `rhythm`          | text    | not null | `'monthly'`           | —                 |
 | `category_id`     | integer | null     | —                     | → `categories.id` |
@@ -525,7 +532,7 @@ Indexes:
 | `urgency`             | integer | null     | —                     | —                 |
 | `interest`            | integer | null     | —                     | —                 |
 | `ease`                | integer | null     | —                     | —                 |
-| `meta`                | text    | not null | `'{}'`                | —                 |
+| `attributes`          | text    | not null | `'{}'`                | —                 |
 | `recipe_id`           | integer | null     | —                     | → `recipes.id`    |
 | `workout_id`          | integer | null     | —                     | → `workouts.id`   |
 | `created_at`          | text    | not null | `(CURRENT_TIMESTAMP)` | —                 |
@@ -697,6 +704,7 @@ Indexes:
 | `type`           | text    | not null | `'bad'`               | —                 |
 | `scheduled_days` | text    | null     | `''`                  | —                 |
 | `notebook_id`    | integer | null     | —                     | → `notebooks.id`  |
+| `archived_at`    | text    | null     | —                     | —                 |
 | `created_at`     | text    | not null | `(CURRENT_TIMESTAMP)` | —                 |
 
 Indexes:
@@ -763,6 +771,7 @@ Indexes:
 | `name`               | text    | not null | —                     | —                 |
 | `shared_with_family` | integer | not null | `false`               | —                 |
 | `is_food`            | integer | not null | `false`               | —                 |
+| `color`              | text    | null     | —                     | —                 |
 | `sort_order`         | integer | not null | `0`                   | —                 |
 | `created_at`         | text    | not null | `(CURRENT_TIMESTAMP)` | —                 |
 
@@ -957,6 +966,21 @@ Indexes:
 
 - `newsletter_issues_version_unique` on `version` — unique
 
+## notebook_favourites
+
+| Column        | Type    | Null     | Default               | Notes             |
+| ------------- | ------- | -------- | --------------------- | ----------------- |
+| `id`          | integer | not null | —                     | primary key, auto |
+| `user_id`     | text    | not null | —                     | → `user.id`       |
+| `notebook_id` | integer | not null | —                     | → `notebooks.id`  |
+| `created_at`  | text    | not null | `(CURRENT_TIMESTAMP)` | —                 |
+
+Indexes:
+
+- `notebook_favourites_user_idx` on `user_id`
+- `notebook_favourites_notebook_idx` on `notebook_id`
+- `notebook_favourites_unique` on `user_id`, `notebook_id` — unique
+
 ## notebooks
 
 | Column               | Type    | Null     | Default               | Notes             |
@@ -964,9 +988,11 @@ Indexes:
 | `id`                 | integer | not null | —                     | primary key, auto |
 | `user_id`            | text    | not null | —                     | → `user.id`       |
 | `title`              | text    | not null | —                     | —                 |
+| `folder`             | text    | not null | `''`                  | —                 |
 | `description`        | text    | null     | `''`                  | —                 |
 | `picture_id`         | integer | null     | —                     | → `media.id`      |
 | `default_tags`       | text    | not null | `''`                  | —                 |
+| `category_id`        | integer | null     | —                     | → `categories.id` |
 | `shared_with_family` | integer | not null | `false`               | —                 |
 | `modules`            | text    | null     | —                     | —                 |
 | `closed_at`          | text    | null     | —                     | —                 |
@@ -976,7 +1002,7 @@ Indexes:
 Indexes:
 
 - `notebooks_user_idx` on `user_id`
-- `notebooks_user_title_unique` on `user_id`, `title` — unique
+- `notebooks_user_folder_title_unique` on `user_id`, `folder`, `title` — unique
 
 ## oauth_clients
 
@@ -1036,6 +1062,27 @@ Indexes:
 
 - `people_user_idx` on `user_id`
 - `people_user_name_unique` on `user_id`, `name` — unique
+
+## phone_widgets
+
+| Column        | Type    | Null     | Default | Notes             |
+| ------------- | ------- | -------- | ------- | ----------------- |
+| `id`          | integer | not null | —       | primary key, auto |
+| `user_id`     | text    | not null | —       | → `user.id`       |
+| `token_id`    | integer | not null | —       | → `api_tokens.id` |
+| `notebook_id` | integer | not null | —       | → `notebooks.id`  |
+| `section`     | text    | not null | —       | —                 |
+| `status`      | text    | not null | —       | —                 |
+| `sort_by`     | text    | not null | —       | —                 |
+| `direction`   | text    | not null | —       | —                 |
+| `tag`         | text    | null     | —       | —                 |
+| `created_at`  | text    | not null | —       | —                 |
+| `updated_at`  | text    | not null | —       | —                 |
+
+Indexes:
+
+- `phone_widgets_user_idx` on `user_id`
+- `phone_widgets_token_unique` on `token_id` — unique
 
 ## plan_members
 
@@ -1240,7 +1287,8 @@ Indexes:
 | `urgency`             | integer | null     | —                     | —                 |
 | `interest`            | integer | null     | —                     | —                 |
 | `ease`                | integer | null     | —                     | —                 |
-| `meta`                | text    | not null | `'{}'`                | —                 |
+| `attributes`          | text    | not null | `'{}'`                | —                 |
+| `notebook_id`         | integer | null     | —                     | → `notebooks.id`  |
 | `recipe_id`           | integer | null     | —                     | → `recipes.id`    |
 | `workout_id`          | integer | null     | —                     | → `workouts.id`   |
 | `created_at`          | text    | not null | `(CURRENT_TIMESTAMP)` | —                 |
@@ -1249,6 +1297,7 @@ Indexes:
 Indexes:
 
 - `slots_user_idx` on `user_id`
+- `recurring_tasks_notebook_idx` on `notebook_id`
 - `slots_weekday_idx` on `weekday`
 - `slots_weekday_time_idx` on `weekday`, `start_time`
 
@@ -1301,6 +1350,23 @@ Indexes:
 - `reminders_due_idx` on `user_id`, `delivered_at`, `remind_at`
 - `reminders_subject_idx` on `subject_kind`, `subject_id`
 - `reminders_pending_idx` on `user_id`, `pushed_at`, `remind_at`
+
+## request_replays
+
+| Column        | Type    | Null     | Default | Notes             |
+| ------------- | ------- | -------- | ------- | ----------------- |
+| `id`          | integer | not null | —       | primary key, auto |
+| `user_id`     | text    | not null | —       | → `user.id`       |
+| `request_id`  | text    | not null | —       | —                 |
+| `tool`        | text    | not null | —       | —                 |
+| `fingerprint` | text    | not null | —       | —                 |
+| `answer`      | text    | not null | —       | —                 |
+| `created_at`  | text    | not null | —       | —                 |
+
+Indexes:
+
+- `request_replays_user_request_unique` on `user_id`, `request_id` — unique
+- `request_replays_user_created_idx` on `user_id`, `created_at`
 
 ## ringtones
 
@@ -1502,26 +1568,28 @@ Indexes:
 
 ## todo_tasks
 
-| Column           | Type    | Null     | Default               | Notes             |
-| ---------------- | ------- | -------- | --------------------- | ----------------- |
-| `id`             | integer | not null | —                     | primary key, auto |
-| `user_id`        | text    | not null | —                     | → `user.id`       |
-| `title`          | text    | not null | —                     | —                 |
-| `notes`          | text    | null     | `''`                  | —                 |
-| `completed`      | integer | not null | `false`               | —                 |
-| `completed_at`   | text    | null     | —                     | —                 |
-| `category_id`    | integer | null     | —                     | → `categories.id` |
-| `notebook_id`    | integer | null     | —                     | → `notebooks.id`  |
-| `notebook_seq`   | integer | null     | —                     | —                 |
-| `scheduled_date` | text    | null     | —                     | —                 |
-| `status`         | text    | not null | `'todo'`              | —                 |
-| `archived_at`    | text    | null     | —                     | —                 |
-| `sort_order`     | integer | not null | `0`                   | —                 |
-| `urgency`        | integer | null     | —                     | —                 |
-| `interest`       | integer | null     | —                     | —                 |
-| `ease`           | integer | null     | —                     | —                 |
-| `created_at`     | text    | not null | `(CURRENT_TIMESTAMP)` | —                 |
-| `updated_at`     | text    | not null | `(CURRENT_TIMESTAMP)` | —                 |
+| Column              | Type    | Null     | Default               | Notes                    |
+| ------------------- | ------- | -------- | --------------------- | ------------------------ |
+| `id`                | integer | not null | —                     | primary key, auto        |
+| `user_id`           | text    | not null | —                     | → `user.id`              |
+| `title`             | text    | not null | —                     | —                        |
+| `notes`             | text    | null     | `''`                  | —                        |
+| `completed`         | integer | not null | `false`               | —                        |
+| `completed_at`      | text    | null     | —                     | —                        |
+| `category_id`       | integer | null     | —                     | → `categories.id`        |
+| `notebook_id`       | integer | null     | —                     | → `notebooks.id`         |
+| `notebook_seq`      | integer | null     | —                     | —                        |
+| `scheduled_date`    | text    | null     | —                     | —                        |
+| `delegated_slot_id` | integer | null     | —                     | → `exceptional_tasks.id` |
+| `status`            | text    | not null | `'todo'`              | —                        |
+| `archived_at`       | text    | null     | —                     | —                        |
+| `sort_order`        | integer | not null | `0`                   | —                        |
+| `urgency`           | integer | null     | —                     | —                        |
+| `interest`          | integer | null     | —                     | —                        |
+| `ease`              | integer | null     | —                     | —                        |
+| `attributes`        | text    | not null | `'{}'`                | —                        |
+| `created_at`        | text    | not null | `(CURRENT_TIMESTAMP)` | —                        |
+| `updated_at`        | text    | not null | `(CURRENT_TIMESTAMP)` | —                        |
 
 Indexes:
 

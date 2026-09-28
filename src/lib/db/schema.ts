@@ -95,10 +95,13 @@ export const recurringTasks = sqliteTable(
 		urgency: integer('urgency'),
 		interest: integer('interest'),
 		ease: integer('ease'),
-		// User-defined key/value pairs, opaque to ontoplano and surfaced to
-		// plugins via the schedule API — e.g. { "alarm": "true", "remind_min": "5" }.
-		// Stored as a JSON object of string→string. See services/meta.ts.
-		meta: text('meta').notNull().default('{}'),
+		// The block's attributes: user-defined key/value pairs, opaque to
+		// ontoplano and surfaced to plugins via the schedule API — e.g.
+		// { "alarm": "true", "remind_min": "5" }. A JSON object of string→string.
+		// See services/task-attributes.ts. Called `meta` until 0.184.
+		attributes: text('attributes').notNull().default('{}'),
+		// The subject this block belongs to, the same as a one-off's below.
+		notebookId: integer('notebook_id').references(() => notebooks.id, { onDelete: 'set null' }),
 		/**
 		 * The recipe this block is for, when it is a meal.
 		 *
@@ -120,6 +123,7 @@ export const recurringTasks = sqliteTable(
 	},
 	(table) => [
 		index('slots_user_idx').on(table.userId),
+		index('recurring_tasks_notebook_idx').on(table.notebookId),
 		index('slots_weekday_idx').on(table.weekday),
 		index('slots_weekday_time_idx').on(table.weekday, table.startTime),
 		check('slots_urgency_range', sql`${table.urgency} IS NULL OR ${table.urgency} BETWEEN 0 AND 5`),
@@ -220,6 +224,16 @@ export const notebooks = sqliteTable(
 			.notNull()
 			.references(() => user.id),
 		title: text('title').notNull(),
+		/**
+		 * Where it sits on the shelf, as a slash-separated path: `Home/Kitchen`.
+		 *
+		 * A folder is only a label for grouping. It holds nothing and is not a
+		 * notebook, so it has no row of its own: it exists while a notebook
+		 * names it. Empty means the top of the shelf — empty rather than null so
+		 * the unique index below treats two top-level notebooks with one name as
+		 * the clash they are.
+		 */
+		folder: text('folder').notNull().default(''),
 		description: text('description').default(''),
 		/**
 		 * One picture, so a shelf of subjects is a shelf of things.
@@ -243,6 +257,15 @@ export const notebooks = sqliteTable(
 		 * suggests.
 		 */
 		defaultTags: text('default_tags').notNull().default(''),
+		/**
+		 * The category a new task filed here starts with.
+		 *
+		 * The same bargain the labels above make: a suggestion the form fills
+		 * in, not a rule applied to what is already here. Null for none.
+		 * Added by `ALTER TABLE`, which gives it no delete action, so deleting
+		 * the category clears it in `deleteCategory`.
+		 */
+		categoryId: integer('category_id').references(() => categories.id),
 		/**
 		 * Opt-in, per notebook, by its owner: everybody on the owner's family
 		 * plan can read it and write their own entries into it. The rows keep
@@ -279,7 +302,35 @@ export const notebooks = sqliteTable(
 	},
 	(table) => [
 		index('notebooks_user_idx').on(table.userId),
-		uniqueIndex('notebooks_user_title_unique').on(table.userId, table.title)
+		uniqueIndex('notebooks_user_folder_title_unique').on(table.userId, table.folder, table.title)
+	]
+);
+
+/**
+ * The notebooks somebody keeps at the front of the shelf.
+ *
+ * A row per reader rather than a column on the notebook: a notebook shared into
+ * the family is seen by several people, and which ones each of them reaches for
+ * is their own answer. Deleting the notebook takes its stars with it.
+ */
+export const notebookFavourites = sqliteTable(
+	'notebook_favourites',
+	{
+		id: integer('id').primaryKey({ autoIncrement: true }),
+		userId: text('user_id')
+			.notNull()
+			.references(() => user.id),
+		notebookId: integer('notebook_id')
+			.notNull()
+			.references(() => notebooks.id, { onDelete: 'cascade' }),
+		createdAt: text('created_at')
+			.notNull()
+			.default(sql`(CURRENT_TIMESTAMP)`)
+	},
+	(table) => [
+		index('notebook_favourites_user_idx').on(table.userId),
+		index('notebook_favourites_notebook_idx').on(table.notebookId),
+		uniqueIndex('notebook_favourites_unique').on(table.userId, table.notebookId)
 	]
 );
 
@@ -553,6 +604,13 @@ export const habits = sqliteTable(
 		 * these rows, never the place they live.
 		 */
 		notebookId: integer('notebook_id').references(() => notebooks.id, { onDelete: 'set null' }),
+		/**
+		 * Put away: off the room and today's list, its history kept.
+		 *
+		 * A habit carries months of logged days, so stopping one is an archive
+		 * rather than a delete — the delete is reachable from the archived list.
+		 */
+		archivedAt: text('archived_at'),
 		createdAt: text('created_at')
 			.notNull()
 			.default(sql`(CURRENT_TIMESTAMP)`)
@@ -666,7 +724,8 @@ export const exceptionalTasks = sqliteTable(
 		urgency: integer('urgency'),
 		interest: integer('interest'),
 		ease: integer('ease'),
-		meta: text('meta').notNull().default('{}'),
+		/** See `recurring_tasks.attributes`. */
+		attributes: text('attributes').notNull().default('{}'),
 
 		/** The recipe this block is for, when it is a meal. See `recurring_tasks`. */
 		recipeId: integer('recipe_id').references(() => recipes.id, { onDelete: 'set null' }),
@@ -745,6 +804,18 @@ export const todoTasks = sqliteTable(
 		// A todo is a task without a date yet. Setting this is what "drag it onto
 		// today" does — the same row acquires a day rather than being copied.
 		scheduledDate: text('scheduled_date'),
+		/**
+		 * The block this task was delegated to, when it was.
+		 *
+		 * Delegating keeps the task in the list and puts a block on the plan, so
+		 * it must not set `scheduledDate` — that would put the task on the day's
+		 * board beside its own block, and carry it on as overdue afterwards. The
+		 * card reads the day off the block instead, which follows the block when
+		 * it moves and goes when it is deleted.
+		 */
+		delegatedSlotId: integer('delegated_slot_id').references(() => exceptionalTasks.id, {
+			onDelete: 'set null'
+		}),
 		status: text('status', { enum: ['todo', 'doing', 'done', 'skipped'] })
 			.notNull()
 			.default('todo'),
@@ -765,6 +836,12 @@ export const todoTasks = sqliteTable(
 		urgency: integer('urgency'),
 		interest: integer('interest'),
 		ease: integer('ease'),
+		/**
+		 * The task's attributes, the same shape a block's are: a JSON object of
+		 * string→string. Carried onto the block when the task is put on the
+		 * plan, and back again when the block goes back to the list.
+		 */
+		attributes: text('attributes').notNull().default('{}'),
 		createdAt: text('created_at')
 			.notNull()
 			.default(sql`(CURRENT_TIMESTAMP)`),
@@ -810,6 +887,8 @@ export const inventoryCategories = sqliteTable(
 		 * Ticked once per category, in settings.
 		 */
 		isFood: integer('is_food', { mode: 'boolean' }).notNull().default(false),
+		/** What the category wears on its cards, as `#rrggbb`. None is the neutral fallback. */
+		color: text('color'),
 		sortOrder: integer('sort_order').notNull().default(0),
 		createdAt: text('created_at')
 			.notNull()
@@ -1602,6 +1681,37 @@ export const assistantCalls = sqliteTable(
 	(table) => [index('assistant_calls_user_idx').on(table.userId, table.id)]
 );
 
+/**
+ * A create an assistant may send twice, and the answer the first one got.
+ *
+ * An assistant that loses the answer to "add a task" — a timeout, a dropped
+ * connection — cannot tell whether the task was made, and sending it again
+ * makes two. A call that carries a `requestId` is recorded here with its
+ * answer, so the same id sent again within the window is answered from this
+ * row instead of being run. `fingerprint` is the tool and its arguments: the
+ * same id with a different call is refused rather than answered with
+ * something that was not asked for.
+ */
+export const requestReplays = sqliteTable(
+	'request_replays',
+	{
+		id: integer('id').primaryKey({ autoIncrement: true }),
+		userId: text('user_id')
+			.notNull()
+			.references(() => user.id, { onDelete: 'cascade' }),
+		requestId: text('request_id').notNull(),
+		tool: text('tool').notNull(),
+		fingerprint: text('fingerprint').notNull(),
+		/** The answer's structured content, as JSON. */
+		answer: text('answer').notNull(),
+		createdAt: text('created_at').notNull()
+	},
+	(table) => [
+		uniqueIndex('request_replays_user_request_unique').on(table.userId, table.requestId),
+		index('request_replays_user_created_idx').on(table.userId, table.createdAt)
+	]
+);
+
 // --- Instance: invitations ---
 
 /**
@@ -1696,6 +1806,44 @@ export const apiTokens = sqliteTable(
 	(table) => [
 		uniqueIndex('api_tokens_hash_unique').on(table.tokenHash),
 		index('api_tokens_user_idx').on(table.userId)
+	]
+);
+
+/**
+ * A home-screen widget showing one tab of one notebook.
+ *
+ * The phone holds a key and nothing else; what the widget shows — which
+ * notebook, which tab, narrowed how and in which order — lives here, so it can
+ * be changed from any screen and the phone picks it up on its next refresh.
+ * The key it reads with is its own, confined to the notebook and granted the
+ * one read that tab needs; revoking it disconnects the widget, and deleting
+ * the widget revokes it.
+ */
+export const phoneWidgets = sqliteTable(
+	'phone_widgets',
+	{
+		id: integer('id').primaryKey({ autoIncrement: true }),
+		userId: text('user_id')
+			.notNull()
+			.references(() => user.id, { onDelete: 'cascade' }),
+		tokenId: integer('token_id')
+			.notNull()
+			.references(() => apiTokens.id, { onDelete: 'cascade' }),
+		notebookId: integer('notebook_id')
+			.notNull()
+			.references(() => notebooks.id, { onDelete: 'cascade' }),
+		/** A key of `WIDGET_SECTIONS` in `$lib/notebook-widget`. */
+		section: text('section').notNull(),
+		status: text('status').notNull(),
+		sortBy: text('sort_by').notNull(),
+		direction: text('direction', { enum: ['asc', 'desc'] }).notNull(),
+		tag: text('tag'),
+		createdAt: text('created_at').notNull(),
+		updatedAt: text('updated_at').notNull()
+	},
+	(table) => [
+		index('phone_widgets_user_idx').on(table.userId),
+		uniqueIndex('phone_widgets_token_unique').on(table.tokenId)
 	]
 );
 
@@ -2462,9 +2610,9 @@ export const weeklyReviews = sqliteTable(
 /**
  * What a plugin says about itself.
  *
- * Slot metadata is deliberately open — any key is accepted, so a plugin can
- * invent its own vocabulary without a schema change. The cost is that the keys
- * arrive anonymous: `hard_alarm` next to `location` with nothing saying which
+ * A task block's attributes are deliberately open — any key is accepted, so a
+ * plugin can invent its own vocabulary without a schema change. The cost is
+ * that the keys arrive anonymous: `hard_alarm` next to `location` with nothing saying which
  * program reads which, or what happens if you set it.
  *
  * A manifest is a plugin declaring, through the API and with its own token,
@@ -2491,6 +2639,8 @@ export const pluginManifests = sqliteTable(
 		 * The keys this plugin reads, as JSON:
 		 * [{ key, description, example }]. Stored as a blob because it is the
 		 * plugin's vocabulary, not ours — validated on the way in, never joined on.
+		 *
+		 * `attributeKeys` in the API since 0.184; the column kept its old name.
 		 */
 		metaKeys: text('meta_keys').notNull().default('[]'),
 		updatedAt: text('updated_at')
@@ -2658,6 +2808,22 @@ export const bills = sqliteTable(
 		// 2nd" is one number rather than a second date to keep in step.
 		payLeadDays: integer('pay_lead_days').notNull().default(0),
 		/**
+		 * Paid without anybody doing anything — a subscription on a card, a
+		 * direct debit. It asks for nothing: no reminder, no block on the
+		 * week. Its payments are still written, on the due day, so the history
+		 * says what the money did.
+		 */
+		automatic: integer('automatic', { mode: 'boolean' }).notNull().default(false),
+		/**
+		 * The last civil date automatic payments were written up to.
+		 *
+		 * A mark rather than a scan from the beginning, so a payment somebody
+		 * undid is not written back the next time the page is opened, and a bill
+		 * made automatic today does not invent months of history before it.
+		 * Null when the bill is not automatic.
+		 */
+		settledThrough: text('settled_through'),
+		/**
 		 * Which way the money moves. Income is recorded exactly the way bills
 		 * are — a name, an expected amount, a rhythm, a payment per period —
 		 * so it is the same table with the sign named rather than implied.
@@ -2718,6 +2884,17 @@ export const billPayments = sqliteTable(
 		// actually asked at the time.
 		amountExpected: integer('amount_expected').notNull().default(0),
 		amountPaid: integer('amount_paid').notNull().default(0),
+		/**
+		 * What happened to the period: paid, or skipped on purpose — the gym
+		 * frozen for a month, a holiday with no cleaner. A skip is a row of its
+		 * own so the period reads as settled rather than overdue, and it pays
+		 * nothing: `amount_paid` is 0 and it is left out of every sum.
+		 */
+		status: text('status', { enum: ['paid', 'skipped'] })
+			.notNull()
+			.default('paid'),
+		/** Written by the app on the due day of an automatic bill, not by a person. */
+		automatic: integer('automatic', { mode: 'boolean' }).notNull().default(false),
 		/*
 		 * The line on a statement this payment actually is, when there is one.
 		 *

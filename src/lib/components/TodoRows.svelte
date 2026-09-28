@@ -1,5 +1,8 @@
 <script lang="ts">
 	import { say } from '$lib/said.svelte';
+	import ShowingCount from '$lib/components/ShowingCount.svelte';
+	import SearchField from '$lib/components/SearchField.svelte';
+	import { notebooksHolding } from '$lib/notebook-modules';
 	import { openFromUrl } from '$lib/open-from-url.svelte';
 	import { discardForm, keptForm } from '$lib/kept-form';
 	import Picker from '$lib/components/Picker.svelte';
@@ -10,18 +13,24 @@
 	import RemindLead from '$lib/components/RemindLead.svelte';
 	import { NO_TAG_FILTER, UNTAGGED, isTagFiltering, passesTagFilter } from '$lib/tag-filter';
 	import SortControl from '$lib/components/SortControl.svelte';
-	import { agoOf, momentOf } from '$lib/when';
+	import { agoOf, civilOf, momentOf } from '$lib/when';
 	import { compareByPriority, type RatingValues } from '$lib/ratings';
 	import { useWhen } from '$lib/when-context.svelte';
 	import { deleteLater, isLeaving } from '$lib/undo.svelte';
 	import NumberBox from '$lib/components/NumberBox.svelte';
 	import { SvelteSet } from 'svelte/reactivity';
+	import { Selection } from '$lib/selection.svelte';
+	import SelectionBar from '$lib/components/SelectionBar.svelte';
+	import SelectBox from '$lib/components/SelectBox.svelte';
+	import BatchDialog from '$lib/components/BatchDialog.svelte';
+	import type { BatchVerb } from '$lib/services/todos';
 	import { tick } from 'svelte';
 	import { setRoomAction } from '$lib/room-action.svelte';
 	import RoomToolbar from '$lib/components/RoomToolbar.svelte';
 	import { enhance } from '$lib/enhance';
 	import Backlinks from '$lib/components/Backlinks.svelte';
 	import TodoFields from '$lib/components/fields/TodoFields.svelte';
+	import AttributesDialog from '$lib/components/AttributesDialog.svelte';
 	import Written from '$lib/components/Written.svelte';
 	import EmptyState from '$lib/components/EmptyState.svelte';
 	import Icon from '$lib/components/Icon.svelte';
@@ -31,6 +40,9 @@
 	import { getAction, keyFor } from '$lib/shortcuts';
 	import FilterBar from '$lib/components/FilterBar.svelte';
 	import RatingBadges from '$lib/components/RatingBadges.svelte';
+	import RowCard from '$lib/components/RowCard.svelte';
+	import CategoryMark from '$lib/components/CategoryMark.svelte';
+	import TickBox from '$lib/components/TickBox.svelte';
 	import { phoneWidth } from '$lib/breakpoints.svelte';
 	import TagChip from '$lib/components/TagChip.svelte';
 	import QuickTag from '$lib/components/QuickTag.svelte';
@@ -115,7 +127,7 @@
 	}: {
 		todos: Todo[];
 		categories: { id: number; name: string }[];
-		notebooks: { id: number; title: string }[];
+		notebooks: { id: number; title: string; modules: readonly string[] }[];
 		actions: TodoActionNames;
 		goalLinks?: Record<number, GoalBacklink[]>;
 		error?: string | undefined;
@@ -150,46 +162,29 @@
 		openTodo?: ((id: number) => void) | undefined;
 	} = $props();
 
-	let selecting = $state(false);
-	const chosen = new SvelteSet<number>();
-	let batchVerb = $state<'status' | 'tag' | 'notebook' | 'remove' | null>(null);
-	let batchError = $state<string | undefined>();
-
-	function endSelection() {
-		selecting = false;
-		chosen.clear();
-		batchVerb = null;
-		batchError = undefined;
-	}
-	function toggleSelected(id: number) {
-		if (chosen.has(id)) chosen.delete(id);
-		else chosen.add(id);
-	}
-	function openBatch(verb: NonNullable<typeof batchVerb>) {
-		batchError = undefined;
-		batchVerb = verb;
-	}
+	const selection = new Selection<BatchVerb>();
 	const batchLabels = {
 		status: 'todoRows.batchStatus',
 		tag: 'todoRows.batchTag',
 		notebook: 'todoRows.batchNotebook',
 		remove: 'todoRows.batchDelete'
 	} as const;
-	const submitBatch: SubmitFunction = () => {
-		batchError = undefined;
-		return async ({ update, result }) => {
-			await update({ reset: false });
-			if (result.type === 'success') {
-				endSelection();
-				say(t('todoRows.batchUpdated', { count: Number(result.data?.count ?? 0) }));
-			} else if (result.type === 'failure') {
-				batchError = String(result.data?.message ?? '');
-			}
-		};
-	};
+	const batchVerbs = $derived(
+		(
+			[
+				['status', 'play'],
+				['tag', 'tag'],
+				['notebook', 'notebook'],
+				['remove', 'trash']
+			] as const
+		).map(([key, icon]) => ({ key, icon, label: t(batchLabels[key]) }))
+	);
 
 	let showForm = $state(false);
 	let editingId: number | null = $state(null);
+	/** Whose attributes the ⓘ dialog is showing, by id, so it follows a reload. */
+	let attributesId: number | null = $state(null);
+	const attributesOf = $derived(todos.find((one: Todo) => one.id === attributesId));
 	/**
 	 * Words to look for, across the titles and the notes.
 	 *
@@ -225,9 +220,12 @@
 	 * `''` is all of them, `'none'` the ones filed under nothing — which is a
 	 * real answer and not the absence of one: a task nobody has placed is
 	 * exactly what somebody goes looking for. Not offered inside a notebook,
-	 * where the answer is already fixed.
+	 * where the answer is already fixed — and not read there either: the
+	 * notebooks page names the open notebook with the same `?notebook=`, which
+	 * made every notebook's task list think it was filtered, lighting the
+	 * filter dot and Clear with nothing to clear.
 	 */
-	const notebookFilter = $derived(filters.get('notebook'));
+	const notebookFilter = $derived(notebookId === null ? filters.get('notebook') : '');
 	/**
 	 * Which labels to show and which to hide — see `$lib/tag-filter`.
 	 *
@@ -600,11 +598,8 @@
 	});
 
 	// Only visible rows participate. Filtering cannot leave hidden tasks selected.
-	const selectedTodos = $derived(visibleTodos.filter((todo) => chosen.has(todo.id)));
-	$effect(() => {
-		const visible = new Set(visibleTodos.map((todo) => todo.id));
-		for (const id of chosen) if (!visible.has(id)) chosen.delete(id);
-	});
+	const selectedTodos = $derived(visibleTodos.filter((todo) => selection.has(todo.id)));
+	$effect(() => selection.keep(visibleTodos.map((todo) => todo.id)));
 
 	/**
 	 * Which row this is in the list on screen, live.
@@ -620,20 +615,31 @@
 	 * slider moved under it and changed nothing, which is the sliders looking
 	 * broken.
 	 *
-	 * Counted against the rows on screen — the same filters, the same notebook
-	 * — because that is the claim somebody can check by looking, and against
-	 * the draft's own answers rather than where its row already is, which is
-	 * what makes the number move as a slider does. A task being written has no
-	 * row yet and joins by when it was written down, which is now.
+	 * Counted against every open task in the notebook the form files it under —
+	 * not the rows on screen. A search, a label filter or the hidden completed
+	 * ones are about what is being looked at, and the place is about the
+	 * queue: it said 1st for a task that went in behind three older ones rated
+	 * the same, because they were filtered out. And against the draft's own
+	 * answers rather than where its row already is, which is what makes the
+	 * number move as a slider does.
+	 *
+	 * A task being written has no row yet. The server puts a new one after
+	 * every task it has, so it joins behind its equals rather than in front.
 	 */
 	const draftPlace = $derived.by(() => {
-		const others = visibleTodos.filter((one: Todo) => one.id !== editingId);
+		const queue = todos.filter(
+			(one: Todo) =>
+				one.id !== editingId &&
+				one.archivedAt === null &&
+				!CLOSED_STATUSES.includes(one.status) &&
+				(formNotebookId === null || one.notebookId === formNotebookId)
+		);
 		const draft = {
 			ratings: formRatings as RatingValues,
-			sortOrder: editing?.sortOrder ?? 0,
+			sortOrder: editing?.sortOrder ?? Number.MAX_SAFE_INTEGER,
 			createdAt: editing?.createdAt ?? new Date().toISOString()
 		};
-		return others.filter((one: Todo) => compareByPriority(one, draft) < 0).length + 1;
+		return queue.filter((one: Todo) => compareByPriority(one, draft) < 0).length + 1;
 	});
 
 	/** Whatever the notebook picker lets through, before the two toggles. */
@@ -808,11 +814,6 @@
 			);
 		};
 
-	/** Today, as the value the scheduling form wants. */
-	function todayStr(): string {
-		return formatDate(new Date());
-	}
-
 	function startNew() {
 		showForm = true;
 		editingId = null;
@@ -915,18 +916,12 @@
 		if (!shortcutRoom) return;
 
 		if (e.key === 'Escape') {
-			if (batchVerb) {
-				batchVerb = null;
-				return;
-			}
-			if (selecting) {
-				endSelection();
-				return;
-			}
+			if (selection.handleKey(e, () => undefined)) return;
 			e.preventDefault();
 			showForm = false;
 			editingId = null;
 			delegatingId = null;
+			attributesId = null;
 			confirmingDelete = null;
 			(document.activeElement as HTMLElement)?.blur?.();
 			return;
@@ -942,16 +937,8 @@
 		)
 			return;
 
-		if (batchVerb || showForm || delegatingId !== null) return;
-		if (
-			selecting &&
-			e.key === ' ' &&
-			(!(e.target instanceof HTMLButtonElement) || e.target.getAttribute('role') === 'checkbox')
-		) {
-			e.preventDefault();
-			if (visibleTodos[selectedIndex]) toggleSelected(visibleTodos[selectedIndex].id);
-			return;
-		}
+		if (selection.verb || showForm || delegatingId !== null || attributesId !== null) return;
+		if (selection.handleKey(e, () => visibleTodos[selectedIndex]?.id)) return;
 		const action = getAction(shortcutRoom, e.key);
 		if (!action) return;
 		e.preventDefault();
@@ -978,8 +965,8 @@
 				}
 				break;
 			case 'toggle-done':
-				if (selecting) {
-					if (visibleTodos[selectedIndex]) toggleSelected(visibleTodos[selectedIndex].id);
+				if (selection.selecting) {
+					if (visibleTodos[selectedIndex]) selection.toggle(visibleTodos[selectedIndex].id);
 					break;
 				}
 				if (visibleTodos.length > 0 && visibleTodos[selectedIndex]) {
@@ -997,8 +984,8 @@
 				}
 				break;
 			case 'delete':
-				if (selecting) {
-					if (selectedTodos.length) openBatch('remove');
+				if (selection.selecting) {
+					if (selectedTodos.length) selection.open('remove');
 					break;
 				}
 				if (visibleTodos.length > 0 && visibleTodos[selectedIndex]) {
@@ -1078,6 +1065,19 @@
 	</span>
 {/snippet}
 
+{#snippet sortControl()}
+	<!-- The same control a notebook's notes use. See `SortControl`. -->
+	<SortControl
+		value={order}
+		options={ORDERS}
+		labels={ORDER_LABELS}
+		{direction}
+		onpick={pickOrder}
+		onflip={flipDirection}
+		label={t('todoRows.orderTasksBy')}
+	/>
+{/snippet}
+
 <div class="space-y-4">
 	<!--
 		The filters and the list they narrow are one object.
@@ -1102,39 +1102,45 @@
 					narrowing the list is named on the button while it is shut, and
 					the way back to everything stands beside it.
 				-->
-				<FilterBar
-					name="tasks"
-					on={narrowed || showCompleted || showArchived}
-					summary={narrowing()}
-					onclear={clearFilters}
+				<!--
+					"Select many" is the strip's verb rather than a band of its own:
+					one button was costing a whole line above the list. While
+					choosing, its tools cover the strip beside it.
+				-->
+				<SelectionBar
+					{selection}
+					visible={visibleTodos.map((todo) => todo.id)}
+					verbs={batchVerbs}
+					selectAllLabel={t('todoRows.selectVisible')}
+					dataTour="todo-selection"
 				>
-					{#snippet banner()}
-						<!-- The narrowings this screen has kept, on a line of their own
+					{#snippet strip(selectMany)}
+						<FilterBar
+							name="tasks"
+							on={narrowed || showCompleted || showArchived}
+							summary={narrowing()}
+							onclear={clearFilters}
+							verb={selectMany}
+							trailing={sortControl}
+						>
+							{#snippet banner()}
+								<!-- The narrowings this screen has kept, on a line of their own
 						     above the controls that make one. They are a different
 						     question from "which rows" and were crowding the answer to
 						     it off the strip. See `SavedFilters`. -->
-						<SavedFilters
-							surface="/tasks/todo"
-							narrowed={narrowed || showCompleted || showArchived}
-						/>
-					{/snippet}
-					{#snippet lead()}
-						<!-- The box fills the slot; how wide that slot is belongs to
+								<SavedFilters
+									surface="/tasks/todo"
+									narrowed={narrowed || showCompleted || showArchived}
+								/>
+							{/snippet}
+							{#snippet lead()}
+								<!-- The box fills the slot; how wide that slot is belongs to
 						     `FilterBar`, so this tab and the Notes tab beside it are
 						     the same shape. -->
-						<label class="block w-full">
-							<span class="sr-only">{t('todoRows.searchTheseTasks')}</span>
-							<input
-								type="search"
-								bind:value={looking}
-								placeholder={t('todoRows.searchTheseTasks')}
-								autocomplete="off"
-								class="input input-sm"
-							/>
-						</label>
-					{/snippet}
-					{#snippet count()}
-						<!--
+								<SearchField bind:value={looking} label={t('todoRows.searchTheseTasks')} />
+							{/snippet}
+							{#snippet count()}
+								<!--
 					How many rows are on screen right now, beside the button that
 					narrowed them.
 
@@ -1143,7 +1149,7 @@
 					notebook and a label gave no number at all for the thing you are
 					actually looking at.
 				-->
-						<!--
+								<!--
 							In a slot wide enough for the longest it can be.
 
 							"1 task showing" and "0 tasks showing" are different widths,
@@ -1151,7 +1157,7 @@
 							words are the content; the room they take is not allowed to
 							be.
 						-->
-						<!--
+								<!--
 							In a slot as wide as the longest it can be.
 
 							Held open by the same sentence at the count of the whole list —
@@ -1159,37 +1165,13 @@
 							already narrowed — so it is the largest it can say and does not
 							change when a filter does. See `.count-slot`.
 						-->
-						<span
-							class="tabular count-slot shrink-0 self-center text-xs text-gray-500"
-							title={t('todoRows.showingCount', { count: visibleTodos.length })}
-						>
-							<span class="count-widest" aria-hidden="true">
-								<span class="sm:hidden">{todos.length}</span>
-								<span class="hidden sm:inline"
-									>{t('todoRows.showingCount', { count: todos.length })}</span
-								>
-							</span>
-							<span>
-								<span class="sm:hidden">{visibleTodos.length}</span>
-								<span class="hidden sm:inline"
-									>{t('todoRows.showingCount', { count: visibleTodos.length })}</span
-								>
-							</span>
-						</span>
-					{/snippet}
-					{#snippet trailing()}
-						<!-- The same control a notebook's notes use. See `SortControl`. -->
-						<SortControl
-							value={order}
-							options={ORDERS}
-							labels={ORDER_LABELS}
-							{direction}
-							onpick={pickOrder}
-							onflip={flipDirection}
-							label={t('todoRows.orderTasksBy')}
-						/>
-					{/snippet}
-					<!--
+								<ShowingCount
+									total={todos.length}
+									shown={visibleTodos.length}
+									said={(count) => t('todoRows.showingCount', { count })}
+								/>
+							{/snippet}
+							<!--
 						One label, whichever way it is set.
 
 						It read "Show completed (1)" and became "Hide completed", so
@@ -1200,27 +1182,28 @@
 						are, which does not change when you press it; how many are
 						*showing* is the count beside the search box.
 					-->
-					<button
-						onclick={() => filters.set('done', showCompleted ? '' : 'show')}
-						aria-pressed={showCompleted}
-						class="btn btn-sm shrink-0"
-					>
-						<span class="sm:hidden">{t('todoRows.completed')}</span>
-						<span class="hidden sm:inline">{t('todoRows.completedCount', { count: finished })}</span
-						>
-					</button>
-					<!-- Named with its number so a put-away task is never quietly gone:
+							<button
+								onclick={() => filters.set('done', showCompleted ? '' : 'show')}
+								aria-pressed={showCompleted}
+								class="btn btn-sm shrink-0"
+							>
+								<span class="sm:hidden">{t('todoRows.completed')}</span>
+								<span class="hidden sm:inline"
+									>{t('todoRows.completedCount', { count: finished })}</span
+								>
+							</button>
+							<!-- Named with its number so a put-away task is never quietly gone:
 				     nothing is hidden without the list saying how much. -->
-					<button
-						onclick={() => filters.set('away', showArchived ? '' : 'show')}
-						aria-pressed={showArchived}
-						class="btn btn-sm"
-						hidden={putAway === 0 && !showArchived}
-					>
-						{t('todoRows.archivedCount', { count: putAway })}
-					</button>
-					{#if notebookId === null}
-						<!-- "Not in one" is an answer, not the absence of a filter: a task
+							<button
+								onclick={() => filters.set('away', showArchived ? '' : 'show')}
+								aria-pressed={showArchived}
+								class="btn btn-sm"
+								hidden={putAway === 0 && !showArchived}
+							>
+								{t('todoRows.archivedCount', { count: putAway })}
+							</button>
+							{#if notebookId === null}
+								<!-- "Not in one" is an answer, not the absence of a filter: a task
 					     nobody has placed is the thing people go looking for.
 
 					     A `Picker` rather than a `<select>`: a form field dropped into
@@ -1228,29 +1211,29 @@
 					     two narrow what is on screen rather than submitting anything.
 					     Wide enough for the word — two controls both squeezed to
 					     "Ever…" are two controls nobody can tell apart. -->
-						<Picker
-							value={notebookFilter}
-							options={notebookChoices}
-							onpick={(next) => filters.set('notebook', next)}
-							label={t('ui.notebook')}
-							class="min-w-36 flex-1 sm:flex-none"
-						/>
-					{/if}
-					<!-- Only where there is something to pick: a list nobody has labelled
+								<Picker
+									value={notebookFilter}
+									options={notebookChoices}
+									onpick={(next) => filters.set('notebook', next)}
+									label={t('ui.notebook')}
+									class="min-w-36 flex-1 sm:flex-none"
+								/>
+							{/if}
+							<!-- Only where there is something to pick: a list nobody has labelled
 				     gets no control for labels. -->
-					{#if tagsInUse.length > 0 || isTagFiltering(tagFilter.current)}
-						<TagFilter
-							tags={tagsInUse}
-							value={tagFilter.current}
-							onchange={(next) => {
-								tagFilter.current = next;
-								selectedIndex = 0;
-							}}
-							name="todo-tags"
-							class="min-w-36 flex-1 sm:flex-none"
-						/>
-					{/if}
-					<!--
+							{#if tagsInUse.length > 0 || isTagFiltering(tagFilter.current)}
+								<TagFilter
+									tags={tagsInUse}
+									value={tagFilter.current}
+									onchange={(next) => {
+										tagFilter.current = next;
+										selectedIndex = 0;
+									}}
+									name="todo-tags"
+									class="min-w-36 flex-1 sm:flex-none"
+								/>
+							{/if}
+							<!--
 					Pushed to the right end, but only where there is a right end.
 
 					`ml-auto` at every width made it wrap onto a line of its own on a
@@ -1260,7 +1243,7 @@
 					away from the filters above that, where the distance says what it
 					is — one of these hides rows, the other reorders them.
 				-->
-					<!--
+							<!--
 					Looking for one, rather than choosing a kind.
 
 					The controls beside this answer "which kind" — finished, put
@@ -1269,79 +1252,11 @@
 					with three hundred tasks is actually asking. It narrows as you
 					type and the count beside it says what is left.
 				-->
-				</FilterBar>
+						</FilterBar>
+					{/snippet}
+				</SelectionBar>
 			{/snippet}
 		</RoomToolbar>
-		<div
-			data-tour="todo-selection"
-			class="flex flex-wrap items-center gap-2 border-b border-gray-200 px-4 py-2"
-		>
-			<button
-				type="button"
-				class="btn btn-sm w-36 shrink-0"
-				aria-pressed={selecting}
-				onclick={() => {
-					if (selecting) endSelection();
-					else selecting = true;
-				}}
-			>
-				{selecting ? t('ui.cancel') : t('todoRows.selectMany')}
-			</button>
-			<div class="flex items-center gap-1" class:invisible={!selecting}>
-				<button
-					type="button"
-					class="icon-btn"
-					title={t('todoRows.selectVisible')}
-					aria-label={t('todoRows.selectVisible')}
-					disabled={!visibleTodos.length}
-					onclick={() => {
-						for (const todo of visibleTodos) chosen.add(todo.id);
-					}}><Icon name="select-all" /></button
-				>
-				<button
-					type="button"
-					class="icon-btn"
-					title={t('todoRows.clearSelection')}
-					aria-label={t('todoRows.clearSelection')}
-					disabled={!selectedTodos.length}
-					onclick={() => chosen.clear()}><Icon name="close" /></button
-				>
-			</div>
-			<span
-				class="tabular min-w-24 text-xs text-gray-600"
-				aria-live="polite"
-				class:invisible={!selecting}
-			>
-				{t('todoRows.selectedCount', { count: selectedTodos.length })}
-			</span>
-			<div
-				class="flex items-center gap-1 border-l border-gray-200 pl-2"
-				class:invisible={!selecting}
-			>
-				{#each ['status', 'tag', 'notebook', 'remove'] as verb (verb)}
-					{@const kind = verb as NonNullable<typeof batchVerb>}
-					<button
-						type="button"
-						class="icon-btn"
-						title={t(batchLabels[kind])}
-						aria-label={t(batchLabels[kind])}
-						disabled={!selectedTodos.length}
-						onclick={() => openBatch(kind)}
-					>
-						<Icon
-							name={kind === 'status'
-								? 'play'
-								: kind === 'tag'
-									? 'tag'
-									: kind === 'notebook'
-										? 'notebook'
-										: 'trash'}
-						/>
-					</button>
-				{/each}
-				<kbd class="text-xs" title={t('todoRows.selectionKeys')}></kbd>
-			</div>
-		</div>
 		{#if visibleTodos.length === 0}
 			<!--
 				Empty because there is nothing, or empty because it is all hidden.
@@ -1350,8 +1265,11 @@
 			-->
 			{#if narrowed}
 				<EmptyState
-					icon="search"
-					title={t('todoRows.nothingToShow')}
+					filtered
+					onclear={() => {
+						looking = '';
+						clearFilters();
+					}}
 					description={t('todoRows.noneMatchTheseFilters', { count: inScope.length })}
 				/>
 			{:else if hiddenHere > 0}
@@ -1401,12 +1319,11 @@
 				{#each visibleTodos as todo, i (todo.id)}
 					<div
 						data-todo-id={todo.id}
-						class:bg-gray-100={selecting && chosen.has(todo.id)}
+						class:bg-gray-100={selection.selecting && selection.has(todo.id)}
 						use:keepInView={shortcutRoom !== null && selectedIndex === i}
-						class="flex flex-wrap items-stretch gap-x-4 px-4 py-3 {shortcutRoom &&
-						selectedIndex === i
-							? 'kb-cursor'
-							: ''} {isDone(todo) ? 'opacity-50' : ''} {todo.status === 'doing' ? 'is-doing' : ''}"
+						class="row-card {shortcutRoom && selectedIndex === i ? 'kb-cursor' : ''} {isDone(todo)
+							? 'opacity-50'
+							: ''} {todo.status === 'doing' ? 'is-doing' : ''}"
 					>
 						<!--
 							The tick box and the three gauges are one column.
@@ -1424,294 +1341,175 @@
 							their own fixed height: what stretches is the column, not the
 							scale, or a taller card would draw a taller 4 than a short one.
 						-->
-						<div class="flex shrink-0 flex-col items-center gap-1 self-stretch">
-							{#if selecting}
+						{#snippet quickTag()}
+							<QuickTag
+								id={todo.id}
+								action={actions.tag}
+								has={todo.tags.map((one) => one.name)}
+								known={page.data.tagVocabulary ?? []}
+							/>
+						{/snippet}
+						<RowCard quiet={selection.selecting}>
+							{#snippet rail()}
+								{#if selection.selecting}
+									<SelectBox
+										checked={selection.has(todo.id)}
+										label={t('todoRows.selectTask', { title: todo.title })}
+										ontoggle={() => selection.toggle(todo.id)}
+									/>
+								{:else}
+									<form
+										id="toggle-form-{todo.id}"
+										method="post"
+										action={actions.setStatus}
+										use:enhance={deferComplete(todo)}
+										class="flex"
+									>
+										<input type="hidden" name="id" value={todo.id} />
+										<input
+											type="hidden"
+											name="status"
+											value={todo.status === 'done' ? 'todo' : 'done'}
+										/>
+										<!--
+									As tall as the row it belongs to.
+
+									The box was 20px pinned to the top-left of a row that is often
+									three lines tall — notes, a notebook, a column of icons — so it
+									sat in a corner of a lot of nothing and was a small thing to hit
+									besides. The target now runs the height of the row and the
+									square is bigger and centred in it, which fills the space the
+									rest of the row makes and gives the one action every row has the
+									size it deserves.
+								-->
+										<!--
+									At the top of the row, not down the middle of it.
+
+									It was `self-stretch` and centred, so on a task with notes,
+									labels and a gauge under the title the box floated halfway down
+									beside none of them. The thing it ticks is the title, so it
+									stands level with the title.
+
+									And once a task is done it says when: the tick is the only part
+									of the row that knows, and "did I do that this morning or last
+									week" is the question somebody asks of a list they are looking
+									back at.
+								-->
+										<button
+											type="submit"
+											class="-m-1 flex shrink-0 items-start justify-center self-start p-1 pointer-coarse:w-11"
+											aria-label={isDone(todo)
+												? t('todoRows.markIncomplete')
+												: t('todoRows.markComplete')}
+											title={isDone(todo) && todo.completedAt
+												? t('todoRows.doneAgo', {
+														when: momentOf(todo.completedAt, now()),
+														ago: agoOf(todo.completedAt, now())
+													})
+												: undefined}
+										>
+											<!-- Blue while it is the one being worked on, so the state is
+										     on the box that owns it rather than only on the row. -->
+											<TickBox done={isDone(todo)} doing={todo.status === 'doing'} />
+										</button>
+									</form>
+								{/if}
+
+								<!--
+								Under the tick box, stacked.
+
+								They were beside the labels under the title, which is where you
+								read what a task *is*; these three answer what it would cost you.
+								The rail the tick box stands in has the width and nothing under
+								it, and stacked they line up across every row — which is the half
+								of "make sure its aligned" that a row of pills could never do.
+
+								All three, always. Drawing only the answered ones put the same
+								question in a different place on every row, so the eye had to
+								read each card from scratch; an unanswered one is drawn half
+								full and grey, which says "nobody said" rather than "the lowest
+								there is".
+							-->
+								<!--
+								Pressing them opens the form on them.
+
+								They are the one thing on a row that shows a number without
+								offering a way to change it, and the way in was two presses
+								through a dialog that opens somewhere else entirely.
+							-->
+								<!--
+									The tick and the gauges are the whole rail. The number and
+									the add-a-label chip used to stand in it too, which made a
+									one-line task 124px tall with a gap under its title; they
+									lead and end the labels line instead, at every width.
+								-->
 								<button
 									type="button"
-									role="checkbox"
-									aria-checked={chosen.has(todo.id)}
-									aria-label={t('todoRows.selectTask', { title: todo.title })}
-									title={t('todoRows.selectTask', { title: todo.title })}
-									class="-m-1 flex items-start justify-center self-start p-1 pointer-coarse:w-11"
-									onclick={() => toggleSelected(todo.id)}
+									class="mt-auto flex cursor-pointer"
+									onclick={() => startEdit(todo, { atRatings: true })}
+									aria-label={t('todoRows.setTheRatings')}
 								>
-									<span
-										style="border-radius: 50%"
-										class="flex size-7 items-center justify-center border border-gray-500 hover:bg-gray-200"
-										class:bg-gray-200={chosen.has(todo.id)}
-										>{#if chosen.has(todo.id)}<Icon name="check" />{/if}</span
-									>
+									<RatingBadges values={todo.ratings} stacked muted={isDone(todo)} />
 								</button>
-							{:else}
-								<form
-									id="toggle-form-{todo.id}"
-									method="post"
-									action={actions.setStatus}
-									use:enhance={deferComplete(todo)}
-									class="flex"
-								>
-									<input type="hidden" name="id" value={todo.id} />
-									<input
-										type="hidden"
-										name="status"
-										value={todo.status === 'done' ? 'todo' : 'done'}
-									/>
-									<!--
-								As tall as the row it belongs to.
-
-								The box was 20px pinned to the top-left of a row that is often
-								three lines tall — notes, a notebook, a column of icons — so it
-								sat in a corner of a lot of nothing and was a small thing to hit
-								besides. The target now runs the height of the row and the
-								square is bigger and centred in it, which fills the space the
-								rest of the row makes and gives the one action every row has the
-								size it deserves.
-							-->
-									<!--
-								At the top of the row, not down the middle of it.
-
-								It was `self-stretch` and centred, so on a task with notes,
-								labels and a gauge under the title the box floated halfway down
-								beside none of them. The thing it ticks is the title, so it
-								stands level with the title.
-
-								And once a task is done it says when: the tick is the only part
-								of the row that knows, and "did I do that this morning or last
-								week" is the question somebody asks of a list they are looking
-								back at.
-							-->
-									<button
-										type="submit"
-										class="-m-1 flex shrink-0 items-start justify-center self-start p-1 pointer-coarse:w-11"
-										aria-label={isDone(todo)
-											? t('todoRows.markIncomplete')
-											: t('todoRows.markComplete')}
-										title={isDone(todo) && todo.completedAt
-											? t('todoRows.doneAgo', {
-													when: momentOf(todo.completedAt, now()),
-													ago: agoOf(todo.completedAt, now())
-												})
-											: undefined}
-									>
-										<!-- Blue while it is the one being worked on, so the state is
-									     on the box that owns it rather than only on the row. -->
-										<span
-											class="flex size-7 items-center justify-center border {isDone(todo)
-												? 'border-gray-400 bg-gray-400'
-												: todo.status === 'doing'
-													? 'doing-box'
-													: 'border-gray-400 bg-white'}"
-										>
-											{#if isDone(todo)}
-												<svg class="h-4 w-4 text-white" viewBox="0 0 20 20" fill="currentColor">
-													<path
-														fill-rule="evenodd"
-														d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-														clip-rule="evenodd"
-													/>
-												</svg>
-											{/if}
-										</span>
-									</button>
-								</form>
-							{/if}
-
-							<!--
-							Under the tick box, stacked.
-
-							They were beside the labels under the title, which is where you
-							read what a task *is*; these three answer what it would cost you.
-							The rail the tick box stands in has the width and nothing under
-							it, and stacked they line up across every row — which is the half
-							of "make sure its aligned" that a row of pills could never do.
-
-							All three, always. Drawing only the answered ones put the same
-							question in a different place on every row, so the eye had to
-							read each card from scratch; an unanswered one is drawn half
-							full and grey, which says "nobody said" rather than "the lowest
-							there is".
-						-->
-							<!--
-							Pressing them opens the form on them.
-
-							They are the one thing on a row that shows a number without
-							offering a way to change it, and the way in was two presses
-							through a dialog that opens somewhere else entirely.
-						-->
-							<button
-								type="button"
-								class="mt-auto cursor-pointer"
-								onclick={() => startEdit(todo, { atRatings: true })}
-								aria-label={t('todoRows.setTheRatings')}
-							>
-								<RatingBadges values={todo.ratings} stacked />
-							</button>
-						</div>
-
-						<!-- One row at every width: the actions are a narrow column of icons
-						     now, which fits beside the title on a phone. -->
-						<!--
-							Wrapping, because the actions below are a full-width line: in a
-							row that cannot wrap they are a sibling competing for the width
-							instead, which squeezes the title to one letter per line.
-						-->
-						<div class="flex min-w-0 flex-1 flex-wrap gap-x-3">
-							<div class="min-w-0 flex-1">
-								<div class="flex flex-wrap items-center gap-2">
-									{#if todo.categoryColor}
-										<span
-											class="h-3 w-1 shrink-0"
-											style="background-color: {todo.categoryColor}"
-											title={todo.categoryName}
-										></span>
-									{/if}
-									<!--
-										`min-w-0` because a flex item will not shrink below its own
-										content by default: a long title stopped being able to wrap,
-										widened the row past the card, and took the whole list off
-										the side of the screen with it. `break-words` so a single
-										long word breaks rather than doing the same thing again.
-									-->
-									<!-- Finished is grey, not struck through: the tick and the
-									     colour say it already, and a line through a title is one
-									     more thing to read past. -->
-									<!--
-										The title is the title. The chevron belongs to the writing.
-
-										It used to sit in front of the title, which put the mark
-										for "there is more of this" on the line that is not the
-										more of it — and indented every title in the list by a
-										glyph most rows had nothing to put in. It is on the first
-										line of the notes now, in their own left margin, with the
-										lines under it hanging to the same place.
-
-										The title still opens a folded row, along with everything
-										else in the block; what shuts one is the chevron and the
-										line beside it. See the notes below.
-									-->
-									<span
-										class="min-w-0 text-sm font-medium break-words {isDone(todo)
-											? 'text-gray-400'
-											: 'text-gray-900'}">{todo.title}</span
-									>
-									{#if todo.scheduledDate}
-										<span
-											class="tabular border border-gray-200 bg-gray-50 px-1 text-[10px] text-gray-600"
-											title={t('todoRows.pulledOntoThisDay')}
-										>
-											{todo.scheduledDate}
-										</span>
-									{/if}
-									{#if todo.archivedAt}
-										<span
-											class="border border-gray-200 bg-gray-50 px-1 text-[10px] text-gray-600"
-											title={t('todoRows.putAway')}
-										>
-											{t('todoRows.archived')}
-										</span>
-									{/if}
-								</div>
-								<!--
-									A recording is a player and a picture is a picture, not the
-									address of either.
-
-									Notes are drawn as a line of text, and both attachments are
-									stored as ordinary markdown — right for the text, wrong on
-									the screen, where the row reads as
-									`[ring the plumber](/media/audio/40)`. `Written` takes them
-									out of the line and draws them under it, the same way an
-									idea's are drawn. They are always there when there are any,
-									so nothing moves when the row is pressed.
-								-->
-								{#if todo.notes}
-									<!--
-										The chevron sits on the first line of the writing, and
-										that line is what folds it.
-
-										Open, the press is the first line and the mark beside it —
-										nothing else. Everything under it is a paragraph somebody
-										is reading, and reading means selecting a word or
-										following a link, both of which used to fold the row away
-										mid-sentence. Which line was pressed is worked out from
-										where the pointer was rather than from an overlay, so the
-										words stay selectable and a link in them stays a link.
-
-										Folded, the whole block opens: the title, the line, a
-										picture in it, any of them. There is nothing to lose by
-										pressing in the wrong place when the only thing that can
-										happen is seeing more.
-
-										A picture or a recording is still its own control — the
-										press is caught here rather than bound to the block, so
-										playing something does not fold the row.
-									-->
-									<!-- svelte-ignore a11y_click_events_have_key_events -->
-									<!-- svelte-ignore a11y_no_static_element_interactions -->
-									<div
-										class="todo-notes {hasMore(todo) ? 'todo-notes-foldable' : ''}"
-										onclick={(press) => foldPress(todo, press)}
-										onpointermove={(move) => foldHover(todo, move)}
-										onpointerleave={(leave) =>
-											(leave.currentTarget as HTMLElement).classList.remove('todo-notes-hot')}
-									>
-										{#if hasMore(todo)}
-											<button
-												type="button"
-												class="todo-fold"
-												onclick={(press) => {
-													press.stopPropagation();
-													toggleNotes(todo.id);
-												}}
-												aria-expanded={openNotes.has(todo.id)}
-												aria-label={todo.title}
-											>
-												<Icon
-													name={openNotes.has(todo.id) ? 'chevron-down' : 'chevron-right'}
-													size={12}
-												/>
-											</button>
-										{/if}
-										<Written
-											content={todo.notes}
-											compact
-											oneLine={!openNotes.has(todo.id)}
-											ontruncate={notesTruncate(todo.id)}
-											todos={todoRefs}
-										/>
-									</div>
+							{/snippet}
+							{#snippet labels()}
+								{#if todo.notebookSeq !== null}
+									<span class="tabular mr-1 text-[11px] text-gray-500" title={whenOf(todo)}>
+										#{todo.notebookSeq}
+									</span>
 								{/if}
-								<!-- Pressing one narrows the list to it, the way an idea's do:
-								     a label is only useful if reading back one of them is a
-								     press rather than a trip to a filter. -->
-								<!--
-									The three gauges, in the room the tick used to take.
-
-									Under the title rather than in it: the title line is what
-									somebody scans, and three small objects in the middle of it
-									were three things to read past. Here they sit with the
-									labels, which is the other thing you look at when you are
-									choosing what to do rather than reading what it is.
-								-->
-								<Backlinks
-									goals={goalLinks[todo.id]}
-									notebook={notebookId === null && todo.notebookId && todo.notebookTitle
-										? { id: todo.notebookId, title: todo.notebookTitle }
-										: null}
-								/>
-							</div>
-
-							<!--
-								Under the words, not beside them.
-
-								The actions were a block three buttons wide pinned to the
-								right-hand edge, which on a phone took a third of the row and
-								left the title with barely enough space to break a word in —
-								"letters barely have space there to span". A note card has
-								never done that: its buttons sit on a line of their own under
-								the text, pushed right. Same here, at every width, because it
-								reads better on a laptop too.
-							-->
-							<div class="task-actions" inert={selecting} class:opacity-50={selecting}>
+								{#each todo.tags as tag (tag.id)}
+									<!--
+										The chip says when it went on.
+										
+										Which is the whole reason the join carries a date: a
+										list of labels says what is true and says nothing
+										about what is new. Under the pointer rather than
+										beside the word, because the age matters when you go
+										looking for it and would be noise on every row at
+										once. A label from before the column existed simply
+										does not say — an invented date would be read as real.
+									-->
+									<TagChip
+										name={tag.name}
+										active={tagFilter.current.include.includes(tag.name)}
+										title={tag.taggedAt
+											? t('todoRows.taggedAgo', { ago: agoOf(tag.taggedAt, now()) })
+											: undefined}
+										onclick={() => {
+											// Pressing a label adds it to the ones shown rather
+											// than replacing them, so two presses is two labels.
+											const held = tagFilter.current;
+											tagFilter.current = held.include.includes(tag.name)
+												? { ...held, include: held.include.filter((one) => one !== tag.name) }
+												: {
+														...held,
+														include: [...held.include, tag.name],
+														exclude: held.exclude.filter((one) => one !== tag.name)
+													};
+											selectedIndex = 0;
+										}}
+									/>
+								{/each}
+								{@render quickTag()}
+							{/snippet}
+							{#snippet controls()}
+								<!-- First, and only where there is something to read: what the
+								     task says about itself, to copy or to change. Stood down
+								     while a delete is being confirmed, whose two worded buttons
+								     need the room on a phone. -->
+								{#if Object.keys(todo.attributes).length > 0 && confirmingDelete !== todo.id}
+									<button
+										type="button"
+										class="icon-btn"
+										data-tour="todo-attributes"
+										title={t('attributes.show')}
+										aria-label={t('attributes.show')}
+										onclick={() => (attributesId = todo.id)}
+									>
+										<Icon name="info" />
+									</button>
+								{/if}
 								{#if !isDone(todo)}
 									<!--
 										What you are on, said on the list rather than only on the
@@ -1742,30 +1540,6 @@
 												: t('todoRows.startDoing')}
 										>
 											<Icon name="play" />
-										</button>
-									</form>
-								{/if}
-								{#if !isDone(todo)}
-									<!-- One column changes; nothing is copied anywhere. -->
-									<form method="post" action={actions.schedule} use:enhance>
-										<input type="hidden" name="id" value={todo.id} />
-										<input
-											type="hidden"
-											name="scheduledDate"
-											value={todo.scheduledDate ? '' : todayStr()}
-										/>
-										<button
-											type="submit"
-											class="icon-btn"
-											aria-pressed={!!todo.scheduledDate}
-											aria-label={todo.scheduledDate
-												? t('todoRows.putBackOnTheGeneral')
-												: t('todoRows.pullOntoToday')}
-											title={todo.scheduledDate
-												? t('todoRows.putBackOnTheGeneral')
-												: t('todoRows.pullOntoToday')}
-										>
-											<Icon name={todo.scheduledDate ? 'undo' : 'arrow-down'} />
 										</button>
 									</form>
 								{/if}
@@ -1844,161 +1618,201 @@
 										<Icon name="trash" />
 									</button>
 								{/if}
-
+							{/snippet}
+							<div class="flex flex-wrap items-center gap-2">
 								<!--
-									This task's number inside its notebook, quietly, at the end
-									of the row.
-
-									It is what a note points at — `TASK:#4` — and what somebody
-									says out loud when they mean a particular task, so it has to
-									be on the screen: the row id never was, and "the one about
-									the plumber" is the only other way to name one. Bottom right,
-									under the actions, because it is a label rather than a
-									control. A task filed under nothing has no number and shows
-									none.
-								-->
-								<!--
-									The number and then the labels, on the same line.
-
-									The labels used to sit above, under the notes, which put
-									them in the middle of what somebody is reading rather than
-									with the other things a row is filed under. They belong
-									with the number: both of them say how to find this task
-									again rather than what it is.
-								-->
-								<!-- `task-labels`: what the row says, so it keeps its ink while
-								     the buttons beside it are held back — see `.task-actions`. -->
-								<div
-									class="task-labels order-first mr-auto flex min-w-0 flex-wrap items-center gap-1"
-								>
-									{#if todo.notebookSeq !== null}
-										<span class="tabular text-[11px] text-gray-500" title={whenOf(todo)}>
-											#{todo.notebookSeq}
-										</span>
-									{/if}
-									{#each todo.tags as tag (tag.id)}
-										<!--
-											The chip says when it went on.
-											
-											Which is the whole reason the join carries a date: a
-											list of labels says what is true and says nothing
-											about what is new. Under the pointer rather than
-											beside the word, because the age matters when you go
-											looking for it and would be noise on every row at
-											once. A label from before the column existed simply
-											does not say — an invented date would be read as real.
-										-->
-										<TagChip
-											name={tag.name}
-											active={tagFilter.current.include.includes(tag.name)}
-											title={tag.taggedAt
-												? t('todoRows.taggedAgo', { ago: agoOf(tag.taggedAt, now()) })
-												: undefined}
-											onclick={() => {
-												// Pressing a label adds it to the ones shown rather
-												// than replacing them, so two presses is two labels.
-												const held = tagFilter.current;
-												tagFilter.current = held.include.includes(tag.name)
-													? { ...held, include: held.include.filter((one) => one !== tag.name) }
-													: {
-															...held,
-															include: [...held.include, tag.name],
-															exclude: held.exclude.filter((one) => one !== tag.name)
-														};
-												selectedIndex = 0;
-											}}
-										/>
-									{/each}
-									<!--
-										And the way to add one, at the end of the strip.
-
-										Where the cursor already is when somebody reads the row
-										and decides it needs a word. The alternative was the
-										edit dialog, which is five steps and a list that
-										reorders underneath you for one label.
+										`min-w-0` because a flex item will not shrink below its own
+										content by default: a long title stopped being able to wrap,
+										widened the row past the card, and took the whole list off
+										the side of the screen with it. `break-words` so a single
+										long word breaks rather than doing the same thing again.
 									-->
-									<QuickTag
-										id={todo.id}
-										action={actions.tag}
-										has={todo.tags.map((one) => one.name)}
-										known={page.data.tagVocabulary ?? []}
+								<!-- Finished is grey, not struck through: the tick and the
+									     colour say it already, and a line through a title is one
+									     more thing to read past. -->
+								<!--
+										The title is the title. The chevron belongs to the writing.
+
+										It used to sit in front of the title, which put the mark
+										for "there is more of this" on the line that is not the
+										more of it — and indented every title in the list by a
+										glyph most rows had nothing to put in. It is on the first
+										line of the notes now, in their own left margin, with the
+										lines under it hanging to the same place.
+
+										The title still opens a folded row, along with everything
+										else in the block; what shuts one is the chevron and the
+										line beside it. See the notes below.
+									-->
+								<span
+									class="min-w-0 text-sm font-medium break-words {isDone(todo)
+										? 'text-gray-400'
+										: 'text-gray-900'}">{todo.title}</span
+								>
+								<!-- Its category, worn after the title rather than as a bar in
+								     front of it, which pushed the title off the row's column. -->
+								{#if todo.categoryColor && todo.categoryName}
+									<CategoryMark name={todo.categoryName} color={todo.categoryColor} />
+								{/if}
+								{#if todo.scheduledDate}
+									<span
+										class="tabular border border-gray-200 bg-gray-50 px-1 text-[10px] text-gray-600"
+										title={t('todoRows.pulledOntoThisDay')}
+									>
+										{civilOf(todo.scheduledDate, now())}
+									</span>
+								{:else if todo.delegatedDate}
+									<!-- The day of the block it was delegated to: the task itself
+										stays in the list, and the block is what the day's board shows. -->
+									<span
+										class="tabular border border-gray-200 bg-gray-50 px-1 text-[10px] text-gray-600"
+										title={t('todoRows.delegatedToThisDay')}
+									>
+										{civilOf(todo.delegatedDate, now())}
+									</span>
+								{/if}
+								{#if todo.archivedAt}
+									<span
+										class="border border-gray-200 bg-gray-50 px-1 text-[10px] text-gray-600"
+										title={t('todoRows.putAway')}
+									>
+										{t('todoRows.archived')}
+									</span>
+								{/if}
+							</div>
+							<!--
+									A recording is a player and a picture is a picture, not the
+									address of either.
+
+									Notes are drawn as a line of text, and both attachments are
+									stored as ordinary markdown — right for the text, wrong on
+									the screen, where the row reads as
+									`[ring the plumber](/media/audio/40)`. `Written` takes them
+									out of the line and draws them under it, the same way an
+									idea's are drawn. They are always there when there are any,
+									so nothing moves when the row is pressed.
+								-->
+							{#if todo.notes}
+								<!--
+										The chevron sits on the first line of the writing, and
+										that line is what folds it.
+
+										Open, the press is the first line and the mark beside it —
+										nothing else. Everything under it is a paragraph somebody
+										is reading, and reading means selecting a word or
+										following a link, both of which used to fold the row away
+										mid-sentence. Which line was pressed is worked out from
+										where the pointer was rather than from an overlay, so the
+										words stay selectable and a link in them stays a link.
+
+										Folded, the whole block opens: the title, the line, a
+										picture in it, any of them. There is nothing to lose by
+										pressing in the wrong place when the only thing that can
+										happen is seeing more.
+
+										A picture or a recording is still its own control — the
+										press is caught here rather than bound to the block, so
+										playing something does not fold the row.
+									-->
+								<!-- svelte-ignore a11y_click_events_have_key_events -->
+								<!-- svelte-ignore a11y_no_static_element_interactions -->
+								<div
+									class="todo-notes {hasMore(todo) ? 'todo-notes-foldable' : ''}"
+									onclick={(press) => foldPress(todo, press)}
+									onpointermove={(move) => foldHover(todo, move)}
+									onpointerleave={(leave) =>
+										(leave.currentTarget as HTMLElement).classList.remove('todo-notes-hot')}
+								>
+									{#if hasMore(todo)}
+										<button
+											type="button"
+											class="todo-fold"
+											onclick={(press) => {
+												press.stopPropagation();
+												toggleNotes(todo.id);
+											}}
+											aria-expanded={openNotes.has(todo.id)}
+											aria-label={todo.title}
+										>
+											<Icon
+												name={openNotes.has(todo.id) ? 'chevron-down' : 'chevron-right'}
+												size={12}
+											/>
+										</button>
+									{/if}
+									<Written
+										content={todo.notes}
+										compact
+										oneLine={!openNotes.has(todo.id)}
+										ontruncate={notesTruncate(todo.id)}
+										todos={todoRefs}
 									/>
 								</div>
-							</div>
-						</div>
+							{/if}
+							<!-- Pressing one narrows the list to it, the way an idea's do:
+								     a label is only useful if reading back one of them is a
+								     press rather than a trip to a filter. -->
+							<!--
+									The three gauges, in the room the tick used to take.
+
+									Under the title rather than in it: the title line is what
+									somebody scans, and three small objects in the middle of it
+									were three things to read past. Here they sit with the
+									labels, which is the other thing you look at when you are
+									choosing what to do rather than reading what it is.
+								-->
+							<Backlinks
+								goals={goalLinks[todo.id]}
+								notebook={notebookId === null && todo.notebookId && todo.notebookTitle
+									? { id: todo.notebookId, title: todo.notebookTitle }
+									: null}
+							/>
+						</RowCard>
 					</div>
 				{/each}
 			</div>
 		{/if}
 	</div>
 
-	<Modal
-		open={batchVerb !== null}
-		title={batchVerb ? t(batchLabels[batchVerb]) : ''}
-		description={t('todoRows.selectedCount', { count: selectedTodos.length })}
-		error={batchError}
-		onclose={() => (batchVerb = null)}
-		size="sm"
+	<BatchDialog
+		{selection}
+		ids={selectedTodos.map((todo) => todo.id)}
+		action={actions.batch}
+		id="todo-batch-form"
+		title={selection.verb ? t(batchLabels[selection.verb]) : ''}
+		destructive={selection.verb === 'remove'}
+		done={(count) => t('todoRows.batchUpdated', { count })}
 	>
-		{#if batchVerb}
-			<form id="todo-batch-form" method="post" action={actions.batch} use:enhance={submitBatch}>
-				<input type="hidden" name="do" value={batchVerb} />
-				{#each selectedTodos as todo (todo.id)}<input
-						type="hidden"
-						name="id"
-						value={todo.id}
-					/>{/each}
-				<FormGrid>
-					{#if batchVerb === 'status'}
-						<Field label={t('todoRows.batchStatus')} span={12}>
-							<select name="status" class="select" use:autofocus>
-								{#each STATUSES as status (status)}<option value={status}
-										>{t(STATUS_LABELS[status])}</option
-									>{/each}
-							</select>
-						</Field>
-					{:else if batchVerb === 'tag'}
-						<Field label={t('todoRows.addLabels')} span={12}
-							><OneLine name="add" class="input" autofocus /></Field
-						>
-						<Field label={t('todoRows.removeLabels')} span={12}
-							><OneLine name="remove" class="input" /></Field
-						>
-					{:else if batchVerb === 'notebook'}
-						<Field label={t('ui.notebook')} span={12}>
-							<select name="notebookId" class="select" use:autofocus>
-								<option value="">{t('todoRows.notInOne')}</option>
-								{#each notebooks as notebook (notebook.id)}<option value={notebook.id}
-										>{notebook.title}</option
-									>{/each}
-							</select>
-						</Field>
-					{:else}
-						<p class="col-span-12 text-sm text-gray-700">{t('todoRows.deleteSelectedWarning')}</p>
-					{/if}
-				</FormGrid>
-			</form>
-		{/if}
-		{#snippet footer()}
-			<button type="button" class="btn" onclick={() => (batchVerb = null)}>{t('ui.cancel')}</button>
-			{#if batchVerb === 'remove'}
-				<button
-					type="submit"
-					form="todo-batch-form"
-					class="btn btn-danger"
-					use:armed
-					disabled={!selectedTodos.length}>{t('ui.delete')}</button
+		{#snippet fields(verb)}
+			{#if verb === 'status'}
+				<Field label={t('todoRows.batchStatus')} span={12}>
+					<select name="status" class="select" use:autofocus>
+						{#each STATUSES as status (status)}<option value={status}
+								>{t(STATUS_LABELS[status])}</option
+							>{/each}
+					</select>
+				</Field>
+			{:else if verb === 'tag'}
+				<Field label={t('todoRows.addLabels')} span={12}
+					><OneLine name="add" class="input" autofocus /></Field
 				>
+				<Field label={t('todoRows.removeLabels')} span={12}
+					><OneLine name="remove" class="input" /></Field
+				>
+			{:else if verb === 'notebook'}
+				<Field label={t('ui.notebook')} span={12}>
+					<select name="notebookId" class="select" use:autofocus>
+						<option value="">{t('todoRows.notInOne')}</option>
+						{#each notebooksHolding(notebooks, 'tasks') as notebook (notebook.id)}<option
+								value={notebook.id}>{notebook.title}</option
+							>{/each}
+					</select>
+				</Field>
 			{:else}
-				<button
-					type="submit"
-					form="todo-batch-form"
-					class="btn btn-primary"
-					disabled={!selectedTodos.length}>{t('ui.save')}</button
-				>
+				<p class="col-span-12 text-sm text-gray-700">{t('todoRows.deleteSelectedWarning')}</p>
 			{/if}
 		{/snippet}
-	</Modal>
+	</BatchDialog>
 
 	<Modal
 		bind:open={showForm}
@@ -2063,7 +1877,8 @@
 				<TodoFields
 					title={editing?.title ?? ''}
 					notes={editing?.notes ?? ''}
-					categoryId={editing?.categoryId ?? null}
+					attributes={editing?.attributes ?? {}}
+					categoryId={editing ? editing.categoryId : undefined}
 					bind:notebookId={formNotebookId}
 					tags={editing?.tags.map((one) => one.name).join(', ') ?? ''}
 					scheduledDate={editing?.scheduledDate ?? ''}
@@ -2112,9 +1927,14 @@
 					}}
 				>
 					<input type="hidden" name="id" value={editingId} />
-					<button type="submit" class="btn btn-danger" use:armed>
+					<button
+						type="submit"
+						class="btn btn-danger"
+						use:armed
+						title={t('ui.delete')}
+						aria-label={t('ui.delete')}
+					>
 						<Icon name="trash" />
-						{t('ui.delete')}
 					</button>
 				</form>
 			{/if}
@@ -2224,4 +2044,15 @@
 			>
 		{/snippet}
 	</Modal>
+
+	{#if attributesOf}
+		<AttributesDialog
+			open={attributesId !== null}
+			title={attributesOf.title}
+			id={attributesOf.id}
+			attributes={attributesOf.attributes}
+			action={actions.attribute}
+			onclose={() => (attributesId = null)}
+		/>
+	{/if}
 </div>

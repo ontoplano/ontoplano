@@ -90,6 +90,7 @@ sentence somebody agrees to when they grant it.
 | `/api/v1/inventory/items`                    | POST   | `inventory:write` |
 | `/api/v1/inventory/items/[id]/bought`        | POST   | `inventory:write` |
 | `/api/v1/me`                                 | GET    | —                 |
+| `/api/v1/notebooks/[id]/[section]`           | GET    | —                 |
 | `/api/v1/plugin`                             | GET    | `plugin:declare`  |
 | `/api/v1/plugin`                             | PUT    | `plugin:declare`  |
 | `/api/v1/plugin`                             | DELETE | `plugin:declare`  |
@@ -104,6 +105,7 @@ sentence somebody agrees to when they grant it.
 | `/api/v1/webhooks`                           | GET    | `webhooks:manage` |
 | `/api/v1/webhooks`                           | POST   | `webhooks:manage` |
 | `/api/v1/webhooks/[id]`                      | DELETE | `webhooks:manage` |
+| `/api/v1/widget`                             | GET    | —                 |
 | `/calendar/[token]`                          | GET    | `calendar:read`   |
 | `/favicon.ico`                               | GET    | —                 |
 | `/health/meals`                              | GET    | —                 |
@@ -582,6 +584,18 @@ the user's timezone during setup, without needing any other scope.
 
 **GET**
 
+### `/api/v1/notebooks/[id]/[section]`
+
+One tab of one notebook, as lines — what a widget draws.
+
+`?status=`, `?order=`, `?direction=`, `?tag=` and `?limit=` take the choices
+`$lib/notebook-widget` lists for the tab; anything else falls back to the
+tab's first. The grant is the tab's own read (`SECTION_SCOPE`), and a key
+pinned to a notebook answers for that notebook alone: asking for another is
+the same 404 as asking for somebody else's.
+
+**GET**
+
 ### `/api/v1/plugin`
 
 The manifests this account has been given.
@@ -595,7 +609,7 @@ can call it at every startup and the newest version's vocabulary wins.
 
 **DELETE** — requires `plugin:declare`
 
-Withdraw a manifest. The metadata keys keep working; they just lose their label.
+Withdraw a manifest. The attribute keys keep working; they just lose their label.
 
 ### `/api/v1/reminders/upcoming`
 
@@ -693,6 +707,19 @@ verify `X-Ontoplano-Signature` (`sha256=` + HMAC-SHA256 of the raw body).
 ### `/api/v1/webhooks/[id]`
 
 **DELETE** — requires `webhooks:manage`
+
+### `/api/v1/widget`
+
+What the home-screen widget holding this key should draw.
+
+The key is the widget: its notebook, tab, filter and order are kept on the
+instance, so they can be changed from Settings and the phone picks them up
+on its next refresh. Only a key answers — a session has no widget.
+
+Any of the reads a widget can hold lets the key in; `widgetFor` then
+checks it holds the one its own tab needs.
+
+**GET**
 
 ### `/calendar/[token]`
 

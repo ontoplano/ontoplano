@@ -76,7 +76,9 @@ test('an assistant connects itself, and the key it gets works', async ({ page, r
 		const workouts = page.getByRole('checkbox', { name: /Habits and workouts/ });
 		await expect(workouts).toBeChecked();
 		await workouts.uncheck();
-		await page.getByRole('checkbox', { name: /See your ideas/ }).uncheck();
+		// A write line; its read is held while the write is ticked, since a
+		// write means reading first.
+		await page.getByRole('checkbox', { name: /Add ideas, change them/ }).uncheck();
 
 		// 3. Yes — and the code goes home to the address it registered.
 		await page.getByRole('button', { name: 'Connect it' }).click();
@@ -125,8 +127,8 @@ test('an assistant connects itself, and the key it gets works', async ({ page, r
 		// whole area with it, and the line took itself.
 		expect(token.scope).not.toContain('habits:');
 		expect(token.scope).not.toContain('workouts:');
-		expect(token.scope).not.toContain('ideas:read');
-		expect(token.scope).toContain('ideas:write');
+		expect(token.scope).not.toContain('ideas:write');
+		expect(token.scope).toContain('ideas:read');
 
 		// 6. And the key works where it was minted to work.
 		const called = await request.post('/api/mcp', {

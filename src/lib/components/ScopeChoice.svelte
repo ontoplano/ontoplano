@@ -3,7 +3,7 @@
 
 	import { useT } from '$lib/i18n';
 	import type { PlainKey } from '$lib/i18n/keys';
-	import { groupsOf } from '$lib/scope-groups';
+	import { groupsOf, readNeededBy } from '$lib/scope-groups';
 
 	/**
 	 * Permissions, with a tick box beside each one.
@@ -77,8 +77,21 @@
 	 * the list is a real thing to want — but a grant that will not work is
 	 * worth one sentence before it is made.
 	 */
-	const halfGranted = (key: string) =>
-		key.endsWith(':write') && ticked[key] && !ticked[key.replace(':write', ':read')];
+	/*
+	 * Writing a room needs reading it, so a ticked write holds its read on.
+	 * The read box shows ticked and cannot be unticked while the write is —
+	 * the server adds it anyway, and a box that could say otherwise would be
+	 * a box that lies.
+	 */
+	const heldBy = (key: string) =>
+		scopes.find((one) => ticked[one.key] && readNeededBy(one.key) === key)?.key ?? null;
+
+	$effect(() => {
+		for (const one of scopes) {
+			const read = readNeededBy(one.key);
+			if (ticked[one.key] && read && read in ticked && !ticked[read]) ticked[read] = true;
+		}
+	});
 </script>
 
 <div class="space-y-3">
@@ -113,6 +126,7 @@
 							value={one.key}
 							class="mt-1"
 							bind:checked={ticked[one.key]}
+							disabled={heldBy(one.key) !== null}
 						/>
 						<span>
 							{#if showKeys}
@@ -121,17 +135,11 @@
 							{:else}
 								{one.says ? t(one.says) : one.key}
 							{/if}
-							{#if halfGranted(one.key)}
-								<span
-									class="mt-1 mb-0.5 block border-l-2 border-blue-600 pl-2 text-xs font-medium text-blue-700"
-								>
-									{#if showKeys}
-										{t('settings.integrations.connections.without')}
-										<code class="font-mono">{one.key.replace(':write', ':read')}</code>
-										{t('settings.integrations.connections.itCanWriteButNot')}
-									{:else}
-										{t('scopeGroups.withoutTheLineAbove')}
-									{/if}
+							<!-- On the line itself and drawn either way, so ticking a write
+							     moves nothing below it. -->
+							{#if scopes.some((other) => readNeededBy(other.key) === one.key)}
+								<span class="text-xs text-gray-500" class:invisible={!heldBy(one.key)}>
+									· {t('scopeGroups.neededToWrite')}
 								</span>
 							{/if}
 							{#if one.caution && ticked[one.key]}

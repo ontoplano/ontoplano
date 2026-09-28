@@ -17,7 +17,7 @@ import {
 import type { Ctx } from './ctx.js';
 import { NotFoundError } from './errors.js';
 import { num } from './validate.js';
-import { assertReachableNotebook } from './notebooks.js';
+import { assertNotebookHolds, assertReachableNotebook } from './notebooks.js';
 import { isNotebookModule, type NotebookModule } from '../notebook-modules.js';
 import { CLOSED_STATUSES } from '../task-status.js';
 
@@ -192,7 +192,8 @@ export function fileUnderNotebook(
 	if (!isNotebookModule(module)) throw new NotFoundError('module');
 	const linkable = TABLES[module];
 	if (!linkable) throw new NotFoundError('module');
-	if (notebookId !== null) assertReachableNotebook(ctx, notebookId);
+	// Into a notebook only when it has the tab; out of one, always.
+	if (notebookId !== null) assertNotebookHolds(ctx, notebookId, module);
 
 	const rowId = num(id, 'id', { int: true, min: 1 });
 	const { table } = linkable;

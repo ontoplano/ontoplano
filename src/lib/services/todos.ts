@@ -10,10 +10,14 @@
 import {
 	and,
 	asc,
+	desc,
 	eq,
 	exists,
+	gte,
 	inArray,
+	isNotNull,
 	isNull,
+	lte,
 	max,
 	not,
 	notExists,
@@ -22,6 +26,8 @@ import {
 	sql,
 	type SQL
 } from 'drizzle-orm';
+
+import type { SQLiteColumn } from 'drizzle-orm/sqlite-core';
 
 import { db } from '$lib/db/index.js';
 import {
@@ -37,16 +43,28 @@ import {
 } from '$lib/db/schema.js';
 import { CLOSED_STATUSES, isStatus, type Status } from '../task-status.js';
 import { UNTAGGED, isTagFiltering, type TagFilter } from '../tag-filter.js';
-import type { RatingValues } from '../ratings.js';
+import {
+	RATINGS,
+	RATING_ORDER,
+	RATING_UNRATED,
+	type Rating,
+	type RatingValues
+} from '../ratings.js';
 import type { Ctx } from './ctx.js';
 import { NotFoundError, ValidationError } from './errors.js';
-import { ownedNotebookId } from './notebooks.js';
+import { defaultCategoryOf, ownedNotebookId } from './notebooks.js';
 import { fileUnderNotebook } from './notebook-linking.js';
 import { getUserSetting, setUserSetting } from './settings.js';
 import { cleanupOrphanTags, optionalTagInput, parseTags, replaceTodoTags } from './tags.js';
 import { created, stamp, stamps } from './time.js';
 import { host } from './host.js';
 import { TIME_PATTERN, num, oneOf, optionalStr, str } from './validate.js';
+import {
+	parseAttributes,
+	serialiseAttributes,
+	withAttribute,
+	type TaskAttributes
+} from './task-attributes.js';
 
 export type Todo = {
 	id: number;
@@ -54,6 +72,14 @@ export type Todo = {
 	notes: string;
 	status: Status;
 	scheduledDate: string | null;
+	/**
+	 * The day of the block it was delegated to, or null.
+	 *
+	 * Not a schedule: the task stays in the list and the block is what sits on
+	 * that day's board. Read off the block, so it follows a moved block and
+	 * clears when the block is deleted.
+	 */
+	delegatedDate: string | null;
 	sortOrder: number;
 	categoryId: number | null;
 	categoryName: string | null;
@@ -67,6 +93,11 @@ export type Todo = {
 	/** When it was last finished, or null. Cleared when it is reopened. */
 	completedAt: string | null;
 	ratings: RatingValues;
+	/**
+	 * Its attributes, parsed: `{ "url": "…", "room": "B12" }`. The same shape a
+	 * task block's are, and carried onto the block when it is put on the plan.
+	 */
+	attributes: TaskAttributes;
 	/**
 	 * The labels on it, from the account's one tag vocabulary.
 	 *
@@ -97,6 +128,13 @@ const SELECTION = {
 	status: todoTasks.status,
 	completedAt: todoTasks.completedAt,
 	scheduledDate: todoTasks.scheduledDate,
+	// A subquery rather than a join, so every list that selects this shape
+	// gets it without each growing a join of its own.
+	delegatedDate: sql<string | null>`(
+		SELECT ${exceptionalTasks.date} FROM ${exceptionalTasks}
+		WHERE ${exceptionalTasks.id} = ${todoTasks.delegatedSlotId}
+			AND ${exceptionalTasks.userId} = ${todoTasks.userId}
+	)`,
 	sortOrder: todoTasks.sortOrder,
 	categoryId: todoTasks.categoryId,
 	categoryName: categories.name,
@@ -108,6 +146,7 @@ const SELECTION = {
 	urgency: todoTasks.urgency,
 	interest: todoTasks.interest,
 	ease: todoTasks.ease,
+	attributes: todoTasks.attributes,
 	createdAt: todoTasks.createdAt,
 	updatedAt: todoTasks.updatedAt
 };
@@ -119,6 +158,7 @@ function shape(r: Record<string, unknown>): Todo {
 		notes: (r.notes as string) ?? '',
 		status: r.status as Status,
 		scheduledDate: (r.scheduledDate as string) ?? null,
+		delegatedDate: (r.delegatedDate as string) ?? null,
 		sortOrder: r.sortOrder as number,
 		categoryId: (r.categoryId as number) ?? null,
 		categoryName: (r.categoryName as string) ?? null,
@@ -133,6 +173,7 @@ function shape(r: Record<string, unknown>): Todo {
 			interest: (r.interest as number) ?? null,
 			ease: (r.ease as number) ?? null
 		},
+		attributes: parseAttributes(r.attributes as string | null),
 		// Filled in by `withTags`, which reads them for a whole list at once.
 		tags: (r.tags as Tag[]) ?? [],
 		createdAt: r.createdAt as string,
@@ -269,6 +310,244 @@ export function listTodos(ctx: Ctx, options: { tags?: TagFilter } = {}): Todo[] 
 }
 
 /**
+ * The orders a list of todos can be read in. A closed set: a caller names one
+ * of these and never a column, so nothing it sends reaches `ORDER BY`.
+ *
+ * - `manual` — the drag position, then the older first: the board's order.
+ * - `priority` — the order "what should I be doing" is answered in, which is
+ *   `compareByPriority` from `$lib/ratings` written as SQL. Urgency, then
+ *   ease, then interest, an unset one counting as `RATING_UNRATED`; ties by
+ *   the drag position, then the older.
+ * - the rest are one column each.
+ *
+ * Whatever the order, the id comes last, so two rows alike in every key still
+ * come out the same way on every page and an offset never repeats or skips.
+ */
+export const TODO_SORTS = [
+	'manual',
+	'priority',
+	'created',
+	'updated',
+	'completed',
+	'scheduled',
+	'title'
+] as const;
+export type TodoSort = (typeof TODO_SORTS)[number];
+
+export const SORT_DIRECTIONS = ['asc', 'desc'] as const;
+export type SortDirection = (typeof SORT_DIRECTIONS)[number];
+
+/** Which way each order runs when nobody says: the way it is usually read. */
+export const TODO_SORT_DEFAULT_DIRECTION: Record<TodoSort, SortDirection> = {
+	manual: 'asc',
+	// Best first: the higher rating is the one to do.
+	priority: 'desc',
+	created: 'desc',
+	updated: 'desc',
+	completed: 'desc',
+	scheduled: 'asc',
+	title: 'asc'
+};
+
+/** Whether dated and undated todos are both wanted, or only one kind. */
+export const TODO_SCHEDULED = ['any', 'undated', 'dated'] as const;
+export type TodoScheduled = (typeof TODO_SCHEDULED)[number];
+
+/** Whether archived todos are left out, let in, or the only ones. */
+export const TODO_ARCHIVED = ['exclude', 'include', 'only'] as const;
+export type TodoArchived = (typeof TODO_ARCHIVED)[number];
+
+/** The four states, plus `open` (not finished, not skipped) and `closed`. */
+export const TODO_STATES = ['todo', 'doing', 'done', 'skipped', 'open', 'closed'] as const;
+export type TodoState = (typeof TODO_STATES)[number];
+
+/** The most rows one page may hold, and the most ids one filter may name. */
+export const TODO_PAGE_CEILING = 200;
+export const TODO_IDS_CEILING = 200;
+
+export type TodoQuery = {
+	/** Only these ids. An id that is not this account's matches nothing. */
+	ids?: number[];
+	/** Words in the title or the notes, case-insensitively. */
+	text?: string;
+	/** One notebook; `null` for the ones filed under nothing. */
+	notebookId?: number | null;
+	state?: TodoState;
+	scheduled?: TodoScheduled;
+	/** Put on a day from this one, inclusive. Implies a date. */
+	scheduledFrom?: string;
+	/** Put on a day up to this one, inclusive. Implies a date. */
+	scheduledTo?: string;
+	createdSince?: string;
+	updatedSince?: string;
+	completedSince?: string;
+	archived?: TodoArchived;
+	tags?: TagFilter;
+	/** Labelled at or after this instant — by one of `tags.include`, or by any label. */
+	taggedSince?: string;
+	/** Bounds on a rating, inclusive; an unset rating counts as `RATING_UNRATED`. */
+	ratings?: Partial<Record<Rating, { min?: number; max?: number }>>;
+	sort?: TodoSort;
+	direction?: SortDirection;
+	limit: number;
+	offset?: number;
+};
+
+const RATING_COLUMNS = {
+	urgency: todoTasks.urgency,
+	ease: todoTasks.ease,
+	interest: todoTasks.interest
+} as const;
+
+/** A rating as `compareByPriority` weighs it: the value, or the unrated middle. */
+const weighed = (rating: Rating) => sql`coalesce(${RATING_COLUMNS[rating]}, ${RATING_UNRATED})`;
+
+/** `LIKE` treats these as wildcards; a caller's words are matched literally. */
+const LIKE_ESCAPE = '\\';
+const likeLiteral = (said: string) => said.replace(/[\\%_]/g, (c) => `${LIKE_ESCAPE}${c}`);
+
+function queryCondition(ctx: Ctx, query: TodoQuery): SQL | undefined {
+	const parts: (SQL | undefined)[] = [eq(todoTasks.userId, ctx.userId)];
+
+	if (query.ids !== undefined) {
+		if (query.ids.length > TODO_IDS_CEILING)
+			throw new ValidationError(`At most ${TODO_IDS_CEILING} ids at once.`);
+		parts.push(query.ids.length === 0 ? sql`0` : inArray(todoTasks.id, query.ids));
+	}
+
+	const text = query.text?.trim();
+	if (text) {
+		const pattern = `%${likeLiteral(text)}%`;
+		parts.push(
+			or(
+				sql`${todoTasks.title} LIKE ${pattern} ESCAPE ${LIKE_ESCAPE}`,
+				sql`coalesce(${todoTasks.notes}, '') LIKE ${pattern} ESCAPE ${LIKE_ESCAPE}`
+			)
+		);
+	}
+
+	if (query.notebookId === null) parts.push(isNull(todoTasks.notebookId));
+	else if (query.notebookId !== undefined) parts.push(eq(todoTasks.notebookId, query.notebookId));
+
+	const state = query.state;
+	if (state === 'open') parts.push(notInArray(todoTasks.status, [...CLOSED_STATUSES]));
+	else if (state === 'closed') parts.push(inArray(todoTasks.status, [...CLOSED_STATUSES]));
+	else if (state !== undefined) parts.push(eq(todoTasks.status, state));
+
+	const scheduled = query.scheduled ?? 'any';
+	if (scheduled === 'undated') parts.push(isNull(todoTasks.scheduledDate));
+	if (scheduled === 'dated') parts.push(isNotNull(todoTasks.scheduledDate));
+	if (query.scheduledFrom) parts.push(gte(todoTasks.scheduledDate, query.scheduledFrom));
+	if (query.scheduledTo) parts.push(lte(todoTasks.scheduledDate, query.scheduledTo));
+
+	if (query.createdSince) parts.push(gte(todoTasks.createdAt, query.createdSince));
+	if (query.updatedSince) parts.push(gte(todoTasks.updatedAt, query.updatedSince));
+	if (query.completedSince) parts.push(gte(todoTasks.completedAt, query.completedSince));
+
+	const archived = query.archived ?? 'exclude';
+	if (archived === 'exclude') parts.push(isNull(todoTasks.archivedAt));
+	if (archived === 'only') parts.push(isNotNull(todoTasks.archivedAt));
+
+	parts.push(tagCondition(ctx, query.tags));
+	if (query.taggedSince) {
+		const named = (query.tags?.include ?? []).filter((one) => one !== UNTAGGED);
+		const counting = query.tags && query.tags.include.length > 0;
+		parts.push(
+			exists(
+				db
+					.select({ one: sql`1` })
+					.from(todoTags)
+					.innerJoin(tags, eq(todoTags.tagId, tags.id))
+					.where(
+						and(
+							eq(todoTags.todoId, todoTasks.id),
+							eq(todoTags.userId, ctx.userId),
+							eq(tags.userId, ctx.userId),
+							gte(todoTags.taggedAt, query.taggedSince),
+							// Asked about some labels: the date is one of theirs.
+							counting ? (named.length > 0 ? inArray(tags.name, named) : sql`0`) : undefined
+						)
+					)
+			)
+		);
+	}
+
+	for (const rating of RATINGS) {
+		const bounds = query.ratings?.[rating];
+		if (bounds?.min !== undefined) parts.push(sql`${weighed(rating)} >= ${bounds.min}`);
+		if (bounds?.max !== undefined) parts.push(sql`${weighed(rating)} <= ${bounds.max}`);
+	}
+
+	return and(...parts);
+}
+
+function queryOrder(query: TodoQuery): SQL[] {
+	const sort = query.sort ?? 'manual';
+	const direction = query.direction ?? TODO_SORT_DEFAULT_DIRECTION[sort];
+	const way = (column: SQL | SQLiteColumn) => (direction === 'asc' ? asc(column) : desc(column));
+	// Nothing to sort by sits at the end whichever way the rest runs.
+	const lastly = (column: SQLiteColumn) => [asc(sql`${column} IS NULL`), way(column)];
+
+	const keys: SQL[] = (() => {
+		switch (sort) {
+			case 'priority':
+				return [
+					...RATING_ORDER.map((rating) => way(weighed(rating))),
+					asc(todoTasks.sortOrder),
+					asc(todoTasks.createdAt)
+				];
+			case 'created':
+				return [way(todoTasks.createdAt)];
+			case 'updated':
+				return [way(todoTasks.updatedAt)];
+			case 'completed':
+				return lastly(todoTasks.completedAt);
+			case 'scheduled':
+				return lastly(todoTasks.scheduledDate);
+			case 'title':
+				return [way(sql`${todoTasks.title} COLLATE NOCASE`)];
+			default:
+				return [way(todoTasks.sortOrder), way(todoTasks.createdAt)];
+		}
+	})();
+	return [...keys, asc(todoTasks.id)];
+}
+
+/**
+ * The one query behind every listing of todos a caller can shape.
+ *
+ * Filters, order and the page are all SQL: the page is `LIMIT`/`OFFSET` and
+ * `total` is a `COUNT` over the same `WHERE`, so a list of thousands costs
+ * the rows asked for rather than all of them. Labels are read for the page
+ * alone. Everything is scoped to `ctx.userId` in the statement itself.
+ */
+export function queryTodos(ctx: Ctx, query: TodoQuery): { items: Todo[]; total: number } {
+	const where = queryCondition(ctx, query);
+	const limit = Math.min(Math.max(1, Math.floor(query.limit)), TODO_PAGE_CEILING);
+	const offset = Math.max(0, Math.floor(query.offset ?? 0));
+
+	const total =
+		db
+			.select({ n: sql<number>`count(*)` })
+			.from(todoTasks)
+			.where(where)
+			.get()?.n ?? 0;
+
+	const rows = db
+		.select(SELECTION)
+		.from(todoTasks)
+		.leftJoin(categories, eq(todoTasks.categoryId, categories.id))
+		.leftJoin(notebooks, eq(todoTasks.notebookId, notebooks.id))
+		.where(where)
+		.orderBy(...queryOrder(query))
+		.limit(limit)
+		.offset(offset)
+		.all()
+		.map(shape);
+	return { items: withTags(ctx, rows), total };
+}
+
+/**
  * Everything filed under one notebook.
  *
  * The same rows `listTodos` returns, narrowed — the notebook's Tasks tab is
@@ -305,6 +584,10 @@ export function listTodosIn(
  * — its Done column is where they live — but anywhere that offers a todo to be
  * *scheduled* wants only the ones still waiting, because asking somebody when
  * they will do a thing they already did is nonsense.
+ *
+ * A task delegated to a block is left out too, while the block exists: its
+ * day is decided, and the block is what the board and the plan show for it.
+ * The full list (`listTodos`) still has it, with the day on its card.
  */
 export function listUnscheduled(ctx: Ctx, options: { openOnly?: boolean } = {}): Todo[] {
 	const rows = db
@@ -316,6 +599,7 @@ export function listUnscheduled(ctx: Ctx, options: { openOnly?: boolean } = {}):
 			and(
 				eq(todoTasks.userId, ctx.userId),
 				isNull(todoTasks.scheduledDate),
+				isNull(todoTasks.delegatedSlotId),
 				options.openOnly ? notInArray(todoTasks.status, [...CLOSED_STATUSES]) : undefined
 			)
 		)
@@ -392,7 +676,7 @@ export function promoteTodo(
 		durationMinutes?: number;
 		status?: Status;
 	}
-): { ok: true } | { ok: false; message: string } {
+): { ok: true; id: number } | { ok: false; message: string } {
 	const todo = db
 		.select()
 		.from(todoTasks)
@@ -414,7 +698,7 @@ export function promoteTodo(
 
 	if (!categoryId) return { ok: false, message: 'Create a category before scheduling todos' };
 
-	db.transaction((tx) => {
+	const id = db.transaction((tx) => {
 		const slot = tx
 			.insert(exceptionalTasks)
 			.values({
@@ -430,7 +714,9 @@ export function promoteTodo(
 				notebookId: todo.notebookId,
 				urgency: todo.urgency,
 				interest: todo.interest,
-				ease: todo.ease
+				ease: todo.ease,
+				// And what it says about itself: a task's attributes are a block's.
+				attributes: todo.attributes
 			})
 			.returning({ id: exceptionalTasks.id })
 			.get();
@@ -451,9 +737,11 @@ export function promoteTodo(
 		tx.delete(todoTasks)
 			.where(and(eq(todoTasks.id, input.todoId), eq(todoTasks.userId, ctx.userId)))
 			.run();
+		return slot.id;
 	});
 
-	return { ok: true };
+	// The one-off it became, so whatever goes on with it can name it.
+	return { ok: true, id };
 }
 
 /**
@@ -469,7 +757,7 @@ export function promoteTodo(
  * occurrence, which is not what "not today" means. Refused, in words.
  *
  * What survives is what a todo can hold: the name, the notes, the category, the
- * notebook and the three ratings. The date and the hour are what is being
+ * notebook, the three ratings and the attributes. The date and the hour are what is being
  * given up, and the status comes with it — a block ticked off and then pulled
  * back is still done.
  */
@@ -480,6 +768,12 @@ export function demoteToTodo(ctx: Ctx, slotId: number): { ok: true; todoId: numb
 		.where(and(eq(exceptionalTasks.id, slotId), eq(exceptionalTasks.userId, ctx.userId)))
 		.get();
 	if (!slot) throw new NotFoundError('Block');
+
+	const delegator = delegatedFrom(ctx, slotId);
+	if (delegator !== null) {
+		dropBlock(ctx, slotId);
+		return { ok: true, todoId: delegator };
+	}
 
 	// The instance carries what happened to it: the status, and the notes, which
 	// a block has nowhere else to put.
@@ -517,9 +811,11 @@ export function demoteToTodo(ctx: Ctx, slotId: number): { ok: true; todoId: numb
 				sortOrder: nextSortOrder(ctx),
 				categoryId: slot.categoryId,
 				notebookId: slot.notebookId,
+				notebookSeq: nextNotebookSeq(ctx, slot.notebookId),
 				urgency: slot.urgency,
 				interest: slot.interest,
-				ease: slot.ease
+				ease: slot.ease,
+				attributes: slot.attributes
 			})
 			.returning({ id: todoTasks.id })
 			.get();
@@ -535,6 +831,30 @@ export function demoteToTodo(ctx: Ctx, slotId: number): { ok: true; todoId: numb
 	});
 
 	return { ok: true, todoId };
+}
+
+/**
+ * The task a one-off block was delegated from, when it still exists.
+ *
+ * That task never left the list, so sending its block back is removing the
+ * block — making a second task of it would put the same thing on the list
+ * twice.
+ */
+function delegatedFrom(ctx: Ctx, slotId: number): number | null {
+	return (
+		db
+			.select({ id: todoTasks.id })
+			.from(todoTasks)
+			.where(and(eq(todoTasks.userId, ctx.userId), eq(todoTasks.delegatedSlotId, slotId)))
+			.get()?.id ?? null
+	);
+}
+
+/** A one-off block gone, its instance by cascade and the task's link by `set null`. */
+function dropBlock(ctx: Ctx, slotId: number): void {
+	db.delete(exceptionalTasks)
+		.where(and(eq(exceptionalTasks.id, slotId), eq(exceptionalTasks.userId, ctx.userId)))
+		.run();
 }
 
 // --- Mutations ----------------------------------------------------------------
@@ -553,6 +873,11 @@ export type TodoInput = {
 	scheduledDate?: unknown;
 	status?: unknown;
 	ratings?: Partial<RatingValues>;
+	/**
+	 * Its attributes, as an object or already serialised. Left out means leave
+	 * alone on an update — a form with no attributes fold must not clear them.
+	 */
+	attributes?: unknown;
 	/**
 	 * Labels, as typed: "a1, done" or "#a1 #done". Left out means leave alone
 	 * on an update, which matters because not every screen that edits a todo
@@ -595,6 +920,7 @@ function nextNotebookSeq(ctx: Ctx, notebookId: number | null | undefined): numbe
 
 export function createTodo(ctx: Ctx, raw: TodoInput): number {
 	const title = str(raw.title, 'title', { max: MAX_TITLE_LENGTH });
+	const notebookId = ownedNotebookId(ctx, raw.notebookId, 'tasks');
 	const result = db
 		.insert(todoTasks)
 		.values({
@@ -602,13 +928,19 @@ export function createTodo(ctx: Ctx, raw: TodoInput): number {
 			userId: ctx.userId,
 			title,
 			notes: optionalStr(raw.notes, 'notes', { max: MAX_NOTES_LENGTH }),
-			categoryId: ownedCategoryId(ctx, raw.categoryId),
-			notebookId: ownedNotebookId(ctx, raw.notebookId),
-			notebookSeq: nextNotebookSeq(ctx, ownedNotebookId(ctx, raw.notebookId)),
+			// Unsaid, it is the notebook's — what the form would have filled in.
+			// An empty one from a form is somebody choosing none.
+			categoryId:
+				raw.categoryId === undefined
+					? defaultCategoryOf(ctx, notebookId)
+					: ownedCategoryId(ctx, raw.categoryId),
+			notebookId,
+			notebookSeq: nextNotebookSeq(ctx, notebookId),
 			scheduledDate: optionalDate(raw.scheduledDate),
 			status: isStatus(raw.status) ? raw.status : 'todo',
 			sortOrder: nextSortOrder(ctx),
-			...(raw.ratings ?? {})
+			...(raw.ratings ?? {}),
+			attributes: serialiseAttributes(raw.attributes)
 		})
 		.run();
 
@@ -620,7 +952,7 @@ export function createTodo(ctx: Ctx, raw: TodoInput): number {
 }
 
 export function updateTodo(ctx: Ctx, id: number, raw: TodoInput): void {
-	const notebookId = ownedNotebookId(ctx, raw.notebookId);
+	const notebookId = ownedNotebookId(ctx, raw.notebookId, 'tasks', { table: todoTasks, id });
 	/*
 	 * A task moved into a notebook is numbered there, once.
 	 *
@@ -647,6 +979,7 @@ export function updateTodo(ctx: Ctx, id: number, raw: TodoInput): void {
 			notebookId,
 			notebookSeq: seq,
 			...(raw.ratings ?? {}),
+			...(raw.attributes === undefined ? {} : { attributes: serialiseAttributes(raw.attributes) }),
 			updatedAt: stamp(ctx)
 		})
 		.where(and(eq(todoTasks.id, id), eq(todoTasks.userId, ctx.userId)))
@@ -816,7 +1149,11 @@ export function delegateTodo(
 		throw new ValidationError({ key: 'errors.todos.activityRequired' });
 
 	const todo = db
-		.select({ title: todoTasks.title, notebookId: todoTasks.notebookId })
+		.select({
+			title: todoTasks.title,
+			notebookId: todoTasks.notebookId,
+			attributes: todoTasks.attributes
+		})
 		.from(todoTasks)
 		.where(and(eq(todoTasks.id, id), eq(todoTasks.userId, ctx.userId)))
 		.get();
@@ -824,7 +1161,8 @@ export function delegateTodo(
 	if (!todo) throw new NotFoundError('todo');
 
 	db.transaction((tx) => {
-		tx.insert(exceptionalTasks)
+		const block = tx
+			.insert(exceptionalTasks)
 			.values({
 				...created(ctx),
 				userId: ctx.userId,
@@ -838,12 +1176,17 @@ export function delegateTodo(
 				remindLeadMinutes: lead,
 				// As with promoting: giving a task a time must not take it out of
 				// the notebook it belongs to.
-				notebookId: todo.notebookId
+				notebookId: todo.notebookId,
+				attributes: todo.attributes
 			})
-			.run();
+			.returning({ id: exceptionalTasks.id })
+			.get();
 
+		// The task remembers the block rather than taking its date: a
+		// `scheduledDate` would put it on that day's board beside the block, and
+		// carry it on as overdue after.
 		tx.update(todoTasks)
-			.set({ completed: true, updatedAt: stamp(ctx) })
+			.set({ completed: true, delegatedSlotId: block.id, updatedAt: stamp(ctx) })
 			.where(and(eq(todoTasks.id, id), eq(todoTasks.userId, ctx.userId)))
 			.run();
 	});
@@ -908,6 +1251,29 @@ export function reorderTodos(ctx: Ctx, ids: unknown[]): void {
 	});
 }
 
+/**
+ * One attribute on a todo, set or — with an empty value — removed.
+ *
+ * Its own verb because the ⓘ dialog edits one value in place: sending the
+ * whole set back would need the dialog to hold every other pair as it was,
+ * and would overwrite one somebody changed in the meantime.
+ */
+export function setTodoAttribute(ctx: Ctx, id: number, key: unknown, value: unknown): void {
+	const row = db
+		.select({ attributes: todoTasks.attributes })
+		.from(todoTasks)
+		.where(and(eq(todoTasks.id, id), eq(todoTasks.userId, ctx.userId)))
+		.get();
+	if (!row) throw new NotFoundError('todo');
+
+	const res = db
+		.update(todoTasks)
+		.set({ attributes: withAttribute(row.attributes, key, value), updatedAt: stamp(ctx) })
+		.where(and(eq(todoTasks.id, id), eq(todoTasks.userId, ctx.userId)))
+		.run();
+	if (res.changes === 0) throw new NotFoundError('todo');
+}
+
 export function setTodoRatings(ctx: Ctx, id: number, ratings: Partial<RatingValues>): void {
 	if (Object.keys(ratings).length === 0) return;
 
@@ -937,6 +1303,8 @@ export function demoteInstance(ctx: Ctx, instanceId: number): void {
 			easeOverride: taskRecords.easeOverride,
 			label: exceptionalTasks.label,
 			categoryId: exceptionalTasks.categoryId,
+			notebookId: exceptionalTasks.notebookId,
+			attributes: exceptionalTasks.attributes,
 			urgency: exceptionalTasks.urgency,
 			interest: exceptionalTasks.interest,
 			ease: exceptionalTasks.ease
@@ -948,6 +1316,11 @@ export function demoteInstance(ctx: Ctx, instanceId: number): void {
 
 	if (!instance) throw new ValidationError({ key: 'errors.todos.onlyOneOffBlocksCan' });
 
+	if (delegatedFrom(ctx, instance.exceptionalSlotId!) !== null) {
+		dropBlock(ctx, instance.exceptionalSlotId!);
+		return;
+	}
+
 	const sortOrder = nextSortOrder(ctx);
 
 	db.transaction((tx) => {
@@ -958,6 +1331,11 @@ export function demoteInstance(ctx: Ctx, instanceId: number): void {
 				title: instance.label || 'Untitled',
 				notes: instance.notes ?? '',
 				categoryId: instance.categoryId,
+				// The same two `demoteToTodo` keeps: going back to the list does
+				// not take it out of its subject or strip what it says about itself.
+				notebookId: instance.notebookId,
+				notebookSeq: nextNotebookSeq(ctx, instance.notebookId),
+				attributes: instance.attributes,
 				status: instance.status,
 				completed: instance.status === 'done',
 				sortOrder,
@@ -1027,7 +1405,7 @@ export function batchTodos(
 		throw new ValidationError({ key: 'errors.todos.invalidBatch' });
 
 	db.transaction(() => {
-		const notebookId = verb === 'notebook' ? ownedNotebookId(ctx, what.notebookId) : null;
+		const notebookId = verb === 'notebook' ? ownedNotebookId(ctx, what.notebookId, 'tasks') : null;
 		for (const id of ids) {
 			if (verb === 'status') setTodoStatus(ctx, id, what.status);
 			else if (verb === 'tag') tagTodo(ctx, id, { add: what.add, remove: what.remove });

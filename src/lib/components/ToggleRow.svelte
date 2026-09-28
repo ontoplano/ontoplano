@@ -90,7 +90,7 @@
 </script>
 
 <div
-	class="flex items-center gap-3 border px-3 text-sm {nested
+	class="toggle-row flex items-center gap-3 border px-3 text-sm {nested
 		? 'ml-8 border-l-2 border-gray-200 border-l-gray-300 py-1.5'
 		: here
 			? 'border-gray-200 py-2'

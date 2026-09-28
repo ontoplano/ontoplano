@@ -1,4 +1,4 @@
-import { optionalTagInput, parseTags, replaceBlockTags } from './tags.js';
+import { optionalTagInput, parseTags, replaceBlockTags, tagsForBlock } from './tags.js';
 import { and, eq, gte, inArray, isNull, lt, sql } from 'drizzle-orm';
 
 import { ratingsFromForm, type RatingValues } from '../ratings.js';
@@ -12,6 +12,7 @@ import {
 	activities,
 	categories,
 	exceptionalTasks,
+	notebooks,
 	recipes,
 	reminders,
 	suppressedSlots,
@@ -22,6 +23,7 @@ import {
 import { localDateOf, type Ctx } from './ctx.js';
 import { NotFoundError, ValidationError } from './errors.js';
 import { createReminder } from './reminders.js';
+import { ownedNotebookId, type FiledRow } from './notebooks.js';
 import { created, stamp, stamps } from './time.js';
 import { TIME_PATTERN, num, oneOf, optionalStr, str } from './validate.js';
 import { MAX_BLOCK_NOTES } from '../planner-grid.js';
@@ -77,9 +79,15 @@ export type BlockInput = {
 	 */
 	tags?: unknown;
 	ratings?: Partial<RatingValues>;
-	meta?: string;
+	/** Serialised attributes, as `serialiseAttributes` writes them. */
+	attributes?: string;
 	/** Undefined leaves an existing value alone; a drag posts placement only. */
-	metaPatch?: string | undefined;
+	attributesPatch?: string | undefined;
+	/**
+	 * The notebook it is filed under. Undefined leaves it alone — a drag posts
+	 * placement only — and an empty value takes it out of the one it is in.
+	 */
+	notebookId?: unknown;
 	recurrence?: string;
 };
 
@@ -130,10 +138,13 @@ export function listWeeklySlots(ctx: Ctx) {
 			urgency: recurringTasks.urgency,
 			interest: recurringTasks.interest,
 			ease: recurringTasks.ease,
-			meta: recurringTasks.meta,
+			attributes: recurringTasks.attributes,
+			notebookId: recurringTasks.notebookId,
+			notebookTitle: notebooks.title,
 			active: recurringTasks.active
 		})
 		.from(recurringTasks)
+		.leftJoin(notebooks, eq(recurringTasks.notebookId, notebooks.id))
 		.leftJoin(categories, eq(recurringTasks.categoryId, categories.id))
 		.leftJoin(activities, eq(recurringTasks.activityId, activities.id))
 		.leftJoin(workouts, eq(recurringTasks.workoutId, workouts.id))
@@ -176,12 +187,15 @@ export function listExceptionals(ctx: Ctx, from: string, to: string) {
 			urgency: exceptionalTasks.urgency,
 			interest: exceptionalTasks.interest,
 			ease: exceptionalTasks.ease,
-			meta: exceptionalTasks.meta,
+			attributes: exceptionalTasks.attributes,
+			notebookId: exceptionalTasks.notebookId,
+			notebookTitle: notebooks.title,
 			active: exceptionalTasks.active,
 			// A one-off's status lives on its instance now, not on the block.
 			status: sql<string>`coalesce(${taskRecords.status}, 'todo')`.as('one_off_status')
 		})
 		.from(exceptionalTasks)
+		.leftJoin(notebooks, eq(exceptionalTasks.notebookId, notebooks.id))
 		.leftJoin(categories, eq(exceptionalTasks.categoryId, categories.id))
 		.leftJoin(activities, eq(exceptionalTasks.activityId, activities.id))
 		.leftJoin(workouts, eq(exceptionalTasks.workoutId, workouts.id))
@@ -212,7 +226,8 @@ export function createSlot(ctx: Ctx, raw: BlockInput & { weekday: unknown }): nu
 			...placement,
 			recurrence: raw.recurrence ?? 'weekly',
 			...(raw.ratings ?? {}),
-			meta: raw.meta ?? '{}'
+			...blockNotebook(ctx, raw),
+			attributes: raw.attributes ?? '{}'
 		})
 		.returning({ id: recurringTasks.id })
 		.get();
@@ -240,9 +255,11 @@ export function updateSlot(ctx: Ctx, id: number, raw: BlockInput & { weekday: un
 		.set({
 			weekday,
 			...placement,
-			// `meta` is only touched when the request actually carried it. Drag and
-			// resize post placement fields only, and must not clear it.
-			...(raw.metaPatch !== undefined ? { meta: raw.metaPatch } : {}),
+			// The attributes and the notebook are only touched when the request
+			// actually carried them. Drag and resize post placement fields only,
+			// and must not clear either.
+			...(raw.attributesPatch !== undefined ? { attributes: raw.attributesPatch } : {}),
+			...blockNotebook(ctx, raw, { table: recurringTasks, id }),
 			/*
 			 * And the rhythm, on the same rule and for the same reason.
 			 *
@@ -447,11 +464,18 @@ export function toggleSlotActive(ctx: Ctx, id: number): void {
 		.get();
 
 	if (!current) throw new NotFoundError('slot');
+	setSlotActive(ctx, id, !current.active);
+}
 
-	db.update(recurringTasks)
-		.set({ active: !current.active, updatedAt: stamp(ctx) })
+/** Paused or running by saying which, for a caller that should not have to read first. */
+export function setSlotActive(ctx: Ctx, id: number, active: boolean): void {
+	const res = db
+		.update(recurringTasks)
+		.set({ active, updatedAt: stamp(ctx) })
 		.where(and(eq(recurringTasks.id, id), eq(recurringTasks.userId, ctx.userId)))
 		.run();
+
+	if (res.changes === 0) throw new NotFoundError('slot');
 }
 
 export function deleteSlots(ctx: Ctx, ids: number[]): void {
@@ -592,7 +616,8 @@ export function createExceptional(
 			// calendar of its own.
 			recipeId: ownedRecipeId(ctx, raw.recipeId),
 			...(raw.ratings ?? {}),
-			meta: raw.meta ?? '{}'
+			...blockNotebook(ctx, raw),
+			attributes: raw.attributes ?? '{}'
 		})
 		.returning({ id: exceptionalTasks.id })
 		.get();
@@ -616,7 +641,8 @@ export function updateExceptional(ctx: Ctx, id: number, raw: BlockInput & { date
 			// actually sent one.
 			...(raw.recurrence !== undefined ? { recurrence: raw.recurrence } : {}),
 			...(raw.ratings ?? {}),
-			...(raw.metaPatch !== undefined ? { meta: raw.metaPatch } : {})
+			...blockNotebook(ctx, raw, { table: exceptionalTasks, id }),
+			...(raw.attributesPatch !== undefined ? { attributes: raw.attributesPatch } : {})
 		})
 		.where(and(eq(exceptionalTasks.id, id), eq(exceptionalTasks.userId, ctx.userId)))
 		.run();
@@ -744,16 +770,9 @@ export function moveOccurrence(
 				...created(ctx),
 				userId: ctx.userId,
 				date,
+				...blockBody(slot),
 				startTime,
-				durationMinutes,
-				mode: slot.mode,
-				categoryId: slot.categoryId,
-				activityId: slot.activityId,
-				label: slot.label,
-				urgency: slot.urgency,
-				interest: slot.interest,
-				ease: slot.ease,
-				meta: slot.meta
+				durationMinutes
 			})
 			.returning({ id: exceptionalTasks.id })
 			.get();
@@ -767,17 +786,56 @@ export function moveOccurrence(
 }
 
 /**
+ * What a block says about itself, whichever table it is in.
+ *
+ * Everything but the day. A switch between repeating and once only, or one
+ * occurrence moved off its week, copies exactly this: a column left out here
+ * is a column the switch silently drops — and for `workoutId` the row then
+ * breaks the table's own check and the switch fails outright.
+ */
+function blockBody(row: typeof recurringTasks.$inferSelect | typeof exceptionalTasks.$inferSelect) {
+	return {
+		startTime: row.startTime,
+		durationMinutes: row.durationMinutes,
+		mode: row.mode,
+		categoryId: row.categoryId,
+		activityId: row.activityId,
+		workoutId: row.workoutId,
+		recipeId: row.recipeId,
+		label: row.label,
+		active: row.active,
+		remindLeadMinutes: row.remindLeadMinutes,
+		urgency: row.urgency,
+		interest: row.interest,
+		ease: row.ease,
+		attributes: row.attributes,
+		notebookId: row.notebookId
+	};
+}
+
+/** The block a switch made: which table it is in now, and its id there. */
+export type ConvertedBlock = { kind: 'slot' | 'exceptional'; id: number };
+
+/**
  * Turn a one-off into a recurring block, or a recurring block into a one-off.
  *
  * The two differ only in which day they name — a weekday versus a date — so
  * changing your mind should not mean deleting one and retyping the other.
- * Everything else about the block travels with it.
+ * Everything else about the block travels with it, labels included.
+ *
+ * They are two tables, so the block comes out with a new id, and that id is
+ * what is returned: whatever goes on editing it — saving, switching back —
+ * has to name the new row. The old one no longer exists.
  *
  * A recurring block becoming a one-off keeps only the occurrence in the visible
  * window; its other occurrences were never separate things, so there is nothing
  * else to preserve.
  */
-export function convertRepeat(ctx: Ctx, id: number, raw: { to: unknown; date: unknown }): void {
+export function convertRepeat(
+	ctx: Ctx,
+	id: number,
+	raw: { to: unknown; date: unknown }
+): ConvertedBlock {
 	const to = oneOf(raw.to, 'target', ['weekly', 'once'] as const);
 	const date = requiredDate(raw.date);
 
@@ -789,35 +847,31 @@ export function convertRepeat(ctx: Ctx, id: number, raw: { to: unknown; date: un
 			.get();
 
 		if (!one) throw new NotFoundError('block');
+		const labels = tagsForBlock('exceptional', id, ctx.userId).map((t) => t.name);
 
-		db.transaction((tx) => {
-			tx.insert(recurringTasks)
+		const made = db.transaction((tx) => {
+			const row = tx
+				.insert(recurringTasks)
 				.values({
 					...stamps(ctx),
 					userId: ctx.userId,
 					// The date it sits on decides which weekday it repeats on.
 					weekday: (new Date(`${one.date}T00:00:00`).getDay() + 6) % 7,
-					startTime: one.startTime,
-					durationMinutes: one.durationMinutes,
-					mode: one.mode,
-					categoryId: one.categoryId,
-					activityId: one.activityId,
-					label: one.label,
-					urgency: one.urgency,
-					interest: one.interest,
-					ease: one.ease,
-					meta: one.meta
+					...blockBody(one)
 				})
-				.run();
+				.returning({ id: recurringTasks.id })
+				.get();
 
 			// Cascades to the instance it produced; the new weekly slot generates
 			// its own.
 			tx.delete(exceptionalTasks)
 				.where(and(eq(exceptionalTasks.id, id), eq(exceptionalTasks.userId, ctx.userId)))
 				.run();
+			return row.id;
 		});
 
-		return;
+		if (labels.length > 0) replaceBlockTags('recurring', made, labels, ctx.userId);
+		return { kind: 'slot', id: made };
 	}
 
 	const slot = db
@@ -827,25 +881,19 @@ export function convertRepeat(ctx: Ctx, id: number, raw: { to: unknown; date: un
 		.get();
 
 	if (!slot) throw new NotFoundError('block');
+	const labels = tagsForBlock('recurring', id, ctx.userId).map((t) => t.name);
 
-	db.transaction((tx) => {
-		tx.insert(exceptionalTasks)
+	const made = db.transaction((tx) => {
+		const row = tx
+			.insert(exceptionalTasks)
 			.values({
 				...created(ctx),
 				userId: ctx.userId,
 				date,
-				startTime: slot.startTime,
-				durationMinutes: slot.durationMinutes,
-				mode: slot.mode,
-				categoryId: slot.categoryId,
-				activityId: slot.activityId,
-				label: slot.label,
-				urgency: slot.urgency,
-				interest: slot.interest,
-				ease: slot.ease,
-				meta: slot.meta
+				...blockBody(slot)
 			})
-			.run();
+			.returning({ id: exceptionalTasks.id })
+			.get();
 
 		tx.delete(taskRecords)
 			.where(and(eq(taskRecords.userId, ctx.userId), eq(taskRecords.slotId, id)))
@@ -856,7 +904,11 @@ export function convertRepeat(ctx: Ctx, id: number, raw: { to: unknown; date: un
 		tx.delete(recurringTasks)
 			.where(and(eq(recurringTasks.id, id), eq(recurringTasks.userId, ctx.userId)))
 			.run();
+		return row.id;
 	});
+
+	if (labels.length > 0) replaceBlockTags('exceptional', made, labels, ctx.userId);
+	return { kind: 'exceptional', id: made };
 }
 
 // --- Import -------------------------------------------------------------------
@@ -1023,7 +1075,7 @@ export { ratingsFromForm };
  * Three answers, not two. `undefined` means the form did not mention it at
  * all, and the field is then left alone: a drag or a resize posts placement
  * only, and must not silently take somebody's reminder off a block they were
- * only moving. Same rule as `meta` below.
+ * only moving. Same rule as the attributes and the notebook.
  */
 function parseRemindLead(raw: unknown): number | null | undefined {
 	if (raw === undefined) return undefined;
@@ -1062,6 +1114,17 @@ function parseBlock(ctx: Ctx, raw: BlockInput) {
 		label,
 		...(remindLeadMinutes === undefined ? {} : { remindLeadMinutes })
 	};
+}
+
+/**
+ * `{ notebookId }` when the caller said something about the notebook, nothing
+ * when it did not — a drag posts placement only and must not unfile a block.
+ */
+function blockNotebook(ctx: Ctx, raw: BlockInput, was?: FiledRow) {
+	// A block is a task on a day, so it is filed where tasks are.
+	return raw.notebookId === undefined
+		? {}
+		: { notebookId: ownedNotebookId(ctx, raw.notebookId, 'tasks', was) };
 }
 
 /** A workout id from a form is a number until it is checked against the owner. */

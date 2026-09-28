@@ -15,11 +15,13 @@ seedAccounts(database.path);
 afterAll(() => database.remove());
 
 let habits: typeof import('../src/lib/services/habits');
+let NotFoundError: typeof import('../src/lib/services/errors').NotFoundError;
 let ctx: { userId: string; now: Date; tz: string };
 let theirs: { userId: string; now: Date; tz: string };
 
 beforeAll(async () => {
 	habits = await import('../src/lib/services/habits');
+	({ NotFoundError } = await import('../src/lib/services/errors'));
 	// A Monday, so weekday arithmetic in the schedule is easy to read.
 	ctx = { userId: OWNER, now: new Date('2026-08-17T09:00:00'), tz: 'UTC' };
 	theirs = { ...ctx, userId: STRANGER };
@@ -55,6 +57,28 @@ describe('keeping habits', () => {
 	});
 });
 
+describe('putting a habit away', () => {
+	test('an archived habit leaves the list and keeps its days', () => {
+		const id = habits.createHabit(ctx, { name: 'stretch', type: 'good' });
+		habits.logOccurrence(ctx, { habitId: id, date: '2026-08-16' });
+
+		habits.setHabitArchived(ctx, id, true);
+		expect(habits.listHabits(ctx).some((h) => h.id === id)).toBe(false);
+		const kept = habits.listHabits(ctx, { includeArchived: true }).find((h) => h.id === id)!;
+		expect(kept.archivedAt).toMatch(/Z$/);
+		expect(habits.listOccurrences(ctx).filter((o) => o.habitId === id)).toHaveLength(1);
+
+		habits.setHabitArchived(ctx, id, false);
+		expect(habits.listHabits(ctx).find((h) => h.id === id)?.archivedAt).toBeNull();
+	});
+
+	test('another account cannot archive one, and it stays as it was', () => {
+		const id = habits.createHabit(ctx, { name: 'floss', type: 'good' });
+		expect(() => habits.setHabitArchived(theirs, id, true)).toThrow(NotFoundError);
+		expect(habits.listHabits(ctx).find((h) => h.id === id)?.archivedAt).toBeNull();
+	});
+});
+
 describe('logging a day', () => {
 	test('ticking twice is a tick and an untick, not two rows', () => {
 		const id = habits.createHabit(ctx, { name: 'water', type: 'good' });
@@ -72,6 +96,39 @@ describe('logging a day', () => {
 
 		const logged = habits.listOccurrences(ctx).find((o) => o.habitId === id)!;
 		expect(logged.notes).toBe('along the river');
+	});
+
+	test('a day can be set to a count, up and back down', () => {
+		const id = habits.createHabit(ctx, { name: 'coffee', type: 'neutral' });
+		const onTheDay = () =>
+			habits.listOccurrences(ctx).filter((o) => o.habitId === id && o.date === '2026-08-17');
+
+		habits.logOccurrence(ctx, { habitId: id, date: '2026-08-17', notes: 'the first one' });
+		habits.setDayCount(ctx, { habitId: id, date: '2026-08-17', count: '3' });
+		expect(onTheDay()).toHaveLength(3);
+
+		// Sent twice, it is still three: the count is absolute, not a step.
+		habits.setDayCount(ctx, { habitId: id, date: '2026-08-17', count: '3' });
+		expect(onTheDay()).toHaveLength(3);
+
+		// Down takes the newest back, so the one with a note is kept.
+		habits.setDayCount(ctx, { habitId: id, date: '2026-08-17', count: '1' });
+		expect(onTheDay().map((o) => o.notes)).toEqual(['the first one']);
+
+		habits.setDayCount(ctx, { habitId: id, date: '2026-08-17', count: '0' });
+		expect(onTheDay()).toHaveLength(0);
+
+		expect(() => habits.setDayCount(ctx, { habitId: id, count: '-1' })).toThrow();
+		expect(() =>
+			habits.setDayCount(ctx, { habitId: id, count: String(habits.MAX_DAY_COUNT + 1) })
+		).toThrow();
+	});
+
+	test("another account's day cannot be counted", () => {
+		const mine = habits.listHabits(ctx)[0];
+		expect(() =>
+			habits.setDayCount(theirs, { habitId: mine.id, date: '2026-08-17', count: '2' })
+		).toThrow();
 	});
 
 	test("another account's habit cannot be logged against", () => {

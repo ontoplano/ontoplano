@@ -1,23 +1,34 @@
 <script lang="ts">
-	import { dateOf } from '$lib/when';
+	import { routeGlyph } from '$lib/glyphs';
+	import { civilOf, dayOf, momentOf, today } from '$lib/when';
 	import { useWhen } from '$lib/when-context.svelte';
 	import { resolve } from '$app/paths';
+	import { goto } from '$app/navigation';
 	import { setRoomAction } from '$lib/room-action.svelte';
 	import OneLine from '$lib/components/OneLine.svelte';
 	import { getAction, keyFor } from '$lib/shortcuts';
 	import { enhance } from '$lib/enhance';
 	import FormError from '$lib/components/FormError.svelte';
 	import { armed } from '$lib/actions/armed';
+	import { listCursor } from '$lib/actions/list-cursor';
 	import Card from '$lib/components/Card.svelte';
+	import Banner from '$lib/components/Banner.svelte';
+	import DetailHeader from '$lib/components/DetailHeader.svelte';
+	import RoomToolbar from '$lib/components/RoomToolbar.svelte';
+	import FilterBar from '$lib/components/FilterBar.svelte';
+	import SearchField from '$lib/components/SearchField.svelte';
+	import ShowingCount from '$lib/components/ShowingCount.svelte';
+	import SortControl from '$lib/components/SortControl.svelte';
+	import SplitColumns from '$lib/components/SplitColumns.svelte';
 	import EmptyState from '$lib/components/EmptyState.svelte';
+	import FoldedText from '$lib/components/FoldedText.svelte';
 	import Field from '$lib/components/Field.svelte';
 	import FormGrid from '$lib/components/FormGrid.svelte';
 	import Icon from '$lib/components/Icon.svelte';
 	import Modal from '$lib/components/Modal.svelte';
-	import { birthdayLabel, RELATIONSHIPS, RELATIONSHIP_LABELS } from '$lib/people';
-	import { SECTION_COLORS } from '$lib/colors';
+	import { birthdayDay, RELATIONSHIPS, RELATIONSHIP_LABELS } from '$lib/people';
 	import type { PageServerData, ActionData } from './$types';
-	import { keepInView } from '$lib/actions/keep-in-view';
+	import type { PlainKey } from '$lib/i18n/keys';
 	import Written from '$lib/components/Written.svelte';
 	import { useT } from '$lib/i18n';
 
@@ -43,12 +54,86 @@
 	/** Said here rather than by the server, for the ones never sent. */
 	let faceProblem = $state('');
 	let confirmDelete = $state<number | null>(null);
-	let selectedIndex = $state(0);
+	/*
+	 * Where j/k stands. Nowhere until a key is pressed — a first row wearing
+	 * the cursor beside a panel saying nobody is chosen read as a contradiction
+	 * — and on whoever is open when somebody is.
+	 */
+	// svelte-ignore state_referenced_locally
+	let cursor = $state(data.people.findIndex((p) => p.id === data.selected));
+	/** What the search box holds: people whose name, relationship or notes contain it. */
+	let looking = $state('');
+
+	/*
+	 * How wide the list is. The drag lives in `SplitColumns` — the same
+	 * handle the shelf and the inventory have — and is written down once, when
+	 * it is let go.
+	 */
+	// svelte-ignore state_referenced_locally
+	let panelRem = $state(data.listPanelRem);
+	let panelForm = $state<HTMLFormElement>();
+
+	const ORDERS = ['name', 'birthday', 'mentions'] as const;
+	type Order = (typeof ORDERS)[number];
+	const ORDER_LABELS: Record<Order, PlainKey> = {
+		name: 'ui.name',
+		birthday: 'notebooks.people.nextBirthday',
+		mentions: 'notebooks.people.mentions'
+	};
+	/* Each order's natural direction: A to Z, the soonest first, the most first. */
+	const NATURAL: Record<Order, 'asc' | 'desc'> = {
+		name: 'asc',
+		birthday: 'asc',
+		mentions: 'desc'
+	};
+	let order = $state<Order>('name');
+	let direction = $state<'asc' | 'desc'>('asc');
+
+	/** Days from today to their next birthday; people without one sort last. */
+	function daysToBirthday(person: Person): number {
+		const day = birthdayDay(person.birthday);
+		if (!day) return Number.POSITIVE_INFINITY;
+		const now_ = today(now());
+		const year = Number(now_.slice(0, 4));
+		const at = (y: number) => Date.UTC(y, Number(day.slice(5, 7)) - 1, Number(day.slice(8, 10)));
+		const from = Date.UTC(year, Number(now_.slice(5, 7)) - 1, Number(now_.slice(8, 10)));
+		const next = at(year) >= from ? at(year) : at(year + 1);
+		return Math.round((next - from) / 86_400_000);
+	}
+
+	const shownPeople = $derived.by(() => {
+		const needle = looking.trim().toLowerCase();
+		const found = needle
+			? data.people.filter((one) =>
+					[one.name, t(RELATIONSHIP_LABELS[one.relationship]), one.notes ?? '']
+						.join('\n')
+						.toLowerCase()
+						.includes(needle)
+				)
+			: data.people;
+		const sign = direction === 'asc' ? 1 : -1;
+		const byName = (a: Person, b: Person) => a.name.localeCompare(b.name);
+		return [...found].sort((a, b) => {
+			if (order === 'mentions') return sign * (a.mentions - b.mentions) || byName(a, b);
+			if (order === 'birthday') {
+				const da = daysToBirthday(a);
+				const db = daysToBirthday(b);
+				// Nobody without a birthday jumps the queue, whichever way it runs.
+				if (da === db) return byName(a, b);
+				if (!Number.isFinite(da)) return 1;
+				if (!Number.isFinite(db)) return -1;
+				return sign * (da - db);
+			}
+			return sign * byName(a, b);
+		});
+	});
 
 	const editing = $derived(
 		editingId ? (data.people.find((p) => p.id === editingId) ?? null) : null
 	);
 	const selectedPerson = $derived(data.people.find((p) => p.id === data.selected) ?? null);
+
+	const personHref = (person: Person) => resolve(`/notebooks/people?person=${person.id}`);
 
 	function openCreate() {
 		editingId = null;
@@ -79,23 +164,27 @@
 			return;
 		}
 		const action = getAction('/notebooks/people', e.key);
+		const here = shownPeople[cursor];
 		if (action === 'new') {
 			e.preventDefault();
 			openCreate();
 		}
+		if (action === 'edit' && here) {
+			e.preventDefault();
+			openEdit(here);
+		}
+		if (action === 'open' && here) {
+			e.preventDefault();
+			// Already resolved: `personHref` builds it with `resolve()`.
+			// eslint-disable-next-line svelte/no-navigation-without-resolve
+			void goto(personHref(here), { noScroll: true, keepFocus: true });
+		}
 		if (action === 'navigate-down' || action === 'navigate-up') {
 			e.preventDefault();
-			const max = data.people.length - 1;
+			const max = shownPeople.length - 1;
 			if (max < 0) return;
-			selectedIndex = Math.min(
-				Math.max(selectedIndex + (action === 'navigate-down' ? 1 : -1), 0),
-				max
-			);
+			cursor = Math.min(Math.max(cursor + (action === 'navigate-down' ? 1 : -1), 0), max);
 		}
-	}
-
-	function when(iso: string): string {
-		return dateOf(iso, now(), {});
 	}
 
 	/* This screen's one verb, drawn by the room's bar — see $lib/room-action. */
@@ -109,6 +198,92 @@
 
 <svelte:window onkeydown={handleKeydown} />
 
+<!-- A face, or the initial where there is not one yet: a silhouette says
+     "missing", an initial says "this one". -->
+{#snippet face(person: Person, size: 'row' | 'head')}
+	{#if person.pictureId}
+		<img
+			src="/media/{person.pictureId}"
+			alt=""
+			loading="lazy"
+			class="{size === 'row'
+				? 'size-8'
+				: 'size-12'} shrink-0 rounded-full border border-gray-200 bg-white object-cover"
+		/>
+	{:else}
+		<span
+			aria-hidden="true"
+			class="flex {size === 'row'
+				? 'size-8 text-xs'
+				: 'size-12 text-lg'} shrink-0 items-center justify-center rounded-full border border-dashed border-gray-300 bg-gray-100 font-medium text-gray-500"
+		>
+			{person.name.trim().charAt(0).toUpperCase()}
+		</span>
+	{/if}
+{/snippet}
+
+<!-- What there is to say about somebody in a line, in the same order on the
+     row and over their page: how you know them, the birthday, the mentions. -->
+{#snippet facts(person: Person)}
+	<span>{t(RELATIONSHIP_LABELS[person.relationship])}</span>
+	{#if birthdayDay(person.birthday)}
+		<span aria-hidden="true">·</span>
+		<span class="inline-flex items-center gap-1">
+			<Icon name="cake" class="size-3.5" />
+			<span class="tabular">{dayOf(birthdayDay(person.birthday)!, now())}</span>
+		</span>
+	{/if}
+	<span aria-hidden="true">·</span>
+	<span class="tabular">{t('notebooks.people.mentionsCount', { count: person.mentions })}</span>
+{/snippet}
+
+{#snippet deleteControl(person: Person)}
+	{#if confirmDelete === person.id}
+		<form
+			method="post"
+			action="?/delete"
+			use:enhance={() =>
+				async ({ update, result }) => {
+					confirmDelete = null;
+					await update();
+					if (result.type === 'success' && person.id === data.selected)
+						await goto(resolve('/notebooks/people'), { noScroll: true });
+				}}
+			class="flex items-center gap-1"
+		>
+			<input type="hidden" name="id" value={person.id} />
+			<button type="button" onclick={() => (confirmDelete = null)} class="btn btn-sm"
+				>{t('ui.cancel')}</button
+			>
+			<button class="btn btn-danger btn-sm" use:armed>{t('notebooks.people.yesDelete')}</button>
+		</form>
+	{:else}
+		<button
+			title={t('ui.delete')}
+			aria-label={t('ui.delete')}
+			onclick={() => (confirmDelete = person.id)}
+			class="icon-btn icon-btn-danger"
+		>
+			<Icon name="trash" />
+		</button>
+	{/if}
+{/snippet}
+
+{#snippet orderControl()}
+	<SortControl
+		value={order}
+		options={ORDERS}
+		labels={ORDER_LABELS}
+		{direction}
+		onpick={(next) => {
+			order = next;
+			direction = NATURAL[next];
+		}}
+		onflip={() => (direction = direction === 'asc' ? 'desc' : 'asc')}
+		label={t('notebooks.people.orderPeopleBy')}
+	/>
+{/snippet}
+
 <div class="space-y-4">
 	<!--
 		No second heading: the room's name is above and the People tab is lit,
@@ -118,210 +293,236 @@
 	<FormError message={form?.message} />
 
 	<!--
-		The list and whoever you picked are one object, not two.
-
-		They were two cards with the page's own patterned ground showing between
-		them, which draws them as two views that happen to sit side by side.
-		They are one room: the list chooses and the column beside it shows, so
-		the divider between them is a seam in one surface — the same shape the
-		notebooks page and the inventory room have. `pane` is what takes each
-		card's own edge away.
+		The list and whoever you picked are one object: the list chooses and the
+		column beside it shows, so the divider is a seam in one surface — the
+		same handle the notebooks shelf and the inventory have. On a phone there
+		is one column, and it is whichever of the two you are looking at.
 	-->
-	<div
-		class="card-accent room-surface grid lg:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)]"
-		style="--card-accent: {SECTION_COLORS.diary}"
-	>
-		<Card flush pane>
-			{#if data.people.length === 0}
-				<EmptyState
-					icon="user"
-					title={t('notebooks.people.nobodyYet')}
-					description={t('notebooks.people.addThePeopleWhoTurn')}
-				>
-					{#snippet action()}
-						<button onclick={openCreate} class="btn btn-primary">
-							<Icon name="plus" />
-							{t('notebooks.people.newPerson')}
-						</button>
-					{/snippet}
-				</EmptyState>
-			{:else}
-				<div class="divide-y divide-gray-200" data-tour="people-list">
-					{#each data.people as person, i (person.id)}
-						<!--
-							The shared row shape, so a person looks like a bill and a
-							workout look. It used to stack into three blocks on a phone —
-							face, then name, then buttons — which made a list of six people
-							a page and a half of mostly nothing.
-						-->
-						<div
-							use:keepInView={selectedIndex === i}
-							class="list-row {selectedIndex === i ? 'kbd-cursor' : ''}"
-						>
-							<div class="list-row-main flex min-w-0 items-center gap-3">
-								<!--
-								The face, or the initial where there is not one yet.
-
-								A list of names is a list of names; a list of faces is a list
-								of people, and recognising one at a glance is the whole point
-								of a page about the people in your life. The fallback is a
-								letter rather than a grey silhouette — a silhouette says
-								"missing", an initial says "this one".
-							-->
-								<!--
-								…and it is a button, because the picture control lives in the
-								edit form, and a form nobody opens is a feature nobody finds.
-								The face is where somebody looks when they want to change it.
-							-->
-								<button
-									type="button"
-									onclick={() => openEdit(person)}
-									title={person.pictureId
-										? t('notebooks.people.changeTheirPicture', { name: person.name })
-										: t('notebooks.people.addAPictureOf', { name: person.name })}
-									class="shrink-0 rounded-full transition hover:opacity-80 focus-visible:ring-2 focus-visible:ring-gray-900 focus-visible:outline-none"
-								>
-									{#if person.pictureId}
-										<img
-											src="/media/{person.pictureId}"
-											alt=""
-											loading="lazy"
-											class="size-8 rounded-full border border-gray-200 bg-white object-cover"
-										/>
-									{:else}
-										<span
-											aria-hidden="true"
-											class="flex size-8 items-center justify-center rounded-full border border-dashed border-gray-300 bg-gray-100 text-xs font-medium text-gray-500"
-										>
-											{person.name.trim().charAt(0).toUpperCase()}
-										</span>
-									{/if}
-									<span class="sr-only"
-										>{t('notebooks.people.aPictureOf', {
-											add: person.pictureId ? t('ui.change') : t('ui.add'),
-											name: person.name
-										})}</span
-									>
-								</button>
-
-								<a
-									href={resolve(`/notebooks/people?person=${person.id}`)}
-									class="min-w-0 flex-1 text-sm text-gray-900 hover:underline"
-								>
-									<!--
-										The name gets the line, and everything small about them gets
-										the one under it. Squeezed onto a single line the name was
-										the part that lost — "Bechara …" beside a relationship
-										nobody asked to see first.
-									-->
-									<span class="block break-words">{person.name}</span>
-									<span class="flex flex-wrap items-center gap-x-2 text-xs text-gray-500">
-										<span class="eyebrow">{t(RELATIONSHIP_LABELS[person.relationship])}</span>
-										{#if birthdayLabel(person.birthday)}
-											<!-- The one date on the card, so it wears the one glyph. -->
-											<span class="inline-flex items-center gap-1">
-												<Icon name="cake" class="size-3.5" />
-												<span class="tabular">{birthdayLabel(person.birthday)}</span>
-											</span>
-										{/if}
-										<span class="tabular">
-											{person.mentions}
-											{person.mentions === 1 ? 'mention' : 'mentions'}
-										</span>
-										{#if person.notes}
-											<span class="min-w-0 truncate">{person.notes}</span>
-										{/if}
-									</span>
-								</a>
-							</div>
-
-							<!-- `flex-none`: the shared rule lets the actions grow into the
-							     slack, which on a phone squeezed the line under the name into
-							     three. Two icons need exactly two icons of room. -->
-							<div class="list-row-actions flex-none">
-								<button
-									title={t('ui.edit')}
-									aria-label={t('ui.edit')}
-									onclick={() => openEdit(person)}
-									class="icon-btn"
-								>
-									<Icon name="edit" />
-								</button>
-
-								{#if confirmDelete === person.id}
-									<form
-										method="post"
-										action="?/delete"
-										use:enhance={() =>
-											async ({ update }) => {
-												confirmDelete = null;
-												await update();
-											}}
-										class="flex items-center gap-1"
-									>
-										<input type="hidden" name="id" value={person.id} />
-										<button type="button" onclick={() => (confirmDelete = null)} class="btn btn-sm"
-											>{t('ui.cancel')}</button
-										>
-										<button class="btn btn-danger btn-sm" use:armed
-											>{t('notebooks.people.yesDelete')}</button
-										>
-									</form>
-								{:else}
-									<button
-										title={t('ui.delete')}
-										aria-label={t('ui.delete')}
-										onclick={() => (confirmDelete = person.id)}
-										class="icon-btn icon-btn-danger"
-									>
-										<Icon name="trash" />
+	<div class="room-surface">
+		<SplitColumns
+			bind:rem={panelRem}
+			label={t('notebooks.widenOrNarrowTheList')}
+			onsettle={() => panelForm?.requestSubmit()}
+		>
+			{#snippet left()}
+				<div class:hidden={!!selectedPerson} class="min-w-0 lg:!block">
+					<Card flush pane>
+						{#if data.people.length === 0}
+							<EmptyState
+								icon={routeGlyph('/notebooks/people')!}
+								title={t('notebooks.people.nobodyYet')}
+								description={t('notebooks.people.addThePeopleWhoTurn')}
+							>
+								{#snippet action()}
+									<button onclick={openCreate} class="btn btn-primary">
+										<Icon name="plus" />
+										{t('notebooks.people.newPerson')}
 									</button>
-								{/if}
-							</div>
-						</div>
-					{/each}
-				</div>
-			{/if}
-		</Card>
+								{/snippet}
+							</EmptyState>
+						{:else}
+							<RoomToolbar inset>
+								{#snippet tools()}
+									<FilterBar name="people" trailing={orderControl}>
+										{#snippet lead()}
+											<SearchField
+												bind:value={looking}
+												label={t('notebooks.people.searchPeople')}
+											/>
+										{/snippet}
+										{#snippet count()}
+											<ShowingCount
+												total={data.people.length}
+												shown={shownPeople.length}
+												said={(count) => t('notebooks.people.showingCount', { count })}
+											/>
+										{/snippet}
+									</FilterBar>
+								{/snippet}
+							</RoomToolbar>
+							{#if shownPeople.length === 0}
+								<EmptyState filtered onclear={() => (looking = '')} />
+							{/if}
+							<div class="divide-y divide-gray-200" data-tour="people-list">
+								{#each shownPeople as person, i (person.id)}
+									<!--
+										The shared row: the face in the rail, so the name starts on
+										the column every other list's words start on, and the row's
+										two verbs at its right in the shared order.
+									-->
+									<div
+										use:listCursor={cursor === i}
+										data-row
+										class="list-row"
+										class:bg-gray-100={person.id === data.selected}
+									>
+										<!-- Already resolved: `personHref` builds it with `resolve()`. -->
+										<!-- eslint-disable svelte/no-navigation-without-resolve -->
+										<a
+											href={personHref(person)}
+											class="row-rail justify-center"
+											tabindex="-1"
+											aria-hidden="true"
+										>
+											{@render face(person, 'row')}
+										</a>
+										<a
+											href={personHref(person)}
+											aria-current={person.id === data.selected ? 'true' : undefined}
+											class="list-row-main min-w-0 text-sm text-gray-900 hover:underline"
+										>
+											<!-- The name gets the line; everything small about them gets
+											     the one under it. -->
+											<span class="block font-medium break-words">{person.name}</span>
+											<span class="flex flex-wrap items-center gap-x-1.5 text-xs text-gray-500">
+												{@render facts(person)}
+											</span>
+										</a>
+										<!-- eslint-enable svelte/no-navigation-without-resolve -->
 
-		<!--
-			The second column is whoever you picked, and on a phone there is no
-			second column. With nobody picked it said so twice under a list that
-			was already empty.
-		-->
-		<div class:hidden={!selectedPerson} class="contents lg:!block">
-			<Card
-				title={selectedPerson ? selectedPerson.name : t('notebooks.people.mentions')}
-				description={selectedPerson
-					? t(RELATIONSHIP_LABELS[selectedPerson.relationship])
-					: t('notebooks.people.pickSomebodyToSeeEverything')}
-				flush
-				pane
-			>
-				{#if !selectedPerson}
-					<EmptyState icon="diary" title={t('notebooks.people.nobodySelected')} />
-				{:else if data.entries.length === 0}
-					<EmptyState
-						icon="diary"
-						title={t('notebooks.people.nothingWrittenAboutYet', { name: selectedPerson.name })}
-						description={t('notebooks.people.mentionThemInADiary')}
-					/>
-				{:else}
-					<div class="divide-y divide-gray-200">
-						{#each data.entries as entry (entry.id)}
-							<article class="px-4 py-3">
-								<Written content={entry.content} />
-								<p class="tabular mt-1 text-xs text-gray-500">
-									{when(entry.createdAt)}{#if entry.forDate}{t('notebooks.people.nbspFor')}
-										{entry.forDate}{/if}
-								</p>
-							</article>
-						{/each}
-					</div>
-				{/if}
-			</Card>
-		</div>
+										<div class="list-row-actions">
+											<button
+												title={t('ui.edit')}
+												aria-label={t('ui.edit')}
+												onclick={() => openEdit(person)}
+												class="icon-btn"
+											>
+												<Icon name="edit" />
+											</button>
+											{@render deleteControl(person)}
+										</div>
+									</div>
+								{/each}
+							</div>
+						{/if}
+					</Card>
+				</div>
+			{/snippet}
+
+			{#snippet right()}
+				<!--
+					Whoever you picked, headed the way a notebook's own page is: the
+					face, the name, the line about them, and what can be done to them.
+					On a phone it replaces the list, and the way back is on it.
+				-->
+				<div class:hidden={!selectedPerson} class="min-w-0 lg:!block">
+					<Card flush pane>
+						{#if selectedPerson}
+							<DetailHeader
+								surface
+								pane
+								title={selectedPerson.name}
+								back={{
+									href: resolve('/notebooks/people'),
+									label: t('notebooks.people.allPeople')
+								}}
+							>
+								{#snippet lead()}
+									<!-- The face is where somebody looks when they want to change it. -->
+									<button
+										type="button"
+										onclick={() => openEdit(selectedPerson)}
+										title={selectedPerson.pictureId
+											? t('notebooks.people.changeTheirPicture', { name: selectedPerson.name })
+											: t('notebooks.people.addAPictureOf', { name: selectedPerson.name })}
+										aria-label={selectedPerson.pictureId
+											? t('notebooks.people.changeTheirPicture', { name: selectedPerson.name })
+											: t('notebooks.people.addAPictureOf', { name: selectedPerson.name })}
+										class="rounded-full transition hover:opacity-80"
+									>
+										{@render face(selectedPerson, 'head')}
+									</button>
+								{/snippet}
+								{#snippet meta()}
+									<p class="flex flex-wrap items-center gap-x-1.5 text-xs text-gray-500">
+										{@render facts(selectedPerson)}
+										{#if selectedPerson.phone}
+											<span aria-hidden="true">·</span>
+											<a href="tel:{selectedPerson.phone}" class="tabular hover:underline"
+												>{selectedPerson.phone}</a
+											>
+										{/if}
+										{#if selectedPerson.email}
+											<span aria-hidden="true">·</span>
+											<a href="mailto:{selectedPerson.email}" class="hover:underline"
+												>{selectedPerson.email}</a
+											>
+										{/if}
+									</p>
+									{#if selectedPerson.notes}
+										<FoldedText text={selectedPerson.notes} class="mt-1" />
+									{/if}
+								{/snippet}
+								{#snippet actions()}
+									<div class="row-actions controls-sm flex items-center gap-1">
+										<button
+											title={t('ui.edit')}
+											aria-label={t('ui.edit')}
+											onclick={() => openEdit(selectedPerson)}
+											class="icon-btn"
+										>
+											<Icon name="edit" />
+										</button>
+										{@render deleteControl(selectedPerson)}
+									</div>
+								{/snippet}
+							</DetailHeader>
+
+							{#if data.entries.length === 0}
+								<EmptyState
+									compact
+									icon="diary"
+									title={t('notebooks.people.nothingWrittenAboutYet', {
+										name: selectedPerson.name
+									})}
+									description={t('notebooks.people.mentionThemInADiary')}
+								/>
+							{:else}
+								<div class="divide-y divide-gray-200 border-t border-gray-200">
+									{#each data.entries as entry (entry.id)}
+										<!-- The entry's number in the rail, where the diary has it, and
+										     the way to it in the diary itself. -->
+										<article class="list-row items-start">
+											<a
+												href={resolve(`/notebooks/diary#diary-${entry.seq}`)}
+												class="row-rail tabular pt-0.5 text-xs text-gray-500 hover:text-gray-900 hover:underline"
+												>#{entry.seq}</a
+											>
+											<div class="list-row-main">
+												<Written content={entry.content} />
+												<p class="tabular mt-1 text-xs text-gray-500">
+													{momentOf(entry.createdAt, now())}{#if entry.forDate}{t(
+															'notebooks.people.nbspFor'
+														)}
+														{civilOf(entry.forDate, now())}{/if}
+												</p>
+											</div>
+										</article>
+									{/each}
+								</div>
+							{/if}
+						{:else}
+							<EmptyState
+								icon="diary"
+								title={t('notebooks.people.nobodySelected')}
+								description={t('notebooks.people.pickSomebodyToSeeEverything')}
+							/>
+						{/if}
+					</Card>
+				</div>
+			{/snippet}
+		</SplitColumns>
 	</div>
+
+	<form
+		method="POST"
+		action="?/setPanelWidth"
+		class="hidden"
+		bind:this={panelForm}
+		use:enhance={() => async () => {}}
+	>
+		<input type="hidden" name="rem" value={panelRem} />
+	</form>
 </div>
 
 <Modal
@@ -488,7 +689,11 @@
 							faceProblem = '';
 							if (!file) return;
 							if (file.size > data.pictureKilobytes * 1024) {
-								faceProblem = `Pictures here are at most ${data.pictureKilobytes}KB, and ${file.name} is ${Math.ceil(file.size / 1024)}KB.`;
+								faceProblem = t('pictures.tooBig', {
+									limit: data.pictureKilobytes,
+									name: file.name,
+									size: Math.ceil(file.size / 1024)
+								});
 								field.value = '';
 								return;
 							}
@@ -515,14 +720,14 @@
 			</span>
 		</div>
 		{#if faceProblem}
-			<p class="mt-1 text-xs text-red-700">{faceProblem}</p>
+			<div class="mt-2"><Banner message={faceProblem} /></div>
 		{/if}
 	{/if}
 
 	{#snippet footer()}
 		<button type="button" class="btn" onclick={() => (showForm = false)}>{t('ui.cancel')}</button>
 		<button type="submit" form="person-form" class="btn btn-primary">
-			{editingId ? 'Save' : t('notebooks.people.addPerson')}
+			{editingId ? t('ui.save') : t('notebooks.people.addPerson')}
 		</button>
 	{/snippet}
 </Modal>

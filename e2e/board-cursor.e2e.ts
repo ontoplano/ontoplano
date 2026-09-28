@@ -21,13 +21,13 @@ test('moving with j and k shows where you are', async ({ page }) => {
 	await page.keyboard.press('j');
 	await page.waitForTimeout(300);
 	const first = await page
-		.locator('.kbd-cursor')
+		.locator('.kb-cursor')
 		.first()
 		.evaluate((el) => getComputedStyle(el).boxShadow);
 
 	// The card the cursor is on is drawn differently from one it is not.
 	const others = await cards
-		.filter({ hasNot: page.locator('.kbd-cursor') })
+		.filter({ hasNot: page.locator('.kb-cursor') })
 		.first()
 		.evaluate((el) => getComputedStyle(el).boxShadow);
 
@@ -35,8 +35,8 @@ test('moving with j and k shows where you are', async ({ page }) => {
 	expect(first).not.toBe(others);
 
 	// And it moves: the card that had it does not keep it.
-	const wasOn = await page.locator('.kbd-cursor').first().innerText();
+	const wasOn = await page.locator('.kb-cursor').first().innerText();
 	await page.keyboard.press('j');
 	await page.waitForTimeout(300);
-	expect(await page.locator('.kbd-cursor').first().innerText()).not.toBe(wasOn);
+	expect(await page.locator('.kb-cursor').first().innerText()).not.toBe(wasOn);
 });

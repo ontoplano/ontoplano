@@ -13,17 +13,17 @@ import { error } from '@sveltejs/kit';
 import { buildCtx } from '$lib/services/ctx';
 import { NotFoundError } from '$lib/services/errors';
 import { NOTEBOOK_ALBUM_NAME, notebookMediaView } from '$lib/services/notebook-media';
-import { NOTEBOOK_SEPARATOR } from '$lib/services/notebooks';
+import { NOTEBOOK_SEPARATOR } from '$lib/notebook-path';
 
 export const load = async ({ locals, params }: IsolatedEvent) => {
 	const ctx = buildCtx(locals.user!.id);
 
 	/*
-	 * The address is the notebook's own name, one path segment per level.
+	 * The address is the notebook's path, one segment per level.
 	 *
-	 * `gallery/notebooks/Home/Kitchen` is the notebook `Home — Kitchen`, so a
-	 * link can be built from a name and a name read back out of a link without
-	 * either side knowing about the separator.
+	 * `gallery/notebooks/Home/Kitchen` is the notebook `Kitchen` in the shelf
+	 * folder `Home`, so a link can be built from a path and a path read back
+	 * out of a link without either side knowing about the separator.
 	 */
 	const path = (params.path ?? '')
 		.split('/')

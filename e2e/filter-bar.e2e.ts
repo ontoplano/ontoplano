@@ -48,6 +48,11 @@ test('the filters are out on a wide screen, and clear in one press', async ({ pa
 	await page.keyboard.press('Escape');
 	await expect(page.getByText('post the parcel')).toBeHidden();
 
+	// The way back stands against the last filter, not across the row from it.
+	const lastFilter = (await page.locator('#tasks-filters > *').last().boundingBox())!;
+	const clear = (await page.getByRole('button', { name: 'Clear' }).boundingBox())!;
+	expect(clear.x - (lastFilter.x + lastFilter.width)).toBeLessThanOrEqual(16);
+
 	// One press back to everything.
 	await page.getByRole('button', { name: 'Clear' }).click();
 	await expect(page.getByText('post the parcel')).toBeVisible();
@@ -72,6 +77,10 @@ test('on a phone they are a sheet, and the button says one is on', async ({ page
 
 	// The controls are not on the strip: that is the whole point of the width.
 	const sheet = page.locator('.filter-toggle');
+	// But the order is, on the same line as the search box and its count.
+	const search = (await page.getByRole('searchbox', { name: 'Search these tasks' }).boundingBox())!;
+	const order = (await page.getByRole('button', { name: 'Order tasks by' }).boundingBox())!;
+	expect(Math.abs(order.y + order.height / 2 - (search.y + search.height / 2))).toBeLessThan(4);
 	await expect(sheet).toHaveCount(1);
 	await expect(sheet).toHaveAttribute('aria-pressed', 'false');
 	await expect(page.getByRole('button', { name: 'Filter by tag' })).toBeHidden();

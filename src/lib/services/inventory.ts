@@ -138,6 +138,7 @@ export function listCategories(ctx: Ctx) {
 			id: inventoryCategories.id,
 			name: inventoryCategories.name,
 			isFood: inventoryCategories.isFood,
+			color: inventoryCategories.color,
 			sortOrder: inventoryCategories.sortOrder,
 			sharedWithFamily: inventoryCategories.sharedWithFamily,
 			ownerId: inventoryCategories.userId
@@ -253,6 +254,51 @@ export function deleteCategory(ctx: Ctx, id: number): void {
 			.run();
 
 		if (res.changes === 0) throw new NotFoundError('category');
+	});
+}
+
+/** What a colour may look like, since it is written into an inline style. */
+const HEX_COLOR = /^#[0-9a-f]{6}$/i;
+
+/** A category's colour, or none (empty) for the neutral one. The owner's alone. */
+export function setCategoryColor(ctx: Ctx, id: number, raw: unknown): void {
+	const hex = String(raw ?? '').trim();
+	const color = hex === '' ? null : str(hex, 'colour', { max: 7, pattern: HEX_COLOR });
+	const res = db
+		.update(inventoryCategories)
+		.set({ color })
+		.where(and(eq(inventoryCategories.id, id), eq(inventoryCategories.userId, ctx.userId)))
+		.run();
+
+	if (res.changes === 0) throw new NotFoundError('category');
+}
+
+/**
+ * One place up or down the order the cards are drawn in.
+ *
+ * Only the account's own categories are renumbered: a family member's shared
+ * shelf is ordered by its owner, and moving one of those is a not-found.
+ */
+export function moveCategory(ctx: Ctx, id: number, delta: number): void {
+	const own = db
+		.select({ id: inventoryCategories.id })
+		.from(inventoryCategories)
+		.where(eq(inventoryCategories.userId, ctx.userId))
+		.orderBy(inventoryCategories.sortOrder, inventoryCategories.id)
+		.all();
+	const from = own.findIndex((one) => one.id === id);
+	if (from === -1) throw new NotFoundError('category');
+	const to = Math.min(Math.max(from + Math.sign(delta), 0), own.length - 1);
+	if (to === from) return;
+	const [moved] = own.splice(from, 1);
+	own.splice(to, 0, moved);
+	db.transaction((tx) => {
+		own.forEach((one, index) => {
+			tx.update(inventoryCategories)
+				.set({ sortOrder: index })
+				.where(and(eq(inventoryCategories.id, one.id), eq(inventoryCategories.userId, ctx.userId)))
+				.run();
+		});
 	});
 }
 
@@ -390,7 +436,36 @@ export function createOwnedThing(
 }
 
 export function updateItem(ctx: Ctx, id: number, raw: ItemInput): void {
-	const values = parseItem(ctx, raw);
+	const values = parseItem(ctx, raw, id);
+
+	const res = db
+		.update(inventoryItems)
+		.set({ ...values, updatedAt: stamp(ctx) })
+		.where(itemWhere(ctx, id))
+		.run();
+
+	if (res.changes === 0) throw new NotFoundError('item');
+}
+
+/**
+ * Rename an item, or change its type or notes, touching nothing else.
+ *
+ * `updateItem` takes the whole row, price and section included, which is the
+ * form's shape; a change that names one field sends one. Left out, a field
+ * keeps what it had; an empty `notes` clears them.
+ */
+export function changeItem(
+	ctx: Ctx,
+	id: number,
+	raw: { name?: unknown; type?: unknown; notes?: unknown }
+): void {
+	const values = {
+		...(raw.name === undefined ? {} : { name: str(raw.name, 'name', { max: MAX_NAME_LENGTH }) }),
+		...(raw.type === undefined ? {} : { type: oneOf(raw.type, 'type', ITEM_TYPES) }),
+		...(raw.notes === undefined
+			? {}
+			: { notes: optionalStr(raw.notes, 'notes', { max: MAX_NOTES_LENGTH }) })
+	};
 
 	const res = db
 		.update(inventoryItems)
@@ -687,7 +762,7 @@ function ownedItem(ctx: Ctx, id: number) {
 	return row;
 }
 
-function parseItem(ctx: Ctx, raw: ItemInput) {
+function parseItem(ctx: Ctx, raw: ItemInput, id?: number) {
 	return {
 		name: str(raw.name, 'name', { max: MAX_NAME_LENGTH }),
 		type: oneOf(raw.type, 'type', ITEM_TYPES),
@@ -698,7 +773,12 @@ function parseItem(ctx: Ctx, raw: ItemInput) {
 		priceCents: parseMoney(raw.price, getCurrency(ctx.userId)),
 		idealQty: parseIdealQty(raw.idealQty),
 		// Only when the caller mentioned it — see `notebookPatch`.
-		...notebookPatch(ctx, raw)
+		...notebookPatch(
+			ctx,
+			raw,
+			'inventory',
+			id === undefined ? undefined : { table: inventoryItems, id }
+		)
 	};
 }
 

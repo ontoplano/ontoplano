@@ -50,7 +50,7 @@
 		content?: string;
 		tags?: string;
 		notebookId?: number | null;
-		notebooks?: { id: number; title: string; defaultTags?: string }[];
+		notebooks?: { id: number; title: string; defaultTags?: string; modules: readonly string[] }[];
 		compact?: boolean;
 		pictures?: boolean;
 		notebook?: boolean;
@@ -142,6 +142,7 @@
 {#snippet where()}
 	<NotebookField
 		{notebooks}
+		holds="notes"
 		bind:value={filedIn}
 		span={12}
 		label={t('ui.notebook')}

@@ -1,9 +1,11 @@
 <script lang="ts">
+	import Kbd from '$lib/components/Kbd.svelte';
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import Icon from '$lib/components/Icon.svelte';
 	import { findDestinations, type Destination } from '$lib/destinations';
-	import { KIND_LABELS, MIN_QUERY, type Hit } from '$lib/search';
+	import { KIND_LABELS, KIND_PLACES, MIN_QUERY, type Hit } from '$lib/search';
+	import { glyphFor } from '$lib/glyphs';
 	import { palette } from '$lib/palette.svelte';
 	import { useT } from '$lib/i18n';
 
@@ -177,7 +179,7 @@
 								<span class="text-xs text-gray-500">{t(row.place.group)}</span>
 							{/if}
 						{:else}
-							<Icon name="tag" class="shrink-0 text-gray-300" />
+							<Icon name={glyphFor(KIND_PLACES[row.hit.kind])!} class="shrink-0 text-gray-500" />
 							<span class="min-w-0 flex-1 truncate text-gray-900">{row.hit.title}</span>
 							<span class="eyebrow shrink-0 text-gray-500">{t(KIND_LABELS[row.hit.kind])}</span>
 						{/if}
@@ -198,28 +200,22 @@
 				class="kbd-hint flex items-center gap-3 border-t border-gray-200 px-4 py-2 text-xs text-gray-500"
 			>
 				<span
-					><kbd class="border border-gray-300 bg-gray-50 px-1 text-gray-700">↑↓</kbd>
+					><Kbd keys="↑↓" />
 					{t('commandPalette.move')}</span
 				>
 				<span
-					><kbd class="border border-gray-300 bg-gray-50 px-1 text-gray-700">↵</kbd>
+					><Kbd keys="↵" />
 					{t('commandPalette.open')}</span
 				>
 				<span
-					><kbd class="border border-gray-300 bg-gray-50 px-1 text-gray-700"
-						>{t('commandPalette.esc')}</kbd
-					>
+					><Kbd keys={t('commandPalette.esc')} />
 					{t('commandPalette.close')}</span
 				>
 				<!-- The same syntax the search page teaches, where somebody typing is
 				     most likely to want it. -->
 				<span class="ml-auto"
-					><kbd class="border border-gray-300 bg-gray-50 px-1 text-gray-700"
-						>{t('commandPalette.todo')}</kbd
-					>
-					<kbd class="border border-gray-300 bg-gray-50 px-1 text-gray-700"
-						>{t('commandPalette.in')}</kbd
-					>
+					><Kbd keys={t('commandPalette.todo')} />
+					<Kbd keys={t('commandPalette.in')} />
 					{t('commandPalette.narrow')}</span
 				>
 			</div>

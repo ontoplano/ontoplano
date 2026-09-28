@@ -118,44 +118,55 @@ const PICTURES = [
 		crop: { x: 0.36, y: 0.2, w: 0.42, h: 0.57 }
 	},
 	/*
-	 * The four notebook covers.
+	 * The notebook covers.
 	 *
-	 * Photographs rather than paintings, which is the one thing a cover must
-	 * not be: a shelf of framed oils reads as a museum catalogue, and a
-	 * notebook is a subject somebody is working on. Portrait, because the
-	 * cover is drawn at 3:4 — the shape of a book on a shelf.
+	 * Generated illustrations, one per subject, drawn at 3:4 — the shape of a
+	 * book on a shelf — so the crop is the whole picture.
 	 */
 	{
 		out: 'cover-kitchen.jpg',
-		object: 289171,
+		file: 'cover-kitchen.jpg',
+		credit: 'generated',
 		what: "the renovation notebook's cover",
 		width: 480,
 		height: 640,
-		crop: { x: 0.18, y: 0.0, w: 0.6, h: 1.0 }
+		crop: { x: 0, y: 0, w: 1, h: 1 }
 	},
 	{
 		out: 'cover-portugal.jpg',
-		object: 267019,
+		file: 'cover-portugal.jpg',
+		credit: 'generated',
 		what: "the trip notebook's cover",
 		width: 480,
 		height: 640,
-		crop: { x: 0.2, y: 0.0, w: 0.56, h: 1.0 }
+		crop: { x: 0, y: 0, w: 1, h: 1 }
 	},
 	{
 		out: 'cover-reading.jpg',
-		object: 283103,
+		file: 'cover-reading.jpg',
+		credit: 'generated',
 		what: "the reading notebook's cover",
 		width: 480,
 		height: 640,
-		crop: { x: 0.24, y: 0.0, w: 0.5, h: 1.0 }
+		crop: { x: 0, y: 0, w: 1, h: 1 }
 	},
 	{
 		out: 'cover-republic.jpg',
-		object: 283133,
+		file: 'cover-republic.jpg',
+		credit: 'generated',
 		what: "the Republic notebook's cover",
 		width: 480,
 		height: 640,
-		crop: { x: 0.12, y: 0.0, w: 0.72, h: 1.0 }
+		crop: { x: 0, y: 0, w: 1, h: 1 }
+	},
+	{
+		out: 'cover-twelve.jpg',
+		file: 'cover-twelve.jpg',
+		credit: 'generated',
+		what: "the year's goals notebook's cover",
+		width: 480,
+		height: 640,
+		crop: { x: 0, y: 0, w: 1, h: 1 }
 	},
 	{
 		out: 'tomato-pasta.jpg',
@@ -275,10 +286,10 @@ writeFileSync(
 	join(OUT, 'SOURCES.md'),
 	`# Where the demo's pictures come from
 
-The faces are generated — nobody in this repository is a photograph of a real
-person, which is the only honest way to put a face on a made-up contact called
-Ana. Their originals are \`scripts/demo-media-src/\`, committed so a rebuild
-needs nothing but this checkout.
+The faces and the notebook covers are generated — nobody in this repository is
+a photograph of a real person, which is the only honest way to put a face on a
+made-up contact called Ana. Their originals are \`scripts/demo-media-src/\`,
+committed so a rebuild needs nothing but this checkout.
 
 Everything else is from the Metropolitan Museum of Art's Open Access
 collection, released under [CC0](https://creativecommons.org/publicdomain/zero/1.0/):

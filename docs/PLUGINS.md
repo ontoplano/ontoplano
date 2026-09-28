@@ -160,13 +160,22 @@ GET /api/v1/schedule/upcoming?days=7
         "title": "Wake up",
         "category": "duty",
         "label": "",
-        "status": "pending"
+        "status": "pending",
+        "attributes": { "alarm": "true", "remind_min": "5" },
+        "meta": { "alarm": "true", "remind_min": "5" }
       }
-    ]
+    ],
+    "warning": "Each occurrence's `meta` is deprecated and will be removed in 0.190.0. Read `attributes`, which is the same object."
   }
 ```
 
 Only pending occurrences by default; pass `include_completed=true` for all.
+
+**`attributes`** are the task block's own key/value pairs, set in the block's
+form under _Attributes_ — string to string, passed through untouched. They were
+called `meta` until 0.184; each occurrence still carries the same object under
+`meta`, and the answer's `warning` says so, until 0.190.0 removes it. Read
+`attributes`.
 
 **`at_local` is naive local wall-clock time** — no offset — and `timezone` tells you how to
 interpret it. That is deliberate: a consumer setting an alarm wants the wall-clock
@@ -245,6 +254,25 @@ two tokens, and a household shares a shopping list — across two different
 instances if that is where the two people live. It is ~150 lines and uses
 nothing above: scoped tokens, the shopping API, self-managed webhooks.
 
+### One tab of a notebook
+
+```http
+GET /api/v1/notebooks/<id>/<tab>?status=open&order=created&direction=desc&tag=walls&limit=30
+→ { "notebook": { "id": 12, "title": "The flat" }, "section": "tasks", "href": "/notebooks/12?tab=tasks",
+    "total": 7, "items": [{ "id": 40, "title": "Buy tiles", "detail": null, "done": false,
+    "href": "/notebooks/12?tab=tasks&item=40" }] }
+```
+
+`<tab>` is `notes`, `tasks`, `goals`, `ideas` or `inventory`, and needs that
+tab's read scope (goals are read with `tasks:read`). The statuses and orders
+each tab takes are listed in `src/lib/notebook-widget.ts`; anything else falls
+back to the tab's first. `href` is where the app opens that line.
+
+A key tied to one notebook reads that notebook here and nowhere else — every
+other endpoint refuses it, because they answer for the whole account. The
+phone's notebook widget holds such a key and reads `GET /api/v1/widget`, which
+answers the same shape for the tab the widget was set up to show.
+
 ---
 
 ## 5. Errors
@@ -321,7 +349,7 @@ Then open `/data/demo.temperature`.
 
 ## Declaring what your plugin understands
 
-Slot metadata accepts any key, which is what lets a plugin invent its own
+A task block's attributes accept any key, which is what lets a plugin invent its own
 vocabulary without a change to ontoplano. The cost is that the keys arrive
 anonymous: `hard_alarm` sitting next to `location` with nothing saying which
 program reads it or what it does.
@@ -339,7 +367,7 @@ Content-Type: application/json
   "name": "Smart scale",
   "description": "Smart-scale alarm",
   "homepage": "https://example.com/scale",
-  "metaKeys": [
+  "attributeKeys": [
     { "key": "alarm",       "description": "Ring an alarm for this block",       "example": "true" },
     { "key": "remind_min",  "description": "Notify N minutes beforehand",        "example": "5" },
     { "key": "hard_alarm",  "description": "Alarm that resists being dismissed", "example": "true" }
@@ -347,14 +375,18 @@ Content-Type: application/json
 }
 ```
 
-The metadata editor then offers those keys labelled with your plugin's name
-instead of as a bare list. Declared keys must be valid metadata keys —
+The attributes editor then offers those keys labelled with your plugin's name
+instead of as a bare list. Declared keys must be valid attribute keys —
 lowercase letters, digits and underscores — because a manifest describing keys
 the server would reject on save is worse than no manifest.
+
+`attributeKeys` was `metaKeys` until 0.184. A manifest sending `metaKeys` is
+still read, and its answer carries a `warning`; the answer lists the keys under
+both names until 0.190.0, when `metaKeys` goes.
 
 Manifests are per-account, not global: they are a claim by one installation, and
 two people may be running different versions.
 
 Withdrawing one (`DELETE /api/v1/plugin?source=…`) removes the labels. It does
-not remove the metadata — those keys keep working, they just stop saying who
+not remove the attributes — those keys keep working, they just stop saying who
 reads them.

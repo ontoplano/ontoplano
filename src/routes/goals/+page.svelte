@@ -1,16 +1,23 @@
 <script lang="ts">
 	import { useWhen } from '$lib/when-context.svelte';
-	import Swatch from '$lib/components/Swatch.svelte';
+	import ShowingCount from '$lib/components/ShowingCount.svelte';
+	import SearchField from '$lib/components/SearchField.svelte';
+	import StripVerb from '$lib/components/StripVerb.svelte';
 	import { setRoomAction } from '$lib/room-action.svelte';
-	import RoomToolbar from '$lib/components/RoomToolbar.svelte';
-	import RoomBar from '$lib/components/RoomBar.svelte';
+	import RoomSurface from '$lib/components/RoomSurface.svelte';
+	import FilterBar from '$lib/components/FilterBar.svelte';
+	import TabbedRoom from '$lib/components/TabbedRoom.svelte';
 	import { page } from '$app/state';
 	import { resolve } from '$app/paths';
 	import { goto } from '$app/navigation';
 	import Picker from '$lib/components/Picker.svelte';
+	import SortControl from '$lib/components/SortControl.svelte';
+	import type { PlainKey } from '$lib/i18n/keys';
+	import { CATEGORY_FALLBACK_COLOR } from '$lib/colors';
 	import OneLine from '$lib/components/OneLine.svelte';
 	import { getAction, keyFor } from '$lib/shortcuts';
 	import { enhance } from '$lib/enhance';
+	import { armed } from '$lib/actions/armed';
 	import FormError from '$lib/components/FormError.svelte';
 	import EmptyState from '$lib/components/EmptyState.svelte';
 	import Icon from '$lib/components/Icon.svelte';
@@ -31,7 +38,6 @@
 		periodStart,
 		type Horizon
 	} from '$lib/goals.js';
-	import { SECTION_COLORS } from '$lib/colors.js';
 	import { useT } from '$lib/i18n';
 
 	const t = useT();
@@ -43,6 +49,10 @@
 
 	let showForm = $state(false);
 	let showAreas = $state(false);
+	/** The area whose removal has been asked for and not yet confirmed. */
+	let removingArea: number | null = $state(null);
+	/** The area being renamed in place. */
+	let renamingArea: number | null = $state(null);
 	let editingId: number | null = $state(null);
 	let linkingId: number | null = $state(null);
 	let areaFilter: number | null = $state(null);
@@ -66,41 +76,124 @@
 	/* Drawn once the keys have moved it, not as a ring on the first goal. */
 	let cursorShown = $state(false);
 
-	const accent = SECTION_COLORS.home;
+	/** What the search box holds; a goal matches on its title, notes or area. */
+	let looking = $state('');
+	const needle = $derived(looking.trim().toLocaleLowerCase());
 
-	const visible = $derived(
+	const inArea = $derived(
 		areaFilter === null ? data.goals : data.goals.filter((g) => g.areaId === areaFilter)
 	);
+	const visible = $derived(
+		needle === ''
+			? inArea
+			: inArea.filter((g) =>
+					[g.title, g.notes ?? '', g.areaName ?? ''].some((text) =>
+						text.toLocaleLowerCase().includes(needle)
+					)
+				)
+	);
+	/** Whether the area or the search is hiding any goal. */
+	const narrowed = $derived(areaFilter !== null || needle !== '');
 
-	/** One column per horizon, so the year and the week sit side by side. */
-	const byHorizon = $derived(
-		HORIZONS.map((h) => {
-			const of = visible.filter((g) => g.horizon === h);
-			/*
-			 * A goal about a subject sits below the ones about the life.
-			 *
-			 * Filing a goal under a notebook scopes it — "read twelve books" is
-			 * a goal you hold; "finish the kitchen tiling" belongs to the
-			 * renovation and is only a goal while that is going on. Mixed into
-			 * one list they read as the same kind of thing, so the loose ones
-			 * come first and each notebook's own are grouped under its name.
-			 */
+	function clearFilters() {
+		areaFilter = null;
+		looking = '';
+		if (data.includeClosed) toggleClosed();
+	}
+
+	/** What is narrowing the list, for the phone's folded filter button. */
+	const summary = $derived(
+		[
+			areaFilter === null ? '' : (data.areas.find((a) => a.id === areaFilter)?.name ?? ''),
+			data.includeClosed ? t('goals.closedCount', { count: data.closedCount }) : ''
+		]
+			.filter(Boolean)
+			.join(', ')
+	);
+
+	/*
+	 * The order inside each group. Kept per browser, like the task list's:
+	 * it is how somebody likes to read, not a fact about the goals.
+	 */
+	const ORDERS = ['period', 'title', 'progress', 'created'] as const;
+	type Order = (typeof ORDERS)[number];
+	const ORDER_LABELS: Record<Order, PlainKey> = {
+		period: 'goals.orderPeriod',
+		title: 'goals.orderTitle',
+		progress: 'goals.orderProgress',
+		created: 'goals.orderAdded'
+	};
+	const ORDER_KEY = 'goals.order';
+	let order = $state<Order>('period');
+	let direction = $state<'asc' | 'desc'>('asc');
+	$effect(() => {
+		try {
+			const kept = JSON.parse(localStorage.getItem(ORDER_KEY) ?? 'null');
+			if (kept && ORDERS.includes(kept.order)) order = kept.order;
+			if (kept?.direction === 'asc' || kept?.direction === 'desc') direction = kept.direction;
+		} catch {
+			/* A private window keeps nothing; the default order stands. */
+		}
+	});
+	function keepOrder() {
+		try {
+			localStorage.setItem(ORDER_KEY, JSON.stringify({ order, direction }));
+		} catch {
+			/* As above. */
+		}
+	}
+
+	/** How far along a goal is, 0–1; one with nothing counted sorts first. */
+	function progressOf(g: Goal): number {
+		return g.progress.fraction ?? -1;
+	}
+	const sorted = $derived(
+		[...visible].sort((a, b) => {
+			const by =
+				order === 'title'
+					? a.title.localeCompare(b.title)
+					: order === 'progress'
+						? progressOf(a) - progressOf(b)
+						: order === 'created'
+							? a.id - b.id
+							: a.periodStart.localeCompare(b.periodStart) || a.title.localeCompare(b.title);
+			return direction === 'asc' ? by : -by;
+		})
+	);
+
+	/**
+	 * One band per horizon, and one per notebook inside it.
+	 *
+	 * A goal about a subject sits below the ones about the life. Filing a goal
+	 * under a notebook scopes it — "read twelve books" is a goal you hold;
+	 * "finish the kitchen tiling" belongs to the renovation and is only a goal
+	 * while that is going on — so the loose ones come first and each
+	 * notebook's own follow under a band of the same kind that names it.
+	 */
+	const groups = $derived(
+		HORIZONS.flatMap((h) => {
+			const of = sorted.filter((g) => g.horizon === h);
 			const loose = of.filter((g) => g.notebookId === null);
 			const filed = [...new Set(of.filter((g) => g.notebookId !== null).map((g) => g.notebookId))]
 				.map((id) => ({
-					id: id as number,
-					title: of.find((g) => g.notebookId === id)?.notebookTitle ?? '',
+					horizon: h,
+					notebook: {
+						id: id as number,
+						title: of.find((g) => g.notebookId === id)?.notebookTitle ?? ''
+					},
 					goals: of.filter((g) => g.notebookId === id)
 				}))
-				.sort((a, b) => a.title.localeCompare(b.title));
-			return { horizon: h, goals: of, loose, filed };
-		}).filter((c) => c.goals.length > 0 || showForm)
+				.sort((a, b) => a.notebook.title.localeCompare(b.notebook.title));
+			return [
+				...(loose.length > 0 ? [{ horizon: h, notebook: null, goals: loose }] : []),
+				...filed
+			];
+		})
 	);
 
 	/** Every goal in the order it is drawn, which is the order j and k walk. */
-	const ordered = $derived(
-		byHorizon.flatMap((c) => [...c.loose, ...c.filed.flatMap((b) => b.goals)])
-	);
+	const ordered = $derived(groups.flatMap((g) => g.goals));
+
 	const cursorId = $derived(ordered[Math.min(selectedIndex, ordered.length - 1)]?.id ?? null);
 
 	/** The area filter as the picker holds it: a string, 'all' for none. */
@@ -241,9 +334,6 @@
 				return;
 			}
 			selectedIndex = Math.min(Math.max(selectedIndex + (action === 'next' ? 1 : -1), 0), max);
-			document.getElementById(`goal-${ordered[selectedIndex].id}`)?.scrollIntoView({
-				block: 'nearest'
-			});
 			return;
 		}
 		if (action === 'edit') {
@@ -265,262 +355,388 @@
 
 <svelte:window onkeydown={handleKeydown} />
 
-<div class="space-y-4">
-	<RoomBar title={t('goals.goals')} />
-	<!--
-		One row: what narrows the list on the left, managing the areas on the
-		right. It wraps as a row, never into a stack of one control per line.
-	-->
-	<!-- On a phone the cards run to the screen's edges; the controls do not. -->
-	{#if data.areas.length > 0 || data.goals.length > 0}
-		<div class="px-4 sm:px-0">
-			<RoomToolbar>
-				{#snippet tools()}
-					{#if data.areas.length > 0}
-						<Picker
-							value={areaFilter === null ? ALL_AREAS : String(areaFilter)}
-							options={areaOptions}
-							onpick={(next) => (areaFilter = next === ALL_AREAS ? null : Number(next))}
-							label={t('goals.area')}
+<TabbedRoom title={t('goals.goals')} room="goals" label={t('goals.goals')}>
+	<div class="space-y-4">
+		<FormError message={form?.message} />
+
+		<Modal
+			bind:open={showAreas}
+			onclose={() => {
+				renamingArea = null;
+				removingArea = null;
+			}}
+			error={form?.message}
+			title={t('goals.areas')}
+			description={t('goals.fitnessStudyMoney')}
+			size="sm"
+		>
+			{#if data.areas.length > 0}
+				<div class="divide-y divide-gray-200 border border-gray-200">
+					{#each data.areas as area, index (area.id)}
+						<div class="list-row" data-area={area.name}>
+							{#if renamingArea === area.id}
+								<form
+									method="post"
+									action="?/updateArea"
+									use:enhance={() =>
+										async ({ update, result }) => {
+											await update({ reset: false });
+											if (result.type === 'success') renamingArea = null;
+										}}
+									class="flex min-w-0 flex-1 items-center gap-2"
+								>
+									<input type="hidden" name="id" value={area.id} />
+									<OneLine
+										name="label"
+										value={area.name}
+										class="input min-w-0 flex-1"
+										required
+										autofocus
+									/>
+									<button class="icon-btn" title={t('ui.save')} aria-label={t('ui.save')}>
+										<Icon name="check" />
+									</button>
+									<button
+										type="button"
+										class="icon-btn"
+										title={t('ui.cancel')}
+										aria-label={t('ui.cancel')}
+										onclick={() => (renamingArea = null)}
+									>
+										<Icon name="close" />
+									</button>
+								</form>
+							{:else}
+								<div class="list-row-main flex items-center gap-3">
+									<!-- The browser's own colour control, saved as it is let go of:
+								     there is nothing else on the row a Save would cover. -->
+									<form method="post" action="?/updateArea" use:enhance class="flex shrink-0">
+										<input type="hidden" name="id" value={area.id} />
+										<input
+											type="color"
+											name="color"
+											value={area.color}
+											class="h-7 w-8 cursor-pointer border border-gray-300 bg-transparent p-0"
+											title={t('goals.areaColour', { name: area.name })}
+											aria-label={t('goals.areaColour', { name: area.name })}
+											onchange={(e) => e.currentTarget.form?.requestSubmit()}
+										/>
+									</form>
+									<span class="min-w-0 text-sm break-words text-gray-900">{area.name}</span>
+								</div>
+								<!-- Two steps, like every removal: the bin arms it, the worded
+							     button does it, and Cancel sits where the bin was. -->
+								<div class="list-row-actions">
+									{#if removingArea === area.id}
+										<form
+											method="post"
+											action="?/deleteArea"
+											use:enhance={() =>
+												async ({ update }) => {
+													removingArea = null;
+													await update();
+												}}
+										>
+											<input type="hidden" name="id" value={area.id} />
+											<button class="btn btn-sm btn-danger" use:armed>{t('ui.remove')}</button>
+										</form>
+										<button type="button" class="btn btn-sm" onclick={() => (removingArea = null)}
+											>{t('ui.cancel')}</button
+										>
+									{:else}
+										<!-- The order here is the order of the area filter and of
+									     the goal form's list. The end rows keep both arrows,
+									     disabled, so the row does not shift as an area moves. -->
+										<form method="post" action="?/moveArea" use:enhance class="contents">
+											<input type="hidden" name="id" value={area.id} />
+											<input type="hidden" name="delta" value="-1" />
+											<button
+												class="icon-btn"
+												disabled={index === 0}
+												title={t('goals.moveAreaEarlier', { name: area.name })}
+												aria-label={t('goals.moveAreaEarlier', { name: area.name })}
+											>
+												<Icon name="chevron-up" />
+											</button>
+										</form>
+										<form method="post" action="?/moveArea" use:enhance class="contents">
+											<input type="hidden" name="id" value={area.id} />
+											<input type="hidden" name="delta" value="1" />
+											<button
+												class="icon-btn"
+												disabled={index === data.areas.length - 1}
+												title={t('goals.moveAreaLater', { name: area.name })}
+												aria-label={t('goals.moveAreaLater', { name: area.name })}
+											>
+												<Icon name="chevron-down" />
+											</button>
+										</form>
+										<button
+											type="button"
+											class="icon-btn"
+											title={t('ui.rename')}
+											aria-label={t('goals.renameArea', { name: area.name })}
+											onclick={() => {
+												removingArea = null;
+												renamingArea = area.id;
+											}}
+										>
+											<Icon name="edit" />
+										</button>
+										<button
+											type="button"
+											class="icon-btn icon-btn-danger"
+											title={t('ui.remove')}
+											aria-label={t('ui.remove')}
+											onclick={() => (removingArea = area.id)}
+										>
+											<Icon name="trash" />
+										</button>
+									{/if}
+								</div>
+							{/if}
+						</div>
+					{/each}
+				</div>
+			{:else}
+				<EmptyState icon="tag" title={t('goals.noAreasYet')} compact />
+			{/if}
+
+			<form
+				id="area-form"
+				method="post"
+				action="?/createArea"
+				use:enhance={() =>
+					async ({ update }) =>
+						update({ reset: true })}
+				class="mt-4"
+			>
+				<FormGrid>
+					<Field label={t('goals.newArea')} span={8}>
+						<OneLine name="label" placeholder={t('goals.eGFitness')} class="input" required />
+					</Field>
+					<Field label={t('ui.colour')} span={4}>
+						<input
+							name="color"
+							type="color"
+							value={CATEGORY_FALLBACK_COLOR}
+							class="input h-9 p-1"
 						/>
-					{/if}
-					{#if data.goals.length > 0}
+					</Field>
+				</FormGrid>
+			</form>
+
+			{#snippet footer()}
+				<button type="button" class="btn" onclick={() => (showAreas = false)}>{t('ui.done')}</button
+				>
+				<button type="submit" form="area-form" class="btn btn-primary">{t('goals.addArea')}</button>
+			{/snippet}
+		</Modal>
+
+		<Modal
+			bind:open={showForm}
+			error={form?.message}
+			title={editingId ? t('goals.editGoal') : t('goals.newGoal')}
+			onclose={() => (editingId = null)}
+		>
+			<form
+				id="goal-form"
+				method="post"
+				action={editingId ? '?/update' : '?/create'}
+				use:enhance={() =>
+					async ({ result, update }) => {
+						await update({ reset: false });
+						if (result.type === 'success') {
+							showForm = false;
+							editingId = null;
+						}
+					}}
+			>
+				{#if editingId}
+					<input type="hidden" name="id" value={editingId} />
+				{/if}
+
+				<GoalFields
+					{editing}
+					{editingId}
+					bind:horizon={formHorizon}
+					bind:start={formStart}
+					bind:targets={formTargets}
+					period={formPeriod}
+					areas={data.areas}
+					notebooks={data.notebooks}
+					workoutMeasures={data.workoutMeasures}
+					{parentOptions}
+					{knownUnits}
+					{startingNotebook}
+				/>
+			</form>
+
+			{#snippet footer()}
+				<button type="button" class="btn" onclick={() => (showForm = false)}
+					>{t('ui.cancel')}</button
+				>
+				<button type="submit" form="goal-form" class="btn btn-primary">
+					{editingId ? t('ui.save') : t('goals.createGoal')}
+				</button>
+			{/snippet}
+		</Modal>
+
+		{#snippet card(goal: Goal)}
+			<GoalCard
+				{goal}
+				goals={data.goals}
+				allTodos={data.allTodos}
+				slots={data.slots}
+				activities={data.activities}
+				actions={GOAL_ROOM_ACTIONS}
+				onedit={(id) => {
+					const one = data.goals.find((g) => g.id === id);
+					if (one) openEdit(one);
+				}}
+				onlink={(id) => (linkingId = id)}
+				selected={cursorShown && goal.id === cursorId}
+			/>
+		{/snippet}
+
+		<RoomSurface dataTour="goal-list">
+			{#snippet tools()}
+				<FilterBar
+					name="goals"
+					inlineBelow
+					on={narrowed || data.includeClosed}
+					{summary}
+					onclear={clearFilters}
+				>
+					{#snippet lead()}
+						<SearchField bind:value={looking} label={t('goals.searchGoals')} />
+					{/snippet}
+					<!-- Managing the areas is not narrowing the list, so it stands at the
+				     far end of the strip, where another room keeps its order. -->
+					{#snippet verb()}
+						<StripVerb
+							icon="sliders"
+							label={t('goals.areas')}
+							onclick={() => (showAreas = true)}
+							data-tour="goal-areas"
+						/>
+					{/snippet}
+					{#snippet count()}
+						<!-- Held open by the whole list's count, so narrowing it moves nothing. -->
+						<ShowingCount
+							total={data.goals.length}
+							shown={visible.length}
+							said={(count) => t('goals.showingCount', { count })}
+						/>
+					{/snippet}
+					{#snippet trailing()}
+						<SortControl
+							value={order}
+							options={ORDERS}
+							labels={ORDER_LABELS}
+							{direction}
+							onpick={(next) => {
+								order = next;
+								keepOrder();
+							}}
+							onflip={() => {
+								direction = direction === 'asc' ? 'desc' : 'asc';
+								keepOrder();
+							}}
+							label={t('goals.orderGoalsBy')}
+						/>
+					{/snippet}
+					<!-- Two filters: out on the strip at every width, not a sheet of two. -->
+					{#snippet inline()}
+						{#if data.areas.length > 0}
+							<Picker
+								value={areaFilter === null ? ALL_AREAS : String(areaFilter)}
+								options={areaOptions}
+								onpick={(next) => (areaFilter = next === ALL_AREAS ? null : Number(next))}
+								label={t('goals.area')}
+								class="sm:w-36"
+							/>
+						{/if}
+						<!-- One label either way, with the number of goals it puts away. -->
 						<button
 							type="button"
-							class="btn btn-sm"
+							class="btn btn-sm shrink-0"
 							aria-pressed={data.includeClosed}
 							onclick={toggleClosed}
+							hidden={data.closedCount === 0 && !data.includeClosed}
 						>
-							<Icon name="archive" size={14} />
-							{t('goals.showClosed')}
-						</button>
-						<button
-							type="button"
-							onclick={() => (showAreas = true)}
-							class="btn btn-sm btn-quiet ml-auto"
-							data-tour="goal-areas"
-						>
-							<Icon name="tag" size={14} />
-							{t('goals.areas')}
-						</button>
-					{/if}
-				{/snippet}
-			</RoomToolbar>
-		</div>
-	{/if}
-
-	<FormError message={form?.message} />
-
-	<Modal
-		bind:open={showAreas}
-		error={form?.message}
-		title={t('goals.areas')}
-		description={t('goals.fitnessStudyMoney')}
-		size="sm"
-	>
-		{#if data.areas.length > 0}
-			<div class="divide-y divide-gray-200 border border-gray-200">
-				{#each data.areas as area (area.id)}
-					<div class="flex items-center gap-3 px-3 py-2">
-						<Swatch color={area.color} shape="tall" />
-						<span class="flex-1 text-sm text-gray-900">{area.name}</span>
-						<form method="post" action="?/deleteArea" use:enhance>
-							<input type="hidden" name="id" value={area.id} />
-							<button class="btn btn-quiet btn-sm"><Icon name="trash" /> {t('ui.remove')}</button>
-						</form>
-					</div>
-				{/each}
-			</div>
-		{:else}
-			<EmptyState icon="tag" title={t('goals.noAreasYet')} compact />
-		{/if}
-
-		<form
-			id="area-form"
-			method="post"
-			action="?/createArea"
-			use:enhance={() =>
-				async ({ update }) =>
-					update({ reset: true })}
-			class="mt-4"
-		>
-			<FormGrid>
-				<Field label={t('goals.newArea')} span={8}>
-					<OneLine name="label" placeholder={t('goals.eGFitness')} class="input" required />
-				</Field>
-				<Field label={t('ui.colour')} span={4}>
-					<input name="color" type="color" value="#6b7280" class="input h-9 p-1" />
-				</Field>
-			</FormGrid>
-		</form>
-
-		{#snippet footer()}
-			<button type="button" class="btn" onclick={() => (showAreas = false)}>{t('ui.done')}</button>
-			<button type="submit" form="area-form" class="btn btn-primary">{t('goals.addArea')}</button>
-		{/snippet}
-	</Modal>
-
-	<Modal
-		bind:open={showForm}
-		error={form?.message}
-		title={editingId ? t('goals.editGoal') : t('goals.newGoal')}
-		onclose={() => (editingId = null)}
-	>
-		<form
-			id="goal-form"
-			method="post"
-			action={editingId ? '?/update' : '?/create'}
-			use:enhance={() =>
-				async ({ result, update }) => {
-					await update({ reset: false });
-					if (result.type === 'success') {
-						showForm = false;
-						editingId = null;
-					}
-				}}
-		>
-			{#if editingId}
-				<input type="hidden" name="id" value={editingId} />
-			{/if}
-
-			<GoalFields
-				{editing}
-				{editingId}
-				bind:horizon={formHorizon}
-				bind:start={formStart}
-				bind:targets={formTargets}
-				period={formPeriod}
-				areas={data.areas}
-				notebooks={data.notebooks}
-				workoutMeasures={data.workoutMeasures}
-				{parentOptions}
-				{knownUnits}
-				{startingNotebook}
-			/>
-		</form>
-
-		{#snippet footer()}
-			<button type="button" class="btn" onclick={() => (showForm = false)}>{t('ui.cancel')}</button>
-			<button type="submit" form="goal-form" class="btn btn-primary">
-				{editingId ? 'Save' : t('goals.createGoal')}
-			</button>
-		{/snippet}
-	</Modal>
-
-	{#if visible.length === 0 && !showForm}
-		<div class="border border-gray-200 bg-white shadow-card">
-			{#if data.goals.length === 0}
-				<EmptyState
-					icon="goals"
-					title={t('goals.noGoalsYet')}
-					description={t('goals.aGoalIsACommitment')}
-				>
-					{#snippet action()}
-						<button onclick={() => openCreate()} class="btn btn-primary">
-							<Icon name="plus" />
-							{t('goals.newGoal')}
+							{t('goals.closedCount', { count: data.closedCount })}
 						</button>
 					{/snippet}
-				</EmptyState>
+				</FilterBar>
+			{/snippet}
+
+			{#if visible.length === 0}
+				{#if narrowed}
+					<EmptyState
+						icon="search"
+						title={t('goals.noGoalsMatch')}
+						description={t('goals.noneOfTheseMatch', { count: data.goals.length })}
+					>
+						{#snippet action()}
+							<button onclick={clearFilters} class="btn btn-sm">{t('filters.clear')}</button>
+						{/snippet}
+					</EmptyState>
+				{:else}
+					<EmptyState
+						icon="goals"
+						title={t('goals.noGoalsYet')}
+						description={t('goals.aGoalIsACommitment')}
+					/>
+				{/if}
 			{:else}
-				<EmptyState icon="goals" title={t('goals.noGoalsInThisArea')}>
-					{#snippet action()}
-						<button onclick={() => (areaFilter = null)} class="btn"
-							>{t('goals.showEveryArea')}</button
-						>
-					{/snippet}
-				</EmptyState>
-			{/if}
-		</div>
-	{/if}
-
-	{#snippet card(goal: Goal)}
-		<GoalCard
-			{goal}
-			goals={data.goals}
-			allTodos={data.allTodos}
-			slots={data.slots}
-			activities={data.activities}
-			actions={GOAL_ROOM_ACTIONS}
-			{accent}
-			onedit={(id) => {
-				const one = data.goals.find((g) => g.id === id);
-				if (one) openEdit(one);
-			}}
-			onlink={(id) => (linkingId = id)}
-			selected={cursorShown && goal.id === cursorId}
-		/>
-	{/snippet}
-
-	<!--
-		No strip of page between two groups on a phone.
-
-		Each horizon is a card, and on a phone the cards are the page — a band
-		of background between MONTH and QUARTER reads as a trench rather than
-		as a boundary. The gap comes back at desktop width, where a card is an
-		object on a page again.
-	-->
-	<div class="space-y-0 sm:space-y-4" data-tour="goal-list">
-		{#each byHorizon as column (column.horizon)}
-			<section
-				class="card-accent border border-gray-200 bg-white shadow-card"
-				style="--card-accent: {accent}"
-			>
-				<div class="flex items-center justify-between border-b border-b-gray-200 px-4 py-2">
-					<span class="eyebrow text-gray-600">{t(HORIZON_LABELS[column.horizon])}</span>
-					<span class="tabular text-xs text-gray-500">{column.goals.length}</span>
-				</div>
-
-				<div class="divide-y divide-gray-200">
-					{#each column.loose as goal (goal.id)}
-						{@render card(goal)}
-					{/each}
-
-					{#if column.goals.length === 0}
-						<p class="px-4 py-3 text-xs text-gray-500">{t('goals.nothingAtThisHorizon')}</p>
-					{/if}
-				</div>
-
 				<!--
-					A notebook's own goals, under a rule with its name on it, so the
-					list says which of these are about a subject and which are not.
-					The name is a link: the notebook is where the rest of it is.
-				-->
-				{#each column.filed as book (book.id)}
-					<div class="notebook-rule border-t-2 border-gray-300 pt-2">
-						<a
-							href={resolve('/notebooks/[id]', { id: String(book.id) })}
-							class="eyebrow flex items-center gap-1.5 px-4 text-gray-600 hover:text-gray-900"
-						>
-							<Icon name="notebook" size={12} />
-							{book.title}
-						</a>
-						<div class="mt-1 divide-y divide-gray-200">
-							{#each book.goals as goal (goal.id)}
-								{@render card(goal)}
-							{/each}
-						</div>
-					</div>
-				{/each}
-			</section>
-		{/each}
+				One band per group, headed the way the review heads its days: a quiet
+				band with the name and how many, the rows edge to edge under it. A
+				notebook's own goals get the same band, naming the horizon and the
+				notebook — the name is a link, since the notebook holds the rest.
+			-->
+				<div class="divide-y divide-gray-200">
+					{#each groups as group (`${group.horizon}:${group.notebook?.id ?? ''}`)}
+						{@const headId = `goals-${group.horizon}-${group.notebook?.id ?? 'loose'}`}
+						<section aria-labelledby={headId}>
+							<h2
+								id={headId}
+								class="eyebrow flex items-center gap-2 border-b border-gray-200 bg-gray-50 px-4 py-1.5 text-gray-600"
+							>
+								<span>{t(HORIZON_LABELS[group.horizon])}</span>
+								{#if group.notebook}
+									<span aria-hidden="true">·</span>
+									<a
+										href={resolve('/notebooks/[id]', { id: String(group.notebook.id) })}
+										class="inline-flex min-w-0 items-center gap-1 hover:text-gray-900 hover:underline"
+									>
+										<Icon name="notebook" size={12} />
+										<span class="truncate">{group.notebook.title}</span>
+									</a>
+								{/if}
+								<span class="tabular ml-auto">{group.goals.length}</span>
+							</h2>
+							<div class="divide-y divide-gray-200">
+								{#each group.goals as goal (goal.id)}
+									{@render card(goal)}
+								{/each}
+							</div>
+						</section>
+					{/each}
+				</div>
+			{/if}
+		</RoomSurface>
+
+		<GoalLinksModal
+			goal={linking}
+			activities={data.activities}
+			slots={data.slots}
+			todos={data.todos}
+			allTodos={data.allTodos}
+			action={GOAL_ROOM_ACTIONS.setLinks}
+			error={form?.message}
+			onclose={() => (linkingId = null)}
+		/>
 	</div>
-
-	<GoalLinksModal
-		goal={linking}
-		activities={data.activities}
-		slots={data.slots}
-		todos={data.todos}
-		allTodos={data.allTodos}
-		action={GOAL_ROOM_ACTIONS.setLinks}
-		error={form?.message}
-		onclose={() => (linkingId = null)}
-	/>
-</div>
-
-<style>
-	/* A rule across the card, not the top of a box: square at both ends. */
-	.notebook-rule {
-		border-radius: 0;
-	}
-</style>
+</TabbedRoom>

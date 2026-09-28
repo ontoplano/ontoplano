@@ -32,7 +32,9 @@ async function openIt(page: Page, title: string) {
 		.getByRole('link', { name: new RegExp(title) })
 		.first()
 		.getAttribute('href');
-	const id = (href ?? '').split('=')[1] ?? '';
+	// Which address a cover links to depends on the width — its own page on a
+	// phone, `?notebook=` beside the shelf — so the id is read from either.
+	const id = (href ?? '').match(/(?:notebook=|\/notebooks\/)(\d+)/)?.[1] ?? '';
 	await visit(page, `/notebooks/${id}`);
 }
 
@@ -98,6 +100,10 @@ test('on the shelf, the title and description get the width and the description 
 	 * buttons the tab below offers: three of them wrapped on their own at
 	 * 390px, and it took a phone held a little wider to leave them on the
 	 * title's line.
+	 *
+	 * The title shares its line with two icons now — Open and the labels, in
+	 * the corner — so it gets the line less those, and never the one-word
+	 * column this was written against. The description under it gets all of it.
 	 */
 	for (const width of [390, 480]) {
 		await page.setViewportSize({ width, height: 844 });
@@ -105,7 +111,7 @@ test('on the shelf, the title and description get the width and the description 
 			.poll(async () => (await heading.boundingBox())?.width ?? 0, {
 				message: `title at ${width}px`
 			})
-			.toBeGreaterThan(200);
+			.toBeGreaterThan(150);
 		expect((await paragraph.boundingBox())?.width ?? 0).toBeGreaterThan(200);
 	}
 	await page.setViewportSize({ width: 390, height: 844 });

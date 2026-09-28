@@ -31,7 +31,7 @@ test('the picker shows everything first, then narrows as you type', async ({ pag
 	test.setTimeout(150_000);
 	await register(page, testEmail('picker'));
 	await visit(page, '/tasks/plan?view=week');
-	await page.getByRole('button', { name: 'New block' }).click();
+	await page.getByRole('button', { name: 'New task block' }).click();
 
 	const box = page.getByRole('combobox', { name: 'Activity' });
 	await expect(box).toBeVisible();
@@ -63,7 +63,7 @@ test('it works from the keyboard alone, and Escape lets go', async ({ page }) =>
 	test.setTimeout(150_000);
 	await register(page, testEmail('picker-keys'));
 	await visit(page, '/tasks/plan?view=week');
-	await page.getByRole('button', { name: 'New block' }).click();
+	await page.getByRole('button', { name: 'New task block' }).click();
 
 	const box = page.getByRole('combobox', { name: 'Activity' });
 	await box.focus();
@@ -83,14 +83,14 @@ test('it works from the keyboard alone, and Escape lets go', async ({ page }) =>
 	await expect(box).toHaveValue(taken);
 
 	// And Escape on the picker did not also close the form under it.
-	await expect(page.getByRole('button', { name: /Add repeating block/ })).toBeVisible();
+	await expect(page.getByRole('button', { name: /Add repeating task block/ })).toBeVisible();
 });
 
 test('a query that matches nothing says so rather than showing an empty box', async ({ page }) => {
 	test.setTimeout(150_000);
 	await register(page, testEmail('picker-empty'));
 	await visit(page, '/tasks/plan?view=week');
-	await page.getByRole('button', { name: 'New block' }).click();
+	await page.getByRole('button', { name: 'New task block' }).click();
 
 	const box = page.getByRole('combobox', { name: 'Activity' });
 	await box.click();

@@ -7,14 +7,9 @@ import type { PlainKey } from '$lib/i18n/keys';
  */
 import type { Pathname } from '$app/types';
 import type { IconName } from '$lib/components/Icon.svelte';
-import {
-	isHidden,
-	isHideableSection,
-	ROOM_TABS,
-	tabGlyph,
-	type HideableSection
-} from '$lib/sections';
+import { isHidden, isHideableSection, ROOM_TABS, type HideableSection } from '$lib/sections';
 import { NAV_PLACES } from '$lib/sections-nav';
+import { SETTINGS_ROUTES } from '$lib/settings-tabs';
 import type { Translate } from '$lib/i18n/core';
 
 export type Destination = {
@@ -34,6 +29,16 @@ export type Destination = {
 };
 
 /**
+ * The places that belong to the shell rather than to a room, and what
+ * they wear. Declared here with the rest of the places; `$lib/glyphs` reads it.
+ */
+export const SHELL_ROUTES = {
+	'/': 'home',
+	'/search': 'search',
+	'/settings': 'settings'
+} as const satisfies Record<string, IconName>;
+
+/**
  * The places that are not rooms of the bar: settings, reached from the account
  * menu rather than the wheel.
  */
@@ -42,21 +47,21 @@ const OUTSIDE_THE_ROOMS: Destination[] = [
 		label: 'app.account',
 		group: 'rooms.settings.title',
 		href: '/settings/account',
-		icon: 'settings',
+		icon: SETTINGS_ROUTES['/settings/account'],
 		hide: []
 	},
 	{
 		label: 'app.preferences',
 		group: 'rooms.settings.title',
 		href: '/settings/preferences',
-		icon: 'settings',
+		icon: SETTINGS_ROUTES['/settings/preferences'],
 		hide: []
 	},
 	{
 		label: 'app.integrations',
 		group: 'rooms.settings.title',
 		href: '/settings/integrations',
-		icon: 'plug',
+		icon: SETTINGS_ROUTES['/settings/integrations'],
 		hide: []
 	}
 ];
@@ -68,7 +73,7 @@ const OUTSIDE_THE_ROOMS: Destination[] = [
  * Media, and Inventory's two tabs as one entry.
  */
 export const DESTINATIONS: Destination[] = [
-	{ label: 'app.today', href: '/', icon: 'home', hide: [] },
+	{ label: 'app.today', href: '/', icon: SHELL_ROUTES['/'], hide: [] },
 	...NAV_PLACES.flatMap((place): Destination[] => {
 		const room = place.hide ? [place.hide] : [];
 		const tabs = ROOM_TABS[place.key];
@@ -78,7 +83,7 @@ export const DESTINATIONS: Destination[] = [
 			label: tab.label,
 			group: place.name,
 			href: tab.href,
-			icon: tabGlyph(tab, place.key) ?? place.icon,
+			icon: tab.glyph,
 			hide: tab.id && isHideableSection(tab.id) ? [...room, tab.id] : room
 		}));
 	}),

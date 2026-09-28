@@ -86,7 +86,7 @@
 					x={cx}
 					y={FLOOR + 25}
 					text-anchor="middle"
-					class="fill-gray-400 text-[9px]"
+					class="fill-gray-500 text-[9px]"
 					style="font-variant-numeric: tabular-nums"
 				>
 					{monthTotals[i] === 0 ? '' : formatMoney(monthTotals[i], currency)}

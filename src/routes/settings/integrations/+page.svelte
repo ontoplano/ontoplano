@@ -1,8 +1,15 @@
 <script lang="ts">
+	import { useWhen } from '$lib/when-context.svelte';
+	import { momentOf } from '$lib/when';
 	import { enhance } from '$lib/enhance';
 	import Icon from '$lib/components/Icon.svelte';
 	import { resolve } from '$app/paths';
-	import Card from '$lib/components/Card.svelte';
+	import RoomSurface from '$lib/components/RoomSurface.svelte';
+	import SettingGroup from '$lib/components/SettingGroup.svelte';
+	import SettingRow from '$lib/components/SettingRow.svelte';
+	import FormGrid from '$lib/components/FormGrid.svelte';
+	import Field from '$lib/components/Field.svelte';
+	import { sliding } from '$lib/actions/sliding';
 	import ChatSettings from '$lib/components/ChatSettings.svelte';
 	import { CHAT_IN_APP } from '$lib/features';
 	import Modal from '$lib/components/Modal.svelte';
@@ -17,6 +24,7 @@
 	import { useT } from '$lib/i18n';
 
 	const t = useT();
+	const now = useWhen();
 
 	/**
 	 * Letting an assistant use this account, for somebody who has never heard
@@ -205,6 +213,12 @@ bearer_token_env_var = "ONTOPLANO_KEY"
 
 	let using = $state('words');
 	const chosen = $derived(clients.find((c) => c.id === using) ?? clients[0]);
+	/* One assistant's answer as blocks: Claude's three ways, or the one snippet. */
+	const blocks = $derived(
+		chosen.ways ?? [
+			{ name: '', note: chosen.note ?? '', wrap: chosen.wrap, text: chosen.text ?? '' }
+		]
+	);
 
 	/** One legible line per call: whatever names the thing, never the raw JSON. */
 	function callLine(one: {
@@ -224,310 +238,61 @@ bearer_token_env_var = "ONTOPLANO_KEY"
 	<FormError message={form?.message} />
 
 	<!--
-		What this is, before how to do it.
-
-		Nobody arrives here knowing what MCP is, and they do not need to: the
-		thing being offered is that an assistant they already talk to can read
-		and change what is in this app. The protocol's name appears once, where
-		somebody who does know it will look for it.
-	-->
-	<!--
-		The chat first, because it is the thing somebody came here to use.
-
-		It had a tab of its own beside this one until the tabs read as three
-		rooms where there were two: what the chat runs on is a setting of this
-		page. Everything below is how something OUTSIDE the app reaches in.
+		The chat first, because it is the thing somebody came here to use. What
+		the chat runs on is a setting of this page; everything below is how
+		something OUTSIDE the app reaches in.
 	-->
 	{#if CHAT_IN_APP}
 		<ChatSettings {data} {form} />
 	{/if}
 
-	<Card
-		title={t('settings.integrations.letAnAiAssistantUse')}
-		description={t('settings.integrations.yourWeekToDoListDiary')}
-	>
-		<!--
-			Said, not hidden.
-
-			An instance on a phone cannot do this, and the temptation is to drop
-			the card. But somebody who installed the app from a store has no other
-			way to learn that this exists at all, and a feature nobody can see is a
-			feature nobody asks for. So it stays, greyed, with the reason and both
-			ways round it — ours is not the only one.
-		-->
-		{#if assistantsWhyNot}
-			<div class="mb-4"><Banner kind="info" message={assistantsWhyNot} /></div>
-		{/if}
-		<div class:opacity-60={assistantsWhyNot} class:pointer-events-none={assistantsWhyNot}>
+	<!-- One surface, a subject per band, a setting per row — the shape every
+	     settings screen shares. See `SettingGroup` and `SettingRow`. -->
+	<RoomSurface>
+		<SettingGroup
+			title={t('settings.integrations.letAnAiAssistantUse')}
+			description={t('settings.integrations.yourWeekToDoListDiary')}
+		>
 			<!--
-			Room to read.
+				Said, not hidden.
 
-			Everything here was text-sm at a tight leading, stacked, and stretched
-			across the whole of a wide screen — a line of prose nineteen hundred
-			pixels long, under a heading four pixels above it. It said "this is
-			going to be difficult" before anybody had read a word of it. The steps
-			are far enough apart to be two things, the type is the size the rest of
-			the app reads at, and a paragraph stops at a length an eye can track
-			back from. The card still uses the width; only the sentences stop.
-		-->
-			<div class="space-y-8">
-				<!-- Step one. -->
-				<div>
-					<h3 class="text-base font-semibold text-gray-900">
-						{t('settings.integrations.1MakeAKey')}
-					</h3>
-					<p class="mt-2 max-w-2xl text-sm leading-relaxed text-gray-500">
-						{t('settings.integrations.aKeyIsThePassword')}
-					</p>
-
-					<!--
-					Making a key is a question, so it is asked in a dialog.
-
-					It was a form that took the button's place on the page — which
-					meant answering it while the rest of the screen scrolled past
-					underneath, and reaching the button that finishes it by going back
-					up through everything it asks.
-				-->
-					<button
-						type="button"
-						class="btn btn-sm mt-2"
-						aria-haspopup="dialog"
-						onclick={() => (naming = true)}
-					>
-						<Icon name="plus" size={16} />
-						{t('settings.integrations.createAKey')}
-					</button>
-
-					<Modal
-						bind:open={naming}
-						title={t('settings.integrations.createAKey')}
-						description={t('settings.integrations.aKeyIsThePassword')}
-						size="lg"
-					>
-						<form
-							id="new-key"
-							method="post"
-							action="?/createKey"
-							use:enhance={() => {
-								return async ({ update }) => {
-									naming = false;
-									await update();
-								};
-							}}
-							class="mt-2 flex flex-wrap items-center gap-2"
-						>
-							<!--
-							The warning, here rather than on the page above.
-
-							It is about a secret that does not exist yet, so it reads as
-							scolding somebody who has not done anything — until the moment
-							they are about to make one, which is this one.
-						-->
-							<p class="w-full text-sm font-semibold text-red-600">
-								{t('settings.integrations.doNotShareItWith')}
-							</p>
-
-							<!--
-							What it may do, ticked and changeable.
-
-							Every box is on to begin with, because the whole set is what an
-							assistant uses and choosing between eleven of them is not a
-							decision most people arrive here able to make. It is still their
-							decision: somebody who would rather an assistant never saw their
-							diary unticks that one and everything else still works.
-
-							The three grants an assistant has no use for — declaring a plugin,
-							managing webhooks, handing out a calendar address — are not on
-							this list. Deleting is: its own box under the table, unticked,
-							because it is the one grant that should be given on purpose. The
-							Integrations tab has the wider form, with every permission and an
-							expiry, for a key meant to run a script.
-						-->
-
-							<!--
-							What it may work on, before what it may do.
-
-							The narrower answer is the one people actually want — "work on
-							this project with me" — and it decides which of the boxes below
-							mean anything at all.
-						-->
-							<div class="w-full max-w-md">
-								<KeyReach choices={data.reach} bind:kind={tiedTo} bind:id={tiedId} />
-							</div>
-
-							<fieldset class="w-full">
-								<legend class="eyebrow text-gray-600"
-									>{t('settings.integrations.whatItMayDo')}</legend
-								>
-								<p class="mt-1 mb-3 max-w-2xl text-xs leading-relaxed text-gray-500">
-									{t('settings.integrations.allOfItUnlessYou')}
-								</p>
-
-								<!--
-								A grid, not a column of sentences.
-
-								Every grant is a thing and a verb, and written out as twenty-six
-								full sentences it was a wall nobody would read — which is the same
-								as not showing it at all. One row per thing, one column each for
-								reading and writing, and a disabled box where the pair does not
-								exist: the shape of what is being handed over is legible in a
-								glance down two columns. The sentence is still on the row, as its
-								title, for anybody who wants the detail.
-							-->
-								<div class="max-w-md overflow-x-auto">
-									<table class="w-full text-sm">
-										<thead>
-											<tr class="border-b border-gray-200">
-												<th class="py-1 text-left font-normal text-gray-500"></th>
-												<th class="eyebrow w-16 py-1 text-center text-gray-600"
-													>{t('settings.integrations.read')}</th
-												>
-												<th class="eyebrow w-16 py-1 text-center text-gray-600"
-													>{t('settings.integrations.write')}</th
-												>
-											</tr>
-										</thead>
-										<tbody class="divide-y divide-gray-200">
-											{#each data.permissions as row (row.subject)}
-												<!--
-												A row a confinement cannot reach is drawn faint, not removed.
-
-												Taking it off the table would make the list jump about as
-												somebody changes their mind, and would hide the fact that the
-												narrowing is what put it out of reach. Faint and unticked says
-												the same thing and stays in place.
-											-->
-												<tr class={reaches(row.read ?? row.write) ? '' : 'opacity-40'}>
-													<td class="py-1.5 text-gray-700" title={row.says.join('\n')}
-														>{row.label}</td
-													>
-													{#each [row.read, row.write] as scope, i (i)}
-														<td class="py-1.5 text-center">
-															<!--
-															A box that is not offered is drawn anyway, disabled: an
-															empty cell reads as a column that ran out, and the
-															question "can it write to this?" deserves the answer
-															"no, never" rather than no answer.
-														-->
-															{#if scope && reaches(scope)}
-																<input
-																	type="checkbox"
-																	name="scopes"
-																	value={scope}
-																	checked
-																	aria-label="{row.label}: {i === 0 ? t('ui.read') : t('ui.write')}"
-																/>
-															{:else if scope}
-																<input
-																	type="checkbox"
-																	disabled
-																	aria-label={t('settings.integrations.outsideWhat', {
-																		label: row.label,
-																		write: i === 0 ? 'read' : 'write'
-																	})}
-																/>
-															{:else}
-																<input
-																	type="checkbox"
-																	disabled
-																	aria-label={t('settings.integrations.notSomething', {
-																		label: row.label,
-																		write: i === 0 ? 'read' : 'write'
-																	})}
-																/>
-															{/if}
-														</td>
-													{/each}
-												</tr>
-											{/each}
-										</tbody>
-									</table>
-								</div>
-
-								<!--
-								Deleting, apart from the rest and unticked.
-
-								It is not another column: removing a person or a habit's whole
-								history is a different kind of thing from writing to it, and the
-								one answer somebody should have to reach for rather than opt out
-								of. Red on its own ground, which is the app's colour for a thing
-								that goes wrong.
-							-->
-								<label
-									class="mt-3 flex max-w-md items-start gap-2 border border-red-200 bg-red-50 px-3 py-2 text-sm text-gray-700"
-								>
-									<input type="checkbox" name="scopes" value="destructive" class="mt-0.5" />
-									<span>
-										<strong class="font-semibold text-red-600"
-											>{t('settings.integrations.andLetItDeleteThings')}</strong
-										>
-										<span class="mt-0.5 block text-xs leading-relaxed text-gray-500">
-											{t('settings.integrations.removingIsPermanentWithoutThis')}
-										</span>
-									</span>
-								</label>
-							</fieldset>
-
-							<!--
-							Naming it and making it, last.
-
-							These were under the warning at the top, which put the button
-							that submits the form above every question the form asks — so
-							answering them meant scrolling down to read, back up to name it,
-							and down again to check. What a thing is called is the last
-							thing you decide about it anyway.
-						-->
-							<div class="mt-4 flex w-full flex-wrap items-center gap-2">
-								<!-- Named after what it is tied to, when it is tied to
-								     something: a list of keys called "AI assistant" is a list
-								     nobody can revoke the right one from. -->
-								<OneLine
-									name="label"
-									placeholder={tiedName || t('settings.integrations.aiAssistant')}
-									class="input w-auto flex-1 sm:max-w-64"
-									ariaLabel="What to call this key"
-									required
-								/>
-								<button class="btn btn-primary btn-sm" type="submit"
-									>{t('settings.integrations.createIt')}</button
-								>
-								<button type="button" class="btn btn-sm btn-quiet" onclick={() => (naming = false)}>
-									{t('ui.cancel')}
-								</button>
-							</div>
-						</form>
-					</Modal>
-
-					<!--
-						The count and the way to them, and nothing else.
-
-						It used to carry the warning about a secret being shown once, which
-						put a caution about something that has already happened in front of
-						somebody who has not done anything yet. That warning belongs to the
-						moment a key exists, and it is there.
-					-->
+				An instance on a phone cannot do this, and the temptation is to drop
+				the section. But somebody who installed the app from a store has no
+				other way to learn that this exists at all. So it stays, greyed, with
+				the reason and both ways round it.
+			-->
+			{#if assistantsWhyNot}
+				<div class="px-4 py-3"><Banner kind="info" message={assistantsWhyNot} /></div>
+			{/if}
+			<div
+				class="divide-y divide-gray-200"
+				class:opacity-60={assistantsWhyNot}
+				class:pointer-events-none={assistantsWhyNot}
+			>
+				<!-- Step one: the key. Making one is a question, so it is asked in a
+				     dialog rather than in a form that takes the button's place. -->
+				<SettingRow
+					label={t('settings.integrations.1MakeAKey')}
+					hint={t('settings.integrations.aKeyIsThePassword')}
+				>
 					{#if data.assistants.length > 0}
-						<!-- The count belongs to the link, not to a sentence in front of
-							     it: "you already have 4" and "see them here" are one thing to
-							     press and were two things to read. -->
-						<p class="mt-3 max-w-2xl text-sm leading-relaxed text-gray-500">
+						<!-- The count belongs to the link: "you already have 4" and "see
+						     them here" are one thing to press. -->
+						<p class="mt-1 text-sm text-gray-500">
 							<a
 								href={resolve('/settings/integrations/connections')}
 								class="underline underline-offset-2"
-								>{t('settings.integrations.seeYourKeys', {
-									count: data.assistants.length
-								})}</a
+								>{t('settings.integrations.seeYourKeys', { count: data.assistants.length })}</a
 							>
 						</p>
 					{/if}
-
 					{#if key}
 						<!--
-						Shown once, and said so twice: it is not recoverable, and the
-						pasteable things below already have it in them, so the common case
-						needs nothing copied from here at all.
-					-->
-						<div class="mt-3 border border-gray-300 bg-gray-50 p-3">
+							Shown once, and said so: it is not recoverable, and the pasteable
+							things below already have it in them, so the common case needs
+							nothing copied from here at all.
+						-->
+						<div class="mt-3 max-w-3xl border border-gray-300 bg-gray-50 p-3">
 							<span class="eyebrow block text-gray-600"
 								>{t('settings.integrations.yourNewKey')}</span
 							>
@@ -542,133 +307,124 @@ bearer_token_env_var = "ONTOPLANO_KEY"
 							</p>
 						</div>
 					{/if}
-				</div>
+					{#snippet control()}
+						<button
+							type="button"
+							class="btn btn-sm"
+							aria-haspopup="dialog"
+							onclick={() => (naming = true)}
+						>
+							<Icon name="plus" />
+							{t('settings.integrations.createAKey')}
+						</button>
+					{/snippet}
+				</SettingRow>
 
 				<!--
-				Step two: the paste, and only the paste.
+					Step two: the paste, and only the paste.
 
-				The command used to be first, under "Using Claude Code?", which asked
-				somebody to know what they were using before they knew what they were
-				doing. Pasting these words is the path that needs nothing explained: an
-				assistant with a terminal reads the address and the key and sets itself
-				up. Everything that cannot do that — a chat window, an editor — needs a
-				configuration file edited, which is a page of its own and lives in the
-				docs.
-			-->
-				<div>
-					<h3 class="text-base font-semibold text-gray-900">
-						{t('settings.integrations.2HandItTo')}
-					</h3>
-					<p class="mt-2 max-w-2xl text-sm leading-relaxed text-gray-500">
-						{t('settings.integrations.whichOneAreYouUsing')}
-					</p>
-
-					<!--
-					The picker, and the text under it changing with it.
-
-					A row of names rather than a select: there are five, they are short,
-					and what is being chosen changes what is on screen — which is a set
-					of tabs, not a form field.
+					An assistant with a terminal reads the address and the key and sets
+					itself up; everything that cannot — a chat window, an editor — needs
+					a configuration file edited, which is a page of its own in the docs.
 				-->
-					<div class="mt-2 flex flex-wrap gap-1">
+				<SettingRow
+					wide
+					label={t('settings.integrations.2HandItTo')}
+					hint={t('settings.integrations.whichOneAreYouUsing')}
+				>
+					<!--
+						Buttons that press in, in the one segmented control: a tab role
+						promises a tabpanel and arrow-key navigation, and half an ARIA
+						pattern is worse to a screen reader than none.
+					-->
+					<div
+						use:sliding
+						class="seg mt-2"
+						role="group"
+						aria-label={t('settings.integrations.whichOneAreYouUsing')}
+					>
 						{#each clients as client (client.id)}
-							<!-- Buttons that press in, not tabs: a tab role promises a tabpanel
-						     and arrow-key navigation between them, and half an ARIA pattern
-						     is worse to a screen reader than none. `aria-pressed` says what
-						     this actually is. -->
 							<button
 								type="button"
 								aria-pressed={using === client.id}
 								onclick={() => (using = client.id)}
-								class="btn btn-sm {using === client.id ? 'btn-primary' : 'btn-quiet'}"
 							>
 								{client.name}
 							</button>
 						{/each}
 					</div>
-
 					<!--
 						One assistant's answer: a snippet, or several labelled ways in.
-
-						Claude has three — the plugin, the command line, the desktop app
-						— and they are blocks under one tab rather than three tabs,
-						because which of them you use is a detail of installing Claude
-						and not an answer to "which assistant do you use".
+						Claude has three — the plugin, the command line, the desktop app —
+						and they are blocks under one choice rather than three choices.
 					-->
-					{#if chosen.ways}
-						<div class="mt-3 max-w-3xl space-y-5">
-							{#each chosen.ways as way (way.name)}
-								<div>
-									<h4 class="eyebrow text-gray-600">{way.name}</h4>
-									<p class="mt-1 max-w-2xl text-sm leading-relaxed text-gray-500">{way.note}</p>
-									<div class="mt-2">
-										<CopyBlock
-											text={way.text}
-											wrap={way.wrap}
-											label={t('settings.integrations.copyThis')}
-										/>
-									</div>
-								</div>
-							{/each}
-						</div>
-					{:else}
-						<p class="mt-2 max-w-2xl text-sm leading-relaxed text-gray-500">{chosen.note}</p>
-
-						<div class="mt-2 max-w-3xl">
-							<CopyBlock
-								text={chosen.text}
-								wrap={chosen.wrap}
-								label={t('settings.integrations.copyThis')}
-							/>
-						</div>
-					{/if}
-
 					<!--
-					The way to the full instructions, said on the page rather than
-					assumed: each snippet here is the shortest correct version, and
-					what makes each client keep it — a scope, a shell profile, a
-					restart — is a page of its own in the docs.
-				-->
-					<p class="mt-2 max-w-2xl text-sm leading-relaxed text-gray-500">
+						What it is beside the text to paste: the words in a column of
+						their own, the block in the width that is left, so a short
+						snippet does not leave half the row empty beside it.
+					-->
+					<div class="mt-3 space-y-5">
+						{#each blocks as way (way.name)}
+							<div class="snippet grid gap-2 lg:gap-6">
+								<div>
+									{#if way.name}<h4 class="eyebrow text-gray-600">{way.name}</h4>{/if}
+									<p class="text-sm leading-relaxed text-gray-500" class:mt-1={way.name}>
+										{way.note}
+									</p>
+								</div>
+								<CopyBlock
+									text={way.text}
+									wrap={way.wrap}
+									label={t('settings.integrations.copyThis')}
+								/>
+							</div>
+						{/each}
+					</div>
+					<!-- Each snippet is the shortest correct version; what makes each
+					     client keep it is a page of its own in the docs. -->
+					<p class="mt-3 text-sm leading-relaxed text-gray-500">
 						<a
 							href="{data.links.docs}/ai-agents#connect-it"
 							rel="external"
 							class="underline underline-offset-2">{t('settings.integrations.howToSetEachOne')}</a
 						>.
 					</p>
-				</div>
+				</SettingRow>
+
+				<!-- The wider form, for a key meant to run a script. -->
+				<SettingRow
+					label={t('settings.integrations.integrations')}
+					hint={t('settings.integrations.scriptsWidgetsCalendars')}
+				>
+					{#snippet control()}
+						<a href={resolve('/settings/integrations/connections')} class="btn btn-sm">
+							<Icon name="arrow-right" />
+							{t('settings.integrations.integrations')}
+						</a>
+					{/snippet}
+				</SettingRow>
 			</div>
-		</div>
-	</Card>
+		</SettingGroup>
 
-	<!--
-		What the assistants did.
+		<!--
+			What the assistants did.
 
-		Every write answers the caller with the state it replaced, but that answer
-		goes to whoever holds the transcript — and the owner of the data holds
-		none. This is their copy: the last writes, each with what stood there
-		before, and a way back for the ones that removed something.
-
-		Drawn even when it is empty, because this is the page that promises
-		somebody an assistant can write here. The promise and the receipt belong
-		together.
-	-->
-	<Card
-		id="assistant-activity"
-		title={t('settings.integrations.whatYourAssistantsDid')}
-		description={t('settings.integrations.everythingAnAssistantHasChanged')}
-		flush={data.assistantCalls.length > 0}
-	>
-		{#if data.assistantCalls.length === 0}
-			<EmptyState icon="plug" title={t('settings.integrations.nothingYetEverythingAn')} compact />
-		{:else}
-			<!-- The pressed row itself turns into "Put back" — that is the
-			     confirmation, in place, moving nothing. -->
-			<ul class="divide-y divide-gray-200">
-				{#each data.assistantCalls as one (one.id)}
-					<li class="flex items-center gap-3 px-4 py-2">
+			Every write answers the caller with the state it replaced, but that
+			answer goes to whoever holds the transcript — and the owner of the data
+			holds none. This is their copy: the last writes, and a way back for the
+			ones that removed something. Drawn even when empty: the promise and the
+			receipt belong together.
+		-->
+		<SettingGroup
+			id="assistant-activity"
+			title={t('settings.integrations.whatYourAssistantsDid')}
+			description={t('settings.integrations.everythingAnAssistantHasChanged')}
+		>
+			{#each data.assistantCalls as one (one.id)}
+				<div class="list-row">
+					<div class="list-row-main flex flex-wrap items-baseline gap-x-3 gap-y-0.5">
 						<span class="tabular shrink-0 text-xs text-gray-500">
-							{one.createdAt.slice(0, 16).replace('T', ' ')}
+							{momentOf(one.createdAt, now())}
 						</span>
 						<code class="shrink-0 font-mono text-xs text-gray-900">{one.tool}</code>
 						<span class="min-w-0 flex-1 truncate text-sm text-gray-700">
@@ -677,31 +433,178 @@ bearer_token_env_var = "ONTOPLANO_KEY"
 								<span class="text-xs text-gray-500">· {one.tokenName}</span>
 							{/if}
 						</span>
-						{#if one.destroyed}
+					</div>
+					{#if one.destroyed}
+						<div class="list-row-actions">
 							{#if one.restoredAt}
-								<span class="shrink-0 text-xs text-gray-500"
-									>{t('settings.integrations.putBack')}</span
-								>
+								<span class="text-xs text-gray-500">{t('settings.integrations.putBack')}</span>
 							{:else}
-								<form method="post" action="?/putBack" use:enhance class="shrink-0">
+								<form method="post" action="?/putBack" use:enhance>
 									<input type="hidden" name="id" value={one.id} />
-									<button type="submit" class="btn btn-sm"
-										>{t('settings.integrations.putItBack')}</button
+									<button
+										type="submit"
+										class="icon-btn"
+										title={t('settings.integrations.putItBack')}
+										aria-label={t('settings.integrations.putItBack')}
 									>
+										<Icon name="undo" />
+									</button>
 								</form>
 							{/if}
-						{/if}
-					</li>
-				{/each}
-			</ul>
-		{/if}
-	</Card>
+						</div>
+					{/if}
+				</div>
+			{:else}
+				<EmptyState icon="plug" title={t('settings.integrations.nothingYetEverythingAn')} compact />
+			{/each}
+		</SettingGroup>
+	</RoomSurface>
 
-	<p class="max-w-2xl text-sm leading-relaxed text-gray-500">
-		{t('settings.integrations.wiringUpAScriptA')}
-		<a href={resolve('/settings/integrations/connections')} class="underline underline-offset-2"
-			>{t('settings.integrations.integrations')}</a
+	<Modal
+		bind:open={naming}
+		title={t('settings.integrations.createAKey')}
+		description={t('settings.integrations.aKeyIsThePassword')}
+		size="lg"
+	>
+		<form
+			id="new-key"
+			method="post"
+			action="?/createKey"
+			use:enhance={() => {
+				return async ({ update }) => {
+					naming = false;
+					await update();
+				};
+			}}
+			class="space-y-4"
 		>
-		{t('settings.integrations.hasTheFullFormWith')}
-	</p>
+			<!-- The warning belongs to the moment a secret is about to exist, not
+			     to the page above, where it scolds somebody who has done nothing. -->
+			<Banner kind="warning" message={t('settings.integrations.doNotShareItWith')} />
+			<!--
+				What it may work on, before what it may do: the narrower answer is
+				the one people want — "work on this project with me" — and it decides
+				which of the boxes below mean anything at all.
+			-->
+			<div class="max-w-md">
+				<KeyReach choices={data.reach} bind:kind={tiedTo} bind:id={tiedId} />
+			</div>
+			<!--
+				What it may do, ticked and changeable. Every box is on to begin with;
+				deleting is its own box under the table, unticked, because it is the
+				one grant that should be given on purpose.
+			-->
+			<fieldset>
+				<legend class="eyebrow text-gray-600">{t('settings.integrations.whatItMayDo')}</legend>
+				<p class="mt-1 mb-3 max-w-2xl text-xs leading-relaxed text-gray-500">
+					{t('settings.integrations.allOfItUnlessYou')}
+				</p>
+				<!-- A grid, not a column of sentences: one row per thing, a column each
+				     for reading and writing, and a disabled box where the pair does not
+				     exist. The sentence is still on the row, as its title. -->
+				<div class="max-w-md overflow-x-auto">
+					<table class="w-full text-sm">
+						<thead>
+							<tr class="border-b border-gray-200">
+								<th class="py-1 text-left font-normal text-gray-500"></th>
+								<th class="eyebrow w-16 py-1 text-center text-gray-600"
+									>{t('settings.integrations.read')}</th
+								>
+								<th class="eyebrow w-16 py-1 text-center text-gray-600"
+									>{t('settings.integrations.write')}</th
+								>
+							</tr>
+						</thead>
+						<tbody class="divide-y divide-gray-200">
+							{#each data.permissions as row (row.subject)}
+								<!-- A row a confinement cannot reach is drawn faint, not removed,
+								     so the table does not jump as somebody changes their mind. -->
+								<tr class={reaches(row.read ?? row.write) ? '' : 'opacity-40'}>
+									<td class="py-1.5 text-gray-700" title={row.says.join('\n')}>{row.label}</td>
+									{#each [row.read, row.write] as scope, i (i)}
+										<td class="py-1.5 text-center">
+											{#if scope && reaches(scope)}
+												<input
+													type="checkbox"
+													name="scopes"
+													value={scope}
+													checked
+													aria-label="{row.label}: {i === 0 ? t('ui.read') : t('ui.write')}"
+												/>
+											{:else if scope}
+												<input
+													type="checkbox"
+													disabled
+													aria-label={t('settings.integrations.outsideWhat', {
+														label: row.label,
+														write: i === 0 ? 'read' : 'write'
+													})}
+												/>
+											{:else}
+												<input
+													type="checkbox"
+													disabled
+													aria-label={t('settings.integrations.notSomething', {
+														label: row.label,
+														write: i === 0 ? 'read' : 'write'
+													})}
+												/>
+											{/if}
+										</td>
+									{/each}
+								</tr>
+							{/each}
+						</tbody>
+					</table>
+				</div>
+				<!--
+					Deleting, apart from the rest and unticked, on the danger ground.
+					The words stay dark: small red text is the one place colour cannot
+					carry meaning for everyone; the tint and the glyph say it.
+				-->
+				<label
+					class="mt-3 flex max-w-md items-start gap-2 border border-red-200 bg-red-50 px-3 py-2 text-sm text-gray-700"
+				>
+					<input type="checkbox" name="scopes" value="destructive" class="mt-0.5" />
+					<span>
+						<strong class="flex items-center gap-1.5 font-semibold text-gray-900"
+							><Icon name="warning" size={14} />{t(
+								'settings.integrations.andLetItDeleteThings'
+							)}</strong
+						>
+						<span class="mt-0.5 block text-xs leading-relaxed text-gray-600">
+							{t('settings.integrations.removingIsPermanentWithoutThis')}
+						</span>
+					</span>
+				</label>
+			</fieldset>
+			<!-- Naming it, last: what a thing is called is the last thing you decide
+			     about it. Named after what it is tied to, when it is tied. -->
+			<FormGrid>
+				<Field label={t('settings.integrations.whatToCallThisKey')} span={6} required>
+					<OneLine
+						name="label"
+						placeholder={tiedName || t('settings.integrations.aiAssistant')}
+						class="input"
+						ariaLabel={t('settings.integrations.whatToCallThisKey')}
+						required
+					/>
+				</Field>
+			</FormGrid>
+		</form>
+		{#snippet footer()}
+			<button type="button" class="btn" onclick={() => (naming = false)}>{t('ui.cancel')}</button>
+			<button class="btn btn-primary" type="submit" form="new-key"
+				>{t('settings.integrations.createIt')}</button
+			>
+		{/snippet}
+	</Modal>
 </div>
+
+<style>
+	@media (width >= 64rem) {
+		.snippet {
+			grid-template-columns: minmax(0, 18rem) minmax(0, 1fr);
+		}
+	}
+</style>

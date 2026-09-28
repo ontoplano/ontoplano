@@ -28,7 +28,7 @@
  */
 import { build, files, version } from '$service-worker';
 import { APP_LAUNCH_PARAM, APP_LAUNCH_VALUE, APP_VERSION_PARAM } from '$lib/platform';
-import { PICTURE_REQUEST, type PictureReply } from '$lib/isolated/picture-protocol';
+import { PICTURE_PATH, PICTURE_REQUEST, type PictureReply } from '$lib/isolated/picture-protocol';
 
 const sw = self as unknown as ServiceWorkerGlobalScope;
 
@@ -41,6 +41,19 @@ const OFFLINE_URL = '/offline';
  * there is no signal. Kept small: each one is a request on every install.
  */
 const KEEP_FRESH = ['/inventory/stock', '/health/recipes'];
+
+/**
+ * Whether a response may be kept and handed back later.
+ *
+ * Not one that arrived through a redirect: `fetch(path)` follows them, so
+ * the shopping list asked for while signed out, or before the first-run
+ * screen was finished, came back as the page it was sent to — stored under
+ * the list's address. Chrome does not accept a redirect's response as the
+ * answer to a navigation, and opening the list could fail outright.
+ */
+function keepable(response: Response | undefined): response is Response {
+	return !!response && response.ok && response.type === 'basic' && !response.redirected;
+}
 
 /** Hashed build output plus static files — safe to keep until the version changes. */
 const PRECACHE = [...build, ...files, OFFLINE_URL];
@@ -60,7 +73,7 @@ sw.addEventListener('install', (event) => {
 				Promise.all(
 					KEEP_FRESH.map((path) =>
 						fetch(path)
-							.then((res) => (res.ok && res.type === 'basic' ? cache.put(path, res) : undefined))
+							.then((res) => (keepable(res) ? cache.put(path, res) : undefined))
 							.catch(() => undefined)
 					)
 				)
@@ -82,9 +95,6 @@ sw.addEventListener('activate', (event) => {
 			.then(() => sw.clients.claim())
 	);
 });
-
-/** `/media/3` and nothing else — never `/media/3/anything`. */
-const PICTURE_PATH = /^\/media\/(\d+)$/;
 
 /** How long a page has to find a picture before the image is a broken one. */
 const PICTURE_DEADLINE_MS = 10_000;
@@ -271,7 +281,7 @@ sw.addEventListener('fetch', (event) => {
 			caches.match(request).then((cached) => {
 				const fresh = fetch(request)
 					.then((response) => {
-						if (response.ok && response.type === 'basic') {
+						if (keepable(response)) {
 							const copy = response.clone();
 							caches.open(PAGE_CACHE).then((cache) => cache.put(request, copy));
 						}
@@ -282,7 +292,8 @@ sw.addEventListener('fetch', (event) => {
 						return offline ?? new Response('Offline', { status: 503 });
 					});
 
-				return cached ?? fresh;
+				// A copy stored before `keepable` existed may be a redirect's.
+				return keepable(cached) ? cached : fresh;
 			})
 		);
 		return;
@@ -293,7 +304,7 @@ sw.addEventListener('fetch', (event) => {
 	event.respondWith(
 		fetch(request)
 			.then((response) => {
-				if (response.ok && response.type === 'basic') {
+				if (keepable(response)) {
 					const copy = response.clone();
 					caches.open(PAGE_CACHE).then((cache) => cache.put(request, copy));
 				}

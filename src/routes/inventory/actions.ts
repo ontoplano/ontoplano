@@ -4,6 +4,7 @@ import { itemHandlers } from '$lib/services/item-actions';
 import { toActionFailure } from '$lib/http-errors';
 import {
 	removeAttribute,
+	removeAttributeValue,
 	renameAttribute,
 	renameAttributeValue,
 	setAttributeColor
@@ -13,7 +14,9 @@ import { setPanelWidth, LOCATION_PANEL_WIDTH_KEY } from '$lib/services/settings'
 import {
 	createCategory,
 	deleteCategory,
+	moveCategory,
 	renameCategory,
+	setCategoryColor,
 	setCategoryShared,
 	listCategories,
 	setCategoryFood,
@@ -63,6 +66,17 @@ export const inventoryActions = {
 		try {
 			removeAttribute(buildCtx(locals.user!.id), formData.get('key'));
 			return { success: true, action: 'removeAttribute' };
+		} catch (e) {
+			return toActionFailure(e);
+		}
+	},
+
+	/** Take one value off everything that says it. The attribute stays on the rest. */
+	removeAttributeValue: async ({ request, locals }: IsolatedEvent) => {
+		const formData = await request.formData();
+		try {
+			removeAttributeValue(buildCtx(locals.user!.id), formData.get('key'), formData.get('value'));
+			return { success: true, action: 'removeAttributeValue' };
 		} catch (e) {
 			return toActionFailure(e);
 		}
@@ -120,6 +134,36 @@ export const inventoryActions = {
 		try {
 			renameCategory(buildCtx(locals.user!.id), Number(formData.get('id')), formData.get('name'));
 			return { success: true, action: 'renameCategory' };
+		} catch (e) {
+			return toActionFailure(e);
+		}
+	},
+
+	/** The colour a category's cards wear. Empty takes it off. */
+	setCategoryColor: async ({ request, locals }: IsolatedEvent) => {
+		const formData = await request.formData();
+		try {
+			setCategoryColor(
+				buildCtx(locals.user!.id),
+				Number(formData.get('id')),
+				formData.get('color')
+			);
+			return { success: true, action: 'setCategoryColor' };
+		} catch (e) {
+			return toActionFailure(e);
+		}
+	},
+
+	/** One place up (-1) or down (1) the order the cards are drawn in. */
+	moveCategory: async ({ request, locals }: IsolatedEvent) => {
+		const formData = await request.formData();
+		try {
+			moveCategory(
+				buildCtx(locals.user!.id),
+				Number(formData.get('id')),
+				Number(formData.get('delta'))
+			);
+			return { success: true, action: 'moveCategory' };
 		} catch (e) {
 			return toActionFailure(e);
 		}

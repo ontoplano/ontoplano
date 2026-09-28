@@ -23,6 +23,16 @@
  * of day" looks the same everywhere it appears and changing what that means is
  * one edit. A caller that needs something genuinely one-off passes `extra`,
  * and that stays visible as the exception it is.
+ *
+ * The shapes, and the one to reach for:
+ *
+ * - a day — `dayOf` (`Sep 12`), or `dateOf` with its year (`Sep 12, 2026`);
+ * - a day and a time — `momentOf` (`Sep 12, 2026, 4:00 PM`);
+ * - a span of days — `rangeOf` (`Sep 7 – 13, 2026`);
+ * - how long ago — `agoOf` (`3 days ago`);
+ * - a civil date, the stored `YYYY-MM-DD` of a day with no time or zone —
+ *   `civilOf`. Never print the stored string itself: `2026-09-12` is how the
+ *   database writes a day, not how a person reads one.
  */
 import type { Locale } from '$lib/i18n/locales';
 
@@ -155,6 +165,47 @@ export function momentOf(
 		hour12: hour12Of(when.clock),
 		...extra
 	});
+}
+
+/**
+ * A civil date, as a person reads it: `Sep 12, 2026`.
+ *
+ * For the `YYYY-MM-DD` a day is stored as — when a movement happened, what a
+ * diary entry is for, the day a todo was put on. It has no zone, so none is
+ * applied: the twelfth is the twelfth wherever it is read.
+ */
+export function civilOf(
+	day: string | null | undefined,
+	when: When,
+	extra: Intl.DateTimeFormatOptions = {}
+): string {
+	return day ? dateOf(day.slice(0, 10), when, extra) : '';
+}
+
+/**
+ * Two days as one span: `Sep 7 – 13, 2026`, `7–13 de set. de 2026`.
+ *
+ * `formatRange` rather than two dates and a dash: the language knows where the
+ * year goes, and that a span inside one month says the month once. Two
+ * formatted dates joined by hand were how a week came out as "Sep 7 – Sep 13
+ * 2026", with no comma and the month said twice.
+ */
+export function rangeOf(
+	start: Moment,
+	end: Moment,
+	when: When,
+	extra: Intl.DateTimeFormatOptions = {}
+): string {
+	const from = parse(start);
+	const to = parse(end);
+	if (Number.isNaN(from.at.getTime()) || Number.isNaN(to.at.getTime())) return '';
+	return new Intl.DateTimeFormat(when.locale, {
+		timeZone: from.naive && to.naive ? 'UTC' : when.tz,
+		day: 'numeric',
+		month: 'short',
+		year: 'numeric',
+		...extra
+	}).formatRange(from.at, to.at);
 }
 
 /**

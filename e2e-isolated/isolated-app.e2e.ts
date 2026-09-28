@@ -385,7 +385,9 @@ test('the phone can leave the instance it is', async ({ page }) => {
  */
 test('settings offers nothing that needs somebody else to connect', async ({ page }) => {
 	await page.goto('/settings/preferences');
-	await expect(page.getByRole('heading', { name: 'Settings' })).toBeVisible({ timeout: 20_000 });
+	await expect(page.getByRole('heading', { name: 'Settings', exact: true })).toBeVisible({
+		timeout: 20_000
+	});
 
 	const tabs = await page.locator('nav[aria-label="Settings sections"] a').allInnerTexts();
 	expect(tabs).toContain('Account');

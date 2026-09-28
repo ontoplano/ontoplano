@@ -56,6 +56,8 @@ describe('the handshake', () => {
 		// how a client ends up calling something that does not answer.
 		expect(Object.keys(answer.result.capabilities)).toEqual(['tools']);
 		expect(answer.result.instructions).toContain('Ontoplano');
+		// The person sees a task's number in its notebook, never its row id.
+		expect(answer.result.instructions).toMatch(/`seq`.*never by `id`/s);
 	});
 
 	it('says nothing at all to a notification', () => {
@@ -193,7 +195,7 @@ describe('a tool that runs', () => {
 			const structured = answer.result?.structuredContent;
 			// A tool that refused the empty arguments has said so properly; what
 			// it refused with is another test's business.
-			if (answer.result?.isError) continue;
+			if (answer.error || answer.result?.isError) continue;
 			if (structured === null || typeof structured !== 'object' || Array.isArray(structured)) {
 				wrong.push(`${tool.name}: ${Array.isArray(structured) ? 'array' : typeof structured}`);
 			}
@@ -236,7 +238,8 @@ describe('a tool that runs', () => {
 			['remind_before_block', ['dismiss_reminder']],
 			['apply_idea', ['apply_idea']],
 			['favorite_idea', ['favorite_idea']],
-			['archive_recipe', ['archive_recipe']]
+			['archive_recipe', ['archive_recipe']],
+			['archive_habit', ['unarchive_habit']]
 			// add_goal, add_goal_area, add_habit and add_person have no delete
 			// on purpose — see the block comment in tools.ts: precious data is
 			// deleted by the person, in the app.
@@ -825,8 +828,10 @@ describe('editing what was created', () => {
 		expect(row.title).toBe('strip the hallway walls');
 		expect(row.status).toBe('done');
 
+		// Not a state the schema names, so refused before the tool runs.
 		const refused = rpc(6, 'change_task', { id, status: 'started' }, ['tasks:write']);
-		expect(refused.result.isError).toBe(true);
+		expect(refused.error.code).toBe(-32602);
+		expect(refused.error.data).toMatchObject({ argument: 'status', problem: 'enum' });
 	});
 
 	it('changes a goal the person already committed to', () => {
@@ -893,9 +898,12 @@ describe('editing what was created', () => {
 		);
 		const id = made.result.structuredContent.id as number;
 
-		const changed = rpc(10, 'change_recipe', { id, minutes: 40, ingredients: '100 g parmesan' }, [
-			'kitchen:write'
-		]);
+		const changed = rpc(
+			10,
+			'change_recipe',
+			{ id, minutes: 40, addIngredients: '100 g parmesan' },
+			['kitchen:write']
+		);
 		expect(changed.result.isError).toBe(false);
 
 		const read = rpc(11, 'recipes', { id }, ['kitchen:read']);
@@ -1163,7 +1171,7 @@ describe('the opened rooms', () => {
 	});
 
 	it('ticks a habit by name, with the write grant alone', () => {
-		const made = rpc(50, 'add_habit', { name: 'stretching', kind: 'good' }, ['habits:write']);
+		const made = rpc(50, 'add_habit', { name: 'stretching', type: 'good' }, ['habits:write']);
 		const habitId = made.result.structuredContent?.id as number | undefined;
 		expect(made.result.isError, made.result.content?.[0]?.text).toBe(false);
 
@@ -1502,6 +1510,38 @@ describe('bills over MCP', () => {
 		rpc(4, 'unpay_bill', { id, period: '2026-09' }, ['bills:write']);
 		const after = rpc(5, 'bill_payments', { id }, ['bills:read']);
 		expect(after.result.structuredContent.payments).toHaveLength(0);
+	});
+
+	it('skips a period and takes the skip back, and reads the history with its average', () => {
+		const id = rpc(1, 'add_bill', { name: 'Gym', amount_expected: 9000, automatic: true }, [
+			'bills:write'
+		]).result.structuredContent.id as number;
+		expect(
+			rpc(2, 'bills', {}, ['bills:read']).result.structuredContent.bills.find(
+				(b: { id: number }) => b.id === id
+			).automatic
+		).toBe(true);
+
+		rpc(3, 'pay_bill', { id, amount_paid: 8000, period: '2026-07' }, ['bills:write']);
+		const skipped = rpc(4, 'skip_bill', { id, period: '2026-08' }, ['bills:write']);
+		expect(skipped.result.isError, skipped.result.content?.[0]?.text).toBe(false);
+		expect(skipped.result.structuredContent.skipped.status).toBe('skipped');
+
+		const history = rpc(5, 'bill_history', { id }, ['bills:read']).result.structuredContent;
+		expect(history.paidCount).toBe(1);
+		expect(history.skippedCount).toBe(1);
+		expect(history.averagePaid).toBe(8000);
+
+		rpc(6, 'unskip_bill', { id, period: '2026-08' }, ['bills:write']);
+		const after = rpc(7, 'bill_history', { id }, ['bills:read']).result.structuredContent;
+		expect(after.skippedCount).toBe(0);
+
+		rpc(8, 'change_bill', { id, automatic: false }, ['bills:write']);
+		expect(
+			rpc(9, 'bills', {}, ['bills:read']).result.structuredContent.bills.find(
+				(b: { id: number }) => b.id === id
+			).automatic
+		).toBe(false);
 	});
 
 	it('paying the same period twice corrects rather than doubling', () => {

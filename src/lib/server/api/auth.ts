@@ -2,9 +2,19 @@ import type { RequestEvent } from '@sveltejs/kit';
 
 import { paymentHoldFor } from '../services/access.js';
 import { buildCtx, type Ctx } from '$lib/services/ctx.js';
-import { RateLimitedError, ServiceError, UnauthorizedError } from '$lib/services/errors.js';
+import {
+	ForbiddenError,
+	RateLimitedError,
+	ServiceError,
+	UnauthorizedError
+} from '$lib/services/errors.js';
 import { rateLimit } from '../rate-limit.js';
-import { authenticateToken, requireScope, type Scope } from '../services/tokens.js';
+import {
+	authenticateToken,
+	requireScope,
+	type AuthenticatedToken,
+	type Scope
+} from '../services/tokens.js';
 
 /**
  * How often one caller may knock.
@@ -90,14 +100,32 @@ export function spendCallBudget(tokenId: number, userId: string, write: boolean)
  */
 export function authenticateApi(
 	event: RequestEvent,
-	scope: Scope
-): { ctx: Ctx; via: 'token' | 'session'; holds: (scope: Scope) => boolean } {
+	scope: Scope | readonly Scope[],
+	opts: { confined?: boolean } = {}
+): {
+	ctx: Ctx;
+	via: 'token' | 'session';
+	holds: (scope: Scope) => boolean;
+	/** The key itself, for a handler that answers per key; null for a session. */
+	token: AuthenticatedToken | null;
+} {
 	const header = event.request.headers.get('authorization') ?? '';
 	const now = new Date();
 
 	if (header.toLowerCase().startsWith('bearer ')) {
 		const token = authenticateToken(header.slice(7).trim(), now);
-		requireScope(token, scope);
+		// A list is "any of these", for a handler that checks which one itself.
+		if (typeof scope === 'string') requireScope(token, scope);
+		else if (!scope.some((one) => token.scopes.includes(one))) requireScope(token, scope[0]);
+
+		/*
+		 * A key pinned to one notebook reaches only handlers that honour the
+		 * pin. Every other endpoint answers for the whole account, so letting
+		 * such a key through would widen it to everything its scopes name —
+		 * the widget showing one notebook's shopping would read all of it.
+		 */
+		if (token.confinement && !opts.confined)
+			throw new ForbiddenError({ key: 'errors.tokens.confinedKeyCannotUseThis' });
 
 		spendCallBudget(token.tokenId, token.userId, isWrite(event.request.method));
 
@@ -105,7 +133,8 @@ export function authenticateApi(
 		return {
 			ctx: buildCtx(token.userId, { now }),
 			via: 'token',
-			holds: (wanted) => token.scopes.includes(wanted)
+			holds: (wanted) => token.scopes.includes(wanted),
+			token
 		};
 	}
 
@@ -127,7 +156,12 @@ export function authenticateApi(
 		spendCallBudget(SESSION_BUDGET_KEY, event.locals.user.id, isWrite(event.request.method));
 
 		assertNoPaymentHold(event.locals.user.id);
-		return { ctx: buildCtx(event.locals.user.id, { now }), via: 'session', holds: () => true };
+		return {
+			ctx: buildCtx(event.locals.user.id, { now }),
+			via: 'session',
+			holds: () => true,
+			token: null
+		};
 	}
 
 	throw new UnauthorizedError({ key: 'errors.auth.provideABearerToken' });

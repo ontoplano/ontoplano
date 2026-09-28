@@ -1,6 +1,7 @@
 <script lang="ts">
 	import {
 		alarmsMayHaveChanged,
+		clearDelivered,
 		scheduleDeviceReminders,
 		syncRinger
 	} from '$lib/phone-notifications';
@@ -204,6 +205,12 @@
 
 		poll();
 		reschedule();
+		// On screen means seen: the tray's copies, and the launcher's count of
+		// them, go when the app is looked at — see `clearDelivered`.
+		const seen = () => {
+			if (document.visibilityState === 'visible') clearDelivered().catch(() => undefined);
+		};
+		seen();
 		/*
 		 * Both on the same beat, and `reschedule` is nearly free when nothing
 		 * has moved — it asks the server for the coming alarms and compares a
@@ -222,8 +229,10 @@
 		// Coming back to the tab is exactly when you want to know what you missed.
 		document.addEventListener('visibilitychange', poll);
 		document.addEventListener('visibilitychange', reschedule);
+		document.addEventListener('visibilitychange', seen);
 
 		return () => {
+			document.removeEventListener('visibilitychange', seen);
 			clearInterval(timer);
 			document.removeEventListener('visibilitychange', poll);
 			document.removeEventListener('visibilitychange', reschedule);

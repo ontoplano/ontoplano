@@ -1,12 +1,13 @@
 <script lang="ts">
 	import { useT } from '$lib/i18n';
+	import PageTitle from '$lib/components/PageTitle.svelte';
 
 	const t = useT();
 	// Rendered from the cache when a navigation fails, so it must not depend on
 	// anything loaded from the server.
 </script>
 
-<svelte:head><title>{t('offline.offlineOntoplano')}</title></svelte:head>
+<PageTitle parts={t('titles.offline')} />
 
 <div class="solo-screen bg-gray-100">
 	<div class="solo-card sm:max-w-sm">

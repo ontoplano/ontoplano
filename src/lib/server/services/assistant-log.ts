@@ -6,6 +6,7 @@ import type { Ctx } from '$lib/services/ctx.js';
 import { stamp } from '$lib/services/time.js';
 import { NotFoundError, ValidationError } from '$lib/services/errors.js';
 import { createTodo } from '$lib/services/todos.js';
+import { serialiseAttributes } from '$lib/services/task-attributes.js';
 import { createNotebook } from '$lib/services/notebooks.js';
 import { createIdea, toggleApplied, toggleFavorite } from '$lib/services/ideas.js';
 import { createItem, createCategory as createInventoryCategory } from '$lib/services/inventory.js';
@@ -183,6 +184,12 @@ export function putBack(ctx: Ctx, id: number): { made: string } {
 	return { made };
 }
 
+/** Recorded attributes, stored or parsed, as the service stores them. */
+function storedAttributes(value: unknown): string | undefined {
+	if (value === undefined || value === null) return undefined;
+	return serialiseAttributes(value);
+}
+
 /** One case per deleting tool. A tool this does not know is a bug, not a shrug. */
 function recreate(ctx: Ctx, tool: string, before: Record<string, unknown>): string {
 	switch (tool) {
@@ -192,15 +199,20 @@ function recreate(ctx: Ctx, tool: string, before: Record<string, unknown>): stri
 				notes: before.notes,
 				categoryId: before.categoryId,
 				notebookId: before.notebookId,
-				scheduledDate: before.scheduledDate
+				scheduledDate: before.scheduledDate,
+				attributes: before.attributes
 			});
 			return `the todo "${String(before.title)}"`;
 		}
 
 		case 'remove_notebook': {
-			// Only empty notebooks can be removed over MCP, so the title and the
-			// description are the whole of what was lost.
-			createNotebook(ctx, { title: before.title, description: before.description });
+			// Only empty notebooks can be removed over MCP, so the title, the
+			// folder it was in and the description are the whole of what was lost.
+			createNotebook(ctx, {
+				title: before.title,
+				folder: before.folder,
+				description: before.description
+			});
 			return `the notebook "${String(before.title)}"`;
 		}
 
@@ -258,7 +270,9 @@ function recreate(ctx: Ctx, tool: string, before: Record<string, unknown>): stri
 				label: before.label,
 				remindLeadMinutes: before.remindLeadMinutes,
 				recurrence: typeof before.recurrence === 'string' ? before.recurrence : undefined,
-				meta: typeof before.meta === 'string' ? before.meta : undefined,
+				// `meta` in a log written before 0.184, `attributes` after it.
+				attributes: storedAttributes(before.attributes ?? before.meta),
+				notebookId: before.notebookId ?? undefined,
 				ratings: {
 					urgency: (before.urgency as number) ?? null,
 					interest: (before.interest as number) ?? null,

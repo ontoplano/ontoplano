@@ -1,0 +1,1 @@
+ALTER TABLE `notebooks` ADD `category_id` integer REFERENCES categories(id);

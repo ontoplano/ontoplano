@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="notebook_widget_name">Ontoplano — notebook</string>
+    <string name="notebook_widget_description">One tab of one notebook: its tasks, notes, goals, ideas or things to buy.</string>
+    <string name="notebook_widget_refresh">Refresh</string>
+    <string name="notebook_widget_set_up">Tap to choose a notebook</string>
+    <string name="notebook_widget_nothing">Nothing here</string>
+    <string name="notebook_widget_refused">This widget was removed or its key revoked. Tap to set it up again.</string>
+    <string name="notebook_widget_unreachable">Could not reach your instance. Tap refresh to try again.</string>
+    <string name="notebook_widget_section_notes">Notes</string>
+    <string name="notebook_widget_section_tasks">Tasks</string>
+    <string name="notebook_widget_section_goals">Goals</string>
+    <string name="notebook_widget_section_ideas">Ideas</string>
+    <string name="notebook_widget_section_inventory">Inventory</string>
+</resources>

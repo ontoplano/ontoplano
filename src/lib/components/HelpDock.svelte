@@ -1,4 +1,5 @@
 <script lang="ts">
+	import Kbd from '$lib/components/Kbd.svelte';
 	import { page } from '$app/state';
 	import Icon from '$lib/components/Icon.svelte';
 	import ReportDialog from '$lib/components/ReportDialog.svelte';
@@ -9,7 +10,7 @@
 	const t = useT();
 
 	/**
-	 * Where help lives: one corner, three answers.
+	 * Where help lives: a button in the header, and the answers under it.
 	 *
 	 * There used to be a single `?` here and it opened a list of keys, which is
 	 * the narrowest of the three things somebody means by "?". Now the keyboard
@@ -21,12 +22,9 @@
 	 * most and the docs are the thing that answers what the tour did not.
 	 */
 	let {
-		/** The demo's strip sits on the phone's bottom bar; this clears it. */
-		demo = false,
 		/** Opens the tour for the screen being looked at. */
 		onstart
 	}: {
-		demo?: boolean;
 		onstart?: () => void;
 	} = $props();
 
@@ -54,8 +52,9 @@
 	/**
 	 * Whether this screen has a tour written for it yet.
 	 *
-	 * When it does not, the button says so rather than pretending: red, disabled,
-	 * and the reason under the pointer. The alternative is a button that opens
+	 * When it does not, the button says so rather than pretending: disabled, the
+	 * question mark in the header drawn with a dashed edge, and the reason under
+	 * the pointer. Shape rather than colour, so it reads for everybody. The alternative is a button that opens
 	 * nothing, which reads as a broken app rather than as a gap in the writing —
 	 * and this is the gap somebody has to notice before it can be filled.
 	 */
@@ -79,21 +78,102 @@
 <svelte:window onkeydown={handleKeydown} />
 
 <!--
-	Clear of the phone's navigation bar, and of the demo's strip above it.
+	In the header, beside the other things the bar does.
 
-	The keys are `kbd-hint`, so a real phone never sees that one — but a narrow
-	window on a laptop has a fine pointer *and* the bottom bar, and there the
-	dock sat on top of the last item in it.
+	It was a square fixed to the bottom right of the screen, and it sat over the
+	right edge of every room's surface — over row actions and values. Up here it
+	covers nothing, and it is the header's own button size. What it opens drops
+	down under it, over the page rather than inside the bar, so opening it
+	moves nothing.
 -->
-<div
-	class="fixed right-4 z-50 flex flex-col items-end lg:bottom-4"
-	style="bottom: calc(var(--mobile-nav-height) + var(--safe-bottom) + {demo ? '2.5rem' : '1rem'})"
-	data-tour="help-dock"
->
+<div class="relative flex items-center" data-tour="help-dock">
+	<!--
+		The fold. It carries the question mark because that is the glyph anybody
+		looks for, and pressing it again closes the row — one control, both ways.
+	-->
+	<button
+		onclick={() => (open = !open)}
+		class="dock-toggle flex h-8 w-8 items-center justify-center border border-chrome-line bg-chrome-raised text-chrome-muted shadow-sm transition hover:text-chrome-ink hover:brightness-125 {toured
+			? ''
+			: 'dock-untoured'}"
+		aria-expanded={open}
+		title={open ? t('helpDock.hideHelp') : 'Help'}
+		aria-label={open ? t('helpDock.hideHelp') : 'Help'}
+		data-tour="tutorial"
+	>
+		<!-- A question mark folded, a close mark open. -->
+		<Icon name={open ? 'close' : 'help'} size={16} />
+	</button>
+
+	<!--
+		One group rather than separate buttons: they are answers to the same
+		question and a row of loose squares reads as unrelated features.
+	-->
+	<div
+		class="dock absolute top-full right-0 mt-2 flex border border-gray-300 bg-white shadow-overlay {open
+			? ''
+			: 'hidden'}"
+	>
+		<a
+			href="https://docs.ontoplano.com"
+			target="_blank"
+			rel="noreferrer"
+			class="dock-btn dock-more {open ? 'is-open' : ''}"
+			title={t('helpDock.theDocumentation')}
+			aria-label={t('helpDock.theDocumentation')}
+		>
+			<Icon name="book" size={16} />
+		</a>
+
+		<!--
+			`aria-disabled` rather than `disabled`: a disabled button does not
+			receive the pointer in every browser, and the tooltip is the entire
+			point of drawing this one at all.
+		-->
+		<button
+			onclick={() => {
+				if (!toured) return;
+				open = false;
+				onstart?.();
+			}}
+			aria-disabled={!toured}
+			class="dock-btn dock-more {open ? 'is-open' : ''} {toured ? '' : 'missing'}"
+			title={toured ? t('helpDock.showMeAroundThisScreen') : t('helpDock.noTutorialForThisScreen')}
+			aria-label={toured
+				? t('helpDock.showMeAroundThisScreen')
+				: t('helpDock.noTutorialForThisScreen')}
+		>
+			<Icon name="help" size={16} />
+		</button>
+
+		<button
+			onclick={() => (show = !show)}
+			class="dock-btn dock-more kbd-hint {open ? 'is-open' : ''}"
+			title={t('helpDock.keyboardShortcuts2')}
+			aria-label={t('helpDock.keyboardShortcuts')}
+		>
+			<Icon name="keyboard" size={16} />
+		</button>
+
+		<!-- Something here is wrong. Beside the answers, because it is what you
+		     reach for when none of them helped. -->
+		<button
+			onclick={() => {
+				open = false;
+				reporting = true;
+			}}
+			class="dock-btn dock-more {open ? 'is-open' : ''}"
+			title={t('helpDock.reportAProblemOrSuggest')}
+			aria-label={t('helpDock.reportAProblemOrSuggest')}
+		>
+			<Icon name="bug" size={16} />
+		</button>
+	</div>
+
 	{#if show}
 		<div
-			class="rise mb-2 w-72 border border-gray-200 bg-white p-4 shadow-overlay"
-			style="border-radius: var(--radius-md, 0)"
+			class="rise absolute top-full right-0 z-10 mt-2 w-72 border border-gray-200 bg-white p-4 shadow-overlay"
+			style="border-radius: var(--radius-md, 0); margin-top: {open ? '3rem' : '0.5rem'}"
 		>
 			<div class="mb-3 flex items-center justify-between">
 				<h3 class="text-sm font-bold text-gray-900">{t('helpDock.keyboardShortcuts')}</h3>
@@ -108,9 +188,7 @@
 					<div class="space-y-0.5">
 						{#each pageDisplay as s (s.displayKey + s.description)}
 							<div class="flex items-center justify-between text-xs">
-								<kbd class="border border-gray-300 bg-gray-50 px-1 font-mono text-gray-700"
-									>{s.displayKey}</kbd
-								>
+								<Kbd keys={s.displayKey} />
 								<span class="text-gray-600">{t(s.description)}</span>
 							</div>
 						{/each}
@@ -123,9 +201,7 @@
 				<div class="space-y-0.5">
 					{#each GLOBAL_SHORTCUTS as s (s.key)}
 						<div class="flex items-center justify-between text-xs">
-							<kbd class="border border-gray-300 bg-gray-50 px-1 font-mono text-gray-700"
-								>{s.key === 'Escape' ? 'Esc' : s.key}</kbd
-							>
+							<Kbd keys={s.key === 'Escape' ? 'Esc' : s.key} />
 							<span class="text-gray-600">{t(s.description)}</span>
 						</div>
 					{/each}
@@ -133,80 +209,6 @@
 			</div>
 		</div>
 	{/if}
-
-	<!--
-		One group rather than three floating buttons: they are three answers to
-		the same question and a row of separate circles reads as three unrelated
-		features.
-	-->
-	<div class="dock flex border border-gray-300 bg-white shadow-sm">
-		<!--
-			The fold, and the only button drawn until it is opened.
-			
-			It carries the question mark because that is the glyph anybody looks
-			for, and pressing it again closes the row — one control, both ways.
-		-->
-		<button
-			onclick={() => (open = !open)}
-			class="dock-btn dock-toggle"
-			aria-expanded={open}
-			title={open ? t('helpDock.hideHelp') : 'Help'}
-			aria-label={open ? t('helpDock.hideHelp') : 'Help'}
-		>
-			<!-- A question mark folded, a close mark open. Two question marks in a
-			     row — this one and the tour's — is a row that cannot be read. -->
-			<Icon name={open ? 'close' : 'help'} size={15} />
-		</button>
-
-		<a
-			href="https://docs.ontoplano.com"
-			target="_blank"
-			rel="noreferrer"
-			class="dock-btn dock-more {open ? 'is-open' : ''}"
-			title={t('helpDock.theDocumentation')}
-			aria-label={t('helpDock.theDocumentation')}
-		>
-			<Icon name="book" size={15} />
-		</a>
-
-		<!--
-			`aria-disabled` rather than `disabled`: a disabled button does not
-			receive the pointer in every browser, and the tooltip is the entire
-			point of drawing this one at all.
-		-->
-		<button
-			onclick={() => toured && onstart?.()}
-			aria-disabled={!toured}
-			class="dock-btn dock-more {open ? 'is-open' : ''} {toured ? '' : 'missing'}"
-			title={toured ? t('helpDock.showMeAroundThisScreen') : t('helpDock.noTutorialForThisScreen')}
-			aria-label={toured
-				? t('helpDock.showMeAroundThisScreen')
-				: t('helpDock.noTutorialForThisScreen')}
-			data-tour="tutorial"
-		>
-			<Icon name="help" size={15} />
-		</button>
-
-		<button
-			onclick={() => (show = !show)}
-			class="dock-btn dock-more kbd-hint {open ? 'is-open' : ''}"
-			title={t('helpDock.keyboardShortcuts2')}
-			aria-label={t('helpDock.keyboardShortcuts')}
-		>
-			<Icon name="keyboard" size={15} />
-		</button>
-
-		<!-- Something here is wrong. Beside the answers, because it is what you
-		     reach for when none of them helped. -->
-		<button
-			onclick={() => (reporting = true)}
-			class="dock-btn dock-more {open ? 'is-open' : ''}"
-			title={t('helpDock.reportAProblemOrSuggest')}
-			aria-label={t('helpDock.reportAProblemOrSuggest')}
-		>
-			<Icon name="bug" size={15} />
-		</button>
-	</div>
 </div>
 
 <ReportDialog open={reporting} onclose={() => (reporting = false)} />
@@ -217,15 +219,16 @@
 		overflow: hidden;
 	}
 
-	/* One divider between neighbours, drawn by the second and third buttons so
-	   a hidden keyboard button cannot leave a rule with nothing after it. */
+	/* One divider between neighbours, drawn by the later buttons so a hidden
+	   keyboard button cannot leave a rule with nothing after it. */
 	.dock-btn + .dock-btn {
 		border-left: 1px solid var(--color-gray-200);
 	}
 
+	/* The header's own control size, the same square as the menu beside it. */
 	.dock-btn {
 		display: flex;
-		height: 1.875rem;
+		height: 2rem;
 		width: 2rem;
 		align-items: center;
 		justify-content: center;
@@ -243,43 +246,22 @@
 	/*
 	 * A screen nobody has written a tour for.
 	 *
-	 * Red, and it says why under the pointer — the colour is the thing that
-	 * makes it noticeable and the words are the thing that makes it useful,
-	 * because a colour on its own is not something everybody can read.
+	 * Said by shape, not by colour: the question mark in the header takes a
+	 * dashed edge, and the tour button inside is plainly unavailable, with the
+	 * reason under the pointer. Red was the only cue before, and a red-green
+	 * colourblind eye reads a small red glyph as any other.
 	 */
+	.dock-untoured {
+		border-style: dashed;
+	}
+
 	.dock-btn.missing {
-		color: var(--color-red-600);
 		cursor: not-allowed;
+		opacity: 0.45;
 	}
 
 	.dock-btn.missing:hover {
 		background: transparent;
-		color: var(--color-red-600);
-	}
-
-	/*
-	 * A thumb needs 44px, and the rule that gives it to every button in the app
-	 * cannot reach the anchor in the middle of this row — which left the docs
-	 * button half the height of its neighbours on a phone. Stated for all three.
-	 */
-	@media (pointer: coarse) {
-		.dock-btn {
-			height: 2.75rem;
-			width: 2.75rem;
-		}
-	}
-	/*
-	 * Folded until it is asked for, at every width.
-	 *
-	 * A desktop used to get the row open on every screen, which is four icons
-	 * sitting over the page in the corner of everything you do — help you are
-	 * not asking for, taking up the same room whether you want it or not. One
-	 * question mark says help is here just as well, and says it quietly.
-	 *
-	 * The toggle carries the question mark and closes the row again, so it is
-	 * one control both ways rather than an expand with no collapse.
-	 */
-	.dock-more:not(.is-open) {
-		display: none;
+		color: var(--color-gray-500);
 	}
 </style>

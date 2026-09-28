@@ -3,7 +3,6 @@ import type { IconName } from '$lib/components/Icon.svelte';
 import type { NavKey } from './sections-nav.js';
 import type { Translate } from './i18n/index.js';
 import type { PlainKey } from './i18n/keys.js';
-import { glyphFor } from './glyphs.js';
 
 /**
  * The sections a person can put away.
@@ -105,15 +104,25 @@ export const HIDEABLE_SECTIONS = [
  * it, and nothing said so.
  */
 export const NOTEBOOK_TABS = [
-	{ id: 'notebooks', href: '/notebooks', label: 'rooms.notebooks.tabs.notebooks' },
-	{ id: 'diary', href: '/notebooks/diary', label: 'rooms.notebooks.tabs.diary' },
+	{
+		id: 'notebooks',
+		href: '/notebooks',
+		label: 'rooms.notebooks.tabs.notebooks',
+		glyph: 'notebook'
+	},
+	{ id: 'diary', href: '/notebooks/diary', label: 'rooms.notebooks.tabs.diary', glyph: 'diary' },
 	// Ideas is writing too — a line you jot and come back to — and a room of
 	// its own in the bar for something that small was a room nobody entered.
-	{ id: 'ideas', href: '/notebooks/ideas', label: 'rooms.notebooks.tabs.ideas' },
+	{ id: 'ideas', href: '/notebooks/ideas', label: 'rooms.notebooks.tabs.ideas', glyph: 'ideas' },
 	// What the weekly review writes. It is writing, and it was reachable only
 	// from the week it belonged to, which is a thing nobody navigates to.
-	{ id: 'weekly', href: '/notebooks/weekly', label: 'rooms.notebooks.tabs.weekly' },
-	{ id: 'people', href: '/notebooks/people', label: 'rooms.notebooks.tabs.people' },
+	{ id: 'weekly', href: '/notebooks/weekly', label: 'rooms.notebooks.tabs.weekly', glyph: 'week' },
+	{
+		id: 'people',
+		href: '/notebooks/people',
+		label: 'rooms.notebooks.tabs.people',
+		glyph: 'contacts'
+	},
 	/*
 	 * Every word in the account, with what carries it.
 	 *
@@ -123,16 +132,16 @@ export const NOTEBOOK_TABS = [
 	 * find. The notebook's own words are still the Manage tags button on it
 	 * (see `NotebookTags`); this is the whole vocabulary, one tab along.
 	 */
-	{ id: 'tags', href: '/notebooks/tags', label: 'rooms.notebooks.tabs.tags' }
+	{ id: 'tags', href: '/notebooks/tags', label: 'rooms.notebooks.tabs.tags', glyph: 'tag' }
 ] as const;
 
 /** The planner's tabs, in the order it shows them. */
 export const TASK_TABS = [
-	{ href: '/tasks/plan', label: 'rooms.tasks.tabs.plan' },
-	{ href: '/tasks/board', label: 'rooms.tasks.tabs.board' },
-	{ href: '/tasks/todo', label: 'rooms.tasks.tabs.todo' },
-	{ href: '/tasks/activities', label: 'rooms.tasks.tabs.activities' },
-	{ href: '/tasks/review', label: 'rooms.tasks.tabs.review' }
+	{ href: '/tasks/plan', label: 'rooms.tasks.tabs.plan', glyph: 'calendar' },
+	{ href: '/tasks/board', label: 'rooms.tasks.tabs.board', glyph: 'kanban' },
+	{ href: '/tasks/todo', label: 'rooms.tasks.tabs.todo', glyph: 'checklist' },
+	{ href: '/tasks/activities', label: 'rooms.tasks.tabs.activities', glyph: 'blocks' },
+	{ href: '/tasks/review', label: 'rooms.tasks.tabs.review', glyph: 'clipboard' }
 ] as const;
 
 /**
@@ -141,20 +150,20 @@ export const TASK_TABS = [
  * here.
  */
 export const HEALTH_TABS = [
-	{ id: 'habits', href: '/health/habits', label: 'rooms.health.tabs.habits' },
-	{ id: 'workouts', href: '/health/workouts', label: 'rooms.health.tabs.workouts' },
-	{ id: 'recipes', href: '/health/recipes', label: 'rooms.health.tabs.recipes' }
+	{ id: 'habits', href: '/health/habits', label: 'rooms.health.tabs.habits', glyph: 'target' },
+	{ id: 'workouts', href: '/health/workouts', label: 'rooms.health.tabs.workouts', glyph: 'flame' },
+	{ id: 'recipes', href: '/health/recipes', label: 'rooms.health.tabs.recipes', glyph: 'utensils' }
 ] as const;
 
 /** The Finance room's tabs, in the order it shows them. */
 export const FINANCE_TABS = [
-	{ href: '/finance/ledgers', label: 'rooms.finance.tabs.ledgers' },
+	{ href: '/finance/ledgers', label: 'rooms.finance.tabs.ledgers', glyph: 'bank' },
 	// Bills had a room and nothing pointing at it, which is a room nobody
 	// finds. Beside Ledgers, because a bill is money leaving on a date and
 	// that is the same subject as the lines it will turn into.
-	{ href: '/finance/bills', label: 'rooms.finance.tabs.bills' },
-	{ href: '/finance/rules', label: 'rooms.finance.tabs.rules' },
-	{ href: '/finance/insights', label: 'rooms.finance.tabs.insights' }
+	{ href: '/finance/bills', label: 'rooms.finance.tabs.bills', glyph: 'receipt' },
+	{ href: '/finance/rules', label: 'rooms.finance.tabs.rules', glyph: 'sort' },
+	{ href: '/finance/insights', label: 'rooms.finance.tabs.insights', glyph: 'chart' }
 ] as const;
 
 /**
@@ -164,14 +173,14 @@ export const FINANCE_TABS = [
  * here, so it is the one the room lands on.
  */
 export const MEDIA_TABS = [
-	{ id: 'audios', href: '/media/audios', label: 'rooms.media.tabs.audios' },
-	{ id: 'gallery', href: '/media/gallery', label: 'rooms.media.tabs.gallery' }
+	{ id: 'audios', href: '/media/audios', label: 'rooms.media.tabs.audios', glyph: 'mic' },
+	{ id: 'gallery', href: '/media/gallery', label: 'rooms.media.tabs.gallery', glyph: 'image' }
 ] as const;
 
 /** The Inventory room's tabs: what you keep, and what you might get one day. */
 export const INVENTORY_TABS = [
-	{ href: '/inventory/stock', label: 'inventory.stock' },
-	{ href: '/inventory/wishlist', label: 'inventory.wishlist' }
+	{ href: '/inventory/stock', label: 'inventory.stock', glyph: 'shopping' },
+	{ href: '/inventory/wishlist', label: 'inventory.wishlist', glyph: 'star' }
 ] as const;
 
 /**
@@ -185,19 +194,13 @@ export type RoomTab = {
 	id?: string;
 	href: Pathname;
 	label: PlainKey;
+	/**
+	 * What it wears, written beside the route it belongs to. `$lib/glyphs`
+	 * reads every one of these into the one index the app draws from, and
+	 * `tests/glyphs.test.ts` fails when two different places wear the same.
+	 */
+	glyph: IconName;
 };
-
-/**
- * The glyph a tab wears, and the room's own where it has none of its own.
- *
- * Not a field on the tab. Every list that draws one of these — the strip, the
- * wheel, the palette — used to carry its own `icon:`, so a glyph lived in as
- * many places as it was drawn and two of the writing room's tabs had simply
- * never been given one. `$lib/glyphs` is the list; this is how a tab asks it.
- */
-export function tabGlyph(tab: RoomTab, room?: NavKey): IconName | undefined {
-	return glyphFor(tab.href, tab.id, room);
-}
 
 /**
  * What each room holds, by the key the navigation knows it as.

@@ -25,11 +25,9 @@ test('a day ending at midnight can be scrolled to midnight', async ({ page }) =>
 	// The hours somebody actually sets when they work late.
 	await visit(page, '/settings/preferences');
 	await page.locator('select[name="start"]').selectOption('6');
+	// Each select saves itself on change; wait for the second to land.
 	await page.locator('select[name="end"]').selectOption('24');
-	await page
-		.locator('form[action="?/saveGridHours"]')
-		.getByRole('button', { name: 'Save' })
-		.click();
+	await expect(page.getByText('Planner hours saved.').last()).toBeVisible();
 
 	await visit(page, '/tasks/plan');
 	const main = page.locator('.ec-main');
@@ -238,19 +236,25 @@ test('a block can be marked done from the plan, and undone', async ({ page }) =>
 	await visit(page, '/tasks/plan?view=day');
 	await page.locator('.ec-event').filter({ hasText: 'tick me' }).click();
 
-	const done = page.getByRole('button', { name: 'Mark as done' });
+	// The block's own form; the grid's corner marks are named after their block.
+	const editor = page.getByRole('dialog');
+	const done = editor.getByRole('button', { name: 'Mark as done', exact: true });
 	await expect(done).toBeVisible();
 	await done.click();
 
 	// The form knows, and offers the way back.
-	await expect(page.getByRole('button', { name: /Done ✓ — undo/ })).toBeVisible();
+	await expect(editor.getByRole('button', { name: /Done ✓ — undo/ })).toBeVisible();
 	// And the grid says so in the block's corner.
 	await expect(
 		page.locator('.ec-event').filter({ hasText: 'tick me' }).locator('.ec-event-mark--done')
 	).toBeVisible();
 
-	await page.getByRole('button', { name: /Done ✓ — undo/ }).click();
-	await expect(page.getByRole('button', { name: 'Mark as done' })).toBeVisible();
+	await editor.getByRole('button', { name: /Done ✓ — undo/ }).click();
+	await expect(done).toBeVisible();
+	// And the grid's own mark is named for the block it ticks.
+	await expect(
+		page.locator('.ec-event').filter({ hasText: 'tick me' }).locator('.ec-event-mark')
+	).toHaveAttribute('aria-label', 'Mark tick me as done');
 });
 
 /**

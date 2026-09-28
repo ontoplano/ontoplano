@@ -26,12 +26,16 @@
 	 *
 	 * One order, at both widths:
 	 *
-	 *     search   count   [ the filters ]   clear   ——   sort   direction
+	 *     search   count   [ the filters ]   clear   ——   verb   sort
 	 *
-	 * The slack in the row goes to the filters, which is the one thing in the
-	 * strip whose width nothing else is measured from — so a tab with four of
-	 * them and a tab with one draw every other control in the same place, and
-	 * changing tab moves nothing.
+	 * On one line at both widths: a phone folds the filters into a button and
+	 * the order into a square (`SortControl` reads that from the strip), and
+	 * nothing drops to a line of its own. The slack goes after Clear, so the
+	 * way back sits against the last filter rather than across the row from it.
+	 *
+	 * A filter that should stay out on a phone — the only one a list has, say
+	 * — goes in `inline` rather than in the children: a sheet holding one
+	 * control is a press in front of a control there was room for.
 	 *
 	 * What stays out at both widths is what you do not press: the search box
 	 * (`lead`) is typed into, and the count and the order are read.
@@ -40,11 +44,32 @@
 	import Modal from '$lib/components/Modal.svelte';
 	import { phoneWidth } from '$lib/breakpoints.svelte';
 	import { useT } from '$lib/i18n';
+	import { setFilterStrip } from '$lib/filter-strip';
 	import { afterNavigate, goto } from '$app/navigation';
 	import { navigating, page } from '$app/state';
 	import type { Snippet } from 'svelte';
 
 	const phone = phoneWidth();
+
+	/**
+	 * How wide the strip has to be for the filters to sit out in it.
+	 *
+	 * Measured on the strip rather than the window: a notebook's panel is a
+	 * narrow list on a wide screen, and at about 750px its filters wrapped into
+	 * a clogged second line beside the search box while the window said
+	 * "desktop". 56rem at the default type size.
+	 */
+	const INLINE_MIN_PX = 896;
+
+	let width = $state(0);
+	/** Folded into the sheet: the strip is too narrow, or not measured yet on a phone. */
+	const folded = $derived(width > 0 ? width < INLINE_MIN_PX : phone.current);
+
+	setFilterStrip({
+		get folded() {
+			return folded;
+		}
+	});
 
 	const t = useT();
 
@@ -64,7 +89,10 @@
 		banner,
 		lead,
 		count,
+		verb,
 		trailing,
+		inline,
+		inlineBelow = false,
 		children
 	}: {
 		name: string;
@@ -91,9 +119,40 @@
 		 * end of the strip from everything that changes it.
 		 */
 		count?: Snippet;
-		/** The sort order and its direction, at the far end. */
+		/**
+		 * One secondary verb about the whole list — Areas, Categories.
+		 *
+		 * On the first line at every width, just before the order. Rooms used
+		 * to find their own place for it — an icon beside the search box on one
+		 * screen, inside the Filters sheet on the next, where pressing it opened
+		 * a dialog over a dialog. `StripVerb` draws it.
+		 */
+		verb?: Snippet;
+		/**
+		 * The order: a `SortControl`, at the far end of the first line at every
+		 * width. It goes compact by itself while the strip is folded.
+		 */
 		trailing?: Snippet;
-		children: Snippet;
+		/**
+		 * Filters that stay out on the strip at every width, before the rest.
+		 *
+		 * For a list with one or two of them, where the phone's sheet would
+		 * hide a single control behind a press. Whatever is in `children` still
+		 * folds; a list whose filters are all here gets no Filters button.
+		 */
+		inline?: Snippet;
+		/**
+		 * While the strip is folded, the `inline` filters take a line of their
+		 * own under the first, rather than squeezing the search box — for two
+		 * of them, which do not fit beside it on a phone.
+		 */
+		inlineBelow?: boolean;
+		/**
+		 * The filters. A list with none — a search box and a count, nothing
+		 * else — leaves this out, and a phone gets no Filters button to open an
+		 * empty sheet with.
+		 */
+		children?: Snippet;
 	} = $props();
 
 	/** Whether the phone's sheet is up. Nothing on a desktop, where they are out. */
@@ -141,11 +200,11 @@
 	controls are there: two more permanent lines above the search box, on a
 	screen that has about nine, to answer a question most visits do not ask.
 -->
-{#if banner && !phone.current}
+{#if banner && !folded}
 	<div class="mb-2 flex w-full flex-wrap items-center gap-2">{@render banner()}</div>
 {/if}
 
-<div class="flex w-full flex-wrap items-center gap-2">
+<div class="filter-strip flex w-full flex-wrap items-center gap-2" bind:clientWidth={width}>
 	<!--
 		The search box, in a slot of a fixed size.
 
@@ -155,19 +214,26 @@
 		was 405px wide on one and 235px on the other. Everything after it moved
 		when you changed tab: the button, the count, all of it.
 
-		A row of its own on a phone: it is the one control somebody types into
-		rather than presses, so it takes the first line whole.
+		On a phone it takes what the row has left, so everything shares the
+		first line.
 	-->
 	{#if lead}
-		<div class="order-first w-full min-w-32 sm:order-none sm:w-56 sm:shrink-0">
+		<div class="filter-lead min-w-24 flex-1 sm:w-56 sm:flex-none sm:shrink-0">
 			{@render lead()}
 		</div>
 	{/if}
 
-	<!-- How many rows are showing, next to the box that narrows them by name. -->
-	{#if count}<div class="shrink-0">{@render count()}</div>{/if}
+	<!-- How many rows are showing, next to the box that narrows them by name,
+	     at both widths. -->
+	{#if count}<div class="filter-count shrink-0">{@render count()}</div>{/if}
 
-	{#if phone.current}
+	{#if inline}
+		<div class="flex min-w-0 items-center gap-2" class:filter-inline-below={folded && inlineBelow}>
+			{@render inline()}
+		</div>
+	{/if}
+
+	{#if children && folded}
 		<!--
 			On a phone the filters are a sheet, because the row is not there.
 
@@ -184,25 +250,26 @@
 			}}
 			aria-haspopup="dialog"
 			aria-pressed={on}
-			class="filter-toggle btn btn-sm btn-quiet shrink-0"
+			class="filter-toggle btn btn-sm shrink-0"
 			title={said}
 			aria-label={said}
 		>
-			<Icon name="filter" size={14} />
+			<!-- The word, not a funnel: it is the one way to the filters at this
+			     width, and a glyph alone was a thing to squint at. -->
+			{t('filters.filters')}
 			{#if on}<span class="filter-dot" aria-hidden="true"></span>{/if}
 		</button>
-	{:else}
+	{:else if children}
 		<!--
 			On anything wider they are simply there.
 
 			They were behind a disclosure at every width, which is a press
 			between somebody and the control they can already see room for — and
 			opening it moved whatever the fold pushed down. Filtering is a loop:
-			narrow, look, adjust. The controls stay out where the loop is short,
-			and the slack in the row goes here so that nothing else in the strip
-			moves when a tab has more of them than the tab beside it.
+			narrow, look, adjust. The controls stay out where the loop is short.
+			Their own width and no more, so Clear stands against the last one.
 		-->
-		<div id="{name}-filters" class="flex min-w-0 flex-1 flex-wrap items-center gap-2">
+		<div id="{name}-filters" class="flex min-w-0 flex-wrap items-center gap-2">
 			{@render children()}
 		</div>
 	{/if}
@@ -219,17 +286,24 @@
 			onclick={onclear}
 			class="btn btn-sm btn-quiet shrink-0 {on ? '' : 'invisible'}"
 			inert={!on}
+			title={t('filters.clear')}
+			aria-label={t('filters.clear')}
 		>
-			{t('filters.clear')}
+			{#if folded}<Icon name="broom" size={14} />{:else}{t('filters.clear')}{/if}
 		</button>
 	{/if}
 
-	{#if trailing}
-		<div class="ml-auto flex shrink-0 items-center gap-2">{@render trailing()}</div>
+	<!-- The verb and the order, pushed to the end of the first line at every
+	     width. The slack in the row is the space before them. -->
+	{#if verb || trailing}
+		<div class="ml-auto flex shrink-0 items-center gap-2">
+			{#if verb}{@render verb()}{/if}
+			{#if trailing}{@render trailing()}{/if}
+		</div>
 	{/if}
 </div>
 
-{#if phone.current}
+{#if folded && children}
 	<!--
 		The same controls, once, in a sheet.
 
@@ -242,7 +316,7 @@
 			<div class="mb-3 flex flex-wrap items-center gap-2">{@render banner()}</div>
 		{/if}
 		<div id="{name}-filters" class="flex flex-wrap items-center gap-2">
-			{@render children()}
+			{@render children?.()}
 		</div>
 
 		{#snippet footer()}
@@ -267,6 +341,17 @@
 {/if}
 
 <style>
+	/* Its own line, last, the controls sharing it as they would a row. */
+	.filter-inline-below {
+		order: 1;
+		width: 100%;
+	}
+
+	.filter-inline-below > :global(*) {
+		flex: 1 1 0;
+		min-width: 0;
+	}
+
 	/* The mark that says a filter is on while the strip is shut. */
 	.filter-toggle {
 		position: relative;

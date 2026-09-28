@@ -2,7 +2,9 @@
 	import { enhance } from '$lib/enhance';
 	import { armed } from '$lib/actions/armed';
 	import Banner from '$lib/components/Banner.svelte';
-	import Card from '$lib/components/Card.svelte';
+	import RoomSurface from '$lib/components/RoomSurface.svelte';
+	import SettingGroup from '$lib/components/SettingGroup.svelte';
+	import SettingRow from '$lib/components/SettingRow.svelte';
 	import FormError from '$lib/components/FormError.svelte';
 	import Icon from '$lib/components/Icon.svelte';
 	import type { ActionData, PageServerData } from './$types';
@@ -17,132 +19,135 @@
 </script>
 
 <div class="space-y-4">
-	{#if data.seatOwner}
-		<!--
-			A seat grants access, never the ability to spend, so this side has the
-			state of the plan and no buttons.
-		-->
-		<!-- The title is the whole message. -->
-		<Card
-			title={t('settings.family.youAreOnTheirPlan', { name: data.seatOwner.name })}
-			accent="var(--section-accent)"
-		/>
-	{:else}
-		<Card
-			title={t('settings.family.whoIsOnYourPlan')}
-			description={t('settings.family.planCoversAccounts', {
-				seats: data.seats,
-				more: data.seats - 1
-			})}
-		>
-			<p class="text-sm text-gray-600">{t('settings.family.everybodyKeepsTheirOwnWeek')}</p>
+	<FormError message={form?.message} />
+	{#if form && 'invited' in form && form.invited}
+		<Banner kind="success" message={t('settings.family.sentEmailToOpenAccount')} />
+	{:else if form && 'added' in form && form.added}
+		<Banner kind="success" message={t('settings.family.askedTheSeatIsTheirs')} />
+	{:else if form && 'withdrawn' in form && form.withdrawn}
+		<Banner kind="success" message={t('settings.family.offerIsWithdrawn')} />
+	{/if}
 
-			<div class="mt-3"><FormError message={form?.message} /></div>
-
-			{#if form && 'invited' in form && form.invited}
-				<div class="mt-3">
-					<Banner kind="success" message={t('settings.family.sentEmailToOpenAccount')} />
-				</div>
-			{:else if form && 'added' in form && form.added}
-				<div class="mt-3">
-					<Banner kind="success" message={t('settings.family.askedTheSeatIsTheirs')} />
-				</div>
-			{:else if form && 'withdrawn' in form && form.withdrawn}
-				<div class="mt-3">
-					<Banner kind="success" message={t('settings.family.offerIsWithdrawn')} />
-				</div>
-			{/if}
-
-			{#if data.members.length > 0}
-				<ul class="mt-3 divide-y divide-gray-200 border-y border-gray-200">
-					{#each data.members as member (member.id)}
-						<li class="flex items-center justify-between gap-3 py-2">
-							<span class="min-w-0">
-								<span class="block truncate text-sm text-gray-900">{member.name}</span>
-								<span class="block truncate text-xs text-gray-500">{member.email}</span>
-							</span>
+	<!-- The shape every settings screen has: one surface, a band per subject. -->
+	<RoomSurface>
+		{#if data.seatOwner}
+			<!--
+				A seat grants access, never the ability to spend, so this side has the
+				state of the plan and no buttons. The title is the whole message.
+			-->
+			<SettingGroup title={t('settings.family.youAreOnTheirPlan', { name: data.seatOwner.name })}>
+				<p class="px-4 py-3 text-sm text-gray-600">
+					{t('settings.family.everybodyKeepsTheirOwnWeek')}
+				</p>
+			</SettingGroup>
+		{:else}
+			<SettingGroup
+				title={t('settings.family.whoIsOnYourPlan')}
+				description={t('settings.family.planCoversAccounts', {
+					seats: data.seats,
+					more: data.seats - 1
+				})}
+			>
+				<p class="px-4 py-3 text-sm text-gray-600">
+					{t('settings.family.everybodyKeepsTheirOwnWeek')}
+				</p>
+				{#each data.members as member (member.id)}
+					<div class="list-row">
+						<div class="list-row-main">
+							<p class="truncate text-sm text-gray-900">{member.name}</p>
+							<p class="truncate text-xs text-gray-500">{member.email}</p>
+						</div>
+						<!-- Two presses: taking a seat away locks a person out of writing
+						     until somebody pays, which one slipped click must never do. -->
+						<form
+							method="post"
+							action="?/removeSeat"
+							use:enhance={() =>
+								async ({ update }) => {
+									confirmRemove = null;
+									await update();
+								}}
+							class="list-row-actions"
+						>
+							<input type="hidden" name="member" value={member.id} />
 							{#if confirmRemove === member.id}
-								<!-- Two presses, and the second is not under the cursor: taking
-								     a seat away locks a person out of writing until somebody
-								     pays, which one slipped click must never do. -->
-								<form
-									method="post"
-									action="?/removeSeat"
-									use:enhance={() =>
-										async ({ update }) => {
-											confirmRemove = null;
-											await update();
-										}}
-									class="flex shrink-0 items-center gap-1"
+								<button class="btn btn-danger btn-sm" use:armed
+									>{t('settings.family.takeThemOffThePlan')}</button
 								>
-									<input type="hidden" name="member" value={member.id} />
-									<button type="button" onclick={() => (confirmRemove = null)} class="btn btn-sm">
-										{t('settings.family.keepThem')}
-									</button>
-									<button class="btn btn-danger btn-sm" use:armed
-										>{t('settings.family.takeThemOffThePlan')}</button
-									>
-								</form>
+								<button
+									type="button"
+									onclick={() => (confirmRemove = null)}
+									class="icon-btn"
+									title={t('settings.family.keepThem')}
+									aria-label={t('settings.family.keepThem')}><Icon name="close" /></button
+								>
 							{:else}
 								<button
 									type="button"
 									onclick={() => (confirmRemove = member.id)}
-									class="btn btn-sm"
+									class="icon-btn icon-btn-danger"
 									title={t('settings.family.takeThemOffThisPlan')}
+									aria-label={t('settings.family.takeThemOffThisPlan')}
 								>
-									<Icon name="close" size={14} />
+									<Icon name="trash" />
 								</button>
 							{/if}
-						</li>
-					{/each}
-				</ul>
-			{/if}
+						</form>
+					</div>
+				{/each}
+
+				{#if data.members.length + data.invited.length < data.seats - 1}
+					<SettingRow
+						label={t('settings.family.addToMyPlan')}
+						hint={t('settings.family.withAnAccountHereThey')}
+					>
+						{#snippet control()}
+							<form method="post" action="?/addSeat" use:enhance class="flex flex-wrap gap-2">
+								<input
+									name="who"
+									type="email"
+									required
+									aria-label={t('settings.family.theirEmailAddress')}
+									placeholder={t('settings.family.theirEmailAddress')}
+									class="input input-sm w-64 max-w-full"
+								/>
+								<button class="btn btn-sm btn-primary">
+									<Icon name="plus" />
+									{t('settings.family.addToMyPlan')}
+								</button>
+							</form>
+						{/snippet}
+					</SettingRow>
+				{:else}
+					<p class="px-4 py-3 text-sm text-gray-500">{t('settings.family.everySeatIsTaken')}</p>
+				{/if}
+			</SettingGroup>
 
 			{#if data.invited.length > 0}
 				<!--
 					Offers, not members. An account that already existed is asked
-					rather than moved, so these sit apart from the seats that are
-					actually in use — and each one can be taken back.
+					rather than moved, so these sit apart from the seats in use — and
+					each one can be taken back.
 				-->
-				<p class="eyebrow mt-4 text-gray-500">{t('settings.family.waitingForAnAnswer')}</p>
-				<ul class="mt-1 divide-y divide-gray-200 border-y border-gray-200">
+				<SettingGroup title={t('settings.family.waitingForAnAnswer')}>
 					{#each data.invited as person (person.id)}
-						<li class="flex items-center justify-between gap-3 py-2">
-							<span class="min-w-0">
-								<span class="block truncate text-sm text-gray-900">{person.email}</span>
-								<span class="block truncate text-xs text-gray-500">
-									{t('settings.family.askedTheSeatIs')}
-								</span>
-							</span>
-							<form method="post" action="?/withdrawInvite" use:enhance class="shrink-0">
+						<div class="list-row">
+							<div class="list-row-main">
+								<p class="truncate text-sm text-gray-900">{person.email}</p>
+								<p class="truncate text-xs text-gray-500">{t('settings.family.askedTheSeatIs')}</p>
+							</div>
+							<form method="post" action="?/withdrawInvite" use:enhance class="list-row-actions">
 								<input type="hidden" name="member" value={person.id} />
-								<button class="btn btn-sm">{t('settings.family.withdraw')}</button>
+								<button
+									class="icon-btn"
+									title={t('settings.family.withdraw')}
+									aria-label={t('settings.family.withdraw')}><Icon name="undo" /></button
+								>
 							</form>
-						</li>
+						</div>
 					{/each}
-				</ul>
+				</SettingGroup>
 			{/if}
-
-			{#if data.members.length + data.invited.length < data.seats - 1}
-				<form method="post" action="?/addSeat" use:enhance class="mt-3 flex flex-wrap gap-2">
-					<input
-						name="who"
-						type="email"
-						required
-						placeholder={t('settings.family.theirEmailAddress')}
-						class="input flex-1"
-					/>
-					<button class="btn btn-sm btn-primary">
-						<Icon name="plus" size={14} />
-						{t('settings.family.addToMyPlan')}
-					</button>
-				</form>
-				<p class="mt-2 text-xs text-gray-500">
-					{t('settings.family.withAnAccountHereThey')}
-				</p>
-			{:else}
-				<p class="mt-3 text-xs text-gray-500">{t('settings.family.everySeatIsTaken')}</p>
-			{/if}
-		</Card>
-	{/if}
+		{/if}
+	</RoomSurface>
 </div>

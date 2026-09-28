@@ -1,4 +1,4 @@
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Locator, type Page } from '@playwright/test';
 import { register, testEmail } from './helpers/account';
 import { visit } from './helpers/visit';
 
@@ -12,6 +12,23 @@ import { visit } from './helpers/visit';
  * switching it off leaves what was filed under it exactly where it was.
  */
 /**
+ * Press a form's submit, and wait for the save to be answered and its dialog shut.
+ *
+ * Not a fixed pause: on a loaded machine the save outlasts it, the reload that
+ * follows cancels the request in flight, and the test reads a notebook the
+ * save never reached.
+ */
+async function save(page: Page, press: Locator): Promise<void> {
+	const answered = page.waitForResponse(
+		(response) =>
+			response.request().method() === 'POST' && new URL(response.url()).search.startsWith('?/')
+	);
+	await press.click();
+	await answered;
+	await expect(page.locator('dialog[open]')).toHaveCount(0);
+}
+
+/**
  * A notebook, and its own page.
  *
  * The index shows one beside the list and says which in the query string; the
@@ -22,8 +39,7 @@ async function makeNotebook(page: Page, title: string): Promise<void> {
 	await visit(page, '/notebooks');
 	await page.getByRole('button', { name: 'New notebook' }).first().click();
 	await page.getByLabel('Title').fill(title);
-	await page.getByRole('button', { name: 'Create notebook' }).click();
-	await page.waitForTimeout(600);
+	await save(page, page.getByRole('button', { name: 'Create notebook' }));
 
 	await page.getByRole('link', { name: title }).first().click();
 	await page.waitForURL(/\?notebook=\d+/);
@@ -51,18 +67,16 @@ test.describe('what a notebook holds', () => {
 		// not a notebook.
 		await expect(page.getByRole('checkbox', { name: 'Notes' })).toHaveCount(0);
 		await page.getByRole('checkbox', { name: 'Inventory' }).check();
-		await page.getByRole('button', { name: 'Save' }).click();
-		await page.waitForTimeout(600);
+		await save(page, page.getByRole('button', { name: 'Save' }));
 
 		const inventoryTab = page.getByRole('button', { name: /^Inventory/ });
 		await expect(inventoryTab).toBeVisible();
 
 		// And the tab does the room's work rather than linking to it.
 		await inventoryTab.click();
-		await page.getByRole('button', { name: 'New thing' }).click();
-		await page.getByLabel('Item').fill('Wall tiles');
-		await page.getByRole('button', { name: 'Save' }).click();
-		await page.waitForTimeout(600);
+		await page.getByRole('button', { name: 'New item' }).click();
+		await page.getByRole('textbox', { name: /^Item\*?$/ }).fill('Wall tiles');
+		await save(page, page.getByRole('button', { name: 'Save' }));
 		await expect(page.getByText('Wall tiles')).toBeVisible();
 
 		// It is an ordinary inventory row, in the room where inventory lives.
@@ -77,22 +91,19 @@ test.describe('what a notebook holds', () => {
 
 		await page.getByRole('button', { name: 'Rename' }).click();
 		await page.getByRole('checkbox', { name: 'Inventory' }).check();
-		await page.getByRole('button', { name: 'Save' }).click();
-		await page.waitForTimeout(600);
+		await save(page, page.getByRole('button', { name: 'Save' }));
 
 		await page.getByRole('button', { name: /^Inventory/ }).click();
-		await page.getByRole('button', { name: 'New thing' }).click();
-		await page.getByLabel('Item').fill('Sealant');
-		await page.getByRole('button', { name: 'Save' }).click();
-		await page.waitForTimeout(600);
+		await page.getByRole('button', { name: 'New item' }).click();
+		await page.getByRole('textbox', { name: /^Item\*?$/ }).fill('Sealant');
+		await save(page, page.getByRole('button', { name: 'Save' }));
 
 		// Off again. The dialog says how much is filed under it, which is what
 		// makes this legible as "one tab fewer" rather than "one thing deleted".
 		await page.getByRole('button', { name: 'Rename' }).click();
 		await expect(page.getByText('1 filed')).toBeVisible();
 		await page.getByRole('checkbox', { name: 'Inventory' }).uncheck();
-		await page.getByRole('button', { name: 'Save' }).click();
-		await page.waitForTimeout(600);
+		await save(page, page.getByRole('button', { name: 'Save' }));
 
 		await expect(page.getByRole('button', { name: /^Inventory/ })).toHaveCount(0);
 
@@ -108,8 +119,7 @@ test.describe('what a notebook holds', () => {
 		await visit(page, '/settings/preferences');
 		const menu = page.locator('form[action="?/saveMenu"]');
 		await menu.getByRole('checkbox', { name: 'Finance' }).uncheck();
-		await menu.getByRole('button', { name: 'Save menu' }).click();
-		await page.waitForTimeout(600);
+		await save(page, menu.getByRole('button', { name: 'Save menu' }));
 
 		await makeNotebook(page, 'A subject');
 
@@ -132,8 +142,7 @@ test.describe('what a notebook holds', () => {
 		// about the order and not about switching anything on.
 		await page.getByRole('button', { name: 'Rename' }).click();
 		await page.getByRole('button', { name: /Move Tasks up/ }).click();
-		await page.getByRole('button', { name: 'Save' }).click();
-		await page.waitForTimeout(600);
+		await save(page, page.getByRole('button', { name: 'Save' }));
 
 		/*
 		 * The order somebody puts a notebook's tabs in is that notebook's answer
@@ -143,7 +152,7 @@ test.describe('what a notebook holds', () => {
 		await page.reload();
 		const strip = page.locator('[data-tour="notebook-tabs"] button');
 		await expect(strip.first()).toContainText('Tasks');
-		await expect(strip.first()).toHaveClass(/border-b-2/);
+		await expect(strip.first()).toHaveAttribute('aria-current', 'page');
 	});
 
 	test('the tabs keep their ticks across a save', async ({ page }) => {
@@ -166,6 +175,7 @@ test.describe('what a notebook holds', () => {
 		 * blank for the moment before the dialog closed, which reads exactly like
 		 * the save having thrown the answer away.
 		 */
+		const answered = page.waitForResponse((response) => response.url().includes('?/update'));
 		await page.getByRole('button', { name: 'Save' }).click();
 		await expect
 			.poll(async () =>
@@ -176,7 +186,7 @@ test.describe('what a notebook holds', () => {
 			)
 			.toBe(true);
 
-		await page.waitForTimeout(600);
+		await answered;
 		await expect(page.getByRole('button', { name: /^Recipes/ })).toBeVisible();
 	});
 });

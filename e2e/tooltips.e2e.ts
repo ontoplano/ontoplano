@@ -47,7 +47,10 @@ test('it stays on screen at the edges', async ({ page }) => {
 	 * source order is not screen order, and a header that gains a control ought
 	 * not to quietly change what this test is about.
 	 */
-	const titled = page.locator('header [title]:visible');
+	// The site's bar, not any `<header>`: a dashboard card's header carries
+	// titled buttons of its own, further down the page.
+	const bar = page.locator('header', { has: page.locator('[data-tour="menu"]') });
+	const titled = bar.locator('[title]:visible');
 	const boxes = await titled.evaluateAll((els) =>
 		els.map((el, i) => ({ i, right: el.getBoundingClientRect().right }))
 	);

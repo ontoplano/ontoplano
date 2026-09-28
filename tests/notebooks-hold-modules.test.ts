@@ -11,6 +11,9 @@
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 import { makeDatabase, OWNER, seedAccounts } from './helpers/db';
 
+/** Every tab a notebook can have, for a subject that files one of each. */
+const EVERY_TAB = 'notes,tasks,goals,ideas,inventory,ledgers,bills,habits,workouts,recipes';
+
 const database = makeDatabase();
 seedAccounts(database.path);
 afterAll(() => database.remove());
@@ -69,9 +72,11 @@ describe('what a notebook holds', () => {
 	});
 
 	test('the choices offered say how much is already filed under each', () => {
-		const id = notebooks.createNotebook(ctx, { title: 'A renovation' });
+		const id = notebooks.createNotebook(ctx, { title: 'A renovation', modules: EVERY_TAB });
 		inventory.createItem(ctx, { name: 'tiles', type: 'someday', notebookId: id });
 		inventory.createItem(ctx, { name: 'grout', type: 'someday', notebookId: id });
+		// Then the tab goes; the things filed under it stay.
+		notebooks.updateNotebook(ctx, id, { modules: 'notes,tasks' });
 
 		const offered = notebooks.moduleChoices(ctx, id);
 		expect(offered.find((m) => m.id === 'inventory')?.held).toBe(2);
@@ -84,8 +89,8 @@ describe('what a notebook holds', () => {
 
 describe('the rows filed under one', () => {
 	test('each room answers with its own rows, narrowed to the subject', () => {
-		const mine = notebooks.createNotebook(ctx, { title: 'The bathroom' });
-		const other = notebooks.createNotebook(ctx, { title: 'Somewhere else' });
+		const mine = notebooks.createNotebook(ctx, { title: 'The bathroom', modules: EVERY_TAB });
+		const other = notebooks.createNotebook(ctx, { title: 'Somewhere else', modules: EVERY_TAB });
 
 		habits.createHabit(ctx, { name: 'run the extractor', notebookId: mine });
 		ideas.createIdea(ctx, { content: 'heated towel rail', notebookId: mine });
@@ -110,7 +115,7 @@ describe('the rows filed under one', () => {
 	});
 
 	test('the tally counts each module separately', () => {
-		const id = notebooks.createNotebook(ctx, { title: 'A counted subject' });
+		const id = notebooks.createNotebook(ctx, { title: 'A counted subject', modules: EVERY_TAB });
 		inventory.createItem(ctx, { name: 'one thing', type: 'someday', notebookId: id });
 		bills.createBill(ctx, { name: 'one bill', notebookId: id });
 
@@ -125,7 +130,7 @@ describe('the rows filed under one', () => {
 	 * point at one: the notebook goes and nothing it pointed at goes with it.
 	 */
 	test('deleting the notebook leaves everything it held exactly where it is', () => {
-		const id = notebooks.createNotebook(ctx, { title: 'A finished job' });
+		const id = notebooks.createNotebook(ctx, { title: 'A finished job', modules: EVERY_TAB });
 		const habit = habits.createHabit(ctx, { name: 'sweep up', notebookId: id });
 		const item = inventory.createItem(ctx, { name: 'dust sheet', type: 'someday', notebookId: id });
 		const bill = bills.createBill(ctx, { name: 'skip hire', notebookId: id });

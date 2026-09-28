@@ -3,11 +3,12 @@
 	import EmptyState from '$lib/components/EmptyState.svelte';
 	import Icon from '$lib/components/Icon.svelte';
 	import Modal from '$lib/components/Modal.svelte';
-	import RoomBar from '$lib/components/RoomBar.svelte';
+	import RoomSurface from '$lib/components/RoomSurface.svelte';
 	import TagChip from '$lib/components/TagChip.svelte';
 	import { NOTEBOOK_SEPARATOR } from '$lib/notebook-path';
 	import type { PageServerData } from './$types';
 	import { useT } from '$lib/i18n';
+	import PageTitle from '$lib/components/PageTitle.svelte';
 
 	const t = useT();
 
@@ -48,23 +49,39 @@
 	);
 </script>
 
-<svelte:head
-	><title>{t('gallery.notebooks.path.pictures', { title: data.title })}</title></svelte:head
->
+<PageTitle parts={t('gallery.notebooks.path.pictures', { title: data.title })} />
 
-<div class="space-y-4">
-	<RoomBar title={data.title} back={upTo} backLabel="Back">
-		{#snippet actions()}
-			<span class="text-sm text-gray-500 tabular-nums">{data.pictures.length}</span>
-		{/snippet}
-	</RoomBar>
-
-	<p class="text-xs text-gray-500">
-		{t('gallery.notebooks.path.thePicturesInYourNotebooks')}
-	</p>
+<!-- One surface, the same shape an album has: where you are along the top,
+     then the folders and the pictures. -->
+<RoomSurface>
+	{#snippet tools()}
+		<div class="flex w-full flex-wrap items-center gap-2">
+			<!-- `upTo` is resolved where it is built. -->
+			<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -->
+			<a href={upTo} class="icon-btn shrink-0" title={t('ui.back')} aria-label={t('ui.back')}>
+				<Icon name="arrow-left" />
+			</a>
+			<h2 class="min-w-0 truncate text-sm font-semibold text-gray-900">{data.title}</h2>
+			<!-- Only a count of what is on this page: pictures in the folders below
+			     are counted on their own tiles. -->
+			{#if data.pictures.length > 0}
+				<span class="tabular shrink-0 text-xs text-gray-500">
+					{t('gallery.picturesCount', { count: data.pictures.length })}
+				</span>
+			{/if}
+			<p class="w-full text-xs text-gray-500 sm:ml-auto sm:w-auto">
+				{t('gallery.notebooks.path.thePicturesInYourNotebooks')}
+			</p>
+		</div>
+	{/snippet}
 
 	{#if data.folders.length > 0}
-		<ul class="grid grid-cols-3 gap-1.5 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6">
+		<ul
+			class="grid grid-cols-3 gap-1.5 p-4 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 {data
+				.pictures.length > 0
+				? 'border-b border-gray-200'
+				: ''}"
+		>
 			{#each data.folders as folder (folder.name)}
 				<li>
 					<!-- `linkTo` starts from resolve('/media/gallery') and appends the
@@ -110,7 +127,7 @@
 			description={t('gallery.notebooks.path.putAPictureInA')}
 		/>
 	{:else if data.pictures.length > 0}
-		<ul class="grid grid-cols-3 gap-1.5 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6">
+		<ul class="grid grid-cols-3 gap-1.5 p-4 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6">
 			{#each data.pictures as picture (picture.id)}
 				<li>
 					<button
@@ -129,7 +146,7 @@
 			{/each}
 		</ul>
 	{/if}
-</div>
+</RoomSurface>
 
 <Modal
 	open={viewing !== null}

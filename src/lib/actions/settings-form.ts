@@ -35,6 +35,8 @@ export function settingsForm(
 		 * the copy is the outcome the copy exists to prevent.
 		 */
 		before?: (formData: FormData) => boolean | Promise<boolean>;
+		/** After a successful save — a dialog holding the form closes here. */
+		saved?: () => void;
 	} = {}
 ) {
 	return enhance(node, async ({ formData, cancel }) => {
@@ -56,6 +58,7 @@ export function settingsForm(
 				const said = (result.data as { message?: unknown } | undefined)?.message;
 				notify.success(typeof said === 'string' && said ? said : options.notice);
 			}
+			if (result.type === 'success') options.saved?.();
 			if (result.type === 'failure') {
 				const data = result.data as { message?: unknown; refused?: unknown } | undefined;
 				// A refusal from a hook is announced by the root layout, for every form

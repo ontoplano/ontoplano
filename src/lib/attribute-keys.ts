@@ -1,6 +1,22 @@
 import type { Translate } from './i18n/core.js';
 
-export type MetaKeySuggestion = {
+/**
+ * The form fields a task's attributes editor posts, and the marker that says
+ * the editor was on the form at all. See `AttributeFields.svelte`.
+ */
+export const ATTRIBUTE_FORM = {
+	key: 'attributeKey',
+	value: 'attributeValue',
+	/** Present whenever the editor was on the form, so an empty one reads as "cleared". */
+	present: 'attributesPresent'
+} as const;
+
+/** A stored attributes object as the editor's rows. */
+export function attributePairs(attributes: Record<string, string> | null | undefined) {
+	return Object.entries(attributes ?? {}) as [string, string][];
+}
+
+export type AttributeKeySuggestion = {
 	key: string;
 	description: string;
 	example: string;
@@ -9,7 +25,7 @@ export type MetaKeySuggestion = {
 };
 
 /**
- * Metadata keys ontoplano suggests on its own.
+ * Attribute names ontoplano suggests on its own, for a task or a task block.
  *
  * Hints, not a whitelist — any valid key is accepted, so a plugin can define
  * its own vocabulary without a change here. What a plugin declares through
@@ -19,10 +35,10 @@ export type MetaKeySuggestion = {
  * Only genuinely generic keys belong here. Anything a specific program reads
  * should come from that program's manifest, where it can be labelled.
  */
-export function suggestedKeys(t: Translate): MetaKeySuggestion[] {
+export function suggestedKeys(t: Translate): AttributeKeySuggestion[] {
 	return [
-		{ key: 'location', description: t('metaKeys.whereThisHappens'), example: 'gym' },
-		{ key: 'url', description: t('metaKeys.linkToOpenWithTheBlock'), example: '' }
+		{ key: 'location', description: t('attributeKeys.whereThisHappens'), example: 'gym' },
+		{ key: 'url', description: t('attributeKeys.linkToOpenWithIt'), example: '' }
 	];
 }
 
@@ -35,13 +51,16 @@ export function suggestedKeys(t: Translate): MetaKeySuggestion[] {
  */
 export function mergeSuggestions(
 	t: Translate,
-	declared: { name: string; metaKeys: { key: string; description: string; example: string }[] }[]
-): MetaKeySuggestion[] {
-	const byKey = new Map<string, MetaKeySuggestion>();
+	declared: {
+		name: string;
+		attributeKeys: { key: string; description: string; example: string }[];
+	}[]
+): AttributeKeySuggestion[] {
+	const byKey = new Map<string, AttributeKeySuggestion>();
 	for (const s of suggestedKeys(t)) byKey.set(s.key, s);
 
 	for (const plugin of declared) {
-		for (const entry of plugin.metaKeys) {
+		for (const entry of plugin.attributeKeys) {
 			const existing = byKey.get(entry.key);
 			byKey.set(entry.key, {
 				key: entry.key,
@@ -56,8 +75,8 @@ export function mergeSuggestions(
 	return [...byKey.values()].sort((a, b) => a.key.localeCompare(b.key));
 }
 
-/** Parse a stored meta JSON string into a flat object, tolerating bad input. */
-export function parseSlotMeta(raw: string | null | undefined): Record<string, string> {
+/** Parse stored attributes into a flat object, tolerating bad input. */
+export function parseStoredAttributes(raw: string | null | undefined): Record<string, string> {
 	if (!raw) return {};
 	try {
 		const parsed = JSON.parse(raw);

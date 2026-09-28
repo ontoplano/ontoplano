@@ -736,6 +736,97 @@
       "when": 1790285660008,
       "tag": "0104_a_habit_day_can_be_logged_more_than_once",
       "breakpoints": true
+    },
+    {
+      "idx": 105,
+      "version": "6",
+      "when": 1790482603720,
+      "tag": "0105_notebooks_carry_a_folder",
+      "breakpoints": true
+    },
+    {
+      "idx": 106,
+      "version": "6",
+      "when": 1790482607274,
+      "tag": "0106_dashed_notebook_names_become_folders",
+      "breakpoints": true
+    },
+    {
+      "idx": 107,
+      "version": "6",
+      "when": 1790484746844,
+      "tag": "0107_a_notebook_can_be_a_favourite",
+      "breakpoints": true
+    },
+    {
+      "idx": 108,
+      "version": "6",
+      "when": 1790486569714,
+      "tag": "0108_a_notebook_can_carry_a_category",
+      "breakpoints": true
+    },
+    {
+      "idx": 109,
+      "version": "6",
+      "when": 1790488586365,
+      "tag": "0109_bills_can_be_automatic_and_skipped",
+      "breakpoints": true
+    },
+    {
+      "idx": 110,
+      "version": "6",
+      "when": 1790489270487,
+      "tag": "0110_task_attributes_and_block_notebooks",
+      "breakpoints": true
+    },
+    {
+      "idx": 111,
+      "version": "6",
+      "when": 1790489329133,
+      "tag": "0111_a_repeating_block_lets_its_notebook_go",
+      "breakpoints": true
+    },
+    {
+      "idx": 112,
+      "version": "6",
+      "when": 1790528658228,
+      "tag": "0112_a_delegated_task_remembers_its_block",
+      "breakpoints": true
+    },
+    {
+      "idx": 113,
+      "version": "6",
+      "when": 1790528693639,
+      "tag": "0113_a_delegated_task_lets_its_block_go",
+      "breakpoints": true
+    },
+    {
+      "idx": 114,
+      "version": "6",
+      "when": 1790528910841,
+      "tag": "0114_a_widget_shows_one_notebook_tab",
+      "breakpoints": true
+    },
+    {
+      "idx": 115,
+      "version": "6",
+      "when": 1790529337112,
+      "tag": "0115_a_retried_create_is_answered_once",
+      "breakpoints": true
+    },
+    {
+      "idx": 116,
+      "version": "6",
+      "when": 1790551418434,
+      "tag": "0116_a_habit_can_be_archived",
+      "breakpoints": true
+    },
+    {
+      "idx": 117,
+      "version": "6",
+      "when": 1790551419787,
+      "tag": "0117_an_inventory_category_has_a_colour",
+      "breakpoints": true
     }
   ]
 }

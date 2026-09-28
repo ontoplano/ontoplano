@@ -50,7 +50,7 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 		weeklyReviewMail: weeklyReviewMailEnabled(locals.user!.id),
 		// The hour it would arrive, so the switch says when rather than leaving
 		// somebody to find out on a Monday.
-		weeklyReviewHour: `${String(reviewMailHour(locals.user!.id)).padStart(2, '0')}:00`,
+		weeklyReviewHour: String(reviewMailHour(locals.user!.id)).padStart(2, '0'),
 		exports: (() => {
 			const allowance = exportAllowance(locals.user!.id);
 			return {

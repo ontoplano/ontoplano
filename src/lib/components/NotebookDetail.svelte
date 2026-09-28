@@ -1,12 +1,14 @@
 <script lang="ts">
 	import GoalFields, { type FormTarget } from '$lib/components/fields/GoalFields.svelte';
+	import ShowingCount from '$lib/components/ShowingCount.svelte';
+	import SearchField from '$lib/components/SearchField.svelte';
 	import SortControl from '$lib/components/SortControl.svelte';
 	import MarkdownBox from '$lib/components/MarkdownBox.svelte';
 	import { page } from '$app/state';
 	import TagInput from '$lib/components/TagInput.svelte';
-	import { momentOf } from '$lib/when';
+	import { civilOf, momentOf } from '$lib/when';
 	import { useWhen } from '$lib/when-context.svelte';
-	import { tick, untrack, type ComponentProps } from 'svelte';
+	import { tick, untrack, type ComponentProps, type Snippet } from 'svelte';
 	import { enhance } from '$lib/enhance';
 	import { SvelteSet } from 'svelte/reactivity';
 	import OneLine from '$lib/components/OneLine.svelte';
@@ -15,6 +17,7 @@
 	import { BackCloses } from '$lib/back-closes';
 	import { isPhone } from '$lib/breakpoints';
 	import { keepInView } from '$lib/actions/keep-in-view';
+	import TabStrip from '$lib/components/TabStrip.svelte';
 	import EmptyState from '$lib/components/EmptyState.svelte';
 	import Field from '$lib/components/Field.svelte';
 	import FormGrid from '$lib/components/FormGrid.svelte';
@@ -24,7 +27,6 @@
 	import Modal from '$lib/components/Modal.svelte';
 	import MoreOptions from '$lib/components/MoreOptions.svelte';
 	import PictureAttach from '$lib/components/PictureAttach.svelte';
-	import { SECTION_COLORS } from '$lib/colors';
 	import { type Horizon } from '$lib/goals';
 	import GoalCard from '$lib/components/GoalCard.svelte';
 	import GoalLinksModal from '$lib/components/GoalLinksModal.svelte';
@@ -43,9 +45,16 @@
 		type NoteOrder
 	} from '$lib/note-order';
 	import TodoRows from '$lib/components/TodoRows.svelte';
+	import NotebookField from '$lib/components/NotebookField.svelte';
+	import { Selection } from '$lib/selection.svelte';
+	import SelectionBar from '$lib/components/SelectionBar.svelte';
+	import RowCard from '$lib/components/RowCard.svelte';
+	import SelectBox from '$lib/components/SelectBox.svelte';
+	import BatchDialog from '$lib/components/BatchDialog.svelte';
+	import type { EntryBatchVerb } from '$lib/services/diary';
 	import RoomToolbar from '$lib/components/RoomToolbar.svelte';
 	import IdeaCard from '$lib/components/IdeaCard.svelte';
-	import BillRow from '$lib/components/BillRow.svelte';
+	import BillList from '$lib/components/BillList.svelte';
 	import HabitCard from '$lib/components/HabitCard.svelte';
 	import LedgerTile from '$lib/components/LedgerTile.svelte';
 	import RecipeCard from '$lib/components/RecipeCard.svelte';
@@ -57,19 +66,15 @@
 	import { NOTEBOOK_HABIT_ACTIONS } from '$lib/habit-action-names';
 	import { NOTEBOOK_BILL_ACTIONS } from '$lib/bill-action-names';
 	import IdeaFields from '$lib/components/fields/IdeaFields.svelte';
-	import BillFields from '$lib/components/fields/BillFields.svelte';
 	import BuyFields from '$lib/components/fields/BuyFields.svelte';
 	import HabitFields from '$lib/components/fields/HabitFields.svelte';
 	import LedgerFields from '$lib/components/fields/LedgerFields.svelte';
 	import RecipeFields from '$lib/components/fields/RecipeFields.svelte';
 	import WorkoutFields from '$lib/components/fields/WorkoutFields.svelte';
 	import { NOTEBOOK_IDEA_ACTIONS } from '$lib/idea-action-names';
-	import {
-		DEFAULT_MODULES,
-		moduleGlyph,
-		moduleMeta,
-		type NotebookModule
-	} from '$lib/notebook-modules';
+	import { DEFAULT_MODULES, moduleMeta, type NotebookModule } from '$lib/notebook-modules';
+	import { ITEM_PARAM, TAB_PARAM } from '$lib/notebook-widget';
+	import { moduleGlyph } from '$lib/glyphs';
 	import type { Currency } from '$lib/money';
 	import { NOTEBOOK_TODO_ACTIONS } from '$lib/todo-actions';
 	import type { Todo } from '$lib/services/todos';
@@ -78,6 +83,7 @@
 	import { renderMarkdown } from '$lib/markdown';
 	import { say } from '$lib/said.svelte';
 	import { useT } from '$lib/i18n';
+	import { describeRecurrence, parseRecurrence } from '$lib/recurrence';
 	import type { PlainKey } from '$lib/i18n/keys';
 
 	/** What the picker is given, per module. */
@@ -126,6 +132,7 @@
 		parsers = [],
 		currency = 'BRL',
 		pickableNotebooks = [],
+		locations = [],
 		areas = [],
 		workoutMeasures = [],
 		slots = [],
@@ -168,16 +175,23 @@
 		contents?: {
 			entries: Entry[];
 			todos: Todo[];
-			blocks: { id: number; label: string | null; date: string; startTime: string }[];
+			blocks: {
+				id: number;
+				kind: 'weekly' | 'once';
+				label: string | null;
+				/** A one-off's day; null for one that repeats. */
+				date: string | null;
+				/** A repeating one's weekday and rhythm; null for a one-off. */
+				weekday: number | null;
+				recurrence: string | null;
+				startTime: string;
+			}[];
 			/* The whole goal: the tab draws the goals room's own card. */
 			goals: ComponentProps<typeof GoalCard>['goal'][];
 			/* And the whole idea, for the same reason — see `IdeaCard`. */
 			ideas: ComponentProps<typeof IdeaCard>['idea'][];
-			/* And the whole bill, with the period its tick would pay. */
-			bills: (ComponentProps<typeof BillRow>['bill'] & {
-				period: string;
-				paidThisPeriod: boolean;
-			})[];
+			/* And the whole bill, with the period its tick would pay and its history. */
+			bills: ComponentProps<typeof BillList>['bills'];
 			/* And the whole habit, with the days it has been logged. */
 			habits: ComponentProps<typeof HabitCard>['habit'][];
 			habitOccurrences: ComponentProps<typeof HabitCard>['occurrences'];
@@ -218,7 +232,9 @@
 		parsers?: { key: string; name: string }[];
 		/** For the money a ledger holds and a bill expects. */
 		currency?: Currency;
-		pickableNotebooks?: { id: number; title: string }[];
+		pickableNotebooks?: { id: number; title: string; modules: readonly string[] }[];
+		/** Where a thing can live, for the Inventory tab's form. */
+		locations?: { id: number; name: string; path: string }[];
 		areas?: { id: number; name: string }[];
 		workoutMeasures?: { activity: string; unit: string }[];
 		/* What a goal on this notebook can be told to count. */
@@ -228,7 +244,7 @@
 		activities?: { id: number; name: string }[];
 		/** Whether the composer is open, so a page can put the button elsewhere. */
 		composing?: boolean;
-		newAction?: { label: string; run?: () => void; href?: string } | undefined;
+		newAction?: { label: string; labels: string[]; run?: () => void; href?: string } | undefined;
 		linkAction?: { label: string; run: () => void } | undefined;
 	} = $props();
 
@@ -490,6 +506,15 @@
 		)
 	);
 
+	/** The notes `NOTE:#12` may name here, by their number, as they are listed. */
+	const noteRefs = $derived(
+		new Map(
+			(contents?.entries ?? [])
+				.filter((entry) => entry.seq !== null)
+				.map((entry) => [entry.seq as number, { title: noteName(entry) }])
+		)
+	);
+
 	function openReferencedTodo(press: MouseEvent) {
 		const link = (press.target as HTMLElement).closest('.todo-ref') as HTMLElement | null;
 		if (!link) return;
@@ -576,6 +601,18 @@
 		recipes: 'recipe'
 	};
 
+	/** What each tab's search box says, in the words the Notes and Tasks tabs use. */
+	const SEARCH_LABEL: Partial<Record<NotebookModule, PlainKey>> = {
+		goals: 'notebookDetail.searchTheseGoals',
+		ideas: 'notebookDetail.searchTheseIdeas',
+		inventory: 'notebookDetail.searchTheseThings',
+		ledgers: 'notebookDetail.searchTheseLedgers',
+		bills: 'notebookDetail.searchTheseBills',
+		habits: 'notebookDetail.searchTheseHabits',
+		workouts: 'notebookDetail.searchTheseWorkouts',
+		recipes: 'notebookDetail.searchTheseRecipes'
+	};
+
 	const NEW_LABELS: Partial<Record<NotebookModule, PlainKey>> = {
 		inventory: 'notebooks.newItem',
 		ledgers: 'notebooks.newLedger',
@@ -615,14 +652,14 @@
 	 * forms now carries, already set to this one.
 	 */
 	let composingModule = $state<NotebookModule | null>(null);
-	let billRhythm = $state('monthly');
+	/** The Bills tab's list, which owns the bill form — see `BillList`. */
+	let billList = $state<ReturnType<typeof BillList>>();
 	let habitKind = $state<'bad' | 'good' | 'neutral'>('bad');
 	let habitDays = $state<boolean[]>([false, false, false, false, false, false, false]);
 	let newMeasures = $state<{ activity: string; unit: string }[]>([{ activity: '', unit: '' }]);
 
 	function openComposer(module: NotebookModule) {
 		// Opened fresh: what the last one was left on is not part of this one.
-		billRhythm = 'monthly';
 		habitKind = 'bad';
 		habitDays = [false, false, false, false, false, false, false];
 		newMeasures = [{ activity: '', unit: '' }];
@@ -634,7 +671,7 @@
 			newAction = undefined;
 			return;
 		}
-		newAction =
+		const action =
 			tab === 'notes'
 				? {
 						label: composing ? t('ui.cancel') : t('notebookDetail.newNote'),
@@ -673,9 +710,32 @@
 							: // The rest: the room's own form, opened here — see `openComposer`.
 								{
 									label: t(NEW_LABELS[tab] ?? 'ui.add'),
-									run: () => openComposer(tab)
+									// Bills open the list's own form, the one the room uses.
+									run: () => (tab === 'bills' ? billList?.openNew() : openComposer(tab))
 								};
+		newAction = { ...action, labels: newLabels };
 	});
+
+	/**
+	 * Every word the New button can say on this notebook's tabs, and Cancel.
+	 *
+	 * So whoever draws it can make it as wide as the longest of them: a button
+	 * that changes width when the tab does moves everything beside it.
+	 */
+	const newLabels = $derived([
+		...TAB_KEYS.map((key) =>
+			key === 'notes'
+				? t('notebookDetail.newNote')
+				: key === 'tasks'
+					? t('notebookDetail.newTask')
+					: key === 'ideas'
+						? t('notebooks.newIdea')
+						: key === 'goals'
+							? t('notebookDetail.newGoal')
+							: t(NEW_LABELS[key] ?? 'ui.add')
+		),
+		t('ui.cancel')
+	]);
 
 	/*
 	 * Whichever notebook you move to opens on its own first tab, not on
@@ -697,8 +757,35 @@
 		const subject = showingOrphans ? 'orphans' : String(notebook?.id ?? '');
 		if (subject === subjectOnScreen) return;
 		subjectOnScreen = subject;
-		tab = firstTab;
+		// Unless the address names a tab — a home-screen widget's tap does.
+		const asked = untrack(() => page.url.searchParams.get(TAB_PARAM));
+		const named = TAB_KEYS.find((one) => one === asked);
+		tab = named ?? firstTab;
+		const item = Number(untrack(() => page.url.searchParams.get(ITEM_PARAM)));
+		// A task and a goal open in a form, which is a history entry; on a
+		// first load that has to wait until the router is up.
+		if (named && Number.isInteger(item) && item > 0) setTimeout(() => openItem(named, item));
 	});
+
+	/**
+	 * Put one thing in the tab on screen, opened — what a widget's line was
+	 * pressed for. A note unfolds under the cursor, a task and a goal open in
+	 * their editors; the other tabs have no single thing to open, and showing
+	 * the tab is the answer.
+	 */
+	function openItem(module: Tab, id: number) {
+		if (module === 'notes') {
+			const entry = contents?.entries.find((one) => one.id === id);
+			if (!entry) return;
+			if (entry.archivedAt) showArchivedNotes = true;
+			openNotes.add(id);
+			void tick().then(() => {
+				const at = shownNotes.findIndex((one) => one.id === id);
+				if (at >= 0) cursor = at;
+			});
+		} else if (module === 'tasks') openTodoById?.(id);
+		else if (module === 'goals') openGoalEdit(id);
+	}
 
 	/**
 	 * How far along, where that means something.
@@ -785,6 +872,103 @@
 	 */
 	let noteSearch = $state('');
 
+	/*
+	 * What the search box on every other tab holds.
+
+	 * One box for all of them, cleared when the tab changes: the Notes and
+	 * Tasks tabs each open on a search strip, and a Goals tab that opened on
+	 * its first card read as a different kind of screen.
+	 */
+	function clearNoteFilters() {
+		noteTagFilter = [];
+		showArchivedNotes = false;
+		noteSearch = '';
+	}
+
+	let moduleSearch = $state('');
+	$effect(() => {
+		void tab;
+		untrack(() => (moduleSearch = ''));
+	});
+
+	/** The words of whatever a module tab lists, for the search box above it. */
+	function wordsOf(item: Record<string, unknown>): string {
+		const words: string[] = [];
+		for (const value of Object.values(item)) {
+			if (typeof value === 'string') words.push(value);
+			else if (Array.isArray(value))
+				for (const one of value)
+					if (one && typeof one === 'object' && 'name' in one && typeof one.name === 'string')
+						words.push(one.name);
+		}
+		return words.join('\n').toLowerCase();
+	}
+
+	/**
+	 * How every other tab is ordered: when it was added, or by name.
+	 *
+	 * The Notes and Tasks tabs each have an order control at the end of the
+	 * strip; a tab without one was the same strip missing its last control.
+	 */
+	const MODULE_ORDERS = ['added', 'name'] as const;
+	type ModuleOrder = (typeof MODULE_ORDERS)[number];
+	const MODULE_ORDER_LABELS: Record<ModuleOrder, PlainKey> = {
+		added: 'notebookDetail.orderAdded',
+		name: 'notebookDetail.orderName'
+	};
+	let moduleOrder = $state<ModuleOrder>('added');
+	let moduleDirection = $state<'asc' | 'desc'>('asc');
+
+	/** What a module's thing is called, whichever field its room keeps that in. */
+	function nameOf(item: Record<string, unknown>): string {
+		for (const field of ['title', 'name', 'content'])
+			if (typeof item[field] === 'string') return item[field] as string;
+		return '';
+	}
+
+	/** A module tab's list, narrowed by its search box and put in its order. */
+	function searched<T>(items: readonly T[]): T[] {
+		const needle = moduleSearch.trim().toLowerCase();
+		const out = needle
+			? items.filter((item) => wordsOf(item as Record<string, unknown>).includes(needle))
+			: [...items];
+		const sign = moduleDirection === 'asc' ? 1 : -1;
+		return out.sort((a, b) => {
+			const one = a as Record<string, unknown>;
+			const two = b as Record<string, unknown>;
+			return (
+				sign *
+				(moduleOrder === 'name'
+					? nameOf(one).localeCompare(nameOf(two))
+					: Number(one.id ?? 0) - Number(two.id ?? 0))
+			);
+		});
+	}
+
+	const shownGoals = $derived(searched(contents?.goals ?? []));
+	const shownIdeas = $derived(searched(contents?.ideas ?? []));
+	const shownInventory = $derived(searched(contents?.inventory ?? []));
+	const shownWorkouts = $derived(searched(contents?.workouts ?? []));
+	const shownRecipes = $derived(searched(contents?.recipes ?? []));
+	const shownLedgers = $derived(searched(contents?.ledgers ?? []));
+	const shownHabits = $derived(searched(contents?.habits ?? []));
+	const shownBills = $derived(searched(contents?.bills ?? []));
+
+	/** How many the showing tab holds, and how many of them the search leaves. */
+	const moduleTally = $derived.by(() => {
+		const pairs: Partial<Record<Tab, [number, number]>> = {
+			goals: [contents?.goals.length ?? 0, shownGoals.length],
+			ideas: [contents?.ideas.length ?? 0, shownIdeas.length],
+			inventory: [contents?.inventory.length ?? 0, shownInventory.length],
+			workouts: [contents?.workouts.length ?? 0, shownWorkouts.length],
+			recipes: [contents?.recipes.length ?? 0, shownRecipes.length],
+			ledgers: [contents?.ledgers.length ?? 0, shownLedgers.length],
+			habits: [contents?.habits.length ?? 0, shownHabits.length],
+			bills: [contents?.bills.length ?? 0, shownBills.length]
+		};
+		return pairs[tab] ?? null;
+	});
+
 	function toggleNoteTag(name: string) {
 		noteTagFilter = noteTagFilter.includes(name)
 			? noteTagFilter.filter((one) => one !== name)
@@ -811,6 +995,57 @@
 		return orderNotes(out, noteOrder, noteDirection);
 	});
 
+	/*
+	 * Several notes at once — the same selection the task list has.
+	 *
+	 * Only your own: in a shared notebook somebody else's note is theirs to
+	 * move or delete, as it is on its own row.
+	 */
+	const noteSelection = new Selection<EntryBatchVerb>();
+	const selectableNotes = $derived(
+		shownNotes.filter((entry) => !('mine' in entry) || entry.mine !== false)
+	);
+	const chosenNoteIds = $derived(
+		selectableNotes.filter((entry) => noteSelection.has(entry.id)).map((entry) => entry.id)
+	);
+	$effect(() => noteSelection.keep(selectableNotes.map((entry) => entry.id)));
+	const NOTE_BATCH_LABELS = {
+		notebook: 'notebookDetail.batchMove',
+		tag: 'notebookDetail.batchTag',
+		archive: 'notebookDetail.batchArchive',
+		unarchive: 'notebookDetail.batchUnarchive',
+		remove: 'notebookDetail.batchDelete'
+	} as const;
+	const noteBatchVerbs = $derived(
+		(
+			[
+				['notebook', 'notebook'],
+				['tag', 'tag'],
+				['archive', 'archive'],
+				// Only while the put-away ones are on screen to be chosen.
+				...(showArchivedNotes ? ([['unarchive', 'undo']] as const) : []),
+				['remove', 'trash']
+			] as const
+		).map(([key, icon]) => ({ key, icon, label: t(NOTE_BATCH_LABELS[key]) }))
+	);
+
+	function noteSelectionKeys(e: KeyboardEvent) {
+		if (tab !== 'notes' && !showingOrphans) return;
+		if (e.key !== 'Escape') {
+			if (e.ctrlKey || e.metaKey || e.altKey) return;
+			if (
+				e.target instanceof HTMLInputElement ||
+				e.target instanceof HTMLTextAreaElement ||
+				e.target instanceof HTMLSelectElement
+			)
+				return;
+		}
+		if (noteSelection.verb && e.key !== 'Escape') return;
+		const under = shownNotes[cursor];
+		const selectable = under && selectableNotes.includes(under) ? under.id : undefined;
+		if (noteSelection.handleKey(e, () => selectable)) e.stopPropagation();
+	}
+
 	/** How many are put away, so the button can say what it would bring back. */
 	const putAwayNotes = $derived(
 		(contents?.entries ?? orphaned).filter((entry) => entry.archivedAt).length
@@ -820,77 +1055,31 @@
 	 * The strip: one entry per module this notebook holds, in the app's order.
 	 *
 	 * Built from the same list the body switches on, so a tab can never be
-	 * drawn with nothing behind it. Notes, tasks and goals count themselves
-	 * because they are drawn here; everything else is counted through
-	 * `rowsFor`, which is what the tab itself draws — so the number beside a
-	 * tab is exactly how many lines pressing it shows.
+	 * drawn with nothing behind it. The number beside a tab is how many lines
+	 * pressing it shows — one number, because "3/8" beside a word does not say
+	 * which of the two is which.
 	 */
-	const tabs = $derived<{ key: Tab; label: PlainKey; count: number; done?: number }[]>(
+	const tabs = $derived<{ key: Tab; label: PlainKey; count: number }[]>(
 		TAB_KEYS.map((key) => {
 			if (key === 'notes') return { key, label: 'app.notes' as PlainKey, count: shownNotes.length };
 			if (key === 'tasks')
 				return {
 					key,
 					label: 'app.tasks' as PlainKey,
-					count: (contents?.todos.length ?? 0) + (contents?.blocks.length ?? 0),
-					// A block on the grid is a thing that happens rather than a thing
-					// to finish, so only the todos are counted as done or not.
-					done: contents?.todos.filter((todo) => CLOSED_STATUSES.includes(todo.status)).length ?? 0
+					count: (contents?.todos.length ?? 0) + (contents?.blocks.length ?? 0)
 				};
 			if (key === 'goals')
-				return {
-					key,
-					label: 'app.goals' as PlainKey,
-					count: contents?.goals.length ?? 0,
-					done: contents?.goals.filter((goal) => goal.status !== 'open').length ?? 0
-				};
-			if (key === 'ideas')
-				return {
-					key,
-					label: moduleMeta(key).name,
-					count: contents?.ideas.length ?? 0,
-					done: contents?.ideas.filter((idea) => idea.isApplied).length ?? 0
-				};
-			if (key === 'inventory')
-				return {
-					key,
-					label: moduleMeta(key).name,
-					count: contents?.inventory.length ?? 0,
-					// Got it, which is what the tick on a row says.
-					done: contents?.inventory.filter((item) => item.bought).length ?? 0
-				};
-			if (key === 'workouts')
-				return { key, label: moduleMeta(key).name, count: contents?.workouts.length ?? 0 };
-			if (key === 'recipes')
-				return { key, label: moduleMeta(key).name, count: contents?.recipes.length ?? 0 };
-			if (key === 'ledgers')
-				return { key, label: moduleMeta(key).name, count: contents?.ledgers.length ?? 0 };
-			if (key === 'habits')
-				return {
-					key,
-					label: moduleMeta(key).name,
-					count: contents?.habits.length ?? 0,
-					// Done today, which is the one thing a habit row is pressed for.
-					done:
-						contents?.habits.filter((habit) =>
-							contents.habitOccurrences.some(
-								(one) => one.habitId === habit.id && one.date === contents.today
-							)
-						).length ?? 0
-				};
-			if (key === 'bills')
-				return {
-					key,
-					label: moduleMeta(key).name,
-					count: contents?.bills.length ?? 0,
-					// Put away, not paid: a bill comes round again, and whether this
-					// month's is settled is the mark on the row rather than a tally.
-					done: contents?.bills.filter((bill) => !bill.active).length ?? 0
-				};
-
-			// Every module above names itself; this is the compiler's proof that
-			// none is missing rather than a fallback anybody reaches.
-			return { key, label: moduleMeta(key).name, count: 0 };
+				return { key, label: 'app.goals' as PlainKey, count: contents?.goals.length ?? 0 };
+			const counted: Partial<Record<NotebookModule, number>> = {
+				ideas: contents?.ideas.length,
+				inventory: contents?.inventory.length,
+				workouts: contents?.workouts.length,
+				recipes: contents?.recipes.length,
+				ledgers: contents?.ledgers.length,
+				habits: contents?.habits.length,
+				bills: contents?.bills.length
+			};
+			return { key, label: moduleMeta(key).name, count: counted[key] ?? 0 };
 		})
 	);
 
@@ -930,7 +1119,7 @@
 	 * over rather than fighting it for them.
 	 */
 	browsable(() => ({
-		items: () => (tab === 'notes' ? shownNotes : tab === 'goals' ? (contents?.goals ?? []) : []),
+		items: () => (tab === 'notes' ? shownNotes : tab === 'goals' ? shownGoals : []),
 		cursor: () => cursor,
 		moveTo: (at: number) => (cursor = at),
 		tabs: { of: TAB_KEYS, current: () => tab, go: (key: string) => (tab = key as Tab) },
@@ -954,6 +1143,8 @@
 		return momentOf(iso, now());
 	}
 </script>
+
+<svelte:window onkeydown={noteSelectionKeys} />
 
 <!--
 	The dialog is the notebook's own surface, inline until `showModal()` — see
@@ -1028,11 +1219,13 @@
 
 	<div class="nb-body">
 		{#if showingOrphans}
-			<!-- Notes whose notebook was deleted: no tabs here, so the order
-			     control gets the row the tab strip would have been. -->
-			<div class="flex items-center justify-end gap-1 border-b border-gray-200 px-4 py-1.5">
-				{@render orderControl()}
-			</div>
+			<!-- Notes whose notebook was deleted: no tabs, and the same strip
+			     the Notes tab opens on. -->
+			<RoomToolbar inset>
+				{#snippet tools()}
+					{@render noteControls()}
+				{/snippet}
+			</RoomToolbar>
 			{@render noteList(shownNotes, null)}
 		{:else if !notebook || !contents}
 			<!--
@@ -1063,55 +1256,37 @@
 				here at every size, because one icon costs nothing and it is the
 				control for the panel rather than for what is in it.
 			-->
-			<div class="flex items-center border-b border-gray-200 pr-2">
-				<div data-tour="notebook-tabs" class="snap-strip min-w-0 flex-1 gap-1 px-2 md:flex">
-					{#each tabs as option (option.key)}
-						<!--
-							The strip gives up its width to the controls beside it, so on a
-							narrow screen the tab you are on can be the one off the end.
-							This scrolls it back — by the smallest amount that works, and
-							never vertically.
-						-->
+			<!-- The same strip a room's tabs are, one level down; the whole-screen
+			     button stands at its far end, as a room's verb does. -->
+			<div class="notebook-tabs">
+				<TabStrip
+					nested
+					label={t('notebookDetail.sections')}
+					dataTour="notebook-tabs"
+					tabs={tabs.map((option) => ({
+						label: t(option.label),
+						icon: moduleGlyph(option.key),
+						count: String(option.count)
+					}))}
+					current={tabs.findIndex((option) => option.key === tab)}
+					onpick={(index) => (tab = tabs[index].key)}
+				>
+					{#snippet trailing()}
 						<button
-							use:keepInView={tab === option.key}
-							onclick={() => (tab = option.key)}
-							class="tab-link inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium whitespace-nowrap transition {tab ===
-							option.key
-								? 'border-b-2 text-gray-900'
-								: 'text-gray-500 hover:text-gray-700'}"
-							style={tab === option.key ? `border-color: ${SECTION_COLORS.diary}` : ''}
+							type="button"
+							onclick={() => (maximized ? leaveMaximized() : enterMaximized())}
+							class="icon-btn ml-auto shrink-0"
+							title={maximized
+								? t('notebookDetail.backToThePage')
+								: t('notebookDetail.theWholeScreen')}
+							aria-label={maximized
+								? t('notebookDetail.backToThePage')
+								: t('notebookDetail.theWholeScreen')}
 						>
-							<!-- The glyph before the word, from `$lib/glyphs` — the same
-						     list the rooms' own strips read, so a notebook's Tasks tab
-						     and the planner in the bar cannot end up wearing two
-						     different pictures of the same idea. -->
-							{#if moduleGlyph(option.key)}
-								<Icon name={moduleGlyph(option.key)!} size={14} />
-							{/if}
-							{t(option.label)}
-							<span class="tabular ml-1 text-xs text-gray-500">
-								{option.done !== undefined && option.count > 0
-									? `${option.done}/${option.count}`
-									: option.count}
-							</span>
+							<Icon name="maximize" />
 						</button>
-					{/each}
-				</div>
-				<div class="flex shrink-0 items-center justify-end gap-2 pl-2">
-					<button
-						type="button"
-						onclick={() => (maximized ? leaveMaximized() : enterMaximized())}
-						class="icon-btn shrink-0"
-						title={maximized
-							? t('notebookDetail.backToThePage')
-							: t('notebookDetail.theWholeScreen')}
-						aria-label={maximized
-							? t('notebookDetail.backToThePage')
-							: t('notebookDetail.theWholeScreen')}
-					>
-						<Icon name="maximize" />
-					</button>
-				</div>
+					{/snippet}
+				</TabStrip>
 			</div>
 
 			{#if tab === 'notes'}
@@ -1130,6 +1305,18 @@
 						{@render noteControls()}
 					{/snippet}
 				</RoomToolbar>
+			{:else if moduleTally && moduleTally[0] > 0}
+				<!-- The strip every tab of a notebook opens on: search and count, in
+				     the places the Notes and Tasks tabs put them. -->
+				<RoomToolbar inset>
+					{#snippet tools()}
+						{@render moduleControls(moduleTally[0], moduleTally[1])}
+					{/snippet}
+				</RoomToolbar>
+			{/if}
+
+			{#if moduleTally && moduleTally[0] > 0 && moduleTally[1] === 0}
+				<EmptyState filtered onclear={() => (moduleSearch = '')} compact />
 			{/if}
 
 			{#if tab === 'notes'}
@@ -1183,6 +1370,7 @@
 							rows={6}
 							required
 							todos={todoRefs}
+							notes={noteRefs}
 							placeholder={t('notebookDetail.writeANoteAbout', { title: notebook.title })}
 						/>
 						<!-- A note written here takes a picture the same way a note written in
@@ -1281,12 +1469,16 @@
 				-->
 				{#if contents.blocks.length > 0}
 					<ul class="divide-y divide-gray-200 border-t border-gray-200">
-						{#each contents.blocks as block (`b${block.id}`)}
+						{#each contents.blocks as block (`${block.kind}${block.id}`)}
 							<li class="flex items-center gap-3 px-4 py-2 text-sm">
 								<Icon name="calendar" class="shrink-0 text-gray-500" />
-								<span class="min-w-0 flex-1 truncate text-gray-900">{block.label}</span>
+								<span class="min-w-0 flex-1 truncate text-gray-900"
+									>{block.label || t('tasks.plan.untitledBlock')}</span
+								>
 								<span class="tabular shrink-0 text-xs text-gray-500">
-									{block.date}
+									{block.kind === 'weekly'
+										? describeRecurrence(parseRecurrence(block.recurrence), block.weekday ?? 0, t)
+										: civilOf(block.date, now())}
 									{block.startTime}
 								</span>
 							</li>
@@ -1304,7 +1496,7 @@
 					to scope it, not strip it.
 				-->
 				<div class="divide-y divide-gray-200">
-					{#each contents.goals as goal, at (goal.id)}
+					{#each shownGoals as goal, at (goal.id)}
 						<div class={tab === 'goals' && cursor === at ? 'kb-cursor' : ''}>
 							<GoalCard
 								{goal}
@@ -1313,7 +1505,6 @@
 								{slots}
 								{activities}
 								actions={NOTEBOOK_GOAL_ACTIONS}
-								accent={SECTION_COLORS.home}
 								onedit={(id) => openGoalEdit(id)}
 								onlink={(id) => (linkingGoalId = id)}
 							/>
@@ -1325,16 +1516,19 @@
 					The Ideas room's own card, not a line with a tick beside it.
 
 					An idea filed under a subject is an idea: its star, its tags, the
-					note saying what was applied, and the verbs up its right-hand
-					edge. Drawing a thinner version of it here is how the two screens
+					note saying what was applied, and its verbs. Drawing a thinner version of it here is how the two screens
 					stopped agreeing about what an idea is — see `IdeaCard`.
 				-->
 				{#if contents.ideas.length === 0}
-					<EmptyState icon="ideas" title={t('notebooks.nothingUnderThisSubjectYet')} compact />
+					<EmptyState
+						icon={moduleGlyph('ideas')}
+						title={t('notebooks.nothingUnderThisSubjectYet')}
+						compact
+					/>
 				{:else}
-					<div class="divide-y divide-gray-200 px-4">
-						{#each contents.ideas as idea (idea.id)}
-							<div class="py-2">
+					<div class="divide-y divide-gray-200">
+						{#each shownIdeas as idea (idea.id)}
+							<div>
 								<IdeaCard
 									{idea}
 									actions={NOTEBOOK_IDEA_ACTIONS}
@@ -1356,11 +1550,15 @@
 					"unticked" until you look — see `ItemRow`.
 				-->
 				{#if contents.inventory.length === 0}
-					<EmptyState icon="shopping" title={t('notebooks.nothingUnderThisSubjectYet')} compact />
+					<EmptyState
+						icon={moduleGlyph('inventory')}
+						title={t('notebooks.nothingUnderThisSubjectYet')}
+						compact
+					/>
 				{:else}
 					<div class="divide-y divide-gray-200">
-						{#each contents.inventory as item (item.id)}
-							<div class="flex items-center gap-x-3 px-4 py-2">
+						{#each shownInventory as item (item.id)}
+							<div class="row-card">
 								<ItemRow {item} {currency} actions={NOTEBOOK_ITEM_ACTIONS} />
 							</div>
 						{/each}
@@ -1374,10 +1572,14 @@
 					here — see `WorkoutCard`.
 				-->
 				{#if contents.workouts.length === 0}
-					<EmptyState icon="flame" title={t('notebooks.nothingUnderThisSubjectYet')} compact />
+					<EmptyState
+						icon={moduleGlyph('workouts')}
+						title={t('notebooks.nothingUnderThisSubjectYet')}
+						compact
+					/>
 				{:else}
 					<ul class="divide-y divide-gray-200">
-						{#each contents.workouts as workout (workout.id)}
+						{#each shownWorkouts as workout (workout.id)}
 							<WorkoutCard
 								{workout}
 								sessions={contents.workoutSessions}
@@ -1394,10 +1596,14 @@
 					without it is a title in a list — see `RecipeCard`.
 				-->
 				{#if contents.recipes.length === 0}
-					<EmptyState icon="utensils" title={t('notebooks.nothingUnderThisSubjectYet')} compact />
+					<EmptyState
+						icon={moduleGlyph('recipes')}
+						title={t('notebooks.nothingUnderThisSubjectYet')}
+						compact
+					/>
 				{:else}
-					<div class="grid gap-px bg-gray-200 sm:grid-cols-2">
-						{#each contents.recipes as recipe (recipe.id)}
+					<div class="divide-y divide-gray-200">
+						{#each shownRecipes as recipe (recipe.id)}
 							<RecipeCard {recipe} />
 						{/each}
 					</div>
@@ -1410,10 +1616,14 @@
 					somebody reads a bank export.
 				-->
 				{#if contents.ledgers.length === 0}
-					<EmptyState icon="wallet" title={t('notebooks.nothingUnderThisSubjectYet')} compact />
+					<EmptyState
+						icon={moduleGlyph('ledgers')}
+						title={t('notebooks.nothingUnderThisSubjectYet')}
+						compact
+					/>
 				{:else}
 					<div class="flex flex-wrap gap-2 px-4 py-3">
-						{#each contents.ledgers as ledger (ledger.id)}
+						{#each shownLedgers as ledger (ledger.id)}
 							<LedgerTile
 								{ledger}
 								{currency}
@@ -1429,10 +1639,14 @@
 					checkbox — see `HabitCard`.
 				-->
 				{#if contents.habits.length === 0}
-					<EmptyState icon="health" title={t('notebooks.nothingUnderThisSubjectYet')} compact />
+					<EmptyState
+						icon={moduleGlyph('habits')}
+						title={t('notebooks.nothingUnderThisSubjectYet')}
+						compact
+					/>
 				{:else}
 					<div class="divide-y divide-gray-200">
-						{#each contents.habits as habit (habit.id)}
+						{#each shownHabits as habit (habit.id)}
 							<HabitCard
 								{habit}
 								occurrences={contents.habitOccurrences}
@@ -1445,24 +1659,25 @@
 				{/if}
 			{:else if tab === 'bills'}
 				<!--
-					The Finance room's own row: what it costs, its rhythm, the day it
-					falls due, the tick that pays it and the undo beside it.
+					The Finance room's own list: the rows, the form that edits them and
+					the confirmation that deletes an archived one — see `BillList`.
 				-->
-				{#if contents.bills.length === 0}
-					<EmptyState icon="wallet" title={t('notebooks.nothingUnderThisSubjectYet')} compact />
-				{:else}
-					<ul class="divide-y divide-gray-200">
-						{#each contents.bills as bill (bill.id)}
-							<BillRow
-								{bill}
-								{currency}
-								actions={NOTEBOOK_BILL_ACTIONS}
-								period={bill.period}
-								paid={bill.paidThisPeriod}
-							/>
-						{/each}
-					</ul>
-				{/if}
+				<BillList
+					bind:this={billList}
+					bills={shownBills}
+					{currency}
+					actions={NOTEBOOK_BILL_ACTIONS}
+					notebooks={pickableNotebooks}
+					startingNotebook={notebook?.id ?? null}
+				>
+					{#snippet empty()}
+						<EmptyState
+							icon={moduleGlyph('bills')}
+							title={t('notebooks.nothingUnderThisSubjectYet')}
+							compact
+						/>
+					{/snippet}
+				</BillList>
 			{/if}
 		{/if}
 	</div>
@@ -1527,6 +1742,36 @@
 	One snippet, drawn either beside the tabs or on a row below them depending
 	on the width — never twice at once, and never two versions of it.
 -->
+{#snippet moduleControls(total: number, shown: number)}
+	<!-- The Notes tab's search and count, in the same slots; these tabs have
+	     nothing else to narrow by. -->
+	<FilterBar name="notebook-module">
+		{#snippet lead()}
+			<SearchField
+				bind:value={moduleSearch}
+				label={t(SEARCH_LABEL[tab] ?? 'notebookDetail.searchThisTab')}
+			/>
+		{/snippet}
+		{#snippet count()}
+			<ShowingCount {total} {shown} said={(count) => t('notebookDetail.itemsShowing', { count })} />
+		{/snippet}
+		{#snippet trailing()}
+			<SortControl
+				value={moduleOrder}
+				options={MODULE_ORDERS}
+				labels={MODULE_ORDER_LABELS}
+				direction={moduleDirection}
+				onpick={(next) => {
+					moduleOrder = next;
+					moduleDirection = 'asc';
+				}}
+				onflip={() => (moduleDirection = moduleDirection === 'asc' ? 'desc' : 'asc')}
+				label={t('notebookDetail.orderThisTabBy')}
+			/>
+		{/snippet}
+	</FilterBar>
+{/snippet}
+
 {#snippet noteControls()}
 	<!--
 		The same strip the tasks tab has, in the same order.
@@ -1537,53 +1782,49 @@
 		boiler" on the Tasks tab and not on the Notes tab beside it. The controls
 		differ because notes and tasks differ. The shape does not.
 	-->
+	<!-- "Select many" is the strip's verb, as on the to-do list, rather than a
+	     band of its own above the notes. -->
+	{#if (contents?.entries ?? orphaned).length > 0}
+		<SelectionBar
+			selection={noteSelection}
+			visible={selectableNotes.map((entry) => entry.id)}
+			verbs={noteBatchVerbs}
+			selectAllLabel={t('notebookDetail.selectVisibleNotes')}
+			dataTour="notebook-note-selection"
+		>
+			{#snippet strip(selectMany)}
+				{@render noteFilters(selectMany)}
+			{/snippet}
+		</SelectionBar>
+	{:else}
+		{@render noteFilters()}
+	{/if}
+{/snippet}
+
+{#snippet noteFilters(selectMany?: Snippet)}
 	<FilterBar
 		name="notes"
+		verb={selectMany}
 		on={noteTagFilter.length > 0 || showArchivedNotes || noteSearch.trim() !== ''}
 		summary={noteTagFilter.map((one) => `#${one}`).join(', ')}
-		onclear={() => {
-			noteTagFilter = [];
-			showArchivedNotes = false;
-			noteSearch = '';
-		}}
+		onclear={clearNoteFilters}
 	>
 		{#snippet lead()}
 			<!-- The box fills the slot; how wide that slot is belongs to
 			     `FilterBar`, so this tab and the Tasks tab beside it are the same
 			     shape. -->
-			<label class="block w-full">
-				<span class="sr-only">{t('notebookDetail.searchTheseNotes')}</span>
-				<input
-					type="search"
-					bind:value={noteSearch}
-					placeholder={t('notebookDetail.searchTheseNotes')}
-					autocomplete="off"
-					class="input input-sm"
-				/>
-			</label>
+			<SearchField bind:value={noteSearch} label={t('notebookDetail.searchTheseNotes')} />
 		{/snippet}
 
 		{#snippet count()}
 			<!-- How many are on screen right now — the toggles say what is hidden
 			     and nothing said what is left. -->
 			<!-- Held open at the count of every note there is — see `.count-slot`. -->
-			<span
-				class="tabular count-slot shrink-0 self-center text-xs text-gray-500"
-				title={t('notebookDetail.showingCount', { count: shownNotes.length })}
-			>
-				<span class="count-widest" aria-hidden="true">
-					<span class="sm:hidden">{contents?.entries.length ?? 0}</span>
-					<span class="hidden sm:inline"
-						>{t('notebookDetail.showingCount', { count: contents?.entries.length ?? 0 })}</span
-					>
-				</span>
-				<span>
-					<span class="sm:hidden">{shownNotes.length}</span>
-					<span class="hidden sm:inline"
-						>{t('notebookDetail.showingCount', { count: shownNotes.length })}</span
-					>
-				</span>
-			</span>
+			<ShowingCount
+				total={contents?.entries.length ?? 0}
+				shown={shownNotes.length}
+				said={(count) => t('notebookDetail.showingCount', { count })}
+			/>
 		{/snippet}
 
 		{#snippet trailing()}
@@ -1614,23 +1855,24 @@
 {/snippet}
 
 {#snippet orderControl()}
-	{#if shownNotes.length > 1 || noteOrder !== DEFAULT_NOTE_ORDER}
-		<!-- The same control the task list uses. See `SortControl`. -->
-		<SortControl
-			value={noteOrder}
-			options={NOTE_ORDERS}
-			labels={ORDER_LABELS}
-			direction={noteDirection}
-			onpick={pickOrder}
-			onflip={flipDirection}
-			label={t('notebookDetail.orderNotesBy')}
-		/>
-	{/if}
+	<!-- The same control the task list uses, always in the same place. See `SortControl`. -->
+	<SortControl
+		value={noteOrder}
+		options={NOTE_ORDERS}
+		labels={ORDER_LABELS}
+		direction={noteDirection}
+		onpick={pickOrder}
+		onflip={flipDirection}
+		label={t('notebookDetail.orderNotesBy')}
+	/>
 {/snippet}
 
 {#snippet noteList(entries: Entry[], notebookId: number | null)}
-	{#if entries.length === 0}
-		<p class="px-4 py-3 text-sm text-gray-500">{t('notebookDetail.nothingWrittenHereYet')}</p>
+	{#if entries.length === 0 && (contents?.entries ?? orphaned).length > 0}
+		<!-- Hidden, not absent: the strip says what is narrowing it. -->
+		<EmptyState compact filtered onclear={clearNoteFilters} />
+	{:else if entries.length === 0}
+		<EmptyState compact icon="note" title={t('notebookDetail.nothingWrittenHereYet')} />
 	{:else}
 		<div class="divide-y divide-gray-200">
 			{#each entries as entry, at (entry.id)}
@@ -1648,7 +1890,10 @@
 				-->
 				<article
 					use:keepInView={notebookId !== null && cursor === at}
-					class="px-4 py-3 {cursor === at ? 'kb-cursor' : ''}"
+					class="{editingNoteId === entry.id ? 'px-4 py-3' : 'row-card'} {cursor === at
+						? 'kb-cursor'
+						: ''}"
+					class:bg-gray-100={noteSelection.selecting && noteSelection.has(entry.id)}
 					class:is-pinned={'pinnedAt' in entry && entry.pinnedAt}
 				>
 					{#if editingNoteId === entry.id}
@@ -1669,30 +1914,33 @@
 							oninput={() => (noteSaved = false)}
 						>
 							<input type="hidden" name="id" value={entry.id} />
-							{#if notebookId !== null}
-								<input type="hidden" name="notebookId" value={notebookId} />
-							{/if}
 							<OneLine
 								name="heading"
 								value={entry.title ?? ''}
 								placeholder={t('ui.title')}
 								class="input mb-2 w-full font-medium"
 							/>
-							<!-- An existing note already owns this space. Let its editor show
-							     the whole text alongside the preview instead of adding an
-							     inner scrollbar at the generic box's height ceiling. -->
 							<MarkdownBox
 								bind:element={editBox}
 								value={entry.content}
 								name="content"
 								rows={8}
-								maxHeight={Infinity}
 								required
 								todos={todoRefs}
+								notes={noteRefs}
 							/>
 							<PictureAttach target={editBox} />
 							<div class="mt-3">
 								<FormGrid>
+									<!-- Where it lives, which an edit may change: the diary is
+									     the choice of no notebook. -->
+									<NotebookField
+										notebooks={pickableNotebooks}
+										holds="notes"
+										value={notebookId}
+										span={12}
+										noneLabel={t('sections.diary.label')}
+									/>
 									{@render tagsAndPeople(
 										entry.tags.map((t) => t.name).join(', '),
 										entry.people.map((p) => p.name).join(', ')
@@ -1729,53 +1977,190 @@
 						</form>
 					{:else}
 						<!--
-							A note is its name until you open it.
+							The card a task is drawn on — `RowCard`: the fold and the note's
+							number in the rail, the name and when beside them, the people and
+							labels along the foot with the verbs at the end of that line.
 
-							A notebook is a subject somebody comes back to for months, and a
-							column of full notes is a wall: what a list of them is for is
-							finding the one you meant. Pressing the title opens it, and it
-							stays open until pressed again.
+							A note is its name until you open it. A notebook is a subject
+							somebody comes back to for months, and a column of full notes is
+							a wall: what a list of them is for is finding the one you meant.
+							Pressing the title opens it, and it stays open until pressed again.
 						-->
-						<button
-							type="button"
-							class="flex w-full items-baseline gap-2 text-left"
-							aria-expanded={openNotes.has(entry.id)}
-							onclick={() => toggleNote(entry.id)}
-						>
-							<span class="shrink-0 text-gray-400">
-								<Icon name={openNotes.has(entry.id) ? 'chevron-down' : 'chevron-right'} size={14} />
-							</span>
-							<!-- Named for the suite, which asserts the order the list is in. -->
-							<span
-								data-note-title
-								class="min-w-0 flex-1 truncate text-sm font-medium text-gray-900"
-							>
-								{noteName(entry)}
-							</span>
-						</button>
-						{#if openNotes.has(entry.id)}
-							<!--
-								A reference in the writing opens the task it names.
+						<RowCard quiet={noteSelection.selecting}>
+							{#snippet rail()}
+								{#if noteSelection.selecting && !('mine' in entry && entry.mine === false)}
+									<SelectBox
+										checked={noteSelection.has(entry.id)}
+										label={t('notebookDetail.selectNote', { title: noteName(entry) })}
+										ontoggle={() => noteSelection.toggle(entry.id)}
+									/>
+								{:else}
+									<!-- The same fold as the title; the title is the one a
+									     keyboard and a screen reader reach. -->
+									<button
+										type="button"
+										tabindex="-1"
+										aria-hidden="true"
+										class="-m-1 flex shrink-0 items-start justify-center self-start p-1 text-gray-500 hover:text-gray-900 pointer-coarse:w-11"
+										onclick={() => toggleNote(entry.id)}
+									>
+										<span class="flex size-7 items-center justify-center">
+											<Icon
+												name={openNotes.has(entry.id) ? 'chevron-down' : 'chevron-right'}
+												size={14}
+											/>
+										</span>
+									</button>
+								{/if}
+								{#if entry.seq !== null}
+									<span class="tabular text-[11px] text-gray-500">#{entry.seq}</span>
+								{/if}
+							{/snippet}
 
-								`TASK:#4` is rendered as a link by the markdown renderer,
-								which is pure and knows nothing about this screen — so the
-								press is caught here, where the list and its editor are.
-								Delegated from the whole block rather than bound per link:
-								the html is written by `{@html}` and has no components in it
-								to put a handler on.
-							-->
-							<!-- svelte-ignore a11y_click_events_have_key_events -->
-							<!-- svelte-ignore a11y_no_static_element_interactions -->
-							<div class="md mt-2 text-sm text-gray-900" onclick={openReferencedTodo}>
-								<!-- `renderMarkdown` escapes every character of the input before it emits a
-								     tag, and emits only attributes it writes itself. See `$lib/markdown.ts`. -->
-								<!-- eslint-disable-next-line svelte/no-at-html-tags -->
-								{@html renderMarkdown(entry.content, todoRefs)}
-							</div>
-						{/if}
-						<div class="mt-1 flex flex-wrap items-center gap-2">
-							<span class="tabular text-xs text-gray-500">
-								{entry.seq === null ? '' : `#${entry.seq} · `}{when(entry.createdAt)}
+							{#snippet labels()}
+								<!-- `@` for a person and `#` for a tag, the same one character
+								     that makes the diary's rows legible. -->
+								{#each entry.people as person (person.id)}
+									<a href={resolve('/notebooks/people')} class="chip">@{person.name}</a>
+								{/each}
+								{#each entry.tags as tag (tag.id)}
+									<TagChip
+										name={tag.name}
+										active={noteTagFilter.includes(tag.name)}
+										onclick={() => toggleNoteTag(tag.name)}
+									/>
+								{/each}
+							{/snippet}
+
+							{#snippet controls()}
+								<!-- In a shared notebook everybody reads everything, but a note
+								     is edited and deleted only by whoever wrote it. -->
+								{#if !('mine' in entry && entry.mine === false)}
+									<!--
+										Kept at the top, or let go. As many as somebody likes: what
+										is worth having in front of you when you open a notebook is
+										not a number anybody else can pick.
+									-->
+									{#if notebookId !== null}
+										<form method="post" action="?/pinEntry" use:enhance>
+											<input type="hidden" name="id" value={entry.id} />
+											<input
+												type="hidden"
+												name="pinned"
+												value={'pinnedAt' in entry && entry.pinnedAt ? 'false' : 'true'}
+											/>
+											<button
+												type="submit"
+												class="icon-btn"
+												aria-pressed={'pinnedAt' in entry && Boolean(entry.pinnedAt)}
+												title={'pinnedAt' in entry && entry.pinnedAt
+													? t('notebookDetail.stopKeepingThisAtThe')
+													: t('notebookDetail.keepThisAtTheTop')}
+												aria-label={'pinnedAt' in entry && entry.pinnedAt
+													? t('notebookDetail.stopKeepingThisAtThe')
+													: t('notebookDetail.keepThisAtTheTop')}
+											>
+												<Icon name="pin" />
+											</button>
+										</form>
+									{/if}
+									<!--
+										Offered by what the note says, not by where the pointer is.
+
+										It is here for as long as the note has a checkbox in it and
+										gone the moment it does not, so the row never changes shape
+										under somebody reaching for the button beside it. The
+										tooltip is what explains it: an icon alone would be a
+										guess.
+									-->
+									{#if checklistItems(entry.content).length > 0}
+										<button
+											type="button"
+											onclick={() => offerTodos(entry)}
+											class="icon-btn"
+											title={t('notebookDetail.makeTodosOfTheCheckboxes')}
+											aria-label={t('notebookDetail.makeTodosOfTheCheckboxes')}
+											><Icon name="check" /></button
+										>
+									{/if}
+									<button
+										onclick={() => {
+											editingNoteId = entry.id;
+											noteSaved = false;
+										}}
+										class="icon-btn"
+										title={t('notebookDetail.editThisNote')}
+										aria-label={t('notebookDetail.editThisNote')}><Icon name="edit" /></button
+									>
+									<!--
+										Away, and back. No confirmation: this is the reversible one
+										— the note stays where it is and comes back unchanged. The
+										button beside it is what deletes, and that one asks.
+									-->
+									<form method="post" action="?/archiveEntry" use:enhance>
+										<input type="hidden" name="id" value={entry.id} />
+										<input type="hidden" name="away" value={entry.archivedAt ? 'false' : 'true'} />
+										<button
+											type="submit"
+											class="icon-btn"
+											title={entry.archivedAt
+												? t('notebookDetail.takeItBackOut')
+												: t('finance.ledgers.putItAway')}
+											aria-label={entry.archivedAt
+												? t('notebookDetail.takeItBackOut')
+												: t('finance.ledgers.putItAway')}
+										>
+											<Icon name={entry.archivedAt ? 'undo' : 'archive'} />
+										</button>
+									</form>
+									{#if confirmDeleteNote === entry.id}
+										<form
+											method="post"
+											action="?/deleteEntry"
+											use:enhance={() =>
+												async ({ update }) => {
+													await update({ reset: false });
+													confirmDeleteNote = null;
+												}}
+											class="flex items-center gap-2"
+										>
+											<input type="hidden" name="id" value={entry.id} />
+											<button
+												type="button"
+												class="btn btn-sm"
+												onclick={() => (confirmDeleteNote = null)}>{t('ui.cancel')}</button
+											>
+											<button class="btn btn-danger btn-sm" use:armed
+												>{t('notebookDetail.yesDelete')}</button
+											>
+										</form>
+									{:else}
+										<button
+											onclick={() => (confirmDeleteNote = entry.id)}
+											class="icon-btn icon-btn-danger"
+											title={t('notebookDetail.deleteThisNote')}
+											aria-label={t('notebookDetail.deleteThisNote')}><Icon name="trash" /></button
+										>
+									{/if}
+								{/if}
+							{/snippet}
+
+							<button
+								type="button"
+								class="flex min-w-0 items-baseline self-start text-left"
+								aria-expanded={openNotes.has(entry.id)}
+								onclick={() => toggleNote(entry.id)}
+							>
+								<!-- Named for the suite, which asserts the order the list is in. -->
+								<span
+									data-note-title
+									class="min-w-0 text-sm leading-snug font-medium break-words text-gray-900"
+								>
+									{noteName(entry)}
+								</span>
+							</button>
+							<span class="tabular mt-0.5 text-xs text-gray-500">
+								{when(entry.createdAt)}
 								{#if entry.archivedAt}
 									{t('notebookDetail.archived')}
 								{/if}
@@ -1783,140 +2168,68 @@
 									· {entry.author}
 								{/if}
 							</span>
-
-							<!-- `@` for a person and `#` for a tag, the same one character
-							     that makes the diary's rows legible. -->
-							{#each entry.people as person (person.id)}
-								<a href={resolve('/notebooks/people')} class="chip">@{person.name}</a>
-							{/each}
-							{#each entry.tags as tag (tag.id)}
-								<TagChip
-									name={tag.name}
-									active={noteTagFilter.includes(tag.name)}
-									onclick={() => toggleNoteTag(tag.name)}
-								/>
-							{/each}
-
-							<!-- In a shared notebook everybody reads everything, but a note
-							     is edited and deleted only by whoever wrote it. -->
-							<div
-								class="ml-auto flex items-center gap-2"
-								hidden={'mine' in entry && entry.mine === false}
-							>
+							{#if openNotes.has(entry.id)}
 								<!--
-									Kept at the top, or let go. As many as somebody likes: what
-									is worth having in front of you when you open a notebook is
-									not a number anybody else can pick.
-								-->
-								{#if notebookId !== null}
-									<form method="post" action="?/pinEntry" use:enhance>
-										<input type="hidden" name="id" value={entry.id} />
-										<input
-											type="hidden"
-											name="pinned"
-											value={'pinnedAt' in entry && entry.pinnedAt ? 'false' : 'true'}
-										/>
-										<button
-											type="submit"
-											class="icon-btn"
-											aria-pressed={'pinnedAt' in entry && Boolean(entry.pinnedAt)}
-											title={'pinnedAt' in entry && entry.pinnedAt
-												? t('notebookDetail.stopKeepingThisAtThe')
-												: t('notebookDetail.keepThisAtTheTop')}
-											aria-label={'pinnedAt' in entry && entry.pinnedAt
-												? t('notebookDetail.stopKeepingThisAtThe')
-												: t('notebookDetail.keepThisAtTheTop')}
-										>
-											<Icon name="pin" />
-										</button>
-									</form>
-								{/if}
-								<!--
-									Offered by what the note says, not by where the pointer is.
+									A reference in the writing opens the task it names.
 
-									It is here for as long as the note has a checkbox in it and
-									gone the moment it does not, so the row never changes shape
-									under somebody reaching for the button beside it. The
-									tooltip is what explains it: an icon alone would be a
-									guess.
+									`TASK:#4` is rendered as a link by the markdown renderer,
+									which is pure and knows nothing about this screen — so the
+									press is caught here, where the list and its editor are.
+									Delegated from the whole block rather than bound per link:
+									the html is written by `{@html}` and has no components in it
+									to put a handler on.
 								-->
-								{#if checklistItems(entry.content).length > 0}
-									<button
-										type="button"
-										onclick={() => offerTodos(entry)}
-										class="icon-btn"
-										title={t('notebookDetail.makeTodosOfTheCheckboxes')}
-										aria-label={t('notebookDetail.makeTodosOfTheCheckboxes')}
-										><Icon name="check" /></button
-									>
-								{/if}
-								<button
-									onclick={() => {
-										editingNoteId = entry.id;
-										noteSaved = false;
-									}}
-									class="icon-btn"
-									title={t('notebookDetail.editThisNote')}
-									aria-label={t('notebookDetail.editThisNote')}><Icon name="edit" /></button
-								>
-								<!--
-									Away, and back. No confirmation: this is the reversible one
-									— the note stays where it is and comes back unchanged. The
-									button beside it is what deletes, and that one asks.
-								-->
-								<form method="post" action="?/archiveEntry" use:enhance>
-									<input type="hidden" name="id" value={entry.id} />
-									<input type="hidden" name="away" value={entry.archivedAt ? 'false' : 'true'} />
-									<button
-										type="submit"
-										class="icon-btn"
-										title={entry.archivedAt
-											? t('notebookDetail.takeItBackOut')
-											: t('finance.ledgers.putItAway')}
-										aria-label={entry.archivedAt
-											? t('notebookDetail.takeItBackOut')
-											: t('finance.ledgers.putItAway')}
-									>
-										<Icon name={entry.archivedAt ? 'undo' : 'archive'} />
-									</button>
-								</form>
-								{#if confirmDeleteNote === entry.id}
-									<form
-										method="post"
-										action="?/deleteEntry"
-										use:enhance={() =>
-											async ({ update }) => {
-												await update({ reset: false });
-												confirmDeleteNote = null;
-											}}
-										class="flex items-center gap-2"
-									>
-										<input type="hidden" name="id" value={entry.id} />
-										<button
-											type="button"
-											class="btn btn-sm"
-											onclick={() => (confirmDeleteNote = null)}>{t('ui.cancel')}</button
-										>
-										<button class="btn btn-danger btn-sm" use:armed
-											>{t('notebookDetail.yesDelete')}</button
-										>
-									</form>
-								{:else}
-									<button
-										onclick={() => (confirmDeleteNote = entry.id)}
-										class="icon-btn icon-btn-danger"
-										title={t('notebookDetail.deleteThisNote')}
-										aria-label={t('notebookDetail.deleteThisNote')}><Icon name="trash" /></button
-									>
-								{/if}
-							</div>
-						</div>
+								<!-- svelte-ignore a11y_click_events_have_key_events -->
+								<!-- svelte-ignore a11y_no_static_element_interactions -->
+								<div class="md mt-2 text-sm text-gray-900" onclick={openReferencedTodo}>
+									<!-- `renderMarkdown` escapes every character of the input before it emits a
+									     tag, and emits only attributes it writes itself. See `$lib/markdown.ts`. -->
+									<!-- eslint-disable-next-line svelte/no-at-html-tags -->
+									{@html renderMarkdown(entry.content, { tasks: todoRefs, notes: noteRefs })}
+								</div>
+							{/if}
+						</RowCard>
 					{/if}
 				</article>
 			{/each}
 		</div>
 	{/if}
 {/snippet}
+
+<BatchDialog
+	selection={noteSelection}
+	ids={chosenNoteIds}
+	action="?/batchEntries"
+	id="note-batch-form"
+	title={noteSelection.verb ? t(NOTE_BATCH_LABELS[noteSelection.verb]) : ''}
+	destructive={noteSelection.verb === 'remove'}
+	done={(count) => t('notebookDetail.batchUpdated', { count })}
+>
+	{#snippet fields(verb)}
+		{#if verb === 'notebook'}
+			<NotebookField
+				notebooks={pickableNotebooks}
+				holds="notes"
+				value={notebook?.id ?? null}
+				span={12}
+				noneLabel={t('sections.diary.label')}
+			/>
+		{:else if verb === 'tag'}
+			<Field label={t('todoRows.addLabels')} span={12}
+				><OneLine name="add" class="input" autofocus /></Field
+			>
+			<Field label={t('todoRows.removeLabels')} span={12}
+				><OneLine name="remove" class="input" /></Field
+			>
+		{:else if verb === 'archive'}
+			<p class="col-span-12 text-sm text-gray-700">{t('notebookDetail.archiveSelectedNotes')}</p>
+		{:else if verb === 'unarchive'}
+			<p class="col-span-12 text-sm text-gray-700">{t('notebookDetail.unarchiveSelectedNotes')}</p>
+		{:else}
+			<p class="col-span-12 text-sm text-gray-700">{t('notebookDetail.deleteSelectedNotes')}</p>
+		{/if}
+	{/snippet}
+</BatchDialog>
 
 <!--
 	What the note is about to become.
@@ -1956,7 +2269,9 @@
 						aria-label={item.title}
 					/>
 					<div class="min-w-0 flex-1">
-						<p class="text-sm {item.done ? 'text-gray-400' : 'text-gray-900'}">{item.title}</p>
+						<p class="text-sm {item.done ? 'text-gray-500 line-through' : 'text-gray-900'}">
+							{item.title}
+						</p>
 						{#if item.notes}
 							<p class="mt-0.5 text-xs whitespace-pre-wrap text-gray-500">{item.notes}</p>
 						{/if}
@@ -2107,6 +2422,8 @@
 				<FormGrid>
 					<BuyFields
 						categories={inventoryCategories}
+						{locations}
+						askLocation
 						notebooks={pickableNotebooks}
 						startingNotebook={notebook.id}
 						showFields
@@ -2114,12 +2431,6 @@
 				</FormGrid>
 			{:else if module === 'ledgers'}
 				<LedgerFields {parsers} notebooks={pickableNotebooks} startingNotebook={notebook.id} />
-			{:else if module === 'bills'}
-				<BillFields
-					bind:rhythm={billRhythm}
-					notebooks={pickableNotebooks}
-					startingNotebook={notebook.id}
-				/>
 			{:else if module === 'habits'}
 				<HabitFields
 					bind:kind={habitKind}
@@ -2257,5 +2568,15 @@
 	dialog.nb-surface[open] :global(textarea) {
 		font-size: var(--nb-type);
 		line-height: 1.6;
+	}
+
+	/*
+	 * The panel has no gutter of its own — its toolbar and rows inset
+	 * themselves by a rem — so the first tab's word lines up with those, not
+	 * with a gutter that is not there.
+	 */
+	.notebook-tabs :global(.room-tabs-nested > .seg-track) {
+		margin-inline-start: 0;
+		padding-inline: 0.25rem;
 	}
 </style>

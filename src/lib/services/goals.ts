@@ -351,16 +351,72 @@ export function createArea(ctx: Ctx, raw: { name: unknown; color?: unknown }): n
 
 	if (clash) throw new ConflictError({ key: 'errors.goals.youAlreadyHaveAnArea' });
 
+	// Last, so a new area does not jump ahead of an order somebody arranged.
+	const last = listAreas(ctx).at(-1);
 	const result = db
 		.insert(goalAreas)
 		.values({
 			...created(ctx),
 			userId: ctx.userId,
 			name,
-			color
+			color,
+			sortOrder: last ? last.sortOrder + 1 : 0
 		})
 		.run();
 	return Number(result.lastInsertRowid);
+}
+
+/**
+ * Rename an area or change its colour; a field left out is untouched.
+ *
+ * A name another area already has is refused, as it is on create: an area
+ * is a place goals are filed, like a shelf, and two shelves with one label
+ * would be merged by a typo rather than on purpose.
+ */
+export function updateArea(ctx: Ctx, id: number, raw: { name?: unknown; color?: unknown }): void {
+	const set: { name?: string; color?: string } = {};
+	if (raw.name !== undefined && raw.name !== null && raw.name !== '') {
+		set.name = str(raw.name, 'name', { max: MAX_AREA_NAME_LENGTH });
+		const clash = db
+			.select({ id: goalAreas.id })
+			.from(goalAreas)
+			.where(and(eq(goalAreas.userId, ctx.userId), eq(goalAreas.name, set.name)))
+			.get();
+		if (clash && clash.id !== id)
+			throw new ConflictError({ key: 'errors.goals.youAlreadyHaveAnArea' });
+	}
+	const color = parseColor(raw.color);
+	if (color) set.color = color;
+	if (!set.name && !set.color) {
+		ownedAreaId(ctx, id);
+		return;
+	}
+
+	const res = db
+		.update(goalAreas)
+		.set(set)
+		.where(and(eq(goalAreas.id, id), eq(goalAreas.userId, ctx.userId)))
+		.run();
+	if (res.changes === 0) throw new NotFoundError('area');
+}
+
+/** A move is a reinsertion: every area is resequenced around the one moved. */
+export function moveArea(ctx: Ctx, id: number, delta: number): void {
+	const all = listAreas(ctx);
+	const from = all.findIndex((a) => a.id === id);
+	if (from === -1) throw new NotFoundError('area');
+	const to = Math.min(Math.max(from + Math.sign(delta), 0), all.length - 1);
+	if (to === from) return;
+	const [moved] = all.splice(from, 1);
+	all.splice(to, 0, moved);
+	db.transaction((tx) => {
+		all.forEach((a, index) => {
+			tx.update(goalAreas)
+				.set({ sortOrder: index })
+				.where(and(eq(goalAreas.id, a.id), eq(goalAreas.userId, ctx.userId)))
+				.run();
+		});
+	});
 }
 
 /** Goals keep existing without an area rather than disappearing with it. */
@@ -391,7 +447,7 @@ export function createGoal(
 	const anchor = parseAnchor(raw.startDate) ?? ctx.now;
 	const targets = parseTargets(raw.targets) ?? [];
 	const areaId = ownedAreaId(ctx, raw.areaId);
-	const notebookId = ownedNotebookId(ctx, raw.notebookId);
+	const notebookId = ownedNotebookId(ctx, raw.notebookId, 'goals');
 	const parentId = ownedGoalId(ctx, raw.parentId);
 
 	return db.transaction((tx) => {
@@ -463,7 +519,7 @@ export function updateGoal(
 	// emptied list there does mean "no measures".
 	const targets = parseTargets(raw.targets);
 	const areaId = ownedAreaId(ctx, raw.areaId);
-	const notebookId = ownedNotebookId(ctx, raw.notebookId);
+	const notebookId = ownedNotebookId(ctx, raw.notebookId, 'goals', { table: goals, id });
 	const title = str(raw.title, 'title', { max: MAX_TITLE_LENGTH });
 	const notes = optionalStr(raw.notes, 'notes', { max: MAX_NOTES_LENGTH });
 
@@ -644,7 +700,7 @@ export function setGoalLinks(
 	assertOwnedGoal(ctx, id);
 
 	const slotIds = ownedIds(links.slotIds, ownedSlotIds(ctx));
-	const todoIds = ownedIds(links.todoIds, ownedTodoIds(ctx));
+	const todoIds = ownedIds(links.todoIds, linkableTodoIds(ctx, id));
 	const activityIds = ownedIds(links.activityIds, ownedActivityIds(ctx));
 
 	db.transaction((tx) => {
@@ -684,7 +740,7 @@ export function addGoalLinks(
 	assertOwnedGoal(ctx, id);
 
 	const slotIds = ownedIds(links.slotIds ?? [], ownedSlotIds(ctx));
-	const todoIds = ownedIds(links.todoIds ?? [], ownedTodoIds(ctx));
+	const todoIds = ownedIds(links.todoIds ?? [], linkableTodoIds(ctx, id));
 	const activityIds = ownedIds(links.activityIds ?? [], ownedActivityIds(ctx));
 
 	const existing = db
@@ -817,6 +873,39 @@ function ownedTodoIds(ctx: Ctx): number[] {
 		.where(eq(todoTasks.userId, ctx.userId))
 		.all()
 		.map((r) => r.id);
+}
+
+/**
+ * The tasks a goal may count: in a goal filed under a notebook, that
+ * notebook's own — plus whatever it already counts, so tidying a notebook
+ * never silently unlinks work that was linked before this rule.
+ *
+ * The picker in a notebook offered every task the account has, which is the
+ * notebook failing to be the thing that scopes a subject. Refusing here too
+ * means a form or an assistant cannot get round the picker.
+ */
+function linkableTodoIds(ctx: Ctx, goalId: number): number[] {
+	const goal = db
+		.select({ notebookId: goals.notebookId })
+		.from(goals)
+		.where(and(eq(goals.id, goalId), eq(goals.userId, ctx.userId)))
+		.get();
+	if (!goal || goal.notebookId === null) return ownedTodoIds(ctx);
+
+	const inNotebook = db
+		.select({ id: todoTasks.id })
+		.from(todoTasks)
+		.where(and(eq(todoTasks.userId, ctx.userId), eq(todoTasks.notebookId, goal.notebookId)))
+		.all()
+		.map((r) => r.id);
+	const already = db
+		.select({ id: goalLinks.todoId })
+		.from(goalLinks)
+		.where(and(eq(goalLinks.goalId, goalId), eq(goalLinks.userId, ctx.userId)))
+		.all()
+		.map((r) => r.id)
+		.filter((v): v is number => v !== null);
+	return [...inNotebook, ...already];
 }
 
 function ownedActivityIds(ctx: Ctx): number[] {

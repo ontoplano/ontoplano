@@ -27,7 +27,7 @@ import { chooseValue } from './helpers/choose';
  */
 test.use({ viewport: { width: 360, height: 800 }, hasTouch: true, isMobile: true });
 
-test('a goal’s progress field and the button beside it are the same height', async ({ page }) => {
+test('a goal’s progress field and the buttons beside it are the same height', async ({ page }) => {
 	await register(page, testEmail('touch'));
 
 	// A goal with a target, which is what puts the self-reported progress form
@@ -47,11 +47,9 @@ test('a goal’s progress field and the button beside it are the same height', a
 	await page.getByRole('button', { name: 'Create goal' }).click();
 	await page.waitForTimeout(800);
 
-	const field = page.locator('form[action="?/setProgress"] input[name="currentValue"]').first();
-	const update = page
-		.locator('form[action="?/setProgress"]')
-		.first()
-		.getByRole('button', { name: 'Save progress' });
+	const counter = page.locator('form[action="?/setProgress"]').first();
+	const field = counter.getByRole('textbox');
+	const update = counter.getByRole('button', { name: /One more/ });
 	await expect(field).toBeVisible();
 
 	const box = await field.boundingBox();
@@ -79,7 +77,7 @@ test('the goal card’s controls sit on one row inside the card', async ({ page 
 	await page.waitForTimeout(800);
 
 	const card = page.locator('[id^="goal-"]').first();
-	const rail = card.locator('.row-actions');
+	const rail = card.locator('.task-actions');
 	await expect(rail).toBeVisible();
 
 	/*

@@ -2,7 +2,7 @@ import { and, count, eq } from 'drizzle-orm';
 
 import { CATEGORY_DEFAULT_NEW } from '../colors.js';
 import { db } from '$lib/db/index.js';
-import { activities, categories, taskRecords, recurringTasks } from '$lib/db/schema.js';
+import { activities, categories, notebooks, taskRecords, recurringTasks } from '$lib/db/schema.js';
 import type { Ctx } from './ctx.js';
 import { ConflictError, NotFoundError, ValidationError } from './errors.js';
 import { stamp, stamps } from './time.js';
@@ -100,11 +100,18 @@ export function toggleActivityActive(ctx: Ctx, id: number): void {
 		.get();
 
 	if (!current) throw new NotFoundError('activity');
+	setActivityActive(ctx, id, !current.active);
+}
 
-	db.update(activities)
-		.set({ active: !current.active, updatedAt: stamp(ctx) })
+/** Switched on or off by saying which, for a caller that should not have to read first. */
+export function setActivityActive(ctx: Ctx, id: number, active: boolean): void {
+	const res = db
+		.update(activities)
+		.set({ active, updatedAt: stamp(ctx) })
 		.where(and(eq(activities.id, id), eq(activities.userId, ctx.userId)))
 		.run();
+
+	if (res.changes === 0) throw new NotFoundError('activity');
 }
 
 export function deleteActivity(ctx: Ctx, id: number): void {
@@ -177,6 +184,22 @@ export function updateCategory(
 	if (res.changes === 0) throw new NotFoundError('category');
 }
 
+/**
+ * A category id from a form or a call, or null for none — one of this
+ * account's own, or a 404.
+ */
+export function ownedCategory(ctx: Ctx, value: unknown): number | null {
+	if (value === undefined || value === null || value === '') return null;
+	const id = num(value, 'category', { int: true, min: 1 });
+	const owned = db
+		.select({ id: categories.id })
+		.from(categories)
+		.where(and(eq(categories.id, id), eq(categories.userId, ctx.userId)))
+		.get();
+	if (!owned) throw new NotFoundError('category');
+	return id;
+}
+
 export function deleteCategory(ctx: Ctx, id: number): void {
 	const activityRefs = countRows(
 		db
@@ -196,12 +219,21 @@ export function deleteCategory(ctx: Ctx, id: number): void {
 	if (activityRefs > 0 || slotRefs > 0)
 		throw new ValidationError({ key: 'errors.activities.cannotDeleteCategoryHasActivities' });
 
-	const res = db
-		.delete(categories)
-		.where(and(eq(categories.id, id), eq(categories.userId, ctx.userId)))
-		.run();
+	db.transaction((tx) => {
+		// A notebook only suggests its category, so losing it is losing the
+		// suggestion. The column has no delete action of its own.
+		tx.update(notebooks)
+			.set({ categoryId: null })
+			.where(and(eq(notebooks.categoryId, id), eq(notebooks.userId, ctx.userId)))
+			.run();
 
-	if (res.changes === 0) throw new NotFoundError('category');
+		const res = tx
+			.delete(categories)
+			.where(and(eq(categories.id, id), eq(categories.userId, ctx.userId)))
+			.run();
+
+		if (res.changes === 0) throw new NotFoundError('category');
+	});
 }
 
 function activityReferences(ctx: Ctx, id: number): number {

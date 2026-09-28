@@ -22,7 +22,7 @@ test('a space makes a chip and empties the box, and typing suggests', async ({ p
 	// answer to the same class.
 	const form = () => page.getByLabel('New task');
 	const tags = () => form().locator('input[role="combobox"]').first();
-	const chips = () => form().locator('.chip');
+	const chips = () => form().locator('[data-tag]');
 
 	// One task, to put two words into the vocabulary.
 	await page.getByRole('button', { name: 'New task' }).click();
@@ -110,16 +110,16 @@ test("pressing one chip's remove button takes exactly one off", async ({ page })
 	const box = form.locator('input[role="combobox"]').first();
 	await box.fill('a1 wood paint');
 	await box.press(' ');
-	await expect(form.locator('.chip')).toHaveCount(3);
+	await expect(form.locator('[data-tag]')).toHaveCount(3);
 
 	// The real click, not the keyboard — this is the path that was wrong.
 	await page.getByRole('button', { name: 'Remove wood' }).click();
-	await expect(form.locator('.chip')).toHaveCount(2);
-	await expect(form.locator('.chip').filter({ hasText: 'a1' })).toBeVisible();
-	await expect(form.locator('.chip').filter({ hasText: 'paint' })).toBeVisible();
+	await expect(form.locator('[data-tag]')).toHaveCount(2);
+	await expect(form.locator('[data-tag]').filter({ hasText: 'a1' })).toBeVisible();
+	await expect(form.locator('[data-tag]').filter({ hasText: 'paint' })).toBeVisible();
 
 	// And again, from the middle of what is left.
 	await page.getByRole('button', { name: 'Remove a1' }).click();
-	await expect(form.locator('.chip')).toHaveCount(1);
-	await expect(form.locator('.chip').filter({ hasText: 'paint' })).toBeVisible();
+	await expect(form.locator('[data-tag]')).toHaveCount(1);
+	await expect(form.locator('[data-tag]').filter({ hasText: 'paint' })).toBeVisible();
 });

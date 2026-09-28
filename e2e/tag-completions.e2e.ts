@@ -44,9 +44,9 @@ test('the tag box offers what is already there, and Tab walks it', async ({ page
 	// it is on.
 	await box.press('Tab');
 	await box.press('Enter');
-	await expect(page.locator('#todo-form .chip')).toHaveCount(1);
+	await expect(page.locator('#todo-form [data-tag]')).toHaveCount(1);
 
 	// And a word already taken is not offered twice.
-	const taken = await page.locator('#todo-form .chip').first().innerText();
+	const taken = await page.locator('#todo-form [data-tag]').first().innerText();
 	await expect(list.getByRole('option', { name: taken.trim(), exact: true })).toHaveCount(0);
 });

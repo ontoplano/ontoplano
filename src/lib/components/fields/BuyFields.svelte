@@ -1,11 +1,10 @@
 <script lang="ts">
 	import NumberBox from '$lib/components/NumberBox.svelte';
 	import Field from '$lib/components/Field.svelte';
-	import Icon from '$lib/components/Icon.svelte';
 	import OneLine from '$lib/components/OneLine.svelte';
 	import MoreOptions from '$lib/components/MoreOptions.svelte';
 	import NotebookField from '$lib/components/NotebookField.svelte';
-	import { namedAttributes } from '$lib/actions/named-attributes';
+	import AttributeFields from '$lib/components/AttributeFields.svelte';
 	import { useT } from '$lib/i18n';
 
 	const t = useT();
@@ -55,7 +54,7 @@
 		showFields?: boolean;
 		askLocation?: boolean;
 		compact?: boolean;
-		notebooks?: { id: number; title: string }[];
+		notebooks?: { id: number; title: string; modules: readonly string[] }[];
 		startingNotebook?: number | null;
 		notebookId?: number | null;
 	} = $props();
@@ -111,59 +110,18 @@
 	{/if}
 
 	{#if showFields}
-		<Field label={t('fields.buy.attributes')} span={12}>
-			<div class="space-y-2" use:namedAttributes={() => t('fields.buy.anAttributeNeedsAName')}>
-				{#each fields as pair, i (i)}
-					<div class="flex items-center gap-2">
-						<OneLine
-							name="fieldName"
-							bind:value={pair[0]}
-							placeholder={t('fields.buy.attributeName')}
-							class="input min-w-0 flex-1"
-						/>
-						<!-- A value may be left out — the name alone is the attribute — and
-						     the placeholder is where that is said, because the only other
-						     way to find out is to try it. -->
-						<OneLine
-							name="fieldValue"
-							bind:value={pair[1]}
-							placeholder={t('fields.buy.attributeValue')}
-							class="input min-w-0 flex-1"
-						/>
-						<!--
-							A button, not an instruction.
-
-							"Clearing a name removes that attribute" is true and is a
-							sentence somebody has to read, remember, and then do by hand.
-							The server still reads it the same way — a pair with no name is
-							not an attribute — so this empties the row rather than inventing
-							a second way to say the same thing.
-						-->
-						<button
-							type="button"
-							onclick={() => (fields = fields.filter((_, at) => at !== i))}
-							class="icon-btn icon-btn-danger shrink-0 {pair[0] || pair[1] ? '' : 'invisible'}"
-							title={t('fields.buy.removeThisAttribute')}
-							aria-label={t('fields.buy.removeTheAttribute', {
-								written: pair[0] || t('fields.buy.beingWritten')
-							})}
-						>
-							<Icon name="close" />
-						</button>
-					</div>
-				{/each}
-			</div>
-			<button
-				type="button"
-				onclick={() => (fields = [...fields, ['', '']])}
-				class="btn btn-sm mt-2"
-			>
-				{t('fields.buy.another')}
-			</button>
+		<Field label={t('fields.buy.attributes')} span={12} group>
+			<!-- The editor a task's attributes use, posting the names the item
+			     actions read. -->
+			<AttributeFields
+				bind:pairs={fields}
+				names={{ key: 'fieldName', value: 'fieldValue' }}
+				valueOptional
+			/>
 		</Field>
 	{/if}
 
-	<NotebookField {notebooks} value={notebookId ?? startingNotebook} span={12} />
+	<NotebookField {notebooks} holds="inventory" value={notebookId ?? startingNotebook} span={12} />
 
 	<Field label={t('ui.notes')} span={8}>
 		<OneLine name="notes" bind:value={notes} class="input" />

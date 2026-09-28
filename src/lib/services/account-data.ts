@@ -146,6 +146,8 @@ export const USER_TABLES: OwnedTable[] = [
 	owned('goalAreas', schema.goalAreas as never),
 	owned('dataPoints', schema.dataPoints as never),
 	owned('dataStreams', schema.dataStreams as never),
+	// Before the key it reads with and the notebook it shows.
+	owned('phoneWidgets', schema.phoneWidgets as never),
 	owned('apiTokens', schema.apiTokens as never),
 	owned('webhookSubscriptions', schema.webhookSubscriptions as never),
 	owned('ideaTags', schema.ideaTags as never),
@@ -181,6 +183,10 @@ export const USER_TABLES: OwnedTable[] = [
 	// What the assistants did, before/after included — as much the account's
 	// record as the audit log above it, and it names things the diary names.
 	owned('assistantCalls', schema.assistantCalls as never),
+	// The answers a retried assistant call is given instead of being run again.
+	// Kept a day; it names what the calls made, so it leaves and goes with the
+	// rest of what the assistants did.
+	owned('requestReplays', schema.requestReplays as never),
 	// The provider keeps its own copy of the commercial record; this one is the
 	// account's and goes with it.
 	owned('subscriptions', schema.subscriptions as never),
@@ -199,6 +205,9 @@ export const USER_TABLES: OwnedTable[] = [
 	// as much somebody's own as the diary is: it leaves with the export and it
 	// goes with the deletion.
 	owned('media', schema.media as never),
+	// Stars on notebooks, before the notebooks. One on a notebook a family
+	// member shared has nothing to point at in the file, and a restore drops it.
+	owned('notebookFavourites', schema.notebookFavourites as never),
 	// Last of the subjects: entries, todos, goals and blocks all point at it.
 	owned('notebooks', schema.notebooks as never),
 	owned('recurringTaskTags', schema.recurringTaskTags as never),

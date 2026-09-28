@@ -1,13 +1,14 @@
 <script lang="ts">
 	import type { PageServerData } from './$types';
 	import { useT } from '$lib/i18n';
+	import PageTitle from '$lib/components/PageTitle.svelte';
 
 	const t = useT();
 
 	let { data }: { data: PageServerData } = $props();
 </script>
 
-<svelte:head><title>{t('legal.privacy.privacyOntoplano')}</title></svelte:head>
+<PageTitle parts={t('titles.privacy')} />
 
 <h1>{t('legal.privacy.privacy')}</h1>
 <p class="updated">{t('legal.privacy.lastUpdated', { updated: data.updated })}</p>

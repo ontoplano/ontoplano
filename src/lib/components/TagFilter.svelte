@@ -102,7 +102,9 @@
 	function offered(side: Side): string[] {
 		const taken = [...selected.include, ...selected.exclude];
 		const draft = drafts[side];
-		const words = suggestTags(tags, draft, taken);
+		// Every label: the list under the box scrolls, so it can offer the
+		// notebook's whole vocabulary rather than the first few alphabetically.
+		const words = suggestTags(tags, draft, taken, Number.POSITIVE_INFINITY);
 		const wanted = draft.trim().replace(/^#+/, '').toLowerCase();
 		const untagged =
 			!taken.includes(UNTAGGED) && (wanted === '' || matchScore(untaggedWord, wanted) !== null);

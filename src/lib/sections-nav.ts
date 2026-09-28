@@ -2,7 +2,7 @@ import { SECTIONS, type SectionKey } from '$lib/colors';
 import type { PlainKey } from './i18n/keys.js';
 import type { HideableSection } from '$lib/sections';
 import type { IconName } from '$lib/components/Icon.svelte';
-import { glyphFor } from '$lib/glyphs';
+import { ROOM_TABS } from '$lib/sections';
 
 /**
  * The eight rooms, and the door into each.
@@ -79,14 +79,14 @@ export type NavPlace = {
 	/** The section it belongs to — its colour, and the wash behind its pages. */
 	section: SectionKey;
 	/**
-	 * Its glyph, from `$lib/glyphs` rather than written here.
-	 *
-	 * The bar, the wheel, the palette and a room's own tab strip all draw it,
-	 * and it used to be written into each of those lists — so changing what
-	 * Ideas looks like meant finding it in three files. One list now, and this
-	 * reads it.
+	 * Its glyph. The bar, the wheel, the palette and the room's own strip all
+	 * draw this one. A room is a different thing from its first tab and wears
+	 * a different glyph — Health is not Habits — unless it *is* that tab, the
+	 * way the Notebooks room is its Notebooks tab; see `is`.
 	 */
 	icon: IconName;
+	/** The tab this room is, when it is one: it wears that tab's glyph. */
+	is?: string;
 	href: string;
 	/** The preference that puts it away. Absent means always there. */
 	hide?: HideableSection;
@@ -103,9 +103,10 @@ export type NavPlace = {
  * puts a room it has never heard of at the end, so changing this list moves
  * nobody who has already chosen.
  */
-const PLACES: Omit<NavPlace, 'icon'>[] = [
+const PLACES: (Omit<NavPlace, 'icon'> & { glyph?: IconName })[] = [
 	{
 		key: 'planner',
+		glyph: 'planner',
 		name: 'sections.tasks.label',
 		section: 'planner',
 		href: '/tasks/plan'
@@ -120,12 +121,14 @@ const PLACES: Omit<NavPlace, 'icon'>[] = [
 	 */
 	{
 		key: 'diary',
+		is: '/notebooks',
 		name: 'sections.notebooks.label',
 		section: 'diary',
 		href: '/notebooks'
 	},
 	{
 		key: 'health',
+		glyph: 'health',
 		name: 'sections.health.label',
 		section: 'health',
 		href: '/health/habits',
@@ -133,6 +136,7 @@ const PLACES: Omit<NavPlace, 'icon'>[] = [
 	},
 	{
 		key: 'inventory',
+		glyph: 'box',
 		name: 'sections.inventory.label',
 		section: 'inventory',
 		href: '/inventory/stock',
@@ -140,6 +144,7 @@ const PLACES: Omit<NavPlace, 'icon'>[] = [
 	},
 	{
 		key: 'finance',
+		glyph: 'wallet',
 		name: 'sections.finance.label',
 		section: 'finance',
 		href: '/finance/ledgers',
@@ -147,6 +152,7 @@ const PLACES: Omit<NavPlace, 'icon'>[] = [
 	},
 	{
 		key: 'goals',
+		glyph: 'goals',
 		name: 'sections.goals.label',
 		section: 'goals',
 		href: '/goals',
@@ -154,6 +160,7 @@ const PLACES: Omit<NavPlace, 'icon'>[] = [
 	},
 	{
 		key: 'media',
+		glyph: 'media',
 		name: 'sections.media.label',
 		section: 'media',
 		href: '/media/audios',
@@ -164,24 +171,23 @@ const PLACES: Omit<NavPlace, 'icon'>[] = [
 	// planner's, which is where most of them come from.
 	{
 		key: 'reminders',
+		glyph: 'clock',
 		name: 'sections.reminders.label',
 		section: 'planner',
 		href: '/reminders'
 	}
 ];
 
-/**
- * The places, each wearing the glyph the one list gives it.
- *
- * Written out beside every entry once, in this file and in three others. Now
- * it is read from `$lib/glyphs`, so editing what a room looks like is editing
- * one line and seeing it in the bar, the wheel, the palette and the room's
- * own tab strip at once. A room whose key is not in that list does not build.
- */
-export const NAV_PLACES: NavPlace[] = PLACES.map((place) => ({
-	...place,
-	icon: glyphFor(place.key) as IconName
-}));
+/** The places, each wearing its own glyph, or the tab's it is. */
+export const NAV_PLACES: NavPlace[] = PLACES.map(({ glyph, ...place }) => {
+	const icon =
+		glyph ??
+		Object.values(ROOM_TABS)
+			.flat()
+			.find((tab) => tab.href === place.is)?.glyph;
+	if (!icon) throw new Error(`${place.key} has no glyph`);
+	return { ...place, icon };
+});
 
 export const ROOMS: Room[] = NAV_PLACES.map((place) => ({
 	key: place.key,

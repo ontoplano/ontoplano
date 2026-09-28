@@ -106,3 +106,9 @@ describe('which known tags a draft could be', () => {
 		expect(suggestTags(known, '').length).toBeLessThanOrEqual(MAX_SUGGESTIONS);
 	});
 });
+
+test('a list that scrolls can ask for every match', () => {
+	const many = Array.from({ length: MAX_SUGGESTIONS + 4 }, (_, i) => `label${i}`);
+	expect(suggestTags(many, '')).toHaveLength(MAX_SUGGESTIONS);
+	expect(suggestTags(many, '', [], Number.POSITIVE_INFINITY)).toHaveLength(many.length);
+});

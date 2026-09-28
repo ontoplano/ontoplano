@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/notebook_widget_background"
+    android:orientation="vertical"
+    android:padding="@dimen/notebook_widget_padding">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <!-- The notebook and its tab; pressing it opens them in the app. -->
+        <LinearLayout
+            android:id="@+id/notebook_widget_header"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/notebook_widget_title"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:ellipsize="end"
+                android:maxLines="1"
+                android:textColor="@color/notebook_widget_text"
+                android:textSize="15sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/notebook_widget_section"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:ellipsize="end"
+                android:maxLines="1"
+                android:textAllCaps="true"
+                android:textColor="@color/notebook_widget_dim"
+                android:textSize="11sp" />
+        </LinearLayout>
+
+        <ImageView
+            android:id="@+id/notebook_widget_refresh"
+            android:layout_width="@dimen/notebook_widget_button"
+            android:layout_height="@dimen/notebook_widget_button"
+            android:contentDescription="@string/notebook_widget_refresh"
+            android:padding="8dp"
+            android:src="@android:drawable/ic_popup_sync"
+            android:tint="@color/notebook_widget_dim" />
+    </LinearLayout>
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_marginTop="6dp"
+        android:layout_weight="1">
+
+        <ListView
+            android:id="@+id/notebook_widget_list"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:divider="@color/notebook_widget_rule"
+            android:dividerHeight="1dp" />
+
+        <TextView
+            android:id="@+id/notebook_widget_empty"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:gravity="center"
+            android:padding="8dp"
+            android:textColor="@color/notebook_widget_dim"
+            android:textSize="13sp" />
+    </FrameLayout>
+</LinearLayout>

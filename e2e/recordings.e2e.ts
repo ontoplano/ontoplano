@@ -30,7 +30,7 @@ test('records, keeps it under a name, renames it and deletes it', async ({ page 
 	await expect(page.getByRole('heading', { name: 'Media' }).first()).toBeVisible();
 	await expect(page.getByText('Nothing recorded yet.')).toBeVisible();
 
-	await page.getByRole('button', { name: 'Record' }).click();
+	await page.getByRole('button', { name: 'Record', exact: true }).click();
 
 	/*
 	 * Pausing gives everything at once.
@@ -74,8 +74,10 @@ test('records, keeps it under a name, renames it and deletes it', async ({ page 
 	 */
 	const only = page.locator('ul li').first();
 	await only.getByRole('button', { name: 'Rename' }).click();
-	await only.getByRole('textbox', { name: 'What to call it' }).fill('what I actually said');
-	await only.getByRole('button', { name: 'Save', exact: true }).click();
+	// The new name is asked for in a dialog, like every other form here.
+	const renaming = page.getByRole('dialog');
+	await renaming.getByRole('textbox', { name: 'What to call it' }).fill('what I actually said');
+	await renaming.getByRole('button', { name: 'Save', exact: true }).click();
 	await expect(page.locator('ul li').first()).toContainText('what I actually said');
 
 	// Deleting is asked in a dialog, and the dialog's own button answers it.
@@ -96,13 +98,13 @@ test('the recording never leaves the page until it is saved', async ({ page }) =
 		if (one.method() === 'POST') posts.push(one.url());
 	});
 
-	await page.getByRole('button', { name: 'Record' }).click();
+	await page.getByRole('button', { name: 'Record', exact: true }).click();
 	await page.waitForTimeout(1200);
 	await page.getByRole('button', { name: 'Pause', exact: true }).click();
 	await page.getByRole('button', { name: 'Discard' }).click();
 
 	// Back to the start, with nothing kept and nothing sent.
-	await expect(page.getByRole('button', { name: 'Record' })).toBeVisible();
+	await expect(page.getByRole('button', { name: 'Record', exact: true })).toBeVisible();
 	await expect(page.getByText('Nothing recorded yet.')).toBeVisible();
 	expect(posts.filter((url) => url.includes('/media/audio'))).toEqual([]);
 });

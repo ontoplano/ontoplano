@@ -212,6 +212,23 @@ test.describe('one account cannot reach another account by id', () => {
 			attack: (id) => ({ path: '/goals?/deleteArea', form: { id } })
 		},
 		{
+			name: 'goal area rename',
+			page: '/goals',
+			payloadKey: 'areas',
+			create: { path: '/goals?/createArea', form: { label: "alice's renamed area" } },
+			attack: (id) => ({
+				path: '/goals?/updateArea',
+				form: { id, label: 'taken', color: '#000000' }
+			})
+		},
+		{
+			name: 'goal area move',
+			page: '/goals',
+			payloadKey: 'areas',
+			create: { path: '/goals?/createArea', form: { label: "alice's moved area" } },
+			attack: (id) => ({ path: '/goals?/moveArea', form: { id, delta: '-1' } })
+		},
+		{
 			name: 'activity',
 			page: '/tasks/activities',
 			payloadKey: 'activities',
@@ -429,6 +446,68 @@ test.describe('one account cannot reach another account by id', () => {
 		});
 		const body = await attempt.json();
 		expect(body.status, "Mallory attaching to Alice's recipe").toBe(404);
+
+		await request.dispose();
+	});
+
+	/**
+	 * A home-screen widget, and the notebook tab it reads.
+	 *
+	 * Three doors: the widget row itself (edit, delete), the notebook a new
+	 * widget is pointed at, and the API that answers a tab of a notebook.
+	 * Each must answer Mallory the way it answers an id that never existed.
+	 */
+	test('a notebook widget cannot be reached from another account', async ({ playwright }) => {
+		const request = await playwright.request.newContext({ baseURL: ORIGIN });
+		const page = '/settings/integrations/widget';
+
+		const made = await action(request, alice, '/notebooks?/create', {
+			heading: "alice's widget notebook",
+			modules: 'notes,tasks'
+		});
+		expect(['success', 'redirect']).toContain(made.type);
+		const notebookId = await firstId(request, alice, '/notebooks', 'notebooks');
+
+		const widget = await action(request, alice, `${page}?/createWidget`, {
+			notebookId,
+			section: 'tasks'
+		});
+		expect(widget.type, `Alice making a widget: ${widget.message ?? ''}`).toBe('success');
+		const widgetId = await firstId(request, alice, page, 'widgets');
+
+		for (const verb of ['updateWidget', 'deleteWidget']) {
+			const form = (id: string) => ({ id, notebookId, section: 'tasks' });
+			const stolen = await action(request, mallory, `${page}?/${verb}`, form(widgetId));
+			const invented = await action(request, mallory, `${page}?/${verb}`, form('987654'));
+			expect(stolen.status, `${verb}: another account's widget`).toBe(404);
+			expect(invented.status, `${verb}: a widget that never existed`).toBe(404);
+			expect(stolen.message).toBe(invented.message);
+		}
+
+		const pointed = await action(request, mallory, `${page}?/createWidget`, {
+			notebookId,
+			section: 'tasks'
+		});
+		const nowhere = await action(request, mallory, `${page}?/createWidget`, {
+			notebookId: '987654',
+			section: 'tasks'
+		});
+		expect(pointed.status, "a widget on Alice's notebook").toBe(404);
+		expect(pointed.message).toBe(nowhere.message);
+
+		const read = await request.get(`/api/v1/notebooks/${notebookId}/tasks`, {
+			headers: { Cookie: mallory.cookie }
+		});
+		const unread = await request.get('/api/v1/notebooks/987654/tasks', {
+			headers: { Cookie: mallory.cookie }
+		});
+		expect(read.status(), "reading Alice's notebook tab").toBe(404);
+		expect(await read.text()).toBe(await unread.text());
+
+		const hers = await request.get(`/api/v1/notebooks/${notebookId}/tasks`, {
+			headers: { Cookie: alice.cookie }
+		});
+		expect(hers.status(), 'Alice reading her own').toBe(200);
 
 		await request.dispose();
 	});

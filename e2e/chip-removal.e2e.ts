@@ -28,18 +28,18 @@ test('a real click on one chip takes one chip off', async ({ page }) => {
 	await register(page, testEmail('chip-removal'));
 	const form = await openTagBox(page, 'alpha, bravo, charlie, delta ');
 
-	await expect(form.locator('.chip')).toHaveCount(4);
+	await expect(form.locator('[data-tag]')).toHaveCount(4);
 
 	// The middle one, with a neighbour either side — the case that broke.
-	const bravo = form.locator('.chip', { hasText: 'bravo' }).getByRole('button');
+	const bravo = form.locator('[data-tag]', { hasText: 'bravo' }).getByRole('button');
 	const box = await bravo.boundingBox();
 	expect(box).not.toBeNull();
 	await page.mouse.move(box!.x + box!.width / 2, box!.y + box!.height / 2);
 	await page.mouse.down();
 	await page.mouse.up();
 
-	await expect(form.locator('.chip')).toHaveCount(3);
-	const left = await form.locator('.chip').allInnerTexts();
+	await expect(form.locator('[data-tag]')).toHaveCount(3);
+	const left = await form.locator('[data-tag]').allInnerTexts();
 	expect(left.join(' ')).toContain('alpha');
 	expect(left.join(' ')).toContain('charlie');
 	expect(left.join(' ')).toContain('delta');
@@ -49,16 +49,16 @@ test('pressing them one after another takes them off one at a time', async ({ pa
 	test.setTimeout(180_000);
 	await register(page, testEmail('chip-removal-run'));
 	const form = await openTagBox(page, 'one, two, three, four, five, six ');
-	await expect(form.locator('.chip')).toHaveCount(6);
+	await expect(form.locator('[data-tag]')).toHaveCount(6);
 
 	// Always the first chip, six times: the walk-over-a-changing-list case.
 	for (let left = 6; left > 0; left--) {
-		await expect(form.locator('.chip')).toHaveCount(left);
-		const first = form.locator('.chip').first().getByRole('button');
+		await expect(form.locator('[data-tag]')).toHaveCount(left);
+		const first = form.locator('[data-tag]').first().getByRole('button');
 		const box = await first.boundingBox();
 		await page.mouse.move(box!.x + box!.width / 2, box!.y + box!.height / 2);
 		await page.mouse.down();
 		await page.mouse.up();
 	}
-	await expect(form.locator('.chip')).toHaveCount(0);
+	await expect(form.locator('[data-tag]')).toHaveCount(0);
 });

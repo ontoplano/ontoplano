@@ -1,7 +1,22 @@
 <script lang="ts">
+	import { useWhen } from '$lib/when-context.svelte';
+	import { civilOf, today } from '$lib/when';
+	import { routeGlyph } from '$lib/glyphs';
+	import ShowingCount from '$lib/components/ShowingCount.svelte';
+	import SearchField from '$lib/components/SearchField.svelte';
+	import StripVerb from '$lib/components/StripVerb.svelte';
 	import NumberBox from '$lib/components/NumberBox.svelte';
 	import { setRoomAction } from '$lib/room-action.svelte';
-	import RoomToolbar from '$lib/components/RoomToolbar.svelte';
+	import RoomSurface from '$lib/components/RoomSurface.svelte';
+	import FilterBar from '$lib/components/FilterBar.svelte';
+	import SortControl from '$lib/components/SortControl.svelte';
+	import CategoryMark from '$lib/components/CategoryMark.svelte';
+	import { listCursor } from '$lib/actions/list-cursor';
+	import { browsable } from '$lib/browse.svelte';
+	import { getAction, keyFor } from '$lib/shortcuts';
+	import Picker from '$lib/components/Picker.svelte';
+	import Field from '$lib/components/Field.svelte';
+	import FormGrid from '$lib/components/FormGrid.svelte';
 	import { enhance } from '$lib/enhance';
 	import OneLine from '$lib/components/OneLine.svelte';
 	import Icon from '$lib/components/Icon.svelte';
@@ -15,16 +30,90 @@
 	import { useT } from '$lib/i18n';
 
 	const t = useT();
+	const now = useWhen();
 
 	let { data, form }: { data: PageServerData; form: ActionData } = $props();
 
-	const active = $derived(data.workouts.filter((w) => !w.archived));
-	const archived = $derived(data.workouts.filter((w) => w.archived));
+	/** Where "put it on a day" starts, before anybody changes it. */
+	const DEFAULT_START = '09:00';
+	const DEFAULT_MINUTES = 60;
+	const ROOM = '/health/workouts';
+
+	/*
+	 * What narrows the list: a name typed, a category picked. The archived
+	 * ones are a toggle, as on the task list, and join the list below the
+	 * others rather than hiding behind a fold of their own.
+	 */
+	let looking = $state('');
+	let showArchived = $state(false);
+	/** A category id, `none` for the uncategorised, or `all`. */
+	let categoryFilter = $state('all');
+
+	const categoryChoices = $derived([
+		{ value: 'all', label: t('health.workouts.everyCategory') },
+		...data.categories.map((c) => ({ value: String(c.id), label: c.name })),
+		{ value: 'none', label: t('health.workouts.noCategory2') }
+	]);
+
+	function matches(workout: (typeof data.workouts)[number]): boolean {
+		const needle = looking.trim().toLowerCase();
+		if (needle && !workout.title.toLowerCase().includes(needle)) return false;
+		if (categoryFilter === 'none') return workout.categoryId === null;
+		if (categoryFilter !== 'all') return String(workout.categoryId) === categoryFilter;
+		return true;
+	}
+
+	/*
+	 * The order, the same control every list has. By name is how the loader
+	 * sends them; "last done" ascending puts the one most overdue at the top,
+	 * which is the question a training week asks.
+	 */
+	const SORTS = ['title', 'lastDone', 'category', 'minutes'] as const;
+	type Sort = (typeof SORTS)[number];
+	const SORT_LABELS = {
+		title: 'ui.name',
+		lastDone: 'health.workouts.sortLastDone',
+		category: 'health.workouts.category',
+		minutes: 'health.workouts.minutes'
+	} as const;
+	let sortBy = $state<Sort>('title');
+	let sortDir = $state<'asc' | 'desc'>('asc');
+
+	type Workout = (typeof data.workouts)[number];
+	const categoryRank = $derived(new Map(data.categories.map((c, i) => [c.id, i])));
+
+	/** One comparison per order; ties fall back to the name, so the list never shuffles. */
+	function compare(a: Workout, b: Workout): number {
+		let by = 0;
+		if (sortBy === 'lastDone') by = (a.lastDoneAt ?? '').localeCompare(b.lastDoneAt ?? '');
+		else if (sortBy === 'category')
+			by =
+				(categoryRank.get(a.categoryId ?? -1) ?? data.categories.length) -
+				(categoryRank.get(b.categoryId ?? -1) ?? data.categories.length);
+		else if (sortBy === 'minutes') by = (a.minutes ?? 0) - (b.minutes ?? 0);
+		if (by !== 0) return sortDir === 'asc' ? by : -by;
+		const named = a.title.localeCompare(b.title);
+		return sortBy === 'title' && sortDir === 'desc' ? -named : named;
+	}
+
+	const narrowed = $derived(looking.trim() !== '' || categoryFilter !== 'all');
+	const allActive = $derived(data.workouts.filter((w) => !w.archived));
+	const active = $derived(allActive.filter(matches).sort(compare));
+	const allArchived = $derived(data.workouts.filter((w) => w.archived));
+	const archived = $derived(allArchived.filter(matches).sort(compare));
+	const showing = $derived(active.length + (showArchived ? archived.length : 0));
+	/** Every row on screen, in order — what j/k walks. */
+	const rows = $derived(showArchived ? [...active, ...archived] : active);
+
+	function clearFilters() {
+		looking = '';
+		categoryFilter = 'all';
+		showArchived = false;
+	}
 
 	// One form for new and edit, so the two cannot drift.
 	let showForm = $state(false);
 	let editing: (typeof data.workouts)[number] | null = $state(null);
-	let showArchived = $state(false);
 	let confirmingDelete: (typeof data.workouts)[number] | null = $state(null);
 	/**
 	 * The workout whose plan is open.
@@ -37,10 +126,9 @@
 	/** The workout being put on a day. */
 	let scheduling: (typeof data.workouts)[number] | null = $state(null);
 
+	/** Today where the account lives, for the date fields' starting value. */
 	function todayStr(): string {
-		const d = new Date();
-		const pad = (n: number) => String(n).padStart(2, '0');
-		return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+		return today(now());
 	}
 
 	/*
@@ -73,6 +161,36 @@
 	let addingCategory = $state(false);
 	let editingCategory = $state<number | null>(null);
 	let confirmDeleteCategory = $state<number | null>(null);
+
+	/** Where j/k stands: an index into `rows`, or -1 before the first press. */
+	let cursor = $state(-1);
+	browsable(() => ({
+		items: () => rows,
+		cursor: () => cursor,
+		moveTo: (i) => (cursor = i),
+		open: (i) => {
+			const id = rows[i].id;
+			expanded = expanded === id ? null : id;
+		},
+		edit: (i) => openEdit(rows[i])
+	}));
+
+	function onkeydown(event: KeyboardEvent) {
+		if (event.metaKey || event.ctrlKey || event.altKey) return;
+		const target = event.target;
+		if (
+			document.querySelector('dialog[open]') ||
+			target instanceof HTMLInputElement ||
+			target instanceof HTMLTextAreaElement ||
+			target instanceof HTMLSelectElement ||
+			(target instanceof HTMLElement && target.isContentEditable)
+		)
+			return;
+		if (getAction(ROOM, event.key) === 'new') {
+			event.preventDefault();
+			openNew();
+		}
+	}
 
 	/*
 	 * The register: what was actually done, and how much of it.
@@ -232,39 +350,102 @@
 		if (lines.length === 0) lines.push(blankLine());
 	}
 
-	/**
-	 * The day a session happened, as a person would say it.
-	 *
-	 * `2026-09-10` is what the database holds, and a column of them is a column
-	 * to decode. The year is dropped inside the current one, where it is the
-	 * same on every row and says nothing.
-	 */
 	/* This screen's one verb, drawn by the room's bar — see $lib/room-action. */
 	setRoomAction(() => ({
 		label: t('health.workouts.newWorkout'),
-		run: openNew
+		run: openNew,
+		kbd: keyFor(ROOM, 'new')
 	}));
 </script>
 
-<div class="space-y-4">
-	<RoomToolbar>
-		{#snippet tools()}
-			<button class="btn btn-sm btn-quiet" onclick={() => (showCategories = true)}
-				>{t('health.workouts.categories')}</button
-			>
-			<p class="text-sm text-gray-500">{t('health.workouts.workoutsYouCanDropOnto')}</p>
-		{/snippet}
-	</RoomToolbar>
+<svelte:window {onkeydown} />
 
-	{#if active.length === 0}
-		<EmptyState
-			icon="health"
-			title={t('health.workouts.noWorkoutsYet')}
-			description={t('health.workouts.writeAWorkoutDown')}
-		/>
-	{:else}
-		<ul class="divide-y divide-gray-100 rounded border border-gray-200">
-			{#each active as workout (workout.id)}
+{#snippet sortControl()}
+	<SortControl
+		value={sortBy}
+		options={SORTS}
+		labels={SORT_LABELS}
+		direction={sortDir}
+		onpick={(next) => (sortBy = next)}
+		onflip={() => (sortDir = sortDir === 'asc' ? 'desc' : 'asc')}
+		label={t('health.workouts.orderBy')}
+	/>
+{/snippet}
+
+<!-- The controls and the workouts are one object — see `RoomSurface` — with
+     the task list's strip along its top. -->
+<RoomSurface dataTour="workout-list">
+	{#snippet tools()}
+		<FilterBar
+			name="workouts"
+			on={narrowed || showArchived}
+			summary={categoryFilter === 'all'
+				? ''
+				: (categoryChoices.find((c) => c.value === categoryFilter)?.label ?? '')}
+			onclear={clearFilters}
+			trailing={sortControl}
+		>
+			{#snippet lead()}
+				<SearchField bind:value={looking} label={t('health.workouts.search')} />
+			{/snippet}
+			<!-- What the category picker picks from, at the end of the strip. -->
+			{#snippet verb()}
+				<StripVerb
+					icon="blocks"
+					label={t('health.workouts.categories')}
+					onclick={() => (showCategories = true)}
+					aria-haspopup="dialog"
+				/>
+			{/snippet}
+			{#snippet count()}
+				<!-- Held open by the count of every workout, so narrowing does not
+				     change its width. See `.count-slot`. -->
+				<ShowingCount
+					total={data.workouts.length}
+					shown={showing}
+					said={(count) => t('health.workouts.showingCount', { count })}
+				/>
+			{/snippet}
+			<!-- Two filters, so they stay out on a phone rather than behind a sheet. -->
+			{#snippet inline()}
+				{#if data.categories.length > 0}
+					<Picker
+						value={categoryFilter}
+						options={categoryChoices}
+						onpick={(next) => (categoryFilter = next)}
+						label={t('health.workouts.category')}
+					/>
+				{/if}
+				<!-- Named with its number, so a put-away workout is never quietly gone. -->
+				<button
+					onclick={() => (showArchived = !showArchived)}
+					aria-pressed={showArchived}
+					class="btn btn-sm shrink-0"
+					hidden={allArchived.length === 0 && !showArchived}
+				>
+					{t('health.workouts.archived', { length: allArchived.length })}
+				</button>
+			{/snippet}
+		</FilterBar>
+	{/snippet}
+
+	{#if showing === 0}
+		<!-- None yet, or none that match: saying the first when the second is
+		     true reads as a list that lost something. -->
+		{#if narrowed}
+			<EmptyState filtered onclear={clearFilters} title={t('health.workouts.noneMatch')} />
+		{:else}
+			<EmptyState
+				icon={routeGlyph('/health/workouts')!}
+				title={t('health.workouts.noWorkoutsYet')}
+				description={t('health.workouts.writeAWorkoutDown')}
+			/>
+		{/if}
+	{/if}
+
+	{#if active.length > 0}
+		<ul class="divide-y divide-gray-200">
+			{#each active as workout, i (workout.id)}
 				<!--
 					The card is a component, so a workout filed under a notebook is the
 					same workout this room shows — its plan, and the register of what
@@ -275,6 +456,7 @@
 					sessions={data.sessions}
 					actions={WORKOUT_ROOM_ACTIONS}
 					expanded={expanded === workout.id}
+					cursor={cursor === i}
 					onexpand={(id) => (expanded = expanded === id ? null : id)}
 					onedit={() => openEdit(workout)}
 					onlog={() => startLog(workout)}
@@ -291,44 +473,51 @@
 		</ul>
 	{/if}
 
-	{#if archived.length > 0}
-		<div>
-			<button
-				class="text-sm text-gray-500 hover:text-gray-700"
-				onclick={() => (showArchived = !showArchived)}
-			>
-				<Icon name={showArchived ? 'chevron-down' : 'chevron-right'} />{t(
-					'health.workouts.archived',
-					{ length: archived.length }
-				)}</button
-			>
-			{#if showArchived}
-				<ul class="mt-2 divide-y divide-gray-100 rounded border border-gray-200">
-					{#each archived as workout (workout.id)}
-						<li class="flex items-center gap-3 px-4 py-2 text-sm">
-							<span class="min-w-0 flex-1 text-gray-600">{workout.title}</span>
-							<span class="text-xs text-gray-500"
-								>{workout.categoryName ?? t('health.workouts.noCategory2')}</span
+	{#if showArchived && archived.length > 0}
+		<!-- Put away, under the rest: back onto the list, or gone for good. -->
+		<ul class="divide-y divide-gray-200 {active.length > 0 ? 'border-t border-gray-200' : ''}">
+			{#each archived as workout, i (workout.id)}
+				<li
+					class="list-row opacity-60 focus-within:opacity-100 hover:opacity-100"
+					data-row
+					use:listCursor={cursor === active.length + i}
+				>
+					<span class="row-rail"></span>
+					<span class="list-row-main">
+						<span class="block text-sm font-medium break-words text-gray-900">{workout.title}</span>
+						{#if workout.categoryName}
+							<span class="mt-1 flex"
+								><CategoryMark name={workout.categoryName} color={null} /></span
 							>
-							<form method="post" action="?/archive" use:enhance>
-								<input type="hidden" name="id" value={workout.id} />
-								<input type="hidden" name="archived" value="false" />
-								<button class="btn btn-sm" type="submit">{t('health.workouts.restore')}</button>
-							</form>
+						{/if}
+					</span>
+					<span class="list-row-actions">
+						<form method="post" action="?/archive" use:enhance>
+							<input type="hidden" name="id" value={workout.id} />
+							<input type="hidden" name="archived" value="false" />
 							<button
 								class="icon-btn"
-								aria-label={t('health.workouts.delete', { title: workout.title })}
-								onclick={() => (confirmingDelete = workout)}
+								type="submit"
+								title={t('health.workouts.restore')}
+								aria-label={t('health.workouts.restoreIt', { title: workout.title })}
 							>
-								<Icon name="trash" />
+								<Icon name="undo" />
 							</button>
-						</li>
-					{/each}
-				</ul>
-			{/if}
-		</div>
+						</form>
+						<button
+							class="icon-btn icon-btn-danger"
+							title={t('ui.delete')}
+							aria-label={t('health.workouts.delete', { title: workout.title })}
+							onclick={() => (confirmingDelete = workout)}
+						>
+							<Icon name="trash" />
+						</button>
+					</span>
+				</li>
+			{/each}
+		</ul>
 	{/if}
-</div>
+</RoomSurface>
 
 <!-- New / edit, one form. -->
 <Modal
@@ -359,7 +548,7 @@
 	{#snippet footer()}
 		<button class="btn" type="button" onclick={() => (showForm = false)}>{t('ui.cancel')}</button>
 		<button class="btn btn-primary" type="submit" form="workout-form">
-			{editing ? 'Save' : 'Add'}
+			{editing ? t('ui.save') : t('ui.add')}
 		</button>
 	{/snippet}
 </Modal>
@@ -387,39 +576,31 @@
 		>
 			<input type="hidden" name="id" value={scheduling.id} />
 			<p class="mb-3 text-sm font-medium text-gray-900">{scheduling.title}</p>
-			<div class="grid gap-3 sm:grid-cols-2">
-				<label class="block text-sm">
-					<span class="text-gray-600">{t('ui.date')}</span>
+			<FormGrid>
+				<Field label={t('ui.date')} span={6} required>
 					<input
 						name="date"
 						type="date"
 						required
 						value={todayStr()}
-						class="input mt-1 w-full"
+						class="input"
 						autocomplete="off"
 					/>
-				</label>
-				<label class="block text-sm">
-					<span class="text-gray-600">{t('health.workouts.time')}</span>
+				</Field>
+				<Field label={t('health.workouts.time')} span={6} required>
 					<input
 						name="startTime"
 						type="time"
 						required
-						value="09:00"
-						class="input tabular mt-1 w-full"
+						value={DEFAULT_START}
+						class="input tabular"
 						autocomplete="off"
 					/>
-				</label>
-				<label class="block text-sm">
-					<span class="text-gray-600">{t('health.workouts.minutes')}</span>
-					<NumberBox
-						name="durationMinutes"
-						min="5"
-						value={scheduling.minutes ?? 60}
-						class="mt-1 w-full"
-					/>
-				</label>
-			</div>
+				</Field>
+				<Field label={t('health.workouts.minutes')} span={6}>
+					<NumberBox name="durationMinutes" min="5" value={scheduling.minutes ?? DEFAULT_MINUTES} />
+				</Field>
+			</FormGrid>
 		</form>
 	{/if}
 	{#snippet footer()}
@@ -465,19 +646,18 @@
 
 			<p class="mb-3 text-sm font-medium text-gray-900">{logging.title}</p>
 
-			<div class="grid gap-3 sm:grid-cols-2">
-				<label class="block text-sm">
-					<span class="text-gray-600">{t('health.workouts.day')}</span>
+			<FormGrid>
+				<Field label={t('health.workouts.day')} span={6} required>
 					<input
 						name="doneOn"
 						type="date"
 						required
 						bind:value={logDate}
-						class="input mt-1 w-full"
+						class="input"
 						autocomplete="off"
 					/>
-				</label>
-			</div>
+				</Field>
+			</FormGrid>
 
 			<!--
 				Activity, amount, unit — the person's own words in all three. Nothing
@@ -564,22 +744,25 @@
 				</button>
 			</div>
 
-			<label class="mt-4 block text-sm">
-				<span class="text-gray-600">{t('health.workouts.anythingWorthSaying')}</span>
-				<textarea
-					name="notes"
-					rows="2"
-					bind:value={logNotes}
-					class="input mt-1 w-full"
-					placeholder={t('health.workouts.feltHeavyRightKneeComplained')}
-				></textarea>
-			</label>
+			<div class="mt-4">
+				<FormGrid>
+					<Field label={t('health.workouts.anythingWorthSaying')} span={12}>
+						<textarea
+							name="notes"
+							rows="2"
+							bind:value={logNotes}
+							class="textarea"
+							placeholder={t('health.workouts.feltHeavyRightKneeComplained')}
+						></textarea>
+					</Field>
+				</FormGrid>
+			</div>
 		</form>
 	{/if}
 	{#snippet footer()}
 		<button class="btn" type="button" onclick={closeLog}>{t('ui.cancel')}</button>
 		<button class="btn btn-primary" type="submit" form="log-form">
-			{editingSession ? 'Save' : t('health.workouts.writeItDown')}
+			{editingSession ? t('ui.save') : t('health.workouts.writeItDown')}
 		</button>
 	{/snippet}
 </Modal>
@@ -593,7 +776,8 @@
 >
 	{#if confirmDeleteSession}
 		<p class="text-sm text-gray-600">
-			{t('health.workouts.whatYouRecordedOn')} <strong>{confirmDeleteSession.doneOn}</strong>
+			{t('health.workouts.whatYouRecordedOn')}
+			<strong>{civilOf(confirmDeleteSession.doneOn, now())}</strong>
 			{t('health.workouts.isRemovedForGoodThe')}
 		</p>
 	{/if}

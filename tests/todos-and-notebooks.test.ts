@@ -19,6 +19,7 @@ let notebooks: typeof import('../src/lib/services/notebooks');
 let diary: typeof import('../src/lib/services/diary');
 let activities: typeof import('../src/lib/services/activities');
 let slots: typeof import('../src/lib/services/slots');
+let instances: typeof import('../src/lib/services/instances');
 let ctx: { userId: string; now: Date; tz: string };
 let theirs: { userId: string; now: Date; tz: string };
 let work: number;
@@ -29,6 +30,7 @@ beforeAll(async () => {
 	diary = await import('../src/lib/services/diary');
 	activities = await import('../src/lib/services/activities');
 	slots = await import('../src/lib/services/slots');
+	instances = await import('../src/lib/services/instances');
 	ctx = { userId: OWNER, now: new Date('2026-08-17T09:00:00'), tz: 'UTC' };
 	theirs = { ...ctx, userId: STRANGER };
 	work = activities.createCategory(ctx, { name: 'Work', color: '#1d4ed8' });
@@ -204,6 +206,82 @@ describe('putting a todo on the calendar', () => {
 		expect(onTheDay.find((one) => one.label === 'water the plants')?.remindLeadMinutes).toBeNull();
 	});
 
+	/*
+	 * Delegating keeps the task in the list and puts a block on the plan. The
+	 * card says which day, but the task is not scheduled: a scheduled task is
+	 * on that day's board beside its own block, and overdue on every board
+	 * after it.
+	 */
+	test('delegating one to a day dates the card without putting the task on the board', () => {
+		const id = todos.createTodo(ctx, { title: 'book the dentist' });
+		todos.delegateTodo(ctx, id, {
+			date: '2026-08-21',
+			startTime: '11:00',
+			mode: 'category',
+			categoryId: work
+		});
+
+		const task = todos.listTodos(ctx).find((one) => one.id === id)!;
+		expect(task.delegatedDate).toBe('2026-08-21');
+		expect(task.scheduledDate).toBeNull();
+		// Still in the list, but not offered again as waiting for a day.
+		expect(todos.listUnscheduled(ctx).some((one) => one.id === id)).toBe(false);
+
+		// Once on its day, as the block, and not as a task card beside it.
+		expect(todos.listForDate(ctx, '2026-08-21').some((one) => one.id === id)).toBe(false);
+		const day = new Date('2026-08-21T00:00:00');
+		instances.generateForDate(ctx, day);
+		expect(
+			instances.listForDate(ctx, day).filter((one) => one.label === 'book the dentist')
+		).toHaveLength(1);
+		// And not carried on to later boards as overdue.
+		expect(todos.listForDate(ctx, '2026-08-24').some((one) => one.id === id)).toBe(false);
+	});
+
+	test('a delegated card follows its block, and loses the day with it', () => {
+		const id = todos.createTodo(ctx, { title: 'renew the passport' });
+		todos.delegateTodo(ctx, id, {
+			date: '2026-08-22',
+			startTime: '10:00',
+			mode: 'category',
+			categoryId: work
+		});
+		const block = slots
+			.listExceptionals(ctx, '2026-08-22', '2026-08-23')
+			.find((one) => one.label === 'renew the passport')!;
+
+		slots.deleteExceptional(ctx, block.id);
+
+		const task = todos.listTodos(ctx).find((one) => one.id === id)!;
+		expect(task.delegatedDate).toBeNull();
+		expect(task.scheduledDate).toBeNull();
+		expect(todos.listUnscheduled(ctx).some((one) => one.id === id)).toBe(true);
+	});
+
+	test('sending a delegated block back leaves the one task it came from', () => {
+		const id = todos.createTodo(ctx, { title: 'pay the council' });
+		todos.delegateTodo(ctx, id, {
+			date: '2026-08-23',
+			startTime: '10:00',
+			mode: 'category',
+			categoryId: work
+		});
+		const block = slots
+			.listExceptionals(ctx, '2026-08-23', '2026-08-24')
+			.find((one) => one.label === 'pay the council')!;
+
+		const { todoId } = todos.demoteToTodo(ctx, block.id);
+
+		expect(todoId).toBe(id);
+		const named = todos.listTodos(ctx).filter((one) => one.title === 'pay the council');
+		expect(named).toHaveLength(1);
+		expect(named[0].delegatedDate).toBeNull();
+		expect(todos.listUnscheduled(ctx).some((one) => one.id === id)).toBe(true);
+		expect(
+			slots.listExceptionals(ctx, '2026-08-23', '2026-08-24').some((e) => e.id === block.id)
+		).toBe(false);
+	});
+
 	test('delegating one to a block refuses a time that is not one', () => {
 		const id = todos.createTodo(ctx, { title: 'call the bank' });
 		expect(() =>
@@ -273,9 +351,9 @@ describe('notebooks', () => {
 	test('a notebook id from elsewhere is refused rather than accepted', () => {
 		// This is the guard every "belongs to" field leans on.
 		const mine = notebooks.listNotebooks(ctx)[0];
-		expect(notebooks.ownedNotebookId(ctx, mine.id)).toBe(mine.id);
-		expect(notebooks.ownedNotebookId(ctx, '')).toBeNull();
-		expect(() => notebooks.ownedNotebookId(theirs, mine.id)).toThrow();
+		expect(notebooks.ownedNotebookId(ctx, mine.id, 'notes')).toBe(mine.id);
+		expect(notebooks.ownedNotebookId(ctx, '', 'notes')).toBeNull();
+		expect(() => notebooks.ownedNotebookId(theirs, mine.id, 'notes')).toThrow();
 	});
 });
 
@@ -288,17 +366,18 @@ describe('notebooks', () => {
  */
 describe('a birthday, as a card shows it', () => {
 	test('reads as a date, with or without the year behind it', async () => {
-		const { birthdayLabel } = await import('../src/lib/people');
-		expect(birthdayLabel('1990-03-14')).toBe('Mar 14');
-		expect(birthdayLabel('--01-08')).toBe('Jan 8');
-		expect(birthdayLabel('2001-12-01')).toBe('Dec 1');
+		const { birthdayDay } = await import('../src/lib/people');
+		expect(birthdayDay('1990-03-14')).toBe('2000-03-14');
+		expect(birthdayDay('--01-08')).toBe('2000-01-08');
+		expect(birthdayDay('--02-29')).toBe('2000-02-29');
 	});
 
 	test('and says nothing at all when there is nothing to say', async () => {
-		const { birthdayLabel } = await import('../src/lib/people');
-		expect(birthdayLabel(null)).toBeNull();
-		expect(birthdayLabel('')).toBeNull();
-		expect(birthdayLabel('not a date')).toBeNull();
+		const { birthdayDay } = await import('../src/lib/people');
+		expect(birthdayDay(null)).toBeNull();
+		expect(birthdayDay('')).toBeNull();
+		expect(birthdayDay('not a date')).toBeNull();
+		expect(birthdayDay('--13-01')).toBeNull();
 	});
 });
 
@@ -347,46 +426,96 @@ describe('a note is called something', () => {
 });
 
 /**
- * Notebooks belong to each other, by name.
+ * Notebooks sit in folders.
  *
- * The same em dash the gallery's albums use: `Renovation — Kitchen` sits
- * inside `Renovation`. No parent column to keep in step, and renaming one to
- * `Renovation — Bathroom` moves it, which is what typing that plainly means.
+ * A folder is a path a notebook carries, `Home/Kitchen`, and only a label: it
+ * holds nothing and is not a notebook. Renaming one rewrites the path of every
+ * notebook in it, which is the whole of what a folder can be asked to do.
  */
-describe('notebooks as folders', () => {
-	test('a name with a dash in it hangs off the one before it', () => {
-		notebooks.createNotebook(ctx, { title: 'Renovation' });
-		notebooks.createNotebook(ctx, { title: 'Renovation — Kitchen' });
-		notebooks.createNotebook(ctx, { title: 'Renovation — Bathroom' });
+describe('notebooks in folders', () => {
+	const folderOf = (c: typeof ctx, id: number) =>
+		notebooks.listNotebooks(c).find((n) => n.id === id)!.folder;
 
-		const root = notebooks.notebookTree(ctx).find((n) => n.title === 'Renovation')!;
-		expect(root.depth).toBe(0);
-		expect(root.children.map((c) => c.title).sort()).toEqual([
-			'Renovation — Bathroom',
-			'Renovation — Kitchen'
-		]);
-		expect(root.children[0].depth).toBe(1);
+	test('a notebook carries a folder path, tidied, and none by default', () => {
+		const top = notebooks.createNotebook(ctx, { title: 'Folder top' });
+		const deep = notebooks.createNotebook(ctx, {
+			title: 'Folder deep',
+			folder: ' Home / Kitchen/ '
+		});
+		expect(folderOf(ctx, top)).toBe('');
+		expect(folderOf(ctx, deep)).toBe('Home/Kitchen');
 	});
 
-	test('hangs off the nearest ancestor that exists, not off nothing', () => {
-		notebooks.createNotebook(ctx, { title: 'Trip' });
-		// No `Trip — 2026`: the grandchild still belongs under Trip.
-		notebooks.createNotebook(ctx, { title: 'Trip — 2026 — Lisbon' });
-
-		const trip = notebooks.notebookTree(ctx).find((n) => n.title === 'Trip')!;
-		expect(trip.children.map((c) => c.title)).toEqual(['Trip — 2026 — Lisbon']);
+	test('one name may be used once per folder, and again in another', () => {
+		notebooks.createNotebook(ctx, { title: 'Ideas', folder: 'Folder A' });
+		expect(() => notebooks.createNotebook(ctx, { title: 'Ideas', folder: 'Folder A' })).toThrow();
+		expect(() =>
+			notebooks.createNotebook(ctx, { title: 'Ideas', folder: 'Folder B' })
+		).not.toThrow();
 	});
 
-	test('a folder counts what is under it, not only its own', () => {
-		const parent = notebooks.createNotebook(ctx, { title: 'Reading list' });
-		const child = notebooks.createNotebook(ctx, { title: 'Reading list — Philosophy' });
-		diary.createEntry(ctx, { content: 'one', notebookId: parent });
-		diary.createEntry(ctx, { content: 'two', notebookId: child });
-		diary.createEntry(ctx, { content: 'three', notebookId: child });
+	test('an edit that says nothing about the folder leaves it where it is', () => {
+		const id = notebooks.createNotebook(ctx, { title: 'Stays put', folder: 'Keep/Here' });
+		notebooks.updateNotebook(ctx, id, { title: 'Stays put, renamed' });
+		expect(folderOf(ctx, id)).toBe('Keep/Here');
+		notebooks.updateNotebook(ctx, id, { title: 'Stays put, renamed', folder: '' });
+		expect(folderOf(ctx, id)).toBe('');
+	});
 
-		const root = notebooks.notebookTree(ctx).find((n) => n.title === 'Reading list')!;
-		expect(root.entries).toBe(1);
-		expect(root.totals?.notes).toBe(3);
+	test('renaming a folder rewrites every notebook in it, at any depth', () => {
+		const a = notebooks.createNotebook(ctx, { title: 'Tiles', folder: 'Reno' });
+		const b = notebooks.createNotebook(ctx, { title: 'Sink', folder: 'Reno/Kitchen' });
+		const c = notebooks.createNotebook(ctx, { title: 'Elsewhere', folder: 'Renovated' });
+
+		expect(notebooks.renameFolder(ctx, 'Reno', 'Flat/Works')).toBe(2);
+		expect(folderOf(ctx, a)).toBe('Flat/Works');
+		expect(folderOf(ctx, b)).toBe('Flat/Works/Kitchen');
+		// A folder whose name only starts the same is a different folder.
+		expect(folderOf(ctx, c)).toBe('Renovated');
+	});
+
+	test('moving a folder into its parent removes it, and nothing is deleted', () => {
+		const a = notebooks.createNotebook(ctx, { title: 'Pantry', folder: 'Dissolve/Inner' });
+		const b = notebooks.createNotebook(ctx, { title: 'Shelf', folder: 'Dissolve/Inner/Inner' });
+		notebooks.renameFolder(ctx, 'Dissolve/Inner', 'Dissolve');
+		expect(folderOf(ctx, a)).toBe('Dissolve');
+		expect(folderOf(ctx, b)).toBe('Dissolve/Inner');
+	});
+
+	test('refuses a rename that would put two notebooks of one name together', () => {
+		notebooks.createNotebook(ctx, { title: 'Clash', folder: 'Left' });
+		const moving = notebooks.createNotebook(ctx, { title: 'Clash', folder: 'Right' });
+		expect(() => notebooks.renameFolder(ctx, 'Right', 'Left')).toThrow();
+		expect(folderOf(ctx, moving)).toBe('Right');
+	});
+
+	test('refuses a folder inside itself, and a folder nobody is in', () => {
+		notebooks.createNotebook(ctx, { title: 'Loop', folder: 'Loop' });
+		expect(() => notebooks.renameFolder(ctx, 'Loop', 'Loop/Deeper')).toThrow();
+		expect(() => notebooks.renameFolder(ctx, 'Nowhere at all', 'Somewhere')).toThrow();
+	});
+
+	test("renaming a folder moves only this account's notebooks", () => {
+		const mine = notebooks.createNotebook(ctx, { title: 'Shared name', folder: 'Common' });
+		const other = notebooks.createNotebook(theirs, { title: 'Shared name', folder: 'Common' });
+
+		notebooks.renameFolder(ctx, 'Common', 'Mine now');
+		expect(folderOf(ctx, mine)).toBe('Mine now');
+		expect(folderOf(theirs, other)).toBe('Common');
+
+		// And a stranger asking about a folder only somebody else has gets the
+		// same answer as one that does not exist.
+		const statusOf = (run: () => unknown) => {
+			try {
+				run();
+			} catch (e) {
+				return (e as { status?: number }).status;
+			}
+			return null;
+		};
+		expect(statusOf(() => notebooks.renameFolder(theirs, 'Mine now', 'Taken'))).toBe(404);
+		expect(statusOf(() => notebooks.renameFolder(theirs, 'Never existed', 'Taken'))).toBe(404);
+		expect(folderOf(ctx, mine)).toBe('Mine now');
 	});
 });
 

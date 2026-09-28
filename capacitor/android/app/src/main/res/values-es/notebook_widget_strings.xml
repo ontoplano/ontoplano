@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="notebook_widget_name">Ontoplano — cuaderno</string>
+    <string name="notebook_widget_description">Una pestaña de un cuaderno: sus tareas, notas, metas, ideas o cosas por comprar.</string>
+    <string name="notebook_widget_refresh">Actualizar</string>
+    <string name="notebook_widget_set_up">Toca para elegir un cuaderno</string>
+    <string name="notebook_widget_nothing">Nada aquí</string>
+    <string name="notebook_widget_refused">Este widget se eliminó o su clave se revocó. Toca para configurarlo de nuevo.</string>
+    <string name="notebook_widget_unreachable">No se pudo contactar con tu instancia. Toca actualizar para reintentar.</string>
+    <string name="notebook_widget_section_notes">Notas</string>
+    <string name="notebook_widget_section_tasks">Tareas</string>
+    <string name="notebook_widget_section_goals">Metas</string>
+    <string name="notebook_widget_section_ideas">Ideas</string>
+    <string name="notebook_widget_section_inventory">Inventario</string>
+</resources>

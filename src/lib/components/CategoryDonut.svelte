@@ -1,4 +1,6 @@
 <script lang="ts">
+	import EmptyState from '$lib/components/EmptyState.svelte';
+	import CategoryMark from '$lib/components/CategoryMark.svelte';
 	import { formatMoney, type Currency } from '$lib/money';
 	import { useT } from '$lib/i18n';
 
@@ -39,7 +41,7 @@
 </script>
 
 {#if slices.length === 0}
-	<p class="text-sm text-gray-500">{t('finance.donut.empty')}</p>
+	<EmptyState compact icon="wallet" title={t('finance.donut.empty')} />
 {:else}
 	<div class="flex flex-wrap items-center gap-6">
 		<svg
@@ -76,14 +78,12 @@
 			>
 		</svg>
 
-		<ul class="min-w-0 flex-1 space-y-1">
+		<!-- Under the ring when there is no room beside it, rather than a column
+		     of names cut to one letter. -->
+		<ul class="min-w-56 flex-1 space-y-1">
 			{#each slices as slice (slice.name)}
 				<li class="flex items-center gap-2 text-sm">
-					<span
-						class="inline-block h-2.5 w-2.5 shrink-0 rounded-sm"
-						style="background-color: {slice.color}"
-					></span>
-					<span class="min-w-0 flex-1 truncate text-gray-700">{slice.name}</span>
+					<span class="min-w-0 flex-1"><CategoryMark name={slice.name} color={slice.color} /></span>
 					<span class="shrink-0 text-xs text-gray-500 tabular-nums">
 						{Math.round(slice.share * 100)}%
 					</span>

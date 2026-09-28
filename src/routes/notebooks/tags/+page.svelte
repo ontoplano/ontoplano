@@ -1,6 +1,9 @@
 <script lang="ts">
 	import { enhance } from '$lib/enhance';
-	import Card from '$lib/components/Card.svelte';
+	import RoomSurface from '$lib/components/RoomSurface.svelte';
+	import FilterBar from '$lib/components/FilterBar.svelte';
+	import SearchField from '$lib/components/SearchField.svelte';
+	import ShowingCount from '$lib/components/ShowingCount.svelte';
 	import EmptyState from '$lib/components/EmptyState.svelte';
 	import Field from '$lib/components/Field.svelte';
 	import FormError from '$lib/components/FormError.svelte';
@@ -10,7 +13,7 @@
 	import TagChip from '$lib/components/TagChip.svelte';
 	import TagRows from '$lib/components/TagRows.svelte';
 	import TextBox from '$lib/components/TextBox.svelte';
-	import { SECTION_COLORS, TAG_COLOR_DEFAULT } from '$lib/colors';
+	import { TAG_COLOR_DEFAULT } from '$lib/colors';
 	import { getAction } from '$lib/shortcuts';
 	import { useT } from '$lib/i18n';
 	import type { PageServerData, ActionData } from './$types';
@@ -28,6 +31,16 @@
 	let description = $state('');
 	let selectedIndex = $state(0);
 	let rows = $state<ReturnType<typeof TagRows> | undefined>();
+	/** What the search box holds: labels whose word or meaning contains it. */
+	let looking = $state('');
+
+	const shownTags = $derived.by(() => {
+		const needle = looking.trim().toLowerCase();
+		if (!needle) return data.tags;
+		return data.tags.filter((one) =>
+			`${one.name}\n${one.description}`.toLowerCase().includes(needle)
+		);
+	});
 
 	const editing = $derived(
 		editingId ? (data.tags.find((one) => one.id === editingId) ?? null) : null
@@ -60,14 +73,14 @@
 
 		const action = getAction('/notebooks/tags', e.key);
 		if (action === 'edit') {
-			const tag = data.tags[selectedIndex];
+			const tag = shownTags[selectedIndex];
 			if (!tag) return;
 			e.preventDefault();
 			openEdit(tag);
 		}
 		if (action === 'navigate-down' || action === 'navigate-up') {
 			e.preventDefault();
-			const max = data.tags.length - 1;
+			const max = shownTags.length - 1;
 			if (max < 0) return;
 			selectedIndex = Math.min(
 				Math.max(selectedIndex + (action === 'navigate-down' ? 1 : -1), 0),
@@ -76,8 +89,6 @@
 		}
 	}
 </script>
-
-<svelte:head><title>{t('notebooks.tags.tagsOntoplano')}</title></svelte:head>
 
 <svelte:window onkeydown={handleKeydown} />
 
@@ -88,29 +99,47 @@
 		No second heading: the room's name is above and the Tags tab is lit.
 		The description is doing real work, though — this list is not the
 		notebooks' tags, and somebody renaming one here is renaming it on their
-		week as well.
+		week as well — so it sits under the search, where it is read before
+		anything is changed.
 	-->
-	<Card
-		description={t('notebooks.tags.oneVocabularyForTheWhole')}
-		accent={SECTION_COLORS.diary}
-		flush
-	>
+	<RoomSurface>
+		{#snippet tools()}
+			{#if data.tags.length > 0}
+				<FilterBar name="tags">
+					{#snippet lead()}
+						<SearchField bind:value={looking} label={t('notebooks.tags.searchTags')} />
+					{/snippet}
+					{#snippet count()}
+						<ShowingCount
+							total={data.tags.length}
+							shown={shownTags.length}
+							said={(count) => t('notebooks.tags.showingCount', { count })}
+						/>
+					{/snippet}
+				</FilterBar>
+			{/if}
+		{/snippet}
+		{#snippet filters()}
+			<p class="text-xs text-gray-500">{t('notebooks.tags.oneVocabularyForTheWhole')}</p>
+		{/snippet}
 		{#if data.tags.length === 0}
 			<EmptyState
 				icon="tag"
 				title={t('notebooks.tags.noTagsYet')}
 				description={t('notebooks.tags.aTagIsMadeBy')}
 			/>
+		{:else if shownTags.length === 0}
+			<EmptyState filtered onclear={() => (looking = '')} />
 		{:else}
 			<TagRows
 				bind:this={rows}
-				tags={data.tags}
+				tags={shownTags}
 				cursor={selectedIndex}
 				deleteAction="?/delete"
 				onedit={openEdit}
 			/>
 		{/if}
-	</Card>
+	</RoomSurface>
 </div>
 
 <!--

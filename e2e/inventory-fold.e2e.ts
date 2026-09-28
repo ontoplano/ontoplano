@@ -51,8 +51,9 @@ test('a place folds away on the list, and takes what is under it', async ({ page
 
 	// Folding the kitchen takes the drawer inside it with it.
 	await page.getByRole('button', { name: 'Fold Kitchen', exact: true }).first().click();
-	await expect(page.getByText('Rice')).toHaveCount(0);
-	await expect(page.getByText('Vinegar')).toHaveCount(0);
+	// Exact: the shopping strip's "without a price" has a rice in it too.
+	await expect(page.getByText('Rice', { exact: true })).toHaveCount(0);
+	await expect(page.getByText('Vinegar', { exact: true })).toHaveCount(0);
 	// Somewhere else is untouched.
 	await expect(page.getByText('Soap').first()).toBeVisible();
 

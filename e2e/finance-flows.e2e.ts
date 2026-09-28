@@ -26,7 +26,12 @@ test('a ledger, its statement, the rules and the plots', async ({ page }) => {
 	await page.locator('[name="heading"]').fill('Current account');
 	await page.locator('[name="defaultParser"]').selectOption('nubank:conta_corrente');
 	await page.getByRole('button', { name: 'Create', exact: true }).click();
-	await expect(page.getByRole('button', { name: /^Current account Account/ })).toBeVisible();
+	// It is a tab along the top of the statement, with its balance beside it.
+	await expect(
+		page
+			.getByRole('navigation', { name: 'Ledgers' })
+			.getByRole('button', { name: /^Current account/ })
+	).toBeVisible();
 
 	// Its statement, pasted. The parser is already the ledger's own.
 	await page.getByRole('button', { name: 'Import', exact: true }).click();
@@ -50,15 +55,22 @@ test('a ledger, its statement, the rules and the plots', async ({ page }) => {
 	// rewritten afterwards, which re-sorts it again.
 	await page.getByRole('link', { name: 'Rules', exact: true }).click();
 	const categories = page.locator('section', { hasText: 'Categories' }).last();
-	await categories.locator('[name="heading"]').fill('Groceries');
-	await categories.locator('[name="pattern"]').fill('mercado');
-	await categories.getByRole('button', { name: 'Add' }).click();
+	// New and edit are one form, in a dialog.
+	await categories.getByRole('button', { name: 'New category' }).click();
+	const adding = page.getByRole('dialog', { name: 'New rule' });
+	await expect(adding.locator('[name="kind"]')).toHaveValue('category');
+	await adding.locator('[name="heading"]').fill('Groceries');
+	await adding.locator('[name="pattern"]').fill('mercado');
+	await adding.getByRole('button', { name: 'Add', exact: true }).click();
+	await expect(adding).toBeHidden();
 	await expect(categories.getByText('/mercado/i')).toBeVisible();
 
 	await categories.getByRole('button', { name: 'Edit Groceries' }).click();
-	await categories.locator('[name="heading"]').first().fill('Food');
-	await categories.locator('[name="pattern"]').first().fill('mercado|padaria');
-	await categories.getByRole('button', { name: 'Save' }).click();
+	const editing = page.getByRole('dialog', { name: 'Edit rule' });
+	await editing.locator('[name="heading"]').fill('Food');
+	await editing.locator('[name="pattern"]').fill('mercado|padaria');
+	await editing.getByRole('button', { name: 'Save', exact: true }).click();
+	await expect(editing).toBeHidden();
 	await expect(categories.getByText('/mercado|padaria/i')).toBeVisible();
 
 	/*
@@ -74,7 +86,7 @@ test('a ledger, its statement, the rules and the plots', async ({ page }) => {
 	await page.getByRole('button', { name: 'Close' }).click();
 	await expect(page.getByText('Mercado Bom Preço')).toHaveCount(0);
 
-	// The line wears the category now — in its own column, and washing the row.
+	// The line wears the category now, in its own column.
 	await page.getByRole('link', { name: 'Ledgers', exact: true }).click();
 	await page.waitForURL(/\/finance\/ledgers/);
 	await expect(

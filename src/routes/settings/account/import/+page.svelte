@@ -1,9 +1,12 @@
 <script lang="ts">
+	import { useWhen } from '$lib/when-context.svelte';
+	import { dateOf } from '$lib/when';
 	import { tick } from 'svelte';
 	import { resolve } from '$app/paths';
 	import OneLine from '$lib/components/OneLine.svelte';
 	import Banner from '$lib/components/Banner.svelte';
-	import Card from '$lib/components/Card.svelte';
+	import RoomSurface from '$lib/components/RoomSurface.svelte';
+	import SettingGroup from '$lib/components/SettingGroup.svelte';
 	import MarkdownImport from '$lib/components/MarkdownImport.svelte';
 	import Icon from '$lib/components/Icon.svelte';
 	import { settingsForm } from '$lib/actions/settings-form';
@@ -14,9 +17,20 @@
 	import { useT } from '$lib/i18n';
 
 	const t = useT();
+	const now = useWhen();
 
 	/** The ones this card takes: a file, worked out by what is in it. */
 	const fromFiles = IMPORT_KINDS.filter((k) => k.becomes === 'todos');
+
+	/** "Todoist (CSV), Google Tasks (JSON) or Keep (…)", in the reader's language. */
+	const fromFilesList = $derived(
+		new Intl.ListFormat(t.locale, { type: 'disjunction' }).format(
+			fromFiles.map((kind) => `${kind.name} (${kind.file})`)
+		)
+	);
+
+	/** How many tables the preview names before it says "and N smaller ones". */
+	const TABLES_NAMED = 6;
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 
@@ -237,191 +251,180 @@
 </script>
 
 <div class="space-y-4">
-	<p class="text-sm text-gray-500">
-		<a href={resolve('/settings/account')} class="link"
-			><Icon name="arrow-left" /> {t('settings.account.import.account')}</a
-		>
-	</p>
-
-	<Card title={t('settings.account.import.fromAnotherApp')}>
-		<!--
-			Named from `$lib/imports-catalogue`, which is also what `/api/imports`
-			answers with and what ontoplano.com's FAQ is built from. Three places
-			listed these by hand and the site was a source behind for weeks.
-		-->
-		<p class="text-sm text-gray-500">
-			{#each fromFiles as kind, i (kind.id)}<strong>{kind.name}</strong> ({kind.file}){i <
-				fromFiles.length - 2
-					? ', '
-					: i === fromFiles.length - 2
-						? ' or '
-						: '. '}{/each}{t('settings.account.import.whichOneItIsIs')}
-		</p>
-
-		<form
-			method="post"
-			action="?/importTasks"
-			use:settingsForm={{ notice: 'Imported.' }}
-			class="mt-3 space-y-3"
-		>
-			<!--
-				No `name` on the file input, deliberately: it is read in the page and
-				never submitted. With one, the browser uploads the file as well and
-				the server buffers a copy it has no use for.
-			-->
-			<input
-				type="file"
-				multiple
-				accept=".csv,.json,.org,text/csv,application/json,text/plain"
-				class="input"
-				onchange={readTasks}
-			/>
-
-			<textarea
-				name="text"
-				bind:value={importText}
-				rows="4"
-				placeholder={t('settings.account.import.orPasteTheFileHere')}
-				class="input font-mono text-xs"
-			></textarea>
-
-			{#if tasksError}
-				<p class="text-sm text-red-700">{tasksError}</p>
-			{/if}
-
-			<label class="flex items-center gap-2 text-sm text-gray-700">
-				<input type="checkbox" name="includeDone" />
-				<span>{t('settings.account.import.bringFinishedTasksToo')}</span>
-			</label>
-
-			<label class="block text-sm text-gray-700">
-				{t('settings.account.import.nameForTheNotebookThey')}
-				<OneLine
-					name="notebook"
-					placeholder={t('settings.account.import.todoist')}
-					class="input mt-1"
-					maxlength={80}
-				/>
-			</label>
-
-			<!-- The undo, said before the button rather than after the regret. -->
-			<p class="text-xs text-gray-500">
-				{t('settings.account.import.everythingArrivesAsTodosIn')}
-			</p>
-
-			<button type="submit" class="btn btn-sm">{t('settings.account.import.import')}</button>
-		</form>
-
-		{#if form?.success && form.action === 'importTasks'}
-			<p class="mt-3 text-sm text-gray-700">{form.message}</p>
-		{/if}
-	</Card>
+	<a href={resolve('/settings/account')} class="btn btn-sm btn-quiet">
+		<Icon name="arrow-left" />
+		{t('settings.account.import.account')}
+	</a>
 
 	<!--
-		A vault is writing, so it lands where writing lands.
-
-		Its own card rather than a fourth source in the one above: those three
-		hand over a list and become todos, and this hands over notes and becomes
-		entries. Same button, different thing arriving.
+		One surface, a band per way in — the shape of the account page this is
+		a level under. Each form keeps its fields stacked with the button after
+		them, the same as the vault form it sits beside.
 	-->
-	<Card title={t('settings.account.import.anObsidianVault')}>
-		<p class="text-sm text-gray-500">
-			{t('settings.account.import.chooseTheVaultSFolderEvery')}
-			<code class="text-xs">{t('settings.account.import.tags')}</code>
-			{t('settings.account.import.andFromTheFrontmatter')}
-		</p>
-
-		<div class="mt-3">
-			<MarkdownImport enhancer={(node) => settingsForm(node, { notice: 'Imported.' })} />
-		</div>
-
-		{#if form?.success && form.action === 'importVault'}
-			<p class="mt-3 text-sm text-gray-700">{form.message}</p>
-		{/if}
-	</Card>
-
-	<!--
-		The other half of the export, and the one that makes it mean something.
-
-		Its own card rather than a second button on the one above, because they
-		are opposite in consequence: one adds a notebook, the other overwrites
-		everything here.
-	-->
-	<Card title={t('settings.account.import.restoreAnExport')} accent="#b45309">
-		<p class="text-sm text-gray-500">
-			{t('settings.account.import.aFileDownloadedFrom')}
-			<strong>{t('settings.account.import.exportYourData')}</strong>{t(
-				'settings.account.import.onThisInstanceOr'
-			)}
-		</p>
-
-		<form
-			method="post"
-			action="?/importAccount"
-			use:settingsForm={{ notice: 'Restored.', before: keepACopyFirst }}
-			class="mt-3 space-y-3"
+	<RoomSurface>
+		<SettingGroup
+			title={t('settings.account.import.fromAnotherApp')}
+			description="{fromFilesList}. {t('settings.account.import.whichOneItIsIs')}"
 		>
 			<!--
-				The file and nothing else.
-
-				There was a box to paste into beside this, and an export is not a
-				thing anybody pastes: the one that prompted taking it out was fifteen
-				megabytes of base64. What it bought was a second way to arrive at the
-				same action with something unchecked in it.
+				Named from `$lib/imports-catalogue`, which is also what `/api/imports`
+				answers with and what ontoplano.com's FAQ is built from.
 			-->
-			<input type="file" accept=".json,application/json" class="input" onchange={readRestore} />
-			<input type="hidden" name="text" value={restoreText} />
-
-			{#if restoreError}
-				<Banner kind="error">{restoreError}</Banner>
-			{/if}
-
-			{#if preview}
+			<form
+				method="post"
+				action="?/importTasks"
+				use:settingsForm={{ notice: t('settings.account.import.imported') }}
+				class="max-w-3xl space-y-3 px-4 py-3"
+			>
 				<!--
-					What the restore will do, before the word that lets it.
-
-					Numbers rather than adjectives: whose account, how many rows, and
-					the two lists that matter — what is left behind by policy, and what
-					the import would refuse outright. The second list is the one that
-					used to surface as a failure three seconds after everything had
-					already been emptied and rolled back.
+					No `name` on the file input, deliberately: it is read in the page and
+					never submitted. With one, the browser uploads the file as well and
+					the server buffers a copy it has no use for.
 				-->
-				<div class="space-y-2 border border-gray-200 bg-gray-50 p-3 text-sm">
-					<p class="text-gray-900">
-						{#if preview.from}
-							<strong>{preview.from.email}</strong>{t('settings.account.import.sAccountExported')}
-							{preview.from.exportedAt.slice(0, 10)}:
+				<input
+					type="file"
+					multiple
+					accept=".csv,.json,.org,text/csv,application/json,text/plain"
+					class="input"
+					aria-label={t('settings.account.import.fromAnotherApp')}
+					onchange={readTasks}
+				/>
+				<textarea
+					name="text"
+					bind:value={importText}
+					rows="4"
+					aria-label={t('settings.account.import.orPasteTheFileHere')}
+					placeholder={t('settings.account.import.orPasteTheFileHere')}
+					class="textarea font-mono text-xs"
+				></textarea>
+				{#if tasksError}
+					<Banner kind="error" message={tasksError} />
+				{/if}
+				<label class="flex items-center gap-2 text-sm text-gray-700">
+					<input type="checkbox" name="includeDone" />
+					<span>{t('settings.account.import.bringFinishedTasksToo')}</span>
+				</label>
+				<label class="block text-sm text-gray-700">
+					{t('settings.account.import.nameForTheNotebookThey')}
+					<OneLine
+						name="notebook"
+						placeholder={t('settings.account.import.todoist')}
+						class="input mt-1"
+						maxlength={80}
+					/>
+				</label>
+				<!-- The undo, said before the button rather than after the regret. -->
+				<p class="text-xs text-gray-500">
+					{t('settings.account.import.everythingArrivesAsTodosIn')}
+				</p>
+				<button type="submit" class="btn btn-sm">{t('settings.account.import.import')}</button>
+				{#if form?.success && form.action === 'importTasks'}
+					<Banner kind="success" message={form.message} />
+				{/if}
+			</form>
+		</SettingGroup>
+
+		<!--
+			A vault is writing, so it lands where writing lands: those three hand
+			over a list and become todos, this hands over notes and becomes entries.
+		-->
+		<SettingGroup title={t('settings.account.import.anObsidianVault')}>
+			<div class="max-w-3xl space-y-3 px-4 py-3">
+				<p class="text-sm text-gray-500">
+					{t('settings.account.import.chooseTheVaultSFolderEvery')}
+					<code class="text-xs">{t('settings.account.import.tags')}</code>
+					{t('settings.account.import.andFromTheFrontmatter')}
+				</p>
+				<MarkdownImport
+					enhancer={(node) => settingsForm(node, { notice: t('settings.account.import.imported') })}
+				/>
+				{#if form?.success && form.action === 'importVault'}
+					<Banner kind="success" message={form.message} />
+				{/if}
+			</div>
+		</SettingGroup>
+
+		<!--
+			The other half of the export, and the one that makes it mean something.
+			Its own band because the two are opposite in consequence: one adds a
+			notebook, the other overwrites everything here.
+		-->
+		<SettingGroup title={t('settings.account.import.restoreAnExport')}>
+			<form
+				method="post"
+				action="?/importAccount"
+				use:settingsForm={{
+					notice: t('settings.account.import.restored'),
+					before: keepACopyFirst
+				}}
+				class="max-w-3xl space-y-3 px-4 py-3"
+			>
+				<p class="text-sm text-gray-500">
+					{t('settings.account.import.aFileDownloadedFrom')}
+					<strong>{t('settings.account.import.exportYourData')}</strong>{t(
+						'settings.account.import.onThisInstanceOr'
+					)}
+				</p>
+				<!--
+					The file and nothing else: an export is not a thing anybody pastes —
+					the one that prompted taking the box out was fifteen megabytes.
+				-->
+				<input
+					type="file"
+					accept=".json,application/json"
+					class="input"
+					aria-label={t('settings.account.import.theExportFile')}
+					onchange={readRestore}
+				/>
+				<input type="hidden" name="text" value={restoreText} />
+				{#if restoreError}
+					<Banner kind="error">{restoreError}</Banner>
+				{/if}
+				{#if preview}
+					<!--
+						What the restore will do, before the word that lets it: whose
+						account, how many rows, what is left behind by policy, and what
+						the import would refuse outright.
+					-->
+					<Banner kind="info">
+						<p>
+							{#if preview.from}
+								<strong>{preview.from.email}</strong>{t('settings.account.import.sAccountExported')}
+								{dateOf(preview.from.exportedAt, now())}:
+							{/if}
+							<strong>{preview.total}</strong>
+							{t('settings.account.import.rowsWillLand')}
+						</p>
+						{#if preview.tables.length > 0}
+							<p class="mt-1 text-gray-600">
+								{preview.tables
+									.slice(0, TABLES_NAMED)
+									.map((table) => `${table.rows} ${table.name}`)
+									.join(', ')}{preview.tables.length > TABLES_NAMED
+									? t('settings.account.import.andSmallerTables', {
+											count: preview.tables.length - TABLES_NAMED
+										})
+									: ''}.
+							</p>
 						{/if}
-						<strong>{preview.total}</strong>
-						{t('settings.account.import.rowsWillLand')}
-					</p>
-					{#if preview.tables.length > 0}
-						<p class="text-gray-600">
-							{preview.tables
-								.slice(0, 6)
-								.map((t) => `${t.rows} ${t.name}`)
-								.join(', ')}{preview.tables.length > 6
-								? ` and ${preview.tables.length - 6} smaller tables`
-								: ''}.
-						</p>
-					{/if}
-					{#if preview.skipped.length > 0}
-						<p class="text-gray-600">
-							{t('settings.account.import.leftBehind')}
-							{preview.skipped
-								.map((skip) => `${skip.rows} ${skip.name} (${t(skip.why)})`)
-								.join('; ')}.
-						</p>
-					{/if}
+						{#if preview.skipped.length > 0}
+							<p class="mt-1 text-gray-600">
+								{t('settings.account.import.leftBehind')}
+								{preview.skipped
+									.map((skip) => `${skip.rows} ${skip.name} (${t(skip.why)})`)
+									.join('; ')}.
+							</p>
+						{/if}
+					</Banner>
 					{#if preview.unacceptable.length > 0}
-						<div class="border border-red-200 bg-red-50 p-2">
-							<p class="text-sm text-gray-900">
+						<Banner kind="error">
+							<p>
 								{t('settings.account.import.theRestoreWouldRefuseThis')}
 								{preview.unacceptable
 									.map((bad) => `${bad.rows} ${bad.name} ${t(bad.why)}`)
 									.join('; ')}.
 							</p>
-							<label class="mt-1 flex cursor-pointer items-start gap-2 text-sm text-gray-900">
+							<label class="mt-1 flex cursor-pointer items-start gap-2">
 								<input
 									type="checkbox"
 									name="dropUnacceptable"
@@ -430,74 +433,62 @@
 								/>
 								<span>{t('settings.account.import.leaveThoseOutAndBring')}</span>
 							</label>
-						</div>
+						</Banner>
 					{/if}
-				</div>
-			{/if}
-
-			<!--
-				Said before the button, in the words of what it does.
-
-				This is not "import": it empties the account and then fills it, so
-				the sentence has to be the destructive one and the confirmation has
-				to be typed rather than clicked.
-			-->
-			<div class="border border-amber-300 bg-amber-50 p-3">
-				<p class="text-sm text-amber-900">
-					{t('settings.account.import.this')}
-					<strong>{t('settings.account.import.replacesEverythingInThisAccount')}</strong>
-					{t('settings.account.import.withWhatIsInThe')}
-				</p>
+				{/if}
 				<!--
+					Said before the button, in the words of what it does: it empties
+					the account and then fills it, so the sentence is the destructive
+					one and the confirmation is typed rather than clicked.
+
 					One sentence with the word in it, rather than "Type" + the word +
-					"to confirm" as three pieces. Assembled, it came out as "Tipo
-					SUBSTITUIR para confirmar" in Portuguese — "Type" translated as
-					the noun — and a sentence a translator cannot see whole is a
-					sentence they cannot get right.
+					"to confirm" as three pieces — assembled, it came out as "Tipo
+					SUBSTITUIR para confirmar" in Portuguese.
 				-->
-				<label class="mt-2 block text-sm text-amber-900">
-					{confirmLabel[0]}<code class="text-xs">{confirmWord}</code>{confirmLabel[1] ?? ''}
-					<OneLine name="confirm" class="input mt-1 max-w-[12rem]" />
-				</label>
-			</div>
-
-			<p class="text-xs text-gray-500">
-				{t('settings.account.import.dataRelatedToBillingApi')}
-				<strong>{t('settings.account.import.not')}</strong>
-				{t('settings.account.import.beImportedWhateverYouWrote')}
-			</p>
-
-			<!-- Not pressable until a file has been read and understood — the
-			     server refuses a body too big for it before this app sees it, and
-			     what comes back is a 500 rather than a reason — nor while the
-			     preview has named rows the restore would refuse and nobody has
-			     answered what to do about them. -->
-			<button
-				type="submit"
-				class="btn btn-sm"
-				disabled={restoreText === '' ||
-					(preview != null && preview.unacceptable.length > 0 && !dropBad)}
+				<Banner kind="warning">
+					<p>
+						{t('settings.account.import.this')}
+						<strong>{t('settings.account.import.replacesEverythingInThisAccount')}</strong>
+						{t('settings.account.import.withWhatIsInThe')}
+					</p>
+					<label class="mt-2 block">
+						{confirmLabel[0]}<code class="text-xs">{confirmWord}</code>{confirmLabel[1] ?? ''}
+						<OneLine name="confirm" class="input mt-1 max-w-[12rem]" />
+					</label>
+				</Banner>
+				<p class="text-xs text-gray-500">
+					{t('settings.account.import.dataRelatedToBillingApi')}
+					<strong>{t('settings.account.import.not')}</strong>
+					{t('settings.account.import.beImportedWhateverYouWrote')}
+				</p>
+				<!-- Not pressable until a file has been read and understood, nor while
+				     the preview names rows the restore would refuse and nobody has
+				     answered what to do about them. -->
+				<button
+					type="submit"
+					class="btn btn-danger btn-sm"
+					disabled={restoreText === '' ||
+						(preview != null && preview.unacceptable.length > 0 && !dropBad)}
+				>
+					{t('settings.account.import.restore')}
+				</button>
+				{#if form?.success && form.action === 'importAccount'}
+					<Banner kind="success" message={form.message} />
+				{/if}
+			</form>
+			<!--
+				Its own form, because it is its own act: this one writes nothing and
+				needs no REPLACE. It carries the same text, posted the same way.
+			-->
+			<form
+				method="post"
+				action="?/previewImport"
+				class="hidden"
+				bind:this={previewForm}
+				use:settingsForm={{}}
 			>
-				{t('settings.account.import.restore')}
-			</button>
-		</form>
-
-		<!--
-			Its own form, because it is its own act: this one writes nothing and
-			needs no REPLACE. It carries the same text, posted the same way.
-		-->
-		<form
-			method="post"
-			action="?/previewImport"
-			class="hidden"
-			bind:this={previewForm}
-			use:settingsForm={{}}
-		>
-			<input type="hidden" name="text" value={restoreText} />
-		</form>
-
-		{#if form?.success && form.action === 'importAccount'}
-			<p class="mt-3 text-sm text-gray-700">{form.message}</p>
-		{/if}
-	</Card>
+				<input type="hidden" name="text" value={restoreText} />
+			</form>
+		</SettingGroup>
+	</RoomSurface>
 </div>

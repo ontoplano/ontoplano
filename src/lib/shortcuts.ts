@@ -132,6 +132,7 @@ export const PAGE_SHORTCUTS: Record<string, PageShortcuts> = {
 			{ key: 'j', action: 'navigate-down', description: 'shortcut.navigateList' },
 			{ key: 'k', action: 'navigate-up', description: 'shortcut.navigateList' },
 			{ key: 'n', action: 'new', description: 'shortcut.newActivity' },
+			{ key: 'e', action: 'edit', description: 'shortcut.editTheOneUnderThe' },
 			{ key: '1', action: 'filter-1', description: 'shortcut.toggleCategoryFilter' },
 			{ key: '2', action: 'filter-2', description: 'shortcut.toggleCategoryFilter' },
 			{ key: '3', action: 'filter-3', description: 'shortcut.toggleCategoryFilter' },
@@ -141,6 +142,13 @@ export const PAGE_SHORTCUTS: Record<string, PageShortcuts> = {
 			{ key: '7', action: 'filter-7', description: 'shortcut.toggleCategoryFilter' },
 			{ key: '8', action: 'filter-8', description: 'shortcut.toggleCategoryFilter' },
 			{ key: '9', action: 'filter-9', description: 'shortcut.toggleCategoryFilter' }
+		]
+	},
+	'/tasks/review': {
+		label: 'app.review',
+		shortcuts: [
+			{ key: '[', action: 'prev-week', description: 'shortcut.switchWeek' },
+			{ key: ']', action: 'next-week', description: 'shortcut.switchWeek' }
 		]
 	},
 	'/tasks/todo': {
@@ -198,6 +206,10 @@ export const PAGE_SHORTCUTS: Record<string, PageShortcuts> = {
 			{ key: 'Enter', action: 'toggle-expand', description: 'shortcut.expandCollapse' }
 		]
 	},
+	'/health/workouts': {
+		label: 'app.workouts',
+		shortcuts: [{ key: 'n', action: 'new', description: 'shortcut.newWorkout' }]
+	},
 	'/notebooks': {
 		label: 'app.notebooks',
 		// `BROWSE_SHORTCUTS` is the set `$lib/browse` answers for any screen that
@@ -205,7 +217,9 @@ export const PAGE_SHORTCUTS: Record<string, PageShortcuts> = {
 		// the screen actually does rather than the two halves disagreeing.
 		shortcuts: [
 			...BROWSE_SHORTCUTS,
-			{ key: 'n', action: 'new', description: 'shortcut.newNotebook' }
+			{ key: 'n', action: 'new', description: 'shortcut.newNotebook' },
+			// The notebook open beside the shelf.
+			{ key: 'f', action: 'toggle-favorite', description: 'shortcut.toggleFavorite' }
 		]
 	},
 	'/notebooks/tags': {
@@ -213,7 +227,8 @@ export const PAGE_SHORTCUTS: Record<string, PageShortcuts> = {
 		shortcuts: [
 			{ key: 'j', action: 'navigate-down', description: 'shortcut.navigateTags' },
 			{ key: 'k', action: 'navigate-up', description: 'shortcut.navigateTags' },
-			{ key: 'e', action: 'edit', description: 'shortcut.editTag' }
+			{ key: 'e', action: 'edit', description: 'shortcut.editTag' },
+			{ key: 'Enter', action: 'toggle-expand', description: 'shortcut.expandCollapse' }
 		]
 	},
 	'/notebooks/people': {
@@ -221,7 +236,19 @@ export const PAGE_SHORTCUTS: Record<string, PageShortcuts> = {
 		shortcuts: [
 			{ key: 'j', action: 'navigate-down', description: 'shortcut.navigatePeople' },
 			{ key: 'k', action: 'navigate-up', description: 'shortcut.navigatePeople' },
-			{ key: 'n', action: 'new', description: 'shortcut.newPerson' }
+			{ key: 'n', action: 'new', description: 'shortcut.newPerson' },
+			{ key: 'Enter', action: 'open', description: 'shortcut.openTheOneUnderThe' },
+			{ key: 'e', action: 'edit', description: 'shortcut.editTheOneUnderThe' }
+		]
+	},
+	'/finance/ledgers': {
+		label: 'rooms.finance.tabs.ledgers',
+		// h/l walk the ledgers, the strip across the top of the statement.
+		shortcuts: [
+			...BROWSE_SHORTCUTS,
+			{ key: 'n', action: 'new', description: 'shortcut.newLine' },
+			{ key: 'i', action: 'import', description: 'shortcut.importAStatement' },
+			{ key: 'x', action: 'delete', description: 'shortcut.askToDelete' }
 		]
 	},
 	'/health/recipes': {
@@ -235,12 +262,30 @@ export const PAGE_SHORTCUTS: Record<string, PageShortcuts> = {
 			{ key: 'k', action: 'navigate-up', description: 'shortcut.navigateSessions' }
 		]
 	},
+	'/admin': {
+		label: 'admin.accounts',
+		shortcuts: [
+			{ key: 'j', action: 'navigate-down', description: 'shortcut.navigateAccounts' },
+			{ key: 'k', action: 'navigate-up', description: 'shortcut.navigateAccounts' },
+			{ key: 'Enter', action: 'open', description: 'shortcut.openTheOneUnderThe' }
+		]
+	},
 	'/settings/integrations/connections': {
 		label: 'app.integrations',
 		shortcuts: [
 			{ key: 'j', action: 'navigate-down', description: 'shortcut.navigateTokens' },
 			{ key: 'k', action: 'navigate-up', description: 'shortcut.navigateTokens' },
 			{ key: 'n', action: 'new', description: 'shortcut.newToken' }
+		]
+	},
+	'/settings/integrations/widget': {
+		label: 'rooms.integrations.tabs.widgets',
+		shortcuts: [
+			{ key: 'j', action: 'navigate-down', description: 'shortcut.navigateWidgets' },
+			{ key: 'k', action: 'navigate-up', description: 'shortcut.navigateWidgets' },
+			{ key: 'e', action: 'edit', description: 'shortcut.editWidget' },
+			{ key: 'x', action: 'delete', description: 'shortcut.askToDeleteWidget' },
+			{ key: 'n', action: 'new', description: 'shortcut.newWidget' }
 		]
 	}
 };

@@ -13,18 +13,19 @@ test('the delete in the board editor deletes', async ({ page }) => {
 		.click();
 	const form = page.getByRole('dialog');
 	await form.locator('[name="heading"]').first().fill('bin this one');
+	// Onto today, so it is a column card rather than one in the side rail.
+	const more = page.getByRole('button', { name: /Category, notebook/ }).first();
+	if (await more.count()) await more.click();
+	const today = await page.evaluate(() => {
+		const d = new Date();
+		return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+	});
+	await form.locator('[name="scheduledDate"]').fill(today);
 	await form
 		.getByRole('button', { name: /Create task|Create/ })
 		.last()
 		.click();
 	await expect(page.getByText('bin this one').first()).toBeVisible({ timeout: 30_000 });
-
-	// Onto today, so it is a column card rather than one in the side rail.
-	await page
-		.getByRole('button', { name: /Put it on today|today/i })
-		.first()
-		.click();
-	await page.waitForTimeout(1500);
 
 	await visit(page, '/tasks/board');
 	await expect(page.getByText('bin this one').first()).toBeVisible({ timeout: 30_000 });

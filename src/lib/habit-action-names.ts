@@ -9,26 +9,35 @@
  */
 export type HabitActionNames = {
 	logOccurrence: string;
+	setDayCount: string;
 	toggleOccurrence: string;
 	updateOccurrence: string;
 	deleteOccurrence: string;
+	archive: string;
+	unarchive: string;
 	remove: string;
 };
 
 /** The Health room's Habits tab, where a habit is what the page is about. */
 export const HABIT_ROOM_ACTIONS: HabitActionNames = {
 	logOccurrence: '?/logOccurrence',
+	setDayCount: '?/setDayCount',
 	toggleOccurrence: '?/toggleOccurrence',
 	updateOccurrence: '?/updateOccurrence',
 	deleteOccurrence: '?/deleteOccurrence',
+	archive: '?/archive',
+	unarchive: '?/unarchive',
 	remove: '?/delete'
 };
 
 /** Inside a notebook, where the unprefixed names belong to the notebook. */
 export const NOTEBOOK_HABIT_ACTIONS: HabitActionNames = {
 	logOccurrence: '?/habitLogOccurrence',
+	setDayCount: '?/habitSetDayCount',
 	toggleOccurrence: '?/habitToggleOccurrence',
 	updateOccurrence: '?/habitUpdateOccurrence',
 	deleteOccurrence: '?/habitDeleteOccurrence',
+	archive: '?/habitArchive',
+	unarchive: '?/habitUnarchive',
 	remove: '?/habitDelete'
 };

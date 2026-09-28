@@ -60,8 +60,8 @@ declare global {
 		}
 		// interface PageData {}
 		interface PageState {
-			/** A screen-like overlay's claim on one history entry; `$lib/back-closes`. */
-			backCloses?: number;
+			/** The screen-like overlays open at this history entry, newest last; `$lib/back-closes`. */
+			backCloses?: number[];
 		}
 		// interface Platform {}
 	}

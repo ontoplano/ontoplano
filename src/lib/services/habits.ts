@@ -1,11 +1,12 @@
-import { and, desc, eq, gte } from 'drizzle-orm';
+import { and, desc, eq, gte, isNull } from 'drizzle-orm';
 
 import { db } from '$lib/db/index.js';
 import { habitOccurrences, habits } from '$lib/db/schema.js';
 import { localDateOf, type Ctx } from './ctx.js';
-import { created } from './time.js';
+import { created, stamp } from './time.js';
 import { NotFoundError } from './errors.js';
 import { notebookPatch } from './notebooks.js';
+import { MAX_DAY_COUNT } from '$lib/habit-heatmap';
 import { num, oneOf, optionalStr, str } from './validate.js';
 
 /**
@@ -23,6 +24,7 @@ export const MAX_NAME_LENGTH = 100;
 export const MAX_DESCRIPTION_LENGTH = 1000;
 export const MAX_NOTES_LENGTH = 1000;
 export const HISTORY_DAYS = 365;
+export { MAX_DAY_COUNT };
 
 const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -40,8 +42,15 @@ export type HabitInput = {
  * `notebookId` narrows rather than changing the shape: the notebook's Habits
  * tab is this room looking at one subject, and it draws the rows with the same
  * component, so it needs exactly what the room needs.
+ *
+ * Archived habits are left out unless asked for: they keep their history for
+ * the room's archived list, and nothing else — today, a notebook, an
+ * assistant ticking by name — should offer them.
  */
-export function listHabits(ctx: Ctx, scope: { notebookId?: number } = {}) {
+export function listHabits(
+	ctx: Ctx,
+	scope: { notebookId?: number; includeArchived?: boolean } = {}
+) {
 	const rows = db
 		.select({
 			id: habits.id,
@@ -50,13 +59,16 @@ export function listHabits(ctx: Ctx, scope: { notebookId?: number } = {}) {
 			type: habits.type,
 			scheduledDays: habits.scheduledDays,
 			notebookId: habits.notebookId,
+			archivedAt: habits.archivedAt,
 			createdAt: habits.createdAt
 		})
 		.from(habits)
 		.where(
-			scope.notebookId === undefined
-				? eq(habits.userId, ctx.userId)
-				: and(eq(habits.userId, ctx.userId), eq(habits.notebookId, scope.notebookId))
+			and(
+				eq(habits.userId, ctx.userId),
+				scope.notebookId === undefined ? undefined : eq(habits.notebookId, scope.notebookId),
+				scope.includeArchived ? undefined : isNull(habits.archivedAt)
+			)
 		)
 		.orderBy(habits.name)
 		.all();
@@ -107,7 +119,18 @@ export function createHabit(ctx: Ctx, raw: HabitInput): number {
 export function updateHabit(ctx: Ctx, id: number, raw: HabitInput): void {
 	const res = db
 		.update(habits)
-		.set(parseHabit(ctx, raw))
+		.set(parseHabit(ctx, raw, id))
+		.where(and(eq(habits.id, id), eq(habits.userId, ctx.userId)))
+		.run();
+
+	if (res.changes === 0) throw new NotFoundError('habit');
+}
+
+/** Put a habit away, or bring it back. Its history stays either way. */
+export function setHabitArchived(ctx: Ctx, id: number, archived: boolean): void {
+	const res = db
+		.update(habits)
+		.set({ archivedAt: archived ? stamp(ctx) : null })
 		.where(and(eq(habits.id, id), eq(habits.userId, ctx.userId)))
 		.run();
 
@@ -155,6 +178,45 @@ export function logOccurrence(
 	const notes = optionalStr(raw.notes, 'notes', { max: MAX_NOTES_LENGTH });
 
 	writeOccurrence(ctx, { habitId, date, notes });
+}
+
+/**
+ * A day's count, set outright.
+ *
+ * What the counter on a card sends once the pressing stops: the number the
+ * day should hold, never a step, so a repeated or late write cannot count
+ * twice. Going up adds blank occurrences; going down takes the newest ones
+ * back, which are the ones the presses just added.
+ */
+export function setDayCount(
+	ctx: Ctx,
+	raw: { habitId: unknown; date?: unknown; count: unknown }
+): void {
+	const habitId = ownedHabitId(ctx, raw.habitId);
+	const date = parseDate(ctx, raw.date);
+	const count = num(raw.count, 'count', { min: 0, max: MAX_DAY_COUNT, int: true });
+
+	db.transaction(() => {
+		const held = db
+			.select({ id: habitOccurrences.id })
+			.from(habitOccurrences)
+			.where(
+				and(
+					eq(habitOccurrences.habitId, habitId),
+					eq(habitOccurrences.date, date),
+					eq(habitOccurrences.userId, ctx.userId)
+				)
+			)
+			.orderBy(desc(habitOccurrences.id))
+			.all();
+
+		for (let i = held.length; i < count; i++) writeOccurrence(ctx, { habitId, date, notes: '' });
+		for (const one of held.slice(0, Math.max(held.length - count, 0))) {
+			db.delete(habitOccurrences)
+				.where(and(eq(habitOccurrences.id, one.id), eq(habitOccurrences.userId, ctx.userId)))
+				.run();
+		}
+	});
 }
 
 /**
@@ -239,7 +301,7 @@ export function parseScheduledDays(raw: string | null): number[] {
 		.filter((n) => !isNaN(n) && n >= 0 && n <= 6);
 }
 
-function parseHabit(ctx: Ctx, raw: HabitInput) {
+function parseHabit(ctx: Ctx, raw: HabitInput, id?: number) {
 	return {
 		name: str(raw.name, 'name', { max: MAX_NAME_LENGTH }),
 		description: optionalStr(raw.description, 'description', { max: MAX_DESCRIPTION_LENGTH }),
@@ -253,7 +315,7 @@ function parseHabit(ctx: Ctx, raw: HabitInput) {
 		// Only when the caller mentioned it. An update that says nothing about
 		// the notebook must leave it alone, or every assistant renaming a habit
 		// would quietly take it out of the subject it belongs to.
-		...notebookPatch(ctx, raw)
+		...notebookPatch(ctx, raw, 'habits', id === undefined ? undefined : { table: habits, id })
 	};
 }
 

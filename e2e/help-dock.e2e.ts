@@ -32,6 +32,12 @@ test('on a wide screen the dock is one question mark until it is asked', async (
 	await expect(fold).toBeVisible();
 	await expect(page.getByRole('link', { name: 'The documentation' })).toBeHidden();
 
+	// In the header, where it covers nothing: fixed to the corner it sat over
+	// the right edge of every room's surface.
+	await expect(
+		page.locator('header').getByRole('button', { name: 'Help', exact: true })
+	).toBeVisible();
+
 	await fold.click();
 	await expect(page.getByRole('link', { name: 'The documentation' })).toBeVisible();
 });

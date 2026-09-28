@@ -28,7 +28,7 @@ export const PUT: RequestHandler = async (event) => {
 	}
 };
 
-/** Withdraw a manifest. The metadata keys keep working; they just lose their label. */
+/** Withdraw a manifest. The attribute keys keep working; they just lose their label. */
 export const DELETE: RequestHandler = async (event) => {
 	try {
 		const { ctx } = authenticateApi(event, 'plugin:declare');

@@ -5,94 +5,197 @@
 	 * Pressing one used to open it in a new tab — which is the browser's answer
 	 * to a link, not the app's answer to "let me see that". You lost your place,
 	 * came back to a second tab, and the picture was on a blank white page with
-	 * the app nowhere in sight.
+	 * the app nowhere in sight; in the Android app there was no tab to come
+	 * back from at all.
 	 *
-	 * Mounted once by the shell and armed for every rendered picture in the app
-	 * at once: the handler listens for a press on any `img.md-image`, which is
-	 * what `$lib/markdown` emits. A screen that renders markdown gets this
-	 * without knowing it exists, and one added later gets it too.
+	 * Mounted once by the shell and armed for every picture in the app at once:
+	 * the handler listens for a press on any `img.md-image`, which is what
+	 * `$lib/markdown` emits, and on any `a.written-picture`, which is how a
+	 * task's or an idea's notes draw theirs. A screen that renders either gets
+	 * this without knowing it exists.
+	 *
+	 * Pinch, drag, wheel and double-tap zoom are `@panzoom/panzoom`'s. Back —
+	 * the phone's gesture or the browser's button — closes it, like any other
+	 * screen laid over the page (`$lib/back-closes`).
 	 */
+	import type { PanzoomObject } from '@panzoom/panzoom';
+	import { BackCloses } from '$lib/back-closes';
 	import { useT } from '$lib/i18n';
 
 	const t = useT();
 
+	/** How far in a pinch or the wheel may go. */
+	const MAX_SCALE = 6;
+	/** Where a double tap lands, and the other end of it is the whole picture. */
+	const TAP_SCALE = 2.5;
+	/** How far a press on the ground may travel and still be a tap rather than a pan. */
+	const PAN_THRESHOLD_PX = 6;
+
 	/** The picture being looked at, or null when nothing is. */
 	let showing = $state<{ src: string; alt: string } | null>(null);
+	let dialog = $state<HTMLDialogElement | null>(null);
+	let picture = $state<HTMLImageElement | null>(null);
+	let zoom: PanzoomObject | null = null;
+
+	const back = new BackCloses(() => close());
+	$effect(() => back.watch());
 
 	/*
 	 * Pressed anywhere in the document, caught on the way down.
 	 *
 	 * Capture, so this runs before whatever the picture sits inside — a note
-	 * row that unfolds when pressed, a card that opens. Looking at a picture
-	 * should not also do the thing behind it.
+	 * row that unfolds when pressed, a card that opens, a link that would open
+	 * a tab. Looking at a picture should not also do the thing behind it.
 	 */
 	function pressed(event: MouseEvent) {
-		const target = event.target;
-		if (!(target instanceof HTMLImageElement)) return;
-		if (!target.classList.contains('md-image')) return;
+		const target = event.target instanceof Element ? event.target : null;
+		if (!target || dialog?.contains(target)) return;
+
+		const image = target.closest('img.md-image') as HTMLImageElement | null;
+		const link = target.closest('a.written-picture') as HTMLAnchorElement | null;
+		if (!image && !link) return;
+		// A modified press on a link still means a new tab, as it does anywhere.
+		if (link && (event.metaKey || event.ctrlKey || event.shiftKey || event.button !== 0)) return;
 
 		event.preventDefault();
 		event.stopPropagation();
-		showing = { src: target.currentSrc || target.src, alt: target.alt };
+		showing = image
+			? { src: image.currentSrc || image.src, alt: image.alt }
+			: { src: link!.href, alt: link!.getAttribute('aria-label') ?? '' };
+		back.claim();
 	}
 
 	function close() {
+		if (!showing) return;
 		showing = null;
+		void back.release();
 	}
 
-	function onKey(event: KeyboardEvent) {
-		if (showing && event.key === 'Escape') {
-			event.preventDefault();
-			close();
-		}
+	$effect(() => {
+		if (!showing || !dialog || !picture) return;
+		dialog.showModal();
+
+		const image = picture;
+		const stage = image.parentElement!;
+		let gone = false;
+		/*
+		 * Loaded when a picture is first opened, and only in the browser: the
+		 * package's `main` is a UMD file marked as a module, which Node cannot
+		 * import on the server, and nobody needs it until they press a picture.
+		 */
+		void import('@panzoom/panzoom').then(({ default: Panzoom }) => {
+			if (gone) return;
+			zoom = Panzoom(image, {
+				maxScale: MAX_SCALE,
+				minScale: 1,
+				contain: 'outside',
+				panOnlyWhenZoomed: true,
+				cursor: 'grab'
+			});
+		});
+		const wheel = (event: WheelEvent) => zoom?.zoomWithWheel(event);
+		const twice = (event: MouseEvent) => {
+			if (!zoom) return;
+			if (zoom.getScale() > 1) zoom.reset();
+			else zoom.zoomToPoint(TAP_SCALE, event);
+		};
+		stage.addEventListener('wheel', wheel, { passive: false });
+		image.addEventListener('dblclick', twice);
+
+		return () => {
+			gone = true;
+			stage.removeEventListener('wheel', wheel);
+			image.removeEventListener('dblclick', twice);
+			zoom?.destroy();
+			zoom = null;
+			if (dialog?.open) dialog.close();
+		};
+	});
+
+	/** Where the last press on the ground began, to tell a tap from a pan. */
+	let downAt: { x: number; y: number } | null = null;
+
+	/** The ground closes it, unless the picture is zoomed and it is being panned. */
+	function groundPressed(event: MouseEvent) {
+		if (event.target === picture) return;
+		const moved = downAt
+			? Math.hypot(event.clientX - downAt.x, event.clientY - downAt.y) > PAN_THRESHOLD_PX
+			: false;
+		if (moved && zoom && zoom.getScale() > 1) return;
+		close();
 	}
 </script>
 
-<svelte:document onclickcapture={pressed} onkeydown={onKey} />
+<svelte:document onclickcapture={pressed} />
 
 {#if showing}
-	<!--
-		The ground closes it, which is what a person reaches for first — and the
-		picture itself does not, so a press that lands on it is not a press that
-		takes it away. Escape closes it too, and there is a button for anybody
-		who wants one to press.
-	-->
-	<!-- svelte-ignore a11y_click_events_have_key_events -->
-	<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
-	<div
-		class="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 p-4"
-		role="dialog"
-		aria-modal="true"
+	<dialog
+		bind:this={dialog}
+		class="image-viewer"
 		aria-label={showing.alt || t('imageViewer.picture')}
-		onclick={close}
+		oncancel={(event) => {
+			event.preventDefault();
+			close();
+		}}
+		onpointerdown={(event) => (downAt = { x: event.clientX, y: event.clientY })}
+		onclick={groundPressed}
 	>
+		<div class="image-viewer-stage">
+			<img bind:this={picture} src={showing.src} alt={showing.alt} draggable="false" />
+		</div>
 		<button type="button" class="image-viewer-close" onclick={close} aria-label={t('ui.close')}>
 			×
 		</button>
-
-		<!-- svelte-ignore a11y_click_events_have_key_events -->
-		<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
-		<img
-			src={showing.src}
-			alt={showing.alt}
-			class="max-h-full max-w-full object-contain"
-			onclick={(e) => e.stopPropagation()}
-		/>
-	</div>
+	</dialog>
 {/if}
 
 <style>
+	/* The whole screen, in the top layer, on a black ground in both themes. */
+	.image-viewer {
+		width: 100vw;
+		max-width: none;
+		height: 100dvh;
+		max-height: none;
+		margin: 0;
+		padding: 0;
+		border: 0;
+		background: rgb(0 0 0 / 0.9);
+		overflow: hidden;
+	}
+
+	.image-viewer::backdrop {
+		background: transparent;
+	}
+
+	.image-viewer-stage {
+		display: flex;
+		height: 100%;
+		width: 100%;
+		align-items: center;
+		justify-content: center;
+		padding: 1rem;
+		/* Pinch and pan belong to the picture, not to the page behind it. */
+		touch-action: none;
+	}
+
+	.image-viewer-stage img {
+		max-height: 100%;
+		max-width: 100%;
+		object-fit: contain;
+		user-select: none;
+	}
+
 	/*
 	 * Its own colours, not the palette's: this sits on a black ground in both
 	 * themes, so a token that inverts would put dark ink on dark.
 	 */
 	.image-viewer-close {
 		position: absolute;
-		top: 1rem;
+		top: calc(var(--safe-top, 0px) + 1rem);
 		right: 1rem;
 		display: flex;
-		height: 2.5rem;
-		width: 2.5rem;
+		height: 2.75rem;
+		width: 2.75rem;
 		align-items: center;
 		justify-content: center;
 		border-radius: 9999px;

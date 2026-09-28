@@ -1,9 +1,10 @@
 import type { IsolatedEvent } from '$lib/isolated/routes';
-import { clockOfDay } from '$lib/services/time';
-import { listNotebooks } from '$lib/services/notebooks';
+import { clockOfDay, localOfInstant } from '$lib/services/time';
+import { pickableNotebooks } from '$lib/services/notebooks';
 import { fail } from '@sveltejs/kit';
 import { ratingsFromForm } from '$lib/ratings';
-import { isStatus, type Status } from '$lib/task-status';
+import { attributesFromFormData } from '$lib/services/task-attributes';
+import { CLOSED_STATUSES, isStatus, type Status } from '$lib/task-status';
 import { listActivities, listCategories } from '$lib/services/activities';
 import { goalBacklinks, type GoalBacklink } from '$lib/services/backlinks';
 import { buildCtx, type Ctx } from '$lib/services/ctx';
@@ -106,6 +107,9 @@ export type Card = {
 	 * why the board answers it here rather than in the markup.
 	 */
 	goals: GoalBacklink[];
+	/** A todo's labels and notebook, which the To-do tab narrows by as the list does. */
+	tags: string[];
+	notebookId: number | null;
 };
 
 export const load = async ({ locals, url }: IsolatedEvent) => {
@@ -149,7 +153,9 @@ export const load = async ({ locals, url }: IsolatedEvent) => {
 			goals: merge(
 				o.slotId === null ? undefined : links.slots[o.slotId],
 				o.activityId === null ? undefined : links.activities[o.activityId]
-			)
+			),
+			tags: [],
+			notebookId: null
 		})
 	);
 
@@ -175,14 +181,27 @@ export const load = async ({ locals, url }: IsolatedEvent) => {
 		mode: null,
 		activityId: null,
 		activityName: null,
-		goals: merge(links.todos[t.id])
+		goals: merge(links.todos[t.id]),
+		tags: t.tags.map((one) => one.name),
+		notebookId: t.notebookId
 	});
 
 	// A todo given a date is on that day's board — it is what dragging a card
 	// from General to Today means. The Today column used to show occurrences
 	// only, so such a card belonged to neither column and simply vanished.
 	const todayCards = [...occurrences, ...listTodosForDate(ctx, dateStr).map(asCard)];
-	const generalCards = listUnscheduled(ctx).map(asCard);
+	/*
+	 * The undated todos as a board: everything open and not put away, and
+	 * what was finished or skipped today. The list keeps the rest behind its Completed toggle;
+	 * here a Done column that only ever grows buried today's work under a
+	 * year of it, and the count said the year.
+	 */
+	const today = localOfInstant(ctx.now, ctx.tz).slice(0, 10);
+	const closedToday = (t: ReturnType<typeof listUnscheduled>[number]) =>
+		localOfInstant(new Date(t.completedAt ?? t.updatedAt), ctx.tz).slice(0, 10) === today;
+	const generalCards = listUnscheduled(ctx)
+		.filter((t) => t.archivedAt === null && (!CLOSED_STATUSES.includes(t.status) || closedToday(t)))
+		.map(asCard);
 
 	const categoryNames = new Map(listCategories(ctx).map((c) => [c.id, c.name]));
 
@@ -196,7 +215,7 @@ export const load = async ({ locals, url }: IsolatedEvent) => {
 			.sort((a, b) => a.name.localeCompare(b.name)),
 		// A card is a to-do, and a to-do can belong to a notebook — the form
 		// here shares `TodoFields` with the to-do list, which offers it.
-		notebooks: listNotebooks(ctx).map((n) => ({ id: n.id, title: n.title })),
+		notebooks: pickableNotebooks(ctx),
 		/** Reminders already set, keyed by the block they belong to. */
 		reminders: listReminders(ctx)
 			.filter((r) => r.subjectKind === 'instance' && r.subjectId !== null)
@@ -322,9 +341,13 @@ export const actions = {
 				title: formData.get('heading'),
 				notes: formData.get('notes'),
 				categoryId: formData.get('categoryId'),
+				// The card form offers both; they were being dropped here.
+				notebookId: formData.get('notebookId'),
+				...(formData.has('tags') ? { tags: formData.get('tags') } : {}),
 				scheduledDate: formData.get('scheduledDate'),
 				status: formData.get('status'),
-				ratings: ratingsFromForm(formData)
+				ratings: ratingsFromForm(formData),
+				attributes: attributesFromFormData(formData)
 			});
 			return { success: true };
 		} catch (e) {

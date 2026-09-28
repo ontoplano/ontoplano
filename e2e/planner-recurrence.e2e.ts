@@ -63,7 +63,7 @@ test('a block that comes back every two days lands on every second day', async (
 	const anchor = dayAfter(start, 0);
 	await visit(page, `/tasks/plan?from=${anchor}`);
 
-	await page.getByRole('button', { name: 'New block' }).click();
+	await page.getByRole('button', { name: 'New task block' }).click();
 	const form = page.getByRole('dialog');
 	await form.getByRole('button', { name: 'Comes back', exact: true }).first().click();
 	await form.getByRole('button', { name: 'Every N days', exact: true }).click();
@@ -76,7 +76,7 @@ test('a block that comes back every two days lands on every second day', async (
 	await form.locator('[name="startTime"]').fill('09:00');
 	await form.locator('[name="label"]').fill('every-other-day');
 	await choose(form, 'mode', 'Category');
-	await form.getByRole('button', { name: /Add repeating block|Save block/ }).click();
+	await form.getByRole('button', { name: /Add repeating task block|Save task block/ }).click();
 	await expect(form).toBeHidden({ timeout: 20_000 });
 
 	// Four times in the seven days on screen. The week view used to ask the
@@ -101,7 +101,7 @@ test('a fortnightly block skips the week between', async ({ page }) => {
 	// its own first day drew nothing at all for this one.
 	await visit(page, `/tasks/plan?view=day&from=${dayAfter(start, 3)}`);
 
-	await page.getByRole('button', { name: 'New block' }).click();
+	await page.getByRole('button', { name: 'New task block' }).click();
 	const form = page.getByRole('dialog');
 	await form.getByRole('button', { name: 'Comes back', exact: true }).first().click();
 	await form.getByRole('button', { name: 'Every N weeks', exact: true }).click();
@@ -110,7 +110,7 @@ test('a fortnightly block skips the week between', async ({ page }) => {
 	await form.locator('[name="startTime"]').fill('10:00');
 	await form.locator('[name="label"]').fill('the-bins');
 	await choose(form, 'mode', 'Category');
-	await form.getByRole('button', { name: /Add repeating block|Save block/ }).click();
+	await form.getByRole('button', { name: /Add repeating task block|Save task block/ }).click();
 	await expect(form).toBeHidden({ timeout: 20_000 });
 
 	expect(await onDay(page, dayAfter(start, 3), 'the-bins')).toBeGreaterThan(0);
@@ -135,7 +135,7 @@ test('a monthly block lands on its date and nowhere else', async ({ page }) => {
 	const target = dayAfter(start, 3);
 	const monthDay = String(Number(target.slice(8, 10)));
 
-	await page.getByRole('button', { name: 'New block' }).click();
+	await page.getByRole('button', { name: 'New task block' }).click();
 	const form = page.getByRole('dialog');
 	await form.getByRole('button', { name: 'Comes back', exact: true }).first().click();
 	await form.getByRole('button', { name: 'Every month', exact: true }).click();
@@ -146,7 +146,7 @@ test('a monthly block lands on its date and nowhere else', async ({ page }) => {
 	await form.locator('[name="startTime"]').fill('11:00');
 	await form.locator('[name="label"]').fill('the-rent');
 	await choose(form, 'mode', 'Category');
-	await form.getByRole('button', { name: /Add repeating block|Save block/ }).click();
+	await form.getByRole('button', { name: /Add repeating task block|Save task block/ }).click();
 	await expect(form).toBeHidden({ timeout: 20_000 });
 
 	expect(await onDay(page, target, 'the-rent')).toBeGreaterThan(0);
@@ -155,8 +155,38 @@ test('a monthly block lands on its date and nowhere else', async ({ page }) => {
 	// The week that contains its date draws it once, wherever in the week that
 	// date falls — and the month, exactly once.
 	expect(await countIn(page, `/tasks/plan?from=${dayAfter(start, 0)}`, 'the-rent')).toBe(1);
-	expect(await countIn(page, `/tasks/plan?view=month&from=${target}`, 'the-rent')).toBe(1);
+	// The month grid runs whole weeks from the account's first weekday, so its
+	// leading and trailing days belong to the months either side — and the
+	// next month's occurrence is rightly drawn there. Its own days hold it once.
+	await countIn(page, `/tasks/plan?view=month&from=${target}`, 'the-rent');
+	expect(await inMonthOwnDays(page, 'the-rent')).toBe(1);
 });
+
+/**
+ * How many times a block is drawn on the month's own days.
+ *
+ * The month grid draws its blocks in a layer over the day cells rather than
+ * inside them, so which day a block is on is read from where it is drawn.
+ */
+async function inMonthOwnDays(page: Page, label: string): Promise<number> {
+	return page.evaluate((label) => {
+		const days = [...document.querySelectorAll<HTMLElement>('.ec-day')].map((day) => ({
+			rect: day.getBoundingClientRect(),
+			own: !day.classList.contains('ec-other-month')
+		}));
+		return [...document.querySelectorAll<HTMLElement>('.ec-event')]
+			.filter((event) => event.innerText.split('\n').some((line) => line.trim() === label))
+			.filter((event) => {
+				const box = event.getBoundingClientRect();
+				const x = box.left + box.width / 2;
+				const y = box.top + box.height / 2;
+				const day = days.find(
+					({ rect }) => x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom
+				);
+				return day?.own === true;
+			}).length;
+	}, label);
+}
 
 test('skipping one occurrence leaves the block’s other days alone', async ({ page }) => {
 	test.setTimeout(180_000);
@@ -166,7 +196,7 @@ test('skipping one occurrence leaves the block’s other days alone', async ({ p
 	const anchor = dayAfter(start, 0);
 	await visit(page, `/tasks/plan?from=${anchor}`);
 
-	await page.getByRole('button', { name: 'New block' }).click();
+	await page.getByRole('button', { name: 'New task block' }).click();
 	const form = page.getByRole('dialog');
 	await form.getByRole('button', { name: 'Comes back', exact: true }).first().click();
 	await form.getByRole('button', { name: 'Every N days', exact: true }).click();
@@ -175,7 +205,7 @@ test('skipping one occurrence leaves the block’s other days alone', async ({ p
 	await form.locator('[name="startTime"]').fill('09:00');
 	await form.locator('[name="label"]').fill('the-stretches');
 	await choose(form, 'mode', 'Category');
-	await form.getByRole('button', { name: /Add repeating block|Save block/ }).click();
+	await form.getByRole('button', { name: /Add repeating task block|Save task block/ }).click();
 	await expect(form).toBeHidden({ timeout: 20_000 });
 
 	// Skip it on the Wednesday, two days after the anchor.
@@ -217,7 +247,7 @@ test('editing a block does not quietly shift the rhythm it already had', async (
 	const anchor = dayAfter(start, 0);
 	await visit(page, `/tasks/plan?from=${anchor}`);
 
-	await page.getByRole('button', { name: 'New block' }).click();
+	await page.getByRole('button', { name: 'New task block' }).click();
 	const form = page.getByRole('dialog');
 	await form.getByRole('button', { name: 'Comes back', exact: true }).first().click();
 	await form.getByRole('button', { name: 'Every N days', exact: true }).click();
@@ -226,7 +256,7 @@ test('editing a block does not quietly shift the rhythm it already had', async (
 	await form.locator('[name="startTime"]').fill('09:00');
 	await form.locator('[name="label"]').fill('the-walk');
 	await choose(form, 'mode', 'Category');
-	await form.getByRole('button', { name: /Add repeating block|Save block/ }).click();
+	await form.getByRole('button', { name: /Add repeating task block|Save task block/ }).click();
 	await expect(form).toBeHidden({ timeout: 20_000 });
 
 	// Open it from the Wednesday — a day it lands on, but not the one it counts
@@ -237,7 +267,7 @@ test('editing a block does not quietly shift the rhythm it already had', async (
 	await page.getByText('the-walk', { exact: true }).first().click();
 	const editing = page.getByRole('dialog');
 	await editing.locator('[name="label"]').fill('the-longer-walk');
-	await editing.getByRole('button', { name: /Save block|Add repeating block/ }).click();
+	await editing.getByRole('button', { name: /Save task block|Add repeating task block/ }).click();
 	await expect(editing).toBeHidden({ timeout: 20_000 });
 
 	// Still on the even days from the anchor, and still four in the week.
@@ -376,7 +406,7 @@ test.describe('the preview on the grid', () => {
 		const previews = page.locator('.og-event--preview');
 		expect(await previews.count()).toBe(0);
 
-		await page.getByRole('button', { name: 'New block' }).click();
+		await page.getByRole('button', { name: 'New task block' }).click();
 		const form = page.getByRole('dialog');
 		await expect(form).toBeVisible();
 		await choose(form, 'mode', 'Category');
@@ -418,12 +448,12 @@ test.describe('the preview on the grid', () => {
 		await expect(page.locator('.ec-main')).toBeVisible();
 
 		// A block of its own, so this test owns what it counts.
-		await page.getByRole('button', { name: 'New block' }).click();
+		await page.getByRole('button', { name: 'New task block' }).click();
 		const form = page.getByRole('dialog');
 		await choose(form, 'mode', 'Category');
 		await form.locator('[name="label"]').fill('the-one');
 		await form.locator('[name="startTime"]').fill('10:00');
-		await form.getByRole('button', { name: /Add repeating block|Save block/ }).click();
+		await form.getByRole('button', { name: /Add repeating task block|Save task block/ }).click();
 		await expect(form).toBeHidden({ timeout: 20_000 });
 
 		const real = page.locator('.ec-event.og-event:not(.og-event--preview):has-text("the-one")');
@@ -459,7 +489,7 @@ test.describe('the preview on the grid', () => {
 		await expect(page.locator('.ec-main')).toBeVisible();
 		await page.waitForTimeout(600);
 
-		await page.getByRole('button', { name: 'New block' }).click();
+		await page.getByRole('button', { name: 'New task block' }).click();
 		const form = page.getByRole('dialog');
 		await form.getByRole('button', { name: 'Once only', exact: true }).click();
 		await choose(form, 'mode', 'Category');
@@ -467,7 +497,9 @@ test.describe('the preview on the grid', () => {
 		await form.locator('[name="startTime"]').fill('11:00');
 		await expect(page.locator('.og-event--preview')).toHaveCount(1);
 
-		await form.getByRole('button', { name: /Save block|Add one-off|Add repeating block/ }).click();
+		await form
+			.getByRole('button', { name: /Save task block|Add one-off|Add repeating task block/ })
+			.click();
 		await expect(form).toBeHidden({ timeout: 20_000 });
 		await expect(page.getByText('just-this-once', { exact: true })).toBeVisible();
 
@@ -484,7 +516,7 @@ test.describe('the preview on the grid', () => {
 		await expect(page.locator('.ec-main')).toBeVisible();
 		await page.waitForTimeout(600);
 
-		await page.getByRole('button', { name: 'New block' }).click();
+		await page.getByRole('button', { name: 'New task block' }).click();
 		const form = page.getByRole('dialog');
 		await choose(form, 'mode', 'Category');
 		await form.locator('[name="label"]').fill('late one');
@@ -678,7 +710,7 @@ test('a weekly block does not fill in the weeks before it existed', async ({ pag
 	const thisThursday = dayAfter(start, 3);
 	await visit(page, `/tasks/plan?from=${dayAfter(start, 0)}`);
 
-	await page.getByRole('button', { name: 'New block' }).click();
+	await page.getByRole('button', { name: 'New task block' }).click();
 	const form = page.getByRole('dialog');
 	await form.getByRole('button', { name: 'Comes back', exact: true }).first().click();
 	await form.getByRole('button', { name: 'Every week', exact: true }).click();
@@ -687,7 +719,7 @@ test('a weekly block does not fill in the weeks before it existed', async ({ pag
 	await form.locator('[name="startTime"]').fill('12:15');
 	await form.locator('[name="label"]').fill('the-lunch');
 	await choose(form, 'mode', 'Category');
-	await form.getByRole('button', { name: /Add repeating block|Save block/ }).click();
+	await form.getByRole('button', { name: /Add repeating task block|Save task block/ }).click();
 	await expect(form).toBeHidden({ timeout: 20_000 });
 
 	// It is on this Thursday, and on the next one.

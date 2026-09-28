@@ -175,3 +175,11 @@ describe('tables', () => {
 		expect(html).toContain('&lt;script&gt;');
 	});
 });
+
+test('NOTE:#12 links to the note, named by its title where it is known', () => {
+	expect(renderMarkdown('see NOTE:#12')).toContain('href="#diary-12">NOTE:#12</a>');
+	const notes = new Map([[12, { title: 'Paperclip <instructions>' }]]);
+	expect(renderMarkdown('see NOTE:#12', { notes })).toContain(
+		'href="#diary-12">Paperclip &lt;instructions&gt;</a>'
+	);
+});

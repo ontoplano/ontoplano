@@ -43,6 +43,7 @@ shows up here on the next build.
 | [`demo`](#demo)                                  | A demo where everybody gets their own copy.                                                                                                                                                                                                                          |
 | [`diary`](#diary)                                | The journal: free text, free-form tags, one running number per account.                                                                                                                                                                                              |
 | [`digest`](#digest)                              | The content hash a picture is deduplicated by.                                                                                                                                                                                                                       |
+| [`entry-actions`](#entry-actions)                | Several notes at once, from wherever they are listed.                                                                                                                                                                                                                |
 | [`errors`](#errors)                              | Typed errors thrown by service functions.                                                                                                                                                                                                                            |
 | [`family-invite`](#family-invite)                | Inviting somebody to the plan, and the account that makes for them.                                                                                                                                                                                                  |
 | [`gallery`](#gallery)                            | Albums: lists of references over the one media table.                                                                                                                                                                                                                |
@@ -69,19 +70,20 @@ shows up here on the next build.
 | [`media-permission`](#media-permission)          | Whether a caller may see a file, decided by what the file is used for.                                                                                                                                                                                               |
 | [`media-referrers`](#media-referrers)            | What points at a picture or a recording, and where it lives.                                                                                                                                                                                                         |
 | [`media`](#media)                                | Pictures: what is accepted, where they go, and who may see one.                                                                                                                                                                                                      |
-| [`meta`](#meta)                                  | User-defined key/value metadata attached to planner slots.                                                                                                                                                                                                           |
 | [`model-catalog`](#model-catalog)                | What a provider will actually answer to, asked rather than typed.                                                                                                                                                                                                    |
 | [`model-keys`](#model-keys)                      | The model-provider key behind the in-app chat.                                                                                                                                                                                                                       |
 | [`newsletter`](#newsletter)                      | The one channel nobody else can take away.                                                                                                                                                                                                                           |
 | [`note-todos`](#note-todos)                      | Turning a note that is really a checklist into the todos it describes.                                                                                                                                                                                               |
 | [`notebook-linking`](#notebook-linking)          | Putting something that already exists under a subject.                                                                                                                                                                                                               |
 | [`notebook-media`](#notebook-media)              | Every picture that is in a notebook, as a gallery album.                                                                                                                                                                                                             |
+| [`notebook-sections`](#notebook-sections)        | One tab of one notebook, as lines.                                                                                                                                                                                                                                   |
 | [`notebooks`](#notebooks)                        | Notebooks: a subject you write against, with no deadline.                                                                                                                                                                                                            |
 | [`notifications`](#notifications)                | Everything the app will tell you about, in one list.                                                                                                                                                                                                                 |
 | [`oauth`](#oauth)                                | Connecting an assistant without anybody handling a key.                                                                                                                                                                                                              |
 | [`onboarding-templates`](#onboarding-templates)  | The starter weeks, as data.                                                                                                                                                                                                                                          |
 | [`onboarding`](#onboarding)                      | First run.                                                                                                                                                                                                                                                           |
 | [`people`](#people)                              | The people in your life, and where they turn up.                                                                                                                                                                                                                     |
+| [`phone-widgets`](#phone-widgets)                | Home-screen widgets that show one tab of one notebook.                                                                                                                                                                                                               |
 | [`plan-intent`](#plan-intent)                    | Which plan somebody said they wanted, carried from the front page to the card.                                                                                                                                                                                       |
 | [`plugins`](#plugins)                            | Plugin manifests: what a plugin says it understands.                                                                                                                                                                                                                 |
 | [`preferences`](#preferences)                    | The settings a person chooses about themselves.                                                                                                                                                                                                                      |
@@ -94,6 +96,7 @@ shows up here on the next build.
 | [`reminder-delivery`](#reminder-delivery)        | The pass that makes a reminder arrive with the app shut.                                                                                                                                                                                                             |
 | [`reminder-sources`](#reminder-sources)          | The reminders nobody types.                                                                                                                                                                                                                                          |
 | [`reminders`](#reminders)                        | Something that reaches out.                                                                                                                                                                                                                                          |
+| [`request-replays`](#request-replays)            | A create sent twice, answered once.                                                                                                                                                                                                                                  |
 | [`review-mail`](#review-mail)                    | The morning a week begins: what last week actually was, in the inbox.                                                                                                                                                                                                |
 | [`review`](#review)                              | Closing a week.                                                                                                                                                                                                                                                      |
 | [`ringtones`](#ringtones)                        | The sounds a reminder can make.                                                                                                                                                                                                                                      |
@@ -111,6 +114,7 @@ shows up here on the next build.
 | [`streams`](#streams)                            | Declare a stream. Idempotent per (user, slug) so producers can call it at every startup.                                                                                                                                                                             |
 | [`subscriptions`](#subscriptions)                | What an account may do, and until when.                                                                                                                                                                                                                              |
 | [`tags`](#tags)                                  | Tags, and the rows that join them to what they tag.                                                                                                                                                                                                                  |
+| [`task-attributes`](#task-attributes)            | A task's attributes: user-defined key/value pairs on a task block or a todo.                                                                                                                                                                                         |
 | [`time`](#time)                                  | Time, in the two shapes this app actually has.                                                                                                                                                                                                                       |
 | [`today`](#today)                                | One day, in one request.                                                                                                                                                                                                                                             |
 | [`todo-actions`](#todo-actions)                  | Everything that can be done to a todo, wherever the row is on screen.                                                                                                                                                                                                |
@@ -402,11 +406,20 @@ The activities page also wants to know what may be deleted.
 
 Retiring an activity keeps its history; deleting it would not.
 
+#### `setActivityActive(ctx, id, active)`
+
+Switched on or off by saying which, for a caller that should not have to read first.
+
 #### `deleteActivity(ctx, id)`
 
 #### `createCategory(ctx, raw)`
 
 #### `updateCategory(ctx, id, raw)`
+
+#### `ownedCategory(ctx, value)`
+
+A category id from a form or a call, or null for none — one of this
+account's own, or a 404.
 
 #### `deleteCategory(ctx, id)`
 
@@ -773,6 +786,13 @@ The things themselves are untouched otherwise — this removes a fact about
 them, not any of them. It is the destructive end of the screen, so the
 caller asks first.
 
+#### `removeAttributeValue(ctx, key, value)`
+
+Take one value of an attribute off every thing that says it.
+
+The rest of each thing's attributes stay, and so does the attribute on the
+things that say something else — "length: 2m" goes, "length: 5m" does not.
+
 #### `setAttributeColor(ctx, key, value, color, opts)`
 
 Give an attribute, or one of its values, a colour.
@@ -1100,6 +1120,12 @@ A bill is archived, never deleted while it has history: its payments are the
 point. `deleteBill` exists for one made by mistake and takes its payments
 with it, on purpose.
 
+A period can also be skipped — the gym frozen for a month — which is a row
+of its own with nothing paid, so the period reads as settled rather than
+overdue. And a bill can be automatic, a subscription on a card: it never
+asks to be paid, and `recordAutomaticPayments` writes its payment on each
+due day so the history is still true.
+
 ### Functions
 
 #### `periodFor(rhythm, when)`
@@ -1114,14 +1140,23 @@ Every bill, active first, newest within each — or one subject's.
 is this room looking at one subject and draws the rows with the same
 component, so it needs exactly what the room needs.
 
+#### `summariseHistory(entries)`
+
+The numbers under a bill's history, from its rows.
+
+#### `billHistory(ctx, billId)`
+
+One bill's history, with automatic payments caught up first.
+
 #### `listBillsThisPeriod(ctx, opts)`
 
-The bills, each saying which period it is in and whether that one is settled.
+The bills, each saying which period it is in and how that one was settled.
 
 The Finance room worked this out in its own `load`, so anywhere else that
 showed a bill — a notebook's Bills tab — had the row without the two things
 the row is about: which period the tick would pay, and whether it is already
-paid. A row drawn without them offers to pay a bill that is paid.
+paid. A row drawn without them offers to pay a bill that is paid. The
+history rides along because the row expands into it, on both screens.
 
 #### `getBill(ctx, id)`
 
@@ -1132,6 +1167,9 @@ paid. A row drawn without them offers to pay a bill that is paid.
 #### `setArchived(ctx, id, archived)`
 
 Archive keeps the history; the bill leaves the active list and its funnel.
+
+Bringing an automatic one back starts its recording from today: the time it
+spent put away was not paid, and catching up across it would say it was.
 
 #### `deleteBill(ctx, id)`
 
@@ -1161,13 +1199,38 @@ sign is dropped.
 
 Undo a payment for a period — it was never paid, or paid in error.
 
+#### `skipPeriod(ctx, billId, input)`
+
+Say a period was skipped on purpose — nothing was owed, nothing was paid.
+
+Refused on a period that is paid: replacing a payment with a skip would lose
+what was paid, and undoing the payment first is one press.
+
+#### `unskipPeriod(ctx, billId, period)`
+
+Take a skip back — the period is open again. The inverse of `skipPeriod`.
+
 #### `listPayments(ctx, billId)`
 
 #### `monthSummary(ctx, month, flow)`
 
 A month, the way the section's first page reads it: what was expected of the
 monthly bills, what has actually been paid this month across all bills, and
-the gap between the two.
+the gap between the two. A monthly bill skipped this month expected nothing.
+
+#### `recordAutomaticPayments(ctx)`
+
+Write the payments automatic bills have made since they were last looked at.
+
+A subscription on a card is paid whether or not anybody says so, so its
+history is written for it: one payment per due day that has come, for the
+expected amount, marked as the app's rather than a person's. From the bill's
+mark forward only, and the mark moves to today — so a payment somebody undid
+stays undone, and a period already paid or skipped by hand is left alone.
+
+Called by every read that shows a bill's settled state, so the device
+instance, which has no job running in the background, is as true as the
+server. Idempotent: calling it twice in a day writes nothing the second time.
 
 #### `billsDueBetween(ctx, from, to)`
 
@@ -1175,8 +1238,10 @@ the gap between the two.
 
 - `Rhythm`
 - `Flow`
+- `PaymentStatus`
 - `Bill`
 - `BillPayment`
+- `BillHistory` — What a bill has cost so far, and what one period of it costs on average.
 - `BillDue` — The bills that want paying between two dates.
 
 ## birthdays
@@ -1601,6 +1666,32 @@ of you is not a number anybody else can pick.
 
 #### `deleteEntry(ctx, id)`
 
+#### `moveEntry(ctx, id, notebookId)`
+
+File a note under another notebook, or under none.
+
+The notebook's number is not carried: the next one free in the new notebook
+is taken, as `fileUnderNotebook` does for everything numbered by notebook.
+A note that lands in the diary gets the diary's next number if it never had
+one, or it would be the one entry there with no `#` to be referred to by.
+
+#### `isEntryBatchVerb(value)`
+
+#### `tagEntry(ctx, id, change)`
+
+Add and take off labels, leaving the others where they are.
+
+`updateEntry`'s `tags` replaces the whole set, which is right for a form
+showing all of them and wrong for nine notes that each carry different ones.
+
+#### `batchEntries(ctx, verb, rawIds, what)`
+
+Do one thing to each of these notes, or to none of them.
+
+One transaction, as `batchTodos` is: a note that is not this account's, or a
+notebook that is not, refuses the whole press rather than leaving half of it
+done and no way to tell which half.
+
 #### `latestEntry(ctx)`
 
 The most recent entry, for the dashboard card.
@@ -1615,6 +1706,7 @@ notebook, under the diary's heading, with the diary's own last entry nowhere.
 ### Types
 
 - `Tag` — Null on a label that went on before the join carried a date.
+- `EntryBatchVerb`
 
 ## digest
 
@@ -1632,6 +1724,14 @@ phone still knows that two rows are one picture.
 ### Functions
 
 #### `sha256Hex(bytes)`
+
+## entry-actions
+
+Several notes at once, from wherever they are listed.
+
+The diary lists entries and a notebook lists its notes; both are rows of the
+same table and a selection means the same thing on either, so both screens
+mount this one handler.
 
 ## errors
 
@@ -1898,6 +1998,18 @@ every block that had never been given one, which is most of them.
 
 #### `createArea(ctx, raw)`
 
+#### `updateArea(ctx, id, raw)`
+
+Rename an area or change its colour; a field left out is untouched.
+
+A name another area already has is refused, as it is on create: an area
+is a place goals are filed, like a shelf, and two shelves with one label
+would be merged by a typo rather than on purpose.
+
+#### `moveArea(ctx, id, delta)`
+
+A move is a reinsertion: every area is resequenced around the one moved.
+
 #### `deleteArea(ctx, id)`
 
 Goals keep existing without an area rather than disappearing with it.
@@ -1983,6 +2095,10 @@ The habits, all of them or one subject's.
 tab is this room looking at one subject, and it draws the rows with the same
 component, so it needs exactly what the room needs.
 
+Archived habits are left out unless asked for: they keep their history for
+the room's archived list, and nothing else — today, a notebook, an
+assistant ticking by name — should offer them.
+
 #### `listOccurrences(ctx)`
 
 A year of history, which is what the heatmap draws.
@@ -1993,9 +2109,22 @@ A year of history, which is what the heatmap draws.
 
 #### `updateHabit(ctx, id, raw)`
 
+#### `setHabitArchived(ctx, id, archived)`
+
+Put a habit away, or bring it back. Its history stays either way.
+
 #### `deleteHabit(ctx, id)`
 
 #### `logOccurrence(ctx, raw)`
+
+#### `setDayCount(ctx, raw)`
+
+A day's count, set outright.
+
+What the counter on a card sends once the pressing stops: the number the
+day should hold, never a step, so a repeated or late write cannot count
+twice. Going up adds blank occurrences; going down takes the newest ones
+back, which are the ones the presses just added.
 
 #### `toggleOccurrence(ctx, raw)`
 
@@ -2164,10 +2293,18 @@ The note beside an applied idea, which is not the idea. See `toggleApplied`.
 
 Starring an idea is not editing it either. See `toggleApplied`.
 
+#### `isIdeaBatchVerb(value)`
+
+#### `batchIdeas(ctx, verb, rawIds, what)`
+
+Do one thing to each of these ideas, or to none of them: an idea that is
+not this account's refuses the whole press, as `batchEntries` does.
+
 ### Types
 
 - `IdeaTag`
 - `Idea`
+- `IdeaBatchVerb`
 
 ## import-vault
 
@@ -2554,6 +2691,17 @@ Deleting a category unfiles its items rather than taking them along: the
 category is organisation, the items are somebody's cupboard, and removing a
 shelf label must not empty the shelf.
 
+#### `setCategoryColor(ctx, id, raw)`
+
+A category's colour, or none (empty) for the neutral one. The owner's alone.
+
+#### `moveCategory(ctx, id, delta)`
+
+One place up or down the order the cards are drawn in.
+
+Only the account's own categories are renumbered: a family member's shared
+shelf is ordered by its owner, and moving one of those is a not-found.
+
 #### `setCategoryFood(ctx, id, isFood)`
 
 #### `createItem(ctx, raw)`
@@ -2583,6 +2731,14 @@ already known: filing the tape you already listed should move it, not
 duplicate it.
 
 #### `updateItem(ctx, id, raw)`
+
+#### `changeItem(ctx, id, raw)`
+
+Rename an item, or change its type or notes, touching nothing else.
+
+`updateItem` takes the whole row, price and section included, which is the
+form's shape; a change that names one field sends one. Left out, a field
+keeps what it had; an empty `notes` clears them.
 
 #### `setItemCategory(ctx, id, categoryId)`
 
@@ -2757,6 +2913,11 @@ beside the confirmation that says how many lines are about to go.
 
 A move is a reinsertion: every ledger is resequenced around the one moved.
 
+#### `placeLedger(ctx, id, position)`
+
+Put a ledger at a place in the order `listLedgers` gives, counting from 0.
+A place past either end is the end.
+
 ### Types
 
 - `LedgerKind`
@@ -2812,6 +2973,10 @@ The whole tree, each node carrying how many items sit directly in it.
 #### `pathOf(ctx, id)`
 
 The chain of names from the root down to this location, for "Living room › chest › drawer".
+
+#### `locationChoices(ctx)`
+
+Every location with its whole path, for a form's location picker.
 
 #### `createLocation(ctx, input)`
 
@@ -3138,51 +3303,6 @@ the old one is a constraint failure rather than a swap.
 - `Picture`
 - `RecipePicture`
 
-## meta
-
-User-defined key/value metadata attached to planner slots.
-
-Ontoplano stores these and never interprets them. Plugins read them from the
-schedule API and decide what they mean — `alarm: true` and `remind_min: 5`
-make an alarm app ring five minutes early, and a future ontoplano app can act
-on the same pairs without a schema change.
-
-Deliberately constrained rather than free-form JSON: an unbounded blob turns
-into a dumping ground, and a typo like `remind_mins` would silently do
-nothing forever. Flat string→string, validated keys, hard caps.
-
-### Functions
-
-#### `parseMeta(raw)`
-
-#### `serialiseMeta(input)`
-
-Validate and serialise a metadata object for storage.
-
-Accepts either a plain object or the paired `metaKey[]` / `metaValue[]` form
-a form submission produces.
-
-#### `metaFromFormData(formData)`
-
-Build a metadata object from parallel form fields.
-
-Forms submit `metaKey` and `metaValue` as ordered parallel lists, which is
-the shape a repeatable key/value editor produces.
-
-#### `metaPatchFromFormData(formData)`
-
-Metadata patch for an update, distinguishing "not submitted" from "cleared".
-
-Drag and resize in the grid post to the same update action with only the
-placement fields. Those requests must leave metadata alone — returning `{}`
-would silently wipe a slot's alarm settings every time it was moved. A form
-that genuinely clears the last pair submits an empty `metaKey`, which is
-still present in the payload and so reads as an explicit `{}`.
-
-### Types
-
-- `SlotMeta`
-
 ## model-catalog
 
 What a provider will actually answer to, asked rather than typed.
@@ -3470,9 +3590,9 @@ picture into a second note are all just edits to text, and a table recording
 "picture 12 is in the kitchen notebook" would be wrong within a week.
 
 So this is derived, every time it is asked. The gallery gets a folder per
-notebook that has any pictures, named the way the notebook is named — which
-means a notebook inside a notebook is a folder inside a folder, and
-`Home — Kitchen` in the notebooks room is `Home — Kitchen` here too.
+notebook that has any pictures, inside the shelf folders that notebook is
+filed in — `Countertops` in `Home/Kitchen` on the shelf is
+`Home/Kitchen/Countertops` here too.
 
 Derived also decides what can be done to it: pictures can be looked at,
 named and tagged like any other, but nothing is uploaded _into_ a notebook
@@ -3513,6 +3633,27 @@ folder per notebook at the top of the tree.
 
 - `NotebookMediaFolder` — A notebook that has pictures in it, and which ones.
 
+## notebook-sections
+
+One tab of one notebook, as lines.
+
+What a home-screen widget draws, and what `/api/v1/notebooks/:id/:section`
+answers: each row is the tab's own row — read through the same list function
+the tab is drawn from — reduced to what fits on a line, filtered and ordered
+by the choices `$lib/notebook-widget` offers for that tab.
+
+### Functions
+
+#### `sectionItems(ctx, notebookId, q)`
+
+The lines of one tab, or a `NotFoundError` for a notebook this account
+cannot reach — somebody else's and one that does not exist answer alike.
+
+### Types
+
+- `SectionItem`
+- `SectionAnswer`
+
 ## notebooks
 
 Notebooks: a subject you write against, with no deadline.
@@ -3524,10 +3665,6 @@ deleting a notebook leaves every one of them where it is. That is the whole
 design, and the reason this is not a second task system.
 
 ### Functions
-
-#### `notebookTree(ctx)`
-
-The notebooks as they belong to each other, roots first.
 
 #### `listNotebooks(ctx)`
 
@@ -3570,6 +3707,10 @@ A module whose room this account has put away is left out altogether. It
 would be a switch that changes nothing on screen, and the honest place to
 answer for it is Preferences, where the room itself was put away.
 
+#### `entriesOf(ctx, id)`
+
+The notes in one notebook this account may reach. See `notebookEntries`.
+
 #### `contentsOf(ctx, id)`
 
 Everything pointed at this notebook, in the three shapes it can arrive in.
@@ -3585,6 +3726,13 @@ The labels a new note in this notebook should start with.
 Empty for a note filed nowhere, and empty for a notebook nobody set any on,
 which is the same answer and wants no distinction. Reads the column rather
 than the whole notebook: this runs on every note written.
+
+#### `defaultCategoryOf(ctx, notebookId)`
+
+The category a new task in this notebook starts with, or null.
+
+Only a category of the writer's own: a notebook shared into the family
+carries its owner's, which means nothing on somebody else's week.
 
 #### `setNotebookClosed(ctx, id, closed)`
 
@@ -3604,7 +3752,7 @@ and no notebook is one whose notebook was deleted, and that is what puts it
 in `listOrphanedNotes` rather than back in the diary — a note about a
 renovation does not become a journal entry because the renovation is over.
 
-#### `ownedNotebookId(ctx, value)`
+#### `ownedNotebookId(ctx, value, holds, was)`
 
 A notebook id from a form, or null.
 
@@ -3612,7 +3760,22 @@ Every service that lets something belong to a notebook goes through here, so
 "somebody else's notebook" and "no notebook" cannot be confused: an id you do
 not own is a 404, not a silent null (I3).
 
-#### `notebookPatch(ctx, raw)`
+#### `assertNotebookHolds(ctx, notebookId, module)`
+
+A notebook that holds this kind of thing, or a refusal naming the tab it
+lacks.
+
+Filed into a notebook without the tab, a thing is shown nowhere inside it —
+which is worse than refusing, because nothing says where it went. Read from
+what the notebook was told to hold, the same list its tabs come from; a room
+the account has put away does not count against it, since putting a room
+away hides a tab rather than emptying it.
+
+#### `notebookHolds(ctx, notebookId, module)`
+
+Whether a reachable notebook has this tab — for a caller with somewhere else to go.
+
+#### `notebookPatch(ctx, raw, holds, was)`
 
 `{ notebookId }` when the caller named one, and nothing at all when it did not.
 
@@ -3624,7 +3787,27 @@ habit out of its subject.
 
 #### `pickableNotebooks(ctx)`
 
-The open notebooks, for the selector on every form that can point at one.
+The open notebooks, for the selector on every form that can point at one —
+the favourites first, the way the shelf has them.
+
+#### `renameFolder(ctx, rawFrom, rawTo)`
+
+Rename a folder, or move it: every notebook of this account's in `from` or
+anywhere inside it has that prefix rewritten to `to`.
+
+A folder has no row, so this is the whole of renaming one. `to` may be ''
+to take its contents to the top of the shelf, or the folder's own parent to
+dissolve it into that. Refused when a moved notebook would land on a name
+already in its new folder, and when the folder would go inside itself.
+Answers how many notebooks moved.
+
+#### `setNotebookFavourite(ctx, id, favourite)`
+
+Star a notebook, or take the star off.
+
+Reachable rather than owned: a notebook shared into the family can be one
+somebody reaches for every day, and the star is theirs, not the owner's.
+Starring twice is one star.
 
 #### `assertReachableNotebook(ctx, id)`
 
@@ -3641,8 +3824,9 @@ Share a notebook with the family, or stop. The owner's switch alone.
 ### Types
 
 - `Notebook`
-- `NotebookNode`
+- `Scopable` — A table whose rows can point at a notebook.
 - `Tally` — One number per module — see `$lib/notebook-modules`.
+- `FiledRow` — A row being changed, so a notebook it is already filed in can be kept.
 
 ## notifications
 
@@ -3874,6 +4058,43 @@ The people each of these entries mentions, keyed by entry id.
 - `Person`
 - `Mentioned` — What a mention chip needs: who, and how you know them.
 
+## phone-widgets
+
+Home-screen widgets that show one tab of one notebook.
+
+Each widget is a row here and a key of its own. The key is confined to the
+notebook and granted the single read its tab needs — a widget on the lock
+screen showing the renovation's shopping cannot read the diary, nor another
+notebook's shopping. Editing a widget moves its key; deleting one revokes it.
+
+### Functions
+
+#### `listPhoneWidgets(ctx)`
+
+#### `createPhoneWidget(ctx, raw)`
+
+A new widget and the key it reads with. The key is in the answer once and
+never again — it goes straight to the phone.
+
+#### `updatePhoneWidget(ctx, id, raw)`
+
+Point a widget somewhere else. Its key moves with it; the phone keeps the same one.
+
+#### `deletePhoneWidget(ctx, id)`
+
+Remove a widget and revoke its key, so the phone's copy stops working.
+
+#### `widgetFor(ctx, token)`
+
+What the widget holding this key should draw.
+
+The key names the widget: the phone never says which notebook it wants, so
+it cannot ask for another one. Not found for a key that is no widget's.
+
+### Types
+
+- `PhoneWidget`
+
 ## plan-intent
 
 Which plan somebody said they wanted, carried from the front page to the card.
@@ -3903,18 +4124,18 @@ Spent the moment a checkout opens: the choice is the provider's now.
 
 Plugin manifests: what a plugin says it understands.
 
-Slot metadata accepts any key, which is what lets a plugin define its own
+A task's attributes accept any key, which is what lets a plugin define its own
 vocabulary without a schema change here. The price is anonymity — a list of
 keys with nothing saying who reads them. A manifest buys the provenance back
 without closing the vocabulary.
 
 ### Functions
 
-#### `parseMetaKeys(input)`
+#### `parseAttributeKeys(input)`
 
 Validate a declared vocabulary.
 
-Keys must look like metadata keys, because a manifest that describes keys
+Keys must look like attribute names, because a manifest that describes keys
 nobody can actually set is worse than no manifest — it documents something
 that will be rejected on save.
 
@@ -3929,16 +4150,16 @@ drop it, and the manifest it sends is the whole truth about that version.
 
 #### `deleteManifest(userId, source)`
 
-#### `metaKeyOwners(userId)`
+#### `attributeKeyOwners(userId)`
 
-Which plugin claims each key, for the metadata editor.
+Which plugin claims each key, for the attributes editor.
 
 A key claimed by two plugins lists both — that is real, and hiding one would
 misrepresent what happens when it is set.
 
 ### Types
 
-- `PluginMetaKey`
+- `PluginAttributeKey`
 - `PluginManifest`
 
 ## preferences
@@ -3990,6 +4211,15 @@ Whether the chat inside the app may delete things.
 
 A checkbox, so its absence from the form is the answer "no" rather than a
 missing field — which is why this takes the posted value and not a boolean.
+
+#### `saveCaptureSettings(ctx, raw)`
+
+The capture wheel: its wedges, their order, and the notebook it writes into.
+
+At least one wedge, because a wheel with none is a button that does nothing.
+The notebook has to be one this account can file things in — its own, or
+one the family shares — and one it cannot is the same answer as one that
+does not exist.
 
 ## push
 
@@ -4186,6 +4416,11 @@ The tempting version marks every ingredient as used up, which puts salt on
 the shopping list after every meal and teaches people to ignore the list. So
 this only records that it happened; `ranOutOf` is the second half, and the
 screen asks which ones actually ran out — usually none, sometimes the milk.
+
+#### `listIngredientItems(ctx, options)`
+
+The inventory items that are an ingredient of some recipe, as `{ id }` rows
+keyed by the item's id — optionally only the recipes filed in one notebook.
 
 #### `markOutOfStock(ctx, itemIds)`
 
@@ -4666,6 +4901,42 @@ signed-in user and the ids come from its own query.
 
 - `ReminderKind`
 - `Reminder`
+
+## request-replays
+
+A create sent twice, answered once.
+
+An assistant that did not hear back from `add_task` cannot know whether the
+task was made. If it sent a `requestId`, it can send the same call again:
+within the window the first answer comes back and nothing runs a second
+time. After the window the id is forgotten and a resend is a new call —
+a retry is a matter of minutes, and a table of every answer ever given
+would be a second copy of the account.
+
+Keyed per account, not per key: two assistants on one account that pick
+the same id are the same caller as far as the data is concerned, and the
+fingerprint stops either of them being answered for a call it did not make.
+
+### Functions
+
+#### `fingerprintOf(tool, args)`
+
+The call a `requestId` was used for: the tool, and its arguments without the id.
+
+#### `requestIdOf(value)`
+
+The id as sent, refused when it is not one.
+
+#### `replayOf(ctx, requestId, fingerprint)`
+
+The answer this id was given, when it was given within the window — or null.
+
+The same id with a different call is refused: answering "add milk" with the
+answer to "add eggs" would say something was made that was not.
+
+#### `rememberAnswer(ctx, requestId, tool, fingerprint, answer)`
+
+Remembers the answer, and forgets this account's ids that have run out.
 
 ## review-mail
 
@@ -5254,6 +5525,10 @@ checked at both ends rather than trusted at either.
 
 #### `markOnboarded(userId)`
 
+#### `panelWidthFallback(key)`
+
+Where this particular panel starts. See `PEOPLE_PANEL_FALLBACK`.
+
 #### `panelWidthMin(key)`
 
 The narrowest this particular panel goes. See `NOTEBOOK_PANEL_MIN`.
@@ -5273,6 +5548,15 @@ theirs to give, and deciding it for them in a route would make the
 permissions screen a lie in one place.
 
 #### `setChatMayDelete(userId, may)`
+
+#### `getCaptureSettings(userId)`
+
+Which wedges the capture wheel holds, in what order, and the notebook its
+forms start in. Read leniently — see `$lib/capture-settings`; the notebook
+is checked when it is written, and a form offered one that has since gone
+simply does not find it among the notebooks it lists.
+
+#### `setCaptureSettings(userId, settings)`
 
 ### Types
 
@@ -5322,6 +5606,10 @@ to ring about. Only from today: arming yesterday is arming nothing.
 
 #### `toggleSlotActive(ctx, id)`
 
+#### `setSlotActive(ctx, id, active)`
+
+Paused or running by saying which, for a caller that should not have to read first.
+
 #### `deleteSlots(ctx, ids)`
 
 #### `copySlotsToWeekdays(ctx, ids, days)`
@@ -5361,7 +5649,11 @@ Turn a one-off into a recurring block, or a recurring block into a one-off.
 
 The two differ only in which day they name — a weekday versus a date — so
 changing your mind should not mean deleting one and retyping the other.
-Everything else about the block travels with it.
+Everything else about the block travels with it, labels included.
+
+They are two tables, so the block comes out with a new id, and that id is
+what is returned: whatever goes on editing it — saving, switching back —
+has to name the new row. The old one no longer exists.
 
 A recurring block becoming a one-off keeps only the occurrence in the visible
 window; its other occurrences were never separate things, so there is nothing
@@ -5393,6 +5685,7 @@ quietly give it one — that would cut a year-old routine off at today.
 
 - `Mode`
 - `BlockInput`
+- `ConvertedBlock` — The block a switch made: which table it is in now, and its id there.
 - `CsvImportResult`
 
 ## stale
@@ -5484,6 +5777,14 @@ already sent adds nothing, provided it names the same `externalId`.
 
 #### `updateMovement(ctx, id, input)`
 
+#### `getMovementRow(ctx, id)`
+
+One movement as stored, or null — how an id somebody named is resolved.
+
+#### `listMovementRows(ctx, opts)`
+
+Every movement as stored, or only those in some ledgers — what a key tied to a notebook reaches.
+
 #### `deleteMovement(ctx, id)`
 
 #### `listRules(ctx)`
@@ -5497,6 +5798,12 @@ already sent adds nothing, provided it names the same `externalId`.
 Move a rule within its kind. A move is a reinsertion and every sibling is
 resequenced around it, so two rules can never share a position and "up"
 always actually moves.
+
+#### `placeRule(ctx, id, position)`
+
+Put a rule at a place among the rules of its kind, counting from 0 — the
+order `listRules` gives them, which for categories is the order they win in.
+A place past either end is the end.
 
 #### `deleteRule(ctx, id)`
 
@@ -5890,6 +6197,15 @@ during a migration.
 
 The label the account calls this word, if it has one.
 
+#### `untagNotebook(userId, notebookId, tagId)`
+
+Take a label off everything in one notebook, and nothing outside it.
+
+The notebook's own tag list could rename and recolour, which are account-
+wide, but not remove — and removing across the whole account is the Tags
+tab's job, not something to do from inside one subject. A label nothing
+carries any more afterwards goes, as it does when the last thing drops it.
+
 #### `describeTag(userId, id, description)`
 
 What a label means here, in the account's own words.
@@ -5945,6 +6261,71 @@ One notebook's labels — nothing, for a notebook this account never filed anyth
 - `TagRow` — The label as it is stored.
 - `TagUseKind` — What a tag counts towards, in the order a notebook's own tabs run.
 - `NotebookTag` — A label inside one notebook: what it is, and what carries it in there.
+
+## task-attributes
+
+A task's attributes: user-defined key/value pairs on a task block or a todo.
+
+Ontoplano stores these and never interprets them. Plugins read them from the
+schedule API and decide what they mean — `alarm: true` and `remind_min: 5`
+make an alarm app ring five minutes early, and a future ontoplano app can act
+on the same pairs without a schema change.
+
+The same idea as an inventory item's attributes, with a stricter key: a
+plugin reads these by name, so a key is an identifier rather than a word —
+`remind_min`, never `Remind min` — and a typo like `remind_mins` is at least
+refused in the same shape every time. Flat string→string, validated keys,
+hard caps: an unbounded blob turns into a dumping ground.
+
+Called `meta` until 0.184; the schedule API and the plugin manifest still
+answer to the old names until `META_REMOVED_IN`.
+
+### Functions
+
+#### `parseAttributes(raw)`
+
+#### `serialiseAttributes(input)`
+
+Validate and serialise attributes for storage.
+
+Accepts a plain object, or a JSON string of one.
+
+#### `withAttribute(stored, key, value)`
+
+One attribute set, changed or removed, the rest left as they were.
+
+What the ⓘ dialog's pencil posts: one pair, not the whole set, so editing a
+value cannot drop a key somebody else wrote in the meantime. An empty value
+removes the key, the same rule as everywhere else.
+
+#### `attributesFromFormData(formData)`
+
+Attributes from parallel form fields.
+
+Forms submit `attributeKey` and `attributeValue` as ordered parallel lists,
+which is the shape a repeatable key/value editor produces.
+
+#### `attributesPatchFromFormData(formData)`
+
+Attributes for an update, distinguishing "not submitted" from "cleared".
+
+Drag and resize in the grid post to the same update action with only the
+placement fields. Those requests must leave attributes alone — returning
+`{}` would silently wipe a block's alarm settings every time it was moved. A
+form that genuinely clears the last pair still carries the editor's
+`attributesPresent` marker, and so reads as an explicit `{}`.
+
+#### `attributesArg(args)`
+
+The attributes an API or MCP caller sent, from the current spelling or the
+old one, and whether the old one was used.
+
+`attributes` wins when both are given. Undefined means neither was sent,
+which an update reads as "leave them alone".
+
+### Types
+
+- `TaskAttributes`
 
 ## time
 
@@ -6126,6 +6507,15 @@ One task, as the list would have shown it.
 
 Every todo, or the ones a tag filter lets through.
 
+#### `queryTodos(ctx, query)`
+
+The one query behind every listing of todos a caller can shape.
+
+Filters, order and the page are all SQL: the page is `LIMIT`/`OFFSET` and
+`total` is a `COUNT` over the same `WHERE`, so a list of thousands costs
+the rows asked for rather than all of them. Labels are read for the page
+alone. Everything is scoped to `ctx.userId` in the statement itself.
+
 #### `listTodosIn(ctx, notebookId, options)`
 
 Everything filed under one notebook.
@@ -6142,6 +6532,10 @@ The general list: todos not pulled onto a particular day.
 — its Done column is where they live — but anywhere that offers a todo to be
 _scheduled_ wants only the ones still waiting, because asking somebody when
 they will do a thing they already did is nonsense.
+
+A task delegated to a block is left out too, while the block exists: its
+day is decided, and the block is what the board and the plan show for it.
+The full list (`listTodos`) still has it, with the day on its card.
 
 #### `listForDate(ctx, date)`
 
@@ -6181,7 +6575,7 @@ task — dragging one off the grid would quietly delete every future
 occurrence, which is not what "not today" means. Refused, in words.
 
 What survives is what a todo can hold: the name, the notes, the category, the
-notebook and the three ratings. The date and the hour are what is being
+notebook, the three ratings and the attributes. The date and the hour are what is being
 given up, and the status comes with it — a block ticked off and then pulled
 back is still done.
 
@@ -6231,6 +6625,14 @@ Where the cards sit in a column, after a drag.
 Ids the account does not own simply do not match, so a posted list can
 reorder nothing but its own todos.
 
+#### `setTodoAttribute(ctx, id, key, value)`
+
+One attribute on a todo, set or — with an empty value — removed.
+
+Its own verb because the ⓘ dialog edits one value in place: sending the
+whole set back would need the dialog to hold every other pair as it was,
+and would overwrite one somebody changed in the meantime.
+
 #### `setTodoRatings(ctx, id, ratings)`
 
 #### `demoteInstance(ctx, instanceId)`
@@ -6261,6 +6663,12 @@ across collides with whatever already holds it.
 
 - `Todo`
 - `Tag`
+- `TodoSort`
+- `SortDirection`
+- `TodoScheduled`
+- `TodoArchived`
+- `TodoState`
+- `TodoQuery`
 - `TodoInput`
 - `BatchVerb`
 
@@ -6284,6 +6692,15 @@ docs, the sentence is for the owner of the data.
 A calendar link is exactly this one scope — see the note beside it.
 
 #### `createToken(ctx, input)`
+
+#### `reshapeToken(ctx, id, input)`
+
+Change what a live key may read and where, keeping the key itself.
+
+For a key somebody cannot re-enter: a home-screen widget holds its key and
+nothing else, so pointing the widget at another notebook has to move the key
+rather than mint a new one the phone would never hear about. The scopes and
+the confinement are checked exactly as `createToken` checks them.
 
 #### `freeName(ctx, base)`
 

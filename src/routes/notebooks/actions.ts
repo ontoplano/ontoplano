@@ -8,9 +8,10 @@ import { removeNotebookPicture, setNotebookPicture } from '$lib/services/media';
 import { setEntryPeople } from '$lib/services/people';
 import { NOTEBOOK_PANEL_WIDTH_KEY, setPanelWidth } from '$lib/services/settings';
 import { toActionFailure } from '$lib/http-errors';
-import { describeTag, recolorTag, renameTag } from '$lib/services/tags';
+import { describeTag, recolorTag, renameTag, untagNotebook } from '$lib/services/tags';
 import { importVaultAction } from '$lib/import-vault-action';
 import { todoHandlers } from '$lib/services/todo-actions';
+import { entryHandlers } from '$lib/services/entry-actions';
 import { under } from '$lib/services/scoped-actions';
 import { fileUnderNotebook } from '$lib/services/notebook-linking';
 import { billHandlers } from '$lib/services/bill-actions';
@@ -23,7 +24,9 @@ import { recipeActions } from '../health/recipes/actions';
 import {
 	createNotebook,
 	deleteNotebook,
+	renameFolder,
 	setNotebookClosed,
+	setNotebookFavourite,
 	setNotebookShared,
 	updateNotebook
 } from '$lib/services/notebooks';
@@ -58,16 +61,31 @@ export const notebookActions = {
 		}
 	},
 
+	/** A label off everything in this notebook — the notebook named in the URL. */
+	untagNotebook: async ({ request, locals, url }) => {
+		const formData = await request.formData();
+		try {
+			untagNotebook(
+				locals.user!.id,
+				Number(url.searchParams.get('notebook')),
+				Number(formData.get('id'))
+			);
+			return { success: true };
+		} catch (e) {
+			return toActionFailure(e);
+		}
+	},
+
 	create: async ({ request, locals }) => {
 		const formData = await request.formData();
 		try {
 			createNotebook(buildCtx(locals.user!.id), {
 				title: formData.get('heading'),
-				// Where it goes, as its own field: the place is part of the name,
-				// and the service is what puts the two halves together.
-				parent: formData.get('parent'),
+				// Where it sits on the shelf: a path, '' at the top.
+				folder: formData.get('folder') ?? '',
 				description: formData.get('description'),
 				defaultTags: formData.get('defaultTags'),
+				categoryId: formData.get('categoryId'),
 				// What it holds, when whoever is making it said. The dialog does
 				// not ask — a notebook is made in one field and answered for
 				// afterwards — so this is usually the default.
@@ -84,9 +102,13 @@ export const notebookActions = {
 		try {
 			updateNotebook(buildCtx(locals.user!.id), Number(formData.get('id')), {
 				title: formData.get('heading'),
-				parent: formData.get('parent'),
-				description: formData.get('description'),
-				defaultTags: formData.get('defaultTags'),
+				// Absent (the inline rename) keeps the folder it is in.
+				folder: formData.get('folder'),
+				// Absent means untouched, as for the fields below; an emptied box clears.
+				description: formData.has('description') ? formData.get('description') : undefined,
+				defaultTags: formData.has('defaultTags') ? formData.get('defaultTags') : undefined,
+				// Absent where the form does not ask, which leaves it as it was.
+				categoryId: formData.has('categoryId') ? formData.get('categoryId') : undefined,
 				/*
 				 * What it holds, when the form asked about it.
 				 *
@@ -99,6 +121,35 @@ export const notebookActions = {
 				modules: formData.has('modulesPosted') ? formData.getAll('modules') : undefined
 			});
 			return { success: true };
+		} catch (e) {
+			return toActionFailure(e);
+		}
+	},
+
+	/**
+	 * Rename or move a folder: the prefix of every notebook in it is rewritten.
+	 * Moving it into its own parent is how the shelf removes one.
+	 */
+	renameFolder: async ({ request, locals }) => {
+		const formData = await request.formData();
+		try {
+			renameFolder(buildCtx(locals.user!.id), formData.get('from'), formData.get('to') ?? '');
+			return { success: true };
+		} catch (e) {
+			return toActionFailure(e);
+		}
+	},
+
+	/** Keep it at the front of the shelf, or stop. The reader's own star. */
+	setFavourite: async ({ request, locals }) => {
+		const formData = await request.formData();
+		try {
+			setNotebookFavourite(
+				buildCtx(locals.user!.id),
+				Number(formData.get('id')),
+				formData.get('favourite') === 'true'
+			);
+			return { success: true, action: 'setFavourite' };
 		} catch (e) {
 			return toActionFailure(e);
 		}
@@ -332,6 +383,9 @@ export const notebookActions = {
 		}
 	},
 
+	/** Move, label, put away or delete several notes in one press. */
+	batchEntries: entryHandlers.batch,
+
 	deleteEntry: async ({ request, locals }) => {
 		const formData = await request.formData();
 		try {
@@ -427,6 +481,7 @@ export const notebookActions = {
 	todoStatus: todoHandlers.setStatus,
 	todoSchedule: todoHandlers.schedule,
 	todoTag: todoHandlers.tag,
+	todoAttribute: todoHandlers.attribute,
 	todoBatch: todoHandlers.batch,
 	todoDelegate: todoHandlers.delegate,
 	todoArchive: todoHandlers.archive,

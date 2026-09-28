@@ -163,6 +163,11 @@ export const TUTORIALS: Record<string, Tutorial> = {
 				body: 'tour.pullDownAnEmptyStretch'
 			},
 			{
+				target: '[data-tour="plan-grid"]',
+				title: 'tour.aTaskBlockBelongsSomewhere',
+				body: 'tour.openOneToFileIt'
+			},
+			{
 				target: '[data-tour="plan-toolbar"]',
 				title: 'tour.whereYouAreAndWhat',
 				body: 'tour.theWeekAndTheArrows'
@@ -171,6 +176,11 @@ export const TUTORIALS: Record<string, Tutorial> = {
 				target: '[data-tour="plan-week-start"]',
 				title: 'tour.whereYourWeekBegins',
 				body: 'tour.theArrowsStepAWholeWeek'
+			},
+			{
+				target: '[data-tour="plan-tray"]',
+				title: 'tour.whatIsWaitingForATime',
+				body: 'tour.searchTheTasksWithNoTime'
 			},
 			{
 				target: '[data-tour="plan-schemes"]',
@@ -226,6 +236,11 @@ export const TUTORIALS: Record<string, Tutorial> = {
 				target: '[data-tour="todo-list"]',
 				title: 'tour.jAndKMoveE',
 				body: 'tour.handOffATodoWith'
+			},
+			{
+				target: '[data-tour="todo-attributes"]',
+				title: 'tour.whatATaskSaysAboutItself',
+				body: 'tour.aTaskWithAttributes'
 			}
 		]
 	},
@@ -316,6 +331,11 @@ export const TUTORIALS: Record<string, Tutorial> = {
 				target: '[data-tour="diary-list"]',
 				title: 'tour.findItAgainByTag',
 				body: 'tour.everyTagOnAnEntry'
+			},
+			{
+				target: '[data-tour="diary-selection"]',
+				title: 'selection.selectMany',
+				body: 'tour.noteSelection'
 			}
 		]
 	},
@@ -373,11 +393,23 @@ export const TUTORIALS: Record<string, Tutorial> = {
 				body: 'tour.everyNotebookIsACover'
 			},
 			{
+				target: '[data-tour="notebook-favourite"]',
+				title: 'tour.favouritesFirst',
+				body: 'tour.starANotebook'
+			},
+			{
 				// Skipped until a notebook is open, which is right: there are no
 				// tabs to point at on an empty shelf.
 				target: '[data-tour="notebook-tabs"]',
 				title: 'tour.notJustNotesAndTasks',
 				body: 'tour.aNotebookCanHoldWhatever'
+			},
+			{
+				// Only on a notebook with notes in it, which is when there is
+				// anything to select.
+				target: '[data-tour="notebook-note-selection"]',
+				title: 'selection.selectMany',
+				body: 'tour.notebookNoteSelection'
 			}
 		]
 	},
@@ -449,6 +481,25 @@ export const TUTORIALS: Record<string, Tutorial> = {
 			{
 				title: 'tour.rulesDoTheSorting',
 				body: 'tour.categoriesWashTheRowIn'
+			}
+		]
+	},
+	'/finance/bills': {
+		label: 'tour.bills',
+		steps: [
+			{
+				title: 'tour.billsWhatWantsPaying',
+				body: 'tour.billsABillIsANameAn'
+			},
+			{
+				target: '[data-tour="bill-list"]',
+				title: 'tour.billsPaidSkippedOrAutomatic',
+				body: 'tour.billsSkipAPeriod'
+			},
+			{
+				target: '[data-tour="bill-history"]',
+				title: 'tour.billsTheHistory',
+				body: 'tour.billsOpenARowToSee'
 			}
 		]
 	},
@@ -586,6 +637,11 @@ export const TUTORIALS: Record<string, Tutorial> = {
 				body: 'tour.dragARoomUpOr'
 			},
 			{
+				target: '[data-tour="prefs-capture"]',
+				title: 'tour.quickCaptureYourWay',
+				body: 'tour.whichWedgesThePlusWheel'
+			},
+			{
 				target: '[data-tour="prefs-theme"]',
 				title: 'tour.lightDarkOrWhateverThe',
 				body: 'tour.systemFollowsThePhoneOr'
@@ -631,6 +687,21 @@ export const TUTORIALS: Record<string, Tutorial> = {
 				body: 'tour.aStreamIsASeries'
 			}
 		]
+	},
+
+	'/settings/integrations/widget': {
+		label: 'tour.widgets',
+		steps: [
+			{
+				title: 'tour.widgetsOnThePhone',
+				body: 'tour.widgetsOnThePhoneBody'
+			},
+			{
+				target: '[data-tour="widgets-list"]',
+				title: 'tour.widgetsList',
+				body: 'tour.widgetsListBody'
+			}
+		]
 	}
 };
 
@@ -667,5 +738,10 @@ export function hasTutorial(path: string): boolean {
  * on this list: they are read, not learned.
  */
 export function screensNeedingTutorials(): string[] {
-	return [...new Set([...NAV_PLACES.map((p) => p.href), ...Object.keys(PAGE_SHORTCUTS)])].sort();
+	return [...new Set([...NAV_PLACES.map((p) => p.href), ...Object.keys(PAGE_SHORTCUTS)])]
+		.filter((path) => !READ_NOT_LEARNED.some((prefix) => path.startsWith(prefix)))
+		.sort();
 }
+
+/** The places above that keep keys of their own without being learned — see why. */
+const READ_NOT_LEARNED = ['/admin'];

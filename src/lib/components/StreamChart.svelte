@@ -1,8 +1,11 @@
 <script lang="ts">
+	import { useWhen } from '$lib/when-context.svelte';
+	import { civilOf, momentOf } from '$lib/when';
 	import EmptyState from '$lib/components/EmptyState.svelte';
 	import { useT } from '$lib/i18n';
 
 	const t = useT();
+	const now = useWhen();
 
 	/**
 	 * Generic renderers for data streams.
@@ -186,7 +189,7 @@
 				<path d={linePath} fill="none" stroke="#3b82f6" stroke-width="2" />
 				{#each numeric as p (p.external_id)}
 					<circle cx={x(p.at)} cy={y(p.value)} r="2.5" fill="#1d4ed8">
-						<title>{p.local_date}: {formatValue(p.value)} {unit}</title>
+						<title>{civilOf(p.local_date, now())}: {formatValue(p.value)} {unit}</title>
 					</circle>
 				{/each}
 			</svg>
@@ -200,7 +203,7 @@
 				>
 			</p>
 			<p class="mt-1 text-sm text-gray-500">
-				{latest.local_date}
+				{civilOf(latest.local_date, now())}
 				{#if delta !== null}
 					· <span class={delta === 0 ? 'text-gray-500' : 'text-blue-700'}>
 						{delta > 0 ? '+' : ''}{formatValue(delta)}
@@ -222,7 +225,10 @@
 						<div
 							class="h-3 w-3"
 							style="background-color: {heatColor(day.count)}"
-							title={t('streamChart.dateCountPoints', { date: day.date, count: day.count })}
+							title={t('streamChart.dateCountPoints', {
+								date: civilOf(day.date, now()),
+								count: day.count
+							})}
 						></div>
 					{/each}
 				</div>
@@ -243,7 +249,7 @@
 				<div
 					class="flex-1 bg-blue-500"
 					style="height: {bar.height}%"
-					title="{bar.date}: {bar.count}"
+					title="{civilOf(bar.date, now())}: {bar.count}"
 				></div>
 			{/each}
 		</div>
@@ -253,7 +259,7 @@
 		{#each points.slice().reverse().slice(0, 200) as p (p.external_id)}
 			<li class="flex items-center gap-4 px-4 py-3">
 				<span class="w-40 shrink-0 font-mono text-xs text-gray-500">
-					{p.at.slice(0, 16).replace('T', ' ')}
+					{momentOf(p.at, now())}
 				</span>
 				<span class="flex-1 text-sm text-gray-900">
 					{p.value ?? '—'}

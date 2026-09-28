@@ -1,4 +1,5 @@
 <script lang="ts">
+	import Kbd from '$lib/components/Kbd.svelte';
 	/**
 	 * The screen's one verb — New task, New notebook — wherever the room puts it.
 	 *
@@ -46,10 +47,7 @@
 					<!-- The chip reads against the button it sits on: the quiet `.btn`,
 					     not the filled one it used to ride. Grey-100 on grey-600 flips
 					     with the ramp, so it is legible in both themes rather than one. -->
-					<kbd
-						class="hidden border border-gray-300 bg-gray-100 px-1 text-xs text-gray-600 sm:inline"
-						>{room.kbd}</kbd
-					>
+					<Kbd keys={room.kbd} class="hidden sm:inline" />
 				{/if}
 			</button>
 		{/if}

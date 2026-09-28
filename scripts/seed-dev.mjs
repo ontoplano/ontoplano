@@ -75,6 +75,27 @@ const one = (sql, ...args) => db.prepare(sql).get(...args);
 const all = (sql, ...args) => db.prepare(sql).all(...args);
 const run = (sql, ...args) => db.prepare(sql).run(...args).lastInsertRowid;
 
+/*
+ * The colours seeded labels and attributes wear, handed out in order so
+ * neighbours differ. A copy of `COLOUR_PALETTE` in `src/lib/colors.ts`: this
+ * file runs with nothing beside it, and `tests/seed-palette.test.ts` fails
+ * when the two drift.
+ */
+const PALETTE = [
+	'#1d4ed8',
+	'#b45309',
+	'#6d28d9',
+	'#4d7c0f',
+	'#0f766e',
+	'#be123c',
+	'#155e63',
+	'#a16207',
+	'#9d174d',
+	'#7c2d12'
+];
+let paletteNext = 0;
+const nextColour = () => PALETTE[paletteNext++ % PALETTE.length];
+
 const setting = (key, value) => {
 	const existing = one('select id from user_settings where user_id = ? and key = ?', uid, key);
 	if (existing) {
@@ -119,7 +140,7 @@ const slot = (weekday, startTime, durationMinutes, activityId, recurrence = 'wee
 	if (existing) return existing.id;
 	return run(
 		`insert into recurring_tasks
-		 (user_id, weekday, start_time, duration_minutes, mode, activity_id, label, recurrence, meta)
+		 (user_id, weekday, start_time, duration_minutes, mode, activity_id, label, recurrence, attributes)
 		 values (?, ?, ?, ?, 'activity', ?, '', ?, '{}')`,
 		uid,
 		weekday,
@@ -142,7 +163,7 @@ const categorySlot = (weekday, startTime, durationMinutes, categoryId, label) =>
 	if (existing) return existing.id;
 	return run(
 		`insert into recurring_tasks
-		 (user_id, weekday, start_time, duration_minutes, mode, category_id, label, recurrence, meta)
+		 (user_id, weekday, start_time, duration_minutes, mode, category_id, label, recurrence, attributes)
 		 values (?, ?, ?, ?, 'category', ?, ?, 'weekly', '{}')`,
 		uid,
 		weekday,
@@ -163,7 +184,7 @@ const oneOff = (date, startTime, durationMinutes, activityId, label) => {
 	if (existing) return existing.id;
 	return run(
 		`insert into exceptional_tasks
-		 (user_id, date, start_time, duration_minutes, mode, activity_id, label, meta)
+		 (user_id, date, start_time, duration_minutes, mode, activity_id, label, attributes)
 		 values (?, ?, ?, ?, 'activity', ?, ?, '{}')`,
 		uid,
 		date,
@@ -185,7 +206,7 @@ const oneOffInCategory = (date, startTime, durationMinutes, categoryId, label) =
 	if (existing) return existing.id;
 	return run(
 		`insert into exceptional_tasks
-		 (user_id, date, start_time, duration_minutes, mode, category_id, label, meta)
+		 (user_id, date, start_time, duration_minutes, mode, category_id, label, attributes)
 		 values (?, ?, ?, ?, 'category', ?, ?, '{}')`,
 		uid,
 		date,
@@ -222,14 +243,24 @@ const todo = (title, extra = {}) => {
 	return id;
 };
 
-const notebook = (title, description, closed = false) => {
+/**
+ * A notebook, in the shelf folder given (a path, `Home/Kitchen`; '' at the top).
+ *
+ * Found by its title wherever it is and moved into `folder`, so a dev database
+ * seeded before folders ends up on the same shelf as a fresh one.
+ */
+const notebook = (title, description, closed = false, folder = '') => {
 	const existing = one('select id from notebooks where user_id = ? and title = ?', uid, title);
-	if (existing) return existing.id;
+	if (existing) {
+		run('update notebooks set folder = ? where id = ?', folder, existing.id);
+		return existing.id;
+	}
 	return run(
-		`insert into notebooks (user_id, title, description, closed_at, created_at, updated_at)
-		 values (?, ?, ?, ?, ?, ?)`,
+		`insert into notebooks (user_id, title, folder, description, closed_at, created_at, updated_at)
+		 values (?, ?, ?, ?, ?, ?, ?)`,
 		uid,
 		title,
+		folder,
 		description,
 		closed ? stamp(dayOffset(-20)) : null,
 		stamp(dayOffset(-60)),
@@ -366,10 +397,39 @@ const orphanNote = (content) => {
 	);
 };
 
+/*
+ * Coloured, so the tag vocabulary shows what a coloured label looks like. The
+ * colour goes to a label the first time this run meets it, and only fills one
+ * that has none: a colour somebody picked on a re-seeded account stays.
+ */
+const tagColours = new Map();
+/*
+ * The labels the two long notebooks use, given their colours up front and in
+ * this order, so every label on the kitchen's tasks wears a different one and
+ * the trip's do too. Everything else takes the colours after these.
+ */
+const TAGS_COLOURED_FIRST = [
+	'home',
+	'plumbing',
+	'money',
+	'electrics',
+	'tiles',
+	'deliveries',
+	'paint',
+	'travel',
+	'family',
+	'food'
+];
+for (const name of TAGS_COLOURED_FIRST) tagColours.set(name, nextColour());
 const tag = (name) => {
-	const existing = one('select id from tags where user_id = ? and name = ?', uid, name);
-	if (existing) return existing.id;
-	return run('insert into tags (user_id, name) values (?, ?)', uid, name);
+	if (!tagColours.has(name)) tagColours.set(name, nextColour());
+	const colour = tagColours.get(name);
+	const existing = one('select id, color from tags where user_id = ? and name = ?', uid, name);
+	if (existing) {
+		if (!existing.color) run('update tags set color = ? where id = ?', colour, existing.id);
+		return existing.id;
+	}
+	return run('insert into tags (user_id, name, color) values (?, ?, ?)', uid, name, colour);
 };
 
 /**
@@ -1163,11 +1223,13 @@ const kitchen = notebook(
 	'Quotes, measurements, and whatever the plumber said last.\n' +
 		'The kitchen is 3.4 by 2.8 metres; the old cabinets come out in the first week, ' +
 		'and the plumber has to be booked before the tiler.\n' +
-		'Budget is whatever is left after the boiler. The three shops worth visiting are in the notes.'
+		'Budget is whatever is left after the boiler. The three shops worth visiting are in the notes.',
+	false,
+	'Home'
 );
 const readingNotebook = notebook('Reading', 'What I am reading, and what I thought of it.');
 const portugal = notebook('Portugal in September', 'Everything for the trip.');
-const leak = notebook('Bathroom leak', 'Two weeks of it. Kept for the invoices.', true);
+const leak = notebook('Bathroom leak', 'Two weeks of it. Kept for the invoices.', true, 'Home');
 
 /**
  * The notebook that shows what a notebook is for.
@@ -1180,8 +1242,28 @@ const leak = notebook('Bathroom leak', 'Two weeks of it. Kept for the invoices.'
  */
 const republic = notebook(
 	'The Republic',
-	'Reading it properly this time, a book at a time. Notes as I go.'
+	'Reading it properly this time, a book at a time. Notes as I go.',
+	false,
+	'Books'
 );
+
+// A category each for the two subjects that have tasks, so a new task written
+// in either starts with it — and the rest none, which is the usual answer.
+run('update notebooks set category_id = ? where id = ?', home, kitchen);
+run('update notebooks set category_id = ? where id = ?', learning, republic);
+
+/*
+ * Two starred, one of them inside a folder: the shelf draws a Favourites row
+ * above the folders and still shows the kitchen inside Home, and the notebook
+ * pickers list both first.
+ */
+for (const starred of [kitchen, republic])
+	run(
+		'insert or ignore into notebook_favourites (user_id, notebook_id, created_at) values (?, ?, ?)',
+		uid,
+		starred,
+		new Date().toISOString()
+	);
 
 todo('get three quotes for the counter', { urgency: 3, interest: 2, sortOrder: 7 });
 todo('measure the wall properly', { status: 'done', sortOrder: 8 });
@@ -1195,6 +1277,31 @@ inNotebook('diary_entries', 'seq', 6, readingNotebook);
 inNotebook('diary_entries', 'seq', 7, portugal);
 inNotebook('diary_entries', 'seq', 8, leak);
 inNotebook('goals', 'title', 'read twelve books', readingNotebook);
+
+/*
+ * Attributes, on tasks and on task blocks, and task blocks filed in notebooks —
+ * so the ⓘ on a card, the fold in the forms and the notebook line on the grid
+ * all have something to show.
+ */
+const withAttributes = (table, column, value, attributes) =>
+	run(
+		`update ${table} set attributes = ? where user_id = ? and ${column} = ?`,
+		JSON.stringify(attributes),
+		uid,
+		value
+	);
+withAttributes('todo_tasks', 'title', 'get three quotes for the counter', {
+	url: 'https://example.com/worktops',
+	budget: '1200'
+});
+withAttributes('todo_tasks', 'title', 'plan the trip', { flight: 'TP 1353', seat: '14C' });
+withAttributes('recurring_tasks', 'label', 'errands', { location: 'high street' });
+withAttributes('exceptional_tasks', 'label', 'physio', {
+	location: 'clinic on Rua Augusta',
+	phone: '+351 210 000 000'
+});
+inNotebook('recurring_tasks', 'label', 'errands', kitchen);
+inNotebook('exceptional_tasks', 'label', 'dinner with M', portugal);
 
 /*
  * Two notebooks with a year in them, and two with a page.
@@ -1211,11 +1318,11 @@ inNotebook('goals', 'title', 'read twelve books', readingNotebook);
  * where nobody answered draws three half-height bars on every row.
  */
 const KITCHEN_NOTES = [
-	['The tiler wants the wall re-skimmed first. That is another week.', ['home', 'plumbing']],
+	['The tiler wants the wall re-skimmed first. That is another week.', ['tiles', 'plumbing']],
 	['Three quotes in. The middle one can start in April; the cheap one cannot say when.', ['money']],
 	['Measured again: 3.42 by 2.79. The old drawing was out by four centimetres.', ['home']],
 	['The boiler is staying. Moving it is two thousand on its own and it works.', ['money']],
-	['Tiles: the matt ones mark, the gloss ones show every fingerprint. Ask about satin.', ['home']],
+	['Tiles: the matt ones mark, the gloss ones show every fingerprint. Ask about satin.', ['tiles']],
 	[
 		'Worktop shops worth visiting are the two on Bridge Street. The third is a showroom for one brand.',
 		['home']
@@ -1224,12 +1331,12 @@ const KITCHEN_NOTES = [
 		'Quartz against oak: quartz wins on the sink side, oak everywhere else. Ugly, but honest.',
 		['home']
 	],
-	['Electrician wants the layout final before he books. Fair enough.', ['plumbing']],
+	['Electrician wants the layout final before he books. Fair enough.', ['electrics']],
 	['The window is coming out after all — the frame is gone at the bottom corner.', ['home']],
-	['Skip booked for the 14th. Two weeks, which the plumber says is optimistic.', ['home']],
+	['Skip booked for the 14th. Two weeks, which the plumber says is optimistic.', ['deliveries']],
 	[
 		'Paint: the sample looks grey in the morning and green after four. Living with it a week.',
-		['home']
+		['paint']
 	],
 	[
 		'Cabinet doors are the cheapest way to change our minds later, so the carcasses go plain.',
@@ -1254,31 +1361,31 @@ const KITCHEN_TASKS = [
 	['book the plumber for the first week', true, 5, 2, 3, ['plumbing']],
 	['get three quotes for the counter', false, 3, 2, 2, ['money']],
 	['measure the wall properly', true, 4, 1, 4, ['home']],
-	['order the skip', true, 5, 1, 5, ['home']],
+	['order the skip', true, 5, 1, 5, ['deliveries']],
 	['empty the top cupboards', true, 3, 1, 4, ['home']],
 	['take the old cooker out', true, 4, 2, 2, ['home']],
-	['strip the tiles off the splashback wall', true, 4, 2, 2, ['home']],
+	['strip the tiles off the splashback wall', true, 4, 2, 2, ['tiles']],
 	['cap the old feed before the units go', true, 5, 1, 2, ['plumbing']],
 	['choose the worktop', false, 4, 4, 2, ['home']],
-	['choose the tiles', false, 3, 4, 3, ['home']],
-	['get the electrician to quote the sockets', true, 4, 2, 3, ['plumbing']],
+	['choose the tiles', false, 3, 4, 3, ['tiles']],
+	['get the electrician to quote the sockets', true, 4, 2, 3, ['electrics']],
 	['decide where the fridge goes', true, 3, 3, 4, ['home']],
 	['confirm the window measurements with the fitter', true, 5, 1, 3, ['home']],
 	['pay the deposit on the units', true, 5, 1, 5, ['money']],
-	['chase the delivery date', false, 4, 1, 4, ['money']],
-	['clear the hall for the delivery', false, 3, 1, 5, ['home']],
-	['sand and fill the ceiling before painting', true, 2, 1, 2, ['home']],
-	['paint the ceiling', true, 2, 2, 3, ['home']],
-	['live with the paint sample for a week', true, 1, 3, 5, ['home']],
-	['book the tiler for after the plumber', false, 4, 2, 3, ['plumbing']],
-	['order the handles', false, 2, 4, 5, ['home']],
+	['chase the delivery date', false, 4, 1, 4, ['deliveries', 'money']],
+	['clear the hall for the delivery', false, 3, 1, 5, ['deliveries']],
+	['sand and fill the ceiling before painting', true, 2, 1, 2, ['paint']],
+	['paint the ceiling', true, 2, 2, 3, ['paint']],
+	['live with the paint sample for a week', true, 1, 3, 5, ['paint']],
+	['book the tiler for after the plumber', false, 4, 2, 3, ['tiles', 'plumbing']],
+	['order the handles', false, 2, 4, 5, ['deliveries']],
 	['sort out a temporary sink', true, 4, 1, 3, ['home']],
 	['move the microwave to the landing', true, 2, 1, 5, ['home']],
-	['take the old units to the tip', true, 3, 1, 2, ['home']],
+	['take the old units to the tip', true, 3, 1, 2, ['deliveries']],
 	['seal round the new window', false, 3, 1, 3, ['home']],
-	['fit the extractor', false, 3, 3, 2, ['plumbing']],
+	['fit the extractor', false, 3, 3, 2, ['electrics']],
 	['put the doors on', false, 3, 5, 3, ['home']],
-	['touch up the skirting', false, 1, 1, 4, ['home']],
+	['touch up the skirting', false, 1, 1, 4, ['paint']],
 	['get the final invoice from the plumber', true, 4, 1, 4, ['money']],
 	['photograph everything for the insurance', true, 2, 2, 4, ['home']],
 	['send Marco the cooker collection time', true, 3, 2, 5, ['home']]
@@ -1396,6 +1503,15 @@ for (let back = 0; back < 40; back++) {
 	if (back % 2 === 0) logHabit(coffee, d);
 }
 logHabit(doomscroll, iso(dayOffset(-9)), 'an hour before bed, again');
+
+// One put away, so the archived list has something in it.
+const putAway = habit('morning stretches', 'good', '0,2,4');
+for (let back = 60; back < 90; back += 2) logHabit(putAway, iso(dayOffset(-back)));
+run(
+	'update habits set archived_at = ? where id = ? and archived_at is null',
+	new Date().toISOString(),
+	putAway
+);
 
 // --- shopping ---------------------------------------------------------------------
 
@@ -1516,11 +1632,14 @@ shoppingItem('extension lead', 'keep', {
 // payments where the paid amount drifts from the expected — the gap the
 // finance section is built to show.
 
+/** The last day the seeded automatic bills have recorded themselves up to. */
+const AUTOMATIC_SEEDED_THROUGH = '2026-08-31';
+
 const bill = (name, amountExpected, extra = {}) => {
 	const existing = one('select id from bills where user_id = ? and name = ?', uid, name);
 	if (existing) return existing.id;
 	return run(
-		'insert into bills (user_id, name, amount_expected, currency, due_day, pay_lead_days, rhythm, active) values (?, ?, ?, ?, ?, ?, ?, ?)',
+		'insert into bills (user_id, name, amount_expected, currency, due_day, pay_lead_days, rhythm, active, automatic, settled_through) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
 		uid,
 		name,
 		amountExpected,
@@ -1528,20 +1647,31 @@ const bill = (name, amountExpected, extra = {}) => {
 		extra.dueDay ?? null,
 		extra.payLeadDays ?? 0,
 		extra.rhythm ?? 'monthly',
-		extra.active === false ? 0 : 1
+		extra.active === false ? 0 : 1,
+		extra.automatic ? 1 : 0,
+		// Seeded as if it had been recording itself up to the end of August;
+		// the first read of the bills catches up whatever has come due since.
+		extra.automatic ? AUTOMATIC_SEEDED_THROUGH : null
 	);
 };
 
-const billPaid = (billId, period, amountExpected, amountPaid) => {
+/** A settled period: paid (by hand, or by an automatic bill) or skipped. */
+const billPaid = (billId, period, amountExpected, amountPaid, how = {}) => {
 	if (one('select id from bill_payments where bill_id = ? and period = ?', billId, period)) return;
+	// Paid early in its month unless told otherwise, so a history reads like one.
+	const on = how.on ?? (/^\d{4}-\d{2}$/.test(period) ? `${period}-04` : null);
+	const paidAt = on ? `${on}T12:00:00.000Z` : new Date().toISOString();
 	run(
-		"insert into bill_payments (user_id, bill_id, period, amount_expected, amount_paid, currency, paid_at) values (?, ?, ?, ?, ?, ?, datetime('now'))",
+		'insert into bill_payments (user_id, bill_id, period, amount_expected, amount_paid, status, automatic, currency, paid_at) values (?, ?, ?, ?, ?, ?, ?, ?, ?)',
 		uid,
 		billId,
 		period,
 		amountExpected,
-		amountPaid,
-		'USD'
+		how.skipped ? 0 : amountPaid,
+		how.skipped ? 'skipped' : 'paid',
+		how.automatic ? 1 : 0,
+		'USD',
+		paidAt
 	);
 };
 
@@ -1554,7 +1684,7 @@ const cleaner = bill('Cleaner', 12000, { rhythm: 'weekly' });
 // vegetables from a smallholding, the climbing gym, the five-a-side, and the
 // standing donation to the app itself.
 bill('Farm box', 22000, { dueDay: 6 });
-bill('Climbing gym', 14000, { dueDay: 8 });
+const climbing = bill('Climbing gym', 14000, { dueDay: 8 });
 bill('Five-a-side', 6000, { dueDay: 11 });
 bill('Ontoplano', 5000, { dueDay: 3 });
 bill('Old gym membership', 12900, { active: false });
@@ -1570,6 +1700,32 @@ billPaid(cleaner, '2026-W36', 12000, 13000);
 // This month, some paid so far.
 billPaid(billRent, '2026-09', 180000, 180000);
 billPaid(billPower, '2026-09', 15000, 15880);
+// Earlier months, so a row's history has an average worth reading.
+billPaid(billRent, '2026-06', 175000, 175000, { on: '2026-06-03' });
+billPaid(billRent, '2026-07', 180000, 180000, { on: '2026-07-03' });
+billPaid(billPower, '2026-06', 15000, 13910, { on: '2026-06-09' });
+billPaid(billPower, '2026-07', 15000, 17420, { on: '2026-07-09' });
+// The gym frozen over a month away: skipped, not unpaid.
+billPaid(climbing, '2026-07', 14000, 14000, { on: '2026-07-06' });
+billPaid(climbing, '2026-08', 14000, 0, { on: '2026-08-06', skipped: true });
+
+// Subscriptions on a card: they never ask to be paid, and their history is the
+// app's own, one payment per due day.
+const streaming = bill('Film streaming', 1599, { dueDay: 14, automatic: true });
+const cloud = bill('Cloud storage', 299, { dueDay: 2, automatic: true });
+for (const month of ['2026-06', '2026-07', '2026-08']) {
+	billPaid(streaming, month, 1599, 1599, { on: `${month}-14`, automatic: true });
+	billPaid(cloud, month, 299, 299, { on: `${month}-02`, automatic: true });
+}
+
+// A bill filed under a subject, so the kitchen's notebook has a Bills tab
+// with something on it: the skip, hired by the month while the work lasts.
+const skipHire = bill('Skip hire', 9500, { dueDay: 15 });
+run('update bills set notebook_id = ? where id = ? and user_id = ?', kitchen, skipHire, uid);
+const kitchenModules = one('select modules from notebooks where id = ?', kitchen)?.modules ?? '';
+if (kitchenModules && !kitchenModules.split(',').includes('bills'))
+	run('update notebooks set modules = ? where id = ?', `${kitchenModules},bills`, kitchen);
+billPaid(skipHire, '2026-08', 9500, 9800, { on: '2026-08-14' });
 
 // --- income, statements and rules (finance) ---------------------------------------
 //
@@ -1913,6 +2069,27 @@ if (!one('select id from webhook_subscriptions where user_id = ?', uid)) {
 }
 apiToken('scratch script', 'streams:read');
 apiToken('Phone widget', 'today:read');
+
+// A notebook widget: the kitchen's open tasks, newest first. Its key is tied to
+// the notebook and reads that one tab, the way Settings → Widgets mints one.
+{
+	const widgetKey = apiToken('Widget · Kitchen', 'tasks:read');
+	run(
+		"update api_tokens set confined_kind = 'notebook', confined_id = ? where id = ?",
+		kitchen,
+		widgetKey
+	);
+	if (!one('select id from phone_widgets where token_id = ?', widgetKey))
+		run(
+			`insert into phone_widgets (user_id, token_id, notebook_id, section, status, sort_by, direction, created_at, updated_at)
+			 values (?, ?, ?, 'tasks', 'open', 'created', 'desc', ?, ?)`,
+			uid,
+			widgetKey,
+			kitchen,
+			stamp(now),
+			stamp(now)
+		);
+}
 // Two calendar links, so /settings/integrations shows the list with its
 // addresses rather than only the empty state. Each printed URL is
 // `<origin>/calendar/<the token above>`, and both are fetchable straight away.
@@ -2029,7 +2206,11 @@ manifest(
 	'scale',
 	'Smart scale',
 	'Weighs you, and sets alarms from the plan',
-	JSON.stringify(['alarm', 'remind_min'])
+	// The shape `PUT /api/v1/plugin` stores: a key, what it does, an example.
+	JSON.stringify([
+		{ key: 'alarm', description: 'Ring an alarm for this task block', example: 'true' },
+		{ key: 'remind_min', description: 'Notify this many minutes before', example: '5' }
+	])
 );
 
 // --- Recipes ------------------------------------------------------------------
@@ -2411,14 +2592,18 @@ if (horsePicture) {
  *
  * A shelf is picked by looking at it — that is the whole reason the notebooks
  * page draws covers rather than rows — and a shelf of blank dashed rectangles
- * demonstrates the placeholder. Photographs rather than paintings: a framed
- * oil on a renovation reads as a museum catalogue.
+ * demonstrates the placeholder.
  */
+const twelve = notebook(
+	'Twelve in a year',
+	'Twelve things I said I would do this year. Ten of them are done.'
+);
 for (const [id, file, alt] of [
-	[kitchen, 'cover-kitchen.jpg', 'Stonework, before the scaffolding'],
-	[portugal, 'cover-portugal.jpg', 'A barque at anchor in the bay'],
-	[readingNotebook, 'cover-reading.jpg', 'A long garden and the pavilion at the end of it'],
-	[republic, 'cover-republic.jpg', 'A soldier, photographed in 1859']
+	[kitchen, 'cover-kitchen.jpg', 'A terracotta kitchen under an arch'],
+	[portugal, 'cover-portugal.jpg', 'A yellow tram on a Lisbon hill'],
+	[readingNotebook, 'cover-reading.jpg', 'A stair of light rising out of an open book'],
+	[republic, 'cover-republic.jpg', 'A marble bust beside a column'],
+	[twelve, 'cover-twelve.jpg', 'The twelve months around a sun']
 ]) {
 	const cover = picture(file, alt, demoPicture(file));
 	if (cover && !one('select id from notebooks where id = ? and picture_id is not null', id))
@@ -2634,16 +2819,17 @@ const pictureInNote = (seq, mediaId, alt) => {
 };
 
 /*
- * And a notebook inside a notebook, so the folder tree is a tree.
+ * And a folder inside a folder, so the shelf has two levels to draw.
  *
- * `Kitchen renovation — Countertops` is one notebook inside another for the
- * same reason `Birds — Passeriformes` is one album inside another: the
- * separator is the relationship. The gallery draws it as a folder inside a
- * folder, and nothing anywhere had two levels of it to draw.
+ * `Countertops` sits in `Home/Kitchen`, beside nothing else there, while
+ * `Home` holds the kitchen and the leak — a folder holding notebooks and a
+ * folder at once. The gallery draws the same path as folders inside folders.
  */
 const countertops = notebook(
-	'Kitchen renovation — Countertops',
-	'The three quotes, and what each of them actually includes.'
+	'Countertops',
+	'The three quotes, and what each of them actually includes.',
+	false,
+	'Home/Kitchen'
 );
 diary(
 	30,
@@ -2652,9 +2838,9 @@ diary(
 );
 inNotebook('diary_entries', 'seq', 30, countertops);
 
-// Different pictures in the parent and the child, so the folder above counts
-// two and the one inside counts one — a tree with the same photograph twice
-// counts it once and looks like the totals are broken.
+// Different pictures in the kitchen and the countertops, so `Home` in the
+// gallery counts two and `Home/Kitchen` counts one — a tree with the same
+// photograph twice counts it once and looks like the totals are broken.
 pictureInNote(5, kitchenPicture, 'The kitchen shelf');
 pictureInNote(30, pastaPicture, 'The corner they measured');
 pictureInNote(7, horsePicture, 'On the way out of Lisbon');
@@ -3179,8 +3365,7 @@ What has actually changed, as opposed to what I meant to change.
 
 ---
 
-The shopping list turned out to be the thing I use most, which I did not
-expect. It is the only part that goes in my pocket.`
+The shopping list turned out to be the thing I use most, which I did not expect. It is the only part that goes in my pocket.`
 	]
 ];
 
@@ -3188,6 +3373,12 @@ for (const [seq, book, daysAgo, content] of longNotes) {
 	diary(seq, content, [], iso(dayAt(daysAgo)));
 	if (book) inNotebook('diary_entries', 'seq', seq, book);
 }
+// A line break in a paragraph is kept as one, so a seed wrapped for the editor
+// read as a hard-wrapped paragraph. Databases seeded before say it again.
+run(
+	"update diary_entries set content = replace(content, 'did not' || char(10) || 'expect', 'did not expect') where user_id = ? and seq = 12",
+	uid
+);
 
 /*
  * The kitchen notebook opens on the quotes, not on the one-liner.
@@ -3263,10 +3454,6 @@ inNotebook('diary_entries', 'seq', KITCHEN_NOTE_SEQ, kitchen);
  * of the twelve things happened. It also fills the "closed" view, which was
  * two rows.
  */
-const twelve = notebook(
-	'Twelve in a year',
-	'Twelve things I said I would do this year. Ten of them are done.'
-);
 
 const DONE_THIS_YEAR = [
 	['learn to make sourdough', 'the third loaf was the one'],
@@ -3376,5 +3563,202 @@ for (const [title, daysAgo] of FINISHED) {
 }
 
 console.log(`  ${HISTORY_WEEKS} weeks of history: ${kept} blocks kept`);
+
+// --- What each notebook holds ------------------------------------------------------
+
+/*
+ * A notebook is a subject, and a subject holds more than notes: the kitchen is
+ * mostly a list of jobs and things to buy, the trip has a budget and a bag to
+ * pack. Left alone every seeded notebook showed the same two tabs, so the one
+ * thing notebooks are for — the rest of the app seen from one subject — was
+ * never on screen.
+ *
+ * The order is the tab order. It is written only over what the seed used to
+ * leave, nothing or the default pair, so an arrangement made by hand survives
+ * a re-seed.
+ */
+const SEEDED_DEFAULT_MODULES = [null, 'notes,tasks'];
+const holds = (notebookId, modules) => {
+	const current = one('select modules from notebooks where id = ?', notebookId)?.modules ?? null;
+	if (SEEDED_DEFAULT_MODULES.includes(current))
+		run('update notebooks set modules = ? where id = ?', modules.join(','), notebookId);
+};
+
+/** A thing to buy or already bought, filed in a notebook. */
+const notebookItem = (notebookId, name, type, extra = {}) => {
+	const id = shoppingItem(name, type, extra);
+	run('update inventory_items set notebook_id = ? where id = ?', notebookId, id);
+	return id;
+};
+
+holds(kitchen, ['tasks', 'notes', 'inventory', 'recipes', 'bills']);
+for (const [name, bought, attributes, notes] of [
+	['splashback tiles', false, { finish: 'satin', size: '10x10cm', colour: 'sage' }, '4.5m²'],
+	['cabinet handles', false, { material: 'brass', length: '160mm', count: '14' }, ''],
+	['worktop', false, { material: 'quartz', length: '3.4m' }, 'waiting on the wall'],
+	['extractor', true, { power: '240W', kind: 'ducted' }, ''],
+	['ceiling paint', true, { colour: 'off-white', volume: '5L', finish: 'matt' }, ''],
+	['tile grout', false, { colour: 'warm grey', weight: '5kg' }, ''],
+	['pendant lights', false, { fitting: 'E27', count: '3', budget: '240' }, 'over the counter'],
+	['silicone sealant', true, { colour: 'clear', kind: 'kitchen and bath' }, '']
+]) {
+	notebookItem(kitchen, name, 'someday', {
+		qty: bought ? 1 : 0,
+		bought,
+		notes,
+		attributes
+	});
+}
+// The first meal in the finished kitchen is the point of the whole thing.
+inNotebook('recipes', 'title', 'Tomato pasta', kitchen);
+
+holds(countertops, ['notes', 'inventory']);
+for (const [name, attributes] of [
+	['quartz sample', { material: 'quartz', price: '420/m', thickness: '20mm' }],
+	['oak sample', { material: 'oak', price: '260/m', thickness: '40mm' }],
+	['granite sample', { material: 'granite', price: '380/m', thickness: '30mm' }]
+]) {
+	notebookItem(countertops, name, 'someday', { qty: 1, bought: true, attributes });
+}
+
+holds(portugal, ['tasks', 'notes', 'goals', 'inventory']);
+const tripFund = goal('save for Portugal', 'quarter', quarterStart, {
+	notes: 'nine hundred each, flights in',
+	measures: [
+		{ target: 1800, current: 1350, unit: 'EUR' },
+		{ target: 4, current: 4, unit: 'bookings' }
+	]
+});
+inNotebook('goals', 'title', 'save for Portugal', portugal);
+for (const title of ['book the flights', 'book the Lisbon flat', 'book the Porto flat']) {
+	const task = one('select id from todo_tasks where user_id = ? and title = ?', uid, title);
+	if (task) linkGoal(tripFund, { todoId: task.id });
+}
+for (const [name, bought, attributes] of [
+	['travel adapter', false, { plug: 'type F', count: '2' }],
+	['walking shoes', true, { size: '42', kind: 'trail' }],
+	['sun cream', false, { kind: 'SPF 50', volume: '200ml' }],
+	['phrasebook', false, { kind: 'Portuguese', for: 'the markets' }],
+	['day bag', true, { capacity: '20L', colour: 'navy' }]
+]) {
+	notebookItem(portugal, name, 'someday', { qty: bought ? 1 : 0, bought, attributes });
+}
+
+holds(readingNotebook, ['notes', 'goals', 'ideas']);
+goal('read one book in Portuguese', 'year', yearStart, {
+	notes: 'a short one, before the trip if possible',
+	measures: [{ target: 180, current: 64, unit: 'pages' }]
+});
+inNotebook('goals', 'title', 'read one book in Portuguese', readingNotebook);
+idea('A book club of two with Ana — one book a month, dinner after', ['reading', 'family']);
+idea('Reread one old favourite every year, in the same week', ['reading']);
+inNotebook(
+	'ideas',
+	'content',
+	'A book club of two with Ana — one book a month, dinner after',
+	readingNotebook
+);
+inNotebook(
+	'ideas',
+	'content',
+	'Reread one old favourite every year, in the same week',
+	readingNotebook
+);
+
+holds(republic, ['notes', 'goals', 'tasks']);
+goal('finish The Republic', 'quarter', quarterStart, {
+	notes: 'a book at a time, notes on each',
+	measures: [{ target: 10, current: 7, unit: 'books' }]
+});
+inNotebook('goals', 'title', 'finish The Republic', republic);
+const republicGoal = one(
+	'select id from goals where user_id = ? and title = ?',
+	uid,
+	'finish The Republic'
+);
+const bookEight = one(
+	'select id from todo_tasks where user_id = ? and title = ?',
+	uid,
+	'finish Book VIII before the group meets'
+);
+if (republicGoal && bookEight) linkGoal(republicGoal.id, { todoId: bookEight.id });
+
+holds(twelve, ['goals', 'tasks', 'notes']);
+holds(leak, ['notes', 'tasks']);
+for (const [title, labels] of [
+	['get the ceiling re-plastered', ['plumbing']],
+	['send the photos to the insurer', ['money']],
+	['pay the plumber', ['money']]
+]) {
+	notebookTodo(leak, title, { status: 'done', tags: labels, sortOrder: 9400 });
+}
+renumber(leak);
+
+// --- Attribute colours (inventory) ----------------------------------------------
+
+/*
+ * Every attribute the inventory was seeded with gets a colour of its own, so
+ * the chips on a row read apart. Last, because items gain attributes all the
+ * way down this file. A colour already there is left alone.
+ */
+const attributeKeys = all(
+	`select distinct j.key as key from inventory_items i, json_each(i.attributes) j
+	 where i.user_id = ? order by j.key`,
+	uid
+).map((r) => r.key);
+attributeKeys.forEach((key, i) => {
+	run(
+		`insert or ignore into inventory_attribute_colors (user_id, key, value, color)
+		 values (?, ?, '', ?)`,
+		uid,
+		key,
+		PALETTE[i % PALETTE.length]
+	);
+});
+console.log(`  ${attributeKeys.length} inventory attributes coloured`);
+
+// --- Recordings -----------------------------------------------------------------
+
+/*
+ * A few short recordings, so Media → Recordings is a list with its player,
+ * its rename and its delete rather than an empty state. Each is a second or
+ * two of silent MP3 — nobody's voice, one of the formats the recordings
+ * service accepts (so an export of the dev account imports again), and small
+ * enough to sit in the database beside the pictures.
+ */
+/** MPEG-1 Layer III, 128 kbit/s, 44.1 kHz, mono: a frame is 417 bytes and 1152 samples. */
+const MP3_FRAME_HEADER = [0xff, 0xfb, 0x90, 0xc4];
+const MP3_FRAME_BYTES = 417;
+const MP3_FRAMES_PER_SECOND = 44100 / 1152;
+const silence = (seconds) => {
+	const frames = Math.round(seconds * MP3_FRAMES_PER_SECOND);
+	const bytes = Buffer.alloc(frames * MP3_FRAME_BYTES);
+	for (let f = 0; f < frames; f++) bytes.set(MP3_FRAME_HEADER, f * MP3_FRAME_BYTES);
+	return bytes;
+};
+const recordings = [
+	['Idea for the kitchen shelves', 2, 3],
+	['What the plumber said', 1.5, 9],
+	['Birdsong at the park', 2.5, 20]
+];
+for (const [name, seconds, daysBack] of recordings) {
+	const bytes = silence(seconds);
+	const sha = createHash('sha256').update(bytes).digest('hex');
+	if (one('select id from media where user_id = ? and sha256 = ?', uid, sha)) continue;
+	const at = new Date(now);
+	at.setDate(at.getDate() - daysBack);
+	run(
+		`insert into media (user_id, mime, filename, alt, byte_size, seconds, bytes, sha256, created_at)
+		 values (?, 'audio/mpeg', ?, '', ?, ?, ?, ?, ?)`,
+		uid,
+		name,
+		bytes.length,
+		seconds,
+		bytes,
+		sha,
+		stamp(at)
+	);
+}
+console.log(`  ${recordings.length} recordings`);
 
 console.log(`seeded synthetic data for ${user.email ?? uid}`);

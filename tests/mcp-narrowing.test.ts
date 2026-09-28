@@ -196,7 +196,7 @@ describe('narrowing a task list', () => {
 				JSON.stringify(
 					call(['tasks:read'], 'tasks', { tags: ['u5'], tagMode: 'some', notebookId: queue })
 				)
-			).toMatch(/tagMode has to be/);
+			).toMatch(/`tagMode` has to be one of/);
 		} finally {
 			todos.deleteTodo(mine, both);
 		}

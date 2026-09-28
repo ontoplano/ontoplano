@@ -133,3 +133,24 @@ describe('removing an attribute', () => {
 		).toEqual(['cable', 'other cable', 'tape']);
 	});
 });
+
+describe('removing one value', () => {
+	test('takes that value off, and leaves the attribute on the rest', () => {
+		inventory.createItem(ctx, { name: 'ribbon', type: 'someday' });
+		inventory.createItem(ctx, { name: 'strap', type: 'someday' });
+		inventory.setItemAttributes(ctx, idOf('ribbon'), { width: '2cm' });
+		inventory.setItemAttributes(ctx, idOf('strap'), { width: '1cm', usb: '' });
+		attributes.setAttributeColor(ctx, 'width', '2cm', '#123456');
+
+		attributes.removeAttributeValue(ctx, 'width', '2cm');
+
+		const width = attributes.listAttributes(ctx).find((a) => a.key === 'width')!;
+		expect(width.values.map((v) => v.value)).toEqual(['1cm']);
+		expect(inventory.listItems(ctx).find((i) => i.name === 'ribbon')!.attributes).toBe('{}');
+	});
+
+	test('never reaches a stranger’s things', () => {
+		attributes.removeAttributeValue(theirs, 'width', '1cm');
+		expect(attributes.listAttributes(ctx).find((a) => a.key === 'width')!.count).toBe(1);
+	});
+});

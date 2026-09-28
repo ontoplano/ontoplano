@@ -73,14 +73,20 @@ committed has to be buildable exactly as it stands. The icon scripts write the
 same bytes from the same source every time, which is what makes committing
 generated files sane rather than a diff after every build.
 
-`make android` leaves the release APK **unsigned** on purpose: F-Droid signs
-what it builds, and a signing key in that path is only a key to lose.
+`make android-store` leaves the release APK **unsigned** on purpose: F-Droid
+signs what it builds, and a signing key in that path is only a key to lose.
 
 ## Signing keys
 
 There are none in this repository and there should never be. A debug key is
 whatever your SDK generated; anything a store distributes is signed by the
 store or by a key kept outside the tree.
+
+The APK attached to a GitHub release is that same unsigned build, signed with
+the project's release key — kept outside the tree, and neither the Play key nor
+F-Droid's. Android only updates an app with one signed by the same key, so an
+APK from a release updates only an APK from a release; switching to a store's
+build means uninstalling first.
 
 ## HTTPS while developing, so a phone gets a real browser
 
@@ -151,6 +157,34 @@ widget that wakes itself.
 To reconnect or change the address later: long-press the widget and choose the
 launcher's own "reconfigure" (Android 12 and up), or remove it and place it
 again.
+
+### The notebook widget
+
+**Ontoplano — notebook** shows one tab of one notebook: its tasks, notes,
+goals, ideas or things to buy, filtered and ordered the way that tab's own
+list can be. Unlike the widget above it is wired into the Capacitor shell
+(`capacitor/android/app/src/main/java/app/ontoplano/isolated/NotebookWidget*.java`).
+
+1. Long-press the home screen, pick **Ontoplano — notebook**, and drop it.
+2. The app opens on the instance at **Settings → AI & Integrations → Widgets**
+   with the form already open: choose the notebook, the tab, what to show,
+   a tag, and the order. Saving mints the widget a key and hands it to the
+   phone through the app's own copy at `/widget` — the same trip the reminders
+   key makes through `/ring` — and the app comes back to the list.
+
+Pressing the header opens the notebook on that tab
+(`/notebooks/<id>?tab=<tab>`); pressing a line opens that note, task or goal
+(`&item=<id>`). The press reaches the app as `MainActivity.EXTRA_OPEN`, which
+the launch on the device's copy turns into the page on the chosen instance —
+the shell does not know which instance that is; the web view does.
+
+The widget's choices are kept on the instance, in `phone_widgets`, so they are
+edited or deleted from that same list and the phone picks the change up on its
+next refresh. Its key is confined to the notebook and holds only the tab's
+read scope; deleting the widget there revokes it, and the widget says so.
+
+It needs an instance with a server: the phone-only instance has no API for a
+launcher to call, and Settings → Integrations is not on a device build.
 
 ### How it is built
 

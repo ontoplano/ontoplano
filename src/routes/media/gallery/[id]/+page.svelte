@@ -11,7 +11,8 @@
 	import FormError from '$lib/components/FormError.svelte';
 	import OneLine from '$lib/components/OneLine.svelte';
 	import Icon from '$lib/components/Icon.svelte';
-	import RoomBar from '$lib/components/RoomBar.svelte';
+	import RoomSurface from '$lib/components/RoomSurface.svelte';
+	import { setRoomAction } from '$lib/room-action.svelte';
 	import { leafAlbumName } from '$lib/album-path';
 	import { SvelteSet } from 'svelte/reactivity';
 	import Modal from '$lib/components/Modal.svelte';
@@ -59,6 +60,11 @@
 			: (data.pictures.find((p) => p.id === confirmingRemoveId) ?? null)
 	);
 
+	let fileInput: HTMLInputElement | undefined = $state();
+
+	/* This screen's one verb, drawn by the room's bar — see $lib/room-action. */
+	setRoomAction(() => ({ label: t('gallery.id.addPictures'), run: () => fileInput?.click() }));
+
 	/** Choosing the files is the submit. */
 	function filesChosen() {
 		uploadForm?.requestSubmit();
@@ -92,80 +98,103 @@
 	}
 </script>
 
-<div class="space-y-4">
-	<!--
-		The room's own bar, so this page has the header every other one has:
-		it stays at the top with a surface under it while the grid scrolls, and
-		the arrow where a room shows its glyph goes back to the albums.
-	-->
-	<RoomBar title={data.album.name} back={resolve('/media/gallery')} backLabel="Back to the albums">
-		{#snippet actions()}
-			<span class="text-sm text-gray-500 tabular-nums">{data.pictures.length}</span>
+{#snippet targets(nodes: PageServerData['tree'], depth: number)}
+	{#each nodes as node (node.id)}
+		{#if node.id !== data.album.id}
+			<span class="flex items-center gap-1">
+				{#if node.children.length > 0}
+					<button
+						class="icon-btn"
+						title={t('gallery.id.whatIsInside', {
+							show: opened.has(node.id) ? t('ui.hide') : t('ui.show'),
+							name: node.name
+						})}
+						aria-label={t('gallery.id.whatIsInside', {
+							show: opened.has(node.id) ? t('ui.hide') : t('ui.show'),
+							name: node.name
+						})}
+						aria-expanded={opened.has(node.id)}
+						onclick={() => toggle(node.id)}
+					>
+						<Icon name={opened.has(node.id) ? 'chevron-down' : 'chevron-right'} size={14} />
+					</button>
+				{/if}
+				<span
+					role="listitem"
+					class="rounded-full border px-2.5 py-1 text-sm transition-colors {dropTarget === node.id
+						? 'border-gray-900 bg-gray-100 text-gray-900'
+						: 'border-gray-200 text-gray-700'}"
+					ondragover={(e) => {
+						e.preventDefault();
+						dropTarget = node.id;
+					}}
+					ondragleave={() => (dropTarget = null)}
+					ondrop={(e) => dropOn(node.id, e)}
+				>
+					{leafName(node.name)}
+				</span>
+			</span>
+		{/if}
+		{#if opened.has(node.id)}
+			{@render targets(node.children, depth + 1)}
+		{/if}
+	{/each}
+{/snippet}
+
+<!--
+	One surface: where you are and what narrows it along the top, the albums a
+	picture can be dragged to under that, then the folders in this album and
+	its pictures.
+-->
+<RoomSurface>
+	{#snippet tools()}
+		<div class="flex w-full flex-wrap items-center gap-2">
+			<!-- The way back to the albums, where a room shows its glyph. -->
+			<a
+				href={resolve('/media/gallery')}
+				class="icon-btn shrink-0"
+				title={t('gallery.id.backToTheAlbums')}
+				aria-label={t('gallery.id.backToTheAlbums')}
+			>
+				<Icon name="arrow-left" />
+			</a>
+			<h2 class="min-w-0 truncate text-sm font-semibold text-gray-900">{data.album.name}</h2>
+			<span class="tabular shrink-0 text-xs text-gray-500">
+				{t('gallery.picturesCount', { count: data.pictures.length })}
+			</span>
+			<!-- The same tag filter the diary and the task list use. -->
+			{#if albumTags.length > 0 || isTagFiltering(tagFilter.current)}
+				<span class="ml-auto">
+					<TagFilter
+						tags={albumTags}
+						value={tagFilter.current}
+						onchange={(next) => (tagFilter.current = next)}
+						name="gallery-tags"
+					/>
+				</span>
+			{/if}
+			<!-- The room's verb opens this; the form is what posts the files. -->
 			<form
 				method="post"
 				action="?/upload"
 				enctype="multipart/form-data"
 				bind:this={uploadForm}
+				class="hidden"
 				use:enhance
 			>
-				<label class="btn btn-primary btn-sm cursor-pointer">
-					<Icon name="plus" />
-					{t('gallery.id.addPictures')}
-					<input
-						type="file"
-						name="file"
-						accept="image/png,image/jpeg,image/gif,image/webp"
-						multiple
-						class="hidden"
-						onchange={filesChosen}
-					/>
-				</label>
+				<input
+					bind:this={fileInput}
+					type="file"
+					name="file"
+					accept="image/png,image/jpeg,image/gif,image/webp"
+					multiple
+					onchange={filesChosen}
+				/>
 			</form>
-		{/snippet}
-	</RoomBar>
+		</div>
+	{/snippet}
 
 	<FormError message={form?.message} />
-
-	{#snippet targets(nodes: PageServerData['tree'], depth: number)}
-		{#each nodes as node (node.id)}
-			{#if node.id !== data.album.id}
-				<span class="flex items-center gap-1" style="padding-left: {depth * 0.75}rem">
-					{#if node.children.length > 0}
-						<button
-							class="icon-btn"
-							aria-label={t('gallery.id.whatIsInside', {
-								show: opened.has(node.id) ? t('ui.hide') : t('ui.show'),
-								name: node.name
-							})}
-							aria-expanded={opened.has(node.id)}
-							onclick={() => toggle(node.id)}
-						>
-							<Icon name={opened.has(node.id) ? 'chevron-down' : 'chevron-right'} size={14} />
-						</button>
-					{:else}
-						<span class="size-4 shrink-0"></span>
-					{/if}
-					<span
-						role="listitem"
-						class="rounded-full border px-2.5 py-1 text-sm transition-colors {dropTarget === node.id
-							? 'border-gray-900 bg-gray-100 text-gray-900'
-							: 'border-gray-200 text-gray-700'}"
-						ondragover={(e) => {
-							e.preventDefault();
-							dropTarget = node.id;
-						}}
-						ondragleave={() => (dropTarget = null)}
-						ondrop={(e) => dropOn(node.id, e)}
-					>
-						{leafName(node.name)}
-					</span>
-				</span>
-			{/if}
-			{#if opened.has(node.id)}
-				{@render targets(node.children, depth + 1)}
-			{/if}
-		{/each}
-	{/snippet}
 
 	<!--
 		Dragging is a mouse, so this is a mouse's row.
@@ -176,36 +205,26 @@
 		finger can do.
 	-->
 	{#if others.length > 0 && data.pictures.length > 0}
-		<div class="mouse-only text-xs text-gray-500">
-			<p class="mb-1">{t('gallery.id.dragAPictureOntoAn')}</p>
-			<div class="flex flex-col gap-1">
+		<div class="mouse-only border-b border-gray-200 px-4 py-3 text-xs text-gray-500">
+			<p class="mb-2">{t('gallery.id.dragAPictureOntoAn')}</p>
+			<div class="flex flex-wrap items-center gap-2">
 				{@render targets(data.tree, 0)}
 			</div>
 		</div>
 	{/if}
 
-	<!-- The same tag filter the diary and the task list use. -->
-	{#if albumTags.length > 0 || isTagFiltering(tagFilter.current)}
-		<div class="flex">
-			<TagFilter
-				tags={albumTags}
-				value={tagFilter.current}
-				onchange={(next) => (tagFilter.current = next)}
-				name="gallery-tags"
-			/>
-		</div>
-	{/if}
-
 	<!--
 		The folders in this album, above its pictures.
-		
+
 		Without these an album was a flat wall and the only way to the folder
 		inside it was back out to the index — and the grid below is everything
 		beneath this album, so a parent whose pictures all live in subfolders is
 		the wall somebody expects rather than an empty page with a count on it.
 	-->
 	{#if data.folders.length > 0}
-		<ul class="grid grid-cols-3 gap-1.5 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6">
+		<ul
+			class="grid grid-cols-3 gap-1.5 border-b border-gray-200 p-4 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6"
+		>
 			{#each data.folders as folder (folder.id)}
 				<li>
 					<a href="{resolve('/media/gallery')}/{folder.id}" class="block">
@@ -227,7 +246,7 @@
 							<span class="min-w-0 flex-1 truncate text-xs font-medium text-gray-700">
 								{leafName(folder.name)}
 							</span>
-							<span class="text-xs text-gray-400 tabular-nums">{folder.count}</span>
+							<span class="text-xs text-gray-500 tabular-nums">{folder.count}</span>
 						</span>
 					</a>
 				</li>
@@ -244,7 +263,7 @@
 			})}
 		/>
 	{:else}
-		<ul class="grid grid-cols-3 gap-1.5 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6">
+		<ul class="grid grid-cols-3 gap-1.5 p-4 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6">
 			{#each shown as picture (picture.id)}
 				<li>
 					<button
@@ -269,7 +288,7 @@
 			{/each}
 		</ul>
 	{/if}
-</div>
+</RoomSurface>
 
 <!-- The hidden form the drop gesture posts through. -->
 <form method="post" action={dropAction} bind:this={dropForm} class="hidden" use:enhance>

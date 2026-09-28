@@ -564,9 +564,17 @@ describe('the companion services card', () => {
 		expect(reminders.detail).toContain('last asked this app');
 		expect(reminders.fix).toBe('');
 
-		// Every row that is not fine ends with the command that fixes it.
-		for (const row of rows.filter((r) => !r.ok)) {
+		// Every row that is stopped ends with the command that fixes it.
+		for (const row of rows.filter((r) => r.status === 'stopped')) {
 			expect(row.fix, `${row.label} has no fix command`).toContain('systemctl');
+		}
+
+		// With no mail transport the review mail sends nothing, so it is off —
+		// never "running", whatever its timer is doing.
+		const mail = rows.find((r) => r.label === 'app.weeklyReviewMail');
+		if (mail && !process.env.SMTP_HOST) {
+			expect(mail.status).toBe('off');
+			expect(mail.ok).toBe(false);
 		}
 	});
 });

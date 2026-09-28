@@ -1,0 +1,111 @@
+[
+	{
+		"ask": "Start a notebook for the kitchen, under Home.",
+		"tool": "add_notebook",
+		"arguments": { "title": "Kitchen", "folder": "Home" },
+		"answer": { "id": 1 }
+	},
+	{
+		"ask": "Add ‘descale the kettle’ to the kitchen notebook.",
+		"tool": "add_task",
+		"arguments": { "title": "Descale the kettle", "notebookId": 1 },
+		"answer": { "id": 1, "before": null, "after": { "id": 1, "title": "Descale the kettle" } }
+	},
+	{
+		"ask": "And ‘fix the cupboard hinge’.",
+		"tool": "add_task",
+		"arguments": { "title": "Fix the cupboard hinge", "notebookId": 1 },
+		"answer": { "id": 2 }
+	},
+	{
+		"ask": "The hinge is urgent.",
+		"tool": "change_task",
+		"arguments": { "id": 2, "urgency": 5 },
+		"answer": { "after": { "id": 2, "ratings": { "urgency": 5 } } },
+		"note": "Only `id` and the field being changed are sent; everything left out keeps what it had."
+	},
+	{
+		"ask": "What should I do next?",
+		"tool": "up_next",
+		"arguments": {},
+		"answer": {
+			"items": [{ "id": 2, "title": "Fix the cupboard hinge" }],
+			"count": 1,
+			"total": 2,
+			"remaining": 1,
+			"nextOffset": 1
+		},
+		"note": "One task by default. `remaining` and `nextOffset` are there because more is left: passing `offset: 1` reads the next one."
+	},
+	{
+		"ask": "Actually, the hinge can wait — forget the urgency.",
+		"tool": "change_task",
+		"arguments": { "id": 2, "urgency": null },
+		"answer": {
+			"before": { "ratings": { "urgency": 5 } },
+			"after": { "ratings": { "urgency": null } }
+		},
+		"note": "`null` clears a rating; leaving `urgency` out would have kept it."
+	},
+	{
+		"ask": "I descaled the kettle.",
+		"tool": "finish_task",
+		"arguments": { "id": 1 },
+		"answer": { "ok": true, "after": { "id": 1, "status": "done" } }
+	},
+	{
+		"ask": "Which kitchen tasks are still open?",
+		"tool": "tasks",
+		"arguments": { "notebookId": 1, "status": "open", "fields": "title,status" },
+		"answer": {
+			"items": [{ "id": 2, "title": "Fix the cupboard hinge", "status": "todo" }],
+			"count": 1,
+			"total": 1
+		},
+		"note": "No `nextOffset` in the answer means there is nothing more to read."
+	},
+	{
+		"ask": "Note down that the oven runs hot.",
+		"tool": "write_entry",
+		"arguments": { "content": "The oven runs about 20° hot — set it lower than the recipe says." },
+		"answer": { "id": 1 }
+	},
+	{
+		"ask": "File that note under the kitchen notebook.",
+		"tool": "move_notes",
+		"arguments": { "ids": [1], "notebookId": 1 },
+		"answer": { "ok": true, "moved": 1 }
+	},
+	{
+		"ask": "What is labelled kitchen?",
+		"tool": "tasks",
+		"arguments": { "tag": "kitchen" },
+		"answer": {
+			"count": 0,
+			"total": 0,
+			"warning": "`tag` is deprecated and will be removed in 0.185.0. …"
+		},
+		"note": "`tag` is the old spelling of `tags`. It still works until the release named, and the answer says so."
+	},
+	{
+		"ask": "Make the hinge a 3 for urgency.",
+		"tool": "change_task",
+		"arguments": { "id": 2, "urgncy": 3 },
+		"refused": "`urgncy` is not an argument this tool takes.",
+		"note": "A misspelt argument is named back, and nothing is written."
+	},
+	{
+		"ask": "Put ‘buy light bulbs’ on the list.",
+		"tool": "add_task",
+		"arguments": { "title": "Buy light bulbs", "requestId": "5f1c-bulbs" },
+		"answer": { "id": 3 },
+		"note": "`requestId` is any string the assistant picks for this one call."
+	},
+	{
+		"ask": "(No answer came back, so the assistant sends the same call again.)",
+		"tool": "add_task",
+		"arguments": { "title": "Buy light bulbs", "requestId": "5f1c-bulbs" },
+		"answer": { "id": 3, "replayed": true },
+		"note": "Same `requestId` and arguments within a day: the first answer comes back, marked `replayed`, and there is still one task."
+	}
+]

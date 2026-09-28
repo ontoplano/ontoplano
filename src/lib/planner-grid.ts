@@ -117,6 +117,8 @@ export interface GridSlotInput {
 	active: boolean;
 	/** How often it comes round. Absent is weekly, which is what it used to be. */
 	recurrence?: string | null;
+	/** The notebook it is filed under, drawn small under the time. */
+	notebookTitle?: string | null;
 }
 
 export interface GridExceptionalInput {
@@ -135,6 +137,8 @@ export interface GridExceptionalInput {
 	label?: string | null;
 	active: boolean;
 	status?: string;
+	/** The notebook it is filed under, drawn small under the time. */
+	notebookTitle?: string | null;
 }
 
 export interface SlotPlacement {
@@ -348,7 +352,8 @@ function slotToEvent(
 			label: slot.label ?? '',
 			active: slot.active,
 			suppressed,
-			recurrence: slot.recurrence ?? null
+			recurrence: slot.recurrence ?? null,
+			notebookTitle: slot.notebookTitle ?? null
 		}
 	};
 }
@@ -379,7 +384,8 @@ function exceptionalToEvent(
 			categoryName: categoryLabel(categories, effectiveCategoryId(exc)),
 			activityId: exc.activityId,
 			label: exc.label ?? '',
-			status: exc.status ?? ''
+			status: exc.status ?? '',
+			notebookTitle: exc.notebookTitle ?? null
 		}
 	};
 }
@@ -531,8 +537,27 @@ function escapeHtml(value: string): string {
 }
 
 /** `09:00 – 12:00`, in the same 24-hour reading as the gutter beside it. */
-function clockRange(event: GridEventLike): string {
-	return `${formatClock(event.start)}\u2009\u2013\u2009${formatClock(event.end)}`;
+function clockRange(event: GridEventLike, hour12 = false, locale?: string): string {
+	if (!hour12) return `${formatClock(event.start)}\u2009\u2013\u2009${formatClock(event.end)}`;
+	/*
+	 * On a twelve-hour clock the half of the day is said once, at the end,
+	 * unless the block crosses noon or midnight: "7:30 – 8:15 AM".
+	 */
+	const part = (d: Date) =>
+		new Intl.DateTimeFormat(locale, { hour: 'numeric', minute: '2-digit', hour12: true })
+			.formatToParts(d)
+			.reduce(
+				(acc, p) => {
+					if (p.type === 'dayPeriod') acc.period = p.value;
+					else acc.clock += p.value;
+					return acc;
+				},
+				{ clock: '', period: '' }
+			);
+	const a = part(event.start);
+	const b = part(event.end);
+	const from = a.period === b.period ? a.clock.trim() : `${a.clock.trim()} ${a.period}`;
+	return `${from}\u2009\u2013\u2009${b.clock.trim()} ${b.period}`;
 }
 
 export interface GridEventDetail {
@@ -544,6 +569,8 @@ export interface GridEventDetail {
 	state: string | null;
 	/** How often it comes back, when that is not simply every week. */
 	repeats: string | null;
+	/** The notebook it is filed under, or null. */
+	notebookTitle: string | null;
 }
 
 // Everything a block knows about itself, for the hover card — the way to read a slot
@@ -551,7 +578,11 @@ export interface GridEventDetail {
 /** What a block with no title of its own is called. */
 export const UNTITLED_BLOCK: PlainKey = 'tasks.plan.untitledBlock';
 
-export function describeGridEvent(event: GridEventLike, t: Translate): GridEventDetail {
+export function describeGridEvent(
+	event: GridEventLike,
+	t: Translate,
+	clock: { hour12?: boolean; locale?: string } = {}
+): GridEventDetail {
 	const props = event.extendedProps ?? {};
 	const title = typeof event.title === 'string' && event.title ? event.title : t(UNTITLED_BLOCK);
 	const rawLabel = typeof props.label === 'string' ? props.label.trim() : '';
@@ -576,12 +607,16 @@ export function describeGridEvent(event: GridEventLike, t: Translate): GridEvent
 
 	return {
 		title,
-		timeText: `${formatClock(event.start)} – ${formatClock(event.end)}`,
+		timeText: clock.hour12
+			? clockRange(event, true, clock.locale)
+			: `${formatClock(event.start)} – ${formatClock(event.end)}`,
 		durationText: formatGridDuration(minutes),
 		categoryName: rawCategory || null,
 		label: rawLabel && rawLabel !== title ? rawLabel : null,
 		state,
-		repeats
+		repeats,
+		notebookTitle:
+			typeof props.notebookTitle === 'string' && props.notebookTitle ? props.notebookTitle : null
 	};
 }
 
@@ -640,6 +675,19 @@ export function baseGridOptions(
 		 * in the app rather than with a literal written here.
 		 */
 		twelveHour?: boolean;
+		/**
+		 * The notebook glyph's path, for the line a filed block carries.
+		 * Handed in because the icon set lives in a component, and this module
+		 * is plain TypeScript the tests import on their own.
+		 */
+		notebookGlyph?: string;
+		/**
+		 * What the corner mark is called, as a control: tick it, untick it —
+		 * naming the block, since a week of them each carries one.
+		 */
+		markLabels?: { done: (title: string) => string; undone: (title: string) => string };
+		/** The first column of a month, Sunday-based as the library counts. */
+		firstDay?: number;
 	} = {}
 ): Calendar.Options {
 	const slotHeight = opts.slotHeight ?? GRID_ZOOM_LEVELS[GRID_DEFAULT_ZOOM_INDEX];
@@ -655,6 +703,18 @@ export function baseGridOptions(
 	const markOf = opts.markOf;
 	const locale = opts.locale;
 	const hour12 = opts.twelveHour ?? false;
+	const notebookGlyph = opts.notebookGlyph ?? '';
+
+	/** The notebook line under the time, when the block is filed under one. */
+	const notebookHtml = (info: { event: GridEventLike }) => {
+		const title = (info.event.extendedProps as { notebookTitle?: unknown } | undefined)
+			?.notebookTitle;
+		if (typeof title !== 'string' || !title) return '';
+		const glyph = notebookGlyph
+			? `<svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="${notebookGlyph}"/></svg>`
+			: '';
+		return `<span class="ec-event-notebook">${glyph}<span>${escapeHtml(title)}</span></span>`;
+	};
 
 	/** A block's own date, in the same `YYYY-MM-DD` the server speaks. */
 	const dateOf = (start: Date) =>
@@ -675,7 +735,11 @@ export function baseGridOptions(
 		if (!props.kind || typeof props.refId !== 'number') return '';
 		const mark = markOf(props.kind, props.refId, dateOf(info.event.start));
 		if (!mark) return '';
-		return `<span class="ec-event-mark ec-event-mark--${mark}" aria-hidden="true">${
+		const title = typeof info.event.title === 'string' ? info.event.title : '';
+		const said = escapeHtml(
+			(mark === 'done' ? opts.markLabels?.done(title) : opts.markLabels?.undone(title)) ?? ''
+		);
+		return `<span class="ec-event-mark ec-event-mark--${mark}" role="button" title="${said}" aria-label="${said}">${
 			mark === 'done' ? '✓' : '☐'
 		}</span>`;
 	};
@@ -695,7 +759,8 @@ export function baseGridOptions(
 		// arriving from the week.
 		duration: month ? { months: 1 } : { days },
 		date: parseLocalDate(fromStr),
-		firstDay: 1,
+		// The account's own first day, in the library's count (Sunday is 0).
+		firstDay: ((opts.firstDay ?? 1) % 7) as Calendar.dayOfWeek,
 		height: '100%',
 		headerToolbar: { start: '', center: '', end: '' },
 		eventTimeFormat: { hour: hour12 ? 'numeric' : '2-digit', minute: '2-digit', hour12 },
@@ -725,7 +790,11 @@ export function baseGridOptions(
 		// Whatever clock the account reads, matching every other time in the
 		// app. 24-hour is also narrower, which is what lets the hour gutter
 		// shrink on a phone — a 12-hour gutter needs the extra room and gets it.
-		slotLabelFormat: { hour: hour12 ? 'numeric' : '2-digit', minute: '2-digit', hour12 },
+		// "7 AM" on a twelve-hour clock and "07:00" on a twenty-four: the
+		// narrowest honest label either way, since the gutter is on every row.
+		slotLabelFormat: hour12
+			? { hour: 'numeric', hour12: true }
+			: { hour: '2-digit', minute: '2-digit', hour12: false },
 		/*
 		 * A month cell says what, not when.
 		 *
@@ -764,7 +833,8 @@ export function baseGridOptions(
 					return {
 						html:
 							`<span class="ec-event-title">${title}</span>` +
-							`<span class="ec-event-time">${escapeHtml(clockRange(info.event))}</span>` +
+							`<span class="ec-event-time">${escapeHtml(clockRange(info.event, hour12, locale))}</span>` +
+							notebookHtml(info as { event: GridEventLike }) +
 							mark
 					};
 				},

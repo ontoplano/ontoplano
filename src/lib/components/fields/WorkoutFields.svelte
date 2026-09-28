@@ -44,7 +44,7 @@
 		editing?: Editing;
 		categories?: { id: number; name: string }[];
 		measures?: Measure[];
-		notebooks?: { id: number; title: string }[];
+		notebooks?: { id: number; title: string; modules: readonly string[] }[];
 		startingNotebook?: number | null;
 	} = $props();
 
@@ -102,7 +102,12 @@
 		<NumberBox name="minutes" min="1" value={editing?.minutes ?? ''} placeholder="45" />
 	</Field>
 
-	<NotebookField {notebooks} value={editing?.notebookId ?? startingNotebook} span={6} />
+	<NotebookField
+		{notebooks}
+		holds="workouts"
+		value={editing?.notebookId ?? startingNotebook}
+		span={6}
+	/>
 
 	<Field label={t('health.workouts.plan')} span={12}>
 		<textarea

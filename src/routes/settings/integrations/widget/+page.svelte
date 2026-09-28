@@ -3,15 +3,19 @@
 	import { enhance } from '$lib/enhance';
 	import { resolve } from '$app/paths';
 	import Banner from '$lib/components/Banner.svelte';
-	import Card from '$lib/components/Card.svelte';
+	import RoomSurface from '$lib/components/RoomSurface.svelte';
+	import SettingGroup from '$lib/components/SettingGroup.svelte';
+	import SettingRow from '$lib/components/SettingRow.svelte';
+	import CopyBlock from '$lib/components/CopyBlock.svelte';
 	import Icon from '$lib/components/Icon.svelte';
 	import { isStandalone } from '$lib/platform';
-	import type { ActionData } from './$types';
+	import type { ActionData, PageServerData } from './$types';
+	import NotebookWidgets from './NotebookWidgets.svelte';
 	import { useT } from '$lib/i18n';
 
 	const t = useT();
 
-	let { form }: { form: ActionData } = $props();
+	let { data, form }: { data: PageServerData; form: ActionData } = $props();
 
 	/**
 	 * Where the phone app listens. Any app on the phone could claim this scheme,
@@ -38,19 +42,6 @@
 	 */
 	const trapped = $derived(browser && isStandalone());
 
-	let copied = $state(false);
-
-	async function copy(value: string) {
-		try {
-			await navigator.clipboard.writeText(value);
-			copied = true;
-			setTimeout(() => (copied = false), 2000);
-		} catch {
-			// A browser that refuses the clipboard is not an error worth a banner;
-			// the key is on screen and can be selected.
-		}
-	}
-
 	/**
 	 * The navigation happens on its own, but a link stays on screen: a browser
 	 * that refuses a page-initiated scheme change still honours a tap. Not
@@ -61,89 +52,97 @@
 	});
 </script>
 
-{#if form?.message && !form?.success}
-	<Banner kind="error" message={form.message} />
-{/if}
-
-<Card
-	title={t('settings.integrations.widget.homeScreenWidget')}
-	description={t('settings.integrations.widget.theWidgetOnThisPhone')}
->
-	{#if handoff && form?.token}
-		<div class="space-y-3">
-			{#if trapped}
-				<Banner
-					kind="warning"
-					message={t('settings.integrations.widget.openedInsideAppLinkComes')}
-				/>
-			{:else}
-				<Banner kind="success" message={t('settings.integrations.widget.connectedTakingYouBack')} />
-			{/if}
-
-			<!--
-				The key, shown as well as sent.
-
-				The link is at the mercy of which app Android decides should answer
-				it, and on a phone with this app installed it has answered itself.
-				Pasting a key needs no intent, no chooser and no browser, so it is
-				the way that cannot fail — the widget's setup screen has a box for it.
-			-->
-			<div>
-				<p class="eyebrow mb-1 text-gray-600">
-					{t('settings.integrations.widget.theKeyForThisWidget')}
-				</p>
-				<div class="flex items-center gap-2">
-					<code
-						class="tabular flex-1 border border-gray-300 bg-gray-50 px-3 py-2 text-xs break-all"
-					>
-						{form.token}
-					</code>
-					<button type="button" onclick={() => copy(form.token!)} class="btn btn-sm">
-						<Icon name="copy" />
-						{copied ? 'Copied' : 'Copy'}
-					</button>
-				</div>
-				<p class="mt-1 text-xs text-gray-500">
-					{t('settings.integrations.widget.pasteItInto')}
-					<strong>{t('settings.integrations.widget.orPasteTheKey')}</strong>
-					{t('settings.integrations.widget.onTheWidgetSSetupScreen')}
-				</p>
-			</div>
-
-			{#if !trapped}
-				<!-- eslint-disable svelte/no-navigation-without-resolve -- an app scheme, not a route -->
-				<p class="text-sm text-gray-500">
-					{t('settings.integrations.widget.ifNothingHappens')}
-					<a href={handoff} class="font-medium text-gray-900 underline"
-						>{t('settings.integrations.widget.finishInTheApp')}</a
-					>.
-				</p>
-				<!-- eslint-enable svelte/no-navigation-without-resolve -->
-			{/if}
-		</div>
-	{:else}
-		{#if trapped}
-			<div class="mb-3">
-				<Banner
-					kind="warning"
-					message={t('settings.integrations.widget.openedInsideAppRatherThan')}
-				/>
-			</div>
-		{/if}
-
-		<form method="post" action="?/connect" use:enhance>
-			<button class="btn btn-primary"
-				>{t('settings.integrations.widget.connectThisPhoneSWidget')}</button
-			>
-		</form>
-		<p class="mt-3 text-sm text-gray-500">
-			{t('settings.integrations.widget.theWidgetComesWithThe')}
-		</p>
-		<p class="mt-2 text-sm text-gray-500">
-			{t('settings.integrations.widget.youCanDisconnectItAny')}
-			<a href={resolve('/settings/integrations')} class="font-medium text-gray-900 underline"
-				>{t('settings.integrations.widget.integrations')}</a
-			>.
-		</p>
+<div class="space-y-4">
+	{#if form?.message && !form?.success && !('created' in form) && !('updated' in form)}
+		<Banner kind="error" message={form.message} />
 	{/if}
-</Card>
+
+	<!-- One surface, a subject per band — the shape every settings screen
+	     shares. See `SettingGroup` and `SettingRow`. -->
+	<RoomSurface>
+		<NotebookWidgets widgets={data.widgets} notebooks={data.notebooks} {form} />
+
+		<SettingGroup
+			title={t('settings.integrations.widget.homeScreenWidget')}
+			description={t('settings.integrations.widget.theWidgetOnThisPhone')}
+		>
+			{#if handoff && form?.token}
+				<div class="space-y-3 px-4 py-3">
+					{#if trapped}
+						<Banner
+							kind="warning"
+							message={t('settings.integrations.widget.openedInsideAppLinkComes')}
+						/>
+					{:else}
+						<Banner
+							kind="success"
+							message={t('settings.integrations.widget.connectedTakingYouBack')}
+						/>
+					{/if}
+
+					<!--
+						The key, shown as well as sent.
+
+						The link is at the mercy of which app Android decides should
+						answer it, and on a phone with this app installed it has answered
+						itself. Pasting a key needs no intent, no chooser and no browser,
+						so it is the way that cannot fail — the widget's setup screen has
+						a box for it.
+					-->
+					<div>
+						<p class="eyebrow mb-1 text-gray-600">
+							{t('settings.integrations.widget.theKeyForThisWidget')}
+						</p>
+						<CopyBlock text={form.token} label={t('ui.copy')} />
+						<p class="mt-1 text-xs text-gray-500">
+							{t('settings.integrations.widget.pasteItInto')}
+							<strong>{t('settings.integrations.widget.orPasteTheKey')}</strong>
+							{t('settings.integrations.widget.onTheWidgetSSetupScreen')}
+						</p>
+					</div>
+
+					{#if !trapped}
+						<!-- eslint-disable svelte/no-navigation-without-resolve -- an app scheme, not a route -->
+						<p class="text-sm text-gray-500">
+							{t('settings.integrations.widget.ifNothingHappens')}
+							<a href={handoff} class="font-medium text-gray-900 underline"
+								>{t('settings.integrations.widget.finishInTheApp')}</a
+							>.
+						</p>
+						<!-- eslint-enable svelte/no-navigation-without-resolve -->
+					{/if}
+				</div>
+			{:else}
+				{#if trapped}
+					<div class="px-4 py-3">
+						<Banner
+							kind="warning"
+							message={t('settings.integrations.widget.openedInsideAppRatherThan')}
+						/>
+					</div>
+				{/if}
+				<SettingRow
+					label={t('settings.integrations.widget.connectThisPhoneSWidget')}
+					hint={t('settings.integrations.widget.theWidgetComesWithThe')}
+				>
+					<p class="mt-1 text-sm text-gray-500">
+						{t('settings.integrations.widget.youCanDisconnectItAny')}
+						<a
+							href={resolve('/settings/integrations/connections')}
+							class="font-medium text-gray-900 underline"
+							>{t('settings.integrations.widget.integrations')}</a
+						>.
+					</p>
+					{#snippet control()}
+						<form method="post" action="?/connect" use:enhance>
+							<button class="btn btn-sm">
+								<Icon name="phone" />
+								{t('settings.integrations.widget.connect')}
+							</button>
+						</form>
+					{/snippet}
+				</SettingRow>
+			{/if}
+		</SettingGroup>
+	</RoomSurface>
+</div>

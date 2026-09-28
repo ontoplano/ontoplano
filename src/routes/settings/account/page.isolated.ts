@@ -36,7 +36,7 @@ export async function load({ url }: IsolatedEvent) {
 		emailChangeAllowed: false,
 		emailConfigured: false,
 		weeklyReviewMail: false,
-		weeklyReviewHour: '07:00',
+		weeklyReviewHour: '07',
 		sessions: [],
 		// No plan to limit it and nobody else's server to protect: the export
 		// is a file this device writes for the person holding it.

@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Half an hour is the shortest period Android honours for a widget that wakes
+    itself; the refresh button is there for anything sooner.
+-->
+<appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
+    android:configure="app.ontoplano.isolated.NotebookWidgetSetup"
+    android:description="@string/notebook_widget_description"
+    android:initialLayout="@layout/notebook_widget"
+    android:minWidth="180dp"
+    android:minHeight="110dp"
+    android:minResizeWidth="110dp"
+    android:minResizeHeight="80dp"
+    android:resizeMode="horizontal|vertical"
+    android:targetCellWidth="3"
+    android:targetCellHeight="3"
+    android:updatePeriodMillis="1800000"
+    android:widgetCategory="home_screen"
+    android:widgetFeatures="reconfigurable" />

@@ -1,7 +1,6 @@
 import type { IsolatedEvent } from '$lib/isolated/routes';
 import { error } from '@sveltejs/kit';
 import { buildCtx } from '$lib/services/ctx';
-import { host } from '$lib/services/host';
 import { NotFoundError } from '$lib/services/errors';
 import { contentsOf, getNotebook } from '$lib/services/notebooks';
 import { tagsInNotebook } from '$lib/services/tags';
@@ -26,8 +25,7 @@ export const load = async ({ locals, params }: IsolatedEvent) => {
 			contents: contentsOf(ctx, id),
 			// The labels on what is filed here, with what carries each of them.
 			notebookTags: tagsInNotebook(ctx.userId, id),
-			...notebookPanelData(ctx),
-			onFamilyPlan: host.familyUserIds(ctx.userId).length > 1
+			...notebookPanelData(ctx, id)
 		};
 	} catch (e) {
 		// Somebody else's notebook and one that does not exist answer the same

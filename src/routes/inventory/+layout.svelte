@@ -4,6 +4,7 @@
 	import Modal from '$lib/components/Modal.svelte';
 	import TabbedRoom from '$lib/components/TabbedRoom.svelte';
 	import { formatMoney } from '$lib/money';
+	import { inventoryPanels } from '$lib/inventory-panels.svelte';
 	import type { Snippet } from 'svelte';
 	import type { LayoutServerData } from './$types';
 	import { useT } from '$lib/i18n';
@@ -41,6 +42,27 @@
 			it is the trip — and it belongs to the room rather than to either
 			tab, because it is assembled from both.
 		-->
+		<!-- The room's own settings, beside its name: they describe both tabs,
+		     so they are not a control of either tab's list. Words where there
+		     is room for them, the glyph alone on a phone. -->
+		<button
+			class="btn btn-sm"
+			onclick={() => (inventoryPanels.categories = true)}
+			title={t('inventory.categories')}
+			aria-label={t('inventory.categories')}
+		>
+			<Icon name="blocks" />
+			<span class="hidden sm:inline">{t('inventory.categories')}</span>
+		</button>
+		<button
+			class="btn btn-sm"
+			onclick={() => (inventoryPanels.attributes = true)}
+			title={t('inventory.attributes')}
+			aria-label={t('inventory.attributes')}
+		>
+			<Icon name="sliders" />
+			<span class="hidden sm:inline">{t('inventory.attributes')}</span>
+		</button>
 		<button class="btn btn-sm" onclick={() => (showRun = true)}>
 			<Icon name="shopping" />
 			{t('inventory.shoppingList2')}

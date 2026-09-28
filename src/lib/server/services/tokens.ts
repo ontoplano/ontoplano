@@ -1,4 +1,5 @@
 import { createHash, randomBytes, timingSafeEqual } from 'node:crypto';
+import { withNeededReads } from '$lib/scope-groups';
 import { and, desc, eq, isNull } from 'drizzle-orm';
 
 import { db } from '$lib/db/index.js';
@@ -303,6 +304,8 @@ export function createToken(
 		)
 	];
 	if (scopes.length === 0) throw new ForbiddenError({ key: 'errors.tokens.atLeastOneValidScope' });
+	// Writing a room needs reading it; see `readNeededBy`.
+	scopes.splice(0, scopes.length, ...withNeededReads(scopes, ALL_SCOPES));
 
 	/*
 	 * A calendar link stands alone, and it is refused rather than trimmed.
@@ -392,6 +395,41 @@ function confinementFrom(
 	return { kind, id };
 }
 
+/**
+ * Change what a live key may read and where, keeping the key itself.
+ *
+ * For a key somebody cannot re-enter: a home-screen widget holds its key and
+ * nothing else, so pointing the widget at another notebook has to move the key
+ * rather than mint a new one the phone would never hear about. The scopes and
+ * the confinement are checked exactly as `createToken` checks them.
+ */
+export function reshapeToken(
+	ctx: Ctx,
+	id: number,
+	input: { scopes: Scope[]; confinedKind?: unknown; confinedId?: unknown }
+): void {
+	const scopes = withNeededReads(
+		[...new Set(input.scopes)].filter((s) => (ALL_SCOPES as string[]).includes(s)),
+		ALL_SCOPES
+	);
+	if (scopes.length === 0) throw new ForbiddenError({ key: 'errors.tokens.atLeastOneValidScope' });
+	if (scopes.includes('calendar:read'))
+		throw new ForbiddenError({ key: 'errors.tokens.aCalendarLinkReads' });
+	const confinement = confinementFrom(ctx, input);
+
+	const res = db
+		.update(apiTokens)
+		.set({
+			scopes: scopes.join(','),
+			confinedKind: confinement?.kind ?? null,
+			confinedId: confinement?.id ?? null,
+			updatedAt: stamps(ctx).updatedAt
+		})
+		.where(and(eq(apiTokens.id, id), eq(apiTokens.userId, ctx.userId), isNull(apiTokens.revokedAt)))
+		.run();
+	if (res.changes === 0) throw new NotFoundError('Token');
+}
+
 export interface TokenSummary {
 	id: number;
 	name: string;
@@ -438,7 +476,7 @@ export function listTokens(ctx: Ctx): TokenSummary[] {
 			id: t.id,
 			name: t.name,
 			prefix: t.prefix,
-			scopes: t.scopes.split(',').filter(Boolean) as Scope[],
+			scopes: withNeededReads(t.scopes.split(',').filter(Boolean) as Scope[], ALL_SCOPES),
 			plaintext: t.plaintext,
 			confinement: confinementOf(t.confinedKind, t.confinedId),
 			lastUsedAt: t.lastUsedAt,
@@ -516,7 +554,8 @@ export function authenticateToken(plaintext: string, now: Date): AuthenticatedTo
 	return {
 		userId: row.userId,
 		tokenId: row.id,
-		scopes: row.scopes.split(',').filter(Boolean) as Scope[],
+		// Keys minted before writing needed reading get it here too.
+		scopes: withNeededReads(row.scopes.split(',').filter(Boolean) as Scope[], ALL_SCOPES),
 		confinement: confinementOf(row.confinedKind, row.confinedId)
 	};
 }

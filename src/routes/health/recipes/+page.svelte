@@ -1,7 +1,10 @@
 <script lang="ts">
 	import NumberBox from '$lib/components/NumberBox.svelte';
+	import ShowingCount from '$lib/components/ShowingCount.svelte';
+	import SearchField from '$lib/components/SearchField.svelte';
 	import { setRoomAction } from '$lib/room-action.svelte';
-	import RoomToolbar from '$lib/components/RoomToolbar.svelte';
+	import RoomSurface from '$lib/components/RoomSurface.svelte';
+	import FilterBar from '$lib/components/FilterBar.svelte';
 	import { getAction, keyFor } from '$lib/shortcuts';
 	import OneLine from '$lib/components/OneLine.svelte';
 	import { enhance } from '$lib/enhance';
@@ -28,10 +31,28 @@
 	/** While the server is fetching somebody else's page, which takes a moment. */
 	let importing = $state(false);
 	let onlyMakeable = $state(false);
+	let looking = $state('');
 
-	const visible = $derived(
-		onlyMakeable ? data.recipes.filter((r) => r.missing === 0) : data.recipes
-	);
+	/** Where "put it on a day" starts, before anybody changes it. */
+	const DEFAULT_START = '19:00';
+	const DEFAULT_MINUTES = 45;
+
+	const narrowed = $derived(onlyMakeable || looking.trim() !== '');
+	const makeable = $derived(data.recipes.filter((r) => r.missing === 0 && r.ingredients > 0));
+
+	const visible = $derived.by(() => {
+		const needle = looking.trim().toLowerCase();
+		return data.recipes.filter(
+			(r) =>
+				(!onlyMakeable || (r.missing === 0 && r.ingredients > 0)) &&
+				(needle === '' || r.title.toLowerCase().includes(needle))
+		);
+	});
+
+	function clearFilters() {
+		onlyMakeable = false;
+		looking = '';
+	}
 
 	function handleKeydown(e: KeyboardEvent) {
 		if (
@@ -62,32 +83,47 @@
 
 <svelte:window onkeydown={handleKeydown} />
 
-<div class="space-y-4">
-	<RoomToolbar>
-		{#snippet tools()}
-			{#if data.recipes.length > 0}
-				<button
-					onclick={() => (onlyMakeable = !onlyMakeable)}
-					aria-pressed={onlyMakeable}
-					class="btn btn-sm"
-				>
-					{onlyMakeable ? t('health.recipes.showAll') : t('health.recipes.whatICanMakeNow')}
-				</button>
-			{/if}
-		{/snippet}
-	</RoomToolbar>
+<FormError message={form?.message} />
 
-	<FormError message={form?.message} />
+<!-- The controls and the recipes are one object — see `RoomSurface` — with
+     the task list's strip along its top. -->
+<RoomSurface dataTour="recipe-list">
+	{#snippet tools()}
+		<FilterBar name="recipes" on={narrowed} onclear={clearFilters}>
+			{#snippet lead()}
+				<SearchField bind:value={looking} label={t('health.recipes.search')} />
+			{/snippet}
+			{#snippet count()}
+				<!-- Held open by the count of every recipe, so narrowing does not
+				     change its width. See `.count-slot`. -->
+				<ShowingCount
+					total={data.recipes.length}
+					shown={visible.length}
+					said={(count) => t('health.recipes.showingCount', { count })}
+				/>
+			{/snippet}
+			<!-- One label, whichever way it is set: pressed is what says it is on. -->
+			<button
+				onclick={() => (onlyMakeable = !onlyMakeable)}
+				aria-pressed={onlyMakeable}
+				class="btn btn-sm"
+			>
+				{t('health.recipes.canMakeCount', { count: makeable.length })}
+			</button>
+		</FilterBar>
+	{/snippet}
 
 	{#if !data.hasFoodCategory}
 		<!-- Without one, every ingredient field would refuse everything typed
 		     into it, which is a worse first impression than a sentence. -->
-		<Banner kind="warning">
-			{t('health.recipes.noFoodCategoryYet')}
-			<a href={resolve('/inventory/stock')} class="underline"
-				>{t('health.recipes.tickOneOnTheShopping')}</a
-			>
-		</Banner>
+		<div class="border-b border-gray-200 p-3">
+			<Banner kind="warning">
+				{t('health.recipes.noFoodCategoryYet')}
+				<a href={resolve('/inventory/stock')} class="underline"
+					>{t('health.recipes.tickOneOnTheShopping')}</a
+				>
+			</Banner>
+		</div>
 	{/if}
 
 	{#if data.recipes.length === 0}
@@ -104,40 +140,41 @@
 			{/snippet}
 		</EmptyState>
 	{:else if visible.length === 0}
-		<EmptyState icon="utensils" title={t('health.recipes.nothingYouCanMakeRight')}>
+		<EmptyState
+			icon="search"
+			title={onlyMakeable && !looking.trim()
+				? t('health.recipes.nothingYouCanMakeRight')
+				: t('health.recipes.noneMatch')}
+		>
 			{#snippet action()}
-				<button onclick={() => (onlyMakeable = false)} class="btn"
-					>{t('health.recipes.showAllRecipes')}</button
-				>
+				<button onclick={clearFilters} class="btn">{t('health.recipes.showAllRecipes')}</button>
 			{/snippet}
 		</EmptyState>
 	{:else}
 		<!--
-			One surface, and the recipes are its cells.
+			The recipes are cells of the surface: a hairline between rows on a
+			phone, and between columns once there is room for two.
 
-			Every recipe used to be a card of its own on the page's ground, which
-			at four recipes is four boxes floating in a field of background and at
-			twenty is a mosaic. The list is one thing, so it is one surface: a
-			hairline between rows down to the phone, and the same hairline between
-			columns once there is room for two of them. In the two-column layout
-			that line is a one-pixel grid gap with the surface showing through it,
-			which is why the surface is gray behind cells that are white.
+			The lines are each cell's own right and bottom edges, with the grid
+			pulled a pixel under the surface's border so the outermost ones
+			disappear into it. It was a one-pixel gap with a grey ground showing
+			through, which painted the empty end of a short last row solid grey.
 		-->
 		<div
-			class="divide-y divide-gray-200 border border-gray-200 bg-white shadow-card lg:grid lg:grid-cols-2 lg:gap-px lg:divide-y-0 lg:bg-gray-200 2xl:grid-cols-3"
-			data-tour="recipe-list"
+			class="divide-y divide-gray-200 lg:-mr-px lg:-mb-px lg:grid lg:grid-cols-2 lg:divide-y-0 2xl:grid-cols-3"
 		>
 			{#each visible as recipe (recipe.id)}
 				<!--
 					The card is a component, so a recipe filed under a notebook is the
-					same recipe this room shows — its picture, and what it needs that
-					the cupboard has not got. See `RecipeCard`.
+					same recipe this room shows. See `RecipeCard`.
 				-->
-				<RecipeCard {recipe} onplan={(one) => (planning = one)} />
+				<div class="border-gray-200 lg:border-r lg:border-b">
+					<RecipeCard {recipe} onplan={(one) => (planning = one)} />
+				</div>
 			{/each}
 		</div>
 	{/if}
-</div>
+</RoomSurface>
 
 <Modal bind:open={showForm} error={form?.message} title={t('health.recipes.newRecipe')}>
 	<!--
@@ -180,7 +217,7 @@
 				class="input min-w-0 flex-1"
 			/>
 			<button class="btn shrink-0" disabled={importing}>
-				{importing ? 'Reading…' : t('health.recipes.readIt')}
+				{importing ? t('health.recipes.reading') : t('health.recipes.readIt')}
 			</button>
 		</div>
 	</form>
@@ -242,7 +279,7 @@
 						name="startTime"
 						type="time"
 						required
-						value="19:00"
+						value={DEFAULT_START}
 						class="input"
 					/>
 				</Field>
@@ -252,7 +289,7 @@
 						name="durationMinutes"
 						min="5"
 						step="5"
-						value={planning.minutes ?? 45}
+						value={planning.minutes ?? DEFAULT_MINUTES}
 					/>
 				</Field>
 				<Field label={t('health.recipes.countsAs')} span={6}>

@@ -46,9 +46,11 @@ test('a label renamed on the Tags tab is renamed on the task', async ({ page }) 
 	});
 	await page.getByRole('button', { name: 'Save', exact: true }).click();
 
-	// The label wears its colour: `.pill`, whose ink the browser computes from
-	// the fill — a plain label stays the `.chip` it has always been.
-	await expect(page.locator('.pill').filter({ hasText: '#taxes' })).toBeVisible();
+	// The label wears the colour it was given — a pill whose ink the browser
+	// computes from that fill, not the grey every uncoloured label wears.
+	await expect(
+		page.locator('.pill[style*="#0f766e"]').filter({ hasText: '#taxes' }).first()
+	).toBeVisible();
 
 	// And the task wears the new word.
 	await visit(page, '/tasks/todo');

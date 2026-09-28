@@ -10,6 +10,7 @@ import {
 	updatePerson
 } from '$lib/services/people';
 import { mediaLimits, removePersonPicture, setPersonPicture } from '$lib/services/media';
+import { getPanelWidth, PEOPLE_PANEL_WIDTH_KEY, setPanelWidth } from '$lib/services/settings';
 
 export const load: PageServerLoad = async ({ locals, url }) => {
 	const ctx = buildCtx(locals.user!.id);
@@ -23,7 +24,8 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 		// The whole point of a person having a page: everything you wrote that
 		// mentioned them, in one place.
 		selected: Number.isFinite(selected) && selected > 0 ? selected : null,
-		entries: Number.isFinite(selected) && selected > 0 ? entriesAbout(ctx, selected) : []
+		entries: Number.isFinite(selected) && selected > 0 ? entriesAbout(ctx, selected) : [],
+		listPanelRem: getPanelWidth(ctx.userId, PEOPLE_PANEL_WIDTH_KEY)
 	};
 };
 
@@ -97,6 +99,17 @@ export const actions: Actions = {
 		try {
 			removePersonPicture(buildCtx(locals.user!.id), Number(formData.get('id')));
 			return { success: true, action: 'removePicture' };
+		} catch (e) {
+			return toActionFailure(e);
+		}
+	},
+
+	/** Where the divider between the list and the person was left — once, on release. */
+	setPanelWidth: async ({ request, locals }) => {
+		const formData = await request.formData();
+		try {
+			setPanelWidth(locals.user!.id, PEOPLE_PANEL_WIDTH_KEY, Number(formData.get('rem')));
+			return { success: true, action: 'setPanelWidth' };
 		} catch (e) {
 			return toActionFailure(e);
 		}

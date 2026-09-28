@@ -18,12 +18,12 @@ test('the timezone is chosen, not typed', async ({ page }) => {
 	// The whole platform's list, not a handful.
 	expect(await picker.locator('option').count()).toBeGreaterThan(300);
 
+	// The week's fields save themselves on change.
 	await picker.selectOption('Europe/Lisbon');
-	await page.locator('form', { has: picker }).getByRole('button', { name: 'Save' }).click();
 
 	// Wait for the form to say it saved before leaving the page. Navigating on
-	// the click alone raced the request that the click started, and lost often
-	// enough to fail a full run and pass on its own.
+	// the change alone raced the request it started, and lost often enough to
+	// fail a full run and pass on its own.
 	await expect(page.getByText('Week saved.')).toBeVisible();
 
 	await visit(page, '/settings/preferences');

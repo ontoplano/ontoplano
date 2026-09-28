@@ -47,6 +47,7 @@ import {
 	ringFor,
 	ringingFor,
 	alarmsMayHaveChanged,
+	clearDelivered,
 	scheduleDeviceReminders,
 	stopRinging,
 	testPhoneNotification
@@ -405,5 +406,25 @@ describe('a phone that will not take an exact alarm', () => {
 		expect(await testPhoneNotification(t)).toBe(true);
 		expect(asked).toEqual([true, false]);
 		expect(state.booked).toHaveLength(1);
+	});
+});
+
+describe('what is left in the tray', () => {
+	test('goes when the app is looked at, so the launcher stops counting it', async () => {
+		let cleared = 0;
+		inTheApp({
+			LocalNotifications: {
+				...notificationPlugin().plugin,
+				removeAllDeliveredNotifications: async () => {
+					cleared += 1;
+				}
+			}
+		});
+		await clearDelivered();
+		expect(cleared).toBe(1);
+	});
+
+	test('and asks nothing of a browser, which has no tray of ours', async () => {
+		await expect(clearDelivered()).resolves.toBeUndefined();
 	});
 });

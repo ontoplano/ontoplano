@@ -7,8 +7,9 @@ import { listActivities, listCategories } from '$lib/services/activities';
 import { buildCtx, type Ctx } from '$lib/services/ctx';
 import { ServiceError } from '$lib/services/errors';
 import { toActionFailure } from '$lib/http-errors';
-import { metaFromFormData, metaPatchFromFormData } from '$lib/services/meta';
+import { attributesFromFormData, attributesPatchFromFormData } from '$lib/services/task-attributes';
 import { listManifests } from '$lib/services/plugins';
+import { pickableNotebooks } from '$lib/services/notebooks';
 import { billsDueBetween } from '$lib/services/bills';
 import { ensureSession, listWorkouts, updateSession } from '$lib/services/workouts';
 import {
@@ -46,9 +47,10 @@ import {
 	updateSlot
 } from '$lib/services/slots';
 import { demoteToTodo, listForDate, listUnscheduled, promoteTodo } from '$lib/services/todos';
+import { todoHandlers } from '$lib/services/todo-actions';
 import { listInstances, setStatusOn } from '$lib/services/instances';
-import { addDays } from '$lib/services/week-generator';
-import { getGridHours } from '$lib/services/settings';
+import { addDays, startOfWeek } from '$lib/services/week-generator';
+import { getGridHours, getWeekSettings } from '$lib/services/settings';
 
 /**
  * What the browser last knew about its own width.
@@ -94,11 +96,9 @@ function parseAnchor(param: string | null, today: Date): Date {
 	return today;
 }
 
-/** The Monday on or before the first of this date's month. */
-function monthGridStart(date: Date): Date {
-	const first = new Date(date.getFullYear(), date.getMonth(), 1);
-	first.setDate(first.getDate() - ((first.getDay() + 6) % 7));
-	return first;
+/** The account's first weekday on or before the first of this date's month. */
+function monthGridStart(date: Date, firstDay: number): Date {
+	return startOfWeek(new Date(date.getFullYear(), date.getMonth(), 1), firstDay);
 }
 
 /**
@@ -142,22 +142,24 @@ function marksFor(ctx: Ctx, from: Date, to: Date): Record<string, 'done' | 'undo
 }
 
 /**
- * Slot metadata, turning a validation failure into a form error rather than
- * letting it escape the action and surface as a 500.
+ * A task block's attributes, turning a validation failure into a form error
+ * rather than letting it escape the action and surface as a 500.
  */
-function readMeta(formData: FormData): { meta: string } | { message: string } {
+function readAttributes(formData: FormData): { attributes: string } | { message: string } {
 	try {
-		return { meta: metaFromFormData(formData) };
+		return { attributes: attributesFromFormData(formData) };
 	} catch (e) {
-		return { message: e instanceof ServiceError ? e.message : 'Invalid options' };
+		return { message: e instanceof ServiceError ? e.message : 'Invalid attributes' };
 	}
 }
 
-function readMetaPatch(formData: FormData): { meta: string | undefined } | { message: string } {
+function readAttributesPatch(
+	formData: FormData
+): { attributes: string | undefined } | { message: string } {
 	try {
-		return { meta: metaPatchFromFormData(formData) };
+		return { attributes: attributesPatchFromFormData(formData) };
 	} catch (e) {
-		return { message: e instanceof ServiceError ? e.message : 'Invalid options' };
+		return { message: e instanceof ServiceError ? e.message : 'Invalid attributes' };
 	}
 }
 
@@ -173,6 +175,9 @@ function blockFields(formData: FormData) {
 			? formData.get('remindLeadMinutes')
 			: undefined,
 		mode: formData.get('mode'),
+		// Only when the form carried the field: a drag posts placement alone and
+		// must not take the block out of its notebook.
+		notebookId: formData.has('notebookId') ? formData.get('notebookId') : undefined,
 		categoryId: formData.get('categoryId'),
 		activityId: formData.get('activityId'),
 		workoutId: formData.get('workoutId'),
@@ -239,15 +244,19 @@ export const load = async ({ locals, url, cookies }: IsolatedEvent) => {
 	// than being clamped forward to today like a plan you are still writing.
 	//
 	// The anchor is any date INSIDE the month being shown, and it matters that
-	// it stays one: the grid starts on the Monday on or before the 1st, which
+	// it stays one: the grid starts on the first weekday on or before the 1st, which
 	// is usually a date in the PREVIOUS month — so an anchor derived from the
 	// grid's own edges names the wrong month, and navigation snaps back. June
 	// 2026 found it: June starts on a Monday, its grid start IS June 1, and
 	// "next" pointed at July's grid start, June 29 — a June date, so following
 	// it landed on June again and the forward arrow did nothing.
 	const anchor = parseAnchor(url.searchParams.get('from'), today);
+	// The account's first weekday, Monday-indexed: where a month's rows begin.
+	const { firstDay } = getWeekSettings(ctx.userId);
 	const from =
-		view === 'month' ? monthGridStart(anchor) : parseFromParam(url.searchParams.get('from'), today);
+		view === 'month'
+			? monthGridStart(anchor, firstDay)
+			: parseFromParam(url.searchParams.get('from'), today);
 	const to = addDays(from, span);
 
 	// Before anything is read, so a stale copy is not what gets drawn. A failure
@@ -303,8 +312,13 @@ export const load = async ({ locals, url, cookies }: IsolatedEvent) => {
 	};
 
 	return {
-		// So the metadata editor can say which plugin reads which key.
-		plugins: listManifests(ctx.userId).map((m) => ({ name: m.name, metaKeys: m.metaKeys })),
+		// So the attributes editor can say which plugin reads which key.
+		plugins: listManifests(ctx.userId).map((m) => ({
+			name: m.name,
+			attributeKeys: m.attributeKeys
+		})),
+		// What a task block can be filed under, for the form's notebook field.
+		notebooks: pickableNotebooks(ctx),
 		// The stretch of the day this account asked the grid to draw.
 		gridHours: getGridHours(ctx.userId),
 		/*
@@ -321,6 +335,7 @@ export const load = async ({ locals, url, cookies }: IsolatedEvent) => {
 		range,
 		view,
 		viewExplicit,
+		weekFirstDay: firstDay,
 		categories: listCategories(ctx),
 		activities: listActivities(ctx, { activeOnly: true }),
 		schemes: listSchemes(ctx),
@@ -376,15 +391,15 @@ export const actions = {
 		const ctx: Ctx = buildCtx(locals.user!.id);
 		const formData = await request.formData();
 
-		const meta = readMeta(formData);
-		if ('message' in meta) return fail(400, { message: meta.message });
+		const attributes = readAttributes(formData);
+		if ('message' in attributes) return fail(400, { message: attributes.message });
 
 		try {
 			const id = createSlot(ctx, {
 				...blockFields(formData),
 				weekday: formData.get('weekday'),
 				recurrence: readRecurrence(formData, ctx.now),
-				meta: meta.meta
+				attributes: attributes.attributes
 			});
 			return { success: true, id };
 		} catch (e) {
@@ -395,8 +410,8 @@ export const actions = {
 	update: async ({ request, locals }: IsolatedEvent) => {
 		const formData = await request.formData();
 
-		const metaPatch = readMetaPatch(formData);
-		if ('message' in metaPatch) return fail(400, { message: metaPatch.message });
+		const patch = readAttributesPatch(formData);
+		if ('message' in patch) return fail(400, { message: patch.message });
 
 		try {
 			updateSlot(buildCtx(locals.user!.id), Number(formData.get('id')), {
@@ -407,7 +422,7 @@ export const actions = {
 				recurrence: formData.has('recurrenceKind')
 					? readRecurrence(formData, buildCtx(locals.user!.id).now)
 					: undefined,
-				metaPatch: metaPatch.meta
+				attributesPatch: patch.attributes
 			});
 			return { success: true };
 		} catch (e) {
@@ -591,11 +606,12 @@ export const actions = {
 	convertRepeat: async ({ request, locals }: IsolatedEvent) => {
 		const formData = await request.formData();
 		try {
-			convertRepeat(buildCtx(locals.user!.id), Number(formData.get('id')), {
+			// The block has a new id in its new table; the editor carries on with it.
+			const made = convertRepeat(buildCtx(locals.user!.id), Number(formData.get('id')), {
 				to: formData.get('to'),
 				date: formData.get('date')
 			});
-			return { success: true };
+			return { success: true, kind: made.kind, id: made.id };
 		} catch (e) {
 			return toActionFailure(e);
 		}
@@ -624,6 +640,9 @@ export const actions = {
 	 * that ends with "oh — that did happen". Same service the board's tick
 	 * uses, addressed by block and date because that is what the grid knows.
 	 */
+	/** A todo in the tray ticked off where it stands — the list's own handler. */
+	setTodoStatus: todoHandlers.setStatus,
+
 	setStatus: async ({ request, locals }: IsolatedEvent) => {
 		const formData = await request.formData();
 		try {
@@ -707,14 +726,14 @@ export const actions = {
 	createExceptional: async ({ request, locals }: IsolatedEvent) => {
 		const formData = await request.formData();
 
-		const meta = readMeta(formData);
-		if ('message' in meta) return fail(400, { message: meta.message });
+		const attributes = readAttributes(formData);
+		if ('message' in attributes) return fail(400, { message: attributes.message });
 
 		try {
 			const id = createExceptional(buildCtx(locals.user!.id), {
 				...blockFields(formData),
 				date: formData.get('date'),
-				meta: meta.meta
+				attributes: attributes.attributes
 			});
 			return { success: true, id };
 		} catch (e) {
@@ -727,16 +746,16 @@ export const actions = {
 		const formData = await request.formData();
 
 		// Same rule as `update`: a drag or resize carries placement only, and must
-		// leave any metadata on the block untouched.
-		const metaPatch = readMetaPatch(formData);
-		if ('message' in metaPatch) return fail(400, { message: metaPatch.message });
+		// leave the block's attributes untouched.
+		const patch = readAttributesPatch(formData);
+		if ('message' in patch) return fail(400, { message: patch.message });
 
 		try {
 			updateExceptional(ctx, Number(formData.get('id')), {
 				...blockFields(formData),
 				date: formData.get('date'),
 				recurrence: formData.has('recurrenceKind') ? readRecurrence(formData, ctx.now) : undefined,
-				metaPatch: metaPatch.meta
+				attributesPatch: patch.attributes
 			});
 			return { success: true };
 		} catch (e) {

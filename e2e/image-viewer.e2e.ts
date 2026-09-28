@@ -41,3 +41,41 @@ test('a picture opens over the page, and the ground closes it', async ({ page })
 	await viewer.click({ position: { x: 5, y: 5 } });
 	await expect(viewer).toHaveCount(0);
 });
+
+test('a picture in a task’s notes opens in the viewer, zooms, and back closes it', async ({
+	page
+}) => {
+	test.setTimeout(120_000);
+	await page.setViewportSize({ width: 390, height: 844 });
+	await register(page, testEmail('image-viewer-task'));
+	await visit(page, '/tasks/todo');
+
+	await page
+		.getByRole('button', { name: /New task/ })
+		.first()
+		.click();
+	await page.locator('[name="heading"]').first().fill('look at the wall');
+	await page.locator('textarea[name="notes"]').fill('![the wall](/media/999999)');
+	await page.getByRole('button', { name: 'Create task' }).click();
+
+	const link = page.locator('a.written-picture').first();
+	await expect(link).toBeVisible({ timeout: 30_000 });
+	const tabsBefore = page.context().pages().length;
+	await link.click();
+
+	const viewer = page.getByRole('dialog');
+	await expect(viewer).toBeVisible();
+	expect(page.context().pages().length).toBe(tabsBefore);
+
+	// A double tap goes in; the picture is drawn larger than it was.
+	const picture = viewer.locator('img');
+	await picture.dblclick();
+	await expect
+		.poll(async () => picture.evaluate((img) => getComputedStyle(img).transform))
+		.not.toBe('none');
+
+	// Back — the phone's gesture — takes it away and leaves the page where it was.
+	await page.goBack();
+	await expect(viewer).toHaveCount(0);
+	await expect(page).toHaveURL(/\/tasks\/todo/);
+});

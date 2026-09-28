@@ -67,6 +67,12 @@ export type Companion = {
 	label: PlainKey;
 	unit: string;
 	ok: boolean;
+	/**
+	 * Running, not running, or switched off on purpose. A job with nothing to
+	 * do its work with — the review mail without SMTP — is neither of the
+	 * first two, and calling it running is the lie this page exists to catch.
+	 */
+	status: 'running' | 'stopped' | 'off';
 	/** One sentence of state, already worded. */
 	detail: string;
 	/** The command that fixes a bad row; empty when ok. */
@@ -104,6 +110,7 @@ export async function companions(): Promise<Companion[]> {
 			label: 'sections.reminders.label',
 			unit: 'ontoplano-reminders.timer',
 			ok: fresh,
+			status: fresh ? 'running' : 'stopped',
 			detail: fresh
 				? `running — last asked this app ${minutes <= 1 ? 'a minute' : `${minutes} minutes`} ago`
 				: `stopped asking — last heard from ${minutes} minutes ago`,
@@ -115,6 +122,7 @@ export async function companions(): Promise<Companion[]> {
 			label: 'sections.reminders.label',
 			unit: 'ontoplano-reminders.timer',
 			ok: state === 'active',
+			status: state === 'active' ? 'running' : 'stopped',
 			detail:
 				state === 'active'
 					? 'timer running; nothing has come due since the app started'
@@ -138,7 +146,8 @@ export async function companions(): Promise<Companion[]> {
 		rows.push({
 			label: 'app.weeklyReviewMail',
 			unit: 'ontoplano-weekly-review.timer',
-			ok: true,
+			ok: false,
+			status: 'off',
 			detail: 'needs SMTP to send — none is configured, so nothing goes out',
 			fix: ''
 		});
@@ -149,6 +158,7 @@ export async function companions(): Promise<Companion[]> {
 			label: 'app.weeklyReviewMail',
 			unit: 'ontoplano-weekly-review.timer',
 			ok: fresh,
+			status: fresh ? 'running' : 'stopped',
 			detail: fresh
 				? `running — last asked this app ${minutes <= 1 ? 'a minute' : `${minutes} minutes`} ago`
 				: `stopped asking — last heard from ${minutes} minutes ago`,
@@ -171,6 +181,7 @@ export async function companions(): Promise<Companion[]> {
 			label,
 			unit,
 			ok: state === 'active',
+			status: state === 'active' ? 'running' : 'stopped',
 			detail:
 				state === 'active'
 					? 'timer running'

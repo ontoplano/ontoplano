@@ -55,7 +55,9 @@ import { ValidationError } from '$lib/services/errors.js';
 import { sha256Hex } from '$lib/services/digest.js';
 import { USER_TABLES, type AccountExport } from '$lib/services/account-data.js';
 import { sniff, tidyFilename } from '$lib/services/media.js';
+import { sniffAudio } from '$lib/services/audio.js';
 import { RINGTONE_TYPES } from '$lib/services/ringtones.js';
+import { splitLegacyTitle } from '$lib/notebook-path.js';
 
 /**
  * Base64 back into bytes, in either world.
@@ -87,6 +89,8 @@ export const NOT_PORTABLE: Record<string, PlainKey> = {
 	// Secrets minted by another instance, stored as hashes. They would be
 	// unusable here and would look like live credentials on the tokens page.
 	apiTokens: 'accountImport.aTokenIsASecret',
+	// A widget is its key: without the key above it is a line nothing reads.
+	phoneWidgets: 'accountImport.aTokenIsASecret',
 	pluginManifests: 'accountImport.aManifestBelongsToThe',
 	// A feed address handed out by another instance. Importing it would show a
 	// URL that nothing here answers.
@@ -97,6 +101,9 @@ export const NOT_PORTABLE: Record<string, PlainKey> = {
 	// The record of what happened on the old account, on the old instance. The
 	// import writes one event of its own instead.
 	auditEvents: 'accountImport.theLogIsARecord',
+	// A retry's answer names ids on the old instance; replayed here, it would
+	// point at rows that are numbered differently.
+	requestReplays: 'accountImport.theLogIsARecord',
 	// An address at a push service, tied to one browser and to the key of the
 	// instance it subscribed to. Nothing here could send to it, and permission
 	// given to one site is not permission given to another.
@@ -183,9 +190,9 @@ export function parseExport(raw: unknown): AccountExport {
  * remembering to say so here. A reference to `user` is not a remap — it is the
  * account being imported into, and is set rather than translated.
  */
-function referencesOf(table: never): { column: string; target: string }[] {
+function referencesOf(table: never): { column: string; target: string; required: boolean }[] {
 	const config = getTableConfig(table);
-	const out: { column: string; target: string }[] = [];
+	const out: { column: string; target: string; required: boolean }[] = [];
 
 	for (const fk of config.foreignKeys) {
 		const ref = fk.reference();
@@ -194,11 +201,14 @@ function referencesOf(table: never): { column: string; target: string }[] {
 		if (ref.columns.length !== 1) continue;
 		const target = getTableConfig(ref.foreignTable).name;
 		if (target === 'user') continue;
-		out.push({ column: ref.columns[0].name, target });
+		out.push({ column: ref.columns[0].name, target, required: ref.columns[0].notNull });
 	}
 
 	return out;
 }
+
+/** The tables whose `attributes` column was called `meta` in older exports. */
+const TABLES_WITH_LEGACY_META = new Set(['recurringTasks', 'exceptionalTasks']);
 
 /** `recurring_tasks` for the property named `recurringTasks`, and back. */
 function sqlNames(): Map<string, string> {
@@ -291,13 +301,26 @@ export function previewImport(payload: unknown): ImportPreview {
 	};
 }
 
+/**
+ * What one stored file is: a picture or a recording, read from its bytes.
+ *
+ * Both live in `media`, so an export carries both, and a file that only knew
+ * pictures refused every account that had ever recorded anything.
+ */
+function mediaKind(bytes: Uint8Array): { mime: string; extension: string; audio: boolean } | null {
+	const picture = sniff(bytes);
+	if (picture) return { ...picture, audio: false };
+	const recording = sniffAudio(bytes);
+	return recording ? { ...recording, audio: true } : null;
+}
+
 /** Whether one media or ringtone row is something this app would serve. */
 function acceptableBytes(name: string, raw: unknown): boolean {
 	if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return true;
 	const row = raw as Record<string, unknown>;
 	if (name === 'media') {
 		const bytes = typeof row.bytes === 'string' ? fromBase64(row.bytes) : null;
-		return bytes !== null && sniff(bytes) !== null;
+		return bytes !== null && mediaKind(bytes) !== null;
 	}
 	if (name === 'ringtones') return (RINGTONE_TYPES as readonly string[]).includes(String(row.mime));
 	return true;
@@ -452,6 +475,8 @@ export async function importAccount(
 			 * losing it quietly or refusing the whole file over one of them.
 			 */
 			let doubledHere = 0;
+			/** Rows whose required parent is not in the file — see the references below. */
+			let unattachedHere = 0;
 			for (const raw of rows) {
 				if (!raw || typeof raw !== 'object' || Array.isArray(raw)) continue;
 
@@ -494,15 +519,33 @@ export async function importAccount(
 					// `Uint8Array`, not `Buffer`: a Buffer is one of those, and the
 					// decode above returns the plain kind so a device — which has no
 					// Buffer at all — reaches this line with something real in it.
-					const kind = row.bytes instanceof Uint8Array ? sniff(row.bytes) : null;
+					const kind = row.bytes instanceof Uint8Array ? mediaKind(row.bytes) : null;
 					if (!kind)
 						throw new ValidationError({ key: 'errors.accountImport.theFileCarriesAPicture' });
 					row.mime = kind.mime;
-					row.filename = tidyFilename(String(row.filename ?? '')) || `picture.${kind.extension}`;
+					row.filename =
+						tidyFilename(String(row.filename ?? '')) ||
+						`${kind.audio ? 'recording' : 'picture'}.${kind.extension}`;
 					row.byteSize = (row.bytes as Uint8Array).length;
 					row.sha256 = fingerprints.get(asGiven);
 					if (typeof row.sha256 !== 'string')
 						throw new Error('a picture was not hashed before the import began');
+				}
+				/*
+				 * An export from before folders: the notebook's place was in its
+				 * title, `Home — Kitchen`. Split the same way migration 0106 split
+				 * the database, so a restore lands on the same shelf.
+				 */
+				if (table.name === 'notebooks' && !('folder' in row) && typeof row.title === 'string')
+					Object.assign(row, splitLegacyTitle(row.title));
+				/*
+				 * An export from before 0.184: a task block's attributes were
+				 * called `meta`. Renamed the way migration 0110 renamed the column,
+				 * or a restore would bring the blocks back without them.
+				 */
+				if (TABLES_WITH_LEGACY_META.has(table.name) && 'meta' in row) {
+					if (!('attributes' in row)) row.attributes = row.meta;
+					delete row.meta;
 				}
 				if (table.name === 'ringtones') {
 					if (!(RINGTONE_TYPES as readonly string[]).includes(String(row.mime)))
@@ -515,6 +558,7 @@ export async function importAccount(
 				// Whoever it belonged to, it belongs to this account now.
 				row.userId = userId;
 
+				let unattached = false;
 				for (const ref of refs) {
 					const key = columnProperty(table.table, ref.column);
 					if (!key || row[key] === null || row[key] === undefined) continue;
@@ -522,13 +566,19 @@ export async function importAccount(
 					/*
 					 * A reference with nothing to point at.
 					 *
-					 * Its parent was skipped, or the file is inconsistent. Nulled
-					 * where the column allows it and dropped where it does not —
-					 * a row that cannot be attached is better lost than left
-					 * pointing at somebody else's id, which is what keeping the
-					 * old number would mean.
+					 * Its parent was skipped, or the file is inconsistent — or it
+					 * was never the account's: a star on a notebook a family
+					 * member shared. Nulled where the column allows it and dropped
+					 * where it does not — a row that cannot be attached is better
+					 * lost than left pointing at somebody else's id, which is what
+					 * keeping the old number would mean.
 					 */
+					if (mapped === undefined && ref.required) unattached = true;
 					row[key] = mapped ?? null;
+				}
+				if (unattached) {
+					unattachedHere++;
+					continue;
 				}
 
 				let inserted: { id: number } | undefined;
@@ -547,7 +597,16 @@ export async function importAccount(
 				if (inserted && typeof wasId === 'number') mine.set(wasId, inserted.id);
 			}
 
-			counts.push({ name: table.name, rows: rows.length - droppedHere - doubledHere });
+			counts.push({
+				name: table.name,
+				rows: rows.length - droppedHere - doubledHere - unattachedHere
+			});
+			if (unattachedHere > 0)
+				skipped.push({
+					name: table.name,
+					rows: unattachedHere,
+					why: 'accountImport.whatItPointedAtIsNot'
+				});
 			if (droppedHere > 0)
 				skipped.push({
 					name: table.name,

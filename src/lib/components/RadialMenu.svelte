@@ -145,6 +145,15 @@
 		dragging = false,
 		/** Screen the pie must stay clear of — a fixed navigation bar, usually. */
 		bottomInset = 0,
+		/**
+		 * One more thing to press, beside the wheel rather than in it.
+		 *
+		 * The capture wheel's gear: its settings belong with the wheel, and a
+		 * wedge would make them one of the things being captured. Drawn on the
+		 * same dark plate as the name at the top, placed in the space the ring
+		 * leaves on its left — or its right, when the left has none.
+		 */
+		aside = null,
 		onselect,
 		onclose,
 		/**
@@ -165,6 +174,7 @@
 		bounded?: boolean;
 		dragging?: boolean;
 		bottomInset?: number;
+		aside?: { icon: IconName; label: string; tour?: string; onpress: () => void } | null;
 		onselect: (key: string) => void;
 		onclose: () => void;
 		onvisible?: (visible: boolean) => void;
@@ -311,6 +321,7 @@
 	$effect(() => {
 		if (!open) {
 			active = -1;
+			asideHot = false;
 			held = false;
 			swallowClick = false;
 			travelled = 0;
@@ -381,7 +392,8 @@
 	function onmove(e: PointerEvent) {
 		if (!open) return;
 		travelled = Math.max(travelled, Math.hypot(e.clientX - origin.x, e.clientY - origin.y));
-		active = wedgeIndexAt(e.clientX, e.clientY);
+		asideHot = overAside(e.clientX, e.clientY);
+		active = asideHot ? -1 : wedgeIndexAt(e.clientX, e.clientY);
 	}
 
 	/** A press that never went anywhere is a tap, not a gesture. */
@@ -447,6 +459,42 @@
 		fn();
 	}
 
+	/**
+	 * The aside's size, the gap it keeps from the ring and from the screen's
+	 * edge, in pixels. Its bottom lines up with the ring's, which on a phone
+	 * is just above the bar.
+	 */
+	const ASIDE_PX = 56;
+	const ASIDE_ICON = 26;
+	const ASIDE_GAP = 12;
+	const ASIDE_EDGE = 12;
+
+	let asideEl = $state<HTMLButtonElement | null>(null);
+	/** A drag is over the aside, so letting go presses it. */
+	let asideHot = $state(false);
+
+	const asideAt = $derived.by(() => {
+		const top = centre.y + OUTER - ASIDE_PX;
+		const left = centre.x - OUTER - ASIDE_GAP - ASIDE_PX;
+		if (left >= ASIDE_EDGE) return { x: left, y: top };
+		const right = centre.x + OUTER + ASIDE_GAP;
+		if (typeof window !== 'undefined' && right + ASIDE_PX <= window.innerWidth - ASIDE_EDGE)
+			return { x: right, y: top };
+		// No room on either side: under the ring, at its left.
+		return { x: Math.max(ASIDE_EDGE, centre.x - OUTER), y: centre.y + OUTER + ASIDE_GAP };
+	});
+
+	function overAside(x: number, y: number): boolean {
+		if (!aside || !asideEl) return false;
+		const box = asideEl.getBoundingClientRect();
+		return x >= box.left && x <= box.right && y >= box.top && y <= box.bottom;
+	}
+
+	function pressAside() {
+		asideHot = false;
+		aside?.onpress();
+	}
+
 	function onup(e: PointerEvent) {
 		if (!open) return;
 
@@ -462,6 +510,7 @@
 			}
 		}
 
+		if (overAside(e.clientX, e.clientY)) return pressAside();
 		const chosen = wedgeIndexAt(e.clientX, e.clientY);
 		if (chosen >= 0) onselect(items[chosen].key);
 		else onclose();
@@ -493,6 +542,7 @@
 
 		const chosen = active;
 		held = false;
+		if (asideHot) return pressAside();
 		if (chosen >= 0) onselect(items[chosen].key);
 		else onclose();
 	}
@@ -517,6 +567,8 @@
 		}
 		if (e.key === 'Enter' || e.key === ' ') {
 			e.preventDefault();
+			// Tabbed to the aside: that is what Enter is pressing.
+			if (asideEl && document.activeElement === asideEl) return pressAside();
 			if (active >= 0) onselect(items[active].key);
 			else onclose();
 		}
@@ -648,7 +700,7 @@
 		<div class="pie-hud pointer-events-none" aria-hidden="true">
 			{#if active !== -1}
 				{@const chosen = items[active]}
-				<div class="pie-hud-inner" style="color: {chosen.color}">
+				<div class="pie-plate pie-hud-inner" style="--hud-room: {chosen.color}">
 					<span class="pie-hud-icon"><Icon name={chosen.icon} size={56} /></span>
 					<!-- The name in an element of its own: it is what a test asks the
 					     wheel for, and the line under it is not part of that answer. -->
@@ -963,6 +1015,21 @@
 				opens, which is the whole reason the gesture is safe.
 			-->
 		</div>
+
+		{#if aside}
+			<button
+				bind:this={asideEl}
+				type="button"
+				class="pie-plate pie-aside pointer-events-auto {asideHot ? 'is-hot' : ''}"
+				style="left: {asideAt.x}px; top: {asideAt.y}px; --aside: {ASIDE_PX}px; --pie-bloom: {BLOOM_MS}ms"
+				title={aside.label}
+				aria-label={aside.label}
+				data-tour={aside.tour}
+				onclick={() => afterOpening(pressAside)}
+			>
+				<Icon name={aside.icon} size={ASIDE_ICON} />
+			</button>
+		{/if}
 	</div>
 {/if}
 
@@ -987,31 +1054,11 @@
 		/* Tight and dark, not a halo — see the note under this rule. */
 		/* A hairline under the letters, on top of the plate below. */
 		--hud-edge: 0 1px 2px rgb(0 0 0 / 0.55);
-		/*
-		 * What the words stand on, and how much of the room's colour survives it.
-		 *
-		 * Measured rather than guessed. A room's accent is a mid-tone by design,
-		 * and the scrim over a light page is a light grey — Finance's teal on that
-		 * came out at about 2.5:1, which is under the 3:1 a heading needs and
-		 * exactly what "still hard to read" meant. At this plate and this mix
-		 * every room lands between 5.9:1 (Goals, the darkest) and 8.1:1.
-		 *
-		 * Lifting towards white rather than to white: the colour is how somebody
-		 * knows which room they are on before they have read the word.
-		 */
-		--hud-plate: rgb(0 0 0 / 0.78);
-		/*
-		 * How much of the page behind it is taken out of focus.
-		 *
-		 * Free here, whatever it costs elsewhere: the wheel is a press and a
-		 * hold, and while it is up the page under it is not scrolling — there
-		 * is a scrim over it and the finger is on the handle. The blur is
-		 * composited once and then only when the label changes wedge, so it
-		 * never lands in the middle of a scroll. It is not on the scrim
-		 * itself, which is full-screen and would be a different question.
-		 */
-		--hud-blur: 4px;
 		--hud-ink: 62%;
+		/* Screen showing either side of the plate on a phone: without it
+		   Notebooks, with six shelves under its name, ran edge to edge and the
+		   plate's border fell off the screen. */
+		--hud-gutter: 1rem;
 
 		position: fixed;
 		/* Well above the ring, which sits under the thumb, and clear of the
@@ -1020,6 +1067,7 @@
 		top: var(--hud-top);
 		left: 0;
 		right: 0;
+		padding-inline: var(--hud-gutter);
 		display: flex;
 		justify-content: center;
 		/* Above the scrim and the wheel; it is the label for both. */
@@ -1052,18 +1100,32 @@
 		 * scrim was supposed to avoid — but a label nobody can read is not a
 		 * label, and this one is the wheel's whole answer to "where am I going".
 		 */
+	/*
+	 * The dark plate: under the name at the top, and under the aside.
+	 *
+	 * Edged in whatever colour its contents are — the letters' own on the
+	 * name, so the plate belongs to the room it is naming rather than being a
+	 * grey card the name landed on.
+	 */
+	.pie-plate {
+		border: 4px solid currentColor;
+		border-radius: var(--radius-lg, 0);
+		background-color: var(--hud-plate);
+		-webkit-backdrop-filter: blur(var(--hud-blur));
+		backdrop-filter: blur(var(--hud-blur));
+	}
+
 	.pie-hud-inner {
 		display: flex;
 		flex-direction: column;
 		align-items: center;
 		gap: 0.5rem;
-		border-radius: var(--radius-lg, 0);
-		/* Edged in the letters' own colour, so the plate belongs to the room it
-		   is naming rather than being a grey card the name landed on. */
-		border: 4px solid color-mix(in srgb, currentColor var(--hud-ink), white);
-		background-color: var(--hud-plate);
-		-webkit-backdrop-filter: blur(var(--hud-blur));
-		backdrop-filter: blur(var(--hud-blur));
+		/* The room's colour lifted towards white on the plate, once, here: the
+		   glyph, the name, the line under it and the edge all inherit it. Mixed
+		   per element, the glyph was left at the raw colour and read as a
+		   different shade from the words beside it. */
+		color: color-mix(in srgb, var(--hud-room) var(--hud-ink), white);
+		max-width: 100%;
 		padding: 0.875rem 1.5rem 1rem;
 		font-weight: 600;
 		letter-spacing: 0.08em;
@@ -1092,10 +1154,6 @@
 		 * them, so the colour stays the colour.
 		 */
 	.pie-hud-name {
-		/* Lifted towards white on the plate, so it stays the room's colour
-		   rather than becoming white. The inline colour is on the block above,
-		   so this is the first place it can be mixed. */
-		color: color-mix(in srgb, currentColor var(--hud-ink), white);
 		font-size: 2.5rem;
 		text-transform: uppercase;
 		text-shadow: var(--hud-edge);
@@ -1112,20 +1170,17 @@
 	 * move the name every time the pointer crossed a wedge.
 	 */
 	.pie-hud-tabs {
-		/* Lifted towards white on the plate, so it stays the room's colour
-		   rather than becoming white. The inline colour is on the block above,
-		   so this is the first place it can be mixed. */
-		color: color-mix(in srgb, currentColor var(--hud-ink), white);
 		/*
 		 * Small enough that the longest room stays on one line — on a phone
 		 * too, where the line is what has to give.
 		 *
 		 * At this weight and tracking the words run about thirty-three times
 		 * the font size, and Notebooks is the longest of them at six shelves.
-		 * `2.6vw` is that ratio with a margin either side; the rem caps it,
-		 * because beyond a certain width this is a hint and not a heading.
+		 * `2.2vw` is that ratio leaving room for the plate's own padding and
+		 * the gutter either side of it; the rem caps it, because beyond a
+		 * certain width this is a hint and not a heading.
 		 */
-		font-size: min(0.8125rem, 2.6vw);
+		font-size: min(0.8125rem, 2.2vw);
 		font-weight: 600;
 		letter-spacing: 0.06em;
 		text-transform: uppercase;
@@ -1151,10 +1206,85 @@
 	 * the browser takes the gesture, and the release selects nothing.
 	 */
 	.pie-layer {
+		/*
+		 * What the words stand on, and how much of the room's colour survives it.
+		 *
+		 * Measured rather than guessed. A room's accent is a mid-tone by design,
+		 * and the scrim over a light page is a light grey — Finance's teal on that
+		 * came out at about 2.5:1, which is under the 3:1 a heading needs and
+		 * exactly what "still hard to read" meant. At this plate and this mix
+		 * every room lands between 5.9:1 (Goals, the darkest) and 8.1:1.
+		 *
+		 * Lifting towards white rather than to white: the colour is how somebody
+		 * knows which room they are on before they have read the word.
+		 */
+		--hud-plate: rgb(0 0 0 / 0.78);
+		/*
+		 * How much of the page behind it is taken out of focus.
+		 *
+		 * Free here, whatever it costs elsewhere: the wheel is a press and a
+		 * hold, and while it is up the page under it is not scrolling — there
+		 * is a scrim over it and the finger is on the handle. The blur is
+		 * composited once and then only when the label changes wedge, so it
+		 * never lands in the middle of a scroll. It is not on the scrim
+		 * itself, which is full-screen and would be a different question.
+		 */
+		--hud-blur: 4px;
+
 		touch-action: none;
 		user-select: none;
 		-webkit-user-select: none;
 		-webkit-touch-callout: none;
+	}
+
+	/*
+	 * The one thing beside the wheel. Light on the dark plate in both themes,
+	 * since the plate is dark in both; brighter under the pointer, and under
+	 * a drag that would let go on it.
+	 */
+	.pie-aside {
+		position: fixed;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		width: var(--aside);
+		height: var(--aside);
+		color: var(--aside-ink);
+		--aside-ink: rgb(255 255 255 / 0.72);
+		/* `backwards`, not `both`: a held last frame would outrank the hover. */
+		animation: aside-arrives var(--pie-bloom, 190ms) ease-out backwards;
+		transition:
+			transform 120ms ease-out,
+			color 120ms ease-out;
+	}
+
+	.pie-aside:hover,
+	.pie-aside:focus-visible,
+	.pie-aside.is-hot {
+		--aside-ink: rgb(255 255 255);
+		transform: scale(1.06);
+	}
+
+	@keyframes aside-arrives {
+		from {
+			opacity: 0;
+			transform: scale(0.6);
+		}
+		to {
+			opacity: 1;
+			transform: none;
+		}
+	}
+
+	.pie-layer.is-leaving .pie-aside {
+		opacity: 0;
+		transition: opacity var(--pie-bloom, 190ms) ease-in;
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.pie-aside {
+			animation: none;
+		}
 	}
 
 	.pie {

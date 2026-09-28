@@ -155,6 +155,36 @@ public class OntoplanoSettings extends Plugin {
         }
     }
 
+    /**
+     * Hand a notebook widget its key, from the instance that minted it.
+     *
+     * The same trip as `ringFor`: the instance has the session, only the
+     * copy of the app the phone carries has this bridge, and the key crosses
+     * between them in an address — see `/widget`.
+     */
+    @PluginMethod
+    public void bindNotebookWidget(PluginCall call) {
+        Integer slot = call.getInt("slot");
+        Integer widget = call.getInt("widget");
+        String origin = call.getString("origin", "");
+        String token = call.getString("token", "");
+        if (slot == null || widget == null || origin == null || origin.isEmpty()
+                || token == null || token.isEmpty()) {
+            call.reject("A widget, an instance and a key, all three.");
+            return;
+        }
+        NotebookWidgetClient.bind(getContext(), slot, origin, token, widget);
+        NotebookWidget.refreshAll(getContext());
+        call.resolve();
+    }
+
+    /** Read every notebook widget again, after one was edited on the instance. */
+    @PluginMethod
+    public void refreshNotebookWidgets(PluginCall call) {
+        NotebookWidget.refreshAll(getContext());
+        call.resolve();
+    }
+
     private boolean start(Intent intent) {
         try {
             getContext().startActivity(intent);

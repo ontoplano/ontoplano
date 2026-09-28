@@ -6,6 +6,8 @@ import {
 	deleteHabit,
 	deleteOccurrence,
 	logOccurrence,
+	setDayCount,
+	setHabitArchived,
 	toggleOccurrence,
 	updateHabit,
 	updateOccurrence
@@ -58,6 +60,27 @@ export const habitHandlers = {
 		}
 	},
 
+	/** Put away: off the room and today's list, every logged day kept. */
+	archive: async ({ request, locals }: Event) => {
+		const formData = await request.formData();
+		try {
+			setHabitArchived(buildCtx(locals.user!.id), Number(formData.get('id')), true);
+			return { success: true };
+		} catch (e) {
+			return toActionFailure(e);
+		}
+	},
+
+	unarchive: async ({ request, locals }: Event) => {
+		const formData = await request.formData();
+		try {
+			setHabitArchived(buildCtx(locals.user!.id), Number(formData.get('id')), false);
+			return { success: true };
+		} catch (e) {
+			return toActionFailure(e);
+		}
+	},
+
 	delete: async ({ request, locals }: Event) => {
 		const formData = await request.formData();
 		try {
@@ -75,6 +98,21 @@ export const habitHandlers = {
 				habitId: formData.get('habitId'),
 				date: formData.get('date'),
 				notes: formData.get('notes')
+			});
+			return { success: true };
+		} catch (e) {
+			return toActionFailure(e);
+		}
+	},
+
+	/** The counter on a card: the day's count, set outright once the pressing stops. */
+	setDayCount: async ({ request, locals }: Event) => {
+		const formData = await request.formData();
+		try {
+			setDayCount(buildCtx(locals.user!.id), {
+				habitId: formData.get('habitId'),
+				date: formData.get('date'),
+				count: formData.get('count')
 			});
 			return { success: true };
 		} catch (e) {

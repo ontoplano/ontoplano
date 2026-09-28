@@ -7,9 +7,11 @@ import { linkableSlots, listAreas } from '$lib/services/goals';
 import { pickableNotebooks } from '$lib/services/notebooks';
 import { mediaLimits } from '$lib/services/media';
 import { listPeople } from '$lib/services/people';
+import { locationChoices } from '$lib/services/locations';
 import { listTodos } from '$lib/services/todos';
 import { measuredActivities } from '$lib/services/workouts';
 import type { Ctx } from '$lib/services/ctx';
+import { host } from '$lib/services/host';
 
 /**
  * Everything the notebook panel needs besides the notebook itself.
@@ -20,7 +22,18 @@ import type { Ctx } from '$lib/services/ctx';
  * empty area picker. One function, so a tab gaining a field cannot work on one
  * route and quietly not on the other.
  */
-export function notebookPanelData(ctx: Ctx) {
+export function notebookPanelData(ctx: Ctx, notebookId: number | null) {
+	/*
+	 * The tasks a picker in this panel may offer: the notebook's own.
+	 *
+	 * The goal card's "Choose tasks" listed every task the account had, from
+	 * every subject, inside a notebook whose whole job is to be one subject.
+	 * Scoped once here, so every picker the panel draws inherits it rather
+	 * than each one remembering to filter. The goals service refuses the rest.
+	 */
+	const tasks = listTodos(ctx).filter(
+		(one) => notebookId === null || one.notebookId === notebookId
+	);
 	return {
 		// The Tasks tab is the to-do room looking at one subject, and its editor
 		// offers the same two pickers.
@@ -40,6 +53,8 @@ export function notebookPanelData(ctx: Ctx) {
 		// read. Same number the server enforces, and here rather than on one
 		// route because both of them draw the picture control now.
 		pictureKilobytes: mediaLimits().maxKilobytes,
+		// Where a thing written in the Inventory tab lives — the room's own question.
+		locations: locationChoices(ctx),
 		// For the People field on a note, which completes rather than duplicates.
 		allPeople: listPeople(ctx),
 		// The Goals tab writes and edits a goal in place, with the same fields
@@ -52,8 +67,8 @@ export function notebookPanelData(ctx: Ctx) {
 		// What a goal can be told to count — the card's own "what counts
 		// towards this", which is part of a goal rather than part of that room.
 		slots: linkableSlots(ctx),
-		todos: listTodos(ctx).filter((one) => one.status !== 'done'),
-		allTodos: listTodos(ctx).map((one) => ({
+		todos: tasks.filter((one) => one.status !== 'done'),
+		allTodos: tasks.map((one) => ({
 			id: one.id,
 			title: one.title,
 			status: one.status
@@ -61,6 +76,8 @@ export function notebookPanelData(ctx: Ctx) {
 		activities: listActivities(ctx, { activeOnly: true }).map((a) => ({
 			id: a.id,
 			name: a.name
-		}))
+		})),
+		// Whether the owner can share a notebook into the family, from either header.
+		onFamilyPlan: host.familyUserIds(ctx.userId).length > 1
 	};
 }

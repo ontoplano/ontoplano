@@ -1,6 +1,6 @@
 <script lang="ts">
 	import TagInput from '$lib/components/TagInput.svelte';
-	import type { Snippet } from 'svelte';
+	import { untrack, type Snippet } from 'svelte';
 	import { page } from '$app/state';
 	import Field from '$lib/components/Field.svelte';
 	import OneLine from '$lib/components/OneLine.svelte';
@@ -10,6 +10,8 @@
 	import MarkdownBox from '$lib/components/MarkdownBox.svelte';
 	import PictureAttach from '$lib/components/PictureAttach.svelte';
 	import RecordingAttach from '$lib/components/RecordingAttach.svelte';
+	import AttributeFields from '$lib/components/AttributeFields.svelte';
+	import { ATTRIBUTE_FORM, attributePairs, mergeSuggestions } from '$lib/attribute-keys';
 	import { RATINGS, type Rating } from '$lib/ratings';
 	import { useT } from '$lib/i18n';
 
@@ -35,7 +37,8 @@
 		title = '',
 		notes = '',
 		tags = '',
-		categoryId = null,
+		/** Left undefined on a new task, which then starts with its notebook's. */
+		categoryId = undefined,
 		notebookId = $bindable(null),
 		categories = [],
 		notebooks = [],
@@ -50,7 +53,9 @@
 		 * on the dashboard is written without one.
 		 */
 		place = undefined,
-		scheduledDate = ''
+		scheduledDate = '',
+		/** What it says about itself: `{ url, room, … }`. See `AttributeFields`. */
+		attributes = {}
 	}: {
 		title?: string;
 		notes?: string;
@@ -58,13 +63,46 @@
 		categoryId?: number | null;
 		notebookId?: number | null;
 		categories?: { id: number; name: string }[];
-		notebooks?: { id: number; title: string }[];
+		notebooks?: {
+			id: number;
+			title: string;
+			categoryId?: number | null;
+			modules: readonly string[];
+		}[];
 		ratings?: Record<Rating, number | null>;
 		compact?: boolean;
 		place?: Snippet;
 		/** The day it sits on, or '' for a task with no day yet. */
 		scheduledDate?: string;
+		attributes?: Record<string, string>;
 	} = $props();
+
+	// Seeded once: the dialog is rebuilt on every opening, as the category is.
+	let attributeRows = $state(untrack(() => attributePairs(attributes)));
+	// What plugins say they read, where the page has loaded their manifests.
+	const attributeKeys = $derived(mergeSuggestions(t, page.data.plugins ?? []));
+
+	/*
+	 * A notebook's category, filled in rather than applied — the same bargain
+	 * NoteFields makes with a notebook's labels. A new task starts with the
+	 * notebook's; picking another notebook swaps it only while the box still
+	 * says what the last notebook put there, so a category chosen by hand
+	 * stays. The dialog is rebuilt on every opening, so this is seeded once.
+	 */
+	const categoryOf = (id: number | null) =>
+		String((id !== null && notebooks.find((one) => one.id === id)?.categoryId) || '');
+	let chosenCategory = $state(
+		untrack(() => (categoryId === undefined ? categoryOf(notebookId) : String(categoryId ?? '')))
+	);
+	let lastNotebook = untrack(() => notebookId);
+	$effect(() => {
+		const now = notebookId;
+		untrack(() => {
+			if (now === lastNotebook) return;
+			if (chosenCategory === categoryOf(lastNotebook)) chosenCategory = categoryOf(now);
+			lastNotebook = now;
+		});
+	});
 
 	/** The notes box, so a recording can be dropped into it where the cursor is. */
 	let box = $state<HTMLTextAreaElement>();
@@ -73,10 +111,11 @@
 	const filled = $derived(
 		ratingsSet +
 			(scheduledDate ? 1 : 0) +
-			(categoryId ? 1 : 0) +
+			(chosenCategory ? 1 : 0) +
 			(notebookId ? 1 : 0) +
 			(notes ? 1 : 0) +
-			(tags ? 1 : 0)
+			(tags ? 1 : 0) +
+			(attributeRows.some(([key]) => key.trim()) ? 1 : 0)
 	);
 
 	/*
@@ -144,6 +183,16 @@
 		<TagInput value={tags} known={knownTags} placeholder={t('fields.todo.tagsExample')} />
 	</Field>
 
+	<!-- What the task says about itself — a link, a room, an order number. The
+	     same fold a task block has, and carried onto the block when this is put
+	     on the plan. -->
+	<AttributeFields
+		fold
+		bind:pairs={attributeRows}
+		present={ATTRIBUTE_FORM.present}
+		suggestions={attributeKeys}
+	/>
+
 	<!--
 		A day, optionally.
 		
@@ -164,15 +213,15 @@
 	</Field>
 
 	<Field label={t('ui.category')} span={6}>
-		<select name="categoryId" class="select">
+		<select name="categoryId" class="select" bind:value={chosenCategory}>
 			<option value="">{t('fields.todo.none')}</option>
 			{#each categories as cat (cat.id)}
-				<option value={cat.id} selected={categoryId === cat.id}>{cat.name}</option>
+				<option value={String(cat.id)}>{cat.name}</option>
 			{/each}
 		</select>
 	</Field>
 
-	<NotebookField {notebooks} bind:value={notebookId} />
+	<NotebookField {notebooks} holds="tasks" bind:value={notebookId} />
 {/snippet}
 
 {#snippet scales()}

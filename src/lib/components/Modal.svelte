@@ -109,6 +109,38 @@
 
 	const WIDTHS = { sm: '28rem', md: '36rem', lg: '52rem' } as const;
 
+	/*
+	 * Wider, by hand, on a screen with room.
+	 *
+	 * Writing side by side in a 36rem dialog leaves each half a column wide,
+	 * and a picture in the preview is a thumbnail. Either side edge drags: the
+	 * dialog is centred, so both edges move together, at the same rate. A
+	 * double-click on an edge puts it back. Kept while the page is, so the
+	 * form opens as wide as it was left.
+	 */
+	/** Pixels kept clear between a widened dialog and the window's edges. */
+	const WIDEN_GUTTER = 32;
+	let widened = $state(0);
+	let widening: { x: number; from: number; side: 1 | -1 } | null = null;
+
+	function widenDown(event: PointerEvent, side: 1 | -1) {
+		event.preventDefault();
+		(event.currentTarget as HTMLElement).setPointerCapture(event.pointerId);
+		widening = { x: event.clientX, from: widened, side };
+	}
+
+	function widenMove(event: PointerEvent) {
+		if (!widening || !dialog) return;
+		const base = dialog.getBoundingClientRect().width - widened;
+		const room = Math.max(0, window.innerWidth - WIDEN_GUTTER * 2 - base);
+		const moved = (event.clientX - widening.x) * widening.side * 2;
+		widened = Math.min(room, Math.max(0, widening.from + moved));
+	}
+
+	function widenUp() {
+		widening = null;
+	}
+
 	let dialog: HTMLDialogElement | undefined = $state();
 
 	/**
@@ -179,7 +211,7 @@
 
 	/**
 	 * On a phone this is a screen, and a screen answers the system back
-	 * gesture: while it is open it holds one history entry, so Android's back
+	 * gesture: while it is open it holds a history entry, so Android's back
 	 * button closes the form instead of leaving the app. Closing it any other
 	 * way — the arrow, Escape, a saved form — takes the entry back out.
 	 */
@@ -236,7 +268,7 @@
 	onclick={handleClick}
 	aria-label={title}
 	class:docked={dock === 'side'}
-	style="--modal-width: {WIDTHS[size]}"
+	style="--modal-width: calc({WIDTHS[size]} + {widened}px)"
 >
 	{#if open}
 		<div
@@ -310,6 +342,21 @@
 				</button>
 			</header>
 
+			{#if dock === 'centre'}
+				{#each [-1, 1] as const as side (side)}
+					<!-- svelte-ignore a11y_no_static_element_interactions -->
+					<div
+						class="widen-edge {side < 0 ? 'left' : 'right'}"
+						title={t('modal.dragToWiden')}
+						onpointerdown={(event) => widenDown(event, side)}
+						onpointermove={widenMove}
+						onpointerup={widenUp}
+						onpointercancel={widenUp}
+						ondblclick={() => (widened = 0)}
+					></div>
+				{/each}
+			{/if}
+
 			<div class="min-h-0 flex-1 overflow-y-auto overscroll-y-contain px-4 py-4 sm:px-5">
 				{#if error}
 					<div class="mb-4"><Banner kind="error" message={error} /></div>
@@ -366,6 +413,43 @@
 		padding-top: var(--safe-top, 0px);
 	}
 
+	/* The edges that widen it: only with a mouse, and only where it floats. */
+	.widen-edge {
+		display: none;
+	}
+
+	@media (min-width: 640px) and (pointer: fine) {
+		.panel {
+			position: relative;
+		}
+
+		.widen-edge {
+			position: absolute;
+			top: 0;
+			bottom: 0;
+			z-index: 1;
+			display: block;
+			width: 0.5rem;
+			cursor: ew-resize;
+			touch-action: none;
+			transition: background-color 120ms ease;
+		}
+
+		/* Inside the panel: the dialog clips anything past it, and a press that
+		   misses the edge lands on the dialog, which is the backdrop and closes. */
+		.widen-edge.left {
+			left: 0;
+		}
+
+		.widen-edge.right {
+			right: 0;
+		}
+
+		.widen-edge:hover {
+			background-color: color-mix(in srgb, var(--color-gray-400) 35%, transparent);
+		}
+	}
+
 	/* The spring back after a drag that was not far enough to close. */
 	.panel.snapping {
 		transition: transform 180ms cubic-bezier(0.2, 0.9, 0.3, 1.15);
@@ -384,17 +468,37 @@
 		}
 	}
 
+	/*
+	 * Anywhere wider, a card below the site header with room around it.
+	 *
+	 * The dialog is fixed with all four insets at zero, so `height: auto`
+	 * stretches it to the whole window rather than shrinking it to the card —
+	 * and the card sat in its top-left corner, at y=0, over the header, with
+	 * its top corners cut off by the edge. The dialog is the full-height
+	 * layer (its empty part is the backdrop that closes it), and the card
+	 * hangs from a fixed distance below the top: fixed rather than centred, so
+	 * a form that grows — More options opening — grows downwards and nothing
+	 * already on it moves.
+	 */
 	@media (min-width: 640px) {
 		dialog {
+			--modal-top: clamp(4.5rem, 10dvh, 7rem);
+			--modal-foot: 2rem;
 			inset: 0;
-			margin: auto;
+			margin: 0 auto;
 			width: min(100% - 2rem, var(--modal-width));
-			height: auto;
+			height: 100dvh;
+			padding-top: var(--modal-top);
+		}
+
+		dialog[open] {
+			display: flex;
+			flex-direction: column;
 		}
 
 		.panel {
 			height: auto;
-			max-height: 85dvh;
+			max-height: calc(100dvh - var(--modal-top) - var(--modal-foot));
 			border-width: 1px;
 			padding-top: 0;
 		}
@@ -413,6 +517,7 @@
 			margin: 0;
 			height: 100dvh;
 			width: min(100% - 2rem, var(--modal-width));
+			padding-top: 0;
 		}
 
 		dialog.docked::backdrop {

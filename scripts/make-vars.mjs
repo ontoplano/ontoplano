@@ -217,7 +217,7 @@ for (const file of makefiles) {
 		 * a lower-case name here is somebody's shell and not an argument.
 		 */
 		for (const m of line.matchAll(/\$[({]([A-Z][A-Z0-9_]*)[)}]/g)) reads.get(target).add(m[1]);
-		for (const m of line.matchAll(/\$\(MAKE\)\s+(?:-s\s+)?([a-z][a-z0-9_-]*)/g)) {
+		for (const m of line.matchAll(/\$\(MAKE\)\s+(?:-s\s+)?([a-z_][a-z0-9_-]*)/g)) {
 			calls.get(target).add(m[1]);
 		}
 	}

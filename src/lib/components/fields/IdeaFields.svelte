@@ -3,6 +3,7 @@
 	import { page } from '$app/state';
 	import Field from '$lib/components/Field.svelte';
 	import MoreOptions from '$lib/components/MoreOptions.svelte';
+	import NotebookField from '$lib/components/NotebookField.svelte';
 	import MarkdownBox from '$lib/components/MarkdownBox.svelte';
 	import PictureAttach from '$lib/components/PictureAttach.svelte';
 	import RecordingAttach from '$lib/components/RecordingAttach.svelte';
@@ -25,8 +26,33 @@
 	let {
 		content = '',
 		tags = '',
-		compact = false
-	}: { content?: string; tags?: string; compact?: boolean } = $props();
+		compact = false,
+		/**
+		 * The notebooks it may be filed in, where the form offers the choice —
+		 * the capture sheet does. A notebook's own Ideas tab files it there
+		 * without asking, and the Ideas page leaves it loose.
+		 */
+		notebooks = undefined,
+		notebookId = null
+	}: {
+		content?: string;
+		tags?: string;
+		compact?: boolean;
+		notebooks?: {
+			id: number;
+			title: string;
+			folder?: string | null;
+			favourite?: boolean;
+			modules: readonly string[];
+		}[];
+		notebookId?: number | null;
+	} = $props();
+
+	let filedIn = $state<number | null>(null);
+	// Follows what it is handed, which arrives after the list of notebooks does.
+	$effect(() => {
+		filedIn = notebookId;
+	});
 
 	let box = $state<HTMLTextAreaElement>();
 </script>
@@ -50,6 +76,9 @@
 </Field>
 
 {#snippet rest()}
+	{#if notebooks}
+		<NotebookField {notebooks} holds="ideas" bind:value={filedIn} span={12} />
+	{/if}
 	<Field label={t('ui.tags')} span={12} hint={t('fields.idea.separateWithCommasOrSpaces')}>
 		<TagInput
 			value={tags}
@@ -60,7 +89,10 @@
 {/snippet}
 
 {#if compact}
-	<MoreOptions label={t('ui.tags')} count={tags ? 1 : 0}>{@render rest()}</MoreOptions>
+	<MoreOptions
+		label={notebooks ? t('fields.idea.notebookAndTags') : t('ui.tags')}
+		count={(tags ? 1 : 0) + (notebooks && filedIn !== null ? 1 : 0)}>{@render rest()}</MoreOptions
+	>
 {:else}
 	{@render rest()}
 {/if}

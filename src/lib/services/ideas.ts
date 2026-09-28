@@ -15,7 +15,8 @@ import { NotFoundError, ValidationError } from './errors.js';
 import { notebookPatch } from './notebooks.js';
 import { stamp, stamps } from './time.js';
 import { host } from './host.js';
-import { str } from './validate.js';
+import { num, str } from './validate.js';
+import { MAX_BATCH } from './todos.js';
 
 /** Quick capture: a thought, optionally tagged, optionally marked as applied. */
 
@@ -95,7 +96,7 @@ export function createIdea(
 			...stamps(ctx),
 			userId: ctx.userId,
 			content,
-			...notebookPatch(ctx, raw),
+			...notebookPatch(ctx, raw, 'ideas'),
 			createdAt: now,
 			updatedAt: now
 		})
@@ -119,7 +120,11 @@ export function updateIdea(
 
 	const res = db
 		.update(ideas)
-		.set({ content, ...notebookPatch(ctx, raw), updatedAt: stamp(ctx) })
+		.set({
+			content,
+			...notebookPatch(ctx, raw, 'ideas', { table: ideas, id }),
+			updatedAt: stamp(ctx)
+		})
 		.where(and(eq(ideas.id, id), eq(ideas.userId, ctx.userId)))
 		.run();
 
@@ -198,4 +203,82 @@ function optionalNote(value: unknown): string | null {
 	if (s.length > MAX_NOTE_LENGTH)
 		throw new ValidationError(`The note has to be ${MAX_NOTE_LENGTH} characters or fewer`);
 	return s;
+}
+
+/**
+ * What can be done to several ideas at once: the row's own verbs with more
+ * reach — star, mark applied, file, label, delete — never more capability.
+ * Star and applied are set rather than toggled, so a mixed selection ends up
+ * all one way.
+ */
+export const IDEA_BATCH_VERBS = ['favorite', 'apply', 'notebook', 'tag', 'remove'] as const;
+export type IdeaBatchVerb = (typeof IDEA_BATCH_VERBS)[number];
+
+export function isIdeaBatchVerb(value: unknown): value is IdeaBatchVerb {
+	return typeof value === 'string' && (IDEA_BATCH_VERBS as readonly string[]).includes(value);
+}
+
+/** Add and take off labels, leaving the others where they are. */
+function retagIdea(ctx: Ctx, id: number, change: { add?: unknown; remove?: unknown }): void {
+	ownedIdea(ctx, id);
+	const add = parseTags(optionalTagInput(change.add));
+	const remove = new Set(parseTags(optionalTagInput(change.remove)));
+	const now = db
+		.select({ name: tags.name })
+		.from(ideaTags)
+		.innerJoin(tags, eq(ideaTags.tagId, tags.id))
+		.where(and(eq(ideaTags.ideaId, id), eq(ideaTags.userId, ctx.userId)))
+		.all()
+		.map((one) => one.name);
+	replaceIdeaTags(
+		id,
+		[...new Set([...now, ...add])].filter((name) => !remove.has(name)),
+		ctx.userId
+	);
+}
+
+/**
+ * Do one thing to each of these ideas, or to none of them: an idea that is
+ * not this account's refuses the whole press, as `batchEntries` does.
+ */
+export function batchIdeas(
+	ctx: Ctx,
+	verb: unknown,
+	rawIds: unknown[],
+	what: { add?: unknown; remove?: unknown; notebookId?: unknown } = {}
+): number {
+	if (!isIdeaBatchVerb(verb)) throw new ValidationError({ key: 'errors.diary.invalidBatch' });
+	if (rawIds.length === 0) throw new ValidationError({ key: 'errors.diary.nothingWasChosen' });
+	if (rawIds.length > MAX_BATCH)
+		throw new ValidationError({ key: 'errors.diary.thatIsTooManyAtOnce' });
+	const ids = [...new Set(rawIds.map((id) => num(id, 'id', { int: true, min: 1 })))];
+	if (verb === 'notebook' && what.notebookId === undefined)
+		throw new ValidationError({ key: 'errors.diary.invalidBatch' });
+
+	db.transaction(() => {
+		for (const id of ids) {
+			if (verb === 'remove') {
+				deleteIdea(ctx, id);
+				continue;
+			}
+			if (verb === 'tag') {
+				retagIdea(ctx, id, what);
+				continue;
+			}
+			const patch =
+				verb === 'favorite'
+					? { favorite: true }
+					: verb === 'apply'
+						? { isApplied: true }
+						: notebookPatch(ctx, { notebookId: what.notebookId }, 'ideas', { table: ideas, id });
+			const res = db
+				.update(ideas)
+				.set(patch)
+				.where(and(eq(ideas.id, id), eq(ideas.userId, ctx.userId)))
+				.run();
+			if (res.changes === 0) throw new NotFoundError('idea');
+		}
+		if (verb === 'tag') cleanupOrphanTags(ctx.userId);
+	});
+	return ids.length;
 }

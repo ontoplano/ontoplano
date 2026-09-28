@@ -1,0 +1,446 @@
+{
+	"verbs": ["create", "read", "change", "archive", "unarchive", "delete", "reorder"],
+	"domains": [
+		{
+			"name": "Tasks",
+			"mcp": {
+				"create": ["add_task", "note_to_tasks"],
+				"read": ["tasks", "up_next"],
+				"change": [
+					"change_task",
+					"tag_task",
+					"finish_task",
+					"reopen_task",
+					"schedule_task",
+					"unschedule_task"
+				],
+				"archive": ["archive_task"],
+				"unarchive": ["unarchive_task"],
+				"delete": ["drop_task"],
+				"reorder": ["reorder_tasks"]
+			},
+			"app": {
+				"create": ["src/routes/tasks/todo/+page.server.ts#create"],
+				"read": ["src/routes/tasks/todo/+page.server.ts#load"],
+				"change": ["src/routes/tasks/todo/+page.server.ts#update"],
+				"archive": ["src/routes/tasks/todo/+page.server.ts#archive"],
+				"unarchive": ["src/routes/tasks/todo/+page.server.ts#archive"],
+				"delete": ["src/routes/tasks/todo/+page.server.ts#delete"],
+				"reorder": ["src/routes/tasks/board/+page.server.ts#reorder"]
+			}
+		},
+		{
+			"name": "Blocks",
+			"mcp": {
+				"create": ["add_block", "add_repeating_block"],
+				"read": ["upcoming", "past", "repeating_week"],
+				"change": ["change_block", "finish_block", "change_repeating_block"],
+				"archive": ["change_repeating_block"],
+				"unarchive": ["change_repeating_block"],
+				"delete": ["cancel_block", "remove_repeating_block"]
+			},
+			"app": {
+				"create": [
+					"src/routes/tasks/plan/+page.server.ts#create",
+					"src/routes/tasks/plan/+page.server.ts#createExceptional"
+				],
+				"read": ["src/routes/tasks/plan/+page.server.ts#load"],
+				"change": [
+					"src/routes/tasks/plan/+page.server.ts#update",
+					"src/routes/tasks/plan/+page.server.ts#updateExceptional"
+				],
+				"archive": ["src/routes/tasks/plan/+page.server.ts#toggleActive"],
+				"unarchive": ["src/routes/tasks/plan/+page.server.ts#toggleActive"],
+				"delete": [
+					"src/routes/tasks/plan/+page.server.ts#delete",
+					"src/routes/tasks/plan/+page.server.ts#deleteExceptional"
+				]
+			}
+		},
+		{
+			"name": "Notes and diary entries",
+			"mcp": {
+				"create": ["write_entry"],
+				"read": ["diary", "notebook_notes"],
+				"change": ["edit_entry", "pin_note", "unpin_note", "move_notes"],
+				"archive": ["archive_note"],
+				"unarchive": ["unarchive_note"]
+			},
+			"app": {
+				"create": ["src/routes/notebooks/actions.ts#addEntry"],
+				"read": ["src/routes/notebooks/diary/+page.server.ts#load"],
+				"change": ["src/routes/notebooks/actions.ts#updateEntry"],
+				"archive": ["src/routes/notebooks/actions.ts#archiveEntry"],
+				"unarchive": ["src/routes/notebooks/actions.ts#archiveEntry"],
+				"delete": ["src/routes/notebooks/actions.ts#deleteEntry"]
+			},
+			"withheld": {
+				"delete": "Writing is precious: an assistant archives, and the person deletes in the app."
+			}
+		},
+		{
+			"name": "Ideas",
+			"mcp": {
+				"create": ["add_idea"],
+				"read": ["ideas"],
+				"change": ["change_idea", "apply_idea", "favorite_idea"],
+				"delete": ["remove_idea"]
+			},
+			"app": {
+				"create": ["src/lib/services/idea-actions.ts#create"],
+				"read": ["src/routes/notebooks/ideas/+page.server.ts#load"],
+				"change": ["src/lib/services/idea-actions.ts#update"],
+				"delete": ["src/lib/services/idea-actions.ts#delete"]
+			}
+		},
+		{
+			"name": "Goals",
+			"mcp": {
+				"create": ["add_goal", "add_goal_area", "add_goal_target"],
+				"read": ["goals", "goal_areas"],
+				"change": [
+					"change_goal",
+					"log_goal_progress",
+					"link_to_goal",
+					"unlink_from_goal",
+					"remove_goal_target",
+					"change_goal_area"
+				],
+				"archive": ["close_goal"],
+				"unarchive": ["reopen_goal"],
+				"reorder": ["move_goal_area"]
+			},
+			"app": {
+				"create": ["src/routes/goals/+page.server.ts#create"],
+				"read": ["src/routes/goals/+page.server.ts#load"],
+				"change": [
+					"src/routes/goals/+page.server.ts#update",
+					"src/routes/goals/+page.server.ts#updateArea"
+				],
+				"archive": ["src/routes/goals/+page.server.ts#close"],
+				"unarchive": ["src/routes/goals/+page.server.ts#close"],
+				"delete": ["src/routes/goals/+page.server.ts#remove"],
+				"reorder": ["src/routes/goals/+page.server.ts#moveArea"]
+			},
+			"withheld": {
+				"delete": "A goal stands for a commitment: closed or abandoned by a tool, deleted only in the app."
+			}
+		},
+		{
+			"name": "Habits",
+			"mcp": {
+				"create": ["add_habit"],
+				"read": ["habits", "all_habits"],
+				"change": ["change_habit", "tick_habit"],
+				"archive": ["archive_habit"],
+				"unarchive": ["unarchive_habit"]
+			},
+			"app": {
+				"create": ["src/lib/services/habit-actions.ts#create"],
+				"read": ["src/routes/health/habits/+page.server.ts#load"],
+				"change": ["src/lib/services/habit-actions.ts#update"],
+				"archive": ["src/lib/services/habit-actions.ts#archive"],
+				"unarchive": ["src/lib/services/habit-actions.ts#unarchive"],
+				"delete": ["src/lib/services/habit-actions.ts#delete"]
+			},
+			"withheld": {
+				"delete": "A habit carries its kept days: deleted only in the app."
+			}
+		},
+		{
+			"name": "Inventory",
+			"mcp": {
+				"create": ["add_inventory_item", "add_inventory_category"],
+				"read": ["shopping_list", "inventory_categories"],
+				"change": [
+					"file_inventory_item",
+					"record_price",
+					"set_item_attributes",
+					"change_inventory_category",
+					"move_inventory_category",
+					"change_inventory_item"
+				],
+				"archive": ["archive_item"],
+				"unarchive": ["unarchive_item"],
+				"delete": ["remove_inventory_item", "remove_inventory_category"]
+			},
+			"app": {
+				"create": ["src/lib/services/item-actions.ts#create"],
+				"read": ["src/routes/inventory/+layout.server.ts#load"],
+				"change": ["src/lib/services/item-actions.ts#update"],
+				"archive": ["src/lib/services/item-actions.ts#toggleSnoozed"],
+				"unarchive": ["src/lib/services/item-actions.ts#toggleSnoozed"],
+				"delete": ["src/lib/services/item-actions.ts#delete"]
+			}
+		},
+		{
+			"name": "Places",
+			"mcp": {
+				"create": ["add_location"],
+				"read": ["locations", "where_is"],
+				"change": ["change_location", "put_item"],
+				"delete": ["remove_location"]
+			},
+			"app": {
+				"create": ["src/routes/inventory/actions.ts#createLocation"],
+				"read": ["src/routes/inventory/+layout.server.ts#load"],
+				"change": ["src/routes/inventory/actions.ts#updateLocation"],
+				"delete": ["src/routes/inventory/actions.ts#deleteLocation"]
+			}
+		},
+		{
+			"name": "Shopping list",
+			"mcp": {
+				"create": ["add_inventory_item"],
+				"read": ["shopping_list"],
+				"change": ["tick_bought", "untick_bought", "record_price", "change_inventory_item"],
+				"archive": ["archive_item"],
+				"unarchive": ["unarchive_item"],
+				"delete": ["remove_inventory_item"]
+			},
+			"app": {
+				"create": ["src/lib/services/item-actions.ts#create"],
+				"read": ["src/routes/inventory/+layout.server.ts#load"],
+				"change": ["src/lib/services/item-actions.ts#toggleBought"],
+				"archive": ["src/lib/services/item-actions.ts#toggleSnoozed"],
+				"unarchive": ["src/lib/services/item-actions.ts#toggleSnoozed"],
+				"delete": ["src/lib/services/item-actions.ts#delete"]
+			}
+		},
+		{
+			"name": "Recipes",
+			"mcp": {
+				"create": ["add_recipe"],
+				"read": ["recipes"],
+				"change": ["change_recipe", "cooked_recipe"],
+				"archive": ["archive_recipe"],
+				"unarchive": ["archive_recipe"]
+			},
+			"app": {
+				"create": ["src/routes/health/recipes/actions.ts#create"],
+				"read": ["src/routes/health/recipes/+page.server.ts#load"],
+				"change": [
+					"src/routes/health/recipes/actions.ts#update",
+					"src/routes/health/recipes/actions.ts#removeIngredient"
+				],
+				"archive": ["src/routes/health/recipes/actions.ts#setArchived"],
+				"unarchive": ["src/routes/health/recipes/actions.ts#setArchived"],
+				"delete": ["src/routes/health/recipes/actions.ts#delete"]
+			},
+			"withheld": {
+				"delete": "A recipe is archived by a tool; deleting one is done in the app."
+			}
+		},
+		{
+			"name": "Workouts",
+			"mcp": {
+				"create": ["add_workout", "add_workout_category", "log_workout"],
+				"read": [
+					"workouts",
+					"workout_sessions",
+					"workout_history",
+					"workout_activities",
+					"workout_categories"
+				],
+				"change": [
+					"change_workout",
+					"set_workout_measures",
+					"change_workout_session",
+					"workout_done",
+					"change_workout_category"
+				],
+				"archive": ["archive_workout"],
+				"unarchive": ["archive_workout"],
+				"delete": ["remove_workout_session", "remove_workout_category"]
+			},
+			"app": {
+				"create": ["src/lib/services/workout-actions.ts#create"],
+				"read": ["src/routes/health/workouts/+page.server.ts#load"],
+				"change": [
+					"src/lib/services/workout-actions.ts#update",
+					"src/routes/health/workouts/+page.server.ts#renameCategory"
+				],
+				"archive": ["src/lib/services/workout-actions.ts#archive"],
+				"unarchive": ["src/lib/services/workout-actions.ts#archive"],
+				"delete": ["src/lib/services/workout-actions.ts#delete"]
+			},
+			"withheld": {
+				"delete": "An exercise carries its sessions: archived by a tool, deleted in the app. Sessions and categories can be removed."
+			}
+		},
+		{
+			"name": "Bills",
+			"mcp": {
+				"create": ["add_bill"],
+				"read": ["bills", "bill_payments", "bill_history", "month_bills", "bills_due"],
+				"change": ["change_bill", "pay_bill", "unpay_bill", "skip_bill", "unskip_bill"],
+				"archive": ["archive_bill"],
+				"unarchive": ["archive_bill"]
+			},
+			"app": {
+				"create": ["src/lib/services/bill-actions.ts#create"],
+				"read": ["src/routes/finance/bills/+page.server.ts#load"],
+				"change": ["src/lib/services/bill-actions.ts#update"],
+				"archive": ["src/lib/services/bill-actions.ts#archive"],
+				"unarchive": ["src/lib/services/bill-actions.ts#archive"],
+				"delete": ["src/lib/services/bill-actions.ts#delete"]
+			},
+			"withheld": {
+				"delete": "A bill carries its payment history: archived by a tool, deleted in the app where that history is in front of the person."
+			}
+		},
+		{
+			"name": "Accounts and movements",
+			"mcp": {
+				"create": ["add_ledger", "record_movement"],
+				"read": ["ledgers", "movements", "statement_months", "spending_by_category"],
+				"change": ["change_ledger", "change_movement"],
+				"archive": ["change_ledger"],
+				"unarchive": ["change_ledger"],
+				"delete": ["remove_movement"],
+				"reorder": ["change_ledger"]
+			},
+			"app": {
+				"create": [
+					"src/routes/finance/ledgers/+page.server.ts#createLedger",
+					"src/routes/finance/ledgers/+page.server.ts#addMovement"
+				],
+				"read": ["src/routes/finance/ledgers/+page.server.ts#load"],
+				"change": [
+					"src/routes/finance/ledgers/+page.server.ts#updateLedger",
+					"src/routes/finance/ledgers/+page.server.ts#updateMovement"
+				],
+				"archive": ["src/routes/finance/ledgers/+page.server.ts#archiveLedger"],
+				"unarchive": ["src/routes/finance/ledgers/+page.server.ts#archiveLedger"],
+				"delete": [
+					"src/routes/finance/ledgers/+page.server.ts#deleteLedger",
+					"src/routes/finance/ledgers/+page.server.ts#deleteMovement"
+				],
+				"reorder": ["src/routes/finance/ledgers/+page.server.ts#moveLedger"]
+			},
+			"withheld": {
+				"delete": "A ledger takes every line in it when deleted: archived by a tool, deleted in the app. A single line can be removed."
+			}
+		},
+		{
+			"name": "Sorting rules",
+			"mcp": {
+				"create": ["add_sort_rule"],
+				"read": ["sort_rules"],
+				"change": ["change_sort_rule"],
+				"delete": ["delete_sort_rule"],
+				"reorder": ["change_sort_rule"]
+			},
+			"app": {
+				"create": ["src/routes/finance/rules/+page.server.ts#create"],
+				"read": ["src/routes/finance/rules/+page.server.ts#load"],
+				"change": ["src/routes/finance/rules/+page.server.ts#update"],
+				"delete": ["src/routes/finance/rules/+page.server.ts#delete"],
+				"reorder": ["src/routes/finance/rules/+page.server.ts#move"]
+			}
+		},
+		{
+			"name": "People",
+			"mcp": {
+				"create": ["add_person"],
+				"read": ["people", "upcoming_birthdays"],
+				"change": ["change_person"]
+			},
+			"app": {
+				"create": ["src/routes/notebooks/people/+page.server.ts#create"],
+				"read": ["src/routes/notebooks/people/+page.server.ts#load"],
+				"change": ["src/routes/notebooks/people/+page.server.ts#update"],
+				"delete": ["src/routes/notebooks/people/+page.server.ts#delete"]
+			},
+			"withheld": {
+				"delete": "A person's page stands for somebody: deleted only in the app."
+			}
+		},
+		{
+			"name": "Reminders",
+			"mcp": {
+				"create": ["set_alarm", "remind_before_block"],
+				"read": ["reminders"],
+				"change": ["change_reminder", "dismiss_reminder"],
+				"delete": ["cancel_alarm"]
+			},
+			"app": {
+				"create": ["src/routes/reminders/+page.server.ts#create"],
+				"read": ["src/routes/reminders/+page.server.ts#load"],
+				"change": ["src/routes/reminders/+page.server.ts#edit"],
+				"delete": ["src/routes/reminders/+page.server.ts#remove"]
+			}
+		},
+		{
+			"name": "Activities",
+			"mcp": {
+				"create": ["add_activity"],
+				"read": ["activities", "categories"],
+				"change": ["change_activity"],
+				"archive": ["change_activity"],
+				"unarchive": ["change_activity"],
+				"delete": ["remove_activity"]
+			},
+			"app": {
+				"create": ["src/routes/tasks/activities/+page.server.ts#create"],
+				"read": ["src/routes/tasks/activities/+page.server.ts#load"],
+				"change": ["src/routes/tasks/activities/+page.server.ts#update"],
+				"archive": ["src/routes/tasks/activities/+page.server.ts#toggleActive"],
+				"unarchive": ["src/routes/tasks/activities/+page.server.ts#toggleActive"],
+				"delete": ["src/routes/tasks/activities/+page.server.ts#delete"]
+			}
+		},
+		{
+			"name": "Notebooks",
+			"mcp": {
+				"create": ["add_notebook"],
+				"read": ["notebooks"],
+				"change": [
+					"change_notebook",
+					"rename_notebook_folder",
+					"favourite_notebook",
+					"share_notebook"
+				],
+				"archive": ["change_notebook"],
+				"unarchive": ["change_notebook"],
+				"delete": ["remove_notebook"]
+			},
+			"app": {
+				"create": ["src/routes/notebooks/actions.ts#create"],
+				"read": ["src/routes/notebooks/+page.server.ts#load"],
+				"change": ["src/routes/notebooks/actions.ts#update"],
+				"archive": ["src/routes/notebooks/actions.ts#setClosed"],
+				"unarchive": ["src/routes/notebooks/actions.ts#setClosed"],
+				"delete": ["src/routes/notebooks/actions.ts#delete"]
+			}
+		},
+		{
+			"name": "Labels",
+			"mcp": {
+				"read": ["tags", "notebook_tags"],
+				"change": ["describe_tag", "rename_tag", "recolor_tag", "untag_notebook"],
+				"delete": ["remove_tag"]
+			},
+			"app": {
+				"create": ["src/routes/notebooks/tags/+page.server.ts#save"],
+				"read": ["src/routes/notebooks/tags/+page.server.ts#load"],
+				"change": ["src/routes/notebooks/tags/+page.server.ts#save"],
+				"delete": ["src/routes/notebooks/tags/+page.server.ts#delete"]
+			},
+			"withheld": {
+				"create": "A label comes into being by being used — `tags` on a task, a note or an idea — so there is nothing to make first."
+			}
+		}
+	],
+	"elsewhere": {
+		"today": "The day across every room.",
+		"search": "Everything, one box.",
+		"media": "A picture or a recording that a note or a task refers to.",
+		"daily_wins": "The day's three good things.",
+		"record_win": "The day's three good things.",
+		"weekly_review": "The weekly review.",
+		"write_review_note": "The weekly review.",
+		"data_streams": "Numbers posted from outside.",
+		"log_data_point": "Numbers posted from outside."
+	}
+}

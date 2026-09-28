@@ -28,7 +28,7 @@ test('the dashboard shows the notebooks last written in, as covers', async ({ pa
 	await page.setViewportSize({ width: 1280, height: 900 });
 	await register(page, testEmail('dash-notebooks'));
 
-	// Four, so the card has to choose: it shows three.
+	// Four: one row of covers holds all of them at this width.
 	for (const title of ['Kitchen', 'Trip', 'Reading', 'The Republic'])
 		await makeNotebook(page, title);
 
@@ -37,11 +37,12 @@ test('the dashboard shows the notebooks last written in, as covers', async ({ pa
 	await expect(card).toBeVisible();
 
 	const covers = card.locator('.notebook-cover');
-	await expect(covers).toHaveCount(3);
+	await expect(covers).toHaveCount(4);
 
-	// The newest three, newest first — none of them written in yet.
+	// Newest first — none of them written in yet.
 	await expect(covers.nth(0)).toContainText('The Republic');
 	await expect(covers.nth(2)).toContainText('Trip');
+	await expect(covers.nth(3)).toContainText('Kitchen');
 	await expect(covers.nth(0)).toContainText('nothing in it yet');
 
 	// And a cover is the way into the notebook it draws.

@@ -1,6 +1,9 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { OWNER, makeDatabase, seedAccounts } from './helpers/db';
 
+/** Every tab a notebook can have, for a subject that files one of each. */
+const EVERY_TAB = 'notes,tasks,goals,ideas,inventory,ledgers,bills,habits,workouts,recipes';
+
 /**
  * A key tied to one notebook.
  *
@@ -69,8 +72,8 @@ beforeAll(async () => {
 	const { createItem } = await import('../src/lib/services/inventory');
 	const idOf = (made: unknown) => (typeof made === 'number' ? made : (made as { id: number }).id);
 
-	mine = idOf(createNotebook(ctx(), { title: 'The flat' }));
-	other = idOf(createNotebook(ctx(), { title: 'Private' }));
+	mine = idOf(createNotebook(ctx(), { title: 'The flat', modules: EVERY_TAB }));
+	other = idOf(createNotebook(ctx(), { title: 'Private', modules: EVERY_TAB }));
 
 	inside.todo = idOf(createTodo(ctx(), { title: 'call the plumber', notebookId: mine }));
 	inside.goal = idOf(
@@ -287,6 +290,107 @@ describe('what it cannot do', () => {
 	});
 });
 
+/*
+ * Two reads that used to answer about the whole account.
+ *
+ * `recipes` without an id listed every recipe, and `tick_habit` by name found
+ * a habit anywhere, so a tied key was not offered either. Both take a
+ * `notebookId` now, which the confinement pins like any other.
+ */
+describe('recipes and habits, narrowed to the notebook', () => {
+	let habitInside = 0;
+	let habitOutside = 0;
+
+	beforeAll(async () => {
+		const { createHabit } = await import('../src/lib/services/habits');
+		const { createRecipe } = await import('../src/lib/services/recipes');
+		habitInside = createHabit(ctx(), { name: 'sweep the dust', notebookId: mine });
+		habitOutside = createHabit(ctx(), { name: 'sweep the dust' });
+		createRecipe(ctx(), { title: 'builders’ tea', notebookId: mine });
+		createRecipe(ctx(), { title: 'a private stew' });
+	});
+
+	const ticked = (habitId: number) =>
+		database
+			.all('select habit_id from habit_occurrences where user_id = ?', OWNER)
+			.some((row) => (row as { habit_id: number }).habit_id === habitId);
+
+	it('lists only the notebook’s recipes, whatever notebook is asked for', () => {
+		for (const args of [{}, { notebookId: other }]) {
+			const answer = call('recipes', args);
+			expect(failed(answer), said(answer)).toBe(false);
+			expect(said(answer)).toContain('builders’ tea');
+			expect(said(answer)).not.toContain('a private stew');
+		}
+	});
+
+	it('ticks the notebook’s habit by name, and never the one of the same name outside', () => {
+		const answer = call('tick_habit', { name: 'sweep the dust', date: '2026-03-14' });
+		expect(failed(answer), said(answer)).toBe(false);
+		expect(ticked(habitInside)).toBe(true);
+		expect(ticked(habitOutside)).toBe(false);
+	});
+
+	it('refuses a habit outside by id, and writes nothing', () => {
+		const answer = call('tick_habit', { id: habitOutside, date: '2026-03-15' });
+		expect(failed(answer)).toBe(true);
+		expect(ticked(habitOutside)).toBe(false);
+	});
+
+	it('a full-account key still lists every recipe, and filters when asked', () => {
+		expect(said(call('recipes', {}, false))).toContain('a private stew');
+		const filtered = said(call('recipes', { notebookId: mine }, false));
+		expect(filtered).toContain('builders’ tea');
+		expect(filtered).not.toContain('a private stew');
+	});
+
+	it('a full-account key refuses an ambiguous name, and narrows with notebookId', () => {
+		expect(failed(call('tick_habit', { name: 'sweep the dust', date: '2026-03-16' }, false))).toBe(
+			true
+		);
+		const answer = call(
+			'tick_habit',
+			{ name: 'sweep the dust', notebookId: other, date: '2026-03-16' },
+			false
+		);
+		// Nothing of that name in the other notebook: refused, not guessed.
+		expect(failed(answer)).toBe(true);
+	});
+});
+
+describe('the lines in its own ledgers', () => {
+	let own = 0;
+	let foreign = 0;
+
+	beforeAll(async () => {
+		const { createLedger } = await import('../src/lib/services/ledgers');
+		const { recordMovement } = await import('../src/lib/services/statements');
+		const line = (ledgerId: number, description: string) =>
+			recordMovement(ctx(), { ledgerId, occurredOn: '2026-03-10', amountCents: -100, description })
+				.id;
+		own = line(createLedger(ctx(), { name: 'flat fund', notebookId: mine }).id, 'PAINT');
+		foreign = line(createLedger(ctx(), { name: 'private account' }).id, 'PRIVATE');
+	});
+
+	const amount = (id: number) =>
+		(
+			database.all('select amount_cents from finance_transactions where id = ?', id)[0] as {
+				amount_cents: number;
+			}
+		).amount_cents;
+
+	it('corrects a line in a ledger filed under the notebook', () => {
+		expect(failed(call('change_movement', { id: own, amount_cents: -250 }))).toBe(false);
+		expect(amount(own)).toBe(-250);
+	});
+
+	it('cannot correct or remove one anywhere else, and writes nothing', () => {
+		expect(failed(call('change_movement', { id: foreign, amount_cents: -1 }))).toBe(true);
+		expect(failed(call('remove_movement', { id: foreign }))).toBe(true);
+		expect(amount(foreign)).toBe(-100);
+	});
+});
+
 describe('a tool that also takes ids from outside', () => {
 	/*
 	 * `link_to_goal` hangs to-dos and repeating blocks on a goal. A notebook
@@ -438,5 +542,46 @@ describe('what is being held back', () => {
 	it('holds nothing back from a key that may do everything', async () => {
 		const { ASSISTANT_SCOPES } = await import('../src/lib/server/mcp/tools');
 		expect(withheldTools({ ctx: ctx(), scopes: [...ASSISTANT_SCOPES, 'destructive'] })).toEqual([]);
+	});
+});
+
+/*
+ * A key tied to a notebook files what it adds into that notebook — so a
+ * notebook without the tab for the kind has to refuse it, rather than take an
+ * idea and show it nowhere. The same refusal the forms and the API get, from
+ * the service underneath all three.
+ */
+describe('a key tied to a notebook without the tab', () => {
+	it('is refused an idea, and told which tab is missing', async () => {
+		const { createNotebook } = await import('../src/lib/services/notebooks');
+		const { listIdeas } = await import('../src/lib/services/ideas');
+		const bare = createNotebook(ctx(), { title: 'Just writing', modules: 'notes,tasks' });
+		const caller = {
+			ctx: ctx(),
+			scopes: Object.keys(SCOPES),
+			confinement: { kind: 'notebook', id: bare }
+		};
+		const before = listIdeas(ctx()).length;
+
+		const answer = handleBody(caller as never, {
+			jsonrpc: '2.0',
+			id: 1,
+			method: 'tools/call',
+			params: { name: 'add_idea', arguments: { content: 'a herb garden' } }
+		}) as { result?: { isError?: boolean; structuredContent?: { code?: string } } };
+
+		expect(answer.result?.isError).toBe(true);
+		expect(answer.result?.structuredContent?.code).toBe('validation_error');
+		expect(JSON.stringify(answer.result)).toContain('“Just writing” has no Ideas tab');
+		expect(listIdeas(ctx())).toHaveLength(before);
+
+		// The same key may still add what the notebook does hold.
+		const task = handleBody(caller as never, {
+			jsonrpc: '2.0',
+			id: 2,
+			method: 'tools/call',
+			params: { name: 'add_task', arguments: { title: 'buy a notebook' } }
+		}) as { result?: { isError?: boolean } };
+		expect(task.result?.isError).toBeFalsy();
 	});
 });

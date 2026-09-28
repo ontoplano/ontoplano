@@ -1,4 +1,5 @@
 import { enhance as kitEnhance } from '$app/forms';
+import { navigating } from '$app/state';
 import type { SubmitFunction } from '@sveltejs/kit';
 
 /**
@@ -56,6 +57,28 @@ function said(data: FormData): string {
 		.join('&');
 }
 
+/**
+ * A form answered after somebody has already moved on does not call them back.
+ *
+ * `update()` re-runs the loads of the page the form is on, and SvelteKit lets
+ * an invalidation win over a navigation already under way — so writing a note
+ * and pressing another notebook before the write came back left you on the
+ * first one, with the press silently dropped. The page being left does not
+ * need fresh data: the one being opened loads its own.
+ */
+type Outcome = Parameters<
+	Extract<Awaited<ReturnType<SubmitFunction>>, (...args: never[]) => unknown>
+>[0];
+
+function stayingPut(outcome: Outcome): Outcome {
+	const update = outcome.update;
+	return {
+		...outcome,
+		update: (options?: Parameters<typeof update>[0]) =>
+			update(navigating.to ? { ...options, invalidateAll: false } : options)
+	};
+}
+
 export function enhance(form: HTMLFormElement, submit?: SubmitFunction) {
 	let sending: string | null = null;
 
@@ -74,8 +97,9 @@ export function enhance(form: HTMLFormElement, submit?: SubmitFunction) {
 		const after = submit?.(event);
 		return async (outcome) => {
 			try {
-				if (typeof after === 'function') await after(outcome);
-				else await outcome.update();
+				const answered = stayingPut(outcome);
+				if (typeof after === 'function') await after(answered);
+				else await answered.update();
 			} finally {
 				sending = null;
 				// A form that has been taken off the screen takes its buttons

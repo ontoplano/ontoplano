@@ -9,28 +9,68 @@ it, and the first screen asks where your Ontoplano lives —
 nothing else**. The answer can be changed later, so trying one and moving to
 another is a choice, not a reinstall.
 
-## Installing the app
+## Getting the app
 
-The package is on the releases page:
-**<https://github.com/ontoplano/ontoplano/releases/latest>**.
+The app is not in Google Play, F-Droid or the App Store yet. Until it is, there
+are three ways onto an Android phone.
 
-1. Open that page on the phone and download the `.apk`.
+### The APK from a release
+
+Releases are at **<https://github.com/ontoplano/ontoplano/releases>**. One
+that carries the app lists `ontoplano-v<version>.apk` among its files, beside
+`SHA256SUMS`.
+
+1. Open that page on the phone and download the newest `.apk`.
 2. Open the downloaded file. Android asks once whether to allow installs from
    this browser; say yes.
 3. Install, open it, and answer the one question it asks.
 
-What the app has that a browser tab cannot:
+To check a download on a computer, put it beside that release's `SHA256SUMS`
+and run `sha256sum -c SHA256SUMS --ignore-missing`.
 
-- **The home-screen widget** — today's blocks, habits and tasks without
-  opening anything.
+The APK is signed with the project's release key, so each one updates the last
+in place. A build from a store is signed with a different key: switching
+between the two means uninstalling first.
+
+### Building it from source
+
+You need Node and yarn, JDK 21 and an Android SDK.
+
+```sh
+git clone https://github.com/ontoplano/ontoplano
+cd ontoplano
+yarn install
+make android            # the isolated build, then the APK
+make android-install    # onto a phone with USB debugging on, over adb
+```
+
+The APK is written to
+`capacitor/android/app/build/outputs/apk/official/debug/app-official-debug.apk`.
+The SDK is looked for in `ANDROID_HOME`, `ANDROID_SDK_ROOT`, `~/android-sdk`,
+`~/Android/Sdk` and beside `adb`; pass `ANDROID_HOME=/path/to/sdk` otherwise.
+The rest is in
+[docs/ANDROID.md](https://github.com/ontoplano/ontoplano/blob/master/docs/ANDROID.md).
+
+### From the browser
+
+The web app installs as a PWA. Open your instance in Chrome, sign in, and pick
+**Install app** (or **Add to Home screen**) from the menu. Browsers only
+install from HTTPS.
+
+That is the web app, not the Android app: it needs an instance to point at and
+cannot be isolated.
+
+### What the app adds
+
 - **Reminders that arrive as Ontoplano**, through Android's own alarms, with
   the app closed.
 - **It can be its own instance** — the next section.
 
-## On device
+## The isolated instance
 
-Choose **On device** on the first screen and the app is the instance: the same
-rooms and the same data, against a database in the phone's own storage.
+Choose **On device** on the first screen and the app is the instance,
+isolated: the same rooms and the same data, against a database in the phone's
+own storage.
 Nothing is signed into because there is nothing to sign into.
 
 What it costs, in the app's own words on that screen:

@@ -1,7 +1,7 @@
 /**
  * Plugin manifests: what a plugin says it understands.
  *
- * Slot metadata accepts any key, which is what lets a plugin define its own
+ * A task's attributes accept any key, which is what lets a plugin define its own
  * vocabulary without a schema change here. The price is anonymity — a list of
  * keys with nothing saying who reads them. A manifest buys the provenance back
  * without closing the vocabulary.
@@ -11,9 +11,13 @@ import { and, asc, eq } from 'drizzle-orm';
 import { db } from '$lib/db/index.js';
 import { pluginManifests } from '$lib/db/schema.js';
 import { ValidationError } from '$lib/services/errors.js';
-import { META_KEY_PATTERN, MAX_KEY_LENGTH } from '$lib/services/meta.js';
+import {
+	ATTRIBUTE_KEY_PATTERN,
+	MAX_KEY_LENGTH,
+	META_REMOVED_IN
+} from '$lib/services/task-attributes.js';
 
-export type PluginMetaKey = {
+export type PluginAttributeKey = {
 	key: string;
 	description: string;
 	example: string;
@@ -24,12 +28,14 @@ export type PluginManifest = {
 	name: string;
 	description: string;
 	homepage: string;
-	metaKeys: PluginMetaKey[];
+	attributeKeys: PluginAttributeKey[];
+	/** The same list under its old name, answered until `META_REMOVED_IN`. */
+	metaKeys: PluginAttributeKey[];
 	updatedAt: string;
 };
 
 /** A plugin may not claim more than this many keys. */
-export const MAX_PLUGIN_META_KEYS = 40;
+export const MAX_PLUGIN_ATTRIBUTE_KEYS = 40;
 const MAX_TEXT = 200;
 
 /** `source` doubles as the stream namespace, so it obeys the same shape. */
@@ -73,52 +79,68 @@ function text(value: unknown, field: string, { required = false } = {}): string 
 /**
  * Validate a declared vocabulary.
  *
- * Keys must look like metadata keys, because a manifest that describes keys
+ * Keys must look like attribute names, because a manifest that describes keys
  * nobody can actually set is worse than no manifest — it documents something
  * that will be rejected on save.
  */
-export function parseMetaKeys(input: unknown): PluginMetaKey[] {
+export function parseAttributeKeys(input: unknown): PluginAttributeKey[] {
 	if (input === undefined || input === null) return [];
 	if (!Array.isArray(input))
-		throw new ValidationError({ key: 'errors.plugins.metakeysMustBeAnArray' });
-	if (input.length > MAX_PLUGIN_META_KEYS)
-		throw new ValidationError(`at most ${MAX_PLUGIN_META_KEYS} metadata keys`);
+		throw new ValidationError({ key: 'errors.plugins.attributeKeysMustBeAnArray' });
+	if (input.length > MAX_PLUGIN_ATTRIBUTE_KEYS)
+		throw new ValidationError(`at most ${MAX_PLUGIN_ATTRIBUTE_KEYS} attribute keys`);
 
 	const seen = new Set<string>();
 	return input.map((entry) => {
 		if (typeof entry !== 'object' || entry === null)
-			throw new ValidationError({ key: 'errors.plugins.eachMetadataKeyMust' });
+			throw new ValidationError({ key: 'errors.plugins.eachAttributeKeyMust' });
 
 		const row = entry as Record<string, unknown>;
-		const key = text(row.key, 'metaKeys[].key', { required: true }).toLowerCase();
+		const key = text(row.key, 'attributeKeys[].key', { required: true }).toLowerCase();
 
 		if (key.length > MAX_KEY_LENGTH)
 			throw new ValidationError(
-				`metadata key "${key}" is longer than ${MAX_KEY_LENGTH} characters`
+				`attribute key "${key}" is longer than ${MAX_KEY_LENGTH} characters`
 			);
-		if (!META_KEY_PATTERN.test(key))
+		if (!ATTRIBUTE_KEY_PATTERN.test(key))
 			throw new ValidationError(
-				`metadata key "${key}" must be lowercase letters, digits and underscores, starting with a letter`
+				`attribute key "${key}" must be lowercase letters, digits and underscores, starting with a letter`
 			);
-		if (seen.has(key)) throw new ValidationError(`metadata key "${key}" is declared twice`);
+		if (seen.has(key)) throw new ValidationError(`attribute key "${key}" is declared twice`);
 		seen.add(key);
 
 		return {
 			key,
-			description: text(row.description, 'metaKeys[].description'),
-			example: text(row.example, 'metaKeys[].example')
+			description: text(row.description, 'attributeKeys[].description'),
+			example: text(row.example, 'attributeKeys[].example')
 		};
 	});
 }
 
 function shape(row: typeof pluginManifests.$inferSelect): PluginManifest {
-	let metaKeys: PluginMetaKey[] = [];
+	let attributeKeys: PluginAttributeKey[] = [];
 	try {
 		const parsed = JSON.parse(row.metaKeys);
-		if (Array.isArray(parsed)) metaKeys = parsed as PluginMetaKey[];
+		// Read leniently: a bare name is a key with nothing said about it, and
+		// anything else is left out rather than breaking the editor that lists
+		// them — the write path is where the shape is enforced.
+		if (Array.isArray(parsed))
+			attributeKeys = parsed.flatMap((entry): PluginAttributeKey[] =>
+				typeof entry === 'string'
+					? [{ key: entry, description: '', example: '' }]
+					: entry && typeof entry === 'object' && typeof entry.key === 'string'
+						? [
+								{
+									key: entry.key,
+									description: String(entry.description ?? ''),
+									example: String(entry.example ?? '')
+								}
+							]
+						: []
+			);
 	} catch {
 		// A manifest that cannot be parsed is treated as declaring nothing rather
-		// than breaking every page that lists metadata.
+		// than breaking every page that lists attributes.
 	}
 
 	return {
@@ -126,7 +148,8 @@ function shape(row: typeof pluginManifests.$inferSelect): PluginManifest {
 		name: row.name,
 		description: row.description ?? '',
 		homepage: row.homepage ?? '',
-		metaKeys,
+		attributeKeys,
+		metaKeys: attributeKeys,
 		updatedAt: row.updatedAt
 	};
 }
@@ -154,9 +177,11 @@ export function upsertManifest(
 		name?: unknown;
 		description?: unknown;
 		homepage?: unknown;
+		attributeKeys?: unknown;
+		/** The old name for `attributeKeys`, read until `META_REMOVED_IN`. */
 		metaKeys?: unknown;
 	}
-): PluginManifest {
+): PluginManifest & { warning?: string } {
 	const source = text(input.source, 'source', { required: true }).toLowerCase();
 	if (!SOURCE_PATTERN.test(source))
 		throw new ValidationError({ key: 'errors.plugins.sourceMustBeLowercaseLetters' });
@@ -167,7 +192,8 @@ export function upsertManifest(
 		name: text(input.name, 'name') || source,
 		description: text(input.description, 'description'),
 		homepage: webAddress(input.homepage),
-		metaKeys: JSON.stringify(parseMetaKeys(input.metaKeys)),
+		// The column keeps its old name; only the words around it moved.
+		metaKeys: JSON.stringify(parseAttributeKeys(input.attributeKeys ?? input.metaKeys)),
 		updatedAt: new Date().toISOString()
 	};
 
@@ -183,14 +209,24 @@ export function upsertManifest(
 		db.insert(pluginManifests).values(row).run();
 	}
 
-	return shape(
+	const saved = shape(
 		db
 			.select()
 			.from(pluginManifests)
 			.where(and(eq(pluginManifests.userId, userId), eq(pluginManifests.source, source)))
 			.get()!
 	);
+	// Said in the answer, because a plugin that is only ever told "200" goes on
+	// sending the old name right up to the release that stops reading it.
+	return input.attributeKeys === undefined && input.metaKeys !== undefined
+		? { ...saved, warning: META_KEYS_WARNING }
+		: saved;
 }
+
+/** What a manifest still sending `metaKeys` is told. */
+export const META_KEYS_WARNING =
+	`\`metaKeys\` is deprecated and will be removed in ${META_REMOVED_IN}. ` +
+	'Send the same list as `attributeKeys`. This manifest was read anyway.';
 
 export function deleteManifest(userId: string, source: string): void {
 	db.delete(pluginManifests)
@@ -199,17 +235,17 @@ export function deleteManifest(userId: string, source: string): void {
 }
 
 /**
- * Which plugin claims each key, for the metadata editor.
+ * Which plugin claims each key, for the attributes editor.
  *
  * A key claimed by two plugins lists both — that is real, and hiding one would
  * misrepresent what happens when it is set.
  */
-export function metaKeyOwners(
+export function attributeKeyOwners(
 	userId: string
-): Map<string, { name: string; entry: PluginMetaKey }[]> {
-	const out = new Map<string, { name: string; entry: PluginMetaKey }[]>();
+): Map<string, { name: string; entry: PluginAttributeKey }[]> {
+	const out = new Map<string, { name: string; entry: PluginAttributeKey }[]>();
 	for (const manifest of listManifests(userId)) {
-		for (const entry of manifest.metaKeys) {
+		for (const entry of manifest.attributeKeys) {
 			const existing = out.get(entry.key) ?? [];
 			existing.push({ name: manifest.name, entry });
 			out.set(entry.key, existing);

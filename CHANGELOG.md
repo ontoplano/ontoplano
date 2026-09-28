@@ -18,6 +18,91 @@ the shape of the data changing. Bumping the minor per batch is what ran this
 file to 0.161 in a few months, which tells a reader nothing about which
 releases mattered.
 
+## 0.184.0 — 2026-09-27
+
+- Every room is laid out the same way: one surface, a filter strip along its top with search, count, filters and order in the same places, rows with their buttons in the same order, one empty-state message, and every control in a strip the same height.
+- Room titles sit in the same place on every screen, the dashboard has a room bar on a phone, and the tab you are on stays in view with a hint when more tabs continue.
+- The help button lives in the header and never covers a row; dialogs open below the header on a computer, with the filled button as the one to press.
+- Dates read the same everywhere — "Sep 12", "Sep 7 – 13, 2026", "due the 2nd" — and no screen prints a raw date any more.
+- Chrome is quiet: category colour is worn as a labelled pill, and banners, headers and progress bars no longer carry colour of their own. Switches show their knob again in light theme.
+- On a phone the plan's week is a list of the seven days, each opening its own day; the week's first day is one picker, and the hours follow your 12- or 24-hour clock.
+- The board stacks its columns on a phone, every card can be put on today with one press, and the To-do tab counts only what was finished today.
+- A ledger's everyday action, New line, is the room's own button; ledgers are tabs, uncategorised lines are one filter, and the page scrolls rather than a box inside it.
+- A notebook's New note (or task, or thing) is the room's button with n, and on a phone a notebook on the shelf opens its own page.
+- An account whose export holds voice recordings can be imported again; it used to be refused as "not a picture".
+- Plus and minus on an inventory count or a goal's progress answer immediately and save once you stop pressing, and the number itself can be typed — ten more is one edit, not ten presses.
+- A zoomed-in picture closes with a tap on the dark around it; only dragging it keeps it open.
+- On a phone, going somewhere right after closing a dialog is no longer cancelled by the dialog's own way back.
+- One press of Download spends one of the day's exports, even when a shaky connection makes the browser send the request twice.
+- Opening the shopping list or recipes right after signing in no longer fails with a network error.
+- An assistant key tied to one notebook can read that notebook's recipes and tick its habits by name again.
+- Assistants can now correct and delete statement lines, change, archive and reorder ledgers, reorder sorting rules, switch activities off or delete unused ones, close notebooks, pause repeating blocks, rename shopping items and workout categories, and reorder tasks on the board.
+- Renaming a workout category to a name already taken says so instead of failing.
+- A new Android home-screen widget shows one tab of a notebook — its tasks, notes, goals, ideas or things to buy — filtered and ordered as you choose; tap it to open that notebook, or a line to open that item. Widgets are managed under Settings → AI & Integrations → Widgets.
+- A key tied to one notebook can no longer read the rest of the account through the other API endpoints.
+- On a phone, a dialog opened from inside another (like the delete confirmation from Edit notebook) closes on its own — Cancel or back returns to the form underneath.
+- Goal areas can now be renamed, recoloured and moved up or down in the Areas dialog, and that order is the one the area filter shows.
+- Assistants can now safely resend an "add" without making a duplicate, refuse to overwrite a change somebody made in the meantime, change a bill's currency, and take ingredients out of a recipe; every refusal says what kind of refusal it was.
+- A notebook now refuses a task, idea, goal or anything else it has no tab for, naming the missing tab; the notebook pickers only offer notebooks that have it, and an assistant's create now shows what it made.
+- Pressing a link while a save is still going through no longer gets ignored — the app goes where you pressed.
+- Delegating a task to a day shows that day on its card, without also putting the task on that day's board or carrying it on as overdue.
+- The AI agents reference lists, for every MCP tool, the permissions it needs, what its answer carries, the fields inside its arguments with their defaults and limits, and the old argument spellings with the release each is removed in, plus worked examples of common requests.
+- Ideas, inventory, habits, workouts, bills, recipes and notebook notes now use the same card layout as tasks: the tick or count on the left, labels along the bottom, and the buttons in the bottom-right corner.
+- A message shown while a dialog is open appears at the top, clear of the dialog's buttons.
+- Assistants now get a clear error naming the argument when a call doesn't match the tool's published arguments, and nothing runs until it does.
+- Notes can be selected several at a time, in a notebook or in the diary, to move, tag, archive or delete them together; editing a note can now move it to another notebook or into the diary.
+- Assistants can now search, filter by date and rating, sort and page through the task list, and page through up_next, and both answer faster on long lists.
+- A key tied to one notebook can no longer put items from outside it back on the shopping list through a cooked recipe, or read the whole account's recipes, habits, statements or workout sessions.
+- Switching a task block between "once only" and "comes back" works back and forth without a "Not found" error and keeps its workout, reminder and labels; the plan's errors now appear as toasts, shown above an open editor.
+- An assistant changing something over MCP now changes only the fields it names — a notebook's description, a location's notes and whether a bill is income all stay as they were — and a change that is refused leaves nothing half-written.
+- A notebook's folder field lists the folders you already have as soon as you click into it, and still takes a new one.
+- A notebook can be deleted again, from the trash button in its Edit notebook dialog.
+- A task card's buttons sit at its bottom right with its labels beside them, and putting a task on a day now shows that day on the card.
+- Goals are drawn on the same card as tasks, with a tick box to mark one achieved, and removing a goal area now asks first.
+- Every room's title now carries the room's icon on the desktop too, not just on a phone.
+- On a phone running on its own, a picture added in the first moments after install now shows at once instead of staying broken until the app is reopened.
+- Tag suggestions no longer vanish when you step out of the tag box and straight back in.
+- Demo tags and inventory attributes now come in distinct colours.
+- Editing a task, note or idea with long notes opens the text box at the full length of the writing, level with its preview.
+- Notebooks can be starred: favourites sit in their own row at the top of the shelf, still appear in their folder, and come first in every notebook picker. Press `f` to star the notebook that's open.
+- The notebook picker is a tree: favourites first, then every notebook under its folders, rather than one long name per line.
+- On a phone, the empty space under Select many is gone: the selection tools float over the foot of the screen while you are selecting.
+- Adding a label from a task card suggests from the same list as the task form, so on Android the suggestions no longer linger as a half-drawn ghost.
+- Pressing a picture in a task's or a note's writing opens it over the page instead of in a new tab: pinch or double-tap to zoom, drag to look around, and back closes it.
+- A notebook can have a category: a new task written in it starts with that category, the way a new note starts with the notebook's labels. Add card on the board keeps the notebook and labels you chose.
+- The label filter's suggestions list every label, in a list that scrolls, not just the first six.
+- Opening the Android app clears its reminders from the phone's notification tray, so the count on the app's icon no longer sticks.
+- A key or an assistant granted to write somewhere is granted to read there too; the permission screens tick the read line with the write and say why.
+- A notebook's own label list can take a label off everything in that notebook, leaving it on everything outside it.
+- A finished task's rating bars turn three shades of grey, so their heights still read without the colour.
+- In a notebook, typing TASK:# or NOTE:# opens a search of its tasks or notes and writes the number of the one you pick; NOTE:# links to the note and shows its title.
+- A recipe's notes show under its method, and are written in the same box as the method.
+- A notebook's task filters no longer show as on — the dot and Clear — when nothing is filtering them.
+- A task card's add-a-label button sits at the foot of its rail, level with the labels.
+- On a computer, a form dialog can be dragged wider by either side edge — both sides move together — and a double-click on the edge puts it back.
+- A gear beside the open + wheel opens Quick capture settings (also in Settings → Preferences): choose the wheel's wedges and their order, and a main notebook every capture form starts in — a notebook you are reading still wins.
+- Bills can be automatic, like a subscription: no reminder, and the payment is recorded on its due day. A period can be skipped, every bill opens onto its payment history with the average per period, and a notebook's Bills tab edits and deletes bills like the Bills page.
+- A notebook's New item form asks where the item lives, like Inventory's own.
+- Tasks and task blocks carry attributes — a link, a phone number, anything a plugin reads — set in their form under the labels, and read, copied or changed from the ⓘ on a task's card. They were called options.
+- A task block can be filed in a notebook, and says so on the plan under its time; one made from a task keeps the task's notebook.
+- A notebook's Open and Manage tags sit beside its name, apart from the buttons that add to it.
+- The demo's kitchen notebook opens on its tasks, with colour-coded tags and a shopping list; other demo notebooks now hold goals, inventory and ideas.
+- On a phone, a notebook's header and task toolbar are tidier: Open and tags are icons in the corner, the search, filter, clear and count share one line, and the order sits beside Select many.
+- The wheel's room name, its icon and the border around them are the same colour.
+- Every passing message — saved, failed, Task added, Deleted — is one kind of toast in one place. One with a button (Edit or Undo) stays for the undo window and shows it running down.
+- A task's place in line counts every open task in its notebook, whatever the list is filtered to, and a new task goes behind older ones rated the same.
+- Delete in the task and card editors is the bin alone, so their buttons stay on one line on a phone.
+- A task card keeps its number and the add-a-label button under the tick box, its labels on a line of their own, and its buttons on one line that never wraps.
+- Assistants connected over MCP are told to name a task or note by the number the app shows, not by its internal id.
+- A goal inside a notebook offers, and accepts, only that notebook's tasks.
+- Every place wears its own glyph, the same one everywhere: Bills is a receipt, Rules a sorting arrow, Insights a chart, Board a kanban, Habits a target, Inventory a box. Search results and settings tabs carry their place's glyph too.
+- The plan's task strip has the task list's search, notebook, label and order controls, and shows bigger pills with their notebook, labels and due day in a box that scrolls. The week-start arrows sit centred in the toolbar.
+- Filters fold behind a Filters button whenever their strip is too narrow for them — in a notebook's panel as well as on a phone — instead of wrapping into a clogged second line.
+- A label with no colour of its own is a dark pill, so it no longer looks like the add-a-label button beside it.
+- Notebooks are organised in folders: give one a path like Home/Kitchen and it sits in that folder on the shelf. Rename or move a folder from the shelf and every notebook in it moves too. Notebooks that used to sit inside another one by a dash in their name now sit in a folder named after it.
+- The wheel's room name keeps a margin on a phone, even for Notebooks with its six shelves.
+- A goal's notes, a recipe's method and the weekly review's note are written in the same box as every other note, with its preview.
+
 ## 0.183.14 — 2026-09-26
 
 - Notebook linking checks wait for the selected notebook before writing notes.

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { routeGlyph } from '$lib/glyphs';
 	/**
 	 * Choosing what counts towards a goal.
 	 *
@@ -98,7 +99,11 @@
 								{a.name}
 							</label>
 						{:else}
-							<EmptyState icon="planner" title={t('goals.noActivitiesYet')} compact />
+							<EmptyState
+								icon={routeGlyph('/tasks/activities')!}
+								title={t('goals.noActivitiesYet')}
+								compact
+							/>
 						{/each}
 					</div>
 				</div>
@@ -118,7 +123,11 @@
 								{sl.name}
 							</label>
 						{:else}
-							<EmptyState icon="calendar" title={t('goals.noWeeklyBlocksYet')} compact />
+							<EmptyState
+								icon={routeGlyph('/tasks/plan')!}
+								title={t('goals.noWeeklyBlocksYet')}
+								compact
+							/>
 						{/each}
 					</div>
 				</div>
@@ -150,7 +159,7 @@
 								>
 							</label>
 						{:else}
-							<p class="text-xs text-gray-500">{t('goals.noOpenTodos')}</p>
+							<EmptyState compact icon="check" title={t('goals.noOpenTodos')} />
 						{/each}
 					</div>
 					{#if !showDoneTodos}

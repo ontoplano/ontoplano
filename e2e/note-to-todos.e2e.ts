@@ -92,8 +92,13 @@ test('a ticked box crosses over already done', async ({ page }) => {
 	await page.getByRole('button', { name: 'Make tasks of the checkboxes' }).click();
 	await page.getByRole('dialog').getByRole('button', { name: 'Make 2 tasks' }).click();
 
-	// One of two waiting, which is what the tab count says without opening it.
-	await expect(page.getByRole('button', { name: 'Tasks 1/2' })).toBeVisible();
+	// Both became tasks, which is what the tab count says without opening it.
+	await page.getByRole('button', { name: 'Tasks 2', exact: true }).click();
+	// One of the two waiting; the ticked one is already among the completed.
+	await expect(page.getByRole('button', { name: 'Completed (1)' })).toBeVisible();
+	await expect(page.getByText('1 task showing')).toBeVisible();
+	await expect(page.getByText('pack', { exact: true })).toBeVisible();
+	await expect(page.getByText('book the MOT')).toHaveCount(0);
 });
 
 test('a note with no checkbox in it is not offered the button', async ({ page }) => {

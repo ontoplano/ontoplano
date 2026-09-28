@@ -110,6 +110,8 @@ const pages = import.meta.glob(
 		'!/src/routes/settings/billing/**',
 		'!/src/routes/settings/family/**',
 		'!/src/routes/settings/instance/**',
+		// Home-screen widgets too: a launcher reads them over the API, which a
+		// device instance does not serve.
 		'!/src/routes/settings/integrations/**',
 		'!/src/routes/start/**',
 		'!/src/routes/welcome/**'

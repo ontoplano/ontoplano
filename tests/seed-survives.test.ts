@@ -73,8 +73,11 @@ describe('the seed, without its pictures', () => {
 		const history = db.prepare('select count(*) n from task_records').get() as { n: number };
 		expect(history.n).toBeGreaterThan(50);
 
-		// No pictures, and that is the only thing that should be missing.
-		const media = db.prepare('select count(*) n from media').get() as { n: number };
+		// No pictures, and that is the only thing that should be missing. The
+		// recordings share the table and are not drawn from the picture folder.
+		const media = db.prepare("select count(*) n from media where mime like 'image/%'").get() as {
+			n: number;
+		};
 		expect(media.n).toBe(0);
 
 		db.close();

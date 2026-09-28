@@ -62,7 +62,22 @@ export type ExportAllowance = {
 	nextAt: string | null;
 };
 
-function exportLog(userId: string, now: Date): string[] {
+/**
+ * One export in the log, and the key of the press that asked for it.
+ *
+ * A GET is a request the browser may send twice: when the answer to the first
+ * never arrives — a keep-alive socket closed under it — Chromium repeats it on
+ * its own, and the page sees one request where the server saw two. Counting
+ * each would spend two of the day's exports on one press, so the page names
+ * its press and a name already in the log is not charged again. Entries
+ * written before keys existed are bare timestamps.
+ */
+type LoggedExport = { at: string; key: string | null };
+
+/** What a press may call itself: short, and nothing that needs escaping. */
+const EXPORT_KEY = /^[A-Za-z0-9-]{8,64}$/;
+
+function exportLog(userId: string, now: Date): LoggedExport[] {
 	const raw = getUserSetting(userId, EXPORT_LOG_KEY);
 	if (!raw) return [];
 
@@ -70,9 +85,15 @@ function exportLog(userId: string, now: Date): string[] {
 		const parsed: unknown = JSON.parse(raw);
 		if (!Array.isArray(parsed)) return [];
 		return parsed
-			.filter((v): v is string => typeof v === 'string')
-			.filter((at) => now.getTime() - new Date(at).getTime() < EXPORT_WINDOW_MS)
-			.sort();
+			.map((v): LoggedExport | null => {
+				if (typeof v === 'string') return { at: v, key: null };
+				if (v && typeof v === 'object' && typeof v.at === 'string')
+					return { at: v.at, key: typeof v.key === 'string' ? v.key : null };
+				return null;
+			})
+			.filter((v): v is LoggedExport => v !== null)
+			.filter(({ at }) => now.getTime() - new Date(at).getTime() < EXPORT_WINDOW_MS)
+			.sort((a, b) => a.at.localeCompare(b.at));
 	} catch {
 		return [];
 	}
@@ -81,7 +102,7 @@ function exportLog(userId: string, now: Date): string[] {
 export function exportAllowance(userId: string, now: Date = new Date()): ExportAllowance {
 	const log = exportLog(userId, now);
 	const remaining = Math.max(0, exportsAllowedFor(userId, now) - log.length);
-	const oldest = log[0];
+	const oldest = log[0]?.at;
 
 	return {
 		remaining,
@@ -89,15 +110,17 @@ export function exportAllowance(userId: string, now: Date = new Date()): ExportA
 	};
 }
 
-function recordExport(userId: string, now: Date): void {
-	const log = [...exportLog(userId, now), now.toISOString()].slice(-exportsAllowedFor(userId, now));
+function recordExport(userId: string, now: Date, key: string | null): void {
+	const log = [...exportLog(userId, now), { at: now.toISOString(), key }].slice(
+		-exportsAllowedFor(userId, now)
+	);
 	setUserSetting(userId, EXPORT_LOG_KEY, JSON.stringify(log));
 }
 
 export function exportAccount(
 	userId: string,
 	now: Date = new Date(),
-	opts: { withoutPictures?: boolean } = {}
+	opts: { withoutPictures?: boolean; key?: string | null } = {}
 ): AccountExport {
 	const account = db
 		.select({ id: schema.user.id, name: schema.user.name, email: schema.user.email })
@@ -107,14 +130,19 @@ export function exportAccount(
 
 	if (!account) throw new Error('Account not found');
 
-	const allowance = exportAllowance(userId, now);
-	if (allowance.remaining <= 0)
-		throw new RateLimitedError(
-			`You have used both of today's exports. The next one unlocks ${hoursUntil(allowance.nextAt, now)}.`
-		);
+	const key = opts.key && EXPORT_KEY.test(opts.key) ? opts.key : null;
+	const repeated = key !== null && exportLog(userId, now).some((e) => e.key === key);
 
-	recordExport(userId, now);
-	audit(userId, 'data_exported');
+	if (!repeated) {
+		const allowance = exportAllowance(userId, now);
+		if (allowance.remaining <= 0)
+			throw new RateLimitedError(
+				`You have used both of today's exports. The next one unlocks ${hoursUntil(allowance.nextAt, now)}.`
+			);
+
+		recordExport(userId, now, key);
+		audit(userId, 'data_exported');
+	}
 
 	/*
 	 * Without pictures, on request. Base64 makes the bytes a third bigger than

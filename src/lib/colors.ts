@@ -143,6 +143,31 @@ export const CATEGORY_FALLBACK_COLOR = '#d1d5db';
 export const CATEGORY_FALLBACK_LIGHT = '#f3f4f6';
 export const CATEGORY_DEFAULT_NEW = '#6b7280';
 
+// -- Picked colours -----------------------------------------------------------
+
+/**
+ * The colours handed out, in order, to things a person can colour — a new
+ * sorting rule, and the labels and attributes the seed writes.
+ *
+ * Deep enough for a pale wash and for `.pill` ink to be computed from. The
+ * order alternates what reads as blue-ish with what reads as yellow-ish under
+ * red-green colour blindness, so two neighbours never differ only by red
+ * against green. `scripts/seed-dev.mjs` keeps a copy, because it runs with
+ * nothing beside it; `tests/seed-palette.test.ts` holds the two together.
+ */
+export const COLOUR_PALETTE = [
+	'#1d4ed8',
+	'#b45309',
+	'#6d28d9',
+	'#4d7c0f',
+	'#0f766e',
+	'#be123c',
+	'#155e63',
+	'#a16207',
+	'#9d174d',
+	'#7c2d12'
+] as const;
+
 // -- Tags ---------------------------------------------------------------------
 
 /**
@@ -152,3 +177,13 @@ export const CATEGORY_DEFAULT_NEW = '#6b7280';
  * a colour makes it look like an answer somebody already gave.
  */
 export const TAG_COLOR_DEFAULT = '#6b7280';
+
+/**
+ * The fill a label wears when nobody has given it a colour.
+ *
+ * It used to be the plain chip, which is also what the add-a-label button is,
+ * so a label and the button beside it read as the same thing. A dark grey
+ * pill says "a label" in every theme — the ramp inverts in the dark one, and
+ * the pill works out its own ink from whatever the fill turns out to be.
+ */
+export const DEFAULT_TAG_FILL = 'var(--color-gray-700)';

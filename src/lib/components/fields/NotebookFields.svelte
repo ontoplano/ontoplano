@@ -12,13 +12,13 @@
 	import FormGrid from '$lib/components/FormGrid.svelte';
 	import OneLine from '$lib/components/OneLine.svelte';
 	import TagInput from '$lib/components/TagInput.svelte';
+	import PickOne from '$lib/components/PickOne.svelte';
 	import ToggleRow from '$lib/components/ToggleRow.svelte';
 	import NotebookPicture from '$lib/components/NotebookPicture.svelte';
 	import { untrack } from 'svelte';
 	import Icon from '$lib/components/Icon.svelte';
 	import { moduleChoicesOf, type NotebookModule } from '$lib/notebook-modules';
-	import NotebookField from '$lib/components/NotebookField.svelte';
-	import { isInsideNotebook, leafNotebookName, parentNotebookPath } from '$lib/notebook-path';
+	import { allFolders, MAX_FOLDER_LENGTH } from '$lib/notebook-path';
 	import { page } from '$app/state';
 	import { useT } from '$lib/i18n';
 
@@ -26,8 +26,14 @@
 
 	let {
 		title = '',
+		/** The folder it sits in, `Home/Kitchen`; '' at the top of the shelf. */
+		folder = '',
 		description = '',
 		defaultTags = '',
+		/** The category a new task here starts with; null for none. */
+		categoryId = null,
+		/** The account's categories, to choose it from. */
+		categories = [],
 		/**
 		 * The notebook being edited, when one exists.
 		 *
@@ -46,15 +52,18 @@
 		/** What the browser refuses before sending. The page knows the ceiling. */
 		pictureKilobytes = 0,
 		/**
-		 * The notebooks this one could go inside — the whole shelf.
-		 *
-		 * Empty where the caller has none to offer, and the field draws nothing.
+		 * The shelf, for the folders it already has: the folder field suggests
+		 * them, so filing a second notebook beside the first is picking, not
+		 * retyping.
 		 */
 		notebooks = []
 	}: {
 		title?: string;
+		folder?: string;
 		description?: string;
 		defaultTags?: string;
+		categoryId?: number | null;
+		categories?: { id: number; name: string }[];
 		notebook?: {
 			id: number;
 			title: string;
@@ -64,37 +73,11 @@
 			counts: Record<NotebookModule, number>;
 		} | null;
 		pictureKilobytes?: number;
-		notebooks?: { id: number; title: string }[];
+		notebooks?: { folder?: string | null }[];
 	} = $props();
 
-	/*
-	 * The name, and the notebook it sits inside, as two fields.
-	 *
-	 * A notebook's place is its name — `Renovation — Kitchen` sits inside
-	 * `Renovation` — and that is what makes renaming one the way to move it.
-	 * It also meant the only way to file a new notebook under another was to
-	 * know to type an em dash, which nobody does. The box holds the name; this
-	 * holds the place; the server joins them.
-	 */
-	let inside = $state<number | null>(null);
-	let seededFrom = title;
-	const parentOf = (full: string) => {
-		const path = parentNotebookPath(full);
-		return path ? (notebooks.find((one) => one.title === path)?.id ?? null) : null;
-	};
-	$effect(() => {
-		if (title === seededFrom) return;
-		seededFrom = title;
-		inside = parentOf(title);
-	});
-
-	/*
-	 * Everything except itself and what is already under it: a notebook inside
-	 * its own child is a name that contains itself and a tree with no bottom.
-	 */
-	const couldHold = $derived(
-		notebooks.filter((one) => !notebook || !isInsideNotebook(one.title, notebook.title))
-	);
+	/** The folders the shelf already has, for the field's suggestions. */
+	const folders = $derived(allFolders(notebooks));
 
 	const offered = $derived(
 		notebook ? moduleChoicesOf(notebook, page.data.hiddenSections ?? []) : []
@@ -170,7 +153,7 @@
 				<OneLine
 					name="heading"
 					placeholder={t('notebooks.kitchenRenovation')}
-					value={leafNotebookName(title)}
+					value={title}
 					class="input"
 					required
 				/>
@@ -178,15 +161,19 @@
 		</div>
 	</div>
 
-	<!-- Where it goes. `NotebookField` is the same control that files a note or
-	     a task under a subject, asking the same question about a notebook. -->
-	<NotebookField
-		notebooks={couldHold}
-		bind:value={inside}
-		span={12}
-		name="parent"
-		label={t('notebooks.inside')}
-	/>
+	<!-- Where it sits on the shelf: a path, with the folders already in use
+	     offered the moment the field is entered. -->
+	<Field label={t('notebooks.folder')} span={12} hint={t('notebooks.folderHint')}>
+		<PickOne
+			name="folder"
+			value={folder}
+			free
+			options={folders.map((one) => ({ value: one, label: one }))}
+			maxlength={MAX_FOLDER_LENGTH}
+			placeholder={t('notebooks.folderPlaceholder')}
+			ariaLabel={t('notebooks.folder')}
+		/>
+	</Field>
 
 	<Field label={t('notebooks.whatItIsFor')} span={12}>
 		<textarea name="description" rows="3" class="textarea">{description}</textarea>
@@ -198,6 +185,19 @@
 	<Field label={t('ui.tags')} span={12} hint={t('notebooks.id.everyNewNoteStartsWith')}>
 		<TagInput name="defaultTags" value={defaultTags} known={page.data.tagVocabulary ?? []} />
 	</Field>
+
+	<!-- The same for a task: its category, filled into the task form — see
+	     TodoFields. Not on a notebook somebody shared: it is the owner's. -->
+	{#if notebook?.mine !== false}
+		<Field label={t('ui.category')} span={12} hint={t('notebooks.everyNewTaskStartsWith')}>
+			<select name="categoryId" class="select">
+				<option value="">{t('fields.todo.none')}</option>
+				{#each categories as cat (cat.id)}
+					<option value={String(cat.id)} selected={categoryId === cat.id}>{cat.name}</option>
+				{/each}
+			</select>
+		</Field>
+	{/if}
 
 	<!--
 		What this subject accumulates, beside what is written about it.

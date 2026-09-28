@@ -20,7 +20,7 @@
 	 *
 	 * `SortControl` is this plus a direction arrow.
 	 */
-	import Icon from '$lib/components/Icon.svelte';
+	import Icon, { type IconName } from '$lib/components/Icon.svelte';
 	import { afterPress } from '$lib/after-press';
 	import { useT } from '$lib/i18n';
 	import { untrack } from 'svelte';
@@ -33,6 +33,8 @@
 	const LIST_GAP = 4;
 	/** The tallest the list gets before it scrolls: 16rem. */
 	const LIST_MAX_HEIGHT = 256;
+	/** How far each level of a grouped list steps in. */
+	const INDENT_REM = 0.875;
 
 	let {
 		value,
@@ -43,6 +45,7 @@
 		label,
 		name,
 		required = false,
+		icon,
 		class: klass = ''
 	}: {
 		value?: T;
@@ -57,8 +60,17 @@
 		 * is handed the whole set.
 		 */
 		values?: readonly T[];
-		/** What can be chosen, in the order they should be offered. */
-		options: readonly { value: T; label: string }[];
+		/**
+		 * What can be chosen, in the order they should be offered.
+		 *
+		 * `path` places an option inside nested groups — a notebook in
+		 * `Home/Kitchen` is `['Home', 'Kitchen']` — drawn as headings that
+		 * cannot be chosen, with the option indented under them. Options that
+		 * share a path must be given together. `face` is what the closed button
+		 * says when that option is chosen, where the label alone is ambiguous
+		 * outside its group.
+		 */
+		options: readonly { value: T; label: string; path?: readonly string[]; face?: string }[];
 		onpick?: (next: T) => void;
 		onpickMany?: (next: T[]) => void;
 		/** What this control is, for whoever is not looking at it. */
@@ -71,6 +83,12 @@
 		 */
 		name?: string;
 		required?: boolean;
+		/**
+		 * A glyph in place of the chosen option's word, for a strip with no
+		 * room for the word — the order on a phone. The word is still the
+		 * button's name and tooltip, and the list is unchanged.
+		 */
+		icon?: IconName;
 		class?: string;
 	} = $props();
 
@@ -178,6 +196,18 @@
 	let at = $state(-1);
 
 	const chosen = $derived(options.find((one) => one.value === now) ?? options[0]);
+
+	/**
+	 * The group headings that open before option `i`: every level of its path
+	 * past the part it shares with the option above it.
+	 */
+	function headingsBefore(i: number): { label: string; depth: number }[] {
+		const path = options[i].path ?? [];
+		const above = i > 0 ? (options[i - 1].path ?? []) : [];
+		let same = 0;
+		while (same < path.length && same < above.length && path[same] === above[same]) same += 1;
+		return path.slice(same).map((label, at) => ({ label, depth: same + at }));
+	}
 
 	/*
 	 * What the button says when several can be on.
@@ -329,15 +359,20 @@
 	<button
 		bind:this={face}
 		type="button"
-		class="{field ? 'select-face' : 'btn btn-sm'} min-w-0 flex-1 justify-between"
+		class="{field ? 'select-face' : 'btn btn-sm'} min-w-0 {icon ? '' : 'flex-1 justify-between'}"
 		aria-haspopup="listbox"
 		aria-expanded={open}
 		aria-label={label}
+		title={icon ? `${label}: ${many ? saidMany : (chosen?.label ?? '')}` : undefined}
 		onclick={() => (open ? (open = false) : show())}
 		onkeydown={onFaceKey}
 	>
-		<span class="truncate">{many ? saidMany : (chosen?.label ?? '')}</span>
-		<Icon name="chevron-down" size={12} />
+		{#if icon}
+			<Icon name={icon} size={14} />
+		{:else}
+			<span class="truncate">{many ? saidMany : (chosen?.face ?? chosen?.label ?? '')}</span>
+			<Icon name="chevron-down" size={12} />
+		{/if}
 	</button>
 
 	{#if open}
@@ -356,7 +391,16 @@
 			aria-multiselectable={many ? true : undefined}
 			aria-label={label}
 		>
-			{#each options as option (option.value)}
+			{#each options as option, i (option.value)}
+				{#each headingsBefore(i) as heading (heading.depth)}
+					<li
+						role="presentation"
+						class="eyebrow px-3 pt-2 pb-1 text-gray-500"
+						style="padding-inline-start: {0.75 + heading.depth * INDENT_REM}rem"
+					>
+						{heading.label}
+					</li>
+				{/each}
 				<li role="presentation">
 					<button
 						type="button"
@@ -371,6 +415,9 @@
 							: options.indexOf(option) === at
 								? 'overlay-face-on'
 								: ''}"
+						style={option.path?.length
+							? `padding-inline-start: ${0.75 + option.path.length * INDENT_REM}rem`
+							: undefined}
 						onclick={() => (many ? toggle(option.value) : take(option.value))}
 						onmouseenter={() => (at = options.indexOf(option))}
 					>

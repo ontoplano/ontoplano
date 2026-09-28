@@ -9,9 +9,9 @@
  * "picture 12 is in the kitchen notebook" would be wrong within a week.
  *
  * So this is derived, every time it is asked. The gallery gets a folder per
- * notebook that has any pictures, named the way the notebook is named — which
- * means a notebook inside a notebook is a folder inside a folder, and
- * `Home — Kitchen` in the notebooks room is `Home — Kitchen` here too.
+ * notebook that has any pictures, inside the shelf folders that notebook is
+ * filed in — `Countertops` in `Home/Kitchen` on the shelf is
+ * `Home/Kitchen/Countertops` here too.
  *
  * Derived also decides what can be done to it: pictures can be looked at,
  * named and tagged like any other, but nothing is uploaded *into* a notebook
@@ -26,7 +26,7 @@ import type { Ctx } from './ctx.js';
 import { NotFoundError } from './errors.js';
 import type { AlbumPicture } from './gallery.js';
 import { IMAGE_MIME_PREFIX } from './media-kind.js';
-import { NOTEBOOK_SEPARATOR } from './notebooks.js';
+import { NOTEBOOK_SEPARATOR, folderSegments } from '../notebook-path.js';
 
 /** Only rows that are pictures — recordings share this table. */
 const isPicture = like(media.mime, `${IMAGE_MIME_PREFIX}%`);
@@ -58,7 +58,12 @@ export function picturesMentionedIn(content: string): number[] {
 
 /** A notebook that has pictures in it, and which ones. */
 export type NotebookMediaFolder = {
-	/** The notebook's own title, which is also its path — see `NOTEBOOK_SEPARATOR`. */
+	/**
+	 * Its path: the shelf folders and then the notebook's title, joined by
+	 * `NOTEBOOK_SEPARATOR` — a slash cannot join them, since a title may hold
+	 * one. A shelf folder with no pictures of its own appears too, so the
+	 * notebooks in it have somewhere to hang.
+	 */
 	name: string;
 	/** What to show in the folder tile: this folder's name without its parents'. */
 	leaf: string;
@@ -84,7 +89,7 @@ export type NotebookMediaFolder = {
  */
 export function notebookMediaFolders(ctx: Ctx): NotebookMediaFolder[] {
 	const rows = db
-		.select({ title: notebooks.title, content: diaryEntries.content })
+		.select({ title: notebooks.title, folder: notebooks.folder, content: diaryEntries.content })
 		.from(diaryEntries)
 		.innerJoin(notebooks, eq(diaryEntries.notebookId, notebooks.id))
 		.where(and(eq(diaryEntries.userId, ctx.userId), isNotNull(diaryEntries.notebookId)))
@@ -94,9 +99,10 @@ export function notebookMediaFolders(ctx: Ctx): NotebookMediaFolder[] {
 	for (const row of rows) {
 		const mentioned = picturesMentionedIn(row.content);
 		if (mentioned.length === 0) continue;
-		const held = byNotebook.get(row.title) ?? new Set<number>();
+		const path = [...folderSegments(row.folder), row.title].join(NOTEBOOK_SEPARATOR);
+		const held = byNotebook.get(path) ?? new Set<number>();
 		for (const id of mentioned) held.add(id);
-		byNotebook.set(row.title, held);
+		byNotebook.set(path, held);
 	}
 	if (byNotebook.size === 0) return [];
 
@@ -129,6 +135,15 @@ export function notebookMediaFolders(ctx: Ctx): NotebookMediaFolder[] {
 			totalCount: 0,
 			coverId: null
 		});
+	}
+	// The shelf folders above them, which hold no pictures of their own.
+	for (const folder of [...folders]) {
+		const parts = folder.name.split(NOTEBOOK_SEPARATOR);
+		for (let depth = 1; depth < parts.length; depth++) {
+			const name = parts.slice(0, depth).join(NOTEBOOK_SEPARATOR);
+			if (folders.some((one) => one.name === name)) continue;
+			folders.push({ name, leaf: parts[depth - 1], pictureIds: [], totalCount: 0, coverId: null });
+		}
 	}
 	folders.sort((a, b) => a.name.localeCompare(b.name));
 

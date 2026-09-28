@@ -133,7 +133,10 @@ test('several things come in at once, and what moves is named first', async ({ p
 			.getByRole('button', { name: /Add note/ })
 			.last()
 			.click();
-		await expect(page.getByText(content).first()).toBeVisible({ timeout: 30_000 });
+		// The composer's own preview already shows the words, so the note being
+		// on the page says nothing. The composer closing is the write landing.
+		await expect(page.locator('textarea[name="content"]')).toHaveCount(0, { timeout: 30_000 });
+		await expect(page.getByText(content).first()).toBeVisible();
 	}
 
 	await page
@@ -147,9 +150,8 @@ test('several things come in at once, and what moves is named first', async ({ p
 		.getByRole('button', { name: /Add note/ })
 		.last()
 		.click();
-	await expect(page.getByText('the plumber can move the pipes').first()).toBeVisible({
-		timeout: 30_000
-	});
+	await expect(page.locator('textarea[name="content"]')).toHaveCount(0, { timeout: 30_000 });
+	await expect(page.getByText('the plumber can move the pipes').first()).toBeVisible();
 
 	await page
 		.getByRole('button', { name: /Link note/ })
@@ -179,7 +181,13 @@ test('several things come in at once, and what moves is named first', async ({ p
 	 * numbering: a note carried its number across and collided with the one
 	 * already here, which answered "Unexpected error".
 	 */
-	await expect(page.getByText('nine days in September').first()).toBeVisible({ timeout: 30_000 });
+	/*
+	 * The receipt first: it is said the moment the answer is in and gone a
+	 * couple of seconds later. The titles are in the picker too, so they only
+	 * count once the dialogs have closed.
+	 */
+	await expect(page.getByText(/Brought 2 things to Kitchen/)).toBeVisible({ timeout: 30_000 });
+	await expect(page.getByRole('dialog', { name: /Link note/ })).toHaveCount(0);
+	await expect(page.getByText('nine days in September').first()).toBeVisible();
 	await expect(page.getByText('the train is three hours').first()).toBeVisible();
-	await expect(page.getByText(/Brought 2 things to Kitchen/)).toBeVisible();
 });

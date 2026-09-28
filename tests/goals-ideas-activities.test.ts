@@ -10,6 +10,9 @@
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 import { makeDatabase, OWNER, seedAccounts, STRANGER } from './helpers/db';
 
+/** Every tab a notebook can have, for a subject that files one of each. */
+const EVERY_TAB = 'notes,tasks,goals,ideas,inventory,ledgers,bills,habits,workouts,recipes';
+
 const database = makeDatabase();
 seedAccounts(database.path);
 afterAll(() => database.remove());
@@ -152,6 +155,37 @@ describe('goals', () => {
 	 * activity linked to it read "0 of 0 done" and no bar while its own number
 	 * stood at seven of twelve.
 	 */
+	/*
+	 * A goal filed under a notebook counts that notebook's tasks. The picker
+	 * offered every task in the account; the service is where the rule holds,
+	 * so a form or an assistant cannot get round it.
+	 */
+	test("a notebook goal links only that notebook's tasks, and keeps what it had", async () => {
+		const notebooks = await import('../src/lib/services/notebooks');
+		const kitchen = notebooks.createNotebook(ctx, { title: 'Kitchen', modules: EVERY_TAB });
+		const trip = notebooks.createNotebook(ctx, { title: 'Trip', modules: EVERY_TAB });
+		const tiles = todos.createTodo(ctx, { title: 'order tiles', notebookId: kitchen });
+		const flights = todos.createTodo(ctx, { title: 'book flights', notebookId: trip });
+		const loose = todos.createTodo(ctx, { title: 'renew passport' });
+		const id = goals.createGoal(ctx, {
+			title: 'Kitchen done',
+			horizon: 'month',
+			notebookId: kitchen
+		});
+
+		goals.setGoalLinks(ctx, id, { slotIds: [], todoIds: [tiles, flights, loose], activityIds: [] });
+		const linked = () => goals.listGoals(ctx).find((g) => g.id === id)!.linkedTodoIds;
+		expect(linked()).toEqual([tiles]);
+
+		expect(goals.addGoalLinks(ctx, id, { todoIds: [flights] }).added).toBe(0);
+		expect(linked()).toEqual([tiles]);
+
+		// A task that moved to another notebook after it was linked stays linked.
+		todos.updateTodo(ctx, tiles, { title: 'order tiles', notebookId: trip });
+		goals.setGoalLinks(ctx, id, { slotIds: [], todoIds: [tiles], activityIds: [] });
+		expect(linked()).toEqual([tiles]);
+	});
+
 	test('linked tasks and measures both count towards one goal', () => {
 		const id = goals.createGoal(ctx, {
 			title: 'Finish the course',

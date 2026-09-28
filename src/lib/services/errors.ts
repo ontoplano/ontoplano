@@ -54,16 +54,24 @@ function textOf(said: Said): string {
 	return typeof said === 'string' ? said : (said.text ?? said.key);
 }
 
-export type ErrorCode =
-	| 'validation_error'
-	| 'not_found'
-	| 'conflict'
-	| 'plan_limit'
-	| 'payment_required'
-	| 'unauthorized'
-	| 'forbidden'
-	| 'rate_limited'
-	| 'internal';
+/**
+ * Every code a refusal can carry. Stable: the JSON API's envelope and the MCP
+ * server's tool errors both hand these to software that branches on them, so
+ * one is added rather than renamed.
+ */
+export const ERROR_CODES = [
+	'validation_error',
+	'not_found',
+	'conflict',
+	'plan_limit',
+	'payment_required',
+	'unauthorized',
+	'forbidden',
+	'rate_limited',
+	'internal'
+] as const;
+
+export type ErrorCode = (typeof ERROR_CODES)[number];
 
 export class ServiceError extends Error {
 	readonly code: ErrorCode;
@@ -116,8 +124,8 @@ export class NotFoundError extends ServiceError {
 }
 
 export class ConflictError extends ServiceError {
-	constructor(said: Said) {
-		super('conflict', 409, said);
+	constructor(said: Said, details?: unknown) {
+		super('conflict', 409, said, details);
 	}
 }
 

@@ -1,5 +1,6 @@
 <script lang="ts">
 	import FormGrid from '$lib/components/FormGrid.svelte';
+	import { notebooksHolding } from '$lib/notebook-modules';
 	import RatingBadges from '$lib/components/RatingBadges.svelte';
 	import { compareByPriority, type RatingValues } from '$lib/ratings';
 	import { ordinal } from '$lib/ordinal';
@@ -7,7 +8,7 @@
 	import IdeaFields from '$lib/components/fields/IdeaFields.svelte';
 	import NoteFields from '$lib/components/fields/NoteFields.svelte';
 	import TodoFields from '$lib/components/fields/TodoFields.svelte';
-	import type { Capture } from '$lib/capture';
+	import { CAPTURE_OPTIONS_URL, type Capture } from '$lib/capture';
 	import type { Rating } from '$lib/ratings';
 	import { useT } from '$lib/i18n';
 
@@ -26,7 +27,15 @@
 	 * collapsed, because the reason capture exists is that it does not ask you
 	 * for anything before you can write.
 	 */
-	let { capture }: { capture: Capture } = $props();
+	let {
+		capture,
+		/**
+		 * The notebook the form starts in — the one on screen, or the one the
+		 * capture settings name. Offered only once the list of notebooks has it,
+		 * so one that has since been closed or deleted is simply not chosen.
+		 */
+		notebookId = null
+	}: { capture: Capture; notebookId?: number | null } = $props();
 
 	/**
 	 * The choices the full forms offer, fetched the first time one opens.
@@ -38,7 +47,13 @@
 	 */
 	type Options = {
 		categories: { id: number; name: string }[];
-		notebooks: { id: number; title: string }[];
+		notebooks: {
+			id: number;
+			title: string;
+			categoryId?: number | null;
+			defaultTags?: string;
+			modules: readonly string[];
+		}[];
 		inventoryCategories: { id: number; name: string }[];
 		/** The queue a new task would join — see `whereItWouldSit` below. */
 		queue: { ratings: RatingValues; sortOrder: number; createdAt: string }[];
@@ -90,12 +105,24 @@
 		).length + 1
 	);
 
+	/**
+	 * The starting notebook, once it is known to be one of the account's and
+	 * to have a tab for this kind — the wheel's notebook may not, and then the
+	 * form starts in none rather than in one that would refuse it.
+	 */
+	const start = $derived(
+		notebookId !== null &&
+			notebooksHolding(options.notebooks, capture.holds).some((one) => one.id === notebookId)
+			? notebookId
+			: null
+	);
+
 	$effect(() => {
 		// `loaded` rather than "are there any categories": an account with none
 		// of them fetched successfully and would otherwise ask again on every
 		// opening — and never be able to say where a task would land.
 		if (loaded) return;
-		fetch('/api/capture-options')
+		fetch(CAPTURE_OPTIONS_URL)
 			.then((res) => (res.ok ? res.json() : null))
 			.then((got) => {
 				if (!got) return;
@@ -108,7 +135,7 @@
 
 <FormGrid>
 	{#if capture.key === 'idea'}
-		<IdeaFields compact />
+		<IdeaFields compact notebooks={options.notebooks} notebookId={start} />
 	{:else if capture.key === 'note'}
 		<!--
 			A note, and where it goes.
@@ -118,17 +145,23 @@
 			a note; the picker under it says whether it lands in the diary or in
 			one of the notebooks, and it starts on the diary.
 		-->
-		<NoteFields compact label={t('app.note')} notebooks={options.notebooks} />
+		<NoteFields compact label={t('app.note')} notebooks={options.notebooks} notebookId={start} />
 	{:else if capture.key === 'todo'}
 		<TodoFields
 			compact
 			categories={options.categories}
 			notebooks={options.notebooks}
+			notebookId={start}
 			bind:ratings
 			place={loaded ? whereItWouldSit : undefined}
 		/>
 	{:else}
-		<BuyFields compact categories={options.inventoryCategories} />
+		<BuyFields
+			compact
+			categories={options.inventoryCategories}
+			notebooks={options.notebooks}
+			startingNotebook={start}
+		/>
 	{/if}
 </FormGrid>
 

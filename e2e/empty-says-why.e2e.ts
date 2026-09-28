@@ -26,7 +26,8 @@ test('a search that matches nothing says so, not that there is nothing', async (
 	await page.locator('input[type="search"]').first().fill('something nothing matches');
 	await page.waitForTimeout(500);
 
-	await expect(page.getByText('Nothing to show')).toBeVisible();
+	await expect(page.getByText('Nothing matches', { exact: true })).toBeVisible();
+	await expect(page.getByRole('button', { name: 'Clear' }).last()).toBeVisible();
 	await expect(page.getByText(/match what you are filtering by/)).toBeVisible();
 	await expect(page.getByText(/A task is|no day on it/)).toBeHidden();
 });

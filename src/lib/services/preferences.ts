@@ -7,13 +7,16 @@ import {
 	setStyle,
 	setTimezone,
 	setWeekSettings,
-	setClock
+	setClock,
+	setCaptureSettings
 } from './settings.js';
+import { readCaptureForm } from '../capture-settings.js';
+import { pickableNotebooks } from './notebooks.js';
 import { isStyle } from '../style.js';
 import { isClock } from '../when.js';
 import { isLocale } from '../i18n/locales.js';
 import type { Ctx } from './ctx.js';
-import { ValidationError } from './errors.js';
+import { NotFoundError, ValidationError } from './errors.js';
 import { num, str } from './validate.js';
 
 /**
@@ -112,4 +115,26 @@ export function parseTimezone(value: unknown): string {
  */
 export function setAssistantMayDelete(ctx: Ctx, value: unknown): void {
 	setChatMayDelete(ctx.userId, value !== null && value !== undefined && value !== 'false');
+}
+
+/**
+ * The capture wheel: its wedges, their order, and the notebook it writes into.
+ *
+ * At least one wedge, because a wheel with none is a button that does nothing.
+ * The notebook has to be one this account can file things in — its own, or
+ * one the family shares — and one it cannot is the same answer as one that
+ * does not exist.
+ */
+export function saveCaptureSettings(
+	ctx: Ctx,
+	raw: { notebookId: unknown; order: readonly unknown[]; on: readonly unknown[] }
+): void {
+	const settings = readCaptureForm(raw);
+	if (!settings) throw new ValidationError({ key: 'errors.preferences.captureNeedsAWedge' });
+	if (
+		settings.notebookId !== null &&
+		!pickableNotebooks(ctx).some((one) => one.id === settings.notebookId)
+	)
+		throw new NotFoundError('notebook');
+	setCaptureSettings(ctx.userId, settings);
 }
