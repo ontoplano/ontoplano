@@ -78,6 +78,12 @@ jobs:
       # Every changelog line sits under the version this branch ships.
       - run: node scripts/check-changelog.mjs
 
+      # A release PR carries the README's release badge already naming the
+      # version it ships: the tag lands on the merged commit, so a badge left
+      # behind here stays behind until the next release.
+      - if: github.event_name == 'pull_request' && github.head_ref == 'release'
+        run: RELEASE_TAG="v$(node -p "require('./package.json').version")" yarn badges:check
+
       # Nothing shaped like a credential in any commit this repository holds.
       # `make lint` already refuses a tracked file *named* like a key; this
       # reads the content, and reads the history — a secret removed in the next
