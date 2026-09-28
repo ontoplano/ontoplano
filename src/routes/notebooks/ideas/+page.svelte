@@ -41,7 +41,8 @@
 
 	let showForm = $state(false);
 	let editingId: number | null = $state(null);
-	let selectedIndex = $state(0);
+	/* Nowhere until a key is pressed: a first row wearing the cursor reads as chosen. */
+	let selectedIndex = $state(-1);
 	/** Which labels to show and which to hide, kept in the address. */
 	const tagFilter = tagFilterInUrl();
 	/*
@@ -96,7 +97,7 @@
 		filterApplied = DEFAULT_APPLIED;
 		filterFavorite = DEFAULT_FAVOURITE;
 		looking = '';
-		selectedIndex = 0;
+		selectedIndex = -1;
 	}
 
 	/*
@@ -269,7 +270,7 @@
 				openIdeaForm();
 				break;
 			case 'edit':
-				if (items.length > 0) openIdeaForm(items[clampedSelectedIndex].id);
+				if (currentSelectedIdea) openIdeaForm(currentSelectedIdea.id);
 				break;
 			case 'toggle-favorite': {
 				const idea = currentSelectedIdea;
@@ -389,7 +390,7 @@
 										include: [...held.include, name],
 										exclude: held.exclude.filter((one) => one !== name)
 									};
-								selectedIndex = 0;
+								selectedIndex = -1;
 							}}
 							onedit={(id) => openIdeaForm(id)}
 							selecting={selection.selecting}
@@ -428,7 +429,7 @@
 			options={appliedChoices}
 			onpick={(next) => {
 				filterApplied = next;
-				selectedIndex = 0;
+				selectedIndex = -1;
 			}}
 			label={t('notebooks.ideas.applied')}
 			class="min-w-36 flex-1 sm:flex-none"
@@ -438,7 +439,7 @@
 			options={favouriteChoices}
 			onpick={(next) => {
 				filterFavorite = next;
-				selectedIndex = 0;
+				selectedIndex = -1;
 			}}
 			label={t('notebooks.ideas.favourite')}
 			class="min-w-36 flex-1 sm:flex-none"
@@ -449,7 +450,7 @@
 				value={tagFilter.current}
 				onchange={(next) => {
 					tagFilter.current = next;
-					selectedIndex = 0;
+					selectedIndex = -1;
 				}}
 				name="idea-tags"
 				class="min-w-36 flex-1 sm:flex-none"
@@ -469,7 +470,7 @@
 			direction = directionFor(next);
 			remember(ORDER_KEY, next);
 			remember(DIRECTION_KEY, direction);
-			selectedIndex = 0;
+			selectedIndex = -1;
 		}}
 		onflip={() => {
 			direction = direction === 'asc' ? 'desc' : 'asc';

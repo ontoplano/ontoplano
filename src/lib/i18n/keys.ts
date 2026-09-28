@@ -587,6 +587,7 @@ export type MessageKey =
 	| 'errors.webhooks.webhookAddress'
 	| 'errors.webhooks.webhookAddressHasToBeAValid'
 	| 'errors.webhooks.webhookAddressHasToBeHttp'
+	| 'errors.weekly.alreadyWritten'
 	| 'errors.widgets.thatNotebookHasNoSuchTab'
 	| 'errors.workouts.aCategoryByThatName'
 	| 'errors.workouts.measuresHave'
@@ -1369,6 +1370,7 @@ export type MessageKey =
 	| 'instance.whereYourOntoplanoLives'
 	| 'instance.youCanChangeThisLater'
 	| 'inventory.aColourForThisAttribute'
+	| 'inventory.aColourForThisCategory'
 	| 'inventory.aColourForThisValue'
 	| 'inventory.aRoomACupboardA'
 	| 'inventory.about'
@@ -1380,12 +1382,15 @@ export type MessageKey =
 	| 'inventory.archive'
 	| 'inventory.archivedCount'
 	| 'inventory.archivedWord'
-	| 'inventory.atLeast'
-	| 'inventory.atMost'
+	| 'inventory.atLeastLabel'
+	| 'inventory.atLeastShort'
+	| 'inventory.atMostLabel'
+	| 'inventory.atMostShort'
 	| 'inventory.attributes'
 	| 'inventory.boughtCount'
 	| 'inventory.boughtWord'
 	| 'inventory.categories'
+	| 'inventory.categoriesAndAttributes'
 	| 'inventory.changeIs'
 	| 'inventory.changesAre'
 	| 'inventory.confirm'
@@ -1398,12 +1403,13 @@ export type MessageKey =
 	| 'inventory.everythingBothLists'
 	| 'inventory.family'
 	| 'inventory.family2'
-	| 'inventory.find'
-	| 'inventory.find2'
 	| 'inventory.fold'
+	| 'inventory.foodColumn'
 	| 'inventory.frozen'
 	| 'inventory.hereAndYou'
 	| 'inventory.hiddenByTheFilters'
+	| 'inventory.holdsFood'
+	| 'inventory.howMany'
 	| 'inventory.ifTheTripGoesWell'
 	| 'inventory.inside'
 	| 'inventory.inventory'
@@ -1414,9 +1420,14 @@ export type MessageKey =
 	| 'inventory.leaveEmptyForARoom'
 	| 'inventory.lineHas'
 	| 'inventory.linesHave'
+	| 'inventory.moveDown'
+	| 'inventory.moveDownNamed'
+	| 'inventory.moveUp'
+	| 'inventory.moveUpNamed'
 	| 'inventory.newCategory'
 	| 'inventory.newItem'
 	| 'inventory.newLocation'
+	| 'inventory.noColour'
 	| 'inventory.noConnectionThisIsThe'
 	| 'inventory.noPriceYet'
 	| 'inventory.noPriceYetSo'
@@ -1431,6 +1442,14 @@ export type MessageKey =
 	| 'inventory.oneMore'
 	| 'inventory.oneMore2'
 	| 'inventory.onlyWhatYouHaveFewer'
+	| 'inventory.orderAdded'
+	| 'inventory.orderCount'
+	| 'inventory.orderName'
+	| 'inventory.orderPrice'
+	| 'inventory.orderThingsBy'
+	| 'inventory.placeEmpty'
+	| 'inventory.placeHolds'
+	| 'inventory.placeHoldsSplit'
 	| 'inventory.putBackOnTheList'
 	| 'inventory.putItBackOnThe'
 	| 'inventory.remove'
@@ -1443,8 +1462,10 @@ export type MessageKey =
 	| 'inventory.restock'
 	| 'inventory.restock2'
 	| 'inventory.saveTheName'
+	| 'inventory.searchTheseThings'
+	| 'inventory.sharedWithFamily'
 	| 'inventory.shoppingList'
-	| 'inventory.shoppingList2'
+	| 'inventory.shoppingListCount'
 	| 'inventory.short'
 	| 'inventory.showWhatIsIn'
 	| 'inventory.showWhatYouAlreadyHave'
@@ -1452,11 +1473,9 @@ export type MessageKey =
 	| 'inventory.showingCount'
 	| 'inventory.stock'
 	| 'inventory.takeThisAttributeOffEverything'
+	| 'inventory.takeThisValueOffEverything'
 	| 'inventory.theListIsEmpty'
 	| 'inventory.tickTheOnesThatHold'
-	| 'inventory.toBuy'
-	| 'inventory.toBuyCount'
-	| 'inventory.toBuyTotal'
 	| 'inventory.toRestock'
 	| 'inventory.waitingToBeSent'
 	| 'inventory.whatYouTickWillBe'
@@ -1468,7 +1487,6 @@ export type MessageKey =
 	| 'inventory.widenOrNarrowTheLocations'
 	| 'inventory.wishlist'
 	| 'inventory.wishlist2'
-	| 'inventory.withoutAPrice'
 	| 'inventory.yesRemoveIt'
 	| 'keys.reach.everything'
 	| 'keys.reach.heading'
@@ -2026,11 +2044,18 @@ export type MessageKey =
 	| 'notebooks.theirNotebookWasDeletedThe'
 	| 'notebooks.theseLiveElsewhere'
 	| 'notebooks.thisIsGoneFromEverywhere'
+	| 'notebooks.weekly.editNote'
 	| 'notebooks.weekly.everyWeekYouWriteAbout'
 	| 'notebooks.weekly.nothingWrittenYet'
 	| 'notebooks.weekly.openThatWeek'
+	| 'notebooks.weekly.orderWeek'
+	| 'notebooks.weekly.orderWeeksBy'
 	| 'notebooks.weekly.searchTheWeeks'
 	| 'notebooks.weekly.showingCount'
+	| 'notebooks.weekly.theNote'
+	| 'notebooks.weekly.weekOf'
+	| 'notebooks.weekly.writeANote'
+	| 'notebooks.weekly.yesDelete'
 	| 'notebooks.whatIsInside'
 	| 'notebooks.whatItHolds'
 	| 'notebooks.whatItIsFor'
@@ -3065,6 +3090,7 @@ export type MessageKey =
 	| 'shortcut.navigateSlots'
 	| 'shortcut.navigateTags'
 	| 'shortcut.navigateTokens'
+	| 'shortcut.navigateWeeks'
 	| 'shortcut.navigateWidgets'
 	| 'shortcut.newActivity'
 	| 'shortcut.newCard'
@@ -3082,6 +3108,7 @@ export type MessageKey =
 	| 'shortcut.newTodo'
 	| 'shortcut.newToken'
 	| 'shortcut.newWeeklyBlock'
+	| 'shortcut.newWeeklyNote'
 	| 'shortcut.newWidget'
 	| 'shortcut.newWins'
 	| 'shortcut.newWorkout'
@@ -3204,21 +3231,18 @@ export type MessageKey =
 	| 'taskStatus.doing'
 	| 'taskStatus.pending'
 	| 'tasks.activities.anActivityIsANamed'
-	| 'tasks.activities.cannotDeleteReferencedByPlanner'
 	| 'tasks.activities.categories'
 	| 'tasks.activities.colour'
 	| 'tasks.activities.confirm'
 	| 'tasks.activities.createActivity'
 	| 'tasks.activities.deleteActivity'
-	| 'tasks.activities.disable'
-	| 'tasks.activities.disabled'
 	| 'tasks.activities.editActivity'
-	| 'tasks.activities.enable'
 	| 'tasks.activities.everyCategory'
 	| 'tasks.activities.newActivity'
 	| 'tasks.activities.newCategoryName'
 	| 'tasks.activities.noActivitiesMatchTheSelected'
 	| 'tasks.activities.noActivitiesYet'
+	| 'tasks.activities.nothingPutAway'
 	| 'tasks.activities.searchActivities'
 	| 'tasks.activities.showingCount'
 	| 'tasks.board.1Hour'
@@ -3461,6 +3485,13 @@ export type MessageKey =
 	| 'tasks.review.itStillNeedsDoing'
 	| 'tasks.review.itStillNeedsDoing2'
 	| 'tasks.review.keep'
+	| 'tasks.review.keyAskAgain'
+	| 'tasks.review.keyDay'
+	| 'tasks.review.keyHalf'
+	| 'tasks.review.keyHappened'
+	| 'tasks.review.keyMove'
+	| 'tasks.review.keySkipped'
+	| 'tasks.review.keyTodo'
 	| 'tasks.review.letGo'
 	| 'tasks.review.letItGo'
 	| 'tasks.review.noGoalMovedThatWeek'
@@ -3777,6 +3808,12 @@ export type MessageKey =
 	| 'tour.typeAWordYouRemember'
 	| 'tour.upToSixPicturesPer'
 	| 'tour.urgencyEaseInterest'
+	| 'tour.weeklyListBody'
+	| 'tour.weeklyListTitle'
+	| 'tour.weeklyNewBody'
+	| 'tour.weeklyNewTitle'
+	| 'tour.weeklyOpenBody'
+	| 'tour.weeklyOpenTitle'
 	| 'tour.whatATaskSaysAboutItself'
 	| 'tour.whatHappenedInYourWords'
 	| 'tour.whatIsWaitingForATime'
@@ -4173,21 +4210,31 @@ export interface MessageValuesFor {
 		qty: string | number;
 	};
 	'inventory.hiddenByTheFilters': { count: number };
+	'inventory.holdsFood': { name: string | number };
+	'inventory.moveDownNamed': { name: string | number };
+	'inventory.moveUpNamed': { name: string | number };
 	'inventory.noPriceYetSo': { have: string | number; unpriced: string | number };
 	'inventory.oneFewer2': { name: string | number };
 	'inventory.oneMore2': { name: string | number };
+	'inventory.placeEmpty': { name: string | number };
+	'inventory.placeHolds': { count: number; name: string | number };
+	'inventory.placeHoldsSplit': {
+		count: number;
+		here: string | number;
+		inside: string | number;
+		name: string | number;
+	};
 	'inventory.remove': { name: string | number };
 	'inventory.rename': { name: string | number };
 	'inventory.renameOrMove2': { name: string | number };
 	'inventory.restock2': { replenish: string | number };
+	'inventory.sharedWithFamily': { name: string | number };
+	'inventory.shoppingListCount': { count: number };
 	'inventory.showWhatIsIn': { place: string | number };
 	'inventory.showWhatYouAlreadyHave': { bought: string | number };
 	'inventory.showWhatYouPutAway': { snoozed: string | number };
 	'inventory.showingCount': { count: number };
-	'inventory.toBuyCount': { count: number };
-	'inventory.toBuyTotal': { count: number; total: string | number };
 	'inventory.wishlist2': { someday: string | number };
-	'inventory.withoutAPrice': { count: number };
 	'keys.reach.justOne': { noun: string | number };
 	'keys.reach.summary': { what: string | number };
 	'keys.reach.which': { noun: string | number };

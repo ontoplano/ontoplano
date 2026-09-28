@@ -363,9 +363,13 @@ export function readNote(ctx: Ctx, weekStart: string): string {
 export function pastNotes(
 	ctx: Ctx,
 	options: { limit?: number; before?: string } = {}
-): { weekStart: string; note: string }[] {
+): { weekStart: string; note: string; updatedAt: string }[] {
 	const rows = db
-		.select({ weekStart: weeklyReviews.weekStart, content: weeklyReviews.content })
+		.select({
+			weekStart: weeklyReviews.weekStart,
+			content: weeklyReviews.content,
+			updatedAt: weeklyReviews.updatedAt
+		})
 		.from(weeklyReviews)
 		.where(
 			and(
@@ -377,7 +381,11 @@ export function pastNotes(
 		.orderBy(desc(weeklyReviews.weekStart))
 		.all();
 
-	const weeks = rows.map((row) => ({ weekStart: row.weekStart, note: row.content }));
+	const weeks = rows.map((row) => ({
+		weekStart: row.weekStart,
+		note: row.content,
+		updatedAt: row.updatedAt
+	}));
 	return options.limit ? weeks.slice(0, options.limit) : weeks;
 }
 

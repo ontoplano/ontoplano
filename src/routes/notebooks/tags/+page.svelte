@@ -13,6 +13,8 @@
 	import TagChip from '$lib/components/TagChip.svelte';
 	import TagRows from '$lib/components/TagRows.svelte';
 	import TextBox from '$lib/components/TextBox.svelte';
+	import SortControl from '$lib/components/SortControl.svelte';
+	import type { PlainKey } from '$lib/i18n/keys';
 	import { TAG_COLOR_DEFAULT } from '$lib/colors';
 	import { getAction } from '$lib/shortcuts';
 	import { useT } from '$lib/i18n';
@@ -29,16 +31,32 @@
 	let name = $state('');
 	let color = $state<string | null>(null);
 	let description = $state('');
-	let selectedIndex = $state(0);
+	/* Nowhere until a key is pressed: a first row wearing the cursor reads as chosen. */
+	let selectedIndex = $state(-1);
 	let rows = $state<ReturnType<typeof TagRows> | undefined>();
 	/** What the search box holds: labels whose word or meaning contains it. */
 	let looking = $state('');
 
+	/* A to Z, or the ones doing the most work first — each order's natural way. */
+	const ORDERS = ['name', 'uses'] as const;
+	type Order = (typeof ORDERS)[number];
+	const ORDER_LABELS: Record<Order, PlainKey> = {
+		name: 'ui.name',
+		uses: 'notebooks.tags.uses'
+	};
+	const NATURAL: Record<Order, 'asc' | 'desc'> = { name: 'asc', uses: 'desc' };
+	let order = $state<Order>('name');
+	let direction = $state<'asc' | 'desc'>(NATURAL.name);
+
 	const shownTags = $derived.by(() => {
 		const needle = looking.trim().toLowerCase();
-		if (!needle) return data.tags;
-		return data.tags.filter((one) =>
-			`${one.name}\n${one.description}`.toLowerCase().includes(needle)
+		const found = needle
+			? data.tags.filter((one) => `${one.name}\n${one.description}`.toLowerCase().includes(needle))
+			: data.tags;
+		const sign = direction === 'asc' ? 1 : -1;
+		const byName = (a: Label, b: Label) => a.name.localeCompare(b.name);
+		return [...found].sort((a, b) =>
+			order === 'uses' ? sign * (a.uses - b.uses) || byName(a, b) : sign * byName(a, b)
 		);
 	});
 
@@ -72,6 +90,12 @@
 		}
 
 		const action = getAction('/notebooks/tags', e.key);
+		if (action === 'toggle-expand') {
+			const tag = shownTags[selectedIndex];
+			if (!tag) return;
+			e.preventDefault();
+			rows?.toggleUses(tag.id);
+		}
 		if (action === 'edit') {
 			const tag = shownTags[selectedIndex];
 			if (!tag) return;
@@ -97,15 +121,13 @@
 
 	<!--
 		No second heading: the room's name is above and the Tags tab is lit.
-		The description is doing real work, though — this list is not the
-		notebooks' tags, and somebody renaming one here is renaming it on their
-		week as well — so it sits under the search, where it is read before
-		anything is changed.
+		That this is the account's one vocabulary is said by the tour and by the
+		edit dialog, where it matters — not by a paragraph in the toolbar.
 	-->
 	<RoomSurface>
 		{#snippet tools()}
 			{#if data.tags.length > 0}
-				<FilterBar name="tags">
+				<FilterBar name="tags" trailing={data.tags.length > 1 ? orderControl : undefined}>
 					{#snippet lead()}
 						<SearchField bind:value={looking} label={t('notebooks.tags.searchTags')} />
 					{/snippet}
@@ -118,9 +140,6 @@
 					{/snippet}
 				</FilterBar>
 			{/if}
-		{/snippet}
-		{#snippet filters()}
-			<p class="text-xs text-gray-500">{t('notebooks.tags.oneVocabularyForTheWhole')}</p>
 		{/snippet}
 		{#if data.tags.length === 0}
 			<EmptyState
@@ -135,12 +154,29 @@
 				bind:this={rows}
 				tags={shownTags}
 				cursor={selectedIndex}
+				rail
 				deleteAction="?/delete"
 				onedit={openEdit}
 			/>
 		{/if}
 	</RoomSurface>
 </div>
+
+{#snippet orderControl()}
+	<SortControl
+		value={order}
+		options={ORDERS}
+		labels={ORDER_LABELS}
+		{direction}
+		onpick={(next) => {
+			order = next;
+			direction = NATURAL[next];
+			selectedIndex = -1;
+		}}
+		onflip={() => (direction = direction === 'asc' ? 'desc' : 'asc')}
+		label={t('notebooks.tags.orderTagsBy')}
+	/>
+{/snippet}
 
 <!--
 	Rename and colour in one dialog, because they are the same act: this is

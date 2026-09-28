@@ -2975,14 +2975,11 @@ label:has(> input[type='radio']:not(:disabled)) {
 		color: var(--color-gray-900);
 	}
 
+	/* On, it wears what every pressed toggle wears — a white tile on a white card said nothing. */
 	.seg-aside[aria-pressed='true'] {
-		background-color: var(--color-white);
-		box-shadow: var(--shadow-card);
+		border-color: var(--color-gray-900);
+		background-color: color-mix(in srgb, var(--color-gray-900) 12%, transparent);
 		color: var(--color-gray-900);
-	}
-
-	html[data-style='playful'] .seg-aside[aria-pressed='true'] {
-		box-shadow: 0 0 0 1px var(--color-gray-200);
 	}
 
 	.seg-sliding > a,

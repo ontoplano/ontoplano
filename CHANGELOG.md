@@ -20,6 +20,9 @@ releases mattered.
 
 ## 0.184.1 — 2026-09-28
 
+- Weekly notes can be written, edited and deleted from Notebooks → Weekly notes; that list and Tags can be sorted, and a tag's count sits in a column of its own.
+- Activities you no longer do are archived rather than disabled, and one nothing has used can be deleted from the archived list.
+- The weekly review can be answered from the keyboard (j/k, then c, s, t or d), and on a phone the questions come before the stats.
 - On a phone, a filter picked just before pressing Done in the filters sheet stays on; before, it could be dropped.
 - An administrator moving an ended plan's date into the future brings the plan back; before, the account stayed on the pay page.
 

@@ -133,6 +133,8 @@ export const PAGE_SHORTCUTS: Record<string, PageShortcuts> = {
 			{ key: 'k', action: 'navigate-up', description: 'shortcut.navigateList' },
 			{ key: 'n', action: 'new', description: 'shortcut.newActivity' },
 			{ key: 'e', action: 'edit', description: 'shortcut.editTheOneUnderThe' },
+			{ key: 'a', action: 'archive', description: 'shortcut.archiveUnarchive' },
+			{ key: 'x', action: 'delete', description: 'shortcut.askToDelete' },
 			{ key: '1', action: 'filter-1', description: 'shortcut.toggleCategoryFilter' },
 			{ key: '2', action: 'filter-2', description: 'shortcut.toggleCategoryFilter' },
 			{ key: '3', action: 'filter-3', description: 'shortcut.toggleCategoryFilter' },
@@ -147,6 +149,12 @@ export const PAGE_SHORTCUTS: Record<string, PageShortcuts> = {
 	'/tasks/review': {
 		label: 'app.review',
 		shortcuts: [
+			...BROWSE_SHORTCUTS.slice(0, 4),
+			{ key: 'c', action: 'answer-done', description: 'tasks.review.itHappenedAfterAll' },
+			{ key: 's', action: 'answer-skipped', description: 'tasks.review.itDidNotHappen' },
+			{ key: 't', action: 'answer-todo', description: 'tasks.review.itStillNeedsDoing' },
+			{ key: 'd', action: 'answer-day', description: 'tasks.review.itStillNeedsDoing2' },
+			{ key: 'u', action: 'ask-again', description: 'tasks.review.askAboutItAgain' },
 			{ key: '[', action: 'prev-week', description: 'shortcut.switchWeek' },
 			{ key: ']', action: 'next-week', description: 'shortcut.switchWeek' }
 		]
@@ -229,6 +237,16 @@ export const PAGE_SHORTCUTS: Record<string, PageShortcuts> = {
 			{ key: 'k', action: 'navigate-up', description: 'shortcut.navigateTags' },
 			{ key: 'e', action: 'edit', description: 'shortcut.editTag' },
 			{ key: 'Enter', action: 'toggle-expand', description: 'shortcut.expandCollapse' }
+		]
+	},
+	'/notebooks/weekly': {
+		label: 'rooms.notebooks.tabs.weekly',
+		shortcuts: [
+			{ key: 'j', action: 'navigate-down', description: 'shortcut.navigateWeeks' },
+			{ key: 'k', action: 'navigate-up', description: 'shortcut.navigateWeeks' },
+			{ key: 'n', action: 'new', description: 'shortcut.newWeeklyNote' },
+			{ key: 'e', action: 'edit', description: 'shortcut.editTheOneUnderThe' },
+			{ key: 'Enter', action: 'open', description: 'shortcut.openTheOneUnderThe' }
 		]
 	},
 	'/notebooks/people': {

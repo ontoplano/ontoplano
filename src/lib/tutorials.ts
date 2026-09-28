@@ -355,6 +355,26 @@ export const TUTORIALS: Record<string, Tutorial> = {
 		]
 	},
 
+	'/notebooks/weekly': {
+		label: 'rooms.notebooks.tabs.weekly',
+		steps: [
+			{
+				title: 'tour.weeklyOpenTitle',
+				body: 'tour.weeklyOpenBody'
+			},
+			{
+				target: '[data-tour="weekly-new"]',
+				title: 'tour.weeklyNewTitle',
+				body: 'tour.weeklyNewBody'
+			},
+			{
+				target: '[data-tour="weekly-list"]',
+				title: 'tour.weeklyListTitle',
+				body: 'tour.weeklyListBody'
+			}
+		]
+	},
+
 	'/notebooks/people': {
 		label: 'tour.people',
 		steps: [
