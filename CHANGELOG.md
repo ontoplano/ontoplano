@@ -18,6 +18,21 @@ the shape of the data changing. Bumping the minor per batch is what ran this
 file to 0.161 in a few months, which tells a reader nothing about which
 releases mattered.
 
+## 0.184.11 — 2026-09-29
+
+- The puffin in the middle of the menu mark never moves: only the octagon around it turns while a page loads.
+- A recording's notes field is called Notes.
+- The phone app opening a server instance — from its icon or from a widget — no longer shows the on-device look while it gets there.
+- The recording transcriber example lives with the other examples, in `examples/audio-transcriber/`, and reads its settings from a `.env` file beside it.
+
+## 0.184.10 — 2026-09-29
+
+- The recording transcriber example now runs Whisper locally in Python. Recording permissions and upload webhooks have readable labels when you set it up under Connections.
+
+## 0.184.9 — 2026-09-29
+
+- A recording's notes can be written as it is saved, and edited together with its name in one Edit dialog. The separate notes button on each recording is gone.
+
 ## 0.184.8 — 2026-09-29
 
 - The menu wheels lose their outlines: no ring around the wheel, and no frame around the room's name or the wheel's settings button.

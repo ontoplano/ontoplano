@@ -51,6 +51,13 @@ import {
  * on the strength of a key in its own storage would be the app deciding where
  * somebody's week lives.
  */
+/**
+ * How long a launch may take to leave before this copy shows itself after all.
+ * Above the launch below, which runs at load: a `const` further down the file
+ * is not initialised yet when that code reads it.
+ */
+const LEAVING_VEIL_MS = 8000;
+
 if (inPhoneApp() && isIsolatedBuild()) {
 	const carried = new URLSearchParams(location.search);
 
@@ -81,11 +88,27 @@ if (inPhoneApp() && isIsolatedBuild()) {
 		const kept = storedInstance();
 		// A widget's tap names the page; the instance is still the one chosen —
 		// moved on first if it was a suggestion this build has replaced.
-		if (kept)
+		if (kept) {
+			veilWhileLeaving();
 			void keptInstanceNow(kept).then((going) =>
 				openInstance(going, false, openingOn(going, carried.get(OPENING_PARAM)))
 			);
+		}
 	}
+}
+
+/**
+ * Draw nothing of this copy while leaving it for the chosen instance.
+ *
+ * The launch boots on the phone's own copy and moves on, and until the move
+ * lands that copy rendered — blue bar, blue mark — so a widget set up for a
+ * hosted instance opened looking like the isolated one. Hidden for as long as
+ * the move could reasonably take; if it has not happened by then, something
+ * stopped it, and the copy that is here is better than a blank screen.
+ */
+function veilWhileLeaving(): void {
+	document.body.style.visibility = 'hidden';
+	setTimeout(() => (document.body.style.visibility = ''), LEAVING_VEIL_MS);
 }
 
 /**
