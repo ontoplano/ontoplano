@@ -4360,6 +4360,16 @@ html[data-keyboard='open'] {
 	transform: scale(0.92);
 }
 
+/*
+ * A turning mark drops its octagon clip. Only the rim inside it turns, and a
+ * rim part way round pokes its corners out of an octagon standing still. The
+ * clip shapes the press, not the picture — the button has no ground — so
+ * lifting it for the length of a turn changes nothing on screen.
+ */
+[data-mark][data-turning] {
+	clip-path: none !important;
+}
+
 .pie-handle-held :is(img, svg, span) {
 	visibility: hidden;
 }

@@ -21,10 +21,10 @@
 	 * What the mark carries inside, as its own layer, with a hole beneath it.
 	 *
 	 * The mark is drawn twice: the rim with a disc taken out of it, and that
-	 * disc on top. While a navigation drags, `$lib/mark-spin` turns the whole
-	 * mark and turns the disc (`.mark-still`) back by the same angle, so the octagon goes round
-	 * the bird and the bird stays upright. The circle the two are cut on is
-	 * flat dark field, the same at any angle, so the seam does not show.
+	 * disc on top. While a navigation drags, `$lib/mark-spin` turns the rim
+	 * (`.mark-turn`) and nothing else, so the octagon goes round a bird that
+	 * no animation ever touches. The circle the two are cut on is flat dark
+	 * field, the same at any angle, so the seam does not show.
 	 *
 	 * The layer underneath has the disc taken out rather than being the whole
 	 * picture: identical pixels over identical pixels change nothing only while
@@ -142,6 +142,7 @@
 	aria-hidden={label ? undefined : 'true'}
 >
 	<img
+		class="mark-turn"
 		src={artwork}
 		alt=""
 		width={fill ? undefined : size}
@@ -167,7 +168,7 @@
 		}
 	}
 
-	/* Turned back by whatever `$lib/mark-spin` turns the mark by. */
+	/* Never animated: the rim turns around it. */
 	.ontoplano-logo :global(.mark-still) {
 		position: absolute;
 		inset: 0;

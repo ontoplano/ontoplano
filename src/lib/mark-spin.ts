@@ -217,8 +217,15 @@ export function hintMarkSpin(direction: number): void {
 
 /** The app's own marks carry this, so a turn can find them before anything hydrates. */
 const MARK_SELECTOR = '[data-mark]';
-/** The bird's layer inside a mark, turned back by as much as the mark turns. */
-const STILL_SELECTOR = '.mark-still';
+/**
+ * The only part of a mark that turns: the rim. The bird is a separate layer
+ * nothing ever animates, so there is no second animation for it to fall out
+ * of step with — it used to be turned back by the same angle as the whole
+ * mark, and every frame the two disagreed was a frame the puffin moved.
+ */
+const TURN_SELECTOR = '.mark-turn';
+/** On a mark while it turns: lifts the octagon clip, which would cut the rim's corners. */
+const TURNING_ATTRIBUTE = 'data-turning';
 
 /** The clock the animations run on. */
 function now(): number {
@@ -237,25 +244,25 @@ function angleAt(at: number): number {
 	return angleAlong(loop, (into - upFor) % TURN_MS);
 }
 
-function frames(points: TurnPoint[], sign: 1 | -1): Keyframe[] {
+function frames(points: TurnPoint[]): Keyframe[] {
 	const span = points[points.length - 1].at - points[0].at || 1;
 	return points.map((p) => ({
 		offset: (p.at - points[0].at) / span,
-		rotate: `${sign * p.angle}deg`
+		rotate: `${p.angle}deg`
 	}));
 }
 
-/**
- * Put what is playing on one mark: the octagon turns whole, and the bird's
- * layer inside it turns back by the same angle on the same clock, so the
- * octagon goes round a bird that stays upright.
- */
+/** The layers of a mark that turn: its rim, or the mark itself when it is one. */
+function rims(root: HTMLElement): HTMLElement[] {
+	if (root.matches(TURN_SELECTOR)) return [root];
+	return [...root.querySelectorAll<HTMLElement>(TURN_SELECTOR)];
+}
+
+/** Put what is playing on one mark's rim. Nothing else in it moves. */
 function play(root: HTMLElement): void {
 	if (!stretch) return;
-	const layers: [HTMLElement, 1 | -1][] = [[root, 1]];
-	for (const still of root.querySelectorAll<HTMLElement>(STILL_SELECTOR)) layers.push([still, -1]);
-
-	for (const [el, sign] of layers) {
+	root.setAttribute(TURNING_ATTRIBUTE, '');
+	for (const el of rims(root)) {
 		const pieces: [TurnPoint[], KeyframeAnimationOptions][] = [];
 		if (stretch.kind === 'landing') {
 			const { points } = stretch;
@@ -267,7 +274,7 @@ function play(root: HTMLElement): void {
 			pieces.push([loop, { duration: TURN_MS, delay: upFor, iterations: Infinity }]);
 		}
 		for (const [points, options] of pieces) {
-			const animation = el.animate(frames(points, sign), {
+			const animation = el.animate(frames(points), {
 				...options,
 				easing: 'linear',
 				fill: 'none'
@@ -291,19 +298,13 @@ function playEverywhere(): void {
 /*
  * A load's turn starts on the marks the server rendered, and hydration can
  * put new nodes in their place — on a phone, after the layout has already
- * said it is done. Whatever appears carrying `data-mark` joins the turn.
- *
- * So does a bird's layer swapped in *inside* a mark that was already turning.
- * The mark kept its turn and the new layer had no turn back, so the bird went
- * round with the octagon for the rest of the wait — a little, since a load
- * is usually short, which is what "the puffin still spins sometimes" was.
- * Everything is put back on together, on the one clock, so nothing jumps.
+ * said it is done. Whatever appears carrying `data-mark` joins the turn, and
+ * so does a rim swapped in inside a mark that was already turning, all put
+ * back on together, on the one clock, so nothing jumps.
  */
 function adopt(): void {
 	els = els.filter((el) => el.isConnected);
-	const stranded = els.some((el) =>
-		[...el.querySelectorAll(STILL_SELECTOR)].some((still) => !turning.has(still))
-	);
+	const stranded = els.some((el) => rims(el).some((rim) => !turning.has(rim)));
 	if (stranded) playEverywhere();
 	for (const el of document.querySelectorAll<HTMLElement>(MARK_SELECTOR)) {
 		if (els.includes(el)) continue;
@@ -332,6 +333,7 @@ function rest(): void {
 	playing = [];
 	turning = new WeakSet();
 	stretch = null;
+	for (const el of els) el.removeAttribute(TURNING_ATTRIBUTE);
 	els = [];
 	hint = 0;
 	// Whoever was waiting for it to come to rest — the chooser leaves when it

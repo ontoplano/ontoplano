@@ -28,8 +28,8 @@ test('the header mark turns while a navigation drags, then finishes its turn upr
 	});
 	await visit(page, '/tasks/todo');
 
-	const mark = page.locator('header [data-tour=rooms]');
-	await expect(mark).toBeVisible();
+	const mark = page.locator('header [data-tour=rooms] .mark-turn');
+	await expect(mark).toBeAttached();
 
 	/** The angle the browser is playing the mark at; null when nothing is. */
 	const angle = () =>
@@ -79,41 +79,36 @@ test('the header mark turns while a navigation drags, then finishes its turn upr
 test.describe('on a phone', () => {
 	test.use({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
 
-	test('the octagon turns in the bar and the bird stays where it is', async ({ page }) => {
+	test('the rim turns in the bar and the bird stays where it is', async ({ page }) => {
 		await register(page, testEmail('bar-turn'));
 		await visit(page, '/tasks/todo');
 
 		const button = page.locator('nav [data-tour=rooms]');
 		await expect(button).toBeVisible();
 		const bird = button.locator('.mark-still');
+		const rim = button.locator('.mark-turn');
 		await expect(bird).toHaveCount(1);
-		// A disc: the one shape that can be turned back inside a turning octagon
-		// without its edge showing.
-		expect(await bird.evaluate((el) => (el as HTMLElement).style.clipPath)).toContain('circle');
+		await expect(rim).toHaveCount(1);
+		// Siblings: turning the rim cannot carry the bird with it.
+		expect(await rim.evaluate((el) => el.contains(document.querySelector('nav .mark-still')))).toBe(
+			false
+		);
 
-		// Turned as the spin turns it: the button about its own centre, and the
-		// bird back by as much, so it ends where it began.
-		const before = await button.boundingBox();
+		// Turned as the spin turns it: the rim about its own centre, and the
+		// bird exactly where it was.
 		const birdBefore = await bird.boundingBox();
-		await button.evaluate((el) => {
-			(el as HTMLElement).style.rotate = '137deg';
-			el.querySelector<HTMLElement>('.mark-still')!.style.rotate = '-137deg';
-		});
+		const rimBefore = await rim.boundingBox();
+		await rim.evaluate((el) => ((el as HTMLElement).style.rotate = '137deg'));
 		const birdDuring = await bird.boundingBox();
-		const during = await button.boundingBox();
+		const rimDuring = await rim.boundingBox();
 		const centre = (b: { x: number; y: number; width: number; height: number }) => [
 			b.x + b.width / 2,
 			b.y + b.height / 2
 		];
-		for (const [was, now] of [
-			[before!, during!],
-			[birdBefore!, birdDuring!]
-		]) {
-			const [ax, ay] = centre(was);
-			const [bx, by] = centre(now);
-			expect(Math.abs(ax - bx)).toBeLessThan(1);
-			expect(Math.abs(ay - by)).toBeLessThan(1);
-		}
-		expect(Math.abs(birdDuring!.width - birdBefore!.width)).toBeLessThan(1);
+		const [ax, ay] = centre(rimBefore!);
+		const [bx, by] = centre(rimDuring!);
+		expect(Math.abs(ax - bx)).toBeLessThan(1);
+		expect(Math.abs(ay - by)).toBeLessThan(1);
+		expect(birdDuring).toEqual(birdBefore);
 	});
 });
