@@ -1416,9 +1416,10 @@
 -->
 {#snippet underFilters(place: number | null | undefined)}
 	{#if place !== undefined}
+		<!-- Blue words, not a pill: it is a second reading of the same number,
+		     not a label on anything. -->
 		<span
-			class="pill-soft tabular inline-flex min-w-[11ch] items-center justify-center gap-1 px-1.5"
-			style="--pill: var(--color-blue-500)"
+			class="place-under-filters tabular inline-flex min-w-[11ch] items-center justify-center gap-1"
 			title={t('ratings.placeUnderFilters')}
 		>
 			<Icon name="filter" size={12} label={t('ratings.placeUnderFilters')} />

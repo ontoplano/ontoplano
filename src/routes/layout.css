@@ -1835,6 +1835,18 @@ label:has(> input[type='radio']:not(:disabled)) {
 	.overlay-face .btn-primary:hover {
 		background-color: rgb(255 255 255 / 0.85);
 	}
+	/*
+	 * Where a task would land under the filters: blue ink, which the palette
+	 * inverts with the theme — and on the face, which is dark in both, a blue
+	 * light enough to read on it.
+	 */
+	.place-under-filters {
+		color: var(--color-blue-700);
+	}
+	.overlay-face .place-under-filters {
+		color: #93c5fd;
+	}
+
 	/* And an icon on it takes the face's quieter ink, not the palette's grey. */
 	.overlay-face .icon-btn {
 		color: rgb(255 255 255 / 0.66);

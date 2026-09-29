@@ -11,10 +11,13 @@
 	 * It floats in the browser's top layer (`popover`), so it costs the layout
 	 * nothing and nothing it opens over moves. Escape and a press anywhere
 	 * else are the same as the ×: nothing happened.
+	 *
+	 * The button answers at once, unlike a confirmation that takes the place
+	 * of what was pressed (`armed`): this one opens beside the press, never
+	 * under it, so a second press cannot land on it by reflex.
 	 */
 	import type { Snippet } from 'svelte';
 	import Icon from '$lib/components/Icon.svelte';
-	import { armed } from '$lib/actions/armed';
 	import { useT } from '$lib/i18n';
 
 	/** Space kept between the box and the thing it is about, and the screen's edge. */
@@ -139,7 +142,6 @@
 		type={form ? 'submit' : 'button'}
 		{form}
 		class="btn btn-primary btn-sm w-full"
-		use:armed
 		onclick={form ? undefined : onconfirm}
 	>
 		{confirm}
