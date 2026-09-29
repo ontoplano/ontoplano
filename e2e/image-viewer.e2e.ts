@@ -79,3 +79,35 @@ test('a picture in a task’s notes opens in the viewer, zooms, and back closes 
 	await expect(viewer).toHaveCount(0);
 	await expect(page).toHaveURL(/\/tasks\/todo/);
 });
+
+test('a tall picture opens whole and centred on a phone', async ({ page }) => {
+	await page.setViewportSize({ width: 390, height: 844 });
+	await register(page, testEmail('image-viewer-tall'));
+	await visit(page, '/tasks/todo');
+
+	// A phone screenshot's shape, drawn here so no upload is needed.
+	await page.evaluate(() => {
+		const canvas = document.createElement('canvas');
+		canvas.width = 1080;
+		canvas.height = 2000;
+		canvas.getContext('2d')!.fillRect(0, 0, 1080, 2000);
+		const img = document.createElement('img');
+		img.className = 'md-image';
+		img.id = 'tall';
+		img.style.width = '120px';
+		img.src = canvas.toDataURL();
+		document.querySelector('main')!.prepend(img);
+	});
+	await page.locator('#tall').click();
+
+	// Wait for the zoom library to have taken the picture over, then measure.
+	const picture = page.locator('dialog.image-viewer img');
+	await expect(picture).toBeVisible();
+	await page.waitForTimeout(500);
+	const box = (await picture.boundingBox())!;
+	expect(box.x).toBeGreaterThanOrEqual(0);
+	expect(box.y).toBeGreaterThanOrEqual(0);
+	expect(box.x + box.width).toBeLessThanOrEqual(390);
+	expect(box.y + box.height).toBeLessThanOrEqual(844);
+	expect(Math.abs(box.y + box.height / 2 - 422)).toBeLessThan(2);
+});

@@ -77,10 +77,21 @@ test('on a phone they are a sheet, and the button says one is on', async ({ page
 
 	// The controls are not on the strip: that is the whole point of the width.
 	const sheet = page.locator('.filter-toggle');
-	// But the order is, on the same line as the search box and its count.
+	// Two lines: the search box across the top; under it the verb and the
+	// order at the left edge, the count and Filters at the right one.
 	const search = (await page.getByRole('searchbox', { name: 'Search these tasks' }).boundingBox())!;
 	const order = (await page.getByRole('button', { name: 'Order tasks by' }).boundingBox())!;
-	expect(Math.abs(order.y + order.height / 2 - (search.y + search.height / 2))).toBeLessThan(4);
+	const verb = (await page.locator('.filter-tail > *').first().boundingBox())!;
+	const filters = (await sheet.boundingBox())!;
+	const middle = (b: { y: number; height: number }) => b.y + b.height / 2;
+	expect(order.y).toBeGreaterThan(search.y + search.height);
+	expect(Math.abs(middle(order) - middle(filters))).toBeLessThan(4);
+	expect(Math.abs(verb.x - search.x)).toBeLessThan(2);
+	expect(Math.abs(filters.x + filters.width - (search.x + search.width))).toBeLessThan(2);
+	// And the direction is its own button beside the order, not lost in its menu.
+	await expect(
+		page.getByRole('button', { name: /Descending, press for ascending/i })
+	).toBeVisible();
 	await expect(sheet).toHaveCount(1);
 	await expect(sheet).toHaveAttribute('aria-pressed', 'false');
 	await expect(page.getByRole('button', { name: 'Filter by tag' })).toBeHidden();

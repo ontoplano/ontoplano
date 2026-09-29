@@ -19,7 +19,6 @@
 	import Picker from '$lib/components/Picker.svelte';
 	import { useT } from '$lib/i18n';
 	import type { PlainKey } from '$lib/i18n/keys';
-	import { getFilterStrip } from '$lib/filter-strip';
 
 	let {
 		value,
@@ -44,16 +43,15 @@
 		/** What this control is, for whoever is not looking at it. */
 		label: string;
 		/**
-		 * One square instead of a word and an arrow. Left out, it follows the
-		 * `FilterBar` it sits in: compact while that strip is folded, which is
-		 * how the order stays on a phone's first line beside the search box.
+		 * One square instead of a word and an arrow, for a row with no room.
+		 * Off by default: a folded `FilterBar` gives the order a line of its
+		 * own, and the square hid the direction below the fold of its menu.
 		 */
 		compact?: boolean;
 	} = $props();
 
 	const t = useT();
-	const strip = getFilterStrip();
-	const small = $derived(compact ?? strip?.folded ?? false);
+	const small = $derived(compact ?? false);
 
 	/* The orders, as the picker wants them: a value and the word for it. */
 	const choices = $derived(

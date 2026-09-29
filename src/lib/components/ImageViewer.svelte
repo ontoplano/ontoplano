@@ -88,7 +88,11 @@
 			zoom = Panzoom(image, {
 				maxScale: MAX_SCALE,
 				minScale: 1,
-				contain: 'outside',
+				/*
+				 * No `contain`. 'outside' makes the picture cover the stage, so a
+				 * tall one opened at 1.27× and shifted down on a phone, with no way
+				 * to see the rest; at 1× it now fits, centred.
+				 */
 				panOnlyWhenZoomed: true,
 				cursor: 'grab'
 			});

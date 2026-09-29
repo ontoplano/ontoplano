@@ -22,6 +22,8 @@ releases mattered.
 
 - The menu wheels lose their outlines: no ring around the wheel, and no frame around the room's name or the wheel's settings button.
 - The plan opens on the calendar at every width, a phone's week included. The new list button beside Day, Week and Month (or `a`) shows any of the three as a list of its days instead.
+- On a phone a list's controls sit on two tidy lines: the search box on top, then the list's own button and its order on the left and the count and Filters on the right. The order has its direction arrow beside it again, so ascending and descending can be chosen.
+- A tall picture opens whole and centred in the viewer on a phone, rather than enlarged and cut off.
 
 ## 0.184.7 — 2026-09-29
 
