@@ -340,6 +340,7 @@ export const borrowed: ReadonlySet<string> = new Set([
 	'reminders.asking',
 	'reminders.chooseAFile',
 	'reminders.nameOptional',
+	'search.resultsCount',
 	'search.resultsFor',
 	'settings.account.allSessions',
 	'settings.account.download',
@@ -367,6 +368,10 @@ export const borrowed: ReadonlySet<string> = new Set([
 	'settings.integrations.connections.displayLatest',
 	'settings.integrations.connections.displayLine',
 	'settings.integrations.connections.displayList',
+	'settings.integrations.connections.kindCounter',
+	'settings.integrations.connections.kindEvent',
+	'settings.integrations.connections.kindMeasurement',
+	'settings.integrations.connections.kindState',
 	'settings.integrations.connections.unreachable',
 	'settings.integrations.scriptsWidgetsCalendars',
 	'settings.integrations.whatToCallThisKey',
@@ -464,5 +469,6 @@ export const borrowed: ReadonlySet<string> = new Set([
 	'ui.alwaysOn',
 	'ui.archive',
 	'ui.clear',
-	'ui.withTheRoom'
+	'ui.withTheRoom',
+	'widgets.count'
 ]);

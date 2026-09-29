@@ -20,6 +20,7 @@ releases mattered.
 
 ## 0.184.1 — 2026-09-28
 
+- Albums show their name in the bar with a way back, and the gallery can be searched and sorted. Search results mark what matched and no longer show raw markdown. Switches are visible in both themes, and the reminders toolbar is one row of same-height controls.
 - Finance: bills sort with what falls due next first and walk with j/k; Rules has search and keys, and the lines behind a count open where you can see them; Insights charts fit a phone, open on the newest months and show their scale.
 - Habits and recipes can be archived, sorted and edited from the list; logging a habit's day answers on the press; a recipe's page lines up with its cards and has its way back in the bar.
 - Inventory: tick the shopping list off in the shop (offline too), sort each list, reorder and colour categories, delete a single attribute value, and on a phone the list of places folds away so your things come first.

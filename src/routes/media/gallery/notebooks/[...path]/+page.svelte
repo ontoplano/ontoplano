@@ -1,7 +1,6 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
 	import EmptyState from '$lib/components/EmptyState.svelte';
-	import Icon from '$lib/components/Icon.svelte';
 	import Modal from '$lib/components/Modal.svelte';
 	import RoomSurface from '$lib/components/RoomSurface.svelte';
 	import TagChip from '$lib/components/TagChip.svelte';
@@ -9,6 +8,8 @@
 	import type { PageServerData } from './$types';
 	import { useT } from '$lib/i18n';
 	import PageTitle from '$lib/components/PageTitle.svelte';
+	import AlbumCard from '$lib/components/AlbumCard.svelte';
+	import MediaTiles from '$lib/components/MediaTiles.svelte';
 
 	const t = useT();
 
@@ -32,17 +33,6 @@
 			.map(encodeURIComponent)
 			.join('/')}`;
 
-	/** The way up: the notebook above this one, or the album itself. */
-	const upTo = $derived.by(() => {
-		const parts = data.path ? data.path.split(NOTEBOOK_SEPARATOR) : [];
-		parts.pop();
-		return parts.length > 0
-			? linkTo(parts.join(NOTEBOOK_SEPARATOR))
-			: data.path
-				? `${resolve('/media/gallery')}/notebooks`
-				: resolve('/media/gallery');
-	});
-
 	let viewingId: number | null = $state(null);
 	const viewing = $derived(
 		viewingId === null ? null : (data.pictures.find((p) => p.id === viewingId) ?? null)
@@ -55,13 +45,8 @@
      then the folders and the pictures. -->
 <RoomSurface>
 	{#snippet tools()}
-		<div class="flex w-full flex-wrap items-center gap-2">
-			<!-- `upTo` is resolved where it is built. -->
-			<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -->
-			<a href={upTo} class="icon-btn shrink-0" title={t('ui.back')} aria-label={t('ui.back')}>
-				<Icon name="arrow-left" />
-			</a>
-			<h2 class="min-w-0 truncate text-sm font-semibold text-gray-900">{data.title}</h2>
+		<!-- The notebook's name and the way up are the room bar's. -->
+		<div class="flex w-full flex-wrap items-center gap-x-3 gap-y-1">
 			<!-- Only a count of what is on this page: pictures in the folders below
 			     are counted on their own tiles. -->
 			{#if data.pictures.length > 0}
@@ -69,55 +54,25 @@
 					{t('gallery.picturesCount', { count: data.pictures.length })}
 				</span>
 			{/if}
-			<p class="w-full text-xs text-gray-500 sm:ml-auto sm:w-auto">
+			<p class="text-xs text-gray-500">
 				{t('gallery.notebooks.path.thePicturesInYourNotebooks')}
 			</p>
 		</div>
 	{/snippet}
 
 	{#if data.folders.length > 0}
-		<ul
-			class="grid grid-cols-3 gap-1.5 p-4 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 {data
-				.pictures.length > 0
-				? 'border-b border-gray-200'
-				: ''}"
-		>
+		<MediaTiles class={data.pictures.length > 0 ? 'border-b border-gray-200' : ''}>
 			{#each data.folders as folder (folder.name)}
-				<li>
-					<!-- `linkTo` starts from resolve('/media/gallery') and appends the
-					     notebook's own segments. -->
-					<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -->
-					<a href={linkTo(folder.name)} class="block">
-						<span class="block aspect-square overflow-hidden rounded bg-gray-50">
-							<!--
-								The folder wears what is in it, like every other album tile.
-								The notebook glyph belongs on the one card at /gallery that
-								stands for all of this — there it says what kind of thing you
-								are about to open; here it would only repeat the shape.
-							-->
-							{#if folder.coverId}
-								<img
-									src="/media/{folder.coverId}"
-									alt=""
-									loading="lazy"
-									class="h-full w-full object-cover"
-								/>
-							{:else}
-								<span class="flex h-full w-full items-center justify-center text-gray-300">
-									<Icon name="image" size={32} />
-								</span>
-							{/if}
-						</span>
-						<span class="mt-1 flex items-baseline gap-1">
-							<span class="min-w-0 flex-1 truncate text-xs font-medium text-gray-700">
-								{folder.leaf}
-							</span>
-							<span class="text-xs text-gray-500 tabular-nums">{folder.totalCount}</span>
-						</span>
-					</a>
-				</li>
+				<!-- The folder wears what is in it, like every other album tile. -->
+				<AlbumCard
+					href={linkTo(folder.name)}
+					name={folder.name}
+					title={folder.leaf}
+					coverId={folder.coverId}
+					count={folder.totalCount}
+				/>
 			{/each}
-		</ul>
+		</MediaTiles>
 	{/if}
 
 	{#if data.pictures.length === 0 && data.folders.length === 0}
@@ -127,11 +82,11 @@
 			description={t('gallery.notebooks.path.putAPictureInA')}
 		/>
 	{:else if data.pictures.length > 0}
-		<ul class="grid grid-cols-3 gap-1.5 p-4 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6">
+		<MediaTiles kind="pictures">
 			{#each data.pictures as picture (picture.id)}
 				<li>
 					<button
-						class="block w-full overflow-hidden rounded"
+						class="block w-full overflow-hidden"
 						aria-label={picture.alt || picture.filename || t('gallery.notebooks.path.aPicture')}
 						onclick={() => (viewingId = picture.id)}
 					>
@@ -144,7 +99,7 @@
 					</button>
 				</li>
 			{/each}
-		</ul>
+		</MediaTiles>
 	{/if}
 </RoomSurface>
 

@@ -95,8 +95,10 @@
 		--accent: var(--color-blue-600, #2563eb);
 	}
 
+	/* Amber, drained towards grey: chrome stays near-neutral, and the glyph
+	   already says which kind of notice this is. */
 	.warning {
-		--accent: var(--color-amber-600, #d97706);
+		--accent: color-mix(in oklab, var(--color-amber-600, #d97706) 55%, var(--color-gray-500));
 	}
 
 	.info {

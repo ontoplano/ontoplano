@@ -847,7 +847,7 @@
 	-->
 		<RoomSurface>
 			<div
-				class="flex flex-wrap items-center gap-2 border-b border-gray-200 p-4"
+				class="controls-sm flex flex-wrap items-center gap-2 border-b border-gray-200 p-4"
 				data-tour="reminder-window"
 			>
 				<!--
@@ -911,31 +911,20 @@
 						</button>
 					{/each}
 				</div>
-				<form
-					onsubmit={(e) => {
-						e.preventDefault();
-						look(Number(howFar));
-					}}
-					class="hidden items-center gap-2 sm:flex"
+				<!-- Any other number of days is asked in the phone's dialog, rather
+				     than a number box beside the presets saying the same thing twice. -->
+				<button
+					type="button"
+					class="btn btn-sm hidden sm:inline-flex"
+					onclick={() => (ranging = true)}
+					aria-haspopup="dialog"
+					aria-pressed={!WINDOWS.includes(data.days)}
+					title={WINDOWS.includes(data.days)
+						? t('reminders.changeHowFar')
+						: t('reminders.daysCount', { count: data.days })}
 				>
-					<label class="text-xs whitespace-nowrap text-gray-500" for="how-far"
-						>{t('reminders.or')}</label
-					>
-					<NumberBox
-						id="how-far"
-						name="days"
-						min="1"
-						max={data.maxDays}
-						bind:value={howFar}
-						autocomplete="off"
-						title={t('reminders.howManyDaysToCover', { maxDays: data.maxDays })}
-						class="w-20"
-					/>
-					<span class="text-xs whitespace-nowrap text-gray-500">{t('reminders.days')}</span>
-					<button type="submit" class="btn btn-sm" title={t('reminders.lookThatFar')}
-						>{t('reminders.go')}</button
-					>
-				</form>
+					{t('reminders.somethingElse')}
+				</button>
 			</div>
 
 			<!--
@@ -1264,7 +1253,7 @@
 							method="post"
 							action="?/setSound"
 							use:enhance
-							class="grid grid-cols-[1fr_auto] items-center gap-x-3 gap-y-2 sm:grid-cols-[1fr_14rem_auto]"
+							class="controls-sm grid grid-cols-[1fr_auto] items-center gap-x-3 gap-y-2 sm:grid-cols-[1fr_14rem_auto]"
 						>
 							<input type="hidden" name="kind" value={choice.kind} />
 
@@ -1367,7 +1356,7 @@
 							action="?/addSound"
 							enctype="multipart/form-data"
 							use:enhance
-							class="flex flex-wrap items-center justify-end gap-2"
+							class="controls-sm flex flex-wrap items-center justify-end gap-2"
 						>
 							<OneLine
 								name="label"

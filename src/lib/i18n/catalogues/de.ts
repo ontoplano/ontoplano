@@ -2856,6 +2856,7 @@ export const messages: Catalogue = {
 		'Notizen, Tagebucheinträge, Aufgaben, Aufgabenblöcke, Ziele, Ideen, Personen, Einkaufsliste und Aktivitäten — alles auf einmal, oder eine Art nach der anderen.',
 	'search.nothingMatches': 'Nichts passt zu „{q}“',
 	'search.or': '— oder',
+	'search.resultsCount': { one: '{count} result', other: '{count} results' },
 	'search.resultsFor': { one: '{count} result for “{q}”', other: '{count} results for “{q}”' },
 	'search.todo': 'todo:',
 	'search.whatAreYouLookingFor': 'Wonach suchen Sie?',
@@ -3289,10 +3290,10 @@ export const messages: Catalogue = {
 	'settings.integrations.connections.anAppDeclaresAStream':
 		'Eine App meldet einen Stream an, indem sie POST sendet an',
 	'settings.integrations.connections.andCanReadYourUpcoming':
-		'und Ihren bevorstehenden Zeitplan lesen kann —\n\t\tohne dass dafür Code in ontoplano eingebaut werden muss.',
+		'und Ihren bevorstehenden Zeitplan lesen kann — ohne dass dafür Code in ontoplano eingebaut werden muss.',
 	'settings.integrations.connections.andLetItDeleteThings': '…und ihm erlauben, Dinge zu löschen',
 	'settings.integrations.connections.anyoneWithTheAddressCan':
-		'Jeder mit der Adresse kann Ihren Plan lesen, behandeln Sie sie also wie ein Passwort. Jede ist unten\n\t\t\taufgelistet und kann einzeln widerrufen werden.',
+		'Jeder mit der Adresse kann Ihren Plan lesen, behandeln Sie sie also wie ein Passwort. Jede ist unten aufgelistet und kann einzeln widerrufen werden.',
 	'settings.integrations.connections.apiTokens': 'API-Tokens',
 	'settings.integrations.connections.apiV1Streams': '{origin}/api/v1/streams',
 	'settings.integrations.connections.calendarLink': 'Kalenderlink',
@@ -3342,6 +3343,10 @@ export const messages: Catalogue = {
 	'settings.integrations.connections.itSendsYouBackHere':
 		'Sie werden hierher zurückgeschickt, um die Verbindung zu bestätigen; sie erscheint dann in der Liste unten wie jeder andere Schlüssel.',
 	'settings.integrations.connections.keep': 'Behalten',
+	'settings.integrations.connections.kindCounter': 'Counter',
+	'settings.integrations.connections.kindEvent': 'Event',
+	'settings.integrations.connections.kindMeasurement': 'Measurement',
+	'settings.integrations.connections.kindState': 'State',
 	'settings.integrations.connections.lastDelivery': '· letzte Zustellung',
 	'settings.integrations.connections.lastUsed': '· zuletzt verwendet',
 	'settings.integrations.connections.latest': '· neueste',
@@ -3361,7 +3366,7 @@ export const messages: Catalogue = {
 	'settings.integrations.connections.onGithub': 'auf GitHub.',
 	'settings.integrations.connections.oneCommandIfItHas': 'Ein Befehl, falls es eine Shell hat:',
 	'settings.integrations.connections.orPasteThisToIt':
-		'Oder fügen Sie ihm das in Worten ein — es beschreibt, wofür die App da ist, damit der Assistent\n\t\t\t\t\tdanach greift, statt Sie zu bitten, sich zu wiederholen:',
+		'Oder fügen Sie ihm das in Worten ein — es beschreibt, wofür die App da ist, damit der Assistent danach greift, statt Sie zu bitten, sich zu wiederholen:',
 	'settings.integrations.connections.pasteTheAddressIntoGoogle':
 		'Fügen Sie die Adresse in Google Kalender, Apple Kalender oder Thunderbird ein, und Ihr Plan erscheint dort und hält sich selbst aktuell. Diese Apps lesen sie nur — nichts, was sie tun, kann Ihren Plan ändern.',
 	'settings.integrations.connections.pasteThisAddressInto':
@@ -3386,9 +3391,9 @@ export const messages: Catalogue = {
 	'settings.integrations.connections.theLastWritesMadeOver':
 		'Die letzten Schreibvorgänge über die API, neueste zuerst. Ein gelöschtes Ding kann wiederhergestellt werden.',
 	'settings.integrations.connections.theLimitsATokenMay':
-		'Die Grenzen: Ein Token darf 240 Lesevorgänge und 60 Schreibvorgänge pro Minute ausführen, und alle Ihre Tokens zusammen\n\t\t\tteilen sich 600 und 150 — mehr Tokens bedeuten nicht mehr Budget. Gespeicherte Datenpunkte zählen gegen Ihren\n\t\t\tPlan, und ein Stream mit gesetzter Aufbewahrungsdauer behält nur diese Tage.',
+		'Die Grenzen: Ein Token darf 240 Lesevorgänge und 60 Schreibvorgänge pro Minute ausführen, und alle Ihre Tokens zusammen teilen sich 600 und 150 — mehr Tokens bedeuten nicht mehr Budget. Gespeicherte Datenpunkte zählen gegen Ihren Plan, und ein Stream mit gesetzter Aufbewahrungsdauer behält nur diese Tage.',
 	'settings.integrations.connections.thisAddressWasNotKept':
-		'Diese Adresse wurde nicht gespeichert und kann nicht erneut angezeigt werden. Erstellen Sie einen neuen Link, um einen\n\t\t\t\t\t\t\t\t\tzu haben, den Sie kopieren können.',
+		'Diese Adresse wurde nicht gespeichert und kann nicht erneut angezeigt werden. Erstellen Sie einen neuen Link, um einen zu haben, den Sie kopieren können.',
 	'settings.integrations.connections.tiedToOne': 'An eines gebunden',
 	'settings.integrations.connections.tokenCreatedCopyIt':
 		'Token erstellt — kopieren Sie es jetzt, es wird nicht erneut angezeigt.',
@@ -3433,7 +3438,7 @@ export const messages: Catalogue = {
 	'settings.integrations.putItBack': 'Wiederherstellen',
 	'settings.integrations.read': 'Lesen',
 	'settings.integrations.removingIsPermanentWithoutThis':
-		'Das Entfernen ist endgültig. Ohne dies kann ein Assistent Dinge hinzufügen und ändern,\n\t\t\t\t\t\t\t\t\t\t\taber nie wegnehmen.',
+		'Das Entfernen ist endgültig. Ohne dies kann ein Assistent Dinge hinzufügen und ändern, aber nie wegnehmen.',
 	'settings.integrations.runThisInATerminal':
 		'Führen Sie dies in einem Terminal aus. Es schreibt die Einstellung für Sie, für jedes Projekt — das macht --scope user dort.',
 	'settings.integrations.scriptsWidgetsCalendars':
@@ -3477,7 +3482,7 @@ export const messages: Catalogue = {
 	'settings.integrations.widget.pasteItInto': 'Fügen Sie ihn ein in',
 	'settings.integrations.widget.theKeyForThisWidget': 'Der Schlüssel für dieses Widget',
 	'settings.integrations.widget.theWidgetComesWithThe':
-		'Das Widget kommt mit der Android-App. Eine aus dem Browser hinzugefügte Verknüpfung kann keins bereitstellen —\n\t\t\tdas erlaubt Android nur einer installierten App.',
+		'Das Widget kommt mit der Android-App. Eine aus dem Browser hinzugefügte Verknüpfung kann keins bereitstellen — das erlaubt Android nur einer installierten App.',
 	'settings.integrations.widget.theWidgetOnThisPhone':
 		'Das Widget auf diesem Telefon erhält einen eigenen Schlüssel. Es kann den heutigen Plan lesen und sonst nichts.',
 	'settings.integrations.widget.youCanDisconnectItAny':
@@ -3507,7 +3512,7 @@ export const messages: Catalogue = {
 	'settings.menu.moveDown': '{what} nach unten verschieben',
 	'settings.menu.moveUp': '{what} nach oben verschieben',
 	'settings.preferences.aRoomYouPut':
-		'. Ein Bereich, den Sie wegräumen, verschwindet aus jedem Menü, behält aber alles darin — seine Seiten lassen sich\n\t\t\t\tweiterhin über einen Link öffnen.',
+		'. Ein Bereich, den Sie wegräumen, verschwindet aus jedem Menü, behält aber alles darin — seine Seiten lassen sich weiterhin über einen Link öffnen.',
 	'settings.preferences.androidSaidNoAndWill':
 		'Android hat abgelehnt und wird nicht erneut fragen.',
 	'settings.preferences.another': 'Ein weiteres…',
@@ -3595,11 +3600,11 @@ export const messages: Catalogue = {
 	},
 	'settings.preferences.theMenu': 'Das Menü',
 	'settings.preferences.theRoomsInTheOrder':
-		'Die Bereiche, in der Reihenfolge, in der sie erscheinen — auf der Leiste und rund um das Rad. Der erste Eintrag in der Liste\n\t\t\t\tsteht zuerst auf der Leiste und zuerst unter Ihrem Daumen: Das Rad beginnt unten rechts und\n\t\t\t\tläuft gegen den Uhrzeigersinn.',
+		'Die Bereiche, in der Reihenfolge, in der sie erscheinen — auf der Leiste und rund um das Rad. Der erste Eintrag in der Liste steht zuerst auf der Leiste und zuerst unter Ihrem Daumen: Das Rad beginnt unten rechts und läuft gegen den Uhrzeigersinn.',
 	'settings.preferences.theShapeOfThingsApart':
 		'Die Form der Dinge, abgesehen von Hell und Dunkel.',
 	'settings.preferences.theStretchOfTheDay':
-		'Der Zeitraum des Tages, den die Tages- und Wochenraster zeigen. Alles außerhalb davon ist weiterhin da — es\n\t\t\t\twird nur nicht gezeichnet.',
+		'Der Zeitraum des Tages, den die Tages- und Wochenraster zeigen. Alles außerhalb davon ist weiterhin da — es wird nur nicht gezeichnet.',
 	'settings.preferences.thisBrowserCannotDoIt': 'Dieser Browser kann das nicht.',
 	'settings.preferences.thisInstanceWouldNotMake':
 		'Das hat nicht funktioniert. Versuchen Sie es erneut.',
@@ -3617,7 +3622,7 @@ export const messages: Catalogue = {
 		'In welcher Währung die Preise auf der Einkaufsliste angegeben sind.',
 	'settings.preferences.when': 'Wann',
 	'settings.preferences.whenAPageBreaksSend':
-		'Wenn eine Seite abstürzt, werden technische Details an das Protokoll dieses Servers gesendet. Nur was kaputtgegangen ist — nie\n\t\t\t\twas Sie geschrieben haben.',
+		'Wenn eine Seite abstürzt, werden technische Details an das Protokoll dieses Servers gesendet. Nur was kaputtgegangen ist — nie was Sie geschrieben haben.',
 	'settings.preferences.whichCardsAppearAndIn':
 		'Welche Karten erscheinen, und in welcher Reihenfolge.',
 	'settings.timezone.unchanged': '{zone} (unverändert)',
@@ -4669,7 +4674,7 @@ export const messages: Catalogue = {
 	'welcome.whichLanguageHint': 'Alles, was die App sagt, und die E-Mails, die sie Ihnen schickt.',
 	'welcome.yourTimezone': 'Ihre Zeitzone',
 	'widgets.anyTag': 'Beliebiger Tag',
-	'widgets.count': 'Widgets: {count}',
+	'widgets.count': { one: '{count} widget', other: '{count} widgets' },
 	'widgets.deleteWidget': 'Dieses Widget löschen?',
 	'widgets.deleteWidgetExplained':
 		'Sein Schlüssel wird widerrufen und das Widget auf dem Telefon zeigt nichts mehr.',

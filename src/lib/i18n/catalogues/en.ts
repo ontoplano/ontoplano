@@ -2782,6 +2782,7 @@ export const messages: Catalogue = {
 		'Notes, diary entries, todos, task blocks, goals, ideas, people, shopping and activities — all of it at once, or one kind at a time.',
 	'search.nothingMatches': 'Nothing matches “{q}”',
 	'search.or': '— or',
+	'search.resultsCount': { one: '{count} result', other: '{count} results' },
 	'search.resultsFor': { one: '{count} result for “{q}”', other: '{count} results for “{q}”' },
 	'search.todo': 'todo:',
 	'search.whatAreYouLookingFor': 'What are you looking for?',
@@ -3201,10 +3202,10 @@ export const messages: Catalogue = {
 	'settings.integrations.connections.anAppDeclaresAStream':
 		'An app declares a stream by POSTing to',
 	'settings.integrations.connections.andCanReadYourUpcoming':
-		'and can read your upcoming schedule —\n\t\twithout shipping any code into ontoplano.',
+		'and can read your upcoming schedule — without shipping any code into ontoplano.',
 	'settings.integrations.connections.andLetItDeleteThings': '…and let it delete things',
 	'settings.integrations.connections.anyoneWithTheAddressCan':
-		'Anyone with the address can read your plan, so treat it like a password. Each one is listed\n\t\t\tbelow and can be revoked on its own.',
+		'Anyone with the address can read your plan, so treat it like a password. Each one is listed below and can be revoked on its own.',
 	'settings.integrations.connections.apiTokens': 'API tokens',
 	'settings.integrations.connections.apiV1Streams': '{origin}/api/v1/streams',
 	'settings.integrations.connections.calendarLink': 'Calendar link',
@@ -3253,6 +3254,10 @@ export const messages: Catalogue = {
 	'settings.integrations.connections.itSendsYouBackHere':
 		'It sends you back here to approve the connection, which then stands in the list below like any other key.',
 	'settings.integrations.connections.keep': 'Keep',
+	'settings.integrations.connections.kindCounter': 'Counter',
+	'settings.integrations.connections.kindEvent': 'Event',
+	'settings.integrations.connections.kindMeasurement': 'Measurement',
+	'settings.integrations.connections.kindState': 'State',
 	'settings.integrations.connections.lastDelivery': '· last delivery',
 	'settings.integrations.connections.lastUsed': '· last used',
 	'settings.integrations.connections.latest': '· latest',
@@ -3272,7 +3277,7 @@ export const messages: Catalogue = {
 	'settings.integrations.connections.onGithub': 'on GitHub.',
 	'settings.integrations.connections.oneCommandIfItHas': 'One command, if it has a shell:',
 	'settings.integrations.connections.orPasteThisToIt':
-		'Or paste this to it in words — it says what the app is for, so the assistant reaches for\n\t\t\t\t\tit instead of asking you to repeat yourself:',
+		'Or paste this to it in words — it says what the app is for, so the assistant reaches for it instead of asking you to repeat yourself:',
 	'settings.integrations.connections.pasteTheAddressIntoGoogle':
 		'Paste the address into Google Calendar, Apple Calendar or Thunderbird and your plan appears there, keeping itself current. Those apps only read it — nothing they do can change your plan.',
 	'settings.integrations.connections.pasteThisAddressInto':
@@ -3296,9 +3301,9 @@ export const messages: Catalogue = {
 	'settings.integrations.connections.theLastWritesMadeOver':
 		'The last writes made over the API, newest first. A deleted thing can be put back.',
 	'settings.integrations.connections.theLimitsATokenMay':
-		'The limits: a token may make 240 reads and 60 writes a minute, and all your tokens together\n\t\t\tshare 600 and 150 — more tokens is not more budget. Stored data points count against your\n\t\t\tplan, and a stream with retention set keeps only those days.',
+		'The limits: a token may make 240 reads and 60 writes a minute, and all your tokens together share 600 and 150 — more tokens is not more budget. Stored data points count against your plan, and a stream with retention set keeps only those days.',
 	'settings.integrations.connections.thisAddressWasNotKept':
-		'This address was not kept and cannot be shown again. Make a new link to have one\n\t\t\t\t\t\t\t\t\tyou can copy.',
+		'This address was not kept and cannot be shown again. Make a new link to have one you can copy.',
 	'settings.integrations.connections.tiedToOne': 'Tied to one',
 	'settings.integrations.connections.tokenCreatedCopyIt':
 		"Token created — copy it now, it won't be shown again.",
@@ -3342,7 +3347,7 @@ export const messages: Catalogue = {
 	'settings.integrations.putItBack': 'Put it back',
 	'settings.integrations.read': 'Read',
 	'settings.integrations.removingIsPermanentWithoutThis':
-		'Removing is permanent. Without this, an assistant can add and change things\n\t\t\t\t\t\t\t\t\t\t\tbut never take them away.',
+		'Removing is permanent. Without this, an assistant can add and change things but never take them away.',
 	'settings.integrations.runThisInATerminal':
 		'Run this in a terminal. It writes the setting for you, for every project — that is what --scope user is doing there.',
 	'settings.integrations.scriptsWidgetsCalendars':
@@ -3385,7 +3390,7 @@ export const messages: Catalogue = {
 	'settings.integrations.widget.pasteItInto': 'Paste it into',
 	'settings.integrations.widget.theKeyForThisWidget': 'The key for this widget',
 	'settings.integrations.widget.theWidgetComesWithThe':
-		'The widget comes with the Android app. A shortcut added from the browser cannot provide one —\n\t\t\tAndroid only lets an installed app do that.',
+		'The widget comes with the Android app. A shortcut added from the browser cannot provide one — Android only lets an installed app do that.',
 	'settings.integrations.widget.theWidgetOnThisPhone':
 		"The widget on this phone gets its own key. It can read today's plan and nothing else.",
 	'settings.integrations.widget.youCanDisconnectItAny':
@@ -3412,7 +3417,7 @@ export const messages: Catalogue = {
 	'settings.menu.moveDown': 'Move {what} down',
 	'settings.menu.moveUp': 'Move {what} up',
 	'settings.preferences.aRoomYouPut':
-		'. A room you put away leaves every menu and keeps everything in it — its pages still open\n\t\t\t\tfrom a link.',
+		'. A room you put away leaves every menu and keeps everything in it — its pages still open from a link.',
 	'settings.preferences.androidSaidNoAndWill': 'Android said no, and will not ask again.',
 	'settings.preferences.another': 'Another…',
 	'settings.preferences.appearance': 'Appearance',
@@ -3497,10 +3502,10 @@ export const messages: Catalogue = {
 	},
 	'settings.preferences.theMenu': 'The menu',
 	'settings.preferences.theRoomsInTheOrder':
-		'The rooms, in the order they appear — along the bar, and round the wheel. First in the list\n\t\t\t\tis first along the bar and first under your thumb: the wheel starts at the bottom right and\n\t\t\t\tgoes anti-clockwise.',
+		'The rooms, in the order they appear — along the bar, and round the wheel. First in the list is first along the bar and first under your thumb: the wheel starts at the bottom right and goes anti-clockwise.',
 	'settings.preferences.theShapeOfThingsApart': 'The shape of things, apart from light and dark.',
 	'settings.preferences.theStretchOfTheDay':
-		'The stretch of the day the day and week grids show. Anything outside it is still there — it\n\t\t\t\tjust is not drawn.',
+		'The stretch of the day the day and week grids show. Anything outside it is still there — it just is not drawn.',
 	'settings.preferences.thisBrowserCannotDoIt': 'This browser cannot do it.',
 	'settings.preferences.thisInstanceWouldNotMake': 'That did not work. Try again.',
 	'settings.preferences.thisPhoneWouldNotOpen':
@@ -3516,7 +3521,7 @@ export const messages: Catalogue = {
 	'settings.preferences.whatPricesOnTheShopping': 'What prices on the shopping list are in.',
 	'settings.preferences.when': 'When',
 	'settings.preferences.whenAPageBreaksSend':
-		"When a page breaks, send the technical details to this server's log. Only what broke — never\n\t\t\t\twhat you wrote.",
+		"When a page breaks, send the technical details to this server's log. Only what broke — never what you wrote.",
 	'settings.preferences.whichCardsAppearAndIn': 'Which cards appear, and in what order.',
 	'settings.timezone.unchanged': '{zone} (kept as it is)',
 	'shortcut.archiveUnarchive': 'Archive/unarchive',
@@ -4549,7 +4554,7 @@ export const messages: Catalogue = {
 	'welcome.whichLanguageHint': 'Everything the app says, and the mail it sends you.',
 	'welcome.yourTimezone': 'Your timezone',
 	'widgets.anyTag': 'Any tag',
-	'widgets.count': 'Widgets: {count}',
+	'widgets.count': { one: '{count} widget', other: '{count} widgets' },
 	'widgets.deleteWidget': 'Delete this widget?',
 	'widgets.deleteWidgetExplained':
 		'Its key is revoked and the widget on the phone stops showing anything.',

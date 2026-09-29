@@ -1452,7 +1452,7 @@ label:has(> input[type='radio']:not(:disabled)) {
 		flex: none;
 		width: 2.25rem;
 		height: 1.25rem;
-		border: 1px solid var(--color-gray-300);
+		border: 1px solid var(--color-gray-400);
 		border-radius: 999px;
 		background-color: var(--color-gray-200);
 		box-shadow: var(--shadow-card);
@@ -1471,7 +1471,10 @@ label:has(> input[type='radio']:not(:disabled)) {
 		width: 0.875rem;
 		height: 0.875rem;
 		border-radius: 999px;
-		background-color: var(--color-white);
+		/* Mid-grey while off, so the knob shows on the track in either theme —
+		   white on grey-200 vanished in light, and the inverted ramp made it
+		   near-black on near-black in dark. */
+		background-color: var(--color-gray-500);
 		box-shadow: var(--shadow-card);
 		translate: 0 -50%;
 		transition: translate 150ms ease;
@@ -1502,6 +1505,7 @@ label:has(> input[type='radio']:not(:disabled)) {
 	}
 
 	input[type='checkbox'].toggle:checked::after {
+		background-color: var(--ink-on-fill);
 		translate: 0.9375rem -50%;
 	}
 
@@ -5980,9 +5984,14 @@ html[data-pie-open] .float-layer {
 	white-space: pre;
 }
 
-/* The small field's own padding, so it stands as tall as the small buttons beside it. */
+/*
+ * The small field stands as tall as the small buttons beside it, with its one
+ * line centred in it: `.input-sm` takes the vertical padding off, which suits
+ * an `<input>` and leaves a textarea's text against its top edge.
+ */
 .one-line.input-sm {
-	height: calc(1lh + 0.5rem + 2px);
+	height: var(--control-sm);
+	padding-block: calc((var(--control-sm) - 1lh - 2px) / 2);
 }
 
 /*

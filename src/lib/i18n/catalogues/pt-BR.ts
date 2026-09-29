@@ -2831,6 +2831,7 @@ export const messages: Catalogue = {
 		'Notas, entradas de diário, tarefas, blocos de tarefa, metas, ideias, pessoas, compras e atividades — tudo de uma vez, ou um tipo por vez.',
 	'search.nothingMatches': 'Nada corresponde a “{q}”',
 	'search.or': '— ou',
+	'search.resultsCount': { one: '{count} result', other: '{count} results' },
 	'search.resultsFor': { one: '{count} result for “{q}”', other: '{count} results for “{q}”' },
 	'search.todo': 'todo:',
 	'search.whatAreYouLookingFor': 'O que você está procurando?',
@@ -3255,10 +3256,10 @@ export const messages: Catalogue = {
 	'settings.integrations.connections.anAppDeclaresAStream':
 		'Um app declara um stream fazendo POST para',
 	'settings.integrations.connections.andCanReadYourUpcoming':
-		'e pode ler sua agenda futura —\n\t\tsem que nenhum código seja enviado para dentro do ontoplano.',
+		'e pode ler sua agenda futura — sem que nenhum código seja enviado para dentro do ontoplano.',
 	'settings.integrations.connections.andLetItDeleteThings': '…e deixar que ele exclua coisas',
 	'settings.integrations.connections.anyoneWithTheAddressCan':
-		'Qualquer um com o endereço pode ler seu plano, então trate-o como uma senha. Cada um está listado\n\t\t\tabaixo e pode ser revogado individualmente.',
+		'Qualquer um com o endereço pode ler seu plano, então trate-o como uma senha. Cada um está listado abaixo e pode ser revogado individualmente.',
 	'settings.integrations.connections.apiTokens': 'Tokens de API',
 	'settings.integrations.connections.apiV1Streams': '{origin}/api/v1/streams',
 	'settings.integrations.connections.calendarLink': 'Link do calendário',
@@ -3307,6 +3308,10 @@ export const messages: Catalogue = {
 	'settings.integrations.connections.itSendsYouBackHere':
 		'Ele te traz de volta aqui para aprovar a conexão, que então aparece na lista abaixo como qualquer outra chave.',
 	'settings.integrations.connections.keep': 'Manter',
+	'settings.integrations.connections.kindCounter': 'Counter',
+	'settings.integrations.connections.kindEvent': 'Event',
+	'settings.integrations.connections.kindMeasurement': 'Measurement',
+	'settings.integrations.connections.kindState': 'State',
 	'settings.integrations.connections.lastDelivery': '· última entrega',
 	'settings.integrations.connections.lastUsed': '· último uso',
 	'settings.integrations.connections.latest': '· mais recente',
@@ -3326,7 +3331,7 @@ export const messages: Catalogue = {
 	'settings.integrations.connections.onGithub': 'no GitHub.',
 	'settings.integrations.connections.oneCommandIfItHas': 'Um comando, se ele tiver um shell:',
 	'settings.integrations.connections.orPasteThisToIt':
-		'Ou cole isto nele em palavras — diz para que serve o app, para que o assistente recorra\n\t\t\t\t\ta ele em vez de pedir que você se repita:',
+		'Ou cole isto nele em palavras — diz para que serve o app, para que o assistente recorra a ele em vez de pedir que você se repita:',
 	'settings.integrations.connections.pasteTheAddressIntoGoogle':
 		'Cole o endereço no Google Calendar, Apple Calendar ou Thunderbird e seu plano aparece lá, mantendo-se atualizado. Esses apps só leem — nada que fizerem pode mudar seu plano.',
 	'settings.integrations.connections.pasteThisAddressInto':
@@ -3350,9 +3355,9 @@ export const messages: Catalogue = {
 	'settings.integrations.connections.theLastWritesMadeOver':
 		'As últimas escritas feitas pela API, mais recentes primeiro. Algo excluído pode ser recolocado.',
 	'settings.integrations.connections.theLimitsATokenMay':
-		'Os limites: um token pode fazer 240 leituras e 60 escritas por minuto, e todos os seus tokens juntos\n\t\t\tdividem 600 e 150 — mais tokens não é mais orçamento. Pontos de dados armazenados contam contra seu\n\t\t\tplano, e um stream com retenção definida guarda só esses dias.',
+		'Os limites: um token pode fazer 240 leituras e 60 escritas por minuto, e todos os seus tokens juntos dividem 600 e 150 — mais tokens não é mais orçamento. Pontos de dados armazenados contam contra seu plano, e um stream com retenção definida guarda só esses dias.',
 	'settings.integrations.connections.thisAddressWasNotKept':
-		'Este endereço não foi guardado e não pode ser mostrado de novo. Crie um novo link para ter um\n\t\t\t\t\t\t\t\t\tque você possa copiar.',
+		'Este endereço não foi guardado e não pode ser mostrado de novo. Crie um novo link para ter um que você possa copiar.',
 	'settings.integrations.connections.tiedToOne': 'Vinculado a um',
 	'settings.integrations.connections.tokenCreatedCopyIt':
 		'Token criado — copie agora, ele não será mostrado de novo.',
@@ -3397,7 +3402,7 @@ export const messages: Catalogue = {
 	'settings.integrations.putItBack': 'Recolocar',
 	'settings.integrations.read': 'Leitura',
 	'settings.integrations.removingIsPermanentWithoutThis':
-		'Remover é permanente. Sem isso, um assistente pode adicionar e mudar coisas\n\t\t\t\t\t\t\t\t\t\t\tmas nunca tirá-las.',
+		'Remover é permanente. Sem isso, um assistente pode adicionar e mudar coisas mas nunca tirá-las.',
 	'settings.integrations.runThisInATerminal':
 		'Rode isso num terminal. Ele escreve a configuração para você, em todo projeto — é isso que o --scope user faz ali.',
 	'settings.integrations.scriptsWidgetsCalendars':
@@ -3440,7 +3445,7 @@ export const messages: Catalogue = {
 	'settings.integrations.widget.pasteItInto': 'Cole-a em',
 	'settings.integrations.widget.theKeyForThisWidget': 'A chave para este widget',
 	'settings.integrations.widget.theWidgetComesWithThe':
-		'O widget vem com o app Android. Um atalho adicionado pelo navegador não pode oferecer um —\n\t\t\to Android só deixa um app instalado fazer isso.',
+		'O widget vem com o app Android. Um atalho adicionado pelo navegador não pode oferecer um — o Android só deixa um app instalado fazer isso.',
 	'settings.integrations.widget.theWidgetOnThisPhone':
 		'O widget deste telefone tem sua própria chave. Ele pode ler o plano de hoje e nada além disso.',
 	'settings.integrations.widget.youCanDisconnectItAny':
@@ -3468,7 +3473,7 @@ export const messages: Catalogue = {
 	'settings.menu.moveDown': 'Mover {what} para baixo',
 	'settings.menu.moveUp': 'Mover {what} para cima',
 	'settings.preferences.aRoomYouPut':
-		'. Uma seção que você guarda sai de todos os menus e mantém tudo o que tem dentro — as páginas dela ainda abrem\n\t\t\t\ta partir de um link.',
+		'. Uma seção que você guarda sai de todos os menus e mantém tudo o que tem dentro — as páginas dela ainda abrem a partir de um link.',
 	'settings.preferences.androidSaidNoAndWill': 'O Android recusou, e não vai perguntar de novo.',
 	'settings.preferences.another': 'Outro…',
 	'settings.preferences.appearance': 'Aparência',
@@ -3555,10 +3560,10 @@ export const messages: Catalogue = {
 	},
 	'settings.preferences.theMenu': 'O menu',
 	'settings.preferences.theRoomsInTheOrder':
-		'As seções, na ordem em que aparecem — ao longo da barra e ao redor da roda. A primeira da lista\n\t\t\t\tfica primeiro na barra e primeiro debaixo do seu polegar: a roda começa embaixo à direita e\n\t\t\t\tgira em sentido anti-horário.',
+		'As seções, na ordem em que aparecem — ao longo da barra e ao redor da roda. A primeira da lista fica primeiro na barra e primeiro debaixo do seu polegar: a roda começa embaixo à direita e gira em sentido anti-horário.',
 	'settings.preferences.theShapeOfThingsApart': 'A aparência das coisas, além de claro e escuro.',
 	'settings.preferences.theStretchOfTheDay':
-		'O intervalo do dia que as grades de dia e de semana mostram. Qualquer coisa fora dele continua lá — só\n\t\t\t\tnão é desenhada.',
+		'O intervalo do dia que as grades de dia e de semana mostram. Qualquer coisa fora dele continua lá — só não é desenhada.',
 	'settings.preferences.thisBrowserCannotDoIt': 'Este navegador não consegue fazer isso.',
 	'settings.preferences.thisInstanceWouldNotMake': 'Não deu certo. Tente de novo.',
 	'settings.preferences.thisPhoneWouldNotOpen':
@@ -3575,7 +3580,7 @@ export const messages: Catalogue = {
 		'Em que moeda estão os preços da lista de compras.',
 	'settings.preferences.when': 'Quando',
 	'settings.preferences.whenAPageBreaksSend':
-		'Quando uma página quebra, envia os detalhes técnicos para o log deste servidor. Só o que quebrou — nunca\n\t\t\t\to que você escreveu.',
+		'Quando uma página quebra, envia os detalhes técnicos para o log deste servidor. Só o que quebrou — nunca o que você escreveu.',
 	'settings.preferences.whichCardsAppearAndIn': 'Quais cartões aparecem, e em que ordem.',
 	'settings.timezone.unchanged': '{zone} (mantido como está)',
 	'shortcut.archiveUnarchive': 'Arquivar/desarquivar',
@@ -4621,7 +4626,7 @@ export const messages: Catalogue = {
 	'welcome.whichLanguageHint': 'Tudo o que o aplicativo diz, e os e-mails que ele envia a você.',
 	'welcome.yourTimezone': 'Seu fuso horário',
 	'widgets.anyTag': 'Qualquer etiqueta',
-	'widgets.count': 'Widgets: {count}',
+	'widgets.count': { one: '{count} widget', other: '{count} widgets' },
 	'widgets.deleteWidget': 'Excluir este widget?',
 	'widgets.deleteWidgetExplained':
 		'A chave dele é revogada e o widget no telefone deixa de mostrar qualquer coisa.',

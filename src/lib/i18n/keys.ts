@@ -2478,6 +2478,7 @@ export type MessageKey =
 	| 'search.notesDiaryEntriesTodosBlocks'
 	| 'search.nothingMatches'
 	| 'search.or'
+	| 'search.resultsCount'
 	| 'search.resultsFor'
 	| 'search.todo'
 	| 'search.whatAreYouLookingFor'
@@ -2848,6 +2849,10 @@ export type MessageKey =
 	| 'settings.integrations.connections.itMay'
 	| 'settings.integrations.connections.itSendsYouBackHere'
 	| 'settings.integrations.connections.keep'
+	| 'settings.integrations.connections.kindCounter'
+	| 'settings.integrations.connections.kindEvent'
+	| 'settings.integrations.connections.kindMeasurement'
+	| 'settings.integrations.connections.kindState'
 	| 'settings.integrations.connections.lastDelivery'
 	| 'settings.integrations.connections.lastUsed'
 	| 'settings.integrations.connections.latest'
@@ -4467,6 +4472,7 @@ export interface MessageValuesFor {
 	'reportDialog.whereItGoes': { where: string | number };
 	'search.for': { q: string | number; results: string | number; total: string | number };
 	'search.nothingMatches': { q: string | number };
+	'search.resultsCount': { count: number };
 	'search.resultsFor': { count: number; q: string | number };
 	'selection.count': { count: number };
 	'settings.account.allSessions': { count: number };
