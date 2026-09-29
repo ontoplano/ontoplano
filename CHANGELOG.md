@@ -18,6 +18,10 @@ the shape of the data changing. Bumping the minor per batch is what ran this
 file to 0.161 in a few months, which tells a reader nothing about which
 releases mattered.
 
+## 0.184.3 — 2026-09-29
+
+- While the task list is filtered, the task dialog also says where the task would land among the filtered tasks, or — when the filters would hide it.
+
 ## 0.184.2 — 2026-09-29
 
 - The + tag chip on a task in a notebook suggests only that notebook's tags, like the edit dialog does.

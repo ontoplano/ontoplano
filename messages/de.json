@@ -1897,7 +1897,6 @@
 	},
 	"notebooks.folderPath": "Pfad",
 	"notebooks.folderPathHint": "Jedes Notizbuch darin zieht mit um. Leer stellt sie oben ins Regal.",
-	"notebooks.folderPlaceholder": "Zuhause/Küche",
 	"notebooks.goalsCount": {
 		"one": "{count} Ziel",
 		"other": "{count} Ziele"
@@ -2390,6 +2389,7 @@
 	"ratings.labelValue": "{label} {value}",
 	"ratings.labelValueOf5": "{label}: {value} von 5",
 	"ratings.nthInLine": "{nth} in der Reihe",
+	"ratings.placeUnderFilters": "Position unter den Aufgaben, die die aktuellen Filter zeigen",
 	"ratings.priority": "Priorität",
 	"ratings.priorityScoreOf": "Priorität {score} von {max}",
 	"ratings.urgency": "Dringlichkeit",

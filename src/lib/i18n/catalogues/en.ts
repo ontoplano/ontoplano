@@ -2088,7 +2088,6 @@ export const messages: Catalogue = {
 	'notebooks.folderPath': 'Path',
 	'notebooks.folderPathHint':
 		'Every notebook in it moves with it. Empty puts them at the top of the shelf.',
-	'notebooks.folderPlaceholder': 'Home/Kitchen',
 	'notebooks.goalsCount': { one: '{count} goal', other: '{count} goals' },
 	'notebooks.habitsCount': { one: '{count} habit', other: '{count} habits' },
 	'notebooks.id.aPictureFor': 'A picture for {title}',
@@ -2490,6 +2489,7 @@ export const messages: Catalogue = {
 	'ratings.labelValue': '{label} {value}',
 	'ratings.labelValueOf5': '{label}: {value} of 5',
 	'ratings.nthInLine': '{nth} in line',
+	'ratings.placeUnderFilters': 'Position among the tasks the current filters show',
 	'ratings.priority': 'Priority',
 	'ratings.priorityScoreOf': 'Priority {score} of {max}',
 	'ratings.urgency': 'Urgency',

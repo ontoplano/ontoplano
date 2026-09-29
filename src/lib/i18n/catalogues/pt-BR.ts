@@ -2123,7 +2123,6 @@ export const messages: Catalogue = {
 	'notebooks.folderPath': 'Caminho',
 	'notebooks.folderPathHint':
 		'Cada caderno dentro dela vai junto. Vazio, ficam no topo da estante.',
-	'notebooks.folderPlaceholder': 'Casa/Cozinha',
 	'notebooks.goalsCount': { one: '{count} meta', other: '{count} metas' },
 	'notebooks.habitsCount': { one: '{count} habit', other: '{count} habits' },
 	'notebooks.id.aPictureFor': 'Uma imagem para {title}',
@@ -2534,6 +2533,7 @@ export const messages: Catalogue = {
 	'ratings.labelValue': '{label} {value}',
 	'ratings.labelValueOf5': '{label}: {value} de 5',
 	'ratings.nthInLine': '{nth} na fila',
+	'ratings.placeUnderFilters': 'Posição entre as tarefas que os filtros atuais mostram',
 	'ratings.priority': 'Prioridade',
 	'ratings.priorityScoreOf': 'Prioridade {score} de {max}',
 	'ratings.urgency': 'Urgência',

@@ -37,6 +37,7 @@
 	import { autofocus } from '$lib/actions/autofocus';
 	import { armed } from '$lib/actions/armed';
 	import { matchScore } from '$lib/destinations';
+	import { tagsFrom } from '$lib/tag-typing';
 	import { getAction, keyFor } from '$lib/shortcuts';
 	import FilterBar from '$lib/components/FilterBar.svelte';
 	import RatingBadges from '$lib/components/RatingBadges.svelte';
@@ -368,6 +369,14 @@
 	 */
 	let formNotebookId: number | null = $state(null);
 
+	/*
+	 * And what the draft says, for the same reason: whether it would get
+	 * through the filters on the list depends on its words and its labels.
+	 */
+	let formTitle = $state('');
+	let formNotes = $state('');
+	let formTags = $state('');
+
 	/**
 	 * How long a task stays on screen after it is ticked.
 	 *
@@ -563,19 +572,13 @@
 			shown = shown.filter((t: Todo) => String(t.notebookId) === notebookFilter);
 
 		shown = byTag(shown);
-
-		const wanted = looking.trim();
-		if (wanted !== '') {
-			// The title first, then everything else written on it: a word in the
-			// notes is how somebody finds the task they described rather than
-			// named.
-			shown = shown.filter(
-				(t: Todo) =>
-					matchScore(t.title, wanted) !== null ||
-					(t.notes ?? '').toLowerCase().includes(wanted.toLowerCase()) ||
-					t.tags.some((one) => one.name.includes(wanted.toLowerCase()))
-			);
-		}
+		shown = shown.filter((t: Todo) =>
+			answersSearch(
+				t.title,
+				t.notes,
+				t.tags.map((one) => one.name)
+			)
+		);
 
 		if (order === 'tagged') {
 			const tagged = [...shown].sort(byLastTagged);
@@ -649,6 +652,41 @@
 		return queue.filter((one: Todo) => compareByPriority(one, draft) < 0).length + 1;
 	});
 
+	/**
+	 * Where the draft would land in the list as it is filtered right now.
+	 *
+	 * The place above is about the queue; this is about the screen — the rows
+	 * a filter lets through, in the same priority order. `undefined` when
+	 * nothing is narrowing the list, since then the two would be one number;
+	 * `null` when the draft would not get through the filters at all, so it
+	 * would have no place on this screen.
+	 */
+	const filteredPlace = $derived.by((): number | null | undefined => {
+		if (!narrowed) return undefined;
+		const draftRow = {
+			title: formTitle,
+			notes: formNotes,
+			tags: tagsFrom(formTags),
+			notebookId: formNotebookId
+		};
+		if (!passesNarrowing(draftRow)) return null;
+		const draft = {
+			ratings: formRatings as RatingValues,
+			sortOrder: editing?.sortOrder ?? Number.MAX_SAFE_INTEGER,
+			createdAt: editing?.createdAt ?? new Date().toISOString()
+		};
+		return (
+			todos.filter(
+				(one: Todo) =>
+					one.id !== editingId &&
+					one.archivedAt === null &&
+					!CLOSED_STATUSES.includes(one.status) &&
+					passesNarrowing({ ...one, tags: one.tags.map((tag) => tag.name) }) &&
+					compareByPriority(one, draft) < 0
+			).length + 1
+		);
+	});
+
 	/** Whatever the notebook picker lets through, before the two toggles. */
 	let inScope = $derived.by(() => {
 		let held = todos;
@@ -699,6 +737,36 @@
 		{ value: 'none', label: t('todoRows.notInOne') },
 		...notebooks.map((book) => ({ value: String(book.id), label: book.title }))
 	]);
+
+	/*
+	 * The search box's question. The title first, then everything else written
+	 * on it: a word in the notes is how somebody finds the task they described
+	 * rather than named.
+	 */
+	function answersSearch(title: string, notes: string | null, tags: string[]): boolean {
+		const wanted = looking.trim();
+		if (wanted === '') return true;
+		return (
+			matchScore(title, wanted) !== null ||
+			(notes ?? '').toLowerCase().includes(wanted.toLowerCase()) ||
+			tags.some((one) => one.includes(wanted.toLowerCase()))
+		);
+	}
+
+	/** Whether something with these answers gets through the notebook, label and search filters. */
+	function passesNarrowing(row: {
+		title: string;
+		notes: string | null;
+		tags: string[];
+		notebookId: number | null;
+	}): boolean {
+		if (notebookFilter === 'none' && row.notebookId !== null) return false;
+		if (notebookFilter !== '' && notebookFilter !== 'none')
+			if (String(row.notebookId) !== notebookFilter) return false;
+		return (
+			passesTagFilter(row.tags, tagFilter.current) && answersSearch(row.title, row.notes, row.tags)
+		);
+	}
 
 	function byTag(rows: Todo[]): Todo[] {
 		return rows.filter((t: Todo) =>
@@ -827,6 +895,9 @@
 		formRatings = { urgency: null, interest: null, ease: null };
 		// Inside a notebook, a new task starts in it; in the room, in none.
 		formNotebookId = notebookId;
+		formTitle = '';
+		formNotes = '';
+		formTags = '';
 	}
 
 	/**
@@ -867,6 +938,9 @@
 		showForm = true;
 		formRatings = { ...todo.ratings };
 		formNotebookId = todo.notebookId;
+		formTitle = todo.title;
+		formNotes = todo.notes ?? '';
+		formTags = todo.tags.map((one) => one.name).join(', ');
 		openAtRatings = where?.atRatings === true;
 	}
 
@@ -1065,6 +1139,16 @@
 		class="flex flex-1 items-center justify-center gap-2 text-sm"
 		title={t('ratings.whereItWouldSit')}
 	>
+		{#if filteredPlace !== undefined}
+			<span
+				class="pill-soft tabular inline-flex min-w-[11ch] items-center justify-center gap-1 px-1.5"
+				style="--pill: var(--color-blue-500)"
+				title={t('ratings.placeUnderFilters')}
+			>
+				<Icon name="filter" size={12} label={t('ratings.placeUnderFilters')} />
+				{filteredPlace === null ? '—' : t('ratings.nthInLine', { nth: ordinal(t, filteredPlace) })}
+			</span>
+		{/if}
 		<RatingBadges values={formRatings} />
 		<span class="tabular text-gray-700">
 			{t('ratings.nthInLine', { nth: ordinal(t, draftPlace) })}
@@ -1882,12 +1966,12 @@
 
 			<FormGrid>
 				<TodoFields
-					title={editing?.title ?? ''}
-					notes={editing?.notes ?? ''}
+					bind:title={formTitle}
+					bind:notes={formNotes}
 					attributes={editing?.attributes ?? {}}
 					categoryId={editing ? editing.categoryId : undefined}
 					bind:notebookId={formNotebookId}
-					tags={editing?.tags.map((one) => one.name).join(', ') ?? ''}
+					bind:tags={formTags}
 					scheduledDate={editing?.scheduledDate ?? ''}
 					{categories}
 					{notebooks}
