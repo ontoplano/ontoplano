@@ -1,0 +1,14 @@
+{
+	"name": "ontoplano-audio-transcriber",
+	"version": "1.0.0",
+	"private": true,
+	"type": "module",
+	"scripts": {
+		"start": "node audio-transcriber.mjs",
+		"subscribe": "node subscribe.mjs",
+		"test": "node --test"
+	},
+	"engines": {
+		"node": ">=20"
+	}
+}

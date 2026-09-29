@@ -273,6 +273,7 @@ export type MessageKey =
 	| 'audio.noneDescription'
 	| 'audio.noneMatch'
 	| 'audio.notSupported'
+	| 'audio.notes'
 	| 'audio.orderBy'
 	| 'audio.orderLength'
 	| 'audio.orderName'
@@ -390,6 +391,8 @@ export type MessageKey =
 	| 'errors.attributes.mustBeAnObject'
 	| 'errors.audio.aRecordingNeedsAName'
 	| 'errors.audio.noSuchRecording'
+	| 'errors.audio.notesAlreadyWritten'
+	| 'errors.audio.notesTooLong'
 	| 'errors.audio.thatIsNotARecording'
 	| 'errors.audio.thatRecordingWasEmpty'
 	| 'errors.auth.provideABearerToken'
@@ -4057,6 +4060,7 @@ export interface MessageValuesFor {
 		minutes: string | number;
 		minutes2: string | number;
 	};
+	'errors.audio.notesTooLong': { limit: string | number };
 	'errors.notebooks.hasNoBillsTab': { notebook: string | number };
 	'errors.notebooks.hasNoGoalsTab': { notebook: string | number };
 	'errors.notebooks.hasNoHabitsTab': { notebook: string | number };

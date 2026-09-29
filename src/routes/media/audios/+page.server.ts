@@ -3,7 +3,15 @@ import type { IsolatedEvent } from '$lib/isolated/routes';
 
 import { buildCtx } from '$lib/services/ctx';
 import { toActionFailure } from '$lib/http-errors';
-import { audioLimits, defaultAudioName, list, remove, rename } from '$lib/services/audio';
+import {
+	MAX_AUDIO_NOTES_LENGTH,
+	audioLimits,
+	defaultAudioName,
+	list,
+	remove,
+	rename,
+	setNotes
+} from '$lib/services/audio';
 import { createIdea } from '$lib/services/ideas';
 
 /**
@@ -20,6 +28,7 @@ export const load = async ({ locals }: IsolatedEvent) => {
 
 	return {
 		recordings: list(ctx),
+		maxNotesLength: MAX_AUDIO_NOTES_LENGTH,
 		limits: { audioKilobytes: limits.audioKilobytes, accountAudios: limits.accountAudios },
 		/*
 		 * The name the form offers, worked out here.
@@ -34,6 +43,15 @@ export const load = async ({ locals }: IsolatedEvent) => {
 };
 
 export const actions: Actions = {
+	notes: async ({ request, locals }: IsolatedEvent) => {
+		const form = await request.formData();
+		try {
+			setNotes(buildCtx(locals.user!.id), Number(form.get('id')), form.get('notes'));
+			return { success: true, action: 'notes' };
+		} catch (e) {
+			return toActionFailure(e);
+		}
+	},
 	rename: async ({ request, locals }: IsolatedEvent) => {
 		const form = await request.formData();
 		try {

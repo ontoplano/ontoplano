@@ -19,6 +19,7 @@
 	import OneLine from '$lib/components/OneLine.svelte';
 	import Recorder from '$lib/components/Recorder.svelte';
 	import { armed } from '$lib/actions/armed';
+	import { autofocus } from '$lib/actions/autofocus';
 	import { setRoomAction } from '$lib/room-action.svelte';
 	import { useT } from '$lib/i18n';
 	import { momentOf } from '$lib/when';
@@ -66,6 +67,8 @@
 
 	/** Which recording's name is being edited, if any. */
 	let renaming = $state<number | null>(null);
+	let noting = $state<number | null>(null);
+	const notingOne = $derived(data.recordings.find((one) => one.id === noting) ?? null);
 	const renamingOne = $derived(data.recordings.find((one) => one.id === renaming) ?? null);
 
 	/** Finding one by name. */
@@ -73,6 +76,7 @@
 	const needle = $derived(looking.trim().toLowerCase());
 	/** The orders a list of recordings is read in. */
 	const ORDERS = ['recorded', 'name', 'length'] as const;
+	const NOTES_PREVIEW_LENGTH = 180;
 	type Order = (typeof ORDERS)[number];
 	const ORDER_LABELS: Record<Order, PlainKey> = {
 		recorded: 'audio.orderRecorded',
@@ -263,6 +267,11 @@
 							<p class="mt-0.5 text-xs text-gray-500">
 								{said(one.createdAt)} · {size(one.byteSize)}
 							</p>
+							{#if one.notes}<p class="mt-1 text-sm whitespace-pre-wrap text-gray-600">
+									{one.notes.length > NOTES_PREVIEW_LENGTH
+										? `${one.notes.slice(0, NOTES_PREVIEW_LENGTH)}…`
+										: one.notes}
+								</p>{/if}
 						</div>
 						<!-- The app's own transport rather than the browser's, which
 						     arrives at a fixed size in a grey of its own and reads as a
@@ -279,6 +288,13 @@
 					</div>
 
 					<div class="list-row-actions">
+						<button
+							type="button"
+							class="icon-btn"
+							title={t('audio.notes')}
+							aria-label={t('audio.notes')}
+							onclick={() => (noting = one.id)}><Icon name="note" /></button
+						>
 						<button
 							type="button"
 							class="icon-btn"
@@ -312,6 +328,41 @@
 		</ul>
 	{/if}
 </RoomSurface>
+
+<Modal
+	open={notingOne !== null}
+	title={t('audio.notes')}
+	error={form?.message}
+	onclose={() => (noting = null)}
+>
+	{#if notingOne}
+		<form
+			id="audio-notes-form"
+			method="post"
+			action="?/notes"
+			use:enhance={() =>
+				async ({ result, update }) => {
+					await update({ reset: false });
+					if (result.type === 'success') noting = null;
+				}}
+		>
+			<input type="hidden" name="id" value={notingOne.id} />
+			<Field label={t('audio.notes')}>
+				<textarea
+					name="notes"
+					class="input w-full"
+					rows="8"
+					maxlength={data.maxNotesLength}
+					use:autofocus>{notingOne.notes}</textarea
+				>
+			</Field>
+		</form>
+	{/if}
+	{#snippet footer()}
+		<button type="button" class="btn" onclick={() => (noting = null)}>{t('ui.cancel')}</button>
+		<button type="submit" form="audio-notes-form" class="btn btn-primary">{t('ui.save')}</button>
+	{/snippet}
+</Modal>
 
 <!-- A new name, in a dialog like every other form here. -->
 <Modal

@@ -18,6 +18,10 @@ the shape of the data changing. Bumping the minor per batch is what ran this
 file to 0.161 in a few months, which tells a reader nothing about which
 releases mattered.
 
+## 0.184.6 — 2026-09-29
+
+- Recordings now have editable notes, and a standalone example plugin can fill them with a Whisper transcription after upload.
+
 ## 0.184.5 — 2026-09-29
 
 - On a phone, labels on cards are drawn as pills at their own size rather than as button-tall blocks; they are as easy to tap as before.

@@ -30,7 +30,7 @@ import { db } from '$lib/db/index.js';
 import { media } from '$lib/db/schema.js';
 import type { Ctx } from './ctx.js';
 import { sha256Hex } from './digest.js';
-import { NotFoundError, ValidationError } from './errors.js';
+import { ConflictError, NotFoundError, ValidationError } from './errors.js';
 import { host } from './host.js';
 import { AUDIO_MIME_PREFIX } from './media-kind.js';
 import { audioSecondsFor, type MediaLimits } from './media-limits.js';
@@ -99,11 +99,13 @@ export const ACCEPTED_AUDIO_EXTENSIONS = [...SIGNATURES.map((s) => s.extension),
  * from a disk, and a line somebody types is a line that has to fit in a list.
  */
 export const MAX_AUDIO_NAME_LENGTH = 120;
+export const MAX_AUDIO_NOTES_LENGTH = 100_000;
 
 export type Recording = {
 	id: number;
 	mime: string;
 	name: string;
+	notes: string;
 	byteSize: number;
 	/** How long it plays. Null for anything recorded before it was stored. */
 	seconds: number | null;
@@ -237,6 +239,7 @@ export async function store(
 		})
 		.returning()
 		.get();
+	host.emit(ctx, 'audio.uploaded', { id: row.id });
 
 	return toRecording(row);
 }
@@ -246,6 +249,7 @@ function toRecording(row: typeof media.$inferSelect): Recording {
 		id: row.id,
 		mime: row.mime,
 		name: row.filename,
+		notes: row.notes,
 		byteSize: row.byteSize,
 		seconds: row.seconds,
 		createdAt: row.createdAt
@@ -295,6 +299,16 @@ export function list(ctx: Ctx): Recording[] {
 		.map(toRecording);
 }
 
+export function get(ctx: Ctx, id: number): Recording {
+	const row = db
+		.select()
+		.from(media)
+		.where(and(eq(media.id, id), eq(media.userId, ctx.userId), isRecording))
+		.get();
+	if (!row) throw new NotFoundError({ key: 'errors.audio.noSuchRecording' });
+	return toRecording(row);
+}
+
 export function rename(ctx: Ctx, id: number, name: unknown): Recording {
 	const tidy = tidyAudioName(String(name ?? ''));
 	if (!tidy) throw new ValidationError({ key: 'errors.audio.aRecordingNeedsAName' });
@@ -306,6 +320,41 @@ export function rename(ctx: Ctx, id: number, name: unknown): Recording {
 		.returning()
 		.get();
 	if (!row) throw new NotFoundError({ key: 'errors.audio.noSuchRecording' });
+	return toRecording(row);
+}
+
+/** Replace a recording's notes, with ownership and kind checked in the update. */
+export function setNotes(ctx: Ctx, id: number, notes: unknown, onlyIfEmpty = false): Recording {
+	if (typeof notes !== 'string' || notes.length > MAX_AUDIO_NOTES_LENGTH)
+		throw new ValidationError({
+			key: 'errors.audio.notesTooLong',
+			values: { limit: MAX_AUDIO_NOTES_LENGTH }
+		});
+	const row = db
+		.update(media)
+		.set({ notes })
+		.where(
+			and(
+				eq(media.id, id),
+				eq(media.userId, ctx.userId),
+				isRecording,
+				...(onlyIfEmpty ? [eq(media.notes, '')] : [])
+			)
+		)
+		.returning()
+		.get();
+	if (!row) {
+		if (
+			onlyIfEmpty &&
+			db
+				.select({ id: media.id })
+				.from(media)
+				.where(and(eq(media.id, id), eq(media.userId, ctx.userId), isRecording))
+				.get()
+		)
+			throw new ConflictError({ key: 'errors.audio.notesAlreadyWritten' });
+		throw new NotFoundError({ key: 'errors.audio.noSuchRecording' });
+	}
 	return toRecording(row);
 }
 

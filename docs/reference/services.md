@@ -878,7 +878,13 @@ are both a 404: not found, not yours and not a recording are one answer.
 
 #### `list(ctx)`
 
+#### `get(ctx, id)`
+
 #### `rename(ctx, id, name)`
+
+#### `setNotes(ctx, id, notes, onlyIfEmpty)`
+
+Replace a recording's notes, with ownership and kind checked in the update.
 
 #### `remove(ctx, id)`
 

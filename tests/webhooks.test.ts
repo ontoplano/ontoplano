@@ -88,6 +88,20 @@ describe('subscribing', () => {
 });
 
 describe('delivery', () => {
+	test('audio uploads send only their id to subscribers', async () => {
+		const calls: string[] = [];
+		vi.stubGlobal(
+			'fetch',
+			vi.fn(async (_url: string, init: RequestInit) => {
+				calls.push(String(init.body));
+				return new Response(null, { status: 200 });
+			})
+		);
+		s.createSubscription(ctx, { url: 'https://example.com/audio', events: ['audio.uploaded'] });
+		s.emit(ctx, 'audio.uploaded', { id: 7 });
+		await flush();
+		expect(JSON.parse(calls[0]).data).toEqual({ id: 7 });
+	});
 	test('an event reaches only the subscriptions that asked for it, signed', async () => {
 		const calls: { url: string; init: RequestInit }[] = [];
 		vi.stubGlobal(

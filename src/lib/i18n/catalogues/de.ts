@@ -297,6 +297,7 @@ export const messages: Catalogue = {
 		'Press Record and talk; what you keep lands here, ready to play back or turn into an idea.',
 	'audio.noneMatch': 'No recording has that in its name.',
 	'audio.notSupported': 'Dieser Browser kann nicht aufnehmen.',
+	'audio.notes': 'Notizen und Transkription',
 	'audio.orderBy': 'Order recordings by',
 	'audio.orderLength': 'Length',
 	'audio.orderName': 'Name',
@@ -437,6 +438,9 @@ export const messages: Catalogue = {
 	'errors.attributes.mustBeAnObject': 'attributes muss ein Objekt sein',
 	'errors.audio.aRecordingNeedsAName': 'Eine Aufnahme braucht einen Namen.',
 	'errors.audio.noSuchRecording': 'Diese Aufnahme gibt es nicht.',
+	'errors.audio.notesAlreadyWritten': 'Für diese Aufnahme gibt es bereits Notizen.',
+	'errors.audio.notesTooLong':
+		'Die Notizen zur Aufnahme dürfen höchstens {limit} Zeichen lang sein.',
 	'errors.audio.thatIsNotARecording': 'Diese Aufnahme nimmt diese Instanz nicht.',
 	'errors.audio.thatRecordingWasEmpty': 'Diese Aufnahme war leer.',
 	'errors.auth.provideABearerToken': 'Gib einen Schlüssel an oder melde dich an',

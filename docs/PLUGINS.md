@@ -213,7 +213,8 @@ POST /api/v1/webhooks
 ```
 
 Events: `todo.created` `todo.completed` `idea.created` `diary.created` `inventory.added`
-`inventory.bought`. A delivery looks like:
+`inventory.bought` `audio.uploaded`. `audio.uploaded` sends only `{ "id": <recording id> }`.
+A delivery looks like:
 
 ```http
 POST <your url>
@@ -234,6 +235,24 @@ it. `GET /api/v1/webhooks` lists yours; `DELETE /api/v1/webhooks/<id>` unsubscri
 
 On a hosted instance the address must be reachable from the internet — private and
 loopback addresses are refused. Self-hosted instances may point anywhere.
+
+### Transcribing recordings
+
+The standalone example in [`ontoplano-plugin/`](../ontoplano-plugin/README.md) receives
+`audio.uploaded`, fetches the recording, sends it to OpenAI Whisper, and writes the
+transcript into the recording's notes. Its token needs `webhooks:manage`, `audio:read`,
+and `audio:write`. These are account-wide recording permissions, separate from the
+permissions to read recordings referenced by a note or task.
+
+```http
+GET   /api/v1/audio/<id>       → recording metadata, including notes (audio:read)
+GET   /api/v1/audio/<id>/file  → recording bytes (audio:read)
+PATCH /api/v1/audio/<id>       { "notes": "transcript", "onlyIfEmpty": true } (audio:write)
+```
+
+`onlyIfEmpty` gives a delayed transcript a 409 rather than replacing notes written by a
+person. A recording belonging to another account, a picture id, and a missing id all
+return the same 404. The file response is an attachment with `nosniff` and `no-store`.
 
 ### The shopping list
 

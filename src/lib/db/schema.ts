@@ -1037,6 +1037,8 @@ export const media = sqliteTable(
 		/** What the person's file was called. Shown; never used as a path. */
 		filename: text('filename').notNull().default(''),
 		alt: text('alt').notNull().default(''),
+		/** Notes attached to a recording, including its transcription. */
+		notes: text('notes').notNull().default(''),
 		byteSize: integer('byte_size').notNull(),
 		/**
 		 * How long it plays, for the things that play.
