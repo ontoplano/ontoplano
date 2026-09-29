@@ -63,7 +63,7 @@
 	 *
 	 * Where this posts rather than drives state — a notebook's tabs — the
 	 * caller gives `on` and hears nothing back until the form is submitted. So
-	 * a row somebody had just ticked kept the dashed border and the grey label
+	 * a row somebody had just ticked kept the grey ground and the grey label
 	 * of an off one: a control saying the opposite of its own tick. It follows
 	 * the box now, and goes back to the caller's answer when that changes.
 	 */
@@ -94,7 +94,7 @@
 		? 'ml-8 border-l-2 border-gray-200 border-l-gray-300 py-1.5'
 		: here
 			? 'border-gray-200 py-2'
-			: 'border-dashed border-gray-300 bg-gray-50 py-2'}"
+			: 'border-gray-200 bg-gray-50 py-2'}"
 >
 	{@render leading?.()}
 
@@ -125,6 +125,7 @@
 				type="checkbox"
 				{name}
 				{value}
+				aria-label={label}
 				class="size-4 shrink-0"
 				onchange={(e) => onToggle?.(e.currentTarget.checked)}
 			/>

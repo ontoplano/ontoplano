@@ -20,6 +20,7 @@ releases mattered.
 
 ## 0.184.1 — 2026-09-28
 
+- Preferences and Integrations line their fields up in one column at one height, the menu editor's arrows stay put, data streams say what they are in words, and a few settings sentences no longer break mid-line.
 - Albums show their name in the bar with a way back, and the gallery can be searched and sorted. Search results mark what matched and no longer show raw markdown. Switches are visible in both themes, and the reminders toolbar is one row of same-height controls.
 - Finance: bills sort with what falls due next first and walk with j/k; Rules has search and keys, and the lines behind a count open where you can see them; Insights charts fit a phone, open on the newest months and show their scale.
 - Habits and recipes can be archived, sorted and edited from the list; logging a habit's day answers on the press; a recipe's page lines up with its cards and has its way back in the bar.

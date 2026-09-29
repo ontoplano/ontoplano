@@ -67,4 +67,17 @@
 			border-inline-width: 0;
 		}
 	}
+
+	/*
+	 * And it ends the room: no band of the body's padding under its last row,
+	 * and no rule across the foot. The room's own rule for this follows the
+	 * last child down only so far, and these pages sit deeper than it looks.
+	 */
+	:global(.room-body:has(.integrations-body > * > .room-surface)) {
+		padding-bottom: 0;
+	}
+
+	.integrations-body :global(.room-surface) {
+		border-bottom-color: transparent;
+	}
 </style>

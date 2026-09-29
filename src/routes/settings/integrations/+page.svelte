@@ -339,7 +339,7 @@ bearer_token_env_var = "ONTOPLANO_KEY"
 					-->
 					<div
 						use:sliding
-						class="seg mt-2"
+						class="seg seg-sm mt-2"
 						role="group"
 						aria-label={t('settings.integrations.whichOneAreYouUsing')}
 					>
