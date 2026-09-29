@@ -3712,6 +3712,7 @@ export const messages: Catalogue = {
 	'start.1Account': '1 cuenta',
 	'start.aMonthEach': '{currency} al mes',
 	'start.aSubscriptionCannotBeStarted': 'No se puede iniciar una suscripción desde esta app.',
+	'start.aYear': '{currency} al año',
 	'start.accounts': '{familySeats} cuentas',
 	'start.billedTodayTheTrial': 'Se cobra hoy — la prueba ya se usó.',
 	'start.bothOfTodaySExportsAre':
@@ -3722,6 +3723,7 @@ export const messages: Catalogue = {
 	'start.everythingYouWroteIsKept':
 		'Todo lo que escribiste se conserva — no se eliminó nada. Renueva para seguir donde lo dejaste, o\n\t\t\t\tllévate tus datos.',
 	'start.family': 'Familia',
+	'start.from': 'desde',
 	'start.fromAMonth': 'desde {currency} al mes',
 	'start.howOften': 'Con qué frecuencia',
 	'start.iWantToHostMy': 'Quiero alojar mi propia instancia',
@@ -3734,11 +3736,13 @@ export const messages: Catalogue = {
 		'Una factura cubre {familySeats} cuentas, la tuya incluida. Invitas a los demás una vez dentro.',
 	'start.ontoplanoIsFreeAndOpen':
 		'Ontoplano es gratis y de código abierto: aloja tu propia instancia y todas las funciones son tuyas sin costo. Pagar\n\t\t\tes por esta instancia — alojada, respaldada y mantenida al día por nosotros — y financia el\n\t\t\tdesarrollo.',
+	'start.perMonth': 'al mes',
 	'start.percentOff': '{saving}% de descuento',
 	'start.plan': 'Plan',
 	'start.signOut': 'Cerrar sesión',
 	'start.start': 'Empezar',
 	'start.startAMonth': 'Empezar — {currency} al mes',
+	'start.startFreeDays': { one: 'Empezar mi día gratis', other: 'Empezar mis {count} días gratis' },
 	'start.subscribe': 'Suscribirse',
 	'start.yearly': 'Anual — {yearlyLine}',
 	'start.youGetFreeDaysEvenIf': 'Tienes {trialDaysAhead} días gratis aunque canceles de inmediato.',

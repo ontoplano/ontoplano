@@ -3693,6 +3693,7 @@ export const messages: Catalogue = {
 	'start.1Account': '1 conta',
 	'start.aMonthEach': '{currency} por mês',
 	'start.aSubscriptionCannotBeStarted': 'Uma assinatura não pode ser iniciada por este app.',
+	'start.aYear': '{currency} por ano',
 	'start.accounts': '{familySeats} contas',
 	'start.billedTodayTheTrial': 'Cobrado hoje — o teste grátis já foi usado.',
 	'start.bothOfTodaySExportsAre':
@@ -3703,6 +3704,7 @@ export const messages: Catalogue = {
 	'start.everythingYouWroteIsKept':
 		'Tudo o que você escreveu foi mantido — nada foi excluído. Renove para continuar de onde parou, ou\n\t\t\t\tleve seus dados com você.',
 	'start.family': 'Família',
+	'start.from': 'a partir de',
 	'start.fromAMonth': 'a partir de {currency} por mês',
 	'start.howOften': 'Com que frequência',
 	'start.iWantToHostMy': 'Quero hospedar minha própria instância',
@@ -3715,11 +3717,16 @@ export const messages: Catalogue = {
 		'Uma única fatura cobre {familySeats} contas, incluindo a sua. Você convida as outras depois de entrar.',
 	'start.ontoplanoIsFreeAndOpen':
 		'Ontoplano é gratuito e de código aberto: hospede você mesmo e todo recurso é seu sem custo. Pagar\n\t\t\té por esta instância — hospedada, com backup e sempre atualizada para você — e isso financia o\n\t\t\tdesenvolvimento.',
+	'start.perMonth': 'por mês',
 	'start.percentOff': '{saving}% de desconto',
 	'start.plan': 'Plano',
 	'start.signOut': 'Sair',
 	'start.start': 'Começar',
 	'start.startAMonth': 'Começar — {currency} por mês',
+	'start.startFreeDays': {
+		one: 'Começar meu dia grátis',
+		other: 'Começar meus {count} dias grátis'
+	},
 	'start.subscribe': 'Assinar',
 	'start.yearly': 'Anual — {yearlyLine}',
 	'start.youGetFreeDaysEvenIf': 'Você tem {trialDaysAhead} dias grátis mesmo se cancelar na hora.',

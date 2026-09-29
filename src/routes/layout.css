@@ -2612,56 +2612,6 @@ label:has(> input[type='radio']:not(:disabled)) {
 	 * every card the page's own ground unless it says otherwise. A pill has
 	 * said otherwise — that rule is for "the ones that never said".
 	 */
-	/*
-	 * One of a few things to choose between, as a square.
-	 *
-	 * The payment page's shape, written once because it is now two rows of it
-	 * — which plan, and how often — and two copies of a tile drift the first
-	 * time one of them is touched. The border width never changes with the
-	 * state, only its colour: a selection that thickens a border moves
-	 * everything around it, and this is the page where the least may move.
-	 */
-	.choice-tile {
-		display: flex;
-		aspect-ratio: 1;
-		flex-direction: column;
-		align-items: center;
-		justify-content: center;
-		gap: 0.375rem;
-		border: 2px solid var(--color-gray-200);
-		text-align: center;
-		transition:
-			border-color 120ms ease,
-			background-color 120ms ease;
-	}
-
-	/*
-	 * The second choice on the page, and a smaller one than the first.
-	 *
-	 * Which plan and how often were the same square, so the page asked two
-	 * questions with identical weight when the first is the one being made —
-	 * how often is a detail of it.
-	 *
-	 * Narrower, not merely shorter. Keeping the full width and cropping the
-	 * height left two tiles as wide as the plans above, which is the thing
-	 * that made them read as equally important; the pair is centred so the
-	 * row still has a middle.
-	 */
-	.choice-tile-small {
-		aspect-ratio: 1.25;
-		width: 72%;
-		justify-self: center;
-	}
-
-	.choice-tile:hover {
-		border-color: var(--color-gray-400);
-	}
-
-	.choice-tile[aria-checked='true'] {
-		border-color: var(--color-gray-900);
-		background-color: var(--color-gray-50);
-	}
-
 	html .pill {
 		--pill: var(--color-gray-400);
 		display: inline-flex;

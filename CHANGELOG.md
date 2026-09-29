@@ -24,6 +24,7 @@ releases mattered.
 - Task lists can be sorted by when a task was last edited.
 - Urgency, ease and interest are shown as icons — an hourglass, a feather and a star — everywhere but the sliders that set them.
 - The loading octagon keeps turning while a page finishes loading, instead of freezing mid-turn and jumping to its landing.
+- The subscribe page wears the logo's colours: each plan has its own tile and octagon badge, the yearly saving is flagged, and the button says how many free days you get.
 
 ## 0.184.1 — 2026-09-28
 

@@ -3634,6 +3634,7 @@ export const messages: Catalogue = {
 	'start.1Account': '1 account',
 	'start.aMonthEach': '{currency} a month',
 	'start.aSubscriptionCannotBeStarted': 'A subscription cannot be started from this app.',
+	'start.aYear': '{currency} a year',
 	'start.accounts': '{familySeats} accounts',
 	'start.billedTodayTheTrial': 'Billed today — the trial was already used.',
 	'start.bothOfTodaySExportsAre': "Both of today's exports are used — the next unlocks tomorrow.",
@@ -3643,6 +3644,7 @@ export const messages: Catalogue = {
 	'start.everythingYouWroteIsKept':
 		'Everything you wrote is kept — nothing was deleted. Renew to pick up where you left off, or\n\t\t\t\ttake your data with you.',
 	'start.family': 'Family',
+	'start.from': 'from',
 	'start.fromAMonth': 'from {currency} a month',
 	'start.howOften': 'How often',
 	'start.iWantToHostMy': 'I want to host my own instance',
@@ -3655,11 +3657,13 @@ export const messages: Catalogue = {
 		'One invoice covers {familySeats} accounts, yours included. You invite the others once you are in.',
 	'start.ontoplanoIsFreeAndOpen':
 		'Ontoplano is free and open source: self-host it and every feature is yours at no cost. Paying\n\t\t\tis for this instance — hosted, backed up and kept up to date for you — and it funds the\n\t\t\tdevelopment.',
+	'start.perMonth': 'a month',
 	'start.percentOff': '{saving}% off',
 	'start.plan': 'Plan',
 	'start.signOut': 'Sign out',
 	'start.start': 'Start',
 	'start.startAMonth': 'Start — {currency} a month',
+	'start.startFreeDays': { one: 'Start my free day', other: 'Start my {count} free days' },
 	'start.subscribe': 'Subscribe',
 	'start.yearly': 'Yearly — {yearlyLine}',
 	'start.youGetFreeDaysEvenIf':

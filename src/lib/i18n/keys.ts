@@ -3171,6 +3171,7 @@ export type MessageKey =
 	| 'start.1Account'
 	| 'start.aMonthEach'
 	| 'start.aSubscriptionCannotBeStarted'
+	| 'start.aYear'
 	| 'start.accounts'
 	| 'start.billedTodayTheTrial'
 	| 'start.bothOfTodaySExportsAre'
@@ -3179,6 +3180,7 @@ export type MessageKey =
 	| 'start.everyYear'
 	| 'start.everythingYouWroteIsKept'
 	| 'start.family'
+	| 'start.from'
 	| 'start.fromAMonth'
 	| 'start.howOften'
 	| 'start.iWantToHostMy'
@@ -3189,11 +3191,13 @@ export type MessageKey =
 	| 'start.nothingIsChargedToday'
 	| 'start.oneInvoiceCoversAccountsYours'
 	| 'start.ontoplanoIsFreeAndOpen'
+	| 'start.perMonth'
 	| 'start.percentOff'
 	| 'start.plan'
 	| 'start.signOut'
 	| 'start.start'
 	| 'start.startAMonth'
+	| 'start.startFreeDays'
 	| 'start.subscribe'
 	| 'start.yearly'
 	| 'start.youGetFreeDaysEvenIf'
@@ -4539,6 +4543,7 @@ export interface MessageValuesFor {
 	'settings.preferences.testSentTo': { count: number };
 	'settings.timezone.unchanged': { zone: string | number };
 	'start.aMonthEach': { currency: string | number };
+	'start.aYear': { currency: string | number };
 	'start.accounts': { familySeats: string | number };
 	'start.fromAMonth': { currency: string | number };
 	'start.ifNotTheFirstCharge': { firstChargeOn: string | number };
@@ -4546,6 +4551,7 @@ export interface MessageValuesFor {
 	'start.oneInvoiceCoversAccountsYours': { familySeats: string | number };
 	'start.percentOff': { saving: string | number };
 	'start.startAMonth': { currency: string | number };
+	'start.startFreeDays': { count: number };
 	'start.yearly': { yearlyLine: string | number };
 	'start.youGetFreeDaysEvenIf': { trialDaysAhead: string | number };
 	'streamChart.dateCountPoints': { count: number; date: string | number };
