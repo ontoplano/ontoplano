@@ -84,8 +84,10 @@ test('a thing is dragged into a drawer, and the page narrows to it', async ({ pa
 	await kitchen.click();
 	await expect(page.getByText('Measuring tape')).toBeVisible();
 
-	// Opening a location narrows both lists to what is in it.
-	await drawer.click();
+	// Opening a location narrows both lists to what is in it. Pressed on its
+	// name, where a person presses: pointing at a place brings its own buttons
+	// up over the far end of the row.
+	await drawer.click({ position: { x: 12, y: 12 } });
 	await expect(page.getByText('Measuring tape')).toBeVisible();
 	await expect(page.getByText('Milk')).toHaveCount(0);
 
@@ -146,8 +148,9 @@ test.describe('on a phone', () => {
 	test('the panel and the list both fit, and nothing runs off the side', async ({ page }) => {
 		await register(page, testEmail('inv-phone'));
 		await visit(page, '/inventory');
+		// The places fold under one line on a phone, so the things come first.
+		await page.getByRole('button', { name: /Where things live/i, expanded: false }).click();
 		await addLocation(page, 'Kitchen');
-
 		await expect(page.getByRole('button', { name: /^Everything/ })).toBeVisible();
 		const overflow = await page.evaluate(
 			() => document.documentElement.scrollWidth - document.documentElement.clientWidth

@@ -1630,7 +1630,10 @@ export const messages: Catalogue = {
 	'inventory.orderThingsBy': 'Order things by',
 	'inventory.placeEmpty': 'Nothing in {name} yet',
 	'inventory.placeHolds': { one: '{count} thing in {name}', other: '{count} things in {name}' },
-	'inventory.placeHoldsSplit': '{count} in {name}: {here} here and {inside} in what is inside it',
+	'inventory.placeHoldsSplit': {
+		one: '{count} thing in {name}: {here} here and {inside} in what is inside it',
+		other: '{count} things in {name}: {here} here and {inside} in what is inside it'
+	},
 	'inventory.putBackOnTheList': 'Volver a poner en la lista',
 	'inventory.putItBackOnThe': 'Vuelve a ponerlo en la lista',
 	'inventory.remove': 'Quitar {name}',
@@ -2642,6 +2645,7 @@ export const messages: Catalogue = {
 	'reminders.noneBookedYet': 'Todavía no hay nada puesto en este móvil',
 	'reminders.nothingCanReachThisBrowser':
 		'Nada puede llegar a este navegador: las notificaciones necesitan HTTPS y esta página está en',
+	'reminders.nothingSaysThat': 'Ningún recordatorio dice eso.',
 	'reminders.nothingWaiting': 'Nada en espera',
 	'reminders.nothingWentOff': 'Nada sonó',
 	'reminders.onTheMachineRunning': '. En la máquina que lo ejecuta,',
@@ -2667,12 +2671,17 @@ export const messages: Catalogue = {
 		'{weeks} semanas siguen abiertas — la más antigua tiene {blocks} sin responder.',
 	'reminders.saveThisReminder': 'Guardar este recordatorio',
 	'reminders.saveWhatThisKindSounds': 'Guardar cómo suena este tipo',
+	'reminders.searchReminders': 'Buscar recordatorios',
 	'reminders.servesItOverHttpsWith':
 		'lo sirve por HTTPS con un certificado que esta máquina\n\t\t\tfirma — nada sale de la red, y al teléfono se le dice una vez que confíe en él. Un certificado real en\n\t\t\tun dominio que posees hace lo mismo sin nada que instalar. Cualquiera de los dos activa los recordatorios,\n\t\t\tinstalándolo como app, y sin conexión, todo a la vez.',
 	'reminders.setIt': 'Configurarlo',
 	'reminders.setItUp': 'Configurarlo',
 	'reminders.setOne': 'Configura uno',
 	'reminders.setThisReminder': 'Configurar este recordatorio',
+	'reminders.showingCount': {
+		one: '{count} recordatorio visible',
+		other: '{count} recordatorios visibles'
+	},
 	'reminders.silent': 'Silencioso',
 	'reminders.somethingElse': 'Otro valor',
 	'reminders.sound': 'Sonido',

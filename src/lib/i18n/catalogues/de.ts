@@ -1646,7 +1646,10 @@ export const messages: Catalogue = {
 	'inventory.orderThingsBy': 'Order things by',
 	'inventory.placeEmpty': 'Nothing in {name} yet',
 	'inventory.placeHolds': { one: '{count} thing in {name}', other: '{count} things in {name}' },
-	'inventory.placeHoldsSplit': '{count} in {name}: {here} here and {inside} in what is inside it',
+	'inventory.placeHoldsSplit': {
+		one: '{count} thing in {name}: {here} here and {inside} in what is inside it',
+		other: '{count} things in {name}: {here} here and {inside} in what is inside it'
+	},
 	'inventory.putBackOnTheList': 'Zurück auf die Liste setzen',
 	'inventory.putItBackOnThe': 'Es zurück auf die Liste setzen',
 	'inventory.remove': '{name} entfernen',
@@ -2646,6 +2649,7 @@ export const messages: Catalogue = {
 	'reminders.noneBookedYet': 'Auf diesem Handy ist noch nichts gestellt',
 	'reminders.nothingCanReachThisBrowser':
 		'Nichts kann diesen Browser erreichen: Benachrichtigungen brauchen HTTPS, und diese Seite läuft auf',
+	'reminders.nothingSaysThat': 'Keine Erinnerung sagt das.',
 	'reminders.nothingWaiting': 'Nichts wartet',
 	'reminders.nothingWentOff': 'Nichts ist losgegangen',
 	'reminders.onTheMachineRunning': '. Auf dem Rechner, der es ausführt,',
@@ -2671,12 +2675,17 @@ export const messages: Catalogue = {
 		'{weeks} Wochen sind noch offen — die älteste hat {blocks} ohne Antwort.',
 	'reminders.saveThisReminder': 'Diese Erinnerung speichern',
 	'reminders.saveWhatThisKindSounds': 'Speichern, wie diese Art klingt',
+	'reminders.searchReminders': 'Erinnerungen durchsuchen',
 	'reminders.servesItOverHttpsWith':
 		'stellt es über HTTPS bereit, mit einem Zertifikat, das dieser Rechner\n\t\t\tselbst ausstellt — nichts verlässt das Netzwerk, und dem Telefon wird einmal gesagt, dass es ihm vertrauen soll. Ein echtes Zertifikat für\n\t\t\teine Domain, die Ihnen gehört, tut dasselbe, ohne dass etwas installiert werden muss. Beides schaltet Erinnerungen ein, installiert die App\n\t\t\tund funktioniert offline — alles auf einmal.',
 	'reminders.setIt': 'Festlegen',
 	'reminders.setItUp': 'Einrichten',
 	'reminders.setOne': 'Eine festlegen',
 	'reminders.setThisReminder': 'Diese Erinnerung festlegen',
+	'reminders.showingCount': {
+		one: '{count} Erinnerung angezeigt',
+		other: '{count} Erinnerungen angezeigt'
+	},
 	'reminders.silent': 'Lautlos',
 	'reminders.somethingElse': 'Etwas anderes',
 	'reminders.sound': 'Ton',

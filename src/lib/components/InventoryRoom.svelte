@@ -1080,14 +1080,22 @@
 			there they lie over the end of the name, on the row's own fill, so the
 			names keep the width. A finger has no hover, so on a touch screen they
 			are always there, in room of their own.
+
+			Invisible is not absent, though: a hidden button still took the press,
+			so a click on the right half of a place renamed it. They take the
+			pointer only while they can be seen.
+
+			And out of the way altogether while something is being dragged: the
+			row under the pointer is hovered, so they lay over the place a thing
+			was being dropped on and took the drop — nothing moved.
 		-->
 		{#if row.actions && row.fold}
 			{@const node = row.fold}
 			<div
-				class="place-actions relative z-10 flex shrink-0 items-center gap-1 transition-opacity [@media(hover:hover)]:absolute [@media(hover:hover)]:right-12 [@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-focus-within:opacity-100 [@media(hover:hover)]:group-hover:opacity-100 {location ===
+				class="place-actions relative z-10 flex shrink-0 items-center gap-1 transition-opacity [@media(hover:hover)]:pointer-events-none [@media(hover:hover)]:absolute [@media(hover:hover)]:right-12 [@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-focus-within:pointer-events-auto [@media(hover:hover)]:group-focus-within:opacity-100 [@media(hover:hover)]:group-hover:pointer-events-auto [@media(hover:hover)]:group-hover:opacity-100 {location ===
 				row.id
 					? 'bg-gray-100'
-					: 'bg-gray-50'}"
+					: 'bg-gray-50'} {dragging === null ? '' : '!pointer-events-none !opacity-0'}"
 			>
 				<button
 					onclick={() =>
@@ -1306,8 +1314,8 @@
 				<!--
 					The same slots on both tabs, so changing tab moves nothing: the
 					first toggle is the tab's own question — "short" of the cupboard,
-					"bought" of the wishlist — and the count range is the cupboard's,
-					kept as an empty slot on the wishlist where there is no count.
+					"bought" of the wishlist. The count range is the cupboard's alone;
+					it is last, so nothing moves up to fill where it would be.
 				-->
 				{#if list === 'replenish'}
 					<button
@@ -1346,39 +1354,43 @@
 					/>
 				{/if}
 				<!-- How many, as a range: either end may be left open. The pair is
-				     named as one question, and each box says which end it is. -->
-				<div
-					role="group"
-					aria-labelledby="inventory-how-many"
-					class="flex shrink-0 items-center gap-1.5 {list === 'replenish' ? '' : 'invisible'}"
-					inert={list !== 'replenish'}
-				>
-					<span id="inventory-how-many" class="text-sm text-gray-600">{t('inventory.howMany')}</span
+				     named as one question, and each box says which end it is.
+				     The cupboard's alone: held open on the wishlist, it was the
+				     thing that pushed that tab's toolbar onto a second line. -->
+				{#if list === 'replenish'}
+					<div
+						role="group"
+						aria-labelledby="inventory-how-many"
+						class="flex shrink-0 items-center gap-1.5"
 					>
-					<input
-						type="number"
-						min="0"
-						inputmode="numeric"
-						placeholder={t('inventory.atLeastShort')}
-						aria-label={t('inventory.atLeastLabel')}
-						title={t('inventory.atLeastLabel')}
-						value={atLeast}
-						oninput={(e) => (atLeast = e.currentTarget.value)}
-						class="input input-sm w-16"
-					/>
-					<span class="text-gray-500" aria-hidden="true">–</span>
-					<input
-						type="number"
-						min="0"
-						inputmode="numeric"
-						placeholder={t('inventory.atMostShort')}
-						aria-label={t('inventory.atMostLabel')}
-						title={t('inventory.atMostLabel')}
-						value={atMost}
-						oninput={(e) => (atMost = e.currentTarget.value)}
-						class="input input-sm w-16"
-					/>
-				</div>
+						<span id="inventory-how-many" class="text-sm text-gray-600"
+							>{t('inventory.howMany')}</span
+						>
+						<input
+							type="number"
+							min="0"
+							inputmode="numeric"
+							placeholder={t('inventory.atLeastShort')}
+							aria-label={t('inventory.atLeastLabel')}
+							title={t('inventory.atLeastLabel')}
+							value={atLeast}
+							oninput={(e) => (atLeast = e.currentTarget.value)}
+							class="input input-sm w-16"
+						/>
+						<span class="text-gray-500" aria-hidden="true">–</span>
+						<input
+							type="number"
+							min="0"
+							inputmode="numeric"
+							placeholder={t('inventory.atMostShort')}
+							aria-label={t('inventory.atMostLabel')}
+							title={t('inventory.atMostLabel')}
+							value={atMost}
+							oninput={(e) => (atMost = e.currentTarget.value)}
+							class="input input-sm w-16"
+						/>
+					</div>
+				{/if}
 				{#snippet verb()}
 					<!-- Named for the half most visits want; the dialog's second tab is
 					     the attributes. A phone's strip has room for one verb beside

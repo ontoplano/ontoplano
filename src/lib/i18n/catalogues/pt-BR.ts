@@ -1623,7 +1623,10 @@ export const messages: Catalogue = {
 	'inventory.orderThingsBy': 'Order things by',
 	'inventory.placeEmpty': 'Nothing in {name} yet',
 	'inventory.placeHolds': { one: '{count} thing in {name}', other: '{count} things in {name}' },
-	'inventory.placeHoldsSplit': '{count} in {name}: {here} here and {inside} in what is inside it',
+	'inventory.placeHoldsSplit': {
+		one: '{count} thing in {name}: {here} here and {inside} in what is inside it',
+		other: '{count} things in {name}: {here} here and {inside} in what is inside it'
+	},
 	'inventory.putBackOnTheList': 'Colocar de volta na lista',
 	'inventory.putItBackOnThe': 'Colocar de volta na lista',
 	'inventory.remove': 'Remover {name}',
@@ -2629,6 +2632,7 @@ export const messages: Catalogue = {
 	'reminders.noneBookedYet': 'Nada marcado neste celular ainda',
 	'reminders.nothingCanReachThisBrowser':
 		'Nada consegue alcançar este navegador: notificações exigem HTTPS e esta página está em',
+	'reminders.nothingSaysThat': 'Nenhum lembrete diz isso.',
 	'reminders.nothingWaiting': 'Nada em espera',
 	'reminders.nothingWentOff': 'Nada disparou',
 	'reminders.onTheMachineRunning': '. Na máquina que está executando,',
@@ -2653,12 +2657,17 @@ export const messages: Catalogue = {
 		'{weeks} semanas continuam abertas — a mais antiga tem {blocks} sem resposta.',
 	'reminders.saveThisReminder': 'Salvar este lembrete',
 	'reminders.saveWhatThisKindSounds': 'Salvar como esse tipo soa',
+	'reminders.searchReminders': 'Buscar lembretes',
 	'reminders.servesItOverHttpsWith':
 		'serve por HTTPS com um certificado que esta máquina\n\t\t\tassina — nada sai da rede, e o telefone é avisado uma vez para confiar nele. Um certificado real em\n\t\t\tum domínio que você possui faz o mesmo sem nada para instalar. Qualquer um dos dois ativa os lembretes, instala o app,\n\t\t\te funciona offline, tudo de uma vez.',
 	'reminders.setIt': 'Configurar',
 	'reminders.setItUp': 'Configurar',
 	'reminders.setOne': 'Configurar um',
 	'reminders.setThisReminder': 'Configurar este lembrete',
+	'reminders.showingCount': {
+		one: '{count} lembrete exibido',
+		other: '{count} lembretes exibidos'
+	},
 	'reminders.silent': 'Silencioso',
 	'reminders.somethingElse': 'Outro valor',
 	'reminders.sound': 'Som',

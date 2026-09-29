@@ -207,7 +207,24 @@
 	<div class="mb-2 flex w-full flex-wrap items-center gap-2">{@render banner()}</div>
 {/if}
 
-<div class="filter-strip flex w-full flex-wrap items-center gap-2" bind:clientWidth={width}>
+<!--
+	One line where the filters are out, however many of them there are.
+
+	Wrapping the strip put the verbs and the order on a line of their own as
+	soon as the filters were a few pixels too wide — on the wishlist, whose
+	first toggle is longer than the cupboard's, and on a 1366px laptop on both.
+	So the strip does not wrap there: the filters' own group gives up the
+	width and wraps its controls inside itself, and everything else keeps its
+	place on the first line — top-aligned, so a second line of filters hangs
+	below the first rather than pushing the box and the order halfway down.
+	Folded, the few things left share the line and may wrap as they always did.
+-->
+<div
+	class="filter-strip flex w-full gap-2 {folded
+		? 'flex-wrap items-center'
+		: 'flex-nowrap items-start'}"
+	bind:clientWidth={width}
+>
 	<!--
 		The search box, in a slot of a fixed size.
 
@@ -228,7 +245,13 @@
 
 	<!-- How many rows are showing, next to the box that narrows them by name,
 	     at both widths. -->
-	{#if count}<div class="filter-count shrink-0">{@render count()}</div>{/if}
+	{#if count}
+		<!-- As tall as a control, so its words sit level with the buttons on
+		     the first line whichever way the strip aligns. -->
+		<div class="filter-count flex min-h-(--control-sm) shrink-0 items-center">
+			{@render count()}
+		</div>
+	{/if}
 
 	{#if inline}
 		<div class="flex min-w-0 items-center gap-2" class:filter-inline-below={folded && inlineBelow}>

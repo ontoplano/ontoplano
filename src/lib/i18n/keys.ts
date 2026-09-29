@@ -2305,6 +2305,7 @@ export type MessageKey =
 	| 'reminders.newReminder'
 	| 'reminders.noneBookedYet'
 	| 'reminders.nothingCanReachThisBrowser'
+	| 'reminders.nothingSaysThat'
 	| 'reminders.nothingWaiting'
 	| 'reminders.nothingWentOff'
 	| 'reminders.onTheMachineRunning'
@@ -2325,11 +2326,13 @@ export type MessageKey =
 	| 'reminders.reviewWeeksOpen'
 	| 'reminders.saveThisReminder'
 	| 'reminders.saveWhatThisKindSounds'
+	| 'reminders.searchReminders'
 	| 'reminders.servesItOverHttpsWith'
 	| 'reminders.setIt'
 	| 'reminders.setItUp'
 	| 'reminders.setOne'
 	| 'reminders.setThisReminder'
+	| 'reminders.showingCount'
 	| 'reminders.silent'
 	| 'reminders.somethingElse'
 	| 'reminders.sound'
@@ -4479,6 +4482,7 @@ export interface MessageValuesFor {
 	'reminders.reviewBlocks': { count: number };
 	'reminders.reviewPending': { blocks: string | number };
 	'reminders.reviewWeeksOpen': { blocks: string | number; weeks: string | number };
+	'reminders.showingCount': { count: number };
 	'reminders.theLastDays': { count: number };
 	'reminders.theNextDays': { count: number };
 	'reminders.upToRingtonesKbEach': { kilobytes: string | number; ringtones: string | number };

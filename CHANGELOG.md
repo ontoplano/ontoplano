@@ -22,6 +22,8 @@ releases mattered.
 
 - In priority order, two tasks rated alike can be put the other way round with the arrows beside their bars, and every open task shows its place in line in its corner.
 - A task's urgency, ease and interest are changed by pressing its bars — a double press is nought — and kept with Confirm beside them; on a phone the bars open big in a sheet.
+- Toolbars keep the search, the count and the buttons on one line: filters that do not fit wrap among themselves (the wishlist's toolbar no longer breaks in two), Reminders has the same search and count as every other list, and a narrow panel like People keeps its count beside the search.
+- Inventory: dragging a thing onto a place works again, and a click on the right half of a place opens it rather than its hidden rename button; a place's count says "things" again.
 
 ## 0.184.3 — 2026-09-29
 

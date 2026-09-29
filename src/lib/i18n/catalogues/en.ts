@@ -1596,7 +1596,10 @@ export const messages: Catalogue = {
 	'inventory.orderThingsBy': 'Order things by',
 	'inventory.placeEmpty': 'Nothing in {name} yet',
 	'inventory.placeHolds': { one: '{count} thing in {name}', other: '{count} things in {name}' },
-	'inventory.placeHoldsSplit': '{count} in {name}: {here} here and {inside} in what is inside it',
+	'inventory.placeHoldsSplit': {
+		one: '{count} thing in {name}: {here} here and {inside} in what is inside it',
+		other: '{count} things in {name}: {here} here and {inside} in what is inside it'
+	},
 	'inventory.putBackOnTheList': 'Put back on the list',
 	'inventory.putItBackOnThe': 'Put it back on the list',
 	'inventory.remove': 'Remove {name}',
@@ -2584,6 +2587,7 @@ export const messages: Catalogue = {
 	'reminders.noneBookedYet': 'Nothing is set on this phone yet',
 	'reminders.nothingCanReachThisBrowser':
 		'Nothing can reach this browser: notifications need HTTPS and this page is on',
+	'reminders.nothingSaysThat': 'No reminder says that.',
 	'reminders.nothingWaiting': 'Nothing waiting',
 	'reminders.nothingWentOff': 'Nothing went off',
 	'reminders.onTheMachineRunning': '. On the machine running it,',
@@ -2608,12 +2612,14 @@ export const messages: Catalogue = {
 		'{weeks} weeks are still open — the oldest has {blocks} with no answer.',
 	'reminders.saveThisReminder': 'Save this reminder',
 	'reminders.saveWhatThisKindSounds': 'Save what this kind sounds like',
+	'reminders.searchReminders': 'Search reminders',
 	'reminders.servesItOverHttpsWith':
 		'serves it over HTTPS with a certificate this machine\n\t\t\tsigns — nothing leaves the network, and the phone is told once to trust it. A real certificate on\n\t\t\ta domain you own does the same with nothing to install. Either turns on reminders, installing it\n\t\t\tas an app, and offline, all at once.',
 	'reminders.setIt': 'Set it',
 	'reminders.setItUp': 'Set it up',
 	'reminders.setOne': 'Set one',
 	'reminders.setThisReminder': 'Set this reminder',
+	'reminders.showingCount': { one: '{count} reminder showing', other: '{count} reminders showing' },
 	'reminders.silent': 'Silent',
 	'reminders.somethingElse': 'Something else',
 	'reminders.sound': 'Sound',

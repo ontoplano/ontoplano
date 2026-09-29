@@ -30,6 +30,9 @@
 	import { resolve } from '$app/paths';
 	import { goto } from '$app/navigation';
 	import OneLine from '$lib/components/OneLine.svelte';
+	import FilterBar from '$lib/components/FilterBar.svelte';
+	import SearchField from '$lib/components/SearchField.svelte';
+	import ShowingCount from '$lib/components/ShowingCount.svelte';
 	import ReminderFields from '$lib/components/fields/ReminderFields.svelte';
 	import ReminderWhyNot from '$lib/components/ReminderWhyNot.svelte';
 	import { openPicker } from '$lib/open-picker';
@@ -297,6 +300,13 @@
 			data.past ? b.remindAt.localeCompare(a.remindAt) : a.remindAt.localeCompare(b.remindAt)
 		)
 	);
+
+	/** Words to look for in what the reminders say. */
+	let looking = $state('');
+	const shownReminders = $derived.by(() => {
+		const wanted = looking.trim().toLowerCase();
+		return wanted ? upcoming.filter((r) => r.message.toLowerCase().includes(wanted)) : upcoming;
+	});
 
 	/*
 	 * A reminder's time is wall clock in the account's zone, and stays a string.
@@ -603,36 +613,59 @@
 		first wearing a heading that repeated what its own controls said.
 	-->
 		<RoomSurface>
-			<div
-				class="controls-sm flex flex-wrap items-center gap-2 border-b border-gray-200 p-4"
-				data-tour="reminder-window"
-			>
-				<!--
+			<!--
+				The same strip every list has: what to look for and how many are
+				showing, then which way and how far the list looks — kept out on
+				the strip at every width, on a line of their own on a phone.
+			-->
+			<div class="controls-sm border-b border-gray-200 p-4" data-tour="reminder-window">
+				<FilterBar
+					name="reminders"
+					on={looking.trim() !== ''}
+					onclear={() => (looking = '')}
+					inlineBelow
+				>
+					{#snippet lead()}
+						<SearchField bind:value={looking} label={t('reminders.searchReminders')} />
+					{/snippet}
+					{#snippet count()}
+						<ShowingCount
+							total={upcoming.length}
+							shown={shownReminders.length}
+							said={(count) => t('reminders.showingCount', { count })}
+						/>
+					{/snippet}
+					{#snippet inline()}
+						<!-- One box, so a phone's line shares itself between the two
+						     controls it has there, and a wider one keeps the windows
+						     at their own width rather than squeezing them to fit. -->
+						<div class="flex w-full items-center gap-2 max-sm:[&>*]:flex-1">
+							<!--
 				Which way the window points.
 
 				The same number of days, forwards or backwards. It sits first
 				because it changes what every other control in this row means.
 			-->
-				<div use:sliding class="seg" role="group" aria-label={t('reminders.whichWayToLook')}>
-					<button
-						type="button"
-						onclick={() => look(data.days, false)}
-						aria-pressed={!data.past}
-						title={t('reminders.whatIsStillToCome')}
-					>
-						{t('reminders.ahead')}
-					</button>
-					<button
-						type="button"
-						onclick={() => look(data.days, true)}
-						aria-pressed={data.past}
-						title={t('reminders.whatHasAlreadyGoneOff')}
-					>
-						{t('reminders.past')}
-					</button>
-				</div>
+							<div use:sliding class="seg" role="group" aria-label={t('reminders.whichWayToLook')}>
+								<button
+									type="button"
+									onclick={() => look(data.days, false)}
+									aria-pressed={!data.past}
+									title={t('reminders.whatIsStillToCome')}
+								>
+									{t('reminders.ahead')}
+								</button>
+								<button
+									type="button"
+									onclick={() => look(data.days, true)}
+									aria-pressed={data.past}
+									title={t('reminders.whatHasAlreadyGoneOff')}
+								>
+									{t('reminders.past')}
+								</button>
+							</div>
 
-				<!--
+							<!--
 				On a phone: one button saying how far, and a dialog to change it.
 
 				The seven windows, a number box and a Go button are four controls
@@ -642,46 +675,54 @@
 				space; changing it is a question, and questions are asked in dialogs
 				here.
 			-->
-				<button
-					type="button"
-					class="btn btn-sm sm:hidden"
-					onclick={() => (ranging = true)}
-					aria-haspopup="dialog"
-					title={t('reminders.changeHowFar')}
-				>
-					{t('reminders.daysCount', { count: data.days })}
-					<Icon name="chevron-down" />
-				</button>
+							<button
+								type="button"
+								class="btn btn-sm sm:hidden"
+								onclick={() => (ranging = true)}
+								aria-haspopup="dialog"
+								title={t('reminders.changeHowFar')}
+							>
+								{t('reminders.daysCount', { count: data.days })}
+								<Icon name="chevron-down" />
+							</button>
 
-				<!-- …and on anything wider, where the row fits, all of them at once. -->
-				<div use:sliding class="seg hidden sm:flex" role="group" aria-label={t('reminders.howFar')}>
-					{#each WINDOWS as window (window)}
-						<button
-							type="button"
-							onclick={() => look(window)}
-							aria-pressed={data.days === window}
-							title={data.past
-								? t('reminders.theLastDays', { count: window })
-								: t('reminders.theNextDays', { count: window })}
-						>
-							{window}
-						</button>
-					{/each}
-				</div>
-				<!-- Any other number of days is asked in the phone's dialog, rather
+							<!-- …and on anything wider, where the row fits, all of them at once. -->
+							<div
+								use:sliding
+								class="seg hidden sm:flex"
+								role="group"
+								aria-label={t('reminders.howFar')}
+							>
+								{#each WINDOWS as window (window)}
+									<button
+										type="button"
+										onclick={() => look(window)}
+										aria-pressed={data.days === window}
+										title={data.past
+											? t('reminders.theLastDays', { count: window })
+											: t('reminders.theNextDays', { count: window })}
+									>
+										{window}
+									</button>
+								{/each}
+							</div>
+							<!-- Any other number of days is asked in the phone's dialog, rather
 				     than a number box beside the presets saying the same thing twice. -->
-				<button
-					type="button"
-					class="btn btn-sm hidden sm:inline-flex"
-					onclick={() => (ranging = true)}
-					aria-haspopup="dialog"
-					aria-pressed={!WINDOWS.includes(data.days)}
-					title={WINDOWS.includes(data.days)
-						? t('reminders.changeHowFar')
-						: t('reminders.daysCount', { count: data.days })}
-				>
-					{t('reminders.somethingElse')}
-				</button>
+							<button
+								type="button"
+								class="btn btn-sm hidden sm:inline-flex"
+								onclick={() => (ranging = true)}
+								aria-haspopup="dialog"
+								aria-pressed={!WINDOWS.includes(data.days)}
+								title={WINDOWS.includes(data.days)
+									? t('reminders.changeHowFar')
+									: t('reminders.daysCount', { count: data.days })}
+							>
+								{t('reminders.somethingElse')}
+							</button>
+						</div>
+					{/snippet}
+				</FilterBar>
 			</div>
 
 			<!--
@@ -749,7 +790,9 @@
 
 			<!-- Named for which way it looks, so the list can be found by what it is. -->
 			<section aria-label={data.past ? t('reminders.alreadyBeen') : t('reminders.comingUp')}>
-				{#if upcoming.length === 0}
+				{#if upcoming.length > 0 && shownReminders.length === 0}
+					<EmptyState icon={glyphFor('reminders')!} title={t('reminders.nothingSaysThat')} />
+				{:else if upcoming.length === 0}
 					<EmptyState
 						icon={glyphFor('reminders')!}
 						title={data.past ? t('reminders.nothingWentOff') : t('reminders.nothingWaiting')}
@@ -759,7 +802,7 @@
 					/>
 				{:else}
 					<ul class="divide-y divide-gray-200">
-						{#each upcoming as reminder (reminder.key)}
+						{#each shownReminders as reminder (reminder.key)}
 							<li class="px-4 py-3">
 								<div class="flex items-center gap-3">
 									<span
