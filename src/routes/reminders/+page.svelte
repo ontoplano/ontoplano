@@ -30,6 +30,10 @@
 	import { resolve } from '$app/paths';
 	import { goto } from '$app/navigation';
 	import OneLine from '$lib/components/OneLine.svelte';
+	import ReminderFields from '$lib/components/fields/ReminderFields.svelte';
+	import ReminderWhyNot from '$lib/components/ReminderWhyNot.svelte';
+	import { openPicker } from '$lib/open-picker';
+	import { hasBeen as clockHasBeen, isTooSoon as clockIsTooSoon } from '$lib/reminder-clock';
 	import { armed } from '$lib/actions/armed';
 	import { enablePush, pushSupported } from '$lib/push';
 	import { page } from '$app/state';
@@ -45,12 +49,12 @@
 
 	/*
 	 * The hour a dateless alarm goes off, written the way this reader reads a
-	 * clock. `data.dayStart` is the stored `HH:MM`, which is the right thing
+	 * clock. `data.clock.dayStart` is the stored `HH:MM`, which is the right thing
 	 * to compare against and the wrong thing to show: the rows above say
 	 * "6:00 AM" for somebody on a twelve-hour clock while the form promised
 	 * "06:00".
 	 */
-	const dayStartSaid = $derived(timeOf(`2000-01-01T${data.dayStart}`, now()));
+	const dayStartSaid = $derived(timeOf(`2000-01-01T${data.clock.dayStart}`, now()));
 
 	/**
 	 * Everything with a time on it.
@@ -155,162 +159,33 @@
 		}
 	}
 
-	/** The alarm being written, so the button can know whether it is ready. */
+	/**
+	 * The alarm being written, bound out of `ReminderFields` so a save can
+	 * clear it. The rules about it — which day, which time, why not — are the
+	 * fields' own.
+	 */
 	let day = $state('');
 	let time = $state('');
 	let say = $state('');
+	let audible = $state(false);
+	let ready = $state(false);
 
 	/*
-	 * The earliest time this form may offer, kept honest as the page ages.
-	 *
-	 * The server refuses anything inside the window (`$lib/reminder-window`),
-	 * so the form has to refuse the same — being told "no" after pressing save
-	 * is a worse way to learn a rule than not being able to break it.
-	 *
-	 * Measured from the account's own wall clock rather than the browser's: a
-	 * laptop in one zone setting a reminder for an account in another would
-	 * otherwise be told the wrong floor, in both directions. `data.nowLocal` is
-	 * that clock when the page was rendered, and this ages it forward by how
-	 * long the page has been open.
+	 * How long ago the page's clock was read, for the edit form below: it asks
+	 * the same two questions of a row being moved, and a page left open should
+	 * not keep offering a floor from an hour ago. A minute is the resolution
+	 * the floor is expressed in.
 	 */
 	const opened = Date.now();
-	let ticking = $state(0);
+	let since = $state(0);
 	$effect(() => {
 		if (!browser) return;
-		// A minute is the resolution the floor is expressed in; anything finer
-		// would redraw the form for no visible change.
-		const beat = setInterval(() => (ticking = Date.now()), 30_000);
+		const beat = setInterval(() => (since = Date.now() - opened), 30_000);
 		return () => clearInterval(beat);
 	});
 
-	const floorAt = $derived.by(() => {
-		// `ticking` is read so this recomputes as the page sits.
-		void ticking;
-		const since = Date.now() - opened;
-		// Arithmetic on the number, not a Date anybody mutates: read as UTC
-		// because `nowLocal` is already the account's wall clock, and the Z is
-		// only there to stop the browser's own zone joining in.
-		const at = Date.parse(`${data.nowLocal}:00Z`) + since + data.leadMinutes * 60_000;
-		return new Date(at).toISOString().slice(0, 16);
-	});
-
-	/** The day part of that, so the date field cannot offer a day already gone. */
-	const earliestDay = $derived(floorAt.slice(0, 10));
-
-	/** Whether what is in the form now is something the server would refuse. */
-	/**
-	 * Whether a day and a time land inside the window the phone cannot cover.
-	 *
-	 * A day with no time means the hour the account's day starts, which is what
-	 * the server fills in — so it is compared the same way rather than waved
-	 * through.
-	 */
-	function isTooSoon(when: string, at: string): boolean {
-		if (!when) return false;
-		return `${when}T${at || data.dayStart}` < floorAt;
-	}
-
-	let audible = $state(false);
-	// The time is not part of it: an empty one means the hour the day starts,
-	// which is a real answer rather than a missing one.
-	const ready = $derived(
-		Boolean(day && say.trim() && !hasBeen(day, time) && !isTooSoon(day, time))
-	);
-
-	/**
-	 * Whether a day and a time have already gone by.
-	 *
-	 * `data.now` is the account's own wall clock to the minute, in the same
-	 * shape a reminder's time is stored in, so the two compare as strings. An
-	 * empty time means the hour the day starts — which can itself be behind:
-	 * "today", left alone, at three in the afternoon.
-	 *
-	 * From the page it stops a form being filled in and handed back; the
-	 * service refuses it as well, because a page's clock is a page's clock.
-	 */
-	function hasBeen(when: string, at: string): boolean {
-		if (!when) return false;
-		return `${when}T${at || data.dayStart}` <= data.now;
-	}
-
-	/**
-	 * How far ahead the form suggests, when today's opening hour has gone.
-	 *
-	 * A quarter of an hour: long enough to still be ahead by the time somebody
-	 * has finished typing, short enough to mean "shortly".
-	 */
-	const SOONEST_MINUTES = 15;
-
-	/**
-	 * The next quarter hour, as this account's own clock reads it.
-	 *
-	 * Rounded up rather than added to the minute, because a suggestion that
-	 * says 15:07 is a number somebody has to think about; 15:15 is one they
-	 * accept or replace.
-	 */
-	function soonest(): string {
-		const [hour, minute] = data.now.slice(11, 16).split(':').map(Number);
-		const at = hour * 60 + minute + SOONEST_MINUTES;
-		const rounded = Math.ceil(at / SOONEST_MINUTES) * SOONEST_MINUTES;
-		// The far end of the day rather than tomorrow: the day field says which
-		// day, and moving it from under somebody is worse than a tight time.
-		if (rounded >= 24 * 60) return '23:59';
-		const pad = (n: number) => String(n).padStart(2, '0');
-		return `${pad(Math.floor(rounded / 60))}:${pad(rounded % 60)}`;
-	}
-
-	/**
-	 * The time this page filled in, as opposed to one somebody typed.
-	 *
-	 * The difference is the whole of the rule below: a suggestion follows the
-	 * day it was made for, and an answer never moves.
-	 */
-	let suggested = $state('');
-
-	/*
-	 * A form that opens dead is a form that looks broken.
-	 *
-	 * The day starts as today and the time starts empty, and empty means the
-	 * hour the planner opens on — which by the afternoon has been. So the page
-	 * offered a filled-in day, a disabled button and a line explaining why, to
-	 * somebody who had not typed anything yet.
-	 *
-	 * It suggests a time instead, and only when it has to: leaving it empty is
-	 * still what "the hour my day starts" means for every day that has not
-	 * begun. And the suggestion is withdrawn when the day moves to one where
-	 * empty is a real answer again — otherwise choosing today, then tomorrow,
-	 * leaves this afternoon's guess behind as tomorrow's answer.
-	 */
-	$effect(() => {
-		if (!day) return;
-		if (hasBeen(day, '')) {
-			if (time && time !== suggested) return;
-			suggested = soonest();
-			time = suggested;
-			return;
-		}
-		if (time && time === suggested) {
-			time = '';
-			suggested = '';
-		}
-	});
-
-	/**
-	 * Open the browser's own picker rather than the text field behind it.
-	 *
-	 * A date or time input is a row of typeable segments with a small icon
-	 * beside it, and on a phone the icon is the only part anybody wants. This
-	 * throws where the browser refuses — it insists on a real user gesture, and
-	 * some do not implement it at all — in which case the field behaves as it
-	 * always did.
-	 */
-	function pick(event: Event & { currentTarget: HTMLInputElement }) {
-		try {
-			event.currentTarget.showPicker?.();
-		} catch {
-			// Not allowed here; the field still works.
-		}
-	}
+	const hasBeen = (when: string, at: string) => clockHasBeen(data.clock, since, when, at);
+	const isTooSoon = (when: string, at: string) => clockIsTooSoon(data.clock, since, when, at);
 
 	// Seeded from the window in the address and re-seeded when it changes, so
 	// pressing 30 leaves the box saying 30 rather than whatever was typed last.
@@ -327,12 +202,6 @@
 	let howFar = $state<number>(0);
 	$effect(() => {
 		howFar = data.days;
-	});
-
-	// Today, once the page has it, so the day field opens on a real date rather
-	// than on nothing.
-	$effect(() => {
-		if (!day) day = data.today;
 	});
 
 	/**
@@ -518,40 +387,6 @@
 	}
 </script>
 
-<!--
-	Why the button is dead, said where the fields are.
-
-	A disabled control with the reason only in its tooltip is a control that
-	looks broken on a phone, which has no tooltips — and the commonest way to
-	land here is the form's own default: today, no time, opened in the
-	afternoon, when the hour the day starts has been for hours.
--->
-<!--
-	Why this time will not do — both reasons, in one place.
-
-	A time already gone and a time too close are the same shape of problem from
-	the person's side: they typed something and it will not be taken. The
-	server refuses both (`remindAtFrom` and `notTooSoon`), and being told after
-	pressing save is a worse way to learn a rule than seeing it here first.
--->
-{#snippet whyNotThisTime(when: string, at: string)}
-	{#if hasBeen(when, at)}
-		<p class="text-sm text-gray-600">
-			{at
-				? t('reminders.thatTimeHasAlreadyBeen')
-				: t('reminders.dayStartHasAlreadyBeen', { at: dayStartSaid })}
-			{t('reminders.giveItALaterOne')}
-		</p>
-	{:else if isTooSoon(when, at)}
-		<p class="text-sm text-gray-600">
-			{t('reminders.atLeastMinutesFromNow', { count: data.leadMinutes })}
-			<span class="block text-xs text-gray-500">
-				{t('reminders.whyTheFloor', { count: data.leadMinutes })}
-			</span>
-		</p>
-	{/if}
-{/snippet}
-
 <svelte:window onkeydown={handleKeydown} />
 
 <audio bind:this={audio} class="hidden"></audio>
@@ -691,15 +526,6 @@
 			description={t('reminders.aDayAndWhatTo')}
 			size="lg"
 		>
-			<!--
-				A day and a time, not one field with six segments in it.
-
-				`datetime-local` renders as `dd/mm/yyyy, --:--` — one control
-				carrying two different questions, which is why it was both ugly and
-				the widest thing on the row. Two fields say the same thing, fit a
-				phone, and let somebody set a time for today without touching the
-				date at all.
-			-->
 			<form
 				method="post"
 				action="?/create"
@@ -710,7 +536,7 @@
 						// back to nothing — the default is today, and a form that
 						// forgets what day it is asks for it again every time.
 						if (result.type === 'success') {
-							day = data.today;
+							day = data.clock.today;
 							time = '';
 							say = '';
 							audible = false;
@@ -727,108 +553,39 @@
 				class="space-y-3"
 			>
 				<FormGrid>
-					<Field label={t('reminders.day')} span={6} required>
-						<input
-							name="day"
-							type="date"
-							required
-							min={earliestDay}
-							autocomplete="off"
-							bind:value={day}
-							onfocus={pick}
-							onclick={pick}
-							title={t('reminders.whichDayItShouldGo')}
-							class="input"
-						/>
-					</Field>
-					<Field
-						label={t('reminders.time')}
-						span={6}
-						hint={t('reminders.emptyMeansDayStart', { at: dayStartSaid })}
+					<ReminderFields
+						clock={data.clock}
+						ringtones={data.ringtones}
+						bind:day
+						bind:time
+						bind:say
+						bind:audible
+						bind:ready
 					>
-						<!--
-							The browser's own time field, whatever it draws.
+						{#snippet action()}
+							<!--
+								Off until there is something to set.
 
-							There was a hand-built clock face here for a while, because
-							Android opens this as typeable digits unless it feels like
-							opening a dial and Firefox's `showPicker()` does nothing. It
-							looked like nobody's control on every platform where the native
-							one is fine, which is most of them. A standard control is the
-							browser's to draw; where one browser draws it badly, that is a
-							rough edge to carry rather than a widget to own — and the app's
-							real destination is an installed Android app, where this is the
-							good one.
-						-->
-						<!--
-						`min` only on the first day it could be. A time field's `min` is
-						a time of day, not an instant — so on any later day it would
-						forbid the morning for no reason.
-					-->
-						<input
-							id="reminder-time"
-							name="time"
-							type="time"
-							autocomplete="off"
-							bind:value={time}
-							min={day === earliestDay ? floorAt.slice(11, 16) : undefined}
-							title={t('reminders.whatTimeItShouldGo', { dayStart: dayStartSaid })}
-							class="input"
-						/>
-					</Field>
-					<Field label={t('reminders.whatToSay')} span={12} required>
-						<OneLine
-							name="label"
-							required
-							bind:value={say}
-							placeholder={t('reminders.eGTakeTheBreadOut')}
-							class="input"
-						/>
-					</Field>
+								It looked pressable with the fields empty, so pressing it did
+								nothing visible and read as a broken button — the browser's own
+								validation message is easy to miss on a phone, and a control
+								that cannot work should not look like one that can.
+							-->
+							<button
+								type="submit"
+								disabled={!ready}
+								class="btn btn-primary btn-sm ml-auto"
+								title={ready
+									? t('reminders.setThisReminder')
+									: hasBeen(day, time) || isTooSoon(day, time)
+										? t('reminders.thatTimeHasAlreadyBeen2')
+										: t('reminders.aDayAndSomethingTo')}
+							>
+								{t('reminders.setIt')}
+							</button>
+						{/snippet}
+					</ReminderFields>
 				</FormGrid>
-
-				{@render whyNotThisTime(day, time)}
-
-				<div class="flex flex-wrap items-center gap-4">
-					<label
-						class="flex items-center gap-2 text-sm whitespace-nowrap text-gray-700"
-						title={t('reminders.playASoundAsWell')}
-					>
-						<input type="checkbox" name="audible" bind:checked={audible} class="size-4" />
-						{t('reminders.makeASound')}
-					</label>
-					<label
-						class="flex items-center gap-2 text-sm whitespace-nowrap text-gray-700"
-						title={t('reminders.whichSoundThisOnePlays')}
-					>
-						{t('reminders.sound')}
-						<select name="ringtoneId" class="select w-44">
-							<option value="">{t('reminders.default')}</option>
-							{#each data.ringtones as tone (tone.id)}
-								<option value={tone.id}>{tone.name}</option>
-							{/each}
-						</select>
-					</label>
-					<!--
-						Off until there is something to set.
-
-						It looked pressable with the fields empty, so pressing it did
-						nothing visible and read as a broken button — the browser's own
-						validation message is easy to miss on a phone, and a control
-						that cannot work should not look like one that can.
-					-->
-					<button
-						type="submit"
-						disabled={!ready}
-						class="btn btn-primary btn-sm ml-auto"
-						title={ready
-							? t('reminders.setThisReminder')
-							: hasBeen(day, time) || isTooSoon(day, time)
-								? t('reminders.thatTimeHasAlreadyBeen2')
-								: t('reminders.aDayAndSomethingTo')}
-					>
-						{t('reminders.setIt')}
-					</button>
-				</div>
 			</form>
 		</Modal>
 
@@ -1128,11 +885,11 @@
 													name="day"
 													type="date"
 													required
-													min={data.today}
+													min={data.clock.today}
 													autocomplete="off"
 													bind:value={editDay}
-													onfocus={pick}
-													onclick={pick}
+													onfocus={openPicker}
+													onclick={openPicker}
 													class="input"
 												/>
 											</Field>
@@ -1154,7 +911,7 @@
 											</Field>
 										</FormGrid>
 
-										{@render whyNotThisTime(editDay, editTime)}
+										<ReminderWhyNot clock={data.clock} {since} day={editDay} time={editTime} />
 
 										<div class="flex flex-wrap items-center gap-4">
 											<label

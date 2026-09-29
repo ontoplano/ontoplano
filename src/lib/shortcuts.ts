@@ -52,6 +52,7 @@ export const PAGE_SHORTCUTS: Record<string, PageShortcuts> = {
 			{ key: 't', action: 'capture-todo', description: 'shortcut.captureATodo' },
 			{ key: 'd', action: 'capture-note', description: 'shortcut.captureANote' },
 			{ key: 'b', action: 'capture-buy', description: 'shortcut.captureSomethingToBuy' },
+			{ key: 'r', action: 'capture-reminder', description: 'shortcut.captureAReminder' },
 			{ key: 'n', action: 'new-diary', description: 'shortcut.newDiaryEntry' },
 			{ key: 'w', action: 'new-wins', description: 'shortcut.newWins' }
 		]

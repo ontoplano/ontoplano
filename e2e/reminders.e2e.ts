@@ -209,8 +209,10 @@ test('the window can be widened, and stops at a year', async ({ page }) => {
 	await visit(page, '/reminders?days=200');
 	await expect(page.getByText('Rui', { exact: false }).first()).toBeVisible({ timeout: 15_000 });
 
-	// Past a year the list stops being about what is coming, so it clamps.
+	// Past a year the list stops being about what is coming, so it clamps. The
+	// number is asked in a dialog now, which opens on the window in force.
 	await visit(page, '/reminders?days=9999');
+	await page.getByRole('button', { name: 'Something else' }).click();
 	await expect(page.locator('[name="days"]')).toHaveValue('365');
 });
 
@@ -236,7 +238,9 @@ test.describe('on a phone', () => {
 		 * filtered. So the thing that must not move is the button, and the
 		 * choosing happens in the dialog it opens.
 		 */
-		const howFar = page.getByTitle('Change how far this looks');
+		// The phone's button: a wide screen's "Something else" says the same
+		// thing and is only hidden here.
+		const howFar = page.getByTitle('Change how far this looks').filter({ visible: true });
 		await page.mouse.wheel(0, 260);
 		await page.waitForTimeout(400);
 

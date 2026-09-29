@@ -21,6 +21,7 @@ releases mattered.
 ## 0.184.3 — 2026-09-29
 
 - While the task list is filtered, the task dialog also says where the task would land among the filtered tasks, or — when the filters would hide it.
+- A reminder can be set from the quick add — the wheel, the dashboard's buttons, or `r` on the dashboard.
 
 ## 0.184.2 — 2026-09-29
 

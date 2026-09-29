@@ -5,6 +5,8 @@ import { listCategories as listPlannerCategories } from '$lib/services/activitie
 import { listCategories as listInventoryCategories } from '$lib/services/inventory';
 import { pickableNotebooks } from '$lib/services/notebooks';
 import { listTodos } from '$lib/services/todos';
+import { reminderClock } from '$lib/services/reminders';
+import { listRingtones } from '$lib/services/ringtones';
 
 /**
  * The choices the capture dialogs offer, fetched when one opens.
@@ -16,7 +18,14 @@ import { listTodos } from '$lib/services/todos';
  */
 export const GET = async ({ locals }: IsolatedEvent) => {
 	if (!locals.user)
-		return json({ categories: [], notebooks: [], inventoryCategories: [], queue: [] });
+		return json({
+			categories: [],
+			notebooks: [],
+			inventoryCategories: [],
+			queue: [],
+			reminderClock: null,
+			ringtones: []
+		});
 
 	const ctx = buildCtx(locals.user.id);
 	return json({
@@ -35,6 +44,9 @@ export const GET = async ({ locals }: IsolatedEvent) => {
 		 */
 		queue: listTodos(ctx)
 			.filter((t) => (t.status === 'todo' || t.status === 'doing') && !t.scheduledDate)
-			.map((t) => ({ ratings: t.ratings, sortOrder: t.sortOrder, createdAt: t.createdAt }))
+			.map((t) => ({ ratings: t.ratings, sortOrder: t.sortOrder, createdAt: t.createdAt })),
+		/* A reminder's time is checked against the account's clock, not the browser's. */
+		reminderClock: reminderClock(ctx),
+		ringtones: listRingtones(ctx).map((r) => ({ id: r.id, name: r.name }))
 	});
 };

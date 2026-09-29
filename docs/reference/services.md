@@ -4833,6 +4833,15 @@ The hour the account's day opens on, as `HH:MM`.
 Exported because the form has to say it: a field somebody may leave empty
 has to name what leaving it empty means.
 
+#### `reminderClock(ctx)`
+
+The account's clock, as a form setting a reminder needs it.
+
+Its own wall clock rather than the browser's, because "now" means now
+_where the account is_ — the machine's zone is the account's only by luck.
+The reminders page and the quick add sheet both ask this, and the rules they
+apply to it are `$lib/reminder-clock`.
+
 #### `upcomingReminders(ctx)`
 
 What has not gone off yet and is close enough to be worth an alarm.

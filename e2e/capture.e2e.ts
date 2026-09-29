@@ -1,6 +1,10 @@
 import { expect, test, type Page } from '@playwright/test';
 import { register, testEmail } from './helpers/account';
 import { visit } from './helpers/visit';
+import { wedgeCentre } from '../src/lib/radial';
+
+/** How far out from the middle a flick lands: well inside a wedge, clear of the hole. */
+const FLICK_PX = 80;
 
 /**
  * The capture pie.
@@ -128,10 +132,17 @@ test('press, flick and release writes the thing', async ({ page }) => {
 	await page.mouse.move(at.x, at.y - 4);
 
 	// Wedges run anti-clockwise from six o'clock — the first is under a right
-	// thumb — so the second one, Todo, is up and to the right. See
-	// `$lib/radial.ts` for why that way round.
+	// thumb — so Todo is up and to the right. Aimed at its middle, counted from
+	// the wedges drawn, so a kind the wheel gains does not move the target.
+	// See `$lib/radial.ts` for why that way round.
 	const pie = await pieCentre(page);
-	await page.mouse.move(pie.x + 70, pie.y - 40, { steps: 8 });
+	const wedges = await page
+		.locator('[data-pie="capture"] [data-wedge]')
+		.evaluateAll((all) => all.map((one) => one.getAttribute('data-wedge')));
+	const toward = wedgeCentre(wedges.indexOf('todo'), wedges.length);
+	await page.mouse.move(pie.x + FLICK_PX * Math.cos(toward), pie.y + FLICK_PX * Math.sin(toward), {
+		steps: 8
+	});
 	await page.mouse.up();
 
 	await expect(page.getByRole('heading', { name: /new task/i })).toBeVisible();
@@ -347,6 +358,32 @@ test('the Buy capture actually puts something on the shopping list', async ({ pa
 	// Generous: the capture writes and this page reads, and under a full
 	// parallel run the two are not instantaneous.
 	await expect(page.getByText('oat milk')).toBeVisible({ timeout: 15_000 });
+});
+
+test('a reminder can be set from the quick add, and is on the reminders page', async ({ page }) => {
+	await register(page, testEmail('capture-reminder'));
+	await visit(page, '/');
+
+	await page
+		.getByRole('button', { name: /^Reminder/ })
+		.first()
+		.click();
+	const form = page.locator('#capture-form');
+	// Tomorrow, whatever the hour: tonight could be inside the window a phone
+	// cannot promise to ring in.
+	const day = form.locator('[name=day]');
+	await expect(day).not.toHaveValue('');
+	const today = await day.inputValue();
+	const tomorrow = new Date(Date.parse(`${today}T12:00:00Z`) + 86_400_000)
+		.toISOString()
+		.slice(0, 10);
+	await day.fill(tomorrow);
+	await form.locator('[name=time]').fill('10:30');
+	await form.locator('[name=label]').fill('water the ferns');
+	await page.getByRole('button', { name: 'Save' }).click();
+
+	await visit(page, '/reminders');
+	await expect(page.getByText('water the ferns')).toBeVisible({ timeout: 15_000 });
 });
 
 /**

@@ -8,6 +8,8 @@
 	import IdeaFields from '$lib/components/fields/IdeaFields.svelte';
 	import NoteFields from '$lib/components/fields/NoteFields.svelte';
 	import TodoFields from '$lib/components/fields/TodoFields.svelte';
+	import ReminderFields from '$lib/components/fields/ReminderFields.svelte';
+	import type { ReminderClock } from '$lib/reminder-clock';
 	import { CAPTURE_OPTIONS_URL, type Capture } from '$lib/capture';
 	import type { Rating } from '$lib/ratings';
 	import { useT } from '$lib/i18n';
@@ -57,13 +59,18 @@
 		inventoryCategories: { id: number; name: string }[];
 		/** The queue a new task would join — see `whereItWouldSit` below. */
 		queue: { ratings: RatingValues; sortOrder: number; createdAt: string }[];
+		/** The account's clock, which a reminder's time is checked against. */
+		reminderClock: ReminderClock | null;
+		ringtones: { id: number; name: string }[];
 	};
 
 	let options = $state<Options>({
 		categories: [],
 		notebooks: [],
 		inventoryCategories: [],
-		queue: []
+		queue: [],
+		reminderClock: null,
+		ringtones: []
 	});
 	/** Whether the answer above is an answer, rather than the state before one. */
 	let loaded = $state(false);
@@ -112,6 +119,7 @@
 	 */
 	const start = $derived(
 		notebookId !== null &&
+			capture.holds !== undefined &&
 			notebooksHolding(options.notebooks, capture.holds).some((one) => one.id === notebookId)
 			? notebookId
 			: null
@@ -155,6 +163,11 @@
 			bind:ratings
 			place={loaded ? whereItWouldSit : undefined}
 		/>
+	{:else if capture.key === 'reminder'}
+		<!-- Asked of the account's clock, so nothing is drawn until it has come. -->
+		{#if options.reminderClock}
+			<ReminderFields clock={options.reminderClock} ringtones={options.ringtones} />
+		{/if}
 	{:else}
 		<BuyFields
 			compact

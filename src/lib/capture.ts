@@ -6,12 +6,12 @@ import { routeGlyph } from '$lib/glyphs';
 import type { NotebookModule } from '$lib/notebook-modules';
 
 /**
- * The four things worth writing down before they evaporate.
+ * The things worth writing down before they evaporate.
  *
- * Shared rather than owned by one component, because the same four are a row
+ * Shared rather than owned by one component, because the same list is a row
  * of tiles on the dashboard, an inline row in the header and the wedges of the
  * capture pie. Three renderings, one list — which is the only way they stay
- * the same four.
+ * the same ones.
  */
 export type Capture = {
 	key: string;
@@ -50,8 +50,12 @@ export type Capture = {
 	 * thing properly. See `$lib/open-from-url`.
 	 */
 	room: string;
-	/** The notebook tab it is filed under, so it starts only in a notebook that has one. */
-	holds: NotebookModule;
+	/**
+	 * The notebook tab it is filed under, so it starts only in a notebook that
+	 * has one. Absent for what no notebook holds — a reminder is about a time,
+	 * not a subject.
+	 */
+	holds?: NotebookModule;
 };
 
 /** Each wears the glyph of the place it lands in, so a capture and its room agree. */
@@ -104,6 +108,17 @@ const DECLARED: Omit<Capture, 'icon'>[] = [
 		into: 'the shopping list',
 		action: '/inventory?/create',
 		hide: 'inventory'
+	},
+	{
+		key: 'reminder',
+		room: '/reminders',
+		shortcut: 'r',
+		label: 'app.reminder',
+		// The room borrows the planner's colour, and so does its wedge.
+		color: SECTION_COLORS.planner,
+		lead: 'label',
+		into: 'your reminders',
+		action: '/reminders?/create'
 	}
 ];
 
