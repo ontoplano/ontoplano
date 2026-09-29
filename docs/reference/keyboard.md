@@ -24,6 +24,7 @@ works is a key listed here and the reverse.
 | <kbd>t</kbd> | Capture a task           |
 | <kbd>d</kbd> | Capture a note           |
 | <kbd>b</kbd> | Capture something to buy |
+| <kbd>r</kbd> | Capture a reminder       |
 | <kbd>n</kbd> | New diary entry          |
 | <kbd>w</kbd> | New wins                 |
 

@@ -270,7 +270,12 @@ import {
 	setOccurrenceStatus
 } from '$lib/services/instances.js';
 import { listCategories } from '$lib/services/activities.js';
-import { listOccurrences, toggleOccurrence } from '$lib/services/habits.js';
+import {
+	MAX_DAY_COUNT,
+	listOccurrences,
+	setDayCount,
+	toggleOccurrence
+} from '$lib/services/habits.js';
 import {
 	locationTree,
 	createLocation,
@@ -1556,6 +1561,18 @@ const billWithPayments = (ctx: Ctx, args: Record<string, unknown>) => {
 	return { bill: getBill(ctx, id), payments: listPayments(ctx, id) };
 };
 /** The tick itself: null before an occurrence exists is what "unticked" is. */
+/** A habit's count on one day, before and after `set_habit_count` sets it. */
+const habitCount = (ctx: Ctx, args: Record<string, unknown>) => {
+	const habitId = args.id ? Number(args.id) : habitByName(ctx, args.name, args.notebookId).id;
+	const date =
+		typeof args.date === 'string' && args.date ? args.date : localDateOf(ctx.now, ctx.tz);
+	return {
+		habitId,
+		date,
+		count: listOccurrences(ctx).filter((o) => o.habitId === habitId && o.date === date).length
+	};
+};
+
 const habitTick = (ctx: Ctx, args: Record<string, unknown>) => {
 	const habitId = args.id ? Number(args.id) : habitByName(ctx, args.name, args.notebookId).id;
 	const date =
@@ -1723,6 +1740,59 @@ export const TOOLS: Tool[] = [
 				date: args.date ?? localDateOf(ctx.now, ctx.tz)
 			});
 			return { ok: true, habit: habit.name || undefined };
+		}
+	},
+	{
+		/*
+		 * How many times, not whether.
+		 *
+		 * A habit that is kept more than once a day — glasses of water, pages
+		 * read — has a counter on its card, and the tick above can only add or
+		 * take back one. This sets the day to a number outright, as the counter
+		 * does once the pressing stops, so it is its own way back: send the
+		 * number the answer's `before` gave.
+		 */
+		name: 'set_habit_count',
+		title: 'Set a habit\u2019s count for a day',
+		description:
+			'Set how many times a habit was logged on a day — the number itself, not a step, so sending it twice changes nothing. 0 clears the day. For a habit kept more than once a day ("three glasses of water"); for once-a-day ones `tick_habit` is the ordinary call. Name it or give the id `habits` gave; a name that matches two habits is refused rather than guessed. The answer\u2019s `before` is the count it replaced, which is how to put it back.',
+		scope: 'habits:write',
+		writes: true,
+		refs: [
+			{ arg: 'id', kind: 'habit' },
+			{ arg: 'notebookId', kind: 'notebook' }
+		],
+		input: object(
+			{
+				id: { type: 'integer', description: 'The habit\u2019s id, as `habits` gave it.' },
+				name: text('The habit by name, when the id is not to hand — "drink water".'),
+				notebookId: {
+					type: 'integer',
+					description:
+						'Look the name up only among the habits filed in this notebook, as `notebooks` gives its id. Left out, every habit is searched.'
+				},
+				date: text('The day, as YYYY-MM-DD. Today if left out.'),
+				count: {
+					type: 'integer',
+					minimum: 0,
+					maximum: MAX_DAY_COUNT,
+					description: `How many times it happened that day, 0 to ${MAX_DAY_COUNT}.`
+				},
+				...RETRY_ARGS
+			},
+			['count']
+		),
+		subject: habitCount,
+		run: (ctx, args) => {
+			const habit = args.id
+				? { id: args.id, name: '' }
+				: habitByName(ctx, args.name, args.notebookId);
+			setDayCount(ctx, {
+				habitId: habit.id,
+				date: args.date ?? localDateOf(ctx.now, ctx.tz),
+				count: args.count
+			});
+			return { ok: true, habit: habit.name || undefined, count: args.count };
 		}
 	},
 	{

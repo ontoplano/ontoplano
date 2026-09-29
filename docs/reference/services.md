@@ -6634,6 +6634,19 @@ Where the cards sit in a column, after a drag.
 Ids the account does not own simply do not match, so a posted list can
 reorder nothing but its own todos.
 
+#### `swapTiedTodos(ctx, id, otherId)`
+
+Two tasks the three ratings cannot tell apart, put the other way round.
+
+Tasks rated alike are queued by the order arranged by hand and then by age,
+so a tie always went to the older one. This lets somebody say otherwise.
+
+Only the tie is renumbered — every task of the account with the same three
+answers — and with the values it already held, so nothing grows each time:
+the same numbers, handed out in the new order. Where the tie was still
+sharing one value, it is spread over consecutive ones from its lowest, which
+is as far as it ever grows.
+
 #### `setTodoAttribute(ctx, id, key, value)`
 
 One attribute on a todo, set or — with an empty value — removed.

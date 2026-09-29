@@ -3045,6 +3045,39 @@
 			}
 		}
 	},
+	"set_habit_count": {
+		"scope": "habits:write",
+		"writes": true,
+		"destroys": false,
+		"params": {
+			"count": {
+				"type": "integer",
+				"required": true,
+				"minimum": 0,
+				"maximum": 99
+			},
+			"date": {
+				"type": "string",
+				"required": false
+			},
+			"id": {
+				"type": "integer",
+				"required": false
+			},
+			"name": {
+				"type": "string",
+				"required": false
+			},
+			"notebookId": {
+				"type": "integer",
+				"required": false
+			},
+			"requestId": {
+				"type": "string",
+				"required": false
+			}
+		}
+	},
 	"set_item_attributes": {
 		"scope": "inventory:write",
 		"writes": true,
