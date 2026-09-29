@@ -22,6 +22,7 @@ releases mattered.
 
 - Clicking the blank space beside a field's tags, or the field's name, no longer removes a tag.
 - The plan tiles lose the big faint octagon behind each badge.
+- On a phone the board slides sideways again, one column at a time, with the column names above to jump between them or to drop a card on.
 
 ## 0.184.6 — 2026-09-29
 

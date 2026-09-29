@@ -336,6 +336,73 @@
 		}))
 	);
 
+	/**
+	 * On a phone the board slides sideways.
+	 *
+	 * A board is columns; stacked, getting from Pending to Done meant scrolling
+	 * past the whole of Doing, and moving a card between two columns meant
+	 * carrying it down a page. The columns sit side by side in a strip that
+	 * snaps, each most of the screen wide — the sliver of the next one is what
+	 * says there is a next one.
+	 */
+	let strip: HTMLElement | undefined = $state();
+
+	/** Which column the strip is showing, for the names above it. */
+	let phoneColumn: Status = $state('todo');
+
+	// Hiding Skipped while it is the one on screen would leave a blank board.
+	$effect(() => {
+		if (!columns.some((c) => c.status === phoneColumn)) phoneColumn = 'todo';
+	});
+
+	/** Bring a column into view, from the names above or after a drop. */
+	function showColumn(status: Status) {
+		phoneColumn = status;
+		const at = columns.findIndex((c) => c.status === status);
+		const child = strip?.children[at] as HTMLElement | undefined;
+		child?.scrollIntoView({ behavior: 'smooth', inline: 'start', block: 'nearest' });
+	}
+
+	/**
+	 * …and the other direction: swiping tells the names where it got to.
+	 *
+	 * Whichever column's left edge is nearest the scroll position wins, rather
+	 * than arithmetic on a column width, which cannot drift from where the
+	 * columns actually are.
+	 */
+	function followScroll() {
+		if (!strip) return;
+		const children = [...strip.children] as HTMLElement[];
+		if (children.length === 0) return;
+
+		const from = strip.getBoundingClientRect().left;
+		let closest = 0;
+		let best = Infinity;
+		children.forEach((child, i) => {
+			const off = Math.abs(child.getBoundingClientRect().left - from);
+			if (off < best) {
+				best = off;
+				closest = i;
+			}
+		});
+
+		const status = columns[closest]?.status;
+		if (status && status !== phoneColumn) phoneColumn = status;
+	}
+
+	/**
+	 * A card carried to the edge takes the board with it, so the far column is
+	 * reachable mid-drag. The zone is a thumb's width, the step a frame's worth.
+	 */
+	const EDGE_ZONE = 56;
+	const EDGE_STEP = 18;
+	function scrollAtEdge(event: DragEvent) {
+		if (!strip) return;
+		const box = strip.getBoundingClientRect();
+		if (event.clientX < box.left + EDGE_ZONE) strip.scrollLeft -= EDGE_STEP;
+		else if (event.clientX > box.right - EDGE_ZONE) strip.scrollLeft += EDGE_STEP;
+	}
+
 	const focusedCard = $derived(columns[focusCol]?.cards[focusRow] ?? null);
 
 	function post(action: string, fields: Record<string, string | string[]>) {
@@ -986,17 +1053,68 @@
 			<div class="flex flex-col gap-3 md:flex-row md:items-start">
 				<div class="board-columns min-w-0 flex-1" style="--lanes: {columns.length}">
 					<!--
-						Stacked on a phone, side by side from md up — never a strip that
-						scrolls sideways inside the page. Each column is as tall as what
-						is in it: an empty one is its empty state, not a slab of grey.
+						Which column the phone is looking at, and where a card goes that
+						is headed for one off the screen: the names light up while a
+						card is carried or picked up, and a drop or a press on one moves
+						it there and follows it. From md up every column is on screen
+						and this is not drawn.
 					-->
 					<div
-						class="flex flex-col gap-3 md:grid md:auto-cols-fr md:grid-flow-col md:items-start"
+						use:sliding
+						class="seg mb-3 flex w-full md:hidden {dragging || movingUid
+							? 'ring-2 ring-gray-900'
+							: ''}"
+					>
+						{#each columns as column (column.status)}
+							<button
+								type="button"
+								onclick={() => {
+									if (movingUid) placeIn(column.status);
+									showColumn(column.status);
+								}}
+								aria-pressed={phoneColumn === column.status}
+								ondragover={(e) => {
+									e.preventDefault();
+									dragOverColumn = column.status;
+								}}
+								ondragleave={() => {
+									if (dragOverColumn === column.status) dragOverColumn = null;
+								}}
+								ondrop={async (e) => {
+									const card = dragging;
+									await onDropInColumn(column.status, e);
+									if (card) showColumn(column.status);
+								}}
+								class="flex-1 gap-1.5 {dragging && dragOverColumn === column.status
+									? 'on-fill'
+									: ''}"
+							>
+								{t(STATUS_LABELS[column.status])}
+								<span
+									class="tabular text-xs {dragging && dragOverColumn === column.status
+										? 'text-gray-300'
+										: 'text-gray-500'}">{column.cards.length}</span
+								>
+							</button>
+						{/each}
+					</div>
+
+					<!--
+						A strip that snaps on a phone, side by side from md up. Each
+						column is as tall as what is in it from md up: an empty one is
+						its empty state, not a slab of grey.
+					-->
+					<div
+						bind:this={strip}
+						ondragover={scrollAtEdge}
+						onscroll={followScroll}
+						class="-mx-4 flex snap-x snap-mandatory scroll-px-4 items-start gap-3 overflow-x-auto px-4 pb-1 md:mx-0 md:grid md:auto-cols-fr md:grid-flow-col md:overflow-visible md:px-0"
 						data-tour="board-columns"
 					>
 						{#each columns as column, ci (column.status)}
 							<section
-								class="lane flex flex-col border bg-gray-50 {dragOverColumn === column.status
+								class="lane flex min-h-64 w-[86%] shrink-0 snap-start flex-col border bg-gray-50 md:min-h-0 md:w-auto {dragOverColumn ===
+								column.status
 									? 'border-gray-900'
 									: 'border-gray-200'}"
 								ondragover={(e) => {
@@ -1024,7 +1142,7 @@
 							somebody aims at.
 						-->
 								<header
-									class="flex items-center justify-between border-b px-3 py-2 {dragging &&
+									class="hidden items-center justify-between border-b px-3 py-2 md:flex {dragging &&
 									dragOverColumn === column.status
 										? 'on-fill'
 										: 'border-gray-200 bg-white'}"
