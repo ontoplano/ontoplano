@@ -79,6 +79,44 @@ function stayingPut(outcome: Outcome): Outcome {
 	};
 }
 
+/**
+ * A form is emptied after its handler is done with it, never before.
+ *
+ * SvelteKit's `update()` resets the form first and then waits for the page's
+ * data to come back. Every dialog here closes *after* `update()` — so for the
+ * length of a round trip the dialog stood open with its fields reset, and a
+ * bound field resets to nothing: pressing Save on Edit notebook blanked the
+ * title before the dialog went away. It was fixed form by form, with
+ * `reset: false`, and kept coming back with the next form written the
+ * ordinary way.
+ *
+ * So `update()` never resets here. It notes whether a reset was asked for —
+ * SvelteKit's default is yes — and the reset happens once the handler has
+ * returned, by which time a dialog has been told to close and the reset lands
+ * in the same frame, unseen. A form still on screen, like a quick-add row, is
+ * cleared exactly as before, one reload later.
+ */
+function resetAfterwards(outcome: Outcome): { outcome: Outcome; finish: () => void } {
+	const update = outcome.update;
+	let wanted = false;
+	return {
+		outcome: {
+			...outcome,
+			update: (options?: Parameters<typeof update>[0]) => {
+				wanted = options?.reset ?? true;
+				return update({ ...options, reset: false });
+			}
+		},
+		finish: () => {
+			const form = outcome.formElement;
+			// `HTMLFormElement.prototype`, because a field called `reset` would
+			// shadow the method on the form itself.
+			if (wanted && outcome.result.type === 'success' && form.isConnected)
+				HTMLFormElement.prototype.reset.call(form);
+		}
+	};
+}
+
 export function enhance(form: HTMLFormElement, submit?: SubmitFunction) {
 	let sending: string | null = null;
 
@@ -97,9 +135,10 @@ export function enhance(form: HTMLFormElement, submit?: SubmitFunction) {
 		const after = submit?.(event);
 		return async (outcome) => {
 			try {
-				const answered = stayingPut(outcome);
+				const { outcome: answered, finish } = resetAfterwards(stayingPut(outcome));
 				if (typeof after === 'function') await after(answered);
 				else await answered.update();
+				finish();
 			} finally {
 				sending = null;
 				// A form that has been taken off the screen takes its buttons
