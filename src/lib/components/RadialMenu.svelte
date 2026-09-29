@@ -194,17 +194,6 @@
 	const OUTER = $derived(RADIAL_OUTER * scale);
 
 	/**
-	 * How thick the rim is, and how big the hole is.
-	 *
-	 * The rim is the mark's ring at this size; eight pixels is what that ring
-	 * looks like when the whole drawing is two hundred and ninety across. The
-	 * hole is the mark's middle at the same scale, so the medallion in it is
-	 * the size it would be if the wheel simply were the logo — which is the
-	 * idea.
-	 */
-	const RIM = $derived(8 * scale);
-
-	/**
 	 * How much of the hole the mark in the middle takes.
 	 *
 	 * All of it. The hole is the mark's shape at the same size, so the two edges
@@ -230,16 +219,6 @@
 	 * wheel made of the mark is made of the mark's colours.
 	 */
 	const EDGE_DARK = $derived(isIsolatedBuild() ? MARK_FIELD_ISOLATED : MARK_FIELD);
-
-	/**
-	 * What the wheel is outlined in: the theme's ink.
-	 *
-	 * White in the dark theme, black in the light one, because `--color-white`
-	 * and `--color-black` swap with the ramp. The rim was the mark's dark in
-	 * both — which on a dark page is an edge drawn in very nearly the colour
-	 * behind it, so the wheel had no outline at all where it needed one most.
-	 */
-	const EDGE_INK = 'var(--color-black)';
 
 	/**
 	 * A circle, as a path, for a clip that also holds the mark's outline.
@@ -821,18 +800,10 @@
 					<!--
 						The glow of the chosen wedge, and nothing but the wedge.
 
-						Drawn here, with the wedges, so both rims are painted over
-						it: the light stops at the black edges instead of washing
-						across them. It sat after the rim bands, which is why the
-						outer one came up tinted while the inner one did not.
-
-						The black edges do not change: they are the limits of the
-						selection, and light must not cross them into a neighbour. So
-						the glow is not a shadow cast outward — it is a radial wash in
-						the room's own colour, brightening away from the centre, drawn
-						inside the wedge's own shape and cut to the ring like every
-						wedge is. Contained is the point: the light ends exactly at
-						the borders, which is what lets it burn brighter inside them.
+						Not a shadow cast outward, which would cross into the
+						neighbours: a radial wash in the room's own colour,
+						brightening away from the centre, drawn inside the wedge's
+						own shape and cut to the ring like every wedge is.
 						A gradient rather than a blur, so the falloff is smooth and
 						owes nothing to a filter radius.
 					-->
@@ -953,57 +924,6 @@
 					     same as it is for the wedges. -->
 					<title>{t('ui.cancel')}</title>
 				</polygon>
-
-				<!--
-					The ring, on the outside where it belongs.
-					
-					One stroked circle. It used to be eight mitred bands following the
-					mark's outline, which is what the ring in the picture is — but the
-					outer edge is round now, and a circle has no corners for two bands
-					to meet badly at. Drawn last so the wedges end under it rather than
-					beside it: the rim is the edge of the whole thing, not a border
-					around each piece.
-					
-					Inset by half its width, because a stroke is centred on its path:
-					on the radius itself, half of it would hang outside the shape the
-					clip allows and come back cut in half.
-				-->
-				<!--
-					The rim in the theme's ink, which is the only colour that is an
-					edge on both grounds.
-
-					It was the mark's dark in both themes: over a dimmed dark page
-					that is an outline you cannot see, so the wheel ended in a soft
-					nothing instead of a line. The ink flips with the ramp — white
-					up there, black on a light page — and the wheel is bounded
-					either way.
-				-->
-				<circle
-					r={OUTER - RIM / 2}
-					fill="none"
-					stroke={EDGE_INK}
-					stroke-width={RIM}
-					class="pie-edge"
-					style="pointer-events: none"
-				/>
-
-				<!--
-					And then the chosen room's colour, on the two edges that are its
-					own — the outer rim and the inner one, the two sides of the piece
-					being pointed at.
-					
-					Darker than the wedge it borders, not the same: at full strength
-					the edge and the fill are one block of colour and the wedge stops
-					having an outline exactly when it most needs one. Same hue, less
-					light — which is what a border is.
-					
-					Cut to the wedge rather than worked out side by side. With the
-					eight rooms the app ships a wedge is exactly one side of the
-					octagon, but hide a room and it is one and a half: clipping the
-					whole ring to the wedge's own shape is right for any number of
-					them, and cannot get the mapping wrong because there is no
-					mapping.
-				-->
 			</svg>
 
 			<!--
@@ -1057,7 +977,7 @@
 		--hud-ink: 62%;
 		/* Screen showing either side of the plate on a phone: without it
 		   Notebooks, with six shelves under its name, ran edge to edge and the
-		   plate's border fell off the screen. */
+		   plate fell off the screen. */
 		--hud-gutter: 1rem;
 
 		position: fixed;
@@ -1103,12 +1023,10 @@
 	/*
 	 * The dark plate: under the name at the top, and under the aside.
 	 *
-	 * Edged in whatever colour its contents are — the letters' own on the
-	 * name, so the plate belongs to the room it is naming rather than being a
-	 * grey card the name landed on.
+	 * No border: the blur and the dark are the edge, and a coloured frame
+	 * around them was one outline too many.
 	 */
 	.pie-plate {
-		border: 4px solid currentColor;
 		border-radius: var(--radius-lg, 0);
 		background-color: var(--hud-plate);
 		-webkit-backdrop-filter: blur(var(--hud-blur));

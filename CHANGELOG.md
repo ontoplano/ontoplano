@@ -18,6 +18,10 @@ the shape of the data changing. Bumping the minor per batch is what ran this
 file to 0.161 in a few months, which tells a reader nothing about which
 releases mattered.
 
+## 0.184.8 — 2026-09-29
+
+- The menu wheels lose their outlines: no ring around the wheel, and no frame around the room's name or the wheel's settings button.
+
 ## 0.184.7 — 2026-09-29
 
 - Clicking the blank space beside a field's tags, or the field's name, no longer removes a tag.
