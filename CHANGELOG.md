@@ -25,6 +25,7 @@ releases mattered.
 - On a phone a list's controls sit on two tidy lines: the search box on top, then the list's own button and its order on the left and the count and Filters on the right. The order has its direction arrow beside it again, so ascending and descending can be chosen.
 - A tall picture opens whole and centred in the viewer on a phone, rather than enlarged and cut off.
 - The menu mark's turn brakes smoothly to a stop instead of halting from half speed, and the puffin in the middle no longer turns with it after a page load.
+- On Android the number on the app's icon follows the bell: once nothing is unread in the app, its notifications leave the phone's tray, so the icon no longer says 2 when there is nothing to read.
 
 ## 0.184.7 — 2026-09-29
 

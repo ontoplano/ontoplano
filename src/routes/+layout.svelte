@@ -57,6 +57,7 @@
 	import { suppressAutofill } from '$lib/autofill';
 	import { APP_UPDATE_HUSH_KEY } from '$lib/platform';
 	import { startMarkSpin, stopMarkSpin } from '$lib/mark-spin';
+	import { clearTray } from '$lib/tray';
 	import { busy } from '$lib/busy.svelte';
 	import ImageViewer from '$lib/components/ImageViewer.svelte';
 	import { scrollToHash } from '$lib/scroll-to-hash';
@@ -198,6 +199,17 @@
 	let reporting = $state(false);
 	/** Whether the phone is showing the list of what the app has said. */
 	let phoneNotifications = $state(false);
+
+	/*
+	 * Nothing unread, nothing in the tray: the icon's count on a phone is the
+	 * tray's, and it has to say what the bell says. Runs on every load of the
+	 * shell's data — including the one `$lib/live` makes when the app comes
+	 * back to the front — so it is always the server's count it trusts, never
+	 * a stale one that would close a reminder that has just arrived.
+	 */
+	$effect(() => {
+		if (data.user && (data.unreadNotifications ?? 0) === 0) void clearTray();
+	});
 
 	const fanItems = $derived.by(() => {
 		const items: Petal[] = [
