@@ -181,6 +181,38 @@ test('the bars on a card are pressed to change them, and confirmed beside them',
 	).toHaveAttribute('aria-label', /Urgency 5/);
 });
 
+test('a drag across the bars sets whichever bar is under it, and Edit carries it', async ({
+	page
+}) => {
+	test.setTimeout(180_000);
+	await page.setViewportSize({ width: 1280, height: 900 });
+	await register(page, testEmail('todo-rate-drag'));
+	await visit(page, '/tasks/todo');
+	await newTodo(page, 'drag these', {});
+
+	const bars = page.locator('.row-card').filter({ hasText: 'drag these' }).locator('.rating-bars');
+	const box = (await bars.boundingBox())!;
+	const at = (x: number, y: number) => [box.x + box.width * x, box.y + box.height * y] as const;
+
+	// Down low on urgency, up to the top, then across to interest halfway.
+	await page.mouse.move(...at(0.3, 0.9));
+	await page.mouse.down();
+	await page.mouse.move(...at(0.3, 0.05), { steps: 6 });
+	await page.mouse.move(...at(0.9, 0.5), { steps: 6 });
+	await page.mouse.up();
+
+	await expect(bars).toHaveAttribute('aria-label', /Urgency 5/);
+	await expect(bars).toHaveAttribute('aria-label', /Interest 3/);
+
+	// The box says where it would land, and Edit opens the form with the bars
+	// as they were left rather than as they were saved.
+	const holding = page.getByRole('dialog', { name: 'Confirm' });
+	await expect(holding).toContainText(/in line/);
+	await holding.getByRole('button', { name: 'Edit' }).click();
+	await expect(holding).toBeHidden();
+	await expect(page.locator('#todo-form input[name="urgency"]')).toHaveValue('5');
+});
+
 test('the list can say which task you are on, and shows it', async ({ page }) => {
 	test.setTimeout(180_000);
 	await page.setViewportSize({ width: 1280, height: 900 });

@@ -33,7 +33,9 @@
 		/** A form's id, when the button should submit it rather than call `onconfirm`. */
 		form = undefined,
 		/** Whatever the change shows of itself above the button. */
-		children = undefined
+		children = undefined,
+		/** Anything that belongs in the top row, left of the ×. */
+		corner = undefined
 	}: {
 		anchor: HTMLElement;
 		onundo: () => void;
@@ -41,6 +43,7 @@
 		onconfirm?: () => void;
 		form?: string;
 		children?: Snippet;
+		corner?: Snippet;
 	} = $props();
 
 	const t = useT();
@@ -118,6 +121,7 @@
 	class="overlay-face rise fixed m-0 w-max border p-2 pt-1 shadow-overlay"
 >
 	<div class="flex justify-end">
+		{@render corner?.()}
 		<button
 			type="button"
 			class="icon-btn"

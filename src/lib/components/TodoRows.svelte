@@ -697,6 +697,31 @@
 		rerating ? todos.find((one: Todo) => one.id === rerating!.id) : undefined
 	);
 
+	/** Where the task being rerated would land, in the queue and on screen. */
+	const reratingPlace = $derived(
+		rerating && reratingTask
+			? queuePlace(reratingTask, rerating.values, reratingTask.notebookId)
+			: 0
+	);
+	const reratingFilteredPlace = $derived(
+		rerating && reratingTask
+			? placeUnderFilters(reratingTask, rerating.values, {
+					...reratingTask,
+					tags: reratingTask.tags.map((tag) => tag.name)
+				})
+			: undefined
+	);
+
+	/** From the held change to the whole form, carrying the bars as they are. */
+	function rerateInForm() {
+		const held = rerating;
+		const task = reratingTask;
+		rerating = null;
+		if (!held || !task) return;
+		startEdit(task, { atRatings: true });
+		formRatings = { ...held.values };
+	}
+
 	/** Whether this screen has a pointer precise enough to aim at a bar. */
 	function aims(): boolean {
 		return typeof matchMedia === 'function' && matchMedia('(pointer: fine)').matches;
@@ -725,31 +750,38 @@
 	 * `null` when the draft would not get through the filters at all, so it
 	 * would have no place on this screen.
 	 */
-	const filteredPlace = $derived.by((): number | null | undefined => {
+	function placeUnderFilters(
+		task: Todo | undefined,
+		ratings: RatingValues,
+		draftRow: { title: string; notes: string | null; tags: string[]; notebookId: number | null }
+	): number | null | undefined {
 		if (!narrowed) return undefined;
-		const draftRow = {
-			title: formTitle,
-			notes: formNotes,
-			tags: tagsFrom(formTags),
-			notebookId: formNotebookId
-		};
 		if (!passesNarrowing(draftRow)) return null;
 		const draft = {
-			ratings: formRatings as RatingValues,
-			sortOrder: editing?.sortOrder ?? Number.MAX_SAFE_INTEGER,
-			createdAt: editing?.createdAt ?? new Date().toISOString()
+			ratings,
+			sortOrder: task?.sortOrder ?? Number.MAX_SAFE_INTEGER,
+			createdAt: task?.createdAt ?? new Date().toISOString()
 		};
 		return (
 			todos.filter(
 				(one: Todo) =>
-					one.id !== editingId &&
+					one.id !== task?.id &&
 					one.archivedAt === null &&
 					!CLOSED_STATUSES.includes(one.status) &&
 					passesNarrowing({ ...one, tags: one.tags.map((tag) => tag.name) }) &&
 					compareByPriority(one, draft) < 0
 			).length + 1
 		);
-	});
+	}
+
+	const filteredPlace = $derived(
+		placeUnderFilters(editing, formRatings as RatingValues, {
+			title: formTitle,
+			notes: formNotes,
+			tags: tagsFrom(formTags),
+			notebookId: formNotebookId
+		})
+	);
 
 	/**
 	 * Each open task's place in line among the ones on screen.
@@ -1274,7 +1306,22 @@
 			confirm={t('ui.confirm')}
 			form="rate-form"
 		>
+			{#snippet corner()}
+				<button
+					type="button"
+					class="icon-btn mr-auto"
+					onclick={rerateInForm}
+					title={t('ui.edit')}
+					aria-label={t('ui.edit')}
+				>
+					<Icon name="edit" size={12} />
+				</button>
+			{/snippet}
 			{@render pendingRatings(held.values)}
+			<div class="mt-2 flex flex-col items-start gap-1 text-sm">
+				{@render underFilters(reratingFilteredPlace)}
+				{@render inQueue(reratingPlace)}
+			</div>
 		</PendingChange>
 	{/if}
 {/if}
@@ -1295,6 +1342,7 @@
 			<RatingPress
 				values={held.values}
 				height="min(45dvh, 20rem)"
+				touch
 				label={t('todoRows.setTheRatings')}
 				onkeyboard={() => {}}
 				onset={(rating, value, at) => reratingTask && rerate(reratingTask, rating, value, at)}
@@ -1303,14 +1351,19 @@
 	{/if}
 	{#snippet footer()}
 		{#if rerating?.sheet}
-			<span class="tabular mr-auto text-sm text-gray-600">
-				{t('ratings.nthInLine', {
-					nth: ordinal(
-						t,
-						queuePlace(reratingTask, rerating.values, reratingTask?.notebookId ?? null)
-					)
-				})}
+			<span class="mr-auto flex flex-wrap items-center gap-2 text-sm">
+				{@render underFilters(reratingFilteredPlace)}
+				{@render inQueue(reratingPlace)}
 			</span>
+			<button
+				type="button"
+				class="icon-btn"
+				onclick={rerateInForm}
+				title={t('ui.edit')}
+				aria-label={t('ui.edit')}
+			>
+				<Icon name="edit" />
+			</button>
 			<button type="button" class="btn" onclick={() => (rerating = null)}>{t('ui.cancel')}</button>
 			<button type="submit" form="rate-form" class="btn btn-primary">{t('ui.confirm')}</button>
 		{/if}
@@ -1361,25 +1414,32 @@
 	drawing itself now, so what is being made is in front of whoever is making
 	it.
 -->
+{#snippet underFilters(place: number | null | undefined)}
+	{#if place !== undefined}
+		<span
+			class="pill-soft tabular inline-flex min-w-[11ch] items-center justify-center gap-1 px-1.5"
+			style="--pill: var(--color-blue-500)"
+			title={t('ratings.placeUnderFilters')}
+		>
+			<Icon name="filter" size={12} label={t('ratings.placeUnderFilters')} />
+			{place === null ? '—' : t('ratings.nthInLine', { nth: ordinal(t, place) })}
+		</span>
+	{/if}
+{/snippet}
+
+{#snippet inQueue(place: number)}
+	<!-- The colour is whatever it sits on: the form's grey, the box's ink. -->
+	<span class="tabular">{t('ratings.nthInLine', { nth: ordinal(t, place) })}</span>
+{/snippet}
+
 {#snippet whereItWouldSit()}
 	<span
-		class="flex flex-1 items-center justify-center gap-2 text-sm"
+		class="flex flex-1 items-center justify-center gap-2 text-sm text-gray-700"
 		title={t('ratings.whereItWouldSit')}
 	>
-		{#if filteredPlace !== undefined}
-			<span
-				class="pill-soft tabular inline-flex min-w-[11ch] items-center justify-center gap-1 px-1.5"
-				style="--pill: var(--color-blue-500)"
-				title={t('ratings.placeUnderFilters')}
-			>
-				<Icon name="filter" size={12} label={t('ratings.placeUnderFilters')} />
-				{filteredPlace === null ? '—' : t('ratings.nthInLine', { nth: ordinal(t, filteredPlace) })}
-			</span>
-		{/if}
+		{@render underFilters(filteredPlace)}
 		<RatingBadges values={formRatings} />
-		<span class="tabular text-gray-700">
-			{t('ratings.nthInLine', { nth: ordinal(t, draftPlace) })}
-		</span>
+		{@render inQueue(draftPlace)}
 	</span>
 {/snippet}
 

@@ -23,6 +23,7 @@ releases mattered.
 - Clicking the blank space beside a field's tags, or the field's name, no longer removes a tag.
 - The plan tiles lose the big faint octagon behind each badge.
 - On a phone the board slides sideways again, one column at a time, with the column names above to jump between them or to drop a card on.
+- A task's rating bars follow the mouse while it is held down; the box beside them and the phone's sheet say where the task would land, under the filters too, and have an edit button that opens the task with the bars as they are.
 
 ## 0.184.6 — 2026-09-29
 
