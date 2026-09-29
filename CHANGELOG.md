@@ -23,7 +23,7 @@ releases mattered.
 - The puffin in the middle of the menu mark never moves: only the octagon around it turns while a page loads.
 - A recording's notes field is called Notes.
 - The phone app opening a server instance — from its icon or from a widget — no longer shows the on-device look while it gets there.
-- The recording transcriber example lives with the other examples, in `examples/audio-transcriber/`, and reads its settings from a `.env` file beside it.
+- The example plugins, the recording transcriber among them, live together in `ontoplano-plugins/`; the transcriber reads its settings from a `.env` file beside it.
 
 ## 0.184.10 — 2026-09-29
 

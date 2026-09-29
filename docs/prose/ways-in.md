@@ -60,7 +60,7 @@ own](ai-agents.md).
 
 ## Two plugins to read
 
-Both are in `examples/`, both are plain Node with no dependencies, and neither
+Both are in `ontoplano-plugins/`, both are plain Node with no dependencies, and neither
 runs anything inside anybody's server.
 
 **`onto-morning.mjs`** is the short one, and the place to start: a single token

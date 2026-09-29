@@ -5,7 +5,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
 /**
- * `examples/onto-readings.mjs`, on the exports people actually have.
+ * `ontoplano-plugins/onto-readings.mjs`, on the exports people actually have.
  *
  * The example plugins ship in the repository and are the first code anybody
  * writing an integration reads, so one of them being wrong is worse than a bug
@@ -18,7 +18,7 @@ import { join } from 'node:path';
  * the script is a script, and the thing worth pinning is what it makes of a
  * file rather than any function inside it.
  */
-const SCRIPT = join(import.meta.dirname, '..', 'examples', 'onto-readings.mjs');
+const SCRIPT = join(import.meta.dirname, '..', 'ontoplano-plugins', 'onto-readings.mjs');
 let dir: string;
 
 beforeAll(() => {
