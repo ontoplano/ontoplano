@@ -30,7 +30,6 @@ export const borrowed: ReadonlySet<string> = new Set([
 	'audio.orderLength',
 	'audio.orderName',
 	'audio.orderRecorded',
-	'audio.renameName',
 	'audio.searchRecordings',
 	'card.theNotebooksYouHaveWritten',
 	'cookMode.used',

@@ -880,9 +880,12 @@ are both a 404: not found, not yours and not a recording are one answer.
 
 #### `get(ctx, id)`
 
-#### `rename(ctx, id, name)`
+#### `edit(ctx, id, input)`
 
-#### `setNotes(ctx, id, notes, onlyIfEmpty)`
+Everything the edit dialog offers, in one statement: the name and the notes
+land together or not at all.
+
+#### `setNotes(ctx, id, given, onlyIfEmpty)`
 
 Replace a recording's notes, with ownership and kind checked in the update.
 

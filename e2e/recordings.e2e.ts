@@ -22,7 +22,7 @@ test.use({
 	permissions: ['microphone']
 });
 
-test('records, keeps it under a name, renames it and deletes it', async ({ page }) => {
+test('records, keeps it under a name with notes, edits both and deletes it', async ({ page }) => {
 	await register(page, testEmail('recordings'));
 	await visit(page, '/media/audios');
 
@@ -60,25 +60,29 @@ test('records, keeps it under a name, renames it and deletes it', async ({ page 
 	await expect(name).toHaveAttribute('placeholder', /^\d{4}-\d{2}-\d{2}\.\d{2}:\d{2}:\d{2}$/);
 
 	await name.fill('a thing I said');
+	await page.getByRole('textbox', { name: 'Notes' }).fill('said at the sink');
 	await page.getByRole('button', { name: 'Save', exact: true }).click();
 
 	const row = page.locator('li').filter({ hasText: 'a thing I said' });
 	await expect(row).toBeVisible();
+	await expect(row).toContainText('said at the sink');
 	// And it plays from its own URL rather than from the blob that made it.
 	await expect(row.locator('audio')).toHaveAttribute('src', /^\/media\/audio\/\d+$/);
 
-	/*
-	 * Renaming turns the row's name into an input, so the row can no longer be
-	 * found by the text it used to show — there is one recording here, and it
-	 * is the row.
-	 */
+	// The name and the notes are edited together, in one dialog.
 	const only = page.locator('ul li').first();
-	await only.getByRole('button', { name: 'Rename' }).click();
-	// The new name is asked for in a dialog, like every other form here.
-	const renaming = page.getByRole('dialog');
-	await renaming.getByRole('textbox', { name: 'What to call it' }).fill('what I actually said');
-	await renaming.getByRole('button', { name: 'Save', exact: true }).click();
+	await only.getByRole('button', { name: 'Edit' }).click();
+	const editing = page.getByRole('dialog');
+	await expect(editing.getByRole('textbox', { name: 'Notes' })).toHaveValue(
+		'said at the sink'
+	);
+	await editing.getByRole('textbox', { name: 'What to call it' }).fill('what I actually said');
+	await editing
+		.getByRole('textbox', { name: 'Notes' })
+		.fill('said at the sink, twice');
+	await editing.getByRole('button', { name: 'Save', exact: true }).click();
 	await expect(page.locator('ul li').first()).toContainText('what I actually said');
+	await expect(page.locator('ul li').first()).toContainText('said at the sink, twice');
 
 	// Deleting is asked in a dialog, and the dialog's own button answers it.
 	await page.locator('ul li').first().getByRole('button', { name: 'Delete' }).click();

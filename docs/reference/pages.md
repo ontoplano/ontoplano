@@ -11,7 +11,7 @@ own write surface, the way the endpoints in [the API](api.md) are the
 write surface for everything else; both end up calling the same
 [services](services.md).
 
-**64 pages, 211 actions.**
+**64 pages, 210 actions.**
 
 | Page                                 | Actions                                                                                                                                                                                                                                                                                                                                                                                              |
 | ------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -43,7 +43,7 @@ write surface for everything else; both end up calling the same
 | `/login/reset`                       | `reset`                                                                                                                                                                                                                                                                                                                                                                                              |
 | `/login/verify`                      | `resend`                                                                                                                                                                                                                                                                                                                                                                                             |
 | `/mail/weekly-review/off`            | —                                                                                                                                                                                                                                                                                                                                                                                                    |
-| `/media/audios`                      | `notes`, `rename`, `remove`, `toIdea`                                                                                                                                                                                                                                                                                                                                                                |
+| `/media/audios`                      | `edit`, `remove`, `toIdea`                                                                                                                                                                                                                                                                                                                                                                           |
 | `/media/gallery`                     | `create`, `planFolder`, `importFolder`, `rename`, `delete`                                                                                                                                                                                                                                                                                                                                           |
 | `/media/gallery/[id]`                | `upload`, `addTo`, `move`, `remove`, `rename`, `tag`                                                                                                                                                                                                                                                                                                                                                 |
 | `/media/gallery/notebooks/[...path]` | —                                                                                                                                                                                                                                                                                                                                                                                                    |
@@ -245,7 +245,7 @@ What the recordings tab needs, and the two things it can do without bytes.
 The bytes never come through a form action: a `MediaRecorder` hands back a
 blob that is already exactly what should be stored, and wrapping it in a
 multipart body to unwrap it again buys nothing. Recording posts to
-`/media/audio`; renaming and deleting are here, where they have no payload.
+`/media/audio`; editing and deleting are here, where they have no payload.
 
 **`toIdea`**
 

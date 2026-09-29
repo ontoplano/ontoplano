@@ -18,8 +18,8 @@
 	import Icon from '$lib/components/Icon.svelte';
 	import OneLine from '$lib/components/OneLine.svelte';
 	import Recorder from '$lib/components/Recorder.svelte';
+	import { postRecording, type RecordingDraft } from '$lib/recording-upload';
 	import { armed } from '$lib/actions/armed';
-	import { autofocus } from '$lib/actions/autofocus';
 	import { setRoomAction } from '$lib/room-action.svelte';
 	import { useT } from '$lib/i18n';
 	import { momentOf } from '$lib/when';
@@ -65,11 +65,9 @@
 	let justMade = $state<{ id: number; name: string } | null>(null);
 	const ideaSeed = $derived(ideaOf ? audioMarkdown(ideaOf.id, ideaOf.name) + '\n' : '');
 
-	/** Which recording's name is being edited, if any. */
-	let renaming = $state<number | null>(null);
-	let noting = $state<number | null>(null);
-	const notingOne = $derived(data.recordings.find((one) => one.id === noting) ?? null);
-	const renamingOne = $derived(data.recordings.find((one) => one.id === renaming) ?? null);
+	/** Which recording is being edited — its name and its notes — if any. */
+	let editing = $state<number | null>(null);
+	const editingOne = $derived(data.recordings.find((one) => one.id === editing) ?? null);
 
 	/** Finding one by name. */
 	let looking = $state('');
@@ -110,7 +108,7 @@
 		cursor: () => at,
 		moveTo: (i) => (at = i),
 		open: (i) => players[shown[i].id]?.toggle(),
-		edit: (i) => (renaming = shown[i].id)
+		edit: (i) => (editing = shown[i].id)
 	}));
 
 	/**
@@ -138,23 +136,11 @@
 
 	const full = $derived(data.recordings.length >= data.limits.accountAudios);
 
-	async function keep(bytes: Blob, name: string, seconds: number) {
-		const body = new FormData();
-		// A name only for the multipart part; the service names the row.
-		body.set('file', bytes, 'recording');
-		body.set('label', name);
-		body.set('seconds', String(seconds));
-
-		const answer = await fetch('/media/audio', { method: 'POST', body });
-		const said = (await answer.json().catch(() => ({}))) as {
-			id?: number;
-			name?: string;
-			message?: string;
-		};
-		if (!answer.ok) throw new Error(said.message ?? t('audio.notSupported'));
+	async function keep(draft: RecordingDraft) {
+		const kept = await postRecording(draft, t('audio.notSupported'));
 		await invalidateAll();
 		// Offered once, here, while the thought is still in the room.
-		if (said.id) justMade = { id: said.id, name: said.name ?? name };
+		justMade = { id: kept.id, name: kept.name };
 	}
 
 	/** When it happened, where the reader is, in the app's one date format. */
@@ -291,13 +277,6 @@
 						<button
 							type="button"
 							class="icon-btn"
-							title={t('audio.notes')}
-							aria-label={t('audio.notes')}
-							onclick={() => (noting = one.id)}><Icon name="note" /></button
-						>
-						<button
-							type="button"
-							class="icon-btn"
 							title={t('audio.makeAnIdea')}
 							aria-label={t('audio.makeAnIdea')}
 							onclick={() => (ideaOf = { id: one.id, name: one.name })}
@@ -307,9 +286,9 @@
 						<button
 							type="button"
 							class="icon-btn"
-							title={t('audio.rename')}
-							aria-label={t('audio.renameName', { name: one.name })}
-							onclick={() => (renaming = one.id)}
+							title={t('ui.edit')}
+							aria-label={t('audio.editName', { name: one.name })}
+							onclick={() => (editing = one.id)}
 						>
 							<Icon name="edit" />
 						</button>
@@ -329,71 +308,40 @@
 	{/if}
 </RoomSurface>
 
+<!-- Everything a recording carries that somebody wrote: its name and its notes. -->
 <Modal
-	open={notingOne !== null}
-	title={t('audio.notes')}
+	open={editingOne !== null}
+	title={t('ui.edit')}
 	error={form?.message}
-	onclose={() => (noting = null)}
+	onclose={() => (editing = null)}
 >
-	{#if notingOne}
+	{#if editingOne}
 		<form
-			id="audio-notes-form"
+			id="audio-edit-form"
 			method="post"
-			action="?/notes"
+			action="?/edit"
 			use:enhance={() =>
 				async ({ result, update }) => {
 					await update({ reset: false });
-					if (result.type === 'success') noting = null;
+					if (result.type === 'success') editing = null;
 				}}
 		>
-			<input type="hidden" name="id" value={notingOne.id} />
-			<Field label={t('audio.notes')}>
-				<textarea
-					name="notes"
-					class="input w-full"
-					rows="8"
-					maxlength={data.maxNotesLength}
-					use:autofocus>{notingOne.notes}</textarea
-				>
-			</Field>
-		</form>
-	{/if}
-	{#snippet footer()}
-		<button type="button" class="btn" onclick={() => (noting = null)}>{t('ui.cancel')}</button>
-		<button type="submit" form="audio-notes-form" class="btn btn-primary">{t('ui.save')}</button>
-	{/snippet}
-</Modal>
-
-<!-- A new name, in a dialog like every other form here. -->
-<Modal
-	open={renamingOne !== null}
-	title={t('audio.rename')}
-	error={form?.message}
-	onclose={() => (renaming = null)}
-	size="sm"
->
-	{#if renamingOne}
-		<form
-			id="audio-rename-form"
-			method="post"
-			action="?/rename"
-			use:enhance={() =>
-				async ({ result, update }) => {
-					await update({ reset: false });
-					if (result.type === 'success') renaming = null;
-				}}
-		>
-			<input type="hidden" name="id" value={renamingOne.id} />
+			<input type="hidden" name="id" value={editingOne.id} />
 			<FormGrid>
 				<Field label={t('audio.nameIt')}>
-					<OneLine name="label" value={renamingOne.name} class="input w-full" required autofocus />
+					<OneLine name="label" value={editingOne.name} class="input w-full" required autofocus />
+				</Field>
+				<Field label={t('audio.notes')}>
+					<textarea name="notes" class="input w-full" rows="8" maxlength={data.maxNotesLength}
+						>{editingOne.notes}</textarea
+					>
 				</Field>
 			</FormGrid>
 		</form>
 	{/if}
 	{#snippet footer()}
-		<button type="button" class="btn" onclick={() => (renaming = null)}>{t('ui.cancel')}</button>
-		<button type="submit" form="audio-rename-form" class="btn btn-primary">{t('ui.save')}</button>
+		<button type="button" class="btn" onclick={() => (editing = null)}>{t('ui.cancel')}</button>
+		<button type="submit" form="audio-edit-form" class="btn btn-primary">{t('ui.save')}</button>
 	{/snippet}
 </Modal>
 

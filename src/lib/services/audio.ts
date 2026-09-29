@@ -33,7 +33,7 @@ import { sha256Hex } from './digest.js';
 import { ConflictError, NotFoundError, ValidationError } from './errors.js';
 import { host } from './host.js';
 import { AUDIO_MIME_PREFIX } from './media-kind.js';
-import { audioSecondsFor, type MediaLimits } from './media-limits.js';
+import { MAX_AUDIO_NOTES_LENGTH, audioSecondsFor, type MediaLimits } from './media-limits.js';
 import { stamp } from './time.js';
 
 /** Do these bytes start with exactly this run of bytes? */
@@ -99,7 +99,7 @@ export const ACCEPTED_AUDIO_EXTENSIONS = [...SIGNATURES.map((s) => s.extension),
  * from a disk, and a line somebody types is a line that has to fit in a list.
  */
 export const MAX_AUDIO_NAME_LENGTH = 120;
-export const MAX_AUDIO_NOTES_LENGTH = 100_000;
+export { MAX_AUDIO_NOTES_LENGTH };
 
 export type Recording = {
 	id: number;
@@ -189,9 +189,10 @@ export function countStored(ctx: Ctx): number {
  */
 export async function store(
 	ctx: Ctx,
-	input: { bytes: Uint8Array; name?: string; seconds?: number }
+	input: { bytes: Uint8Array; name?: string; seconds?: number; notes?: unknown }
 ): Promise<Recording> {
 	const limits = audioLimits();
+	const notes = checkNotes(input.notes ?? '');
 
 	if (!input.bytes || input.bytes.length === 0)
 		throw new ValidationError({ key: 'errors.audio.thatRecordingWasEmpty' });
@@ -231,6 +232,7 @@ export async function store(
 			// file it came from, so this is the name somebody gave it.
 			filename: name,
 			alt: '',
+			notes,
 			byteSize: input.bytes.length,
 			seconds: tidySeconds(input.seconds),
 			bytes: input.bytes as Buffer,
@@ -309,13 +311,28 @@ export function get(ctx: Ctx, id: number): Recording {
 	return toRecording(row);
 }
 
-export function rename(ctx: Ctx, id: number, name: unknown): Recording {
-	const tidy = tidyAudioName(String(name ?? ''));
+/** Notes as they may be stored: text, and no longer than the ceiling. */
+function checkNotes(notes: unknown): string {
+	if (typeof notes !== 'string' || notes.length > MAX_AUDIO_NOTES_LENGTH)
+		throw new ValidationError({
+			key: 'errors.audio.notesTooLong',
+			values: { limit: MAX_AUDIO_NOTES_LENGTH }
+		});
+	return notes;
+}
+
+/**
+ * Everything the edit dialog offers, in one statement: the name and the notes
+ * land together or not at all.
+ */
+export function edit(ctx: Ctx, id: number, input: { name: unknown; notes: unknown }): Recording {
+	const tidy = tidyAudioName(String(input.name ?? ''));
 	if (!tidy) throw new ValidationError({ key: 'errors.audio.aRecordingNeedsAName' });
+	const notes = checkNotes(input.notes ?? '');
 
 	const row = db
 		.update(media)
-		.set({ filename: tidy })
+		.set({ filename: tidy, notes })
 		.where(and(eq(media.id, id), eq(media.userId, ctx.userId), isRecording))
 		.returning()
 		.get();
@@ -324,12 +341,8 @@ export function rename(ctx: Ctx, id: number, name: unknown): Recording {
 }
 
 /** Replace a recording's notes, with ownership and kind checked in the update. */
-export function setNotes(ctx: Ctx, id: number, notes: unknown, onlyIfEmpty = false): Recording {
-	if (typeof notes !== 'string' || notes.length > MAX_AUDIO_NOTES_LENGTH)
-		throw new ValidationError({
-			key: 'errors.audio.notesTooLong',
-			values: { limit: MAX_AUDIO_NOTES_LENGTH }
-		});
+export function setNotes(ctx: Ctx, id: number, given: unknown, onlyIfEmpty = false): Recording {
+	const notes = checkNotes(given);
 	const row = db
 		.update(media)
 		.set({ notes })

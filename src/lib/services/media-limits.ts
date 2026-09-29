@@ -18,6 +18,8 @@
  */
 export const AUDIO_KILOBYTES = 200;
 export const ACCOUNT_AUDIOS = 100;
+/** The most a recording's notes may hold — a transcription of the longest one fits. */
+export const MAX_AUDIO_NOTES_LENGTH = 100_000;
 
 /**
  * How hard a recording is squeezed, and therefore how long one can be.

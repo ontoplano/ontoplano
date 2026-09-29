@@ -54,7 +54,8 @@ export const POST: RequestHandler = async (event) => {
 			 * own, so this is the only chance to know it cheaply. The service
 			 * bounds whatever arrives — it comes from the page, not from here.
 			 */
-			seconds: Number(form.get('seconds')) || undefined
+			seconds: Number(form.get('seconds')) || undefined,
+			notes: String(form.get('notes') ?? '')
 		});
 
 		return Response.json({

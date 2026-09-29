@@ -20,6 +20,7 @@
 	import { page } from '$app/state';
 	import RadialMenu from '$lib/components/RadialMenu.svelte';
 	import Recorder from '$lib/components/Recorder.svelte';
+	import { postRecording, type RecordingDraft } from '$lib/recording-upload';
 	import { ACCEPTED_TYPES } from '$lib/services/media';
 	import { ACCOUNT_AUDIOS, AUDIO_KILOBYTES } from '$lib/services/media-limits';
 	import { notify } from '$lib/notify.svelte';
@@ -124,16 +125,8 @@
 		} else notify.error(reply.message ?? '');
 	}
 
-	async function keepRecording(bytes: Blob, name: string, seconds: number) {
-		const body = new FormData();
-		body.set('file', bytes, 'recording');
-		body.set('label', name);
-		body.set('seconds', String(seconds));
-		const answer = await fetch('/media/audio', { method: 'POST', body });
-		if (!answer.ok) {
-			const reply = (await answer.json().catch(() => ({}))) as { message?: string };
-			throw new Error(reply.message ?? '');
-		}
+	async function keepRecording(draft: RecordingDraft) {
+		await postRecording(draft);
 		notify.success(t('media.recordingAdded'));
 		recording = false;
 		/*

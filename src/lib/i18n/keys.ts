@@ -262,6 +262,7 @@ export type MessageKey =
 	| 'audio.deleteForever'
 	| 'audio.deleteName'
 	| 'audio.discard'
+	| 'audio.editName'
 	| 'audio.full'
 	| 'audio.held'
 	| 'audio.justRecorded'
@@ -285,8 +286,6 @@ export type MessageKey =
 	| 'audio.position'
 	| 'audio.record'
 	| 'audio.recording'
-	| 'audio.rename'
-	| 'audio.renameName'
 	| 'audio.resume'
 	| 'audio.save'
 	| 'audio.saving'
@@ -2430,6 +2429,8 @@ export type MessageKey =
 	| 'scopeGroups.whatYouWrite'
 	| 'scopeGroups.yourHome'
 	| 'scopeGroups.yourWeek'
+	| 'scopes.audioRead'
+	| 'scopes.audioWrite'
 	| 'scopes.billsRead'
 	| 'scopes.billsWrite'
 	| 'scopes.calendarRead'
@@ -3950,6 +3951,7 @@ export type MessageKey =
 	| 'ui.unit'
 	| 'ui.withTheRoom'
 	| 'ui.write'
+	| 'webhookEvents.audioUploaded'
 	| 'webhookEvents.diaryCreated'
 	| 'webhookEvents.ideaCreated'
 	| 'webhookEvents.inventoryAdded'
@@ -4050,10 +4052,10 @@ export interface MessageValuesFor {
 	'attributes.readBy': { description: string | number; plugins: string | number };
 	'attributes.removeNamed': { written: string | number };
 	'audio.deleteName': { name: string | number };
+	'audio.editName': { name: string | number };
 	'audio.full': { count: number };
 	'audio.held': { count: number };
 	'audio.justRecorded': { name: string | number };
-	'audio.renameName': { name: string | number };
 	'audio.sizeKB': { size: string | number };
 	'audio.tooLong': { kilobytes: string | number };
 	'capture.addedTo': { into: string | number };
