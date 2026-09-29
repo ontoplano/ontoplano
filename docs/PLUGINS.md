@@ -238,11 +238,14 @@ loopback addresses are refused. Self-hosted instances may point anywhere.
 
 ### Transcribing recordings
 
-The standalone example in [`ontoplano-plugin/`](../ontoplano-plugin/README.md) receives
-`audio.uploaded`, fetches the recording, sends it to OpenAI Whisper, and writes the
-transcript into the recording's notes. Its token needs `webhooks:manage`, `audio:read`,
-and `audio:write`. These are account-wide recording permissions, separate from the
-permissions to read recordings referenced by a note or task.
+The Python example in
+[`examples/audio-transcriber/`](../examples/audio-transcriber/README.md)
+receives `audio.uploaded`, fetches the recording, transcribes it with Whisper on the
+machine running the script, and writes the transcript into the recording's notes.
+Create a token on **Settings → Integrations → Connections** with `audio:write` (which
+also grants `audio:read`), then create the webhook on that same screen. These are
+account-wide recording permissions, separate from permissions to read recordings
+referenced by a note or task. No transcription API key is needed.
 
 ```http
 GET   /api/v1/audio/<id>       → recording metadata, including notes (audio:read)
