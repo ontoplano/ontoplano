@@ -12,36 +12,38 @@ until somebody writes one in `src/lib/tutorials.ts`. The same gap is visible
 in the app: the `?` button goes red on a screen with no tour and says so
 under the pointer.
 
-**20 of 21 screens have one.**
+**23 of 24 screens have one.**
 
-| Screen                               | Tour              | Steps |
-| ------------------------------------ | ----------------- | ----- |
-| `/`                                  | tour.ontoplano    | 8     |
-| `/admin`                             | **none**          | —     |
-| `/finance/ledgers`                   | tour.ledgers      | 3     |
-| `/goals`                             | tour.goals        | 4     |
-| `/health/habits`                     | tour.habits       | 3     |
-| `/health/recipes`                    | tour.recipes      | 5     |
-| `/health/workouts`                   | tour.workouts     | 2     |
-| `/inventory/stock`                   | tour.shopping     | 3     |
-| `/notebooks`                         | tour.notebooks    | 6     |
-| `/notebooks/diary`                   | tour.diary        | 5     |
-| `/notebooks/ideas`                   | tour.ideas        | 3     |
-| `/notebooks/people`                  | tour.people       | 3     |
-| `/notebooks/tags`                    | tour.tags         | 2     |
-| `/settings/account`                  | tour.account      | 3     |
-| `/settings/integrations/connections` | tour.integrations | 3     |
-| `/settings/integrations/widget`      | tour.widgets      | 2     |
-| `/tasks/activities`                  | tour.activities   | 3     |
-| `/tasks/board`                       | tour.board        | 4     |
-| `/tasks/plan`                        | tour.plan         | 8     |
-| `/tasks/review`                      | tour.review       | 3     |
-| `/tasks/todo`                        | tour.toDo         | 5     |
+| Screen                               | Tour                        | Steps |
+| ------------------------------------ | --------------------------- | ----- |
+| `/`                                  | tour.ontoplano              | 8     |
+| `/admin`                             | **none**                    | —     |
+| `/finance/bills`                     | tour.bills                  | 3     |
+| `/finance/ledgers`                   | tour.ledgers                | 3     |
+| `/finance/rules`                     | tour.rulesRoom              | 4     |
+| `/goals`                             | tour.goals                  | 4     |
+| `/health/habits`                     | tour.habits                 | 3     |
+| `/health/recipes`                    | tour.recipes                | 5     |
+| `/health/workouts`                   | tour.workouts               | 2     |
+| `/inventory/stock`                   | tour.shopping               | 4     |
+| `/notebooks`                         | tour.notebooks              | 6     |
+| `/notebooks/diary`                   | tour.diary                  | 5     |
+| `/notebooks/ideas`                   | tour.ideas                  | 3     |
+| `/notebooks/people`                  | tour.people                 | 3     |
+| `/notebooks/tags`                    | tour.tags                   | 2     |
+| `/notebooks/weekly`                  | rooms.notebooks.tabs.weekly | 3     |
+| `/settings/account`                  | tour.account                | 3     |
+| `/settings/integrations/connections` | tour.integrations           | 3     |
+| `/settings/integrations/widget`      | tour.widgets                | 2     |
+| `/tasks/activities`                  | tour.activities             | 3     |
+| `/tasks/board`                       | tour.board                  | 4     |
+| `/tasks/plan`                        | tour.plan                   | 8     |
+| `/tasks/review`                      | tour.review                 | 3     |
+| `/tasks/todo`                        | tour.toDo                   | 5     |
 
 Toured as well, though nothing obliges them to be — a screen reached from
 a link rather than from the navigation:
 
-- `/finance/bills` — tour.bills
 - `/media/audios` — tour.recordings
 - `/media/gallery` — tour.gallery
 - `/reminders` — tour.reminders
@@ -76,6 +78,13 @@ at the button that reopens it, so it is not listed here.
 2. tour.theStatementIsTheRecord
 3. tour.rulesDoTheSorting
 
+### `/finance/rules` — tour.rulesRoom
+
+1. tour.rulesSortWhatArrives
+2. tour.rulesCategoriesTakeTurns
+3. tour.rulesTagsPileUp
+4. tour.rulesTheCountOpensTheLines
+
 ### `/goals` — tour.goals
 
 1. tour.whatTheWeekIsFor
@@ -107,6 +116,7 @@ at the button that reopens it, so it is not listed here.
 1. tour.twoListsOnePage
 2. tour.whichListAndWhereIt
 3. tour.boughtAndBackAgain
+4. tour.inventoryTheTrip
 
 ### `/media/audios` — tour.recordings
 
@@ -153,6 +163,12 @@ at the button that reopens it, so it is not listed here.
 
 1. tour.oneSetOfLabelsFor
 2. tour.renameOneAndItChanges
+
+### `/notebooks/weekly` — rooms.notebooks.tabs.weekly
+
+1. tour.weeklyOpenTitle
+2. tour.weeklyNewTitle
+3. tour.weeklyListTitle
 
 ### `/reminders` — tour.reminders
 

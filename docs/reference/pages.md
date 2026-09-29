@@ -11,7 +11,7 @@ own write surface, the way the endpoints in [the API](api.md) are the
 write surface for everything else; both end up calling the same
 [services](services.md).
 
-**64 pages, 206 actions.**
+**64 pages, 208 actions.**
 
 | Page                                 | Actions                                                                                                                                                                                                                                                                                                                                                                                              |
 | ------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -54,7 +54,7 @@ write surface for everything else; both end up calling the same
 | `/notebooks/ideas`                   | `batch`                                                                                                                                                                                                                                                                                                                                                                                              |
 | `/notebooks/people`                  | `create`, `update`, `setPicture`, `removePicture`, `setPanelWidth`, `delete`                                                                                                                                                                                                                                                                                                                         |
 | `/notebooks/tags`                    | `save`, `delete`                                                                                                                                                                                                                                                                                                                                                                                     |
-| `/notebooks/weekly`                  | —                                                                                                                                                                                                                                                                                                                                                                                                    |
+| `/notebooks/weekly`                  | `save`, `remove`                                                                                                                                                                                                                                                                                                                                                                                     |
 | `/oauth/authorize`                   | `allow`, `deny`                                                                                                                                                                                                                                                                                                                                                                                      |
 | `/oauth/connected`                   | —                                                                                                                                                                                                                                                                                                                                                                                                    |
 | `/offline`                           | —                                                                                                                                                                                                                                                                                                                                                                                                    |
@@ -161,12 +161,7 @@ never corrected is a statement somebody stops trusting.
 
 ### `/finance/rules`
 
-The rules, and what they are currently doing.
-
-A rule is only as good as what it catches, so the page shows the count
-beside each one and the shape of the whole month's spending next to them:
-writing a pattern and watching the pie move is the loop this screen is
-for.
+The most lines a rule's "which lines" panel lists.
 
 ### `/health/recipes`
 
@@ -303,11 +298,7 @@ how much work each is doing, and the three things that can be done to one.
 
 ### `/notebooks/weekly`
 
-Every week you have written about, in one place.
-
-The weekly note was reachable only by navigating to the week it belonged to,
-which is a thing nobody does — so the one running account of a year this app
-keeps was write-only. It is writing, so it belongs where the writing is.
+A civil date. Anything else would quietly fall back to this week.
 
 ### `/oauth/authorize`
 
