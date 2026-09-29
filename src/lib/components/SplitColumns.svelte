@@ -194,10 +194,18 @@
 		content: '';
 		position: absolute;
 		inset-block: 0;
-		left: 50%;
+		left: 0;
 		width: 1px;
-		transform: translateX(-50%);
 		background-color: var(--color-gray-200);
+	}
+
+	/*
+	 * The rule is the strip's left edge, not its middle: a selected row in the
+	 * left column fills to the column's edge, and a rule half a strip further
+	 * on left a band of white between the two. The grip sits on the rule.
+	 */
+	.split-handle.is-seam::after {
+		left: 0.5px;
 	}
 
 	.split-handle::after {
@@ -211,12 +219,26 @@
 		border-radius: calc(var(--grip-thickness) / 2);
 		background-color: var(--color-gray-500);
 		opacity: 0.6;
-		transition: opacity 120ms ease;
+		transition:
+			opacity 120ms ease,
+			background-color 120ms ease;
+	}
+
+	/*
+	 * On a seam the grip is quiet until it is wanted: a thicker stretch of the
+	 * rule, in the rule's own family of grey, rather than a dark bar floating
+	 * in the middle of the room. The pointer over it, the keyboard on it or a
+	 * hand dragging it bring the bar up to full strength.
+	 */
+	.split-handle.is-seam::after {
+		background-color: var(--color-gray-300);
+		opacity: 1;
 	}
 
 	.split-handle:hover::after,
 	.split-handle:focus-visible::after,
 	.split-handle.is-dragging::after {
+		background-color: var(--color-gray-500);
 		opacity: 1;
 	}
 

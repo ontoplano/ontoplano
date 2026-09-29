@@ -27,6 +27,7 @@
 	import FormGrid from '$lib/components/FormGrid.svelte';
 	import Field from '$lib/components/Field.svelte';
 	import { autofocus } from '$lib/actions/autofocus';
+	import { packed } from '$lib/actions/packed';
 	import type { PageServerData, ActionData } from './$types';
 	import { SECTION_COLORS, CATEGORY_FALLBACK_COLOR } from '$lib/colors.js';
 	import { cardById, type DashboardCardId } from '$lib/dashboard.js';
@@ -1370,9 +1371,11 @@
 		<!--
 		`grid-flow-dense` so a half-width card fills a gap a full-width one left
 		beside it. On a sparse account, where most cards are one line, the
-		difference is a screen of empty space or none.
+		difference is a screen of empty space or none. `packed` lets a card start
+		under the one above it rather than under the tallest card of that row.
 	-->
 		<div
+			use:packed
 			class="grid grid-flow-row-dense grid-cols-1 items-start gap-4 md:grid-cols-2 2xl:grid-cols-3"
 			data-tour="dash-cards"
 		>

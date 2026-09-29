@@ -1019,7 +1019,7 @@
 })}
 	{@const target = row.id ?? -1}
 	<div
-		class="group relative flex items-center pr-4 {location === row.id
+		class="edge-to-edge group relative flex items-center pr-4 {location === row.id
 			? 'bg-gray-100'
 			: 'hover:bg-gray-50'} {dragOver === target ? 'kb-cursor' : ''}"
 		style="padding-left: {row.depth * PLACE_INDENT_REM}rem"

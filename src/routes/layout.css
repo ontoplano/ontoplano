@@ -170,6 +170,21 @@ html:not([data-style='playful']) *::after {
 }
 
 /*
+ * No number spinners anywhere. A number is typed and the arrow keys step it;
+ * the platform's five-pixel arrows were somebody else's chrome in every field.
+ * See `NumberBox`, and `Counter` where nudging is the point.
+ */
+input[type='number'] {
+	appearance: textfield;
+}
+
+input[type='number']::-webkit-inner-spin-button,
+input[type='number']::-webkit-outer-spin-button {
+	appearance: none;
+	margin: 0;
+}
+
+/*
  * Except a radio button.
  *
  * Its roundness is not decoration: it is the only thing telling you that these

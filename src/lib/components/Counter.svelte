@@ -224,6 +224,23 @@
 		opacity: 0.25;
 	}
 
+	/*
+	 * A thumb's square, whatever row the counter stands in: a row's actions
+	 * are 28px under a cursor and the steps followed them down, and a table's
+	 * 36px icon only grew in height. Down a rail the width stays the rail's,
+	 * so the row's words keep their column.
+	 */
+	@media (pointer: coarse) {
+		.counter .counter-step {
+			width: var(--control-touch);
+			height: var(--control-touch);
+		}
+
+		.counter.counter-vertical .counter-step {
+			width: 2.25rem;
+		}
+	}
+
 	.counter-value {
 		display: inline-flex;
 		align-items: baseline;
@@ -250,7 +267,7 @@
 	 * Down a row's edge the buttons are the thumb's targets, and a field as
 	 * tall as them would make every row a third taller on a phone.
 	 */
-	.counter.counter-vertical .counter-value input {
+	.counter.counter-vertical .counter-value input:not([type='hidden']) {
 		min-height: 0;
 	}
 
