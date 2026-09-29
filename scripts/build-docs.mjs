@@ -1679,6 +1679,35 @@ const built = new Map();
 for (const page of [...WRITTEN, ...PAGES]) built.set(page.file, await format(page.build()));
 built.set('README.md', await format(indexPage(PAGES, WRITTEN)));
 
+const tag = releaseTag();
+const blind = tag === null;
+const NAMES_THE_RELEASE = new Set(['running-it.md']);
+
+/**
+ * Whether a committed page names a release this clone has never heard of.
+ *
+ * The other half of the same hole. A clone whose tags are behind generates
+ * the install page for the older release it knows about, and the committed
+ * page — written after the newer one was tagged — then reads as stale. It
+ * is not: the clone is. Regenerating there rewrites the page backwards to a
+ * version that is no longer current, and in a diff that looks like an
+ * ordinary regeneration. It has happened twice.
+ */
+const ordinal = (v) => v.split('.').map(Number);
+const newerThanUs = (text) => {
+	if (blind) return false;
+	const named = [...text.matchAll(/releases\/download\/v([0-9]+(?:\.[0-9]+)*)/g)].map((m) => m[1]);
+	const mine = ordinal(versionOf(tag));
+	return named.some((v) => {
+		const theirs = ordinal(v);
+		for (let i = 0; i < Math.max(mine.length, theirs.length); i++) {
+			if ((theirs[i] ?? 0) > (mine[i] ?? 0)) return true;
+			if ((theirs[i] ?? 0) < (mine[i] ?? 0)) return false;
+		}
+		return false;
+	});
+};
+
 if (CHECK) {
 	/*
 	 * A clone with no tags cannot know what the newest release is.
@@ -1696,37 +1725,6 @@ if (CHECK) {
 	 * path rather than ours — and a fork gets a check that passes rather than
 	 * one that is wrong.
 	 */
-	const tag = releaseTag();
-	const blind = tag === null;
-	const NAMES_THE_RELEASE = new Set(['running-it.md']);
-
-	/**
-	 * Whether a committed page names a release this clone has never heard of.
-	 *
-	 * The other half of the same hole. A clone whose tags are behind generates
-	 * the install page for the older release it knows about, and the committed
-	 * page — written after the newer one was tagged — then reads as stale. It
-	 * is not: the clone is. Regenerating there rewrites the page backwards to a
-	 * version that is no longer current, and in a diff that looks like an
-	 * ordinary regeneration. It has happened twice.
-	 */
-	const ordinal = (v) => v.split('.').map(Number);
-	const newerThanUs = (text) => {
-		if (blind) return false;
-		const named = [...text.matchAll(/releases\/download\/v([0-9]+(?:\.[0-9]+)*)/g)].map(
-			(m) => m[1]
-		);
-		const mine = ordinal(versionOf(tag));
-		return named.some((v) => {
-			const theirs = ordinal(v);
-			for (let i = 0; i < Math.max(mine.length, theirs.length); i++) {
-				if ((theirs[i] ?? 0) > (mine[i] ?? 0)) return true;
-				if ((theirs[i] ?? 0) < (mine[i] ?? 0)) return false;
-			}
-			return false;
-		});
-	};
-
 	const stale = [];
 	const unchecked = [];
 	const behind = [];
@@ -1752,8 +1750,8 @@ if (CHECK) {
 	if (behind.length > 0) {
 		console.log(
 			`docs: ${behind.join(', ')} names a release newer than ${tag}, which is the ` +
-				'newest tag this clone has. Not checked, and do not run `yarn docs` here — ' +
-				'it would write the page back to the older release. `git fetch --tags` first.'
+				'newest tag this clone has. Not checked; `yarn docs` keeps it as it is ' +
+				'rather than writing it back to the older release.'
 		);
 	}
 
@@ -1770,10 +1768,29 @@ if (CHECK) {
 		);
 	console.log(`docs: ${built.size - unchecked.length - behind.length} pages up to date`);
 } else {
+	/*
+	 * Never backwards.
+	 *
+	 * A committed install page can name a release newer than the newest tag
+	 * here — a clone that has not fetched tags, or a release branch whose
+	 * version was cut before its tag exists. Regenerating wrote it back to the
+	 * older release every time, and every build left the tree dirty with it.
+	 * So such a page is kept as it is, and said so.
+	 */
+	const kept = new Map();
+	for (const file of NAMES_THE_RELEASE) {
+		const path = join(OUT, file);
+		if (existsSync(path) && newerThanUs(readFileSync(path, 'utf8')))
+			kept.set(file, readFileSync(path, 'utf8'));
+	}
 	rmSync(OUT, { recursive: true, force: true });
 	mkdirSync(OUT, { recursive: true });
-	for (const [file, content] of built) writeFileSync(join(OUT, file), content);
+	for (const [file, content] of built) writeFileSync(join(OUT, file), kept.get(file) ?? content);
 	console.log(`docs: wrote ${built.size} pages to docs/reference/`);
+	if (kept.size > 0)
+		console.log(
+			`docs: kept ${[...kept.keys()].join(', ')} as committed — it names a release newer than ${tag}`
+		);
 
 	/*
 	 * Which release the download links now name, said out loud.
@@ -1785,10 +1802,10 @@ if (CHECK) {
 	 * regeneration in the diff. That happened. One line is the difference
 	 * between noticing and committing it.
 	 */
-	const tag = releaseTag();
-	console.log(
-		tag
-			? `docs: the download links name ${tag} — \`git fetch --tags\` if that is not the newest`
-			: 'docs: no tag in this clone, so the download links point at the releases page'
-	);
+	if (kept.size === 0)
+		console.log(
+			tag
+				? `docs: the download links name ${tag} — \`git fetch --tags\` if that is not the newest`
+				: 'docs: no tag in this clone, so the download links point at the releases page'
+		);
 }

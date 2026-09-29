@@ -131,7 +131,7 @@
 			"mcp": {
 				"create": ["add_habit"],
 				"read": ["habits", "all_habits"],
-				"change": ["change_habit", "tick_habit"],
+				"change": ["change_habit", "tick_habit", "set_habit_count"],
 				"archive": ["archive_habit"],
 				"unarchive": ["unarchive_habit"]
 			},
