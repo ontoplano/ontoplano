@@ -304,6 +304,62 @@ export function rememberPhoneInstance(): void {
 	}
 }
 
+/**
+ * The build's suggestion, as it stood when the chosen address matched it.
+ *
+ * The DEV app suggests the laptop's address on the wifi, and that address
+ * moves. A choice is kept across updates — it is localStorage — so a phone
+ * that took the suggestion once kept opening the old address after a build
+ * that suggested the new one. Writing down that the choice *was* the
+ * suggestion is what lets a later build move it on; an address somebody
+ * typed was never a suggestion and is never touched.
+ */
+const SUGGESTED_AT = 'ontoplano:instance-suggested';
+
+function keptSuggestion(): string | null {
+	if (typeof localStorage === 'undefined') return null;
+	try {
+		return localStorage.getItem(SUGGESTED_AT);
+	} catch {
+		return null;
+	}
+}
+
+function keepSuggestion(url: string): void {
+	if (typeof localStorage === 'undefined') return;
+	try {
+		localStorage.setItem(SUGGESTED_AT, url);
+	} catch {
+		/* nothing to keep in a browser that refuses storage */
+	}
+}
+
+/**
+ * Where a kept choice should go now: the build's new suggestion when the
+ * choice was its old one, the choice itself otherwise.
+ */
+export function followSuggestion(
+	kept: string,
+	suggestedThen: string | null,
+	suggestedNow: string | null
+): string {
+	if (!suggestedNow || !suggestedThen) return kept;
+	return kept === suggestedThen ? suggestedNow : kept;
+}
+
+/**
+ * The kept address, moved on if it was a suggestion this build has replaced —
+ * and written down as the suggestion whenever the two agree, so the next build
+ * can tell.
+ */
+export async function keptInstanceNow(kept: string): Promise<string> {
+	const now = await suggestedInstance();
+	const next = followSuggestion(kept, keptSuggestion(), now);
+	if (next !== kept) rememberInstance(next);
+	if (now && next === now) keepSuggestion(now);
+	return next;
+}
+
 /** Forget it, so the next launch asks again. Leaving an instance does this. */
 export function forgetInstance(): void {
 	if (typeof localStorage === 'undefined') return;

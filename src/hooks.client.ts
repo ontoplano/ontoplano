@@ -28,7 +28,8 @@ import {
 	launchAddress,
 	openingOn,
 	rememberInstance,
-	storedInstance
+	storedInstance,
+	keptInstanceNow
 } from '$lib/instance-choice';
 
 /*
@@ -77,9 +78,13 @@ if (inPhoneApp() && isIsolatedBuild()) {
 		 * the state every fresh install is in. So that one is left to the
 		 * router, in the root layout, where it is one line of `goto`.
 		 */
-		const going = storedInstance();
-		// A widget's tap names the page; the instance is still the one chosen.
-		if (going) void openInstance(going, false, openingOn(going, carried.get(OPENING_PARAM)));
+		const kept = storedInstance();
+		// A widget's tap names the page; the instance is still the one chosen —
+		// moved on first if it was a suggestion this build has replaced.
+		if (kept)
+			void keptInstanceNow(kept).then((going) =>
+				openInstance(going, false, openingOn(going, carried.get(OPENING_PARAM)))
+			);
 	}
 }
 
