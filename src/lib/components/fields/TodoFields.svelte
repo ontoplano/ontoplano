@@ -7,7 +7,6 @@
 	import MoreOptions from '$lib/components/MoreOptions.svelte';
 	import NotebookField from '$lib/components/NotebookField.svelte';
 	import RatingPicker from '$lib/components/RatingPicker.svelte';
-	import RatingIcon from '$lib/components/RatingIcon.svelte';
 	import MarkdownBox from '$lib/components/MarkdownBox.svelte';
 	import PictureAttach from '$lib/components/PictureAttach.svelte';
 	import RecordingAttach from '$lib/components/RecordingAttach.svelte';
@@ -255,7 +254,6 @@
 		was in it. The fold stays, so it can be put away.
 	-->
 	<MoreOptions label={t('fields.todo.urgencyEaseInterest')} count={ratingsSet} open>
-		{#snippet summary()}<RatingIcon />{/snippet}
 		{@render scales()}
 	</MoreOptions>
 {/if}

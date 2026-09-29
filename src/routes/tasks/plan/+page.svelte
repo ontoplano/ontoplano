@@ -45,7 +45,6 @@
 	import NotebookField from '$lib/components/NotebookField.svelte';
 	import MoreOptions from '$lib/components/MoreOptions.svelte';
 	import RatingPicker from '$lib/components/RatingPicker.svelte';
-	import RatingIcon from '$lib/components/RatingIcon.svelte';
 	import { RATINGS } from '$lib/ratings.js';
 	import {
 		MAX_INTERVAL,
@@ -4343,7 +4342,6 @@
 				</FormGrid>
 
 				<MoreOptions label={t('tasks.plan.urgencyEaseInterest')} count={ratingsSet}>
-					{#snippet summary()}<RatingIcon />{/snippet}
 					{#each RATINGS as r (r)}
 						<div class="col-span-12 sm:col-span-4">
 							<RatingPicker rating={r} bind:value={formRatings[r]} />

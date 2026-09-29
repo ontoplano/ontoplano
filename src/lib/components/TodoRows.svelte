@@ -15,8 +15,6 @@
 	import SortControl from '$lib/components/SortControl.svelte';
 	import { agoOf, civilOf, momentOf } from '$lib/when';
 	import {
-		RATING_ICONS,
-		RATING_LABELS,
 		RATING_ORDER,
 		compareByPriority,
 		compareByRatings,
@@ -50,6 +48,7 @@
 	import FilterBar from '$lib/components/FilterBar.svelte';
 	import RatingBadges from '$lib/components/RatingBadges.svelte';
 	import RatingPress from '$lib/components/RatingPress.svelte';
+	import RatingTable from '$lib/components/RatingTable.svelte';
 	import RowCard from '$lib/components/RowCard.svelte';
 	import CategoryMark from '$lib/components/CategoryMark.svelte';
 	import TickBox from '$lib/components/TickBox.svelte';
@@ -1257,28 +1256,6 @@
 
 <svelte:window onkeydown={handleKeydown} />
 
-<!--
-	The ratings being changed, as numbers — in the box beside the card and at
-	the head of the phone's sheet alike.
--->
-{#snippet pendingRatings(values: RatingValues)}
-	<table class="tabular text-sm">
-		<tbody>
-			{#each RATING_ORDER as rating (rating)}
-				<tr>
-					<th class="py-0.5 pr-4 text-left font-normal">
-						<span class="inline-flex items-center gap-1.5">
-							<Icon name={RATING_ICONS[rating]} size={12} />
-							{t(RATING_LABELS[rating])}
-						</span>
-					</th>
-					<td class="py-0.5 text-right">{values[rating] ?? '—'}</td>
-				</tr>
-			{/each}
-		</tbody>
-	</table>
-{/snippet}
-
 {#if rerating}
 	{@const held = rerating}
 	<!-- In a box of its own, for the same reason as the untag form below. -->
@@ -1317,7 +1294,7 @@
 					<Icon name="edit" size={12} />
 				</button>
 			{/snippet}
-			{@render pendingRatings(held.values)}
+			<RatingTable values={held.values} />
 			<div class="mt-2 flex flex-col items-start gap-1 text-sm">
 				{@render underFilters(reratingFilteredPlace)}
 				{@render inQueue(reratingPlace)}
@@ -1338,7 +1315,7 @@
 	{#if rerating?.sheet}
 		{@const held = rerating}
 		<div class="flex flex-col items-center gap-4">
-			{@render pendingRatings(held.values)}
+			<RatingTable values={held.values} />
 			<RatingPress
 				values={held.values}
 				height="min(45dvh, 20rem)"

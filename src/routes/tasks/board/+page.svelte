@@ -1614,7 +1614,6 @@
 					{/if}
 
 					<MoreOptions label={t('tasks.board.urgencyEaseInterest')} count={editRatingsSet}>
-						{#snippet summary()}<RatingIcon />{/snippet}
 						{#each RATINGS as r (r)}
 							<div class="col-span-12">
 								<RatingPicker rating={r} bind:value={editRatings[r]} />

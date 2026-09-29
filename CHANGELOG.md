@@ -28,6 +28,7 @@ releases mattered.
 - Where a task would land under the current filters is said in blue words beside the filter icon, not in a pill.
 - The Untag and rating-confirm buttons beside a task can be pressed straight away.
 - Android 12 and later: a notebook widget is placed on the home screen straight away and says "Tap to choose a notebook", rather than depending on the setup page to keep it there.
+- Hovering a task's rating bars shows each rating with its icon; the fold that holds the three sliders is named in words.
 
 ## 0.184.6 — 2026-09-29
 
