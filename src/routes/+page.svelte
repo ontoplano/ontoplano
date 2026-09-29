@@ -27,7 +27,6 @@
 	import FormGrid from '$lib/components/FormGrid.svelte';
 	import Field from '$lib/components/Field.svelte';
 	import { autofocus } from '$lib/actions/autofocus';
-	import { packed } from '$lib/actions/packed';
 	import type { PageServerData, ActionData } from './$types';
 	import { SECTION_COLORS, CATEGORY_FALLBACK_COLOR } from '$lib/colors.js';
 	import { cardById, type DashboardCardId } from '$lib/dashboard.js';
@@ -1371,12 +1370,15 @@
 		<!--
 		`grid-flow-dense` so a half-width card fills a gap a full-width one left
 		beside it. On a sparse account, where most cards are one line, the
-		difference is a screen of empty space or none. `packed` lets a card start
-		under the one above it rather than under the tallest card of that row.
+		difference is a screen of empty space or none.
+
+		Cards side by side share a row and stretch to its height, so their tops
+		and bottoms line up. They used to be packed like a masonry wall — each
+		card starting under the one above it — which left the headers of one
+		row at three different heights and read as a layout that had slipped.
 	-->
 		<div
-			use:packed
-			class="grid grid-flow-row-dense grid-cols-1 items-start gap-4 md:grid-cols-2 2xl:grid-cols-3"
+			class="dash-cards grid grid-flow-row-dense grid-cols-1 gap-4 md:grid-cols-2 2xl:grid-cols-3"
 			data-tour="dash-cards"
 		>
 			{#each layout as id (id)}
@@ -1504,6 +1506,11 @@
 	 */
 	.being-arranged :global(.card-actions) {
 		visibility: hidden;
+	}
+
+	/* The card fills its cell, so a row's cards end on one line. */
+	.dash-cards > [data-card] > :global(section) {
+		height: 100%;
 	}
 
 	/*

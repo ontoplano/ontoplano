@@ -25,6 +25,7 @@ releases mattered.
 - A recording's notes field is called Notes.
 - The phone app opening a server instance — from its icon or from a widget — no longer shows the on-device look while it gets there.
 - The example plugins, the recording transcriber among them, live together in `ontoplano-plugins/`; the transcriber reads its settings from a `.env` file beside it.
+- Home's cards line up in rows: cards side by side start and end at the same height instead of stacking at staggered heights.
 
 ## 0.184.10 — 2026-09-29
 
