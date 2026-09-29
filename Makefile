@@ -1098,6 +1098,15 @@ deploy-local: build db-migrate
 
 ## the app and its jobs as a systemd user service
 install-service: deploy-local
+	@$(MAKE) -s install-unit
+
+# The unit alone, over whatever is already in $(PROD_DIR) — nothing is built.
+# For a server that receives its build from somewhere else: building there
+# means a production box compiling for minutes, under memory it is also
+# serving from.
+## the systemd user service, over the build already deployed
+install-unit:
+	@[ -d $(PROD_DIR)/build ] || { echo "Nothing deployed in $(PROD_DIR) yet — deploy a build first."; exit 1; }
 	@echo "Installing ontoplano systemd service..."
 	@[ -n "$(NODE_BIN)" ] || { echo "No node on PATH — nothing to put in the unit."; exit 1; }
 	@# Fails here, with the reason, rather than as a crash loop at 3am.
