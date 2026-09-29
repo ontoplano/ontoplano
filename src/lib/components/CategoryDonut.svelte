@@ -78,16 +78,22 @@
 			>
 		</svg>
 
-		<!-- Under the ring when there is no room beside it, rather than a column
-		     of names cut to one letter. -->
-		<ul class="min-w-56 flex-1 space-y-1">
+		<!--
+			The legend in columns as wide as a line of it needs, as many as the
+			width holds — a single column across a wide card put each name half
+			a screen from its amount. Under the ring when there is no room beside
+			it, rather than a column of names cut to one letter.
+		-->
+		<ul class="min-w-56 flex-1 columns-[15rem] gap-x-8">
 			{#each slices as slice (slice.name)}
-				<li class="flex items-center gap-2 text-sm">
-					<span class="min-w-0 flex-1"><CategoryMark name={slice.name} color={slice.color} /></span>
-					<span class="shrink-0 text-xs text-gray-500 tabular-nums">
+				<li class="flex max-w-72 break-inside-avoid items-center gap-2 py-0.5 text-sm">
+					<span class="flex min-w-0 flex-1"
+						><CategoryMark name={slice.name} color={slice.color} /></span
+					>
+					<span class="w-9 shrink-0 text-right text-xs text-gray-500 tabular-nums">
 						{Math.round(slice.share * 100)}%
 					</span>
-					<span class="w-24 shrink-0 text-right text-gray-900 tabular-nums">
+					<span class="w-20 shrink-0 text-right text-gray-900 tabular-nums">
 						{formatMoney(slice.outCents, currency)}
 					</span>
 				</li>

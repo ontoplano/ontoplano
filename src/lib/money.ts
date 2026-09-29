@@ -87,7 +87,7 @@ export function normaliseCurrency(value: unknown): Currency | null {
  * and króna have none, and dinar has a thousand. A price stored a hundred times
  * too small is not a rounding error.
  */
-function minorUnits(currency: Currency): number {
+export function minorUnits(currency: Currency): number {
 	try {
 		const digits = new Intl.NumberFormat('en', {
 			style: 'currency',

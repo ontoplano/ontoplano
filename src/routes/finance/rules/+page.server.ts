@@ -2,9 +2,7 @@ import type { IsolatedEvent } from '$lib/isolated/routes';
 import { buildCtx } from '$lib/services/ctx';
 import { toActionFailure } from '$lib/http-errors';
 import { getCurrency } from '$lib/services/settings';
-import { listLedgers } from '$lib/services/ledgers';
 import {
-	categorySlices,
 	createRule,
 	deleteRule,
 	listMovements,
@@ -15,22 +13,19 @@ import {
 	updateRule
 } from '$lib/services/statements';
 
+/** The most lines a rule's "which lines" panel lists. */
+const LINES_SHOWN = 200;
+
 /**
  * The rules, and what they are currently doing.
  *
  * A rule is only as good as what it catches, so the page shows the count
- * beside each one and the shape of the whole month's spending next to them:
- * writing a pattern and watching the pie move is the loop this screen is
- * for.
+ * beside each one — every line in every ledger, the same lines the counts
+ * are taken over — and, pressed, the lines themselves. Where the money went
+ * is Insights' question, with its own window and ledger.
  */
 export const load = async ({ locals, url }: IsolatedEvent) => {
 	const ctx = buildCtx(locals.user!.id);
-	const ledgerId = Number(url.searchParams.get('ledger') || 0) || undefined;
-	const months = Number(url.searchParams.get('months') || 0) || 12;
-	const from = new Date(Date.UTC(ctx.now.getUTCFullYear(), ctx.now.getUTCMonth() - (months - 1), 1))
-		.toISOString()
-		.slice(0, 10);
-	const filter = { ledgerId, from };
 
 	/*
 	 * What a rule is actually catching.
@@ -48,8 +43,7 @@ export const load = async ({ locals, url }: IsolatedEvent) => {
 	const lines =
 		shown || showingUncategorized
 			? listMovements(ctx, {
-					...filter,
-					limit: 200,
+					limit: LINES_SHOWN,
 					...(showingUncategorized
 						? { category: UNCATEGORIZED }
 						: shown!.kind === 'category'
@@ -63,12 +57,8 @@ export const load = async ({ locals, url }: IsolatedEvent) => {
 		showingLabel: showingUncategorized ? UNCATEGORIZED : (shown?.name ?? ''),
 		lines,
 		currency: getCurrency(ctx.userId),
-		ledgers: listLedgers(ctx),
-		ledgerId: ledgerId ?? 0,
-		months,
 		rules,
-		slices: categorySlices(ctx, filter),
-		unsorted: uncategorizedCount(ctx, filter)
+		unsorted: uncategorizedCount(ctx)
 	};
 };
 

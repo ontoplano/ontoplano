@@ -49,7 +49,12 @@
 		 * Draw its own disclosure for the archived bills. Off where the screen
 		 * has a filter strip that carries the toggle instead.
 		 */
-		archiveToggle = true
+		archiveToggle = true,
+		/**
+		 * Where j/k stands, counting the active bills and then the archived
+		 * ones that are showing. -1 for nowhere, and nowhere by default.
+		 */
+		cursor = -1
 	}: {
 		bills: Listed[];
 		currency: Currency;
@@ -60,6 +65,7 @@
 		empty?: Snippet;
 		showArchived?: boolean;
 		archiveToggle?: boolean;
+		cursor?: number;
 	} = $props();
 
 	const active = $derived(bills.filter((b) => b.active));
@@ -87,7 +93,7 @@
 		showForm = true;
 	}
 
-	function openEdit(id: number) {
+	export function openEdit(id: number) {
 		editingId = id;
 		formRhythm = bills.find((b) => b.id === id)?.rhythm ?? 'monthly';
 		formError = null;
@@ -99,8 +105,9 @@
 	const formId = `bill-form-${uid}`;
 </script>
 
-{#snippet row(bill: Listed)}
+{#snippet row(bill: Listed, at: number)}
 	<BillRow
+		here={at === cursor}
 		{bill}
 		{currency}
 		{actions}
@@ -121,7 +128,7 @@
 			{@render empty?.()}
 		{:else}
 			<ul class="divide-y divide-gray-200" data-tour="bill-list">
-				{#each active as bill (bill.id)}{@render row(bill)}{/each}
+				{#each active as bill, i (bill.id)}{@render row(bill, i)}{/each}
 			</ul>
 		{/if}
 
@@ -138,13 +145,13 @@
 				</button>
 				{#if showArchived}
 					<ul class="mt-2 divide-y divide-gray-200 border-t border-gray-200">
-						{#each archived as bill (bill.id)}{@render row(bill)}{/each}
+						{#each archived as bill, i (bill.id)}{@render row(bill, active.length + i)}{/each}
 					</ul>
 				{/if}
 			</div>
 		{:else if archived.length > 0 && showArchived}
 			<ul class="divide-y divide-gray-200 border-t border-gray-200">
-				{#each archived as bill (bill.id)}{@render row(bill)}{/each}
+				{#each archived as bill, i (bill.id)}{@render row(bill, active.length + i)}{/each}
 			</ul>
 		{/if}
 	</div>

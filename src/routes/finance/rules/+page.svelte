@@ -1,18 +1,22 @@
 <script lang="ts">
 	import { useWhen } from '$lib/when-context.svelte';
 	import { civilOf } from '$lib/when';
-	import Picker from '$lib/components/Picker.svelte';
 	import { enhance } from '$lib/enhance';
 	import CategoryMark from '$lib/components/CategoryMark.svelte';
 	import RoomSurface from '$lib/components/RoomSurface.svelte';
 	import EmptyState from '$lib/components/EmptyState.svelte';
 	import Field from '$lib/components/Field.svelte';
 	import FormGrid from '$lib/components/FormGrid.svelte';
+	import FilterBar from '$lib/components/FilterBar.svelte';
+	import SearchField from '$lib/components/SearchField.svelte';
+	import ShowingCount from '$lib/components/ShowingCount.svelte';
 	import { setRoomAction } from '$lib/room-action.svelte';
+	import { browsable } from '$lib/browse.svelte';
+	import { listCursor } from '$lib/actions/list-cursor';
+	import { getAction } from '$lib/shortcuts';
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import Card from '$lib/components/Card.svelte';
-	import CategoryDonut from '$lib/components/CategoryDonut.svelte';
 	import Icon from '$lib/components/Icon.svelte';
 	import Modal from '$lib/components/Modal.svelte';
 	import OneLine from '$lib/components/OneLine.svelte';
@@ -27,11 +31,48 @@
 
 	let { data, form }: { data: PageServerData; form: ActionData } = $props();
 
+	const ROOM = '/finance/rules';
+	/** What `showing` says for the lines no category claims. */
+	const UNSORTED = 'none';
+	/** The panel of lines behind a count. */
+	const LINES_ID = 'rule-lines';
+
 	const currency = $derived(data.currency as Currency);
 	type Rule = PageServerData['rules'][number];
 
-	const categories = $derived(data.rules.filter((r) => r.kind === 'category'));
-	const tags = $derived(data.rules.filter((r) => r.kind === 'tag'));
+	/** Finding a rule by its name or by what its pattern says. */
+	let looking = $state('');
+	const needle = $derived(looking.trim().toLowerCase());
+	const matching = $derived(
+		needle === ''
+			? data.rules
+			: data.rules.filter(
+					(r) => r.name.toLowerCase().includes(needle) || r.pattern.toLowerCase().includes(needle)
+				)
+	);
+	const categories = $derived(matching.filter((r) => r.kind === 'category'));
+	const tags = $derived(matching.filter((r) => r.kind === 'tag'));
+	/** The two panes: categories partition, tags overlap. */
+	const groups = $derived([
+		{
+			kind: 'category' as const,
+			title: t('finance.rules.categories'),
+			blurb: t('finance.rules.aLineBelongsToThe'),
+			rules: categories,
+			offset: 0,
+			tour: 'rule-categories'
+		},
+		{
+			kind: 'tag' as const,
+			title: t('finance.rules.tags'),
+			blurb: t('finance.rules.everyTagThatMatchesApplies'),
+			rules: tags,
+			offset: categories.length,
+			tour: 'rule-tags'
+		}
+	]);
+	/** Every row on screen, top to bottom, for j and k. */
+	const walked = $derived([...categories, ...tags]);
 
 	/** The rule being edited, or the kind of the one being written. */
 	let editingId: number | null = $state(null);
@@ -59,186 +100,233 @@
 	}
 
 	/* This screen's one verb, drawn by the room's bar — see $lib/room-action. */
-	setRoomAction(() => ({ label: t('finance.rules.newRule'), run: () => openNew('category') }));
+	setRoomAction(() => ({
+		label: t('finance.rules.newRule'),
+		run: () => openNew('category'),
+		kbd: 'n'
+	}));
 
-	function filter(changes: { ledger?: number; months?: number; showing?: string }) {
-		const params: [string, string][] = [];
-		const ledger = changes.ledger ?? data.ledgerId;
-		const months = changes.months ?? data.months;
-		const showing = changes.showing ?? data.showing;
-		if (ledger) params.push(['ledger', String(ledger)]);
-		if (months !== 12) params.push(['months', String(months)]);
-		if (showing) params.push(['showing', showing]);
+	function show(showing: string) {
+		const params = showing ? `?${new URLSearchParams({ showing })}` : '';
 		// The path is resolved; the rule cannot see through the appended query.
 		// eslint-disable-next-line svelte/no-navigation-without-resolve
-		void goto(`${resolve('/finance/rules')}?${new URLSearchParams(params)}`, { noScroll: true });
+		void goto(`${resolve('/finance/rules')}${params}`, { noScroll: true }).then(() => {
+			// The lines open under every rule, which on a long list is below the
+			// fold: bring them up, or the press looks like it did nothing.
+			if (showing) document.getElementById(LINES_ID)?.scrollIntoView({ block: 'start' });
+		});
 	}
 
-	const WINDOWS = [3, 6, 12, 24];
+	let cursor = $state(-1);
+	browsable(() => ({
+		items: () => walked,
+		cursor: () => cursor,
+		moveTo: (i) => (cursor = i),
+		open: (i) => show(data.showing === String(walked[i].id) ? '' : String(walked[i].id)),
+		edit: (i) => openEdit(walked[i].id)
+	}));
+
+	function onkeydown(event: KeyboardEvent) {
+		if (event.metaKey || event.ctrlKey || event.altKey) return;
+		const target = event.target;
+		if (
+			document.querySelector('dialog[open]') ||
+			target instanceof HTMLInputElement ||
+			target instanceof HTMLTextAreaElement ||
+			target instanceof HTMLSelectElement ||
+			(target instanceof HTMLElement && target.isContentEditable)
+		)
+			return;
+		const action = getAction(ROOM, event.key);
+		if (action === 'new') {
+			event.preventDefault();
+			openNew('category');
+		} else if (action === 'delete' && cursor >= 0 && cursor < walked.length) {
+			// Arms the confirmation; it never deletes on its own.
+			event.preventDefault();
+			deleting = walked[cursor];
+		}
+	}
 </script>
 
+<svelte:window {onkeydown} />
+
 <!--
-	One surface: what the totals are counted over along its top, where the
-	money went under that, and the rules that sorted it as two panes of the
-	same object — categories partition, tags overlap.
+	One surface: finding a rule along its top, then the rules as two panes of
+	the same object, one above the other — categories partition, tags overlap
+	— and under them the lines behind whichever count was pressed.
 -->
 <RoomSurface>
 	{#snippet tools()}
-		<div class="flex w-full flex-wrap items-center gap-2">
-			<Picker
-				value={String(data.ledgerId)}
-				options={[
-					{ value: '0', label: t('finance.rules.everyLedger') },
-					...data.ledgers.map((l) => ({ value: String(l.id), label: l.name }))
-				]}
-				onpick={(next) => filter({ ledger: Number(next) })}
-				label={t('finance.rules.everyLedger')}
-			/>
-			<Picker
-				value={String(data.months)}
-				options={WINDOWS.map((w) => ({
-					value: String(w),
-					label: t('finance.rules.lastMonths', { w })
-				}))}
-				onpick={(next) => filter({ months: Number(next) })}
-				label={t('finance.rules.lastMonths', { w: data.months })}
-			/>
-			{#if data.unsorted > 0}
-				<a href={resolve('/finance/ledgers')} class="btn btn-sm btn-quiet ml-auto"
-					>{t('finance.rules.uncategorized', { unsorted: data.unsorted })}</a
+		<FilterBar
+			name="rules"
+			on={needle !== '' || data.showing === UNSORTED}
+			summary={[
+				looking.trim(),
+				data.showing === UNSORTED
+					? t('finance.ledgers.uncategorizedCount', { count: data.unsorted })
+					: ''
+			]
+				.filter(Boolean)
+				.join(', ')}
+			onclear={() => {
+				looking = '';
+				if (data.showing === UNSORTED) show('');
+			}}
+		>
+			{#snippet lead()}
+				<SearchField bind:value={looking} label={t('finance.rules.searchRules')} />
+			{/snippet}
+			{#snippet count()}
+				<ShowingCount
+					total={data.rules.length}
+					shown={matching.length}
+					said={(count) => t('finance.rules.showingCount', { count })}
+				/>
+			{/snippet}
+			{#snippet inline()}
+				<!-- The lines no category claims, the way Ledgers narrows to them: the
+				     same words, pressed or not. They open under the rules. -->
+				<button
+					type="button"
+					class="btn btn-sm shrink-0"
+					aria-pressed={data.showing === UNSORTED}
+					hidden={data.unsorted === 0 && data.showing !== UNSORTED}
+					onclick={() => show(data.showing === UNSORTED ? '' : UNSORTED)}
 				>
-			{:else}
-				<span class="ml-auto text-xs text-gray-500">{t('finance.rules.everyOutgoingLineHasA')}</span
-				>
-			{/if}
-		</div>
+					{t('finance.ledgers.uncategorizedCount', { count: data.unsorted })}
+				</button>
+			{/snippet}
+		</FilterBar>
 	{/snippet}
-
-	<!-- What the rules add up to. The legend reads across to its amounts, so it
-	     is kept to a width where the two are still one line. -->
-	<Card title={t('finance.rules.whereItWent')} pane class="border-b border-gray-200">
-		<div class="max-w-3xl">
-			<CategoryDonut slices={data.slices} {currency} />
-		</div>
-	</Card>
 
 	<FormError message={form?.message} />
 
-	<div class="grid grid-cols-1 lg:grid-cols-2">
-		{#each [{ kind: 'category' as const, title: t('finance.rules.categories'), rules: categories, blurb: t('finance.rules.aLineBelongsToThe') }, { kind: 'tag' as const, title: t('finance.rules.tags'), rules: tags, blurb: t('finance.rules.everyTagThatMatchesApplies') }] as group, g (group.kind)}
-			<Card
-				title={group.title}
-				description={group.blurb}
-				flush
-				pane
-				class={g > 0 ? 'border-t border-gray-200 lg:border-t-0 lg:border-l' : ''}
-			>
-				{#snippet actions()}
-					<button
-						type="button"
-						class="icon-btn"
-						title={group.kind === 'category'
-							? t('finance.rules.newCategory')
-							: t('finance.rules.newTag')}
-						aria-label={group.kind === 'category'
-							? t('finance.rules.newCategory')
-							: t('finance.rules.newTag')}
-						onclick={() => openNew(group.kind)}
-					>
-						<Icon name="plus" />
-					</button>
-				{/snippet}
-				{#if group.rules.length === 0}
-					<EmptyState compact icon="sort" title={t('finance.rules.noneYet')} />
+	{#each groups as group, g (group.kind)}
+		<Card
+			title={group.title}
+			description={group.blurb}
+			flush
+			pane
+			dataTour={group.tour}
+			class={g > 0 ? 'border-t border-gray-200' : ''}
+		>
+			{#snippet actions()}
+				<button
+					type="button"
+					class="icon-btn"
+					title={group.kind === 'category'
+						? t('finance.rules.newCategory')
+						: t('finance.rules.newTag')}
+					aria-label={group.kind === 'category'
+						? t('finance.rules.newCategory')
+						: t('finance.rules.newTag')}
+					onclick={() => openNew(group.kind)}
+				>
+					<Icon name="plus" />
+				</button>
+			{/snippet}
+			{#if group.rules.length === 0}
+				{#if needle !== ''}
+					<EmptyState compact filtered onclear={() => (looking = '')} />
 				{:else}
-					<ul class="divide-y divide-gray-200">
-						{#each group.rules as rule, index (rule.id)}
-							<li class="list-row">
-								<div class="list-row-main flex min-w-0 items-center gap-2">
-									<CategoryMark name={rule.name} color={rule.color} />
-									<code class="min-w-0 flex-1 truncate text-xs text-gray-500" title={rule.pattern}>
-										/{rule.pattern}/i
-									</code>
-								</div>
-								<div class="list-row-actions">
-									{#if rule.problem}
-										<!-- Words and a mark, never a colour alone: this is the one
-										     thing on the row that needs acting on. -->
-										<span
-											class="inline-flex shrink-0 items-center gap-1 text-xs font-medium text-gray-900"
-											title={rule.problem}
-										>
-											<Icon name="warning" size={14} />
-											{t('finance.rules.notRunning')}
-										</span>
-									{:else}
-										<!--
-											The count is the way in.
+					<EmptyState compact icon="sort" title={t('finance.rules.noneYet')} />
+				{/if}
+			{:else}
+				<ul class="divide-y divide-gray-200">
+					{#each group.rules as rule, index (rule.id)}
+						<li class="list-row" data-row use:listCursor={group.offset + index === cursor}>
+							<!-- The name, then what it looks for: beside it where there is the
+							     width, under it on a phone, where a pattern beside a pill and
+							     five buttons was cut to eight characters. -->
+							<div
+								class="list-row-main flex min-w-0 flex-col items-start gap-1 sm:flex-row sm:items-center sm:gap-2"
+							>
+								<CategoryMark name={rule.name} color={rule.color} />
+								<code
+									class="max-w-full min-w-0 text-xs break-all text-gray-600 sm:flex-1 sm:truncate"
+									title={rule.pattern}
+								>
+									/{rule.pattern}/i
+								</code>
+							</div>
+							<div class="list-row-actions">
+								{#if rule.problem}
+									<!-- Words and a mark, never a colour alone: this is the one
+									     thing on the row that needs acting on. -->
+									<span
+										class="inline-flex shrink-0 items-center gap-1 text-xs font-medium text-gray-900"
+										title={rule.problem}
+									>
+										<Icon name="warning" size={14} />
+										{t('finance.rules.notRunning')}
+									</span>
+								{:else}
+									<!--
+										The count is the way in.
 
-											"Six lines" is not an answer to "is this pattern right" —
-											which six is. Pressing it puts them below the rules, and
-											pressing it again puts them away.
-										-->
-										<button
-											class="btn btn-sm tabular shrink-0"
-											title={t('finance.rules.whichLinesThisClaims')}
-											aria-pressed={data.showing === String(rule.id)}
-											onclick={() =>
-												filter({
-													showing: data.showing === String(rule.id) ? '' : String(rule.id)
-												})}
-										>
-											{rule.matches}
-										</button>
-									{/if}
-									<form method="post" action="?/move" use:enhance>
-										<input type="hidden" name="id" value={rule.id} />
-										<input type="hidden" name="delta" value="-1" />
-										<button
-											class="icon-btn"
-											title={t('finance.rules.moveUp', { name: rule.name })}
-											aria-label={t('finance.rules.moveUp', { name: rule.name })}
-											disabled={index === 0}
-										>
-											<Icon name="chevron-up" />
-										</button>
-									</form>
-									<form method="post" action="?/move" use:enhance>
-										<input type="hidden" name="id" value={rule.id} />
-										<input type="hidden" name="delta" value="1" />
-										<button
-											class="icon-btn"
-											title={t('finance.rules.moveDown', { name: rule.name })}
-											aria-label={t('finance.rules.moveDown', { name: rule.name })}
-											disabled={index === group.rules.length - 1}
-										>
-											<Icon name="chevron-down" />
-										</button>
-									</form>
+										"Six lines" is not an answer to "is this pattern right" —
+										which six is. Pressing it puts them below the rules, and
+										pressing it again puts them away. As tall as the icons
+										beside it.
+									-->
+									<button
+										class="btn btn-sm tabular min-h-9 shrink-0"
+										title={t('finance.rules.whichLinesThisClaims')}
+										data-tour="rule-count"
+										aria-pressed={data.showing === String(rule.id)}
+										onclick={() => show(data.showing === String(rule.id) ? '' : String(rule.id))}
+									>
+										{rule.matches}
+									</button>
+								{/if}
+								<form method="post" action="?/move" use:enhance>
+									<input type="hidden" name="id" value={rule.id} />
+									<input type="hidden" name="delta" value="-1" />
 									<button
 										class="icon-btn"
-										title={t('ui.edit')}
-										aria-label={t('finance.rules.edit', { name: rule.name })}
-										onclick={() => openEdit(rule.id)}
+										title={t('finance.rules.moveUp', { name: rule.name })}
+										aria-label={t('finance.rules.moveUp', { name: rule.name })}
+										disabled={index === 0}
 									>
-										<Icon name="edit" />
+										<Icon name="chevron-up" />
 									</button>
+								</form>
+								<form method="post" action="?/move" use:enhance>
+									<input type="hidden" name="id" value={rule.id} />
+									<input type="hidden" name="delta" value="1" />
 									<button
-										class="icon-btn icon-btn-danger"
-										title={t('ui.delete')}
-										aria-label={t('finance.rules.delete', { name: rule.name })}
-										onclick={() => (deleting = rule)}
+										class="icon-btn"
+										title={t('finance.rules.moveDown', { name: rule.name })}
+										aria-label={t('finance.rules.moveDown', { name: rule.name })}
+										disabled={index === group.rules.length - 1}
 									>
-										<Icon name="trash" />
+										<Icon name="chevron-down" />
 									</button>
-								</div>
-							</li>
-						{/each}
-					</ul>
-				{/if}
-			</Card>
-		{/each}
-	</div>
+								</form>
+								<button
+									class="icon-btn"
+									title={t('ui.edit')}
+									aria-label={t('finance.rules.edit', { name: rule.name })}
+									onclick={() => openEdit(rule.id)}
+								>
+									<Icon name="edit" />
+								</button>
+								<button
+									class="icon-btn icon-btn-danger"
+									title={t('ui.delete')}
+									aria-label={t('finance.rules.delete', { name: rule.name })}
+									onclick={() => (deleting = rule)}
+								>
+									<Icon name="trash" />
+								</button>
+							</div>
+						</li>
+					{/each}
+				</ul>
+			{/if}
+		</Card>
+	{/each}
 
 	<!--
 		The lines behind a number.
@@ -248,13 +336,13 @@
 		would push the other pane's rows around.
 	-->
 	{#if data.showing}
-		<Card title={data.showingLabel} flush pane class="border-t border-gray-200">
+		<Card id={LINES_ID} title={data.showingLabel} flush pane class="border-t border-gray-200">
 			{#snippet actions()}
 				<button
 					class="icon-btn"
 					title={t('ui.close')}
 					aria-label={t('ui.close')}
-					onclick={() => filter({ showing: '' })}
+					onclick={() => show('')}
 				>
 					<Icon name="close" />
 				</button>
@@ -264,19 +352,21 @@
 			{:else}
 				<ul class="divide-y divide-gray-200">
 					{#each data.lines as line (line.id)}
-						<li
-							class="flex items-baseline gap-3 px-4 py-2"
-							style={line.categoryColor ? `background-color: ${line.categoryColor}2b` : ''}
-						>
-							<span class="tabular shrink-0 text-xs text-gray-500"
+						<li class="flex flex-wrap items-center gap-x-3 gap-y-1 px-4 py-2">
+							<span class="tabular w-24 shrink-0 text-xs text-gray-500"
 								>{civilOf(line.occurredOn, now())}</span
 							>
 							<span class="min-w-0 flex-1 truncate text-sm text-gray-900">{line.description}</span>
+							{#if line.category && line.category !== data.showingLabel}
+								<!-- The category it did land in, worn the one way. Not on a
+								     category's own lines, where it would say the heading again. -->
+								<CategoryMark name={line.category} color={line.categoryColor} />
+							{/if}
 							{#if line.ledgerName}
 								<span class="shrink-0 text-xs text-gray-500">{line.ledgerName}</span>
 							{/if}
 							<span
-								class="shrink-0 text-sm tabular-nums {line.amountCents < 0
+								class="tabular shrink-0 text-sm {line.amountCents < 0
 									? 'text-gray-900'
 									: 'text-blue-700'}"
 							>
@@ -289,32 +379,6 @@
 		</Card>
 	{/if}
 </RoomSurface>
-
-<!--
-	Which regular expressions these are, said plainly. "Regex" is several
-	languages and the differences bite exactly where somebody reaches for
-	a `\d` or a lookbehind.
--->
-<p class="mt-3 text-xs text-gray-500">
-	{t('finance.rules.patternsAre')}
-	<strong>{t('finance.rules.javascriptRegularExpressions')}</strong>
-	{t('finance.rules.ecmascriptMatchedCaseInsensitivelyAndUna')}
-	<code>{t('finance.rules.mercado')}</code>
-	{t('finance.rules.findsItAnywhereInThe')}
-	<code>|</code>
-	{t('finance.rules.isOr')} <code>^</code>
-	{t('finance.rules.and')} <code>$</code>
-	{t('finance.rules.anchor')} <code>\d</code>
-	{t('finance.rules.isADigitAndA')} <code>*</code>
-	{t('finance.rules.or')} <code>.</code>
-	{t('finance.rules.needsABackslash')}
-	<a
-		href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_expressions/Cheatsheet"
-		target="_blank"
-		rel="noreferrer"
-		class="underline">{t('finance.rules.theFullSyntax')}</a
-	>
-</p>
 
 <!-- New and edit, one form. -->
 <Modal
@@ -382,6 +446,31 @@
 			</FormGrid>
 		</form>
 	{/key}
+	<!--
+		Which regular expressions these are, said plainly. "Regex" is several
+		languages and the differences bite exactly where somebody reaches for
+		a `\d` or a lookbehind.
+	-->
+	<p class="mt-4 max-w-prose text-xs text-gray-500">
+		{t('finance.rules.patternsAre')}
+		<strong>{t('finance.rules.javascriptRegularExpressions')}</strong>
+		{t('finance.rules.ecmascriptMatchedCaseInsensitivelyAndUna')}
+		<code>{t('finance.rules.mercado')}</code>
+		{t('finance.rules.findsItAnywhereInThe')}
+		<code>|</code>
+		{t('finance.rules.isOr')} <code>^</code>
+		{t('finance.rules.and')} <code>$</code>
+		{t('finance.rules.anchor')} <code>\d</code>
+		{t('finance.rules.isADigitAndA')} <code>*</code>
+		{t('finance.rules.or')} <code>.</code>
+		{t('finance.rules.needsABackslash')}
+		<a
+			href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_expressions/Cheatsheet"
+			target="_blank"
+			rel="noreferrer"
+			class="underline">{t('finance.rules.theFullSyntax')}</a
+		>
+	</p>
 	{#snippet footer()}
 		<button class="btn" type="button" onclick={closeForm}>{t('ui.cancel')}</button>
 		<button class="btn btn-primary" type="submit" form="rule-form">

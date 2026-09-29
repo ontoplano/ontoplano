@@ -16,6 +16,7 @@
 	import Icon from '$lib/components/Icon.svelte';
 	import RowCard from '$lib/components/RowCard.svelte';
 	import { enhance } from '$lib/enhance';
+	import { listCursor } from '$lib/actions/list-cursor';
 	import { autofocus } from '$lib/actions/autofocus';
 	import { AVERAGE_LABEL, asDecimal, summaryOf } from '$lib/bill-summary';
 	import type { BillActionNames } from '$lib/bill-action-names';
@@ -71,7 +72,9 @@
 		/** Ask to delete it for good — offered on an archived bill only. */
 		ondelete,
 		/** Point at the statement line that paid it. Finance only. */
-		onattach
+		onattach,
+		/** Whether the keyboard's cursor is on this row. */
+		here = false
 	}: {
 		bill: Shown;
 		currency: Currency;
@@ -82,6 +85,7 @@
 		onedit?: (id: number) => void;
 		ondelete?: (id: number) => void;
 		onattach?: (id: number) => void;
+		here?: boolean;
 	} = $props();
 
 	/** Whether the amount box is open on this row. */
@@ -92,7 +96,7 @@
 	const money = (cents: number) => formatMoney(cents, currency);
 </script>
 
-<li>
+<li data-row use:listCursor={here}>
 	<!--
 		The card a task is drawn on — `RowCard`: this period's settling where a
 		task has its tick, the name beside it, the verbs along the foot. The
@@ -281,21 +285,28 @@
 				{/if}
 			{/snippet}
 
+			{#snippet labels()}
+				<!--
+					How this period stands, on the line a task's labels sit on: beside
+					the verbs where there is the width, so a bill is two lines rather
+					than a name, a sentence and a row of buttons on a third.
+				-->
+				<div class="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-gray-500">
+					{#if paid}
+						<span class="font-medium text-blue-700">{t('finance.bills.paid')}</span>
+					{:else if skipped}
+						<span class="font-medium text-gray-600">{t('finance.bills.skipped')}</span>
+					{/if}
+					{#if bill.automatic}
+						<span class="inline-flex items-center gap-1" title={t('finance.bills.automaticTitle')}>
+							<Icon name="clock" size={12} />{t('finance.bills.automatic')}
+						</span>
+					{/if}
+					<span>{summaryOf(t, bill, currency)}</span>
+				</div>
+			{/snippet}
+
 			<p class="text-sm leading-snug font-medium break-words text-gray-900">{bill.name}</p>
-			<!-- How this period stands, on the line a task's notebook sits on. -->
-			<div class="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-gray-500">
-				{#if paid}
-					<span class="font-medium text-blue-700">{t('finance.bills.paid')}</span>
-				{:else if skipped}
-					<span class="font-medium text-gray-600">{t('finance.bills.skipped')}</span>
-				{/if}
-				{#if bill.automatic}
-					<span class="inline-flex items-center gap-1" title={t('finance.bills.automaticTitle')}>
-						<Icon name="clock" size={12} />{t('finance.bills.automatic')}
-					</span>
-				{/if}
-				<span>{summaryOf(t, bill, currency)}</span>
-			</div>
 		</RowCard>
 	</div>
 

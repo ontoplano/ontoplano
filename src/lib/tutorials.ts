@@ -523,6 +523,30 @@ export const TUTORIALS: Record<string, Tutorial> = {
 			}
 		]
 	},
+	'/finance/rules': {
+		label: 'tour.rulesRoom',
+		steps: [
+			{
+				title: 'tour.rulesSortWhatArrives',
+				body: 'tour.rulesSortWhatArrivesBody'
+			},
+			{
+				target: '[data-tour="rule-categories"]',
+				title: 'tour.rulesCategoriesTakeTurns',
+				body: 'tour.rulesCategoriesTakeTurnsBody'
+			},
+			{
+				target: '[data-tour="rule-tags"]',
+				title: 'tour.rulesTagsPileUp',
+				body: 'tour.rulesTagsPileUpBody'
+			},
+			{
+				target: '[data-tour="rule-count"]',
+				title: 'tour.rulesTheCountOpensTheLines',
+				body: 'tour.rulesTheCountOpensTheLinesBody'
+			}
+		]
+	},
 	'/inventory/stock': {
 		label: 'tour.shopping',
 		steps: [
