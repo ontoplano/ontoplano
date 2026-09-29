@@ -30,6 +30,13 @@
 	 * picture: identical pixels over identical pixels change nothing only while
 	 * both are at rest, and the moment one turned there were two puffins.
 	 *
+	 * And only while it turns. At rest the two edges meet on the same circle,
+	 * and two anti-aliased edges laid over each other never add up to no edge:
+	 * a faint ring showed round the bird on every still mark. So at rest the
+	 * rim is the whole picture and the disc is not drawn; `data-turning`, which
+	 * `$lib/mark-spin` puts on the mark for the length of a turn, cuts the hole
+	 * and shows the disc.
+	 *
 	 * The radius is a fraction of the half width. `circle()` percentages
 	 * resolve against the side, hence the halving; a radial gradient sized to
 	 * `closest-side` resolves against the half, so it takes the fraction
@@ -134,7 +141,7 @@
 	class="ontoplano-logo relative inline-flex shrink-0 items-center justify-center {fill
 		? 'h-full w-full'
 		: ''} {klass}"
-	style="{fill ? '' : `width: ${size}px; height: ${size}px;`} {background
+	style="--turn-hole: {TURN_HOLE}; {fill ? '' : `width: ${size}px; height: ${size}px;`} {background
 		? `background: ${MARK_FIELD}`
 		: ''}"
 	role={label ? 'img' : 'presentation'}
@@ -147,7 +154,6 @@
 		alt=""
 		width={fill ? undefined : size}
 		height={fill ? undefined : size}
-		style="-webkit-mask-image: {TURN_HOLE}; mask-image: {TURN_HOLE}"
 	/>
 	<img class="mark-still" src={artwork} alt="" aria-hidden="true" style="clip-path: {TURN_CLIP}" />
 </span>
@@ -168,9 +174,20 @@
 		}
 	}
 
-	/* Never animated: the rim turns around it. */
+	/* Never animated: the rim turns around it. Drawn only while it does. */
 	.ontoplano-logo :global(.mark-still) {
 		position: absolute;
 		inset: 0;
+		visibility: hidden;
+	}
+
+	/* Not while the wheel holds the mark: then it is away, and all of it hidden. */
+	:global([data-turning]:not(.pie-handle-held) .mark-still) {
+		visibility: visible;
+	}
+
+	:global([data-turning] .mark-turn) {
+		-webkit-mask-image: var(--turn-hole);
+		mask-image: var(--turn-hole);
 	}
 </style>

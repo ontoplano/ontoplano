@@ -21,6 +21,7 @@ releases mattered.
 ## 0.184.11 — 2026-09-29
 
 - The puffin in the middle of the menu mark never moves: only the octagon around it turns while a page loads.
+- The logo no longer shows a faint circle around the puffin.
 - A recording's notes field is called Notes.
 - The phone app opening a server instance — from its icon or from a widget — no longer shows the on-device look while it gets there.
 - The example plugins, the recording transcriber among them, live together in `ontoplano-plugins/`; the transcriber reads its settings from a `.env` file beside it.
