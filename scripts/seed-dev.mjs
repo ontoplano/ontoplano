@@ -3747,21 +3747,35 @@ const silence = (seconds) => {
 	return bytes;
 };
 const recordings = [
-	['Idea for the kitchen shelves', 2, 3],
-	['What the plumber said', 1.5, 9],
-	['Birdsong at the park', 2.5, 20]
+	['Idea for the kitchen shelves', 2, 3, 'Three shelves, not two. Oak if the budget holds.'],
+	[
+		'What the plumber said',
+		1.5,
+		9,
+		'Replace the valve under the sink before winter.\nHe comes back on the 14th with the part.'
+	],
+	['Birdsong at the park', 2.5, 20, '']
 ];
-for (const [name, seconds, daysBack] of recordings) {
+for (const [name, seconds, daysBack, notes] of recordings) {
 	const bytes = silence(seconds);
 	const sha = createHash('sha256').update(bytes).digest('hex');
+	// Notes are filled on a recording already seeded too, but never over ones
+	// somebody has since written by hand.
+	run(
+		"update media set notes = ? where user_id = ? and sha256 = ? and notes = ''",
+		notes,
+		uid,
+		sha
+	);
 	if (one('select id from media where user_id = ? and sha256 = ?', uid, sha)) continue;
 	const at = new Date(now);
 	at.setDate(at.getDate() - daysBack);
 	run(
-		`insert into media (user_id, mime, filename, alt, byte_size, seconds, bytes, sha256, created_at)
-		 values (?, 'audio/mpeg', ?, '', ?, ?, ?, ?, ?)`,
+		`insert into media (user_id, mime, filename, alt, notes, byte_size, seconds, bytes, sha256, created_at)
+		 values (?, 'audio/mpeg', ?, '', ?, ?, ?, ?, ?, ?)`,
 		uid,
 		name,
+		notes,
 		bytes.length,
 		seconds,
 		bytes,
