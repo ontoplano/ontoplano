@@ -20,6 +20,7 @@ releases mattered.
 
 ## 0.184.1 — 2026-09-28
 
+- "It did not happen" and skip are a struck-through circle, and on a phone the bottom bar is a straight bar with nothing shaped like the mark sticking out of it.
 - Dashboard cards stack under each other instead of leaving gaps; +/− buttons are finger-sized on touch screens; number fields lose their tiny arrows; a person's or notebook's name lines up with the entries below it.
 - Preferences and Integrations line their fields up in one column at one height, the menu editor's arrows stay put, data streams say what they are in words, and a few settings sentences no longer break mid-line.
 - Albums show their name in the bar with a way back, and the gallery can be searched and sorted. Search results mark what matched and no longer show raw markdown. Switches are visible in both themes, and the reminders toolbar is one row of same-height controls.

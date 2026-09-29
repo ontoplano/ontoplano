@@ -35,7 +35,8 @@
 		refresh: 'M20 12a8 8 0 0 1-14.3 4.9M4 12a8 8 0 0 1 14.3-4.9M18 3v4h-4M6 21v-4h4',
 		// Sent on its way: a paper plane.
 		send: 'M21 3L10 14M21 3l-7 18-4-7-7-4z',
-		skip: 'M5 5l9 7-9 7zM18 5v14',
+		// Did not happen: a circle struck through, the way a card game says skip.
+		skip: 'M12 4a8 8 0 1 0 0 16 8 8 0 0 0 0-16zM6.35 6.35l11.3 11.3',
 		play: 'M7 4l12 8-12 8z',
 		/* The three a recorder needs. Square caps like everything else here. */
 		pause: 'M9 5v14M15 5v14',

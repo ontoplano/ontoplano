@@ -569,8 +569,7 @@
 		 * `-changedRoom`, so the octagon turns the way the rooms are sweeping;
 		 * zero where nothing slid, which spins it the one way it always did.
 		 */
-		if (navigation.to && !navigation.willUnload)
-			startMarkSpin([deskMark, barMark, barGround], -changedRoom);
+		if (navigation.to && !navigation.willUnload) startMarkSpin([deskMark, barMark], -changedRoom);
 
 		// Named again rather than left to `slides`: the same test, in the shape
 		// that tells the compiler these three are really here.
@@ -779,10 +778,9 @@
 	 * navigation quick enough to be over inside one flush was never seen as a
 	 * wait — which on a desktop is most of them.
 	 */
-	/* What the spin turns: the header's mark, the phone bar's, and its ground. */
+	/* What the spin turns: the header's mark and the phone bar's. */
 	let deskMark = $state<HTMLElement>();
 	let barMark = $state<HTMLElement>();
-	let barGround = $state<HTMLElement>();
 	/*
 	 * The turn is started and stopped by the navigation itself — see
 	 * `beforeNavigate` and `afterNavigate` above. This is only the giving up:
@@ -825,7 +823,7 @@
 	 */
 	$effect(() => {
 		if (!busy()) return;
-		startMarkSpin([deskMark, barMark, barGround], 0);
+		startMarkSpin([deskMark, barMark], 0);
 		return () => void stopMarkSpin();
 	});
 
@@ -1555,30 +1553,6 @@
 						No border and no ground: a clipped edge cannot carry a border,
 						and the mark's own bright rim is the edge.
 					-->
-					<!--
-						A ground the shape sits on.
-
-						The button is clipped to the mark's outline, and a clipped edge
-						carries no border — so the bar's own top line ran straight
-						through the shape and the page showed through the notches of
-						its rim. This is the bar's colour in the same outline, a hair
-						larger, which gives the mark an edge to end at.
-					-->
-					<!--
-						And it turns with the mark, round the mark's own centre.
-
-						The two are one octagon and a hair: turned apart, or about
-						centres a fraction of a rem out of line, the rim thins and
-						thickens eight times a turn. `data-mark` puts it in the turn
-						from the first frame of a load, before any of this hydrates.
-					-->
-					<span
-						bind:this={barGround}
-						data-mark
-						aria-hidden="true"
-						style="clip-path: {MARK_CLIP_PATH}; top: calc(-1 * var(--bar-mark-ground-rise)); height: var(--bar-mark-ground); width: var(--bar-mark-ground); transform-origin: 50% calc(var(--bar-mark-ground-rise) - var(--bar-mark-rise) + var(--bar-mark) / 2); background: {barField}"
-						class="pointer-events-none absolute left-1/2 -translate-x-1/2"
-					></span>
 					<!-- `data-mark` names it for code that runs before this component
 					     exists: a turn started on the screen you came from is picked up
 					     here, off the server-rendered mark, before anything hydrates.

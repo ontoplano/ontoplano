@@ -179,8 +179,8 @@ export function startMarkSpin(
 	 * Each root turns whole — the rim, and the octagon the phone bar's button
 	 * is clipped to, so the clip goes round with the drawing instead of cutting
 	 * its corners off — and the medallion inside it (the Logo's `.mark-still`)
-	 * is turned back by the same angle in the same frame. A root without one,
-	 * the bar's ground behind the button, just turns with the rest.
+	 * is turned back by the same angle in the same frame. A root without one
+	 * just turns whole.
 	 *
 	 * Calling again mid-turn adds whatever is new and keeps the angle, so a
 	 * mark that was re-rendered picks the turn up where it was rather than

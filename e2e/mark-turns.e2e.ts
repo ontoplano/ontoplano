@@ -56,51 +56,49 @@ test('a route change turns the mark at least once, however quick it is', async (
 });
 
 /**
- * The octagon turns with its ground, and the bird inside stays upright.
+ * The octagon turns, the bird inside stays upright, and the bar stays a bar.
  *
- * The phone bar draws an octagon of flat colour behind the mark's button, a
- * hair larger, so the clipped button has an edge to end at. Standing still
- * behind a turning mark it would show the mark's corners sweeping past it, so
- * the two turn together, by the same angle. The bird is turned back by the
- * same angle in CSS, which is what keeps it still.
+ * The bar once drew an octagon of its own colour behind the mark, a hair
+ * larger; with the wheel open it stayed behind as a dark bump in a straight
+ * bar. There is nothing behind the mark now, so the only thing that turns in
+ * the bar is the mark's button, and the bird is turned back by as much.
  */
-test('the octagon and its ground turn together, and the bird does not', async ({ page }) => {
+test('the octagon turns alone in the bar, and the bird does not', async ({ page }) => {
 	await page.setViewportSize({ width: 390, height: 844 });
-	await register(page, testEmail('mark-ground'));
+	await register(page, testEmail('mark-bar'));
 	// Somewhere other than home, so the bar's home link is a navigation.
 	await visit(page, '/goals');
+
+	// Nothing in the bar is drawn in the mark's shape but the mark itself.
+	expect(await page.locator('nav [data-mark]').count()).toBe(1);
 
 	/** Every element the turn has written a `rotate` on, with the bird's net angle. */
 	const turned = async () =>
 		page.evaluate(() =>
-			[...document.querySelectorAll<HTMLElement>('nav [data-mark]')]
+			[...document.querySelectorAll<HTMLElement>('nav [style*="rotate"]')]
 				.filter((el) => el.style.rotate)
 				.map((el) => {
 					const bird = el.querySelector<HTMLElement>('.mark-still');
 					const net = bird
 						? parseFloat(el.style.rotate) + parseFloat(getComputedStyle(bird).rotate || '0')
 						: 0;
-					return { tag: el.tagName.toLowerCase(), angle: parseFloat(el.style.rotate), net };
+					return { tag: el.tagName.toLowerCase(), net };
 				})
 		);
 
 	const going = page.getByRole('link', { name: 'Home' }).click();
 
 	const tags = new Set<string>();
-	let apart = 0;
 	let birdTurned = 0;
 	const until = Date.now() + 1500;
 	while (Date.now() < until) {
-		const now = await turned();
-		for (const one of now) {
+		for (const one of await turned()) {
 			tags.add(one.tag);
 			birdTurned = Math.max(birdTurned, Math.abs(one.net));
 		}
-		if (now.length === 2) apart = Math.max(apart, Math.abs(now[0].angle - now[1].angle));
 	}
 	await going;
 
-	expect([...tags].sort(), 'the button or its ground did not turn').toEqual(['button', 'span']);
-	expect(apart, 'the ground and the mark turned out of step').toBeLessThan(0.01);
+	expect([...tags], 'the mark did not turn, or something else did').toEqual(['button']);
 	expect(birdTurned, 'the bird turned with the octagon').toBeLessThan(0.01);
 });

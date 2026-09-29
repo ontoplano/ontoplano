@@ -128,20 +128,16 @@ describe('the turn that answers a press', () => {
 		expect(angleOf(medallion), 'the bird was turned directly').toBe(0);
 	});
 
-	/*
-	 * The phone bar's ground: an octagon of flat colour a hair larger than the
-	 * mark. Left standing while the mark turns, the mark's corners sweep out
-	 * past it; so it turns with the mark, by the same angle.
-	 */
-	test('turns anything shaped like the mark along with it', () => {
-		const ground = document.createElement('span');
-		document.body.append(ground);
+	// The header's mark and the phone bar's are handed over together, and go round as one.
+	test('turns every mark it is handed by the same angle', () => {
+		const other = document.createElement('span');
+		document.body.append(other);
 
-		startMarkSpin([ground, mark], 0);
+		startMarkSpin([other, mark], 0);
 		frames(8);
 
-		expect(angleOf(ground)).toBeGreaterThan(0);
-		expect(angleOf(ground)).toBe(angleOf(mark));
+		expect(angleOf(other)).toBeGreaterThan(0);
+		expect(angleOf(other)).toBe(angleOf(mark));
 	});
 
 	/*
