@@ -18,6 +18,11 @@ the shape of the data changing. Bumping the minor per batch is what ran this
 file to 0.161 in a few months, which tells a reader nothing about which
 releases mattered.
 
+## 0.184.7 — 2026-09-29
+
+- Clicking the blank space beside a field's tags, or the field's name, no longer removes a tag.
+- The plan tiles lose the big faint octagon behind each badge.
+
 ## 0.184.6 — 2026-09-29
 
 - Recordings now have editable notes, and a standalone example plugin can fill them with a Whisper transcription after upload.

@@ -235,7 +235,6 @@
 					>
 						<span class="plan-tick" aria-hidden="true"><Icon name="check" size={14} /></span>
 						<span class="plan-emblem" aria-hidden="true">
-							<span class="plan-ghost">{@render ring()}</span>
 							<span class="plan-badge">
 								<span class="absolute inset-0">{@render ring()}</span>
 								<Icon name={plan.icon} size={28} />
@@ -532,10 +531,7 @@
 			var(--shadow-card);
 	}
 
-	/*
-	 * The badge, with the octagon again behind it — bigger, fainter, turned
-	 * half an edge — so it reads as a ripple going out from the mark.
-	 */
+	/* The badge, and the room around it. */
 	.plan-emblem {
 		position: relative;
 		display: grid;
@@ -543,20 +539,6 @@
 		height: 4rem;
 		margin-bottom: 0.5rem;
 		place-items: center;
-	}
-
-	.plan-ghost {
-		position: absolute;
-		top: 50%;
-		left: 50%;
-		width: 7rem;
-		height: 7rem;
-		opacity: calc(0.16 + var(--lit) * 0.16);
-		pointer-events: none;
-		transform: translate(-50%, -50%) rotate(calc(22.5deg - var(--lit) * 22.5deg));
-		transition:
-			opacity 240ms ease,
-			transform 240ms ease;
 	}
 
 	/* The octagon as a badge: the ring's eight edges around the field. */
