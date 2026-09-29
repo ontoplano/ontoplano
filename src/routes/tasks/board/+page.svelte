@@ -909,7 +909,10 @@
 				{/snippet}
 
 				{#snippet inline()}
-					<!-- Nothing to bring back is nothing to press. -->
+					<!-- Nothing to bring back is nothing to press. The ease picker
+					     only ever says a feather and "All" or "3+", so on a phone it
+					     is narrower than the others, and the order keeps its place
+					     on this line instead of taking one of its own. -->
 					<button
 						type="button"
 						onclick={() => (showDone = !showDone)}
@@ -924,7 +927,7 @@
 						options={easeChoices}
 						onpick={(next) => (minEase = next === '' ? null : Number(next))}
 						label={t('tasks.board.easeFrom')}
-						class="min-w-36 sm:flex-none"
+						class="min-w-24 sm:min-w-36 sm:flex-none"
 					/>
 				{/snippet}
 				{#if tab === 'general'}

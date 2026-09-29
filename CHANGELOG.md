@@ -21,6 +21,9 @@ releases mattered.
 ## 0.184.5 — 2026-09-29
 
 - On a phone, labels on cards are drawn as pills at their own size rather than as button-tall blocks; they are as easy to tap as before.
+- In the copy of the app that lives on the phone, the bottom bar wears the same blue as the puffin's badge.
+- The first-run tour no longer comes back after being dismissed when you leave the page straight away, and no longer vanishes before it opens on a busy page.
+- On a phone the board's toolbar fits on two lines; the order no longer sits alone on a third.
 
 ## 0.184.4 — 2026-09-29
 

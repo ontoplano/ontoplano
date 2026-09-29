@@ -30,6 +30,7 @@
 		stopHiding
 	} from '$lib/slide';
 	import { MARK_CLIP_PATH, MARK_FIELD } from '$lib/logo/mark-shape';
+	import { MARK_FIELD_ISOLATED } from '$lib/logo/brand';
 	import { CHOOSE_PATH, inPhoneApp, storedChoice } from '$lib/instance-choice';
 	import { handOverRingerKey } from '$lib/ringer-handshake';
 	import { THEMES, THEME_LABELS } from '$lib/theme.js';
@@ -170,16 +171,13 @@
 	/** This app is its own instance: no account, and leaving means choosing another. */
 	const onDevice = $derived(isIsolatedBuild());
 	/**
-	 * The bar's own colour, and the rim the mark sits in — both the mark's dark,
-	 * on either instance.
+	 * The bar's own colour: the field the mark in the middle of it is drawn on.
 	 *
-	 * Nothing out here is the device's blue. That colour belongs inside the
-	 * drawing: it is the field between the medallion and the ring, and the
-	 * artwork carries it. Painted out here as well it was first a blue bar and
-	 * then a blue rim around the mark, which is the outside of the icon saying
-	 * something only its inside is meant to say.
+	 * The mark's dark behind a server, and the device's blue on the device —
+	 * so the bar and the mark it carries are one surface on both, and the copy
+	 * that lives on the phone says so from the bar as well as from the icon.
 	 */
-	const barField = MARK_FIELD;
+	const barField = $derived(onDevice ? MARK_FIELD_ISOLATED : MARK_FIELD);
 	let menuOpen = $state(false);
 	let pie = $state<CapturePie | undefined>();
 	let rooms = $state<NavPie | undefined>();
@@ -903,9 +901,29 @@
 		// dismissal is remembered by the tab rather than by the database.
 		if (data.demo && sessionStorage.getItem(DEMO_TOUR_KEY)) return;
 
-		tourOffered = true;
-		const timer = setTimeout(() => tour?.start(), 500);
-		return () => clearTimeout(timer);
+		/*
+		 * Offered when it actually starts, not when it is scheduled.
+		 *
+		 * Anything that re-ran this inside the wait — a page's data arriving
+		 * a second time, which under load is often — cleared the timer, and
+		 * the flag already said "offered", so the tour was simply lost until
+		 * the next full load, where it opened over whatever came next.
+		 *
+		 * `data-tour-pending` says one is on its way, for whoever has to wait
+		 * for it rather than guess how long it takes.
+		 */
+		const root = document.documentElement;
+		root.dataset.tourPending = '';
+		const timer = setTimeout(() => {
+			tourOffered = true;
+			tour?.start();
+			// Once it is on screen, so "no longer pending" means "open or not coming".
+			void tick().then(() => delete root.dataset.tourPending);
+		}, 500);
+		return () => {
+			clearTimeout(timer);
+			delete root.dataset.tourPending;
+		};
 	});
 
 	function tourDismissed() {
@@ -923,7 +941,10 @@
 		void fetch('/api/tutorial', {
 			method: 'POST',
 			headers: { 'content-type': 'application/json' },
-			body: JSON.stringify({ seen: true })
+			body: JSON.stringify({ seen: true }),
+			// Past the page it was sent from: dismissing and leaving at once
+			// cancelled the request, and the tour came back on the next load.
+			keepalive: true
 			// Remembering that somebody has seen the tour is not worth an error
 			// message if it fails; they see it once more.
 		}).catch(() => {});
@@ -1485,10 +1506,10 @@
 			inside flows into the bar instead of ending at an edge. No hairline
 			on top: the edge IS the change of colour.
 
-			On the device it wears the lifted one, because the mark above it is
-			the lifted mark: the two are a single surface, and one of them
-			changing colour without the other would draw exactly the disc the
-			flowing-in is there to avoid.
+			On the device it wears the device's blue, because that is the field
+			the mark above it is drawn on there: the two are a single surface, and
+			one of them changing colour without the other would draw exactly the
+			disc the flowing-in is there to avoid.
 		-->
 		<nav
 			class="mobile-nav fixed inset-x-0 bottom-0 z-40 lg:hidden"

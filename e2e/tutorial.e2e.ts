@@ -39,8 +39,12 @@ test('a new account is shown around, and dismissing it dismisses it', async ({ p
 	 * answering with another card is the pattern everybody has learned to
 	 * hate. The help dock is where somebody looking for help looks.
 	 */
+	// The reload below is only a fair question once the flag is written, and
+	// under load the write can still be on its way when the page is asked for.
+	const saved = page.waitForResponse((r) => r.url().includes('/api/tutorial'));
 	await tour.getByRole('button', { name: 'Dismiss' }).click();
 	await expect(tour).toBeHidden();
+	expect((await saved).ok()).toBe(true);
 
 	// And it stays gone, across a reload — the flag is written, not remembered.
 	await visit(page, '/');
