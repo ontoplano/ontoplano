@@ -62,3 +62,22 @@ test('pressing them one after another takes them off one at a time', async ({ pa
 	}
 	await expect(form.locator('[data-tag]')).toHaveCount(0);
 });
+
+test('a press beside the chips, or on the field name, takes nothing off', async ({ page }) => {
+	test.setTimeout(180_000);
+	await register(page, testEmail('chip-removal-blank'));
+	const form = await openTagBox(page, 'alpha, bravo ');
+	await expect(form.locator('[data-tag]')).toHaveCount(2);
+
+	// The field is a <label>, and a label hands a press to its first button:
+	// the first chip's ×. Blank space to the right of the last chip, then the
+	// field's own name.
+	const last = await form.locator('[data-tag]').last().boundingBox();
+	await page.mouse.click(last!.x + last!.width + 60, last!.y + last!.height / 2);
+	await expect(form.locator('[data-tag]')).toHaveCount(2);
+
+	const field = form.locator('label', { has: page.locator('[data-tag]') });
+	await field.locator('.eyebrow').first().click();
+	await expect(form.locator('[data-tag]')).toHaveCount(2);
+	await expect(page.locator('#todo-form input[role="combobox"]')).toBeFocused();
+});
