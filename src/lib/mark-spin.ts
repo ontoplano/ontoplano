@@ -34,8 +34,8 @@ export const TURN_MS = 300;
  * A turn that snaps to its top speed reads as a video starting; a wheel that
  * is given a push winds up, holds, and runs down as it settles. `SPIN_UP_MS`
  * is how long the winding takes, `SLOWEST` is the fraction of full speed it
- * begins and ends at, and `DECEL_DEGREES` is how far out from its resting
- * place it starts easing off.
+ * begins at, and `DECEL_DEGREES` is how far out from its resting place it
+ * starts easing off.
  *
  * These three are the whole feel of it. Longer `SPIN_UP_MS` or lower
  * `SLOWEST` make the wind-up more pronounced; bigger `DECEL_DEGREES` makes it
@@ -43,7 +43,18 @@ export const TURN_MS = 300;
  */
 export const SPIN_UP_MS = 1000;
 export const SLOWEST = 0.5;
-export const DECEL_DEGREES = 90;
+export const DECEL_DEGREES = 180;
+
+/**
+ * The least speed a landing is worked out at, as a fraction of full.
+ *
+ * The run-down goes to rest the way a wheel does — speed falling with the
+ * square root of the distance left, which is an even braking — and that
+ * arrives in a finite time on paper but creeps in steps of a millisecond.
+ * This is only the floor that makes the arithmetic finish; at this speed the
+ * last fraction of a degree is invisible.
+ */
+const STOP_FLOOR = 0.02;
 
 /** How far apart the keyframes of a curved stretch are. Linear between them. */
 const KEYFRAME_MS = 1000 / 60;
@@ -115,15 +126,19 @@ export function runningTurn(
  */
 export function restingPlace(from: number, spin: 1 | -1): number {
 	const next = (spin > 0 ? Math.ceil(from / 360) : Math.floor(from / 360)) * 360;
-	return Math.abs(next - from) < DECEL_DEGREES * 0.5 ? next + spin * 360 : next;
+	// The whole run-down has to fit, or the braking would start mid-way —
+	// a sudden drop in speed where the landing begins.
+	return Math.abs(next - from) < DECEL_DEGREES ? next + spin * 360 : next;
 }
 
 /**
  * The landing: from `from`, `elapsed` ms into the turn, to `restAt`.
  *
- * Still winding up if it was stopped early, and running down over the last
- * `DECEL_DEGREES` — never all the way to nothing, or it would approach the
- * resting place without ever arriving. The last point is `restAt` exactly.
+ * Still winding up if it was stopped early, and braking evenly over the last
+ * `DECEL_DEGREES`, all the way to still. It used to run down only to
+ * `SLOWEST` and stop dead from there — half speed to nothing in one frame,
+ * which is the jolt a landing is meant to avoid. The last point is `restAt`
+ * exactly.
  */
 export function landingTurn(
 	from: number,
@@ -136,8 +151,9 @@ export function landingTurn(
 	let t = 0;
 	let sinceKept = 0;
 	while (spin > 0 ? angle < restAt : angle > restAt) {
-		const landing = Math.min(1, Math.abs(restAt - angle) / DECEL_DEGREES);
-		const rate = SLOWEST + (1 - SLOWEST) * Math.min(wound(elapsed + t), landing);
+		const landing = Math.sqrt(Math.min(1, Math.abs(restAt - angle) / DECEL_DEGREES));
+		const winding = SLOWEST + (1 - SLOWEST) * wound(elapsed + t);
+		const rate = Math.max(STOP_FLOOR, Math.min(winding, landing));
 		angle += spin * rate * LANDING_STEP_MS * DEGREES_PER_MS;
 		t += LANDING_STEP_MS;
 		sinceKept += LANDING_STEP_MS;
@@ -182,6 +198,8 @@ let spin: 1 | -1 = 1;
 let els: HTMLElement[] = [];
 /** Everything playing, so a change of plan can take it all off at once. */
 let playing: Animation[] = [];
+/** Every layer something is playing on, to notice one hydration swapped in. */
+let turning = new WeakSet<Element>();
 let watcher: MutationObserver | null = null;
 let landingTimer: ReturnType<typeof setTimeout> | undefined;
 /** Everybody waiting for the turn to land. See `stopMarkSpin`. */
@@ -258,6 +276,7 @@ function play(root: HTMLElement): void {
 			// turn up exactly where the others are, not from its beginning.
 			animation.startTime = stretch.begun;
 			playing.push(animation);
+			turning.add(el);
 		}
 	}
 }
@@ -265,6 +284,7 @@ function play(root: HTMLElement): void {
 function playEverywhere(): void {
 	for (const animation of playing) animation.cancel();
 	playing = [];
+	turning = new WeakSet();
 	for (const el of els) play(el);
 }
 
@@ -272,9 +292,19 @@ function playEverywhere(): void {
  * A load's turn starts on the marks the server rendered, and hydration can
  * put new nodes in their place — on a phone, after the layout has already
  * said it is done. Whatever appears carrying `data-mark` joins the turn.
+ *
+ * So does a bird's layer swapped in *inside* a mark that was already turning.
+ * The mark kept its turn and the new layer had no turn back, so the bird went
+ * round with the octagon for the rest of the wait — a little, since a load
+ * is usually short, which is what "the puffin still spins sometimes" was.
+ * Everything is put back on together, on the one clock, so nothing jumps.
  */
 function adopt(): void {
 	els = els.filter((el) => el.isConnected);
+	const stranded = els.some((el) =>
+		[...el.querySelectorAll(STILL_SELECTOR)].some((still) => !turning.has(still))
+	);
+	if (stranded) playEverywhere();
 	for (const el of document.querySelectorAll<HTMLElement>(MARK_SELECTOR)) {
 		if (els.includes(el)) continue;
 		els.push(el);
@@ -300,6 +330,7 @@ function rest(): void {
 	 */
 	for (const animation of playing) animation.cancel();
 	playing = [];
+	turning = new WeakSet();
 	stretch = null;
 	els = [];
 	hint = 0;
@@ -340,9 +371,7 @@ export function startMarkSpin(
 	if (stretch?.kind === 'running' && spin === was) {
 		// Already turning this way: the same motion, put on the marks as they
 		// now are — on one clock, so the ones already turning do not move.
-		for (const animation of playing) animation.cancel();
-		playing = [];
-		for (const el of els) play(el);
+		playEverywhere();
 		return;
 	}
 

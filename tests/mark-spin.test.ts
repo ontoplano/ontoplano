@@ -110,6 +110,18 @@ describe('a turn that has been asked to stop', () => {
 		expect(fastest(last)).toBeLessThan(FULL_SPEED * 0.75);
 	});
 
+	test('comes to rest from almost nothing, not from half speed', () => {
+		// It used to brake only to half speed and stop dead from there.
+		const points = landingTurn(0, SPIN_UP_MS, 1, 360);
+		expect(fastest(points.slice(-2))).toBeLessThan(FULL_SPEED * 0.2);
+	});
+
+	test('begins braking at the speed it was going, without a drop', () => {
+		const from = 360 - DECEL_DEGREES;
+		const points = landingTurn(from, SPIN_UP_MS, 1, restingPlace(from, 1));
+		expect(fastest(points.slice(0, 2))).toBeGreaterThan(FULL_SPEED * 0.9);
+	});
+
 	test('lands the other way for a turn going the other way', () => {
 		const points = landingTurn(-50, 300, -1, -360);
 		expect(points[points.length - 1].angle).toBe(-360);
