@@ -11,6 +11,8 @@ import {
 	scheduleTodo,
 	setTodoAttribute,
 	setTodoStatus,
+	setTodoRatings,
+	swapTiedTodos,
 	tagTodo,
 	updateTodo
 } from '$lib/services/todos';
@@ -129,6 +131,38 @@ export const todoHandlers = {
 				add: formData.get('add'),
 				remove: formData.get('remove')
 			});
+			return { success: true };
+		} catch (e) {
+			return toActionFailure(e);
+		}
+	},
+
+	/*
+	 * The three ratings and nothing else — pressed on a card's bars and
+	 * confirmed beside them, without the whole row going back through a form.
+	 */
+	rate: async ({ request, locals }: Event) => {
+		const formData = await request.formData();
+		try {
+			setTodoRatings(
+				buildCtx(locals.user!.id),
+				Number(formData.get('id')),
+				ratingsFromForm(formData)
+			);
+			return { success: true };
+		} catch (e) {
+			return toActionFailure(e);
+		}
+	},
+
+	/*
+	 * Two tasks the ratings cannot tell apart, the other way round — the
+	 * arrows beside a tie. See `swapTiedTodos`.
+	 */
+	nudge: async ({ request, locals }: Event) => {
+		const formData = await request.formData();
+		try {
+			swapTiedTodos(buildCtx(locals.user!.id), formData.get('id'), formData.get('withId'));
 			return { success: true };
 		} catch (e) {
 			return toActionFailure(e);

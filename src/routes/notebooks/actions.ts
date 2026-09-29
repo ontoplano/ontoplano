@@ -481,6 +481,8 @@ export const notebookActions = {
 	todoStatus: todoHandlers.setStatus,
 	todoSchedule: todoHandlers.schedule,
 	todoTag: todoHandlers.tag,
+	todoNudge: todoHandlers.nudge,
+	todoRate: todoHandlers.rate,
 	todoAttribute: todoHandlers.attribute,
 	todoBatch: todoHandlers.batch,
 	todoDelegate: todoHandlers.delegate,

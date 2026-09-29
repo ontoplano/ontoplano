@@ -13,6 +13,10 @@ export type TodoActionNames = {
 	schedule: string;
 	/** A label on or off, without going through the whole row. */
 	tag: string;
+	/** Two tied tasks the other way round — the arrows beside a tie. */
+	nudge: string;
+	/** The three ratings alone, from a press on the card's bars. */
+	rate: string;
 	/** One attribute set or removed, from the ⓘ dialog. */
 	attribute: string;
 	/** The same verbs over a selection of rows — see `batchTodos`. */
@@ -29,6 +33,8 @@ export const TODO_ROOM_ACTIONS: TodoActionNames = {
 	setStatus: '?/setStatus',
 	schedule: '?/schedule',
 	tag: '?/tag',
+	nudge: '?/nudge',
+	rate: '?/rate',
 	attribute: '?/attribute',
 	batch: '?/batch',
 	delegate: '?/delegate',
@@ -43,6 +49,8 @@ export const NOTEBOOK_TODO_ACTIONS: TodoActionNames = {
 	setStatus: '?/todoStatus',
 	schedule: '?/todoSchedule',
 	tag: '?/todoTag',
+	nudge: '?/todoNudge',
+	rate: '?/todoRate',
 	attribute: '?/todoAttribute',
 	batch: '?/todoBatch',
 	delegate: '?/todoDelegate',

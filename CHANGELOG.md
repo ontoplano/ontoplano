@@ -18,10 +18,16 @@ the shape of the data changing. Bumping the minor per batch is what ran this
 file to 0.161 in a few months, which tells a reader nothing about which
 releases mattered.
 
+## 0.184.4 — 2026-09-29
+
+- In priority order, two tasks rated alike can be put the other way round with the arrows beside their bars, and every open task shows its place in line in its corner.
+- A task's urgency, ease and interest are changed by pressing its bars — a double press is nought — and kept with Confirm beside them; on a phone the bars open big in a sheet.
+
 ## 0.184.3 — 2026-09-29
 
 - While the task list is filtered, the task dialog also says where the task would land among the filtered tasks, or — when the filters would hide it.
 - A reminder can be set from the quick add — the wheel, the dashboard's buttons, or `r` on the dashboard.
+- A task's label can be taken off from the row: the small × on its pill, or holding the pill on a phone, then Untag?.
 
 ## 0.184.2 — 2026-09-29
 

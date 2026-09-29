@@ -47,6 +47,7 @@ import {
 	RATINGS,
 	RATING_ORDER,
 	RATING_UNRATED,
+	compareByRatings,
 	type Rating,
 	type RatingValues
 } from '../ratings.js';
@@ -1246,6 +1247,74 @@ export function reorderTodos(ctx: Ctx, ids: unknown[]): void {
 			tx.update(todoTasks)
 				.set({ sortOrder: index, updatedAt: now })
 				.where(and(eq(todoTasks.id, id), eq(todoTasks.userId, ctx.userId)))
+				.run();
+		});
+	});
+}
+
+/**
+ * Two tasks the three ratings cannot tell apart, put the other way round.
+ *
+ * Tasks rated alike are queued by the order arranged by hand and then by age,
+ * so a tie always went to the older one. This lets somebody say otherwise.
+ *
+ * Only the tie is renumbered — every task of the account with the same three
+ * answers — and with the values it already held, so nothing grows each time:
+ * the same numbers, handed out in the new order. Where the tie was still
+ * sharing one value, it is spread over consecutive ones from its lowest, which
+ * is as far as it ever grows.
+ */
+export function swapTiedTodos(ctx: Ctx, id: unknown, otherId: unknown): void {
+	const one = num(id, 'id', { int: true, min: 1 });
+	const other = num(otherId, 'id', { int: true, min: 1 });
+	if (one === other) throw new ValidationError({ key: 'errors.todos.notTied' });
+
+	const rated = {
+		id: todoTasks.id,
+		sortOrder: todoTasks.sortOrder,
+		createdAt: todoTasks.createdAt,
+		urgency: todoTasks.urgency,
+		interest: todoTasks.interest,
+		ease: todoTasks.ease
+	};
+	const ratingsOf = (r: { urgency: number | null; interest: number | null; ease: number | null }) =>
+		({ urgency: r.urgency, interest: r.interest, ease: r.ease }) as RatingValues;
+
+	const pair = db
+		.select(rated)
+		.from(todoTasks)
+		.where(and(inArray(todoTasks.id, [one, other]), eq(todoTasks.userId, ctx.userId)))
+		.all();
+	// Not found and not yours are the same answer.
+	if (pair.length !== 2) throw new NotFoundError('todo');
+	const answers = ratingsOf(pair[0]);
+	if (compareByRatings(answers, ratingsOf(pair[1])) !== 0)
+		throw new ValidationError({ key: 'errors.todos.notTied' });
+
+	const tie = db
+		.select(rated)
+		.from(todoTasks)
+		.where(eq(todoTasks.userId, ctx.userId))
+		.all()
+		.filter((r) => compareByRatings(ratingsOf(r), answers) === 0)
+		.sort((a, b) => a.sortOrder - b.sortOrder || a.createdAt.localeCompare(b.createdAt));
+
+	const order = tie.map((r) => r.id);
+	const i = order.indexOf(one);
+	const j = order.indexOf(other);
+	[order[i], order[j]] = [order[j], order[i]];
+
+	const held = tie.map((r) => r.sortOrder);
+	const distinct = new Set(held).size === held.length;
+	const values = distinct ? held : held.map((_, k) => held[0] + k);
+
+	const now = stamp(ctx);
+	db.transaction((tx) => {
+		order.forEach((taskId, k) => {
+			if (tie.find((r) => r.id === taskId)!.sortOrder === values[k]) return;
+			tx.update(todoTasks)
+				.set({ sortOrder: values[k], updatedAt: now })
+				.where(and(eq(todoTasks.id, taskId), eq(todoTasks.userId, ctx.userId)))
 				.run();
 		});
 	});

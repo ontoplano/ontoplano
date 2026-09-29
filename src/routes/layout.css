@@ -1814,8 +1814,32 @@ label:has(> input[type='radio']:not(:disabled)) {
 	 * palette: an overlay is dark under either.
 	 */
 	.overlay-face {
+		--overlay-face: #1c212a;
 		border-color: rgb(255 255 255 / 0.14);
-		background-color: #1c212a;
+		background-color: var(--overlay-face);
+		color: #ffffff;
+	}
+
+	/*
+	 * The button that says yes, on that face.
+	 *
+	 * `btn-primary` is the palette's darkest grey, which is the face itself —
+	 * a confirm drawn with it was a dark button on a dark box. On the face it
+	 * is the face turned round: its ink as the fill, the face as the ink.
+	 */
+	.overlay-face .btn-primary {
+		border-color: transparent;
+		background-color: #ffffff;
+		color: var(--overlay-face);
+	}
+	.overlay-face .btn-primary:hover {
+		background-color: rgb(255 255 255 / 0.85);
+	}
+	/* And an icon on it takes the face's quieter ink, not the palette's grey. */
+	.overlay-face .icon-btn {
+		color: rgb(255 255 255 / 0.66);
+	}
+	.overlay-face .icon-btn:hover {
 		color: #ffffff;
 	}
 
@@ -2099,6 +2123,32 @@ label:has(> input[type='radio']:not(:disabled)) {
 		width: var(--row-rail);
 	}
 
+	/*
+	 * The arrows beside a task's bars that reorder a tie.
+	 *
+	 * Hung in the card's left padding, outside the rail, so a row that has
+	 * them starts its words exactly where every other row does.
+	 */
+	.tie-arrows {
+		position: absolute;
+		right: 100%;
+		bottom: 0;
+		display: flex;
+		flex-direction: column;
+		margin-right: 0.125rem;
+	}
+	.tie-arrows button {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		width: 0.875rem;
+		height: 1.125rem;
+		color: var(--color-gray-500);
+	}
+	.tie-arrows button:hover {
+		color: var(--color-gray-900);
+	}
+
 	/* A button standing in the rail — a star, a pin — is the rail's width. */
 	.row-rail > .icon-btn,
 	.row-rail > form > .icon-btn {
@@ -2220,6 +2270,50 @@ label:has(> input[type='radio']:not(:disabled)) {
 	 */
 	.tag-chip {
 		white-space: nowrap;
+	}
+
+	/*
+	 * A label that can be taken off: its word and a small × in one pill.
+	 *
+	 * The two halves carry no chrome of their own — the pill is the shape. The
+	 * × is drawn only where there is a pointer to aim it: a phone holds the
+	 * pill instead (`$lib/actions/long-press`), and a × under a thumb is a
+	 * label taken off by a scroll.
+	 */
+	.tag-chip-face {
+		all: unset;
+		cursor: pointer;
+	}
+	.tag-chip-face:disabled {
+		cursor: default;
+	}
+	.tag-chip-x {
+		all: unset;
+		display: inline-flex;
+		margin-inline-start: 0.125rem;
+		padding: 0.125rem;
+		cursor: pointer;
+		opacity: 0.6;
+	}
+	.tag-chip-x:hover,
+	.tag-chip-x:focus-visible {
+		opacity: 1;
+	}
+	.tag-chip-face:focus-visible,
+	.tag-chip-x:focus-visible {
+		outline: 1px solid currentColor;
+		outline-offset: 1px;
+	}
+	@media (pointer: fine) {
+		/* The × sits in the pill's own end padding rather than adding to it. */
+		.tag-chip-removable {
+			padding-inline-end: 0.125rem;
+		}
+	}
+	@media not (pointer: fine) {
+		.tag-chip-x {
+			display: none;
+		}
 	}
 
 	/*
@@ -4299,6 +4393,19 @@ html[data-keyboard='open'] {
 
 	.seg > :is(button, a, label) {
 		min-height: calc(var(--control-touch) - 2 * var(--seg-pad));
+	}
+
+	/* The tie arrows live in a 16px margin; a 44px floor would stack them off the card. */
+	.tie-arrows button {
+		min-height: 0;
+	}
+
+	/* A label that can be taken off is one target — the pill, not the word in it. */
+	.tag-chip-removable {
+		min-height: var(--control-touch);
+	}
+	.tag-chip-removable > button {
+		min-height: 0;
 	}
 
 	/*

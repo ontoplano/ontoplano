@@ -572,6 +572,7 @@ export type MessageKey =
 	| 'errors.todos.categoryRequired'
 	| 'errors.todos.invalidBatch'
 	| 'errors.todos.invalidStatus'
+	| 'errors.todos.notTied'
 	| 'errors.todos.nothingWasChosen'
 	| 'errors.todos.onlyOneOffBlocksCan'
 	| 'errors.todos.thatIsTooManyAtOnce'
@@ -3216,6 +3217,8 @@ export type MessageKey =
 	| 'style.playfulHint'
 	| 'style.sober'
 	| 'style.soberHint'
+	| 'tagChip.untag'
+	| 'tagChip.untagName'
 	| 'tagFilter.addToHide'
 	| 'tagFilter.addToKeep'
 	| 'tagFilter.all'
@@ -3570,6 +3573,7 @@ export type MessageKey =
 	| 'todoRows.aToDoIsATask'
 	| 'todoRows.addLabels'
 	| 'todoRows.added'
+	| 'todoRows.aheadOfTheTie'
 	| 'todoRows.anythingYouFinishShowsUp'
 	| 'todoRows.archived'
 	| 'todoRows.archivedCount'
@@ -3578,6 +3582,7 @@ export type MessageKey =
 	| 'todoRows.batchStatus'
 	| 'todoRows.batchTag'
 	| 'todoRows.batchUpdated'
+	| 'todoRows.behindTheTie'
 	| 'todoRows.completed'
 	| 'todoRows.completedCount'
 	| 'todoRows.completedTitle'
@@ -3611,6 +3616,7 @@ export type MessageKey =
 	| 'todoRows.oldestAtTheTopPress'
 	| 'todoRows.oldestFirst'
 	| 'todoRows.orderTasksBy'
+	| 'todoRows.placeOnScreen'
 	| 'todoRows.priority'
 	| 'todoRows.pullOntoToday'
 	| 'todoRows.pulledOntoThisDay'
@@ -3890,6 +3896,7 @@ export type MessageKey =
 	| 'ui.clear'
 	| 'ui.close'
 	| 'ui.colour'
+	| 'ui.confirm'
 	| 'ui.copied'
 	| 'ui.copy'
 	| 'ui.create'
@@ -4558,6 +4565,7 @@ export interface MessageValuesFor {
 	'start.youGetFreeDaysEvenIf': { trialDaysAhead: string | number };
 	'streamChart.dateCountPoints': { count: number; date: string | number };
 	'streamChart.inAgainstOutByMonth': { inLabel: string | number; outLabel: string | number };
+	'tagChip.untagName': { name: string | number };
 	'tagFilter.withAll': { tags: string | number };
 	'tagFilter.withAny': { tags: string | number };
 	'tagFilter.without': { tags: string | number };

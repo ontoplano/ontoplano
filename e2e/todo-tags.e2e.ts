@@ -109,3 +109,35 @@ test('labels are edited, and an edit that says nothing about them keeps them', a
 	await expect(chip(page, '#a2')).toHaveCount(0);
 	await expect(page.locator('[aria-controls="todo-tags-panel"]')).toHaveCount(0);
 });
+
+/**
+ * A label comes off from the row, and only once it is confirmed.
+ *
+ * The × on the pill (a held finger on a phone) is quick enough to hit by
+ * accident, so it asks beside the pill; a press anywhere else is the same as
+ * saying no.
+ */
+test('a label comes off from its pill, after one confirmation', async ({ page }) => {
+	test.setTimeout(150_000);
+	await register(page, testEmail('todo-untag'));
+	await visit(page, '/tasks/todo');
+	await newTodo(page, 'renew the domain', 'a1 done');
+
+	const ask = page.getByRole('dialog', { name: 'Untag?' });
+
+	// Thought better of it: Escape leaves the label where it was.
+	await page.getByRole('button', { name: 'Take #a1 off' }).click();
+	await expect(ask).toBeVisible();
+	await page.keyboard.press('Escape');
+	await expect(ask).toBeHidden();
+	await expect(chip(page, '#a1')).toBeVisible();
+
+	// Meant it — once the confirm has armed, which a double press cannot beat.
+	await page.getByRole('button', { name: 'Take #a1 off' }).click();
+	const confirm = ask.getByRole('button', { name: 'Untag?' });
+	await expect(confirm).not.toHaveClass(/is-unarmed/);
+	await confirm.click();
+	await expect(chip(page, '#a1')).toHaveCount(0);
+	// Only that one.
+	await expect(chip(page, '#done')).toBeVisible();
+});

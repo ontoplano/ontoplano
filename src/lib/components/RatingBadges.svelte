@@ -93,11 +93,18 @@
 		stacked = false,
 		/** Grey, for something finished: the shapes still read, the colour is gone. */
 		muted = false,
+		/**
+		 * How tall the group stands, where one scale for the list is not the
+		 * point — the sheet on a phone that sets them draws them big. The
+		 * width follows at the same proportions.
+		 */
+		height = undefined,
 		class: className = ''
 	}: {
 		values: Partial<RatingValues>;
 		stacked?: boolean;
 		muted?: boolean;
+		height?: string;
 		class?: string;
 	} = $props();
 
@@ -133,6 +140,7 @@
 		? 'rating-bars-muted'
 		: ''} {className}"
 	role="img"
+	style={height ? `--bars-height: ${height}; --bars-width: calc(${height} * 2 / 3)` : undefined}
 	title={said}
 	aria-label={said}
 >
