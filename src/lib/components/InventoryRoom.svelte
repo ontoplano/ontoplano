@@ -57,7 +57,7 @@
 	import { browser } from '$app/environment';
 	import { SvelteSet } from 'svelte/reactivity';
 	import SplitColumns from '$lib/components/SplitColumns.svelte';
-	import ItemRow from '$lib/components/ItemRow.svelte';
+	import ItemRow, { itemRowWash } from '$lib/components/ItemRow.svelte';
 	import { ITEM_ROOM_ACTIONS } from '$lib/item-action-names';
 	import { useT } from '$lib/i18n';
 
@@ -1583,10 +1583,8 @@
 													{#each category.items as item (item.id)}
 														{@const globalIdx = shownItems.indexOf(item)}
 														<!--
-															Only what you put away is marked, dimmed: what is at
-															its target already says so in its count, and a wash
-															behind the row was a third highlight next to the cursor
-															and the hover.
+															What you have is washed blue and what you put away
+															dimmed — see `itemRowWash`. Neither moves the row.
 														-->
 														<div
 															use:keepInView={globalIdx === selectedIndex}
@@ -1601,9 +1599,10 @@
 																dragOver = null;
 																stopFollowing();
 															}}
-															class="row-card cursor-grab {item.snoozed
-																? 'opacity-50'
-																: ''} {globalIdx === selectedIndex ? 'kb-cursor' : ''}"
+															class="row-card cursor-grab {itemRowWash(item)} {globalIdx ===
+															selectedIndex
+																? 'kb-cursor'
+																: ''}"
 														>
 															<!--
 																The row is a component, so a thing filed under a notebook is the

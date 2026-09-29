@@ -164,11 +164,11 @@
 	>
 		<Icon name="minus" size={14} />
 	</button>
-	<span class="counter-value" style:order={2}>
+	<span class="counter-value {valueClass?.(shown) ?? ''}" style:order={2}>
 		<input
 			type="text"
 			inputmode={whole ? 'numeric' : 'decimal'}
-			class="tabular {valueClass?.(shown) ?? ''}"
+			class="tabular"
 			style:width="calc({Math.max(String(typing ?? shown).length, 1)}ch + 0.5rem + 2px)"
 			value={typing ?? shown}
 			aria-label={label}
@@ -253,7 +253,13 @@
 	 * A number that reads as text until it is touched: the field's border
 	 * shows on hover and focus, so a row of counts is not a row of boxes.
 	 */
-	.counter-value input {
+	/*
+	 * Doubled up on purpose: the app's form-control rule
+	 * (`input:not(…):not(…):not(…)` in layout.css) paints every field white with
+	 * dark ink, and at one class this lost to it — a white box behind the count
+	 * on a tinted row, and the count's own colour gone.
+	 */
+	.counter .counter-value input:not([type='hidden']) {
 		min-width: calc(1ch + 0.5rem + 2px);
 		padding: 0.125rem 0.25rem;
 		text-align: center;
@@ -271,11 +277,11 @@
 		min-height: 0;
 	}
 
-	.counter-value input:hover {
+	.counter .counter-value input:not([type='hidden']):hover {
 		border-color: var(--color-gray-300);
 	}
 
-	.counter-value input:focus {
+	.counter .counter-value input:not([type='hidden']):focus {
 		outline: none;
 		border-color: var(--color-gray-900);
 		background: var(--color-white);

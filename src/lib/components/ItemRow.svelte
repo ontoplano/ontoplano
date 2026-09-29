@@ -1,3 +1,17 @@
+<script lang="ts" module>
+	/**
+	 * The wash on the row around an item, wherever the row is drawn.
+	 *
+	 * What you have is blue, so a restocked thing is seen where it is rather
+	 * than by reading its count; what you put away is dimmed. Still to buy is
+	 * the list's normal state and is left plain.
+	 */
+	export function itemRowWash(item: { bought: boolean; snoozed: boolean }): string {
+		if (item.snoozed) return 'opacity-50';
+		return item.bought ? 'bg-blue-50' : '';
+	}
+</script>
+
 <script lang="ts">
 	/**
 	 * One thing you own or mean to buy, wherever it is shown.
@@ -148,8 +162,9 @@
 			<!--
 				The count answers the press at once and is sent when the pressing stops,
 				and it is a field: five more is typing it, not five presses. See `Counter`.
-				Where you keep more than one, the count you are measured against is written
-				beside it, so "two of four" is a glance rather than an arithmetic.
+				The count you are measured against is written beside it — one as much as
+				four — so "two of four" is a glance rather than an arithmetic, and every
+				row reads the same way.
 			-->
 			<Counter
 				vertical
@@ -169,7 +184,7 @@
 				class="w-full shrink-0 leading-none"
 			>
 				{#snippet suffix()}
-					{#if item.idealQty > 1}<span class="text-xs text-gray-500">/{item.idealQty}</span>{/if}
+					{#if item.idealQty > 0}<span class="text-xs text-gray-500">/{item.idealQty}</span>{/if}
 				{/snippet}
 			</Counter>
 		{/if}

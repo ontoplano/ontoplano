@@ -24,6 +24,7 @@ releases mattered.
 - The plan tiles lose the big faint octagon behind each badge.
 - On a phone the board slides sideways again, one column at a time, with the column names above to jump between them or to drop a card on.
 - A task's rating bars follow the mouse while it is held down; the box beside them and the phone's sheet say where the task would land, under the filters too, and have an edit button that opens the task with the bars as they are.
+- Inventory always shows a count against what you keep — 0/1 as much as 2/4 — and a thing that is fully stocked is washed blue again, with its count in blue.
 
 ## 0.184.6 — 2026-09-29
 
