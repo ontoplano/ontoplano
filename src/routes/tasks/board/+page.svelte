@@ -955,17 +955,26 @@
 		A card armed for a move is a state somebody can walk away from, so it
 		says so — with its name, because two cards in a column look alike — and
 		the way out is a press rather than a guess.
+
+		Floating at the foot of the screen, where the selection bar floats: it
+		was a line above the columns, and arming a move shoved every column down
+		under the finger that was about to pick one.
 	-->
 			{#if moving}
 				<div
-					class="flex items-center gap-3 border border-gray-900 bg-gray-50 px-3 py-2 text-sm"
+					class="float-layer overlay-face fixed inset-x-3 z-40 mx-auto flex max-w-xl items-center gap-3 border px-3 py-2 text-sm shadow-overlay"
+					style="bottom: calc(var(--safe-bottom) + var(--mobile-nav-height) + 0.75rem)"
 					role="status"
 				>
 					<Icon name="drag" size={14} />
 					<span class="min-w-0 flex-1 truncate"
 						>{t('tasks.board.movingPickAColumn', { title: moving.title })}</span
 					>
-					<button type="button" class="btn btn-sm shrink-0" onclick={() => (movingUid = null)}>
+					<button
+						type="button"
+						class="btn btn-primary btn-sm shrink-0"
+						onclick={() => (movingUid = null)}
+					>
 						{t('ui.cancel')}
 					</button>
 				</div>

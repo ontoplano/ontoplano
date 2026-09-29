@@ -4400,12 +4400,25 @@ html[data-keyboard='open'] {
 		min-height: 0;
 	}
 
-	/* A label that can be taken off is one target — the pill, not the word in it. */
-	.tag-chip-removable {
-		min-height: var(--control-touch);
-	}
-	.tag-chip-removable > button {
+	/*
+	 * A label is a pill, not a slab.
+	 *
+	 * The 44px floor above made every label on a phone a block as tall as a
+	 * button, three to a card and nothing else readable around them. They are
+	 * drawn at their own size; what a finger needs is the target, so each one
+	 * reaches past its edges invisibly (`::after`) rather than by growing.
+	 */
+	:is(button.tag-chip, .tag-chip-removable, .tag-chip-removable > button, .quick-tag) {
 		min-height: 0;
+	}
+	:is(button.tag-chip, .tag-chip-face, .quick-tag) {
+		position: relative;
+	}
+	/* On the button itself — over a wrapper it would take the press from it. */
+	:is(button.tag-chip, .tag-chip-face, .quick-tag)::after {
+		content: '';
+		position: absolute;
+		inset: -0.5rem -0.125rem;
 	}
 
 	/*

@@ -60,8 +60,13 @@ test('the move can be put back down without going anywhere', async ({ page }) =>
 	await newCard(page, 'ring the plumber', 'after 9pm');
 
 	const card = page.locator('article', { hasText: 'ring the plumber' }).first();
+	// The columns stay where they were: what is in your hand is said over the
+	// board, not in a line pushed in above it.
+	const lanes = page.locator('section.lane').first();
+	const before = (await lanes.boundingBox())!.y;
 	await card.getByRole('button', { name: /Move this to another column/ }).click();
 	await expect(page.getByText(/Moving /)).toBeVisible();
+	expect((await lanes.boundingBox())!.y).toBe(before);
 
 	await page.getByRole('button', { name: 'Cancel', exact: true }).click();
 	await expect(page.getByText(/Moving /)).toHaveCount(0);

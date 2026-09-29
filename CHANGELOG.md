@@ -18,6 +18,10 @@ the shape of the data changing. Bumping the minor per batch is what ran this
 file to 0.161 in a few months, which tells a reader nothing about which
 releases mattered.
 
+## 0.184.5 — 2026-09-29
+
+- On a phone, labels on cards are drawn as pills at their own size rather than as button-tall blocks; they are as easy to tap as before.
+
 ## 0.184.4 — 2026-09-29
 
 - In priority order, two tasks rated alike can be put the other way round with the arrows beside their bars, and every open task shows its place in line in its corner.
@@ -25,6 +29,7 @@ releases mattered.
 - Toolbars keep the search, the count and the buttons on one line: filters that do not fit wrap among themselves (the wishlist's toolbar no longer breaks in two), Reminders has the same search and count as every other list, and a narrow panel like People keeps its count beside the search.
 - Inventory: dragging a thing onto a place works again, and a click on the right half of a place opens it rather than its hidden rename button; a place's count says "things" again.
 - Assistants can set how many times a habit was done on a day (`set_habit_count`), not only tick it once.
+- Board: picking a card up to move it says so in a bar floating at the foot of the screen, instead of a line that pushed every column down.
 
 ## 0.184.3 — 2026-09-29
 
