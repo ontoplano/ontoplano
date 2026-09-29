@@ -2096,6 +2096,7 @@ export type MessageKey =
 	| 'notify.noun.goalTarget'
 	| 'notify.noun.habit'
 	| 'notify.noun.idea'
+	| 'notify.noun.inventoryAttribute'
 	| 'notify.noun.inventoryCategory'
 	| 'notify.noun.inventoryItem'
 	| 'notify.noun.item'
@@ -4387,6 +4388,7 @@ export interface MessageValuesFor {
 	'notify.noun.goalTarget': { count: number };
 	'notify.noun.habit': { count: number };
 	'notify.noun.idea': { count: number };
+	'notify.noun.inventoryAttribute': { count: number };
 	'notify.noun.inventoryCategory': { count: number };
 	'notify.noun.inventoryItem': { count: number };
 	'notify.noun.item': { count: number };

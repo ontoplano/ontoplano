@@ -2373,6 +2373,10 @@ export const messages: Catalogue = {
 	'notify.noun.goalTarget': { one: '{count} alvo de meta', other: '{count} alvos de meta' },
 	'notify.noun.habit': { one: '{count} hábito', other: '{count} hábitos' },
 	'notify.noun.idea': { one: '{count} ideia', other: '{count} ideias' },
+	'notify.noun.inventoryAttribute': {
+		one: '{count} atributo de inventário',
+		other: '{count} atributos de inventário'
+	},
 	'notify.noun.inventoryCategory': {
 		one: '{count} categoria de inventário',
 		other: '{count} categorias de inventário'

@@ -2175,6 +2175,10 @@
 		"one": "{count} ideia",
 		"other": "{count} ideias"
 	},
+	"notify.noun.inventoryAttribute": {
+		"one": "{count} atributo de inventário",
+		"other": "{count} atributos de inventário"
+	},
 	"notify.noun.inventoryCategory": {
 		"one": "{count} categoria de inventário",
 		"other": "{count} categorias de inventário"

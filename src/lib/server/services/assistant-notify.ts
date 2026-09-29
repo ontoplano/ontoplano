@@ -201,6 +201,7 @@ export const NOUN_KEYS = new Set([
 	'goalTarget',
 	'habit',
 	'idea',
+	'inventoryAttribute',
 	'inventoryCategory',
 	'inventoryItem',
 	'item',
