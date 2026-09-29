@@ -27,6 +27,7 @@ releases mattered.
 - Inventory always shows a count against what you keep — 0/1 as much as 2/4 — and a thing that is fully stocked is washed blue again, with its count in blue.
 - Where a task would land under the current filters is said in blue words beside the filter icon, not in a pill.
 - The Untag and rating-confirm buttons beside a task can be pressed straight away.
+- Android 12 and later: a notebook widget is placed on the home screen straight away and says "Tap to choose a notebook", rather than depending on the setup page to keep it there.
 
 ## 0.184.6 — 2026-09-29
 
