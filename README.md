@@ -36,7 +36,6 @@ scope all your tasks, recipes, inventory, notes, bills etc. in specific notebook
 
 </div>
 
-
 ---
 
 ## Running it

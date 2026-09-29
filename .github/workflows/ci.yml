@@ -12,9 +12,9 @@ on:
   push:
     branches: [master, main]
     paths-ignore:
-        - '**/*.md'
-        - 'docs/**'
-        - '.github/badges/**'
+      - '**/*.md'
+      - 'docs/**'
+      - '.github/badges/**'
   pull_request:
 
 # A second push to the same branch cancels the first. Nobody needs the result
