@@ -3615,6 +3615,7 @@ export const messages: Catalogue = {
 	'shortcut.carryCardToPreviousColumn': 'Levar cartão para a coluna anterior',
 	'shortcut.closeForm': 'Fechar formulário',
 	'shortcut.copyToDaysMultiselect': 'Copiar para dias (seleção múltipla)',
+	'shortcut.cycleDayWeekMonth': 'Alternar entre dia, semana e mês',
 	'shortcut.delegate': 'Delegar',
 	'shortcut.deleteBlock': 'Excluir bloco de tarefa',
 	'shortcut.deleteItem': 'Excluir item',
@@ -4010,6 +4011,8 @@ export const messages: Catalogue = {
 	'tasks.plan.selectedDragOne':
 		'{size} selecionados · arraste um para mover todos · Esc para limpar',
 	'tasks.plan.shift': 'Shift',
+	'tasks.plan.showAsCalendar': 'Mostrar como calendário (a)',
+	'tasks.plan.showAsList': 'Mostrar como lista (a)',
 	'tasks.plan.someDays': 'Alguns dias',
 	'tasks.plan.startADayEarlier': 'Começar a semana um dia antes',
 	'tasks.plan.startADayLater': 'Começar a semana um dia depois',
@@ -4316,6 +4319,8 @@ export const messages: Catalogue = {
 	'tour.dragToMakeABlock': 'Arraste para criar um bloco de tarefa',
 	'tour.eachCardIsOneRoom':
 		'Cada cartão é uma seção reportando. Arraste-os na ordem que você quiser — a alça fica ao lado da data.',
+	'tour.eachDayAHeadingAndItsBlocks':
+		'Cada dia um título e seus blocos embaixo, no dia, na semana ou no mês. Pressione de novo, ou a, para o calendário.',
 	'tour.emailPasswordTheDevicesYou':
 		'E-mail, senha, os dispositivos em que você está conectado, e as duas coisas que movem tudo de uma vez.',
 	'tour.entriesGoalsPeopleRecipesIdeas':
@@ -4485,6 +4490,7 @@ export const messages: Catalogue = {
 		'As seções se abrem ao redor do seu dedo e você solta na que quiser. Mais rápido que ler uma lista de dez palavras, assim que sua mão já sabe onde elas estão.',
 	'tour.theSameBlocksAsThe':
 		'Os mesmos blocos de tarefa do plano, na única forma em que você pode pegar um e movê-lo.',
+	'tour.theSameDaysAsAList': 'Os mesmos dias, em lista',
 	'tour.theSameGestureForA':
 		'O mesmo gesto, para uma tarefa, uma ideia, uma nota ou algo para comprar — sem precisar decidir antes onde isso pertence.',
 	'tour.theSameWordOnA':

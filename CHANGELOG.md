@@ -21,6 +21,7 @@ releases mattered.
 ## 0.184.8 — 2026-09-29
 
 - The menu wheels lose their outlines: no ring around the wheel, and no frame around the room's name or the wheel's settings button.
+- The plan opens on the calendar at every width, a phone's week included. The new list button beside Day, Week and Month (or `a`) shows any of the three as a list of its days instead.
 
 ## 0.184.7 — 2026-09-29
 

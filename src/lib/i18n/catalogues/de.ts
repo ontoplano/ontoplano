@@ -3659,6 +3659,7 @@ export const messages: Catalogue = {
 	'shortcut.carryCardToPreviousColumn': 'Karte in vorherige Spalte verschieben',
 	'shortcut.closeForm': 'Formular schließen',
 	'shortcut.copyToDaysMultiselect': 'Auf Tage kopieren (Mehrfachauswahl)',
+	'shortcut.cycleDayWeekMonth': 'Tag, Woche und Monat durchschalten',
 	'shortcut.delegate': 'Delegieren',
 	'shortcut.deleteBlock': 'Aufgabenblock löschen',
 	'shortcut.deleteItem': 'Element löschen',
@@ -4059,6 +4060,8 @@ export const messages: Catalogue = {
 	'tasks.plan.selectedDragOne':
 		'{size} ausgewählt · eine ziehen, um sie zu verschieben · Esc zum Leeren',
 	'tasks.plan.shift': 'Umschalt',
+	'tasks.plan.showAsCalendar': 'Als Kalender anzeigen (a)',
+	'tasks.plan.showAsList': 'Als Liste anzeigen (a)',
 	'tasks.plan.someDays': 'Bestimmte Tage',
 	'tasks.plan.startADayEarlier': 'Woche einen Tag früher beginnen',
 	'tasks.plan.startADayLater': 'Woche einen Tag später beginnen',
@@ -4363,6 +4366,8 @@ export const messages: Catalogue = {
 	'tour.dragToMakeABlock': 'Ziehen, um einen Aufgabenblock zu erstellen',
 	'tour.eachCardIsOneRoom':
 		'Jede Karte ist ein Bereich, der sich meldet. Ziehen Sie sie in die gewünschte Reihenfolge — der Griff ist oben neben dem Datum.',
+	'tour.eachDayAHeadingAndItsBlocks':
+		'Jeder Tag eine Überschrift mit seinen Blöcken darunter, für Tag, Woche oder Monat. Nochmals drücken, oder a, für den Kalender.',
 	'tour.emailPasswordTheDevicesYou':
 		'E-Mail, Passwort, die Geräte, auf denen Sie angemeldet sind, und die zwei Dinge, die alles auf einmal verschieben.',
 	'tour.entriesGoalsPeopleRecipesIdeas':
@@ -4533,6 +4538,7 @@ export const messages: Catalogue = {
 		'Die Bereiche öffnen sich um Ihren Finger, und Sie lassen bei dem los, den Sie wollen. Schneller als eine Liste von zehn Wörtern zu lesen, sobald Ihre Hand weiß, wo sie sind.',
 	'tour.theSameBlocksAsThe':
 		'Dieselben Aufgabenblöcke wie im Plan, in der einen Form, in der Sie einen aufnehmen und verschieben können.',
+	'tour.theSameDaysAsAList': 'Dieselben Tage als Liste',
 	'tour.theSameGestureForA':
 		'Dieselbe Geste, für eine Aufgabe, eine Idee, eine Notiz oder etwas zum Kaufen — ohne vorher zu entscheiden, wohin es gehört.',
 	'tour.theSameWordOnA':

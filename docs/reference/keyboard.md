@@ -251,7 +251,8 @@ works is a key listed here and the reverse.
 | ------------ | ----------------------------- |
 | <kbd>j</kbd> | Navigate slots                |
 | <kbd>k</kbd> | Navigate slots                |
-| <kbd>g</kbd> | Toggle list/grid view         |
+| <kbd>g</kbd> | Cycle day, week and month     |
+| <kbd>a</kbd> | Toggle list/grid view         |
 | <kbd>+</kbd> | Zoom in (grid)                |
 | <kbd>=</kbd> | Zoom in (grid)                |
 | <kbd>-</kbd> | Zoom out (grid)               |

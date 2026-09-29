@@ -37,7 +37,7 @@ under the pointer.
 | `/settings/integrations/widget`      | tour.widgets                | 2     |
 | `/tasks/activities`                  | tour.activities             | 3     |
 | `/tasks/board`                       | tour.board                  | 4     |
-| `/tasks/plan`                        | tour.plan                   | 8     |
+| `/tasks/plan`                        | tour.plan                   | 9     |
 | `/tasks/review`                      | tour.review                 | 3     |
 | `/tasks/todo`                        | tour.toDo                   | 5     |
 
@@ -226,8 +226,9 @@ at the button that reopens it, so it is not listed here.
 4. tour.aTaskBlockBelongsSomewhere
 5. tour.whereYouAreAndWhat
 6. tour.whereYourWeekBegins
-7. tour.whatIsWaitingForATime
-8. tour.aWeekYouCanLay
+7. tour.theSameDaysAsAList
+8. tour.whatIsWaitingForATime
+9. tour.aWeekYouCanLay
 
 ### `/tasks/review` — tour.review
 

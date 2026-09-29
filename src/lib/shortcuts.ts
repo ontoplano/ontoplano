@@ -107,7 +107,8 @@ export const PAGE_SHORTCUTS: Record<string, PageShortcuts> = {
 		shortcuts: [
 			{ key: 'j', action: 'navigate-down', description: 'shortcut.navigateSlots' },
 			{ key: 'k', action: 'navigate-up', description: 'shortcut.navigateSlots' },
-			{ key: 'g', action: 'toggle-view', description: 'shortcut.toggleListGridView' },
+			{ key: 'g', action: 'toggle-view', description: 'shortcut.cycleDayWeekMonth' },
+			{ key: 'a', action: 'toggle-list', description: 'shortcut.toggleListGridView' },
 			{ key: '+', action: 'zoom-in', description: 'shortcut.zoomInGrid' },
 			{ key: '=', action: 'zoom-in', description: 'shortcut.zoomInGrid' },
 			{ key: '-', action: 'zoom-out', description: 'shortcut.zoomOutGrid' },

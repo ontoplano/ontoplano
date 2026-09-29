@@ -965,3 +965,10 @@ export function buildBillEvents(
 		}
 	}));
 }
+
+/**
+ * The address that asks for the plan as a list of its days rather than the
+ * calendar: `?as=list`. Absent, it is the calendar.
+ */
+export const LIST_PARAM = 'as';
+export const LIST_VALUE = 'list';

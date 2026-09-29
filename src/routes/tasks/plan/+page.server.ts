@@ -51,6 +51,7 @@ import { todoHandlers } from '$lib/services/todo-actions';
 import { listInstances, setStatusOn } from '$lib/services/instances';
 import { addDays, startOfWeek } from '$lib/services/week-generator';
 import { getGridHours, getWeekSettings } from '$lib/services/settings';
+import { LIST_PARAM, LIST_VALUE } from '$lib/planner-grid';
 
 /**
  * What the browser last knew about its own width.
@@ -238,6 +239,9 @@ export const load = async ({ locals, url, cookies }: IsolatedEvent) => {
 	const viewExplicit =
 		requestedView === 'day' || requestedView === 'week' || requestedView === 'month';
 	const span = SPAN_DAYS[view];
+	// Any of the three views can be read as a list of its days instead of the
+	// calendar, which stays the default.
+	const asList = url.searchParams.get(LIST_PARAM) === LIST_VALUE;
 
 	const today = startOfDay(ctx.now);
 	// A month is read more than edited, so it starts where the month does rather
@@ -335,6 +339,8 @@ export const load = async ({ locals, url, cookies }: IsolatedEvent) => {
 		range,
 		view,
 		viewExplicit,
+		asList,
+		narrow,
 		weekFirstDay: firstDay,
 		categories: listCategories(ctx),
 		activities: listActivities(ctx, { activeOnly: true }),

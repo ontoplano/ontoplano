@@ -3553,6 +3553,7 @@ export const messages: Catalogue = {
 	'shortcut.carryCardToPreviousColumn': 'Carry card to previous column',
 	'shortcut.closeForm': 'Close form',
 	'shortcut.copyToDaysMultiselect': 'Copy to days (multiselect)',
+	'shortcut.cycleDayWeekMonth': 'Cycle day, week and month',
 	'shortcut.delegate': 'Delegate',
 	'shortcut.deleteBlock': 'Delete task block',
 	'shortcut.deleteItem': 'Delete item',
@@ -3941,6 +3942,8 @@ export const messages: Catalogue = {
 	'tasks.plan.selected': '{size} selected',
 	'tasks.plan.selectedDragOne': '{size} selected · drag one to move them · Esc to clear',
 	'tasks.plan.shift': 'Shift',
+	'tasks.plan.showAsCalendar': 'Show as the calendar (a)',
+	'tasks.plan.showAsList': 'Show as a list (a)',
 	'tasks.plan.someDays': 'Some days',
 	'tasks.plan.startADayEarlier': 'Start the week a day earlier',
 	'tasks.plan.startADayLater': 'Start the week a day later',
@@ -4241,6 +4244,8 @@ export const messages: Catalogue = {
 	'tour.dragToMakeABlock': 'Drag to make a task block',
 	'tour.eachCardIsOneRoom':
 		'Each card is one room reporting in. Drag them into the order you want — the handle is up beside the date.',
+	'tour.eachDayAHeadingAndItsBlocks':
+		'Each day a heading and its blocks under it, in the day, the week or the month. Press it again, or a, for the calendar.',
 	'tour.emailPasswordTheDevicesYou':
 		'Email, password, the devices you are signed in on, and the two things that move everything at once.',
 	'tour.entriesGoalsPeopleRecipesIdeas':
@@ -4408,6 +4413,7 @@ export const messages: Catalogue = {
 		'The rooms open around your finger and you release on the one you want. Faster than reading a list of ten words, once your hand knows where they are.',
 	'tour.theSameBlocksAsThe':
 		'The same task blocks as the plan, in the one form where you can pick one up and move it.',
+	'tour.theSameDaysAsAList': 'The same days, as a list',
 	'tour.theSameGestureForA':
 		'The same gesture, for a todo, an idea, a note or something to buy — without deciding where it belongs first.',
 	'tour.theSameWordOnA':

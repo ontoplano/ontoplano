@@ -3634,6 +3634,7 @@ export const messages: Catalogue = {
 	'shortcut.carryCardToPreviousColumn': 'Llevar tarjeta a la columna anterior',
 	'shortcut.closeForm': 'Cerrar formulario',
 	'shortcut.copyToDaysMultiselect': 'Copiar a días (selección múltiple)',
+	'shortcut.cycleDayWeekMonth': 'Recorrer día, semana y mes',
 	'shortcut.delegate': 'Delegar',
 	'shortcut.deleteBlock': 'Eliminar bloque de tarea',
 	'shortcut.deleteItem': 'Eliminar elemento',
@@ -4027,6 +4028,8 @@ export const messages: Catalogue = {
 	'tasks.plan.selectedDragOne':
 		'{size} seleccionados · arrastra uno para moverlos · Esc para limpiar',
 	'tasks.plan.shift': 'Shift',
+	'tasks.plan.showAsCalendar': 'Mostrar como calendario (a)',
+	'tasks.plan.showAsList': 'Mostrar como lista (a)',
 	'tasks.plan.someDays': 'Algunos días',
 	'tasks.plan.startADayEarlier': 'Empezar la semana un día antes',
 	'tasks.plan.startADayLater': 'Empezar la semana un día después',
@@ -4331,6 +4334,8 @@ export const messages: Catalogue = {
 	'tour.dragToMakeABlock': 'Arrastra para crear un bloque de tarea',
 	'tour.eachCardIsOneRoom':
 		'Cada tarjeta es una sección que reporta. Arrástralas al orden que quieras — el asa está junto a la fecha.',
+	'tour.eachDayAHeadingAndItsBlocks':
+		'Cada día un título y sus bloques debajo, en el día, la semana o el mes. Púlsalo otra vez, o a, para el calendario.',
 	'tour.emailPasswordTheDevicesYou':
 		'Correo, contraseña, los dispositivos en los que iniciaste sesión, y las dos cosas que mueven todo a la vez.',
 	'tour.entriesGoalsPeopleRecipesIdeas':
@@ -4500,6 +4505,7 @@ export const messages: Catalogue = {
 		'Las secciones se abren alrededor de tu dedo y sueltas en la que quieres. Más rápido que leer una lista de diez palabras, una vez que tu mano sabe dónde están.',
 	'tour.theSameBlocksAsThe':
 		'Los mismos bloques de tarea que el plan, en la única forma en la que puedes tomar uno y moverlo.',
+	'tour.theSameDaysAsAList': 'Los mismos días, en lista',
 	'tour.theSameGestureForA':
 		'El mismo gesto, para una tarea, una idea, una nota o algo que comprar — sin decidir antes dónde va.',
 	'tour.theSameWordOnA':
