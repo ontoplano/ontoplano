@@ -123,6 +123,13 @@
 		moon: 'M20 14.5A8.5 8.5 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z',
 		tag: 'M4 4h8l8 8-8 8-8-8z M8 8h.01',
 		star: 'M12 4l2.4 5 5.6.7-4 3.9 1 5.4-5-2.7-5 2.7 1-5.4-4-3.9 5.6-.7z',
+		/*
+		 * Two of the three ratings; interest is the star above. An hourglass
+		 * for urgency — time running out — and a feather for ease, the thing
+		 * that weighs nothing. See `RATING_ICONS` in `$lib/ratings`.
+		 */
+		hourglass: 'M6 3h12M6 21h12M7 3c0 4.5 5 6 5 9s-5 4.5-5 9M17 3c0 4.5-5 6-5 9s5 4.5 5 9',
+		feather: 'M20 12a6 6 0 0 0-8.5-8.5L5 10.3V19h8.7zM16 8L3 21M17.5 15H9',
 		key: 'M14 7a4 4 0 1 1-3.5 5.9L4 19v-3h3v-3h3l.5-.6A4 4 0 0 1 14 7z',
 		link: 'M10 14a4 4 0 0 0 6 .5l2-2a4 4 0 0 0-5.7-5.7L11 8M14 10a4 4 0 0 0-6-.5l-2 2a4 4 0 0 0 5.7 5.7L13 16',
 		user: 'M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4 20a8 8 0 0 1 16 0',

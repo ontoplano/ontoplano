@@ -69,8 +69,20 @@
 		 * share a path must be given together. `face` is what the closed button
 		 * says when that option is chosen, where the label alone is ambiguous
 		 * outside its group.
+		 *
+		 * `icon` draws a glyph where the word would be — a rating's hourglass
+		 * rather than "Urgency" — in the list and on the closed button, with
+		 * `short` beside it when there is more to say ("3+"). The label stays
+		 * the option's tooltip and its name for a screen reader.
 		 */
-		options: readonly { value: T; label: string; path?: readonly string[]; face?: string }[];
+		options: readonly {
+			value: T;
+			label: string;
+			path?: readonly string[];
+			face?: string;
+			icon?: IconName;
+			short?: string;
+		}[];
 		onpick?: (next: T) => void;
 		onpickMany?: (next: T[]) => void;
 		/** What this control is, for whoever is not looking at it. */
@@ -363,12 +375,19 @@
 		aria-haspopup="listbox"
 		aria-expanded={open}
 		aria-label={label}
-		title={icon ? `${label}: ${many ? saidMany : (chosen?.label ?? '')}` : undefined}
+		title={icon || (!many && chosen?.icon)
+			? `${label}: ${many ? saidMany : (chosen?.label ?? '')}`
+			: undefined}
 		onclick={() => (open ? (open = false) : show())}
 		onkeydown={onFaceKey}
 	>
 		{#if icon}
 			<Icon name={icon} size={14} />
+		{:else if !many && chosen?.icon}
+			<span class="flex items-center gap-1">
+				<Icon name={chosen.icon} size={14} />{chosen.short ?? ''}
+			</span>
+			<Icon name="chevron-down" size={12} />
 		{:else}
 			<span class="truncate">{many ? saidMany : (chosen?.face ?? chosen?.label ?? '')}</span>
 			<Icon name="chevron-down" size={12} />
@@ -420,6 +439,8 @@
 							: undefined}
 						onclick={() => (many ? toggle(option.value) : take(option.value))}
 						onmouseenter={() => (at = options.indexOf(option))}
+						title={option.icon ? option.label : undefined}
+						aria-label={option.icon ? option.label : undefined}
 					>
 						<!-- The tick keeps its place, so the row does not shift when the
 						     chosen one changes. -->
@@ -429,7 +450,11 @@
 									size={12}
 								/>{/if}
 						</span>
-						{option.label}
+						{#if option.icon}
+							<Icon name={option.icon} size={14} />{option.short ?? ''}
+						{:else}
+							{option.label}
+						{/if}
 					</button>
 				</li>
 			{/each}

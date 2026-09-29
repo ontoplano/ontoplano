@@ -40,7 +40,15 @@
 	import MoreOptions from '$lib/components/MoreOptions.svelte';
 	import { formatDuration } from '$lib/duration';
 	import RatingPicker from '$lib/components/RatingPicker.svelte';
-	import { RATINGS, RATING_LABELS, compareByRating, type Rating } from '$lib/ratings.js';
+	import RatingIcon from '$lib/components/RatingIcon.svelte';
+	import {
+		RATINGS,
+		RATING_ICONS,
+		RATING_LABELS,
+		RATING_ORDER,
+		compareByRating,
+		type Rating
+	} from '$lib/ratings.js';
 	import { getAction, keyFor } from '$lib/shortcuts';
 	import { CLOSED_STATUSES, STATUSES, STATUS_LABELS, type Status } from '$lib/task-status.js';
 	import { CATEGORY_FALLBACK_COLOR } from '$lib/colors.js';
@@ -63,16 +71,12 @@
 	/*
 	 * The orders a column can be read in, and which way each one naturally
 	 * runs: the clock forwards, a rating best first. The arrow beside the
-	 * order flips that.
+	 * order flips that. The ratings come in their one order and wear their
+	 * icons rather than their names.
 	 */
-	const ORDERS = ['time', 'urgency', 'interest', 'ease'] as const;
+	const ORDERS = ['time', ...RATING_ORDER] as const;
 	type Order = (typeof ORDERS)[number];
-	const ORDER_LABELS: Record<Order, PlainKey> = {
-		time: 'tasks.board.byTime',
-		urgency: 'ratings.urgency',
-		interest: 'ratings.interest',
-		ease: 'ratings.ease'
-	};
+	const ORDER_LABELS: Record<Order, PlainKey> = { time: 'tasks.board.byTime', ...RATING_LABELS };
 	const NATURAL: Record<Order, 'asc' | 'desc'> = {
 		time: 'asc',
 		urgency: 'desc',
@@ -90,10 +94,17 @@
 	/** The lowest ease on offer in the filter; an unrated card always shows. */
 	const EASE_STEPS = [1, 2, 3, 4, 5];
 	const easeChoices = $derived([
-		{ value: '', label: t('tasks.board.anyEase') },
+		{
+			value: '',
+			label: t('tasks.board.anyEase'),
+			icon: RATING_ICONS.ease,
+			short: t('ui.all')
+		},
 		...EASE_STEPS.map((n) => ({
 			value: String(n),
-			label: t('tasks.board.easeAtLeast', { value: n })
+			label: t('tasks.board.easeAtLeast', { value: n }),
+			icon: RATING_ICONS.ease,
+			short: `${n}+`
 		}))
 	]);
 
@@ -638,6 +649,8 @@
 
 	/** Which rating the number keys write to; switched with u / i / y. */
 	let ratingKey: Rating = $state('urgency');
+	/** Where the rating's icon goes in the key hint's sentence. */
+	const RATING_SLOT = '\u0000';
 
 	function openForm() {
 		showForm = true;
@@ -811,6 +824,7 @@
 			value={sortBy}
 			options={ORDERS}
 			labels={ORDER_LABELS}
+			icons={RATING_ICONS}
 			{direction}
 			onpick={pickOrder}
 			onflip={() => (direction = direction === 'asc' ? 'desc' : 'asc')}
@@ -1470,6 +1484,7 @@
 					{/if}
 
 					<MoreOptions label={t('tasks.board.urgencyEaseInterest')} count={editRatingsSet}>
+						{#snippet summary()}<RatingIcon />{/snippet}
 						{#each RATINGS as r (r)}
 							<div class="col-span-12">
 								<RatingPicker rating={r} bind:value={editRatings[r]} />
@@ -1526,7 +1541,10 @@
 		<Kbd keys={keyFor('/tasks/board', 'switch-tab')} />
 		{t('tasks.board.switchTab')}
 		<Kbd keys="1-5" />
-		{t('tasks.board.rateWhich', { rating: t(RATING_LABELS[ratingKey]) })}
+		<!-- The rating being set is its icon; the sentence is split around it. -->
+		{#each t('tasks.board.rateWhich', { rating: RATING_SLOT }).split(RATING_SLOT) as part, at (at)}
+			{#if at > 0}<RatingIcon rating={ratingKey} size={12} />{/if}{part}
+		{/each}
 		<Kbd keys={keyFor('/tasks/board', 'delete')} />
 		{t('tasks.board.delete')}
 	</p>

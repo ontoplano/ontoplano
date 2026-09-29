@@ -622,9 +622,9 @@ android-all: _a-real-workstation isolated
 		|| (cd capacitor && npm install --no-audit --no-fund),the shell's dependencies)
 	$(call timed,node scripts/brand-android.mjs,the icons)
 	$(call timed,cd capacitor && npx cap sync android >/dev/null,capacitor sync)
-	@# The DEV app's address comes from the environment or from defaults.env,
-	@# which local.mk includes — a build in a container cannot work out which
-	@# address on the wifi is this laptop's.
+	@# The DEV app's address comes from the environment or from local.mk,
+	@# which asks this laptop's network card for it — a build in a container
+	@# cannot work out which address on the wifi is this laptop's.
 	$(call timed,ONTOPLANO_DEV_ORIGIN="$(ONTOPLANO_DEV_ORIGIN)" node scripts/android-flavours.mjs,the three flavours)
 	@sdk=$$(node scripts/android-sdk.mjs) || { \
 		echo "No Android SDK here. It is looked for in ANDROID_HOME, ANDROID_SDK_ROOT,"; \

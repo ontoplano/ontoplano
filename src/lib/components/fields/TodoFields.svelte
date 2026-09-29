@@ -7,6 +7,7 @@
 	import MoreOptions from '$lib/components/MoreOptions.svelte';
 	import NotebookField from '$lib/components/NotebookField.svelte';
 	import RatingPicker from '$lib/components/RatingPicker.svelte';
+	import RatingIcon from '$lib/components/RatingIcon.svelte';
 	import MarkdownBox from '$lib/components/MarkdownBox.svelte';
 	import PictureAttach from '$lib/components/PictureAttach.svelte';
 	import RecordingAttach from '$lib/components/RecordingAttach.svelte';
@@ -14,6 +15,7 @@
 	import { ATTRIBUTE_FORM, attributePairs, mergeSuggestions } from '$lib/attribute-keys';
 	import { RATINGS, type Rating } from '$lib/ratings';
 	import { useT } from '$lib/i18n';
+	import { vocabularyFor } from '$lib/tag-vocabulary';
 
 	const t = useT();
 
@@ -122,11 +124,7 @@
 	 * With a notebook chosen, the words that subject already uses; with none,
 	 * the whole account's vocabulary.
 	 */
-	const knownTags = $derived(
-		notebookId
-			? (page.data.tagVocabularyByNotebook?.[notebookId] ?? [])
-			: (page.data.tagVocabulary ?? [])
-	);
+	const knownTags = $derived(vocabularyFor(page.data, notebookId));
 </script>
 
 <Field label={t('ui.title')} span={12} required>
@@ -252,6 +250,7 @@
 		was in it. The fold stays, so it can be put away.
 	-->
 	<MoreOptions label={t('fields.todo.urgencyEaseInterest')} count={ratingsSet} open>
+		{#snippet summary()}<RatingIcon />{/snippet}
 		{@render scales()}
 	</MoreOptions>
 {/if}

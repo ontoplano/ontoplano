@@ -1,4 +1,5 @@
 import type { PlainKey } from './i18n/keys.js';
+import type { IconName } from './components/Icon.svelte';
 /**
  * The three questions a task answers besides "when".
  *
@@ -168,6 +169,21 @@ export const RATING_LABELS: Record<Rating, PlainKey> = {
 	interest: 'ratings.interest',
 	ease: 'ratings.ease'
 };
+
+/**
+ * The glyph each question wears everywhere but the slider that sets it.
+ *
+ * The slider says the word, beside the icon, so that is where the icon is
+ * learnt; everywhere else — a sort order, a filter, a disclosure, a key hint —
+ * the icon stands alone and carries the word as its tooltip and its name for a
+ * screen reader. One table, so a card and a menu cannot disagree about which
+ * picture is which question.
+ */
+export const RATING_ICONS = {
+	urgency: 'hourglass',
+	ease: 'feather',
+	interest: 'star'
+} as const satisfies Record<Rating, IconName>;
 
 /**
  * The three, one per line — "Urgency 4 / Ease – / Interest 3".

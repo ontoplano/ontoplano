@@ -35,7 +35,8 @@ async function newTodo(page: Page, title: string, ratings: Record<string, string
 		 */
 		const fold = form
 			.locator('details')
-			.filter({ hasText: /Urgency, ease, interest/ })
+			// Its summary is the three icons; the words are its tooltip.
+			.filter({ has: page.locator('summary[title="Urgency, ease, interest"]') })
 			.first();
 		if ((await fold.count()) > 0 && !(await fold.evaluate((d: HTMLDetailsElement) => d.open))) {
 			await fold.locator('summary').first().click();

@@ -18,6 +18,12 @@ the shape of the data changing. Bumping the minor per batch is what ran this
 file to 0.161 in a few months, which tells a reader nothing about which
 releases mattered.
 
+## 0.184.2 — 2026-09-29
+
+- The + tag chip on a task in a notebook suggests only that notebook's tags, like the edit dialog does.
+- Task lists can be sorted by when a task was last edited.
+- Urgency, ease and interest are shown as icons — an hourglass, a feather and a star — everywhere but the sliders that set them.
+
 ## 0.184.1 — 2026-09-28
 
 - "It did not happen" and skip are a struck-through circle, and on a phone the bottom bar is a straight bar with nothing shaped like the mark sticking out of it.

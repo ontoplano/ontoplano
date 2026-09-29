@@ -46,6 +46,7 @@
 	import { phoneWidth } from '$lib/breakpoints.svelte';
 	import TagChip from '$lib/components/TagChip.svelte';
 	import QuickTag from '$lib/components/QuickTag.svelte';
+	import { vocabularyFor } from '$lib/tag-vocabulary';
 	import OneLine from '$lib/components/OneLine.svelte';
 	import Field from '$lib/components/Field.svelte';
 	import FormGrid from '$lib/components/FormGrid.svelte';
@@ -447,12 +448,17 @@
 	 * you most want to do — and it is `$lib/ratings` doing the reading, so this
 	 * list and the `up_next` an assistant asks cannot disagree about it.
 	 */
-	const ORDERS = ['created', 'tagged', 'done', 'priority'] as const;
+	/*
+	 * And *what did I touch last* — a rename, a note, a rating — which is the
+	 * notes' "Edited" question asked of tasks, under the notes' own word.
+	 */
+	const ORDERS = ['created', 'edited', 'tagged', 'done', 'priority'] as const;
 	type Order = (typeof ORDERS)[number];
 
 	/* The field's name only: which way it runs is the arrow's business now. */
 	const ORDER_LABELS: Record<Order, PlainKey> = {
 		created: 'todoRows.added',
+		edited: 'notebookDetail.orderEdited',
 		tagged: 'todoRows.tagged',
 		done: 'todoRows.done',
 		priority: 'todoRows.priority'
@@ -590,10 +596,11 @@
 			return direction === 'asc' ? best.reverse() : best;
 		}
 
+		// An untouched task was last changed when it was written.
+		const field = (one: Todo) =>
+			order === 'edited' ? (one.updatedAt ?? one.createdAt) : one.createdAt;
 		return [...shown].sort((a: Todo, b: Todo) =>
-			direction === 'desc'
-				? b.createdAt.localeCompare(a.createdAt)
-				: a.createdAt.localeCompare(b.createdAt)
+			direction === 'desc' ? field(b).localeCompare(field(a)) : field(a).localeCompare(field(b))
 		);
 	});
 
@@ -1346,7 +1353,7 @@
 								id={todo.id}
 								action={actions.tag}
 								has={todo.tags.map((one) => one.name)}
-								known={page.data.tagVocabulary ?? []}
+								known={vocabularyFor(page.data, todo.notebookId)}
 							/>
 						{/snippet}
 						<RowCard quiet={selection.selecting}>
