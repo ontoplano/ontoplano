@@ -391,6 +391,8 @@ export const messages: Catalogue = {
 	'demo.theDemoIsFullRight': 'La demo está llena en este momento.',
 	'demo.tryAgain': 'Intentar de nuevo',
 	'emptyState.noneMatch': 'Nothing matches',
+	'errors.account.aNameCannotBeEmpty': 'Un nombre no puede estar vacío',
+	'errors.account.thatNameIsTooLong': 'Un nombre puede tener como máximo {max} caracteres',
 	'errors.accountImport.thatFile': 'Ese archivo no es una exportación de ontoplano.',
 	'errors.accountImport.thatFileHasNoAccount': 'Ese archivo no tiene datos de cuenta dentro.',
 	'errors.accountImport.thatFileIsNotJson': 'Ese archivo no es JSON.',
@@ -2930,6 +2932,7 @@ export const messages: Catalogue = {
 	'settings.account.change': 'Cambiar',
 	'settings.account.changePassword': 'Cambiar contraseña',
 	'settings.account.changeYourEmailAddress': 'Cambiar tu dirección de correo electrónico',
+	'settings.account.changeYourName': 'Cambiar tu nombre',
 	'settings.account.changeYourPassword': 'Cambiar tu contraseña',
 	'settings.account.changingItIsTurnedOff':
 		'Cambiar tu dirección de correo electrónico está desactivado en esta instancia.',
@@ -2945,6 +2948,9 @@ export const messages: Catalogue = {
 	'settings.account.deletePermanently': 'Eliminar permanentemente',
 	'settings.account.deleteThisInstance': 'Eliminar esta instancia',
 	'settings.account.deleteYourAccount': 'Eliminar tu cuenta',
+	'settings.account.displayName': 'Nombre',
+	'settings.account.displayNameHint':
+		'Cómo te llama la app y lo que ven las personas con quienes compartes',
 	'settings.account.download': 'Download',
 	'settings.account.emailAddress': 'Dirección de correo electrónico',
 	'settings.account.everyOtherSignedInDeviceIs':
@@ -3040,6 +3046,7 @@ export const messages: Catalogue = {
 		'Un mensaje los lunes a las {hour}:00 con cómo fue la semana pasada — lo planeado contra lo hecho, y lo que sigue pendiente. Cada mensaje tiene un enlace para dejar de recibirlos.',
 	'settings.account.password': 'Contraseña',
 	'settings.account.preparing': 'Preparing…',
+	'settings.account.profile': 'Perfil',
 	'settings.account.sendConfirmation': 'Enviar confirmación',
 	'settings.account.signOut': 'Cerrar sesión',
 	'settings.account.signOutEverywhere': 'Cerrar sesión en todas partes',

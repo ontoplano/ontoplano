@@ -360,6 +360,8 @@ export type MessageKey =
 	| 'demo.theDemoIsFullRight'
 	| 'demo.tryAgain'
 	| 'emptyState.noneMatch'
+	| 'errors.account.aNameCannotBeEmpty'
+	| 'errors.account.thatNameIsTooLong'
 	| 'errors.accountImport.thatFile'
 	| 'errors.accountImport.thatFileHasNoAccount'
 	| 'errors.accountImport.thatFileIsNotJson'
@@ -2538,6 +2540,7 @@ export type MessageKey =
 	| 'settings.account.change'
 	| 'settings.account.changePassword'
 	| 'settings.account.changeYourEmailAddress'
+	| 'settings.account.changeYourName'
 	| 'settings.account.changeYourPassword'
 	| 'settings.account.changingItIsTurnedOff'
 	| 'settings.account.changingItSignsOutEvery'
@@ -2551,6 +2554,8 @@ export type MessageKey =
 	| 'settings.account.deletePermanently'
 	| 'settings.account.deleteThisInstance'
 	| 'settings.account.deleteYourAccount'
+	| 'settings.account.displayName'
+	| 'settings.account.displayNameHint'
 	| 'settings.account.download'
 	| 'settings.account.emailAddress'
 	| 'settings.account.everyOtherSignedInDeviceIs'
@@ -2621,6 +2626,7 @@ export type MessageKey =
 	| 'settings.account.oneMessageOnAMonday'
 	| 'settings.account.password'
 	| 'settings.account.preparing'
+	| 'settings.account.profile'
 	| 'settings.account.sendConfirmation'
 	| 'settings.account.signOut'
 	| 'settings.account.signOutEverywhere'
@@ -4067,6 +4073,7 @@ export interface MessageValuesFor {
 		minutes: string | number;
 		minutes2: string | number;
 	};
+	'errors.account.thatNameIsTooLong': { max: string | number };
 	'errors.audio.notesTooLong': { limit: string | number };
 	'errors.notebooks.hasNoBillsTab': { notebook: string | number };
 	'errors.notebooks.hasNoGoalsTab': { notebook: string | number };

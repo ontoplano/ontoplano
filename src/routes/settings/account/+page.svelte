@@ -22,6 +22,8 @@
 	import Icon from '$lib/components/Icon.svelte';
 	import FormGrid from '$lib/components/FormGrid.svelte';
 	import Modal from '$lib/components/Modal.svelte';
+	import OneLine from '$lib/components/OneLine.svelte';
+	import { MAX_DISPLAY_NAME_LENGTH } from '$lib/display-name';
 	import type { PageServerData, ActionData } from './$types';
 	import { useT } from '$lib/i18n';
 
@@ -66,7 +68,7 @@
 			location.href = CHOOSE_PATH;
 		};
 
-	let editing = $state<'email' | 'password' | null>(null);
+	let editing = $state<'name' | 'email' | 'password' | null>(null);
 	let confirming = $state(false);
 
 	let downloading = $state(false);
@@ -273,6 +275,22 @@
 			apologies. What is below is the part that is the same either way: your
 			data, and the end of it.
 		-->
+		<!-- The name the app calls you by: on a device as much as on a server. -->
+		<SettingGroup title={t('settings.account.profile')}>
+			<SettingRow
+				label={t('settings.account.displayName')}
+				hint={t('settings.account.displayNameHint')}
+			>
+				<p class="mt-1 text-sm font-medium break-all text-gray-900">{page.data.user?.name}</p>
+				{#snippet control()}
+					<button onclick={() => (editing = 'name')} class="btn btn-sm">
+						<Icon name="edit" />
+						{t('settings.account.change')}
+					</button>
+				{/snippet}
+			</SettingRow>
+		</SettingGroup>
+
 		{#if !onDevice}
 			<SettingGroup title={t('settings.account.signingIn')}>
 				<SettingRow
@@ -680,6 +698,41 @@
 			{/if}
 		</SettingGroup>
 	</RoomSurface>
+
+	<Modal
+		open={editing === 'name'}
+		error={form?.message}
+		onclose={() => (editing = null)}
+		title={t('settings.account.changeYourName')}
+		size="sm"
+	>
+		<form
+			id="name-form"
+			method="post"
+			action="?/rename"
+			use:enhance={() =>
+				async ({ update, result }) => {
+					await update();
+					if (result.type === 'success') editing = null;
+				}}
+		>
+			<FormGrid>
+				<Field label={t('settings.account.displayName')} span={12} required>
+					<OneLine
+						name="name"
+						value={page.data.user?.name ?? ''}
+						required
+						autofocus
+						maxlength={MAX_DISPLAY_NAME_LENGTH}
+					/>
+				</Field>
+			</FormGrid>
+		</form>
+		{#snippet footer()}
+			<button type="button" class="btn" onclick={() => (editing = null)}>{t('ui.cancel')}</button>
+			<button type="submit" form="name-form" class="btn btn-primary">{t('ui.save')}</button>
+		{/snippet}
+	</Modal>
 
 	{#if !onDevice}
 		<Modal

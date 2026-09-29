@@ -4398,5 +4398,11 @@
 		"one": "Start your free day",
 		"other": "Start your free {count} days"
 	},
-	"settings.billing.subscribe": "Subscribe"
+	"settings.billing.subscribe": "Subscribe",
+	"errors.account.aNameCannotBeEmpty": "A name cannot be empty",
+	"errors.account.thatNameIsTooLong": "A name can be at most {max} characters",
+	"settings.account.profile": "Profile",
+	"settings.account.displayName": "Name",
+	"settings.account.displayNameHint": "What the app calls you, and what the people you share with see",
+	"settings.account.changeYourName": "Change your name"
 }

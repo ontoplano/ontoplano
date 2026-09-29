@@ -4236,5 +4236,11 @@
 	"admin.backToAccounts": null,
 	"admin.id.theAccount": null,
 	"settings.billing.startYourFreeDays": null,
-	"settings.billing.subscribe": null
+	"settings.billing.subscribe": null,
+	"errors.account.aNameCannotBeEmpty": "Un nombre no puede estar vacío",
+	"errors.account.thatNameIsTooLong": "Un nombre puede tener como máximo {max} caracteres",
+	"settings.account.profile": "Perfil",
+	"settings.account.displayName": "Nombre",
+	"settings.account.displayNameHint": "Cómo te llama la app y lo que ven las personas con quienes compartes",
+	"settings.account.changeYourName": "Cambiar tu nombre"
 }

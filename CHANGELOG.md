@@ -27,6 +27,7 @@ releases mattered.
 - The example plugins, the recording transcriber among them, live together in `ontoplano-plugins/`; the transcriber reads its settings from a `.env` file beside it.
 - Home's cards line up in rows: cards side by side start and end at the same height instead of stacking at staggered heights.
 - Saving a form no longer empties its fields for a moment before the dialog closes — Edit notebook's title did this.
+- Your display name can be changed under Settings → Account.
 
 ## 0.184.10 — 2026-09-29
 

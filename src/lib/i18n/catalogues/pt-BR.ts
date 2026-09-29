@@ -392,6 +392,8 @@ export const messages: Catalogue = {
 	'demo.theDemoIsFullRight': 'A demonstração está cheia agora.',
 	'demo.tryAgain': 'Tentar de novo',
 	'emptyState.noneMatch': 'Nothing matches',
+	'errors.account.aNameCannotBeEmpty': 'Um nome não pode ficar vazio',
+	'errors.account.thatNameIsTooLong': 'Um nome pode ter no máximo {max} caracteres',
 	'errors.accountImport.thatFile': 'Esse arquivo não é uma exportação do ontoplano.',
 	'errors.accountImport.thatFileHasNoAccount': 'Esse arquivo não tem dados de conta dentro.',
 	'errors.accountImport.thatFileIsNotJson': 'Esse arquivo não é JSON.',
@@ -2916,6 +2918,7 @@ export const messages: Catalogue = {
 	'settings.account.change': 'Mudar',
 	'settings.account.changePassword': 'Mudar a senha',
 	'settings.account.changeYourEmailAddress': 'Mudar seu endereço de e-mail',
+	'settings.account.changeYourName': 'Mudar seu nome',
 	'settings.account.changeYourPassword': 'Mudar sua senha',
 	'settings.account.changingItIsTurnedOff':
 		'A mudança do endereço de e-mail está desligada nesta instância.',
@@ -2931,6 +2934,9 @@ export const messages: Catalogue = {
 	'settings.account.deletePermanently': 'Apagar em definitivo',
 	'settings.account.deleteThisInstance': 'Apagar esta instância',
 	'settings.account.deleteYourAccount': 'Apagar sua conta',
+	'settings.account.displayName': 'Nome',
+	'settings.account.displayNameHint':
+		'Como o app te chama e o que veem as pessoas com quem você compartilha',
 	'settings.account.download': 'Download',
 	'settings.account.emailAddress': 'Endereço de e-mail',
 	'settings.account.everyOtherSignedInDeviceIs':
@@ -3025,6 +3031,7 @@ export const messages: Catalogue = {
 		'Uma mensagem na segunda-feira às {hour}:00 com o que foi a semana passada — planejado contra feito, e o que ficou solto. Toda mensagem tem um link que interrompe o envio.',
 	'settings.account.password': 'Senha',
 	'settings.account.preparing': 'Preparing…',
+	'settings.account.profile': 'Perfil',
 	'settings.account.sendConfirmation': 'Enviar confirmação',
 	'settings.account.signOut': 'Sair',
 	'settings.account.signOutEverywhere': 'Sair de todos os lugares',

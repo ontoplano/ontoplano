@@ -14,6 +14,8 @@
  */
 import { fail } from '@sveltejs/kit';
 import { deleteAccount } from '$lib/services/account-data.js';
+import { renameAccount } from '$lib/services/account-profile.js';
+import { buildCtx } from '$lib/services/ctx.js';
 import { ERASE_CONFIRMATION } from '$lib/danger.js';
 import { toActionFailure } from '$lib/http-errors.js';
 import type { IsolatedEvent } from '$lib/isolated/routes.js';
@@ -46,6 +48,17 @@ export async function load({ url }: IsolatedEvent) {
 }
 
 export const actions = {
+	/** The name the app calls you by — the same act as on a server. */
+	async rename({ request, locals }: IsolatedEvent) {
+		const formData = await request.formData();
+		try {
+			renameAccount(buildCtx(locals.user!.id), formData.get('name'));
+		} catch (e) {
+			return toActionFailure(e);
+		}
+		return { success: true, action: 'rename' };
+	},
+
 	/**
 	 * Delete this instance and everything in it.
 	 *
