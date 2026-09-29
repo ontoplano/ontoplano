@@ -97,6 +97,22 @@ export const notebookActions = {
 		}
 	},
 
+	/*
+	 * Into a folder, and nothing else about it touched — what dropping a
+	 * notebook on a folder of the shelf asks. `''` is the shelf itself.
+	 */
+	move: async ({ request, locals }) => {
+		const formData = await request.formData();
+		try {
+			updateNotebook(buildCtx(locals.user!.id), Number(formData.get('id')), {
+				folder: formData.get('folder') ?? ''
+			});
+			return { success: true };
+		} catch (e) {
+			return toActionFailure(e);
+		}
+	},
+
 	update: async ({ request, locals }) => {
 		const formData = await request.formData();
 		try {

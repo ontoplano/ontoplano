@@ -42,3 +42,35 @@ test('the folder field offers the folders the shelf has, and takes a new one', a
 	await expect(page.getByRole('link', { name: 'Bathroom' }).first()).toBeVisible();
 	await expect(page.getByText('Home').first()).toBeVisible();
 });
+
+/**
+ * Into a folder by carrying it there.
+ *
+ * The edit dialog's folder field was the only way to move a notebook, which
+ * is a form for something the shelf can show: this notebook, that folder.
+ * Dragged with a mouse — held and drawn across on a phone — and let go.
+ */
+test('a notebook dragged onto a folder goes into it', async ({ page }) => {
+	test.setTimeout(180_000);
+	await page.setViewportSize({ width: 1280, height: 900 });
+	await register(page, testEmail('nb-folder-drag'));
+	await visit(page, '/notebooks');
+	const origin = new URL(page.url()).origin;
+	for (const form of [
+		{ heading: 'Kitchen', folder: 'Home' },
+		{ heading: 'Garden', folder: '' }
+	])
+		await page.request.post('/notebooks?/create', {
+			headers: { Origin: origin, 'x-sveltekit-action': 'true' },
+			form
+		});
+	await visit(page, '/notebooks');
+
+	const home = page.locator('.notebook-cover[data-drop-folder="Home"]');
+	await expect(home).toContainText('1 notebook');
+
+	const garden = page.locator('[data-tour="notebook-shelf"] a.cover-face', { hasText: 'Garden' });
+	await garden.dragTo(home);
+
+	await expect(home).toContainText('2 notebooks');
+});
