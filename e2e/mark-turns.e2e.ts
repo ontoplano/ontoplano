@@ -22,10 +22,10 @@ test('a route change turns the mark at least once, however quick it is', async (
 	// The header's mark, which is the one a desktop sees. It turns whole.
 	const mark = page.locator('header [data-mark]').first();
 	await expect(mark).toBeAttached();
+	/** How many turns the browser is playing on the mark. None is at rest. */
+	const playing = () => mark.evaluate((el) => el.getAnimations().length);
 	// The load's own turn lands first, so the one below is the navigation's.
-	await expect
-		.poll(async () => mark.evaluate((el) => (el as HTMLElement).style.rotate), { timeout: 5000 })
-		.toBe('');
+	await expect.poll(playing, { timeout: 5000 }).toBe(0);
 
 	/** Every angle the mark is painted at while something is happening. */
 	const watch = async (ms: number) => {
@@ -34,8 +34,8 @@ test('a route change turns the mark at least once, however quick it is', async (
 		while (Date.now() < until) {
 			seen.push(
 				await mark.evaluate((el) => {
-					const said = (el as HTMLElement).style.rotate;
-					return said ? parseFloat(said) : 0;
+					const said = getComputedStyle(el).rotate;
+					return said && said !== 'none' ? parseFloat(said) : 0;
 				})
 			);
 		}
@@ -49,10 +49,8 @@ test('a route change turns the mark at least once, however quick it is', async (
 	// It moved, and it went most of the way round rather than twitching.
 	expect(Math.max(...seen), 'the mark never turned').toBeGreaterThan(300);
 
-	// And it is upright again: `rest` takes the property off entirely.
-	await expect
-		.poll(async () => mark.evaluate((el) => (el as HTMLElement).style.rotate), { timeout: 5000 })
-		.toBe('');
+	// And it is upright again: nothing is left playing on it.
+	await expect.poll(playing, { timeout: 5000 }).toBe(0);
 });
 
 /**
@@ -72,19 +70,20 @@ test('the octagon turns alone in the bar, and the bird does not', async ({ page 
 	// Nothing in the bar is drawn in the mark's shape but the mark itself.
 	expect(await page.locator('nav [data-mark]').count()).toBe(1);
 
-	/** Every element the turn has written a `rotate` on, with the bird's net angle. */
+	/** Every element the turn is playing on but the bird, with the bird's net angle. */
 	const turned = async () =>
-		page.evaluate(() =>
-			[...document.querySelectorAll<HTMLElement>('nav [style*="rotate"]')]
-				.filter((el) => el.style.rotate)
+		page.evaluate(() => {
+			const deg = (el: Element) => {
+				const said = getComputedStyle(el).rotate;
+				return said && said !== 'none' ? parseFloat(said) : 0;
+			};
+			return [...document.querySelectorAll<HTMLElement>('nav *')]
+				.filter((el) => el.getAnimations().length > 0 && !el.matches('.mark-still'))
 				.map((el) => {
 					const bird = el.querySelector<HTMLElement>('.mark-still');
-					const net = bird
-						? parseFloat(el.style.rotate) + parseFloat(getComputedStyle(bird).rotate || '0')
-						: 0;
-					return { tag: el.tagName.toLowerCase(), net };
-				})
-		);
+					return { tag: el.tagName.toLowerCase(), net: bird ? deg(el) + deg(bird) : 0 };
+				});
+		});
 
 	const going = page.getByRole('link', { name: 'Home' }).click();
 

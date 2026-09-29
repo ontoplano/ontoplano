@@ -1,258 +1,133 @@
 /**
- * @vitest-environment happy-dom
+ * The turn that says "working", worked out ahead of time.
+ *
+ * The browser plays the turn (see `$lib/mark-spin`); what this file holds is
+ * the motion it is handed — the wind-up, the loop, the landing — which is
+ * where each of the old complaints lived:
+ *
+ *   **It never started.** A turn that waited before moving was invisible on
+ *   every navigation quicker than the wait.
+ *
+ *   **It stopped short, or skipped.** A landing that halted a few degrees
+ *   from where it stood, or that leapt round to upright in one step, both read
+ *   as the mark being interrupted rather than finishing.
+ *
+ *   **It hung before it landed.** The old loop needed the main thread for
+ *   every frame, and the end of a load is when there is none to spare. That is
+ *   fixed by who plays it, not by these numbers — and the e2e specs watch it.
  */
-/**
- * The turn that says "working", and the two ways it stopped saying it.
- *
- * Both were found on the instance chooser, where the mark turns while an
- * instance opens, and both looked like the animation simply not being there:
- *
- *   **It never started.** `startMarkSpin` keeps a delay before it paints, so
- *   that a room which loads quickly leaves no trace. The copy of ontoplano on
- *   the phone loads faster than the delay, so the press looked ignored. That
- *   is what `atOnce` is for.
- *
- *   **It stopped after one turn.** `stopMarkSpin` had a shortcut for the wait
- *   that ended inside the delay: angle still zero, nothing drawn, rest at
- *   once. But the first frame never moves the angle — it has no previous
- *   timestamp, so its `dt` is zero — which made "start, then stop" always take
- *   that shortcut. The shortcut is about the delay, and now says so.
- *
- * Driven by hand: `requestAnimationFrame` and `performance.now` are the clock
- * this file runs on, so the test owns both and the turn is examined frame by
- * frame rather than waited for.
- */
-import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
+import { describe, expect, test } from 'vitest';
+import {
+	DECEL_DEGREES,
+	SPIN_UP_MS,
+	TURN_MS,
+	angleAlong,
+	landingTurn,
+	restingPlace,
+	runDistance,
+	runningTurn
+} from '../src/lib/mark-spin';
 
-/*
- * A fresh module per test.
- *
- * The turn is module state — the frame handle, the angle, which elements are
- * turning — because there is one mark and one wait in the app. A test that
- * left a turn running would hand the next one a module that thinks it is
- * already spinning, and `startMarkSpin` would fold into it and paint nothing.
- */
-type Spin = typeof import('../src/lib/mark-spin');
-let startMarkSpin: Spin['startMarkSpin'];
-let stopMarkSpin: Spin['stopMarkSpin'];
-
-/** The frames this test hands out, and the clock they carry. */
-let pending: ((now: number) => void)[] = [];
-let clock = 0;
-
-/** Run one frame, `ms` after the last. */
-function frame(ms = 16): void {
-	clock += ms;
-	const due = pending;
-	pending = [];
-	for (const run of due) run(clock);
+/** The largest change of angle between two neighbouring points, per ms. */
+function fastest(points: { at: number; angle: number }[]): number {
+	let most = 0;
+	for (let i = 1; i < points.length; i += 1) {
+		const span = points[i].at - points[i - 1].at;
+		if (span > 0) most = Math.max(most, Math.abs(points[i].angle - points[i - 1].angle) / span);
+	}
+	return most;
 }
 
-function frames(count: number, ms = 16): void {
-	for (let i = 0; i < count; i += 1) frame(ms);
-}
-
-/** What the mark is turned to, in degrees, as the spin writes it. */
-function angleOf(el: HTMLElement): number {
-	return parseFloat(el.style.rotate || '0');
-}
-
-/**
- * Whether the turn has come to rest: it is asking for no more frames.
- *
- * Not "is the rotate property gone" — happy-dom keeps `style.rotate` after
- * `removeProperty`, so that assertion tests this environment's CSS support
- * rather than the app. A browser does remove it, and either way the thing
- * worth holding is that the loop stopped rather than being abandoned.
- */
-function stillTurning(): boolean {
-	return pending.length > 0;
-}
-
-/**
- * The mark the app hands over, and the bird inside it.
- *
- * The mark turns whole — rim, octagon, and the clip the phone bar's button
- * wears — and the bird's layer is turned back by `--mark-turn` in the Logo's
- * CSS, so the octagon goes round a bird that stays upright. The spin's side of
- * that bargain is writing the variable in step with the angle.
- */
-let mark: HTMLElement;
-let medallion: HTMLElement;
-
-/** What the bird's layer is turned back by, as the spin writes it. */
-function counterOf(el: HTMLElement): number {
-	return parseFloat(el.style.getPropertyValue('--mark-turn') || '0');
-}
-
-beforeEach(async () => {
-	clock = 0;
-	pending = [];
-	vi.stubGlobal('requestAnimationFrame', (cb: (now: number) => void) => {
-		pending.push(cb);
-		return pending.length;
-	});
-	vi.stubGlobal('cancelAnimationFrame', () => {});
-	vi.stubGlobal('performance', { now: () => clock });
-	// No opinion about motion: the real one is asked, and jsdom has none.
-	vi.stubGlobal('matchMedia', () => ({ matches: false }));
-
-	document.body.innerHTML = '';
-	mark = document.createElement('div');
-	mark.dataset.mark = '';
-	medallion = document.createElement('img');
-	medallion.className = 'mark-still';
-	mark.append(medallion);
-	document.body.append(mark);
-
-	vi.resetModules();
-	({ startMarkSpin, stopMarkSpin } = await import('../src/lib/mark-spin'));
-});
-
-afterEach(() => {
-	vi.unstubAllGlobals();
-});
-
-describe('the turn that answers a press', () => {
-	test('starts painting at once, rather than after a delay', () => {
-		startMarkSpin([mark], 0);
-		frames(4);
-		expect(angleOf(mark), 'nothing was drawn').toBeGreaterThan(0);
-	});
-
-	test('turns the octagon, and tells the bird inside how far to turn back', () => {
-		startMarkSpin([mark], 0);
-		frames(4);
-		expect(angleOf(mark)).toBeGreaterThan(0);
-		expect(counterOf(mark), 'the bird would turn with the octagon').toBe(angleOf(mark));
-		expect(angleOf(medallion), 'the bird was turned directly').toBe(0);
-	});
-
-	// The header's mark and the phone bar's are handed over together, and go round as one.
-	test('turns every mark it is handed by the same angle', () => {
-		const other = document.createElement('span');
-		document.body.append(other);
-
-		startMarkSpin([other, mark], 0);
-		frames(8);
-
-		expect(angleOf(other)).toBeGreaterThan(0);
-		expect(angleOf(other)).toBe(angleOf(mark));
-	});
-
-	/*
-	 * A load's turn starts on the marks the server rendered, and hydration can
-	 * put new nodes where they were. The turn used to carry on round the
-	 * detached ones while the mark on screen stood upright — on a phone, the
-	 * mark stopping dead mid-turn.
-	 */
-	test('carries a turn over onto a mark that replaced the one it started on', () => {
-		startMarkSpin([mark], 0);
-		frames(8);
-
-		const fresh = document.createElement('div');
-		fresh.dataset.mark = '';
-		mark.replaceWith(fresh);
-		frames(1);
-
-		expect(angleOf(fresh), 'the new mark stood upright mid-turn').toBeGreaterThan(0);
-		expect(counterOf(fresh)).toBe(angleOf(fresh));
-	});
-
-	/**
-	 * There is no quiet version any more.
-	 *
-	 * The turn used to sit still for a fraction of the room slide, so that a
-	 * navigation finishing inside the movement left no trace. That is right for
-	 * a *warning* that something is slow and wrong for an answer to a press: on
-	 * a desktop most navigations land inside that fraction, so the one thing
-	 * saying "heard you" was invisible exactly when the app was quickest.
-	 */
-	test('every turn moves, however the caller asked for it', () => {
-		startMarkSpin([mark]);
-		frames(4);
-		expect(angleOf(mark)).toBeGreaterThan(0);
-	});
-});
+const FULL_SPEED = 360 / TURN_MS;
 
 describe('a turn nobody has stopped', () => {
-	test('keeps going past a full revolution, for as long as the wait lasts', () => {
-		startMarkSpin([mark], 0);
-		frames(120);
-		// Several revolutions in, and still turning: the wait is what ends it.
-		expect(angleOf(mark)).toBeGreaterThan(720);
-		const far = angleOf(mark);
-		frames(30);
-		expect(angleOf(mark)).toBeGreaterThan(far);
+	test('moves from the first moment, rather than after a delay', () => {
+		expect(runDistance(16)).toBeGreaterThan(0);
 	});
-});
 
-describe('a turn through a long frame', () => {
-	/*
-	 * A load hydrating can hold the main thread for a quarter of a second. The
-	 * turn used to advance by all of it at once, and near the end that jump
-	 * carried it straight past upright: a landing that was really a skip.
-	 */
-	test('moves no further in one frame than in a quick one', () => {
-		startMarkSpin([mark], 0);
-		frames(80);
-		const before = angleOf(mark);
-		frame(16);
-		const quick = angleOf(mark) - before;
-		const again = angleOf(mark);
-		frame(250);
-		expect(angleOf(mark) - again).toBeLessThanOrEqual(quick * 2.5);
+	test('winds up to full speed and holds it', () => {
+		const early = runDistance(20) - runDistance(0);
+		const late = runDistance(SPIN_UP_MS + 20) - runDistance(SPIN_UP_MS);
+		expect(late).toBeGreaterThan(early * 1.5);
+		expect(late / 20).toBeCloseTo(FULL_SPEED, 5);
+	});
+
+	test('keeps going past a full revolution, for as long as the wait lasts', () => {
+		expect(runDistance(3000)).toBeGreaterThan(720);
+		expect(runDistance(3100)).toBeGreaterThan(runDistance(3000));
+	});
+
+	test('hands the wind-up to the loop without a seam', () => {
+		const { windUp, loop } = runningTurn(40, 200, 1);
+		expect(windUp[0]).toEqual({ at: 0, angle: 40 });
+		expect(loop[0].angle).toBe(windUp[windUp.length - 1].angle);
+		expect(loop[1].angle - loop[0].angle).toBe(360);
+		// Nowhere quicker than full speed: no leap between keyframes.
+		expect(fastest(windUp)).toBeLessThanOrEqual(FULL_SPEED + 1e-9);
+	});
+
+	test('turns the other way when the rooms went the other way', () => {
+		const { windUp, loop } = runningTurn(0, 0, -1);
+		expect(windUp[windUp.length - 1].angle).toBeLessThan(0);
+		expect(loop[1].angle).toBeLessThan(loop[0].angle);
+	});
+
+	test('is a plain loop once it is already at full speed', () => {
+		expect(runningTurn(90, SPIN_UP_MS + 5, 1).windUp).toEqual([]);
 	});
 });
 
 describe('a turn that has been asked to stop', () => {
-	test('finishes its revolution and rests upright', async () => {
-		startMarkSpin([mark], 0);
-		frames(20);
-		const caught = angleOf(mark);
-		expect(caught).toBeGreaterThan(0);
-
-		const landed = stopMarkSpin();
-		// Long enough for the wind-down, which finishes the turn it is in.
-		frames(200);
-		await expect(landed).resolves.toBeUndefined();
-		expect(stillTurning(), 'it is still asking for frames').toBe(false);
-
-		// And it went most of the way round to get there rather than stopping
-		// where it stood: a landing, not a halt.
-		expect(angleOf(mark)).toBeGreaterThan(caught + 90);
+	test('rests on a whole turn, in the direction it was going', () => {
+		expect(restingPlace(100, 1) % 360).toBe(0);
+		expect(restingPlace(100, 1)).toBeGreaterThan(100);
+		expect(restingPlace(-100, -1)).toBeLessThan(-100);
 	});
 
-	test('goes round once even when it is stopped in the same tick', async () => {
-		/*
-		 * The navigation that is over before it began — a desktop route change,
-		 * and what the instance chooser does. The mark has not moved when the
-		 * stop arrives, and the answer is not to rest where it stands: it
-		 * carries on to the next upright, which from a standing start is one
-		 * whole turn.
-		 */
-		startMarkSpin([mark], 0);
-		const landed = stopMarkSpin();
-		frames(20);
-		expect(angleOf(mark), 'it rested without turning').toBeGreaterThan(0);
+	test('goes round once more rather than halting a few degrees on', () => {
+		// 350 is ten degrees from upright: too close to slow into.
+		expect(restingPlace(350, 1)).toBe(720);
+		expect(restingPlace(360 - DECEL_DEGREES, 1)).toBe(360);
+	});
 
-		/*
-		 * A whole one, read frame by frame: resting takes the property off, so
-		 * the finished mark is indistinguishable from one that never moved.
-		 *
-		 * The last painted angle is a few degrees short of 360 because the
-		 * wind-down never slows to nothing — it crosses its resting place and
-		 * stops there, upright. What matters is that the resting place was a
-		 * whole turn away and not the nearest one.
-		 */
-		let furthest = 0;
-		for (let i = 0; i < 200; i += 1) {
-			frames(1);
-			furthest = Math.max(furthest, angleOf(mark));
-		}
-		expect(furthest, 'it stopped short of a full turn').toBeGreaterThan(340);
+	test('goes round once even when it is stopped before it moved', () => {
+		// The navigation that is over before it began.
+		expect(restingPlace(0, 1)).toBe(360);
+	});
 
-		await expect(landed).resolves.toBeUndefined();
-		expect(stillTurning(), 'it is still asking for frames').toBe(false);
+	test('lands exactly on its resting place, without a leap to get there', () => {
+		const points = landingTurn(200, 400, 1, 360);
+		expect(points[0].angle).toBe(200);
+		expect(points[points.length - 1].angle).toBe(360);
+		for (let i = 1; i < points.length; i += 1)
+			expect(points[i].angle).toBeGreaterThanOrEqual(points[i - 1].angle);
+		expect(fastest(points)).toBeLessThanOrEqual(FULL_SPEED + 1e-9);
+	});
+
+	test('slows as it arrives rather than stopping at full speed', () => {
+		const points = landingTurn(0, SPIN_UP_MS, 1, 360);
+		const last = points.slice(-3);
+		expect(fastest(last)).toBeLessThan(FULL_SPEED * 0.75);
+	});
+
+	test('lands the other way for a turn going the other way', () => {
+		const points = landingTurn(-50, 300, -1, -360);
+		expect(points[points.length - 1].angle).toBe(-360);
+	});
+});
+
+describe('where a stretch of turn is at a given moment', () => {
+	const points = [
+		{ at: 0, angle: 0 },
+		{ at: 10, angle: 100 }
+	];
+
+	test('between two points, in proportion', () => {
+		expect(angleAlong(points, 5)).toBe(50);
+	});
+
+	test('before and after, at the ends', () => {
+		expect(angleAlong(points, -1)).toBe(0);
+		expect(angleAlong(points, 99)).toBe(100);
 	});
 });

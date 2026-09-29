@@ -22,7 +22,7 @@
 	 *
 	 * The mark is drawn twice: the rim with a disc taken out of it, and that
 	 * disc on top. While a navigation drags, `$lib/mark-spin` turns the whole
-	 * mark and turns the disc back by the same angle, so the octagon goes round
+	 * mark and turns the disc (`.mark-still`) back by the same angle, so the octagon goes round
 	 * the bird and the bird stays upright. The circle the two are cut on is
 	 * flat dark field, the same at any angle, so the seam does not show.
 	 *
@@ -171,6 +171,5 @@
 	.ontoplano-logo :global(.mark-still) {
 		position: absolute;
 		inset: 0;
-		rotate: calc(-1 * var(--mark-turn, 0deg));
 	}
 </style>

@@ -31,10 +31,13 @@ test('the header mark turns while a navigation drags, then finishes its turn upr
 	const mark = page.locator('header [data-tour=rooms]');
 	await expect(mark).toBeVisible();
 
+	/** The angle the browser is playing the mark at; null when nothing is. */
 	const angle = () =>
-		mark.evaluate((el) =>
-			(el as HTMLElement).style.rotate ? parseFloat((el as HTMLElement).style.rotate) : null
-		);
+		mark.evaluate((el) => {
+			if (el.getAnimations().length === 0) return null;
+			const said = getComputedStyle(el).rotate;
+			return said && said !== 'none' ? parseFloat(said) : 0;
+		});
 
 	// Once the load's own turn has landed, the mark stands still, wearing no
 	// rotation at all.
@@ -53,6 +56,18 @@ test('the header mark turns while a navigation drags, then finishes its turn upr
 	await expect.poll(angle).toBeGreaterThan(0);
 	const early = (await angle())!;
 	await expect.poll(angle).toBeGreaterThan(early);
+
+	/*
+	 * And the browser is the one turning it, not a script asking for frames.
+	 * The end of a load is when the page's own thread is busiest — rendering
+	 * what arrived — and a turn that needed that thread every frame froze
+	 * mid-way there, then lurched on. A running animation is played by the
+	 * compositor, which that work does not hold up.
+	 */
+	expect(
+		await mark.evaluate((el) => el.getAnimations().map((one) => one.playState)),
+		'the turn is not an animation the browser plays'
+	).toContain('running');
 
 	// Let the page land mid-turn. The turn keeps going — through at least the
 	// angle it was at — and then rests: the style comes off entirely, which is
@@ -82,9 +97,8 @@ test.describe('on a phone', () => {
 		const birdBefore = await bird.boundingBox();
 		await button.evaluate((el) => {
 			(el as HTMLElement).style.rotate = '137deg';
-			(el as HTMLElement).style.setProperty('--mark-turn', '137deg');
+			el.querySelector<HTMLElement>('.mark-still')!.style.rotate = '-137deg';
 		});
-		await expect.poll(() => bird.evaluate((el) => getComputedStyle(el).rotate)).toBe('-137deg');
 		const birdDuring = await bird.boundingBox();
 		const during = await button.boundingBox();
 		const centre = (b: { x: number; y: number; width: number; height: number }) => [

@@ -1,21 +1,28 @@
 /**
  * The menu's mark, turning while a navigation drags — and landing on its feet.
  *
- * A CSS animation could start the turn but not finish it: taking the class
- * off mid-turn snaps the mark back to upright, and a snap is exactly the
- * flick this replaces. So the turn is driven here, and stopping is a request
- * rather than an event — the mark keeps going to the next full turn (the
- * modular arithmetic in `stopMarkSpin`) and rests upright, which reads as
- * "done" instead of "interrupted".
+ * A CSS class could start the turn but not finish it: taking the class off
+ * mid-turn snaps the mark back to upright, and a snap is exactly the flick
+ * this replaces. So stopping is a request rather than an event — the mark
+ * keeps going to the next full turn and rests upright, which reads as "done"
+ * instead of "interrupted".
  *
- * And it always goes round at least once. It used to wait out a fraction of
- * the room slide before moving, on the theory that a navigation finishing
- * inside the movement should leave no trace — which is true of a *warning*
- * and wrong of an answer to a press. On a desktop, where most navigations
- * land inside that fraction, the mark never moved at all: the thing that
- * tells you the app heard you was invisible exactly when the app was
- * quickest. So the turn starts on the press and `stopMarkSpin` carries it to
- * the next upright, which is a whole turn from a standing start.
+ * And it always goes round at least once. On a desktop most navigations land
+ * inside a fraction of a turn, and a mark that waited before moving never
+ * moved at all: the thing that tells you the app heard you was invisible
+ * exactly when the app was quickest. So the turn starts on the press and
+ * `stopMarkSpin` carries it to the next upright, which is a whole turn from a
+ * standing start.
+ *
+ * **The browser turns it, not this file.** It used to be a
+ * `requestAnimationFrame` loop writing an angle every frame, and the end of a
+ * load is exactly when the main thread stops handing out frames — the new page
+ * is being rendered on it. The mark froze mid-turn, then lurched on and
+ * landed. Now the whole motion — wind-up, running, landing — is worked out
+ * here as keyframes and handed to the Web Animations API, which plays a
+ * `rotate` on the compositor whether or not the page is busy. This file only
+ * speaks when something changes: a start, a stop, a new direction, a mark
+ * that hydration put in the old one's place.
  */
 
 /** One full turn, in milliseconds, at full speed. */
@@ -34,28 +41,151 @@ export const TURN_MS = 300;
  * `SLOWEST` make the wind-up more pronounced; bigger `DECEL_DEGREES` makes it
  * coast further before it settles.
  */
-const SPIN_UP_MS = 1000;
-const SLOWEST = 0.5;
-const DECEL_DEGREES = 90;
+export const SPIN_UP_MS = 1000;
+export const SLOWEST = 0.5;
+export const DECEL_DEGREES = 90;
 
-/** The most one frame may advance the turn by, however long it really took. */
-const LONGEST_FRAME_MS = 1000 / 30;
+/** How far apart the keyframes of a curved stretch are. Linear between them. */
+const KEYFRAME_MS = 1000 / 60;
+
+/** The step the landing is worked out in. Finer than any frame. */
+const LANDING_STEP_MS = 1;
+
+const DEGREES_PER_MS = 360 / TURN_MS;
 
 /** Ease-out: quick at first, gentler as it approaches the top. */
 const eased = (t: number) => 1 - (1 - t) * (1 - t);
 
-/** Everybody waiting for the turn to land. See `stopMarkSpin`. */
-let landed: (() => void)[] = [];
+/** How wound up it is, `elapsed` ms after it was set going: 0 to 1. */
+const wound = (elapsed: number) => eased(Math.min(1, elapsed / SPIN_UP_MS));
 
+/**
+ * How far a turn nobody has stopped has gone, `elapsed` ms after it started.
+ *
+ * The speed is `SLOWEST` of full, rising along `eased` to full over
+ * `SPIN_UP_MS`; this is that speed added up, in closed form, so the angle at
+ * any moment is known without having watched the moments before it.
+ */
+export function runDistance(elapsed: number): number {
+	const t = Math.max(0, elapsed);
+	const T = SPIN_UP_MS;
+	const winding = t < T ? (t * t) / T - (t * t * t) / (3 * T * T) : (2 * T) / 3 + (t - T);
+	return DEGREES_PER_MS * (SLOWEST * t + (1 - SLOWEST) * winding);
+}
+
+/** One point of a stretch of turn: when, in ms from its start, and at what angle. */
+export type TurnPoint = { at: number; angle: number };
+
+/**
+ * A running turn from where it is now: the rest of the wind-up, then a loop.
+ *
+ * `windUp` is empty once it is at full speed. `loop` is one revolution at full
+ * speed, from wherever the wind-up left it, to be repeated for as long as the
+ * wait lasts — it starts the moment `windUp` ends.
+ */
+export function runningTurn(
+	from: number,
+	elapsed: number,
+	spin: 1 | -1
+): { windUp: TurnPoint[]; loop: TurnPoint[] } {
+	const windUp: TurnPoint[] = [];
+	const left = SPIN_UP_MS - elapsed;
+	if (left > 0) {
+		const steps = Math.max(1, Math.ceil(left / KEYFRAME_MS));
+		for (let i = 0; i <= steps; i += 1) {
+			const at = (left * i) / steps;
+			const angle = from + spin * (runDistance(elapsed + at) - runDistance(elapsed));
+			windUp.push({ at, angle });
+		}
+	}
+	const start = windUp.length > 0 ? windUp[windUp.length - 1].angle : from;
+	return {
+		windUp,
+		loop: [
+			{ at: 0, angle: start },
+			{ at: TURN_MS, angle: start + spin * 360 }
+		]
+	};
+}
+
+/**
+ * Where a stop asked for at `from` comes to rest: the next full turn in the
+ * turn's own direction — unless that is too close to slow down into, which
+ * would be a halt rather than a landing, and then the one after.
+ */
+export function restingPlace(from: number, spin: 1 | -1): number {
+	const next = (spin > 0 ? Math.ceil(from / 360) : Math.floor(from / 360)) * 360;
+	return Math.abs(next - from) < DECEL_DEGREES * 0.5 ? next + spin * 360 : next;
+}
+
+/**
+ * The landing: from `from`, `elapsed` ms into the turn, to `restAt`.
+ *
+ * Still winding up if it was stopped early, and running down over the last
+ * `DECEL_DEGREES` — never all the way to nothing, or it would approach the
+ * resting place without ever arriving. The last point is `restAt` exactly.
+ */
+export function landingTurn(
+	from: number,
+	elapsed: number,
+	spin: 1 | -1,
+	restAt: number
+): TurnPoint[] {
+	const points: TurnPoint[] = [{ at: 0, angle: from }];
+	let angle = from;
+	let t = 0;
+	let sinceKept = 0;
+	while (spin > 0 ? angle < restAt : angle > restAt) {
+		const landing = Math.min(1, Math.abs(restAt - angle) / DECEL_DEGREES);
+		const rate = SLOWEST + (1 - SLOWEST) * Math.min(wound(elapsed + t), landing);
+		angle += spin * rate * LANDING_STEP_MS * DEGREES_PER_MS;
+		t += LANDING_STEP_MS;
+		sinceKept += LANDING_STEP_MS;
+		if (sinceKept >= KEYFRAME_MS) {
+			sinceKept = 0;
+			points.push({ at: t, angle: spin > 0 ? Math.min(angle, restAt) : Math.max(angle, restAt) });
+		}
+	}
+	if (points[points.length - 1].angle !== restAt) points.push({ at: t, angle: restAt });
+	return points;
+}
+
+/** The angle a stretch of turn is at, `at` ms into it. */
+export function angleAlong(points: TurnPoint[], at: number): number {
+	if (points.length === 0) return 0;
+	if (at <= points[0].at) return points[0].angle;
+	for (let i = 1; i < points.length; i += 1) {
+		const b = points[i];
+		if (at <= b.at) {
+			const a = points[i - 1];
+			return a.angle + ((b.angle - a.angle) * (at - a.at)) / (b.at - a.at || 1);
+		}
+	}
+	return points[points.length - 1].angle;
+}
+
+/*
+ * What is playing now, as a description rather than a loop: enough to say
+ * where the mark is at any moment, and to put the same motion on a mark that
+ * turns up halfway through.
+ */
+type Stretch =
+	| { kind: 'running'; begun: number; windUp: TurnPoint[]; loop: TurnPoint[] }
+	| { kind: 'landing'; begun: number; points: TurnPoint[] };
+
+let stretch: Stretch | null = null;
+/** When the turn was set going — the wind-up is counted from here. */
+let startedAt = 0;
+/** Which way it turns: the way the screens are moving, +1 or -1. */
+let spin: 1 | -1 = 1;
 /** What turns: the mark's own octagon, and anything shaped like it behind it. */
 let els: HTMLElement[] = [];
-let raf = 0;
-let angle = 0;
-let last = 0;
-let startedAt = 0;
-let windingDown = false;
-/** Which way it turns: the way the screens are moving, +1 or -1. */
-let spin = 1;
+/** Everything playing, so a change of plan can take it all off at once. */
+let playing: Animation[] = [];
+let watcher: MutationObserver | null = null;
+let landingTimer: ReturnType<typeof setTimeout> | undefined;
+/** Everybody waiting for the turn to land. See `stopMarkSpin`. */
+let landed: (() => void)[] = [];
 /**
  * A direction whispered by a slide the layout cannot see — a tab's. The
  * layout starts the spin, but a tab change is the room's own movement; the
@@ -66,63 +196,113 @@ let hint = 0;
 export function hintMarkSpin(direction: number): void {
 	hint = direction;
 }
-/** Where the wind-down rests: the next full turn, in the turn's own direction. */
-let restAt = 0;
 
 /** The app's own marks carry this, so a turn can find them before anything hydrates. */
 const MARK_SELECTOR = '[data-mark]';
+/** The bird's layer inside a mark, turned back by as much as the mark turns. */
+const STILL_SELECTOR = '.mark-still';
 
-function paint(deg: number): void {
-	/*
-	 * Asked afresh each frame. A load's turn starts on the marks the server
-	 * rendered, and hydration can put new nodes in their place — on a phone,
-	 * after the layout has already said it is done — and a stale list turned
-	 * the detached ones while the ones on screen stood upright: the mark
-	 * stopping dead mid-turn. The bird's layer is looked up again for the
-	 * same reason.
-	 */
-	const found = document.querySelectorAll<HTMLElement>(MARK_SELECTOR);
-	els = els.filter((el) => el.isConnected);
-	for (const el of found) {
-		if (els.includes(el)) continue;
-		el.style.transition = 'none';
-		els.push(el);
+/** The clock the animations run on. */
+function now(): number {
+	const t = document.timeline?.currentTime;
+	return typeof t === 'number' ? t : performance.now();
+}
+
+/** Where the mark is, `at` on the animations' clock. */
+function angleAt(at: number): number {
+	if (!stretch) return 0;
+	const into = at - stretch.begun;
+	if (stretch.kind === 'landing') return angleAlong(stretch.points, into);
+	const { windUp, loop } = stretch;
+	const upFor = windUp.length > 0 ? windUp[windUp.length - 1].at : 0;
+	if (into < upFor) return angleAlong(windUp, into);
+	return angleAlong(loop, (into - upFor) % TURN_MS);
+}
+
+function frames(points: TurnPoint[], sign: 1 | -1): Keyframe[] {
+	const span = points[points.length - 1].at - points[0].at || 1;
+	return points.map((p) => ({
+		offset: (p.at - points[0].at) / span,
+		rotate: `${sign * p.angle}deg`
+	}));
+}
+
+/**
+ * Put what is playing on one mark: the octagon turns whole, and the bird's
+ * layer inside it turns back by the same angle on the same clock, so the
+ * octagon goes round a bird that stays upright.
+ */
+function play(root: HTMLElement): void {
+	if (!stretch) return;
+	const layers: [HTMLElement, 1 | -1][] = [[root, 1]];
+	for (const still of root.querySelectorAll<HTMLElement>(STILL_SELECTOR)) layers.push([still, -1]);
+
+	for (const [el, sign] of layers) {
+		const pieces: [TurnPoint[], KeyframeAnimationOptions][] = [];
+		if (stretch.kind === 'landing') {
+			const { points } = stretch;
+			pieces.push([points, { duration: points[points.length - 1].at }]);
+		} else {
+			const { windUp, loop } = stretch;
+			const upFor = windUp.length > 0 ? windUp[windUp.length - 1].at : 0;
+			if (upFor > 0) pieces.push([windUp, { duration: upFor }]);
+			pieces.push([loop, { duration: TURN_MS, delay: upFor, iterations: Infinity }]);
+		}
+		for (const [points, options] of pieces) {
+			const animation = el.animate(frames(points, sign), {
+				...options,
+				easing: 'linear',
+				fill: 'none'
+			});
+			// Every mark on one clock: a mark hydration put in later picks the
+			// turn up exactly where the others are, not from its beginning.
+			animation.startTime = stretch.begun;
+			playing.push(animation);
+		}
 	}
-	// The bird's layer turns back by `--mark-turn` in the Logo's own CSS, so a
-	// layer hydration swaps in mid-turn is right from its first frame.
-	for (const el of els) {
-		el.style.rotate = `${deg}deg`;
-		el.style.setProperty('--mark-turn', `${deg}deg`);
-	}
+}
+
+function playEverywhere(): void {
+	for (const animation of playing) animation.cancel();
+	playing = [];
+	for (const el of els) play(el);
 }
 
 /*
- * Taking the turn off without it showing.
- *
- * A root can carry a utility transition that covers `rotate` — the header's
- * mark does — and dropping the angle and the `transition: none` in one go
- * lets that transition play the angle back to zero: a quick turn backwards,
- * which is the flick at the end of a load. So the angle goes first, the style
- * is flushed, and only then does the transition come back.
+ * A load's turn starts on the marks the server rendered, and hydration can
+ * put new nodes in their place — on a phone, after the layout has already
+ * said it is done. Whatever appears carrying `data-mark` joins the turn.
  */
-function settle(list: HTMLElement[]): void {
-	for (const el of list) {
-		el.style.removeProperty('rotate');
-		el.style.removeProperty('--mark-turn');
+function adopt(): void {
+	els = els.filter((el) => el.isConnected);
+	for (const el of document.querySelectorAll<HTMLElement>(MARK_SELECTOR)) {
+		if (els.includes(el)) continue;
+		els.push(el);
+		play(el);
 	}
-	if (list.length > 0) void list[0].offsetWidth;
-	for (const el of list) el.style.removeProperty('transition');
+}
+
+function watch(): void {
+	if (watcher || typeof MutationObserver !== 'function') return;
+	watcher = new MutationObserver(adopt);
+	watcher.observe(document.body, { childList: true, subtree: true });
 }
 
 function rest(): void {
-	cancelAnimationFrame(raf);
-	raf = 0;
-	angle = 0;
-	last = 0;
-	windingDown = false;
-	hint = 0;
-	settle(els);
+	clearTimeout(landingTimer);
+	landingTimer = undefined;
+	watcher?.disconnect();
+	watcher = null;
+	/*
+	 * Nothing to snap back: the landing ended on a whole turn, and with the
+	 * animations gone the mark is at its own resting angle, which is the same
+	 * picture.
+	 */
+	for (const animation of playing) animation.cancel();
+	playing = [];
+	stretch = null;
 	els = [];
+	hint = 0;
 	// Whoever was waiting for it to come to rest — the chooser leaves when it
 	// has, so that the turn is finished rather than cut off by a navigation.
 	const waiting = landed;
@@ -130,41 +310,12 @@ function rest(): void {
 	for (const done of waiting) done();
 }
 
-function frame(now: number): void {
-	if (!last) last = now;
-	// A long frame — a load hydrating — slows the turn rather than skipping a
-	// piece of it, so it never jumps round to upright and calls that landing.
-	const dt = Math.min(now - last, LONGEST_FRAME_MS);
-	last = now;
-
-	/*
-	 * How fast it is turning this frame.
-	 *
-	 * Winding up from `SLOWEST` over `SPIN_UP_MS`, and — once it has been told
-	 * to stop — running down again over the last `DECEL_DEGREES` before the
-	 * upright it is aiming at. Never all the way to nothing, or it would
-	 * approach the resting place without ever arriving.
-	 */
-	const wound = eased(Math.min(1, (now - startedAt) / SPIN_UP_MS));
-	const left = Math.abs(restAt - angle);
-	const landing = windingDown ? Math.min(1, left / DECEL_DEGREES) : 1;
-	const rate = SLOWEST + (1 - SLOWEST) * Math.min(wound, landing);
-
-	angle += spin * rate * (dt / TURN_MS) * 360;
-	if (windingDown && (spin > 0 ? angle >= restAt : angle <= restAt)) {
-		rest();
-		return;
-	}
-	paint(angle);
-	raf = requestAnimationFrame(frame);
-}
-
 /**
  * The wait is on: turn these, the way the screens are moving.
  *
  * `direction` is the navigation's own — the octagon turns with the rooms
- * rather than always the one way. Calling again mid-wind-down keeps the turn,
- * taking the new direction with it.
+ * rather than always the one way. Calling again mid-turn or mid-landing keeps
+ * the angle and the wind-up, taking the new direction with it.
  */
 export function startMarkSpin(
 	marks: (HTMLElement | null | undefined)[],
@@ -172,41 +323,36 @@ export function startMarkSpin(
 ): void {
 	if (typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches)
 		return;
+	if (typeof Element === 'undefined' || typeof Element.prototype.animate !== 'function') return;
 
-	/*
-	 * The octagon turns and the bird inside it stands still.
-	 *
-	 * Each root turns whole — the rim, and the octagon the phone bar's button
-	 * is clipped to, so the clip goes round with the drawing instead of cutting
-	 * its corners off — and the medallion inside it (the Logo's `.mark-still`)
-	 * is turned back by the same angle in the same frame. A root without one
-	 * just turns whole.
-	 *
-	 * Calling again mid-turn adds whatever is new and keeps the angle, so a
-	 * mark that was re-rendered picks the turn up where it was rather than
-	 * starting upright while the old one is taken off.
-	 */
 	const roots = marks.filter((el): el is HTMLElement => Boolean(el));
 	for (const el of roots) if (!els.includes(el)) els.push(el);
 	els = els.filter((el) => el.isConnected || roots.includes(el));
-	for (const el of els) el.style.transition = 'none';
-	if (raf) paint(angle);
 
 	// The rooms' direction wins; a tab's hint speaks when the rooms did not
 	// move; with neither, the turn keeps its old clockwise.
 	const asked = direction || hint || 1;
 	hint = 0;
+	const was = spin;
 	spin = asked < 0 ? -1 : 1;
-	if (raf) {
-		// Still turning (or winding down): fold the new wait into the turn.
-		windingDown = false;
+
+	const at = now();
+	if (stretch?.kind === 'running' && spin === was) {
+		// Already turning this way: the same motion, put on the marks as they
+		// now are — on one clock, so the ones already turning do not move.
+		for (const animation of playing) animation.cancel();
+		playing = [];
+		for (const el of els) play(el);
 		return;
 	}
-	angle = 0;
-	last = 0;
-	windingDown = false;
-	startedAt = performance.now();
-	raf = requestAnimationFrame(frame);
+
+	const from = stretch ? angleAt(at) : 0;
+	if (!stretch) startedAt = at;
+	clearTimeout(landingTimer);
+	landingTimer = undefined;
+	stretch = { kind: 'running', begun: at, ...runningTurn(from, at - startedAt, spin) };
+	playEverywhere();
+	watch();
 }
 
 /**
@@ -224,17 +370,20 @@ export function startMarkSpin(
  * this whole file exists to avoid.
  */
 export function stopMarkSpin(): Promise<void> {
-	if (!raf) return Promise.resolve();
+	if (!stretch) return Promise.resolve();
 	const settled = new Promise<void>((resolve) => landed.push(resolve));
-	windingDown = true;
+	if (stretch.kind === 'landing') return settled;
+
+	const at = now();
+	const from = angleAt(at);
+	const points = landingTurn(from, at - startedAt, spin, restingPlace(from, spin));
+	stretch = { kind: 'landing', begun: at, points };
+	playEverywhere();
 	/*
-	 * The next upright far enough away to slow down into.
-	 *
-	 * Stopping at the very next one can mean a few degrees, which is a stop
-	 * rather than a landing — so if there is not most of a turn left to slow
-	 * over, it goes round once more.
+	 * A timer, not the animation's own `finished`: a mark swapped out by
+	 * hydration takes its animation with it. Late is harmless — the landing's
+	 * last frame is a whole turn, which looks exactly like no turn at all.
 	 */
-	const next = (spin > 0 ? Math.ceil(angle / 360) : Math.floor(angle / 360)) * 360;
-	restAt = Math.abs(next - angle) < DECEL_DEGREES * 0.5 ? next + spin * 360 : next;
+	landingTimer = setTimeout(rest, points[points.length - 1].at);
 	return settled;
 }

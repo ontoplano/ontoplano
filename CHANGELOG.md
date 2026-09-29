@@ -23,6 +23,7 @@ releases mattered.
 - The + tag chip on a task in a notebook suggests only that notebook's tags, like the edit dialog does.
 - Task lists can be sorted by when a task was last edited.
 - Urgency, ease and interest are shown as icons — an hourglass, a feather and a star — everywhere but the sliders that set them.
+- The loading octagon keeps turning while a page finishes loading, instead of freezing mid-turn and jumping to its landing.
 
 ## 0.184.1 — 2026-09-28
 
