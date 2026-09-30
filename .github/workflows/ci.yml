@@ -128,10 +128,14 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - { suite: app, shard: '1/4', name: app-1 }
-          - { suite: app, shard: '2/4', name: app-2 }
-          - { suite: app, shard: '3/4', name: app-3 }
-          - { suite: app, shard: '4/4', name: app-4 }
+          # Six, not four: at four a shard's tests alone took eleven minutes,
+          # and with the install and the build that ran one over the cap.
+          - { suite: app, shard: '1/6', name: app-1 }
+          - { suite: app, shard: '2/6', name: app-2 }
+          - { suite: app, shard: '3/6', name: app-3 }
+          - { suite: app, shard: '4/6', name: app-4 }
+          - { suite: app, shard: '5/6', name: app-5 }
+          - { suite: app, shard: '6/6', name: app-6 }
           - { suite: admin, shard: '1/1', name: admin }
           - { suite: device, shard: '1/1', name: device }
     name: e2e (${{ matrix.name }})
