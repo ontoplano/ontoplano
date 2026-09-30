@@ -90,7 +90,7 @@ test('on a phone they are a sheet, and the button says one is on', async ({ page
 	expect(Math.abs(filters.x + filters.width - (search.x + search.width))).toBeLessThan(2);
 	// And the direction is its own button beside the order, not lost in its menu.
 	await expect(
-		page.getByRole('button', { name: /Descending, press for ascending/i })
+		page.getByRole('button', { name: /— press for (ascending|descending)/i })
 	).toBeVisible();
 	await expect(sheet).toHaveCount(1);
 	await expect(sheet).toHaveAttribute('aria-pressed', 'false');

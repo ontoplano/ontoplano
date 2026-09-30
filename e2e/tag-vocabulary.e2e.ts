@@ -28,7 +28,7 @@ test('a label renamed on the Tags tab is renamed on the task', async ({ page }) 
 	await visit(page, '/tasks/todo');
 
 	await newTodo(page, 'file the return', 'taxess');
-	await expect(page.getByRole('button', { name: '#taxess' })).toBeVisible();
+	await expect(page.getByRole('button', { name: '#taxess', exact: true })).toBeVisible();
 
 	await visit(page, '/notebooks/tags');
 	// The list says the word and how much work it is doing.
@@ -54,8 +54,8 @@ test('a label renamed on the Tags tab is renamed on the task', async ({ page }) 
 
 	// And the task wears the new word.
 	await visit(page, '/tasks/todo');
-	await expect(page.getByRole('button', { name: '#taxes' })).toBeVisible();
-	await expect(page.getByRole('button', { name: '#taxess' })).toHaveCount(0);
+	await expect(page.getByRole('button', { name: '#taxes', exact: true })).toBeVisible();
+	await expect(page.getByRole('button', { name: '#taxess', exact: true })).toHaveCount(0);
 });
 
 test('renaming onto a label that already exists merges the two', async ({ page }) => {
@@ -98,6 +98,6 @@ test('a label is deleted behind a confirmation, and comes off what carried it', 
 	await expect(page.getByText('#outside')).toHaveCount(0);
 
 	await visit(page, '/tasks/todo');
-	await expect(page.getByRole('button', { name: '#wood' })).toBeVisible();
-	await expect(page.getByRole('button', { name: '#outside' })).toHaveCount(0);
+	await expect(page.getByRole('button', { name: '#wood', exact: true })).toBeVisible();
+	await expect(page.getByRole('button', { name: '#outside', exact: true })).toHaveCount(0);
 });

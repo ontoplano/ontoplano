@@ -59,7 +59,7 @@ for (const size of [
 		// Beside the wheel, not over it.
 		const at = (await gear.boundingBox())!;
 		expect(at.x + at.width <= wheel!.x || at.x >= wheel!.x + wheel!.width).toBe(true);
-		await expect(page.locator('[data-wedge]')).toHaveCount(6);
+		await expect(page.locator('[data-wedge]')).toHaveCount(7);
 
 		await gear.click();
 		const dialog = page.getByRole('dialog', { name: 'Quick capture settings' });
@@ -67,7 +67,7 @@ for (const size of [
 		await expect(page.locator('.pie-layer')).toHaveCount(0);
 
 		// Down to one: the last cannot be unticked, and says so.
-		for (const kind of ['idea', 'buy', 'picture', 'recording', 'todo']) {
+		for (const kind of ['idea', 'buy', 'reminder', 'picture', 'recording', 'todo']) {
 			await dialog.locator(`input[name="on"][value="${kind}"]`).uncheck();
 		}
 		await expect(dialog.locator('input[type="checkbox"][value="note"]')).toHaveCount(0);
