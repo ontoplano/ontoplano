@@ -90,11 +90,17 @@ function stayingPut(outcome: Outcome): Outcome {
  * `reset: false`, and kept coming back with the next form written the
  * ordinary way.
  *
- * So `update()` never resets here. It notes whether a reset was asked for —
- * SvelteKit's default is yes — and the reset happens once the handler has
- * returned, by which time a dialog has been told to close and the reset lands
- * in the same frame, unseen. A form still on screen, like a quick-add row, is
- * cleared exactly as before, one reload later.
+ * So inside a dialog `update()` never resets. It notes whether a reset was
+ * asked for — SvelteKit's default is yes — and the reset happens once the
+ * handler has returned, by which time the dialog has been told to close and
+ * the reset lands in the same frame, unseen.
+ *
+ * Only inside a dialog. A form that stays on the page keeps SvelteKit's own
+ * order — reset, then reload — because the reload is what puts a control
+ * drawn from the page's data back: a switch written `checked={data.on}` is
+ * reset to unticked and ticked again by the fresh data. Reset after the
+ * reload instead, it stayed unticked with nothing left to tick it, and the
+ * weekly review's switch undid itself on every press.
  */
 function resetAfterwards(outcome: Outcome): { outcome: Outcome; finish: () => void } {
 	const update = outcome.update;
@@ -103,6 +109,7 @@ function resetAfterwards(outcome: Outcome): { outcome: Outcome; finish: () => vo
 		outcome: {
 			...outcome,
 			update: (options?: Parameters<typeof update>[0]) => {
+				if (!outcome.formElement.closest('dialog')) return update(options);
 				wanted = options?.reset ?? true;
 				return update({ ...options, reset: false });
 			}
