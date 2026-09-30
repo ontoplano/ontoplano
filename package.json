@@ -111,7 +111,7 @@
 		"ai": "^7.0.108",
 		"better-sqlite3": "^12.6.2",
 		"drizzle-orm": "^0.45.1",
-		"nodemailer": "^9.1.0",
+		"nodemailer": "^10.0.13",
 		"undici": "^7",
 		"web-push": "^3.6.7"
 	},
