@@ -2969,9 +2969,14 @@
 					</span>
 				</PeriodNav>
 
-				<div class="plan-view-controls controls-sm flex min-w-0 flex-wrap items-center gap-2">
+				<div
+					class="plan-view-controls controls-sm flex min-w-0 flex-wrap items-center gap-2 max-sm:w-full"
+				>
+					<!-- On a phone the view comes first and the week's start is left to
+					     Preferences, so the view, the saved weeks and the list share the
+					     one line under the date rather than taking two or three. -->
 					<div
-						class="shrink-0 {effectiveView === 'week' ? '' : 'invisible'}"
+						class="shrink-0 max-sm:hidden {effectiveView === 'week' ? '' : 'invisible'}"
 						inert={effectiveView !== 'week'}
 						data-tour="plan-week-start"
 					>
@@ -3011,7 +3016,12 @@
 						<Icon name={data.asList ? 'calendar' : 'list'} size={14} />
 					</button>
 
-					<div use:sliding class="seg" role="group" aria-label={t('tasks.plan.howMuchToShow')}>
+					<div
+						use:sliding
+						class="seg max-sm:order-first"
+						role="group"
+						aria-label={t('tasks.plan.howMuchToShow')}
+					>
 						{#each [['day', t('tasks.plan.day')], ['week', t('tasks.plan.week')], ['month', t('tasks.plan.month')]] as [mode, label] (mode)}
 							<button
 								onclick={() => setView(mode as PlanView)}

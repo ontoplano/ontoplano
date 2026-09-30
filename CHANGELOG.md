@@ -29,6 +29,7 @@ releases mattered.
 - Saving a form no longer empties its fields for a moment before the dialog closes — Edit notebook's title did this.
 - Your display name can be changed under Settings → Account.
 - On a phone, a board card's title has the card's whole width: its buttons sit on the line under it instead of squeezing the title to a few letters a line.
+- On a phone, the plan's Day / Week / Month switch shares a line with the saved weeks and the list button, so the controls above the grid take one row less.
 
 ## 0.184.10 — 2026-09-29
 
