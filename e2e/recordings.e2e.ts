@@ -73,13 +73,9 @@ test('records, keeps it under a name with notes, edits both and deletes it', asy
 	const only = page.locator('ul li').first();
 	await only.getByRole('button', { name: 'Edit' }).click();
 	const editing = page.getByRole('dialog');
-	await expect(editing.getByRole('textbox', { name: 'Notes' })).toHaveValue(
-		'said at the sink'
-	);
+	await expect(editing.getByRole('textbox', { name: 'Notes' })).toHaveValue('said at the sink');
 	await editing.getByRole('textbox', { name: 'What to call it' }).fill('what I actually said');
-	await editing
-		.getByRole('textbox', { name: 'Notes' })
-		.fill('said at the sink, twice');
+	await editing.getByRole('textbox', { name: 'Notes' }).fill('said at the sink, twice');
 	await editing.getByRole('button', { name: 'Save', exact: true }).click();
 	await expect(page.locator('ul li').first()).toContainText('what I actually said');
 	await expect(page.locator('ul li').first()).toContainText('said at the sink, twice');
