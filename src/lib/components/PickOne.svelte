@@ -1,6 +1,10 @@
 <script lang="ts">
 	/**
-	 * A picker you can type at.
+	 * A picker you can type at, where what is typed may be a new value.
+	 *
+	 * Choosing from a fixed list is `Picker` with `search`: one face and one
+	 * list across the app. This stays for the free field — a notebook's folder,
+	 * which is one the shelf has or a new one — where the typing is the value.
 	 *
 	 * A `<select>` with forty activities in it is a list you scroll past, and
 	 * the app's own rule is to prefer the platform's control — but no platform

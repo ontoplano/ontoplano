@@ -1847,6 +1847,33 @@ label:has(> input[type='radio']:not(:disabled)) {
 		color: #93c5fd;
 	}
 
+	/*
+	 * The search box at the top of a `Picker`'s list: part of the face, not a
+	 * white field dropped onto it, with a rule under it between the typing and
+	 * the rows.
+	 */
+	.overlay-face .picker-search {
+		appearance: none;
+		box-shadow: none;
+		border-radius: 0;
+		display: block;
+		width: 100%;
+		border: 0;
+		border-bottom: 1px solid rgb(255 255 255 / 0.14);
+		background: transparent;
+		padding: 0.5rem 0.75rem;
+		font-size: 0.875rem;
+		line-height: 1.25rem;
+		color: #ffffff;
+		outline: none;
+	}
+	.overlay-face .picker-search::-webkit-search-cancel-button {
+		display: none;
+	}
+	.overlay-face .picker-search::placeholder {
+		color: rgb(255 255 255 / 0.66);
+	}
+
 	/* And an icon on it takes the face's quieter ink, not the palette's grey. */
 	.overlay-face .icon-btn {
 		color: rgb(255 255 255 / 0.66);

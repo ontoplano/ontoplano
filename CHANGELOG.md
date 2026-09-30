@@ -30,6 +30,7 @@ releases mattered.
 - Your display name can be changed under Settings → Account.
 - On a phone, a board card's title has the card's whole width: its buttons sit on the line under it instead of squeezing the title to a few letters a line.
 - On a phone, the plan's Day / Week / Month switch shares a line with the saved weeks and the list button, so the controls above the grid take one row less.
+- The activity field in a task block is the same dropdown as the others, with a search box at the top of its list; pressing the field again closes it.
 
 ## 0.184.10 — 2026-09-29
 

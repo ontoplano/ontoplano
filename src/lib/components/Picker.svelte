@@ -19,9 +19,17 @@
 	 * is worse than a plain browser's. A list of strings is not that.
 	 *
 	 * `SortControl` is this plus a direction arrow.
+	 *
+	 * `search` puts a box at the top of the list that narrows it loosely as
+	 * somebody types (`$lib/fuzzy`), for a list long enough to hunt through —
+	 * forty activities. It is still this control, not a second one: the same
+	 * face, the same list, and a press on the face shuts it as well as opens
+	 * it. A separate typed-at field used to stand here, drawn white where this
+	 * is dark and impossible to shut by pressing it again.
 	 */
 	import Icon, { type IconName } from '$lib/components/Icon.svelte';
 	import { afterPress } from '$lib/after-press';
+	import { fuzzyRank, markHits } from '$lib/fuzzy';
 	import { useT } from '$lib/i18n';
 	import { untrack } from 'svelte';
 
@@ -46,6 +54,7 @@
 		name,
 		required = false,
 		icon,
+		search = false,
 		class: klass = ''
 	}: {
 		value?: T;
@@ -101,6 +110,8 @@
 		 * button's name and tooltip, and the list is unchanged.
 		 */
 		icon?: IconName;
+		/** A box at the top of the list that narrows it as somebody types. */
+		search?: boolean;
 		class?: string;
 	} = $props();
 
@@ -129,6 +140,24 @@
 	let root = $state<HTMLElement>();
 	let face = $state<HTMLButtonElement>();
 	let list = $state<HTMLElement>();
+	let box = $state<HTMLInputElement>();
+	/** What is typed in the search box; nothing, the whole list in its order. */
+	let query = $state('');
+
+	/*
+	 * The rows on offer, and which letters of each matched. Ranked while
+	 * something is typed, so the best match is the one Enter takes; in the
+	 * given order, groups and all, while nothing is.
+	 */
+	const shown = $derived(
+		search && query.trim()
+			? fuzzyRank([...options], query, (one) => one.label).map((row) => ({
+					option: row.item,
+					hits: row.hits
+				}))
+			: options.map((option) => ({ option, hits: [] as number[] }))
+	);
+	const narrowing = $derived(search && query.trim() !== '');
 
 	/*
 	 * The menu is drawn in the top layer, not inside the card it belongs to.
@@ -214,6 +243,7 @@
 	 * past the part it shares with the option above it.
 	 */
 	function headingsBefore(i: number): { label: string; depth: number }[] {
+		if (narrowing) return [];
 		const path = options[i].path ?? [];
 		const above = i > 0 ? (options[i - 1].path ?? []) : [];
 		let same = 0;
@@ -256,18 +286,35 @@
 		held = next;
 		onpick?.(next);
 		afterPress(() => {
-			open = false;
-			at = -1;
+			shut();
 			face?.focus();
 		});
 	}
 
-	function show() {
+	/**
+	 * Open the list. With a search box, the typing goes there — on a pointer
+	 * that aims, or from the keyboard. Under a finger it waits to be pressed,
+	 * because a focused box raises a keyboard over half the list somebody was
+	 * about to read.
+	 */
+	function show(typing = false, seed = '') {
 		open = true;
-		at = Math.max(
-			0,
-			options.findIndex((one) => one.value === now)
-		);
+		query = seed;
+		at = seed
+			? 0
+			: Math.max(
+					0,
+					options.findIndex((one) => one.value === now)
+				);
+		if (search && (typing || window.matchMedia('(pointer: fine)').matches)) {
+			queueMicrotask(() => box?.focus());
+		}
+	}
+
+	function shut() {
+		open = false;
+		at = -1;
+		query = '';
 	}
 
 	/*
@@ -288,35 +335,51 @@
 		if (open && event.key === 'Escape') {
 			event.preventDefault();
 			event.stopPropagation();
-			open = false;
+			shut();
+			face?.focus();
 			return;
 		}
+		// In the search box a letter and a space are typing, not choosing.
+		const typing = event.currentTarget === box;
 		if (!open) {
 			if (['ArrowDown', 'ArrowUp', 'Enter', ' '].includes(event.key)) {
 				event.preventDefault();
-				show();
+				show(true);
+			} else if (search && event.key.length === 1 && !event.ctrlKey && !event.metaKey) {
+				// Typed at while shut: the list opens with that letter in it.
+				event.preventDefault();
+				show(true, event.key);
 			}
 			return;
 		}
 
 		if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
 			event.preventDefault();
+			if (shown.length === 0) return;
 			const step = event.key === 'ArrowDown' ? 1 : -1;
-			at = (at + step + options.length) % options.length;
+			at = (at + step + shown.length) % shown.length;
 			return;
 		}
-		if (event.key === 'Home' || event.key === 'End') {
+		if (!typing && (event.key === 'Home' || event.key === 'End')) {
 			event.preventDefault();
-			at = event.key === 'Home' ? 0 : options.length - 1;
+			at = event.key === 'Home' ? 0 : shown.length - 1;
 			return;
 		}
-		if (event.key === 'Enter' || event.key === ' ') {
+		if (event.key === 'Enter' || (!typing && event.key === ' ')) {
 			event.preventDefault();
-			if (at >= 0) take(options[at].value);
+			if (shown[at]) take(shown[at].option.value);
 			return;
 		}
 		if (event.key === 'Tab') {
-			open = false;
+			shut();
+			return;
+		}
+		if (typing) return;
+		if (search && event.key.length === 1 && !event.ctrlKey && !event.metaKey) {
+			event.preventDefault();
+			query = event.key;
+			at = 0;
+			box?.focus();
 			return;
 		}
 		if (event.key.length === 1) {
@@ -339,13 +402,13 @@
 	 */
 	function elsewhere(event: MouseEvent) {
 		if (!open || !root) return;
-		if (!root.contains(event.target as Node)) open = false;
+		if (!root.contains(event.target as Node)) shut();
 	}
 
 	function onKey(event: KeyboardEvent) {
 		if (open && event.key === 'Escape') {
 			event.preventDefault();
-			open = false;
+			shut();
 		}
 	}
 </script>
@@ -378,7 +441,7 @@
 		title={icon || (!many && chosen?.icon)
 			? `${label}: ${many ? saidMany : (chosen?.label ?? '')}`
 			: undefined}
-		onclick={() => (open ? (open = false) : show())}
+		onclick={() => (open ? shut() : show())}
 		onkeydown={onFaceKey}
 	>
 		{#if icon}
@@ -400,64 +463,93 @@
 			vocabulary, and a menu taller than the screen cannot be reached to
 			the end of.
 		-->
-		<ul
+		<div
 			bind:this={list}
 			popover="manual"
 			style="left:{where.left}px; top:{where.top}px; min-width:{where.width}px; max-height:{where.tall}px; max-width:calc(100vw - {EDGE_GUTTER *
 				2}px)"
-			class="overlay-face fixed m-0 w-max overflow-y-auto border p-0 shadow-overlay"
-			role="listbox"
-			aria-multiselectable={many ? true : undefined}
-			aria-label={label}
+			class="overlay-face fixed m-0 flex w-max flex-col border p-0 shadow-overlay"
 		>
-			{#each options as option, i (option.value)}
-				{#each headingsBefore(i) as heading (heading.depth)}
-					<li
-						role="presentation"
-						class="eyebrow px-3 pt-2 pb-1 text-gray-500"
-						style="padding-inline-start: {0.75 + heading.depth * INDENT_REM}rem"
-					>
-						{heading.label}
-					</li>
-				{/each}
-				<li role="presentation">
-					<button
-						type="button"
-						tabindex="-1"
-						role="option"
-						data-value={option.value}
-						aria-selected={many ? chosenMany.has(option.value) : option.value === now}
-						class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm {(
-							many ? chosenMany.has(option.value) : option.value === now
-						)
-							? 'overlay-face-on'
-							: options.indexOf(option) === at
+			{#if search}
+				<input
+					bind:this={box}
+					bind:value={query}
+					oninput={() => (at = 0)}
+					onkeydown={onFaceKey}
+					type="search"
+					class="picker-search shrink-0"
+					placeholder={t('pickOne.typeToNarrow')}
+					aria-label={label}
+					aria-controls="{name ?? label}-list"
+					autocomplete="off"
+				/>
+			{/if}
+			<ul
+				id="{name ?? label}-list"
+				class="m-0 min-h-0 flex-1 overflow-y-auto p-0"
+				role="listbox"
+				aria-multiselectable={many ? true : undefined}
+				aria-label={label}
+			>
+				{#each shown as { option, hits }, i (option.value)}
+					{#each headingsBefore(i) as heading (heading.depth)}
+						<li
+							role="presentation"
+							class="eyebrow px-3 pt-2 pb-1 text-gray-500"
+							style="padding-inline-start: {0.75 + heading.depth * INDENT_REM}rem"
+						>
+							{heading.label}
+						</li>
+					{/each}
+					<li role="presentation">
+						<button
+							type="button"
+							tabindex="-1"
+							role="option"
+							data-value={option.value}
+							aria-selected={many ? chosenMany.has(option.value) : option.value === now}
+							class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm {(
+								many ? chosenMany.has(option.value) : option.value === now
+							)
 								? 'overlay-face-on'
-								: ''}"
-						style={option.path?.length
-							? `padding-inline-start: ${0.75 + option.path.length * INDENT_REM}rem`
-							: undefined}
-						onclick={() => (many ? toggle(option.value) : take(option.value))}
-						onmouseenter={() => (at = options.indexOf(option))}
-						title={option.icon ? option.label : undefined}
-						aria-label={option.icon ? option.label : undefined}
-					>
-						<!-- The tick keeps its place, so the row does not shift when the
-						     chosen one changes. -->
-						<span class="w-3 shrink-0">
-							{#if many ? chosenMany.has(option.value) : option.value === now}<Icon
-									name="check"
-									size={12}
-								/>{/if}
-						</span>
-						{#if option.icon}
-							<Icon name={option.icon} size={14} />{option.short ?? ''}
-						{:else}
-							{option.label}
-						{/if}
-					</button>
-				</li>
-			{/each}
-		</ul>
+								: i === at
+									? 'overlay-face-on'
+									: ''}"
+							style={option.path?.length && !narrowing
+								? `padding-inline-start: ${0.75 + option.path.length * INDENT_REM}rem`
+								: undefined}
+							onclick={() => (many ? toggle(option.value) : take(option.value))}
+							onmouseenter={() => (at = i)}
+							title={option.icon ? option.label : undefined}
+							aria-label={option.icon ? option.label : undefined}
+						>
+							<!-- The tick keeps its place, so the row does not shift when the
+							     chosen one changes. -->
+							<span class="w-3 shrink-0">
+								{#if many ? chosenMany.has(option.value) : option.value === now}<Icon
+										name="check"
+										size={12}
+									/>{/if}
+							</span>
+							{#if option.icon}
+								<Icon name={option.icon} size={14} />{option.short ?? ''}
+							{:else if narrowing}
+								<!-- The letters that matched are marked: a list that narrows and
+								     does not say why reads as a list that has gone wrong. -->
+								<span
+									>{#each markHits(option.label, hits) as part, p (p)}{#if part.hit}<strong
+												class="font-semibold underline">{part.text}</strong
+											>{:else}{part.text}{/if}{/each}</span
+								>
+							{:else}
+								{option.label}
+							{/if}
+						</button>
+					</li>
+				{:else}
+					<li class="px-3 py-2 text-sm opacity-75">{t('pickOne.nothingMatches')}</li>
+				{/each}
+			</ul>
+		</div>
 	{/if}
 </div>

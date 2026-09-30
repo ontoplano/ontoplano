@@ -8,7 +8,6 @@
 	import { useWhen } from '$lib/when-context.svelte';
 	import NumberBox from '$lib/components/NumberBox.svelte';
 	import PeriodNav from '$lib/components/PeriodNav.svelte';
-	import PickOne from '$lib/components/PickOne.svelte';
 	import Picker from '$lib/components/Picker.svelte';
 	import FilterBar from '$lib/components/FilterBar.svelte';
 	import RoomSurface from '$lib/components/RoomSurface.svelte';
@@ -4311,12 +4310,13 @@
 							<!-- Typed at rather than scrolled: an account with forty
 							     activities was a list you hunted through, and "lr" is how
 							     anybody actually finds "learn russian". -->
-							<PickOne
+							<Picker
 								name="activityId"
 								required
-								bind:value={activityChoice}
-								ariaLabel={t('tasks.plan.activity')}
-								placeholder={t('pickOne.typeToNarrow')}
+								search
+								value={activityChoice}
+								onpick={(next) => (activityChoice = next)}
+								label={t('tasks.plan.activity')}
 								options={[
 									...data.activities.map((act: { id: number; name: string }) => ({
 										value: String(act.id),

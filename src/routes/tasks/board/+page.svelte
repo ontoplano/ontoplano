@@ -6,7 +6,6 @@
 	import NumberBox from '$lib/components/NumberBox.svelte';
 	import TodoFields from '$lib/components/fields/TodoFields.svelte';
 	import PeriodNav from '$lib/components/PeriodNav.svelte';
-	import PickOne from '$lib/components/PickOne.svelte';
 	import CategoryMark from '$lib/components/CategoryMark.svelte';
 	import EmptyState from '$lib/components/EmptyState.svelte';
 	import TodoCard from '$lib/components/TodoCard.svelte';
@@ -1594,11 +1593,11 @@
 							>
 								<!-- The same picker the plan's block form has, for the same
 								     reason: a list of forty is hunted through, not read. -->
-								<PickOne
+								<Picker
 									name="activityId"
+									search
 									value={card.activityId === null ? '' : String(card.activityId)}
-									ariaLabel={t('tasks.board.whatItWas')}
-									placeholder={t('pickOne.typeToNarrow')}
+									label={t('tasks.board.whatItWas')}
 									options={[
 										{ value: '', label: t('tasks.board.notSaid') },
 										...data.activities.map(
