@@ -28,6 +28,7 @@ releases mattered.
 - Home's cards line up in rows: cards side by side start and end at the same height instead of stacking at staggered heights.
 - Saving a form no longer empties its fields for a moment before the dialog closes — Edit notebook's title did this.
 - Your display name can be changed under Settings → Account.
+- On a phone, a board card's title has the card's whole width: its buttons sit on the line under it instead of squeezing the title to a few letters a line.
 
 ## 0.184.10 — 2026-09-29
 
