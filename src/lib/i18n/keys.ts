@@ -176,6 +176,7 @@ export type MessageKey =
 	| 'app.recipes'
 	| 'app.recording'
 	| 'app.refunds'
+	| 'app.reminder'
 	| 'app.reminders'
 	| 'app.remoteWorker'
 	| 'app.review'
@@ -261,6 +262,7 @@ export type MessageKey =
 	| 'audio.deleteForever'
 	| 'audio.deleteName'
 	| 'audio.discard'
+	| 'audio.editName'
 	| 'audio.full'
 	| 'audio.held'
 	| 'audio.justRecorded'
@@ -272,6 +274,7 @@ export type MessageKey =
 	| 'audio.noneDescription'
 	| 'audio.noneMatch'
 	| 'audio.notSupported'
+	| 'audio.notes'
 	| 'audio.orderBy'
 	| 'audio.orderLength'
 	| 'audio.orderName'
@@ -283,8 +286,6 @@ export type MessageKey =
 	| 'audio.position'
 	| 'audio.record'
 	| 'audio.recording'
-	| 'audio.rename'
-	| 'audio.renameName'
 	| 'audio.resume'
 	| 'audio.save'
 	| 'audio.saving'
@@ -359,6 +360,8 @@ export type MessageKey =
 	| 'demo.theDemoIsFullRight'
 	| 'demo.tryAgain'
 	| 'emptyState.noneMatch'
+	| 'errors.account.aNameCannotBeEmpty'
+	| 'errors.account.thatNameIsTooLong'
 	| 'errors.accountImport.thatFile'
 	| 'errors.accountImport.thatFileHasNoAccount'
 	| 'errors.accountImport.thatFileIsNotJson'
@@ -389,6 +392,8 @@ export type MessageKey =
 	| 'errors.attributes.mustBeAnObject'
 	| 'errors.audio.aRecordingNeedsAName'
 	| 'errors.audio.noSuchRecording'
+	| 'errors.audio.notesAlreadyWritten'
+	| 'errors.audio.notesTooLong'
 	| 'errors.audio.thatIsNotARecording'
 	| 'errors.audio.thatRecordingWasEmpty'
 	| 'errors.auth.provideABearerToken'
@@ -571,6 +576,7 @@ export type MessageKey =
 	| 'errors.todos.categoryRequired'
 	| 'errors.todos.invalidBatch'
 	| 'errors.todos.invalidStatus'
+	| 'errors.todos.notTied'
 	| 'errors.todos.nothingWasChosen'
 	| 'errors.todos.onlyOneOffBlocksCan'
 	| 'errors.todos.thatIsTooManyAtOnce'
@@ -587,6 +593,7 @@ export type MessageKey =
 	| 'errors.webhooks.webhookAddress'
 	| 'errors.webhooks.webhookAddressHasToBeAValid'
 	| 'errors.webhooks.webhookAddressHasToBeHttp'
+	| 'errors.weekly.alreadyWritten'
 	| 'errors.widgets.thatNotebookHasNoSuchTab'
 	| 'errors.workouts.aCategoryByThatName'
 	| 'errors.workouts.measuresHave'
@@ -680,6 +687,9 @@ export type MessageKey =
 	| 'finance.bills.nothingInTheLastFew'
 	| 'finance.bills.nothingRecordedYet'
 	| 'finance.bills.onPlan'
+	| 'finance.bills.orderAmount'
+	| 'finance.bills.orderDue'
+	| 'finance.bills.orderName'
 	| 'finance.bills.paid'
 	| 'finance.bills.paid2'
 	| 'finance.bills.paidCount'
@@ -792,6 +802,7 @@ export type MessageKey =
 	| 'finance.ledgers.uncategorizedCount'
 	| 'finance.ledgers.usualExport'
 	| 'finance.ledgers.whatItIs'
+	| 'finance.monthBars.newest'
 	| 'finance.monthlyBars.caption'
 	| 'finance.rules.aCategory'
 	| 'finance.rules.aLineBelongsToThe'
@@ -808,8 +819,6 @@ export type MessageKey =
 	| 'finance.rules.ecmascriptMatchedCaseInsensitivelyAndUna'
 	| 'finance.rules.edit'
 	| 'finance.rules.editRule'
-	| 'finance.rules.everyLedger'
-	| 'finance.rules.everyOutgoingLineHasA'
 	| 'finance.rules.everyTagThatMatchesApplies'
 	| 'finance.rules.findsItAnywhereInThe'
 	| 'finance.rules.isADigitAndA'
@@ -817,7 +826,6 @@ export type MessageKey =
 	| 'finance.rules.javascriptRegularExpressions'
 	| 'finance.rules.keepIt'
 	| 'finance.rules.kind'
-	| 'finance.rules.lastMonths'
 	| 'finance.rules.mercado'
 	| 'finance.rules.moveDown'
 	| 'finance.rules.moveUp'
@@ -832,13 +840,13 @@ export type MessageKey =
 	| 'finance.rules.pattern'
 	| 'finance.rules.patternHint'
 	| 'finance.rules.patternsAre'
+	| 'finance.rules.searchRules'
+	| 'finance.rules.showingCount'
 	| 'finance.rules.stopsClaimingTheLineIt'
 	| 'finance.rules.tagExample'
 	| 'finance.rules.tagPatternExample'
 	| 'finance.rules.tags'
 	| 'finance.rules.theFullSyntax'
-	| 'finance.rules.uncategorized'
-	| 'finance.rules.whereItWent'
 	| 'finance.rules.whichLinesThisClaims'
 	| 'finance.stackedMonths.caption'
 	| 'frontDoor.createAnAccount'
@@ -1026,11 +1034,17 @@ export type MessageKey =
 	| 'health.habits.nothingTrackedYet'
 	| 'health.habits.onWhichDays'
 	| 'health.habits.oneFewerToday'
+	| 'health.habits.orderCreated'
+	| 'health.habits.orderHabitsBy'
+	| 'health.habits.orderName'
+	| 'health.habits.orderStreak'
+	| 'health.habits.orderTotal'
 	| 'health.habits.search'
 	| 'health.habits.showAllHabits'
 	| 'health.habits.showingCount'
 	| 'health.habits.timesToday'
 	| 'health.habits.total'
+	| 'health.recipes.allRecipes'
 	| 'health.recipes.at'
 	| 'health.recipes.canMakeCount'
 	| 'health.recipes.countsAs'
@@ -1059,7 +1073,6 @@ export type MessageKey =
 	| 'health.recipes.id.itBecomesABlockOn'
 	| 'health.recipes.id.itsIngredientsStayOnThe'
 	| 'health.recipes.id.keepIt'
-	| 'health.recipes.id.larrAllRecipes'
 	| 'health.recipes.id.lastCooked'
 	| 'health.recipes.id.main'
 	| 'health.recipes.id.makeThisTheMainPicture'
@@ -1089,7 +1102,6 @@ export type MessageKey =
 	| 'health.recipes.id.thatIsAsManyAs'
 	| 'health.recipes.id.titleWillBeGone'
 	| 'health.recipes.id.toBuy'
-	| 'health.recipes.id.upToKb'
 	| 'health.recipes.id.uploading'
 	| 'health.recipes.id.whatItIs'
 	| 'health.recipes.id.whereItCameFrom'
@@ -1108,6 +1120,11 @@ export type MessageKey =
 	| 'health.recipes.nothingInItYet'
 	| 'health.recipes.nothingYouCanMakeRight'
 	| 'health.recipes.onTheRecipePageSelect'
+	| 'health.recipes.orderCooked'
+	| 'health.recipes.orderMinutes'
+	| 'health.recipes.orderMissing'
+	| 'health.recipes.orderRecipesBy'
+	| 'health.recipes.orderTitle'
 	| 'health.recipes.pasteThePageHere'
 	| 'health.recipes.putItOnADay'
 	| 'health.recipes.putItOnThePlan'
@@ -1369,6 +1386,7 @@ export type MessageKey =
 	| 'instance.whereYourOntoplanoLives'
 	| 'instance.youCanChangeThisLater'
 	| 'inventory.aColourForThisAttribute'
+	| 'inventory.aColourForThisCategory'
 	| 'inventory.aColourForThisValue'
 	| 'inventory.aRoomACupboardA'
 	| 'inventory.about'
@@ -1380,12 +1398,15 @@ export type MessageKey =
 	| 'inventory.archive'
 	| 'inventory.archivedCount'
 	| 'inventory.archivedWord'
-	| 'inventory.atLeast'
-	| 'inventory.atMost'
+	| 'inventory.atLeastLabel'
+	| 'inventory.atLeastShort'
+	| 'inventory.atMostLabel'
+	| 'inventory.atMostShort'
 	| 'inventory.attributes'
 	| 'inventory.boughtCount'
 	| 'inventory.boughtWord'
 	| 'inventory.categories'
+	| 'inventory.categoriesAndAttributes'
 	| 'inventory.changeIs'
 	| 'inventory.changesAre'
 	| 'inventory.confirm'
@@ -1398,12 +1419,13 @@ export type MessageKey =
 	| 'inventory.everythingBothLists'
 	| 'inventory.family'
 	| 'inventory.family2'
-	| 'inventory.find'
-	| 'inventory.find2'
 	| 'inventory.fold'
+	| 'inventory.foodColumn'
 	| 'inventory.frozen'
 	| 'inventory.hereAndYou'
 	| 'inventory.hiddenByTheFilters'
+	| 'inventory.holdsFood'
+	| 'inventory.howMany'
 	| 'inventory.ifTheTripGoesWell'
 	| 'inventory.inside'
 	| 'inventory.inventory'
@@ -1414,9 +1436,14 @@ export type MessageKey =
 	| 'inventory.leaveEmptyForARoom'
 	| 'inventory.lineHas'
 	| 'inventory.linesHave'
+	| 'inventory.moveDown'
+	| 'inventory.moveDownNamed'
+	| 'inventory.moveUp'
+	| 'inventory.moveUpNamed'
 	| 'inventory.newCategory'
 	| 'inventory.newItem'
 	| 'inventory.newLocation'
+	| 'inventory.noColour'
 	| 'inventory.noConnectionThisIsThe'
 	| 'inventory.noPriceYet'
 	| 'inventory.noPriceYetSo'
@@ -1431,6 +1458,14 @@ export type MessageKey =
 	| 'inventory.oneMore'
 	| 'inventory.oneMore2'
 	| 'inventory.onlyWhatYouHaveFewer'
+	| 'inventory.orderAdded'
+	| 'inventory.orderCount'
+	| 'inventory.orderName'
+	| 'inventory.orderPrice'
+	| 'inventory.orderThingsBy'
+	| 'inventory.placeEmpty'
+	| 'inventory.placeHolds'
+	| 'inventory.placeHoldsSplit'
 	| 'inventory.putBackOnTheList'
 	| 'inventory.putItBackOnThe'
 	| 'inventory.remove'
@@ -1443,8 +1478,10 @@ export type MessageKey =
 	| 'inventory.restock'
 	| 'inventory.restock2'
 	| 'inventory.saveTheName'
+	| 'inventory.searchTheseThings'
+	| 'inventory.sharedWithFamily'
 	| 'inventory.shoppingList'
-	| 'inventory.shoppingList2'
+	| 'inventory.shoppingListCount'
 	| 'inventory.short'
 	| 'inventory.showWhatIsIn'
 	| 'inventory.showWhatYouAlreadyHave'
@@ -1452,11 +1489,9 @@ export type MessageKey =
 	| 'inventory.showingCount'
 	| 'inventory.stock'
 	| 'inventory.takeThisAttributeOffEverything'
+	| 'inventory.takeThisValueOffEverything'
 	| 'inventory.theListIsEmpty'
 	| 'inventory.tickTheOnesThatHold'
-	| 'inventory.toBuy'
-	| 'inventory.toBuyCount'
-	| 'inventory.toBuyTotal'
 	| 'inventory.toRestock'
 	| 'inventory.waitingToBeSent'
 	| 'inventory.whatYouTickWillBe'
@@ -1468,7 +1503,6 @@ export type MessageKey =
 	| 'inventory.widenOrNarrowTheLocations'
 	| 'inventory.wishlist'
 	| 'inventory.wishlist2'
-	| 'inventory.withoutAPrice'
 	| 'inventory.yesRemoveIt'
 	| 'keys.reach.everything'
 	| 'keys.reach.heading'
@@ -1844,7 +1878,6 @@ export type MessageKey =
 	| 'notebooks.folderNotebooksCount'
 	| 'notebooks.folderPath'
 	| 'notebooks.folderPathHint'
-	| 'notebooks.folderPlaceholder'
 	| 'notebooks.goalsCount'
 	| 'notebooks.habitsCount'
 	| 'notebooks.id.aPictureFor'
@@ -2026,11 +2059,18 @@ export type MessageKey =
 	| 'notebooks.theirNotebookWasDeletedThe'
 	| 'notebooks.theseLiveElsewhere'
 	| 'notebooks.thisIsGoneFromEverywhere'
+	| 'notebooks.weekly.editNote'
 	| 'notebooks.weekly.everyWeekYouWriteAbout'
 	| 'notebooks.weekly.nothingWrittenYet'
 	| 'notebooks.weekly.openThatWeek'
+	| 'notebooks.weekly.orderWeek'
+	| 'notebooks.weekly.orderWeeksBy'
 	| 'notebooks.weekly.searchTheWeeks'
 	| 'notebooks.weekly.showingCount'
+	| 'notebooks.weekly.theNote'
+	| 'notebooks.weekly.weekOf'
+	| 'notebooks.weekly.writeANote'
+	| 'notebooks.weekly.yesDelete'
 	| 'notebooks.whatIsInside'
 	| 'notebooks.whatItHolds'
 	| 'notebooks.whatItIsFor'
@@ -2061,6 +2101,7 @@ export type MessageKey =
 	| 'notify.noun.goalTarget'
 	| 'notify.noun.habit'
 	| 'notify.noun.idea'
+	| 'notify.noun.inventoryAttribute'
 	| 'notify.noun.inventoryCategory'
 	| 'notify.noun.inventoryItem'
 	| 'notify.noun.item'
@@ -2190,6 +2231,7 @@ export type MessageKey =
 	| 'ratings.labelValue'
 	| 'ratings.labelValueOf5'
 	| 'ratings.nthInLine'
+	| 'ratings.placeUnderFilters'
 	| 'ratings.priority'
 	| 'ratings.priorityScoreOf'
 	| 'ratings.urgency'
@@ -2267,6 +2309,7 @@ export type MessageKey =
 	| 'reminders.newReminder'
 	| 'reminders.noneBookedYet'
 	| 'reminders.nothingCanReachThisBrowser'
+	| 'reminders.nothingSaysThat'
 	| 'reminders.nothingWaiting'
 	| 'reminders.nothingWentOff'
 	| 'reminders.onTheMachineRunning'
@@ -2287,11 +2330,13 @@ export type MessageKey =
 	| 'reminders.reviewWeeksOpen'
 	| 'reminders.saveThisReminder'
 	| 'reminders.saveWhatThisKindSounds'
+	| 'reminders.searchReminders'
 	| 'reminders.servesItOverHttpsWith'
 	| 'reminders.setIt'
 	| 'reminders.setItUp'
 	| 'reminders.setOne'
 	| 'reminders.setThisReminder'
+	| 'reminders.showingCount'
 	| 'reminders.silent'
 	| 'reminders.somethingElse'
 	| 'reminders.sound'
@@ -2386,6 +2431,8 @@ export type MessageKey =
 	| 'scopeGroups.whatYouWrite'
 	| 'scopeGroups.yourHome'
 	| 'scopeGroups.yourWeek'
+	| 'scopes.audioRead'
+	| 'scopes.audioWrite'
 	| 'scopes.billsRead'
 	| 'scopes.billsWrite'
 	| 'scopes.calendarRead'
@@ -2443,6 +2490,7 @@ export type MessageKey =
 	| 'search.notesDiaryEntriesTodosBlocks'
 	| 'search.nothingMatches'
 	| 'search.or'
+	| 'search.resultsCount'
 	| 'search.resultsFor'
 	| 'search.todo'
 	| 'search.whatAreYouLookingFor'
@@ -2492,6 +2540,7 @@ export type MessageKey =
 	| 'settings.account.change'
 	| 'settings.account.changePassword'
 	| 'settings.account.changeYourEmailAddress'
+	| 'settings.account.changeYourName'
 	| 'settings.account.changeYourPassword'
 	| 'settings.account.changingItIsTurnedOff'
 	| 'settings.account.changingItSignsOutEvery'
@@ -2505,6 +2554,8 @@ export type MessageKey =
 	| 'settings.account.deletePermanently'
 	| 'settings.account.deleteThisInstance'
 	| 'settings.account.deleteYourAccount'
+	| 'settings.account.displayName'
+	| 'settings.account.displayNameHint'
 	| 'settings.account.download'
 	| 'settings.account.emailAddress'
 	| 'settings.account.everyOtherSignedInDeviceIs'
@@ -2575,6 +2626,7 @@ export type MessageKey =
 	| 'settings.account.oneMessageOnAMonday'
 	| 'settings.account.password'
 	| 'settings.account.preparing'
+	| 'settings.account.profile'
 	| 'settings.account.sendConfirmation'
 	| 'settings.account.signOut'
 	| 'settings.account.signOutEverywhere'
@@ -2813,6 +2865,10 @@ export type MessageKey =
 	| 'settings.integrations.connections.itMay'
 	| 'settings.integrations.connections.itSendsYouBackHere'
 	| 'settings.integrations.connections.keep'
+	| 'settings.integrations.connections.kindCounter'
+	| 'settings.integrations.connections.kindEvent'
+	| 'settings.integrations.connections.kindMeasurement'
+	| 'settings.integrations.connections.kindState'
 	| 'settings.integrations.connections.lastDelivery'
 	| 'settings.integrations.connections.lastUsed'
 	| 'settings.integrations.connections.latest'
@@ -3030,6 +3086,7 @@ export type MessageKey =
 	| 'shortcut.askToDeleteSelected'
 	| 'shortcut.askToDeleteWidget'
 	| 'shortcut.captureANote'
+	| 'shortcut.captureAReminder'
 	| 'shortcut.captureATodo'
 	| 'shortcut.captureAnIdea'
 	| 'shortcut.captureSomethingToBuy'
@@ -3037,6 +3094,7 @@ export type MessageKey =
 	| 'shortcut.carryCardToPreviousColumn'
 	| 'shortcut.closeForm'
 	| 'shortcut.copyToDaysMultiselect'
+	| 'shortcut.cycleDayWeekMonth'
 	| 'shortcut.delegate'
 	| 'shortcut.deleteBlock'
 	| 'shortcut.deleteItem'
@@ -3065,6 +3123,7 @@ export type MessageKey =
 	| 'shortcut.navigateSlots'
 	| 'shortcut.navigateTags'
 	| 'shortcut.navigateTokens'
+	| 'shortcut.navigateWeeks'
 	| 'shortcut.navigateWidgets'
 	| 'shortcut.newActivity'
 	| 'shortcut.newCard'
@@ -3082,6 +3141,7 @@ export type MessageKey =
 	| 'shortcut.newTodo'
 	| 'shortcut.newToken'
 	| 'shortcut.newWeeklyBlock'
+	| 'shortcut.newWeeklyNote'
 	| 'shortcut.newWidget'
 	| 'shortcut.newWins'
 	| 'shortcut.newWorkout'
@@ -3128,6 +3188,7 @@ export type MessageKey =
 	| 'start.1Account'
 	| 'start.aMonthEach'
 	| 'start.aSubscriptionCannotBeStarted'
+	| 'start.aYear'
 	| 'start.accounts'
 	| 'start.billedTodayTheTrial'
 	| 'start.bothOfTodaySExportsAre'
@@ -3136,6 +3197,7 @@ export type MessageKey =
 	| 'start.everyYear'
 	| 'start.everythingYouWroteIsKept'
 	| 'start.family'
+	| 'start.from'
 	| 'start.fromAMonth'
 	| 'start.howOften'
 	| 'start.iWantToHostMy'
@@ -3146,11 +3208,13 @@ export type MessageKey =
 	| 'start.nothingIsChargedToday'
 	| 'start.oneInvoiceCoversAccountsYours'
 	| 'start.ontoplanoIsFreeAndOpen'
+	| 'start.perMonth'
 	| 'start.percentOff'
 	| 'start.plan'
 	| 'start.signOut'
 	| 'start.start'
 	| 'start.startAMonth'
+	| 'start.startFreeDays'
 	| 'start.subscribe'
 	| 'start.yearly'
 	| 'start.youGetFreeDaysEvenIf'
@@ -3167,6 +3231,8 @@ export type MessageKey =
 	| 'style.playfulHint'
 	| 'style.sober'
 	| 'style.soberHint'
+	| 'tagChip.untag'
+	| 'tagChip.untagName'
 	| 'tagFilter.addToHide'
 	| 'tagFilter.addToKeep'
 	| 'tagFilter.all'
@@ -3204,21 +3270,18 @@ export type MessageKey =
 	| 'taskStatus.doing'
 	| 'taskStatus.pending'
 	| 'tasks.activities.anActivityIsANamed'
-	| 'tasks.activities.cannotDeleteReferencedByPlanner'
 	| 'tasks.activities.categories'
 	| 'tasks.activities.colour'
 	| 'tasks.activities.confirm'
 	| 'tasks.activities.createActivity'
 	| 'tasks.activities.deleteActivity'
-	| 'tasks.activities.disable'
-	| 'tasks.activities.disabled'
 	| 'tasks.activities.editActivity'
-	| 'tasks.activities.enable'
 	| 'tasks.activities.everyCategory'
 	| 'tasks.activities.newActivity'
 	| 'tasks.activities.newCategoryName'
 	| 'tasks.activities.noActivitiesMatchTheSelected'
 	| 'tasks.activities.noActivitiesYet'
+	| 'tasks.activities.nothingPutAway'
 	| 'tasks.activities.searchActivities'
 	| 'tasks.activities.showingCount'
 	| 'tasks.board.1Hour'
@@ -3394,6 +3457,8 @@ export type MessageKey =
 	| 'tasks.plan.selected'
 	| 'tasks.plan.selectedDragOne'
 	| 'tasks.plan.shift'
+	| 'tasks.plan.showAsCalendar'
+	| 'tasks.plan.showAsList'
 	| 'tasks.plan.someDays'
 	| 'tasks.plan.startADayEarlier'
 	| 'tasks.plan.startADayLater'
@@ -3461,6 +3526,13 @@ export type MessageKey =
 	| 'tasks.review.itStillNeedsDoing'
 	| 'tasks.review.itStillNeedsDoing2'
 	| 'tasks.review.keep'
+	| 'tasks.review.keyAskAgain'
+	| 'tasks.review.keyDay'
+	| 'tasks.review.keyHalf'
+	| 'tasks.review.keyHappened'
+	| 'tasks.review.keyMove'
+	| 'tasks.review.keySkipped'
+	| 'tasks.review.keyTodo'
 	| 'tasks.review.letGo'
 	| 'tasks.review.letItGo'
 	| 'tasks.review.noGoalMovedThatWeek'
@@ -3517,6 +3589,7 @@ export type MessageKey =
 	| 'todoRows.aToDoIsATask'
 	| 'todoRows.addLabels'
 	| 'todoRows.added'
+	| 'todoRows.aheadOfTheTie'
 	| 'todoRows.anythingYouFinishShowsUp'
 	| 'todoRows.archived'
 	| 'todoRows.archivedCount'
@@ -3525,6 +3598,7 @@ export type MessageKey =
 	| 'todoRows.batchStatus'
 	| 'todoRows.batchTag'
 	| 'todoRows.batchUpdated'
+	| 'todoRows.behindTheTie'
 	| 'todoRows.completed'
 	| 'todoRows.completedCount'
 	| 'todoRows.completedTitle'
@@ -3558,6 +3632,7 @@ export type MessageKey =
 	| 'todoRows.oldestAtTheTopPress'
 	| 'todoRows.oldestFirst'
 	| 'todoRows.orderTasksBy'
+	| 'todoRows.placeOnScreen'
 	| 'todoRows.priority'
 	| 'todoRows.pullOntoToday'
 	| 'todoRows.pulledOntoThisDay'
@@ -3645,6 +3720,7 @@ export type MessageKey =
 	| 'tour.dragARoomUpOr'
 	| 'tour.dragToMakeABlock'
 	| 'tour.eachCardIsOneRoom'
+	| 'tour.eachDayAHeadingAndItsBlocks'
 	| 'tour.emailPasswordTheDevicesYou'
 	| 'tour.entriesGoalsPeopleRecipesIdeas'
 	| 'tour.entriesNotesIdeasGoalsPeople'
@@ -3676,6 +3752,8 @@ export type MessageKey =
 	| 'tour.ingredientsStepsAndACook'
 	| 'tour.integrations'
 	| 'tour.inventoryIsWhatRunsOut'
+	| 'tour.inventoryTheTrip'
+	| 'tour.inventoryTheTripBody'
 	| 'tour.itBecomesABlockOn'
 	| 'tour.itFansOutYourAccount'
 	| 'tour.itOpensTheTourFor'
@@ -3724,7 +3802,16 @@ export type MessageKey =
 	| 'tour.renamingOntoALabelYou'
 	| 'tour.retireOneWithoutLosingIt'
 	| 'tour.review'
+	| 'tour.rulesCategoriesTakeTurns'
+	| 'tour.rulesCategoriesTakeTurnsBody'
 	| 'tour.rulesDoTheSorting'
+	| 'tour.rulesRoom'
+	| 'tour.rulesSortWhatArrives'
+	| 'tour.rulesSortWhatArrivesBody'
+	| 'tour.rulesTagsPileUp'
+	| 'tour.rulesTagsPileUpBody'
+	| 'tour.rulesTheCountOpensTheLines'
+	| 'tour.rulesTheCountOpensTheLinesBody'
 	| 'tour.saveTheShapeYouAre'
 	| 'tour.sayItInYourOwn'
 	| 'tour.sayItInsteadOfTyping'
@@ -3754,6 +3841,7 @@ export type MessageKey =
 	| 'tour.theRestFillsInAs'
 	| 'tour.theRoomsOpenAroundYour'
 	| 'tour.theSameBlocksAsThe'
+	| 'tour.theSameDaysAsAList'
 	| 'tour.theSameGestureForA'
 	| 'tour.theSameWordOnA'
 	| 'tour.theShapeOfANormal'
@@ -3777,6 +3865,12 @@ export type MessageKey =
 	| 'tour.typeAWordYouRemember'
 	| 'tour.upToSixPicturesPer'
 	| 'tour.urgencyEaseInterest'
+	| 'tour.weeklyListBody'
+	| 'tour.weeklyListTitle'
+	| 'tour.weeklyNewBody'
+	| 'tour.weeklyNewTitle'
+	| 'tour.weeklyOpenBody'
+	| 'tour.weeklyOpenTitle'
 	| 'tour.whatATaskSaysAboutItself'
 	| 'tour.whatHappenedInYourWords'
 	| 'tour.whatIsWaitingForATime'
@@ -3820,6 +3914,7 @@ export type MessageKey =
 	| 'ui.clear'
 	| 'ui.close'
 	| 'ui.colour'
+	| 'ui.confirm'
 	| 'ui.copied'
 	| 'ui.copy'
 	| 'ui.create'
@@ -3862,6 +3957,7 @@ export type MessageKey =
 	| 'ui.unit'
 	| 'ui.withTheRoom'
 	| 'ui.write'
+	| 'webhookEvents.audioUploaded'
 	| 'webhookEvents.diaryCreated'
 	| 'webhookEvents.ideaCreated'
 	| 'webhookEvents.inventoryAdded'
@@ -3962,10 +4058,10 @@ export interface MessageValuesFor {
 	'attributes.readBy': { description: string | number; plugins: string | number };
 	'attributes.removeNamed': { written: string | number };
 	'audio.deleteName': { name: string | number };
+	'audio.editName': { name: string | number };
 	'audio.full': { count: number };
 	'audio.held': { count: number };
 	'audio.justRecorded': { name: string | number };
-	'audio.renameName': { name: string | number };
 	'audio.sizeKB': { size: string | number };
 	'audio.tooLong': { kilobytes: string | number };
 	'capture.addedTo': { into: string | number };
@@ -3977,6 +4073,8 @@ export interface MessageValuesFor {
 		minutes: string | number;
 		minutes2: string | number;
 	};
+	'errors.account.thatNameIsTooLong': { max: string | number };
+	'errors.audio.notesTooLong': { limit: string | number };
 	'errors.notebooks.hasNoBillsTab': { notebook: string | number };
 	'errors.notebooks.hasNoGoalsTab': { notebook: string | number };
 	'errors.notebooks.hasNoHabitsTab': { notebook: string | number };
@@ -4029,14 +4127,14 @@ export interface MessageValuesFor {
 	'finance.ledgers.moveLater': { name: string | number };
 	'finance.ledgers.showingCount': { count: number };
 	'finance.ledgers.uncategorizedCount': { count: number };
+	'finance.monthBars.newest': { shown: string | number; total: string | number };
 	'finance.rules.colourFor': { name: string | number };
 	'finance.rules.delete': { name: string | number };
 	'finance.rules.edit': { name: string | number };
-	'finance.rules.lastMonths': { w: string | number };
 	'finance.rules.moveDown': { name: string | number };
 	'finance.rules.moveUp': { name: string | number };
+	'finance.rules.showingCount': { count: number };
 	'finance.rules.stopsClaimingTheLineIt': { matches: string | number; s: string | number };
-	'finance.rules.uncategorized': { unsorted: string | number };
 	'gallery.albumsCount': { count: number };
 	'gallery.albumsInside': { count: number };
 	'gallery.allOf': { name: string | number };
@@ -4106,7 +4204,6 @@ export interface MessageValuesFor {
 	'health.recipes.id.ranOutOf': { name: string | number };
 	'health.recipes.id.serves2': { servings: string | number };
 	'health.recipes.id.titleWillBeGone': { title: string | number };
-	'health.recipes.id.upToKb': { kilobytes: string | number };
 	'health.recipes.ingredients': { ingredients: string | number };
 	'health.recipes.min': { minutes: string | number };
 	'health.recipes.missingCount': { count: number };
@@ -4173,21 +4270,31 @@ export interface MessageValuesFor {
 		qty: string | number;
 	};
 	'inventory.hiddenByTheFilters': { count: number };
+	'inventory.holdsFood': { name: string | number };
+	'inventory.moveDownNamed': { name: string | number };
+	'inventory.moveUpNamed': { name: string | number };
 	'inventory.noPriceYetSo': { have: string | number; unpriced: string | number };
 	'inventory.oneFewer2': { name: string | number };
 	'inventory.oneMore2': { name: string | number };
+	'inventory.placeEmpty': { name: string | number };
+	'inventory.placeHolds': { count: number; name: string | number };
+	'inventory.placeHoldsSplit': {
+		count: number;
+		here: string | number;
+		inside: string | number;
+		name: string | number;
+	};
 	'inventory.remove': { name: string | number };
 	'inventory.rename': { name: string | number };
 	'inventory.renameOrMove2': { name: string | number };
 	'inventory.restock2': { replenish: string | number };
+	'inventory.sharedWithFamily': { name: string | number };
+	'inventory.shoppingListCount': { count: number };
 	'inventory.showWhatIsIn': { place: string | number };
 	'inventory.showWhatYouAlreadyHave': { bought: string | number };
 	'inventory.showWhatYouPutAway': { snoozed: string | number };
 	'inventory.showingCount': { count: number };
-	'inventory.toBuyCount': { count: number };
-	'inventory.toBuyTotal': { count: number; total: string | number };
 	'inventory.wishlist2': { someday: string | number };
-	'inventory.withoutAPrice': { count: number };
 	'keys.reach.justOne': { noun: string | number };
 	'keys.reach.summary': { what: string | number };
 	'keys.reach.which': { noun: string | number };
@@ -4315,6 +4422,7 @@ export interface MessageValuesFor {
 	'notify.noun.goalTarget': { count: number };
 	'notify.noun.habit': { count: number };
 	'notify.noun.idea': { count: number };
+	'notify.noun.inventoryAttribute': { count: number };
 	'notify.noun.inventoryCategory': { count: number };
 	'notify.noun.inventoryItem': { count: number };
 	'notify.noun.item': { count: number };
@@ -4392,6 +4500,7 @@ export interface MessageValuesFor {
 	'reminders.reviewBlocks': { count: number };
 	'reminders.reviewPending': { blocks: string | number };
 	'reminders.reviewWeeksOpen': { blocks: string | number; weeks: string | number };
+	'reminders.showingCount': { count: number };
 	'reminders.theLastDays': { count: number };
 	'reminders.theNextDays': { count: number };
 	'reminders.upToRingtonesKbEach': { kilobytes: string | number; ringtones: string | number };
@@ -4400,6 +4509,7 @@ export interface MessageValuesFor {
 	'reportDialog.whereItGoes': { where: string | number };
 	'search.for': { q: string | number; results: string | number; total: string | number };
 	'search.nothingMatches': { q: string | number };
+	'search.resultsCount': { count: number };
 	'search.resultsFor': { count: number; q: string | number };
 	'selection.count': { count: number };
 	'settings.account.allSessions': { count: number };
@@ -4464,6 +4574,7 @@ export interface MessageValuesFor {
 	'settings.preferences.testSentTo': { count: number };
 	'settings.timezone.unchanged': { zone: string | number };
 	'start.aMonthEach': { currency: string | number };
+	'start.aYear': { currency: string | number };
 	'start.accounts': { familySeats: string | number };
 	'start.fromAMonth': { currency: string | number };
 	'start.ifNotTheFirstCharge': { firstChargeOn: string | number };
@@ -4471,10 +4582,12 @@ export interface MessageValuesFor {
 	'start.oneInvoiceCoversAccountsYours': { familySeats: string | number };
 	'start.percentOff': { saving: string | number };
 	'start.startAMonth': { currency: string | number };
+	'start.startFreeDays': { count: number };
 	'start.yearly': { yearlyLine: string | number };
 	'start.youGetFreeDaysEvenIf': { trialDaysAhead: string | number };
 	'streamChart.dateCountPoints': { count: number; date: string | number };
 	'streamChart.inAgainstOutByMonth': { inLabel: string | number; outLabel: string | number };
+	'tagChip.untagName': { name: string | number };
 	'tagFilter.withAll': { tags: string | number };
 	'tagFilter.withAny': { tags: string | number };
 	'tagFilter.without': { tags: string | number };

@@ -30,10 +30,10 @@ import { db } from '$lib/db/index.js';
 import { media } from '$lib/db/schema.js';
 import type { Ctx } from './ctx.js';
 import { sha256Hex } from './digest.js';
-import { NotFoundError, ValidationError } from './errors.js';
+import { ConflictError, NotFoundError, ValidationError } from './errors.js';
 import { host } from './host.js';
 import { AUDIO_MIME_PREFIX } from './media-kind.js';
-import { audioSecondsFor, type MediaLimits } from './media-limits.js';
+import { MAX_AUDIO_NOTES_LENGTH, audioSecondsFor, type MediaLimits } from './media-limits.js';
 import { stamp } from './time.js';
 
 /** Do these bytes start with exactly this run of bytes? */
@@ -99,11 +99,13 @@ export const ACCEPTED_AUDIO_EXTENSIONS = [...SIGNATURES.map((s) => s.extension),
  * from a disk, and a line somebody types is a line that has to fit in a list.
  */
 export const MAX_AUDIO_NAME_LENGTH = 120;
+export { MAX_AUDIO_NOTES_LENGTH };
 
 export type Recording = {
 	id: number;
 	mime: string;
 	name: string;
+	notes: string;
 	byteSize: number;
 	/** How long it plays. Null for anything recorded before it was stored. */
 	seconds: number | null;
@@ -187,9 +189,10 @@ export function countStored(ctx: Ctx): number {
  */
 export async function store(
 	ctx: Ctx,
-	input: { bytes: Uint8Array; name?: string; seconds?: number }
+	input: { bytes: Uint8Array; name?: string; seconds?: number; notes?: unknown }
 ): Promise<Recording> {
 	const limits = audioLimits();
+	const notes = checkNotes(input.notes ?? '');
 
 	if (!input.bytes || input.bytes.length === 0)
 		throw new ValidationError({ key: 'errors.audio.thatRecordingWasEmpty' });
@@ -229,6 +232,7 @@ export async function store(
 			// file it came from, so this is the name somebody gave it.
 			filename: name,
 			alt: '',
+			notes,
 			byteSize: input.bytes.length,
 			seconds: tidySeconds(input.seconds),
 			bytes: input.bytes as Buffer,
@@ -237,6 +241,7 @@ export async function store(
 		})
 		.returning()
 		.get();
+	host.emit(ctx, 'audio.uploaded', { id: row.id });
 
 	return toRecording(row);
 }
@@ -246,6 +251,7 @@ function toRecording(row: typeof media.$inferSelect): Recording {
 		id: row.id,
 		mime: row.mime,
 		name: row.filename,
+		notes: row.notes,
 		byteSize: row.byteSize,
 		seconds: row.seconds,
 		createdAt: row.createdAt
@@ -295,17 +301,73 @@ export function list(ctx: Ctx): Recording[] {
 		.map(toRecording);
 }
 
-export function rename(ctx: Ctx, id: number, name: unknown): Recording {
-	const tidy = tidyAudioName(String(name ?? ''));
+export function get(ctx: Ctx, id: number): Recording {
+	const row = db
+		.select()
+		.from(media)
+		.where(and(eq(media.id, id), eq(media.userId, ctx.userId), isRecording))
+		.get();
+	if (!row) throw new NotFoundError({ key: 'errors.audio.noSuchRecording' });
+	return toRecording(row);
+}
+
+/** Notes as they may be stored: text, and no longer than the ceiling. */
+function checkNotes(notes: unknown): string {
+	if (typeof notes !== 'string' || notes.length > MAX_AUDIO_NOTES_LENGTH)
+		throw new ValidationError({
+			key: 'errors.audio.notesTooLong',
+			values: { limit: MAX_AUDIO_NOTES_LENGTH }
+		});
+	return notes;
+}
+
+/**
+ * Everything the edit dialog offers, in one statement: the name and the notes
+ * land together or not at all.
+ */
+export function edit(ctx: Ctx, id: number, input: { name: unknown; notes: unknown }): Recording {
+	const tidy = tidyAudioName(String(input.name ?? ''));
 	if (!tidy) throw new ValidationError({ key: 'errors.audio.aRecordingNeedsAName' });
+	const notes = checkNotes(input.notes ?? '');
 
 	const row = db
 		.update(media)
-		.set({ filename: tidy })
+		.set({ filename: tidy, notes })
 		.where(and(eq(media.id, id), eq(media.userId, ctx.userId), isRecording))
 		.returning()
 		.get();
 	if (!row) throw new NotFoundError({ key: 'errors.audio.noSuchRecording' });
+	return toRecording(row);
+}
+
+/** Replace a recording's notes, with ownership and kind checked in the update. */
+export function setNotes(ctx: Ctx, id: number, given: unknown, onlyIfEmpty = false): Recording {
+	const notes = checkNotes(given);
+	const row = db
+		.update(media)
+		.set({ notes })
+		.where(
+			and(
+				eq(media.id, id),
+				eq(media.userId, ctx.userId),
+				isRecording,
+				...(onlyIfEmpty ? [eq(media.notes, '')] : [])
+			)
+		)
+		.returning()
+		.get();
+	if (!row) {
+		if (
+			onlyIfEmpty &&
+			db
+				.select({ id: media.id })
+				.from(media)
+				.where(and(eq(media.id, id), eq(media.userId, ctx.userId), isRecording))
+				.get()
+		)
+			throw new ConflictError({ key: 'errors.audio.notesAlreadyWritten' });
+		throw new NotFoundError({ key: 'errors.audio.noSuchRecording' });
+	}
 	return toRecording(row);
 }
 

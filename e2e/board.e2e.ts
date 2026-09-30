@@ -180,33 +180,66 @@ test.describe('undo on a card ticked off', () => {
 /**
  * The board on a phone.
  *
- * It was a sideways strip — a scroll box inside the page — with a row of
- * column names above it that was a second way to change column. The columns
- * are stacked now, each as tall as what is in it, and the page scrolls.
+ * It was stacked for a while, which put a full-height Doing between Pending
+ * and Done and made moving a card a trip down the page. A board is columns, so
+ * the phone slides sideways, and the names above jump the strip to a column.
  */
 test.describe('the board on a phone', () => {
 	test.use({ viewport: { width: 390, height: 844 } });
 
-	test('stacks its columns, with nothing scrolling sideways', async ({ page }) => {
+	test('slides sideways, and the names jump to a column', async ({ page }) => {
 		await register(page, testEmail('board-phone'));
-		const title = 'A card on a stacked board';
+		const title = 'A card to find under Done';
 		await newCard(page, title);
+
+		// Pending is what a phone opens on, and the card is on the screen.
+		await expect(page.getByRole('button', { name: /^Pending/ })).toHaveAttribute(
+			'aria-pressed',
+			'true'
+		);
 		await expect(page.getByText(title, { exact: true })).toBeVisible();
 
 		const strip = page.locator('[data-tour="board-columns"]');
-		expect(await strip.evaluate((s) => s.scrollWidth - s.clientWidth)).toBeLessThan(2);
+		const room = await strip.evaluate((s) => s.scrollWidth - s.clientWidth);
+		expect(room, 'the columns have somewhere to slide to').toBeGreaterThan(50);
 
-		// Every column is on the page, one under the other, with its own header.
-		const lanes = strip.locator('section');
-		await expect(lanes).toHaveCount(3);
-		const boxes = await lanes.evaluateAll((all) =>
-			all.map((one) => one.getBoundingClientRect()).map((r) => ({ top: r.top, bottom: r.bottom }))
+		const was = await strip.evaluate((s) => s.scrollLeft);
+		await page.getByRole('button', { name: /^Done/ }).click();
+		await expect(page.getByRole('button', { name: /^Done/ })).toHaveAttribute(
+			'aria-pressed',
+			'true'
 		);
-		expect(boxes[1].top).toBeGreaterThanOrEqual(boxes[0].bottom);
-		expect(boxes[2].top).toBeGreaterThanOrEqual(boxes[1].bottom);
+		await expect
+			.poll(() => strip.evaluate((s) => s.scrollLeft), { timeout: 5000 })
+			.toBeGreaterThan(was);
+
+		// The page itself never scrolls sideways; only the strip does.
+		expect(
+			await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)
+		).toBeLessThan(2);
 	});
 
-	test('moves a card with the grip and a press on a column', async ({ page }) => {
+	test('a drop on a column name moves the card there and follows it', async ({ page }) => {
+		await register(page, testEmail('board-drop-name'));
+		const title = 'A card dropped on Doing';
+		await newCard(page, title);
+
+		const doing = page.getByRole('button', { name: /^Doing/ });
+		const card = page.getByText(title, { exact: true });
+		const transfer = () => page.evaluateHandle(() => new DataTransfer());
+		await card.dispatchEvent('dragstart', { dataTransfer: await transfer() });
+		await doing.dispatchEvent('dragover', { dataTransfer: await transfer() });
+		await doing.dispatchEvent('drop', { dataTransfer: await transfer() });
+
+		await expect(doing).toHaveAttribute('aria-pressed', 'true');
+		await page.reload({ waitUntil: 'load' });
+		await page.waitForSelector('html[data-ready]');
+		await expect(
+			page.locator('[data-tour="board-columns"] section').nth(1).getByText(title, { exact: true })
+		).toBeAttached();
+	});
+
+	test('moves a card with the grip and a press on a column name', async ({ page }) => {
 		await register(page, testEmail('board-switch'));
 		const title = 'A card that should end up Doing';
 		await newCard(page, title);
@@ -217,14 +250,19 @@ test.describe('the board on a phone', () => {
 			.getByRole('button', { name: `Read ${title}` })
 			.getByRole('button', { name: 'Move this to another column' })
 			.click();
-		await page.locator('[data-tour="board-columns"] section').nth(1).click();
+		// The column it is headed for is off the screen; its name is not.
+		await page.getByRole('button', { name: /^Doing/ }).click();
+		await expect(page.getByRole('button', { name: /^Doing/ })).toHaveAttribute(
+			'aria-pressed',
+			'true'
+		);
 		await page.waitForTimeout(900);
 
 		await page.reload({ waitUntil: 'load' });
 		await page.waitForSelector('html[data-ready]');
 		await expect(
 			page.locator('[data-tour="board-columns"] section').nth(1).getByText(title, { exact: true })
-		).toBeVisible();
+		).toBeAttached();
 	});
 });
 

@@ -26,6 +26,8 @@ than a permission bit: a grant given to a string of jargon is not informed.
 | `habits:write`     | Mark a habit kept, or unmark one                                                                                                                  |
 | `plugin:declare`   | Name and describe itself on your integrations page                                                                                                |
 | `webhooks:manage`  | Send itself a message when something changes here — a task finished, a block done — to an address it chooses                                      |
+| `audio:read`       | Read your recordings and their notes                                                                                                              |
+| `audio:write`      | Write notes on your recordings                                                                                                                    |
 | `inventory:read`   | See everything you keep and everything on your shopping list                                                                                      |
 | `inventory:write`  | Add things, tick them bought, change how many you keep, and take things off                                                                       |
 | `locations:read`   | See where your things live, and what is in each room and drawer                                                                                   |
@@ -97,7 +99,7 @@ own](ai-agents.md).
 
 ## Two plugins to read
 
-Both are in `examples/`, both are plain Node with no dependencies, and neither
+Both are in `ontoplano-plugins/`, both are plain Node with no dependencies, and neither
 runs anything inside anybody's server.
 
 **`onto-morning.mjs`** is the short one, and the place to start: a single token

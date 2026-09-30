@@ -15,16 +15,16 @@
 	 * currently going. The menu itself is `Picker`, which the filters beside
 	 * this one use too, so a toolbar has one kind of control in it.
 	 */
-	import Icon from '$lib/components/Icon.svelte';
+	import Icon, { type IconName } from '$lib/components/Icon.svelte';
 	import Picker from '$lib/components/Picker.svelte';
 	import { useT } from '$lib/i18n';
 	import type { PlainKey } from '$lib/i18n/keys';
-	import { getFilterStrip } from '$lib/filter-strip';
 
 	let {
 		value,
 		options,
 		labels,
+		icons = {},
 		direction = 'desc',
 		onpick,
 		onflip,
@@ -35,25 +35,28 @@
 		options: readonly T[];
 		/** What each option is called, as a catalogue key. */
 		labels: Record<T, PlainKey>;
+		/** A glyph in place of an option's word — the ratings' — its name kept as the tooltip. */
+		icons?: Partial<Record<T, IconName>>;
 		direction?: 'asc' | 'desc';
 		onpick: (next: T) => void;
 		onflip: () => void;
 		/** What this control is, for whoever is not looking at it. */
 		label: string;
 		/**
-		 * One square instead of a word and an arrow. Left out, it follows the
-		 * `FilterBar` it sits in: compact while that strip is folded, which is
-		 * how the order stays on a phone's first line beside the search box.
+		 * One square instead of a word and an arrow, for a row with no room.
+		 * Off by default: a folded `FilterBar` gives the order a line of its
+		 * own, and the square hid the direction below the fold of its menu.
 		 */
 		compact?: boolean;
 	} = $props();
 
 	const t = useT();
-	const strip = getFilterStrip();
-	const small = $derived(compact ?? strip?.folded ?? false);
+	const small = $derived(compact ?? false);
 
 	/* The orders, as the picker wants them: a value and the word for it. */
-	const choices = $derived(options.map((one) => ({ value: one, label: t(labels[one]) })));
+	const choices = $derived(
+		options.map((one) => ({ value: one, label: t(labels[one]), icon: icons[one] }))
+	);
 
 	/*
 	 * Compact, the order and the direction are one list in two groups, each
@@ -65,7 +68,12 @@
 	const ASC = '\u0000asc';
 	const DESC = '\u0000desc';
 	const both = $derived([
-		...options.map((one) => ({ value: one, label: t(labels[one]), path: [t('sort.order')] })),
+		...options.map((one) => ({
+			value: one,
+			label: t(labels[one]),
+			icon: icons[one],
+			path: [t('sort.order')]
+		})),
 		{ value: ASC, label: t('sort.ascending'), path: [t('sort.direction')] },
 		{ value: DESC, label: t('sort.descending'), path: [t('sort.direction')] }
 	]);

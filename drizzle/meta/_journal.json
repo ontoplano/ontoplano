@@ -827,6 +827,13 @@
       "when": 1790551419787,
       "tag": "0117_an_inventory_category_has_a_colour",
       "breakpoints": true
+    },
+    {
+      "idx": 118,
+      "version": "6",
+      "when": 1790693873851,
+      "tag": "0118_add_recording_notes",
+      "breakpoints": true
     }
   ]
 }

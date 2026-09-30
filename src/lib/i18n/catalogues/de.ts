@@ -197,6 +197,7 @@ export const messages: Catalogue = {
 	'app.recipes': 'Rezepte',
 	'app.recording': 'Aufnahme',
 	'app.refunds': 'Rückerstattungen',
+	'app.reminder': 'Erinnerung',
 	'app.reminders': 'Erinnerungen',
 	'app.remoteWorker': 'Remote-Mitarbeiter',
 	'app.review': 'Rückblick',
@@ -283,6 +284,7 @@ export const messages: Catalogue = {
 	'audio.deleteForever': 'Das kann nicht rückgängig gemacht werden.',
 	'audio.deleteName': 'Delete {name}',
 	'audio.discard': 'Verwerfen',
+	'audio.editName': '{name} bearbeiten',
 	'audio.full':
 		'Das sind bereits {count} Aufnahmen. Löschen Sie eine, um eine weitere zu behalten.',
 	'audio.held': { one: '{count} Aufnahme', other: '{count} Aufnahmen' },
@@ -296,6 +298,7 @@ export const messages: Catalogue = {
 		'Press Record and talk; what you keep lands here, ready to play back or turn into an idea.',
 	'audio.noneMatch': 'No recording has that in its name.',
 	'audio.notSupported': 'Dieser Browser kann nicht aufnehmen.',
+	'audio.notes': 'Notizen',
 	'audio.orderBy': 'Order recordings by',
 	'audio.orderLength': 'Length',
 	'audio.orderName': 'Name',
@@ -307,8 +310,6 @@ export const messages: Catalogue = {
 	'audio.position': 'Ab welcher Stelle abgespielt wird',
 	'audio.record': 'Aufnehmen',
 	'audio.recording': 'Aufnahme',
-	'audio.rename': 'Umbenennen',
-	'audio.renameName': 'Rename {name}',
 	'audio.resume': 'Weiter',
 	'audio.save': 'Speichern',
 	'audio.saving': 'Wird gespeichert…',
@@ -393,6 +394,8 @@ export const messages: Catalogue = {
 	'demo.theDemoIsFullRight': 'Die Demo ist gerade voll.',
 	'demo.tryAgain': 'Erneut versuchen',
 	'emptyState.noneMatch': 'Nothing matches',
+	'errors.account.aNameCannotBeEmpty': 'Ein Name darf nicht leer sein',
+	'errors.account.thatNameIsTooLong': 'Ein Name darf höchstens {max} Zeichen haben',
 	'errors.accountImport.thatFile': 'Diese Datei ist kein Ontoplano-Export.',
 	'errors.accountImport.thatFileHasNoAccount': 'In dieser Datei stecken keine Kontodaten.',
 	'errors.accountImport.thatFileIsNotJson': 'Diese Datei ist kein JSON.',
@@ -436,6 +439,9 @@ export const messages: Catalogue = {
 	'errors.attributes.mustBeAnObject': 'attributes muss ein Objekt sein',
 	'errors.audio.aRecordingNeedsAName': 'Eine Aufnahme braucht einen Namen.',
 	'errors.audio.noSuchRecording': 'Diese Aufnahme gibt es nicht.',
+	'errors.audio.notesAlreadyWritten': 'Für diese Aufnahme gibt es bereits Notizen.',
+	'errors.audio.notesTooLong':
+		'Die Notizen zur Aufnahme dürfen höchstens {limit} Zeichen lang sein.',
 	'errors.audio.thatIsNotARecording': 'Diese Aufnahme nimmt diese Instanz nicht.',
 	'errors.audio.thatRecordingWasEmpty': 'Diese Aufnahme war leer.',
 	'errors.auth.provideABearerToken': 'Gib einen Schlüssel an oder melde dich an',
@@ -648,6 +654,7 @@ export const messages: Catalogue = {
 	'errors.todos.categoryRequired': 'Kategorie auswählen',
 	'errors.todos.invalidBatch': 'Wähle eine gültige Sammelaktion.',
 	'errors.todos.invalidStatus': 'Ungültiger Status',
+	'errors.todos.notTied': 'Nur gleich bewertete Aufgaben können die Plätze tauschen.',
 	'errors.todos.nothingWasChosen': 'Nichts ausgewählt',
 	'errors.todos.onlyOneOffBlocksCan':
 		'Nur einmalige Aufgabenblöcke können zurück in die Aufgabenliste',
@@ -668,6 +675,7 @@ export const messages: Catalogue = {
 		'Die Webhook-Adresse muss eine URL mit höchstens 300 Zeichen sein',
 	'errors.webhooks.webhookAddressHasToBeAValid': 'Die Webhook-Adresse muss eine gültige URL sein',
 	'errors.webhooks.webhookAddressHasToBeHttp': 'Die Webhook-Adresse muss http oder https sein',
+	'errors.weekly.alreadyWritten': 'That week already has a note. Edit it instead.',
 	'errors.widgets.thatNotebookHasNoSuchTab':
 		'Dieses Notizbuch hat keinen solchen Tab, den ein Widget zeigen könnte.',
 	'errors.workouts.aCategoryByThatName':
@@ -770,6 +778,9 @@ export const messages: Catalogue = {
 		'In den letzten Wochen passt nichts. Eine Rechnung, die von einem Konto bezahlt wurde, das diese Instanz nicht\n\t\t\t\timportiert, lässt sich trotzdem von Hand abhaken.',
 	'finance.bills.nothingRecordedYet': 'Noch nichts bezahlt oder ausgelassen.',
 	'finance.bills.onPlan': 'im Plan',
+	'finance.bills.orderAmount': 'Amount',
+	'finance.bills.orderDue': 'Due next',
+	'finance.bills.orderName': 'Name',
 	'finance.bills.paid': 'bezahlt',
 	'finance.bills.paid2': 'Bezahlt',
 	'finance.bills.paidCount': 'Bezahlt',
@@ -829,8 +840,7 @@ export const messages: Catalogue = {
 	'finance.insights.spentPerMonthOnAverage': 'Ausgegeben, im Durchschnitt pro Monat',
 	'finance.insights.theSameMoneyWithoutThe': 'Dasselbe Geld, ohne die Monate.',
 	'finance.insights.theWholeWindowByCategory': 'Der ganze Zeitraum, nach Kategorie',
-	'finance.insights.whatArrivedAgainstWhatLeft':
-		'Was hereinkam gegen was hinausging, mit dem Saldo unter jedem Monat.',
+	'finance.insights.whatArrivedAgainstWhatLeft': 'What arrived against what left.',
 	'finance.insights.whatEachMonthWasMade': 'Woraus sich jeder Monat zusammensetzte',
 	'finance.insights.whatOneTagCosts': 'Was ein Tag kostet',
 	'finance.insights.writeOne': 'Eine schreiben →',
@@ -902,6 +912,7 @@ export const messages: Catalogue = {
 	'finance.ledgers.uncategorizedCount': 'Uncategorized ({count})',
 	'finance.ledgers.usualExport': 'Üblicher Export',
 	'finance.ledgers.whatItIs': 'Was es ist',
+	'finance.monthBars.newest': 'Newest {shown} of {total} months',
 	'finance.monthlyBars.caption': 'Saldo unter jedem Monat',
 	'finance.rules.aCategory': 'Category: a line gets the first that matches',
 	'finance.rules.aLineBelongsToThe':
@@ -920,8 +931,6 @@ export const messages: Catalogue = {
 		'(ECMAScript), ohne Beachtung der\n\t\tGroß-/Kleinschreibung und ohne Verankerung abgeglichen —',
 	'finance.rules.edit': '{name} bearbeiten',
 	'finance.rules.editRule': 'Edit rule',
-	'finance.rules.everyLedger': 'Jede Buchung',
-	'finance.rules.everyOutgoingLineHasA': 'Jede ausgehende Zeile hat eine Kategorie.',
 	'finance.rules.everyTagThatMatchesApplies':
 		'Jedes passende Tag gilt, Tags überschneiden sich also frei.',
 	'finance.rules.findsItAnywhereInThe': 'findet es überall in der Zeile.',
@@ -930,7 +939,6 @@ export const messages: Catalogue = {
 	'finance.rules.javascriptRegularExpressions': 'reguläre JavaScript-Ausdrücke',
 	'finance.rules.keepIt': 'Behalten',
 	'finance.rules.kind': 'Kind',
-	'finance.rules.lastMonths': 'letzte {w} Monate',
 	'finance.rules.mercado': 'supermarkt',
 	'finance.rules.moveDown': '{name} nach unten verschieben',
 	'finance.rules.moveUp': '{name} nach oben verschieben',
@@ -945,14 +953,14 @@ export const messages: Catalogue = {
 	'finance.rules.pattern': 'Pattern',
 	'finance.rules.patternHint': 'A regular expression, found anywhere in the line, ignoring case.',
 	'finance.rules.patternsAre': 'Muster sind',
+	'finance.rules.searchRules': 'Search rules',
+	'finance.rules.showingCount': { one: '{count} rule showing', other: '{count} rules showing' },
 	'finance.rules.stopsClaimingTheLineIt':
 		'beansprucht die {matches} Zeile{s}, die sie erfasst, nicht mehr. Die Zeilen selbst bleiben; sie gehören der Bank.',
 	'finance.rules.tagExample': 'healthy',
 	'finance.rules.tagPatternExample': 'gym|salad',
 	'finance.rules.tags': 'Tags',
 	'finance.rules.theFullSyntax': 'Die vollständige Syntax →',
-	'finance.rules.uncategorized': '{unsorted} unkategorisiert →',
-	'finance.rules.whereItWent': 'Wohin es ging',
 	'finance.rules.whichLinesThisClaims': 'Welche Zeilen dies beansprucht',
 	'finance.stackedMonths.caption': 'Ausgaben nach Kategorie, nach Monat',
 	'frontDoor.createAnAccount': 'Konto erstellen',
@@ -1152,11 +1160,17 @@ export const messages: Catalogue = {
 	'health.habits.nothingTrackedYet': 'Noch nichts erfasst',
 	'health.habits.onWhichDays': 'An welchen Tagen',
 	'health.habits.oneFewerToday': 'One fewer today',
+	'health.habits.orderCreated': 'Added',
+	'health.habits.orderHabitsBy': 'Order habits by',
+	'health.habits.orderName': 'Name',
+	'health.habits.orderStreak': 'Streak',
+	'health.habits.orderTotal': 'Days logged',
 	'health.habits.search': 'Search habits',
 	'health.habits.showAllHabits': 'Alle Gewohnheiten anzeigen',
 	'health.habits.showingCount': { one: '{count} habit showing', other: '{count} habits showing' },
 	'health.habits.timesToday': 'How many times today: {name}',
 	'health.habits.total': '{length} insgesamt',
+	'health.recipes.allRecipes': 'All recipes',
 	'health.recipes.at': 'Um',
 	'health.recipes.canMakeCount': 'Can make now ({count})',
 	'health.recipes.countsAs': 'Zählt als',
@@ -1189,7 +1203,6 @@ export const messages: Catalogue = {
 	'health.recipes.id.itsIngredientsStayOnThe':
 		'Seine Zutaten bleiben auf der Einkaufsliste — es sind Dinge, die Sie kaufen, nicht Teile des Rezepts.',
 	'health.recipes.id.keepIt': 'Behalten',
-	'health.recipes.id.larrAllRecipes': '← Alle Rezepte',
 	'health.recipes.id.lastCooked': 'zuletzt gekocht {slice}',
 	'health.recipes.id.main': 'Hauptbild',
 	'health.recipes.id.makeThisTheMainPicture': 'Dies zum Hauptbild machen',
@@ -1223,7 +1236,6 @@ export const messages: Catalogue = {
 		'Das ist das Maximum für diese Instanz. Entfernen Sie eins, um ein weiteres hinzuzufügen.',
 	'health.recipes.id.titleWillBeGone': '„{title}" wird verschwinden.',
 	'health.recipes.id.toBuy': 'zu kaufen',
-	'health.recipes.id.upToKb': 'bis zu {kilobytes} KB',
 	'health.recipes.id.uploading': 'wird hochgeladen…',
 	'health.recipes.id.whatItIs': 'Was es ist',
 	'health.recipes.id.whereItCameFrom': 'Woher es kommt',
@@ -1248,6 +1260,11 @@ export const messages: Catalogue = {
 	'health.recipes.nothingYouCanMakeRight': 'Gerade nichts, was Sie zubereiten können',
 	'health.recipes.onTheRecipePageSelect':
 		'Auf der Rezeptseite: alles auswählen, kopieren, hier einfügen. Zutaten und Zubereitung kommen mit.',
+	'health.recipes.orderCooked': 'Last cooked',
+	'health.recipes.orderMinutes': 'Time',
+	'health.recipes.orderMissing': 'Missing ingredients',
+	'health.recipes.orderRecipesBy': 'Order recipes by',
+	'health.recipes.orderTitle': 'Name',
 	'health.recipes.pasteThePageHere': 'Seite hier einfügen',
 	'health.recipes.putItOnADay': 'Auf einen Tag legen',
 	'health.recipes.putItOnThePlan': 'Auf den Plan setzen',
@@ -1544,6 +1561,7 @@ export const messages: Catalogue = {
 	'instance.whereYourOntoplanoLives': 'Wo Ihr Ontoplano liegt',
 	'instance.youCanChangeThisLater': 'Sie können das später ändern.',
 	'inventory.aColourForThisAttribute': 'Eine Farbe für dieses Attribut',
+	'inventory.aColourForThisCategory': 'A colour for this category',
 	'inventory.aColourForThisValue': 'Eine Farbe für diesen Wert',
 	'inventory.aRoomACupboardA':
 		'Ein Raum, ein Schrank, eine Schublade. Eines kann in einem anderen liegen.',
@@ -1557,12 +1575,15 @@ export const messages: Catalogue = {
 	'inventory.archive': 'Archivieren',
 	'inventory.archivedCount': 'Archived ({count})',
 	'inventory.archivedWord': 'Archived',
-	'inventory.atLeast': 'mindestens',
-	'inventory.atMost': 'höchstens',
+	'inventory.atLeastLabel': 'At least',
+	'inventory.atLeastShort': 'min',
+	'inventory.atMostLabel': 'At most',
+	'inventory.atMostShort': 'max',
 	'inventory.attributes': 'Attribute',
 	'inventory.boughtCount': 'Bought ({count})',
 	'inventory.boughtWord': 'Bought',
 	'inventory.categories': 'Kategorien',
+	'inventory.categoriesAndAttributes': 'Categories & attributes',
 	'inventory.changeIs': 'Änderung ist',
 	'inventory.changesAre': 'Änderungen sind',
 	'inventory.confirm': 'Bestätigen?',
@@ -1577,15 +1598,16 @@ export const messages: Catalogue = {
 	'inventory.everythingBothLists': 'Alles, beide Listen',
 	'inventory.family': 'Familie',
 	'inventory.family2': 'Familie',
-	'inventory.find': 'Suchen…',
-	'inventory.find2': 'Suchen',
 	'inventory.fold': '{place} einklappen',
+	'inventory.foodColumn': 'Food',
 	'inventory.frozen': 'Tiefkühl',
 	'inventory.hereAndYou': '{name}: {qty} vorhanden, Sie halten {idealQty} vorrätig',
 	'inventory.hiddenByTheFilters': {
 		one: '{count} hidden by the filters',
 		other: '{count} hidden by the filters'
 	},
+	'inventory.holdsFood': '{name} holds food',
+	'inventory.howMany': 'How many',
 	'inventory.ifTheTripGoesWell': 'Wenn der Einkauf gut läuft',
 	'inventory.inside': 'Innen',
 	'inventory.inventory': 'Inventar',
@@ -1597,9 +1619,14 @@ export const messages: Catalogue = {
 	'inventory.leaveEmptyForARoom': 'Leer lassen für einen Raum oder ein Gebäude.',
 	'inventory.lineHas': 'Zeile hat',
 	'inventory.linesHave': 'Zeilen haben',
+	'inventory.moveDown': 'Move down',
+	'inventory.moveDownNamed': 'Move {name} down',
+	'inventory.moveUp': 'Move up',
+	'inventory.moveUpNamed': 'Move {name} up',
 	'inventory.newCategory': 'Neue Kategorie',
 	'inventory.newItem': 'Neuer Artikel',
 	'inventory.newLocation': 'Neuer Ort',
+	'inventory.noColour': 'No colour',
 	'inventory.noConnectionThisIsThe':
 		'Keine Verbindung. Dies ist die Liste, wie sie beim letzten Mal war —',
 	'inventory.noPriceYet': 'noch kein Preis',
@@ -1617,6 +1644,17 @@ export const messages: Catalogue = {
 	'inventory.oneMore': 'Eins mehr',
 	'inventory.oneMore2': 'Ein {name} mehr',
 	'inventory.onlyWhatYouHaveFewer': 'Nur das, wovon Sie weniger haben, als Sie vorrätig halten',
+	'inventory.orderAdded': 'Added',
+	'inventory.orderCount': 'How many',
+	'inventory.orderName': 'Name',
+	'inventory.orderPrice': 'Price',
+	'inventory.orderThingsBy': 'Order things by',
+	'inventory.placeEmpty': 'Nothing in {name} yet',
+	'inventory.placeHolds': { one: '{count} thing in {name}', other: '{count} things in {name}' },
+	'inventory.placeHoldsSplit': {
+		one: '{count} thing in {name}: {here} here and {inside} in what is inside it',
+		other: '{count} things in {name}: {here} here and {inside} in what is inside it'
+	},
 	'inventory.putBackOnTheList': 'Zurück auf die Liste setzen',
 	'inventory.putItBackOnThe': 'Es zurück auf die Liste setzen',
 	'inventory.remove': '{name} entfernen',
@@ -1629,8 +1667,10 @@ export const messages: Catalogue = {
 	'inventory.restock': 'Auffüllen',
 	'inventory.restock2': 'Auffüllen ({replenish})',
 	'inventory.saveTheName': 'Namen speichern',
+	'inventory.searchTheseThings': 'Search these things',
+	'inventory.sharedWithFamily': '{name} is shared with the family',
 	'inventory.shoppingList': 'Einkaufsliste',
-	'inventory.shoppingList2': 'Einkaufsliste',
+	'inventory.shoppingListCount': 'Shopping list ({count})',
 	'inventory.short': 'Knapp',
 	'inventory.showWhatIsIn': 'Zeigen, was in {place} ist',
 	'inventory.showWhatYouAlreadyHave': 'Anzeigen, was Sie schon haben ({bought})',
@@ -1638,15 +1678,10 @@ export const messages: Catalogue = {
 	'inventory.showingCount': { one: '{count} thing showing', other: '{count} things showing' },
 	'inventory.stock': 'Vorrat',
 	'inventory.takeThisAttributeOffEverything': 'Dieses Attribut überall entfernen',
+	'inventory.takeThisValueOffEverything': 'Take this value off everything that says it',
 	'inventory.theListIsEmpty': 'Die Liste ist leer',
 	'inventory.tickTheOnesThatHold':
 		'Markieren Sie die, die Lebensmittel enthalten. Nur diese können Zutaten in einem Rezept sein.',
-	'inventory.toBuy': 'To buy',
-	'inventory.toBuyCount': { one: '{count} thing', other: '{count} things' },
-	'inventory.toBuyTotal': {
-		one: '{count} thing, about {total}',
-		other: '{count} things, about {total}'
-	},
 	'inventory.toRestock': 'Zum Auffüllen',
 	'inventory.waitingToBeSent': 'wartet auf den Versand.',
 	'inventory.whatYouTickWillBe': 'was Sie markieren, wird gesendet, sobald Sie zurück sind.',
@@ -1659,7 +1694,6 @@ export const messages: Catalogue = {
 	'inventory.widenOrNarrowTheLocations': 'Panel für Orte verbreitern oder verschmälern',
 	'inventory.wishlist': 'Wunschliste',
 	'inventory.wishlist2': 'Wunschliste ({someday})',
-	'inventory.withoutAPrice': { one: '{count} without a price', other: '{count} without a price' },
 	'inventory.yesRemoveIt': 'Ja, entfernen',
 	'keys.reach.everything': 'Alles in diesem Konto',
 	'keys.reach.heading': 'Worauf zugegriffen werden darf',
@@ -2131,7 +2165,6 @@ export const messages: Catalogue = {
 	'notebooks.folderNotebooksCount': { one: '{count} Notizbuch', other: '{count} Notizbücher' },
 	'notebooks.folderPath': 'Pfad',
 	'notebooks.folderPathHint': 'Jedes Notizbuch darin zieht mit um. Leer stellt sie oben ins Regal.',
-	'notebooks.folderPlaceholder': 'Zuhause/Küche',
 	'notebooks.goalsCount': { one: '{count} Ziel', other: '{count} Ziele' },
 	'notebooks.habitsCount': { one: '{count} habit', other: '{count} habits' },
 	'notebooks.id.aPictureFor': 'Ein Bild für {title}',
@@ -2331,12 +2364,19 @@ export const messages: Catalogue = {
 		'These live in another notebook and will stop being there to be here:',
 	'notebooks.thisIsGoneFromEverywhere':
 		'This is gone from everywhere, not only from this notebook.',
+	'notebooks.weekly.editNote': 'Edit the weekly note',
 	'notebooks.weekly.everyWeekYouWriteAbout':
 		'Jede Woche, über die Sie im Rückblick schreiben, erscheint hier.',
 	'notebooks.weekly.nothingWrittenYet': 'Noch nichts geschrieben',
 	'notebooks.weekly.openThatWeek': 'Diese Woche öffnen',
+	'notebooks.weekly.orderWeek': 'Week',
+	'notebooks.weekly.orderWeeksBy': 'Order weeks by',
 	'notebooks.weekly.searchTheWeeks': 'Search the weeks',
 	'notebooks.weekly.showingCount': { one: '{count} week showing', other: '{count} weeks showing' },
+	'notebooks.weekly.theNote': 'The note',
+	'notebooks.weekly.weekOf': 'Week of',
+	'notebooks.weekly.writeANote': 'Write a weekly note',
+	'notebooks.weekly.yesDelete': 'Yes, delete',
 	'notebooks.whatIsInside': '{show}, was in {title} steckt',
 	'notebooks.whatItHolds': 'What it holds',
 	'notebooks.whatItIsFor': 'Wozu es dient',
@@ -2369,6 +2409,10 @@ export const messages: Catalogue = {
 	'notify.noun.goalTarget': { one: '{count} Zielvorgabe', other: '{count} Zielvorgaben' },
 	'notify.noun.habit': { one: '{count} Gewohnheit', other: '{count} Gewohnheiten' },
 	'notify.noun.idea': { one: '{count} Idee', other: '{count} Ideen' },
+	'notify.noun.inventoryAttribute': {
+		one: '{count} Bestandsmerkmal',
+		other: '{count} Bestandsmerkmale'
+	},
 	'notify.noun.inventoryCategory': {
 		one: '{count} Bestandskategorie',
 		other: '{count} Bestandskategorien'
@@ -2519,6 +2563,7 @@ export const messages: Catalogue = {
 	'ratings.labelValue': '{label} {value}',
 	'ratings.labelValueOf5': '{label}: {value} von 5',
 	'ratings.nthInLine': '{nth} in der Reihe',
+	'ratings.placeUnderFilters': 'Position unter den Aufgaben, die die aktuellen Filter zeigen',
 	'ratings.priority': 'Priorität',
 	'ratings.priorityScoreOf': 'Priorität {score} von {max}',
 	'ratings.urgency': 'Dringlichkeit',
@@ -2609,6 +2654,7 @@ export const messages: Catalogue = {
 	'reminders.noneBookedYet': 'Auf diesem Handy ist noch nichts gestellt',
 	'reminders.nothingCanReachThisBrowser':
 		'Nichts kann diesen Browser erreichen: Benachrichtigungen brauchen HTTPS, und diese Seite läuft auf',
+	'reminders.nothingSaysThat': 'Keine Erinnerung sagt das.',
 	'reminders.nothingWaiting': 'Nichts wartet',
 	'reminders.nothingWentOff': 'Nichts ist losgegangen',
 	'reminders.onTheMachineRunning': '. Auf dem Rechner, der es ausführt,',
@@ -2634,12 +2680,17 @@ export const messages: Catalogue = {
 		'{weeks} Wochen sind noch offen — die älteste hat {blocks} ohne Antwort.',
 	'reminders.saveThisReminder': 'Diese Erinnerung speichern',
 	'reminders.saveWhatThisKindSounds': 'Speichern, wie diese Art klingt',
+	'reminders.searchReminders': 'Erinnerungen durchsuchen',
 	'reminders.servesItOverHttpsWith':
 		'stellt es über HTTPS bereit, mit einem Zertifikat, das dieser Rechner\n\t\t\tselbst ausstellt — nichts verlässt das Netzwerk, und dem Telefon wird einmal gesagt, dass es ihm vertrauen soll. Ein echtes Zertifikat für\n\t\t\teine Domain, die Ihnen gehört, tut dasselbe, ohne dass etwas installiert werden muss. Beides schaltet Erinnerungen ein, installiert die App\n\t\t\tund funktioniert offline — alles auf einmal.',
 	'reminders.setIt': 'Festlegen',
 	'reminders.setItUp': 'Einrichten',
 	'reminders.setOne': 'Eine festlegen',
 	'reminders.setThisReminder': 'Diese Erinnerung festlegen',
+	'reminders.showingCount': {
+		one: '{count} Erinnerung angezeigt',
+		other: '{count} Erinnerungen angezeigt'
+	},
 	'reminders.silent': 'Lautlos',
 	'reminders.somethingElse': 'Etwas anderes',
 	'reminders.sound': 'Ton',
@@ -2747,6 +2798,8 @@ export const messages: Catalogue = {
 	'scopeGroups.whatYouWrite': 'Tagebuch, Notizbücher und Ideen',
 	'scopeGroups.yourHome': 'Zuhause, Küche und Einkauf',
 	'scopeGroups.yourWeek': 'Ihre Woche',
+	'scopes.audioRead': 'Ihre Aufnahmen und deren Notizen lesen',
+	'scopes.audioWrite': 'Notizen zu Ihren Aufnahmen schreiben',
 	'scopes.billsRead':
 		'Ihre Rechnungen, Ihre erfassten Einnahmen und das tatsächlich Gezahlte oder Erhaltene sehen',
 	'scopes.billsWrite': 'Rechnungen anlegen und ändern und als bezahlt markieren',
@@ -2825,6 +2878,7 @@ export const messages: Catalogue = {
 		'Notizen, Tagebucheinträge, Aufgaben, Aufgabenblöcke, Ziele, Ideen, Personen, Einkaufsliste und Aktivitäten — alles auf einmal, oder eine Art nach der anderen.',
 	'search.nothingMatches': 'Nichts passt zu „{q}“',
 	'search.or': '— oder',
+	'search.resultsCount': { one: '{count} result', other: '{count} results' },
 	'search.resultsFor': { one: '{count} result for “{q}”', other: '{count} results for “{q}”' },
 	'search.todo': 'todo:',
 	'search.whatAreYouLookingFor': 'Wonach suchen Sie?',
@@ -2890,6 +2944,7 @@ export const messages: Catalogue = {
 	'settings.account.change': 'Ändern',
 	'settings.account.changePassword': 'Passwort ändern',
 	'settings.account.changeYourEmailAddress': 'Ihre E-Mail-Adresse ändern',
+	'settings.account.changeYourName': 'Namen ändern',
 	'settings.account.changeYourPassword': 'Ihr Passwort ändern',
 	'settings.account.changingItIsTurnedOff':
 		'Das Ändern der E-Mail-Adresse ist auf dieser Instanz deaktiviert.',
@@ -2905,6 +2960,9 @@ export const messages: Catalogue = {
 	'settings.account.deletePermanently': 'Endgültig löschen',
 	'settings.account.deleteThisInstance': 'Diese Instanz löschen',
 	'settings.account.deleteYourAccount': 'Ihr Konto löschen',
+	'settings.account.displayName': 'Name',
+	'settings.account.displayNameHint':
+		'Wie die App dich nennt und was die Leute sehen, mit denen du teilst',
 	'settings.account.download': 'Download',
 	'settings.account.emailAddress': 'E-Mail-Adresse',
 	'settings.account.everyOtherSignedInDeviceIs': 'Jedes andere angemeldete Gerät wird abgemeldet.',
@@ -3000,6 +3058,7 @@ export const messages: Catalogue = {
 		'Eine Nachricht montags um {hour}:00 Uhr darüber, wie die letzte Woche war — Geplantes gegen Erledigtes, und was noch offen ist. Jede Nachricht enthält einen Link, der sie beendet.',
 	'settings.account.password': 'Passwort',
 	'settings.account.preparing': 'Preparing…',
+	'settings.account.profile': 'Profil',
 	'settings.account.sendConfirmation': 'Bestätigung senden',
 	'settings.account.signOut': 'Abmelden',
 	'settings.account.signOutEverywhere': 'Überall abmelden',
@@ -3258,10 +3317,10 @@ export const messages: Catalogue = {
 	'settings.integrations.connections.anAppDeclaresAStream':
 		'Eine App meldet einen Stream an, indem sie POST sendet an',
 	'settings.integrations.connections.andCanReadYourUpcoming':
-		'und Ihren bevorstehenden Zeitplan lesen kann —\n\t\tohne dass dafür Code in ontoplano eingebaut werden muss.',
+		'und Ihren bevorstehenden Zeitplan lesen kann — ohne dass dafür Code in ontoplano eingebaut werden muss.',
 	'settings.integrations.connections.andLetItDeleteThings': '…und ihm erlauben, Dinge zu löschen',
 	'settings.integrations.connections.anyoneWithTheAddressCan':
-		'Jeder mit der Adresse kann Ihren Plan lesen, behandeln Sie sie also wie ein Passwort. Jede ist unten\n\t\t\taufgelistet und kann einzeln widerrufen werden.',
+		'Jeder mit der Adresse kann Ihren Plan lesen, behandeln Sie sie also wie ein Passwort. Jede ist unten aufgelistet und kann einzeln widerrufen werden.',
 	'settings.integrations.connections.apiTokens': 'API-Tokens',
 	'settings.integrations.connections.apiV1Streams': '{origin}/api/v1/streams',
 	'settings.integrations.connections.calendarLink': 'Kalenderlink',
@@ -3311,6 +3370,10 @@ export const messages: Catalogue = {
 	'settings.integrations.connections.itSendsYouBackHere':
 		'Sie werden hierher zurückgeschickt, um die Verbindung zu bestätigen; sie erscheint dann in der Liste unten wie jeder andere Schlüssel.',
 	'settings.integrations.connections.keep': 'Behalten',
+	'settings.integrations.connections.kindCounter': 'Counter',
+	'settings.integrations.connections.kindEvent': 'Event',
+	'settings.integrations.connections.kindMeasurement': 'Measurement',
+	'settings.integrations.connections.kindState': 'State',
 	'settings.integrations.connections.lastDelivery': '· letzte Zustellung',
 	'settings.integrations.connections.lastUsed': '· zuletzt verwendet',
 	'settings.integrations.connections.latest': '· neueste',
@@ -3330,7 +3393,7 @@ export const messages: Catalogue = {
 	'settings.integrations.connections.onGithub': 'auf GitHub.',
 	'settings.integrations.connections.oneCommandIfItHas': 'Ein Befehl, falls es eine Shell hat:',
 	'settings.integrations.connections.orPasteThisToIt':
-		'Oder fügen Sie ihm das in Worten ein — es beschreibt, wofür die App da ist, damit der Assistent\n\t\t\t\t\tdanach greift, statt Sie zu bitten, sich zu wiederholen:',
+		'Oder fügen Sie ihm das in Worten ein — es beschreibt, wofür die App da ist, damit der Assistent danach greift, statt Sie zu bitten, sich zu wiederholen:',
 	'settings.integrations.connections.pasteTheAddressIntoGoogle':
 		'Fügen Sie die Adresse in Google Kalender, Apple Kalender oder Thunderbird ein, und Ihr Plan erscheint dort und hält sich selbst aktuell. Diese Apps lesen sie nur — nichts, was sie tun, kann Ihren Plan ändern.',
 	'settings.integrations.connections.pasteThisAddressInto':
@@ -3355,9 +3418,9 @@ export const messages: Catalogue = {
 	'settings.integrations.connections.theLastWritesMadeOver':
 		'Die letzten Schreibvorgänge über die API, neueste zuerst. Ein gelöschtes Ding kann wiederhergestellt werden.',
 	'settings.integrations.connections.theLimitsATokenMay':
-		'Die Grenzen: Ein Token darf 240 Lesevorgänge und 60 Schreibvorgänge pro Minute ausführen, und alle Ihre Tokens zusammen\n\t\t\tteilen sich 600 und 150 — mehr Tokens bedeuten nicht mehr Budget. Gespeicherte Datenpunkte zählen gegen Ihren\n\t\t\tPlan, und ein Stream mit gesetzter Aufbewahrungsdauer behält nur diese Tage.',
+		'Die Grenzen: Ein Token darf 240 Lesevorgänge und 60 Schreibvorgänge pro Minute ausführen, und alle Ihre Tokens zusammen teilen sich 600 und 150 — mehr Tokens bedeuten nicht mehr Budget. Gespeicherte Datenpunkte zählen gegen Ihren Plan, und ein Stream mit gesetzter Aufbewahrungsdauer behält nur diese Tage.',
 	'settings.integrations.connections.thisAddressWasNotKept':
-		'Diese Adresse wurde nicht gespeichert und kann nicht erneut angezeigt werden. Erstellen Sie einen neuen Link, um einen\n\t\t\t\t\t\t\t\t\tzu haben, den Sie kopieren können.',
+		'Diese Adresse wurde nicht gespeichert und kann nicht erneut angezeigt werden. Erstellen Sie einen neuen Link, um einen zu haben, den Sie kopieren können.',
 	'settings.integrations.connections.tiedToOne': 'An eines gebunden',
 	'settings.integrations.connections.tokenCreatedCopyIt':
 		'Token erstellt — kopieren Sie es jetzt, es wird nicht erneut angezeigt.',
@@ -3402,7 +3465,7 @@ export const messages: Catalogue = {
 	'settings.integrations.putItBack': 'Wiederherstellen',
 	'settings.integrations.read': 'Lesen',
 	'settings.integrations.removingIsPermanentWithoutThis':
-		'Das Entfernen ist endgültig. Ohne dies kann ein Assistent Dinge hinzufügen und ändern,\n\t\t\t\t\t\t\t\t\t\t\taber nie wegnehmen.',
+		'Das Entfernen ist endgültig. Ohne dies kann ein Assistent Dinge hinzufügen und ändern, aber nie wegnehmen.',
 	'settings.integrations.runThisInATerminal':
 		'Führen Sie dies in einem Terminal aus. Es schreibt die Einstellung für Sie, für jedes Projekt — das macht --scope user dort.',
 	'settings.integrations.scriptsWidgetsCalendars':
@@ -3446,7 +3509,7 @@ export const messages: Catalogue = {
 	'settings.integrations.widget.pasteItInto': 'Fügen Sie ihn ein in',
 	'settings.integrations.widget.theKeyForThisWidget': 'Der Schlüssel für dieses Widget',
 	'settings.integrations.widget.theWidgetComesWithThe':
-		'Das Widget kommt mit der Android-App. Eine aus dem Browser hinzugefügte Verknüpfung kann keins bereitstellen —\n\t\t\tdas erlaubt Android nur einer installierten App.',
+		'Das Widget kommt mit der Android-App. Eine aus dem Browser hinzugefügte Verknüpfung kann keins bereitstellen — das erlaubt Android nur einer installierten App.',
 	'settings.integrations.widget.theWidgetOnThisPhone':
 		'Das Widget auf diesem Telefon erhält einen eigenen Schlüssel. Es kann den heutigen Plan lesen und sonst nichts.',
 	'settings.integrations.widget.youCanDisconnectItAny':
@@ -3476,7 +3539,7 @@ export const messages: Catalogue = {
 	'settings.menu.moveDown': '{what} nach unten verschieben',
 	'settings.menu.moveUp': '{what} nach oben verschieben',
 	'settings.preferences.aRoomYouPut':
-		'. Ein Bereich, den Sie wegräumen, verschwindet aus jedem Menü, behält aber alles darin — seine Seiten lassen sich\n\t\t\t\tweiterhin über einen Link öffnen.',
+		'. Ein Bereich, den Sie wegräumen, verschwindet aus jedem Menü, behält aber alles darin — seine Seiten lassen sich weiterhin über einen Link öffnen.',
 	'settings.preferences.androidSaidNoAndWill':
 		'Android hat abgelehnt und wird nicht erneut fragen.',
 	'settings.preferences.another': 'Ein weiteres…',
@@ -3564,11 +3627,11 @@ export const messages: Catalogue = {
 	},
 	'settings.preferences.theMenu': 'Das Menü',
 	'settings.preferences.theRoomsInTheOrder':
-		'Die Bereiche, in der Reihenfolge, in der sie erscheinen — auf der Leiste und rund um das Rad. Der erste Eintrag in der Liste\n\t\t\t\tsteht zuerst auf der Leiste und zuerst unter Ihrem Daumen: Das Rad beginnt unten rechts und\n\t\t\t\tläuft gegen den Uhrzeigersinn.',
+		'Die Bereiche, in der Reihenfolge, in der sie erscheinen — auf der Leiste und rund um das Rad. Der erste Eintrag in der Liste steht zuerst auf der Leiste und zuerst unter Ihrem Daumen: Das Rad beginnt unten rechts und läuft gegen den Uhrzeigersinn.',
 	'settings.preferences.theShapeOfThingsApart':
 		'Die Form der Dinge, abgesehen von Hell und Dunkel.',
 	'settings.preferences.theStretchOfTheDay':
-		'Der Zeitraum des Tages, den die Tages- und Wochenraster zeigen. Alles außerhalb davon ist weiterhin da — es\n\t\t\t\twird nur nicht gezeichnet.',
+		'Der Zeitraum des Tages, den die Tages- und Wochenraster zeigen. Alles außerhalb davon ist weiterhin da — es wird nur nicht gezeichnet.',
 	'settings.preferences.thisBrowserCannotDoIt': 'Dieser Browser kann das nicht.',
 	'settings.preferences.thisInstanceWouldNotMake':
 		'Das hat nicht funktioniert. Versuchen Sie es erneut.',
@@ -3586,7 +3649,7 @@ export const messages: Catalogue = {
 		'In welcher Währung die Preise auf der Einkaufsliste angegeben sind.',
 	'settings.preferences.when': 'Wann',
 	'settings.preferences.whenAPageBreaksSend':
-		'Wenn eine Seite abstürzt, werden technische Details an das Protokoll dieses Servers gesendet. Nur was kaputtgegangen ist — nie\n\t\t\t\twas Sie geschrieben haben.',
+		'Wenn eine Seite abstürzt, werden technische Details an das Protokoll dieses Servers gesendet. Nur was kaputtgegangen ist — nie was Sie geschrieben haben.',
 	'settings.preferences.whichCardsAppearAndIn':
 		'Welche Karten erscheinen, und in welcher Reihenfolge.',
 	'settings.timezone.unchanged': '{zone} (unverändert)',
@@ -3596,6 +3659,7 @@ export const messages: Catalogue = {
 	'shortcut.askToDeleteSelected': 'Auswahl löschen bestätigen',
 	'shortcut.askToDeleteWidget': 'Löschen des Widgets anfragen',
 	'shortcut.captureANote': 'Notiz erfassen',
+	'shortcut.captureAReminder': 'Erinnerung erfassen',
 	'shortcut.captureATodo': 'Eine Aufgabe erfassen',
 	'shortcut.captureAnIdea': 'Idee erfassen',
 	'shortcut.captureSomethingToBuy': 'Einkauf erfassen',
@@ -3603,6 +3667,7 @@ export const messages: Catalogue = {
 	'shortcut.carryCardToPreviousColumn': 'Karte in vorherige Spalte verschieben',
 	'shortcut.closeForm': 'Formular schließen',
 	'shortcut.copyToDaysMultiselect': 'Auf Tage kopieren (Mehrfachauswahl)',
+	'shortcut.cycleDayWeekMonth': 'Tag, Woche und Monat durchschalten',
 	'shortcut.delegate': 'Delegieren',
 	'shortcut.deleteBlock': 'Aufgabenblock löschen',
 	'shortcut.deleteItem': 'Element löschen',
@@ -3631,6 +3696,7 @@ export const messages: Catalogue = {
 	'shortcut.navigateSlots': 'Zwischen Zeitfenstern navigieren',
 	'shortcut.navigateTags': 'Durch die Schlagwörter gehen',
 	'shortcut.navigateTokens': 'Zwischen Tokens navigieren',
+	'shortcut.navigateWeeks': 'Navigate weeks',
 	'shortcut.navigateWidgets': 'Durch Widgets navigieren',
 	'shortcut.newActivity': 'Neue Aktivität',
 	'shortcut.newCard': 'Neue Karte',
@@ -3648,6 +3714,7 @@ export const messages: Catalogue = {
 	'shortcut.newTodo': 'Neue Aufgabe',
 	'shortcut.newToken': 'Neuer Token',
 	'shortcut.newWeeklyBlock': 'Neuer wöchentlicher Aufgabenblock',
+	'shortcut.newWeeklyNote': 'New weekly note',
 	'shortcut.newWidget': 'Neues Widget, wenn das Telefon dich hergeschickt hat',
 	'shortcut.newWins': 'Neue Erfolge',
 	'shortcut.newWorkout': 'New workout',
@@ -3696,6 +3763,7 @@ export const messages: Catalogue = {
 	'start.aMonthEach': '{currency} pro Monat',
 	'start.aSubscriptionCannotBeStarted':
 		'Ein Abonnement kann nicht über diese App abgeschlossen werden.',
+	'start.aYear': '{currency} im Jahr',
 	'start.accounts': '{familySeats} Konten',
 	'start.billedTodayTheTrial': 'Heute abgebucht — die Testphase wurde bereits genutzt.',
 	'start.bothOfTodaySExportsAre':
@@ -3706,6 +3774,7 @@ export const messages: Catalogue = {
 	'start.everythingYouWroteIsKept':
 		'Alles, was Sie geschrieben haben, bleibt erhalten — nichts wurde gelöscht. Verlängern Sie, um dort weiterzumachen, wo Sie aufgehört haben, oder\n\t\t\t\tnehmen Sie Ihre Daten mit.',
 	'start.family': 'Familie',
+	'start.from': 'ab',
 	'start.fromAMonth': 'ab {currency} pro Monat',
 	'start.howOften': 'Wie oft',
 	'start.iWantToHostMy': 'Ich möchte eine eigene Instanz hosten',
@@ -3718,11 +3787,16 @@ export const messages: Catalogue = {
 		'Eine Rechnung deckt {familySeats} Konten ab, Ihres eingeschlossen. Sie laden die anderen ein, sobald Sie drin sind.',
 	'start.ontoplanoIsFreeAndOpen':
 		'Ontoplano ist kostenlos und quelloffen: Hosten Sie es selbst, und jede Funktion gehört Ihnen ohne Kosten. Bezahlen\n\t\t\tgilt für diese Instanz — für Sie gehostet, gesichert und aktuell gehalten — und finanziert die\n\t\t\tEntwicklung.',
+	'start.perMonth': 'pro Monat',
 	'start.percentOff': '{saving}% günstiger',
 	'start.plan': 'Plan',
 	'start.signOut': 'Abmelden',
 	'start.start': 'Starten',
 	'start.startAMonth': 'Start — {currency} pro Monat',
+	'start.startFreeDays': {
+		one: 'Meinen kostenlosen Tag starten',
+		other: 'Meine {count} kostenlosen Tage starten'
+	},
 	'start.subscribe': 'Abonnieren',
 	'start.yearly': 'Jährlich — {yearlyLine}',
 	'start.youGetFreeDaysEvenIf':
@@ -3741,6 +3815,8 @@ export const messages: Catalogue = {
 	'style.playfulHint': 'Abgerundet, schattenlos, mit Bereichsfarbe auf der Oberfläche.',
 	'style.sober': 'Nüchtern',
 	'style.soberHint': 'Eckig, flach, ruhig. Farbe gehört Ihren Kategorien.',
+	'tagChip.untag': 'Tag entfernen?',
+	'tagChip.untagName': '#{name} entfernen',
 	'tagFilter.addToHide': 'Schlagwörter zum Ausblenden…',
 	'tagFilter.addToKeep': 'Schlagwörter zum Zeigen…',
 	'tagFilter.all': 'Alle',
@@ -3782,23 +3858,19 @@ export const messages: Catalogue = {
 	'taskStatus.pending': 'Ausstehend',
 	'tasks.activities.anActivityIsANamed':
 		'Eine Aktivität ist eine benannte Sache, die Sie tun — Fitnessstudio, Russisch, konzentriertes Arbeiten. Aufgabenblöcke im Raster verweisen darauf.',
-	'tasks.activities.cannotDeleteReferencedByPlanner':
-		'Kann nicht gelöscht werden: wird vom Planer oder der Historie referenziert',
 	'tasks.activities.categories': 'Kategorien',
 	'tasks.activities.colour': 'Colour',
 	'tasks.activities.confirm': 'Bestätigen?',
 	'tasks.activities.createActivity': 'Aktivität erstellen',
 	'tasks.activities.deleteActivity': 'Aktivität löschen',
-	'tasks.activities.disable': 'Disable',
-	'tasks.activities.disabled': 'Disabled',
 	'tasks.activities.editActivity': 'Aktivität bearbeiten',
-	'tasks.activities.enable': 'Enable',
 	'tasks.activities.everyCategory': 'Every category',
 	'tasks.activities.newActivity': 'Neue Aktivität',
 	'tasks.activities.newCategoryName': 'Neuer Kategoriename',
 	'tasks.activities.noActivitiesMatchTheSelected':
 		'Keine Aktivitäten entsprechen den ausgewählten Filtern.',
 	'tasks.activities.noActivitiesYet': 'Noch keine Aktivitäten',
+	'tasks.activities.nothingPutAway': 'Nothing is put away',
 	'tasks.activities.searchActivities': 'Search activities',
 	'tasks.activities.showingCount': {
 		one: '{count} activity showing',
@@ -3996,6 +4068,8 @@ export const messages: Catalogue = {
 	'tasks.plan.selectedDragOne':
 		'{size} ausgewählt · eine ziehen, um sie zu verschieben · Esc zum Leeren',
 	'tasks.plan.shift': 'Umschalt',
+	'tasks.plan.showAsCalendar': 'Als Kalender anzeigen (a)',
+	'tasks.plan.showAsList': 'Als Liste anzeigen (a)',
 	'tasks.plan.someDays': 'Bestimmte Tage',
 	'tasks.plan.startADayEarlier': 'Woche einen Tag früher beginnen',
 	'tasks.plan.startADayLater': 'Woche einen Tag später beginnen',
@@ -4068,6 +4142,13 @@ export const messages: Catalogue = {
 	'tasks.review.itStillNeedsDoing': 'Muss noch erledigt werden — auf die Aufgabenliste setzen',
 	'tasks.review.itStillNeedsDoing2': 'Muss noch erledigt werden — einen Tag geben',
 	'tasks.review.keep': 'Behalten',
+	'tasks.review.keyAskAgain': 'ask again',
+	'tasks.review.keyDay': 'a day',
+	'tasks.review.keyHalf': 'half',
+	'tasks.review.keyHappened': 'happened',
+	'tasks.review.keyMove': 'move',
+	'tasks.review.keySkipped': 'skipped',
+	'tasks.review.keyTodo': 'todo list',
 	'tasks.review.letGo': '{title} loslassen',
 	'tasks.review.letItGo': 'Loslassen',
 	'tasks.review.noGoalMovedThatWeek': 'Kein Ziel hat sich in dieser Woche bewegt',
@@ -4130,6 +4211,7 @@ export const messages: Catalogue = {
 		'Eine Aufgabe ohne Tag ist etwas zu erledigen. Legen Sie sie hier ab, und ziehen Sie sie aufs Board, sobald sie einen Platz hat.',
 	'todoRows.addLabels': 'Schlagwörter hinzufügen',
 	'todoRows.added': 'Erstellt',
+	'todoRows.aheadOfTheTie': 'Vor die gleich bewertete stellen',
 	'todoRows.anythingYouFinishShowsUp': 'Alles, was Sie abschließen, taucht hier auf.',
 	'todoRows.archived': 'Archiviert',
 	'todoRows.archivedCount': 'Archiviert ({count})',
@@ -4138,6 +4220,7 @@ export const messages: Catalogue = {
 	'todoRows.batchStatus': 'Status der Auswahl ändern',
 	'todoRows.batchTag': 'Ausgewählte Aufgaben verschlagworten',
 	'todoRows.batchUpdated': '{count} Aufgaben aktualisiert.',
+	'todoRows.behindTheTie': 'Hinter die gleich bewertete stellen',
 	'todoRows.completed': 'Abgeschlossen',
 	'todoRows.completedCount': 'Erledigt ({count})',
 	'todoRows.completedTitle': 'Erledigt: {title}',
@@ -4172,6 +4255,7 @@ export const messages: Catalogue = {
 	'todoRows.oldestAtTheTopPress': 'Älteste oben — drücken für das zuletzt Erledigte',
 	'todoRows.oldestFirst': 'Älteste zuerst',
 	'todoRows.orderTasksBy': 'Aufgaben sortieren nach',
+	'todoRows.placeOnScreen': 'Platz in der Reihe unter den angezeigten Aufgaben',
 	'todoRows.priority': 'Priorität',
 	'todoRows.pullOntoToday': 'Auf heute ziehen',
 	'todoRows.pulledOntoThisDay': 'Auf diesen Tag gezogen',
@@ -4290,6 +4374,8 @@ export const messages: Catalogue = {
 	'tour.dragToMakeABlock': 'Ziehen, um einen Aufgabenblock zu erstellen',
 	'tour.eachCardIsOneRoom':
 		'Jede Karte ist ein Bereich, der sich meldet. Ziehen Sie sie in die gewünschte Reihenfolge — der Griff ist oben neben dem Datum.',
+	'tour.eachDayAHeadingAndItsBlocks':
+		'Jeder Tag eine Überschrift mit seinen Blöcken darunter, für Tag, Woche oder Monat. Nochmals drücken, oder a, für den Kalender.',
 	'tour.emailPasswordTheDevicesYou':
 		'E-Mail, Passwort, die Geräte, auf denen Sie angemeldet sind, und die zwei Dinge, die alles auf einmal verschieben.',
 	'tour.entriesGoalsPeopleRecipesIdeas':
@@ -4336,6 +4422,9 @@ export const messages: Catalogue = {
 	'tour.integrations': 'Integrationen',
 	'tour.inventoryIsWhatRunsOut':
 		'Inventar ist, was ausgeht und ersetzt werden muss. Die Wunschliste ist, was Sie vielleicht eines Tages kaufen.',
+	'tour.inventoryTheTrip': 'The trip',
+	'tour.inventoryTheTripBody':
+		'Everything that has run low, with what it should cost. Tick each line in the shop and the count goes back up to what you keep; it works without a signal too.',
 	'tour.itBecomesABlockOn':
 		'Es wird zu einem Aufgabenblock im Plan, neben allem anderen, was Sie an diesem Tag tun.',
 	'tour.itFansOutYourAccount':
@@ -4402,7 +4491,20 @@ export const messages: Catalogue = {
 		'Ein Name, den es schon gibt, führt beide zusammen. Die Farbe trägt das Schlagwort überall, wo es gezeichnet wird; wer es entfernt, nimmt es von allem, was es trug.',
 	'tour.retireOneWithoutLosingIt': 'Eine stilllegen, ohne sie zu verlieren',
 	'tour.review': 'Rückblick',
+	'tour.rulesCategoriesTakeTurns': 'Categories take turns',
+	'tour.rulesCategoriesTakeTurnsBody':
+		'A line gets the first category whose pattern matches, so the order decides ties. Move a rule up or down to change which one wins.',
 	'tour.rulesDoTheSorting': 'Regeln übernehmen die Sortierung',
+	'tour.rulesRoom': 'Rules',
+	'tour.rulesSortWhatArrives': 'Rules sort what arrives',
+	'tour.rulesSortWhatArrivesBody':
+		"Each rule is a pattern looked for in a statement line's description. Every line is sorted by them when it is imported, and again whenever a rule changes.",
+	'tour.rulesTagsPileUp': 'Tags pile up',
+	'tour.rulesTagsPileUpBody':
+		'A line gets every tag that matches. Insights shows what one tag costs, month by month.',
+	'tour.rulesTheCountOpensTheLines': 'The count opens the lines',
+	'tour.rulesTheCountOpensTheLinesBody':
+		'Press the number beside a rule to see which lines it claims. Uncategorized, at the top, shows the ones nothing claims yet.',
 	'tour.saveTheShapeYouAre':
 		'Speichern Sie die Form, die Sie gerade sehen, als Schema — eine Schulwoche, eine Ferienwoche — und wenden Sie es später auf jede Woche an.',
 	'tour.sayItInYourOwn': 'Sagen Sie es mit Ihren eigenen Worten',
@@ -4444,6 +4546,7 @@ export const messages: Catalogue = {
 		'Die Bereiche öffnen sich um Ihren Finger, und Sie lassen bei dem los, den Sie wollen. Schneller als eine Liste von zehn Wörtern zu lesen, sobald Ihre Hand weiß, wo sie sind.',
 	'tour.theSameBlocksAsThe':
 		'Dieselben Aufgabenblöcke wie im Plan, in der einen Form, in der Sie einen aufnehmen und verschieben können.',
+	'tour.theSameDaysAsAList': 'Dieselben Tage als Liste',
 	'tour.theSameGestureForA':
 		'Dieselbe Geste, für eine Aufgabe, eine Idee, eine Notiz oder etwas zum Kaufen — ohne vorher zu entscheiden, wohin es gehört.',
 	'tour.theSameWordOnA':
@@ -4478,6 +4581,13 @@ export const messages: Catalogue = {
 	'tour.upToSixPicturesPer':
 		'Bis zu sechs Bilder pro Rezept. Markieren Sie eines mit einem Stern, und es wird das, das die Liste zeigt.',
 	'tour.urgencyEaseInterest': 'Dringlichkeit, Leichtigkeit, Interesse',
+	'tour.weeklyListBody':
+		'The arrow opens the review of that week, with its numbers beside the note.',
+	'tour.weeklyListTitle': 'Back to the week',
+	'tour.weeklyNewBody': 'Pick any day in it: the note belongs to the whole week.',
+	'tour.weeklyNewTitle': 'Write about any week',
+	'tour.weeklyOpenBody': 'Every note from the weekly review lands here, newest first.',
+	'tour.weeklyOpenTitle': 'A year, a week at a time',
 	'tour.whatATaskSaysAboutItself': 'Was eine Aufgabe über sich sagt',
 	'tour.whatHappenedInYourWords': 'Was passiert ist, in Ihren Worten',
 	'tour.whatIsWaitingForATime': 'Was auf eine Zeit wartet',
@@ -4531,6 +4641,7 @@ export const messages: Catalogue = {
 	'ui.clear': 'clear',
 	'ui.close': 'Schließen',
 	'ui.colour': 'Farbe',
+	'ui.confirm': 'Bestätigen',
 	'ui.copied': 'Kopiert!',
 	'ui.copy': 'Kopieren',
 	'ui.create': 'Erstellen',
@@ -4573,6 +4684,7 @@ export const messages: Catalogue = {
 	'ui.unit': 'Einheit',
 	'ui.withTheRoom': 'with the room',
 	'ui.write': 'Schreiben',
+	'webhookEvents.audioUploaded': 'eine Aufnahme wird hochgeladen',
 	'webhookEvents.diaryCreated': 'ein Tagebucheintrag wird geschrieben',
 	'webhookEvents.ideaCreated': 'eine Idee wird festgehalten',
 	'webhookEvents.inventoryAdded': 'etwas kommt auf die Einkaufsliste',
@@ -4610,7 +4722,7 @@ export const messages: Catalogue = {
 	'welcome.whichLanguageHint': 'Alles, was die App sagt, und die E-Mails, die sie Ihnen schickt.',
 	'welcome.yourTimezone': 'Ihre Zeitzone',
 	'widgets.anyTag': 'Beliebiger Tag',
-	'widgets.count': 'Widgets: {count}',
+	'widgets.count': { one: '{count} widget', other: '{count} widgets' },
 	'widgets.deleteWidget': 'Dieses Widget löschen?',
 	'widgets.deleteWidgetExplained':
 		'Sein Schlüssel wird widerrufen und das Widget auf dem Telefon zeigt nichts mehr.',

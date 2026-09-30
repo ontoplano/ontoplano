@@ -3,8 +3,10 @@
 
 	const t = useT();
 	import Gauge from '$lib/components/Gauge.svelte';
+	import Icon from '$lib/components/Icon.svelte';
 	import {
 		RATING_HINTS,
+		RATING_ICONS,
 		RATING_LABELS,
 		RATING_MAX,
 		RATING_MIN,
@@ -204,10 +206,16 @@
 -->
 <div data-rating={rating} class={compact ? 'flex items-center gap-2' : 'space-y-1'}>
 	{#if compact}
-		<span class="eyebrow w-16 shrink-0 text-gray-600">{t(RATING_LABELS[rating])}</span>
+		<span class="eyebrow flex w-20 shrink-0 items-center gap-1 text-gray-600"
+			><Icon name={RATING_ICONS[rating]} size={12} />{t(RATING_LABELS[rating])}</span
+		>
 	{:else}
 		<div>
-			<div class="eyebrow whitespace-nowrap text-gray-600">{t(RATING_LABELS[rating])}</div>
+			<!-- The one place the name is written: the icon beside it is learnt here
+			     and stands alone everywhere else. -->
+			<div class="eyebrow flex items-center gap-1 whitespace-nowrap text-gray-600">
+				<Icon name={RATING_ICONS[rating]} size={12} />{t(RATING_LABELS[rating])}
+			</div>
 			<div class="text-xs leading-tight text-gray-500">{t(RATING_HINTS[rating])}</div>
 		</div>
 	{/if}

@@ -13,6 +13,7 @@ import {
 	hoursUntil
 } from '$lib/server/services/account';
 import { buildCtx } from '$lib/services/ctx';
+import { renameAccount } from '$lib/services/account-profile';
 import { toActionFailure } from '$lib/http-errors';
 import { listSessions, sessionTokenById } from '$lib/server/services/sessions';
 import { record } from '$lib/services/audit';
@@ -71,6 +72,17 @@ function authFailure(error: unknown, fallback: string) {
 }
 
 export const actions: Actions = {
+	/** The name the app calls you by. Not a credential, so no password. */
+	rename: async ({ request, locals }) => {
+		const formData = await request.formData();
+		try {
+			renameAccount(buildCtx(locals.user!.id), formData.get('name'));
+		} catch (e) {
+			return toActionFailure(e);
+		}
+		return { success: true, action: 'rename' };
+	},
+
 	setWeeklyReviewMail: async ({ request, locals }) => {
 		const formData = await request.formData();
 		setWeeklyReviewMail(buildCtx(locals.user!.id), formData.get('on') === 'true');

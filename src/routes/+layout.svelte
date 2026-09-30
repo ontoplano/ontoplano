@@ -30,6 +30,7 @@
 		stopHiding
 	} from '$lib/slide';
 	import { MARK_CLIP_PATH, MARK_FIELD } from '$lib/logo/mark-shape';
+	import { MARK_FIELD_ISOLATED } from '$lib/logo/brand';
 	import { CHOOSE_PATH, inPhoneApp, storedChoice } from '$lib/instance-choice';
 	import { handOverRingerKey } from '$lib/ringer-handshake';
 	import { THEMES, THEME_LABELS } from '$lib/theme.js';
@@ -56,6 +57,7 @@
 	import { suppressAutofill } from '$lib/autofill';
 	import { APP_UPDATE_HUSH_KEY } from '$lib/platform';
 	import { startMarkSpin, stopMarkSpin } from '$lib/mark-spin';
+	import { clearTray } from '$lib/tray';
 	import { busy } from '$lib/busy.svelte';
 	import ImageViewer from '$lib/components/ImageViewer.svelte';
 	import { scrollToHash } from '$lib/scroll-to-hash';
@@ -170,16 +172,13 @@
 	/** This app is its own instance: no account, and leaving means choosing another. */
 	const onDevice = $derived(isIsolatedBuild());
 	/**
-	 * The bar's own colour, and the rim the mark sits in — both the mark's dark,
-	 * on either instance.
+	 * The bar's own colour: the field the mark in the middle of it is drawn on.
 	 *
-	 * Nothing out here is the device's blue. That colour belongs inside the
-	 * drawing: it is the field between the medallion and the ring, and the
-	 * artwork carries it. Painted out here as well it was first a blue bar and
-	 * then a blue rim around the mark, which is the outside of the icon saying
-	 * something only its inside is meant to say.
+	 * The mark's dark behind a server, and the device's blue on the device —
+	 * so the bar and the mark it carries are one surface on both, and the copy
+	 * that lives on the phone says so from the bar as well as from the icon.
 	 */
-	const barField = MARK_FIELD;
+	const barField = $derived(onDevice ? MARK_FIELD_ISOLATED : MARK_FIELD);
 	let menuOpen = $state(false);
 	let pie = $state<CapturePie | undefined>();
 	let rooms = $state<NavPie | undefined>();
@@ -200,6 +199,17 @@
 	let reporting = $state(false);
 	/** Whether the phone is showing the list of what the app has said. */
 	let phoneNotifications = $state(false);
+
+	/*
+	 * Nothing unread, nothing in the tray: the icon's count on a phone is the
+	 * tray's, and it has to say what the bell says. Runs on every load of the
+	 * shell's data — including the one `$lib/live` makes when the app comes
+	 * back to the front — so it is always the server's count it trusts, never
+	 * a stale one that would close a reminder that has just arrived.
+	 */
+	$effect(() => {
+		if (data.user && (data.unreadNotifications ?? 0) === 0) void clearTray();
+	});
 
 	const fanItems = $derived.by(() => {
 		const items: Petal[] = [
@@ -566,7 +576,7 @@
 		 * carries it round to the next upright however early it is asked —
 		 * which from a standing start is one whole turn.
 		 *
-		 * `-changedRoom`, so the medallion turns the way the rooms are sweeping;
+		 * `-changedRoom`, so the octagon turns the way the rooms are sweeping;
 		 * zero where nothing slid, which spins it the one way it always did.
 		 */
 		if (navigation.to && !navigation.willUnload) startMarkSpin([deskMark, barMark], -changedRoom);
@@ -778,7 +788,7 @@
 	 * navigation quick enough to be over inside one flush was never seen as a
 	 * wait — which on a desktop is most of them.
 	 */
-	/* The two marks the spin turns: the header's and the phone bar's. */
+	/* What the spin turns: the header's mark and the phone bar's. */
 	let deskMark = $state<HTMLElement>();
 	let barMark = $state<HTMLElement>();
 	/*
@@ -903,9 +913,29 @@
 		// dismissal is remembered by the tab rather than by the database.
 		if (data.demo && sessionStorage.getItem(DEMO_TOUR_KEY)) return;
 
-		tourOffered = true;
-		const timer = setTimeout(() => tour?.start(), 500);
-		return () => clearTimeout(timer);
+		/*
+		 * Offered when it actually starts, not when it is scheduled.
+		 *
+		 * Anything that re-ran this inside the wait — a page's data arriving
+		 * a second time, which under load is often — cleared the timer, and
+		 * the flag already said "offered", so the tour was simply lost until
+		 * the next full load, where it opened over whatever came next.
+		 *
+		 * `data-tour-pending` says one is on its way, for whoever has to wait
+		 * for it rather than guess how long it takes.
+		 */
+		const root = document.documentElement;
+		root.dataset.tourPending = '';
+		const timer = setTimeout(() => {
+			tourOffered = true;
+			tour?.start();
+			// Once it is on screen, so "no longer pending" means "open or not coming".
+			void tick().then(() => delete root.dataset.tourPending);
+		}, 500);
+		return () => {
+			clearTimeout(timer);
+			delete root.dataset.tourPending;
+		};
 	});
 
 	function tourDismissed() {
@@ -923,7 +953,10 @@
 		void fetch('/api/tutorial', {
 			method: 'POST',
 			headers: { 'content-type': 'application/json' },
-			body: JSON.stringify({ seen: true })
+			body: JSON.stringify({ seen: true }),
+			// Past the page it was sent from: dismissing and leaving at once
+			// cancelled the request, and the tour came back on the next load.
+			keepalive: true
 			// Remembering that somebody has seen the tour is not worth an error
 			// message if it fails; they see it once more.
 		}).catch(() => {});
@@ -1485,10 +1518,10 @@
 			inside flows into the bar instead of ending at an edge. No hairline
 			on top: the edge IS the change of colour.
 
-			On the device it wears the lifted one, because the mark above it is
-			the lifted mark: the two are a single surface, and one of them
-			changing colour without the other would draw exactly the disc the
-			flowing-in is there to avoid.
+			On the device it wears the device's blue, because that is the field
+			the mark above it is drawn on there: the two are a single surface, and
+			one of them changing colour without the other would draw exactly the
+			disc the flowing-in is there to avoid.
 		-->
 		<nav
 			class="mobile-nav fixed inset-x-0 bottom-0 z-40 lg:hidden"
@@ -1553,31 +1586,6 @@
 						No border and no ground: a clipped edge cannot carry a border,
 						and the mark's own bright rim is the edge.
 					-->
-					<!--
-						A ground the shape sits on.
-
-						The button is clipped to the mark's outline, and a clipped edge
-						carries no border — so the bar's own top line ran straight
-						through the shape and the page showed through the notches of
-						its rim. This is the bar's colour in the same outline, a hair
-						larger, which gives the mark an edge to end at.
-					-->
-					<!--
-						And it stands still while the mark turns.
-
-						It used to turn with it, from back when the whole mark turned:
-						two octagons out of step leave a rim that thins and thickens
-						eight times a turn, and holding them together fixed that. What
-						turns now is the medallion inside the ring, a disc, so there is
-						nothing left to keep in step with — and a second octagon turning
-						behind one that is not swings its corners out past the rim, in a
-						colour meant never to be seen as a shape.
-					-->
-					<span
-						aria-hidden="true"
-						style="clip-path: {MARK_CLIP_PATH}; top: calc(-1 * var(--bar-mark-ground-rise)); height: var(--bar-mark-ground); width: var(--bar-mark-ground); background: {barField}"
-						class="pointer-events-none absolute left-1/2 -translate-x-1/2"
-					></span>
 					<!-- `data-mark` names it for code that runs before this component
 					     exists: a turn started on the screen you came from is picked up
 					     here, off the server-rendered mark, before anything hydrates.

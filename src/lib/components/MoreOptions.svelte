@@ -23,12 +23,18 @@
 		 * separating, and it reads as the form having ended and started again.
 		 */
 		divided = true,
+		/**
+		 * Drawn in place of the label, which becomes its tooltip — the
+		 * ratings' disclosure is their three icons rather than their names.
+		 */
+		summary,
 		children
 	}: {
 		label?: string;
 		count?: number;
 		open?: boolean;
 		divided?: boolean;
+		summary?: Snippet;
 		children: Snippet;
 	} = $props();
 </script>
@@ -40,9 +46,10 @@
 <details bind:open class="no-round col-span-12 {divided ? 'border-t border-gray-200 pt-3' : ''}">
 	<summary
 		class="flex cursor-pointer list-none items-center gap-2 text-sm text-gray-600 hover:text-gray-900"
+		title={summary ? label : undefined}
 	>
 		<span class="text-xs text-gray-500">{open ? '▾' : '▸'}</span>
-		{label}
+		{#if summary}{@render summary()}{:else}{label}{/if}
 		{#if count > 0}
 			<span
 				class="tabular border border-gray-300 bg-gray-50 px-1 text-xs text-gray-600 text-gray-700"

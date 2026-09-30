@@ -32,6 +32,12 @@
 		/** What the delete says, where it removes less than the whole label. */
 		deleteTitle = 'ui.delete',
 		deleteConfirm = 'notebooks.tags.yesDelete',
+		/**
+		 * An empty rail before the chip, so the chip starts on the column every
+		 * room's words start on (`--row-text-x`). A room's list wants it; the
+		 * list inside a notebook's dialog has no other rows to line up with.
+		 */
+		rail = false,
 		onedit
 	}: {
 		tags: NotebookTag[];
@@ -39,6 +45,7 @@
 		deleteAction?: string;
 		deleteTitle?: PlainKey;
 		deleteConfirm?: PlainKey;
+		rail?: boolean;
 		onedit: (tag: NotebookTag) => void;
 	} = $props();
 
@@ -68,65 +75,67 @@
 	export function clearConfirm(): void {
 		confirmDelete = null;
 	}
+
+	/** Unfold or fold one row's breakdown — Enter on the row under the cursor. */
+	export function toggleUses(id: number): void {
+		if (tags.find((one) => one.id === id)?.by.length) toggle(id);
+	}
 </script>
 
 <div class="divide-y divide-gray-200" data-tour="tag-list">
 	{#each tags as tag, i (tag.id)}
 		<div use:keepInView={cursor === i} class="list-row {cursor === i ? 'kb-cursor' : ''}">
-			<div class="list-row-main flex min-w-0 flex-col gap-1">
-				<div class="flex min-w-0 flex-wrap items-center gap-3">
-					<!-- The label as every other room draws it, so a colour is chosen
-					     against the thing it will actually look like. -->
-					<TagChip name={tag.name} color={tag.color} class="shrink-0" />
-
-					<!--
-						The count, and what is under it.
-
-						A button rather than a number where there is something to open,
-						and plain text where there is not: a control that does nothing
-						is one somebody presses twice before deciding the app is broken.
-					-->
-					{#if tag.by.length > 0}
-						<button
-							type="button"
-							class="min-w-0 text-left text-xs text-gray-500 hover:text-gray-900"
-							aria-expanded={shown(tag.id)}
-							aria-label={shown(tag.id)
-								? t('tags.hideWhatCarriesIt', { tag: tag.name })
-								: t('tags.showWhatCarriesIt', { tag: tag.name })}
-							onclick={() => toggle(tag.id)}
-						>
-							<Icon name={shown(tag.id) ? 'chevron-down' : 'chevron-right'} size={12} />
-							<span class="tabular">{tag.uses}</span>
-							{tag.uses === 1
-								? t('notebooks.tags.thingCarriesIt')
-								: t('notebooks.tags.thingsCarryIt')}
-						</button>
-					{:else}
-						<span class="min-w-0 text-xs text-gray-500">
-							{t('tags.nothingCarriesItHere')}
-						</span>
-					{/if}
-				</div>
-
-				<!-- What the word means here, where there is an answer. `#short` on
-				     the shopping and `#short` on a book are not the same idea. -->
+			{#if rail}<span class="row-rail"></span>{/if}
+			<!--
+				The label as every other room draws it, so a colour is chosen against
+				the thing it will actually look like — and what the word means here
+				beside it, where there is an answer. `#short` on the shopping and
+				`#short` on a book are not the same idea.
+			-->
+			<div class="list-row-main flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1">
+				<TagChip name={tag.name} color={tag.color} class="shrink-0" />
 				{#if tag.description}
-					<p class="min-w-0 text-xs text-gray-500">{tag.description}</p>
-				{/if}
-
-				{#if shown(tag.id)}
-					<!-- In the order a notebook's own tabs run, so the list and the
-					     tabs agree about what is in there. -->
-					<p class="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1 text-xs text-gray-500">
-						{#each tag.by as use (use.kind)}
-							<span class="tabular">{t(USE_LABELS[use.kind], { count: use.count })}</span>
-						{/each}
-					</p>
+					<span class="min-w-0 text-xs text-gray-500">{tag.description}</span>
 				{/if}
 			</div>
 
-			<div class="list-row-actions flex-none">
+			<div class="list-row-actions">
+				<!--
+					The count, and what is under it, at the head of the verbs: a column
+					whose right edge holds still, rather than a phrase trailing each chip
+					at whatever x the chip ended on.
+
+					A button where there is something to open and plain text where there
+					is not: a control that does nothing is one somebody presses twice
+					before deciding the app is broken.
+				-->
+				{#if tag.by.length > 0}
+					<button
+						type="button"
+						class="btn btn-sm btn-quiet tag-uses"
+						aria-expanded={shown(tag.id)}
+						title={shown(tag.id)
+							? t('tags.hideWhatCarriesIt', { tag: tag.name })
+							: t('tags.showWhatCarriesIt', { tag: tag.name })}
+						aria-label={shown(tag.id)
+							? t('tags.hideWhatCarriesIt', { tag: tag.name })
+							: t('tags.showWhatCarriesIt', { tag: tag.name })}
+						onclick={() => toggle(tag.id)}
+					>
+						<span class="tabular">{tag.uses}</span>
+						<span class="hidden sm:inline"
+							>{tag.uses === 1
+								? t('notebooks.tags.thingCarriesIt')
+								: t('notebooks.tags.thingsCarryIt')}</span
+						>
+						<Icon name={shown(tag.id) ? 'chevron-down' : 'chevron-right'} size={12} />
+					</button>
+				{:else}
+					<span class="tag-uses px-2 text-xs text-gray-500">
+						{t('tags.nothingCarriesItHere')}
+					</span>
+				{/if}
+
 				<button
 					title={t('ui.edit')}
 					aria-label={t('ui.edit')}
@@ -168,6 +177,38 @@
 					{/if}
 				{/if}
 			</div>
+
+			{#if shown(tag.id)}
+				<!-- A line of its own under the chip, in the order a notebook's own
+				     tabs run, so the list and the tabs agree about what is in there. -->
+				<p class="tag-breakdown" class:has-rail={rail}>
+					{#each tag.by as use (use.kind)}
+						<span class="tabular">{t(USE_LABELS[use.kind], { count: use.count })}</span>
+					{/each}
+				</p>
+			{/if}
 		</div>
 	{/each}
 </div>
+
+<style>
+	/* The count's right edge is the verbs' left edge, so the column is straight. */
+	.tag-uses {
+		justify-content: flex-end;
+		white-space: nowrap;
+	}
+
+	.tag-breakdown {
+		display: flex;
+		flex-basis: 100%;
+		flex-wrap: wrap;
+		column-gap: 0.75rem;
+		row-gap: 0.25rem;
+		font-size: var(--text-xs);
+		color: var(--color-gray-500);
+	}
+
+	.tag-breakdown.has-rail {
+		padding-inline-start: calc(var(--row-rail) + var(--row-gap));
+	}
+</style>

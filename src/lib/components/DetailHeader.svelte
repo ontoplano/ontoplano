@@ -93,8 +93,26 @@
 		padding: 1rem var(--card-pad-x) 0;
 	}
 
+	/*
+	 * In a surface the header stands over rows, and it takes their columns:
+	 * padded like a row, the picture centred on the rail a row's tick or
+	 * number stands in, and the name starting where a row's words start
+	 * (`--row-text-x`). With a card's own padding the name sat eight pixels
+	 * right of every entry under it.
+	 */
 	.detail-header.is-surface {
-		padding: 0.75rem;
+		padding: 0.75rem var(--row-pad-x);
+	}
+
+	.detail-header.is-surface.has-lead {
+		grid-template-columns: var(--row-rail) minmax(0, 1fr) auto;
+		column-gap: var(--row-gap);
+	}
+
+	/* Wider than the rail it is centred on, so it overhangs it evenly. */
+	.detail-header.is-surface .detail-lead {
+		justify-self: center;
+		width: max-content;
 	}
 
 	.detail-header.has-lead {
@@ -140,6 +158,10 @@
 		.detail-header.has-lead {
 			grid-template-columns: auto minmax(0, 1fr);
 			grid-template-areas: 'lead back' 'lead title' 'lead meta' 'actions actions';
+		}
+
+		.detail-header.is-surface.has-lead {
+			grid-template-columns: var(--row-rail) minmax(0, 1fr);
 		}
 
 		.detail-actions {

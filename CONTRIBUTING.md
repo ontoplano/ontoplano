@@ -43,11 +43,11 @@ yarn test:coverage  # unit coverage for rules and services
 make test           # the Playwright e2e suite
 ```
 
-CI runs four app shards, an administration job and a device job in parallel.
+CI runs six app shards, an administration job and a device job in parallel.
 Each job owns its database and only builds the server it uses. Reproduce one with:
 
 ```sh
-PLAYWRIGHT_SUITE=app yarn test:e2e --workers=2 --shard=1/4
+PLAYWRIGHT_SUITE=app yarn test:e2e --workers=2 --shard=1/6
 PLAYWRIGHT_SUITE=admin yarn test:e2e --workers=2
 PLAYWRIGHT_SUITE=device yarn test:e2e --workers=2
 ```

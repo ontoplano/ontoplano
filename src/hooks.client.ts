@@ -28,7 +28,8 @@ import {
 	launchAddress,
 	openingOn,
 	rememberInstance,
-	storedInstance
+	storedInstance,
+	keptInstanceNow
 } from '$lib/instance-choice';
 
 /*
@@ -50,6 +51,13 @@ import {
  * on the strength of a key in its own storage would be the app deciding where
  * somebody's week lives.
  */
+/**
+ * How long a launch may take to leave before this copy shows itself after all.
+ * Above the launch below, which runs at load: a `const` further down the file
+ * is not initialised yet when that code reads it.
+ */
+const LEAVING_VEIL_MS = 8000;
+
 if (inPhoneApp() && isIsolatedBuild()) {
 	const carried = new URLSearchParams(location.search);
 
@@ -77,10 +85,30 @@ if (inPhoneApp() && isIsolatedBuild()) {
 		 * the state every fresh install is in. So that one is left to the
 		 * router, in the root layout, where it is one line of `goto`.
 		 */
-		const going = storedInstance();
-		// A widget's tap names the page; the instance is still the one chosen.
-		if (going) void openInstance(going, false, openingOn(going, carried.get(OPENING_PARAM)));
+		const kept = storedInstance();
+		// A widget's tap names the page; the instance is still the one chosen —
+		// moved on first if it was a suggestion this build has replaced.
+		if (kept) {
+			veilWhileLeaving();
+			void keptInstanceNow(kept).then((going) =>
+				openInstance(going, false, openingOn(going, carried.get(OPENING_PARAM)))
+			);
+		}
 	}
+}
+
+/**
+ * Draw nothing of this copy while leaving it for the chosen instance.
+ *
+ * The launch boots on the phone's own copy and moves on, and until the move
+ * lands that copy rendered — blue bar, blue mark — so a widget set up for a
+ * hosted instance opened looking like the isolated one. Hidden for as long as
+ * the move could reasonably take; if it has not happened by then, something
+ * stopped it, and the copy that is here is better than a blank screen.
+ */
+function veilWhileLeaving(): void {
+	document.body.style.visibility = 'hidden';
+	setTimeout(() => (document.body.style.visibility = ''), LEAVING_VEIL_MS);
 }
 
 /**
@@ -155,17 +183,19 @@ const RINGER_ASK_MS = 400;
  * there: the layout stops the turn as soon as it is not waiting for anything,
  * and `stopMarkSpin` finishes the circle rather than cutting it.
  *
- * The word comes off the address straight away. It describes one arrival, and
- * a reload should not turn the mark for a load that already happened.
+ * Every load turns it now, so the word only has to come off the address, where
+ * it would otherwise be copied along with the link.
  */
 {
 	const url = new URL(location.href);
 	if (url.searchParams.get(SPINNING_PARAM) === '1') {
 		url.searchParams.delete(SPINNING_PARAM);
 		history.replaceState(history.state, '', url);
-		const marks = [...document.querySelectorAll<HTMLElement>('[data-mark]')];
-		if (marks.length > 0) startMarkSpin(marks, 0);
 	}
+	// Every load turns it, not only one the chooser handed over: the layout's
+	// first `afterNavigate` lands it, so even the quickest load goes round once.
+	const marks = [...document.querySelectorAll<HTMLElement>('[data-mark]')];
+	if (marks.length > 0) startMarkSpin(marks, 0);
 }
 
 if (isIsolated()) {

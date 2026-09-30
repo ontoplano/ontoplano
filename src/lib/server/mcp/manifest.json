@@ -1265,6 +1265,29 @@
 			}
 		}
 	},
+	"change_inventory_attribute": {
+		"scope": "inventory:write",
+		"writes": true,
+		"destroys": false,
+		"params": {
+			"color": {
+				"type": "string",
+				"required": false
+			},
+			"key": {
+				"type": "string",
+				"required": true
+			},
+			"rename": {
+				"type": "string",
+				"required": false
+			},
+			"value": {
+				"type": "string",
+				"required": false
+			}
+		}
+	},
 	"change_inventory_category": {
 		"scope": "inventory:write",
 		"writes": true,
@@ -2179,6 +2202,12 @@
 			}
 		}
 	},
+	"inventory_attributes": {
+		"scope": "inventory:read",
+		"writes": false,
+		"destroys": false,
+		"params": {}
+	},
 	"inventory_categories": {
 		"scope": "inventory:read",
 		"writes": false,
@@ -2781,6 +2810,21 @@
 			}
 		}
 	},
+	"remove_inventory_attribute": {
+		"scope": "inventory:write",
+		"writes": true,
+		"destroys": true,
+		"params": {
+			"key": {
+				"type": "string",
+				"required": true
+			},
+			"value": {
+				"type": "string",
+				"required": false
+			}
+		}
+	},
 	"remove_inventory_category": {
 		"scope": "inventory:write",
 		"writes": true,
@@ -2997,6 +3041,39 @@
 			},
 			"sound": {
 				"type": "boolean",
+				"required": false
+			}
+		}
+	},
+	"set_habit_count": {
+		"scope": "habits:write",
+		"writes": true,
+		"destroys": false,
+		"params": {
+			"count": {
+				"type": "integer",
+				"required": true,
+				"minimum": 0,
+				"maximum": 99
+			},
+			"date": {
+				"type": "string",
+				"required": false
+			},
+			"id": {
+				"type": "integer",
+				"required": false
+			},
+			"name": {
+				"type": "string",
+				"required": false
+			},
+			"notebookId": {
+				"type": "integer",
+				"required": false
+			},
+			"requestId": {
+				"type": "string",
 				"required": false
 			}
 		}

@@ -4,6 +4,7 @@
 	import Icon from '$lib/components/Icon.svelte';
 	import Modal from '$lib/components/Modal.svelte';
 	import Recorder from '$lib/components/Recorder.svelte';
+	import { postRecording, type RecordingDraft } from '$lib/recording-upload';
 	import { ACCOUNT_AUDIOS, AUDIO_KILOBYTES } from '$lib/services/media-limits';
 	import { audioMarkdown } from '$lib/audio-markdown';
 	import { invalidateAll } from '$app/navigation';
@@ -45,21 +46,9 @@
 		target.focus();
 	}
 
-	async function keep(bytes: Blob, name: string, seconds: number) {
-		const body = new FormData();
-		body.set('file', bytes, 'recording');
-		body.set('label', name);
-		body.set('seconds', String(seconds));
-
-		const answer = await fetch('/media/audio', { method: 'POST', body });
-		const reply = (await answer.json().catch(() => ({}))) as {
-			id?: number;
-			name?: string;
-			message?: string;
-		};
-		if (!answer.ok || !reply.id) throw new Error(reply.message ?? '');
-
-		write(audioMarkdown(reply.id, reply.name ?? ''));
+	async function keep(draft: RecordingDraft) {
+		const kept = await postRecording(draft);
+		write(audioMarkdown(kept.id, kept.name));
 		recording = false;
 		// The recordings list may be behind this form; it should not have to be
 		// reloaded by hand to show what was just made.

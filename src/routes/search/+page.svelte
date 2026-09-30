@@ -2,9 +2,11 @@
 	import TabbedRoom from '$lib/components/TabbedRoom.svelte';
 	import RoomSurface from '$lib/components/RoomSurface.svelte';
 	import { resolve } from '$app/paths';
-	import OneLine from '$lib/components/OneLine.svelte';
+	import FilterBar from '$lib/components/FilterBar.svelte';
+	import SearchField from '$lib/components/SearchField.svelte';
+	import ShowingCount from '$lib/components/ShowingCount.svelte';
 	import EmptyState from '$lib/components/EmptyState.svelte';
-	import { KIND_PLACES, MIN_QUERY } from '$lib/search';
+	import { KIND_PLACES, MIN_QUERY, parseQuery } from '$lib/search';
 	import { glyphFor, routeGlyph } from '$lib/glyphs';
 	import Icon from '$lib/components/Icon.svelte';
 	import type { PageServerData } from './$types';
@@ -15,7 +17,31 @@
 	let { data }: { data: PageServerData } = $props();
 
 	const total = $derived(data.groups.reduce((n, g) => n + g.hits.length, 0));
+
+	/** What was searched for, without its `todo:` / `in:` prefixes. */
+	const needle = $derived(parseQuery(data.q).text.trim().toLowerCase());
+
+	/** A line cut where it matches, so the match can be marked. */
+	function pieces(text: string): { text: string; hit: boolean }[] {
+		if (needle === '') return [{ text, hit: false }];
+		const out: { text: string; hit: boolean }[] = [];
+		const lower = text.toLowerCase();
+		let from = 0;
+		for (let at = lower.indexOf(needle); at !== -1; at = lower.indexOf(needle, from)) {
+			if (at > from) out.push({ text: text.slice(from, at), hit: false });
+			out.push({ text: text.slice(at, at + needle.length), hit: true });
+			from = at + needle.length;
+		}
+		if (from < text.length) out.push({ text: text.slice(from), hit: false });
+		return out;
+	}
 </script>
+
+<!-- The words that matched, marked where they sit. -->
+{#snippet marked(text: string)}
+	{#each pieces(text) as piece, i (i)}{#if piece.hit}<mark class="search-hit">{piece.text}</mark
+			>{:else}{piece.text}{/if}{/each}
+{/snippet}
 
 <TabbedRoom title={t('ui.search')} label={t('ui.search')}>
 	<div class="space-y-4">
@@ -33,15 +59,26 @@
 				<!-- A plain GET form: the URL is the state, so a search can be linked to
 			     and gone back to, and it works before any JavaScript has run. -->
 				<form method="get" action={resolve('/search')} class="w-full">
-					<OneLine
-						name="q"
-						placeholder={t('search.anythingYouHaveWrittenDown')}
-						value={data.q}
-						class="input"
-						autofocus
-						ariaLabel={t('ui.search')}
-						dataTour="search-box"
-					/>
+					<FilterBar name="search">
+						{#snippet lead()}
+							<SearchField
+								name="q"
+								value={data.q}
+								label={t('search.anythingYouHaveWrittenDown')}
+								autofocus
+								data-tour="search-box"
+							/>
+						{/snippet}
+						{#snippet count()}
+							{#if total > 0}
+								<ShowingCount
+									{total}
+									shown={total}
+									said={(n) => t('search.resultsCount', { count: n })}
+								/>
+							{/if}
+						{/snippet}
+					</FilterBar>
 					<!--
 					The syntax, where somebody will meet it.
 
@@ -68,9 +105,6 @@
 			{:else if total === 0}
 				<EmptyState icon="search" title={t('search.nothingMatches', { q: data.q })} />
 			{:else}
-				<p class="tabular border-b border-gray-200 px-4 py-2 text-xs text-gray-500">
-					{t('search.resultsFor', { count: total, q: data.q })}
-				</p>
 				{#each data.groups as group (group.kind)}
 					<section class="search-group">
 						<h2
@@ -87,9 +121,11 @@
 								<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -->
 								<a href={hit.href} class="list-row hover:bg-gray-50">
 									<span class="list-row-main">
-										<span class="block text-sm text-gray-900">{hit.title}</span>
+										<span class="block text-sm text-gray-900">{@render marked(hit.title)}</span>
 										{#if hit.snippet}
-											<span class="mt-0.5 block text-xs text-gray-500">{hit.snippet}</span>
+											<span class="mt-0.5 block text-xs text-gray-600"
+												>{@render marked(hit.snippet)}</span
+											>
 										{/if}
 									</span>
 									<Icon name="chevron-right" size={14} class="shrink-0 text-gray-500" />
@@ -112,6 +148,14 @@
 
 	.search-group + .search-group {
 		border-top: 1px solid var(--color-gray-200);
+	}
+
+	/* Ink and a grey wash rather than the browser's yellow: chrome stays
+	   neutral, and the weight says it without the colour. */
+	.search-hit {
+		background-color: color-mix(in srgb, var(--color-gray-500) 22%, transparent);
+		color: var(--color-gray-900);
+		font-weight: 600;
 	}
 
 	.search-syntax {

@@ -170,6 +170,21 @@ html:not([data-style='playful']) *::after {
 }
 
 /*
+ * No number spinners anywhere. A number is typed and the arrow keys step it;
+ * the platform's five-pixel arrows were somebody else's chrome in every field.
+ * See `NumberBox`, and `Counter` where nudging is the point.
+ */
+input[type='number'] {
+	appearance: textfield;
+}
+
+input[type='number']::-webkit-inner-spin-button,
+input[type='number']::-webkit-outer-spin-button {
+	appearance: none;
+	margin: 0;
+}
+
+/*
  * Except a radio button.
  *
  * Its roundness is not decoration: it is the only thing telling you that these
@@ -1452,7 +1467,7 @@ label:has(> input[type='radio']:not(:disabled)) {
 		flex: none;
 		width: 2.25rem;
 		height: 1.25rem;
-		border: 1px solid var(--color-gray-300);
+		border: 1px solid var(--color-gray-400);
 		border-radius: 999px;
 		background-color: var(--color-gray-200);
 		box-shadow: var(--shadow-card);
@@ -1471,7 +1486,10 @@ label:has(> input[type='radio']:not(:disabled)) {
 		width: 0.875rem;
 		height: 0.875rem;
 		border-radius: 999px;
-		background-color: var(--color-white);
+		/* Mid-grey while off, so the knob shows on the track in either theme —
+		   white on grey-200 vanished in light, and the inverted ramp made it
+		   near-black on near-black in dark. */
+		background-color: var(--color-gray-500);
 		box-shadow: var(--shadow-card);
 		translate: 0 -50%;
 		transition: translate 150ms ease;
@@ -1502,6 +1520,7 @@ label:has(> input[type='radio']:not(:disabled)) {
 	}
 
 	input[type='checkbox'].toggle:checked::after {
+		background-color: var(--ink-on-fill);
 		translate: 0.9375rem -50%;
 	}
 
@@ -1795,8 +1814,71 @@ label:has(> input[type='radio']:not(:disabled)) {
 	 * palette: an overlay is dark under either.
 	 */
 	.overlay-face {
+		--overlay-face: #1c212a;
 		border-color: rgb(255 255 255 / 0.14);
-		background-color: #1c212a;
+		background-color: var(--overlay-face);
+		color: #ffffff;
+	}
+
+	/*
+	 * The button that says yes, on that face.
+	 *
+	 * `btn-primary` is the palette's darkest grey, which is the face itself —
+	 * a confirm drawn with it was a dark button on a dark box. On the face it
+	 * is the face turned round: its ink as the fill, the face as the ink.
+	 */
+	.overlay-face .btn-primary {
+		border-color: transparent;
+		background-color: #ffffff;
+		color: var(--overlay-face);
+	}
+	.overlay-face .btn-primary:hover {
+		background-color: rgb(255 255 255 / 0.85);
+	}
+	/*
+	 * Where a task would land under the filters: blue ink, which the palette
+	 * inverts with the theme — and on the face, which is dark in both, a blue
+	 * light enough to read on it.
+	 */
+	.place-under-filters {
+		color: var(--color-blue-700);
+	}
+	.overlay-face .place-under-filters {
+		color: #93c5fd;
+	}
+
+	/*
+	 * The search box at the top of a `Picker`'s list: part of the face, not a
+	 * white field dropped onto it, with a rule under it between the typing and
+	 * the rows.
+	 */
+	.overlay-face .picker-search {
+		appearance: none;
+		box-shadow: none;
+		border-radius: 0;
+		display: block;
+		width: 100%;
+		border: 0;
+		border-bottom: 1px solid rgb(255 255 255 / 0.14);
+		background: transparent;
+		padding: 0.5rem 0.75rem;
+		font-size: 0.875rem;
+		line-height: 1.25rem;
+		color: #ffffff;
+		outline: none;
+	}
+	.overlay-face .picker-search::-webkit-search-cancel-button {
+		display: none;
+	}
+	.overlay-face .picker-search::placeholder {
+		color: rgb(255 255 255 / 0.66);
+	}
+
+	/* And an icon on it takes the face's quieter ink, not the palette's grey. */
+	.overlay-face .icon-btn {
+		color: rgb(255 255 255 / 0.66);
+	}
+	.overlay-face .icon-btn:hover {
 		color: #ffffff;
 	}
 
@@ -2080,6 +2162,32 @@ label:has(> input[type='radio']:not(:disabled)) {
 		width: var(--row-rail);
 	}
 
+	/*
+	 * The arrows beside a task's bars that reorder a tie.
+	 *
+	 * Hung in the card's left padding, outside the rail, so a row that has
+	 * them starts its words exactly where every other row does.
+	 */
+	.tie-arrows {
+		position: absolute;
+		right: 100%;
+		bottom: 0;
+		display: flex;
+		flex-direction: column;
+		margin-right: 0.125rem;
+	}
+	.tie-arrows button {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		width: 0.875rem;
+		height: 1.125rem;
+		color: var(--color-gray-500);
+	}
+	.tie-arrows button:hover {
+		color: var(--color-gray-900);
+	}
+
 	/* A button standing in the rail — a star, a pin — is the rail's width. */
 	.row-rail > .icon-btn,
 	.row-rail > form > .icon-btn {
@@ -2201,6 +2309,50 @@ label:has(> input[type='radio']:not(:disabled)) {
 	 */
 	.tag-chip {
 		white-space: nowrap;
+	}
+
+	/*
+	 * A label that can be taken off: its word and a small × in one pill.
+	 *
+	 * The two halves carry no chrome of their own — the pill is the shape. The
+	 * × is drawn only where there is a pointer to aim it: a phone holds the
+	 * pill instead (`$lib/actions/long-press`), and a × under a thumb is a
+	 * label taken off by a scroll.
+	 */
+	.tag-chip-face {
+		all: unset;
+		cursor: pointer;
+	}
+	.tag-chip-face:disabled {
+		cursor: default;
+	}
+	.tag-chip-x {
+		all: unset;
+		display: inline-flex;
+		margin-inline-start: 0.125rem;
+		padding: 0.125rem;
+		cursor: pointer;
+		opacity: 0.6;
+	}
+	.tag-chip-x:hover,
+	.tag-chip-x:focus-visible {
+		opacity: 1;
+	}
+	.tag-chip-face:focus-visible,
+	.tag-chip-x:focus-visible {
+		outline: 1px solid currentColor;
+		outline-offset: 1px;
+	}
+	@media (pointer: fine) {
+		/* The × sits in the pill's own end padding rather than adding to it. */
+		.tag-chip-removable {
+			padding-inline-end: 0.125rem;
+		}
+	}
+	@media not (pointer: fine) {
+		.tag-chip-x {
+			display: none;
+		}
 	}
 
 	/*
@@ -2593,56 +2745,6 @@ label:has(> input[type='radio']:not(:disabled)) {
 	 * every card the page's own ground unless it says otherwise. A pill has
 	 * said otherwise — that rule is for "the ones that never said".
 	 */
-	/*
-	 * One of a few things to choose between, as a square.
-	 *
-	 * The payment page's shape, written once because it is now two rows of it
-	 * — which plan, and how often — and two copies of a tile drift the first
-	 * time one of them is touched. The border width never changes with the
-	 * state, only its colour: a selection that thickens a border moves
-	 * everything around it, and this is the page where the least may move.
-	 */
-	.choice-tile {
-		display: flex;
-		aspect-ratio: 1;
-		flex-direction: column;
-		align-items: center;
-		justify-content: center;
-		gap: 0.375rem;
-		border: 2px solid var(--color-gray-200);
-		text-align: center;
-		transition:
-			border-color 120ms ease,
-			background-color 120ms ease;
-	}
-
-	/*
-	 * The second choice on the page, and a smaller one than the first.
-	 *
-	 * Which plan and how often were the same square, so the page asked two
-	 * questions with identical weight when the first is the one being made —
-	 * how often is a detail of it.
-	 *
-	 * Narrower, not merely shorter. Keeping the full width and cropping the
-	 * height left two tiles as wide as the plans above, which is the thing
-	 * that made them read as equally important; the pair is centred so the
-	 * row still has a middle.
-	 */
-	.choice-tile-small {
-		aspect-ratio: 1.25;
-		width: 72%;
-		justify-self: center;
-	}
-
-	.choice-tile:hover {
-		border-color: var(--color-gray-400);
-	}
-
-	.choice-tile[aria-checked='true'] {
-		border-color: var(--color-gray-900);
-		background-color: var(--color-gray-50);
-	}
-
 	html .pill {
 		--pill: var(--color-gray-400);
 		display: inline-flex;
@@ -2975,14 +3077,11 @@ label:has(> input[type='radio']:not(:disabled)) {
 		color: var(--color-gray-900);
 	}
 
+	/* On, it wears what every pressed toggle wears — a white tile on a white card said nothing. */
 	.seg-aside[aria-pressed='true'] {
-		background-color: var(--color-white);
-		box-shadow: var(--shadow-card);
+		border-color: var(--color-gray-900);
+		background-color: color-mix(in srgb, var(--color-gray-900) 12%, transparent);
 		color: var(--color-gray-900);
-	}
-
-	html[data-style='playful'] .seg-aside[aria-pressed='true'] {
-		box-shadow: 0 0 0 1px var(--color-gray-200);
 	}
 
 	.seg-sliding > a,
@@ -4030,34 +4129,16 @@ option {
 	/*
 	 * The mark on the phone's bottom bar, and everything that follows from it.
 	 *
-	 * One number. The button is clipped to the mark's outline, a ground sits
-	 * behind it in the same shape so the bar's top line does not run through
-	 * the notches of its rim, and both are lifted so the mark rises out of the
-	 * bar — four measurements that have to agree, and did not: they were four
+	 * One number. The button is clipped to the mark's outline and lifted so the
+	 * mark rises out of the bar, which stays a plain straight edge — no ground
+	 * shaped like the mark behind it. The measurements have to agree, and did
+	 * not once: they were four
 	 * literals in the markup and the mark quietly lost a quarter of its size
 	 * when the button stopped being a circle.
 	 */
 	--bar-mark: 4.5rem;
-	/*
-	 * A hair larger, so the mark has an edge to end at.
-	 *
-	 * The rim this leaves is not one width: both shapes are the same octagon,
-	 * and the distance between them is 0.2rem where their corners agree and
-	 * 0.014rem where a corner of the inner one points at a flat of the outer.
-	 * That does not matter while both are still, and it is what made the mark
-	 * look like it was turning off its axis when only the inner one moved —
-	 * the ring around it thinned and thickened eight times a turn. The ground
-	 * turns with it now (see `startMarkSpin` in the layout), so the two stay in
-	 * step and the rim is whatever this says at every angle.
-	 *
-	 * To widen the rim, raise the 0.4rem. To make it a given width `R` at the
-	 * *tightest* angle even without the turning-together — `2 × (2.25 + R) ÷
-	 * cos 22.5°` — which is 5.09rem for 0.1rem of rim, 5.30rem for 0.2rem.
-	 */
-	--bar-mark-ground: calc(var(--bar-mark) + 0.4rem);
 	/* How far it stands proud of the bar. */
 	--bar-mark-rise: calc(var(--bar-mark) * 0.27);
-	--bar-mark-ground-rise: calc(var(--bar-mark-rise) + 0.15rem);
 	/*
 	 * Where that mark's own box sits, measured from the bottom of the screen.
 	 *
@@ -4306,6 +4387,16 @@ html[data-keyboard='open'] {
 	transform: scale(0.92);
 }
 
+/*
+ * A turning mark drops its octagon clip. Only the rim inside it turns, and a
+ * rim part way round pokes its corners out of an octagon standing still. The
+ * clip shapes the press, not the picture — the button has no ground — so
+ * lifting it for the length of a turn changes nothing on screen.
+ */
+[data-mark][data-turning] {
+	clip-path: none !important;
+}
+
 .pie-handle-held :is(img, svg, span) {
 	visibility: hidden;
 }
@@ -4351,6 +4442,32 @@ html[data-keyboard='open'] {
 
 	.seg > :is(button, a, label) {
 		min-height: calc(var(--control-touch) - 2 * var(--seg-pad));
+	}
+
+	/* The tie arrows live in a 16px margin; a 44px floor would stack them off the card. */
+	.tie-arrows button {
+		min-height: 0;
+	}
+
+	/*
+	 * A label is a pill, not a slab.
+	 *
+	 * The 44px floor above made every label on a phone a block as tall as a
+	 * button, three to a card and nothing else readable around them. They are
+	 * drawn at their own size; what a finger needs is the target, so each one
+	 * reaches past its edges invisibly (`::after`) rather than by growing.
+	 */
+	:is(button.tag-chip, .tag-chip-removable, .tag-chip-removable > button, .quick-tag) {
+		min-height: 0;
+	}
+	:is(button.tag-chip, .tag-chip-face, .quick-tag) {
+		position: relative;
+	}
+	/* On the button itself — over a wrapper it would take the press from it. */
+	:is(button.tag-chip, .tag-chip-face, .quick-tag)::after {
+		content: '';
+		position: absolute;
+		inset: -0.5rem -0.125rem;
 	}
 
 	/*
@@ -5983,9 +6100,14 @@ html[data-pie-open] .float-layer {
 	white-space: pre;
 }
 
-/* The small field's own padding, so it stands as tall as the small buttons beside it. */
+/*
+ * The small field stands as tall as the small buttons beside it, with its one
+ * line centred in it: `.input-sm` takes the vertical padding off, which suits
+ * an `<input>` and leaves a textarea's text against its top edge.
+ */
 .one-line.input-sm {
-	height: calc(1lh + 0.5rem + 2px);
+	height: var(--control-sm);
+	padding-block: calc((var(--control-sm) - 1lh - 2px) / 2);
 }
 
 /*

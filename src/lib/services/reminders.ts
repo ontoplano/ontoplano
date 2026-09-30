@@ -16,6 +16,7 @@ import type { Ctx } from './ctx.js';
 import { NotFoundError, ValidationError } from './errors.js';
 import { instantOfLocal, localOfInstant, stamp } from './time.js';
 import { REMINDER_LEAD_MINUTES, REMINDER_LEAD_MS } from '../reminder-window.js';
+import type { ReminderClock } from '../reminder-clock.js';
 import { num, str } from './validate.js';
 // The clock recomputes its sleep whenever the set of pending reminders changes;
 // without this a new alarm would wait for the next ceiling tick to be noticed.
@@ -112,6 +113,24 @@ function minutesBefore(scheduledAt: string, lead: number): string {
  */
 export function startOfDay(userId: string): string {
 	return `${String(getGridHours(userId).start).padStart(2, '0')}:00`;
+}
+
+/**
+ * The account's clock, as a form setting a reminder needs it.
+ *
+ * Its own wall clock rather than the browser's, because "now" means now
+ * *where the account is* — the machine's zone is the account's only by luck.
+ * The reminders page and the quick add sheet both ask this, and the rules they
+ * apply to it are `$lib/reminder-clock`.
+ */
+export function reminderClock(ctx: Ctx): ReminderClock {
+	const now = localNow(ctx).slice(0, 16);
+	return {
+		today: now.slice(0, 10),
+		now,
+		dayStart: startOfDay(ctx.userId),
+		leadMinutes: REMINDER_LEAD_MINUTES
+	};
 }
 
 /**

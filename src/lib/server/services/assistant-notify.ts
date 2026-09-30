@@ -151,7 +151,9 @@ export const PHRASE_OVERRIDES: Record<string, Phrase> = {
 	untag_notebook: { verb: 'remove', noun: 'tag' },
 	// Plural in the name because they take a list; the noun is counted anyway.
 	move_notes: { verb: 'move', noun: 'note' },
-	reorder_tasks: { verb: 'reorder', noun: 'task' }
+	reorder_tasks: { verb: 'reorder', noun: 'task' },
+	// It sets a day's count, which to the person reads as logging the habit.
+	set_habit_count: { verb: 'log', noun: 'habit' }
 };
 
 /** A verb's catalogue key, and the noun it acts on, as the identifier spells it. */
@@ -201,6 +203,7 @@ export const NOUN_KEYS = new Set([
 	'goalTarget',
 	'habit',
 	'idea',
+	'inventoryAttribute',
 	'inventoryCategory',
 	'inventoryItem',
 	'item',

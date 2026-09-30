@@ -26,7 +26,7 @@ export const SCOPE_GROUPS = [
 	{
 		key: 'writing',
 		says: 'scopeGroups.whatYouWrite',
-		scopes: ['notes:read', 'notes:write', 'ideas:read', 'ideas:write']
+		scopes: ['notes:read', 'notes:write', 'ideas:read', 'ideas:write', 'audio:read', 'audio:write']
 	},
 	{ key: 'people', says: 'scopeGroups.people', scopes: ['people:read', 'people:write'] },
 	{

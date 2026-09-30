@@ -17,6 +17,15 @@
 	import { SvelteSet } from 'svelte/reactivity';
 	import Modal from '$lib/components/Modal.svelte';
 	import { armed } from '$lib/actions/armed';
+	import FilterBar from '$lib/components/FilterBar.svelte';
+	import SearchField from '$lib/components/SearchField.svelte';
+	import ShowingCount from '$lib/components/ShowingCount.svelte';
+	import SortControl from '$lib/components/SortControl.svelte';
+	import AlbumCard from '$lib/components/AlbumCard.svelte';
+	import MediaTiles from '$lib/components/MediaTiles.svelte';
+	import { listCursor } from '$lib/actions/list-cursor';
+	import { browsable } from '$lib/browse.svelte';
+	import type { PlainKey } from '$lib/i18n/keys';
 	import type { PageServerData, ActionData } from './$types';
 	import { useT } from '$lib/i18n';
 
@@ -42,7 +51,56 @@
 
 	/** Filtering by tags, the way the diary does; kept in the address. */
 	const tagFilter = tagFilterInUrl();
-	const shown = $derived(data.pictures.filter((p) => passesTagFilter(p.tags, tagFilter.current)));
+	let looking = $state('');
+	const needle = $derived(looking.trim().toLowerCase());
+
+	/** The server sends the newest first; that order is "added". */
+	const ORDERS = ['added', 'name'] as const;
+	type Order = (typeof ORDERS)[number];
+	const ORDER_LABELS: Record<Order, PlainKey> = {
+		added: 'gallery.id.orderAdded',
+		name: 'gallery.id.orderName'
+	};
+	let order = $state<Order>('added');
+	let direction = $state<'asc' | 'desc'>('desc');
+
+	const shown = $derived.by(() => {
+		const found = data.pictures.filter(
+			(p) =>
+				passesTagFilter(p.tags, tagFilter.current) &&
+				(needle === '' ||
+					(p.filename ?? '').toLowerCase().includes(needle) ||
+					(p.alt ?? '').toLowerCase().includes(needle))
+		);
+		if (order === 'name') {
+			const sign = direction === 'asc' ? 1 : -1;
+			return found.sort((a, b) => sign * (a.filename ?? '').localeCompare(b.filename ?? ''));
+		}
+		return direction === 'desc' ? found : found.reverse();
+	});
+	const narrowed = $derived(needle !== '' || isTagFiltering(tagFilter.current));
+
+	/** A folder's tile counts its whole branch, the way the gallery's cards do. */
+	function branchOf(
+		id: number,
+		nodes: PageServerData['tree'] = data.tree
+	): PageServerData['tree'][number] | null {
+		for (const node of nodes) {
+			if (node.id === id) return node;
+			const found = branchOf(id, node.children);
+			if (found) return found;
+		}
+		return null;
+	}
+
+	/** j/k across the pictures; Enter opens the one under the cursor. */
+	let at = $state(-1);
+	browsable(() => ({
+		items: () => shown,
+		cursor: () => at,
+		moveTo: (i) => (at = i),
+		open: (i) => (viewingId = shown[i].id)
+	}));
 	const albumTags = $derived([...new Set(data.pictures.flatMap((p) => p.tags))].sort());
 
 	let uploadForm: HTMLFormElement | undefined = $state();
@@ -101,24 +159,9 @@
 {#snippet targets(nodes: PageServerData['tree'], depth: number)}
 	{#each nodes as node (node.id)}
 		{#if node.id !== data.album.id}
-			<span class="flex items-center gap-1">
-				{#if node.children.length > 0}
-					<button
-						class="icon-btn"
-						title={t('gallery.id.whatIsInside', {
-							show: opened.has(node.id) ? t('ui.hide') : t('ui.show'),
-							name: node.name
-						})}
-						aria-label={t('gallery.id.whatIsInside', {
-							show: opened.has(node.id) ? t('ui.hide') : t('ui.show'),
-							name: node.name
-						})}
-						aria-expanded={opened.has(node.id)}
-						onclick={() => toggle(node.id)}
-					>
-						<Icon name={opened.has(node.id) ? 'chevron-down' : 'chevron-right'} size={14} />
-					</button>
-				{/if}
+			<!-- The chip first and its disclosure after it: a chevron in front of a
+			     name read as a breadcrumb. -->
+			<span class="flex items-center gap-0.5">
 				<span
 					role="listitem"
 					class="rounded-full border px-2.5 py-1 text-sm transition-colors {dropTarget === node.id
@@ -133,6 +176,27 @@
 				>
 					{leafName(node.name)}
 				</span>
+				{#if node.children.length > 0}
+					<button
+						class="icon-btn"
+						title={t('gallery.id.whatIsInside', {
+							show: opened.has(node.id) ? t('ui.hide') : t('ui.show'),
+							name: node.name
+						})}
+						aria-label={t('gallery.id.whatIsInside', {
+							show: opened.has(node.id) ? t('ui.hide') : t('ui.show'),
+							name: node.name
+						})}
+						aria-expanded={opened.has(node.id)}
+						onclick={() => toggle(node.id)}
+					>
+						<Icon
+							name="chevron-down"
+							size={14}
+							class="transition-transform {opened.has(node.id) ? '' : '-rotate-90'}"
+						/>
+					</button>
+				{/if}
 			</span>
 		{/if}
 		{#if opened.has(node.id)}
@@ -148,50 +212,67 @@
 -->
 <RoomSurface>
 	{#snippet tools()}
-		<div class="flex w-full flex-wrap items-center gap-2">
-			<!-- The way back to the albums, where a room shows its glyph. -->
-			<a
-				href={resolve('/media/gallery')}
-				class="icon-btn shrink-0"
-				title={t('gallery.id.backToTheAlbums')}
-				aria-label={t('gallery.id.backToTheAlbums')}
-			>
-				<Icon name="arrow-left" />
-			</a>
-			<h2 class="min-w-0 truncate text-sm font-semibold text-gray-900">{data.album.name}</h2>
-			<span class="tabular shrink-0 text-xs text-gray-500">
-				{t('gallery.picturesCount', { count: data.pictures.length })}
-			</span>
-			<!-- The same tag filter the diary and the task list use. -->
-			{#if albumTags.length > 0 || isTagFiltering(tagFilter.current)}
-				<span class="ml-auto">
+		<!-- The album's name and the way back are the room bar's; the strip is
+		     search, count, tags and order, like every other list. -->
+		<FilterBar
+			name="album"
+			on={narrowed}
+			onclear={() => {
+				looking = '';
+				tagFilter.current = { include: [], exclude: [], mode: 'any' };
+			}}
+		>
+			{#snippet lead()}
+				<SearchField bind:value={looking} label={t('gallery.id.searchPictures')} />
+			{/snippet}
+			{#snippet count()}
+				<ShowingCount
+					total={data.pictures.length}
+					shown={shown.length}
+					said={(n) => t('gallery.picturesCount', { count: n })}
+				/>
+			{/snippet}
+			{#snippet inline()}
+				<!-- The same tag filter the diary and the task list use. -->
+				{#if albumTags.length > 0 || isTagFiltering(tagFilter.current)}
 					<TagFilter
 						tags={albumTags}
 						value={tagFilter.current}
 						onchange={(next) => (tagFilter.current = next)}
 						name="gallery-tags"
 					/>
-				</span>
-			{/if}
-			<!-- The room's verb opens this; the form is what posts the files. -->
-			<form
-				method="post"
-				action="?/upload"
-				enctype="multipart/form-data"
-				bind:this={uploadForm}
-				class="hidden"
-				use:enhance
-			>
-				<input
-					bind:this={fileInput}
-					type="file"
-					name="file"
-					accept="image/png,image/jpeg,image/gif,image/webp"
-					multiple
-					onchange={filesChosen}
+				{/if}
+			{/snippet}
+			{#snippet trailing()}
+				<SortControl
+					value={order}
+					options={ORDERS}
+					labels={ORDER_LABELS}
+					{direction}
+					onpick={(next) => (order = next)}
+					onflip={() => (direction = direction === 'asc' ? 'desc' : 'asc')}
+					label={t('gallery.id.orderBy')}
 				/>
-			</form>
-		</div>
+			{/snippet}
+		</FilterBar>
+		<!-- The room's verb opens this; the form is what posts the files. -->
+		<form
+			method="post"
+			action="?/upload"
+			enctype="multipart/form-data"
+			bind:this={uploadForm}
+			class="hidden"
+			use:enhance
+		>
+			<input
+				bind:this={fileInput}
+				type="file"
+				name="file"
+				accept="image/png,image/jpeg,image/gif,image/webp"
+				multiple
+				onchange={filesChosen}
+			/>
+		</form>
 	{/snippet}
 
 	<FormError message={form?.message} />
@@ -221,37 +302,20 @@
 		beneath this album, so a parent whose pictures all live in subfolders is
 		the wall somebody expects rather than an empty page with a count on it.
 	-->
-	{#if data.folders.length > 0}
-		<ul
-			class="grid grid-cols-3 gap-1.5 border-b border-gray-200 p-4 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6"
-		>
+	{#if data.folders.length > 0 && !narrowed}
+		<MediaTiles class="border-b border-gray-200">
 			{#each data.folders as folder (folder.id)}
-				<li>
-					<a href="{resolve('/media/gallery')}/{folder.id}" class="block">
-						<span class="block aspect-square overflow-hidden rounded bg-gray-50">
-							{#if folder.coverId}
-								<img
-									src="/media/{folder.coverId}"
-									alt=""
-									loading="lazy"
-									class="h-full w-full object-cover"
-								/>
-							{:else}
-								<span class="flex h-full w-full items-center justify-center text-gray-300">
-									<Icon name="image" size={32} />
-								</span>
-							{/if}
-						</span>
-						<span class="mt-1 flex items-baseline gap-1">
-							<span class="min-w-0 flex-1 truncate text-xs font-medium text-gray-700">
-								{leafName(folder.name)}
-							</span>
-							<span class="text-xs text-gray-500 tabular-nums">{folder.count}</span>
-						</span>
-					</a>
-				</li>
+				{@const branch = branchOf(folder.id)}
+				<AlbumCard
+					href="{resolve('/media/gallery')}/{folder.id}"
+					name={folder.name}
+					title={leafName(folder.name)}
+					coverId={folder.coverId}
+					count={branch?.totalCount ?? branch?.count ?? folder.count}
+					inside={branch?.children.length ?? 0}
+				/>
 			{/each}
-		</ul>
+		</MediaTiles>
 	{/if}
 
 	{#if data.pictures.length === 0 && data.folders.length === 0}
@@ -262,13 +326,16 @@
 				kilobytes: data.pictureKilobytes
 			})}
 		/>
-	{:else}
-		<ul class="grid grid-cols-3 gap-1.5 p-4 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6">
-			{#each shown as picture (picture.id)}
-				<li>
+	{:else if shown.length === 0 && narrowed}
+		<EmptyState icon="search" title={t('gallery.id.noneMatch')} />
+	{:else if shown.length > 0}
+		<MediaTiles kind="pictures">
+			{#each shown as picture, i (picture.id)}
+				<li data-row use:listCursor={at === i}>
 					<button
-						class="block w-full overflow-hidden rounded"
+						class="block w-full overflow-hidden"
 						aria-label={picture.alt || picture.filename || t('gallery.id.aPicture')}
+						title={picture.filename || undefined}
 						draggable="true"
 						ondragstart={() => (dragging = picture.id)}
 						ondragend={() => {
@@ -286,7 +353,7 @@
 					</button>
 				</li>
 			{/each}
-		</ul>
+		</MediaTiles>
 	{/if}
 </RoomSurface>
 

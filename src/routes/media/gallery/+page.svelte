@@ -8,9 +8,19 @@
 	import { resolve } from '$app/paths';
 	import EmptyState from '$lib/components/EmptyState.svelte';
 	import Icon from '$lib/components/Icon.svelte';
-	import { SvelteSet } from 'svelte/reactivity';
+	import { MediaQuery, SvelteSet } from 'svelte/reactivity';
 	import Modal from '$lib/components/Modal.svelte';
 	import OneLine from '$lib/components/OneLine.svelte';
+	import FilterBar from '$lib/components/FilterBar.svelte';
+	import SearchField from '$lib/components/SearchField.svelte';
+	import ShowingCount from '$lib/components/ShowingCount.svelte';
+	import SortControl from '$lib/components/SortControl.svelte';
+	import StripVerb from '$lib/components/StripVerb.svelte';
+	import AlbumCard from '$lib/components/AlbumCard.svelte';
+	import MediaTiles from '$lib/components/MediaTiles.svelte';
+	import { browsable } from '$lib/browse.svelte';
+	import { goto } from '$app/navigation';
+	import type { PlainKey } from '$lib/i18n/keys';
 	import { armed } from '$lib/actions/armed';
 	import { ALBUM_SEPARATOR, leafAlbumName } from '$lib/album-path';
 	import type { PageServerData, ActionData } from './$types';
@@ -65,17 +75,82 @@
 	const standingIn = $derived(folderId === null ? null : nodeOf(data.tree, folderId));
 	/** The tiles: what is directly inside where the panel says you are. */
 	const level = $derived(standingIn ? standingIn.children : data.tree);
-	/** `Trips — Japan` is a name and a lineage at once; the strip reads it as one. */
+	/** `Trips — Japan` is a name and a lineage at once; the panel's summary reads it as one. */
 	const here = $derived(
 		standingIn ? standingIn.name.split(ALBUM_SEPARATOR).join(' › ') : t('gallery.allAlbums')
 	);
 
-	function choose(id: number) {
+	/** Every album in the tree, for a search that looks past the level you are on. */
+	const everyAlbum = $derived.by(() => {
+		const out: PageServerData['tree'] = [];
+		const walk = (nodes: PageServerData['tree']) => {
+			for (const node of nodes) {
+				out.push(node);
+				walk(node.children);
+			}
+		};
+		walk(data.tree);
+		return out;
+	});
+
+	let looking = $state('');
+	const needle = $derived(looking.trim().toLowerCase());
+
+	const ORDERS = ['name', 'size'] as const;
+	type Order = (typeof ORDERS)[number];
+	const ORDER_LABELS: Record<Order, PlainKey> = {
+		name: 'gallery.orderName',
+		size: 'gallery.orderSize'
+	};
+	let order = $state<Order>('name');
+	let direction = $state<'asc' | 'desc'>('asc');
+
+	const sizeOf = (node: PageServerData['tree'][number]) => node.totalCount ?? node.count;
+
+	/** What the grid shows: the level you stand on, or every album the search finds. */
+	const tiles = $derived.by(() => {
+		const found =
+			needle === ''
+				? [...level]
+				: everyAlbum.filter((node) => node.name.toLowerCase().includes(needle));
+		const sign = direction === 'asc' ? 1 : -1;
+		return found.sort((a, b) =>
+			order === 'name'
+				? sign * leafAlbumName(a.name).localeCompare(leafAlbumName(b.name))
+				: sign * (sizeOf(a) - sizeOf(b))
+		);
+	});
+	const listed = $derived(needle === '' ? level.length : everyAlbum.length);
+
+	/** The notebooks' pictures, as the last card of the top level. */
+	const showNotebooks = $derived(folderId === null && needle === '' && data.notebookPictures > 0);
+
+	/** j/k across the cards; Enter opens one, e renames it. */
+	let at = $state(-1);
+	const hrefOf = (id: number) => `${resolve('/media/gallery')}/${id}`;
+	browsable(() => ({
+		items: () => tiles,
+		cursor: () => at,
+		moveTo: (i) => (at = i),
+		// eslint-disable-next-line svelte/no-navigation-without-resolve
+		open: (i) => goto(hrefOf(tiles[i].id)),
+		edit: (i) => (renaming = tiles[i])
+	}));
+
+	/** On a phone the panel is folded to one line, so the albums start on the first screen. */
+	let foldersOpen = $state(false);
+	/** The width at which the panel sits beside the tiles: Tailwind's `lg`. */
+	const wide = new MediaQuery('(min-width: 64rem)');
+
+	function choose(id: number | null) {
 		folderId = id;
+		at = -1;
+		foldersOpen = false;
 		// Opened as well as chosen: standing in a folder while the panel still
 		// draws it shut is the tree and the tiles disagreeing about where you are.
-		opened.add(id);
+		if (id !== null) opened.add(id);
 	}
+	let folderInput: HTMLInputElement | undefined = $state();
 	let planForm: HTMLFormElement | undefined = $state();
 	let importing = $state(false);
 	/** How many of the chosen files have been sent, for the button. */
@@ -256,53 +331,20 @@
 	</li>
 {/snippet}
 
-<!--
-	The card is the `li`, not the link inside it.
-
-	What is under an album belongs to the album, and a "5 albums inside" line
-	floating under the card read as page furniture rather than as part of it. So
-	the border is the cell's, and the link and the way into the folder both sit
-	inside it.
--->
-{#snippet albumCard(node: PageServerData['tree'][number])}
-	<li data-row class="group relative overflow-hidden rounded-lg border border-gray-200">
-		<a href="{resolve('/media/gallery')}/{node.id}" class="block">
-			<span class="block aspect-square bg-gray-50">
-				{#if node.coverId}
-					<img
-						src="/media/{node.coverId}"
-						alt=""
-						loading="lazy"
-						class="h-full w-full object-cover"
-					/>
-				{:else}
-					<span class="flex h-full w-full items-center justify-center text-gray-300">
-						<Icon name="image" size={40} />
-					</span>
-				{/if}
-			</span>
-			<!--
-				Its own pictures, not its branch's.
-
-				The card used to show the total under it, so a folder import's root
-				said 28 and opened empty — the 28 were in the albums inside it, and
-				the number promised something the screen behind it did not have.
-
-				It does have them now: an album shows everything beneath it, so the
-				branch's total is what opening this card produces and the number is
-				honest again. A folder import's root said 0 and opened onto
-				twenty-eight birds.
-			-->
-			<span class="flex items-baseline justify-between gap-2 px-2.5 py-2">
-				<span class="truncate text-sm font-medium text-gray-900">{leafAlbumName(node.name)}</span>
-				<span class="shrink-0 text-xs text-gray-500 tabular-nums">
-					{node.totalCount ?? node.count}
-				</span>
-			</span>
-		</a>
-		<span class="row-actions absolute top-1.5 right-1.5 flex gap-1">
+<!-- An album as a card, its verbs on its caption rather than over its picture. -->
+{#snippet albumCard(node: PageServerData['tree'][number], index: number)}
+	<AlbumCard
+		href={hrefOf(node.id)}
+		name={node.name}
+		title={needle === '' ? leafAlbumName(node.name) : node.name.split(ALBUM_SEPARATOR).join(' › ')}
+		coverId={node.coverId}
+		count={sizeOf(node)}
+		inside={node.children.length}
+		cursor={at === index}
+	>
+		{#snippet actions()}
 			<button
-				class="icon-btn bg-white/80"
+				class="icon-btn"
 				title={t('gallery.rename', { name: node.name })}
 				aria-label={t('gallery.rename', { name: node.name })}
 				onclick={() => (renaming = node)}
@@ -310,28 +352,15 @@
 				<Icon name="edit" />
 			</button>
 			<button
-				class="icon-btn icon-btn-danger bg-white/80"
+				class="icon-btn icon-btn-danger"
 				title={t('gallery.delete', { name: node.name })}
 				aria-label={t('gallery.delete', { name: node.name })}
 				onclick={() => (confirmingDelete = node)}
 			>
 				<Icon name="trash" />
 			</button>
-		</span>
-		{#if node.children.length > 0}
-			<!-- The folders inside this one, as a place to go rather than as a
-			     drawer that opened in the middle of the grid: it stands you in the
-			     folder, and the panel and the tiles both follow. -->
-			<button
-				class="flex w-full items-center gap-1 border-t border-gray-200 px-2.5 py-1.5 text-xs text-gray-500 hover:text-gray-700"
-				onclick={() => choose(node.id)}
-			>
-				<Icon name="chevron-right" size={14} />{t('gallery.albumsInside', {
-					count: node.children.length
-				})}</button
-			>
-		{/if}
-	</li>
+		{/snippet}
+	</AlbumCard>
 {/snippet}
 
 <!--
@@ -348,49 +377,53 @@
 <RoomSurface>
 	{#snippet tools()}
 		<!--
-			Where you are, along the top of the same white, with the import beside
-			it rather than loose on the page above.
-
-			And the way into the album's own pictures, because a folder's tiles
-			are the folders in it: what it holds itself is one press from here.
-			The button is drawn whether or not there is anywhere to go, so
-			choosing a folder never moves the row underneath it.
+			Search, count, the import and the order, in the strip every room has.
+			The search looks through every album, not only the level you stand on.
 		-->
-		<div class="flex w-full items-center gap-3">
-			<span class="min-w-0 flex-1 truncate text-sm font-medium text-gray-900">{here}</span>
-			<span class="tabular shrink-0 text-xs text-gray-500">
-				{#if standingIn}
-					{t('gallery.picturesCount', { count: standingIn.totalCount ?? standingIn.count })}
-				{:else}
-					{t('gallery.albumsCount', { count: data.albums.length })}
-				{/if}
-			</span>
-			<a
-				href="{resolve('/media/gallery')}/{standingIn?.id ?? ''}"
-				class="btn btn-sm shrink-0 {standingIn ? '' : 'invisible'}"
-				aria-hidden={standingIn ? undefined : 'true'}
-				tabindex={standingIn ? undefined : -1}
-			>
-				{t('ui.open')}
-			</a>
-			<!-- A folder of pictures, with its subfolders as albums. -->
-			<!-- Ask first: what is in this folder, and what would be refused. -->
-			<form method="post" action="?/planFolder" bind:this={planForm} use:enhance>
-				<input type="hidden" name="files" />
-				<label class="btn btn-sm shrink-0 cursor-pointer" title={t('gallery.importAFolder')}>
-					<Icon name="download" />
-					{t('gallery.import')}
-					<input
-						type="file"
-						accept="image/png,image/jpeg,image/gif,image/webp"
-						multiple
-						use:directory
-						class="hidden"
-						onchange={folderChosen}
-					/>
-				</label>
-			</form>
-		</div>
+		<FilterBar name="gallery">
+			{#snippet lead()}
+				<SearchField bind:value={looking} label={t('gallery.searchAlbums')} />
+			{/snippet}
+			{#snippet count()}
+				<ShowingCount
+					total={listed}
+					shown={tiles.length}
+					said={(n) => t('gallery.albumsCount', { count: n })}
+				/>
+			{/snippet}
+			{#snippet verb()}
+				<StripVerb
+					icon="download"
+					label={t('gallery.import')}
+					title={t('gallery.importAFolder')}
+					onclick={() => folderInput?.click()}
+				/>
+			{/snippet}
+			{#snippet trailing()}
+				<SortControl
+					value={order}
+					options={ORDERS}
+					labels={ORDER_LABELS}
+					{direction}
+					onpick={(next) => (order = next)}
+					onflip={() => (direction = direction === 'asc' ? 'desc' : 'asc')}
+					label={t('gallery.orderBy')}
+				/>
+			{/snippet}
+		</FilterBar>
+		<!-- A folder of pictures, with its subfolders as albums. Ask first: what
+		     is in this folder, and what would be refused. -->
+		<form method="post" action="?/planFolder" bind:this={planForm} class="hidden" use:enhance>
+			<input type="hidden" name="files" />
+			<input
+				bind:this={folderInput}
+				type="file"
+				accept="image/png,image/jpeg,image/gif,image/webp"
+				multiple
+				use:directory
+				onchange={folderChosen}
+			/>
+		</form>
 	{/snippet}
 
 	<!--
@@ -476,19 +509,37 @@
 		style="--folders: {PANEL_REM}rem"
 	>
 		<section class="border-b border-gray-200 lg:border-r lg:border-b-0">
-			<h2 class="eyebrow border-b border-gray-200 px-4 py-2 text-gray-600">
-				{t('gallery.folders')}
+			<!-- On a phone the heading is the fold: one line saying where you
+			     stand, so the albums start on the first screen. -->
+			<h2 class="eyebrow border-b border-gray-200 text-gray-600">
+				{#if wide.current}
+					<span class="block px-4 py-2">{t('gallery.folders')}</span>
+				{:else}
+					<button
+						type="button"
+						class="flex w-full items-center gap-2 px-4 py-2 text-left hover:bg-gray-50"
+						aria-expanded={foldersOpen}
+						aria-controls="gallery-folders"
+						onclick={() => (foldersOpen = !foldersOpen)}
+					>
+						<span class="shrink-0">{t('gallery.folders')}</span>
+						<span class="min-w-0 truncate font-normal tracking-normal normal-case">· {here}</span>
+						<Icon
+							name="chevron-down"
+							size={14}
+							class="ml-auto shrink-0 transition-transform {foldersOpen ? '' : '-rotate-90'}"
+						/>
+					</button>
+				{/if}
 			</h2>
 
-			<!-- Capped on a phone, where the panel sits above the tiles rather
-			     than beside them: an import of forty subfolders would otherwise
-			     push the pictures off the bottom of the screen. -->
 			<ul
-				class="max-h-64 divide-y divide-gray-200 overflow-y-auto lg:max-h-none lg:overflow-visible"
+				id="gallery-folders"
+				class="divide-y divide-gray-200 {foldersOpen || wide.current ? '' : 'hidden'}"
 			>
 				<li>
 					<button
-						onclick={() => (folderId = null)}
+						onclick={() => choose(null)}
 						class="flex w-full items-center gap-2 py-2 pr-3 pl-1 text-left text-sm transition {folderId ===
 						null
 							? 'bg-gray-100 font-medium text-gray-900'
@@ -509,66 +560,49 @@
 			</ul>
 		</section>
 
-		<div class="min-w-0 p-4">
+		<div class="min-w-0">
 			{#if data.albums.length === 0}
 				<EmptyState
 					icon="image"
 					title={t('gallery.noAlbumsYet')}
 					description={t('gallery.anAlbumIsWherePictures')}
 				/>
-			{:else if standingIn && level.length === 0}
-				<!-- A folder with no folders in it. Its pictures are the thing to
-				     offer: an empty grid with nothing to press is a dead end. -->
-				<EmptyState
-					icon="image"
-					title={t('gallery.noAlbumsInside', { name: leafAlbumName(standingIn.name) })}
-				>
-					{#snippet action()}
-						<a class="btn btn-primary" href="{resolve('/media/gallery')}/{standingIn?.id}">
-							{t('gallery.openTheAlbum')}
-						</a>
-					{/snippet}
-				</EmptyState>
+			{:else if needle !== '' && tiles.length === 0}
+				<EmptyState icon="search" title={t('gallery.noneMatch')} />
 			{:else}
-				<!-- `tiles`: two columns at phone width, so each cell keeps its own
-				     edges rather than bleeding to both sides of the screen. -->
-				<ul class="tiles grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
-					{#each level as node (node.id)}
-						{@render albumCard(node)}
+				<MediaTiles>
+					<!-- Standing in a folder, its own pictures come first: every one
+					     beneath it, in one album. -->
+					{#if standingIn && needle === ''}
+						<AlbumCard
+							href={hrefOf(standingIn.id)}
+							name={standingIn.name}
+							title={t('gallery.allOf', { name: leafAlbumName(standingIn.name) })}
+							coverId={standingIn.coverId}
+							count={sizeOf(standingIn)}
+						/>
+					{/if}
+					{#each tiles as node, i (node.id)}
+						{@render albumCard(node, i)}
 					{/each}
-				</ul>
-			{/if}
+					<!--
+						The pictures that are in notebooks.
 
-			<!--
-				The pictures that are in notebooks.
-
-				Not an album somebody made and not one they can make: a picture is
-				in a notebook because a note mentions it, so this is a view of the
-				writing rather than a place to put things. It draws a notebook
-				rather than a cover for the same reason — a preview would suggest it
-				is a pile of pictures like the others, and opening it shows folders
-				named after notebooks, not a wall. It belongs to the top of the
-				tree, so standing inside a folder puts it away with the rest of what
-				is not in that folder.
-			-->
-			{#if folderId === null && data.notebookPictures > 0}
-				<ul class="tiles mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
-					<li class="group relative overflow-hidden rounded-lg border border-gray-200">
-						<a href="{resolve('/media/gallery')}/notebooks" class="block">
-							<span class="flex aspect-square items-center justify-center bg-gray-50 text-gray-300">
-								<Icon name="notebook" size={40} />
-							</span>
-							<span class="flex items-baseline justify-between gap-2 px-2.5 py-2">
-								<span class="truncate text-sm font-medium text-gray-900">
-									{t('gallery.notebooks')}
-								</span>
-								<span class="shrink-0 text-xs text-gray-500 tabular-nums"
-									>{data.notebookPictures}</span
-								>
-							</span>
-						</a>
-					</li>
-				</ul>
+						Not an album somebody made and not one they can make: a picture
+						is in a notebook because a note mentions it, so this is a view of
+						the writing rather than a place to put things. It draws a
+						notebook rather than a cover for the same reason, and belongs to
+						the top of the tree.
+					-->
+					{#if showNotebooks}
+						<AlbumCard
+							href="{resolve('/media/gallery')}/notebooks"
+							name={t('gallery.notebooks')}
+							icon="notebook"
+							count={data.notebookPictures}
+						/>
+					{/if}
+				</MediaTiles>
 			{/if}
 		</div>
 	</div>

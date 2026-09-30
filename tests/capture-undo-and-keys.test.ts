@@ -36,11 +36,13 @@ afterEach(() => {
 	vi.unstubAllGlobals();
 });
 
-describe('the four things worth writing down', () => {
+describe('the things worth writing down', () => {
 	test('each names a place to write to and a key to get there', () => {
 		for (const capture of CAPTURES) {
 			expect(capture.action).toMatch(/^\/.+\?\/create$/);
 			expect(capture.shortcut).toHaveLength(1);
+			// Drawn by its glyph on the dashboard and in the wheel: without one it is a blank.
+			expect(capture.icon, `${capture.key} has no glyph`).toBeTruthy();
 			expect(capture.color).toMatch(/^#|^oklch|^rgb/);
 		}
 	});

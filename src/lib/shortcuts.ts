@@ -52,6 +52,7 @@ export const PAGE_SHORTCUTS: Record<string, PageShortcuts> = {
 			{ key: 't', action: 'capture-todo', description: 'shortcut.captureATodo' },
 			{ key: 'd', action: 'capture-note', description: 'shortcut.captureANote' },
 			{ key: 'b', action: 'capture-buy', description: 'shortcut.captureSomethingToBuy' },
+			{ key: 'r', action: 'capture-reminder', description: 'shortcut.captureAReminder' },
 			{ key: 'n', action: 'new-diary', description: 'shortcut.newDiaryEntry' },
 			{ key: 'w', action: 'new-wins', description: 'shortcut.newWins' }
 		]
@@ -106,7 +107,8 @@ export const PAGE_SHORTCUTS: Record<string, PageShortcuts> = {
 		shortcuts: [
 			{ key: 'j', action: 'navigate-down', description: 'shortcut.navigateSlots' },
 			{ key: 'k', action: 'navigate-up', description: 'shortcut.navigateSlots' },
-			{ key: 'g', action: 'toggle-view', description: 'shortcut.toggleListGridView' },
+			{ key: 'g', action: 'toggle-view', description: 'shortcut.cycleDayWeekMonth' },
+			{ key: 'a', action: 'toggle-list', description: 'shortcut.toggleListGridView' },
 			{ key: '+', action: 'zoom-in', description: 'shortcut.zoomInGrid' },
 			{ key: '=', action: 'zoom-in', description: 'shortcut.zoomInGrid' },
 			{ key: '-', action: 'zoom-out', description: 'shortcut.zoomOutGrid' },
@@ -133,6 +135,8 @@ export const PAGE_SHORTCUTS: Record<string, PageShortcuts> = {
 			{ key: 'k', action: 'navigate-up', description: 'shortcut.navigateList' },
 			{ key: 'n', action: 'new', description: 'shortcut.newActivity' },
 			{ key: 'e', action: 'edit', description: 'shortcut.editTheOneUnderThe' },
+			{ key: 'a', action: 'archive', description: 'shortcut.archiveUnarchive' },
+			{ key: 'x', action: 'delete', description: 'shortcut.askToDelete' },
 			{ key: '1', action: 'filter-1', description: 'shortcut.toggleCategoryFilter' },
 			{ key: '2', action: 'filter-2', description: 'shortcut.toggleCategoryFilter' },
 			{ key: '3', action: 'filter-3', description: 'shortcut.toggleCategoryFilter' },
@@ -147,6 +151,12 @@ export const PAGE_SHORTCUTS: Record<string, PageShortcuts> = {
 	'/tasks/review': {
 		label: 'app.review',
 		shortcuts: [
+			...BROWSE_SHORTCUTS.slice(0, 4),
+			{ key: 'c', action: 'answer-done', description: 'tasks.review.itHappenedAfterAll' },
+			{ key: 's', action: 'answer-skipped', description: 'tasks.review.itDidNotHappen' },
+			{ key: 't', action: 'answer-todo', description: 'tasks.review.itStillNeedsDoing' },
+			{ key: 'd', action: 'answer-day', description: 'tasks.review.itStillNeedsDoing2' },
+			{ key: 'u', action: 'ask-again', description: 'tasks.review.askAboutItAgain' },
 			{ key: '[', action: 'prev-week', description: 'shortcut.switchWeek' },
 			{ key: ']', action: 'next-week', description: 'shortcut.switchWeek' }
 		]
@@ -203,6 +213,7 @@ export const PAGE_SHORTCUTS: Record<string, PageShortcuts> = {
 			{ key: 'j', action: 'navigate-down', description: 'shortcut.navigateHabits' },
 			{ key: 'k', action: 'navigate-up', description: 'shortcut.navigateHabits' },
 			{ key: 'n', action: 'new', description: 'shortcut.newHabit' },
+			{ key: 'e', action: 'edit', description: 'shortcut.editTheOneUnderThe' },
 			{ key: 'Enter', action: 'toggle-expand', description: 'shortcut.expandCollapse' }
 		]
 	},
@@ -231,6 +242,16 @@ export const PAGE_SHORTCUTS: Record<string, PageShortcuts> = {
 			{ key: 'Enter', action: 'toggle-expand', description: 'shortcut.expandCollapse' }
 		]
 	},
+	'/notebooks/weekly': {
+		label: 'rooms.notebooks.tabs.weekly',
+		shortcuts: [
+			{ key: 'j', action: 'navigate-down', description: 'shortcut.navigateWeeks' },
+			{ key: 'k', action: 'navigate-up', description: 'shortcut.navigateWeeks' },
+			{ key: 'n', action: 'new', description: 'shortcut.newWeeklyNote' },
+			{ key: 'e', action: 'edit', description: 'shortcut.editTheOneUnderThe' },
+			{ key: 'Enter', action: 'open', description: 'shortcut.openTheOneUnderThe' }
+		]
+	},
 	'/notebooks/people': {
 		label: 'app.people',
 		shortcuts: [
@@ -251,9 +272,31 @@ export const PAGE_SHORTCUTS: Record<string, PageShortcuts> = {
 			{ key: 'x', action: 'delete', description: 'shortcut.askToDelete' }
 		]
 	},
+	'/finance/bills': {
+		label: 'rooms.finance.tabs.bills',
+		shortcuts: [
+			...BROWSE_SHORTCUTS.slice(2, 4),
+			{ key: 'e', action: 'browse-edit', description: 'shortcut.editTheOneUnderThe' },
+			{ key: 'n', action: 'new', description: 'finance.bills.newBill' }
+		]
+	},
+	'/finance/rules': {
+		label: 'rooms.finance.tabs.rules',
+		shortcuts: [
+			...BROWSE_SHORTCUTS.slice(2),
+			{ key: 'n', action: 'new', description: 'finance.rules.newRule' },
+			{ key: 'x', action: 'delete', description: 'shortcut.askToDelete' }
+		]
+	},
 	'/health/recipes': {
 		label: 'app.recipes',
-		shortcuts: [{ key: 'n', action: 'new', description: 'shortcut.newRecipe' }]
+		shortcuts: [
+			{ key: 'j', action: 'navigate-down', description: 'shortcut.navigateList' },
+			{ key: 'k', action: 'navigate-up', description: 'shortcut.navigateList' },
+			{ key: 'n', action: 'new', description: 'shortcut.newRecipe' },
+			{ key: 'e', action: 'edit', description: 'shortcut.editTheOneUnderThe' },
+			{ key: 'Enter', action: 'open', description: 'shortcut.openTheOneUnderThe' }
+		]
 	},
 	'/settings/account': {
 		label: 'app.account',

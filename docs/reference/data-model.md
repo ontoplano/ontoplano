@@ -50,7 +50,7 @@ exist.
 | [`ledgers`](#ledgers)                                       | 11      | yes               |
 | [`locations`](#locations)                                   | 8       | yes               |
 | [`mail_failures`](#mail_failures)                           | 11      | —                 |
-| [`media`](#media)                                           | 10      | yes               |
+| [`media`](#media)                                           | 11      | yes               |
 | [`media_tags`](#media_tags)                                 | 4       | yes               |
 | [`model_provider_keys`](#model_provider_keys)               | 9       | yes               |
 | [`newsletter_issues`](#newsletter_issues)                   | 6       | —                 |
@@ -902,6 +902,7 @@ Indexes:
 | `mime`       | text    | not null | —                     | —                 |
 | `filename`   | text    | not null | `''`                  | —                 |
 | `alt`        | text    | not null | `''`                  | —                 |
+| `notes`      | text    | not null | `''`                  | —                 |
 | `byte_size`  | integer | not null | —                     | —                 |
 | `seconds`    | integer | null     | —                     | —                 |
 | `bytes`      | blob    | not null | —                     | —                 |

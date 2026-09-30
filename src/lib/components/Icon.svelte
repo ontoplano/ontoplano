@@ -35,7 +35,8 @@
 		refresh: 'M20 12a8 8 0 0 1-14.3 4.9M4 12a8 8 0 0 1 14.3-4.9M18 3v4h-4M6 21v-4h4',
 		// Sent on its way: a paper plane.
 		send: 'M21 3L10 14M21 3l-7 18-4-7-7-4z',
-		skip: 'M5 5l9 7-9 7zM18 5v14',
+		// Did not happen: a circle struck through, the way a card game says skip.
+		skip: 'M12 4a8 8 0 1 0 0 16 8 8 0 0 0 0-16zM6.35 6.35l11.3 11.3',
 		play: 'M7 4l12 8-12 8z',
 		/* The three a recorder needs. Square caps like everything else here. */
 		pause: 'M9 5v14M15 5v14',
@@ -122,6 +123,13 @@
 		moon: 'M20 14.5A8.5 8.5 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z',
 		tag: 'M4 4h8l8 8-8 8-8-8z M8 8h.01',
 		star: 'M12 4l2.4 5 5.6.7-4 3.9 1 5.4-5-2.7-5 2.7 1-5.4-4-3.9 5.6-.7z',
+		/*
+		 * Two of the three ratings; interest is the star above. An hourglass
+		 * for urgency — time running out — and a feather for ease, the thing
+		 * that weighs nothing. See `RATING_ICONS` in `$lib/ratings`.
+		 */
+		hourglass: 'M6 3h12M6 21h12M7 3c0 4.5 5 6 5 9s-5 4.5-5 9M17 3c0 4.5-5 6-5 9s5 4.5 5 9',
+		feather: 'M20 12a6 6 0 0 0-8.5-8.5L5 10.3V19h8.7zM16 8L3 21M17.5 15H9',
 		key: 'M14 7a4 4 0 1 1-3.5 5.9L4 19v-3h3v-3h3l.5-.6A4 4 0 0 1 14 7z',
 		link: 'M10 14a4 4 0 0 0 6 .5l2-2a4 4 0 0 0-5.7-5.7L11 8M14 10a4 4 0 0 0-6-.5l-2 2a4 4 0 0 0 5.7 5.7L13 16',
 		user: 'M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4 20a8 8 0 0 1 16 0',
@@ -157,6 +165,8 @@
 		 */
 		kanban: 'M4 4h4v12H4zM10 4h4v7h-4zM16 4h4v16h-4z',
 		checklist: 'M3 6l2 2 3-3M11 7h10M3 13l2 2 3-3M11 14h10M4 20h3M11 20h10',
+		// Rows with nothing to tick: a thing read as a list rather than laid out.
+		list: 'M4 6h1M4 12h1M4 18h1M9 6h11M9 12h11M9 18h11',
 		// Three bricks: what a block of the plan is made of.
 		blocks: 'M3 13h8v8H3zM13 13h8v8h-8zM8 3h8v8H8z',
 		// A clipboard with a tick: the week gone through and signed off.

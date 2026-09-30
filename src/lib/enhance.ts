@@ -79,6 +79,51 @@ function stayingPut(outcome: Outcome): Outcome {
 	};
 }
 
+/**
+ * A form is emptied after its handler is done with it, never before.
+ *
+ * SvelteKit's `update()` resets the form first and then waits for the page's
+ * data to come back. Every dialog here closes *after* `update()` — so for the
+ * length of a round trip the dialog stood open with its fields reset, and a
+ * bound field resets to nothing: pressing Save on Edit notebook blanked the
+ * title before the dialog went away. It was fixed form by form, with
+ * `reset: false`, and kept coming back with the next form written the
+ * ordinary way.
+ *
+ * So inside a dialog `update()` never resets. It notes whether a reset was
+ * asked for — SvelteKit's default is yes — and the reset happens once the
+ * handler has returned, by which time the dialog has been told to close and
+ * the reset lands in the same frame, unseen.
+ *
+ * Only inside a dialog. A form that stays on the page keeps SvelteKit's own
+ * order — reset, then reload — because the reload is what puts a control
+ * drawn from the page's data back: a switch written `checked={data.on}` is
+ * reset to unticked and ticked again by the fresh data. Reset after the
+ * reload instead, it stayed unticked with nothing left to tick it, and the
+ * weekly review's switch undid itself on every press.
+ */
+function resetAfterwards(outcome: Outcome): { outcome: Outcome; finish: () => void } {
+	const update = outcome.update;
+	let wanted = false;
+	return {
+		outcome: {
+			...outcome,
+			update: (options?: Parameters<typeof update>[0]) => {
+				if (!outcome.formElement.closest('dialog')) return update(options);
+				wanted = options?.reset ?? true;
+				return update({ ...options, reset: false });
+			}
+		},
+		finish: () => {
+			const form = outcome.formElement;
+			// `HTMLFormElement.prototype`, because a field called `reset` would
+			// shadow the method on the form itself.
+			if (wanted && outcome.result.type === 'success' && form.isConnected)
+				HTMLFormElement.prototype.reset.call(form);
+		}
+	};
+}
+
 export function enhance(form: HTMLFormElement, submit?: SubmitFunction) {
 	let sending: string | null = null;
 
@@ -97,9 +142,10 @@ export function enhance(form: HTMLFormElement, submit?: SubmitFunction) {
 		const after = submit?.(event);
 		return async (outcome) => {
 			try {
-				const answered = stayingPut(outcome);
+				const { outcome: answered, finish } = resetAfterwards(stayingPut(outcome));
 				if (typeof after === 'function') await after(answered);
 				else await answered.update();
+				finish();
 			} finally {
 				sending = null;
 				// A form that has been taken off the screen takes its buttons

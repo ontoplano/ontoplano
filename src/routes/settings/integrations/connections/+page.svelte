@@ -23,7 +23,7 @@
 	import Modal from '$lib/components/Modal.svelte';
 	import type { PageServerData, ActionData } from './$types';
 	import { listCursor } from '$lib/actions/list-cursor';
-	import type { StreamDisplay } from '$lib/services/streams';
+	import type { StreamDisplay, StreamKind } from '$lib/services/streams';
 	import type { PlainKey } from '$lib/i18n/keys';
 	import { useT } from '$lib/i18n';
 
@@ -81,6 +81,14 @@
 		calendar_heatmap: 'settings.integrations.connections.displayCalendar',
 		latest_value: 'settings.integrations.connections.displayLatest',
 		list: 'settings.integrations.connections.displayList'
+	};
+
+	// What a stream is, in words: the stored value is for plugins, not people.
+	const KIND_LABELS: Record<StreamKind, PlainKey> = {
+		measurement: 'settings.integrations.connections.kindMeasurement',
+		event: 'settings.integrations.connections.kindEvent',
+		counter: 'settings.integrations.connections.kindCounter',
+		state: 'settings.integrations.connections.kindState'
 	};
 
 	/*
@@ -497,7 +505,7 @@ Token: ${token}`;
 		>
 			{#each data.streams as stream (stream.id)}
 				<div class="list-row">
-					<div class="list-row-main min-w-48">
+					<div class="list-row-main">
 						<a
 							href={resolve('/data/[slug]', { slug: stream.slug })}
 							class="text-sm font-medium text-gray-900 underline underline-offset-2"
@@ -506,60 +514,66 @@ Token: ${token}`;
 						</a>
 						<p class="mt-0.5 font-mono text-xs text-gray-500">{stream.slug}</p>
 						<p class="mt-1 text-xs text-gray-500">
-							{stream.kind}{stream.unit ? ` · ${stream.unit}` : ''} · {stream.stats.count}
+							{t(KIND_LABELS[stream.kind])}{stream.unit ? ` · ${stream.unit}` : ''} · {stream.stats
+								.count}
 							{t('settings.integrations.connections.points')}
 							{#if stream.stats.latest}
 								{t('settings.integrations.connections.latest')}
 								{dateOf(stream.stats.latest.at, now())}
 							{/if}
 						</p>
+						<!--
+							Saved as it is changed, like every other setting: a tick of its
+							own on each row was a second step nobody expected.
+						-->
+						<form
+							method="post"
+							action="?/updateStream"
+							use:enhance={() =>
+								async ({ update }) => {
+									await update({ reset: false });
+								}}
+							onchange={(e) => saveSoon(e.currentTarget)}
+							class="controls-sm mt-2 flex flex-wrap items-center gap-x-4 gap-y-2"
+						>
+							<input type="hidden" name="id" value={stream.id} />
+							<input type="hidden" name="label" value={stream.name} />
+							<select
+								name="display"
+								class="select w-auto"
+								aria-label={t('settings.integrations.connections.display')}
+							>
+								{#each data.displays as display (display)}
+									<option value={display} selected={stream.display === display}
+										>{t(DISPLAY_LABELS[display])}</option
+									>
+								{/each}
+							</select>
+							<label class="flex items-center gap-1.5 text-sm text-gray-700">
+								<input
+									type="checkbox"
+									class="toggle"
+									name="showOnDashboard"
+									checked={stream.showOnDashboard}
+								/>
+								{t('settings.integrations.connections.dashboard')}
+							</label>
+							<label
+								class="flex items-center gap-1.5 text-sm text-gray-700"
+								title={t('settings.integrations.connections.pointsOlderThanThisAre')}
+							>
+								{t('settings.integrations.connections.keep')}
+								<NumberBox
+									name="retentionDays"
+									min="1"
+									max="3650"
+									value={stream.retentionDays ?? ''}
+									class="w-20"
+								/>
+								{t('settings.integrations.connections.days')}
+							</label>
+						</form>
 					</div>
-					<!--
-						Saved as it is changed, like every other setting: a tick of its
-						own on each row was a second step nobody expected.
-					-->
-					<form
-						method="post"
-						action="?/updateStream"
-						use:enhance={() =>
-							async ({ update }) => {
-								await update({ reset: false });
-							}}
-						onchange={(e) => saveSoon(e.currentTarget)}
-						class="controls-sm flex flex-wrap items-center justify-end gap-x-3 gap-y-2"
-					>
-						<input type="hidden" name="id" value={stream.id} />
-						<input type="hidden" name="label" value={stream.name} />
-						<select
-							name="display"
-							class="select w-auto"
-							aria-label={t('settings.integrations.connections.display')}
-						>
-							{#each data.displays as display (display)}
-								<option value={display} selected={stream.display === display}
-									>{t(DISPLAY_LABELS[display])}</option
-								>
-							{/each}
-						</select>
-						<label class="flex items-center gap-1.5 text-sm text-gray-700">
-							<input type="checkbox" name="showOnDashboard" checked={stream.showOnDashboard} />
-							{t('settings.integrations.connections.dashboard')}
-						</label>
-						<label
-							class="flex items-center gap-1.5 text-sm text-gray-700"
-							title={t('settings.integrations.connections.pointsOlderThanThisAre')}
-						>
-							{t('settings.integrations.connections.keep')}
-							<NumberBox
-								name="retentionDays"
-								min="1"
-								max="3650"
-								value={stream.retentionDays ?? ''}
-								class="w-20"
-							/>
-							{t('settings.integrations.connections.days')}
-						</label>
-					</form>
 					<form method="post" action="?/deleteStream" use:enhance class="list-row-actions">
 						<input type="hidden" name="id" value={stream.id} />
 						{#if confirmDeleteStream === stream.id}
@@ -624,7 +638,9 @@ Token: ${token}`;
 						<p class="text-sm font-medium break-all text-gray-900">{hook.url}</p>
 						<p class="mt-1 text-xs text-gray-500">
 							{t('settings.integrations.connections.when')}
-							{hook.events.map(eventLabel).join(t('legal.terms.or'))}
+							{new Intl.ListFormat(t.locale, { type: 'disjunction' }).format(
+								hook.events.map(eventLabel)
+							)}
 							{#if hook.disabled}
 								· <span class="font-medium text-gray-900"
 									>{t('settings.integrations.connections.gaveUpAfterRepeatedFailures')}</span

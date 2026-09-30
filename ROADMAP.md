@@ -6,24 +6,16 @@
 
 Many Android widgets can be made, no attention has been given to that yet.
 
-### Insights
+### Needs attention
 
-More cool optional dashboard overviews for data
-
-### The rest of the REST API
-
-`/api/v1` covers `me`, today, the schedule, shopping, streams, webhooks and
-plugin manifests. MCP
-reaches further — todos, diary, notebooks, ideas, goals, habits, recipes — and
-those have no REST equivalent.
+So far, most attention have been given to: Tasks, Notebooks and Inventory.
+meaning Finance, Goals, Media, Reminders, Health probably have many small and
+big improvements in UX or general behavior and capabilities.
+the REST API also probably lack obvious necessary endpoints
 
 ---
 
 ## Small improvements
-
-- **Sharing beyond shopping and notebooks.** A family plan can share a
-  shopping category and a notebook today, opt-in, owner-controlled.
-  Maybe create scoped permission invite tokens.
 
 - **An `.ics` importer**, beside the Todoist, Google Tasks, Google Keep,
   org-mode and Obsidian ones. Subscribing to a calendar already works;
@@ -35,6 +27,11 @@ those have no REST equivalent.
   to these days.
 
 ---
+
+## Big features
+
+- **Sharing notebooks and its contents.** : Maybe family/organization kind of thing with an invite link with scoped permissions.
+- **Organizations**: Family / organization to do the above with multiple people
 
 ## One day, maybe
 

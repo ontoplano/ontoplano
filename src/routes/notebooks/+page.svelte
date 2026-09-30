@@ -18,6 +18,7 @@
 	import Field from '$lib/components/Field.svelte';
 	import FormGrid from '$lib/components/FormGrid.svelte';
 	import { autofocus } from '$lib/actions/autofocus';
+	import { longPress } from '$lib/actions/long-press';
 	import NotebookDetail from '$lib/components/NotebookDetail.svelte';
 	import NotebookTags from '$lib/components/NotebookTags.svelte';
 	import NotebookFields from '$lib/components/fields/NotebookFields.svelte';
@@ -137,6 +138,67 @@
 	function openRename(path: string) {
 		renamingFolder = path;
 		renameOpen = true;
+	}
+
+	/*
+	 * A notebook carried to a folder.
+	 *
+	 * Dragged with a mouse — its cover is a link, and a link already drags —
+	 * or, on a phone, held and then drawn across the shelf, where a drag would
+	 * be the page scrolling. Either way it lands on whatever carries
+	 * `data-drop-folder` under the pointer: a folder's tile, an open folder's
+	 * block, or the shelf itself for no folder at all.
+	 */
+	let carrying = $state<Notebook | null>(null);
+	/** The folder the carried notebook would land in, `''` for the shelf. */
+	let dropOn = $state<string | null>(null);
+	/** Where the finger is, on a phone, so the notebook can follow it. */
+	let finger = $state<{ x: number; y: number } | null>(null);
+	let moveForm = $state<HTMLFormElement | null>(null);
+	let moveId = $state(0);
+	let moveFolder = $state('');
+
+	function folderUnder(el: Element | null): string | null {
+		const target = el?.closest<HTMLElement>('[data-drop-folder]');
+		return target ? (target.dataset.dropFolder ?? '') : null;
+	}
+
+	function putDown() {
+		const into = dropOn;
+		const node = carrying;
+		carrying = null;
+		dropOn = null;
+		finger = null;
+		if (!node || into === null || into === (node.folder ?? '')) return;
+		moveId = node.id;
+		moveFolder = into;
+		// After the fields have the values, which is the next microtask.
+		queueMicrotask(() => moveForm?.requestSubmit());
+	}
+
+	/** A finger held on a cover: the notebook comes up and follows it. */
+	function pickUp(node: Notebook, cover: HTMLElement) {
+		if (!node.mine) return;
+		const box = cover.getBoundingClientRect();
+		carrying = node;
+		finger = { x: box.left + box.width / 2, y: box.top + box.height / 2 };
+		const follow = (event: TouchEvent) => {
+			const touch = event.touches[0];
+			if (!touch) return;
+			// The page stays put while something is being carried across it.
+			event.preventDefault();
+			finger = { x: touch.clientX, y: touch.clientY };
+			dropOn = folderUnder(document.elementFromPoint(touch.clientX, touch.clientY));
+		};
+		const release = () => {
+			window.removeEventListener('touchmove', follow);
+			window.removeEventListener('touchend', release);
+			window.removeEventListener('touchcancel', release);
+			putDown();
+		};
+		window.addEventListener('touchmove', follow, { passive: false });
+		window.addEventListener('touchend', release);
+		window.addEventListener('touchcancel', release);
 	}
 
 	/** Every notebook in a folder, at any depth — what its tile shows. */
@@ -298,44 +360,63 @@
 							on rather than beside it.
 						-->
 							{#snippet cover(node: Notebook, tour = false)}
-								<NotebookCover
-									notebook={node}
-									href={coverHref(node.id)}
-									chosen={node.id === data.selected}
+								<div
+									class="contents"
+									role="presentation"
+									ondragstart={(event) => {
+										if (!node.mine) return;
+										carrying = node;
+										event.dataTransfer?.setData('text/plain', node.title);
+									}}
+									ondragend={() => {
+										carrying = null;
+										dropOn = null;
+									}}
+									use:longPress={(held) => pickUp(node, held)}
 								>
-									{#snippet star()}
-										<NotebookStar notebook={node} {tour} />
-									{/snippet}
-									{#snippet actions()}
-										<button
-											onclick={() => openEdit(node)}
-											class="icon-btn"
-											aria-label={t('notebooks.edit', { title: node.title })}
-										>
-											<Icon name="edit" />
-										</button>
-										<form
-											method="post"
-											action="?/setClosed"
-											use:enhance={() =>
-												async ({ update }) => {
-													await update({ reset: false });
-												}}
-										>
-											<input type="hidden" name="id" value={node.id} />
-											<input type="hidden" name="closed" value={node.closedAt ? 'false' : 'true'} />
+									<NotebookCover
+										notebook={node}
+										href={coverHref(node.id)}
+										chosen={node.id === data.selected}
+									>
+										{#snippet star()}
+											<NotebookStar notebook={node} {tour} />
+										{/snippet}
+										{#snippet actions()}
 											<button
+												onclick={() => openEdit(node)}
 												class="icon-btn"
-												title={node.closedAt ? t('notebooks.reopenIt') : t('notebooks.closeIt')}
-												aria-label="{node.closedAt
-													? t('notebooks.reopenIt')
-													: t('notebooks.closeIt')} {node.title}"
+												aria-label={t('notebooks.edit', { title: node.title })}
 											>
-												<Icon name={node.closedAt ? 'undo' : 'archive'} />
+												<Icon name="edit" />
 											</button>
-										</form>
-									{/snippet}
-								</NotebookCover>
+											<form
+												method="post"
+												action="?/setClosed"
+												use:enhance={() =>
+													async ({ update }) => {
+														await update({ reset: false });
+													}}
+											>
+												<input type="hidden" name="id" value={node.id} />
+												<input
+													type="hidden"
+													name="closed"
+													value={node.closedAt ? 'false' : 'true'}
+												/>
+												<button
+													class="icon-btn"
+													title={node.closedAt ? t('notebooks.reopenIt') : t('notebooks.closeIt')}
+													aria-label="{node.closedAt
+														? t('notebooks.reopenIt')
+														: t('notebooks.closeIt')} {node.title}"
+												>
+													<Icon name={node.closedAt ? 'undo' : 'archive'} />
+												</button>
+											</form>
+										{/snippet}
+									</NotebookCover>
+								</div>
 							{/snippet}
 
 							<!--
@@ -351,7 +432,10 @@
 							{#snippet folderTile(folder: ShelfFolder<Notebook>)}
 								{@const open = opened.has(folder.path)}
 								{@const shown = insideOf(folder).slice(0, 4)}
-								<div class="notebook-cover">
+								<div
+									class="notebook-cover {dropOn === folder.path ? 'drop-here' : ''}"
+									data-drop-folder={folder.path}
+								>
 									<button
 										type="button"
 										class="cover-face w-full text-left"
@@ -400,7 +484,11 @@
 
 							{#snippet folderRow(folder: ShelfFolder<Notebook>)}
 								{#if opened.has(folder.path)}
-									<div class="notebook-family" data-folder={folder.path}>
+									<div
+										class="notebook-family {dropOn === folder.path ? 'drop-here' : ''}"
+										data-folder={folder.path}
+										data-drop-folder={folder.path}
+									>
 										{@render folderTile(folder)}
 										{@render shelfContents(folder)}
 									</div>
@@ -447,9 +535,55 @@
 								</h2>
 							{/if}
 
-							<div data-tour="notebook-shelf" class="notebook-shelf">
+							<div
+								data-tour="notebook-shelf"
+								class="notebook-shelf {dropOn === '' ? 'drop-here' : ''}"
+								data-drop-folder=""
+								role="group"
+								aria-label={t('notebooks.allNotebooks')}
+								ondragover={(event) => {
+									if (!carrying) return;
+									const into = folderUnder(event.target as Element);
+									if (into === null) return;
+									event.preventDefault();
+									dropOn = into;
+								}}
+								ondragleave={(event) => {
+									if (!event.currentTarget.contains(event.relatedTarget as Node)) dropOn = null;
+								}}
+								ondrop={(event) => {
+									event.preventDefault();
+									putDown();
+								}}
+							>
 								{@render shelfContents(shelved)}
 							</div>
+
+							<!-- Where a carried notebook is posted from: one form, whoever carried it. -->
+							<form
+								bind:this={moveForm}
+								method="post"
+								action="?/move"
+								class="hidden"
+								use:enhance={() =>
+									async ({ update }) => {
+										await update({ reset: false });
+									}}
+							>
+								<input type="hidden" name="id" value={moveId} />
+								<input type="hidden" name="folder" value={moveFolder} />
+							</form>
+
+							{#if carrying && finger}
+								<!-- The notebook under the finger, while it is carried. -->
+								<div
+									class="overlay-face pointer-events-none fixed z-50 -translate-x-1/2 -translate-y-full border px-3 py-1.5 text-sm shadow-overlay"
+									style="left: {finger.x}px; top: {finger.y - 12}px"
+									aria-hidden="true"
+								>
+									{carrying.title}
+								</div>
+							{/if}
 
 							{#if closedOnes.length > 0}
 								<!--
@@ -783,6 +917,12 @@
 </Modal>
 
 <style>
+	/* Where a carried notebook would land, while it is over it. */
+	.drop-here {
+		outline: 2px solid var(--section-accent, var(--color-gray-900));
+		outline-offset: 2px;
+	}
+
 	/*
 	 * The shelf's width while nobody has chosen one: its usual width on a
 	 * laptop, gaining three rems for every eight the screen has past 90rem, up

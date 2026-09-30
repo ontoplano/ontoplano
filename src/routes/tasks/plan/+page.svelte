@@ -8,7 +8,6 @@
 	import { useWhen } from '$lib/when-context.svelte';
 	import NumberBox from '$lib/components/NumberBox.svelte';
 	import PeriodNav from '$lib/components/PeriodNav.svelte';
-	import PickOne from '$lib/components/PickOne.svelte';
 	import Picker from '$lib/components/Picker.svelte';
 	import FilterBar from '$lib/components/FilterBar.svelte';
 	import RoomSurface from '$lib/components/RoomSurface.svelte';
@@ -104,6 +103,8 @@
 		hourToTime,
 		windowForEvents,
 		GRID_SNAP_DURATION,
+		LIST_PARAM,
+		LIST_VALUE,
 		timeToMinutes,
 		minutesToTime,
 		type GridEventDetail,
@@ -138,7 +139,10 @@
 	 * — it is what notices a resize — but by then there is nothing to correct.
 	 */
 	let narrowScreen = $state(
-		browser ? window.matchMedia(`(max-width: ${NARROW_BREAKPOINT - 1}px)`).matches : false
+		browser
+			? window.matchMedia(`(max-width: ${NARROW_BREAKPOINT - 1}px)`).matches
+			: // The server's guess, from the cookie the effect below writes.
+				untrack(() => data.narrow)
 	);
 
 	// One effect owns `viewMode`, because two of them assigning it is what makes
@@ -201,13 +205,30 @@
 	});
 
 	/**
-	 * The week on a phone is a list of its days rather than seven columns.
+	 * Any view read as a list of its days rather than as the calendar.
 	 *
-	 * Seven columns of 39px broke every word letter by letter, and a
-	 * three-column window stops being a week. Each day reads as a heading and
-	 * its blocks in time order; the time grid is one press away on the day.
+	 * The calendar is the default everywhere; the list is asked for with the
+	 * button beside the views, and kept in the address so it survives the
+	 * arrows and a reload. Each day reads as a heading and its blocks in time
+	 * order; the time grid is one press away on the day.
 	 */
-	const agenda = $derived(narrowScreen && effectiveView === 'week');
+	const agenda = $derived(data.asList);
+
+	/** The address's own part for the list, when it is on. */
+	const listPart = $derived(data.asList ? [`${LIST_PARAM}=${LIST_VALUE}`] : []);
+
+	/** Between the list and the calendar, keeping the view and the range. */
+	function toggleList() {
+		const parts: string[] = [`view=${viewMode}`];
+		if (!data.range.isCurrent)
+			parts.push(`from=${viewMode === 'month' ? data.range.month : data.range.from}`);
+		if (!data.asList) parts.push(`${LIST_PARAM}=${LIST_VALUE}`);
+		goto(resolve(`/tasks/plan?${parts.join('&')}`), {
+			replaceState: true,
+			keepFocus: true,
+			noScroll: true
+		});
+	}
 
 	const gridDays = $derived(effectiveView === 'day' ? GRID_DAYS_MOBILE : GRID_DAYS_DESKTOP);
 
@@ -881,7 +902,8 @@
 		weekdayNames.map((name, i) => ({
 			value: String(i),
 			label: name,
-			face: t('tasks.plan.startsOn', { day: name.slice(0, 3) })
+			// A phone's toolbar has no room for the word; the picker's label says it.
+			face: narrowScreen ? name.slice(0, 3) : t('tasks.plan.startsOn', { day: name.slice(0, 3) })
 		}))
 	);
 
@@ -1583,6 +1605,7 @@
 	function rangeHref(from: string | null): string {
 		const parts: string[] = [`view=${viewMode}`];
 		if (from) parts.push(`from=${from}`);
+		parts.push(...listPart);
 		return resolve(`/tasks/plan?${parts.join('&')}`);
 	}
 
@@ -1719,6 +1742,11 @@
 		}
 		e.preventDefault();
 
+		if (action === 'toggle-list') {
+			toggleList();
+			return;
+		}
+
 		if (action === 'toggle-view') {
 			// From what the buttons show rather than from the grid: pressing `g`
 			// twice before the first load lands should step two views on, not
@@ -1742,7 +1770,7 @@
 			return;
 		}
 
-		// The phone's week is a list: j/k walk it, e opens the one under the cursor.
+		// As a list, j/k walk it and e opens the one under the cursor.
 		if (agenda && (action === 'navigate-down' || action === 'navigate-up' || action === 'edit')) {
 			const last = agendaItems.length - 1;
 			if (action === 'edit') {
@@ -1914,6 +1942,7 @@
 		pendingView = mode;
 		const parts: string[] = [`view=${mode}`];
 		if (!data.range.isCurrent) parts.push(`from=${data.range.from}`);
+		parts.push(...listPart);
 		goto(resolve(`/tasks/plan?${parts.join('&')}`), {
 			replaceState: true,
 			keepFocus: true,
@@ -2173,7 +2202,12 @@
 		if (!agenda) return [];
 		const twelve = wantsTwelveHour(now());
 		const clock = (d: Date) => timeOf(d, now(), { hour12: twelve });
-		return data.range.days.map((day: { date: string; isToday: boolean }) => {
+		// A month's grid starts and ends in its neighbours; its list is the month.
+		const month = data.range.month.slice(0, 7);
+		const days = data.range.days.filter(
+			(day: { date: string }) => effectiveView !== 'month' || day.date.startsWith(month)
+		);
+		return days.map((day: { date: string; isToday: boolean }) => {
 			const events = gridEvents
 				.filter((e) => e.start instanceof Date && formatLocalDate(e.start) === day.date)
 				.filter((e) => !String(e.id ?? '').startsWith('preview:'))
@@ -2934,9 +2968,14 @@
 					</span>
 				</PeriodNav>
 
-				<div class="plan-view-controls controls-sm flex min-w-0 items-center gap-2">
+				<div
+					class="plan-view-controls controls-sm flex min-w-0 flex-wrap items-center gap-2 max-sm:w-full"
+				>
+					<!-- On a phone the view comes first and the week's start is left to
+					     Preferences, so the view, the saved weeks and the list share the
+					     one line under the date rather than taking two or three. -->
 					<div
-						class="shrink-0 {effectiveView === 'week' ? '' : 'invisible'}"
+						class="shrink-0 max-sm:hidden {effectiveView === 'week' ? '' : 'invisible'}"
 						inert={effectiveView !== 'week'}
 						data-tour="plan-week-start"
 					>
@@ -2963,7 +3002,25 @@
 						<span class="hidden sm:inline">{t('tasks.plan.schemes')}</span>
 					</button>
 
-					<div use:sliding class="seg" role="group" aria-label={t('tasks.plan.howMuchToShow')}>
+					<!-- The same views as a list of their days; the calendar is the default. -->
+					<button
+						type="button"
+						onclick={toggleList}
+						aria-pressed={data.asList}
+						class="btn btn-sm shrink-0"
+						title={data.asList ? t('tasks.plan.showAsCalendar') : t('tasks.plan.showAsList')}
+						aria-label={data.asList ? t('tasks.plan.showAsCalendar') : t('tasks.plan.showAsList')}
+						data-tour="plan-as-list"
+					>
+						<Icon name={data.asList ? 'calendar' : 'list'} size={14} />
+					</button>
+
+					<div
+						use:sliding
+						class="seg max-sm:order-first"
+						role="group"
+						aria-label={t('tasks.plan.howMuchToShow')}
+					>
 						{#each [['day', t('tasks.plan.day')], ['week', t('tasks.plan.week')], ['month', t('tasks.plan.month')]] as [mode, label] (mode)}
 							<button
 								onclick={() => setView(mode as PlanView)}
@@ -4253,12 +4310,13 @@
 							<!-- Typed at rather than scrolled: an account with forty
 							     activities was a list you hunted through, and "lr" is how
 							     anybody actually finds "learn russian". -->
-							<PickOne
+							<Picker
 								name="activityId"
 								required
-								bind:value={activityChoice}
-								ariaLabel={t('tasks.plan.activity')}
-								placeholder={t('pickOne.typeToNarrow')}
+								search
+								value={activityChoice}
+								onpick={(next) => (activityChoice = next)}
+								label={t('tasks.plan.activity')}
 								options={[
 									...data.activities.map((act: { id: number; name: string }) => ({
 										value: String(act.id),

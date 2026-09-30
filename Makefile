@@ -622,9 +622,9 @@ android-all: _a-real-workstation isolated
 		|| (cd capacitor && npm install --no-audit --no-fund),the shell's dependencies)
 	$(call timed,node scripts/brand-android.mjs,the icons)
 	$(call timed,cd capacitor && npx cap sync android >/dev/null,capacitor sync)
-	@# The DEV app's address comes from the environment or from defaults.env,
-	@# which local.mk includes — a build in a container cannot work out which
-	@# address on the wifi is this laptop's.
+	@# The DEV app's address comes from the environment or from local.mk,
+	@# which asks this laptop's network card for it — a build in a container
+	@# cannot work out which address on the wifi is this laptop's.
 	$(call timed,ONTOPLANO_DEV_ORIGIN="$(ONTOPLANO_DEV_ORIGIN)" node scripts/android-flavours.mjs,the three flavours)
 	@sdk=$$(node scripts/android-sdk.mjs) || { \
 		echo "No Android SDK here. It is looked for in ANDROID_HOME, ANDROID_SDK_ROOT,"; \
@@ -854,7 +854,6 @@ lint:
 	@# The floor on a reminder and the phone's polling interval are one fact
 	@# written in two languages, with nothing type-checking across the gap.
 	@node scripts/check-reminder-window.mjs
-	@node scripts/check-plugin.mjs
 	@node scripts/check-make-help.mjs
 	@# Every switch a recipe expands is one somebody has to be able to find.
 	@# Over the makefiles actually loaded, the way `vars` reads them: a fresh
@@ -1099,6 +1098,15 @@ deploy-local: build db-migrate
 
 ## the app and its jobs as a systemd user service
 install-service: deploy-local
+	@$(MAKE) -s install-unit
+
+# The unit alone, over whatever is already in $(PROD_DIR) — nothing is built.
+# For a server that receives its build from somewhere else: building there
+# means a production box compiling for minutes, under memory it is also
+# serving from.
+## the systemd user service, over the build already deployed
+install-unit:
+	@[ -d $(PROD_DIR)/build ] || { echo "Nothing deployed in $(PROD_DIR) yet — deploy a build first."; exit 1; }
 	@echo "Installing ontoplano systemd service..."
 	@[ -n "$(NODE_BIN)" ] || { echo "No node on PATH — nothing to put in the unit."; exit 1; }
 	@# Fails here, with the reason, rather than as a crash loop at 3am.

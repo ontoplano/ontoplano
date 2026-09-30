@@ -164,11 +164,11 @@
 	>
 		<Icon name="minus" size={14} />
 	</button>
-	<span class="counter-value" style:order={2}>
+	<span class="counter-value {valueClass?.(shown) ?? ''}" style:order={2}>
 		<input
 			type="text"
 			inputmode={whole ? 'numeric' : 'decimal'}
-			class="tabular {valueClass?.(shown) ?? ''}"
+			class="tabular"
 			style:width="calc({Math.max(String(typing ?? shown).length, 1)}ch + 0.5rem + 2px)"
 			value={typing ?? shown}
 			aria-label={label}
@@ -224,6 +224,23 @@
 		opacity: 0.25;
 	}
 
+	/*
+	 * A thumb's square, whatever row the counter stands in: a row's actions
+	 * are 28px under a cursor and the steps followed them down, and a table's
+	 * 36px icon only grew in height. Down a rail the width stays the rail's,
+	 * so the row's words keep their column.
+	 */
+	@media (pointer: coarse) {
+		.counter .counter-step {
+			width: var(--control-touch);
+			height: var(--control-touch);
+		}
+
+		.counter.counter-vertical .counter-step {
+			width: 2.25rem;
+		}
+	}
+
 	.counter-value {
 		display: inline-flex;
 		align-items: baseline;
@@ -236,7 +253,13 @@
 	 * A number that reads as text until it is touched: the field's border
 	 * shows on hover and focus, so a row of counts is not a row of boxes.
 	 */
-	.counter-value input {
+	/*
+	 * Doubled up on purpose: the app's form-control rule
+	 * (`input:not(…):not(…):not(…)` in layout.css) paints every field white with
+	 * dark ink, and at one class this lost to it — a white box behind the count
+	 * on a tinted row, and the count's own colour gone.
+	 */
+	.counter .counter-value input:not([type='hidden']) {
 		min-width: calc(1ch + 0.5rem + 2px);
 		padding: 0.125rem 0.25rem;
 		text-align: center;
@@ -250,15 +273,15 @@
 	 * Down a row's edge the buttons are the thumb's targets, and a field as
 	 * tall as them would make every row a third taller on a phone.
 	 */
-	.counter.counter-vertical .counter-value input {
+	.counter.counter-vertical .counter-value input:not([type='hidden']) {
 		min-height: 0;
 	}
 
-	.counter-value input:hover {
+	.counter .counter-value input:not([type='hidden']):hover {
 		border-color: var(--color-gray-300);
 	}
 
-	.counter-value input:focus {
+	.counter .counter-value input:not([type='hidden']):focus {
 		outline: none;
 		border-color: var(--color-gray-900);
 		background: var(--color-white);

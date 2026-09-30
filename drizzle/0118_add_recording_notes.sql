@@ -1,0 +1,1 @@
+ALTER TABLE `media` ADD `notes` text DEFAULT '' NOT NULL;

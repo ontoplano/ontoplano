@@ -26,6 +26,8 @@ export const SCOPE_WORDS = {
 	'habits:write': 'scopes.habitsWrite',
 	'plugin:declare': 'scopes.pluginDeclare',
 	'webhooks:manage': 'scopes.webhooksManage',
+	'audio:read': 'scopes.audioRead',
+	'audio:write': 'scopes.audioWrite',
 	'inventory:read': 'scopes.inventoryRead',
 	'inventory:write': 'scopes.inventoryWrite',
 	'locations:read': 'scopes.locationsRead',
@@ -68,6 +70,7 @@ export const SCOPE_CAUTION_WORDS = {
  * to. The English stays where the docs read it; this is what the screen draws.
  */
 export const WEBHOOK_EVENT_WORDS = {
+	'audio.uploaded': 'webhookEvents.audioUploaded',
 	'todo.created': 'webhookEvents.todoCreated',
 	'todo.completed': 'webhookEvents.todoCompleted',
 	'idea.created': 'webhookEvents.ideaCreated',

@@ -72,6 +72,9 @@ export function glyphFor(...keys: (string | undefined)[]): IconName | undefined 
  */
 export function routeGlyph(href: string): IconName | undefined {
 	if (href in GLYPHS) return GLYPHS[href];
+	// A room with no tabs — Reminders — is known by its key, not its address.
+	const place = NAV_PLACES.find((one) => one.href === href);
+	if (place) return place.icon;
 	return GLYPH_THINGS.find((thing) => thing.key.startsWith(`${href}/`))?.glyph;
 }
 

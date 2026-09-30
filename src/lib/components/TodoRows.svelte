@@ -14,7 +14,13 @@
 	import { NO_TAG_FILTER, UNTAGGED, isTagFiltering, passesTagFilter } from '$lib/tag-filter';
 	import SortControl from '$lib/components/SortControl.svelte';
 	import { agoOf, civilOf, momentOf } from '$lib/when';
-	import { compareByPriority, type RatingValues } from '$lib/ratings';
+	import {
+		RATING_ORDER,
+		compareByPriority,
+		compareByRatings,
+		type Rating,
+		type RatingValues
+	} from '$lib/ratings';
 	import { useWhen } from '$lib/when-context.svelte';
 	import { deleteLater, isLeaving } from '$lib/undo.svelte';
 	import NumberBox from '$lib/components/NumberBox.svelte';
@@ -37,15 +43,20 @@
 	import { autofocus } from '$lib/actions/autofocus';
 	import { armed } from '$lib/actions/armed';
 	import { matchScore } from '$lib/destinations';
+	import { tagsFrom } from '$lib/tag-typing';
 	import { getAction, keyFor } from '$lib/shortcuts';
 	import FilterBar from '$lib/components/FilterBar.svelte';
 	import RatingBadges from '$lib/components/RatingBadges.svelte';
+	import RatingPress from '$lib/components/RatingPress.svelte';
+	import RatingTable from '$lib/components/RatingTable.svelte';
 	import RowCard from '$lib/components/RowCard.svelte';
 	import CategoryMark from '$lib/components/CategoryMark.svelte';
 	import TickBox from '$lib/components/TickBox.svelte';
 	import { phoneWidth } from '$lib/breakpoints.svelte';
 	import TagChip from '$lib/components/TagChip.svelte';
 	import QuickTag from '$lib/components/QuickTag.svelte';
+	import PendingChange from '$lib/components/PendingChange.svelte';
+	import { vocabularyFor } from '$lib/tag-vocabulary';
 	import OneLine from '$lib/components/OneLine.svelte';
 	import Field from '$lib/components/Field.svelte';
 	import FormGrid from '$lib/components/FormGrid.svelte';
@@ -367,6 +378,23 @@
 	 */
 	let formNotebookId: number | null = $state(null);
 
+	/*
+	 * And what the draft says, for the same reason: whether it would get
+	 * through the filters on the list depends on its words and its labels.
+	 */
+	/**
+	 * A label on its way off a task, held until it is confirmed beside the pill.
+	 *
+	 * Its × (a held finger on a phone) is quick enough to hit by accident, and
+	 * the label may be the one thing saying whose work a task is — so the press
+	 * asks, in place, rather than taking it off. See `PendingChange`.
+	 */
+	let untagging = $state<{ id: number; name: string; pill: HTMLElement } | null>(null);
+
+	let formTitle = $state('');
+	let formNotes = $state('');
+	let formTags = $state('');
+
 	/**
 	 * How long a task stays on screen after it is ticked.
 	 *
@@ -447,12 +475,17 @@
 	 * you most want to do — and it is `$lib/ratings` doing the reading, so this
 	 * list and the `up_next` an assistant asks cannot disagree about it.
 	 */
-	const ORDERS = ['created', 'tagged', 'done', 'priority'] as const;
+	/*
+	 * And *what did I touch last* — a rename, a note, a rating — which is the
+	 * notes' "Edited" question asked of tasks, under the notes' own word.
+	 */
+	const ORDERS = ['created', 'edited', 'tagged', 'done', 'priority'] as const;
 	type Order = (typeof ORDERS)[number];
 
 	/* The field's name only: which way it runs is the arrow's business now. */
 	const ORDER_LABELS: Record<Order, PlainKey> = {
 		created: 'todoRows.added',
+		edited: 'notebookDetail.orderEdited',
 		tagged: 'todoRows.tagged',
 		done: 'todoRows.done',
 		priority: 'todoRows.priority'
@@ -557,19 +590,13 @@
 			shown = shown.filter((t: Todo) => String(t.notebookId) === notebookFilter);
 
 		shown = byTag(shown);
-
-		const wanted = looking.trim();
-		if (wanted !== '') {
-			// The title first, then everything else written on it: a word in the
-			// notes is how somebody finds the task they described rather than
-			// named.
-			shown = shown.filter(
-				(t: Todo) =>
-					matchScore(t.title, wanted) !== null ||
-					(t.notes ?? '').toLowerCase().includes(wanted.toLowerCase()) ||
-					t.tags.some((one) => one.name.includes(wanted.toLowerCase()))
-			);
-		}
+		shown = shown.filter((t: Todo) =>
+			answersSearch(
+				t.title,
+				t.notes,
+				t.tags.map((one) => one.name)
+			)
+		);
 
 		if (order === 'tagged') {
 			const tagged = [...shown].sort(byLastTagged);
@@ -590,10 +617,11 @@
 			return direction === 'asc' ? best.reverse() : best;
 		}
 
+		// An untouched task was last changed when it was written.
+		const field = (one: Todo) =>
+			order === 'edited' ? (one.updatedAt ?? one.createdAt) : one.createdAt;
 		return [...shown].sort((a: Todo, b: Todo) =>
-			direction === 'desc'
-				? b.createdAt.localeCompare(a.createdAt)
-				: a.createdAt.localeCompare(b.createdAt)
+			direction === 'desc' ? field(b).localeCompare(field(a)) : field(a).localeCompare(field(b))
 		);
 	});
 
@@ -626,20 +654,172 @@
 	 * A task being written has no row yet. The server puts a new one after
 	 * every task it has, so it joins behind its equals rather than in front.
 	 */
-	const draftPlace = $derived.by(() => {
+	function queuePlace(
+		task: Todo | undefined,
+		ratings: RatingValues,
+		notebook: number | null
+	): number {
 		const queue = todos.filter(
 			(one: Todo) =>
-				one.id !== editingId &&
+				one.id !== task?.id &&
 				one.archivedAt === null &&
 				!CLOSED_STATUSES.includes(one.status) &&
-				(formNotebookId === null || one.notebookId === formNotebookId)
+				(notebook === null || one.notebookId === notebook)
 		);
 		const draft = {
-			ratings: formRatings as RatingValues,
-			sortOrder: editing?.sortOrder ?? Number.MAX_SAFE_INTEGER,
-			createdAt: editing?.createdAt ?? new Date().toISOString()
+			ratings,
+			sortOrder: task?.sortOrder ?? Number.MAX_SAFE_INTEGER,
+			createdAt: task?.createdAt ?? new Date().toISOString()
 		};
 		return queue.filter((one: Todo) => compareByPriority(one, draft) < 0).length + 1;
+	}
+
+	const draftPlace = $derived(queuePlace(editing, formRatings as RatingValues, formNotebookId));
+
+	/**
+	 * Ratings being changed on a card, held until they are confirmed.
+	 *
+	 * Pressing the bars moves them under the pointer, but a slip of the mouse
+	 * is not an answer — so the card previews the change and the box beside it
+	 * holds it, with a × to throw it all away and one button to keep it. On a
+	 * phone the bars are too small to aim at, so the first tap opens them big
+	 * in a sheet (`sheet`) and the pressing happens there.
+	 */
+	let rerating = $state<{
+		id: number;
+		values: RatingValues;
+		at: HTMLElement | null;
+		sheet: boolean;
+	} | null>(null);
+
+	const reratingTask = $derived(
+		rerating ? todos.find((one: Todo) => one.id === rerating!.id) : undefined
+	);
+
+	/** Where the task being rerated would land, in the queue and on screen. */
+	const reratingPlace = $derived(
+		rerating && reratingTask
+			? queuePlace(reratingTask, rerating.values, reratingTask.notebookId)
+			: 0
+	);
+	const reratingFilteredPlace = $derived(
+		rerating && reratingTask
+			? placeUnderFilters(reratingTask, rerating.values, {
+					...reratingTask,
+					tags: reratingTask.tags.map((tag) => tag.name)
+				})
+			: undefined
+	);
+
+	/** From the held change to the whole form, carrying the bars as they are. */
+	function rerateInForm() {
+		const held = rerating;
+		const task = reratingTask;
+		rerating = null;
+		if (!held || !task) return;
+		startEdit(task, { atRatings: true });
+		formRatings = { ...held.values };
+	}
+
+	/** Whether this screen has a pointer precise enough to aim at a bar. */
+	function aims(): boolean {
+		return typeof matchMedia === 'function' && matchMedia('(pointer: fine)').matches;
+	}
+
+	function rerate(todo: Todo, rating: Rating, value: number, at: HTMLElement) {
+		if (!aims() && !rerating?.sheet) {
+			rerating = { id: todo.id, values: { ...todo.ratings }, at: null, sheet: true };
+			return;
+		}
+		const held = rerating?.id === todo.id ? rerating : null;
+		rerating = {
+			id: todo.id,
+			values: { ...(held?.values ?? todo.ratings), [rating]: value },
+			at: held?.sheet ? null : at,
+			sheet: held?.sheet ?? false
+		};
+	}
+
+	/**
+	 * Where the draft would land in the list as it is filtered right now.
+	 *
+	 * The place above is about the queue; this is about the screen — the rows
+	 * a filter lets through, in the same priority order. `undefined` when
+	 * nothing is narrowing the list, since then the two would be one number;
+	 * `null` when the draft would not get through the filters at all, so it
+	 * would have no place on this screen.
+	 */
+	function placeUnderFilters(
+		task: Todo | undefined,
+		ratings: RatingValues,
+		draftRow: { title: string; notes: string | null; tags: string[]; notebookId: number | null }
+	): number | null | undefined {
+		if (!narrowed) return undefined;
+		if (!passesNarrowing(draftRow)) return null;
+		const draft = {
+			ratings,
+			sortOrder: task?.sortOrder ?? Number.MAX_SAFE_INTEGER,
+			createdAt: task?.createdAt ?? new Date().toISOString()
+		};
+		return (
+			todos.filter(
+				(one: Todo) =>
+					one.id !== task?.id &&
+					one.archivedAt === null &&
+					!CLOSED_STATUSES.includes(one.status) &&
+					passesNarrowing({ ...one, tags: one.tags.map((tag) => tag.name) }) &&
+					compareByPriority(one, draft) < 0
+			).length + 1
+		);
+	}
+
+	const filteredPlace = $derived(
+		placeUnderFilters(editing, formRatings as RatingValues, {
+			title: formTitle,
+			notes: formNotes,
+			tags: tagsFrom(formTags),
+			notebookId: formNotebookId
+		})
+	);
+
+	/**
+	 * Each open task's place in line among the ones on screen.
+	 *
+	 * The queue as the filters leave it — the rows a label or a search lets
+	 * through, in the order `up_next` reads them — so the number in a card's
+	 * corner answers "how soon would I get to this, looking at this list".
+	 */
+	const placeOnScreen = $derived.by(() => {
+		const open = visibleTodos
+			.filter((one: Todo) => !CLOSED_STATUSES.includes(one.status))
+			.sort(compareByPriority);
+		return new Map(open.map((one: Todo, i: number) => [one.id, i + 1]));
+	});
+
+	/**
+	 * Which neighbour on screen a task is tied with, above and below.
+	 *
+	 * Only while the list is in priority order, where the rows beside it are
+	 * the ones it is queued against. A tie went to the older task; the arrows
+	 * beside the bars say otherwise. See `swapTiedTodos`.
+	 */
+	const ties = $derived.by(() => {
+		if (order !== 'priority') return new Map<number, { up: number | null; down: number | null }>();
+		const tied = (a: Todo | undefined, b: Todo) =>
+			a !== undefined &&
+			!CLOSED_STATUSES.includes(a.status) &&
+			!CLOSED_STATUSES.includes(b.status) &&
+			compareByRatings(a.ratings, b.ratings) === 0;
+		return new Map(
+			visibleTodos.map((one: Todo, i: number) => {
+				const above = visibleTodos[i - 1];
+				const below = visibleTodos[i + 1];
+				return [
+					one.id,
+					{ up: tied(above, one) ? above.id : null, down: tied(below, one) ? below.id : null }
+				];
+			})
+		);
 	});
 
 	/** Whatever the notebook picker lets through, before the two toggles. */
@@ -692,6 +872,36 @@
 		{ value: 'none', label: t('todoRows.notInOne') },
 		...notebooks.map((book) => ({ value: String(book.id), label: book.title }))
 	]);
+
+	/*
+	 * The search box's question. The title first, then everything else written
+	 * on it: a word in the notes is how somebody finds the task they described
+	 * rather than named.
+	 */
+	function answersSearch(title: string, notes: string | null, tags: string[]): boolean {
+		const wanted = looking.trim();
+		if (wanted === '') return true;
+		return (
+			matchScore(title, wanted) !== null ||
+			(notes ?? '').toLowerCase().includes(wanted.toLowerCase()) ||
+			tags.some((one) => one.includes(wanted.toLowerCase()))
+		);
+	}
+
+	/** Whether something with these answers gets through the notebook, label and search filters. */
+	function passesNarrowing(row: {
+		title: string;
+		notes: string | null;
+		tags: string[];
+		notebookId: number | null;
+	}): boolean {
+		if (notebookFilter === 'none' && row.notebookId !== null) return false;
+		if (notebookFilter !== '' && notebookFilter !== 'none')
+			if (String(row.notebookId) !== notebookFilter) return false;
+		return (
+			passesTagFilter(row.tags, tagFilter.current) && answersSearch(row.title, row.notes, row.tags)
+		);
+	}
 
 	function byTag(rows: Todo[]): Todo[] {
 		return rows.filter((t: Todo) =>
@@ -820,6 +1030,9 @@
 		formRatings = { urgency: null, interest: null, ease: null };
 		// Inside a notebook, a new task starts in it; in the room, in none.
 		formNotebookId = notebookId;
+		formTitle = '';
+		formNotes = '';
+		formTags = '';
 	}
 
 	/**
@@ -860,6 +1073,9 @@
 		showForm = true;
 		formRatings = { ...todo.ratings };
 		formNotebookId = todo.notebookId;
+		formTitle = todo.title;
+		formNotes = todo.notes ?? '';
+		formTags = todo.tags.map((one) => one.name).join(', ');
 		openAtRatings = where?.atRatings === true;
 	}
 
@@ -1040,6 +1256,128 @@
 
 <svelte:window onkeydown={handleKeydown} />
 
+{#if rerating}
+	{@const held = rerating}
+	<!-- In a box of its own, for the same reason as the untag form below. -->
+	<div class="hidden">
+		<form
+			id="rate-form"
+			method="post"
+			action={actions.rate}
+			use:enhance={() =>
+				async ({ update }) => {
+					await update({ reset: false });
+					rerating = null;
+				}}
+		>
+			<input type="hidden" name="id" value={held.id} />
+			{#each RATING_ORDER as rating (rating)}
+				<input type="hidden" name={rating} value={held.values[rating] ?? ''} />
+			{/each}
+		</form>
+	</div>
+	{#if held.at && !held.sheet}
+		<PendingChange
+			anchor={held.at}
+			onundo={() => (rerating = null)}
+			confirm={t('ui.confirm')}
+			form="rate-form"
+		>
+			{#snippet corner()}
+				<button
+					type="button"
+					class="icon-btn mr-auto"
+					onclick={rerateInForm}
+					title={t('ui.edit')}
+					aria-label={t('ui.edit')}
+				>
+					<Icon name="edit" size={12} />
+				</button>
+			{/snippet}
+			<RatingTable values={held.values} />
+			<div class="mt-2 flex flex-col items-start gap-1 text-sm">
+				{@render underFilters(reratingFilteredPlace)}
+				{@render inQueue(reratingPlace)}
+			</div>
+		</PendingChange>
+	{/if}
+{/if}
+
+<!--
+	On a phone: the same bars, big enough for a thumb, and the same holding.
+-->
+<Modal
+	open={rerating?.sheet === true}
+	onclose={() => (rerating = null)}
+	title={reratingTask?.title ?? ''}
+	size="lg"
+>
+	{#if rerating?.sheet}
+		{@const held = rerating}
+		<div class="flex flex-col items-center gap-4">
+			<RatingTable values={held.values} />
+			<RatingPress
+				values={held.values}
+				height="min(45dvh, 20rem)"
+				touch
+				label={t('todoRows.setTheRatings')}
+				onkeyboard={() => {}}
+				onset={(rating, value, at) => reratingTask && rerate(reratingTask, rating, value, at)}
+			/>
+		</div>
+	{/if}
+	{#snippet footer()}
+		{#if rerating?.sheet}
+			<span class="mr-auto flex flex-wrap items-center gap-2 text-sm">
+				{@render underFilters(reratingFilteredPlace)}
+				{@render inQueue(reratingPlace)}
+			</span>
+			<button
+				type="button"
+				class="icon-btn"
+				onclick={rerateInForm}
+				title={t('ui.edit')}
+				aria-label={t('ui.edit')}
+			>
+				<Icon name="edit" />
+			</button>
+			<button type="button" class="btn" onclick={() => (rerating = null)}>{t('ui.cancel')}</button>
+			<button type="submit" form="rate-form" class="btn btn-primary">{t('ui.confirm')}</button>
+		{/if}
+	{/snippet}
+</Modal>
+
+{#if untagging}
+	{@const off = untagging}
+	<!--
+		In a box of its own because of its field named \`remove\`: a form's named
+		fields shadow its own properties, so \`form.remove\` is that input — and
+		taking the form away when this closes calls \`remove()\` on whatever is
+		outermost here.
+	-->
+	<div class="hidden">
+		<form
+			id="untag-form"
+			method="post"
+			action={actions.tag}
+			use:enhance={() =>
+				async ({ update }) => {
+					await update({ reset: false });
+					untagging = null;
+				}}
+		>
+			<input type="hidden" name="id" value={off.id} />
+			<input type="hidden" name="remove" value={off.name} />
+		</form>
+	</div>
+	<PendingChange
+		anchor={off.pill}
+		onundo={() => (untagging = null)}
+		confirm={t('tagChip.untag')}
+		form="untag-form"
+	/>
+{/if}
+
 <!--
 	Where this task would land, and the bars it will wear.
 
@@ -1053,15 +1391,33 @@
 	drawing itself now, so what is being made is in front of whoever is making
 	it.
 -->
+{#snippet underFilters(place: number | null | undefined)}
+	{#if place !== undefined}
+		<!-- Blue words, not a pill: it is a second reading of the same number,
+		     not a label on anything. -->
+		<span
+			class="place-under-filters tabular inline-flex min-w-[11ch] items-center justify-center gap-1"
+			title={t('ratings.placeUnderFilters')}
+		>
+			<Icon name="filter" size={12} label={t('ratings.placeUnderFilters')} />
+			{place === null ? '—' : t('ratings.nthInLine', { nth: ordinal(t, place) })}
+		</span>
+	{/if}
+{/snippet}
+
+{#snippet inQueue(place: number)}
+	<!-- The colour is whatever it sits on: the form's grey, the box's ink. -->
+	<span class="tabular">{t('ratings.nthInLine', { nth: ordinal(t, place) })}</span>
+{/snippet}
+
 {#snippet whereItWouldSit()}
 	<span
-		class="flex flex-1 items-center justify-center gap-2 text-sm"
+		class="flex flex-1 items-center justify-center gap-2 text-sm text-gray-700"
 		title={t('ratings.whereItWouldSit')}
 	>
+		{@render underFilters(filteredPlace)}
 		<RatingBadges values={formRatings} />
-		<span class="tabular text-gray-700">
-			{t('ratings.nthInLine', { nth: ordinal(t, draftPlace) })}
-		</span>
+		{@render inQueue(draftPlace)}
 	</span>
 {/snippet}
 
@@ -1346,10 +1702,20 @@
 								id={todo.id}
 								action={actions.tag}
 								has={todo.tags.map((one) => one.name)}
-								known={page.data.tagVocabulary ?? []}
+								known={vocabularyFor(page.data, todo.notebookId)}
 							/>
 						{/snippet}
 						<RowCard quiet={selection.selecting}>
+							{#snippet corner()}
+								{@const place = placeOnScreen.get(todo.id)}
+								<!-- Drawn empty on a finished task, so every title wraps at the same place. -->
+								<span
+									class="tabular inline-block min-w-[4ch] text-right text-xs text-gray-500"
+									title={place ? t('todoRows.placeOnScreen') : undefined}
+								>
+									{place ? ordinal(t, place) : ''}
+								</span>
+							{/snippet}
 							{#snippet rail()}
 								{#if selection.selecting}
 									<SelectBox
@@ -1443,14 +1809,47 @@
 									one-line task 124px tall with a gap under its title; they
 									lead and end the labels line instead, at every width.
 								-->
-								<button
-									type="button"
-									class="mt-auto flex cursor-pointer"
-									onclick={() => startEdit(todo, { atRatings: true })}
-									aria-label={t('todoRows.setTheRatings')}
-								>
-									<RatingBadges values={todo.ratings} stacked muted={isDone(todo)} />
-								</button>
+								<div class="relative mt-auto flex">
+									<!--
+										Beside the bars, in the card's own margin: a task rated the
+										same as the one next to it can be put the other way round.
+										Hung outside the rail rather than in it, so a row that has
+										them starts its words where every other row does.
+									-->
+									{#if ties.get(todo.id)?.up || ties.get(todo.id)?.down}
+										{@const tie = ties.get(todo.id)!}
+										<div class="tie-arrows">
+											{#each [{ other: tie.up, glyph: 'chevron-up', said: t('todoRows.aheadOfTheTie') }, { other: tie.down, glyph: 'chevron-down', said: t('todoRows.behindTheTie') }] as const as way (way.glyph)}
+												<form
+													method="post"
+													action={actions.nudge}
+													use:enhance
+													class:invisible={!way.other}
+												>
+													<input type="hidden" name="id" value={todo.id} />
+													<input type="hidden" name="withId" value={way.other ?? ''} />
+													<button
+														type="submit"
+														disabled={!way.other}
+														title={way.said}
+														aria-label={way.said}
+													>
+														<Icon name={way.glyph} size={12} />
+													</button>
+												</form>
+											{/each}
+										</div>
+									{/if}
+									<RatingPress
+										values={rerating?.id === todo.id && !rerating.sheet
+											? rerating.values
+											: todo.ratings}
+										muted={isDone(todo)}
+										label={t('todoRows.setTheRatings')}
+										onkeyboard={() => startEdit(todo, { atRatings: true })}
+										onset={(rating, value, at) => rerate(todo, rating, value, at)}
+									/>
+								</div>
 							{/snippet}
 							{#snippet labels()}
 								{#if todo.notebookSeq !== null}
@@ -1489,6 +1888,7 @@
 													};
 											selectedIndex = 0;
 										}}
+										onremove={(pill) => (untagging = { id: todo.id, name: tag.name, pill })}
 									/>
 								{/each}
 								{@render quickTag()}
@@ -1875,12 +2275,12 @@
 
 			<FormGrid>
 				<TodoFields
-					title={editing?.title ?? ''}
-					notes={editing?.notes ?? ''}
+					bind:title={formTitle}
+					bind:notes={formNotes}
 					attributes={editing?.attributes ?? {}}
 					categoryId={editing ? editing.categoryId : undefined}
 					bind:notebookId={formNotebookId}
-					tags={editing?.tags.map((one) => one.name).join(', ') ?? ''}
+					bind:tags={formTags}
 					scheduledDate={editing?.scheduledDate ?? ''}
 					{categories}
 					{notebooks}

@@ -29,15 +29,19 @@ test('the header mark turns while a navigation drags, then finishes its turn upr
 	await visit(page, '/tasks/todo');
 
 	const mark = page.locator('header [data-tour=rooms] .mark-turn');
-	await expect(mark).toBeVisible();
+	await expect(mark).toBeAttached();
 
+	/** The angle the browser is playing the mark at; null when nothing is. */
 	const angle = () =>
-		mark.evaluate((el) =>
-			(el as HTMLElement).style.rotate ? parseFloat((el as HTMLElement).style.rotate) : null
-		);
+		mark.evaluate((el) => {
+			if (el.getAnimations().length === 0) return null;
+			const said = getComputedStyle(el).rotate;
+			return said && said !== 'none' ? parseFloat(said) : 0;
+		});
 
-	// Nothing in flight: the mark stands still, wearing no rotation at all.
-	expect(await angle()).toBeNull();
+	// Once the load's own turn has landed, the mark stands still, wearing no
+	// rotation at all.
+	await expect.poll(angle, { timeout: 5000 }).toBeNull();
 
 	let release: () => void = () => {};
 	const held = new Promise<void>((resolve) => (release = resolve));
@@ -53,6 +57,18 @@ test('the header mark turns while a navigation drags, then finishes its turn upr
 	const early = (await angle())!;
 	await expect.poll(angle).toBeGreaterThan(early);
 
+	/*
+	 * And the browser is the one turning it, not a script asking for frames.
+	 * The end of a load is when the page's own thread is busiest — rendering
+	 * what arrived — and a turn that needed that thread every frame froze
+	 * mid-way there, then lurched on. A running animation is played by the
+	 * compositor, which that work does not hold up.
+	 */
+	expect(
+		await mark.evaluate((el) => el.getAnimations().map((one) => one.playState)),
+		'the turn is not an animation the browser plays'
+	).toContain('running');
+
 	// Let the page land mid-turn. The turn keeps going — through at least the
 	// angle it was at — and then rests: the style comes off entirely, which is
 	// upright, rather than snapping there from wherever it was.
@@ -63,25 +79,36 @@ test('the header mark turns while a navigation drags, then finishes its turn upr
 test.describe('on a phone', () => {
 	test.use({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
 
-	test('only the medallion turns in the bar; the button stands still', async ({ page }) => {
+	test('the rim turns in the bar and the bird stays where it is', async ({ page }) => {
 		await register(page, testEmail('bar-turn'));
 		await visit(page, '/tasks/todo');
 
 		const button = page.locator('nav [data-tour=rooms]');
 		await expect(button).toBeVisible();
-		const medallion = button.locator('.mark-turn');
-		await expect(medallion).toHaveCount(1);
-		// A disc: the one shape that turns without clipping or revealing.
-		expect(await medallion.evaluate((el) => (el as HTMLElement).style.clipPath)).toContain(
-			'circle'
+		const bird = button.locator('.mark-still');
+		const rim = button.locator('.mark-turn');
+		await expect(bird).toHaveCount(1);
+		await expect(rim).toHaveCount(1);
+		// Siblings: turning the rim cannot carry the bird with it.
+		expect(await rim.evaluate((el) => el.contains(document.querySelector('nav .mark-still')))).toBe(
+			false
 		);
 
-		// Turning the medallion moves nothing: not itself off-centre, and not
-		// the button around it.
-		const before = await button.boundingBox();
-		await medallion.evaluate((el) => ((el as HTMLElement).style.rotate = '137deg'));
-		const during = await button.boundingBox();
-		expect(Math.abs(during!.x - before!.x)).toBeLessThan(1);
-		expect(Math.abs(during!.y - before!.y)).toBeLessThan(1);
+		// Turned as the spin turns it: the rim about its own centre, and the
+		// bird exactly where it was.
+		const birdBefore = await bird.boundingBox();
+		const rimBefore = await rim.boundingBox();
+		await rim.evaluate((el) => ((el as HTMLElement).style.rotate = '137deg'));
+		const birdDuring = await bird.boundingBox();
+		const rimDuring = await rim.boundingBox();
+		const centre = (b: { x: number; y: number; width: number; height: number }) => [
+			b.x + b.width / 2,
+			b.y + b.height / 2
+		];
+		const [ax, ay] = centre(rimBefore!);
+		const [bx, by] = centre(rimDuring!);
+		expect(Math.abs(ax - bx)).toBeLessThan(1);
+		expect(Math.abs(ay - by)).toBeLessThan(1);
+		expect(birdDuring).toEqual(birdBefore);
 	});
 });

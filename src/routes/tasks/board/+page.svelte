@@ -6,7 +6,6 @@
 	import NumberBox from '$lib/components/NumberBox.svelte';
 	import TodoFields from '$lib/components/fields/TodoFields.svelte';
 	import PeriodNav from '$lib/components/PeriodNav.svelte';
-	import PickOne from '$lib/components/PickOne.svelte';
 	import CategoryMark from '$lib/components/CategoryMark.svelte';
 	import EmptyState from '$lib/components/EmptyState.svelte';
 	import TodoCard from '$lib/components/TodoCard.svelte';
@@ -40,7 +39,15 @@
 	import MoreOptions from '$lib/components/MoreOptions.svelte';
 	import { formatDuration } from '$lib/duration';
 	import RatingPicker from '$lib/components/RatingPicker.svelte';
-	import { RATINGS, RATING_LABELS, compareByRating, type Rating } from '$lib/ratings.js';
+	import RatingIcon from '$lib/components/RatingIcon.svelte';
+	import {
+		RATINGS,
+		RATING_ICONS,
+		RATING_LABELS,
+		RATING_ORDER,
+		compareByRating,
+		type Rating
+	} from '$lib/ratings.js';
 	import { getAction, keyFor } from '$lib/shortcuts';
 	import { CLOSED_STATUSES, STATUSES, STATUS_LABELS, type Status } from '$lib/task-status.js';
 	import { CATEGORY_FALLBACK_COLOR } from '$lib/colors.js';
@@ -63,16 +70,12 @@
 	/*
 	 * The orders a column can be read in, and which way each one naturally
 	 * runs: the clock forwards, a rating best first. The arrow beside the
-	 * order flips that.
+	 * order flips that. The ratings come in their one order and wear their
+	 * icons rather than their names.
 	 */
-	const ORDERS = ['time', 'urgency', 'interest', 'ease'] as const;
+	const ORDERS = ['time', ...RATING_ORDER] as const;
 	type Order = (typeof ORDERS)[number];
-	const ORDER_LABELS: Record<Order, PlainKey> = {
-		time: 'tasks.board.byTime',
-		urgency: 'ratings.urgency',
-		interest: 'ratings.interest',
-		ease: 'ratings.ease'
-	};
+	const ORDER_LABELS: Record<Order, PlainKey> = { time: 'tasks.board.byTime', ...RATING_LABELS };
 	const NATURAL: Record<Order, 'asc' | 'desc'> = {
 		time: 'asc',
 		urgency: 'desc',
@@ -90,10 +93,17 @@
 	/** The lowest ease on offer in the filter; an unrated card always shows. */
 	const EASE_STEPS = [1, 2, 3, 4, 5];
 	const easeChoices = $derived([
-		{ value: '', label: t('tasks.board.anyEase') },
+		{
+			value: '',
+			label: t('tasks.board.anyEase'),
+			icon: RATING_ICONS.ease,
+			short: t('ui.all')
+		},
 		...EASE_STEPS.map((n) => ({
 			value: String(n),
-			label: t('tasks.board.easeAtLeast', { value: n })
+			label: t('tasks.board.easeAtLeast', { value: n }),
+			icon: RATING_ICONS.ease,
+			short: `${n}+`
 		}))
 	]);
 
@@ -324,6 +334,73 @@
 			hidden: narrowed && cards.some((c) => shownStatus(c) === status)
 		}))
 	);
+
+	/**
+	 * On a phone the board slides sideways.
+	 *
+	 * A board is columns; stacked, getting from Pending to Done meant scrolling
+	 * past the whole of Doing, and moving a card between two columns meant
+	 * carrying it down a page. The columns sit side by side in a strip that
+	 * snaps, each most of the screen wide — the sliver of the next one is what
+	 * says there is a next one.
+	 */
+	let strip: HTMLElement | undefined = $state();
+
+	/** Which column the strip is showing, for the names above it. */
+	let phoneColumn: Status = $state('todo');
+
+	// Hiding Skipped while it is the one on screen would leave a blank board.
+	$effect(() => {
+		if (!columns.some((c) => c.status === phoneColumn)) phoneColumn = 'todo';
+	});
+
+	/** Bring a column into view, from the names above or after a drop. */
+	function showColumn(status: Status) {
+		phoneColumn = status;
+		const at = columns.findIndex((c) => c.status === status);
+		const child = strip?.children[at] as HTMLElement | undefined;
+		child?.scrollIntoView({ behavior: 'smooth', inline: 'start', block: 'nearest' });
+	}
+
+	/**
+	 * …and the other direction: swiping tells the names where it got to.
+	 *
+	 * Whichever column's left edge is nearest the scroll position wins, rather
+	 * than arithmetic on a column width, which cannot drift from where the
+	 * columns actually are.
+	 */
+	function followScroll() {
+		if (!strip) return;
+		const children = [...strip.children] as HTMLElement[];
+		if (children.length === 0) return;
+
+		const from = strip.getBoundingClientRect().left;
+		let closest = 0;
+		let best = Infinity;
+		children.forEach((child, i) => {
+			const off = Math.abs(child.getBoundingClientRect().left - from);
+			if (off < best) {
+				best = off;
+				closest = i;
+			}
+		});
+
+		const status = columns[closest]?.status;
+		if (status && status !== phoneColumn) phoneColumn = status;
+	}
+
+	/**
+	 * A card carried to the edge takes the board with it, so the far column is
+	 * reachable mid-drag. The zone is a thumb's width, the step a frame's worth.
+	 */
+	const EDGE_ZONE = 56;
+	const EDGE_STEP = 18;
+	function scrollAtEdge(event: DragEvent) {
+		if (!strip) return;
+		const box = strip.getBoundingClientRect();
+		if (event.clientX < box.left + EDGE_ZONE) strip.scrollLeft -= EDGE_STEP;
+		else if (event.clientX > box.right - EDGE_ZONE) strip.scrollLeft += EDGE_STEP;
+	}
 
 	const focusedCard = $derived(columns[focusCol]?.cards[focusRow] ?? null);
 
@@ -638,6 +715,8 @@
 
 	/** Which rating the number keys write to; switched with u / i / y. */
 	let ratingKey: Rating = $state('urgency');
+	/** Where the rating's icon goes in the key hint's sentence. */
+	const RATING_SLOT = '\u0000';
 
 	function openForm() {
 		showForm = true;
@@ -811,6 +890,7 @@
 			value={sortBy}
 			options={ORDERS}
 			labels={ORDER_LABELS}
+			icons={RATING_ICONS}
 			{direction}
 			onpick={pickOrder}
 			onflip={() => (direction = direction === 'asc' ? 'desc' : 'asc')}
@@ -895,7 +975,10 @@
 				{/snippet}
 
 				{#snippet inline()}
-					<!-- Nothing to bring back is nothing to press. -->
+					<!-- Nothing to bring back is nothing to press. The ease picker
+					     only ever says a feather and "All" or "3+", so on a phone it
+					     is narrower than the others, and the order keeps its place
+					     on this line instead of taking one of its own. -->
 					<button
 						type="button"
 						onclick={() => (showDone = !showDone)}
@@ -910,7 +993,7 @@
 						options={easeChoices}
 						onpick={(next) => (minEase = next === '' ? null : Number(next))}
 						label={t('tasks.board.easeFrom')}
-						class="min-w-36 sm:flex-none"
+						class="min-w-24 sm:min-w-36 sm:flex-none"
 					/>
 				{/snippet}
 				{#if tab === 'general'}
@@ -941,17 +1024,26 @@
 		A card armed for a move is a state somebody can walk away from, so it
 		says so — with its name, because two cards in a column look alike — and
 		the way out is a press rather than a guess.
+
+		Floating at the foot of the screen, where the selection bar floats: it
+		was a line above the columns, and arming a move shoved every column down
+		under the finger that was about to pick one.
 	-->
 			{#if moving}
 				<div
-					class="flex items-center gap-3 border border-gray-900 bg-gray-50 px-3 py-2 text-sm"
+					class="float-layer overlay-face fixed inset-x-3 z-40 mx-auto flex max-w-xl items-center gap-3 border px-3 py-2 text-sm shadow-overlay"
+					style="bottom: calc(var(--safe-bottom) + var(--mobile-nav-height) + 0.75rem)"
 					role="status"
 				>
 					<Icon name="drag" size={14} />
 					<span class="min-w-0 flex-1 truncate"
 						>{t('tasks.board.movingPickAColumn', { title: moving.title })}</span
 					>
-					<button type="button" class="btn btn-sm shrink-0" onclick={() => (movingUid = null)}>
+					<button
+						type="button"
+						class="btn btn-primary btn-sm shrink-0"
+						onclick={() => (movingUid = null)}
+					>
 						{t('ui.cancel')}
 					</button>
 				</div>
@@ -960,17 +1052,68 @@
 			<div class="flex flex-col gap-3 md:flex-row md:items-start">
 				<div class="board-columns min-w-0 flex-1" style="--lanes: {columns.length}">
 					<!--
-						Stacked on a phone, side by side from md up — never a strip that
-						scrolls sideways inside the page. Each column is as tall as what
-						is in it: an empty one is its empty state, not a slab of grey.
+						Which column the phone is looking at, and where a card goes that
+						is headed for one off the screen: the names light up while a
+						card is carried or picked up, and a drop or a press on one moves
+						it there and follows it. From md up every column is on screen
+						and this is not drawn.
 					-->
 					<div
-						class="flex flex-col gap-3 md:grid md:auto-cols-fr md:grid-flow-col md:items-start"
+						use:sliding
+						class="seg mb-3 flex w-full md:hidden {dragging || movingUid
+							? 'ring-2 ring-gray-900'
+							: ''}"
+					>
+						{#each columns as column (column.status)}
+							<button
+								type="button"
+								onclick={() => {
+									if (movingUid) placeIn(column.status);
+									showColumn(column.status);
+								}}
+								aria-pressed={phoneColumn === column.status}
+								ondragover={(e) => {
+									e.preventDefault();
+									dragOverColumn = column.status;
+								}}
+								ondragleave={() => {
+									if (dragOverColumn === column.status) dragOverColumn = null;
+								}}
+								ondrop={async (e) => {
+									const card = dragging;
+									await onDropInColumn(column.status, e);
+									if (card) showColumn(column.status);
+								}}
+								class="flex-1 gap-1.5 {dragging && dragOverColumn === column.status
+									? 'on-fill'
+									: ''}"
+							>
+								{t(STATUS_LABELS[column.status])}
+								<span
+									class="tabular text-xs {dragging && dragOverColumn === column.status
+										? 'text-gray-300'
+										: 'text-gray-500'}">{column.cards.length}</span
+								>
+							</button>
+						{/each}
+					</div>
+
+					<!--
+						A strip that snaps on a phone, side by side from md up. Each
+						column is as tall as what is in it from md up: an empty one is
+						its empty state, not a slab of grey.
+					-->
+					<div
+						bind:this={strip}
+						ondragover={scrollAtEdge}
+						onscroll={followScroll}
+						class="-mx-4 flex snap-x snap-mandatory scroll-px-4 items-start gap-3 overflow-x-auto px-4 pb-1 md:mx-0 md:grid md:auto-cols-fr md:grid-flow-col md:overflow-visible md:px-0"
 						data-tour="board-columns"
 					>
 						{#each columns as column, ci (column.status)}
 							<section
-								class="lane flex flex-col border bg-gray-50 {dragOverColumn === column.status
+								class="lane flex min-h-64 w-[86%] shrink-0 snap-start flex-col border bg-gray-50 md:min-h-0 md:w-auto {dragOverColumn ===
+								column.status
 									? 'border-gray-900'
 									: 'border-gray-200'}"
 								ondragover={(e) => {
@@ -998,7 +1141,7 @@
 							somebody aims at.
 						-->
 								<header
-									class="flex items-center justify-between border-b px-3 py-2 {dragging &&
+									class="hidden items-center justify-between border-b px-3 py-2 md:flex {dragging &&
 									dragOverColumn === column.status
 										? 'on-fill'
 										: 'border-gray-200 bg-white'}"
@@ -1450,11 +1593,11 @@
 							>
 								<!-- The same picker the plan's block form has, for the same
 								     reason: a list of forty is hunted through, not read. -->
-								<PickOne
+								<Picker
 									name="activityId"
+									search
 									value={card.activityId === null ? '' : String(card.activityId)}
-									ariaLabel={t('tasks.board.whatItWas')}
-									placeholder={t('pickOne.typeToNarrow')}
+									label={t('tasks.board.whatItWas')}
 									options={[
 										{ value: '', label: t('tasks.board.notSaid') },
 										...data.activities.map(
@@ -1526,7 +1669,10 @@
 		<Kbd keys={keyFor('/tasks/board', 'switch-tab')} />
 		{t('tasks.board.switchTab')}
 		<Kbd keys="1-5" />
-		{t('tasks.board.rateWhich', { rating: t(RATING_LABELS[ratingKey]) })}
+		<!-- The rating being set is its icon; the sentence is split around it. -->
+		{#each t('tasks.board.rateWhich', { rating: RATING_SLOT }).split(RATING_SLOT) as part, at (at)}
+			{#if at > 0}<RatingIcon rating={ratingKey} size={12} />{/if}{part}
+		{/each}
 		<Kbd keys={keyFor('/tasks/board', 'delete')} />
 		{t('tasks.board.delete')}
 	</p>

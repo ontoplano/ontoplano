@@ -36,6 +36,8 @@ export const actions = {
 	setStatus: todoHandlers.setStatus,
 	schedule: todoHandlers.schedule,
 	tag: todoHandlers.tag,
+	nudge: todoHandlers.nudge,
+	rate: todoHandlers.rate,
 	attribute: todoHandlers.attribute,
 	batch: todoHandlers.batch,
 	delete: todoHandlers.remove,

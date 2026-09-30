@@ -19,7 +19,7 @@ shows up here on the next build.
 | [`account-data`](#account-data)                  | The account's data, table by table.                                                                                                                                                                                                                                  |
 | [`account-import`](#account-import)              | Putting an exported account back.                                                                                                                                                                                                                                    |
 | [`server/account-import`](#serveraccount-import) | Putting an exported account back, on a server — and the copy it keeps first.                                                                                                                                                                                         |
-| [`account-profile`](#account-profile)            | The account row itself, for whatever draws a name at the top of a page.                                                                                                                                                                                              |
+| [`account-profile`](#account-profile)            | The account row itself, for whatever draws a name at the top of a page — and the name on it, which both instances let a person change.                                                                                                                               |
 | [`account`](#account)                            | Taking your data out, and closing your account — and what this instance allows of both.                                                                                                                                                                              |
 | [`activities`](#activities)                      | Categories are the areas of a life; activities are the named recurring things inside them. Both are referenced by planner slots and by history, so neither can be deleted while something still points at it — history that loses its category stops being readable. |
 | [`admin`](#admin)                                | Administration: looking at somebody else's account.                                                                                                                                                                                                                  |
@@ -345,7 +345,8 @@ a file beside the database there is a file nobody can reach.
 
 ## account-profile
 
-The account row itself, for whatever draws a name at the top of a page.
+The account row itself, for whatever draws a name at the top of a page —
+and the name on it, which both instances let a person change.
 
 The rest of `user` handling — sessions, passwords, deletion — is the
 server's business and stays there. This is the one read that every
@@ -355,6 +356,12 @@ the layout builds its `user` from it.
 ### Functions
 
 #### `profileOf(userId)`
+
+#### `renameAccount(ctx, raw)`
+
+The name the app calls this account by — in the header, and to the family
+on what they share. Not a credential: nothing signs in with it, so it takes
+no password to change.
 
 ## account
 
@@ -878,7 +885,16 @@ are both a 404: not found, not yours and not a recording are one answer.
 
 #### `list(ctx)`
 
-#### `rename(ctx, id, name)`
+#### `get(ctx, id)`
+
+#### `edit(ctx, id, input)`
+
+Everything the edit dialog offers, in one statement: the name and the notes
+land together or not at all.
+
+#### `setNotes(ctx, id, given, onlyIfEmpty)`
+
+Replace a recording's notes, with ownership and kind checked in the update.
 
 #### `remove(ctx, id)`
 
@@ -4833,6 +4849,15 @@ The hour the account's day opens on, as `HH:MM`.
 Exported because the form has to say it: a field somebody may leave empty
 has to name what leaving it empty means.
 
+#### `reminderClock(ctx)`
+
+The account's clock, as a form setting a reminder needs it.
+
+Its own wall clock rather than the browser's, because "now" means now
+_where the account is_ — the machine's zone is the account's only by luck.
+The reminders page and the quick add sheet both ask this, and the rules they
+apply to it are `$lib/reminder-clock`.
+
 #### `upcomingReminders(ctx)`
 
 What has not gone off yet and is close enough to be worth an alarm.
@@ -6624,6 +6649,19 @@ Where the cards sit in a column, after a drag.
 
 Ids the account does not own simply do not match, so a posted list can
 reorder nothing but its own todos.
+
+#### `swapTiedTodos(ctx, id, otherId)`
+
+Two tasks the three ratings cannot tell apart, put the other way round.
+
+Tasks rated alike are queued by the order arranged by hand and then by age,
+so a tie always went to the older one. This lets somebody say otherwise.
+
+Only the tie is renumbered — every task of the account with the same three
+answers — and with the values it already held, so nothing grows each time:
+the same numbers, handed out in the new order. Where the tie was still
+sharing one value, it is spread over consecutive ones from its lowest, which
+is as far as it ever grows.
 
 #### `setTodoAttribute(ctx, id, key, value)`
 

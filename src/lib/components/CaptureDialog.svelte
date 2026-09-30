@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { enhance } from '$lib/enhance';
+	import { alarmsChanged } from '$lib/alarms';
 	import CaptureForm from '$lib/components/CaptureForm.svelte';
 	import Icon from '$lib/components/Icon.svelte';
 	import Modal from '$lib/components/Modal.svelte';
@@ -93,6 +94,9 @@
 					 */
 					await update({ reset: false });
 					if (result.type === 'success') {
+						// Booked with the phone now rather than whenever the app next
+						// happens to be reopened — the same as the reminders page.
+						if (which.key === 'reminder') alarmsChanged();
 						/*
 						 * The receipt, and a way into the thing it is about.
 						 *

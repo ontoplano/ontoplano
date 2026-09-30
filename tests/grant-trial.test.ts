@@ -56,3 +56,31 @@ describe('grantTrial', () => {
 		expect(refusal(() => admin.grantTrial(STRANGER, OWNER))).toMatch(/history/i);
 	});
 });
+
+describe('setPlanEnd', () => {
+	test('a future date brings back a trial the nightly reconcile expired', async () => {
+		const { db } = await import('../src/lib/server/db');
+		const { subscriptions: table } = await import('../src/lib/db/schema');
+		const { eq } = await import('drizzle-orm');
+
+		// What the reconcile writes once the trial has run out.
+		db.update(table)
+			.set({ plan: 'none', status: 'expired', currentPeriodEnd: '2020-01-01T00:00:00.000Z' })
+			.where(eq(table.userId, OWNER))
+			.run();
+		expect(subscriptions.resolvePlan(OWNER).plan).toBe('none');
+
+		const ends = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
+		admin.setPlanEnd(STRANGER, OWNER, ends);
+
+		const plan = subscriptions.resolvePlan(OWNER);
+		expect(plan.plan).toBe('pro');
+		expect(plan.source).toBe('trial');
+		expect(plan.until).toBe(ends);
+	});
+
+	test('a past date still lapses the account', () => {
+		admin.setPlanEnd(STRANGER, OWNER, '2020-01-01');
+		expect(subscriptions.resolvePlan(OWNER).plan).toBe('none');
+	});
+});

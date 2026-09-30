@@ -127,7 +127,7 @@ One malformed point does not fail the batch:
 
 Rejected points will _never_ succeed — log and drop them rather than retrying forever.
 
-**The worked example lives in `examples/onto-readings.mjs`**: a CSV of
+**The worked example lives in `ontoplano-plugins/onto-readings.mjs`**: a CSV of
 measurements becomes one stream per column. Every bathroom scale, sleep
 tracker and blood-pressure cuff has an app that exports one, and this is the
 shortest path from that file to a chart you own — about 200 lines, no
@@ -213,7 +213,8 @@ POST /api/v1/webhooks
 ```
 
 Events: `todo.created` `todo.completed` `idea.created` `diary.created` `inventory.added`
-`inventory.bought`. A delivery looks like:
+`inventory.bought` `audio.uploaded`. `audio.uploaded` sends only `{ "id": <recording id> }`.
+A delivery looks like:
 
 ```http
 POST <your url>
@@ -235,6 +236,27 @@ it. `GET /api/v1/webhooks` lists yours; `DELETE /api/v1/webhooks/<id>` unsubscri
 On a hosted instance the address must be reachable from the internet — private and
 loopback addresses are refused. Self-hosted instances may point anywhere.
 
+### Transcribing recordings
+
+The Python example in
+[`ontoplano-plugins/audio-transcriber/`](../ontoplano-plugins/audio-transcriber/README.md)
+receives `audio.uploaded`, fetches the recording, transcribes it with Whisper on the
+machine running the script, and writes the transcript into the recording's notes.
+Create a token on **Settings → Integrations → Connections** with `audio:write` (which
+also grants `audio:read`), then create the webhook on that same screen. These are
+account-wide recording permissions, separate from permissions to read recordings
+referenced by a note or task. No transcription API key is needed.
+
+```http
+GET   /api/v1/audio/<id>       → recording metadata, including notes (audio:read)
+GET   /api/v1/audio/<id>/file  → recording bytes (audio:read)
+PATCH /api/v1/audio/<id>       { "notes": "transcript", "onlyIfEmpty": true } (audio:write)
+```
+
+`onlyIfEmpty` gives a delayed transcript a 409 rather than replacing notes written by a
+person. A recording belonging to another account, a picture id, and a missing id all
+return the same 404. The file response is an attachment with `nosniff` and `no-store`.
+
 ### The shopping list
 
 ```http
@@ -249,7 +271,7 @@ is a state, not a toggle — saying it twice is safe. Shopping webhook events
 fire only on transitions, so a mirror that echoes changes back settles
 instead of looping.
 
-**The worked example lives in `examples/onto-household.mjs`**: one script,
+**The worked example lives in `ontoplano-plugins/onto-household.mjs`**: one script,
 two tokens, and a household shares a shopping list — across two different
 instances if that is where the two people live. It is ~150 lines and uses
 nothing above: scoped tokens, the shopping API, self-managed webhooks.

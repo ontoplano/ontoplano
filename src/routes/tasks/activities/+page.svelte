@@ -9,6 +9,7 @@
 	import FilterBar from '$lib/components/FilterBar.svelte';
 	import Picker from '$lib/components/Picker.svelte';
 	import OneLine from '$lib/components/OneLine.svelte';
+	import ColorWell from '$lib/components/ColorWell.svelte';
 	import { enhance } from '$lib/enhance';
 	import FormError from '$lib/components/FormError.svelte';
 	import EmptyState from '$lib/components/EmptyState.svelte';
@@ -20,7 +21,7 @@
 	import type { PageServerData, ActionData } from './$types';
 	import { CATEGORY_FALLBACK_COLOR, CATEGORY_DEFAULT_NEW } from '$lib/colors.js';
 	import { getAction, keyFor } from '$lib/shortcuts';
-	import { keepInView } from '$lib/actions/keep-in-view';
+	import { listCursor } from '$lib/actions/list-cursor';
 	import { useT } from '$lib/i18n';
 
 	const t = useT();
@@ -37,6 +38,17 @@
 	let editingCategoryId: number | null = $state(null);
 	let newCatColor = $state(CATEGORY_DEFAULT_NEW);
 	let confirmingDelete: string | null = $state(null);
+	/**
+	 * Put-away activities, on their own.
+	 *
+	 * An activity that history names cannot be deleted without rewriting that
+	 * history, so it is put away instead: gone from the list and the plan's
+	 * pickers, every record under it kept. Deleting is for one nothing names,
+	 * and it is offered only here, once it has been put away.
+	 */
+	let showArchived = $state(false);
+	const putAway = $derived(data.activities.filter((a) => !a.active).length);
+	const pool = $derived(data.activities.filter((a) => a.active !== showArchived));
 
 	function catColor(catId: number | null): string {
 		if (!catId) return CATEGORY_FALLBACK_COLOR;
@@ -47,7 +59,7 @@
 
 	const shown = $derived.by(() => {
 		const needle = looking.trim().toLowerCase();
-		return data.activities.filter(
+		return pool.filter(
 			(a) =>
 				(activeFilters.size === 0 || activeFilters.has(a.categoryId)) &&
 				(!needle ||
@@ -81,6 +93,7 @@
 	function clearFilters() {
 		activeFilters = new Set();
 		looking = '';
+		showArchived = false;
 		selectedIndex = 0;
 	}
 
@@ -102,6 +115,17 @@
 		editingId = id;
 		showForm = true;
 	}
+
+	function toggleArchived() {
+		showArchived = !showArchived;
+		selectedIndex = 0;
+		confirmingDelete = null;
+	}
+
+	/* Keep the cursor on the list when a row leaves it — put away, taken out, deleted. */
+	$effect(() => {
+		if (selectedIndex > shown.length - 1) selectedIndex = Math.max(0, shown.length - 1);
+	});
 
 	function openCategories() {
 		showCategoryForm = true;
@@ -141,6 +165,18 @@
 			case 'edit':
 				if (items[selectedIndex]) openEdit(items[selectedIndex].id);
 				break;
+			case 'archive': {
+				const one = items[selectedIndex];
+				if (one)
+					(document.getElementById(`archive-${one.id}`) as HTMLFormElement | null)?.requestSubmit();
+				break;
+			}
+			case 'delete': {
+				// Arms the confirmation only; deleting takes a deliberate press.
+				const one = items[selectedIndex];
+				if (one && !one.active && !one.hasReferences) confirmingDelete = `act-${one.id}`;
+				break;
+			}
 			default: {
 				if (!action.startsWith('filter-')) break;
 				const idx = parseInt(action.split('-')[1], 10) - 1;
@@ -165,7 +201,12 @@
 
 	<RoomSurface dataTour="activity-list">
 		{#snippet tools()}
-			<FilterBar name="activities" on={narrowed} summary={summary()} onclear={clearFilters}>
+			<FilterBar
+				name="activities"
+				on={narrowed || showArchived}
+				summary={summary()}
+				onclear={clearFilters}
+			>
 				{#snippet lead()}
 					<SearchField
 						bind:value={looking}
@@ -199,6 +240,16 @@
 						class="min-w-40 flex-1 sm:flex-none"
 					/>
 				{/if}
+				<!-- Named with its number, so a put-away activity is never quietly gone. -->
+				<button
+					type="button"
+					onclick={toggleArchived}
+					aria-pressed={showArchived}
+					class="btn btn-sm shrink-0"
+					hidden={putAway === 0 && !showArchived}
+				>
+					{t('todoRows.archivedCount', { count: putAway })}
+				</button>
 			</FilterBar>
 		{/snippet}
 
@@ -209,6 +260,8 @@
 					onclear={clearFilters}
 					description={t('tasks.activities.noActivitiesMatchTheSelected')}
 				/>
+			{:else if showArchived}
+				<EmptyState icon="archive" title={t('tasks.activities.nothingPutAway')} />
 			{:else}
 				<EmptyState
 					icon="planner"
@@ -226,28 +279,25 @@
 		{:else}
 			<div class="divide-y divide-gray-200">
 				{#each shown as activity, i (activity.id)}
-					<div
-						use:keepInView={i === selectedIndex}
-						class="list-row {i === selectedIndex ? 'kb-cursor' : ''}"
-						data-activity-id={activity.id}
-					>
-						<div class="list-row-main {activity.active ? '' : 'opacity-60'}">
-							<div class="flex flex-wrap items-center gap-x-2 gap-y-1">
+					<div use:listCursor={i === selectedIndex} class="list-row" data-activity-id={activity.id}>
+						<!-- One line whatever the row carries: the goals it counts toward
+						     follow the category rather than adding a line under it, so a
+						     row with a goal is the height of one without. -->
+						<div class="list-row-main">
+							<div class="flex flex-wrap items-center gap-x-2 gap-y-1 [&>p]:mt-0">
 								<span class="text-sm font-medium text-gray-900">{activity.name}</span>
 								<CategoryMark
 									name={activity.categoryName ?? ''}
 									color={catColor(activity.categoryId)}
 								/>
-								{#if !activity.active}
-									<span class="text-xs text-gray-600">{t('tasks.activities.disabled')}</span>
-								{/if}
+								<Backlinks goals={data.goalLinks.activities[activity.id]} />
 							</div>
 							{#if activity.description}
 								<p class="mt-0.5 truncate text-xs text-gray-500">{activity.description}</p>
 							{/if}
-							<Backlinks goals={data.goalLinks.activities[activity.id]} />
 						</div>
 
+						<!-- Edit · put away · delete, the order every row in the app uses. -->
 						<div class="list-row-actions">
 							<button
 								type="button"
@@ -258,59 +308,59 @@
 							>
 								<Icon name="edit" />
 							</button>
-							<!-- One glyph whichever way it is set, so the rail does not move;
-							     the pressed surface and the word say which. -->
-							<form method="post" action="?/toggleActive" use:enhance>
+							<form id="archive-{activity.id}" method="post" action="?/toggleActive" use:enhance>
 								<input type="hidden" name="id" value={activity.id} />
-								<input type="hidden" name="active" value={String(activity.active)} />
 								<button
 									type="submit"
 									class="icon-btn"
-									aria-pressed={!activity.active}
 									title={activity.active
-										? t('tasks.activities.disable')
-										: t('tasks.activities.enable')}
+										? t('finance.ledgers.putItAway')
+										: t('todoRows.takeItBackOut')}
 									aria-label={activity.active
-										? t('tasks.activities.disable')
-										: t('tasks.activities.enable')}
+										? t('finance.ledgers.putItAway')
+										: t('todoRows.takeItBackOut')}
 								>
-									<Icon name="pause" />
+									<Icon name={activity.active ? 'archive' : 'undo'} />
 								</button>
 							</form>
-							{#if confirmingDelete === `act-${activity.id}` && !activity.hasReferences}
-								<form
-									method="post"
-									action="?/delete"
-									use:enhance={() => {
-										return async ({ update }) => {
-											await update({ reset: false });
-											confirmingDelete = null;
-										};
-									}}
-								>
-									<input type="hidden" name="id" value={activity.id} />
-									<button type="submit" class="btn btn-sm btn-danger" use:armed>
-										{t('tasks.activities.confirm')}
+							{#if !activity.active}
+								{#if confirmingDelete === `act-${activity.id}`}
+									<form
+										method="post"
+										action="?/delete"
+										use:enhance={() => {
+											return async ({ update }) => {
+												await update({ reset: false });
+												confirmingDelete = null;
+											};
+										}}
+									>
+										<input type="hidden" name="id" value={activity.id} />
+										<button type="submit" class="btn btn-sm btn-danger" use:armed>
+											{t('tasks.activities.confirm')}
+										</button>
+									</form>
+									<button
+										type="button"
+										onclick={() => (confirmingDelete = null)}
+										class="btn btn-sm"
+									>
+										{t('ui.cancel')}
 									</button>
-								</form>
-								<button type="button" onclick={() => (confirmingDelete = null)} class="btn btn-sm">
-									{t('ui.cancel')}
-								</button>
-							{:else}
-								<button
-									type="button"
-									onclick={() => (confirmingDelete = `act-${activity.id}`)}
-									disabled={activity.hasReferences}
-									class="icon-btn icon-btn-danger"
-									title={activity.hasReferences
-										? t('tasks.activities.cannotDeleteReferencedByPlanner')
-										: t('tasks.activities.deleteActivity')}
-									aria-label={activity.hasReferences
-										? t('tasks.activities.cannotDeleteReferencedByPlanner')
-										: t('tasks.activities.deleteActivity')}
-								>
-									<Icon name="trash" />
-								</button>
+								{:else}
+									<!-- Held in place when history names it, so the column stays
+									     put: that one can only be put away, never deleted. -->
+									<button
+										type="button"
+										onclick={() => (confirmingDelete = `act-${activity.id}`)}
+										class="icon-btn icon-btn-danger {activity.hasReferences ? 'invisible' : ''}"
+										inert={activity.hasReferences}
+										title={t('tasks.activities.deleteActivity')}
+										aria-label={t('tasks.activities.deleteActivity')}
+									>
+										<Icon name="trash" />
+									</button>
+								{/if}
 							{/if}
 						</div>
 					</div>
@@ -321,7 +371,7 @@
 </div>
 
 <Modal bind:open={showCategoryForm} error={form?.message} title={t('tasks.activities.categories')}>
-	<div class="divide-y divide-gray-200 border-y border-gray-200">
+	<div class="divide-y divide-gray-200 border-b border-gray-200">
 		{#each data.categories as cat (cat.id)}
 			<div class="flex items-center gap-3 py-2">
 				{#if editingCategoryId === cat.id}
@@ -337,13 +387,7 @@
 						class="flex flex-1 items-center gap-2"
 					>
 						<input type="hidden" name="id" value={cat.id} />
-						<input
-							name="color"
-							type="color"
-							value={cat.color}
-							class="h-8 w-10 shrink-0 cursor-pointer border border-gray-300"
-							aria-label={t('tasks.activities.colour')}
-						/>
+						<ColorWell name="color" value={cat.color} label={t('tasks.activities.colour')} />
 						<OneLine
 							name="label"
 							value={cat.name}
@@ -420,13 +464,7 @@
 		}}
 		class="mt-3 flex items-center gap-2"
 	>
-		<input
-			name="color"
-			type="color"
-			bind:value={newCatColor}
-			class="h-8 w-10 shrink-0 cursor-pointer border border-gray-300"
-			aria-label={t('tasks.activities.colour')}
-		/>
+		<ColorWell name="color" bind:value={newCatColor} label={t('tasks.activities.colour')} />
 		<OneLine
 			name="label"
 			placeholder={t('tasks.activities.newCategoryName')}

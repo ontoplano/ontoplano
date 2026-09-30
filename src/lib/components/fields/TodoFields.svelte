@@ -14,6 +14,7 @@
 	import { ATTRIBUTE_FORM, attributePairs, mergeSuggestions } from '$lib/attribute-keys';
 	import { RATINGS, type Rating } from '$lib/ratings';
 	import { useT } from '$lib/i18n';
+	import { vocabularyFor } from '$lib/tag-vocabulary';
 
 	const t = useT();
 
@@ -34,9 +35,14 @@
 	const NOTES_ROWS = 8;
 
 	let {
-		title = '',
-		notes = '',
-		tags = '',
+		/*
+		 * Title, notes and tags report back when bound, for a list that has to
+		 * know whether the draft would pass its filters. Seeding them is enough
+		 * everywhere else.
+		 */
+		title = $bindable(''),
+		notes = $bindable(''),
+		tags = $bindable(''),
 		/** Left undefined on a new task, which then starts with its notebook's. */
 		categoryId = undefined,
 		notebookId = $bindable(null),
@@ -122,11 +128,7 @@
 	 * With a notebook chosen, the words that subject already uses; with none,
 	 * the whole account's vocabulary.
 	 */
-	const knownTags = $derived(
-		notebookId
-			? (page.data.tagVocabularyByNotebook?.[notebookId] ?? [])
-			: (page.data.tagVocabulary ?? [])
-	);
+	const knownTags = $derived(vocabularyFor(page.data, notebookId));
 </script>
 
 <Field label={t('ui.title')} span={12} required>
@@ -134,7 +136,7 @@
 		A textarea, not an input: Android offers its saved addresses over one and
 		not the other, and no attribute changes that. `OneLine.svelte` says more.
 	-->
-	<OneLine name="heading" required value={title} />
+	<OneLine name="heading" required bind:value={title} />
 </Field>
 
 {#snippet details()}
@@ -164,7 +166,7 @@
 		-->
 		<MarkdownBox
 			bind:element={box}
-			value={notes}
+			bind:value={notes}
 			name="notes"
 			rows={compact ? 3 : NOTES_ROWS}
 			preview="written"
@@ -180,7 +182,7 @@
 	<Field label={t('ui.tags')} span={12} hint={t('fields.todo.separateWithCommasOrSpaces')}>
 		<!-- The account's one vocabulary, not a second one: a word used on a
 		     diary entry is the same word here. -->
-		<TagInput value={tags} known={knownTags} placeholder={t('fields.todo.tagsExample')} />
+		<TagInput bind:value={tags} known={knownTags} placeholder={t('fields.todo.tagsExample')} />
 	</Field>
 
 	<!-- What the task says about itself — a link, a room, an order number. The

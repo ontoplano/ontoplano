@@ -3,7 +3,14 @@ import type { IsolatedEvent } from '$lib/isolated/routes';
 
 import { buildCtx } from '$lib/services/ctx';
 import { toActionFailure } from '$lib/http-errors';
-import { audioLimits, defaultAudioName, list, remove, rename } from '$lib/services/audio';
+import {
+	MAX_AUDIO_NOTES_LENGTH,
+	audioLimits,
+	defaultAudioName,
+	edit,
+	list,
+	remove
+} from '$lib/services/audio';
 import { createIdea } from '$lib/services/ideas';
 
 /**
@@ -12,7 +19,7 @@ import { createIdea } from '$lib/services/ideas';
  * The bytes never come through a form action: a `MediaRecorder` hands back a
  * blob that is already exactly what should be stored, and wrapping it in a
  * multipart body to unwrap it again buys nothing. Recording posts to
- * `/media/audio`; renaming and deleting are here, where they have no payload.
+ * `/media/audio`; editing and deleting are here, where they have no payload.
  */
 export const load = async ({ locals }: IsolatedEvent) => {
 	const ctx = buildCtx(locals.user!.id);
@@ -20,6 +27,7 @@ export const load = async ({ locals }: IsolatedEvent) => {
 
 	return {
 		recordings: list(ctx),
+		maxNotesLength: MAX_AUDIO_NOTES_LENGTH,
 		limits: { audioKilobytes: limits.audioKilobytes, accountAudios: limits.accountAudios },
 		/*
 		 * The name the form offers, worked out here.
@@ -34,11 +42,14 @@ export const load = async ({ locals }: IsolatedEvent) => {
 };
 
 export const actions: Actions = {
-	rename: async ({ request, locals }: IsolatedEvent) => {
+	edit: async ({ request, locals }: IsolatedEvent) => {
 		const form = await request.formData();
 		try {
-			rename(buildCtx(locals.user!.id), Number(form.get('id')), form.get('label'));
-			return { success: true, action: 'rename' };
+			edit(buildCtx(locals.user!.id), Number(form.get('id')), {
+				name: form.get('label'),
+				notes: form.get('notes')
+			});
+			return { success: true, action: 'edit' };
 		} catch (e) {
 			return toActionFailure(e);
 		}

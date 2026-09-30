@@ -144,6 +144,9 @@ export async function register(
 	if (!keepTour) await dismissTour(page);
 }
 
+/** The longest a scheduled tour may take to open, even on a loaded machine. */
+const TOUR_ARRIVES_MS = 20_000;
+
 /**
  * Get the tour out of the way, wherever a spec is not about the tour.
  *
@@ -156,11 +159,27 @@ export async function register(
  */
 export async function dismissTour(page: Page): Promise<void> {
 	const tour = page.getByRole('dialog', { name: 'Tutorial' });
-	try {
-		await tour.waitFor({ state: 'visible', timeout: 4000 });
-	} catch {
-		return;
-	}
+	/*
+	 * Waited for by what the page says, not by a guess at how long it takes.
+	 *
+	 * It was four seconds for the tour to appear, and under a full parallel
+	 * run it sometimes took longer: the helper gave up, and the tour opened a
+	 * moment later over whatever the test pressed next. The layout marks
+	 * `data-tour-pending` while one is on its way, so this waits for that to
+	 * clear and then knows.
+	 */
+	await page.waitForFunction(
+		() => !document.documentElement.hasAttribute('data-tour-pending'),
+		null,
+		{
+			timeout: TOUR_ARRIVES_MS
+		}
+	);
+	if (!(await tour.isVisible())) return;
+	// And only done once the server has it: a page asked for before the write
+	// lands renders the tour again, over whatever the spec does next.
+	const saved = page.waitForResponse((r) => r.url().includes('/api/tutorial'));
 	await tour.getByRole('button', { name: 'Dismiss' }).click();
 	await tour.waitFor({ state: 'hidden' });
+	await saved;
 }

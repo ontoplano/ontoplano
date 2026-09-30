@@ -24,6 +24,7 @@ works is a key listed here and the reverse.
 | <kbd>t</kbd> | Capture a task           |
 | <kbd>d</kbd> | Capture a note           |
 | <kbd>b</kbd> | Capture something to buy |
+| <kbd>r</kbd> | Capture a reminder       |
 | <kbd>n</kbd> | New diary entry          |
 | <kbd>w</kbd> | New wins                 |
 
@@ -34,6 +35,13 @@ works is a key listed here and the reverse.
 | <kbd>j</kbd>     | Navigate accounts             |
 | <kbd>k</kbd>     | Navigate accounts             |
 | <kbd>Enter</kbd> | Open the one under the cursor |
+
+## Bills — `/finance/bills`
+
+| Key          | Does                          |
+| ------------ | ----------------------------- |
+| <kbd>e</kbd> | Edit the one under the cursor |
+| <kbd>n</kbd> | New bill                      |
 
 ## Ledgers — `/finance/ledgers`
 
@@ -49,6 +57,13 @@ works is a key listed here and the reverse.
 | <kbd>i</kbd>     | Import a statement            |
 | <kbd>x</kbd>     | Ask to delete                 |
 
+## Rules — `/finance/rules`
+
+| Key          | Does          |
+| ------------ | ------------- |
+| <kbd>n</kbd> | New rule      |
+| <kbd>x</kbd> | Ask to delete |
+
 ## Goals — `/goals`
 
 | Key          | Does                          |
@@ -60,18 +75,23 @@ works is a key listed here and the reverse.
 
 ## Habits — `/health/habits`
 
-| Key              | Does            |
-| ---------------- | --------------- |
-| <kbd>j</kbd>     | Navigate habits |
-| <kbd>k</kbd>     | Navigate habits |
-| <kbd>n</kbd>     | New habit       |
-| <kbd>Enter</kbd> | Expand/collapse |
+| Key              | Does                          |
+| ---------------- | ----------------------------- |
+| <kbd>j</kbd>     | Navigate habits               |
+| <kbd>k</kbd>     | Navigate habits               |
+| <kbd>n</kbd>     | New habit                     |
+| <kbd>e</kbd>     | Edit the one under the cursor |
+| <kbd>Enter</kbd> | Expand/collapse               |
 
 ## Recipes — `/health/recipes`
 
-| Key          | Does       |
-| ------------ | ---------- |
-| <kbd>n</kbd> | New recipe |
+| Key              | Does                          |
+| ---------------- | ----------------------------- |
+| <kbd>j</kbd>     | Navigate list                 |
+| <kbd>k</kbd>     | Navigate list                 |
+| <kbd>n</kbd>     | New recipe                    |
+| <kbd>e</kbd>     | Edit the one under the cursor |
+| <kbd>Enter</kbd> | Open the one under the cursor |
 
 ## Workouts — `/health/workouts`
 
@@ -145,6 +165,16 @@ works is a key listed here and the reverse.
 | <kbd>e</kbd>     | Edit the tag under the cursor |
 | <kbd>Enter</kbd> | Expand/collapse               |
 
+## Weekly notes — `/notebooks/weekly`
+
+| Key              | Does                          |
+| ---------------- | ----------------------------- |
+| <kbd>j</kbd>     | Navigate weeks                |
+| <kbd>k</kbd>     | Navigate weeks                |
+| <kbd>n</kbd>     | New weekly note               |
+| <kbd>e</kbd>     | Edit the one under the cursor |
+| <kbd>Enter</kbd> | Open the one under the cursor |
+
 ## Account — `/settings/account`
 
 | Key          | Does              |
@@ -178,6 +208,8 @@ works is a key listed here and the reverse.
 | <kbd>k</kbd> | Navigate list                 |
 | <kbd>n</kbd> | New activity                  |
 | <kbd>e</kbd> | Edit the one under the cursor |
+| <kbd>a</kbd> | Archive/unarchive             |
+| <kbd>x</kbd> | Ask to delete                 |
 | <kbd>1</kbd> | Toggle category filter        |
 | <kbd>2</kbd> | Toggle category filter        |
 | <kbd>3</kbd> | Toggle category filter        |
@@ -219,7 +251,8 @@ works is a key listed here and the reverse.
 | ------------ | ----------------------------- |
 | <kbd>j</kbd> | Navigate slots                |
 | <kbd>k</kbd> | Navigate slots                |
-| <kbd>g</kbd> | Toggle list/grid view         |
+| <kbd>g</kbd> | Cycle day, week and month     |
+| <kbd>a</kbd> | Toggle list/grid view         |
 | <kbd>+</kbd> | Zoom in (grid)                |
 | <kbd>=</kbd> | Zoom in (grid)                |
 | <kbd>-</kbd> | Zoom out (grid)               |
@@ -240,10 +273,15 @@ works is a key listed here and the reverse.
 
 ## Review — `/tasks/review`
 
-| Key          | Does        |
-| ------------ | ----------- |
-| <kbd>[</kbd> | Switch week |
-| <kbd>]</kbd> | Switch week |
+| Key          | Does                                           |
+| ------------ | ---------------------------------------------- |
+| <kbd>c</kbd> | It happened after all                          |
+| <kbd>s</kbd> | It did not happen                              |
+| <kbd>t</kbd> | It still needs doing — put it on the todo list |
+| <kbd>d</kbd> | It still needs doing — give it a day           |
+| <kbd>u</kbd> | Ask about it again                             |
+| <kbd>[</kbd> | Switch week                                    |
+| <kbd>]</kbd> | Switch week                                    |
 
 ## Tasks — `/tasks/todo`
 

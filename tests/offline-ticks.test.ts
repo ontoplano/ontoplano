@@ -63,6 +63,13 @@ describe('a tick made with no signal', () => {
 		expect(JSON.parse(localStorage.getItem(KEY)!)).toEqual([]);
 	});
 
+	test('a count is replaced by the newer one rather than cancelled', () => {
+		// The shopping list's tick sets a count, and its untick sets the old one.
+		remember({ id: 3, action: 'setQty', qty: 4 });
+		remember({ id: 3, action: 'setQty', qty: 1 });
+		expect(ticks.pending).toEqual([{ id: 3, action: 'setQty', qty: 1 }]);
+	});
+
 	test('but two different things on one item are both kept', () => {
 		remember({ id: 3, action: 'toggleBought' });
 		remember({ id: 3, action: 'toggleSnoozed' });

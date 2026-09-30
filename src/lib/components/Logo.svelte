@@ -20,17 +20,22 @@
 	/*
 	 * What the mark carries inside, as its own layer, with a hole beneath it.
 	 *
-	 * The mark is drawn twice: the rim, and a disc cut inside it that can turn
-	 * while the rim stands still. A disc turns in place, and the circle it is
-	 * cut on is flat dark field, the same at any angle, so the seam does not
-	 * show. `$lib/mark-spin` turns it while a navigation drags.
+	 * The mark is drawn twice: the rim with a disc taken out of it, and that
+	 * disc on top. While a navigation drags, `$lib/mark-spin` turns the rim
+	 * (`.mark-turn`) and nothing else, so the octagon goes round a bird that
+	 * no animation ever touches. The circle the two are cut on is flat dark
+	 * field, the same at any angle, so the seam does not show.
 	 *
-	 * The layer underneath has that same disc taken out of it. It used to be
-	 * the whole picture, on the reasoning that identical pixels over identical
-	 * pixels change nothing to look at — true only while the top layer is at
-	 * rest. The moment it turned there were two puffins, one standing still
-	 * under the other, which is what the instance chooser shows for as long as
-	 * it takes to answer it.
+	 * The layer underneath has the disc taken out rather than being the whole
+	 * picture: identical pixels over identical pixels change nothing only while
+	 * both are at rest, and the moment one turned there were two puffins.
+	 *
+	 * And only while it turns. At rest the two edges meet on the same circle,
+	 * and two anti-aliased edges laid over each other never add up to no edge:
+	 * a faint ring showed round the bird on every still mark. So at rest the
+	 * rim is the whole picture and the disc is not drawn; `data-turning`, which
+	 * `$lib/mark-spin` puts on the mark for the length of a turn, cuts the hole
+	 * and shows the disc.
 	 *
 	 * The radius is a fraction of the half width. `circle()` percentages
 	 * resolve against the side, hence the halving; a radial gradient sized to
@@ -136,7 +141,7 @@
 	class="ontoplano-logo relative inline-flex shrink-0 items-center justify-center {fill
 		? 'h-full w-full'
 		: ''} {klass}"
-	style="{fill ? '' : `width: ${size}px; height: ${size}px;`} {background
+	style="--turn-hole: {TURN_HOLE}; {fill ? '' : `width: ${size}px; height: ${size}px;`} {background
 		? `background: ${MARK_FIELD}`
 		: ''}"
 	role={label ? 'img' : 'presentation'}
@@ -144,13 +149,13 @@
 	aria-hidden={label ? undefined : 'true'}
 >
 	<img
+		class="mark-turn"
 		src={artwork}
 		alt=""
 		width={fill ? undefined : size}
 		height={fill ? undefined : size}
-		style="-webkit-mask-image: {TURN_HOLE}; mask-image: {TURN_HOLE}"
 	/>
-	<img class="mark-turn" src={artwork} alt="" aria-hidden="true" style="clip-path: {TURN_CLIP}" />
+	<img class="mark-still" src={artwork} alt="" aria-hidden="true" style="clip-path: {TURN_CLIP}" />
 </span>
 
 <style>
@@ -169,8 +174,20 @@
 		}
 	}
 
-	.ontoplano-logo :global(.mark-turn) {
+	/* Never animated: the rim turns around it. Drawn only while it does. */
+	.ontoplano-logo :global(.mark-still) {
 		position: absolute;
 		inset: 0;
+		visibility: hidden;
+	}
+
+	/* Not while the wheel holds the mark: then it is away, and all of it hidden. */
+	:global([data-turning]:not(.pie-handle-held) .mark-still) {
+		visibility: visible;
+	}
+
+	:global([data-turning] .mark-turn) {
+		-webkit-mask-image: var(--turn-hole);
+		mask-image: var(--turn-hole);
 	}
 </style>

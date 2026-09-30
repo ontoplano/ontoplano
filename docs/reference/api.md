@@ -24,6 +24,8 @@ sentence somebody agrees to when they grant it.
 | `habits:write`     | Mark a habit kept, or unmark one                                                                                                                  |
 | `plugin:declare`   | Name and describe itself on your integrations page                                                                                                |
 | `webhooks:manage`  | Send itself a message when something changes here — a task finished, a block done — to an address it chooses                                      |
+| `audio:read`       | Read your recordings and their notes                                                                                                              |
+| `audio:write`      | Write notes on your recordings                                                                                                                    |
 | `inventory:read`   | See everything you keep and everything on your shopping list                                                                                      |
 | `inventory:write`  | Add things, tick them bought, change how many you keep, and take things off                                                                       |
 | `locations:read`   | See where your things live, and what is in each room and drawer                                                                                   |
@@ -86,6 +88,9 @@ sentence somebody agrees to when they grant it.
 | `/api/search`                                | GET    | —                 |
 | `/api/subscribe`                             | POST   | —                 |
 | `/api/tutorial`                              | POST   | —                 |
+| `/api/v1/audio/[id]`                         | GET    | `audio:read`      |
+| `/api/v1/audio/[id]`                         | PATCH  | `audio:write`     |
+| `/api/v1/audio/[id]/file`                    | GET    | `audio:read`      |
 | `/api/v1/inventory`                          | GET    | `inventory:read`  |
 | `/api/v1/inventory/items`                    | POST   | `inventory:write` |
 | `/api/v1/inventory/items/[id]/bought`        | POST   | `inventory:write` |
@@ -552,6 +557,16 @@ and the next visitor gets a different one, so a dismissal there is remembered
 by the tab and nowhere else.
 
 **POST**
+
+### `/api/v1/audio/[id]`
+
+**GET** — requires `audio:read`
+
+**PATCH** — requires `audio:write`
+
+### `/api/v1/audio/[id]/file`
+
+**GET** — requires `audio:read`
 
 ### `/api/v1/inventory`
 

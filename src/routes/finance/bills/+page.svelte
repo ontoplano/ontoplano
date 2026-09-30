@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { useWhen } from '$lib/when-context.svelte';
-	import { dayOf } from '$lib/when';
+	import { dayOf, today } from '$lib/when';
 	import { routeGlyph } from '$lib/glyphs';
 	import { setRoomAction } from '$lib/room-action.svelte';
 	import { enhance } from '$lib/enhance';
@@ -14,11 +14,25 @@
 	import FilterBar from '$lib/components/FilterBar.svelte';
 	import ShowingCount from '$lib/components/ShowingCount.svelte';
 	import SearchField from '$lib/components/SearchField.svelte';
+	import SortControl from '$lib/components/SortControl.svelte';
+	import StatTiles from '$lib/components/StatTiles.svelte';
+	import { browsable } from '$lib/browse.svelte';
+	import { getAction } from '$lib/shortcuts';
+	import {
+		BILL_ORDERS,
+		BILL_ORDER_LABELS,
+		directionFor,
+		orderBills,
+		type BillDirection,
+		type BillOrder
+	} from '$lib/bill-order';
 	import { BILL_ROOM_ACTIONS } from '$lib/bill-action-names';
 	import { useT } from '$lib/i18n';
 
 	const t = useT();
 	const now = useWhen();
+
+	const ROOM = '/finance/bills';
 
 	let { data }: { data: PageServerData } = $props();
 
@@ -54,15 +68,86 @@
 	let looking = $state('');
 	let showArchived = $state(false);
 	const needle = $derived(looking.trim().toLowerCase());
+
+	/*
+	 * The order, kept in this browser the way a notebook's notes keep theirs
+	 * (`$lib/bill-order`). What falls due next first, until somebody says
+	 * otherwise.
+	 */
+	const ORDER_KEY = 'ontoplano:bills-order';
+	const DIRECTION_KEY = 'ontoplano:bills-direction';
+	let order = $state<BillOrder>(BILL_ORDERS[0]);
+	let direction = $state<BillDirection>(directionFor(BILL_ORDERS[0]));
+
+	$effect(() => {
+		try {
+			const kept = localStorage.getItem(ORDER_KEY);
+			if ((BILL_ORDERS as readonly string[]).includes(kept ?? '')) order = kept as BillOrder;
+			const way = localStorage.getItem(DIRECTION_KEY);
+			if (way === 'asc' || way === 'desc') direction = way;
+		} catch {
+			// A private window, or storage refused: the defaults stand.
+		}
+	});
+
+	function remember(key: string, value: string) {
+		try {
+			localStorage.setItem(key, value);
+		} catch {
+			// It still holds for this visit.
+		}
+	}
+
 	const shownBills = $derived(
-		needle === '' ? data.bills : data.bills.filter((b) => b.name.toLowerCase().includes(needle))
+		orderBills(
+			needle === '' ? data.bills : data.bills.filter((b) => b.name.toLowerCase().includes(needle)),
+			order,
+			direction,
+			today(now())
+		)
 	);
 	const putAway = $derived(data.bills.filter((b) => !b.active).length);
-	const showing = $derived(shownBills.filter((b) => b.active || showArchived).length);
+	/** The rows on screen, in the order `BillList` draws them: active, then archived. */
+	const walked = $derived([
+		...shownBills.filter((b) => b.active),
+		...(showArchived ? shownBills.filter((b) => !b.active) : [])
+	]);
+	const showing = $derived(walked.length);
+
+	let cursor = $state(-1);
+	browsable(() => ({
+		items: () => walked,
+		cursor: () => cursor,
+		moveTo: (i) => (cursor = i),
+		edit: (i) => list?.openEdit(walked[i].id)
+	}));
+
+	function onkeydown(event: KeyboardEvent) {
+		if (event.metaKey || event.ctrlKey || event.altKey) return;
+		const target = event.target;
+		if (
+			document.querySelector('dialog[open]') ||
+			target instanceof HTMLInputElement ||
+			target instanceof HTMLTextAreaElement ||
+			target instanceof HTMLSelectElement ||
+			(target instanceof HTMLElement && target.isContentEditable)
+		)
+			return;
+		if (getAction(ROOM, event.key) === 'new') {
+			event.preventDefault();
+			list?.openNew();
+		}
+	}
 
 	/* This screen's one verb, drawn by the room's bar — see $lib/room-action. */
-	setRoomAction(() => ({ label: t('finance.bills.newBill'), run: () => list?.openNew() }));
+	setRoomAction(() => ({
+		label: t('finance.bills.newBill'),
+		run: () => list?.openNew(),
+		kbd: 'n'
+	}));
 </script>
+
+<svelte:window {onkeydown} />
 
 <!--
 	One surface: what narrows the list along its top, the month at a glance
@@ -94,35 +179,48 @@
 					said={(count) => t('finance.bills.showingCount', { count })}
 				/>
 			{/snippet}
-			<button
-				type="button"
-				onclick={() => (showArchived = !showArchived)}
-				aria-pressed={showArchived}
-				class="btn btn-sm"
-				hidden={putAway === 0 && !showArchived}
-			>
-				{t('finance.bills.archived', { length: putAway })}
-			</button>
+			{#snippet inline()}
+				<!-- The only filter this list has, so it stays out on a phone too. -->
+				<button
+					type="button"
+					onclick={() => (showArchived = !showArchived)}
+					aria-pressed={showArchived}
+					class="btn btn-sm shrink-0"
+					hidden={putAway === 0 && !showArchived}
+				>
+					{t('finance.bills.archived', { length: putAway })}
+				</button>
+			{/snippet}
+			{#snippet trailing()}
+				<SortControl
+					value={order}
+					options={BILL_ORDERS}
+					labels={BILL_ORDER_LABELS}
+					{direction}
+					onpick={(next) => {
+						order = next;
+						direction = directionFor(next);
+						remember(ORDER_KEY, next);
+						remember(DIRECTION_KEY, direction);
+					}}
+					onflip={() => {
+						direction = direction === 'asc' ? 'desc' : 'asc';
+						remember(DIRECTION_KEY, direction);
+					}}
+					label={t('sort.order')}
+				/>
+			{/snippet}
 		</FilterBar>
 	{/snippet}
 
 	<!-- The month at a glance. -->
-	<dl class="flex flex-wrap gap-x-8 gap-y-2 border-b border-gray-200 px-4 py-3">
-		<div>
-			<dt class="text-xs text-gray-500">{t('finance.bills.expectedThisMonth')}</dt>
-			<dd class="tabular text-lg font-semibold text-gray-900">{money(data.summary.expected)}</dd>
-		</div>
-		<div>
-			<dt class="text-xs text-gray-500">{t('finance.bills.paidSoFar')}</dt>
-			<dd class="tabular text-lg font-semibold text-gray-900">{money(data.summary.paid)}</dd>
-		</div>
-		<div>
-			<dt class="text-xs text-gray-500">{t('finance.bills.difference')}</dt>
-			<dd class="tabular text-lg font-semibold text-gray-900">
-				{gapText(data.summary.difference)}
-			</dd>
-		</div>
-	</dl>
+	<StatTiles
+		tiles={[
+			{ label: t('finance.bills.expectedThisMonth'), value: money(data.summary.expected) },
+			{ label: t('finance.bills.paidSoFar'), value: money(data.summary.paid) },
+			{ label: t('finance.bills.difference'), value: gapText(data.summary.difference) }
+		]}
+	/>
 
 	<!--
 		The same list a notebook's Bills tab draws, with the same form: see
@@ -133,6 +231,7 @@
 		bind:showArchived
 		archiveToggle={false}
 		bills={shownBills}
+		{cursor}
 		{currency}
 		actions={BILL_ROOM_ACTIONS}
 		notebooks={data.notebooks}

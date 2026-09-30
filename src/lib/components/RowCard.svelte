@@ -31,6 +31,12 @@
 		controls,
 		/** The actions held back — while rows are being selected, say. */
 		quiet = false,
+		/**
+		 * Something small in the card's top right corner — a task's place in
+		 * line. Beside the words rather than over them, so a long title wraps
+		 * short of it instead of running under it.
+		 */
+		corner = undefined,
 		children
 	}: {
 		rail: Snippet;
@@ -38,6 +44,7 @@
 		/** Named apart from a page's form `actions`, which a snippet would shadow. */
 		controls?: Snippet;
 		quiet?: boolean;
+		corner?: Snippet;
 		children: Snippet;
 	} = $props();
 </script>
@@ -47,7 +54,14 @@
 </div>
 
 <div class="row-card-body flex min-w-0 flex-1 flex-col">
-	{@render children()}
+	{#if corner}
+		<div class="flex items-start gap-2">
+			<div class="min-w-0 flex-1">{@render children()}</div>
+			<div class="shrink-0">{@render corner()}</div>
+		</div>
+	{:else}
+		{@render children()}
+	{/if}
 	<!--
 		The foot of the card: labels and actions at its bottom edge, whatever
 		the rail beside them makes the card's height.

@@ -17,9 +17,13 @@
 	 * `.icon-btn`s in a `.row-actions` group (held back until the pointer is on
 	 * the card, 28px, room-specific verbs before edit, delete last).
 	 *
-	 *     tick | title                    actions
-	 *          | meta (time, gauges, notebook, labels)
+	 *     tick | title
+	 *          | meta (time, gauges, notebook, labels)      actions
 	 *          | children (what opens under it)
+	 *
+	 * The actions share the meta's line rather than the title's: beside the
+	 * title, three touch-sized buttons left a phone card's title four
+	 * characters a line, which is `.task-actions`' reason too.
 	 *
 	 * It wears its category as its face (`.pill-soft`), which is what a card
 	 * does; a row wears a `CategoryMark` instead. Everything else — drag,
@@ -81,17 +85,17 @@
 			</button>
 		{/if}
 		<div class="min-w-0 flex-1">
-			<div class="flex items-start gap-2">
-				<p class="todo-card-title min-w-0 flex-1 text-sm font-medium break-words">{title}</p>
-				{#if actions}
-					<div class="row-actions -my-0.5 flex shrink-0 items-center gap-0.5">
-						{@render actions()}
+			<p class="todo-card-title text-sm font-medium break-words">{title}</p>
+			{#if meta || actions}
+				<div class="mt-0.5 flex items-end gap-2">
+					<div class="flex min-h-4 min-w-0 flex-1 flex-wrap items-center gap-x-2 gap-y-1 text-xs">
+						{@render meta?.()}
 					</div>
-				{/if}
-			</div>
-			{#if meta}
-				<div class="mt-0.5 flex min-h-4 flex-wrap items-center gap-x-2 gap-y-1 text-xs">
-					{@render meta()}
+					{#if actions}
+						<div class="row-actions -mb-0.5 flex shrink-0 items-center gap-0.5">
+							{@render actions()}
+						</div>
+					{/if}
 				</div>
 			{/if}
 		</div>

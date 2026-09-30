@@ -84,8 +84,14 @@
 		type RatingValues
 	} from '$lib/ratings.js';
 	import { useT } from '$lib/i18n';
+	import RatingTable from '$lib/components/RatingTable.svelte';
 
 	const t = useT();
+
+	/** How long the pointer rests on the bars before the numbers show. */
+	const TIP_DELAY_MS = 350;
+	/** Space kept between the tip and the bars, and the screen's edge. */
+	const TIP_GAP_PX = 6;
 
 	let {
 		values,
@@ -93,11 +99,18 @@
 		stacked = false,
 		/** Grey, for something finished: the shapes still read, the colour is gone. */
 		muted = false,
+		/**
+		 * How tall the group stands, where one scale for the list is not the
+		 * point — the sheet on a phone that sets them draws them big. The
+		 * width follows at the same proportions.
+		 */
+		height = undefined,
 		class: className = ''
 	}: {
 		values: Partial<RatingValues>;
 		stacked?: boolean;
 		muted?: boolean;
+		height?: string;
 		class?: string;
 	} = $props();
 
@@ -126,6 +139,54 @@
 	 * whole of how you know which bar is which.
 	 */
 	const widthOf = (at: number) => ((RATING_ORDER.length - at) * 100) / RATING_ORDER.length;
+
+	/*
+	 * The numbers on hover, with each rating's icon beside its word.
+	 *
+	 * A browser's own tooltip is words only, and the icons are how the three
+	 * are told apart everywhere else — so the tip is drawn here, in the top
+	 * layer where no card can clip it. Only for a mouse: a finger has no
+	 * hover, and a press on the bars is a change rather than a question.
+	 */
+	let group = $state<HTMLElement | null>(null);
+	let tipBox = $state<HTMLElement | null>(null);
+	let tipAt = $state<{ left: number; top: number } | null>(null);
+	let waiting: ReturnType<typeof setTimeout> | undefined;
+
+	function hover(event: PointerEvent) {
+		if (event.pointerType !== 'mouse') return;
+		clearTimeout(waiting);
+		waiting = setTimeout(() => {
+			if (!group) return;
+			const at = group.getBoundingClientRect();
+			tipAt = { left: at.left, top: at.bottom + TIP_GAP_PX };
+		}, TIP_DELAY_MS);
+	}
+
+	function unhover() {
+		clearTimeout(waiting);
+		tipAt = null;
+	}
+
+	$effect(() => {
+		if (!tipBox || !tipAt) return;
+		try {
+			tipBox.showPopover?.();
+		} catch {
+			/* already open, or a browser without popovers: it still draws */
+		}
+		// Above the bars when there is no room under them, and never off the side.
+		const wide = tipBox.offsetWidth;
+		const high = tipBox.offsetHeight;
+		const left = Math.max(TIP_GAP_PX, Math.min(tipAt.left, innerWidth - TIP_GAP_PX - wide));
+		const top =
+			tipAt.top + high > innerHeight - TIP_GAP_PX
+				? tipAt.top - high - 2 * TIP_GAP_PX - (group?.offsetHeight ?? 0)
+				: tipAt.top;
+		if (left !== tipAt.left || top !== tipAt.top) tipAt = { left, top };
+		window.addEventListener('scroll', unhover, true);
+		return () => window.removeEventListener('scroll', unhover, true);
+	});
 </script>
 
 <span
@@ -133,8 +194,12 @@
 		? 'rating-bars-muted'
 		: ''} {className}"
 	role="img"
-	title={said}
+	style={height ? `--bars-height: ${height}; --bars-width: calc(${height} * 2 / 3)` : undefined}
 	aria-label={said}
+	bind:this={group}
+	onpointerenter={hover}
+	onpointerleave={unhover}
+	onpointerdown={unhover}
 >
 	<!--
 		The bars stand in their own box on the right, so the widths below stay
@@ -150,6 +215,17 @@
 		{/each}
 	</span>
 </span>
+{#if tipAt}
+	<span
+		bind:this={tipBox}
+		popover="manual"
+		role="tooltip"
+		style="left:{tipAt.left}px; top:{tipAt.top}px"
+		class="overlay-face pointer-events-none fixed m-0 block w-max border px-2 py-1 shadow-overlay"
+	>
+		<RatingTable {values} />
+	</span>
+{/if}
 
 <style>
 	/*

@@ -178,6 +178,11 @@ export const TUTORIALS: Record<string, Tutorial> = {
 				body: 'tour.theArrowsStepAWholeWeek'
 			},
 			{
+				target: '[data-tour="plan-as-list"]',
+				title: 'tour.theSameDaysAsAList',
+				body: 'tour.eachDayAHeadingAndItsBlocks'
+			},
+			{
 				target: '[data-tour="plan-tray"]',
 				title: 'tour.whatIsWaitingForATime',
 				body: 'tour.searchTheTasksWithNoTime'
@@ -355,6 +360,26 @@ export const TUTORIALS: Record<string, Tutorial> = {
 		]
 	},
 
+	'/notebooks/weekly': {
+		label: 'rooms.notebooks.tabs.weekly',
+		steps: [
+			{
+				title: 'tour.weeklyOpenTitle',
+				body: 'tour.weeklyOpenBody'
+			},
+			{
+				target: '[data-tour="weekly-new"]',
+				title: 'tour.weeklyNewTitle',
+				body: 'tour.weeklyNewBody'
+			},
+			{
+				target: '[data-tour="weekly-list"]',
+				title: 'tour.weeklyListTitle',
+				body: 'tour.weeklyListBody'
+			}
+		]
+	},
+
 	'/notebooks/people': {
 		label: 'tour.people',
 		steps: [
@@ -503,6 +528,30 @@ export const TUTORIALS: Record<string, Tutorial> = {
 			}
 		]
 	},
+	'/finance/rules': {
+		label: 'tour.rulesRoom',
+		steps: [
+			{
+				title: 'tour.rulesSortWhatArrives',
+				body: 'tour.rulesSortWhatArrivesBody'
+			},
+			{
+				target: '[data-tour="rule-categories"]',
+				title: 'tour.rulesCategoriesTakeTurns',
+				body: 'tour.rulesCategoriesTakeTurnsBody'
+			},
+			{
+				target: '[data-tour="rule-tags"]',
+				title: 'tour.rulesTagsPileUp',
+				body: 'tour.rulesTagsPileUpBody'
+			},
+			{
+				target: '[data-tour="rule-count"]',
+				title: 'tour.rulesTheCountOpensTheLines',
+				body: 'tour.rulesTheCountOpensTheLinesBody'
+			}
+		]
+	},
 	'/inventory/stock': {
 		label: 'tour.shopping',
 		steps: [
@@ -519,6 +568,11 @@ export const TUTORIALS: Record<string, Tutorial> = {
 				target: '[data-tour="inventory-list"]',
 				title: 'tour.boughtAndBackAgain',
 				body: 'tour.tickingSomethingOffInventoryStarts'
+			},
+			{
+				target: '[data-tour="inventory-shopping"]',
+				title: 'tour.inventoryTheTrip',
+				body: 'tour.inventoryTheTripBody'
 			}
 		]
 	},

@@ -59,7 +59,7 @@
 	import LedgerTile from '$lib/components/LedgerTile.svelte';
 	import RecipeCard from '$lib/components/RecipeCard.svelte';
 	import WorkoutCard from '$lib/components/WorkoutCard.svelte';
-	import ItemRow from '$lib/components/ItemRow.svelte';
+	import ItemRow, { itemRowWash } from '$lib/components/ItemRow.svelte';
 	import LinkIntoNotebook from '$lib/components/LinkIntoNotebook.svelte';
 	import { NOTEBOOK_ITEM_ACTIONS } from '$lib/item-action-names';
 	import { NOTEBOOK_WORKOUT_ACTIONS } from '$lib/workout-action-names';
@@ -1558,7 +1558,7 @@
 				{:else}
 					<div class="divide-y divide-gray-200">
 						{#each shownInventory as item (item.id)}
-							<div class="row-card">
+							<div class="row-card {itemRowWash(item)}">
 								<ItemRow {item} {currency} actions={NOTEBOOK_ITEM_ACTIONS} />
 							</div>
 						{/each}

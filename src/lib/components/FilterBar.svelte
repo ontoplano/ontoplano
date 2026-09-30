@@ -28,10 +28,12 @@
 	 *
 	 *     search   count   [ the filters ]   clear   ——   verb   sort
 	 *
-	 * On one line at both widths: a phone folds the filters into a button and
-	 * the order into a square (`SortControl` reads that from the strip), and
-	 * nothing drops to a line of its own. The slack goes after Clear, so the
-	 * way back sits against the last filter rather than across the row from it.
+	 * Folded, on a phone, it is two lines that are always the same two: the
+	 * search box across the top, then the list's verb and its order on the
+	 * left and the count with the Filters button on the right. Letting the
+	 * one line wrap put the verb and the order on a second line of their own,
+	 * right-aligned under the Filters button, which lined up with nothing —
+	 * and it squeezed the order into a square whose direction nobody found.
 	 *
 	 * A filter that should stay out on a phone — the only one a list has, say
 	 * — goes in `inline` rather than in the children: a sheet holding one
@@ -173,8 +175,11 @@
 		const wanted = chosenLocation;
 		chosenLocation = undefined;
 		// BackCloses has popped the entry; wait for the router to finish that
-		// navigation before replacing its old query with the chosen one.
-		await navigating.complete;
+		// navigation before replacing its old query with the chosen one. A
+		// filter picked just before Done is still loading when the pop lands,
+		// and the pop aborts it: `complete` rejects, and the chosen query is
+		// put back below all the same.
+		await navigating.complete?.catch(() => undefined);
 		if (!wanted || wanted.pathname !== page.url.pathname || wanted.href === page.url.href) return;
 		// Same resolved route; only its filter query is being restored.
 		// eslint-disable-next-line svelte/no-navigation-without-resolve
@@ -191,6 +196,9 @@
 	 * whenever something is actually narrowing the list.
 	 */
 	const said = $derived(on && summary ? summary : t('filters.filters'));
+
+	/** Folded with a verb or an order: the fixed two lines described above. */
+	const twoRows = $derived(folded && Boolean(verb || trailing));
 </script>
 
 <!--
@@ -204,7 +212,25 @@
 	<div class="mb-2 flex w-full flex-wrap items-center gap-2">{@render banner()}</div>
 {/if}
 
-<div class="filter-strip flex w-full flex-wrap items-center gap-2" bind:clientWidth={width}>
+<!--
+	One line where the filters are out, however many of them there are.
+
+	Wrapping the strip put the verbs and the order on a line of their own as
+	soon as the filters were a few pixels too wide — on the wishlist, whose
+	first toggle is longer than the cupboard's, and on a 1366px laptop on both.
+	So the strip does not wrap there: the filters' own group gives up the
+	width and wraps its controls inside itself, and everything else keeps its
+	place on the first line — top-aligned, so a second line of filters hangs
+	below the first rather than pushing the box and the order halfway down.
+	Folded, the few things left share the line and may wrap as they always did.
+-->
+<div
+	class="filter-strip flex w-full gap-2 {folded
+		? 'flex-wrap items-center'
+		: 'flex-nowrap items-start'}"
+	class:filter-two-rows={twoRows}
+	bind:clientWidth={width}
+>
 	<!--
 		The search box, in a slot of a fixed size.
 
@@ -225,7 +251,13 @@
 
 	<!-- How many rows are showing, next to the box that narrows them by name,
 	     at both widths. -->
-	{#if count}<div class="filter-count shrink-0">{@render count()}</div>{/if}
+	{#if count}
+		<!-- As tall as a control, so its words sit level with the buttons on
+		     the first line whichever way the strip aligns. -->
+		<div class="filter-count flex min-h-(--control-sm) shrink-0 items-center">
+			{@render count()}
+		</div>
+	{/if}
 
 	{#if inline}
 		<div class="flex min-w-0 items-center gap-2" class:filter-inline-below={folded && inlineBelow}>
@@ -284,7 +316,7 @@
 		<button
 			type="button"
 			onclick={onclear}
-			class="btn btn-sm btn-quiet shrink-0 {on ? '' : 'invisible'}"
+			class="filter-clear btn btn-sm btn-quiet shrink-0 {on ? '' : 'invisible'}"
 			inert={!on}
 			title={t('filters.clear')}
 			aria-label={t('filters.clear')}
@@ -293,10 +325,15 @@
 		</button>
 	{/if}
 
-	<!-- The verb and the order, pushed to the end of the first line at every
-	     width. The slack in the row is the space before them. -->
+	<!-- Folded, the line break before the second row. -->
+	{#if twoRows}
+		<div class="filter-break" aria-hidden="true"></div>
+	{/if}
+
+	<!-- The verb and the order, pushed to the end of the first line where the
+	     filters are out; the start of the second line where they are folded. -->
 	{#if verb || trailing}
-		<div class="ml-auto flex shrink-0 items-center gap-2">
+		<div class="filter-tail ml-auto flex shrink-0 items-center gap-2">
 			{#if verb}{@render verb()}{/if}
 			{#if trailing}{@render trailing()}{/if}
 		</div>
@@ -343,8 +380,42 @@
 <style>
 	/* Its own line, last, the controls sharing it as they would a row. */
 	.filter-inline-below {
-		order: 1;
+		order: 6;
 		width: 100%;
+	}
+
+	/*
+	 * The two folded lines: the search box (and any inline filter) on the
+	 * first; the verb and the order at the start of the second, the way back,
+	 * the count and the Filters button at its end.
+	 */
+	.filter-break {
+		order: 1;
+		flex-basis: 100%;
+		height: 0;
+	}
+
+	.filter-two-rows > .filter-tail {
+		order: 2;
+		margin-left: 0;
+	}
+
+	.filter-two-rows > .filter-clear {
+		order: 3;
+		margin-left: auto;
+	}
+
+	.filter-two-rows > .filter-count {
+		order: 4;
+	}
+
+	/* With no way back to hold the slack, the count takes it. */
+	.filter-two-rows:not(:has(> .filter-clear)) > .filter-count {
+		margin-left: auto;
+	}
+
+	.filter-two-rows > .filter-toggle {
+		order: 5;
 	}
 
 	.filter-inline-below > :global(*) {

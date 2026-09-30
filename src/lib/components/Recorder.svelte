@@ -3,7 +3,8 @@
 	import Icon from '$lib/components/Icon.svelte';
 	import OneLine from '$lib/components/OneLine.svelte';
 	import { notify } from '$lib/notify.svelte';
-	import { AUDIO_BITS_PER_SECOND } from '$lib/services/media-limits';
+	import { AUDIO_BITS_PER_SECOND, MAX_AUDIO_NOTES_LENGTH } from '$lib/services/media-limits';
+	import type { RecordingDraft } from '$lib/recording-upload';
 	import { useT } from '$lib/i18n';
 
 	/**
@@ -35,7 +36,7 @@
 		atMost,
 		/** The name offered when nobody types one — the moment, from the server. */
 		suggestedName = '',
-		/** Handed the bytes and the name; returns once it is stored. */
+		/** Handed the bytes, the name and the notes; returns once it is stored. */
 		onsave,
 		/** Called when there is nothing in hand any more, so a sheet may close. */
 		ondone,
@@ -56,7 +57,7 @@
 		full?: boolean;
 		atMost: number;
 		suggestedName?: string;
-		onsave: (bytes: Blob, name: string, seconds: number) => Promise<void>;
+		onsave: (draft: RecordingDraft) => Promise<void>;
 		ondone?: () => void;
 		autostart?: boolean;
 		onstarted?: () => void;
@@ -67,6 +68,7 @@
 
 	let stage = $state<Stage>('idle');
 	let name = $state('');
+	let notes = $state('');
 	let saving = $state(false);
 
 	let recorder: MediaRecorder | null = null;
@@ -333,6 +335,7 @@
 		chunks = [];
 		elapsed = 0;
 		name = '';
+		notes = '';
 		stage = 'idle';
 		ondone?.();
 	}
@@ -354,7 +357,7 @@
 			if (!bytes) return;
 			// `elapsed` is what the clock in front of them counted, which is the
 			// only cheap measure of how long this is: the container carries none.
-			await onsave(bytes, name.trim(), elapsed);
+			await onsave({ bytes, name: name.trim(), notes, seconds: elapsed });
 			discard();
 		} catch (e) {
 			notify.error(e instanceof Error ? e.message : String(e));
@@ -479,14 +482,24 @@
 			produces a row called "recording".
 		-->
 		{#if stage !== 'recording'}
+			<OneLine
+				name="recording-label"
+				bind:value={name}
+				placeholder={fallbackName}
+				class="input w-full"
+				ariaLabel={t('audio.nameIt')}
+			/>
+			<!-- No `name`: this sits inside other forms (a to-do's, a note's), and
+			     is sent by `onsave`, never with the form around it. -->
+			<textarea
+				bind:value={notes}
+				class="input w-full"
+				rows="3"
+				maxlength={MAX_AUDIO_NOTES_LENGTH}
+				placeholder={t('audio.notes')}
+				aria-label={t('audio.notes')}
+			></textarea>
 			<div class="flex flex-wrap items-center gap-2">
-				<OneLine
-					name="label"
-					bind:value={name}
-					placeholder={fallbackName}
-					class="input w-auto min-w-48 flex-1"
-					ariaLabel={t('audio.nameIt')}
-				/>
 				<button type="button" class="btn btn-primary btn-sm" onclick={keep} disabled={saving}>
 					<Icon name="check" class="mr-1.5" />
 					{saving ? t('audio.saving') : t('audio.save')}

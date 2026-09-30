@@ -647,3 +647,60 @@ test.describe('booking with Android', () => {
 		expect(mine!.channelId).toBe(REMINDER_CHANNEL);
 	});
 });
+
+/**
+ * A launch bound for a chosen instance draws nothing of the device's copy.
+ *
+ * The app boots on the copy it carries and moves on to the instance chosen —
+ * which is how a home-screen widget's press arrives, `?open=` naming the page.
+ * Until the move landed, the device's copy rendered with its blue bar and
+ * blue mark, so a widget set up for a hosted instance opened looking like the
+ * isolated one. The instance's answer is held here, and the copy has to stay
+ * out of sight the whole time it waits.
+ */
+test.describe('leaving for a chosen instance', () => {
+	test.use({ userAgent: `Mozilla/5.0 (Linux; Android 14) Mobile OntoplanoApp/0.1.0` });
+
+	test('shows nothing of this copy on the way, and lands on the page asked for', async ({
+		page
+	}) => {
+		const hosted = 'https://hosted.example.test';
+		/*
+		 * Told by the page, every frame, whether any of this copy was showing.
+		 * Asked from outside it cannot be: while the move is held the page is
+		 * mid-navigation, and a question put to it then waits for the move.
+		 */
+		let shown = 0;
+		await page.exposeFunction('__shown', () => void (shown += 1));
+		await page.addInitScript((address) => {
+			if (location.origin === address) return;
+			localStorage.setItem('ontoplano:instance', address);
+			const look = () => {
+				const body = document.body;
+				if (
+					body &&
+					body.querySelector('nav, header') &&
+					getComputedStyle(body).visibility !== 'hidden'
+				)
+					(window as never as Record<string, () => void>).__shown();
+				requestAnimationFrame(look);
+			};
+			requestAnimationFrame(look);
+		}, hosted);
+
+		let release: () => void = () => {};
+		const held = new Promise<void>((resolve) => (release = resolve));
+		await page.route(`${hosted}/**`, async (route) => {
+			await held;
+			await route.fulfill({ contentType: 'text/html', body: '<p>hosted</p>' });
+		});
+
+		void page.goto('/?open=/tasks/todo').catch(() => {});
+		// Long enough for the copy to have drawn itself, had it been allowed to.
+		await page.waitForTimeout(3000);
+		release();
+		await page.waitForURL((url) => url.origin === hosted);
+		expect(shown, 'the device copy was drawn on the way').toBe(0);
+		expect(new URL(page.url()).pathname).toBe('/tasks/todo');
+	});
+});

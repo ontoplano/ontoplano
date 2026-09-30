@@ -14,7 +14,8 @@ import { recipeActions } from './actions';
  * is how a list stops being instant.
  */
 function withPictures(ctx: Parameters<typeof withMissingCounts>[0]) {
-	const recipes = withMissingCounts(ctx);
+	// The archived ones too: the room's Archived toggle brings them back.
+	const recipes = withMissingCounts(ctx, { includeArchived: true });
 	const main = mainPictures(
 		ctx,
 		recipes.map((r) => r.id)

@@ -18,6 +18,100 @@ the shape of the data changing. Bumping the minor per batch is what ran this
 file to 0.161 in a few months, which tells a reader nothing about which
 releases mattered.
 
+## 0.184.11 — 2026-09-29
+
+- The puffin in the middle of the menu mark never moves: only the octagon around it turns while a page loads.
+- The logo no longer shows a faint circle around the puffin.
+- A recording's notes field is called Notes.
+- The phone app opening a server instance — from its icon or from a widget — no longer shows the on-device look while it gets there.
+- The example plugins, the recording transcriber among them, live together in `ontoplano-plugins/`; the transcriber reads its settings from a `.env` file beside it.
+- Home's cards line up in rows: cards side by side start and end at the same height instead of stacking at staggered heights.
+- Saving a form no longer empties its fields for a moment before the dialog closes — Edit notebook's title did this.
+- Your display name can be changed under Settings → Account.
+- On a phone, a board card's title has the card's whole width: its buttons sit on the line under it instead of squeezing the title to a few letters a line.
+- On a phone, the plan's Day / Week / Month switch shares a line with the saved weeks and the list button, so the controls above the grid take one row less.
+- The activity field in a task block is the same dropdown as the others, with a search box at the top of its list; pressing the field again closes it.
+
+## 0.184.10 — 2026-09-29
+
+- The recording transcriber example now runs Whisper locally in Python. Recording permissions and upload webhooks have readable labels when you set it up under Connections.
+
+## 0.184.9 — 2026-09-29
+
+- A recording's notes can be written as it is saved, and edited together with its name in one Edit dialog. The separate notes button on each recording is gone.
+
+## 0.184.8 — 2026-09-29
+
+- The menu wheels lose their outlines: no ring around the wheel, and no frame around the room's name or the wheel's settings button.
+- The plan opens on the calendar at every width, a phone's week included. The new list button beside Day, Week and Month (or `a`) shows any of the three as a list of its days instead.
+- On a phone a list's controls sit on two tidy lines: the search box on top, then the list's own button and its order on the left and the count and Filters on the right. The order has its direction arrow beside it again, so ascending and descending can be chosen.
+- A tall picture opens whole and centred in the viewer on a phone, rather than enlarged and cut off.
+- The menu mark's turn brakes smoothly to a stop instead of halting from half speed, and the puffin in the middle no longer turns with it after a page load.
+- On Android the number on the app's icon follows the bell: once nothing is unread in the app, its notifications leave the phone's tray, so the icon no longer says 2 when there is nothing to read.
+
+## 0.184.7 — 2026-09-29
+
+- Clicking the blank space beside a field's tags, or the field's name, no longer removes a tag.
+- The plan tiles lose the big faint octagon behind each badge.
+- On a phone the board slides sideways again, one column at a time, with the column names above to jump between them or to drop a card on.
+- A task's rating bars follow the mouse while it is held down; the box beside them and the phone's sheet say where the task would land, under the filters too, and have an edit button that opens the task with the bars as they are.
+- Inventory always shows a count against what you keep — 0/1 as much as 2/4 — and a thing that is fully stocked is washed blue again, with its count in blue.
+- Where a task would land under the current filters is said in blue words beside the filter icon, not in a pill.
+- The Untag and rating-confirm buttons beside a task can be pressed straight away.
+- Android 12 and later: a notebook widget is placed on the home screen straight away and says "Tap to choose a notebook", rather than depending on the setup page to keep it there.
+- Hovering a task's rating bars shows each rating with its icon; the fold that holds the three sliders is named in words.
+
+## 0.184.6 — 2026-09-29
+
+- Recordings now have editable notes, and a standalone example plugin can fill them with a Whisper transcription after upload.
+
+## 0.184.5 — 2026-09-29
+
+- On a phone, labels on cards are drawn as pills at their own size rather than as button-tall blocks; they are as easy to tap as before.
+- In the copy of the app that lives on the phone, the bottom bar wears the same blue as the puffin's badge.
+- The first-run tour no longer comes back after being dismissed when you leave the page straight away, and no longer vanishes before it opens on a busy page.
+- On a phone the board's toolbar fits on two lines; the order no longer sits alone on a third.
+- A notebook can be put in a folder by dragging it onto the folder on the shelf — on a phone, hold it, then draw it across and let go.
+
+## 0.184.4 — 2026-09-29
+
+- In priority order, two tasks rated alike can be put the other way round with the arrows beside their bars, and every open task shows its place in line in its corner.
+- A task's urgency, ease and interest are changed by pressing its bars — a double press is nought — and kept with Confirm beside them; on a phone the bars open big in a sheet.
+- Toolbars keep the search, the count and the buttons on one line: filters that do not fit wrap among themselves (the wishlist's toolbar no longer breaks in two), Reminders has the same search and count as every other list, and a narrow panel like People keeps its count beside the search.
+- Inventory: dragging a thing onto a place works again, and a click on the right half of a place opens it rather than its hidden rename button; a place's count says "things" again.
+- Assistants can set how many times a habit was done on a day (`set_habit_count`), not only tick it once.
+- Board: picking a card up to move it says so in a bar floating at the foot of the screen, instead of a line that pushed every column down.
+
+## 0.184.3 — 2026-09-29
+
+- While the task list is filtered, the task dialog also says where the task would land among the filtered tasks, or — when the filters would hide it.
+- A reminder can be set from the quick add — the wheel, the dashboard's buttons, or `r` on the dashboard.
+- A task's label can be taken off from the row: the small × on its pill, or holding the pill on a phone, then Untag?.
+
+## 0.184.2 — 2026-09-29
+
+- The + tag chip on a task in a notebook suggests only that notebook's tags, like the edit dialog does.
+- Task lists can be sorted by when a task was last edited.
+- Urgency, ease and interest are shown as icons — an hourglass, a feather and a star — everywhere but the sliders that set them.
+- The loading octagon keeps turning while a page finishes loading, instead of freezing mid-turn and jumping to its landing.
+- The subscribe page wears the logo's colours: each plan has its own tile and octagon badge, the yearly saving is flagged, and the button says how many free days you get.
+
+## 0.184.1 — 2026-09-28
+
+- "It did not happen" and skip are a struck-through circle, and on a phone the bottom bar is a straight bar with nothing shaped like the mark sticking out of it.
+- Dashboard cards stack under each other instead of leaving gaps; +/− buttons are finger-sized on touch screens; number fields lose their tiny arrows; a person's or notebook's name lines up with the entries below it.
+- Preferences and Integrations line their fields up in one column at one height, the menu editor's arrows stay put, data streams say what they are in words, and a few settings sentences no longer break mid-line.
+- Albums show their name in the bar with a way back, and the gallery can be searched and sorted. Search results mark what matched and no longer show raw markdown. Switches are visible in both themes, and the reminders toolbar is one row of same-height controls.
+- Finance: bills sort with what falls due next first and walk with j/k; Rules has search and keys, and the lines behind a count open where you can see them; Insights charts fit a phone, open on the newest months and show their scale.
+- Habits and recipes can be archived, sorted and edited from the list; logging a habit's day answers on the press; a recipe's page lines up with its cards and has its way back in the bar.
+- Inventory: tick the shopping list off in the shop (offline too), sort each list, reorder and colour categories, delete a single attribute value, and on a phone the list of places folds away so your things come first.
+- While a page loads, the octagon turns round a still puffin and always finishes a whole turn; on a phone it no longer stops dead mid-turn, and every load now turns it at least once.
+- Weekly notes can be written, edited and deleted from Notebooks → Weekly notes; that list and Tags can be sorted, and a tag's count sits in a column of its own.
+- Activities you no longer do are archived rather than disabled, and one nothing has used can be deleted from the archived list.
+- The weekly review can be answered from the keyboard (j/k, then c, s, t or d), and on a phone the questions come before the stats.
+- On a phone, a filter picked just before pressing Done in the filters sheet stays on; before, it could be dropped.
+- An administrator moving an ended plan's date into the future brings the plan back; before, the account stayed on the pay page.
+
 ## 0.184.0 — 2026-09-27
 
 - Every room is laid out the same way: one surface, a filter strip along its top with search, count, filters and order in the same places, rows with their buttons in the same order, one empty-state message, and every control in a strip the same height.

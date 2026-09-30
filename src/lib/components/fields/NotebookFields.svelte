@@ -170,7 +170,6 @@
 			free
 			options={folders.map((one) => ({ value: one, label: one }))}
 			maxlength={MAX_FOLDER_LENGTH}
-			placeholder={t('notebooks.folderPlaceholder')}
 			ariaLabel={t('notebooks.folder')}
 		/>
 	</Field>

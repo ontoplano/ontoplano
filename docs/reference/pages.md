@@ -11,7 +11,7 @@ own write surface, the way the endpoints in [the API](api.md) are the
 write surface for everything else; both end up calling the same
 [services](services.md).
 
-**64 pages, 206 actions.**
+**64 pages, 211 actions.**
 
 | Page                                 | Actions                                                                                                                                                                                                                                                                                                                                                                                              |
 | ------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -43,7 +43,7 @@ write surface for everything else; both end up calling the same
 | `/login/reset`                       | `reset`                                                                                                                                                                                                                                                                                                                                                                                              |
 | `/login/verify`                      | `resend`                                                                                                                                                                                                                                                                                                                                                                                             |
 | `/mail/weekly-review/off`            | —                                                                                                                                                                                                                                                                                                                                                                                                    |
-| `/media/audios`                      | `rename`, `remove`, `toIdea`                                                                                                                                                                                                                                                                                                                                                                         |
+| `/media/audios`                      | `edit`, `remove`, `toIdea`                                                                                                                                                                                                                                                                                                                                                                           |
 | `/media/gallery`                     | `create`, `planFolder`, `importFolder`, `rename`, `delete`                                                                                                                                                                                                                                                                                                                                           |
 | `/media/gallery/[id]`                | `upload`, `addTo`, `move`, `remove`, `rename`, `tag`                                                                                                                                                                                                                                                                                                                                                 |
 | `/media/gallery/notebooks/[...path]` | —                                                                                                                                                                                                                                                                                                                                                                                                    |
@@ -54,14 +54,14 @@ write surface for everything else; both end up calling the same
 | `/notebooks/ideas`                   | `batch`                                                                                                                                                                                                                                                                                                                                                                                              |
 | `/notebooks/people`                  | `create`, `update`, `setPicture`, `removePicture`, `setPanelWidth`, `delete`                                                                                                                                                                                                                                                                                                                         |
 | `/notebooks/tags`                    | `save`, `delete`                                                                                                                                                                                                                                                                                                                                                                                     |
-| `/notebooks/weekly`                  | —                                                                                                                                                                                                                                                                                                                                                                                                    |
+| `/notebooks/weekly`                  | `save`, `remove`                                                                                                                                                                                                                                                                                                                                                                                     |
 | `/oauth/authorize`                   | `allow`, `deny`                                                                                                                                                                                                                                                                                                                                                                                      |
 | `/oauth/connected`                   | —                                                                                                                                                                                                                                                                                                                                                                                                    |
 | `/offline`                           | —                                                                                                                                                                                                                                                                                                                                                                                                    |
 | `/reminders`                         | `create`, `edit`, `dismiss`, `remove`, `addSound`, `removeSound`, `setSound`                                                                                                                                                                                                                                                                                                                         |
 | `/ring`                              | —                                                                                                                                                                                                                                                                                                                                                                                                    |
 | `/search`                            | —                                                                                                                                                                                                                                                                                                                                                                                                    |
-| `/settings/account`                  | `setWeeklyReviewMail`, `changeEmail`, `changePassword`, `revokeSession`, `signOutEverywhere`, `empty`, `delete`                                                                                                                                                                                                                                                                                      |
+| `/settings/account`                  | `rename`, `setWeeklyReviewMail`, `changeEmail`, `changePassword`, `revokeSession`, `signOutEverywhere`, `empty`, `delete`                                                                                                                                                                                                                                                                            |
 | `/settings/account/import`           | `importTasks`, `importVault`, `previewImport`, `importAccount`                                                                                                                                                                                                                                                                                                                                       |
 | `/settings/billing`                  | `acceptFamilyOffer`, `declineFamilyOffer`, `checkout`, `switchInterval`                                                                                                                                                                                                                                                                                                                              |
 | `/settings/family`                   | `addSeat`, `withdrawInvite`, `removeSeat`                                                                                                                                                                                                                                                                                                                                                            |
@@ -75,7 +75,7 @@ write surface for everything else; both end up calling the same
 | `/tasks/board`                       | `setStatus`, `reorder`, `schedule`, `promote`, `demote`, `createTodo`, `setRatings`, `remind`, `unremind`, `editInstance`, `resolveActivity`, `deleteInstance`, `deleteTodo`                                                                                                                                                                                                                         |
 | `/tasks/plan`                        | `create`, `update`, `toggleActive`, `delete`, `bulkDelete`, `copyToWeekdays`, `addCalendar`, `removeCalendar`, `applyTemplate`, `saveScheme`, `loadScheme`, `deleteScheme`, `renameScheme`, `scheduleTodo`, `unscheduleBlock`, `convertRepeat`, `moveOccurrence`, `setTodoStatus`, `setStatus`, `suppress`, `unsuppress`, `createExceptional`, `updateExceptional`, `deleteExceptional`, `importCsv` |
 | `/tasks/review`                      | `saveNote`, `keepStale`, `completeStale`, `dropStale`, `resolve`, `reopen`, `settle`, `carry`                                                                                                                                                                                                                                                                                                        |
-| `/tasks/todo`                        | `create`, `update`, `archive`, `setStatus`, `schedule`, `tag`, `attribute`, `batch`, `delete`, `delegate`                                                                                                                                                                                                                                                                                            |
+| `/tasks/todo`                        | `create`, `update`, `archive`, `setStatus`, `schedule`, `tag`, `nudge`, `rate`, `attribute`, `batch`, `delete`, `delegate`                                                                                                                                                                                                                                                                           |
 | `/welcome`                           | `assistantToken`, `setLanguage`, `finish`                                                                                                                                                                                                                                                                                                                                                            |
 | `/welcome/password`                  | `default`                                                                                                                                                                                                                                                                                                                                                                                            |
 | `/widget`                            | —                                                                                                                                                                                                                                                                                                                                                                                                    |
@@ -161,12 +161,7 @@ never corrected is a statement somebody stops trusting.
 
 ### `/finance/rules`
 
-The rules, and what they are currently doing.
-
-A rule is only as good as what it catches, so the page shows the count
-beside each one and the shape of the whole month's spending next to them:
-writing a pattern and watching the pie move is the loop this screen is
-for.
+The most lines a rule's "which lines" panel lists.
 
 ### `/health/recipes`
 
@@ -250,7 +245,7 @@ What the recordings tab needs, and the two things it can do without bytes.
 The bytes never come through a form action: a `MediaRecorder` hands back a
 blob that is already exactly what should be stored, and wrapping it in a
 multipart body to unwrap it again buys nothing. Recording posts to
-`/media/audio`; renaming and deleting are here, where they have no payload.
+`/media/audio`; editing and deleting are here, where they have no payload.
 
 **`toIdea`**
 
@@ -303,11 +298,7 @@ how much work each is doing, and the three things that can be done to one.
 
 ### `/notebooks/weekly`
 
-Every week you have written about, in one place.
-
-The weekly note was reachable only by navigating to the week it belonged to,
-which is a thing nobody does — so the one running account of a year this app
-keeps was write-only. It is writing, so it belongs where the writing is.
+A civil date. Anything else would quietly fall back to this week.
 
 ### `/oauth/authorize`
 
@@ -373,6 +364,10 @@ reminder does". A checkbox has no way to say the third thing.
 ### `/settings/account`
 
 better-auth's messages are already user-facing; anything else is a bug.
+
+**`rename`**
+
+The name the app calls you by. Not a credential, so no password.
 
 **`changeEmail`**
 

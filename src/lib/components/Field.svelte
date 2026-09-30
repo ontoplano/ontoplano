@@ -43,6 +43,27 @@
 		8: 'sm:col-span-8',
 		12: 'sm:col-span-12'
 	} as const;
+
+	/** What counts as pressing something of its own, inside the field. */
+	const INTERACTIVE = 'button, a, input, select, textarea, [role="button"]';
+	/** Where a press on the label's own words or empty space should go. */
+	const TYPED = 'input:not([type="hidden"]), textarea, select';
+
+	/*
+	 * A press on the label that would land on a button is sent to the box.
+	 *
+	 * A label hands every press on it to its first labelable descendant, and a
+	 * button is labelable. Around the tag box that first one is the first
+	 * chip's ×, so clicking the field's name or the blank beside the chips took
+	 * a tag off. A label is for pointing at the thing you type into.
+	 */
+	function onLabelClick(e: MouseEvent) {
+		const label = e.currentTarget as HTMLLabelElement;
+		if (!(label.control instanceof HTMLButtonElement)) return;
+		if (e.target instanceof Element && e.target.closest(INTERACTIVE)) return;
+		e.preventDefault();
+		label.querySelector<HTMLElement>(TYPED)?.focus();
+	}
 </script>
 
 {#if group}
@@ -58,7 +79,8 @@
 		{/if}
 	</fieldset>
 {:else}
-	<label class="col-span-12 block {SPANS[span]}">
+	<!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_noninteractive_element_interactions -->
+	<label class="col-span-12 block {SPANS[span]}" onclick={onLabelClick}>
 		<span class="eyebrow text-gray-600">
 			{label}{#if required}<span class="text-gray-500"> *</span>{/if}
 		</span>

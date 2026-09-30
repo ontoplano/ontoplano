@@ -12,13 +12,13 @@ import { visit } from './helpers/visit';
  * finds a name whose letters are three words apart.
  */
 
-/**
- * The picker's own options — scoped, because a native `<select>` on the same
- * form has `option` children with exactly that role, and the first version of
- * this test was counting the Mode dropdown's.
- */
+/** The activity field: the `Picker` with a search box at the top of its list. */
+const field = (page: import('@playwright/test').Page) => page.locator('[data-picker="activityId"]');
+const face = (page: import('@playwright/test').Page) => field(page).getByRole('button').first();
+const search = (page: import('@playwright/test').Page) =>
+	field(page).getByRole('searchbox', { name: 'Activity' });
 const optionsIn = (page: import('@playwright/test').Page) =>
-	page.locator('[role="listbox"] [role="option"]');
+	field(page).locator('[role="listbox"] [role="option"]');
 
 /** The initials of a multi-word name: the query no substring match would find. */
 const initials = (name: string) =>
@@ -33,12 +33,9 @@ test('the picker shows everything first, then narrows as you type', async ({ pag
 	await visit(page, '/tasks/plan?view=week');
 	await page.getByRole('button', { name: 'New task block' }).click();
 
-	const box = page.getByRole('combobox', { name: 'Activity' });
-	await expect(box).toBeVisible();
-
 	// Nothing typed, and the whole list is already there. This is the half a
 	// `<datalist>` gets wrong.
-	await box.click();
+	await face(page).click();
 	const options = optionsIn(page);
 	await expect(options.first()).toBeVisible();
 	const all = await options.allInnerTexts();
@@ -49,14 +46,29 @@ test('the picker shows everything first, then narrows as you type', async ({ pag
 	const spread = all.map((t) => t.trim()).find((t) => /\s/.test(t) && t.length > 4);
 	expect(spread, `no multi-word activity among ${all.join(', ')}`).toBeTruthy();
 
-	await box.fill(initials(spread!));
+	// The search box has the typing already, on a pointer that aims.
+	await expect(search(page)).toBeFocused();
+	await page.keyboard.type(initials(spread!));
 	await expect(options.filter({ hasText: spread! })).toHaveCount(1);
 
 	// Enter takes the one under the cursor, and the form posts an id.
 	await page.keyboard.press('Enter');
-	await expect(box).toHaveValue(spread!);
+	await expect(face(page)).toHaveText(spread!);
 	await expect(page.locator('input[type=hidden][name=activityId]')).not.toHaveValue('');
 	await expect(options).toHaveCount(0);
+});
+
+test('a press on the field shuts it as well as opens it', async ({ page }) => {
+	test.setTimeout(150_000);
+	await register(page, testEmail('picker-toggle'));
+	await visit(page, '/tasks/plan?view=week');
+	await page.getByRole('button', { name: 'New task block' }).click();
+
+	await face(page).click();
+	await expect(optionsIn(page).first()).toBeVisible();
+	await face(page).click();
+	await expect(optionsIn(page)).toHaveCount(0);
+	await expect(page.getByRole('button', { name: /Add repeating task block/ })).toBeVisible();
 });
 
 test('it works from the keyboard alone, and Escape lets go', async ({ page }) => {
@@ -65,22 +77,22 @@ test('it works from the keyboard alone, and Escape lets go', async ({ page }) =>
 	await visit(page, '/tasks/plan?view=week');
 	await page.getByRole('button', { name: 'New task block' }).click();
 
-	const box = page.getByRole('combobox', { name: 'Activity' });
-	await box.focus();
+	await face(page).focus();
+	await page.keyboard.press('ArrowDown');
 	await expect(optionsIn(page).first()).toBeVisible();
 
 	// Down moves the cursor; Enter takes it.
 	await page.keyboard.press('ArrowDown');
 	await page.keyboard.press('Enter');
-	const taken = await box.inputValue();
+	const taken = (await face(page).innerText()).trim();
 	expect(taken).not.toBe('');
 
 	// Reopened and abandoned: the list closes and what was chosen is still there.
-	await box.click();
+	await face(page).click();
 	await expect(optionsIn(page).first()).toBeVisible();
 	await page.keyboard.press('Escape');
 	await expect(optionsIn(page)).toHaveCount(0);
-	await expect(box).toHaveValue(taken);
+	await expect(face(page)).toHaveText(taken);
 
 	// And Escape on the picker did not also close the form under it.
 	await expect(page.getByRole('button', { name: /Add repeating task block/ })).toBeVisible();
@@ -92,9 +104,8 @@ test('a query that matches nothing says so rather than showing an empty box', as
 	await visit(page, '/tasks/plan?view=week');
 	await page.getByRole('button', { name: 'New task block' }).click();
 
-	const box = page.getByRole('combobox', { name: 'Activity' });
-	await box.click();
-	await box.fill('zzzzzz');
+	await face(page).click();
+	await search(page).fill('zzzzzz');
 	await expect(optionsIn(page)).toHaveCount(0);
 	await expect(page.getByText('Nothing matches')).toBeVisible();
 });

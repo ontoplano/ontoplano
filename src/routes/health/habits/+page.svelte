@@ -5,6 +5,8 @@
 	import { enhance } from '$lib/enhance';
 	import FilterBar from '$lib/components/FilterBar.svelte';
 	import Picker from '$lib/components/Picker.svelte';
+	import SortControl from '$lib/components/SortControl.svelte';
+	import type { PlainKey } from '$lib/i18n/keys';
 	import RoomSurface from '$lib/components/RoomSurface.svelte';
 	import { setRoomAction } from '$lib/room-action.svelte';
 	import FormError from '$lib/components/FormError.svelte';
@@ -13,7 +15,7 @@
 	import Modal from '$lib/components/Modal.svelte';
 	import { tick } from 'svelte';
 	import type { PageData, ActionData } from './$types';
-	import { getAction } from '$lib/shortcuts';
+	import { getAction, keyFor } from '$lib/shortcuts';
 	import { keepInView } from '$lib/actions/keep-in-view';
 	import HabitCard from '$lib/components/HabitCard.svelte';
 	import { HABIT_ROOM_ACTIONS } from '$lib/habit-action-names';
@@ -29,6 +31,7 @@
 		type: 'bad' | 'good' | 'neutral';
 		scheduledDays: string | null;
 		createdAt: string;
+		archivedAt: string | null;
 		streak: number;
 	}
 
@@ -52,22 +55,79 @@
 		{ value: 'neutral', label: 'app.neutral' }
 	] as const;
 
+	/** Put away, and shown only when asked for — with how many there are. */
+	let showArchived = $state(false);
+	const putAway = $derived((data.habits as Habit[]).filter((h) => h.archivedAt !== null).length);
+
 	const narrowed = $derived(typeFilter !== 'all' || looking.trim() !== '');
+
+	const ORDERS = ['name', 'streak', 'total', 'created'] as const;
+	type Order = (typeof ORDERS)[number];
+	const ORDER_LABELS: Record<Order, PlainKey> = {
+		name: 'health.habits.orderName',
+		streak: 'health.habits.orderStreak',
+		total: 'health.habits.orderTotal',
+		created: 'health.habits.orderCreated'
+	};
+	/** Where this browser keeps the order it was last given. */
+	const ORDER_KEY = 'habits.order';
+	let order = $state<Order>('name');
+	let direction = $state<'asc' | 'desc'>('asc');
+	$effect(() => {
+		try {
+			const kept = JSON.parse(localStorage.getItem(ORDER_KEY) ?? 'null');
+			if (kept && ORDERS.includes(kept.order)) order = kept.order;
+			if (kept?.direction === 'asc' || kept?.direction === 'desc') direction = kept.direction;
+		} catch {
+			/* A private window keeps nothing; the default order stands. */
+		}
+	});
+	function keepOrder() {
+		try {
+			localStorage.setItem(ORDER_KEY, JSON.stringify({ order, direction }));
+		} catch {
+			/* As above. */
+		}
+	}
+
+	/** How many days of the year each habit was logged, for ordering by it. */
+	const totals = $derived.by(() => {
+		const out: Record<number, number> = {};
+		for (const one of data.occurrences) out[one.habitId] = (out[one.habitId] ?? 0) + 1;
+		return out;
+	});
+
+	function compare(a: Habit, b: Habit): number {
+		const by =
+			order === 'streak'
+				? a.streak - b.streak
+				: order === 'total'
+					? (totals[a.id] ?? 0) - (totals[b.id] ?? 0)
+					: order === 'created'
+						? a.createdAt.localeCompare(b.createdAt)
+						: 0;
+		const tie = a.name.localeCompare(b.name);
+		return (direction === 'asc' ? 1 : -1) * (by || tie);
+	}
 
 	function filteredHabits() {
 		const needle = looking.trim().toLowerCase();
-		return (data.habits as Habit[]).filter(
-			(h) =>
-				(typeFilter === 'all' || h.type === typeFilter) &&
-				(needle === '' ||
-					h.name.toLowerCase().includes(needle) ||
-					(h.description ?? '').toLowerCase().includes(needle))
-		);
+		return (data.habits as Habit[])
+			.filter(
+				(h) =>
+					(h.archivedAt !== null) === showArchived &&
+					(typeFilter === 'all' || h.type === typeFilter) &&
+					(needle === '' ||
+						h.name.toLowerCase().includes(needle) ||
+						(h.description ?? '').toLowerCase().includes(needle))
+			)
+			.sort(compare);
 	}
 
 	function clearFilters() {
 		typeFilter = 'all';
 		looking = '';
+		showArchived = false;
 		selectedHabitIndex = 0;
 	}
 
@@ -112,6 +172,9 @@
 					nameInput?.focus();
 				});
 				break;
+			case 'edit':
+				if (habits.length > 0) startEdit(habits[selectedHabitIndex]);
+				break;
 			case 'toggle-expand':
 				if (habits.length > 0) {
 					const habit = habits[selectedHabitIndex];
@@ -155,6 +218,7 @@
 		label: t('health.habits.newHabit'),
 		open: showForm,
 		tour: 'habit-new',
+		kbd: keyFor('/health/habits', 'new'),
 		run: () => {
 			if (showForm && !editingId) {
 				showForm = false;
@@ -189,8 +253,14 @@
 		{#snippet tools()}
 			<FilterBar
 				name="habits"
-				on={narrowed}
-				summary={typeFilter === 'all' ? '' : t(KINDS.find((k) => k.value === typeFilter)!.label)}
+				inlineBelow
+				on={narrowed || showArchived}
+				summary={[
+					typeFilter === 'all' ? '' : t(KINDS.find((k) => k.value === typeFilter)!.label),
+					showArchived ? t('todoRows.archived') : ''
+				]
+					.filter(Boolean)
+					.join(', ')}
 				onclear={clearFilters}
 			>
 				{#snippet lead()}
@@ -209,22 +279,56 @@
 						said={(count) => t('health.habits.showingCount', { count })}
 					/>
 				{/snippet}
-				<Picker
-					value={typeFilter}
-					options={KINDS.map((k) => ({ value: k.value, label: t(k.label) }))}
-					onpick={(next) => {
-						typeFilter = next;
-						selectedHabitIndex = 0;
-					}}
-					label={t('health.habits.kind')}
-					class="min-w-32 flex-1 sm:flex-none"
-				/>
+				{#snippet trailing()}
+					<SortControl
+						value={order}
+						options={ORDERS}
+						labels={ORDER_LABELS}
+						{direction}
+						onpick={(next) => {
+							order = next;
+							keepOrder();
+						}}
+						onflip={() => {
+							direction = direction === 'asc' ? 'desc' : 'asc';
+							keepOrder();
+						}}
+						label={t('health.habits.orderHabitsBy')}
+					/>
+				{/snippet}
+				<!-- Out on the strip at every width: a phone's sheet holding one
+				     picker is a press in front of a control there was room for. -->
+				{#snippet inline()}
+					<Picker
+						value={typeFilter}
+						options={KINDS.map((k) => ({ value: k.value, label: t(k.label) }))}
+						onpick={(next) => {
+							typeFilter = next;
+							selectedHabitIndex = 0;
+						}}
+						label={t('health.habits.kind')}
+						class="min-w-36 flex-1 sm:flex-none"
+					/>
+					<!-- One label either way, with how many are put away. -->
+					<button
+						type="button"
+						class="btn btn-sm shrink-0"
+						aria-pressed={showArchived}
+						hidden={putAway === 0 && !showArchived}
+						onclick={() => {
+							showArchived = !showArchived;
+							selectedHabitIndex = 0;
+						}}
+					>
+						{t('todoRows.archivedCount', { count: putAway })}
+					</button>
+				{/snippet}
 			</FilterBar>
 		{/snippet}
 
 		{#if filteredHabits().length === 0}
 			<!-- Inside the surface, so the controls that emptied it stay to undo it. -->
-			{#if !narrowed}
+			{#if !narrowed && !showArchived}
 				<EmptyState
 					icon={routeGlyph('/health/habits')!}
 					title={t('health.habits.nothingTrackedYet')}

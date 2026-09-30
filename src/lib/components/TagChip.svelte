@@ -2,6 +2,9 @@
 	import { pillStyle } from '$lib/pill-ink';
 	import { DEFAULT_TAG_FILL } from '$lib/colors';
 	import { page } from '$app/state';
+	import Icon from '$lib/components/Icon.svelte';
+	import { longPress } from '$lib/actions/long-press';
+	import { useT } from '$lib/i18n';
 
 	/**
 	 * A label, wherever one is drawn.
@@ -26,6 +29,12 @@
 		active = false,
 		onclick = undefined,
 		title = undefined,
+		/**
+		 * Take this label off whatever wears it. Given, the pill carries a small
+		 * × where there is a pointer, and a held finger does the same on a
+		 * phone. Called with the pill, so what confirms it can open beside it.
+		 */
+		onremove = undefined,
 		class: klass = '',
 		children = undefined
 	}: {
@@ -34,9 +43,12 @@
 		active?: boolean;
 		onclick?: (event: MouseEvent) => void;
 		title?: string;
+		onremove?: (pill: HTMLElement) => void;
 		class?: string;
 		children?: import('svelte').Snippet;
 	} = $props();
+
+	const t = useT();
 
 	/*
 	 * Undefined means "ask the account"; null means "this label has no colour"
@@ -69,7 +81,37 @@
 	);
 </script>
 
-{#if onclick}
+{#if onremove}
+	<!--
+		Two presses in one pill: the label's own, and the ×. Two buttons side by
+		side inside it, since a button cannot hold another.
+	-->
+	<span
+		class="{look} tag-chip-removable inline-flex items-center"
+		style={pillStyle(fill)}
+		use:longPress={onremove}
+	>
+		<button
+			type="button"
+			{onclick}
+			{title}
+			aria-pressed={onclick ? active : undefined}
+			class="tag-chip-face"
+			disabled={!onclick}
+		>
+			#{name}{#if children}{@render children()}{/if}
+		</button>
+		<button
+			type="button"
+			class="tag-chip-x"
+			onclick={(event) => onremove((event.currentTarget as HTMLElement).parentElement!)}
+			title={t('tagChip.untagName', { name })}
+			aria-label={t('tagChip.untagName', { name })}
+		>
+			<Icon name="close" size={10} />
+		</button>
+	</span>
+{:else if onclick}
 	<button
 		type="button"
 		{onclick}
