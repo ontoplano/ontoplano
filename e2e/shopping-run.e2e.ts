@@ -19,12 +19,6 @@ test('the shopping list adds up what has run low, and keeps the wishlist out of 
 	await page.getByRole('button', { name: /Add item/ }).click();
 	const form = page.getByRole('dialog');
 	await form.locator('[name="label"]').fill('Tinned tomatoes');
-	// How many you keep, the price and the kind live behind the disclosure —
-	// see `BuyFields`: capture is one line, the rest is one press away.
-	await form
-		.getByRole('button', { name: /More|options/i })
-		.first()
-		.click();
 	await form.locator('[name="idealQty"]').fill('4');
 	await form.locator('[name="price"]').fill('2.50');
 	await form.getByRole('button', { name: 'Add item', exact: true }).click();
@@ -34,10 +28,6 @@ test('the shopping list adds up what has run low, and keeps the wishlist out of 
 	await page.getByRole('button', { name: /Add item/ }).click();
 	const wish = page.getByRole('dialog');
 	await wish.locator('[name="label"]').fill('A better pan');
-	await wish
-		.getByRole('button', { name: /More|options/i })
-		.first()
-		.click();
 	await wish.locator('[name="type"]').selectOption('someday');
 	await wish.locator('[name="price"]').fill('80.00');
 	await wish.getByRole('button', { name: 'Add item', exact: true }).click();
