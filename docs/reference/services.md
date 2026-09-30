@@ -19,7 +19,7 @@ shows up here on the next build.
 | [`account-data`](#account-data)                  | The account's data, table by table.                                                                                                                                                                                                                                  |
 | [`account-import`](#account-import)              | Putting an exported account back.                                                                                                                                                                                                                                    |
 | [`server/account-import`](#serveraccount-import) | Putting an exported account back, on a server — and the copy it keeps first.                                                                                                                                                                                         |
-| [`account-profile`](#account-profile)            | The account row itself, for whatever draws a name at the top of a page.                                                                                                                                                                                              |
+| [`account-profile`](#account-profile)            | The account row itself, for whatever draws a name at the top of a page — and the name on it, which both instances let a person change.                                                                                                                               |
 | [`account`](#account)                            | Taking your data out, and closing your account — and what this instance allows of both.                                                                                                                                                                              |
 | [`activities`](#activities)                      | Categories are the areas of a life; activities are the named recurring things inside them. Both are referenced by planner slots and by history, so neither can be deleted while something still points at it — history that loses its category stops being readable. |
 | [`admin`](#admin)                                | Administration: looking at somebody else's account.                                                                                                                                                                                                                  |
@@ -345,7 +345,8 @@ a file beside the database there is a file nobody can reach.
 
 ## account-profile
 
-The account row itself, for whatever draws a name at the top of a page.
+The account row itself, for whatever draws a name at the top of a page —
+and the name on it, which both instances let a person change.
 
 The rest of `user` handling — sessions, passwords, deletion — is the
 server's business and stays there. This is the one read that every
@@ -355,6 +356,12 @@ the layout builds its `user` from it.
 ### Functions
 
 #### `profileOf(userId)`
+
+#### `renameAccount(ctx, raw)`
+
+The name the app calls this account by — in the header, and to the family
+on what they share. Not a credential: nothing signs in with it, so it takes
+no password to change.
 
 ## account
 

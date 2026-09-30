@@ -11,7 +11,7 @@ own write surface, the way the endpoints in [the API](api.md) are the
 write surface for everything else; both end up calling the same
 [services](services.md).
 
-**64 pages, 210 actions.**
+**64 pages, 211 actions.**
 
 | Page                                 | Actions                                                                                                                                                                                                                                                                                                                                                                                              |
 | ------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -61,7 +61,7 @@ write surface for everything else; both end up calling the same
 | `/reminders`                         | `create`, `edit`, `dismiss`, `remove`, `addSound`, `removeSound`, `setSound`                                                                                                                                                                                                                                                                                                                         |
 | `/ring`                              | —                                                                                                                                                                                                                                                                                                                                                                                                    |
 | `/search`                            | —                                                                                                                                                                                                                                                                                                                                                                                                    |
-| `/settings/account`                  | `setWeeklyReviewMail`, `changeEmail`, `changePassword`, `revokeSession`, `signOutEverywhere`, `empty`, `delete`                                                                                                                                                                                                                                                                                      |
+| `/settings/account`                  | `rename`, `setWeeklyReviewMail`, `changeEmail`, `changePassword`, `revokeSession`, `signOutEverywhere`, `empty`, `delete`                                                                                                                                                                                                                                                                            |
 | `/settings/account/import`           | `importTasks`, `importVault`, `previewImport`, `importAccount`                                                                                                                                                                                                                                                                                                                                       |
 | `/settings/billing`                  | `acceptFamilyOffer`, `declineFamilyOffer`, `checkout`, `switchInterval`                                                                                                                                                                                                                                                                                                                              |
 | `/settings/family`                   | `addSeat`, `withdrawInvite`, `removeSeat`                                                                                                                                                                                                                                                                                                                                                            |
@@ -364,6 +364,10 @@ reminder does". A checkbox has no way to say the third thing.
 ### `/settings/account`
 
 better-auth's messages are already user-facing; anything else is a bug.
+
+**`rename`**
+
+The name the app calls you by. Not a credential, so no password.
 
 **`changeEmail`**
 
