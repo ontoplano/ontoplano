@@ -22,6 +22,8 @@ releases mattered.
 
 - The review of the running week includes today's blocks, before the day is
   over and even if nothing has opened today yet.
+- On a phone, a task's add-a-label button sits in the left column, just above
+  its rating bars.
 
 ## 0.184.12 — 2026-10-01
 

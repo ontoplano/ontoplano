@@ -1842,57 +1842,65 @@
 								through a dialog that opens somewhere else entirely.
 							-->
 								<!--
-									The tick and the gauges are the whole rail. The number and
-									the add-a-label chip used to stand in it too, which made a
-									one-line task 124px tall with a gap under its title; they
-									lead and end the labels line instead, at every width.
+									The tick and the gauges are the rail on a wide screen. The
+									number and the add-a-label chip used to stand in it too,
+									which made a one-line task 124px tall with a gap under its
+									title; there they lead and end the labels line instead.
+
+									On a phone the add-a-label chip stands in the rail, sitting
+									on the bars rather than hanging off the tick: a phone's row is
+									already tall enough to hold it, and the labels line there is
+									the number and the labels, with nothing trailing after them.
 								-->
-								<div class="relative mt-auto flex">
-									<!--
+								<div class="mt-auto flex flex-col items-center gap-1">
+									<div class="sm:hidden">{@render quickTag()}</div>
+									<div class="relative flex">
+										<!--
 										Beside the bars, in the card's own margin: a task rated the
 										same as the one next to it can be put the other way round.
 										Hung outside the rail rather than in it, so a row that has
 										them starts its words where every other row does.
 									-->
-									{#if ties.get(todo.id)?.up || ties.get(todo.id)?.down}
-										{@const tie = ties.get(todo.id)!}
-										<div class="tie-arrows">
-											{#each [{ other: tie.up, way: 'up', glyph: 'chevron-up', said: t('todoRows.aheadOfTheTie') }, { other: tie.down, way: 'down', glyph: 'chevron-down', said: t('todoRows.behindTheTie') }] as const as way (way.glyph)}
-												<form
-													method="post"
-													action={actions.nudge}
-													use:enhance={() => {
-														if (way.other) holdSwap(todo, way.other, way.way);
-														return async ({ result, update }) => {
-															if (result.type !== 'success') heldOrder = new Map();
-															await update();
-														};
-													}}
-													class:invisible={!way.other}
-												>
-													<input type="hidden" name="id" value={todo.id} />
-													<input type="hidden" name="withId" value={way.other ?? ''} />
-													<button
-														type="submit"
-														disabled={!way.other}
-														title={way.said}
-														aria-label={way.said}
+										{#if ties.get(todo.id)?.up || ties.get(todo.id)?.down}
+											{@const tie = ties.get(todo.id)!}
+											<div class="tie-arrows">
+												{#each [{ other: tie.up, way: 'up', glyph: 'chevron-up', said: t('todoRows.aheadOfTheTie') }, { other: tie.down, way: 'down', glyph: 'chevron-down', said: t('todoRows.behindTheTie') }] as const as way (way.glyph)}
+													<form
+														method="post"
+														action={actions.nudge}
+														use:enhance={() => {
+															if (way.other) holdSwap(todo, way.other, way.way);
+															return async ({ result, update }) => {
+																if (result.type !== 'success') heldOrder = new Map();
+																await update();
+															};
+														}}
+														class:invisible={!way.other}
 													>
-														<Icon name={way.glyph} size={12} />
-													</button>
-												</form>
-											{/each}
-										</div>
-									{/if}
-									<RatingPress
-										values={rerating?.id === todo.id && !rerating.sheet
-											? rerating.values
-											: todo.ratings}
-										muted={isDone(todo)}
-										label={t('todoRows.setTheRatings')}
-										onkeyboard={() => startEdit(todo, { atRatings: true })}
-										onset={(rating, value, at) => rerate(todo, rating, value, at)}
-									/>
+														<input type="hidden" name="id" value={todo.id} />
+														<input type="hidden" name="withId" value={way.other ?? ''} />
+														<button
+															type="submit"
+															disabled={!way.other}
+															title={way.said}
+															aria-label={way.said}
+														>
+															<Icon name={way.glyph} size={12} />
+														</button>
+													</form>
+												{/each}
+											</div>
+										{/if}
+										<RatingPress
+											values={rerating?.id === todo.id && !rerating.sheet
+												? rerating.values
+												: todo.ratings}
+											muted={isDone(todo)}
+											label={t('todoRows.setTheRatings')}
+											onkeyboard={() => startEdit(todo, { atRatings: true })}
+											onset={(rating, value, at) => rerate(todo, rating, value, at)}
+										/>
+									</div>
 								</div>
 							{/snippet}
 							{#snippet labels()}
@@ -1935,7 +1943,7 @@
 										onremove={(pill) => (untagging = { id: todo.id, name: tag.name, pill })}
 									/>
 								{/each}
-								{@render quickTag()}
+								<span class="hidden sm:contents">{@render quickTag()}</span>
 							{/snippet}
 							{#snippet controls()}
 								<!-- First, and only where there is something to read: what the
