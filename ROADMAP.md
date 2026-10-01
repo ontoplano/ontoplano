@@ -32,6 +32,7 @@ the REST API also probably lack obvious necessary endpoints
 
 - **Sharing notebooks and its contents.** : Maybe family/organization kind of thing with an invite link with scoped permissions.
 - **Organizations**: Family / organization to do the above with multiple people
+- **CLI**: A CLI tool that uses the REST API for easier scripting 
 
 ## One day, maybe
 
