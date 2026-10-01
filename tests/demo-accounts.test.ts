@@ -295,9 +295,9 @@ describe('the spares', () => {
 		const waiting = demo.demoSpareCount();
 
 		let madeDuringTheCall = -1;
-		const account = await demo.createDemoAccount('demo.test', async (host) => {
+		const account = await demo.createDemoAccount('demo.test', async () => {
 			madeDuringTheCall = made();
-			return make(host);
+			return make();
 		});
 
 		expect(account).not.toBeNull();
