@@ -6221,3 +6221,47 @@ input[type='search']::-webkit-search-cancel-button:hover {
 .progress-fill {
 	background-color: var(--color-gray-700);
 }
+
+/*
+ * The screen being gone to, drawn over the one being left — see
+ * `PendingPage`. Invisible for the first beat, so a quick navigation never
+ * shows it; the delay is the same idea as `.nav-progress`, shorter, because
+ * this one stands in for the content rather than decorating it.
+ */
+:root {
+	--pending-page-delay: 120ms;
+}
+
+.pending-page {
+	position: absolute;
+	inset: 0;
+	z-index: 5;
+	min-height: 100%;
+	padding-top: 0.25rem;
+	background-color: var(--color-gray-100);
+	opacity: 0;
+	animation: pending-page-show 120ms ease var(--pending-page-delay) forwards;
+}
+
+@keyframes pending-page-show {
+	to {
+		opacity: 1;
+	}
+}
+
+.pending-bone {
+	display: block;
+	background-color: var(--color-gray-200);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+	.pending-bone {
+		animation: pending-bone-pulse 1.2s ease-in-out infinite;
+	}
+}
+
+@keyframes pending-bone-pulse {
+	50% {
+		opacity: 0.5;
+	}
+}

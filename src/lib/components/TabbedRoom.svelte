@@ -3,6 +3,7 @@
 	import { afterNavigate, beforeNavigate, goto } from '$app/navigation';
 	import { navigating, page } from '$app/state';
 	import RoomBar from '$lib/components/RoomBar.svelte';
+	import PendingPage from '$lib/components/PendingPage.svelte';
 	import TabStrip from '$lib/components/TabStrip.svelte';
 	import RoomVerb from '$lib/components/RoomVerb.svelte';
 	import { phoneWidth } from '$lib/breakpoints.svelte';
@@ -154,7 +155,18 @@
 		return best;
 	}
 
-	const at = $derived(tabFor(page.url.pathname));
+	/*
+	 * The tab being gone to, from the press rather than from the arrival.
+	 *
+	 * The strip used to stay on the old tab until the new one's data had
+	 * loaded, so the press had no answer for that long. While a navigation to
+	 * another of this room's tabs is in flight, that tab is the current one —
+	 * and the screen under it is the shape of what is coming (`PendingPage`).
+	 */
+	const goingTo = $derived(navigating.to ? tabFor(navigating.to.url.pathname) : -1);
+	const here = $derived(tabFor(page.url.pathname));
+	const at = $derived(goingTo >= 0 ? goingTo : here);
+	const pending = $derived(goingTo >= 0 && goingTo !== here);
 
 	/** The panel that moves. Its content is `body`, which is what is replaced. */
 	let pane = $state<HTMLElement>();
@@ -309,7 +321,7 @@
 	<!-- `.slide-frame` is where the movement is clipped, and why it gives the
 	     page gutter back first. -->
 	<div bind:this={frame} class="slide-frame">
-		<div bind:this={pane}>
+		<div bind:this={pane} class="relative">
 			<!--
 				Something solid under the tabs.
 
@@ -320,6 +332,9 @@
 				and Media and Health looked like.
 			-->
 			<div bind:this={body} class={nested ? '' : 'room-body'}>{@render children()}</div>
+			<!-- Beside the body rather than in it: the movement between tabs hides
+			     the body and copies it, and this has to be seen over both. -->
+			{#if pending}<PendingPage />{/if}
 		</div>
 		<div bind:this={stage} class="slide-stage" aria-hidden="true"></div>
 		<!--

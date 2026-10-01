@@ -27,6 +27,9 @@ releases mattered.
 - Archiving or deleting from a list row takes the row away as you press, and
   puts it back if the server refuses.
 - Stars and on/off buttons switch as you press them.
+- Pressing a tab or a room takes you there at once: the tab and the menu
+  highlight straight away, and the page shows its outline with "Loading"
+  until its contents arrive.
 
 ## 0.184.13 — 2026-10-01
 

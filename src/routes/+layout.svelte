@@ -7,6 +7,8 @@
 	import { guardSubmits, releaseHeldButtons } from '$lib/one-press';
 	import { resolve } from '$app/paths';
 	import { navigating, page } from '$app/state';
+	import PendingPage from '$lib/components/PendingPage.svelte';
+	import { DESTINATIONS } from '$lib/destinations';
 	import { live } from '$lib/live';
 	import { afterNavigate, beforeNavigate, goto } from '$app/navigation';
 	import { isIsolatedBuild } from '$lib/isolated/mode';
@@ -384,20 +386,21 @@
 	});
 
 	function isNavActive(href: string): boolean {
-		if (href === '/') return page.url.pathname === '/';
+		// Where a press is taking you, from the press: the bar answers it
+		// before the room has arrived, the way the room's tabs do.
+		const path = navigating.to?.url.pathname ?? page.url.pathname;
+		if (href === '/') return path === '/';
 		// People sits beside the writing in the bar, not under it, so the
 		// Notebooks entry means the notebooks and the diary and nothing else.
 		if (href === '/notebooks')
 			return (
-				page.url.pathname === '/notebooks' ||
-				(page.url.pathname.startsWith('/notebooks/') &&
-					!page.url.pathname.startsWith('/notebooks/people'))
+				path === '/notebooks' ||
+				(path.startsWith('/notebooks/') && !path.startsWith('/notebooks/people'))
 			);
-		if (href === '/tasks/plan') return page.url.pathname.startsWith('/tasks');
-		if (href === '/goals') return page.url.pathname.startsWith('/goals');
-		if (href === '/health/habits')
-			return page.url.pathname.startsWith('/health') || page.url.pathname.startsWith('/data/');
-		return page.url.pathname === href;
+		if (href === '/tasks/plan') return path.startsWith('/tasks');
+		if (href === '/goals') return path.startsWith('/goals');
+		if (href === '/health/habits') return path.startsWith('/health') || path.startsWith('/data/');
+		return path === href;
 	}
 
 	import { GLOBAL_SHORTCUTS } from '$lib/shortcuts';
@@ -773,6 +776,21 @@
 	 * How long the indicator insists before it stops saying "working".
 	 * Far past any real wait here; past it the page on screen is the real one.
 	 */
+	/**
+	 * The room a navigation in flight is going to, when it is another room.
+	 *
+	 * Named the way the menu names it — the room, not the tab — so the screen
+	 * that stands in for it says where you are going before it has arrived.
+	 */
+	const goingToRoom = $derived.by(() => {
+		const to = navigating.to?.url.pathname;
+		if (!to || placeAt(to) === placeAt(page.url.pathname)) return null;
+		const place = DESTINATIONS.filter(
+			(one) => to === one.href || (one.href !== '/' && to.startsWith(`${one.href}/`))
+		).sort((a, b) => b.href.length - a.href.length)[0];
+		return place ? { label: place.group ?? place.label, icon: place.icon } : null;
+	});
+
 	const GIVE_UP_MS = 20_000;
 	let givenUp = $state(false);
 	/*
@@ -1488,8 +1506,14 @@
 			     gutter back first so a card that bleeds to the screen edge still
 			     reaches it. -->
 			<div bind:this={roomFrame} class="slide-frame">
-				<div bind:this={page$}>
+				<div bind:this={page$} class="relative">
 					<div bind:this={pageBody}>{@render children()}</div>
+					<!-- The room being gone to, over the one being left, until it
+					     arrives — see `PendingPage`. A move between a room's own
+					     tabs is the room's to draw; this is for a change of room. -->
+					{#if goingToRoom && !givenUp}
+						<PendingPage title={t(goingToRoom.label)} icon={goingToRoom.icon} />
+					{/if}
 				</div>
 				<div bind:this={roomStage} class="slide-stage" aria-hidden="true"></div>
 			</div>
