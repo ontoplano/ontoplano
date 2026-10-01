@@ -2407,6 +2407,7 @@ export const messages: Catalogue = {
 	'notify.noun.person': { one: '{count} pessoa', other: '{count} pessoas' },
 	'notify.noun.price': { one: '{count} preço', other: '{count} preços' },
 	'notify.noun.recipe': { one: '{count} receita', other: '{count} receitas' },
+	'notify.noun.recording': { one: '{count} gravação', other: '{count} gravações' },
 	'notify.noun.reminder': { one: '{count} lembrete', other: '{count} lembretes' },
 	'notify.noun.repeatingBlock': {
 		one: '{count} bloco de tarefa repetido',

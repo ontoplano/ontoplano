@@ -37,6 +37,7 @@ function subjectLabels(t: Translate): Record<string, string> {
 		streams: t('settings.integrations.connections.dataStreams'),
 		statements: t('settings.integrations.bankStatements'),
 		tags: t('app.tags'),
+		audio: t('rooms.media.tabs.audios'),
 		search: t('ui.search')
 	};
 }

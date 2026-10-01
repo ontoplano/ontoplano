@@ -2432,6 +2432,7 @@ export const messages: Catalogue = {
 	'notify.noun.person': { one: '{count} Person', other: '{count} Personen' },
 	'notify.noun.price': { one: '{count} Preis', other: '{count} Preise' },
 	'notify.noun.recipe': { one: '{count} Rezept', other: '{count} Rezepte' },
+	'notify.noun.recording': { one: '{count} Aufnahme', other: '{count} Aufnahmen' },
 	'notify.noun.reminder': { one: '{count} Hinweis', other: '{count} Hinweise' },
 	'notify.noun.repeatingBlock': {
 		one: '{count} wiederkehrender Aufgabenblock',

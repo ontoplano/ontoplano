@@ -32,7 +32,6 @@ const ALLOWED: Record<string, number> = {
 	'src/lib/components/GoalLinksModal.svelte': 1,
 	// The greying of a finished task, and the pages below.
 	'src/lib/components/TodoRows.svelte': 1,
-	'src/routes/demo/+page.svelte': 1,
 	'src/routes/instance/+page.svelte': 1,
 	// The in-app chat, which is switched off — see `$lib/features`.
 	'src/routes/assistant/+page.svelte': 2

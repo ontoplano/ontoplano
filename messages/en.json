@@ -2354,6 +2354,10 @@
 		"one": "{count} recipe",
 		"other": "{count} recipes"
 	},
+	"notify.noun.recording": {
+		"one": "{count} recording",
+		"other": "{count} recordings"
+	},
 	"notify.noun.reminder": {
 		"one": "{count} reminder",
 		"other": "{count} reminders"

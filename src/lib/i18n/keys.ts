@@ -2115,6 +2115,7 @@ export type MessageKey =
 	| 'notify.noun.person'
 	| 'notify.noun.price'
 	| 'notify.noun.recipe'
+	| 'notify.noun.recording'
 	| 'notify.noun.reminder'
 	| 'notify.noun.repeatingBlock'
 	| 'notify.noun.reviewNote'
@@ -4435,6 +4436,7 @@ export interface MessageValuesFor {
 	'notify.noun.person': { count: number };
 	'notify.noun.price': { count: number };
 	'notify.noun.recipe': { count: number };
+	'notify.noun.recording': { count: number };
 	'notify.noun.reminder': { count: number };
 	'notify.noun.repeatingBlock': { count: number };
 	'notify.noun.reviewNote': { count: number };

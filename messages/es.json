@@ -2237,6 +2237,10 @@
 		"one": "{count} receta",
 		"other": "{count} recetas"
 	},
+	"notify.noun.recording": {
+		"one": "{count} grabación",
+		"other": "{count} grabaciones"
+	},
 	"notify.noun.reminder": {
 		"one": "{count} recordatorio",
 		"other": "{count} recordatorios"
