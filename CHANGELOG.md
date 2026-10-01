@@ -28,6 +28,8 @@ releases mattered.
 - The new block form has an "Existing task" mode: pick a todo and it goes on
   the day at that time. Dragging blocks to and from the todo strip is gone, so
   moving a block on a phone no longer opens the strip over the calendar.
+- The arrow that opens a notebook from the shelf sits beside its name, not at
+  the far end with the other buttons.
 
 ## 0.184.11 — 2026-09-29
 
