@@ -40,6 +40,8 @@ releases mattered.
   the connection is back, instead of a page that just said "Offline".
 - A neutral habit's calendar no longer looks inverted in the dark: the days
   it was logged are the filled ones, and the gaps are the dark ones.
+- The number on the phone's app icon clears once the bell has nothing unread,
+  including right after the app is launched.
 
 ## 0.184.11 — 2026-09-29
 
