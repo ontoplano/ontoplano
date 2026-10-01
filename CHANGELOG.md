@@ -35,6 +35,9 @@ releases mattered.
 - Saving a form no longer waits on the server: the dialog closes as soon as
   you press Create or Save, and comes back with what you typed if the save is
   refused. The arrows that reorder two equally rated tasks move them at once.
+- Opening the app from a notification while the phone is still reconnecting
+  tries again before giving up, and the offline page reloads by itself once
+  the connection is back, instead of a page that just said "Offline".
 
 ## 0.184.11 — 2026-09-29
 
