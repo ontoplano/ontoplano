@@ -105,8 +105,8 @@ try {
  * - The web app the shell carries is NOT committed (`assets/public` is
  *   ignored), so the builder makes it from source: the root yarn workspace,
  *   the isolated build (`ONTOPLANO_ISOLATED_BUILD=1`, the same thing `make
- *   android` runs), and `cap sync` to put it into the project. Node 20 in
- *   their image is too old for the toolchain, hence the pinned tarball.
+ *   android` runs), and `cap sync` to put it into the project. Their image
+ *   has no node at all, hence the pinned tarball.
  * - The scanner runs after prebuild and refuses binaries. What the web build
  *   leaves behind (the root node_modules, its output directories, the wasm
  *   copied into static/, the cli's template tarballs) is deleted; gradle
@@ -118,21 +118,35 @@ try {
  * fails in their builder costs a review round trip measured in weeks.
  */
 const NODE_BUILD = 'v22.14.0';
-// gzip rather than xz: their image has no xz. The sum is nodejs.org's own
-// SHASUMS256.txt line for this tarball, so the builder never runs an
-// unverified download.
-const NODE_TARBALL = `node-${NODE_BUILD}-linux-x64.tar.gz`;
-const NODE_SHA256 = '9d942932535988091034dc94cc5f42b6dc8784d6366df3a36c4c9ccb3996f0c2';
+/*
+ * Everything the recipe runs, installed rather than assumed. Their image is a
+ * minimal Debian that has failed this recipe twice — no xz, then no node on
+ * the PATH npm's shebang looks up — so nothing the steps below call is taken on
+ * trust: curl and the certificates for the download, xz for nodejs.org's
+ * tarball, and a compiler and python for the native modules yarn builds when
+ * there is no prebuilt binary for them.
+ */
+const APT_PACKAGES = ['ca-certificates', 'curl', 'xz-utils', 'git', 'python3', 'build-essential'];
+// The sum is nodejs.org's own SHASUMS256.txt line for this tarball, so the
+// builder never runs an unverified download.
+const NODE_TARBALL = `node-${NODE_BUILD}-linux-x64.tar.xz`;
+const NODE_SHA256 = '69b09dba5c8dcb05c4e4273a4340db1005abeafe3927efda2bc5b249e80437ec';
+const NODE_HOME = `/opt/node-${NODE_BUILD}-linux-x64`;
+// Linked before npm runs: npm is `#!/usr/bin/env node`, and sudo's PATH has
+// /usr/local/bin in it but not /opt.
+const NODE_BINS = ['node', 'npm', 'npx', 'corepack'];
 const buildEntry = `  - versionName: ${version}
     versionCode: ${versionCode}
     commit: ${tag}
     subdir: capacitor/android/app
     sudo:
-      - curl -fLo /tmp/node.tar.gz https://nodejs.org/dist/${NODE_BUILD}/${NODE_TARBALL}
-      - echo "${NODE_SHA256}  /tmp/node.tar.gz" | sha256sum -c
-      - tar -xzf /tmp/node.tar.gz -C /opt
-      - /opt/node-${NODE_BUILD}-linux-x64/bin/npm install -g yarn
-      - for b in node npm npx corepack yarn yarnpkg; do ln -sf /opt/node-${NODE_BUILD}-linux-x64/bin/$b /usr/local/bin/$b; done
+      - apt-get update
+      - DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends ${APT_PACKAGES.join(' ')}
+      - curl -fLo /tmp/node.tar.xz https://nodejs.org/dist/${NODE_BUILD}/${NODE_TARBALL}
+      - echo "${NODE_SHA256}  /tmp/node.tar.xz" | sha256sum -c
+      - tar -xJf /tmp/node.tar.xz -C /opt
+      - for b in ${NODE_BINS.join(' ')}; do ln -sf ${NODE_HOME}/bin/$b /usr/local/bin/$b; done
+      - npm install -g --prefix /usr/local yarn
     init:
       - cd ../../.. && yarn install --frozen-lockfile && cd capacitor && npm ci --no-audit --no-fund
     prebuild:
