@@ -3970,15 +3970,10 @@ export const messages: Catalogue = {
 	'tasks.plan.doneUndo': 'Erledigt ✓ — rückgängig',
 	'tasks.plan.dragAcrossAnEmptyStretch':
 		'Über einen leeren Abschnitt eines Tages ziehen, um einen Aufgabenblock zu erstellen.',
-	'tasks.plan.dragOntoTheGridOr':
-		'Auf das Raster ziehen, oder antippen und dann eine Uhrzeit antippen',
-	'tasks.plan.dragOntoTheGridTo':
-		'auf das Raster ziehen, um ihm eine Uhrzeit zu geben, oder zurück hierher, um sie wieder zu entfernen',
 	'tasks.plan.dragToCreateDrag':
 		'Ziehen zum Erstellen · einen Aufgabenblock ziehen zum Verschieben · anklicken zum Bearbeiten, Überspringen oder Löschen · halten',
 	'tasks.plan.dragToSelectSeveralThen':
 		'ziehen, um mehrere auszuwählen, dann eine ziehen, um alle zu verschieben ·',
-	'tasks.plan.dropHereToTakeIt': 'Hier ablegen, um es vom Tag zu entfernen',
 	'tasks.plan.dropJustThisOneOccurrence':
 		'Nur dieses eine Vorkommen entfernen; der Aufgabenblock wiederholt sich weiterhin',
 	'tasks.plan.due': 'Fällig',
@@ -3990,6 +3985,7 @@ export const messages: Catalogue = {
 	'tasks.plan.everyNDays': 'Alle N Tage',
 	'tasks.plan.everyNWeeks': 'Alle N Wochen',
 	'tasks.plan.everyWeek': 'Jede Woche',
+	'tasks.plan.existingTask': 'Vorhandene Aufgabe',
 	'tasks.plan.fallsOnTheLastDay': 'Fällt in kürzeren Monaten auf den letzten Tag.',
 	'tasks.plan.forEverythingTheKeyboardCan': 'für alles,\n\t\t\t\t\t\twas die Tastatur kann.',
 	'tasks.plan.formatHTimeDDuration':
@@ -4081,6 +4077,7 @@ export const messages: Catalogue = {
 	'tasks.plan.stopSubscribingTo': 'Abonnement von {name} beenden',
 	'tasks.plan.subscribe': 'Abonnieren',
 	'tasks.plan.takeItOffTheDay': 'Vom Tag entfernen, Aufgabe behalten',
+	'tasks.plan.tapItThenTapATime': 'Antippen, dann eine Zeit antippen',
 	'tasks.plan.tapOneThenTapA': 'eine antippen, dann eine Uhrzeit antippen',
 	'tasks.plan.theCalendarSIcalAddress': 'Die iCal-Adresse des Kalenders',
 	'tasks.plan.theFirstLineIsWhat': 'die erste Zeile ist das, was der Aufgabenblock sagt',
@@ -4514,7 +4511,7 @@ export const messages: Catalogue = {
 		'Beschränkt auf das, was gebraucht wird, und von hier aus widerrufbar. Kopieren Sie es, sobald es erscheint — es wird gehasht gespeichert und kann nicht erneut angezeigt werden.',
 	'tour.search': 'Suche',
 	'tour.searchTheTasksWithNoTime':
-		'Aufgaben ohne Zeit und die von heute. Suche, filtere und sortiere sie wie in der Aufgabenliste und zieh eine ins Raster — oder tippe sie an und dann eine Zeit.',
+		'Aufgaben ohne Zeit und die von heute. Suche, filtere und sortiere sie wie in der Aufgabenliste, dann tippe eine an und danach eine Zeit.',
 	'tour.shopping': 'Einkauf',
 	'tour.signOneOutOrAll':
 		'Melden Sie eines ab, oder alle auf einmal, wenn etwas verdächtig aussieht.',

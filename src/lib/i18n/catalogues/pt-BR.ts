@@ -3923,14 +3923,10 @@ export const messages: Catalogue = {
 	'tasks.plan.doneUndo': 'Feito ✓ — desfazer',
 	'tasks.plan.dragAcrossAnEmptyStretch':
 		'Arraste por um trecho vazio do dia para criar um bloco de tarefa.',
-	'tasks.plan.dragOntoTheGridOr': 'Arraste para a grade, ou toque e depois toque em um horário',
-	'tasks.plan.dragOntoTheGridTo':
-		'arraste para a grade para dar um horário, ou de volta aqui para tirá-lo',
 	'tasks.plan.dragToCreateDrag':
 		'Arraste para criar · arraste um bloco de tarefa para mover · clique para editar, pular ou excluir · segure',
 	'tasks.plan.dragToSelectSeveralThen':
 		'arraste para selecionar vários, depois arraste um para mover todos ·',
-	'tasks.plan.dropHereToTakeIt': 'Solte aqui para tirá-lo do dia',
 	'tasks.plan.dropJustThisOneOccurrence':
 		'Solte apenas esta ocorrência; o bloco de tarefa continua se repetindo',
 	'tasks.plan.due': 'Prazo',
@@ -3942,6 +3938,7 @@ export const messages: Catalogue = {
 	'tasks.plan.everyNDays': 'A cada N dias',
 	'tasks.plan.everyNWeeks': 'A cada N semanas',
 	'tasks.plan.everyWeek': 'Toda semana',
+	'tasks.plan.existingTask': 'Tarefa existente',
 	'tasks.plan.fallsOnTheLastDay': 'Cai no último dia em meses mais curtos.',
 	'tasks.plan.forEverythingTheKeyboardCan': 'para tudo\n\t\t\t\t\t\tque o teclado pode fazer.',
 	'tasks.plan.formatHTimeDDuration':
@@ -4032,6 +4029,7 @@ export const messages: Catalogue = {
 	'tasks.plan.stopSubscribingTo': 'Parar de assinar {name}',
 	'tasks.plan.subscribe': 'Assinar',
 	'tasks.plan.takeItOffTheDay': 'Tirar do dia, manter a tarefa',
+	'tasks.plan.tapItThenTapATime': 'Toque nela, depois num horário',
 	'tasks.plan.tapOneThenTapA': 'toque em um, depois toque em um horário',
 	'tasks.plan.theCalendarSIcalAddress': 'O endereço iCal do calendário',
 	'tasks.plan.theFirstLineIsWhat': 'a primeira linha é o que o bloco de tarefa diz',
@@ -4467,7 +4465,7 @@ export const messages: Catalogue = {
 		'Restrito ao que precisa, e revogável a partir daqui. Copie assim que aparecer — ele é armazenado com hash e não pode ser mostrado de novo.',
 	'tour.search': 'Buscar',
 	'tour.searchTheTasksWithNoTime':
-		'Tarefas ainda sem horário, e as de hoje. Busque, filtre e ordene como na lista de tarefas e arraste uma para a grade — ou toque nela e depois num horário.',
+		'Tarefas ainda sem horário, e as de hoje. Busque, filtre e ordene como na lista de tarefas, depois toque numa e num horário.',
 	'tour.shopping': 'Compras',
 	'tour.signOneOutOrAll': 'Desconecte um, ou todos de uma vez se algo parecer errado.',
 	'tour.sixViewsOfTheSame': 'Seis visões da mesma semana',

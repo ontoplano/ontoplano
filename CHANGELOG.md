@@ -25,6 +25,9 @@ releases mattered.
 - A task you are on is shown by its blue wash alone; the bar down its left
   edge is gone, and the arrows that reorder two equally rated tasks sit centred
   in the margin rather than against the card's edge.
+- The new block form has an "Existing task" mode: pick a todo and it goes on
+  the day at that time. Dragging blocks to and from the todo strip is gone, so
+  moving a block on a phone no longer opens the strip over the calendar.
 
 ## 0.184.11 — 2026-09-29
 

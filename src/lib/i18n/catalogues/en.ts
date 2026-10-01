@@ -3857,13 +3857,9 @@ export const messages: Catalogue = {
 	'tasks.plan.doneUndo': 'Done ✓ — undo',
 	'tasks.plan.dragAcrossAnEmptyStretch':
 		'Drag across an empty stretch of a day to make a task block.',
-	'tasks.plan.dragOntoTheGridOr': 'Drag onto the grid, or tap and then tap a time',
-	'tasks.plan.dragOntoTheGridTo':
-		'drag onto the grid to give it a time, or back here to take it off',
 	'tasks.plan.dragToCreateDrag':
 		'Drag to create · drag a task block to move · click it to edit, skip or delete · hold',
 	'tasks.plan.dragToSelectSeveralThen': 'drag to select several, then drag one to move them all ·',
-	'tasks.plan.dropHereToTakeIt': 'Drop here to take it off the day',
 	'tasks.plan.dropJustThisOneOccurrence':
 		'Drop just this one occurrence; the task block still repeats',
 	'tasks.plan.due': 'Due',
@@ -3875,6 +3871,7 @@ export const messages: Catalogue = {
 	'tasks.plan.everyNDays': 'Every N days',
 	'tasks.plan.everyNWeeks': 'Every N weeks',
 	'tasks.plan.everyWeek': 'Every week',
+	'tasks.plan.existingTask': 'Existing task',
 	'tasks.plan.fallsOnTheLastDay': 'Falls on the last day in shorter months.',
 	'tasks.plan.forEverythingTheKeyboardCan': 'for everything\n\t\t\t\t\t\tthe keyboard can do.',
 	'tasks.plan.formatHTimeDDuration':
@@ -3963,6 +3960,7 @@ export const messages: Catalogue = {
 	'tasks.plan.stopSubscribingTo': 'Stop subscribing to {name}',
 	'tasks.plan.subscribe': 'Subscribe',
 	'tasks.plan.takeItOffTheDay': 'Take it off the day, keep the task',
+	'tasks.plan.tapItThenTapATime': 'Tap it, then tap a time',
 	'tasks.plan.tapOneThenTapA': 'tap one, then tap a time',
 	'tasks.plan.theCalendarSIcalAddress': "The calendar's iCal address",
 	'tasks.plan.theFirstLineIsWhat': 'the first line is what the task block says',
@@ -4390,7 +4388,7 @@ export const messages: Catalogue = {
 		'Scoped to what it needs, and revokable from here. Copy it when it appears — it is stored hashed and cannot be shown again.',
 	'tour.search': 'Search',
 	'tour.searchTheTasksWithNoTime':
-		"Tasks with no time yet, and today's. Search, filter and sort them like the task list, then drag one onto the grid — or tap it, then tap a time.",
+		"Tasks with no time yet, and today's. Search, filter and sort them like the task list, then tap one and tap a time.",
 	'tour.shopping': 'Shopping',
 	'tour.signOneOutOrAll': 'Sign one out, or all of them at once if something looks wrong.',
 	'tour.sixViewsOfTheSame': 'Six views of the same week',

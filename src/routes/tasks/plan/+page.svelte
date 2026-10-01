@@ -442,7 +442,12 @@
 
 	/** How many of the folded-away ratings currently carry a value. */
 	const ratingsSet = $derived(Object.values(formRatings).filter((v) => v !== null).length);
-	let slotMode: 'category' | 'activity' | 'workout' = $state('activity');
+	/*
+	 * `task` is not a kind of block: it is an existing todo given this time,
+	 * the way the tray's tap-then-tap does it, and it only exists while creating.
+	 */
+	let slotMode: 'category' | 'activity' | 'workout' | 'task' = $state('activity');
+	let formTodoId = $state<number | null>(null);
 	let activityChoice = $state(NEW_ACTIVITY);
 	/*
 	 * The rest of the form, held rather than read off the inputs.
@@ -509,6 +514,10 @@
 			};
 		}
 		if (mode === 'category') return { name: DASH, ...pill(category(formCategoryId)) };
+		if (mode === 'task') {
+			const todo = data.todos.find((one) => one.id === formTodoId);
+			return { name: todo?.title ?? DASH, ...pill(category(todo?.categoryId)) };
+		}
 
 		const activity =
 			activityChoice === NEW_ACTIVITY
@@ -711,6 +720,7 @@
 		formWeekday = selectedWeekday;
 		formDate = selectedDateStr();
 		slotMode = 'activity';
+		formTodoId = null;
 		activityChoice = defaultActivityChoice(null);
 		remindLead = 0;
 		formStartTime = prefillTime;
@@ -864,32 +874,6 @@
 	const NEW_TODO_MINUTES = 30;
 
 	let gridWrap: HTMLElement | undefined = $state();
-	let dragTodoId: number | null = $state(null);
-	let dropPreview: DropSpot | null = $state(null);
-	/** The todo being dragged or placed, so the ghost can carry its name. */
-	const dragTodoTitle = $derived(
-		data.todos.find((t: { id: number }) => t.id === (dragTodoId ?? placingTodoId))?.title ?? ''
-	);
-
-	/**
-	 * Dragging a block back off the grid.
-	 *
-	 * The calendar drags with pointer events rather than HTML5 drag-and-drop, so
-	 * the strip cannot be a `dragover` target — nothing would ever fire. What it
-	 * gets instead is the coordinates the drag ended at, and whether they land
-	 * inside it. `draggingBlock` is only for showing the strip while a drag is in
-	 * the air: an affordance nobody can see is one nobody uses.
-	 */
-	let trayEl: HTMLElement | undefined = $state();
-	/** The strip's own row in the toolbar: a drop there counts too. */
-	let trayHeadEl: HTMLElement | undefined = $state();
-	let draggingBlock = $state(false);
-	/** The name of the block in the air, so the strip can show it arriving. */
-	let draggingBlockTitle = $state('');
-	/** Whether that drag is currently over the strip. */
-	let overTrayNow = $state(false);
-	/** Set when a drag ended on the strip, so `eventDrop` does not also act. */
-	let takenOffGrid = false;
 
 	/**
 	 * Where the week begins, as one choice rather than two nudges.
@@ -992,72 +976,6 @@
 	function clearTray() {
 		trayNotebook = '';
 		trayTags = NO_TAG_FILTER;
-	}
-
-	function overTray(jsEvent: Calendar.DomEvent | undefined): boolean {
-		const point = jsEvent as { clientX?: number; clientY?: number } | undefined;
-		if (point?.clientX === undefined || point.clientY === undefined) return false;
-		const el = document.elementFromPoint(point.clientX, point.clientY);
-		return el !== null && [trayEl, trayHeadEl].some((zone) => zone?.contains(el));
-	}
-
-	/*
-	 * Whether the drag is over the strip, while it is still in the air.
-	 *
-	 * The calendar drags with pointer events and reports only start and stop, so
-	 * "it will land here" has to be watched for. Attached only while a block is
-	 * being dragged, and detached the moment it is dropped.
-	 */
-	let trayWatcher: ((e: PointerEvent) => void) | null = null;
-
-	function watchTray() {
-		stopWatchingTray();
-		trayWatcher = (e: PointerEvent) => (overTrayNow = overTray(e));
-		window.addEventListener('pointermove', trayWatcher);
-	}
-
-	function stopWatchingTray() {
-		if (trayWatcher) window.removeEventListener('pointermove', trayWatcher);
-		trayWatcher = null;
-	}
-
-	async function unscheduleBlock(slotId: number) {
-		const body = new FormData();
-		body.set('id', String(slotId));
-		const result = await postGridAction(
-			'unscheduleBlock',
-			body,
-			'Could not take that off the day.'
-		);
-		if (!result) return;
-		await invalidateAll();
-	}
-
-	/**
-	 * A drag that ended on the todo strip means "not on a day after all".
-	 *
-	 * One-off blocks only. A weekly block is a shape of the week rather than a
-	 * task, and pulling one off the grid would quietly end every future
-	 * occurrence of it — so it says so instead, and the block springs back.
-	 */
-	function handleEventDragStop(info: Calendar.EventDragInfo) {
-		draggingBlock = false;
-		overTrayNow = false;
-		stopWatchingTray();
-		if (!overTray(info.jsEvent)) return;
-
-		const decoded = decodeEventId(info.event.id);
-		if (!decoded) return;
-		takenOffGrid = true;
-
-		if (decoded.kind !== 'exceptional') {
-			notify.error(
-				'That block repeats every week. Skip it for this day, or remove it from the week.'
-			);
-			return;
-		}
-
-		void unscheduleBlock(decoded.refId);
 	}
 
 	/**
@@ -1205,19 +1123,6 @@
 
 		const todoId = placingTodoId;
 		placingTodoId = null;
-		await scheduleTodoAt(todoId, target);
-	}
-
-	async function onTodoDrop(e: DragEvent) {
-		e.preventDefault();
-		const todoId = dragTodoId;
-		dragTodoId = null;
-		dropPreview = null;
-		if (todoId === null) return;
-
-		const target = dropTarget(e);
-		if (!target) return;
-
 		await scheduleTodoAt(todoId, target);
 	}
 
@@ -1931,6 +1836,7 @@
 	/** "30 min", "1 h", "Not at all" — the chips, in the fewest words. */
 
 	const formAction = $derived.by(() => {
+		if (slotMode === 'task' && editingKind === null) return '?/scheduleTodo';
 		if (editingKind === 'slot') return '?/update';
 		if (editingKind === 'exceptional') return '?/updateExceptional';
 		return repeat === 'once' ? '?/createExceptional' : '?/create';
@@ -2011,6 +1917,9 @@
 		const activityId = activityChoice === NEW_ACTIVITY ? null : Number(activityChoice);
 		const activity = data.activities.find((a: { id: number }) => a.id === activityId);
 		const workout = data.workouts.find((w: { id: number }) => w.id === formWorkoutId);
+		// A todo being given a time is drawn as what it will become: its title,
+		// in its category's colour.
+		const todo = slotMode === 'task' ? data.todos.find((one) => one.id === formTodoId) : undefined;
 		return {
 			// A preview is not a block, so it gets an id no block can have and
 			// nothing that reads an id can mistake it for one.
@@ -2018,14 +1927,14 @@
 			weekday: formWeekday,
 			startTime: formStartTime,
 			durationMinutes: Number(formDuration) || 0,
-			mode: slotMode,
-			categoryId: slotMode === 'category' ? formCategoryId : null,
+			mode: slotMode === 'task' ? ('category' as const) : slotMode,
+			categoryId: todo ? todo.categoryId : slotMode === 'category' ? formCategoryId : null,
 			activityId,
 			activityCategoryId: activity?.categoryId ?? null,
 			activityName: activity?.name ?? null,
 			workoutId: formWorkoutId,
 			workoutName: workout?.title ?? null,
-			label: formLabel,
+			label: todo ? todo.title : formLabel,
 			active: true,
 			recurrence: serialiseRecurrence(formRecurrence)
 		};
@@ -2362,27 +2271,7 @@
 		eventDidMount: stampEventId,
 		eventMouseEnter: showHover,
 		eventMouseLeave: () => (hovered = null),
-		eventDragStart: (info: Calendar.EventDragInfo) => {
-			hovered = null;
-
-			/*
-			 * Only for a block that could actually go there.
-			 *
-			 * A weekly block cannot become a todo — it is a shape of the week, and
-			 * pulling one off would end every future occurrence — so opening the
-			 * strip while one is being dragged offers something that will be
-			 * refused. Nothing opens, and the drag reads as what it is: a move.
-			 */
-			if (decodeEventId(info.event.id)?.kind !== 'exceptional') return;
-
-			draggingBlock = true;
-			draggingBlockTitle = String(info.event.title ?? 'this block');
-			// The strip has to be visible before the drag reaches it, and open
-			// before anything can be dropped into it.
-			todosOpen = true;
-			watchTray();
-		},
-		eventDragStop: handleEventDragStop,
+		eventDragStart: () => (hovered = null),
 		eventResizeStart: () => (hovered = null)
 	});
 
@@ -2542,15 +2431,6 @@
 	};
 
 	async function handleEventDrop(info: DragInfo) {
-		// The drag ended on the todo strip, and `eventDragStop` has already dealt
-		// with it. Whether the calendar also reads it as a move depends on where
-		// the strip happens to sit, which is not a thing to depend on.
-		if (takenOffGrid) {
-			takenOffGrid = false;
-			info.revert();
-			return;
-		}
-
 		const keys = modifiers(info.jsEvent);
 		if (keys.ctrlKey || keys.metaKey) {
 			await duplicateBlock(info);
@@ -3034,7 +2914,7 @@
 		{/snippet}
 
 		{#snippet filters()}
-			{#if data.todos.length > 0 || draggingBlock}
+			{#if data.todos.length > 0}
 				<!--
 					What is waiting for a time, narrowed the way the task list narrows
 					it, with the switch that shows it as the strip's one verb. It
@@ -3042,13 +2922,7 @@
 					top of the page. Dropping a block anywhere on this row or the
 					strip under it takes the block off the day.
 				-->
-				<div
-					bind:this={trayHeadEl}
-					class="w-full {draggingBlock
-						? 'outline-1 outline-offset-4 outline-gray-400 outline-dashed'
-						: ''}"
-					data-tour="plan-tray"
-				>
+				<div class="w-full" data-tour="plan-tray">
 					<FilterBar
 						name="plan-tray"
 						on={trayNarrowed}
@@ -3098,24 +2972,16 @@
 			{/if}
 		{/snippet}
 
-		{#if (data.todos.length > 0 || draggingBlock) && (todosOpen || draggingBlock)}
-			<section bind:this={trayEl} id="plan-tray-pills" class="border-b border-gray-200 p-3">
+		{#if data.todos.length > 0 && todosOpen}
+			<section id="plan-tray-pills" class="border-b border-gray-200 p-3">
 				<!-- Cards in even columns, each its own height; the first few rows
 				     and the rest behind "Show all", so the page scrolls rather than
 				     a box inside it. -->
 				<div class="grid grid-cols-[repeat(auto-fill,minmax(15rem,1fr))] items-start gap-2">
-					{#if draggingBlock && overTrayNow}
-						<span
-							class="border border-dashed border-gray-400 bg-gray-100 px-3 py-2 text-sm text-gray-500 italic"
-						>
-							{draggingBlockTitle}
-						</span>
-					{/if}
 					{#each trayAll ? trayMatches : trayMatches.slice(0, TRAY_SHOWN) as todo (todo.id)}
 						<!-- The todo card the board's rail draws — see `TodoCard`. Pressing
 						     it picks it up for a tap on the grid; dragging drops it there. -->
 						<TodoCard
-							draggable="true"
 							onclick={() => (placingTodoId = placingTodoId === todo.id ? null : todo.id)}
 							onkeydown={(e) => {
 								if (e.key === 'Enter' || e.key === ' ') {
@@ -3123,24 +2989,14 @@
 									placingTodoId = placingTodoId === todo.id ? null : todo.id;
 								}
 							}}
-							ondragstart={(e) => {
-								placingTodoId = null;
-								dragTodoId = todo.id;
-								e.dataTransfer?.setData('text/plain', String(todo.id));
-								if (e.dataTransfer) e.dataTransfer.effectAllowed = 'move';
-							}}
-							ondragend={() => {
-								dragTodoId = null;
-								dropPreview = null;
-							}}
 							role="button"
 							tabindex={0}
 							aria-pressed={placingTodoId === todo.id}
-							class="lift cursor-grab text-left {placingTodoId === todo.id
+							class="lift cursor-pointer text-left {placingTodoId === todo.id
 								? 'outline-2 outline-offset-2 outline-gray-900'
-								: ''} {dragTodoId === todo.id ? 'opacity-40' : ''}"
+								: ''}"
 							title={todo.title}
-							hint={t('tasks.plan.dragOntoTheGridOr')}
+							hint={t('tasks.plan.tapItThenTapATime')}
 							color={todo.categoryColor}
 							doing={todo.status === 'doing'}
 							tickLabel={t('todoRows.markComplete')}
@@ -3164,24 +3020,20 @@
 							{/snippet}
 						</TodoCard>
 					{:else}
-						{#if !draggingBlock}
-							<div class="col-span-full">
-								<EmptyState
-									compact
-									filtered
-									onclear={() => {
-										trayLooking = '';
-										clearTray();
-									}}
-								/>
-							</div>
-						{/if}
+						<div class="col-span-full">
+							<EmptyState
+								compact
+								filtered
+								onclear={() => {
+									trayLooking = '';
+									clearTray();
+								}}
+							/>
+						</div>
 					{/each}
 				</div>
 				<div class="mt-2 flex min-h-7 flex-wrap items-center gap-x-3 gap-y-1">
-					{#if draggingBlock}
-						<span class="text-xs text-gray-600">{t('tasks.plan.dropHereToTakeIt')}</span>
-					{:else if placingTodo}
+					{#if placingTodo}
 						<span class="text-xs text-gray-600"
 							>{t('tasks.plan.nowTapATimeFor', { title: placingTodo.title })}</span
 						>
@@ -3191,10 +3043,7 @@
 							onclick={() => (placingTodoId = null)}>{t('tasks.plan.cancel')}</button
 						>
 					{:else}
-						<span class="hidden text-xs text-gray-500 sm:inline">
-							{t('tasks.plan.dragOntoTheGridTo')}
-						</span>
-						<span class="text-xs text-gray-500 sm:hidden">{t('tasks.plan.tapOneThenTapA')}</span>
+						<span class="text-xs text-gray-500">{t('tasks.plan.tapOneThenTapA')}</span>
 					{/if}
 					{#if trayMatches.length > TRAY_SHOWN}
 						<button
@@ -3331,13 +3180,6 @@
 						: 'h-[70vh]'}"
 				use:gridZoomWheel
 				use:selectionSurface
-				ondragover={(e) => {
-					if (dragTodoId === null) return;
-					e.preventDefault();
-					dropPreview = dropTarget(e);
-				}}
-				ondragleave={() => (dropPreview = null)}
-				ondrop={onTodoDrop}
 				onpointerdowncapture={onGridPointerDown}
 				onpointerupcapture={onGridPointerUp}
 				onpointermovecapture={onGridPointerMove}
@@ -3361,25 +3203,6 @@
 					</div>
 				{/if}
 
-				{#if dropPreview?.box}
-					<!--
-					The todo, drawn as the block it is about to become.
-
-					This was a chip in the corner reading the date and the time, which is
-					a sentence to read while your hand is holding a drag. The shape in
-					the right place answers the same question with nothing to read.
-				-->
-					<div
-						class="pointer-events-none absolute z-20 overflow-hidden border-2 border-dashed border-gray-500 bg-gray-500/15"
-						style="left:{dropPreview.box.left}px; top:{dropPreview.box.top}px; width:{dropPreview
-							.box.width}px; height:{dropPreview.box.height}px"
-					>
-						<span class="tabular block px-1 text-[0.65rem] leading-tight text-gray-700">
-							{dropPreview.startTime}
-							{dragTodoTitle}
-						</span>
-					</div>
-				{/if}
 				{#if browser && widthChecked}
 					<Calendar
 						bind:this={ec}
@@ -4043,7 +3866,7 @@
 				{/if}
 
 				<div class="flex items-center gap-3">
-					<span class="text-sm font-medium text-gray-700">{t('tasks.plan.repeats')}</span>
+					<span class="shrink-0 text-sm font-medium text-gray-700">{t('tasks.plan.repeats')}</span>
 					{#if editingKind}
 						<span class="text-sm text-gray-500">
 							{editingKind === 'slot' ? t('app.comesBack') : t('app.onceOnly')}
@@ -4067,7 +3890,11 @@
 							{#each RECURRENCE_CHOICES as choice (choice.value)}
 								<button
 									type="button"
-									onclick={() => (repeat = choice.value as 'weekly' | 'once')}
+									onclick={() => {
+										repeat = choice.value as 'weekly' | 'once';
+										// A todo given a time happens once; repeating is a block's.
+										if (repeat === 'weekly' && slotMode === 'task') slotMode = 'activity';
+									}}
 									aria-pressed={repeat === choice.value}
 								>
 									{t(choice.label)}
@@ -4271,9 +4098,18 @@
 								{ value: 'category', label: t('ui.category') },
 								...(data.workouts.length > 0
 									? [{ value: 'workout', label: t('tasks.plan.workout') }]
+									: []),
+								...(editingKind === null && data.todos.length > 0
+									? [{ value: 'task', label: t('tasks.plan.existingTask') }]
 									: [])
 							]}
-							onpick={(next) => (slotMode = next as typeof slotMode)}
+							onpick={(next) => {
+								slotMode = next as typeof slotMode;
+								if (slotMode === 'task') {
+									repeat = 'once';
+									formTodoId ??= data.todos[0]?.id ?? null;
+								}
+							}}
 							label={t('tasks.plan.mode')}
 						/>
 					</Field>
@@ -4289,6 +4125,21 @@
 								}))}
 								onpick={(next) => (formCategoryId = Number(next))}
 								label={t('ui.category')}
+							/>
+						</Field>
+					{:else if slotMode === 'task'}
+						<Field label={t('tasks.plan.existingTask')} span={6} required>
+							<Picker
+								name="todoId"
+								required
+								search
+								value={String(formTodoId ?? '')}
+								options={data.todos.map((todo) => ({
+									value: String(todo.id),
+									label: todo.title
+								}))}
+								onpick={(next) => (formTodoId = Number(next))}
+								label={t('tasks.plan.existingTask')}
 							/>
 						</Field>
 					{:else if slotMode === 'workout'}
@@ -4352,81 +4203,84 @@
 					</div>
 				{/if}
 
-				<FormGrid>
-					<!--
-						Optional in every mode, and the same size in every mode.
-
-						It was required for a category block, on the reasoning that such a
-						block has no name of its own — but it does: `schedule.ts` already
-						falls back to the category's name, so an hour of "health" with
-						nothing written on it draws as "health", which is exactly what it
-						is. What the requirement actually bought was a star, a placeholder
-						and a taller box appearing the moment somebody changed the mode,
-						which is the form moving under a press.
-					-->
-					<Field label={t('ui.notes')} span={12} hint={t('tasks.plan.theFirstLineIsWhat')}>
+				<!-- The task brings its own notes, ratings and notebook. -->
+				{#if slotMode !== 'task'}
+					<FormGrid>
 						<!--
-							Notes, not a label.
+							Optional in every mode, and the same size in every mode.
 
-							It was one line called "Label", which is what it looked like from
-							the database's side and not what anybody uses it for: what goes
-							here is what the thing actually is, and often what you need to
-							remember about it. It takes as much as you want to write; the
-							grid shows the first line, because a block is a rectangle an
-							hour tall and a paragraph does not fit in one.
+							It was required for a category block, on the reasoning that such a
+							block has no name of its own — but it does: `schedule.ts` already
+							falls back to the category's name, so an hour of "health" with
+							nothing written on it draws as "health", which is exactly what it
+							is. What the requirement actually bought was a star, a placeholder
+							and a taller box appearing the moment somebody changed the mode,
+							which is the form moving under a press.
 						-->
-						<textarea
-							name="label"
-							rows={3}
-							autocomplete="off"
-							placeholder={t('tasks.plan.eGDentist')}
-							bind:value={formLabel}
-							class="input resize-y"
-							maxlength={MAX_BLOCK_NOTES}
-						></textarea>
-					</Field>
-				</FormGrid>
+						<Field label={t('ui.notes')} span={12} hint={t('tasks.plan.theFirstLineIsWhat')}>
+							<!--
+								Notes, not a label.
 
-				<FormGrid>
-					<!--
-						The reminder, where the block is.
+								It was one line called "Label", which is what it looked like from
+								the database's side and not what anybody uses it for: what goes
+								here is what the thing actually is, and often what you need to
+								remember about it. It takes as much as you want to write; the
+								grid shows the first line, because a block is a rectangle an
+								hour tall and a paragraph does not fit in one.
+							-->
+							<textarea
+								name="label"
+								rows={3}
+								autocomplete="off"
+								placeholder={t('tasks.plan.eGDentist')}
+								bind:value={formLabel}
+								class="input resize-y"
+								maxlength={MAX_BLOCK_NOTES}
+							></textarea>
+						</Field>
+					</FormGrid>
 
-						Not a page of its own and not a clock reading: a reminder is a
-						property of the thing being planned — "tell me ten minutes before
-						gym" — said once, applying to every occurrence of it. Each
-						occurrence gets its own nudge as it appears.
-					-->
-					<RemindLead bind:value={remindLead} hint="tasks.plan.minutesBeforeItStartsEvery" />
-				</FormGrid>
+					<FormGrid>
+						<!--
+							The reminder, where the block is.
 
-				<MoreOptions label={t('tasks.plan.urgencyEaseInterest')} count={ratingsSet}>
-					{#each RATINGS as r (r)}
-						<div class="col-span-12 sm:col-span-4">
-							<RatingPicker rating={r} bind:value={formRatings[r]} />
-						</div>
-					{/each}
-				</MoreOptions>
+							Not a page of its own and not a clock reading: a reminder is a
+							property of the thing being planned — "tell me ten minutes before
+							gym" — said once, applying to every occurrence of it. Each
+							occurrence gets its own nudge as it appears.
+						-->
+						<RemindLead bind:value={remindLead} hint="tasks.plan.minutesBeforeItStartsEvery" />
+					</FormGrid>
 
-				<!-- What it is part of: the subject a task in the same notebook is
-				     filed under, which is where a block made from one comes from. -->
-				<FormGrid>
-					<NotebookField
-						notebooks={data.notebooks}
-						holds="tasks"
-						bind:value={formNotebookId}
-						span={12}
-					/>
-				</FormGrid>
+					<MoreOptions label={t('tasks.plan.urgencyEaseInterest')} count={ratingsSet}>
+						{#each RATINGS as r (r)}
+							<div class="col-span-12 sm:col-span-4">
+								<RatingPicker rating={r} bind:value={formRatings[r]} />
+							</div>
+						{/each}
+					</MoreOptions>
 
-				{#key formOpenings}
-					<AttributeFields
-						fold
-						bind:pairs={formAttributes}
-						present={ATTRIBUTE_FORM.present}
-						suggestions={mergeSuggestions(t, data.plugins)}
-						hint={t('attributes.readByPlugins')}
-					/>
-				{/key}
+					<!-- What it is part of: the subject a task in the same notebook is
+					     filed under, which is where a block made from one comes from. -->
+					<FormGrid>
+						<NotebookField
+							notebooks={data.notebooks}
+							holds="tasks"
+							bind:value={formNotebookId}
+							span={12}
+						/>
+					</FormGrid>
+
+					{#key formOpenings}
+						<AttributeFields
+							fold
+							bind:pairs={formAttributes}
+							present={ATTRIBUTE_FORM.present}
+							suggestions={mergeSuggestions(t, data.plugins)}
+							hint={t('attributes.readByPlugins')}
+						/>
+					{/key}
+				{/if}
 			</form>
 
 			<!-- Skip and delete belong to a block that already exists; a new one has
