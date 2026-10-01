@@ -25,7 +25,7 @@ sentence somebody agrees to when they grant it.
 | `plugin:declare`   | Name and describe itself on your integrations page                                                                                                |
 | `webhooks:manage`  | Send itself a message when something changes here — a task finished, a block done — to an address it chooses                                      |
 | `audio:read`       | Read your recordings and their notes                                                                                                              |
-| `audio:write`      | Write notes on your recordings                                                                                                                    |
+| `audio:write`      | Rename your recordings and write their notes                                                                                                      |
 | `inventory:read`   | See everything you keep and everything on your shopping list                                                                                      |
 | `inventory:write`  | Add things, tick them bought, change how many you keep, and take things off                                                                       |
 | `locations:read`   | See where your things live, and what is in each room and drawer                                                                                   |

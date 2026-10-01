@@ -562,6 +562,7 @@ which a test holds to the tools the server serves and the actions the app has.
 | Activities              | `add_activity`                                       | `activities`, `categories`                                                                    | `change_activity`                                                                                                                                                           | `change_activity`        | `change_activity`        | `remove_activity`                                                                  |                    |
 | Notebooks               | `add_notebook`                                       | `notebooks`                                                                                   | `change_notebook`, `rename_notebook_folder`, `favourite_notebook`, `share_notebook`                                                                                         | `change_notebook`        | `change_notebook`        | `remove_notebook`                                                                  |                    |
 | Labels                  | _app only, on purpose_                               | `tags`, `notebook_tags`                                                                       | `describe_tag`, `rename_tag`, `recolor_tag`, `untag_notebook`                                                                                                               |                          |                          | `remove_tag`                                                                       |                    |
+| Recordings              | _app only, on purpose_                               | `recordings`, `media`                                                                         | `change_recording`                                                                                                                                                          |                          |                          | _app only, on purpose_                                                             |                    |
 
 **Not there yet** — what the app does and an assistant cannot:
 
@@ -576,6 +577,8 @@ which a test holds to the tools the server serves and the actions the app has.
 - **Accounts and movements, delete.** A ledger takes every line in it when deleted: archived by a tool, deleted in the app. A single line can be removed.
 - **People, delete.** A person's page stands for somebody: deleted only in the app.
 - **Labels, create.** A label comes into being by being used — `tags` on a task, a note or an idea — so there is nothing to make first.
+- **Recordings, create.** A recording is made by a microphone in the app; there is nothing for a tool to say into.
+- **Recordings, delete.** A recording is the one copy of something said: deleted only in the app.
 
 ## Old spellings
 
@@ -756,6 +759,29 @@ _Needs any of `ideas:read`, `kitchen:read`, `notes:read`, `people:read`, `tasks:
 | Parameter | Type   | Required | What it is                                                                                                                          |
 | --------- | ------ | -------- | ----------------------------------------------------------------------------------------------------------------------------------- |
 | `path`    | string | yes      | The link, exactly as the text writes it: `/media/12`, or `/media/audio/12` for a recording. The number alone is taken as a picture. |
+
+### `recordings` — Recordings
+
+The audio recordings, newest first: name, notes, length in seconds and when it was made. `link` is what `media` takes to fetch the sound itself.
+
+_Needs `audio:read`; read-only; answers a page._
+
+| Parameter | Type    | Required | What it is                                                                                                                                                     |
+| --------- | ------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `limit`   | integer | —        | How many. Default `50`.                                                                                                                                        |
+| `offset`  | integer | —        | Skip this many before counting, so the rest of the recordings can be read a page at a time. `nextOffset` on the answer is what to pass here next. Default `0`. |
+
+### `change_recording` — Rename a recording, or write its notes
+
+Change a recording’s name, its notes, or both — a transcript, a summary, what it was about. A field left out is untouched; notes replace what was there, and an empty string clears them.
+
+_Needs `audio:write`; writes; answers with `before` and `after`._
+
+| Parameter | Type    | Required | What it is                                               |
+| --------- | ------- | -------- | -------------------------------------------------------- |
+| `id`      | integer | yes      | The recording’s id, as `recordings` gives it.            |
+| `name`    | string  | —        | The new name.                                            |
+| `notes`   | string  | —        | The new notes, as Markdown. An empty string clears them. |
 
 ### `tasks` — The todo list
 

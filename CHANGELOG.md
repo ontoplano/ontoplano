@@ -24,6 +24,8 @@ releases mattered.
   over and even if nothing has opened today yet.
 - On a phone, a task's add-a-label button sits in the left column, just above
   its rating bars.
+- An assistant can list your recordings, rename them and write their notes —
+  a transcript, a summary — over MCP, with the "recordings" permission.
 
 ## 0.184.12 — 2026-10-01
 

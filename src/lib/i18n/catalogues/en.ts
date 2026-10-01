@@ -2731,7 +2731,7 @@ export const messages: Catalogue = {
 	'scopeGroups.yourHome': 'Home, kitchen and shopping',
 	'scopeGroups.yourWeek': 'Your week',
 	'scopes.audioRead': 'Read your recordings and their notes',
-	'scopes.audioWrite': 'Write notes on your recordings',
+	'scopes.audioWrite': 'Rename your recordings and write their notes',
 	'scopes.billsRead':
 		'See your bills, your recorded income, and what you have actually paid or received',
 	'scopes.billsWrite': 'Add and change bills, and mark them paid',

@@ -1590,6 +1590,25 @@
 			}
 		}
 	},
+	"change_recording": {
+		"scope": "audio:write",
+		"writes": true,
+		"destroys": false,
+		"params": {
+			"id": {
+				"type": "integer",
+				"required": true
+			},
+			"name": {
+				"type": "string",
+				"required": false
+			},
+			"notes": {
+				"type": "string",
+				"required": false
+			}
+		}
+	},
 	"change_reminder": {
 		"scope": "schedule:write",
 		"writes": true,
@@ -2735,6 +2754,24 @@
 			"requestId": {
 				"type": "string",
 				"required": false
+			}
+		}
+	},
+	"recordings": {
+		"scope": "audio:read",
+		"writes": false,
+		"destroys": false,
+		"pages": true,
+		"params": {
+			"limit": {
+				"type": "integer",
+				"required": false,
+				"default": 50
+			},
+			"offset": {
+				"type": "integer",
+				"required": false,
+				"default": 0
 			}
 		}
 	},

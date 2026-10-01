@@ -29,7 +29,12 @@ import type { Confinement } from './confinement.js';
 import { mayReadFile } from '$lib/services/media-permission.js';
 import { pictureReferrers, recordingReferrers } from '$lib/services/media-referrers.js';
 import { read as readPicture } from '$lib/services/media.js';
-import { read as readRecording } from '$lib/services/audio.js';
+import {
+	edit as editRecording,
+	get as getRecording,
+	list as listRecordings,
+	read as readRecording
+} from '$lib/services/audio.js';
 
 import {
 	archiveEntry,
@@ -2085,6 +2090,61 @@ export const TOOLS: Tool[] = [
 					base64: Buffer.from(file.bytes).toString('base64')
 				}
 			};
+		}
+	},
+
+	// ── Recordings ───────────────────────────────────────────────────────────
+	/*
+	 * The recordings themselves, which `media` could fetch only by a link
+	 * somebody had already written down. Listed, renamed, and their notes
+	 * written — the notes are what makes a voice memo searchable, and an
+	 * assistant transcribing one needs somewhere to put the words. Deleting
+	 * one is the person's to do: a recording is the one copy of something said.
+	 */
+	{
+		name: 'recordings',
+		title: 'Recordings',
+		description:
+			'The audio recordings, newest first: name, notes, length in seconds and when it was made. `link` is what `media` takes to fetch the sound itself.',
+		scope: 'audio:read',
+		writes: false,
+		input: object({ limit: count('How many.', 50), offset: from('the recordings') }),
+		run: (ctx, args) =>
+			paged(
+				listRecordings(ctx).map((one) => ({
+					id: one.id,
+					name: one.name,
+					notes: one.notes,
+					seconds: one.seconds,
+					createdAt: one.createdAt,
+					link: `/media/audio/${one.id}`
+				})),
+				args,
+				50
+			)
+	},
+	{
+		name: 'change_recording',
+		title: 'Rename a recording, or write its notes',
+		description:
+			'Change a recording’s name, its notes, or both — a transcript, a summary, what it was about. A field left out is untouched; notes replace what was there, and an empty string clears them.',
+		scope: 'audio:write',
+		writes: true,
+		refs: [{ arg: 'id', kind: 'recording', subject: true }],
+		input: object(
+			{
+				id: { type: 'integer', description: 'The recording’s id, as `recordings` gives it.' },
+				name: text('The new name.'),
+				notes: text('The new notes, as Markdown. An empty string clears them.')
+			},
+			['id']
+		),
+		run: (ctx, args) => {
+			const now = getRecording(ctx, Number(args.id));
+			return editRecording(ctx, now.id, {
+				name: args.name ?? now.name,
+				notes: args.notes ?? now.notes
+			});
 		}
 	},
 

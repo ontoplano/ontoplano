@@ -2794,7 +2794,7 @@ export const messages: Catalogue = {
 	'scopeGroups.yourHome': 'Casa, cocina y compras',
 	'scopeGroups.yourWeek': 'Tu semana',
 	'scopes.audioRead': 'Leer tus grabaciones y sus notas',
-	'scopes.audioWrite': 'Escribir notas en tus grabaciones',
+	'scopes.audioWrite': 'Renombrar tus grabaciones y escribir sus notas',
 	'scopes.billsRead':
 		'Ver tus facturas, tus ingresos registrados, y lo que realmente has pagado o recibido',
 	'scopes.billsWrite': 'Añadir y cambiar facturas, y marcarlas pagadas',

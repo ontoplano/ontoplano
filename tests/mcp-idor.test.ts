@@ -86,7 +86,8 @@ const WATCHED = [
 	'finance_transactions',
 	'exceptional_tasks',
 	'recurring_tasks',
-	'task_records'
+	'task_records',
+	'media'
 ];
 
 function snapshot(user = STRANGER): string {
@@ -204,6 +205,13 @@ beforeAll(async () => {
 	seedEveryKind(at(STRANGER), MARK, theirs);
 	// And the caller's own, for the baselines a substitution starts from.
 	seedEveryKind(at(OWNER), 'the-owners-own', mine);
+
+	// A recording is stored from its bytes, which is asynchronous; a webm
+	// header is what makes these bytes one.
+	const { store } = await import('../src/lib/services/audio');
+	const webm = (mark: string) => new Uint8Array([0x1a, 0x45, 0xdf, 0xa3, ...Buffer.from(mark)]);
+	theirs.recording = (await store(at(STRANGER), { bytes: webm(MARK) })).id;
+	mine.recording = (await store(at(OWNER), { bytes: webm('the-owners-own') })).id;
 
 	// Some listings seed defaults the first time they are read — an account's
 	// exercise groups. Read each kind once now, so the snapshots below see

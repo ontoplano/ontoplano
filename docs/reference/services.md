@@ -1543,7 +1543,18 @@ expiry from the moment it is made.
 
 How many demo accounts exist right now.
 
-#### `createDemoAccount(host)`
+#### `createDemoAccount(host, make)`
+
+#### `demoSpareCount()`
+
+How many are waiting, for the tests and the operator's curiosity.
+
+#### `fillDemoSpares(host, make)`
+
+Top the spares up, one at a time, in the background.
+
+One fill at a time: two visitors in the same second must not start four
+seeds. A failure is logged and ends the fill — the next request tries again.
 
 #### `resetDemoAccount(userId)`
 

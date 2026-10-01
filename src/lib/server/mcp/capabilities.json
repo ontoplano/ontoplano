@@ -435,6 +435,23 @@
 			"withheld": {
 				"create": "A label comes into being by being used — `tags` on a task, a note or an idea — so there is nothing to make first."
 			}
+		},
+		{
+			"name": "Recordings",
+			"mcp": {
+				"read": ["recordings", "media"],
+				"change": ["change_recording"]
+			},
+			"app": {
+				"create": ["src/routes/media/audio/+server.ts#POST"],
+				"read": ["src/routes/media/audios/+page.server.ts#load"],
+				"change": ["src/routes/media/audios/+page.server.ts#edit"],
+				"delete": ["src/routes/media/audios/+page.server.ts#remove"]
+			},
+			"withheld": {
+				"create": "A recording is made by a microphone in the app; there is nothing for a tool to say into.",
+				"delete": "A recording is the one copy of something said: deleted only in the app."
+			}
 		}
 	],
 	"elsewhere": {
