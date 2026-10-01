@@ -352,6 +352,7 @@ export type MessageKey =
 	| 'data.slug.fromPoints'
 	| 'data.slug.integrations'
 	| 'demo.everyCopyIsInUse'
+	| 'demo.noAnswerTryingAgain'
 	| 'demo.nobodyElseCanSeeIt'
 	| 'demo.openTheDemo'
 	| 'demo.settingUpACopyFor'

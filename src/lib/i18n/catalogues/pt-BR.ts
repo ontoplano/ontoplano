@@ -382,6 +382,7 @@ export const messages: Catalogue = {
 	'data.slug.integrations': 'Integrações',
 	'demo.everyCopyIsInUse':
 		'Todas as cópias estão em uso. Elas voltam alguns minutos depois que alguém sai, então isso se resolve sozinho.',
+	'demo.noAnswerTryingAgain': 'A demonstração não respondeu. Tentando de novo em instantes.',
 	'demo.nobodyElseCanSeeIt':
 		'Mais ninguém consegue ver, e é apagado algumas horas depois que você fecha a aba.',
 	'demo.openTheDemo': 'Abrir a demonstração',

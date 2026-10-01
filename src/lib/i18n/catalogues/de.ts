@@ -384,6 +384,7 @@ export const messages: Catalogue = {
 	'data.slug.integrations': 'Integrationen',
 	'demo.everyCopyIsInUse':
 		'Alle Kopien sind in Gebrauch. Sie werden ein paar Minuten, nachdem jemand aufgehört hat hinzusehen, zurückgegeben, sodass\n\t\t\t\tsich das von selbst löst.',
+	'demo.noAnswerTryingAgain': 'Die Demo hat nicht geantwortet. Gleich wird es erneut versucht.',
 	'demo.nobodyElseCanSeeIt':
 		'Niemand sonst kann es sehen, und es wird ein paar Stunden, nachdem Sie den Tab schließen, gelöscht.',
 	'demo.openTheDemo': 'Demo öffnen',

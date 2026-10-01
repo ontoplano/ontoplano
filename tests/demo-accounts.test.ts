@@ -309,6 +309,30 @@ describe('the spares', () => {
 		expect(demo.demoSpareCount()).toBe(waiting);
 	});
 
+	it('are seeded one at a time when a crowd arrives at once', async () => {
+		const { make } = maker();
+		let running = 0;
+		let most = 0;
+		const slow = async () => {
+			running++;
+			most = Math.max(most, running);
+			await new Promise((r) => setTimeout(r, 5));
+			running--;
+			return make();
+		};
+		// Nothing waiting, so every visitor needs a seed of their own.
+		while (demo.demoSpareCount() > 0) await demo.createDemoAccount('demo.test', make);
+
+		const crowd = await Promise.all(
+			Array.from({ length: 6 }, () => demo.createDemoAccount('demo.test', slow))
+		);
+		await demo.fillDemoSpares('demo.test', slow);
+
+		expect(crowd.every((a) => a && demo.isDemoAccount(a.userId))).toBe(true);
+		expect(new Set(crowd.map((a) => a!.userId)).size).toBe(crowd.length);
+		expect(most).toBe(1);
+	});
+
 	it('skip one the sweep has already taken', async () => {
 		const { make } = maker();
 		await demo.fillDemoSpares('demo.test', make);

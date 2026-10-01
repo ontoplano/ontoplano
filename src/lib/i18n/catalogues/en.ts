@@ -373,6 +373,7 @@ export const messages: Catalogue = {
 	'data.slug.integrations': 'Integrations',
 	'demo.everyCopyIsInUse':
 		'Every copy is in use. They are handed back a few minutes after somebody stops looking, so\n\t\t\t\tthis clears on its own.',
+	'demo.noAnswerTryingAgain': 'The demo did not answer. Trying again in a moment.',
 	'demo.nobodyElseCanSeeIt':
 		'Nobody else can see it, and it is deleted a few hours after you close the tab.',
 	'demo.openTheDemo': 'Open the demo',

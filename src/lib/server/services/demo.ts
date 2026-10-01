@@ -97,10 +97,34 @@ export async function createDemoAccount(
 	host: string,
 	make: (host: string) => Promise<DemoAccount | null> = makeDemoAccount
 ): Promise<DemoAccount | null> {
+	const started = Date.now();
 	const spare = takeSpare();
-	const account = spare ?? (await make(host));
+	// Queued behind whatever seed is running, and a spare made while it waited
+	// is taken rather than a second account seeded.
+	const account = spare ?? (await inLane(async () => takeSpare() ?? make(host)));
+	console.log(
+		`demo: ${account ? 'account handed over' : 'no account to hand over'} in ${Date.now() - started}ms` +
+			` (${spare ? 'spare' : 'made while waiting'}; ${demoAccountCount()} out, ${spares.length} spare)`
+	);
 	void fillDemoSpares(host, make);
 	return account;
+}
+
+/**
+ * One seed at a time, whoever asked for it.
+ *
+ * A seed is a child Node process, and the demo's box has under a gigabyte. A
+ * link posted somewhere sends a crowd in the same minute; with the spares gone,
+ * every one of them started a seed of its own, the box ran out of memory and
+ * the demo went down for everybody — the visitors waiting included. In a line,
+ * the tenth visitor waits for nine seeds, and the box stays up to finish them.
+ */
+let lane: Promise<unknown> = Promise.resolve();
+
+function inLane<T>(work: () => Promise<T>): Promise<T> {
+	const turn = lane.then(work, work);
+	lane = turn.catch(() => undefined);
+	return turn;
 }
 
 /**
@@ -148,7 +172,7 @@ export function fillDemoSpares(
 	const fill = async () => {
 		try {
 			while (spares.length < DEMO_SPARES) {
-				const account = await make(host);
+				const account = await inLane(() => make(host));
 				if (!account) return;
 				spares.push(account);
 			}

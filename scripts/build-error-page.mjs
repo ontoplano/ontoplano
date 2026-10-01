@@ -1,5 +1,5 @@
 /**
- * The page nginx serves when the app is not answering.
+ * The pages nginx serves when the app is not answering, or will not.
  *
  * Everything else in this repo is rendered by the app, which is exactly what
  * has gone wrong by the time somebody sees this. So it is one file with nothing
@@ -34,7 +34,7 @@ if (process.env.ONTOPLANO_ISOLATED_BUILD === '1') {
 }
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
-const OUT = join(ROOT, 'build', 'client', '503.html');
+const OUT_DIR = join(ROOT, 'build', 'client');
 
 /** How big the mark is drawn, in CSS pixels, and at twice that in the file. */
 const MARK_PX = 30;
@@ -70,14 +70,34 @@ const mark = await (async () => {
 /** How often the page asks again. Long enough not to be a load test. */
 const RETRY_SECONDS = 20;
 
-const html = `<!doctype html>
+/**
+ * The pages, by the status nginx answers with.
+ *
+ * 429 is nginx's own flood guard refusing an address, which is not the app
+ * being down — and saying "not answering" for it sent somebody away from a
+ * demo that was up, because their browser had asked for too much at once.
+ */
+const PAGES = {
+	'503.html': {
+		title: 'ontoplano is not answering',
+		heading: 'Not answering right now',
+		lead: 'Ontoplano is not responding at this address.'
+	},
+	'429.html': {
+		title: 'ontoplano is busy',
+		heading: 'Too many requests',
+		lead: 'Too many requests came from your address at once.'
+	}
+};
+
+const pageFor = ({ title, heading, lead }) => `<!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta http-equiv="refresh" content="${RETRY_SECONDS}">
 <meta name="robots" content="noindex">
-<title>ontoplano is not answering</title>
+<title>${title}</title>
 <style>
 :root {
   --ink: #171a1f; --muted: #5b6270; --line: #e2e5ea; --bg: #f6f7f9;
@@ -107,16 +127,20 @@ p.lead { color: var(--ink); }
 <body>
 <main>
   <div class="brand">${mark ? `<img src="${mark}" alt="">` : ''}<span>ontoplano</span></div>
-  <h1>Not answering right now</h1>
-  <p class="lead">Ontoplano is not responding at this address.</p>
+  <h1>${heading}</h1>
+  <p class="lead">${lead}</p>
   <p>This page tries again every ${RETRY_SECONDS} seconds, so leaving the tab open is enough.</p>
 </main>
 </body>
 </html>
 `;
 
-mkdirSync(dirname(OUT), { recursive: true });
-writeFileSync(OUT, html);
-console.log(
-	`error page: wrote ${OUT.replace(ROOT + '/', '')} (${Math.round(html.length / 1024)}kB)`
-);
+mkdirSync(OUT_DIR, { recursive: true });
+for (const [name, words] of Object.entries(PAGES)) {
+	const out = join(OUT_DIR, name);
+	const html = pageFor(words);
+	writeFileSync(out, html);
+	console.log(
+		`error page: wrote ${out.replace(ROOT + '/', '')} (${Math.round(html.length / 1024)}kB)`
+	);
+}

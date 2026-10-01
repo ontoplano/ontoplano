@@ -20,6 +20,10 @@ releases mattered.
 
 ## 0.184.13 — 2026-10-01
 
+- Opening the demo for the first time no longer fails with "JSON Parse
+  error" or "Not answering right now": when the request does not get through,
+  the waiting room tries again. A server that is refusing requests says so
+  rather than claiming to be down.
 - The review of the running week includes today's blocks, before the day is
   over and even if nothing has opened today yet.
 - On a phone, a task's add-a-label button sits in the left column, just above

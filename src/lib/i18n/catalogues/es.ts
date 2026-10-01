@@ -381,6 +381,7 @@ export const messages: Catalogue = {
 	'data.slug.integrations': 'Integraciones',
 	'demo.everyCopyIsInUse':
 		'Todas las copias están en uso. Se devuelven unos minutos después de que alguien deja de mirar, así que\n\t\t\t\testo se despeja solo.',
+	'demo.noAnswerTryingAgain': 'La demo no respondió. Se intentará de nuevo en un momento.',
 	'demo.nobodyElseCanSeeIt':
 		'Nadie más puede verlo, y se elimina unas horas después de que cierres la pestaña.',
 	'demo.openTheDemo': 'Abrir la demo',
