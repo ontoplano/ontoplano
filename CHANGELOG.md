@@ -22,6 +22,9 @@ releases mattered.
 
 - The demo opens straight away: a copy is ready before you press the button,
   rather than made while you wait.
+- A task you are on is shown by its blue wash alone; the bar down its left
+  edge is gone, and the arrows that reorder two equally rated tasks sit centred
+  in the margin rather than against the card's edge.
 
 ## 0.184.11 — 2026-09-29
 
