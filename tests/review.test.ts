@@ -392,3 +392,16 @@ describe('which weeks are still open', () => {
 		expect(s.review.reviewPending(ctx)?.weeks ?? 0).toBe(before);
 	});
 });
+
+describe('the week that is running', () => {
+	test('includes today, though nothing has opened today yet, and stops there', () => {
+		// Wednesday of a week no planner has been asked about.
+		const wednesday = { ...ctx, now: new Date('2026-09-09T20:00:00') };
+		const { loose } = s.review.readWeek(wednesday, '2026-09-07');
+		const titled = loose.map((one) => `${one.date} ${one.title}`);
+		expect(titled).toContain('2026-09-07 Write');
+		expect(titled).toContain('2026-09-09 Review');
+		// Friday has not happened: nothing to review on it yet.
+		expect(titled.some((one) => one.startsWith('2026-09-11'))).toBe(false);
+	});
+});

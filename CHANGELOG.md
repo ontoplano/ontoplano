@@ -18,6 +18,11 @@ the shape of the data changing. Bumping the minor per batch is what ran this
 file to 0.161 in a few months, which tells a reader nothing about which
 releases mattered.
 
+## 0.184.13 — 2026-10-01
+
+- The review of the running week includes today's blocks, before the day is
+  over and even if nothing has opened today yet.
+
 ## 0.184.12 — 2026-10-01
 
 - The demo opens straight away: a copy is ready before you press the button,
