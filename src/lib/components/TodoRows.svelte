@@ -740,6 +740,12 @@
 		};
 	}
 
+	/** One of the held ratings back to no answer — the middle of the scale. */
+	function unrate(rating: Rating) {
+		if (!rerating) return;
+		rerating = { ...rerating, values: { ...rerating.values, [rating]: null } };
+	}
+
 	/**
 	 * Where the draft would land in the list as it is filtered right now.
 	 *
@@ -1294,7 +1300,7 @@
 					<Icon name="edit" size={12} />
 				</button>
 			{/snippet}
-			<RatingTable values={held.values} />
+			<RatingTable values={held.values} onunset={unrate} />
 			<div class="mt-2 flex flex-col items-start gap-1 text-sm">
 				{@render underFilters(reratingFilteredPlace)}
 				{@render inQueue(reratingPlace)}
@@ -1315,7 +1321,7 @@
 	{#if rerating?.sheet}
 		{@const held = rerating}
 		<div class="flex flex-col items-center gap-4">
-			<RatingTable values={held.values} />
+			<RatingTable values={held.values} onunset={unrate} />
 			<RatingPress
 				values={held.values}
 				height="min(45dvh, 20rem)"

@@ -30,6 +30,8 @@ releases mattered.
   moving a block on a phone no longer opens the strip over the calendar.
 - The arrow that opens a notebook from the shelf sits beside its name, not at
   the far end with the other buttons.
+- Changing a task's ratings by pressing its bars, each rating now has an ×
+  that puts it back to unanswered.
 
 ## 0.184.11 — 2026-09-29
 
