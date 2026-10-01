@@ -47,6 +47,33 @@ function browserSqlite() {
 	};
 }
 
+/**
+ * What the dev server does not watch: whatever this checkout excludes locally.
+ *
+ * Vite watches the whole project root, and a working checkout tends to hold
+ * other things beside the app — sibling repositories, tool caches, a clone of
+ * somebody else's project. Watched, those can run the machine out of inotify
+ * watches (ENOSPC), and the dev server dies before serving a page. The files a
+ * developer listed in `.git/info/exclude` are by definition not the app, and
+ * that list lives on their machine, so nothing about it is written here. Only
+ * root-anchored entries (`/name/`), which name one place rather than a pattern.
+ */
+function locallyExcluded(): string[] {
+	try {
+		return readFileSync('.git/info/exclude', 'utf8')
+			.split('\n')
+			.map((line) => line.trim())
+			.filter((line) => line.startsWith('/') && !line.includes('*'))
+			.flatMap((line) => {
+				const path = `${import.meta.dirname}${line.replace(/\/$/, '')}`;
+				return [path, `${path}/**`];
+			});
+	} catch {
+		// A worktree's `.git` is a file, and a tarball has none: watch everything.
+		return [];
+	}
+}
+
 const pkg = JSON.parse(readFileSync('package.json', 'utf8')) as { version: string };
 const commit = git('git rev-parse --short HEAD');
 const dirty = git('git status --porcelain') !== '' ? '+' : '';
@@ -161,6 +188,7 @@ export default defineConfig({
 		 * second `yarn dev` in another terminal quietly steals the name and the
 		 * first one is talking to nobody.
 		 */
-		strictPort: true
+		strictPort: true,
+		watch: { ignored: locallyExcluded() }
 	}
 });
