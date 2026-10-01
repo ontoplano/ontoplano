@@ -107,27 +107,45 @@ try {
  *   the isolated build (`ONTOPLANO_ISOLATED_BUILD=1`, the same thing `make
  *   android` runs), and `cap sync` to put it into the project. Node 20 in
  *   their image is too old for the toolchain, hence the pinned tarball.
+ * - The scanner runs after prebuild and refuses binaries. What the web build
+ *   leaves behind (the root node_modules, its output directories, the wasm
+ *   copied into static/, the cli's template tarballs) is deleted; gradle
+ *   still needs the rest of capacitor/node_modules. The web app itself,
+ *   sqlite3.wasm included, is what the APK carries, so it is ignored.
  *
  * REHEARSE THIS before every submission — `fdroid build` in their server
  * image (the store checkout keeps the walkthrough) — because a recipe that
  * fails in their builder costs a review round trip measured in weeks.
  */
 const NODE_BUILD = 'v22.14.0';
+// gzip rather than xz: their image has no xz. The sum is nodejs.org's own
+// SHASUMS256.txt line for this tarball, so the builder never runs an
+// unverified download.
+const NODE_TARBALL = `node-${NODE_BUILD}-linux-x64.tar.gz`;
+const NODE_SHA256 = '9d942932535988091034dc94cc5f42b6dc8784d6366df3a36c4c9ccb3996f0c2';
 const buildEntry = `  - versionName: ${version}
     versionCode: ${versionCode}
     commit: ${tag}
     subdir: capacitor/android/app
     sudo:
-      - curl -Lo /tmp/node.tar.xz https://nodejs.org/dist/${NODE_BUILD}/node-${NODE_BUILD}-linux-x64.tar.xz
-      - tar -xJf /tmp/node.tar.xz -C /opt
-      - for b in node npm npx corepack; do ln -sf /opt/node-${NODE_BUILD}-linux-x64/bin/$b /usr/local/bin/$b; done
-      - npm install -g yarn
+      - curl -fLo /tmp/node.tar.gz https://nodejs.org/dist/${NODE_BUILD}/${NODE_TARBALL}
+      - echo "${NODE_SHA256}  /tmp/node.tar.gz" | sha256sum -c
+      - tar -xzf /tmp/node.tar.gz -C /opt
+      - /opt/node-${NODE_BUILD}-linux-x64/bin/npm install -g yarn
+      - for b in node npm npx corepack yarn yarnpkg; do ln -sf /opt/node-${NODE_BUILD}-linux-x64/bin/$b /usr/local/bin/$b; done
     init:
-      - cd ../../.. && yarn install --frozen-lockfile
-      - cd ../.. && npm ci --no-audit --no-fund
+      - cd ../../.. && yarn install --frozen-lockfile && cd capacitor && npm ci --no-audit --no-fund
     prebuild:
       - cd ../../.. && NODE_OPTIONS=--max-old-space-size=4096 ONTOPLANO_ISOLATED_BUILD=1
         PUBLIC_ONTOPLANO_ISOLATED=true yarn build && cd capacitor && npx cap sync android
+    scandelete:
+      - node_modules
+      - build-isolated
+      - .svelte-kit-isolated
+      - static/sqlite3.wasm
+      - capacitor/node_modules/@capacitor/cli
+    scanignore:
+      - capacitor/android/app/src/main/assets/public
     gradle:
       - official
 `;
