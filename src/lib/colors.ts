@@ -124,11 +124,18 @@ export const HEATMAP_FULL_YEAR_FROM = '640px';
 
 export const HEATMAP_BAD = ['bg-slate-100', 'bg-red-300', 'bg-red-500', 'bg-red-700'] as const;
 export const HEATMAP_GOOD = ['bg-slate-100', 'bg-blue-300', 'bg-blue-500', 'bg-blue-700'] as const;
+/*
+ * A step further up the gray than the other two go up their hues.
+ *
+ * The grays are the chrome's own ramp, and in the dark a gray-300 is within a
+ * shade of the card it sits on: a day logged once disappeared into the card,
+ * and the empty days, a darker slate, read as the ones that had been done.
+ */
 export const HEATMAP_NEUTRAL = [
 	'bg-slate-100',
-	'bg-gray-300',
-	'bg-gray-500',
-	'bg-gray-700'
+	'bg-gray-400',
+	'bg-gray-600',
+	'bg-gray-800'
 ] as const;
 
 /** Habit accent border (inline style) */

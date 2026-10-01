@@ -38,6 +38,8 @@ releases mattered.
 - Opening the app from a notification while the phone is still reconnecting
   tries again before giving up, and the offline page reloads by itself once
   the connection is back, instead of a page that just said "Offline".
+- A neutral habit's calendar no longer looks inverted in the dark: the days
+  it was logged are the filled ones, and the gaps are the dark ones.
 
 ## 0.184.11 — 2026-09-29
 
