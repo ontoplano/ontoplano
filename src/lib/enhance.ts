@@ -1,6 +1,7 @@
 import { enhance as kitEnhance } from '$app/forms';
 import { navigating } from '$app/state';
 import type { SubmitFunction } from '@sveltejs/kit';
+import { afterPress } from '$lib/after-press';
 
 /**
  * `use:enhance`, with one press meaning one submission.
@@ -145,6 +146,52 @@ function steppingAway(event: Parameters<SubmitFunction>[0]): HTMLDialogElement |
 	return by.closest('dialog');
 }
 
+/**
+ * The two answers a press outside a dialog can give before the server does,
+ * declared on the button (or the form) rather than written per screen.
+ *
+ * - `data-leaves`: the press takes its row off the list — archive, delete,
+ *   put away. The row (`data-leaves="<selector>"`, or the nearest list row)
+ *   goes on the press and comes back if the server refuses.
+ * - `aria-pressed`: the press is a switch. It reads as flipped on the press,
+ *   and flips back if refused; when the page's data returns it draws the
+ *   switch from the answer anyway.
+ *
+ * Both after the press has finished landing (`$lib/after-press`): a row taken
+ * away under the pointer would otherwise hand the rest of the click to the
+ * row that moved up into its place.
+ */
+const ROW = '[data-row], .list-row, .row-card, [data-todo-id], li';
+
+function answerAtOnce(event: Parameters<SubmitFunction>[0]): () => void {
+	const by = event.submitter as HTMLElement | null;
+	const declares = (name: string) =>
+		by?.hasAttribute(name) ? by : event.formElement.hasAttribute(name) ? event.formElement : null;
+	const undo: (() => void)[] = [];
+
+	const leaver = declares('data-leaves');
+	if (leaver) {
+		const named = leaver.getAttribute('data-leaves');
+		const row = (named ? leaver.closest(named) : leaver.closest(ROW)) as HTMLElement | null;
+		if (row) {
+			afterPress(() => {
+				row.hidden = true;
+			});
+			undo.push(() => (row.hidden = false));
+		}
+	}
+
+	if (by?.hasAttribute('aria-pressed')) {
+		const was = by.getAttribute('aria-pressed');
+		afterPress(() => by.setAttribute('aria-pressed', was === 'true' ? 'false' : 'true'));
+		undo.push(() => was !== null && by.setAttribute('aria-pressed', was));
+	}
+
+	return () => {
+		for (const one of undo) afterPress(one);
+	};
+}
+
 export function enhance(form: HTMLFormElement, submit?: SubmitFunction) {
 	let sending: string | null = null;
 
@@ -163,9 +210,11 @@ export function enhance(form: HTMLFormElement, submit?: SubmitFunction) {
 		const after = submit?.(event);
 		const dialog = steppingAway(event);
 		dialog?.dispatchEvent(new Event('stepaway'));
+		const takeBack = dialog ? () => {} : answerAtOnce(event);
 		return async (outcome) => {
 			try {
 				const { outcome: answered, finish } = resetAfterwards(stayingPut(outcome));
+				if (outcome.result.type === 'failure' || outcome.result.type === 'error') takeBack();
 				if (typeof after === 'function') await after(answered);
 				else await answered.update();
 				finish();

@@ -187,7 +187,7 @@
 	};
 </script>
 
-<div>
+<div data-habit>
 	<!--
 		The card a task is drawn on — `RowCard`: the box that logs today where a
 		task has its tick, the name beside it, where it stands on the foot line
@@ -327,7 +327,7 @@
 				     a habit already put away. -->
 				{#if archived}
 					{#if confirmingDelete}
-						<form method="post" action={actions.remove} use:enhance>
+						<form data-leaves="[data-habit]" method="post" action={actions.remove} use:enhance>
 							<input type="hidden" name="id" value={habit.id} />
 							<button type="submit" class="btn btn-sm btn-danger" use:armed>
 								{t('health.habits.confirm')}
@@ -510,7 +510,7 @@
 							-->
 				<div class="mt-3 max-h-56 divide-y divide-gray-100 overflow-y-auto pr-1">
 					{#each occ as occurrence (occurrence.id)}
-						<div class="flex items-center justify-between py-1.5">
+						<div data-row class="flex items-center justify-between py-1.5">
 							<div class="flex items-center gap-2">
 								<span class="text-xs font-medium text-gray-600"
 									>{civilOf(occurrence.date, now())}</span
@@ -541,6 +541,7 @@
 							</div>
 							{#if confirmingOccurrence === occurrence.id}
 								<form
+									data-leaves
 									method="post"
 									action={actions.deleteOccurrence}
 									use:enhance={() => {

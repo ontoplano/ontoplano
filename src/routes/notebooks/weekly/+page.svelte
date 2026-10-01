@@ -221,6 +221,7 @@
 						<div class="list-row-actions">
 							{#if confirmDelete === week.weekStart}
 								<form
+									data-leaves
 									method="post"
 									action="?/remove"
 									use:enhance={() =>

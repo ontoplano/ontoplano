@@ -18,6 +18,16 @@ the shape of the data changing. Bumping the minor per batch is what ran this
 file to 0.161 in a few months, which tells a reader nothing about which
 releases mattered.
 
+## 0.184.14 — 2026-10-01
+
+- Every form that closes when saved now says so ("Saved"), in every room; a
+  new block on the plan says "Task block added".
+- Confirming a task's ratings, saying you are on a task, and putting one away
+  happen at once, without waiting for the server.
+- Archiving or deleting from a list row takes the row away as you press, and
+  puts it back if the server refuses.
+- Stars and on/off buttons switch as you press them.
+
 ## 0.184.13 — 2026-10-01
 
 - Opening the demo for the first time no longer fails with "JSON Parse

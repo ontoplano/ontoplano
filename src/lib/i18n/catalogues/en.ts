@@ -1928,6 +1928,7 @@ export const messages: Catalogue = {
 	'media.showWhatIsIn': 'Show what is in {name}',
 	'media.signInFirst': 'Sign in first.',
 	'modal.dragToWiden': 'Drag to make it wider; double-click to put it back',
+	'modal.saved': 'Saved',
 	'newsletter.off.goToOntoplano': 'Go to ontoplano',
 	'newsletter.off.nothingMoreWillBeSent': 'Nothing more will be sent to {email}.',
 	'notebookDetail.addNote': 'Add note',
@@ -3838,6 +3839,7 @@ export const messages: Catalogue = {
 	'tasks.plan.backOneUnitPlain': 'Back one {unit}',
 	'tasks.plan.backToLabel': 'Back to {label}',
 	'tasks.plan.backToToDo': 'Back to tasks',
+	'tasks.plan.blockAdded': 'Task block added',
 	'tasks.plan.borderBorderGray300BgWhiteTextGray700Sha':
 		'border border-gray-300 bg-white text-gray-700 shadow-sm hover:bg-gray-50',
 	'tasks.plan.calendarsYouSubscribeTo': 'Calendars you subscribe to',

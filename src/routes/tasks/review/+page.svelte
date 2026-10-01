@@ -720,6 +720,7 @@
 											     was: Keep lands under a cursor that was on the bin, and
 											     `armed` keeps the confirm inert until it can be read. -->
 										<form
+											data-leaves
 											method="post"
 											action="?/dropStale"
 											use:enhance={() => {

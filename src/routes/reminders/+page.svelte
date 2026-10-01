@@ -840,6 +840,7 @@
 										></span>
 									{:else if confirmingDelete === reminder.id}
 										<form
+											data-leaves
 											method="post"
 											action="?/remove"
 											use:enhance={() =>

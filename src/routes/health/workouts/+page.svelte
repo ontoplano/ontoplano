@@ -492,7 +492,7 @@
 						{/if}
 					</span>
 					<span class="list-row-actions">
-						<form method="post" action="?/archive" use:enhance>
+						<form data-leaves method="post" action="?/archive" use:enhance>
 							<input type="hidden" name="id" value={workout.id} />
 							<input type="hidden" name="archived" value="false" />
 							<button

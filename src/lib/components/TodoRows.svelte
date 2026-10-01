@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { say } from '$lib/said.svelte';
+	import { afterPress } from '$lib/after-press';
 	import ShowingCount from '$lib/components/ShowingCount.svelte';
 	import SearchField from '$lib/components/SearchField.svelte';
 	import { notebooksHolding } from '$lib/notebook-modules';
@@ -89,7 +90,7 @@
 	 * `$lib/todo-actions`.
 	 */
 	let {
-		todos,
+		todos: given,
 		categories,
 		notebooks,
 		actions,
@@ -172,6 +173,55 @@
 		openNew?: (() => void) | undefined;
 		openTodo?: ((id: number) => void) | undefined;
 	} = $props();
+
+	/**
+	 * The tasks as the screen should show them: what the server last said, with
+	 * whatever this screen has been told and the server has not answered yet.
+	 *
+	 * A press is answered here before the round trip — a tie put the other way
+	 * round, ratings confirmed on a card — and everything below reads this, so
+	 * the order, the place in line and the bars all move at once. Each hold is
+	 * dropped when the page's own data comes back, which then says the same
+	 * thing, or when the server refuses it.
+	 */
+	let held = $state(new Map<number, Partial<Todo>>());
+	$effect(() => {
+		void given;
+		held = new Map();
+	});
+	const todos: Todo[] = $derived(
+		held.size === 0
+			? given
+			: given.map((one: Todo) => (held.has(one.id) ? { ...one, ...held.get(one.id) } : one))
+	);
+
+	/** Show this about a task until the page's data comes back. */
+	function hold(id: number, patch: Partial<Todo>) {
+		held = new Map([...held, [id, { ...held.get(id), ...patch }]]);
+	}
+
+	/** A press refused: let go of everything held; the page's error says why. */
+	function letGo() {
+		held = new Map();
+	}
+
+	/**
+	 * A form whose press is answered at once: `patch` is what the task looks
+	 * like afterwards, shown from the press until the answer, and dropped if
+	 * the answer is a refusal.
+	 */
+	function answered(id: number, patch: () => Partial<Todo>): SubmitFunction {
+		return () => {
+			// After the press has landed: a row that leaves the list under the
+			// pointer must not hand the rest of the click to the row below.
+			const next = patch();
+			afterPress(() => hold(id, next));
+			return async ({ result, update }) => {
+				if (result.type !== 'success') letGo();
+				await update({ reset: false });
+			};
+		};
+	}
 
 	const selection = new Selection<BatchVerb>();
 	const batchLabels = {
@@ -581,16 +631,10 @@
 	 * the list's own data comes back — which then says the same thing — or
 	 * when the server refuses it.
 	 */
-	let heldOrder = $state(new Map<number, number>());
-	$effect(() => {
-		void todos;
-		heldOrder = new Map();
-	});
-
 	function holdSwap(one: Todo, otherId: number, way: 'up' | 'down') {
 		const other = todos.find((t: Todo) => t.id === otherId);
 		if (!other) return;
-		const at = (t: Todo) => heldOrder.get(t.id) ?? t.sortOrder ?? 0;
+		const at = (t: Todo) => t.sortOrder ?? 0;
 		const [mine, theirs] = [at(one), at(other)];
 		// Equal by hand, the age decided it: step just past the other instead.
 		const moved: [number, number][] =
@@ -600,7 +644,7 @@
 						[other.id, mine]
 					]
 				: [[one.id, way === 'up' ? theirs - 0.5 : theirs + 0.5]];
-		heldOrder = new Map([...heldOrder, ...moved]);
+		for (const [id, sortOrder] of moved) hold(id, { sortOrder });
 	}
 
 	let visibleTodos = $derived.by(() => {
@@ -643,9 +687,7 @@
 			 * Ties past the three ratings keep the order somebody arranged by
 			 * hand, rather than falling back on when they were written down.
 			 */
-			const held = (one: Todo) =>
-				heldOrder.has(one.id) ? { ...one, sortOrder: heldOrder.get(one.id) } : one;
-			const best = [...shown].sort((a: Todo, b: Todo) => compareByPriority(held(a), held(b)));
+			const best = [...shown].sort(compareByPriority);
 			return direction === 'asc' ? best.reverse() : best;
 		}
 
@@ -1302,11 +1344,19 @@
 			id="rate-form"
 			method="post"
 			action={actions.rate}
-			use:enhance={() =>
-				async ({ update }) => {
+			use:enhance={() => {
+				// Answered on the press: the bars keep what was confirmed and the
+				// box goes, after the press has finished landing.
+				const confirmed = rerating;
+				if (confirmed) hold(confirmed.id, { ratings: { ...confirmed.values } });
+				afterPress(() => {
+					if (rerating?.id === confirmed?.id) rerating = null;
+				});
+				return async ({ result, update }) => {
+					if (result.type !== 'success') letGo();
 					await update({ reset: false });
-					rerating = null;
-				}}
+				};
+			}}
 		>
 			<input type="hidden" name="id" value={held.id} />
 			{#each RATING_ORDER as rating (rating)}
@@ -1871,7 +1921,7 @@
 														use:enhance={() => {
 															if (way.other) holdSwap(todo, way.other, way.way);
 															return async ({ result, update }) => {
-																if (result.type !== 'success') heldOrder = new Map();
+																if (result.type !== 'success') letGo();
 																await update();
 															};
 														}}
@@ -1973,7 +2023,13 @@
 										I am on". It is a toggle rather than a step in a cycle:
 										pressing it says so, pressing it again says you are not.
 									-->
-									<form method="post" action={actions.setStatus} use:enhance>
+									<form
+										method="post"
+										action={actions.setStatus}
+										use:enhance={answered(todo.id, () => ({
+											status: todo.status === 'doing' ? 'todo' : 'doing'
+										}))}
+									>
 										<input type="hidden" name="id" value={todo.id} />
 										<input
 											type="hidden"
@@ -2018,9 +2074,14 @@
 									the reversible one — the button beside it is what deletes,
 									and that one asks.
 								-->
-								<!-- Plain `use:enhance`: the default applies the result and
-								     re-reads the page, which is how the row leaves the list. -->
-								<form method="post" action={actions.archive} use:enhance>
+								<!-- Gone from the list on the press; the re-read confirms it. -->
+								<form
+									method="post"
+									action={actions.archive}
+									use:enhance={answered(todo.id, () => ({
+										archivedAt: todo.archivedAt ? null : new Date().toISOString()
+									}))}
+								>
 									<input type="hidden" name="id" value={todo.id} />
 									<input type="hidden" name="away" value={todo.archivedAt ? 'false' : 'true'} />
 									<button

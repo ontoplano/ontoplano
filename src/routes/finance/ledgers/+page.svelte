@@ -616,7 +616,7 @@
 					>
 						<Icon name="edit" />
 					</button>
-					<form method="post" action="?/archiveLedger" use:enhance>
+					<form data-leaves method="post" action="?/archiveLedger" use:enhance>
 						<input type="hidden" name="id" value={ledger.id} />
 						<input type="hidden" name="archived" value={ledger.archived ? 'false' : 'true'} />
 						{#if ledger.archived}

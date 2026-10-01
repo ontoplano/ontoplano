@@ -326,6 +326,7 @@
 							{#if !activity.active}
 								{#if confirmingDelete === `act-${activity.id}`}
 									<form
+										data-leaves
 										method="post"
 										action="?/delete"
 										use:enhance={() => {

@@ -1989,6 +1989,7 @@ export const messages: Catalogue = {
 	'media.showWhatIsIn': 'Zeigen, was in {name} ist',
 	'media.signInFirst': 'Zuerst anmelden.',
 	'modal.dragToWiden': 'Ziehen, um es breiter zu machen; Doppelklick setzt es zurück',
+	'modal.saved': 'Gespeichert',
 	'newsletter.off.goToOntoplano': 'Zu ontoplano gehen',
 	'newsletter.off.nothingMoreWillBeSent': 'Es wird nichts mehr an {email} gesendet.',
 	'notebookDetail.addNote': 'Notiz hinzufügen',
@@ -3951,6 +3952,7 @@ export const messages: Catalogue = {
 	'tasks.plan.backOneUnitPlain': 'Eine(n) {unit} zurück',
 	'tasks.plan.backToLabel': 'Zurück zu {label}',
 	'tasks.plan.backToToDo': 'Zurück zu den Aufgaben',
+	'tasks.plan.blockAdded': 'Block hinzugefügt',
 	'tasks.plan.borderBorderGray300BgWhiteTextGray700Sha':
 		'border border-gray-300 bg-white text-gray-700 shadow-sm hover:bg-gray-50',
 	'tasks.plan.calendarsYouSubscribeTo': 'Kalender, die Sie abonniert haben',

@@ -5,6 +5,7 @@
 	import { isPhone } from '$lib/breakpoints';
 	import { panelHeight, readViewport } from '$lib/keyboard';
 	import { useT } from '$lib/i18n';
+	import { say, spokenCount } from '$lib/said.svelte';
 
 	const t = useT();
 
@@ -76,6 +77,12 @@
 		/** A failed submission's message. Shown here because the page behind is
 		 *  dimmed and inert — an error rendered out there cannot be read. */
 		error = null,
+		/**
+		 * What is said once a save from the footer has closed it — "Saved" unless
+		 * the page passes something more particular ("Task block added"). Not
+		 * said when the page announced the save itself.
+		 */
+		saved = undefined,
 		onclose,
 		/**
 		 * Same moment, one beat later: after the history entry a phone screen
@@ -100,6 +107,7 @@
 		size?: 'sm' | 'md' | 'lg';
 		dock?: 'centre' | 'side';
 		error?: string | null;
+		saved?: string;
 		onclose?: () => void;
 		onclosed?: () => void;
 		badge?: Snippet;
@@ -236,10 +244,16 @@
 	 * nothing to undo.
 	 */
 	let away = false;
+	/** What had been said when it stepped away, to tell whether the page spoke since. */
+	let spokenAtAway = 0;
+	/** And what it was going to say, read then: closing resets what the page passes. */
+	let savedAtAway: string | undefined;
 
 	function stepAway() {
 		if (!dialog?.open) return;
 		away = true;
+		spokenAtAway = spokenCount();
+		savedAtAway = saved;
 		dialog.close();
 	}
 
@@ -255,6 +269,10 @@
 			if (dialog && !dialog.open) dialog.showModal();
 			return;
 		}
+		// The save went through and the page let it go: say so, unless the
+		// page already did. Every room gets an answer this way, rather than the
+		// ones somebody remembered to give one.
+		if (spokenCount() === spokenAtAway) say(savedAtAway ?? t('modal.saved'));
 		onclose?.();
 		void back.release().then(() => onclosed?.());
 	}

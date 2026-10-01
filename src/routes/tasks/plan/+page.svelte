@@ -3808,6 +3808,7 @@
 	<Modal
 		bind:open={showForm}
 		error={form?.message}
+		saved={editingKind === null ? t('tasks.plan.blockAdded') : undefined}
 		onclose={closeForm}
 		size="md"
 		dock="side"

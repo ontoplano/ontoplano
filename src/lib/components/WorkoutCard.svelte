@@ -178,7 +178,7 @@
 				<Icon name="edit" />
 			</button>
 
-			<form method="post" action={actions.archive} use:enhance>
+			<form data-leaves method="post" action={actions.archive} use:enhance>
 				<input type="hidden" name="id" value={workout.id} />
 				<input type="hidden" name="archived" value="true" />
 				<button

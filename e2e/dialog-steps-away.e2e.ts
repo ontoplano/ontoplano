@@ -66,3 +66,40 @@ test('a refused save brings the dialog back, with what was typed and why', async
 	await expect(dialog).toContainText('The server said no', { timeout: 10_000 });
 	await expect(dialog.locator('[name="heading"]')).toHaveValue('this one is refused');
 });
+
+test('a block saved on the plan says so', async ({ page }) => {
+	test.setTimeout(180_000);
+	await register(page, testEmail('dialog-plan-toast'));
+	await visit(page, '/tasks/plan');
+	await page.getByRole('button', { name: 'New task block' }).click();
+	await page.getByRole('button', { name: 'Once only' }).click();
+	await page.locator('#block-form [name="newActivityName"]').fill('ring the bank');
+	await page.getByRole('button', { name: 'Add one-off' }).click();
+	await expect(page.getByText('Task block added')).toBeVisible({ timeout: 10_000 });
+});
+
+test('a confirmed rating and an archived task answer before the server', async ({ page }) => {
+	test.setTimeout(180_000);
+	await page.setViewportSize({ width: 1280, height: 900 });
+	await register(page, testEmail('press-answers'));
+	await visit(page, '/tasks/todo');
+	for (const title of ['rate me', 'put me away']) {
+		await startTask(page, title);
+		await page.getByRole('button', { name: 'Create task' }).click();
+		await expect(page.getByText(title).first()).toBeVisible({ timeout: 30_000 });
+	}
+	await slowPosts(page, null);
+
+	const rated = page.locator('.row-card').filter({ hasText: 'rate me' });
+	const bars = rated.locator('.rating-bars');
+	const box = (await bars.boundingBox())!;
+	await page.mouse.click(box.x + box.width * 0.15, box.y + box.height * 0.05);
+	const holding = page.getByRole('dialog', { name: 'Confirm' });
+	await holding.getByRole('button', { name: 'Confirm' }).click();
+	await expect(holding).toBeHidden({ timeout: 500 });
+	await expect(bars).toHaveAttribute('aria-label', /Urgency 5/, { timeout: 500 });
+
+	const away = page.locator('.row-card').filter({ hasText: 'put me away' });
+	await away.getByRole('button', { name: 'Put it away' }).click();
+	await expect(away).toHaveCount(0, { timeout: 500 });
+});
