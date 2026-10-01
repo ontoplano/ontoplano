@@ -223,7 +223,65 @@
 
 	$effect(() => back.watch());
 
+	/*
+	 * Stepped away while its form is being answered.
+	 *
+	 * Saving from the footer used to hold the dialog on screen for the whole
+	 * round trip — a second or two of a form that had plainly been sent. Now
+	 * `$lib/enhance` asks it to step away the moment the press is made: the
+	 * `<dialog>` closes, so the page behind is live again, but `open` stays
+	 * true and everything typed stays mounted. When the answer comes, it comes
+	 * back if the page still wants it — a refused save, with the reason in the
+	 * error banner — and otherwise the page has already closed it and there is
+	 * nothing to undo.
+	 */
+	let away = false;
+
+	function stepAway() {
+		if (!dialog?.open) return;
+		away = true;
+		dialog.close();
+	}
+
+	/**
+	 * The answer is in: back on screen if the page still wants it, and closed
+	 * properly if the page has let it go. Reached from the answer and from the
+	 * page closing it, whichever comes first.
+	 */
+	function stepBack() {
+		if (!away) return;
+		away = false;
+		if (open) {
+			if (dialog && !dialog.open) dialog.showModal();
+			return;
+		}
+		onclose?.();
+		void back.release().then(() => onclosed?.());
+	}
+
+	$effect(() => {
+		if (!dialog) return;
+		const el = dialog;
+		el.addEventListener('stepaway', stepAway);
+		el.addEventListener('stepback', stepBack);
+		return () => {
+			el.removeEventListener('stepaway', stepAway);
+			el.removeEventListener('stepback', stepBack);
+		};
+	});
+
+	// Closed by the page while away: what the native close would have done.
+	$effect(() => {
+		if (!open) stepBack();
+	});
+
+	/** The `close` event that stepping away fires — later, as a task — is not somebody closing it. */
+	function handleNativeClose() {
+		if (!away) handleClose();
+	}
+
 	function handleClose() {
+		away = false;
 		open = false;
 		onclose?.();
 		// `onclosed` waits for the history entry to be given back, because a
@@ -263,7 +321,7 @@
 
 <dialog
 	bind:this={dialog}
-	onclose={handleClose}
+	onclose={handleNativeClose}
 	onpointerdown={handlePointerDown}
 	onclick={handleClick}
 	aria-label={title}
@@ -366,6 +424,7 @@
 
 			{#if footer}
 				<footer
+					data-modal-footer
 					class="flex flex-wrap items-center justify-end gap-2 border-t border-gray-200 bg-gray-50 px-5 py-3"
 					style="padding-bottom: calc(0.75rem + var(--safe-bottom, 0px))"
 				>

@@ -573,6 +573,36 @@
 		return b.completedAt.localeCompare(a.completedAt);
 	}
 
+	/**
+	 * A tie put the other way round, shown before the server has agreed.
+	 *
+	 * The arrows used to do nothing visible until the round trip and the
+	 * reload were over. The swap is held here from the press, and dropped when
+	 * the list's own data comes back — which then says the same thing — or
+	 * when the server refuses it.
+	 */
+	let heldOrder = $state(new Map<number, number>());
+	$effect(() => {
+		void todos;
+		heldOrder = new Map();
+	});
+
+	function holdSwap(one: Todo, otherId: number, way: 'up' | 'down') {
+		const other = todos.find((t: Todo) => t.id === otherId);
+		if (!other) return;
+		const at = (t: Todo) => heldOrder.get(t.id) ?? t.sortOrder ?? 0;
+		const [mine, theirs] = [at(one), at(other)];
+		// Equal by hand, the age decided it: step just past the other instead.
+		const moved: [number, number][] =
+			mine !== theirs
+				? [
+						[one.id, theirs],
+						[other.id, mine]
+					]
+				: [[one.id, way === 'up' ? theirs - 0.5 : theirs + 0.5]];
+		heldOrder = new Map([...heldOrder, ...moved]);
+	}
+
 	let visibleTodos = $derived.by(() => {
 		// A row whose delete is being held is already gone as far as the person
 		// is concerned — the toast is what is holding it, not the list.
@@ -613,7 +643,9 @@
 			 * Ties past the three ratings keep the order somebody arranged by
 			 * hand, rather than falling back on when they were written down.
 			 */
-			const best = [...shown].sort(compareByPriority);
+			const held = (one: Todo) =>
+				heldOrder.has(one.id) ? { ...one, sortOrder: heldOrder.get(one.id) } : one;
+			const best = [...shown].sort((a: Todo, b: Todo) => compareByPriority(held(a), held(b)));
 			return direction === 'asc' ? best.reverse() : best;
 		}
 
@@ -1825,11 +1857,17 @@
 									{#if ties.get(todo.id)?.up || ties.get(todo.id)?.down}
 										{@const tie = ties.get(todo.id)!}
 										<div class="tie-arrows">
-											{#each [{ other: tie.up, glyph: 'chevron-up', said: t('todoRows.aheadOfTheTie') }, { other: tie.down, glyph: 'chevron-down', said: t('todoRows.behindTheTie') }] as const as way (way.glyph)}
+											{#each [{ other: tie.up, way: 'up', glyph: 'chevron-up', said: t('todoRows.aheadOfTheTie') }, { other: tie.down, way: 'down', glyph: 'chevron-down', said: t('todoRows.behindTheTie') }] as const as way (way.glyph)}
 												<form
 													method="post"
 													action={actions.nudge}
-													use:enhance
+													use:enhance={() => {
+														if (way.other) holdSwap(todo, way.other, way.way);
+														return async ({ result, update }) => {
+															if (result.type !== 'success') heldOrder = new Map();
+															await update();
+														};
+													}}
 													class:invisible={!way.other}
 												>
 													<input type="hidden" name="id" value={todo.id} />

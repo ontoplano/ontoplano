@@ -32,6 +32,9 @@ releases mattered.
   the far end with the other buttons.
 - Changing a task's ratings by pressing its bars, each rating now has an ×
   that puts it back to unanswered.
+- Saving a form no longer waits on the server: the dialog closes as soon as
+  you press Create or Save, and comes back with what you typed if the save is
+  refused. The arrows that reorder two equally rated tasks move them at once.
 
 ## 0.184.11 — 2026-09-29
 

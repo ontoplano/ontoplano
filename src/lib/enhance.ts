@@ -124,6 +124,27 @@ function resetAfterwards(outcome: Outcome): { outcome: Outcome; finish: () => vo
 	};
 }
 
+/**
+ * A dialog saved from its footer gets out of the way before the answer.
+ *
+ * The press on Create or Save is the end of what somebody is doing with the
+ * dialog, and holding it on screen for the round trip made every form in the
+ * app feel a second or two slow. So the dialog steps away at once and the
+ * page behind is usable; `Modal` keeps everything typed. When the answer
+ * arrives, it steps back only if the page has not closed it — which is a
+ * refusal, shown in the dialog's error banner with the fields as they were.
+ *
+ * Only a press from the footer: a button inside the body of a dialog is
+ * usually one step of something still going on there. `data-stays` on the
+ * button or the form opts a footer press out.
+ */
+function steppingAway(event: Parameters<SubmitFunction>[0]): HTMLDialogElement | null {
+	const by = event.submitter;
+	if (!by?.closest('[data-modal-footer]')) return null;
+	if (by.hasAttribute('data-stays') || event.formElement.hasAttribute('data-stays')) return null;
+	return by.closest('dialog');
+}
+
 export function enhance(form: HTMLFormElement, submit?: SubmitFunction) {
 	let sending: string | null = null;
 
@@ -140,6 +161,8 @@ export function enhance(form: HTMLFormElement, submit?: SubmitFunction) {
 		for (const button of pressed) button.disabled = true;
 
 		const after = submit?.(event);
+		const dialog = steppingAway(event);
+		dialog?.dispatchEvent(new Event('stepaway'));
 		return async (outcome) => {
 			try {
 				const { outcome: answered, finish } = resetAfterwards(stayingPut(outcome));
@@ -147,6 +170,7 @@ export function enhance(form: HTMLFormElement, submit?: SubmitFunction) {
 				else await answered.update();
 				finish();
 			} finally {
+				dialog?.dispatchEvent(new Event('stepback'));
 				sending = null;
 				// A form that has been taken off the screen takes its buttons
 				// with it; setting a property on a detached node is harmless.
