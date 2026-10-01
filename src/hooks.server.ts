@@ -21,6 +21,7 @@ import {
 	createDemoAccount,
 	DEMO_ACCOUNTS_PER_ADDRESS,
 	DEMO_WINDOW_MS,
+	fillDemoSpares,
 	isDemoAccount,
 	maybeSweepDemoAccounts,
 	touchDemoAccount
@@ -628,6 +629,9 @@ const handleDemo: Handle = async ({ event, resolve }) => {
 	 * nothing on the other requests.
 	 */
 	maybeSweepDemoAccounts();
+	// And the spares, so the visitor who presses the button finds one waiting.
+	// A no-op while they are full or already being made.
+	void fillDemoSpares(event.url.hostname);
 
 	const path = event.url.pathname;
 

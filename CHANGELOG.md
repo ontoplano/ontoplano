@@ -18,6 +18,11 @@ the shape of the data changing. Bumping the minor per batch is what ran this
 file to 0.161 in a few months, which tells a reader nothing about which
 releases mattered.
 
+## 0.184.12 — 2026-10-01
+
+- The demo opens straight away: a copy is ready before you press the button,
+  rather than made while you wait.
+
 ## 0.184.11 — 2026-09-29
 
 - The puffin in the middle of the menu mark never moves: only the octagon around it turns while a page loads.

@@ -11,17 +11,6 @@
 
 	let { data, form }: { data: PageServerData; form: ActionData } = $props();
 
-	/**
-	 * What is happening, while it happens.
-	 *
-	 * The stages are honest about the order — the account exists before the week
-	 * is written — and they advance on a timer rather than on progress reports,
-	 * because the work is one server round trip and reporting inside it would
-	 * cost more than it is worth. If it finishes early the page has already gone.
-	 */
-	const STAGES = ['Making you an account…', 'Filling a week in…', 'Almost there…'];
-	let stage = $state(0);
-
 	let starter = $state<HTMLFormElement>();
 	let started = $state(false);
 
@@ -29,10 +18,6 @@
 		// Submitted from here rather than on the server so the screen is painted
 		// first: the whole point is that the wait is looked at, not waited out.
 		starter?.requestSubmit();
-		const timer = setInterval(() => {
-			stage = Math.min(stage + 1, STAGES.length - 1);
-		}, 1800);
-		return () => clearInterval(timer);
 	});
 </script>
 
@@ -74,23 +59,6 @@
 			<p class="mt-1 text-sm text-gray-600">
 				{t('demo.nobodyElseCanSeeIt')}
 			</p>
-
-			<ul class="mt-4 space-y-2">
-				{#each STAGES as line, i (line)}
-					<li
-						class="flex items-center gap-2 text-sm {i <= stage ? 'text-gray-900' : 'text-gray-400'}"
-					>
-						<span
-							class="h-1.5 w-1.5 shrink-0 {i < stage
-								? 'bg-blue-600'
-								: i === stage
-									? 'bg-gray-900'
-									: 'bg-gray-300'}"
-						></span>
-						{line}
-					</li>
-				{/each}
-			</ul>
 
 			<div class="mt-4 h-1 w-full overflow-hidden bg-gray-200">
 				<div class="demo-bar h-full bg-gray-900"></div>

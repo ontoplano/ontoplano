@@ -93,7 +93,79 @@ export function demoAccountCount(): number {
  */
 export { DEMO_ACCOUNTS_PER_ADDRESS, DEMO_WINDOW_MS } from '$lib/demo-limits';
 
-export async function createDemoAccount(host: string): Promise<DemoAccount | null> {
+export async function createDemoAccount(
+	host: string,
+	make: (host: string) => Promise<DemoAccount | null> = makeDemoAccount
+): Promise<DemoAccount | null> {
+	const spare = takeSpare();
+	const account = spare ?? (await make(host));
+	void fillDemoSpares(host, make);
+	return account;
+}
+
+/**
+ * Accounts made and seeded before anybody asked for them.
+ *
+ * Seeding a week takes seconds — it is a child process writing a few hundred
+ * rows — and a visitor used to sit through all of it in the waiting room. So
+ * the demo keeps a couple ready: pressing the button takes one, which is a
+ * sign-in and nothing more, and the next is seeded behind the scenes.
+ *
+ * Kept in memory, because the password is what a spare is handed over with
+ * and a password is not written down anywhere. A restart forgets them; they
+ * carry an expiry like any demo account, so the sweep collects them.
+ */
+const DEMO_SPARES = 2;
+const spares: DemoAccount[] = [];
+let filling: Promise<void> | null = null;
+
+/** The oldest spare that still exists, its clock started from now. */
+function takeSpare(): DemoAccount | null {
+	for (let spare = spares.shift(); spare; spare = spares.shift()) {
+		if (!isDemoAccount(spare.userId)) continue;
+		touchDemoAccount(spare.userId);
+		return spare;
+	}
+	return null;
+}
+
+/** How many are waiting, for the tests and the operator's curiosity. */
+export function demoSpareCount(): number {
+	return spares.length;
+}
+
+/**
+ * Top the spares up, one at a time, in the background.
+ *
+ * One fill at a time: two visitors in the same second must not start four
+ * seeds. A failure is logged and ends the fill — the next request tries again.
+ */
+export function fillDemoSpares(
+	host: string,
+	make: (host: string) => Promise<DemoAccount | null> = makeDemoAccount
+): Promise<void> {
+	if (filling) return filling;
+	const fill = async () => {
+		try {
+			while (spares.length < DEMO_SPARES) {
+				const account = await make(host);
+				if (!account) return;
+				spares.push(account);
+			}
+		} catch (e) {
+			console.error('demo: making a spare failed:', e instanceof Error ? e.message : e);
+		}
+	};
+	// Cleared in `.finally`, which always runs after this assignment — clearing
+	// it inside `fill` would happen first when there is nothing to make, and
+	// leave a settled promise here that no later call could get past.
+	filling = fill().finally(() => {
+		filling = null;
+	});
+	return filling;
+}
+
+async function makeDemoAccount(host: string): Promise<DemoAccount | null> {
 	if (demoAccountCount() >= demoMaxAccounts()) return null;
 
 	const email = emailFor(host);
@@ -234,6 +306,8 @@ export function maybeSweepDemoAccounts(now = new Date()): void {
 	if (now.getTime() - lastSweep < SWEEP_EVERY_MS) return;
 	lastSweep = now.getTime();
 	try {
+		// A spare nobody has taken yet is waiting, not abandoned.
+		for (const spare of spares) touchDemoAccount(spare.userId, now);
 		sweepDemoAccounts(now);
 	} catch (e) {
 		// A tidy-up that throws must not take the request with it.

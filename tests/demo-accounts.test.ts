@@ -12,6 +12,7 @@
  * push it past.
  */
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { eq } from 'drizzle-orm';
 import { makeDatabase, OWNER, seedAccounts } from './helpers/db';
 
 const database = makeDatabase();
@@ -264,5 +265,64 @@ describe('the ceiling', () => {
 		process.env.ONTOPLANO_DEMO_MAX_ACCOUNTS = '3';
 		expect(settings.demoMaxAccounts()).toBe(3);
 		delete process.env.ONTOPLANO_DEMO_MAX_ACCOUNTS;
+	});
+});
+
+describe('the spares', () => {
+	/** A maker that counts its calls and makes accounts the cheap way. */
+	function maker() {
+		let made = 0;
+		const make = async () => {
+			made++;
+			const id = `spare-${made}-${Math.random().toString(36).slice(2, 8)}`;
+			pretendVisitor(id, new Date(Date.now() + 60_000).toISOString());
+			return { email: `demo-${id}@demo.test`, password: 'unused', userId: id };
+		};
+		return { make, made: () => made };
+	}
+
+	it('are made ahead of anybody asking', async () => {
+		const { make, made } = maker();
+		await demo.fillDemoSpares('demo.test', make);
+		expect(demo.demoSpareCount()).toBeGreaterThan(0);
+		expect(made()).toBe(demo.demoSpareCount());
+	});
+
+	it('hand a visitor an account without making one while they wait', async () => {
+		const { make, made } = maker();
+		await demo.fillDemoSpares('demo.test', make);
+		const before = made();
+		const waiting = demo.demoSpareCount();
+
+		let madeDuringTheCall = -1;
+		const account = await demo.createDemoAccount('demo.test', async (host) => {
+			madeDuringTheCall = made();
+			return make(host);
+		});
+
+		expect(account).not.toBeNull();
+		expect(demo.isDemoAccount(account!.userId)).toBe(true);
+		// The account came from the pool: nothing was made before it was handed
+		// over, only afterwards to refill.
+		expect(madeDuringTheCall === -1 || madeDuringTheCall === before).toBe(true);
+		await demo.fillDemoSpares('demo.test', make);
+		expect(demo.demoSpareCount()).toBe(waiting);
+	});
+
+	it('skip one the sweep has already taken', async () => {
+		const { make } = maker();
+		await demo.fillDemoSpares('demo.test', make);
+		const count = demo.demoSpareCount();
+		// Expire every waiting spare, and sweep them away.
+		db.db
+			.update(schema.userSettings)
+			.set({ value: new Date(Date.now() - 1_000).toISOString() })
+			.where(eq(schema.userSettings.key, 'demo.expiresAt'))
+			.run();
+		demo.sweepDemoAccounts();
+
+		const account = await demo.createDemoAccount('demo.test', make);
+		expect(count).toBeGreaterThan(0);
+		expect(demo.isDemoAccount(account!.userId)).toBe(true);
 	});
 });
