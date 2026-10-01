@@ -4890,6 +4890,15 @@ arrives the next time it opens, rather than being silently skipped.
 
 #### `createFreeReminder(ctx, raw)`
 
+#### `createTodoReminder(ctx, raw)`
+
+A reminder about a todo, at a time.
+
+A todo has no time of its own, so this is an alarm that names what it is
+about: the todo's title when nothing else is said, and the todo's own page
+when it is pressed. It is also the one reminder a key confined to a
+notebook can set — an alarm names nothing, and so belongs to no notebook.
+
 #### `createReminder(ctx, raw, { chosen = false })`
 
 #### `markDelivered(ctx, ids)`

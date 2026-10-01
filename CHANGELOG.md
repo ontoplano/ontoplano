@@ -26,6 +26,8 @@ releases mattered.
   its rating bars.
 - An assistant can list your recordings, rename them and write their notes —
   a transcript, a summary — over MCP, with the "recordings" permission.
+- An assistant can set a reminder about a task at a time ("remind me at six to
+  send this"), including one that only has access to a single notebook.
 
 ## 0.184.12 — 2026-10-01
 

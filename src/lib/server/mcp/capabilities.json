@@ -364,7 +364,7 @@
 		{
 			"name": "Reminders",
 			"mcp": {
-				"create": ["set_alarm", "remind_before_block"],
+				"create": ["set_alarm", "remind_before_block", "remind_task"],
 				"read": ["reminders"],
 				"change": ["change_reminder", "dismiss_reminder"],
 				"delete": ["cancel_alarm"]
