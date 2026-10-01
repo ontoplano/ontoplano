@@ -73,7 +73,9 @@ test('a block saved on the plan says so', async ({ page }) => {
 	await visit(page, '/tasks/plan');
 	await page.getByRole('button', { name: 'New task block' }).click();
 	await page.getByRole('button', { name: 'Once only' }).click();
-	await page.locator('#block-form [name="newActivityName"]').fill('ring the bank');
+	// A category block needs nothing typed: the account's first category is chosen.
+	await page.getByRole('button', { name: 'Mode' }).click();
+	await page.getByRole('option', { name: 'Category' }).click();
 	await page.getByRole('button', { name: 'Add one-off' }).click();
 	await expect(page.getByText('Task block added')).toBeVisible({ timeout: 10_000 });
 });
