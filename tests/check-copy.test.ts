@@ -1,5 +1,4 @@
 import { describe, expect, it } from 'vitest';
-// @ts-expect-error — a plain .mjs script, untyped
 import { copyIn } from '../scripts/check-copy.mjs';
 
 describe('check-copy', () => {

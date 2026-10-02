@@ -70,6 +70,11 @@ const SKIP = [
 	'src/lib/server/services/assistant-notify.ts'
 ];
 
+/**
+ * @param {string} dir
+ * @param {string[]} [found]
+ * @returns {string[]}
+ */
 function walk(dir, found = []) {
 	if (SKIP.some((skip) => dir === skip || dir.startsWith(`${skip}/`))) return found;
 	for (const entry of readdirSync(join(ROOT, dir), { withFileTypes: true })) {
@@ -89,6 +94,8 @@ function walk(dir, found = []) {
  * Script and style blocks go first — a string in a component's script is a
  * different problem, and its class names are not copy. Comments go too: a
  * comment is for whoever reads the code, and this repository's are long.
+ *
+ * @param {string} source
  */
 function markupOf(source) {
 	return source
@@ -161,14 +168,18 @@ const COPY_NAMES = [
  * tag walks out of the tag and reads the rest of it as prose. Braces are
  * counted wherever they are, being inside a tag is remembered across them, and
  * a quoted attribute is skipped whole.
+ *
+ * @param {string} markup
  */
 function textRuns(markup) {
+	/** @type {string[]} */
 	const runs = [];
 	let inTag = false;
 	let braces = 0;
 	let quote = '';
 	let start = -1;
 
+	/** @param {number} at */
 	const close = (at) => {
 		if (start >= 0) runs.push(markup.slice(start, at));
 		start = -1;
@@ -207,7 +218,11 @@ function textRuns(markup) {
 	return runs;
 }
 
-/** The script of a component, with its comments gone. */
+/**
+ * The script of a component, with its comments gone.
+ *
+ * @param {string} source
+ */
 function scriptOf(source, hasMarkup = true) {
 	const code = hasMarkup
 		? [...source.matchAll(/<script[^>]*>([\s\S]*?)<\/script>/g)].map((match) => match[1]).join('\n')
@@ -232,6 +247,8 @@ const CODEY = /[<>{}$\\]|^[a-z-]+$|^[A-Z_]+$|\//;
  * `border-gray-400 bg-gray-400` has spaces and words and is styling. Prose in
  * this app starts with a capital or ends in a full stop; a run of lowercase
  * tokens that all carry a hyphen or a colon is Tailwind.
+ *
+ * @param {string} text
  */
 const CLASSES = (text) => {
 	if (/[A-Z]/.test(text)) return false;
@@ -242,7 +259,9 @@ const CLASSES = (text) => {
 	return tokens.filter((token) => /[-:]/.test(token)).length * 2 > tokens.length;
 };
 
+/** @param {string} source */
 function prosyLiterals(source) {
+	/** @type {string[]} */
 	const found = [];
 	let braces = 0;
 
@@ -258,7 +277,8 @@ function prosyLiterals(source) {
 	 */
 	const markup = source.replace(
 		/(^|[^:\\])\/\/[^\n]*/g,
-		(m, lead) => lead + ' '.repeat(m.length - lead.length)
+		(/** @type {string} */ m, /** @type {string} */ lead) =>
+			lead + ' '.repeat(m.length - lead.length)
 	);
 
 	for (let i = 0; i < markup.length; i++) {
@@ -305,8 +325,11 @@ function prosyLiterals(source) {
  * and a lookup of sentences is copy.
  *
  * Typed as `Record<X, PlainKey>` once converted, so this stops matching it.
+ *
+ * @param {string} source
  */
 function wordTables(source) {
+	/** @type {string[]} */
 	const found = [];
 
 	for (const match of source.matchAll(/Record<[^>]*,\s*string>\s*=\s*\{/g)) {
@@ -379,7 +402,9 @@ function wordTables(source) {
 const REFUSALS =
 	/\b(?:Validation|Forbidden|Conflict|Unauthorized|PlanLimit|RateLimited)Error\(\s*'((?:[^'\\]|\\.){6,}?)'/g;
 
+/** @param {string} source */
 function refusals(source) {
+	/** @type {string[]} */
 	const found = [];
 	for (const match of source.matchAll(REFUSALS)) {
 		const text = match[1].trim();
@@ -388,7 +413,12 @@ function refusals(source) {
 	return found;
 }
 
-/** The words between tags, and the attributes and properties a person reads. */
+/**
+ * The words between tags, and the attributes and properties a person reads.
+ *
+ * @param {string} source
+ * @returns {string[]}
+ */
 export function copyIn(source, { markup: hasMarkup = true } = {}) {
 	const markup = hasMarkup ? markupOf(source) : '';
 	const found = [];
@@ -461,7 +491,9 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) main();
 
 function main() {
 	const files = ROOTS.filter((dir) => existsSync(join(ROOT, dir))).flatMap((dir) => walk(dir));
+	/** @type {Record<string, number>} */
 	const counts = {};
+	/** @type {Record<string, string[]>} */
 	const examples = {};
 
 	for (const file of files.sort()) {
