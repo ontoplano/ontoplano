@@ -26,7 +26,6 @@
 	import { provideSwipeSurface } from '$lib/swipe-surface';
 	import {
 		holdHeight,
-		landOn,
 		releaseHeight,
 		slideAway,
 		slideOn,
@@ -523,8 +522,6 @@
 	/** Where the copy of the outgoing room is put. Svelte never fills it. */
 	let roomStage = $state<HTMLElement>();
 	let changedRoom = 0;
-	/** The empty panel's arrival, so landing can ask whether it is still going. */
-	let roomArriving: Animation | null = null;
 
 	/*
 	 * `beforeNavigate`, and it has to be: `onNavigate` runs *after* the load.
@@ -593,7 +590,7 @@
 		 * The movement used to be: take the old room off, wait for the next one
 		 * to load, bring it on — so the arrival *was* the load, and on a slow
 		 * one the screen left and nothing happened until it finished. It is the
-		 * other way round now: the room leaves, the empty panel arrives behind
+		 * other way round now: the room leaves, the panel arrives behind
 		 * it, and if the data has not come by the time it settles the mark turns
 		 * in the middle of a panel that has already stopped moving.
 		 *
@@ -602,7 +599,7 @@
 		 */
 		holdHeight(roomFrame, pageBody);
 		slideAway(roomStage, pageBody, changedRoom, true);
-		roomArriving = slideOn(page$, changedRoom, true);
+		slideOn(page$, changedRoom, true);
 	});
 
 	/*
@@ -619,13 +616,12 @@
 		// Asked to stop as soon as the room is here; it finishes its turn on the
 		// way, so the quickest navigation still leaves a mark that went round.
 		stopMarkSpin();
-		// Joining the panel mid-flight when the load was quick, or arriving
-		// again — with the room finally in it — when the load outlived the
-		// slide. Never appearing in place: see `landOn`.
-		landOn(page$, pageBody, roomArriving, changedRoom, true);
+		// The panel arrived at the press carrying the room's outline, so the
+		// room is revealed where it stands, mid-flight or settled. Sliding it
+		// in again was the same movement twice over one navigation.
+		stopHiding(pageBody);
 		releaseHeight(roomFrame);
 		changedRoom = 0;
-		roomArriving = null;
 	});
 
 	/*

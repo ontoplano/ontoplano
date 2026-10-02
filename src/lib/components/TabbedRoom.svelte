@@ -12,7 +12,6 @@
 	import {
 		holdHeight,
 		releaseHeight,
-		landOn,
 		slideAway,
 		slideOn,
 		slidesHere,
@@ -178,8 +177,6 @@
 
 	/** Which way the last tab change went: 1 rightwards, -1 leftwards, 0 not one. */
 	let went = 0;
-	/** The empty panel's arrival, so landing can ask whether it is still going. */
-	let arriving: Animation | null = null;
 
 	function step(by: number) {
 		const to = tabs[at + by];
@@ -247,13 +244,13 @@
 		 * one to load, bring it on. So the arrival was the load — press a tab on
 		 * a slow connection and the screen leaves, nothing happens, and then
 		 * something slides in. What an app does is move when you ask it to and
-		 * then wait, which is this: the content leaves, the empty panel arrives
+		 * then wait, which is this: the content leaves, the panel arrives
 		 * behind it, and if the data is not there by the time it settles the
 		 * mark turns in the middle of a panel that has already stopped moving.
 		 */
 		holdHeight(frame, body);
 		slideAway(stage, body, went);
-		arriving = slideOn(pane, went);
+		slideOn(pane, went);
 		// The waiting medallion turns against the way the tabs are sweeping,
 		// the same rule the rooms follow. The layout starts the spin; this is
 		// the tab telling it which way things went.
@@ -261,13 +258,12 @@
 	});
 
 	afterNavigate(() => {
-		// Joining the panel mid-flight when the load was quick, or arriving
-		// again — with the content finally in it — when the load outlived the
-		// slide. Never appearing in place: see `landOn`.
-		landOn(pane, body, arriving, went);
+		// The panel arrived at the press carrying the tab's outline, so the
+		// content is revealed where it stands — see the same note in the root
+		// layout.
+		stopHiding(body);
 		releaseHeight(frame);
 		went = 0;
-		arriving = null;
 	});
 
 	/*

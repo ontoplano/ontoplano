@@ -22,6 +22,8 @@ releases mattered.
 
 - While a room loads, its header is already the real one — name, colour and
   tabs — and only the list below it is an outline.
+- On a phone, a room or tab that loads slowly slides in once, not a second
+  time when its content arrives.
 
 ## 0.184.14 — 2026-10-01
 
