@@ -18,6 +18,11 @@ the shape of the data changing. Bumping the minor per batch is what ran this
 file to 0.161 in a few months, which tells a reader nothing about which
 releases mattered.
 
+## 0.184.15 — 2026-10-02
+
+- While a room loads, its header is already the real one — name, colour and
+  tabs — and only the list below it is an outline.
+
 ## 0.184.14 — 2026-10-01
 
 - Every form that closes when saved now says so ("Saved"), in every room; a

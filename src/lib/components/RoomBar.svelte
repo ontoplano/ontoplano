@@ -36,6 +36,7 @@
 		back,
 		backLabel = 'Back',
 		verbInTabs = false,
+		still = false,
 		fold = true,
 		actions,
 		children
@@ -80,6 +81,12 @@
 		 * places it applies to. Without this it would be drawn twice.
 		 */
 		verbInTabs?: boolean;
+		/**
+		 * A bar drawn for a room that has not arrived yet — see `PendingPage`.
+		 * It names nothing for the browser tab and draws no verb, because the
+		 * screen that would answer either is still the one being left.
+		 */
+		still?: boolean;
 	} = $props();
 
 	/**
@@ -101,7 +108,9 @@
 	const phone = phoneWidth();
 
 	/* The browser tab says the room's name the way the bar does. */
-	setRoomTitle(() => title);
+	// Decided once: a bar is drawn still or not for the whole of its life.
+	// svelte-ignore state_referenced_locally
+	if (!still) setRoomTitle(() => title);
 
 	/** The folded actions' menu, and where it opens: under its button. */
 	let more = $state<HTMLElement>();
@@ -153,7 +162,7 @@
 			object rather than two rows of loose controls.
 		-->
 		<div class="ml-auto flex shrink-0 items-center gap-2">
-			{#if !verbInTabs}<RoomVerb />{/if}
+			{#if !verbInTabs && !still}<RoomVerb />{/if}
 			{#if actions}
 				{#if phone.current && fold}
 					<button

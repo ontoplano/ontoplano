@@ -9,6 +9,8 @@
 	import { navigating, page } from '$app/state';
 	import PendingPage from '$lib/components/PendingPage.svelte';
 	import { DESTINATIONS } from '$lib/destinations';
+	import { routeGlyph } from '$lib/glyphs';
+	import { isHidden } from '$lib/sections';
 	import { live } from '$lib/live';
 	import { afterNavigate, beforeNavigate, goto } from '$app/navigation';
 	import { isIsolatedBuild } from '$lib/isolated/mode';
@@ -351,10 +353,6 @@
 			 */
 			page.url.pathname.startsWith('/newsletter')
 	);
-
-	/** The section being viewed. Its accent fills the active nav tab. */
-	const sectionKey = $derived(sectionFor(page.url.pathname));
-	const section = $derived({ ...SECTIONS[sectionKey], accent: accents[sectionKey] });
 
 	/**
 	 * What the browser tab says.
@@ -788,11 +786,51 @@
 		const place = DESTINATIONS.filter(
 			(one) => to === one.href || (one.href !== '/' && to.startsWith(`${one.href}/`))
 		).sort((a, b) => b.href.length - a.href.length)[0];
-		return place ? { label: place.group ?? place.label, icon: place.icon } : null;
+		if (!place) return null;
+		// The room's header, drawn from the same lists the room draws it from:
+		// a room with tabs is its group, a room of one page is one tab of
+		// itself, and home has none.
+		const shown = DESTINATIONS.filter(
+			(one) => !one.hide.some((id) => isHidden(data.hiddenSections, id))
+		);
+		const tabs = place.group
+			? shown.filter((one) => one.group === place.group)
+			: place.href === '/'
+				? []
+				: [place];
+		const room = place.group ?? place.label;
+		const glyph =
+			NAV_PLACES.find((one) => one.name === room)?.icon ??
+			routeGlyph(`/${place.href.split('/')[1] ?? ''}`) ??
+			place.icon;
+		return {
+			path: to,
+			title: t(room),
+			glyph,
+			// A room of one page names itself in its strip without a glyph, as
+			// `TabbedRoom` does.
+			tabs: tabs.map((one) => ({
+				href: one.href,
+				label: t(one.label),
+				icon: place.group ? one.icon : undefined
+			})),
+			current: tabs.indexOf(place)
+		};
 	});
 
 	const GIVE_UP_MS = 20_000;
 	let givenUp = $state(false);
+
+	/*
+	 * The section being viewed — its accent fills the active nav tab — and
+	 * of the room being gone to, from the press: its colour is part of its
+	 * header, and the header is drawn before its data arrives — see
+	 * `goingToRoom`.
+	 */
+	const sectionKey = $derived(
+		sectionFor(goingToRoom && !givenUp ? goingToRoom.path : page.url.pathname)
+	);
+	const section = $derived({ ...SECTIONS[sectionKey], accent: accents[sectionKey] });
 	/*
 	 * While the navigation is on, the menu itself turns.
 	 *
@@ -1506,13 +1544,13 @@
 			     gutter back first so a card that bleeds to the screen edge still
 			     reaches it. -->
 			<div bind:this={roomFrame} class="slide-frame">
-				<div bind:this={page$} class="relative">
-					<div bind:this={pageBody}>{@render children()}</div>
+				<div bind:this={page$} class="pending-host relative">
+					<div bind:this={pageBody} class="pending-under">{@render children()}</div>
 					<!-- The room being gone to, over the one being left, until it
 					     arrives — see `PendingPage`. A move between a room's own
 					     tabs is the room's to draw; this is for a change of room. -->
 					{#if goingToRoom && !givenUp}
-						<PendingPage title={t(goingToRoom.label)} icon={goingToRoom.icon} />
+						<PendingPage room={goingToRoom} />
 					{/if}
 				</div>
 				<div bind:this={roomStage} class="slide-stage" aria-hidden="true"></div>
