@@ -252,9 +252,12 @@ function prosyLiterals(source) {
 	 * An apostrophe in one — `// the browser's own refusal` — opens a string
 	 * that runs to the next real quote, and everything between reads as prose.
 	 * Blanked rather than skipped inline, because a comment can hold anything.
+	 * Not after a `:` (a URL) nor a backslash: `/^https:\/\//` ends in an
+	 * escaped slash and its own closing one, and blanking from there took the
+	 * `}` after it, leaving every brace below it off by one.
 	 */
 	const markup = source.replace(
-		/(^|[^:])\/\/[^\n]*/g,
+		/(^|[^:\\])\/\/[^\n]*/g,
 		(m, lead) => lead + ' '.repeat(m.length - lead.length)
 	);
 
@@ -453,68 +456,75 @@ export function copyIn(source, { markup: hasMarkup = true } = {}) {
 	return found;
 }
 
-const files = ROOTS.filter((dir) => existsSync(join(ROOT, dir))).flatMap((dir) => walk(dir));
-const counts = {};
-const examples = {};
+/* Run as a script; imported by its test for `copyIn` alone. */
+if (process.argv[1] === fileURLToPath(import.meta.url)) main();
 
-for (const file of files.sort()) {
-	const copy = copyIn(readFileSync(join(ROOT, file), 'utf8'), {
-		markup: file.endsWith('.svelte')
-	});
-	if (!copy.length) continue;
-	counts[file] = copy.length;
-	examples[file] = copy.slice(0, 3);
-}
+function main() {
+	const files = ROOTS.filter((dir) => existsSync(join(ROOT, dir))).flatMap((dir) => walk(dir));
+	const counts = {};
+	const examples = {};
 
-const total = Object.values(counts).reduce((sum, n) => sum + n, 0);
-
-if (RECORD) {
-	writeFileSync(BASELINE, `${JSON.stringify({ total, files: counts }, null, '\t')}\n`, 'utf8');
-	console.log(`copy: ${total} literal(s) across ${Object.keys(counts).length} file(s) — recorded.`);
-	process.exit(0);
-}
-
-if (!CHECK) {
-	for (const [file, count] of Object.entries(counts).sort((a, b) => b[1] - a[1])) {
-		console.log(`${String(count).padStart(5)}  ${file}`);
+	for (const file of files.sort()) {
+		const copy = copyIn(readFileSync(join(ROOT, file), 'utf8'), {
+			markup: file.endsWith('.svelte')
+		});
+		if (!copy.length) continue;
+		counts[file] = copy.length;
+		examples[file] = copy.slice(0, 3);
 	}
-	console.log(`\n${total} literal(s) across ${Object.keys(counts).length} file(s).`);
-	process.exit(0);
-}
 
-const baseline = existsSync(BASELINE) ? JSON.parse(readFileSync(BASELINE, 'utf8')) : null;
+	const total = Object.values(counts).reduce((sum, n) => sum + n, 0);
 
-if (!baseline) {
-	console.error('No floor recorded yet. Run: node scripts/check-copy.mjs --record');
-	process.exit(1);
-}
-
-const worse = [];
-for (const [file, count] of Object.entries(counts)) {
-	const was = baseline.files[file];
-	// A file the floor has never seen is a new screen, and a new screen has no
-	// excuse: it is being written now, with `messages/` already there.
-	const allowed = was ?? 0;
-	if (count > allowed) worse.push({ file, was: allowed, now: count, examples: examples[file] });
-}
-
-if (worse.length) {
-	console.error('copy: these files have more untranslated text than they did.\n');
-	for (const { file, was, now, examples: sample } of worse) {
-		console.error(`  ${file}: ${was} → ${now}`);
-		for (const line of sample) console.error(`      ${line.slice(0, 72)}`);
+	if (RECORD) {
+		writeFileSync(BASELINE, `${JSON.stringify({ total, files: counts }, null, '\t')}\n`, 'utf8');
+		console.log(
+			`copy: ${total} literal(s) across ${Object.keys(counts).length} file(s) — recorded.`
+		);
+		process.exit(0);
 	}
-	console.error(
-		'\nPut the new strings in messages/en.json and reach them with t(), or — if a file ' +
-			'genuinely gained copy that is already translated — run:\n' +
-			'  node scripts/check-copy.mjs --record'
+
+	if (!CHECK) {
+		for (const [file, count] of Object.entries(counts).sort((a, b) => b[1] - a[1])) {
+			console.log(`${String(count).padStart(5)}  ${file}`);
+		}
+		console.log(`\n${total} literal(s) across ${Object.keys(counts).length} file(s).`);
+		process.exit(0);
+	}
+
+	const baseline = existsSync(BASELINE) ? JSON.parse(readFileSync(BASELINE, 'utf8')) : null;
+
+	if (!baseline) {
+		console.error('No floor recorded yet. Run: node scripts/check-copy.mjs --record');
+		process.exit(1);
+	}
+
+	const worse = [];
+	for (const [file, count] of Object.entries(counts)) {
+		const was = baseline.files[file];
+		// A file the floor has never seen is a new screen, and a new screen has no
+		// excuse: it is being written now, with `messages/` already there.
+		const allowed = was ?? 0;
+		if (count > allowed) worse.push({ file, was: allowed, now: count, examples: examples[file] });
+	}
+
+	if (worse.length) {
+		console.error('copy: these files have more untranslated text than they did.\n');
+		for (const { file, was, now, examples: sample } of worse) {
+			console.error(`  ${file}: ${was} → ${now}`);
+			for (const line of sample) console.error(`      ${line.slice(0, 72)}`);
+		}
+		console.error(
+			'\nPut the new strings in messages/en.json and reach them with t(), or — if a file ' +
+				'genuinely gained copy that is already translated — run:\n' +
+				'  node scripts/check-copy.mjs --record'
+		);
+		process.exit(1);
+	}
+
+	const gone = baseline.total - total;
+	console.log(
+		gone > 0
+			? `copy: ${total} literal(s) left, ${gone} fewer than the floor. Run --record to keep it.`
+			: `copy: ${total} literal(s) left to translate.`
 	);
-	process.exit(1);
 }
-
-const gone = baseline.total - total;
-console.log(
-	gone > 0
-		? `copy: ${total} literal(s) left, ${gone} fewer than the floor. Run --record to keep it.`
-		: `copy: ${total} literal(s) left to translate.`
-);

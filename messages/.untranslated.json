@@ -1,5 +1,5 @@
 {
-	"total": 31,
+	"total": 25,
 	"files": {
 		"src/lib/assistant-providers.ts": 4,
 		"src/lib/components/CaptureDialog.svelte": 1,
@@ -10,7 +10,6 @@
 		"src/lib/components/fields/HabitFields.svelte": 3,
 		"src/lib/search.ts": 10,
 		"src/lib/server/services/request-replays.ts": 1,
-		"src/lib/services/todos.ts": 1,
-		"src/routes/+layout.svelte": 6
+		"src/lib/services/todos.ts": 1
 	}
 }
