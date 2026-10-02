@@ -18,21 +18,17 @@ the shape of the data changing. Bumping the minor per batch is what ran this
 file to 0.161 in a few months, which tells a reader nothing about which
 releases mattered.
 
-## 0.184.16 — 2026-10-02
+## 0.185.0 — 2026-10-02
 
 - Subscribed calendars draw every event at the hour it actually happens, in
   your own timezone: Outlook and Microsoft 365 zones such as "Eastern Standard
   Time" are read, UTC times no longer follow the server's clock, and a series'
   last occurrence is no longer dropped.
 
-## 0.184.15 — 2026-10-02
-
 - While a room loads, its header is already the real one — name, colour and
   tabs — and only the list below it is an outline.
 - On a phone, a room or tab that loads slowly slides in once, not a second
   time when its content arrives.
-
-## 0.184.14 — 2026-10-01
 
 - Every form that closes when saved now says so ("Saved"), in every room; a
   new block on the plan says "Task block added".
@@ -44,8 +40,6 @@ releases mattered.
 - Pressing a tab or a room takes you there at once: the tab and the menu
   highlight straight away, and the page shows its outline with "Loading"
   until its contents arrive.
-
-## 0.184.13 — 2026-10-01
 
 - Opening the demo for the first time no longer fails with "JSON Parse
   error" or "Not answering right now": when the request does not get through,
@@ -59,8 +53,6 @@ releases mattered.
   a transcript, a summary — over MCP, with the "recordings" permission.
 - An assistant can set a reminder about a task at a time ("remind me at six to
   send this"), including one that only has access to a single notebook.
-
-## 0.184.12 — 2026-10-01
 
 - The demo opens straight away: a copy is ready before you press the button,
   rather than made while you wait.
