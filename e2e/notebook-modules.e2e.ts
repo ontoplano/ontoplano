@@ -173,20 +173,22 @@ test.describe('what a notebook holds', () => {
 		 * An enhanced submit resets the form on success, and reset means the
 		 * `checked` attribute rather than what was on screen — so every box went
 		 * blank for the moment before the dialog closed, which reads exactly like
-		 * the save having thrown the answer away.
+		 * the save having thrown the answer away. The dialog steps away on the
+		 * press now, so what matters is a box still on screen, and the box when
+		 * the dialog is opened again.
 		 */
 		const answered = page.waitForResponse((response) => response.url().includes('?/update'));
 		await page.getByRole('button', { name: 'Save' }).click();
 		await expect
-			.poll(async () =>
-				page
-					.getByRole('checkbox', { name: 'Recipes' })
-					.isChecked()
-					.catch(() => true)
-			)
+			.poll(async () => {
+				const box = page.getByRole('checkbox', { name: 'Recipes' });
+				return !(await box.isVisible().catch(() => false)) || (await box.isChecked());
+			})
 			.toBe(true);
 
 		await answered;
 		await expect(page.getByRole('button', { name: /^Recipes/ })).toBeVisible();
+		await page.getByRole('button', { name: 'Rename' }).click();
+		await expect(page.getByRole('checkbox', { name: 'Recipes' })).toBeChecked();
 	});
 });

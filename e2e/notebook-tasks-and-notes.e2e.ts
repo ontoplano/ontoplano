@@ -36,8 +36,11 @@ test('a notebook’s tasks are operated on where they are', async ({ page }) => 
 	await expect(page.getByText('measure the wall').first()).toBeVisible();
 
 	// The whole verb set, on the row: away and back.
+	// The row leaves on the press; the filter is pressed once the server has it.
+	const archived = page.waitForResponse((r) => r.request().method() === 'POST');
 	await page.getByRole('button', { name: 'Put it away' }).first().click();
 	await expect(page.getByText('measure the wall')).toHaveCount(0);
+	await archived;
 	await page.getByRole('button', { name: /^Archived/ }).click();
 	await expect(page.getByText('measure the wall').first()).toBeVisible();
 	await page.getByRole('button', { name: 'Take it back out' }).first().click();
@@ -59,8 +62,10 @@ test('a note can be put away and taken back out', async ({ page }) => {
 	await page.getByRole('button', { name: 'Add note' }).click();
 	await expect(page.getByText('Restaurants').first()).toBeVisible();
 
+	const archived = page.waitForResponse((r) => r.request().method() === 'POST');
 	await page.getByRole('button', { name: 'Put it away' }).first().click();
 	await expect(page.getByText('Restaurants')).toHaveCount(0);
+	await archived;
 
 	// Hidden, not gone: the strip says how many, and they come back unchanged.
 	// It folds now, the way the tasks tab's strip always has.

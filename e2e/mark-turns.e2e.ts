@@ -76,7 +76,13 @@ test('the rim turns alone in the bar, and nothing holding the bird does', async 
 	const sample = async () =>
 		page.evaluate(() => {
 			const turned = [...document.querySelectorAll<HTMLElement>('nav *')]
-				.filter((el) => el.getAnimations().some((one) => one.playState === 'running'))
+				// Animations, not transitions: the tab a press leaves fades its
+				// colour as it stops being current, which turns nothing.
+				.filter((el) =>
+					el
+						.getAnimations()
+						.some((one) => one.playState === 'running' && !(one instanceof CSSTransition))
+				)
 				.map((el) => (el.matches('.mark-turn') ? 'mark-turn' : el.outerHTML.slice(0, 80)));
 			const still = document.querySelector<HTMLElement>('nav [data-mark] .mark-still')!;
 			let held = 0;
