@@ -3,6 +3,7 @@
 	import { resolve } from '$app/paths';
 	import { enhance } from '$lib/enhance';
 	import { armed } from '$lib/actions/armed';
+	import { historySettled } from '$lib/back-closes';
 	import Modal from '$lib/components/Modal.svelte';
 	import { useT } from '$lib/i18n';
 
@@ -18,7 +19,9 @@
 	 * The redirect is followed from `onclosed`, not from the submission: on a
 	 * phone this dialog holds a history entry and gives it back with
 	 * `history.back()`, and a navigation fired before that pop lands is undone
-	 * by it — the notebook was deleted and the shelf still showed it.
+	 * by it — the notebook was deleted and the shelf still showed it. The Edit
+	 * notebook dialogue under this one gives its entry back too, a moment
+	 * later, so the redirect waits for every pop rather than only this one.
 	 */
 	let {
 		open = $bindable(false),
@@ -42,9 +45,10 @@
 	title={t('notebooks.id.deleteThisNotebook')}
 	description={t('notebooks.id.titleWillBeGone', { title: notebook.title })}
 	size="sm"
-	onclosed={() => {
+	onclosed={async () => {
 		if (!leaving) return;
 		leaving = false;
+		await historySettled();
 		void goto(resolve('/notebooks'), { invalidateAll: true });
 	}}
 >

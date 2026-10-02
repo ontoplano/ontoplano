@@ -107,6 +107,7 @@ function pop(from: string): Promise<void> {
 		};
 		const timer = setTimeout(done, POP_TIMEOUT_MS);
 		window.addEventListener('popstate', done);
+		popped += 1;
 		history.back();
 	});
 }
@@ -125,6 +126,26 @@ async function drain(from: string): Promise<void> {
 }
 
 let nextMark = 0;
+
+let popped = 0;
+
+/** How many entries have been given back, for telling whether any were since. */
+export function popsSoFar(): number {
+	return popped;
+}
+
+/**
+ * Every history entry given back so far has been popped — including one a
+ * dialog is about to give back on the `close` event it has already queued.
+ *
+ * For a caller that navigates once several dialogs have closed: a pop that
+ * lands after the navigation has started cancels it, and the page is left
+ * showing what it showed before.
+ */
+export async function historySettled(): Promise<void> {
+	await new Promise((next) => setTimeout(next));
+	await idle();
+}
 
 export class BackCloses {
 	#mark: number | null = null;

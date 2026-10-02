@@ -1,7 +1,9 @@
 import { enhance as kitEnhance } from '$app/forms';
+import { invalidateAll } from '$app/navigation';
 import { navigating } from '$app/state';
 import type { SubmitFunction } from '@sveltejs/kit';
 import { afterPress } from '$lib/after-press';
+import { historySettled, popsSoFar } from '$lib/back-closes';
 
 /**
  * `use:enhance`, with one press meaning one submission.
@@ -226,7 +228,9 @@ export function enhance(form: HTMLFormElement, submit?: SubmitFunction) {
 		const { takeBack, settle } = dialog
 			? { takeBack: () => {}, settle: () => {} }
 			: answerAtOnce(event);
+		const popsBefore = popsSoFar();
 		return async (outcome) => {
+			const saved = outcome.result.type === 'success';
 			try {
 				const { outcome: answered, finish } = resetAfterwards(stayingPut(outcome));
 				if (outcome.result.type === 'failure' || outcome.result.type === 'error') takeBack();
@@ -240,6 +244,18 @@ export function enhance(form: HTMLFormElement, submit?: SubmitFunction) {
 				// A form that has been taken off the screen takes its buttons
 				// with it; setting a property on a detached node is harmless.
 				for (const button of pressed) button.disabled = false;
+			}
+			/*
+			 * A phone's dialog gives its history entry back as it closes, and a
+			 * pop that lands while the save's data is still loading cancels that
+			 * load: the task was added, the toast said so, and the list did not
+			 * have it. When any entry was popped meanwhile, load once more after
+			 * the last pop — a cost paid only on the path that lost the data.
+			 */
+			if (saved) {
+				void historySettled().then(() => {
+					if (popsSoFar() !== popsBefore) void invalidateAll();
+				});
 			}
 		};
 	};
