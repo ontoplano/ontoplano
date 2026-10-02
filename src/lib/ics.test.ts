@@ -292,3 +292,140 @@ describe('the text of an event', () => {
 		expect(summaryOf('Two\\nlines')).toBe('Two lines');
 	});
 });
+
+/*
+ * Issue #15: a Microsoft 365 feed, read for an account in Nairobi. Every
+ * answer below has to be the same whatever zone the server runs in — the
+ * suite is run under several `TZ`s to hold that.
+ */
+describe('zones', () => {
+	const NAIROBI = 'Africa/Nairobi';
+	const FROM = new Date(2026, 9, 5);
+	const TO = new Date(2026, 9, 26);
+	const feed = ics(
+		event([
+			'UID:repro-1',
+			'SUMMARY:Eastern 09:00 meeting',
+			'DTSTART;TZID=Eastern Standard Time:20261006T090000',
+			'DTEND;TZID=Eastern Standard Time:20261006T100000'
+		]),
+		event([
+			'UID:repro-2',
+			'SUMMARY:UTC 12:00 meeting',
+			'DTSTART:20261006T120000Z',
+			'DTEND:20261006T130000Z'
+		]),
+		event([
+			'UID:repro-3',
+			'SUMMARY:All day',
+			'DTSTART;VALUE=DATE:20261008',
+			'DTEND;VALUE=DATE:20261009'
+		]),
+		event([
+			'UID:repro-4',
+			'SUMMARY:Weekly until',
+			'DTSTART;TZID=E. Africa Standard Time:20261005T130000',
+			'DTEND;TZID=E. Africa Standard Time:20261005T133000',
+			'RRULE:FREQ=WEEKLY;UNTIL=20261019T100000Z;BYDAY=MO'
+		])
+	);
+	const found = eventsBetween(feed, FROM, TO, NAIROBI);
+	const at = (summary: string) =>
+		found.filter((e) => e.summary === summary).map((e) => `${e.start} ${e.end}`);
+
+	test('a Windows TZID is read and drawn in the account’s zone', () => {
+		expect(at('Eastern 09:00 meeting')).toEqual(['2026-10-06T16:00 2026-10-06T17:00']);
+	});
+
+	test('a UTC stamp is drawn in the account’s zone, not the server’s', () => {
+		expect(at('UTC 12:00 meeting')).toEqual(['2026-10-06T15:00 2026-10-06T16:00']);
+	});
+
+	test('an all-day event keeps its date', () => {
+		expect(at('All day')).toEqual(['2026-10-08T00:00 2026-10-09T00:00']);
+	});
+
+	test('UNTIL keeps the occurrence it lands on', () => {
+		expect(at('Weekly until')).toEqual([
+			'2026-10-05T13:00 2026-10-05T13:30',
+			'2026-10-12T13:00 2026-10-12T13:30',
+			'2026-10-19T13:00 2026-10-19T13:30'
+		]);
+	});
+
+	test('a weekly meeting stays at its own nine across its own DST change', () => {
+		// New York leaves DST on 1 Nov 2026: 09:00 EDT is 16:00 in Nairobi,
+		// 09:00 EST is 17:00.
+		const found = eventsBetween(
+			ics(
+				event([
+					'UID:dst',
+					'SUMMARY:Sync',
+					'DTSTART;TZID=America/New_York:20261026T090000',
+					'RRULE:FREQ=WEEKLY'
+				])
+			),
+			new Date(2026, 9, 26),
+			new Date(2026, 10, 9),
+			NAIROBI
+		);
+		expect(found.map((e) => e.start)).toEqual(['2026-10-26T16:00', '2026-11-02T17:00']);
+	});
+
+	test('an EXDATE and a RECURRENCE-ID in the series’ zone match its own days', () => {
+		const found = eventsBetween(
+			ics(
+				event([
+					'UID:s',
+					'SUMMARY:Late call',
+					// 20:00 in New York is 03:00 the next day in Nairobi.
+					'DTSTART;TZID=Eastern Standard Time:20261005T200000',
+					'RRULE:FREQ=DAILY;COUNT=3',
+					'EXDATE;TZID=Eastern Standard Time:20261006T200000'
+				]),
+				event([
+					'UID:s',
+					'SUMMARY:Late call, moved',
+					'RECURRENCE-ID;TZID=Eastern Standard Time:20261007T200000',
+					'DTSTART;TZID=Eastern Standard Time:20261007T180000'
+				])
+			),
+			FROM,
+			TO,
+			NAIROBI
+		);
+		expect(found.map((e) => `${e.start} ${e.summary}`)).toEqual([
+			'2026-10-06T03:00 Late call',
+			'2026-10-08T01:00 Late call, moved'
+		]);
+	});
+
+	test('a vendor-prefixed IANA name is read', () => {
+		const [only] = eventsBetween(
+			ics(
+				event([
+					'UID:moz',
+					'SUMMARY:Berlin',
+					'DTSTART;TZID=/mozilla.org/20050126_1/Europe/Berlin:20261006T090000'
+				])
+			),
+			FROM,
+			TO,
+			NAIROBI
+		);
+		expect(only.start).toBe('2026-10-06T10:00');
+	});
+
+	test('a TZID it cannot read is skipped rather than drawn at the wrong hour', () => {
+		expect(
+			eventsBetween(
+				ics(
+					event(['UID:x', 'SUMMARY:Where', 'DTSTART;TZID=Nowhere Standard Time:20261006T090000'])
+				),
+				FROM,
+				TO,
+				NAIROBI
+			)
+		).toEqual([]);
+	});
+});

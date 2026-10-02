@@ -18,6 +18,13 @@ the shape of the data changing. Bumping the minor per batch is what ran this
 file to 0.161 in a few months, which tells a reader nothing about which
 releases mattered.
 
+## 0.184.16 — 2026-10-02
+
+- Subscribed calendars draw every event at the hour it actually happens, in
+  your own timezone: Outlook and Microsoft 365 zones such as "Eastern Standard
+  Time" are read, UTC times no longer follow the server's clock, and a series'
+  last occurrence is no longer dropped.
+
 ## 0.184.15 — 2026-10-02
 
 - While a room loads, its header is already the real one — name, colour and
