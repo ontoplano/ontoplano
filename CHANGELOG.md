@@ -20,6 +20,8 @@ releases mattered.
 
 ## 0.185.0 — 2026-10-02
 
+- Taking a note back out of the archive no longer leaves it invisible until
+  the page is reloaded.
 - Subscribed calendars draw every event at the hour it actually happens, in
   your own timezone: Outlook and Microsoft 365 zones such as "Eastern Standard
   Time" are read, UTC times no longer follow the server's clock, and a series'

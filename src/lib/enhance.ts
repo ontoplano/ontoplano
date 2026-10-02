@@ -152,7 +152,10 @@ function steppingAway(event: Parameters<SubmitFunction>[0]): HTMLDialogElement |
  *
  * - `data-leaves`: the press takes its row off the list — archive, delete,
  *   put away. The row (`data-leaves="<selector>"`, or the nearest list row)
- *   goes on the press and comes back if the server refuses.
+ *   goes on the press and comes back if the server refuses — or if the
+ *   page's data, once it returns, still draws it: unarchiving from a list
+ *   that shows both kinds takes nothing off it, and a list that reuses its
+ *   nodes puts the next row in the one that was hidden.
  * - `aria-pressed`: the press is a switch. It reads as flipped on the press,
  *   and flips back if refused; when the page's data returns it draws the
  *   switch from the answer anyway.
@@ -163,11 +166,15 @@ function steppingAway(event: Parameters<SubmitFunction>[0]): HTMLDialogElement |
  */
 const ROW = '[data-row], .list-row, .row-card, [data-todo-id], li';
 
-function answerAtOnce(event: Parameters<SubmitFunction>[0]): () => void {
+function answerAtOnce(event: Parameters<SubmitFunction>[0]): {
+	takeBack: () => void;
+	settle: () => void;
+} {
 	const by = event.submitter as HTMLElement | null;
 	const declares = (name: string) =>
 		by?.hasAttribute(name) ? by : event.formElement.hasAttribute(name) ? event.formElement : null;
 	const undo: (() => void)[] = [];
+	const hidden: HTMLElement[] = [];
 
 	const leaver = declares('data-leaves');
 	if (leaver) {
@@ -178,6 +185,7 @@ function answerAtOnce(event: Parameters<SubmitFunction>[0]): () => void {
 				row.hidden = true;
 			});
 			undo.push(() => (row.hidden = false));
+			hidden.push(row);
 		}
 	}
 
@@ -187,8 +195,13 @@ function answerAtOnce(event: Parameters<SubmitFunction>[0]): () => void {
 		undo.push(() => was !== null && by.setAttribute('aria-pressed', was));
 	}
 
-	return () => {
-		for (const one of undo) afterPress(one);
+	return {
+		takeBack: () => {
+			for (const one of undo) afterPress(one);
+		},
+		settle: () => {
+			for (const row of hidden) if (row.isConnected) row.hidden = false;
+		}
 	};
 }
 
@@ -210,7 +223,9 @@ export function enhance(form: HTMLFormElement, submit?: SubmitFunction) {
 		const after = submit?.(event);
 		const dialog = steppingAway(event);
 		dialog?.dispatchEvent(new Event('stepaway'));
-		const takeBack = dialog ? () => {} : answerAtOnce(event);
+		const { takeBack, settle } = dialog
+			? { takeBack: () => {}, settle: () => {} }
+			: answerAtOnce(event);
 		return async (outcome) => {
 			try {
 				const { outcome: answered, finish } = resetAfterwards(stayingPut(outcome));
@@ -218,6 +233,7 @@ export function enhance(form: HTMLFormElement, submit?: SubmitFunction) {
 				if (typeof after === 'function') await after(answered);
 				else await answered.update();
 				finish();
+				settle();
 			} finally {
 				dialog?.dispatchEvent(new Event('stepback'));
 				sending = null;
