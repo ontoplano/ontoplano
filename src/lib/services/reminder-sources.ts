@@ -57,6 +57,29 @@ function addDays(day: string, n: number): string {
 	return d.toISOString().slice(0, 10);
 }
 
+/** Whether the row `writeOnce` would write is already there. */
+function written(
+	userId: string,
+	kind: 'review' | 'bill' | 'day',
+	subjectId: number | null,
+	at: string
+): boolean {
+	return (
+		db
+			.select({ id: reminders.id })
+			.from(reminders)
+			.where(
+				and(
+					eq(reminders.userId, userId),
+					eq(reminders.subjectKind, kind),
+					subjectId === null ? eq(reminders.subjectId, -1) : eq(reminders.subjectId, subjectId),
+					eq(reminders.remindAt, at)
+				)
+			)
+			.get() !== undefined
+	);
+}
+
 /**
  * Written once, or not at all.
  *
@@ -72,19 +95,7 @@ function writeOnce(
 	at: string,
 	message: string
 ): boolean {
-	const already = db
-		.select({ id: reminders.id })
-		.from(reminders)
-		.where(
-			and(
-				eq(reminders.userId, userId),
-				eq(reminders.subjectKind, kind),
-				subjectId === null ? eq(reminders.subjectId, -1) : eq(reminders.subjectId, subjectId),
-				eq(reminders.remindAt, at)
-			)
-		)
-		.get();
-	if (already) return false;
+	if (written(userId, kind, subjectId, at)) return false;
 
 	db.insert(reminders)
 		.values({
@@ -112,11 +123,13 @@ function writeOnce(
 export function ensureReviewReminder(ctx: Ctx, now: Date, tz: string, t: Translate): number {
 	if (!notifies(ctx.userId, 'review')) return 0;
 
-	const pending = reviewPending(ctx);
-	if (!pending) return 0;
-
 	const today = dayOf(localOfInstant(now, tz));
 	const at = `${today}T${String(getGridHours(ctx.userId).start).padStart(2, '0')}:00:00`;
+	// Today's is said already: the twelve-week walk below would only find that out.
+	if (written(ctx.userId, 'review', null, at)) return 0;
+
+	const pending = reviewPending(ctx);
+	if (!pending) return 0;
 
 	const blocks = t('reminders.reviewBlocks', { count: pending.unanswered });
 	const message =
@@ -317,6 +330,35 @@ export function ensureEndOfDayReminder(ctx: Ctx, now: Date, tz: string, t: Trans
 }
 
 /**
+ * How often a page's poll may repeat an account's pass, once a clock runs one.
+ *
+ * Every open tab asks twice a minute, and every ask ran all five sources — the
+ * review's alone walks twelve weeks of plan. On an instance with the reminder
+ * clock (`$lib/server/services/reminder-clock`), which runs the pass for every
+ * account at least once a minute, those asks repeated work done seconds
+ * before, and they were the busiest thing the server did. So once the clock
+ * says it runs, a poll inside this window is answered from what is already
+ * written. Any write by the account clears its mark (`forgetReminderPass`), so
+ * the poll a page makes right after a change still runs in full.
+ *
+ * Off where there is no clock — the device's own instance — because there the
+ * poll is the only pass there is.
+ */
+export const PASS_EVERY_MS = 60_000;
+let passing = false;
+const lastPass = new Map<string, number>();
+
+/** Said by the clock when it starts: from now on a pass runs without the polls. */
+export function passesRunOnAClock(): void {
+	passing = true;
+}
+
+/** Something of this account's changed: its next poll runs the pass in full. */
+export function forgetReminderPass(userId: string): void {
+	lastPass.delete(userId);
+}
+
+/**
  * Every reminder nobody types, written for one account.
  *
  * Five sources, one call, because the list of them is a thing that grows and
@@ -331,7 +373,18 @@ export function ensureEndOfDayReminder(ctx: Ctx, now: Date, tz: string, t: Trans
  * it would write, so being called from a page poll, a job and a phone waking
  * up cannot say a thing twice.
  */
-export function ensureOwnReminders(ctx: Ctx, now: Date, tz: string, t: Translate): number {
+export function ensureOwnReminders(
+	ctx: Ctx,
+	now: Date,
+	tz: string,
+	t: Translate,
+	{ always = false }: { always?: boolean } = {}
+): number {
+	if (passing && !always) {
+		const last = lastPass.get(ctx.userId);
+		if (last !== undefined && Math.abs(now.getTime() - last) < PASS_EVERY_MS) return 0;
+	}
+	lastPass.set(ctx.userId, now.getTime());
 	return (
 		ensureBirthdayReminders(ctx.userId, now, tz) +
 		ensureReviewReminder(ctx, now, tz, t) +

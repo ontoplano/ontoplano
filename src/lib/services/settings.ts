@@ -25,17 +25,45 @@ import {
 	type CaptureSettings
 } from '../capture-settings.js';
 
-export function getUserSetting(userId: string, key: string): string | null {
-	const row = db
-		.select()
-		.from(userSettings)
-		.where(and(eq(userSettings.userId, userId), eq(userSettings.key, key)))
-		.get();
+/**
+ * How long an account's settings are kept once read, in milliseconds.
+ *
+ * A page asks for two dozen of them — the theme, the week, the hours, the
+ * currency, each through its own getter — and each was a query of its own,
+ * on every request. Now the first one reads them all and the rest are
+ * answered from that. Writes through this module clear it at once; the
+ * window only bounds how stale a write from somewhere else can look.
+ */
+const SETTINGS_KEPT_MS = 1000;
+const kept = new Map<string, { at: number; values: Map<string, string> }>();
 
-	return row?.value ?? null;
+function settingsOf(userId: string): Map<string, string> {
+	const now = performance.now();
+	const held = kept.get(userId);
+	if (held && now - held.at < SETTINGS_KEPT_MS) return held.values;
+	const values = new Map(
+		db
+			.select({ key: userSettings.key, value: userSettings.value })
+			.from(userSettings)
+			.where(eq(userSettings.userId, userId))
+			.all()
+			.map((row) => [row.key, row.value])
+	);
+	kept.set(userId, { at: now, values });
+	return values;
+}
+
+/** An account's settings were written around this module: read them afresh. */
+export function forgetUserSettings(userId: string): void {
+	kept.delete(userId);
+}
+
+export function getUserSetting(userId: string, key: string): string | null {
+	return settingsOf(userId).get(key) ?? null;
 }
 
 export function setUserSetting(userId: string, key: string, value: string): void {
+	forgetUserSettings(userId);
 	const existing = db
 		.select()
 		.from(userSettings)

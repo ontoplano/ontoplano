@@ -22,7 +22,7 @@ import { num, str } from './validate.js';
 // The clock recomputes its sleep whenever the set of pending reminders changes;
 // without this a new alarm would wait for the next ceiling tick to be noticed.
 import { host } from './host.js';
-import { soundFor } from './ringtones.js';
+import { soundChoices, soundFor } from './ringtones.js';
 import { getGridHours } from './settings.js';
 
 /**
@@ -238,11 +238,12 @@ export function listReminders(
 	// Whether each one will make a noise, resolved here rather than by the page:
 	// it is a question about the reminder, its kind's setting and a ringtone
 	// that may have been deleted, which is three tables the page cannot see.
+	const choices = soundChoices(ctx);
 	return wanted.map((row) => {
 		const { audible, ringtoneId, ...rest } = row;
 		return {
 			...rest,
-			audible: soundFor(ctx, { ...rest, audible, ringtoneId }) !== null,
+			audible: soundFor(ctx, { ...rest, audible, ringtoneId }, choices) !== null,
 			chosen: { audible, ringtoneId }
 		};
 	});
@@ -286,9 +287,13 @@ export function dueReminders(ctx: Ctx): (Reminder & { sound: string | null })[] 
 	 * one is audible at all is three tables' worth of question and belongs on
 	 * the side that can see them.
 	 */
+	const choices = soundChoices(ctx);
 	return rows.map((row) => {
 		const { audible, ringtoneId, ...rest } = row;
-		return { ...rest, sound: soundFor(ctx, { ...rest, audible, ringtoneId })?.url ?? null };
+		return {
+			...rest,
+			sound: soundFor(ctx, { ...rest, audible, ringtoneId }, choices)?.url ?? null
+		};
 	});
 }
 

@@ -8,7 +8,7 @@
  * dashboard omitted one-offs entirely and the tracker's day tabs counted a
  * different set of tasks than the list beneath them displayed.
  */
-import { and, asc, eq, gte, isNull, lt, ne, sql } from 'drizzle-orm';
+import { and, asc, eq, gte, isNull, lt, ne, notExists, sql } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/sqlite-core';
 
 import { db } from '$lib/db/index.js';
@@ -308,6 +308,8 @@ export function generateOneOffs(ctx: Ctx, from: Date, to: Date): number {
 
 	// A one-off produces exactly one instance, guaranteed by a unique index on
 	// exceptional_slot_id rather than by hoping every caller checks first.
+	// Only the ones still without it, asked in one statement: a check per
+	// one-off was a hundred statements on the dashboard, every time it loaded.
 	const oneOffs = db
 		.select()
 		.from(exceptionalTasks)
@@ -316,19 +318,18 @@ export function generateOneOffs(ctx: Ctx, from: Date, to: Date): number {
 				eq(exceptionalTasks.userId, ctx.userId),
 				eq(exceptionalTasks.active, true),
 				gte(exceptionalTasks.date, fromDate),
-				lt(exceptionalTasks.date, toDate)
+				lt(exceptionalTasks.date, toDate),
+				notExists(
+					db
+						.select({ id: taskRecords.id })
+						.from(taskRecords)
+						.where(eq(taskRecords.exceptionalSlotId, exceptionalTasks.id))
+				)
 			)
 		)
 		.all();
 
 	for (const one of oneOffs) {
-		const existing = db
-			.select({ id: taskRecords.id })
-			.from(taskRecords)
-			.where(eq(taskRecords.exceptionalSlotId, one.id))
-			.get();
-		if (existing) continue;
-
 		const record = db
 			.insert(taskRecords)
 			.values({

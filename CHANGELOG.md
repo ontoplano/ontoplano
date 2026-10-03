@@ -24,6 +24,9 @@ releases mattered.
   form, and urgency, ease and interest sit on one row.
 - Inventory cards fill the left column first. Zoomed in on Firefox, the first
   column could be left empty with every card pushed to the right.
+- Pages load with far less work on the server: the dashboard does half what it
+  did, the reminders check an open tab makes every minute does a tenth, and
+  settings, sounds and places are read once per page instead of once per use.
 
 ## 0.185.4 — 2026-10-03
 

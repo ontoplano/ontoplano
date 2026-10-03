@@ -76,7 +76,15 @@ export async function deliverDueReminders(now = new Date()): Promise<{
 		 * read — there is no request in scope and nothing to infer a language
 		 * from but the account itself. Same rule the mail follows.
 		 */
-		written += ensureOwnReminders(ctx, now, ctx.tz, await translatorFor(localeForUser(account.id)));
+		written += ensureOwnReminders(
+			ctx,
+			now,
+			ctx.tz,
+			await translatorFor(localeForUser(account.id)),
+			{
+				always: true
+			}
+		);
 	}
 
 	const devices = db.select({ id: pushSubscriptions.id }).from(pushSubscriptions).all().length;

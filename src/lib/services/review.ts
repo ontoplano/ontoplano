@@ -500,10 +500,34 @@ export function reviewPending(
 	let oldest: { weekStart: string; unanswered: number } | null = null;
 	let weeks = 0;
 
+	/*
+	 * The whole span read once, then cut into its weeks.
+	 *
+	 * It was `readWeek` twelve times — twelve generations and twelve reads, on
+	 * every dashboard load and every reminder pass, for two numbers a week.
+	 * Every week here is over, so `readWeek`'s extra step for the running week
+	 * never applied: what it counted is exactly the one-offs made real and the
+	 * records in the window, which is what this reads.
+	 */
+	const spanStart = addDays(thisWeek, -7 * REVIEW_LOOKBACK_WEEKS);
+	generateOneOffs(ctx, spanStart, thisWeek);
+	const byWeek = new Map<string, { planned: number; unfinished: number }>();
+	const starts = Array.from({ length: REVIEW_LOOKBACK_WEEKS }, (_, i) =>
+		localDay(addDays(thisWeek, -7 * (REVIEW_LOOKBACK_WEEKS - i)))
+	);
+	for (const instance of listInstances(ctx, spanStart, thisWeek)) {
+		const day = instance.scheduledAt.slice(0, 10);
+		const start = starts.findLast((one) => one <= day);
+		if (!start) continue;
+		const week = byWeek.get(start) ?? { planned: 0, unfinished: 0 };
+		week.planned += 1;
+		if (instance.status === 'todo' || instance.status === 'doing') week.unfinished += 1;
+		byWeek.set(start, week);
+	}
+
 	for (let back = 1; back <= REVIEW_LOOKBACK_WEEKS; back++) {
 		const start = localDay(addDays(thisWeek, -7 * back));
-
-		const { reading } = readWeek(ctx, start);
+		const reading = byWeek.get(start) ?? { planned: 0, unfinished: 0 };
 		// A week nobody planned is not a week anybody owes an answer for, and it
 		// must not stop the walk either: a fortnight away leaves a gap in the
 		// middle that says nothing about the weeks either side of it.

@@ -4,6 +4,7 @@ import { db } from '$lib/db/index.js';
 import { reminders } from '$lib/db/schema.js';
 import { offsetAt } from '$lib/services/time.js';
 import { pushCandidates } from '$lib/services/reminders.js';
+import { passesRunOnAClock } from '$lib/services/reminder-sources.js';
 import { serverTimezone } from '$lib/services/ctx.js';
 import { getTimezone } from '$lib/services/settings.js';
 
@@ -177,6 +178,7 @@ async function tick(): Promise<void> {
  */
 export function startReminderClock(): void {
 	if (state.timer) return;
+	passesRunOnAClock();
 	const first = setTimeout(schedule, 0);
 	first.unref?.();
 }

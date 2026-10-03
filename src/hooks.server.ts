@@ -1,5 +1,6 @@
 import { redirect, type Handle, type HandleServerError } from '@sveltejs/kit';
 import { measured } from '$lib/server/metrics';
+import { forgetReminderPass } from '$lib/services/reminder-sources';
 import { getRequestEvent } from '$app/server';
 import { SOURCE_LOCALE } from '$lib/i18n/core';
 import { provider } from '$lib/server/billing/index';
@@ -121,6 +122,10 @@ const handleRequestLog: Handle = async ({ event, resolve }) => {
 		event.request.method,
 		() => resolve(event)
 	);
+
+	// A write by this account: its reminders may owe something new, so its
+	// next poll runs the whole pass — see `forgetReminderPass`.
+	if (event.request.method !== 'GET' && event.locals.user) forgetReminderPass(event.locals.user.id);
 
 	console.log(
 		JSON.stringify({

@@ -202,7 +202,9 @@ export function setSoundChoice(
  */
 export function soundFor(
 	ctx: Ctx,
-	reminder: { subjectKind: ReminderKind; audible: boolean | null; ringtoneId: number | null }
+	reminder: { subjectKind: ReminderKind; audible: boolean | null; ringtoneId: number | null },
+	/** The account's choices, when a list asks for many: read once, not per row. */
+	choices?: SoundChoice[]
 ): { url: string } | null {
 	if (reminder.audible === false) return null;
 
@@ -210,7 +212,7 @@ export function soundFor(
 	let ringtoneId = reminder.ringtoneId;
 
 	if (!audible || ringtoneId === null) {
-		const kind = soundChoices(ctx).find((c) => c.kind === reminder.subjectKind);
+		const kind = (choices ?? soundChoices(ctx)).find((c) => c.kind === reminder.subjectKind);
 		if (!audible) audible = kind?.audible ?? false;
 		if (ringtoneId === null) ringtoneId = kind?.ringtoneId ?? null;
 	}

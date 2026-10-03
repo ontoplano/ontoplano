@@ -12,6 +12,7 @@ import { demoLifetimeMinutes, demoMaxAccounts } from '../settings.js';
 import { USER_TABLES } from './account.js';
 import { NotFoundError } from '$lib/services/errors.js';
 import { deleteAccount } from './account.js';
+import { forgetUserSettings } from '$lib/services/settings.js';
 
 const run = promisify(execFile);
 
@@ -209,6 +210,7 @@ async function makeDemoAccount(host: string): Promise<DemoAccount | null> {
 			set: { value: expiresAt }
 		})
 		.run();
+	forgetUserSettings(userId);
 
 	await seed(email);
 
