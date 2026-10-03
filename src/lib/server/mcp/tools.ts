@@ -933,12 +933,15 @@ const TODO_QUERY_REFS: Ref[] = [
  * this a notebook key could add an idea and never see it again.
  */
 const IN_NOTEBOOK_REF: Ref = { arg: 'notebookId', kind: 'notebook' };
-const inNotebookArg = (things: string) => ({
+// A shared table rather than a function of the noun: the docs read a
+// parameter's words out of this file, and they follow a spread of a table.
+const IN_NOTEBOOK_ARG = {
 	notebookId: {
 		type: 'integer',
-		description: `Only the ${things} filed in this notebook, as \`notebooks\` gives its id. Left out, all of them.`
+		description:
+			'Only what is filed in this notebook, as `notebooks` gives its id. Left out, all of it.'
 	}
-});
+} as const;
 const inNotebook = (args: Record<string, unknown>) =>
 	args.notebookId === undefined ? {} : { notebookId: Number(args.notebookId) };
 
@@ -3293,7 +3296,7 @@ export const TOOLS: Tool[] = [
 		input: object({
 			limit: count('How many.', 50),
 			offset: from('the ideas'),
-			...inNotebookArg('ideas')
+			...IN_NOTEBOOK_ARG
 		}),
 		run: (ctx, args) => paged(listIdeas(ctx, inNotebook(args)), args, 50)
 	},
@@ -3550,7 +3553,7 @@ export const TOOLS: Tool[] = [
 				description:
 					'Only the things there are fewer of than are kept — what an actual shopping trip is for.'
 			},
-			...inNotebookArg('things')
+			...IN_NOTEBOOK_ARG
 		}),
 		run: (ctx, args) => {
 			const items = listItems(ctx, inNotebook(args));
@@ -4325,7 +4328,7 @@ export const TOOLS: Tool[] = [
 		refs: [IN_NOTEBOOK_REF],
 		input: object({
 			includeArchived: { type: 'boolean', default: false },
-			...inNotebookArg('habits')
+			...IN_NOTEBOOK_ARG
 		}),
 		run: (ctx, args) =>
 			listHabits(ctx, { includeArchived: Boolean(args.includeArchived), ...inNotebook(args) })
@@ -4635,7 +4638,7 @@ export const TOOLS: Tool[] = [
 		scope: 'schedule:read',
 		writes: false,
 		refs: [IN_NOTEBOOK_REF],
-		input: object({ ...inNotebookArg('blocks') }),
+		input: object({ ...IN_NOTEBOOK_ARG }),
 		run: (ctx, args) =>
 			listWeeklySlots(ctx)
 				.filter(
@@ -5469,7 +5472,7 @@ export const TOOLS: Tool[] = [
 		refs: [IN_NOTEBOOK_REF],
 		input: object({
 			include_archived: { type: 'boolean', description: 'Include ones put away.' },
-			...inNotebookArg('workouts')
+			...IN_NOTEBOOK_ARG
 		}),
 		run: (ctx, args) => ({
 			workouts: listWorkouts(ctx, { includeArchived: !!args.include_archived, ...inNotebook(args) })
@@ -5868,7 +5871,7 @@ export const TOOLS: Tool[] = [
 		scope: 'statements:read',
 		writes: false,
 		refs: [IN_NOTEBOOK_REF],
-		input: object({ ...inNotebookArg('ledgers') }),
+		input: object({ ...IN_NOTEBOOK_ARG }),
 		run: (ctx, args) => ({
 			ledgers: listLedgers(ctx, { includeArchived: true, ...inNotebook(args) })
 		})
@@ -6204,7 +6207,7 @@ export const TOOLS: Tool[] = [
 			flow: text(
 				"Which direction: 'out' (bills, the default) or 'in' — income, recorded exactly the way bills are."
 			),
-			...inNotebookArg('bills')
+			...IN_NOTEBOOK_ARG
 		}),
 		run: (ctx, args) => {
 			// Reading bills is when automatic ones catch up on what they paid.
