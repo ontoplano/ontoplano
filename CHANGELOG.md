@@ -30,6 +30,8 @@ releases mattered.
 - The token form no longer has the "An AI assistant (MCP)" preset buttons.
 - The release mail is shorter: what is new in five lines, a link to the rest,
   and an Unsubscribe link instead of a printed address.
+- Administration lists the release mails apart from the addresses on the
+  mailing list.
 
 ## 0.185.3 — 2026-10-03
 

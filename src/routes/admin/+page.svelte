@@ -346,26 +346,6 @@
 					pane
 				>
 					<div class="divide-y divide-gray-200" data-tour="admin-mailing-list">
-						{#each data.newsletter.issues as issue (issue.id)}
-							<div class="list-row">
-								<span class="row-rail"></span>
-								<div class="list-row-main">
-									<p class="truncate text-sm text-gray-900">{issue.subject}</p>
-									<p class="mt-0.5 text-xs text-gray-500">
-										{t('admin.issueSent', {
-											sent: issue.sent,
-											failed: issue.failed,
-											when: ago(issue.sentAt)
-										})}
-									</p>
-								</div>
-							</div>
-						{:else}
-							<div class="list-row">
-								<span class="row-rail"></span>
-								<p class="list-row-main text-sm text-gray-500">{t('admin.noIssueYet')}</p>
-							</div>
-						{/each}
 						{#each data.newsletter.subscribers as one (one.id)}
 							<div class="list-row" data-row>
 								<span class="row-rail"></span>
@@ -412,6 +392,38 @@
 						{:else}
 							<div class="px-4">
 								<EmptyState icon="send" title={t('admin.nobodyOnTheList')} compact />
+							</div>
+						{/each}
+					</div>
+				</Card>
+
+				<!-- What has gone to them: one row per release mail, apart from the
+				     addresses so a mail does not read as one more person on the list. -->
+				<Card
+					title={t('admin.releaseMails')}
+					description={t('admin.releaseMailsDescription')}
+					flush
+					pane
+				>
+					<div class="divide-y divide-gray-200">
+						{#each data.newsletter.issues as issue (issue.id)}
+							<div class="list-row">
+								<span class="row-rail"></span>
+								<div class="list-row-main">
+									<p class="truncate text-sm text-gray-900">{issue.subject}</p>
+									<p class="mt-0.5 text-xs text-gray-500">
+										{t('admin.issueSent', {
+											sent: issue.sent,
+											failed: issue.failed,
+											when: ago(issue.sentAt)
+										})}
+									</p>
+								</div>
+							</div>
+						{:else}
+							<div class="list-row">
+								<span class="row-rail"></span>
+								<p class="list-row-main text-sm text-gray-500">{t('admin.noIssueYet')}</p>
 							</div>
 						{/each}
 					</div>

@@ -3813,4 +3813,43 @@ for (const [name, seconds, daysBack, notes] of recordings) {
 }
 console.log(`  ${recordings.length} recordings`);
 
+/*
+ * The release mailing list, for the administration page: a few addresses and
+ * two mails sent to them. Instance-wide rather than the dev account's, and
+ * only drawn when `[newsletter] enabled` is on.
+ */
+const listed = [
+	['reader@example.test', 'site', 21],
+	['someone@example.test', 'site', 9],
+	['friend@example.test', 'app', 2]
+];
+for (const [email, source, daysBack] of listed) {
+	if (one('select id from subscribers where email = ?', email)) continue;
+	const at = new Date(now);
+	at.setDate(at.getDate() - daysBack);
+	run(
+		'insert into subscribers (email, token, source, confirmed_at) values (?, ?, ?, ?)',
+		email,
+		randomBytes(24).toString('base64url'),
+		source,
+		at.toISOString()
+	);
+}
+for (const [version, daysBack] of [
+	['0.184.0', 12],
+	['0.185.0', 3]
+]) {
+	if (one('select id from newsletter_issues where version = ?', version)) continue;
+	const at = new Date(now);
+	at.setDate(at.getDate() - daysBack);
+	run(
+		'insert into newsletter_issues (version, subject, sent, failed, sent_at) values (?, ?, ?, 0, ?)',
+		version,
+		`Ontoplano ${version}`,
+		listed.length,
+		at.toISOString()
+	);
+}
+console.log(`  ${listed.length} on the mailing list`);
+
 console.log(`seeded synthetic data for ${user.email ?? uid}`);
