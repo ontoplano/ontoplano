@@ -9,6 +9,7 @@ import { sendLogged } from './mail-log.js';
 import { NotFoundError, ValidationError } from '$lib/services/errors.js';
 import { translatorFor } from '$lib/i18n/core';
 import { localeForAddress } from '$lib/server/locale';
+import { SOURCE_URL } from '$lib/links';
 
 /**
  * The one channel nobody else can take away.
@@ -76,6 +77,16 @@ const ISSUES_SHOWN = 10;
 
 /** Long enough that a token cannot be guessed, short enough to sit in a URL. */
 const TOKEN_BYTES = 24;
+
+/**
+ * How many of the changelog's lines a release mail lists. The rest are one
+ * link away, on the release itself: a mail is read on a phone, and a list of
+ * thirty is a list nobody reaches the end of.
+ */
+const ISSUE_LINES = 5;
+
+/** Where a release's whole changelog is, when the caller has not named a page. */
+export const releasePage = (version: string) => `${SOURCE_URL}/releases/tag/v${version}`;
 
 /** RFC-shaped enough to catch a typo, which is all a form can do for one. */
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -188,7 +199,7 @@ async function welcome(email: string): Promise<void> {
 					subject: t('mail.newsletterWelcome.subject'),
 					lines: [t('mail.newsletterWelcome.line1'), t('mail.newsletterWelcome.line2')],
 					action: where ? { label: t('mail.newsletterWelcome.action'), url: where } : undefined,
-					small: stop ? [t('mail.stopThese', { url: stop })] : []
+					small: stop ? [{ text: '{link}', label: t('mail.unsubscribe'), url: stop }] : []
 				})
 			},
 			{
@@ -287,7 +298,13 @@ export function announced(version: string): boolean {
 		.get();
 }
 
-export type Issue = { version: string; subject: string; lines: string[] };
+export type Issue = {
+	version: string;
+	subject: string;
+	lines: string[];
+	/** The page with everything that changed — the release PR; the release otherwise. */
+	more?: string;
+};
 
 /**
  * Tell the list that something shipped.
@@ -323,6 +340,7 @@ export async function announce(issue: Issue): Promise<{ sent: number; failed: nu
 		// A subscriber may have an account here, and if they do it says which
 		// language they read in. Most do not; those get the instance's.
 		const t = await translatorFor(localeForAddress(email));
+		const more = issue.lines.length > ISSUE_LINES;
 		try {
 			await sendLogged(
 				'newsletter-issue',
@@ -330,11 +348,22 @@ export async function announce(issue: Issue): Promise<{ sent: number; failed: nu
 					to: email,
 					...renderEmail({
 						subject: issue.subject,
-						lines: issue.lines,
-						// The issue is the operator's own words, in whatever language they
-						// wrote it. Only the app's own button around it is translated.
-						action: where ? { label: t('mail.newsletter.action'), url: where } : undefined,
-						small: stop ? [t('mail.stopThese', { url: stop })] : []
+						title: t('mail.newsletter.title', { version: issue.version }),
+						lines: [],
+						// The lines are the changelog's, in whatever language it is
+						// written. Only the app's own words around them are translated.
+						list: {
+							heading: t('mail.newsletter.whatChanged'),
+							items: issue.lines.slice(0, ISSUE_LINES)
+						},
+						link: {
+							text: more
+								? t('mail.newsletter.andMore', { link: '{link}' })
+								: t('mail.newsletter.allOfIt', { link: '{link}' }),
+							label: t('mail.newsletter.here'),
+							url: issue.more ?? releasePage(issue.version)
+						},
+						small: stop ? [{ text: '{link}', label: t('mail.unsubscribe'), url: stop }] : []
 					})
 				},
 				{ retryable: true }

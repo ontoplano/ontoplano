@@ -28,6 +28,8 @@ releases mattered.
   them. In the permission grid a row is faded only when nothing in it applies,
   and the tasks row says it covers goals too.
 - The token form no longer has the "An AI assistant (MCP)" preset buttons.
+- The release mail is shorter: what is new in five lines, a link to the rest,
+  and an Unsubscribe link instead of a printed address.
 
 ## 0.185.3 — 2026-10-03
 

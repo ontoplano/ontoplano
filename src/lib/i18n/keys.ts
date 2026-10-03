@@ -87,6 +87,8 @@ export type MessageKey =
 	| 'admin.owner'
 	| 'admin.problemsSomebodyReportedIdeasThey'
 	| 'admin.refresh'
+	| 'admin.releaseMails'
+	| 'admin.releaseMailsDescription'
 	| 'admin.removeAdmin'
 	| 'admin.reported'
 	| 'admin.searchAccounts'
@@ -1679,7 +1681,11 @@ export type MessageKey =
 	| 'mail.familyOffer.line2'
 	| 'mail.familyOffer.small'
 	| 'mail.familyOffer.subject'
-	| 'mail.newsletter.action'
+	| 'mail.newsletter.allOfIt'
+	| 'mail.newsletter.andMore'
+	| 'mail.newsletter.here'
+	| 'mail.newsletter.title'
+	| 'mail.newsletter.whatChanged'
 	| 'mail.newsletterWelcome.action'
 	| 'mail.newsletterWelcome.line1'
 	| 'mail.newsletterWelcome.line2'
@@ -1699,7 +1705,6 @@ export type MessageKey =
 	| 'mail.review.summary'
 	| 'mail.review.threeLines'
 	| 'mail.review.unanswered'
-	| 'mail.stopThese'
 	| 'mail.trial.action'
 	| 'mail.trial.billingPage'
 	| 'mail.trial.inYourSettings'
@@ -1713,6 +1718,7 @@ export type MessageKey =
 	| 'mail.trial.subject'
 	| 'mail.trial.withCard'
 	| 'mail.trial.withoutCard'
+	| 'mail.unsubscribe'
 	| 'mail.verify.action'
 	| 'mail.verify.line'
 	| 'mail.verify.small'
@@ -4359,6 +4365,9 @@ export interface MessageValuesFor {
 	'mail.familyInvite.subject': { owner: string | number };
 	'mail.familyOffer.line1': { owner: string | number };
 	'mail.familyOffer.subject': { owner: string | number };
+	'mail.newsletter.allOfIt': { link: string | number };
+	'mail.newsletter.andMore': { link: string | number };
+	'mail.newsletter.title': { version: string | number };
 	'mail.review.andMore': { count: number };
 	'mail.review.busiest': {
 		category: string | number;
@@ -4377,7 +4386,6 @@ export interface MessageValuesFor {
 		span: string | number;
 	};
 	'mail.review.unanswered': { andMore: string | number; count: number; titles: string | number };
-	'mail.stopThese': { url: string | number };
 	'mail.trial.line': { consequence: string | number; date: string | number };
 	'mail.trial.lineCard': { date: string | number };
 	'mail.trial.lineNoCard': { date: string | number };

@@ -106,6 +106,8 @@ export const messages: Catalogue = {
 	'admin.problemsSomebodyReportedIdeasThey':
 		'Probleme, die jemand gemeldet hat, Ideen, die jemand vorgeschlagen hat, und Abstürze, die jemand geschickt hat. Einen Eintrag ausblenden, sobald er erledigt ist.',
 	'admin.refresh': 'Aktualisieren',
+	'admin.releaseMails': 'Versions-Mails',
+	'admin.releaseMailsDescription': 'Jede an die Liste verschickte Version, die neueste zuerst.',
 	'admin.removeAdmin': 'Admin entfernen',
 	'admin.reported': 'gemeldet',
 	'admin.searchAccounts': 'Search by name or address',
@@ -1929,7 +1931,11 @@ export const messages: Catalogue = {
 	'mail.familyOffer.small':
 		'Wenn Sie das nicht erwartet haben, lehnen Sie es ab, und es passiert nichts.',
 	'mail.familyOffer.subject': '{owner} hat angeboten, für Ihr ontoplano-Konto zu bezahlen',
-	'mail.newsletter.action': 'Sehen, was sich geändert hat',
+	'mail.newsletter.allOfIt': 'Die ganze Version steht {link}.',
+	'mail.newsletter.andMore': '… und mehr! Alles, was sich sonst geändert hat, steht {link}.',
+	'mail.newsletter.here': 'hier',
+	'mail.newsletter.title': 'Ontoplano {version} ist da!',
+	'mail.newsletter.whatChanged': 'Was ist neu?',
 	'mail.newsletterWelcome.action': 'Have a look at ontoplano',
 	'mail.newsletterWelcome.line1':
 		'Nothing to do — you are on the list. This is the only message that is not about a release.',
@@ -1959,7 +1965,6 @@ export const messages: Catalogue = {
 		other:
 			'{count} Aufgabenblöcke haben noch keine Antwort — {titles}{andMore}. Sagen Sie, was aus ihnen geworden ist, oder übernehmen Sie sie in diese Woche.'
 	},
-	'mail.stopThese': 'Diese stoppen: {url}',
 	'mail.trial.action': 'Plan verwalten',
 	'mail.trial.billingPage': 'the billing page in your settings',
 	'mail.trial.inYourSettings': 'die Abrechnungsseite in Ihren Einstellungen',
@@ -1977,6 +1982,7 @@ export const messages: Catalogue = {
 		'beginnt Ihr Abo, und die erste Abbuchung erfolgt dann. Wenn Sie lieber aufhören möchten, kündigen Sie vor diesem Datum, und es wird nichts berechnet',
 	'mail.trial.withoutCard':
 		'bleibt alles, was Sie geschrieben haben, Ihres und lesbar, aber es kann nichts Neues hinzugefügt werden, bis Sie abonnieren',
+	'mail.unsubscribe': 'Abbestellen',
 	'mail.verify.action': 'Adresse bestätigen',
 	'mail.verify.line': 'Bestätigen Sie, dass diese Adresse Ihnen gehört.',
 	'mail.verify.small':

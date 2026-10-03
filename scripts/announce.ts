@@ -64,11 +64,19 @@ const { versions, lines } = notesSince(
 );
 if (!lines.length) throw new Error(`CHANGELOG.md lists nothing under ${version}`);
 
-const issue = { version, subject: `Ontoplano ${version}`, lines };
+/*
+ * Where "everything else" points: the release PR when the release names it —
+ * its body is the whole changelog for the batch — and the release otherwise.
+ */
+const moreAt = process.argv.indexOf('--more');
+const more = moreAt >= 0 && process.argv[moreAt + 1] ? process.argv[moreAt + 1] : undefined;
+
+const issue = { version, subject: `Ontoplano ${version}`, lines, more };
 
 if (DRY) {
 	console.log(`subject: ${issue.subject}`);
 	console.log(`covers:  ${versions.join(', ')}`);
+	console.log(`more:    ${more ?? '(the release page)'}`);
 	console.log(`to:      ${newsletterEnabled() ? counts().confirmed : 0} addresses`);
 	console.log();
 	for (const line of issue.lines) console.log(`  · ${line}`);

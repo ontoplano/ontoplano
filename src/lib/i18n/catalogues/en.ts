@@ -100,6 +100,8 @@ export const messages: Catalogue = {
 	'admin.problemsSomebodyReportedIdeasThey':
 		'Problems somebody reported, ideas they suggested, and crashes they chose to send. Dismiss one once it is dealt with.',
 	'admin.refresh': 'Refresh',
+	'admin.releaseMails': 'Release mails',
+	'admin.releaseMailsDescription': 'Every release mailed to the list, newest first.',
 	'admin.removeAdmin': 'Remove admin',
 	'admin.reported': 'reported',
 	'admin.searchAccounts': 'Search by name or address',
@@ -1869,7 +1871,11 @@ export const messages: Catalogue = {
 		'If you accept, they pay and you keep everything — your notes and your week stay your own.',
 	'mail.familyOffer.small': 'If you were not expecting this, decline it and nothing happens.',
 	'mail.familyOffer.subject': '{owner} offered to pay for your ontoplano account',
-	'mail.newsletter.action': 'See what changed',
+	'mail.newsletter.allOfIt': 'The whole release is {link}.',
+	'mail.newsletter.andMore': '… and more! See everything else that changed {link}.',
+	'mail.newsletter.here': 'here',
+	'mail.newsletter.title': 'Ontoplano {version} is here!',
+	'mail.newsletter.whatChanged': 'What has changed?',
 	'mail.newsletterWelcome.action': 'Have a look at ontoplano',
 	'mail.newsletterWelcome.line1':
 		'Nothing to do — you are on the list. This is the only message that is not about a release.',
@@ -1897,7 +1903,6 @@ export const messages: Catalogue = {
 		other:
 			'{count} task blocks have no answer yet — {titles}{andMore}. Say what became of them, or carry them into this week.'
 	},
-	'mail.stopThese': 'Stop these: {url}',
 	'mail.trial.action': 'Manage your plan',
 	'mail.trial.billingPage': 'the billing page in your settings',
 	'mail.trial.inYourSettings': 'the billing page in your settings',
@@ -1915,6 +1920,7 @@ export const messages: Catalogue = {
 		'your subscription starts and the first charge happens then. If you would rather stop, cancel before that date and you will not be charged',
 	'mail.trial.withoutCard':
 		'everything you wrote stays yours and stays readable, but nothing new can be added until you subscribe',
+	'mail.unsubscribe': 'Unsubscribe',
 	'mail.verify.action': 'Confirm address',
 	'mail.verify.line': 'Confirm this address belongs to you.',
 	'mail.verify.small': "If you didn't create an ontoplano account, ignore this message.",

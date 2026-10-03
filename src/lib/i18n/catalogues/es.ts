@@ -104,6 +104,8 @@ export const messages: Catalogue = {
 	'admin.problemsSomebodyReportedIdeasThey':
 		'Problemas que alguien reportó, ideas que sugirió, y fallos que decidió enviar. Descarta uno una vez resuelto.',
 	'admin.refresh': 'Actualizar',
+	'admin.releaseMails': 'Correos de versión',
+	'admin.releaseMailsDescription': 'Cada versión enviada a la lista, la más reciente primero.',
 	'admin.removeAdmin': 'Quitar admin',
 	'admin.reported': 'reportado',
 	'admin.searchAccounts': 'Search by name or address',
@@ -1906,7 +1908,11 @@ export const messages: Catalogue = {
 		'Si aceptas, ellos pagan y tú te quedas con todo — tus notas y tu semana siguen siendo tuyas.',
 	'mail.familyOffer.small': 'Si no esperabas esto, recházala y no pasa nada.',
 	'mail.familyOffer.subject': '{owner} se ofreció a pagar tu cuenta de ontoplano',
-	'mail.newsletter.action': 'Ver qué cambió',
+	'mail.newsletter.allOfIt': 'La versión completa está {link}.',
+	'mail.newsletter.andMore': '… ¡y más! Mira todo lo demás que ha cambiado {link}.',
+	'mail.newsletter.here': 'aquí',
+	'mail.newsletter.title': '¡Ontoplano {version} ya está aquí!',
+	'mail.newsletter.whatChanged': '¿Qué ha cambiado?',
 	'mail.newsletterWelcome.action': 'Have a look at ontoplano',
 	'mail.newsletterWelcome.line1':
 		'Nothing to do — you are on the list. This is the only message that is not about a release.',
@@ -1936,7 +1942,6 @@ export const messages: Catalogue = {
 		other:
 			'{count} bloques de tarea todavía no tienen respuesta — {titles}{andMore}. Di qué pasó con ellos, o llévalos a esta semana.'
 	},
-	'mail.stopThese': 'Detener estos: {url}',
 	'mail.trial.action': 'Gestionar tu plan',
 	'mail.trial.billingPage': 'the billing page in your settings',
 	'mail.trial.inYourSettings': 'la página de facturación en tu configuración',
@@ -1954,6 +1959,7 @@ export const messages: Catalogue = {
 		'tu suscripción empieza y el primer cobro ocurre entonces. Si prefieres detenerla, cancela antes de esa fecha y no se te cobrará',
 	'mail.trial.withoutCard':
 		'todo lo que escribiste sigue siendo tuyo y sigue siendo legible, pero no se puede agregar nada nuevo hasta que te suscribas',
+	'mail.unsubscribe': 'Darse de baja',
 	'mail.verify.action': 'Confirmar dirección',
 	'mail.verify.line': 'Confirma que esta dirección es tuya.',
 	'mail.verify.small': 'Si no creaste una cuenta de ontoplano, ignora este mensaje.',

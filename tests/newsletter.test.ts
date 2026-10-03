@@ -248,6 +248,46 @@ describe('announcing a release', () => {
 		expect(sendEmail.mock.calls[0][0].text).toContain(tokenOf('reader@example.test'));
 	});
 
+	test('lists five of the changelog’s lines and links to the rest', async () => {
+		await list.subscribe('reader@example.test');
+		sendEmail.mockClear();
+		const lines = ['one', 'two', 'three', 'four', 'five', 'six', 'seven'];
+		await list.announce({ ...issue, lines, more: 'https://example.test/pull/9' });
+
+		const { html, text } = sendEmail.mock.calls[0][0];
+		expect(html).toContain('<li style="margin:0 0 6px;">five</li>');
+		expect(html).not.toContain('>six<');
+		expect(html).toContain('href="https://example.test/pull/9"');
+		expect(text).toContain('1.2.3');
+	});
+
+	test('without a page named, "the rest" is the release itself', async () => {
+		await list.subscribe('reader@example.test');
+		sendEmail.mockClear();
+		await list.announce(issue);
+
+		expect(sendEmail.mock.calls[0][0].html).toContain(`href="${list.releasePage('1.2.3')}"`);
+	});
+
+	test('the way off is a link, not an address printed out', async () => {
+		await list.subscribe('reader@example.test');
+		sendEmail.mockClear();
+		await list.announce(issue);
+
+		const { html } = sendEmail.mock.calls[0][0];
+		const token = tokenOf('reader@example.test');
+		expect(html).toMatch(new RegExp(`<a href="[^"]*/newsletter/off\\?t=${token}"`));
+		expect(html).not.toMatch(new RegExp(`>[^<]*newsletter/off\\?t=${token}`));
+	});
+
+	test('its link takes that address off and nobody else', async () => {
+		await list.subscribe('one@example.test');
+		await list.subscribe('two@example.test');
+
+		expect(list.unsubscribe(tokenOf('one@example.test'))).toBe('one@example.test');
+		expect(list.confirmedAddresses()).toEqual(['two@example.test']);
+	});
+
 	test('refuses to send the same version twice', async () => {
 		await list.subscribe('reader@example.test');
 		await list.announce(issue);
