@@ -2615,6 +2615,34 @@ if (horsePicture) {
 }
 
 /*
+ * And the kitchen's staples, each with its own photograph, so the stock and
+ * the shopping list read as a used cupboard rather than a column of names.
+ * Only where the item has no picture yet: one attached by hand stays.
+ */
+for (const name of [
+	'black beans',
+	'coffee beans',
+	'dish soap',
+	'eggs',
+	'garlic',
+	'milk',
+	'olive oil',
+	'pasta',
+	'rice',
+	'tomatoes'
+]) {
+	const file = `item-${name.replace(' ', '-')}.jpg`;
+	const id = picture(file, name, demoPicture(file));
+	if (id)
+		run(
+			'update inventory_items set picture_id = ? where user_id = ? and name = ? and picture_id is null',
+			id,
+			uid,
+			name
+		);
+}
+
+/*
  * A picture nothing points at: pasted into a todo and then cut out of it. The
  * gallery's "Unused" tile only appears when there is one, so without this the
  * screen is never seen in a used state. Distinct bytes — a JPEG ignores what
