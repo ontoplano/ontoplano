@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { tick, type Snippet } from 'svelte';
+	import { tick, untrack, type Snippet } from 'svelte';
 	import { BackCloses } from '$lib/back-closes';
 	import Banner from '$lib/components/Banner.svelte';
 	import { isPhone } from '$lib/breakpoints';
@@ -196,7 +196,7 @@
 	// gives a non-modal dialog with no backdrop and no focus trap.
 	$effect(() => {
 		if (!dialog) return;
-		if (open && !dialog.open) {
+		if (open && !dialog.open && !away) {
 			dialog.showModal();
 			focusFirstField();
 		}
@@ -237,13 +237,20 @@
 	 * Saving from the footer used to hold the dialog on screen for the whole
 	 * round trip — a second or two of a form that had plainly been sent. Now
 	 * `$lib/enhance` asks it to step away the moment the press is made: the
-	 * `<dialog>` closes, so the page behind is live again, but `open` stays
-	 * true and everything typed stays mounted. When the answer comes, it comes
-	 * back if the page still wants it — a refused save, with the reason in the
-	 * error banner — and otherwise the page has already closed it and there is
-	 * nothing to undo.
+	 * `<dialog>` closes, so the page behind is live again, and everything
+	 * typed stays mounted. When the answer comes, it comes back if the save
+	 * was refused, with the reason in the error banner; otherwise it is done.
+	 *
+	 * `open` goes false while it is away, so the page sees what the person
+	 * sees: a closed dialog. It used to stay true, and then pressing the
+	 * dialog's own opener again — "New notebook" while the last one was still
+	 * being saved — set it to the value it already had, which is no change at
+	 * all, and the save's answer closed it under the press. Opened again while
+	 * away, it comes back as soon as the answer is in, fresh.
 	 */
-	let away = false;
+	let away = $state(false);
+	/** The page opened it again while it was away. */
+	let askedAgain = false;
 	/** What had been said when it stepped away, to tell whether the page spoke since. */
 	let spokenAtAway = 0;
 	/** And what it was going to say, read then: closing resets what the page passes. */
@@ -252,29 +259,42 @@
 	function stepAway() {
 		if (!dialog?.open) return;
 		away = true;
+		askedAgain = false;
 		spokenAtAway = spokenCount();
 		savedAtAway = saved;
 		dialog.close();
+		open = false;
 	}
 
+	// Opened by the page while away: kept for when the answer is in.
+	$effect(() => {
+		if (open && untrack(() => away)) askedAgain = true;
+	});
+
 	/**
-	 * The answer is in: back on screen if the page still wants it, and closed
-	 * properly if the page has let it go. Reached from the answer and from the
-	 * page closing it, whichever comes first.
+	 * The answer is in: back on screen with the reason if it was refused, and
+	 * closed properly if not — then opened afresh if the page asked for it in
+	 * the meantime.
 	 */
-	function stepBack() {
+	function stepBack(event: Event) {
 		if (!away) return;
+		const refused = (event as CustomEvent<{ refused?: boolean }>).detail?.refused === true;
 		away = false;
-		if (open) {
+		if (refused) {
+			open = true;
 			if (dialog && !dialog.open) dialog.showModal();
 			return;
 		}
-		// The save went through and the page let it go: say so, unless the
-		// page already did. Every room gets an answer this way, rather than the
-		// ones somebody remembered to give one.
+		const again = askedAgain;
+		askedAgain = false;
+		// The save went through: say so, unless the page already did. Every
+		// room gets an answer this way, rather than the ones somebody
+		// remembered to give one.
 		if (spokenCount() === spokenAtAway) say(savedAtAway ?? t('modal.saved'));
 		onclose?.();
 		void back.release().then(() => onclosed?.());
+		if (again) open = true;
+		else open = false;
 	}
 
 	$effect(() => {
@@ -286,11 +306,6 @@
 			el.removeEventListener('stepaway', stepAway);
 			el.removeEventListener('stepback', stepBack);
 		};
-	});
-
-	// Closed by the page while away: what the native close would have done.
-	$effect(() => {
-		if (!open) stepBack();
 	});
 
 	/** The `close` event that stepping away fires — later, as a task — is not somebody closing it. */
@@ -346,7 +361,7 @@
 	class:docked={dock === 'side'}
 	style="--modal-width: calc({WIDTHS[size]} + {widened}px)"
 >
-	{#if open}
+	{#if open || away}
 		<div
 			class="rise panel border border-gray-200 bg-white shadow-overlay"
 			class:snapping={!draggingSheet}

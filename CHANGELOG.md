@@ -25,6 +25,8 @@ releases mattered.
   beside the others; each pane has a ×, the bar between panes shares out the
   width, and the keys act on the pane last pressed. On a computer only.
 - The keyboard works on a notebook's full screen; it did nothing there before.
+- Pressing New again while the last one is still being saved opens a fresh
+  form once the save is in, rather than doing nothing.
 
 ## 0.185.1 — 2026-10-03
 

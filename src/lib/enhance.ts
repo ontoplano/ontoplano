@@ -256,7 +256,10 @@ export function enhance(form: HTMLFormElement, submit?: SubmitFunction) {
 				finish();
 				settle();
 			} finally {
-				dialog?.dispatchEvent(new Event('stepback'));
+				// With the outcome: the dialog comes back for a refusal, and for
+				// nothing else — see `stepBack` in Modal.
+				const refused = outcome.result.type === 'failure' || outcome.result.type === 'error';
+				dialog?.dispatchEvent(new CustomEvent('stepback', { detail: { refused } }));
 				sending = null;
 				// A form that has been taken off the screen takes its buttons
 				// with it; setting a property on a detached node is harmless.
