@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { Reveal, revealNear } from '$lib/reveal.svelte';
 	import { say } from '$lib/said.svelte';
 	import { afterPress } from '$lib/after-press';
 	import ShowingCount from '$lib/components/ShowingCount.svelte';
@@ -699,6 +700,12 @@
 		);
 	});
 
+	/** Drawn fifty at a time as the end comes near — see `$lib/reveal`. */
+	const reveal = new Reveal(
+		() => visibleTodos.length,
+		() => todos.length
+	);
+
 	// Only visible rows participate. Filtering cannot leave hidden tasks selected.
 	const selectedTodos = $derived(visibleTodos.filter((todo) => selection.has(todo.id)));
 	$effect(() => selection.keep(visibleTodos.map((todo) => todo.id)));
@@ -1244,6 +1251,7 @@
 				confirmingDelete = null;
 				if (visibleTodos.length > 0) {
 					selectedIndex = Math.min(selectedIndex + 1, visibleTodos.length - 1);
+					reveal.reach(selectedIndex);
 				}
 				break;
 			case 'navigate-up':
@@ -1760,9 +1768,10 @@
 			{/if}
 		{:else}
 			<div class="divide-y divide-gray-200" data-tour={listTour}>
-				{#each visibleTodos as todo, i (todo.id)}
+				{#each reveal.of(visibleTodos) as todo, i (todo.id)}
 					<div
 						data-todo-id={todo.id}
+						use:revealNear={{ reveal, index: i, trigger: reveal.trigger }}
 						class:bg-gray-100={selection.selecting && selection.has(todo.id)}
 						use:keepInView={shortcutRoom !== null && selectedIndex === i}
 						class="row-card {shortcutRoom && selectedIndex === i ? 'kb-cursor' : ''} {isDone(todo)

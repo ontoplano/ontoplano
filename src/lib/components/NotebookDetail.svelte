@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { Reveal, revealNear } from '$lib/reveal.svelte';
 	import GoalFields, { type FormTarget } from '$lib/components/fields/GoalFields.svelte';
 	import ShowingCount from '$lib/components/ShowingCount.svelte';
 	import SearchField from '$lib/components/SearchField.svelte';
@@ -1322,10 +1323,30 @@
 	 * to-do room's own component and takes the keys itself, so this hands them
 	 * over rather than fighting it for them.
 	 */
+	/*
+	 * The long lists, drawn fifty at a time as their end comes near — see
+	 * `$lib/reveal`. A notebook of years of notes froze opening otherwise.
+	 */
+	const noteReveal = new Reveal(
+		() => shownNotes.length,
+		() => (contents?.entries ?? orphaned).length
+	);
+	const goalReveal = new Reveal(
+		() => shownGoals.length,
+		() => contents?.goals.length ?? 0
+	);
+	const ideaReveal = new Reveal(
+		() => shownIdeas.length,
+		() => contents?.ideas.length ?? 0
+	);
+
 	browsable(() => ({
 		items: () => (tab === 'notes' ? shownNotes : tab === 'goals' ? shownGoals : []),
 		cursor: () => cursor,
-		moveTo: (at: number) => (cursor = at),
+		moveTo: (at: number) => {
+			cursor = at;
+			(tab === 'goals' ? goalReveal : noteReveal).reach(at);
+		},
 		tabs: { of: TAB_KEYS, current: () => tab, go: (key: string) => (tab = key as Tab) },
 		open: (at: number) => {
 			if (tab === 'notes') toggleNote(shownNotes[at].id);
@@ -1812,8 +1833,11 @@
 				to scope it, not strip it.
 			-->
 			<div class="divide-y divide-gray-200">
-				{#each shownGoals as goal, at (goal.id)}
-					<div class={k === tab && cursor === at ? 'kb-cursor' : ''}>
+				{#each goalReveal.of(shownGoals) as goal, at (goal.id)}
+					<div
+						class={k === tab && cursor === at ? 'kb-cursor' : ''}
+						use:revealNear={{ reveal: goalReveal, index: at, trigger: goalReveal.trigger }}
+					>
 						<GoalCard
 							{goal}
 							goals={contents.goals}
@@ -1843,8 +1867,8 @@
 				/>
 			{:else}
 				<div class="divide-y divide-gray-200">
-					{#each shownIdeas as idea (idea.id)}
-						<div>
+					{#each ideaReveal.of(shownIdeas) as idea, at (idea.id)}
+						<div use:revealNear={{ reveal: ideaReveal, index: at, trigger: ideaReveal.trigger }}>
 							<IdeaCard
 								{idea}
 								actions={NOTEBOOK_IDEA_ACTIONS}
@@ -2190,7 +2214,7 @@
 		<EmptyState compact icon="note" title={t('notebookDetail.nothingWrittenHereYet')} />
 	{:else}
 		<div class="divide-y divide-gray-200">
-			{#each entries as entry, at (entry.id)}
+			{#each noteReveal.of(entries) as entry, at (entry.id)}
 				<!--
 					A pinned note is marked, not just moved.
 
@@ -2205,6 +2229,7 @@
 				-->
 				<article
 					use:keepInView={notebookId !== null && cursor === at}
+					use:revealNear={{ reveal: noteReveal, index: at, trigger: noteReveal.trigger }}
 					class="{editingNoteId === entry.id ? 'px-4 py-3' : 'row-card'} {cursor === at
 						? 'kb-cursor'
 						: ''}"

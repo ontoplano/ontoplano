@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { Reveal, revealNear } from '$lib/reveal.svelte';
 	import { page } from '$app/state';
 	import ShowingCount from '$lib/components/ShowingCount.svelte';
 	import SearchField from '$lib/components/SearchField.svelte';
@@ -161,6 +162,12 @@
 		);
 	});
 
+	/** Drawn fifty at a time as the end comes near — see `$lib/reveal`. */
+	const reveal = new Reveal(
+		() => shownEntries.length,
+		() => data.entries.length
+	);
+
 	/** When it was written, the day it is for, and when it was last changed — one line, one separator. */
 	function metaOf(entry: PageServerData['entries'][number]): string {
 		return [
@@ -305,6 +312,7 @@
 		switch (action) {
 			case 'navigate-down':
 				selectedIndex = Math.min(selectedIndex + 1, items.length - 1);
+				reveal.reach(selectedIndex);
 				break;
 			case 'navigate-up':
 				selectedIndex = Math.max(selectedIndex - 1, 0);
@@ -529,7 +537,7 @@
 				onpointerout={handleEntriesPointerOut}
 				onclick={handleEntriesClick}
 			>
-				{#each shownEntries as entry, i (entry.id)}
+				{#each reveal.of(shownEntries) as entry, i (entry.id)}
 					<!--
 						The card a note is drawn on — `RowCard`: the entry's number in the
 						rail, the writing and when beside it, the people and labels along
@@ -537,6 +545,7 @@
 					-->
 					<article
 						use:listCursor={i === selectedIndex}
+						use:revealNear={{ reveal, index: i, trigger: reveal.trigger }}
 						id="diary-{entry.diarySeq ?? entry.seq}"
 						class="row-card"
 						class:bg-gray-100={selection.selecting && selection.has(entry.id)}
