@@ -184,7 +184,7 @@ describe('the notebooks album', () => {
 		createGoal(ctx, {
 			title: 'finish the kitchen',
 			horizon: 'year',
-			periodStart: '2026-01-01',
+			startDate: '2026-01-01',
 			notes: plan.markdown,
 			notebookId: kitchen
 		});

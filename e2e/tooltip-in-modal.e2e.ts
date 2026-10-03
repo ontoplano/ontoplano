@@ -16,10 +16,13 @@ test('the tooltip is a popover, so a dialog cannot cover it', async ({ page }) =
 	await visit(page, '/tasks/todo');
 	await page.waitForTimeout(800);
 
-	await page.locator('[title]').first().hover();
+	const target = page.locator('[title]').first();
+	const words = (await target.getAttribute('title'))!;
+	await target.hover();
 	await page.waitForTimeout(900);
 
-	const tip = page.locator('[role="tooltip"]');
+	// The task peek is a tooltip of its own, mounted and closed; ask for ours by its words.
+	const tip = page.getByRole('tooltip', { name: words });
 	await expect(tip).toBeVisible();
 	// `:popover-open` matches only while it is in the top layer.
 	expect(await tip.evaluate((el) => el.matches(':popover-open'))).toBe(true);

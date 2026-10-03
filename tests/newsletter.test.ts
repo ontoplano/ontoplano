@@ -30,7 +30,7 @@ import { makeDatabase } from './helpers/db';
 const database = makeDatabase();
 afterAll(() => database.remove());
 
-type Mail = { to: string; subject: string; text: string };
+type Mail = { to: string; subject: string; text: string; html?: string };
 const sendEmail = vi.fn<(email: Mail) => Promise<{ delivered: boolean; reason?: string }>>(
 	async () => ({ delivered: true })
 );

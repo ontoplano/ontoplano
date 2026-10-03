@@ -66,7 +66,8 @@ for (const { name, viewport } of WIDTHS) {
 			const hint = dialog.locator('p[aria-live="polite"]');
 			const before = (await hint.boundingBox())!.y;
 			await dialog.getByRole('button', { name: 'Edit phone' }).click();
-			expect((await hint.boundingBox())!.y).toBe(before);
+			// Within half a pixel: a centred dialog lands on sub-pixel rounding.
+			expect(Math.abs((await hint.boundingBox())!.y - before)).toBeLessThan(0.5);
 			await dialog.locator('[name="value"]').fill('555 0101');
 			await dialog.getByRole('button', { name: 'Save' }).click();
 			await expect(dialog.getByText('555 0101')).toBeVisible();
