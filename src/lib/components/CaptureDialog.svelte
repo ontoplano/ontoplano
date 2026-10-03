@@ -68,7 +68,6 @@
 	open={capture !== null}
 	{onclose}
 	title={capture ? t('capture.newThing', { thing: t(capture.label).toLowerCase() }) : ''}
-	size="sm"
 	{error}
 >
 	{#if capture}

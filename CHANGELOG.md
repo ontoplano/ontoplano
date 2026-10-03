@@ -18,6 +18,11 @@ the shape of the data changing. Bumping the minor per batch is what ran this
 file to 0.161 in a few months, which tells a reader nothing about which
 releases mattered.
 
+## 0.185.5 — 2026-10-03
+
+- A task written from the quick menu opens as wide as the Tasks page's own
+  form, and urgency, ease and interest sit on one row.
+
 ## 0.185.4 — 2026-10-03
 
 - A reminder left unsent for more than twelve hours no longer keeps the server
