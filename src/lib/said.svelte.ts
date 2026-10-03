@@ -45,6 +45,18 @@ export const said = $state<{ items: Said[] }>({ items: [] });
 let next = 1;
 
 /**
+ * How many things have been said, ever.
+ *
+ * So a shared answer can tell whether the page it is standing in already
+ * spoke: `Modal` says "Saved" for a dialog that was saved and closed, unless
+ * the page said something more particular in the meantime.
+ */
+let spoken = 0;
+export function spokenCount(): number {
+	return spoken;
+}
+
+/**
  * How long a message with something to press stays up: the undo window.
  *
  * Offering Edit for two and a half seconds was offering it to nobody, and
@@ -64,6 +76,7 @@ export function actionWindowMs(): number {
  */
 export function say(message: string, action?: SaidAction): void {
 	const id = next++;
+	spoken++;
 	const ms = action ? actionWindowMs() : SAID_MS;
 	said.items = [{ id, message, action, until: Date.now() + ms, window: ms }];
 	setTimeout(() => unsay(id), ms);

@@ -352,6 +352,7 @@ export type MessageKey =
 	| 'data.slug.fromPoints'
 	| 'data.slug.integrations'
 	| 'demo.everyCopyIsInUse'
+	| 'demo.noAnswerTryingAgain'
 	| 'demo.nobodyElseCanSeeIt'
 	| 'demo.openTheDemo'
 	| 'demo.settingUpACopyFor'
@@ -1722,6 +1723,7 @@ export type MessageKey =
 	| 'media.showWhatIsIn'
 	| 'media.signInFirst'
 	| 'modal.dragToWiden'
+	| 'modal.saved'
 	| 'newsletter.off.goToOntoplano'
 	| 'newsletter.off.nothingMoreWillBeSent'
 	| 'notebookDetail.addNote'
@@ -2115,6 +2117,7 @@ export type MessageKey =
 	| 'notify.noun.person'
 	| 'notify.noun.price'
 	| 'notify.noun.recipe'
+	| 'notify.noun.recording'
 	| 'notify.noun.reminder'
 	| 'notify.noun.repeatingBlock'
 	| 'notify.noun.reviewNote'
@@ -3354,6 +3357,7 @@ export type MessageKey =
 	| 'tasks.plan.backOneUnitPlain'
 	| 'tasks.plan.backToLabel'
 	| 'tasks.plan.backToToDo'
+	| 'tasks.plan.blockAdded'
 	| 'tasks.plan.borderBorderGray300BgWhiteTextGray700Sha'
 	| 'tasks.plan.calendarsYouSubscribeTo'
 	| 'tasks.plan.cancel'
@@ -3373,11 +3377,8 @@ export type MessageKey =
 	| 'tasks.plan.deleteSelected'
 	| 'tasks.plan.doneUndo'
 	| 'tasks.plan.dragAcrossAnEmptyStretch'
-	| 'tasks.plan.dragOntoTheGridOr'
-	| 'tasks.plan.dragOntoTheGridTo'
 	| 'tasks.plan.dragToCreateDrag'
 	| 'tasks.plan.dragToSelectSeveralThen'
-	| 'tasks.plan.dropHereToTakeIt'
 	| 'tasks.plan.dropJustThisOneOccurrence'
 	| 'tasks.plan.due'
 	| 'tasks.plan.duration'
@@ -3388,6 +3389,7 @@ export type MessageKey =
 	| 'tasks.plan.everyNDays'
 	| 'tasks.plan.everyNWeeks'
 	| 'tasks.plan.everyWeek'
+	| 'tasks.plan.existingTask'
 	| 'tasks.plan.fallsOnTheLastDay'
 	| 'tasks.plan.forEverythingTheKeyboardCan'
 	| 'tasks.plan.formatHTimeDDuration'
@@ -3470,6 +3472,7 @@ export type MessageKey =
 	| 'tasks.plan.stopSubscribingTo'
 	| 'tasks.plan.subscribe'
 	| 'tasks.plan.takeItOffTheDay'
+	| 'tasks.plan.tapItThenTapATime'
 	| 'tasks.plan.tapOneThenTapA'
 	| 'tasks.plan.theCalendarSIcalAddress'
 	| 'tasks.plan.theFirstLineIsWhat'
@@ -4436,6 +4439,7 @@ export interface MessageValuesFor {
 	'notify.noun.person': { count: number };
 	'notify.noun.price': { count: number };
 	'notify.noun.recipe': { count: number };
+	'notify.noun.recording': { count: number };
 	'notify.noun.reminder': { count: number };
 	'notify.noun.repeatingBlock': { count: number };
 	'notify.noun.reviewNote': { count: number };

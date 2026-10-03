@@ -8,7 +8,8 @@ import {
 	reminders,
 	ringtones,
 	taskRecords,
-	recurringTasks
+	recurringTasks,
+	todoTasks
 } from '$lib/db/schema.js';
 import { blockName } from '../planner-grid.js';
 
@@ -408,6 +409,49 @@ export function createFreeReminder(
 			// something about this one, whatever free reminders do in general.
 			audible: Boolean(raw.audible),
 			ringtoneId
+		})
+		.returning({ id: reminders.id })
+		.get();
+
+	host.reminderScheduleChanged();
+	return inserted.id;
+}
+
+/**
+ * A reminder about a todo, at a time.
+ *
+ * A todo has no time of its own, so this is an alarm that names what it is
+ * about: the todo's title when nothing else is said, and the todo's own page
+ * when it is pressed. It is also the one reminder a key confined to a
+ * notebook can set — an alarm names nothing, and so belongs to no notebook.
+ */
+export function createTodoReminder(
+	ctx: Ctx,
+	raw: { todoId?: unknown; at?: unknown; message?: unknown; audible?: unknown }
+): number {
+	const todoId = num(raw.todoId, 'todo', { int: true, min: 1 });
+	const todo = db
+		.select({ title: todoTasks.title })
+		.from(todoTasks)
+		.where(and(eq(todoTasks.id, todoId), eq(todoTasks.userId, ctx.userId)))
+		.get();
+	if (!todo) throw new NotFoundError('todo');
+
+	const remindAt = remindAtFrom(ctx, raw.at);
+	const given = raw.message === undefined || raw.message === null ? '' : String(raw.message).trim();
+	const message = str((given || todo.title).slice(0, MAX_MESSAGE_LENGTH), 'message', {
+		max: MAX_MESSAGE_LENGTH
+	});
+
+	const inserted = db
+		.insert(reminders)
+		.values({
+			userId: ctx.userId,
+			subjectKind: 'todo',
+			subjectId: todoId,
+			remindAt,
+			message,
+			audible: raw.audible === undefined ? null : Boolean(raw.audible)
 		})
 		.returning({ id: reminders.id })
 		.get();

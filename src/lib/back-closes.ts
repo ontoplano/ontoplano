@@ -126,6 +126,54 @@ async function drain(from: string): Promise<void> {
 
 let nextMark = 0;
 
+/*
+ * Every `popstate`, not only the ones given back here: SvelteKit cancels the
+ * navigation in flight on any of them (`token = {}` before it even looks at
+ * the entry), so any of them can have thrown a load away.
+ */
+let popped = 0;
+if (typeof window !== 'undefined') window.addEventListener('popstate', () => (popped += 1));
+
+/** How many history pops there have been, for telling whether any were since. */
+export function popsSoFar(): number {
+	return popped;
+}
+
+/**
+ * Every history entry given back so far has been popped — including one a
+ * dialog is about to give back on the `close` event it has already queued.
+ *
+ * For a caller that navigates once several dialogs have closed: a pop that
+ * lands after the navigation has started cancels it, and the page is left
+ * showing what it showed before.
+ */
+export async function historySettled(): Promise<void> {
+	await new Promise((next) => setTimeout(next));
+	await idle();
+}
+
+/** A safety net: pops that never stop coming must not loop for ever. */
+const MAX_RELOADS = 3;
+
+/**
+ * Load the page's data once no pop can land on top of the load.
+ *
+ * A pop that lands while a navigation is loading cancels it — the notebook
+ * was deleted, the fresh data came back without it, and the shelf went on
+ * drawing it. Waiting for the pops first is not enough on its own: a dialog
+ * further down gives its entry back on a `close` event whose timing is the
+ * browser's, and a slow machine runs the load before it. So the load runs
+ * again if anything was popped while it ran.
+ */
+export async function loadAfterHistory(load: () => Promise<unknown>): Promise<void> {
+	for (let tries = 0; tries < MAX_RELOADS; tries++) {
+		await historySettled();
+		const before = popped;
+		await load().catch(() => undefined);
+		if (popped === before) return;
+	}
+}
+
 export class BackCloses {
 	#mark: number | null = null;
 	/** Whether the entry is actually in the history yet: the push is queued. */

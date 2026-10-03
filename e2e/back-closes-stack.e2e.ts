@@ -77,6 +77,47 @@ test('the delete confirmation stacks over the Edit notebook form (phone)', async
 	expect(held ?? []).toEqual([]);
 });
 
+/*
+ * Any history pop cancels the navigation SvelteKit has in flight — on a
+ * slow machine the Edit dialogue's entry came back while the shelf was
+ * reloading after the delete, the fresh data was thrown away, and the
+ * deleted notebook stayed on the shelf. Forced here: a pop lands mid-load.
+ */
+test('a pop landing while the shelf reloads does not undo the delete (phone)', async ({ page }) => {
+	test.setTimeout(120_000);
+	await page.setViewportSize(PHONE);
+	await register(page, testEmail('back-stack-late-pop'));
+	await makeNotebook(page, 'Doomed');
+	await makeNotebook(page, 'Kept');
+	await visit(page, '/notebooks');
+
+	await page.route(
+		(url) => url.pathname === '/notebooks/__data.json',
+		async (route) => {
+			await page.evaluate(() => {
+				history.pushState(history.state, '');
+				history.back();
+			});
+			await new Promise((done) => setTimeout(done, 300));
+			await route.continue();
+		},
+		{ times: 1 }
+	);
+
+	await page.locator('.notebook-cover', { hasText: 'Doomed' }).hover();
+	await page.getByRole('button', { name: 'Edit Doomed', exact: true }).click();
+	await page
+		.getByRole('dialog', { name: 'Edit notebook' })
+		.getByRole('button', { name: 'Delete', exact: true })
+		.click();
+	const confirm = page.getByRole('dialog', { name: 'Delete this notebook?' });
+	await expect(confirm).toBeVisible();
+	await page.waitForTimeout(500); // `use:armed`
+	await confirm.getByRole('button', { name: 'Delete the notebook' }).click();
+	await expect(page.locator('.notebook-cover', { hasText: 'Doomed' })).toHaveCount(0);
+	await expect(page.locator('.notebook-cover', { hasText: 'Kept' })).toHaveCount(1);
+});
+
 test('the task picker stacks over a maximized notebook (phone)', async ({ page }) => {
 	test.setTimeout(120_000);
 	await page.setViewportSize(PHONE);

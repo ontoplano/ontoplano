@@ -201,6 +201,14 @@ describe('what a key tied to one notebook can do', () => {
 			expect(offered, `${name} is missing from a confined key's tool list`).toContain(name);
 	});
 
+	it('rings about one of its own todos at a time', () => {
+		// The one reminder a confined key can set: it names the todo, so the
+		// fence that lets it see the todo lets it ring about it.
+		const answer = call('remind_task', { id: inside.todo, at: '2026-03-14T18:00' });
+		expect(failed(answer), said(answer)).toBe(false);
+		expect(said(call('reminders', {}, false))).toContain('call the plumber');
+	});
+
 	it('can actually call the one that says what to do next', () => {
 		// Being offered it and being able to call it are two promises, and the
 		// second is the one an assistant finds out about.
@@ -212,6 +220,10 @@ describe('what it cannot do', () => {
 	it('cannot touch a task that is not in the notebook', () => {
 		const answer = call('finish_task', { id: outside.todo });
 		expect(failed(answer)).toBe(true);
+	});
+
+	it('cannot ring about a task that is not in the notebook', () => {
+		expect(failed(call('remind_task', { id: outside.todo, at: '2026-03-14T18:00' }))).toBe(true);
 	});
 
 	it('cannot touch one in a different notebook', () => {

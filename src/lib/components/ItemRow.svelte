@@ -260,6 +260,7 @@
 		</form>
 		{#if asking}
 			<form
+				data-leaves
 				method="POST"
 				action={actions.remove}
 				use:enhance={ondeletesubmit?.(item) ??

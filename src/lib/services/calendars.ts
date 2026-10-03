@@ -179,7 +179,7 @@ export function subscribedEvents(ctx: Ctx, from: Date, to: Date): SubscribedEven
 
 	for (const row of rows) {
 		if (!row.body) continue;
-		for (const event of eventsBetween(row.body, from, to)) {
+		for (const event of eventsBetween(row.body, from, to, ctx.tz)) {
 			out.push({ ...event, feedId: row.id, feedName: row.name, color: row.color });
 		}
 	}

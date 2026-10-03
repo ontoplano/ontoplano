@@ -574,7 +574,13 @@ Token: ${token}`;
 							</label>
 						</form>
 					</div>
-					<form method="post" action="?/deleteStream" use:enhance class="list-row-actions">
+					<form
+						data-leaves
+						method="post"
+						action="?/deleteStream"
+						use:enhance
+						class="list-row-actions"
+					>
 						<input type="hidden" name="id" value={stream.id} />
 						{#if confirmDeleteStream === stream.id}
 							<button type="submit" class="btn btn-danger btn-sm" use:armed

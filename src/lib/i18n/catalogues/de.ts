@@ -384,6 +384,7 @@ export const messages: Catalogue = {
 	'data.slug.integrations': 'Integrationen',
 	'demo.everyCopyIsInUse':
 		'Alle Kopien sind in Gebrauch. Sie werden ein paar Minuten, nachdem jemand aufgehört hat hinzusehen, zurückgegeben, sodass\n\t\t\t\tsich das von selbst löst.',
+	'demo.noAnswerTryingAgain': 'Die Demo hat nicht geantwortet. Gleich wird es erneut versucht.',
 	'demo.nobodyElseCanSeeIt':
 		'Niemand sonst kann es sehen, und es wird ein paar Stunden, nachdem Sie den Tab schließen, gelöscht.',
 	'demo.openTheDemo': 'Demo öffnen',
@@ -1988,6 +1989,7 @@ export const messages: Catalogue = {
 	'media.showWhatIsIn': 'Zeigen, was in {name} ist',
 	'media.signInFirst': 'Zuerst anmelden.',
 	'modal.dragToWiden': 'Ziehen, um es breiter zu machen; Doppelklick setzt es zurück',
+	'modal.saved': 'Gespeichert',
 	'newsletter.off.goToOntoplano': 'Zu ontoplano gehen',
 	'newsletter.off.nothingMoreWillBeSent': 'Es wird nichts mehr an {email} gesendet.',
 	'notebookDetail.addNote': 'Notiz hinzufügen',
@@ -2432,6 +2434,7 @@ export const messages: Catalogue = {
 	'notify.noun.person': { one: '{count} Person', other: '{count} Personen' },
 	'notify.noun.price': { one: '{count} Preis', other: '{count} Preise' },
 	'notify.noun.recipe': { one: '{count} Rezept', other: '{count} Rezepte' },
+	'notify.noun.recording': { one: '{count} Aufnahme', other: '{count} Aufnahmen' },
 	'notify.noun.reminder': { one: '{count} Hinweis', other: '{count} Hinweise' },
 	'notify.noun.repeatingBlock': {
 		one: '{count} wiederkehrender Aufgabenblock',
@@ -2799,7 +2802,7 @@ export const messages: Catalogue = {
 	'scopeGroups.yourHome': 'Zuhause, Küche und Einkauf',
 	'scopeGroups.yourWeek': 'Ihre Woche',
 	'scopes.audioRead': 'Ihre Aufnahmen und deren Notizen lesen',
-	'scopes.audioWrite': 'Notizen zu Ihren Aufnahmen schreiben',
+	'scopes.audioWrite': 'Ihre Aufnahmen umbenennen und Notizen dazu schreiben',
 	'scopes.billsRead':
 		'Ihre Rechnungen, Ihre erfassten Einnahmen und das tatsächlich Gezahlte oder Erhaltene sehen',
 	'scopes.billsWrite': 'Rechnungen anlegen und ändern und als bezahlt markieren',
@@ -3949,6 +3952,7 @@ export const messages: Catalogue = {
 	'tasks.plan.backOneUnitPlain': 'Eine(n) {unit} zurück',
 	'tasks.plan.backToLabel': 'Zurück zu {label}',
 	'tasks.plan.backToToDo': 'Zurück zu den Aufgaben',
+	'tasks.plan.blockAdded': 'Block hinzugefügt',
 	'tasks.plan.borderBorderGray300BgWhiteTextGray700Sha':
 		'border border-gray-300 bg-white text-gray-700 shadow-sm hover:bg-gray-50',
 	'tasks.plan.calendarsYouSubscribeTo': 'Kalender, die Sie abonniert haben',
@@ -3970,15 +3974,10 @@ export const messages: Catalogue = {
 	'tasks.plan.doneUndo': 'Erledigt ✓ — rückgängig',
 	'tasks.plan.dragAcrossAnEmptyStretch':
 		'Über einen leeren Abschnitt eines Tages ziehen, um einen Aufgabenblock zu erstellen.',
-	'tasks.plan.dragOntoTheGridOr':
-		'Auf das Raster ziehen, oder antippen und dann eine Uhrzeit antippen',
-	'tasks.plan.dragOntoTheGridTo':
-		'auf das Raster ziehen, um ihm eine Uhrzeit zu geben, oder zurück hierher, um sie wieder zu entfernen',
 	'tasks.plan.dragToCreateDrag':
 		'Ziehen zum Erstellen · einen Aufgabenblock ziehen zum Verschieben · anklicken zum Bearbeiten, Überspringen oder Löschen · halten',
 	'tasks.plan.dragToSelectSeveralThen':
 		'ziehen, um mehrere auszuwählen, dann eine ziehen, um alle zu verschieben ·',
-	'tasks.plan.dropHereToTakeIt': 'Hier ablegen, um es vom Tag zu entfernen',
 	'tasks.plan.dropJustThisOneOccurrence':
 		'Nur dieses eine Vorkommen entfernen; der Aufgabenblock wiederholt sich weiterhin',
 	'tasks.plan.due': 'Fällig',
@@ -3990,6 +3989,7 @@ export const messages: Catalogue = {
 	'tasks.plan.everyNDays': 'Alle N Tage',
 	'tasks.plan.everyNWeeks': 'Alle N Wochen',
 	'tasks.plan.everyWeek': 'Jede Woche',
+	'tasks.plan.existingTask': 'Vorhandene Aufgabe',
 	'tasks.plan.fallsOnTheLastDay': 'Fällt in kürzeren Monaten auf den letzten Tag.',
 	'tasks.plan.forEverythingTheKeyboardCan': 'für alles,\n\t\t\t\t\t\twas die Tastatur kann.',
 	'tasks.plan.formatHTimeDDuration':
@@ -4081,6 +4081,7 @@ export const messages: Catalogue = {
 	'tasks.plan.stopSubscribingTo': 'Abonnement von {name} beenden',
 	'tasks.plan.subscribe': 'Abonnieren',
 	'tasks.plan.takeItOffTheDay': 'Vom Tag entfernen, Aufgabe behalten',
+	'tasks.plan.tapItThenTapATime': 'Antippen, dann eine Zeit antippen',
 	'tasks.plan.tapOneThenTapA': 'eine antippen, dann eine Uhrzeit antippen',
 	'tasks.plan.theCalendarSIcalAddress': 'Die iCal-Adresse des Kalenders',
 	'tasks.plan.theFirstLineIsWhat': 'die erste Zeile ist das, was der Aufgabenblock sagt',
@@ -4514,7 +4515,7 @@ export const messages: Catalogue = {
 		'Beschränkt auf das, was gebraucht wird, und von hier aus widerrufbar. Kopieren Sie es, sobald es erscheint — es wird gehasht gespeichert und kann nicht erneut angezeigt werden.',
 	'tour.search': 'Suche',
 	'tour.searchTheTasksWithNoTime':
-		'Aufgaben ohne Zeit und die von heute. Suche, filtere und sortiere sie wie in der Aufgabenliste und zieh eine ins Raster — oder tippe sie an und dann eine Zeit.',
+		'Aufgaben ohne Zeit und die von heute. Suche, filtere und sortiere sie wie in der Aufgabenliste, dann tippe eine an und danach eine Zeit.',
 	'tour.shopping': 'Einkauf',
 	'tour.signOneOutOrAll':
 		'Melden Sie eines ab, oder alle auf einmal, wenn etwas verdächtig aussieht.',

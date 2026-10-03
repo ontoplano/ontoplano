@@ -150,6 +150,7 @@
 		{#snippet controls()}
 			{#if confirmingDelete}
 				<form
+					data-leaves
 					method="post"
 					action={actions.remove}
 					use:enhance={() => {

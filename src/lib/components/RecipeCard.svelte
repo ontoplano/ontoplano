@@ -139,7 +139,7 @@
 			{/if}
 			{#if manage}
 				<!-- Away and back, without asking: nothing is lost either way. -->
-				<form method="post" action="?/setArchived" use:enhance class="relative z-10">
+				<form data-leaves method="post" action="?/setArchived" use:enhance class="relative z-10">
 					<input type="hidden" name="id" value={recipe.id} />
 					<input type="hidden" name="archived" value={archived ? 'false' : 'true'} />
 					<button

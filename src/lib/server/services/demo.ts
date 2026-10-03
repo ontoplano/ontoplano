@@ -93,7 +93,103 @@ export function demoAccountCount(): number {
  */
 export { DEMO_ACCOUNTS_PER_ADDRESS, DEMO_WINDOW_MS } from '$lib/demo-limits';
 
-export async function createDemoAccount(host: string): Promise<DemoAccount | null> {
+export async function createDemoAccount(
+	host: string,
+	make: (host: string) => Promise<DemoAccount | null> = makeDemoAccount
+): Promise<DemoAccount | null> {
+	const started = Date.now();
+	const spare = takeSpare();
+	// Queued behind whatever seed is running, and a spare made while it waited
+	// is taken rather than a second account seeded.
+	const account = spare ?? (await inLane(async () => takeSpare() ?? make(host)));
+	console.log(
+		`demo: ${account ? 'account handed over' : 'no account to hand over'} in ${Date.now() - started}ms` +
+			` (${spare ? 'spare' : 'made while waiting'}; ${demoAccountCount()} out, ${spares.length} spare)`
+	);
+	void fillDemoSpares(host, make);
+	return account;
+}
+
+/**
+ * One seed at a time, whoever asked for it.
+ *
+ * A seed is a child Node process, and the demo's box has under a gigabyte. A
+ * link posted somewhere sends a crowd in the same minute; with the spares gone,
+ * every one of them started a seed of its own, the box ran out of memory and
+ * the demo went down for everybody — the visitors waiting included. In a line,
+ * the tenth visitor waits for nine seeds, and the box stays up to finish them.
+ */
+let lane: Promise<unknown> = Promise.resolve();
+
+function inLane<T>(work: () => Promise<T>): Promise<T> {
+	const turn = lane.then(work, work);
+	lane = turn.catch(() => undefined);
+	return turn;
+}
+
+/**
+ * Accounts made and seeded before anybody asked for them.
+ *
+ * Seeding a week takes seconds — it is a child process writing a few hundred
+ * rows — and a visitor used to sit through all of it in the waiting room. So
+ * the demo keeps a couple ready: pressing the button takes one, which is a
+ * sign-in and nothing more, and the next is seeded behind the scenes.
+ *
+ * Kept in memory, because the password is what a spare is handed over with
+ * and a password is not written down anywhere. A restart forgets them; they
+ * carry an expiry like any demo account, so the sweep collects them.
+ */
+const DEMO_SPARES = 2;
+const spares: DemoAccount[] = [];
+let filling: Promise<void> | null = null;
+
+/** The oldest spare that still exists, its clock started from now. */
+function takeSpare(): DemoAccount | null {
+	for (let spare = spares.shift(); spare; spare = spares.shift()) {
+		if (!isDemoAccount(spare.userId)) continue;
+		touchDemoAccount(spare.userId);
+		return spare;
+	}
+	return null;
+}
+
+/** How many are waiting, for the tests and the operator's curiosity. */
+export function demoSpareCount(): number {
+	return spares.length;
+}
+
+/**
+ * Top the spares up, one at a time, in the background.
+ *
+ * One fill at a time: two visitors in the same second must not start four
+ * seeds. A failure is logged and ends the fill — the next request tries again.
+ */
+export function fillDemoSpares(
+	host: string,
+	make: (host: string) => Promise<DemoAccount | null> = makeDemoAccount
+): Promise<void> {
+	if (filling) return filling;
+	const fill = async () => {
+		try {
+			while (spares.length < DEMO_SPARES) {
+				const account = await inLane(() => make(host));
+				if (!account) return;
+				spares.push(account);
+			}
+		} catch (e) {
+			console.error('demo: making a spare failed:', e instanceof Error ? e.message : e);
+		}
+	};
+	// Cleared in `.finally`, which always runs after this assignment — clearing
+	// it inside `fill` would happen first when there is nothing to make, and
+	// leave a settled promise here that no later call could get past.
+	filling = fill().finally(() => {
+		filling = null;
+	});
+	return filling;
+}
+
+async function makeDemoAccount(host: string): Promise<DemoAccount | null> {
 	if (demoAccountCount() >= demoMaxAccounts()) return null;
 
 	const email = emailFor(host);
@@ -234,6 +330,8 @@ export function maybeSweepDemoAccounts(now = new Date()): void {
 	if (now.getTime() - lastSweep < SWEEP_EVERY_MS) return;
 	lastSweep = now.getTime();
 	try {
+		// A spare nobody has taken yet is waiting, not abandoned.
+		for (const spare of spares) touchDemoAccount(spare.userId, now);
 		sweepDemoAccounts(now);
 	} catch (e) {
 		// A tidy-up that throws must not take the request with it.

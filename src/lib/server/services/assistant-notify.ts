@@ -217,6 +217,7 @@ export const NOUN_KEYS = new Set([
 	'person',
 	'price',
 	'recipe',
+	'recording',
 	'reminder',
 	'repeatingBlock',
 	'reviewNote',

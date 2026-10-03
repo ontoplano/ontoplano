@@ -382,6 +382,7 @@ export const messages: Catalogue = {
 	'data.slug.integrations': 'Integrações',
 	'demo.everyCopyIsInUse':
 		'Todas as cópias estão em uso. Elas voltam alguns minutos depois que alguém sai, então isso se resolve sozinho.',
+	'demo.noAnswerTryingAgain': 'A demonstração não respondeu. Tentando de novo em instantes.',
 	'demo.nobodyElseCanSeeIt':
 		'Mais ninguém consegue ver, e é apagado algumas horas depois que você fecha a aba.',
 	'demo.openTheDemo': 'Abrir a demonstração',
@@ -1957,6 +1958,7 @@ export const messages: Catalogue = {
 	'media.showWhatIsIn': 'Mostrar o que tem em {name}',
 	'media.signInFirst': 'Entre na sua conta primeiro.',
 	'modal.dragToWiden': 'Arraste para alargar; clique duas vezes para voltar',
+	'modal.saved': 'Salvo',
 	'newsletter.off.goToOntoplano': 'Ir para o ontoplano',
 	'newsletter.off.nothingMoreWillBeSent': 'Nada mais será enviado para {email}.',
 	'notebookDetail.addNote': 'Adicionar nota',
@@ -2407,6 +2409,7 @@ export const messages: Catalogue = {
 	'notify.noun.person': { one: '{count} pessoa', other: '{count} pessoas' },
 	'notify.noun.price': { one: '{count} preço', other: '{count} preços' },
 	'notify.noun.recipe': { one: '{count} receita', other: '{count} receitas' },
+	'notify.noun.recording': { one: '{count} gravação', other: '{count} gravações' },
 	'notify.noun.reminder': { one: '{count} lembrete', other: '{count} lembretes' },
 	'notify.noun.repeatingBlock': {
 		one: '{count} bloco de tarefa repetido',
@@ -2779,7 +2782,7 @@ export const messages: Catalogue = {
 	'scopeGroups.yourHome': 'Casa, cozinha e compras',
 	'scopeGroups.yourWeek': 'Sua semana',
 	'scopes.audioRead': 'Ler suas gravações e suas notas',
-	'scopes.audioWrite': 'Escrever notas nas suas gravações',
+	'scopes.audioWrite': 'Renomear suas gravações e escrever as notas delas',
 	'scopes.billsRead':
 		'Ver as suas contas, a sua renda registrada, e o que você de fato pagou ou recebeu',
 	'scopes.billsWrite': 'Adicionar e alterar contas, e marcá-las como pagas',
@@ -3902,6 +3905,7 @@ export const messages: Catalogue = {
 	'tasks.plan.backOneUnitPlain': 'Voltar um(a) {unit}',
 	'tasks.plan.backToLabel': 'Voltar para {label}',
 	'tasks.plan.backToToDo': 'Voltar às tarefas',
+	'tasks.plan.blockAdded': 'Bloco adicionado',
 	'tasks.plan.borderBorderGray300BgWhiteTextGray700Sha':
 		'border border-gray-300 bg-white text-gray-700 shadow-sm hover:bg-gray-50',
 	'tasks.plan.calendarsYouSubscribeTo': 'Calendários que você assina',
@@ -3923,14 +3927,10 @@ export const messages: Catalogue = {
 	'tasks.plan.doneUndo': 'Feito ✓ — desfazer',
 	'tasks.plan.dragAcrossAnEmptyStretch':
 		'Arraste por um trecho vazio do dia para criar um bloco de tarefa.',
-	'tasks.plan.dragOntoTheGridOr': 'Arraste para a grade, ou toque e depois toque em um horário',
-	'tasks.plan.dragOntoTheGridTo':
-		'arraste para a grade para dar um horário, ou de volta aqui para tirá-lo',
 	'tasks.plan.dragToCreateDrag':
 		'Arraste para criar · arraste um bloco de tarefa para mover · clique para editar, pular ou excluir · segure',
 	'tasks.plan.dragToSelectSeveralThen':
 		'arraste para selecionar vários, depois arraste um para mover todos ·',
-	'tasks.plan.dropHereToTakeIt': 'Solte aqui para tirá-lo do dia',
 	'tasks.plan.dropJustThisOneOccurrence':
 		'Solte apenas esta ocorrência; o bloco de tarefa continua se repetindo',
 	'tasks.plan.due': 'Prazo',
@@ -3942,6 +3942,7 @@ export const messages: Catalogue = {
 	'tasks.plan.everyNDays': 'A cada N dias',
 	'tasks.plan.everyNWeeks': 'A cada N semanas',
 	'tasks.plan.everyWeek': 'Toda semana',
+	'tasks.plan.existingTask': 'Tarefa existente',
 	'tasks.plan.fallsOnTheLastDay': 'Cai no último dia em meses mais curtos.',
 	'tasks.plan.forEverythingTheKeyboardCan': 'para tudo\n\t\t\t\t\t\tque o teclado pode fazer.',
 	'tasks.plan.formatHTimeDDuration':
@@ -4032,6 +4033,7 @@ export const messages: Catalogue = {
 	'tasks.plan.stopSubscribingTo': 'Parar de assinar {name}',
 	'tasks.plan.subscribe': 'Assinar',
 	'tasks.plan.takeItOffTheDay': 'Tirar do dia, manter a tarefa',
+	'tasks.plan.tapItThenTapATime': 'Toque nela, depois num horário',
 	'tasks.plan.tapOneThenTapA': 'toque em um, depois toque em um horário',
 	'tasks.plan.theCalendarSIcalAddress': 'O endereço iCal do calendário',
 	'tasks.plan.theFirstLineIsWhat': 'a primeira linha é o que o bloco de tarefa diz',
@@ -4467,7 +4469,7 @@ export const messages: Catalogue = {
 		'Restrito ao que precisa, e revogável a partir daqui. Copie assim que aparecer — ele é armazenado com hash e não pode ser mostrado de novo.',
 	'tour.search': 'Buscar',
 	'tour.searchTheTasksWithNoTime':
-		'Tarefas ainda sem horário, e as de hoje. Busque, filtre e ordene como na lista de tarefas e arraste uma para a grade — ou toque nela e depois num horário.',
+		'Tarefas ainda sem horário, e as de hoje. Busque, filtre e ordene como na lista de tarefas, depois toque numa e num horário.',
 	'tour.shopping': 'Compras',
 	'tour.signOneOutOrAll': 'Desconecte um, ou todos de uma vez se algo parecer errado.',
 	'tour.sixViewsOfTheSame': 'Seis visões da mesma semana',

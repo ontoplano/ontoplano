@@ -47,10 +47,17 @@ for (const [label, viewport] of [
 		// The row's bottom padding is all that is between them.
 		expect(card.y + card.height - (actions.y + actions.height)).toBeLessThan(16);
 
-		const quick = row.locator('.quick-tag');
+		// One add-a-label chip on screen: at the end of the labels on a wide
+		// screen, standing on the rating bars in the rail on a phone.
+		const quick = row.locator('.quick-tag').filter({ visible: true });
 		await expect(quick).toHaveCount(1);
-		await expect(row.locator('.task-labels .quick-tag')).toHaveCount(1);
-		await expect(row.locator('.row-card-rail .quick-tag')).toHaveCount(0);
+		const [labels, rail] = label === 'desktop' ? [1, 0] : [0, 1];
+		await expect(row.locator('.task-labels .quick-tag').filter({ visible: true })).toHaveCount(
+			labels
+		);
+		await expect(row.locator('.row-card-rail .quick-tag').filter({ visible: true })).toHaveCount(
+			rail
+		);
 		if (label === 'desktop') {
 			// After the last label, on the line the buttons are on, and level
 			// with them.

@@ -7,6 +7,10 @@
 	import { guardSubmits, releaseHeldButtons } from '$lib/one-press';
 	import { resolve } from '$app/paths';
 	import { navigating, page } from '$app/state';
+	import PendingPage from '$lib/components/PendingPage.svelte';
+	import { DESTINATIONS } from '$lib/destinations';
+	import { routeGlyph } from '$lib/glyphs';
+	import { isHidden } from '$lib/sections';
 	import { live } from '$lib/live';
 	import { afterNavigate, beforeNavigate, goto } from '$app/navigation';
 	import { isIsolatedBuild } from '$lib/isolated/mode';
@@ -22,7 +26,6 @@
 	import { provideSwipeSurface } from '$lib/swipe-surface';
 	import {
 		holdHeight,
-		landOn,
 		releaseHeight,
 		slideAway,
 		slideOn,
@@ -350,10 +353,6 @@
 			page.url.pathname.startsWith('/newsletter')
 	);
 
-	/** The section being viewed. Its accent fills the active nav tab. */
-	const sectionKey = $derived(sectionFor(page.url.pathname));
-	const section = $derived({ ...SECTIONS[sectionKey], accent: accents[sectionKey] });
-
 	/**
 	 * What the browser tab says.
 	 *
@@ -384,20 +383,21 @@
 	});
 
 	function isNavActive(href: string): boolean {
-		if (href === '/') return page.url.pathname === '/';
+		// Where a press is taking you, from the press: the bar answers it
+		// before the room has arrived, the way the room's tabs do.
+		const path = navigating.to?.url.pathname ?? page.url.pathname;
+		if (href === '/') return path === '/';
 		// People sits beside the writing in the bar, not under it, so the
 		// Notebooks entry means the notebooks and the diary and nothing else.
 		if (href === '/notebooks')
 			return (
-				page.url.pathname === '/notebooks' ||
-				(page.url.pathname.startsWith('/notebooks/') &&
-					!page.url.pathname.startsWith('/notebooks/people'))
+				path === '/notebooks' ||
+				(path.startsWith('/notebooks/') && !path.startsWith('/notebooks/people'))
 			);
-		if (href === '/tasks/plan') return page.url.pathname.startsWith('/tasks');
-		if (href === '/goals') return page.url.pathname.startsWith('/goals');
-		if (href === '/health/habits')
-			return page.url.pathname.startsWith('/health') || page.url.pathname.startsWith('/data/');
-		return page.url.pathname === href;
+		if (href === '/tasks/plan') return path.startsWith('/tasks');
+		if (href === '/goals') return path.startsWith('/goals');
+		if (href === '/health/habits') return path.startsWith('/health') || path.startsWith('/data/');
+		return path === href;
 	}
 
 	import { GLOBAL_SHORTCUTS } from '$lib/shortcuts';
@@ -522,8 +522,6 @@
 	/** Where the copy of the outgoing room is put. Svelte never fills it. */
 	let roomStage = $state<HTMLElement>();
 	let changedRoom = 0;
-	/** The empty panel's arrival, so landing can ask whether it is still going. */
-	let roomArriving: Animation | null = null;
 
 	/*
 	 * `beforeNavigate`, and it has to be: `onNavigate` runs *after* the load.
@@ -592,7 +590,7 @@
 		 * The movement used to be: take the old room off, wait for the next one
 		 * to load, bring it on — so the arrival *was* the load, and on a slow
 		 * one the screen left and nothing happened until it finished. It is the
-		 * other way round now: the room leaves, the empty panel arrives behind
+		 * other way round now: the room leaves, the panel arrives behind
 		 * it, and if the data has not come by the time it settles the mark turns
 		 * in the middle of a panel that has already stopped moving.
 		 *
@@ -601,7 +599,7 @@
 		 */
 		holdHeight(roomFrame, pageBody);
 		slideAway(roomStage, pageBody, changedRoom, true);
-		roomArriving = slideOn(page$, changedRoom, true);
+		slideOn(page$, changedRoom, true);
 	});
 
 	/*
@@ -618,13 +616,12 @@
 		// Asked to stop as soon as the room is here; it finishes its turn on the
 		// way, so the quickest navigation still leaves a mark that went round.
 		stopMarkSpin();
-		// Joining the panel mid-flight when the load was quick, or arriving
-		// again — with the room finally in it — when the load outlived the
-		// slide. Never appearing in place: see `landOn`.
-		landOn(page$, pageBody, roomArriving, changedRoom, true);
+		// The panel arrived at the press carrying the room's outline, so the
+		// room is revealed where it stands, mid-flight or settled. Sliding it
+		// in again was the same movement twice over one navigation.
+		stopHiding(pageBody);
 		releaseHeight(roomFrame);
 		changedRoom = 0;
-		roomArriving = null;
 	});
 
 	/*
@@ -773,8 +770,63 @@
 	 * How long the indicator insists before it stops saying "working".
 	 * Far past any real wait here; past it the page on screen is the real one.
 	 */
+	/**
+	 * The room a navigation in flight is going to, when it is another room.
+	 *
+	 * Named the way the menu names it — the room, not the tab — so the screen
+	 * that stands in for it says where you are going before it has arrived.
+	 */
+	const goingToRoom = $derived.by(() => {
+		const to = navigating.to?.url.pathname;
+		if (!to || placeAt(to) === placeAt(page.url.pathname)) return null;
+		const place = DESTINATIONS.filter(
+			(one) => to === one.href || (one.href !== '/' && to.startsWith(`${one.href}/`))
+		).sort((a, b) => b.href.length - a.href.length)[0];
+		if (!place) return null;
+		// The room's header, drawn from the same lists the room draws it from:
+		// a room with tabs is its group, a room of one page is one tab of
+		// itself, and home has none.
+		const shown = DESTINATIONS.filter(
+			(one) => !one.hide.some((id) => isHidden(data.hiddenSections, id))
+		);
+		const tabs = place.group
+			? shown.filter((one) => one.group === place.group)
+			: place.href === '/'
+				? []
+				: [place];
+		const room = place.group ?? place.label;
+		const glyph =
+			NAV_PLACES.find((one) => one.name === room)?.icon ??
+			routeGlyph(`/${place.href.split('/')[1] ?? ''}`) ??
+			place.icon;
+		return {
+			path: to,
+			title: t(room),
+			glyph,
+			// A room of one page names itself in its strip without a glyph, as
+			// `TabbedRoom` does.
+			tabs: tabs.map((one) => ({
+				href: one.href,
+				label: t(one.label),
+				icon: place.group ? one.icon : undefined
+			})),
+			current: tabs.indexOf(place)
+		};
+	});
+
 	const GIVE_UP_MS = 20_000;
 	let givenUp = $state(false);
+
+	/*
+	 * The section being viewed — its accent fills the active nav tab — and
+	 * of the room being gone to, from the press: its colour is part of its
+	 * header, and the header is drawn before its data arrives — see
+	 * `goingToRoom`.
+	 */
+	const sectionKey = $derived(
+		sectionFor(goingToRoom && !givenUp ? goingToRoom.path : page.url.pathname)
+	);
+	const section = $derived({ ...SECTIONS[sectionKey], accent: accents[sectionKey] });
 	/*
 	 * While the navigation is on, the menu itself turns.
 	 *
@@ -1488,8 +1540,14 @@
 			     gutter back first so a card that bleeds to the screen edge still
 			     reaches it. -->
 			<div bind:this={roomFrame} class="slide-frame">
-				<div bind:this={page$}>
-					<div bind:this={pageBody}>{@render children()}</div>
+				<div bind:this={page$} class="pending-host relative">
+					<div bind:this={pageBody} class="pending-under">{@render children()}</div>
+					<!-- The room being gone to, over the one being left, until it
+					     arrives — see `PendingPage`. A move between a room's own
+					     tabs is the room's to draw; this is for a change of room. -->
+					{#if goingToRoom && !givenUp}
+						<PendingPage room={goingToRoom} />
+					{/if}
 				</div>
 				<div bind:this={roomStage} class="slide-stage" aria-hidden="true"></div>
 			</div>

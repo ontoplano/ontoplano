@@ -56,13 +56,50 @@ function keepable(response: Response | undefined): response is Response {
 }
 
 /** Hashed build output plus static files — safe to keep until the version changes. */
-const PRECACHE = [...build, ...files, OFFLINE_URL];
+const PRECACHE = [...build, ...files];
+
+/**
+ * How long a failed navigation waits before asking the network once more.
+ *
+ * A phone opening the app from a notification is often still waking its
+ * radio, and the first request fails where the second, a moment later, would
+ * not — that is how tapping a reminder landed on "Offline" with a working
+ * connection.
+ */
+const NAVIGATION_RETRY_MS = 1500;
+
+/**
+ * Everything worth having, kept one file at a time.
+ *
+ * `addAll` is all or nothing: one file the server would not hand over threw
+ * the whole list away — the offline page included, so the fallback for a
+ * failed navigation became a bare "Offline" with no way back. The offline page
+ * goes first and on its own, and a miss elsewhere costs only that file.
+ */
+async function precache(cache: Cache): Promise<void> {
+	await cache.add(OFFLINE_URL).catch((e) => console.warn('[sw] offline page not kept:', e));
+	try {
+		await cache.addAll(PRECACHE);
+	} catch {
+		await Promise.allSettled(PRECACHE.map((path) => cache.add(path)));
+	}
+}
+
+/** The network for a navigation, asked twice before anything else is said. */
+async function navigateOnline(request: Request): Promise<Response> {
+	try {
+		return await fetch(request);
+	} catch {
+		await new Promise((waited) => setTimeout(waited, NAVIGATION_RETRY_MS));
+		return fetch(request);
+	}
+}
 
 sw.addEventListener('install', (event) => {
 	event.waitUntil(
 		caches
 			.open(ASSET_CACHE)
-			.then((cache) => cache.addAll(PRECACHE))
+			.then(precache)
 			// A precache miss must not wedge the install: one missing file would
 			// otherwise leave the app with no service worker at all.
 			.catch((e) => console.warn('[sw] precache incomplete:', e))
@@ -302,7 +339,7 @@ sw.addEventListener('fetch', (event) => {
 	// Everything else: try the network, fall back to what we last saw, and only
 	// then to the offline page.
 	event.respondWith(
-		fetch(request)
+		(request.mode === 'navigate' ? navigateOnline(request) : fetch(request))
 			.then((response) => {
 				if (keepable(response)) {
 					const copy = response.clone();

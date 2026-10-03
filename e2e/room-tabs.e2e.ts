@@ -659,19 +659,19 @@ test.describe('with a mouse', () => {
 });
 
 /**
- * A screen that loads slower than the slide still ARRIVES.
+ * A screen that loads slower than the slide moves ONCE.
  *
  * Both halves of the movement run at the press: the old room's copy leaves,
- * and the empty panel comes in behind it. When the data outlives that slide,
- * the room used to be revealed in place — a screen appearing out of nowhere
- * after its neighbour left in an arc. `landOn` plays the arrival again with
- * the room finally in it, and this holds a navigation open past the slide to
- * see that it does.
+ * and the panel comes in behind it carrying the next room's outline
+ * (`PendingPage`). When the data outlives that slide, the room is revealed in
+ * the panel where it already stands. It used to play the arrival a second
+ * time, from when the panel came in empty — and once the outline rode in with
+ * it, that was the same movement twice over one navigation.
  */
 test.describe('with a coarse pointer on a wide screen', () => {
 	test.use({ hasTouch: true });
 
-	test('a room that arrives after the slide still slides in', async ({ page }) => {
+	test('a room that arrives after the slide does not slide in again', async ({ page }) => {
 		await register(page, testEmail('late-arrival'));
 		await visit(page, '/tasks/todo');
 
@@ -692,21 +692,24 @@ test.describe('with a coarse pointer on a wide screen', () => {
 		const pane = page.locator('.slide-frame > div').first();
 
 		await page.getByRole('link', { name: 'Goals' }).click();
-		// Let the empty panel's own arrival finish: the slide is over, the data
+		// Let the panel's own arrival finish: the slide is over, the data
 		// is not, and the old content is hidden where it stands.
 		await page.waitForTimeout(700);
 		expect(await pane.evaluate((el) => getComputedStyle(el).transform)).toBe('none');
 
+		// From here on, any transform on the pane is a second arrival.
+		await pane.evaluate((el) => {
+			const w = window as unknown as { moved?: boolean };
+			w.moved = false;
+			new MutationObserver(() => {
+				if ((el as HTMLElement).style.transform) w.moved = true;
+			}).observe(el, { attributes: true, attributeFilter: ['style'] });
+		});
 		release();
-		// The landing plays the arrival again: the pane leaves its resting place
-		// for the far side and travels back — never a reveal in place.
-		await expect
-			.poll(async () => pane.evaluate((el) => el.style.transform), { timeout: 2000 })
-			.toMatch(/rotate/);
-		// And it settles: transform handed back, the room standing where it landed.
-		await expect
-			.poll(async () => pane.evaluate((el) => el.style.transform), { timeout: 2000 })
-			.toBe('');
+		await page.waitForURL('**/goals');
+		await page.waitForTimeout(600);
+		expect(await page.evaluate(() => (window as unknown as { moved: boolean }).moved)).toBe(false);
+		expect(await pane.evaluate((el) => el.getAnimations().length)).toBe(0);
 	});
 });
 

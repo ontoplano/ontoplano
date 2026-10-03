@@ -558,10 +558,11 @@ which a test holds to the tools the server serves and the actions the app has.
 | Accounts and movements  | `add_ledger`, `record_movement`                      | `ledgers`, `movements`, `statement_months`, `spending_by_category`                            | `change_ledger`, `change_movement`                                                                                                                                          | `change_ledger`          | `change_ledger`          | `remove_movement`                                                                  | `change_ledger`    |
 | Sorting rules           | `add_sort_rule`                                      | `sort_rules`                                                                                  | `change_sort_rule`                                                                                                                                                          |                          |                          | `delete_sort_rule`                                                                 | `change_sort_rule` |
 | People                  | `add_person`                                         | `people`, `upcoming_birthdays`                                                                | `change_person`                                                                                                                                                             |                          |                          | _app only, on purpose_                                                             |                    |
-| Reminders               | `set_alarm`, `remind_before_block`                   | `reminders`                                                                                   | `change_reminder`, `dismiss_reminder`                                                                                                                                       |                          |                          | `cancel_alarm`                                                                     |                    |
+| Reminders               | `set_alarm`, `remind_before_block`, `remind_task`    | `reminders`                                                                                   | `change_reminder`, `dismiss_reminder`                                                                                                                                       |                          |                          | `cancel_alarm`                                                                     |                    |
 | Activities              | `add_activity`                                       | `activities`, `categories`                                                                    | `change_activity`                                                                                                                                                           | `change_activity`        | `change_activity`        | `remove_activity`                                                                  |                    |
 | Notebooks               | `add_notebook`                                       | `notebooks`                                                                                   | `change_notebook`, `rename_notebook_folder`, `favourite_notebook`, `share_notebook`                                                                                         | `change_notebook`        | `change_notebook`        | `remove_notebook`                                                                  |                    |
 | Labels                  | _app only, on purpose_                               | `tags`, `notebook_tags`                                                                       | `describe_tag`, `rename_tag`, `recolor_tag`, `untag_notebook`                                                                                                               |                          |                          | `remove_tag`                                                                       |                    |
+| Recordings              | _app only, on purpose_                               | `recordings`, `media`                                                                         | `change_recording`                                                                                                                                                          |                          |                          | _app only, on purpose_                                                             |                    |
 
 **Not there yet** — what the app does and an assistant cannot:
 
@@ -576,6 +577,8 @@ which a test holds to the tools the server serves and the actions the app has.
 - **Accounts and movements, delete.** A ledger takes every line in it when deleted: archived by a tool, deleted in the app. A single line can be removed.
 - **People, delete.** A person's page stands for somebody: deleted only in the app.
 - **Labels, create.** A label comes into being by being used — `tags` on a task, a note or an idea — so there is nothing to make first.
+- **Recordings, create.** A recording is made by a microphone in the app; there is nothing for a tool to say into.
+- **Recordings, delete.** A recording is the one copy of something said: deleted only in the app.
 
 ## Old spellings
 
@@ -756,6 +759,29 @@ _Needs any of `ideas:read`, `kitchen:read`, `notes:read`, `people:read`, `tasks:
 | Parameter | Type   | Required | What it is                                                                                                                          |
 | --------- | ------ | -------- | ----------------------------------------------------------------------------------------------------------------------------------- |
 | `path`    | string | yes      | The link, exactly as the text writes it: `/media/12`, or `/media/audio/12` for a recording. The number alone is taken as a picture. |
+
+### `recordings` — Recordings
+
+The audio recordings, newest first: name, notes, length in seconds and when it was made. `link` is what `media` takes to fetch the sound itself.
+
+_Needs `audio:read`; read-only; answers a page._
+
+| Parameter | Type    | Required | What it is                                                                                                                                                     |
+| --------- | ------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `limit`   | integer | —        | How many. Default `50`.                                                                                                                                        |
+| `offset`  | integer | —        | Skip this many before counting, so the rest of the recordings can be read a page at a time. `nextOffset` on the answer is what to pass here next. Default `0`. |
+
+### `change_recording` — Rename a recording, or write its notes
+
+Change a recording’s name, its notes, or both — a transcript, a summary, what it was about. A field left out is untouched; notes replace what was there, and an empty string clears them.
+
+_Needs `audio:write`; writes; answers with `before` and `after`._
+
+| Parameter | Type    | Required | What it is                                               |
+| --------- | ------- | -------- | -------------------------------------------------------- |
+| `id`      | integer | yes      | The recording’s id, as `recordings` gives it.            |
+| `name`    | string  | —        | The new name.                                            |
+| `notes`   | string  | —        | The new notes, as Markdown. An empty string clears them. |
 
 ### `tasks` — The todo list
 
@@ -1822,6 +1848,20 @@ _Needs `schedule:write` and `destructive`; deletes; answers with `before` and `a
 | Parameter | Type    | Required | What it is         |
 | --------- | ------- | -------- | ------------------ |
 | `id`      | integer | yes      | The reminder’s id. |
+
+### `remind_task` — Ring about a todo at a time
+
+A reminder about one todo, at a time, reaching the phone even with the app closed — "remind me at six to send this". Says the todo’s title unless `message` says otherwise, and pressing it opens the todo list. The todo stays undated; `schedule_task` is for putting it on a day. `change_reminder` and `cancel_alarm` take the answer’s id.
+
+_Needs `tasks:write`; writes; answers with `before` and `after`._
+
+| Parameter   | Type    | Required | What it is                                                                                                                                                                                                                                                                                  |
+| ----------- | ------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `id`        | integer | yes      | The todo’s id, as `tasks` gives it.                                                                                                                                                                                                                                                         |
+| `at`        | string  | yes      | When, as YYYY-MM-DDTHH:MM in the person’s own timezone. A bare YYYY-MM-DD means the hour their day starts. It has to be ahead of now — check the year.                                                                                                                                      |
+| `message`   | string  | —        | What it should say. The todo’s title if left out.                                                                                                                                                                                                                                           |
+| `sound`     | boolean | —        | Whether it should make a noise. Leave it out for what reminders do by default; do not turn this on unless they said so.                                                                                                                                                                     |
+| `requestId` | string  | —        | An id you choose for this call, such as a UUID, so it can be sent again safely: the same `requestId` with the same arguments within a day answers with the first answer, marked `replayed`, and nothing is made twice. Reused for a different call, it is refused with the code `conflict`. |
 
 ### `remind_before_block` — Set a reminder on a block
 

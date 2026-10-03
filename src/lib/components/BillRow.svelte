@@ -250,7 +250,7 @@
 					</button>
 				{/if}
 
-				<form method="post" action={actions.archive} use:enhance>
+				<form data-leaves method="post" action={actions.archive} use:enhance>
 					<input type="hidden" name="id" value={bill.id} />
 					<input type="hidden" name="archived" value={bill.active ? 'true' : 'false'} />
 					{#if bill.active}

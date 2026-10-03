@@ -3,6 +3,7 @@
 	import { afterNavigate, beforeNavigate, goto } from '$app/navigation';
 	import { navigating, page } from '$app/state';
 	import RoomBar from '$lib/components/RoomBar.svelte';
+	import PendingPage from '$lib/components/PendingPage.svelte';
 	import TabStrip from '$lib/components/TabStrip.svelte';
 	import RoomVerb from '$lib/components/RoomVerb.svelte';
 	import { phoneWidth } from '$lib/breakpoints.svelte';
@@ -11,7 +12,6 @@
 	import {
 		holdHeight,
 		releaseHeight,
-		landOn,
 		slideAway,
 		slideOn,
 		slidesHere,
@@ -154,7 +154,18 @@
 		return best;
 	}
 
-	const at = $derived(tabFor(page.url.pathname));
+	/*
+	 * The tab being gone to, from the press rather than from the arrival.
+	 *
+	 * The strip used to stay on the old tab until the new one's data had
+	 * loaded, so the press had no answer for that long. While a navigation to
+	 * another of this room's tabs is in flight, that tab is the current one —
+	 * and the screen under it is the shape of what is coming (`PendingPage`).
+	 */
+	const goingTo = $derived(navigating.to ? tabFor(navigating.to.url.pathname) : -1);
+	const here = $derived(tabFor(page.url.pathname));
+	const at = $derived(goingTo >= 0 ? goingTo : here);
+	const pending = $derived(goingTo >= 0 && goingTo !== here);
 
 	/** The panel that moves. Its content is `body`, which is what is replaced. */
 	let pane = $state<HTMLElement>();
@@ -166,8 +177,6 @@
 
 	/** Which way the last tab change went: 1 rightwards, -1 leftwards, 0 not one. */
 	let went = 0;
-	/** The empty panel's arrival, so landing can ask whether it is still going. */
-	let arriving: Animation | null = null;
 
 	function step(by: number) {
 		const to = tabs[at + by];
@@ -235,13 +244,13 @@
 		 * one to load, bring it on. So the arrival was the load — press a tab on
 		 * a slow connection and the screen leaves, nothing happens, and then
 		 * something slides in. What an app does is move when you ask it to and
-		 * then wait, which is this: the content leaves, the empty panel arrives
+		 * then wait, which is this: the content leaves, the panel arrives
 		 * behind it, and if the data is not there by the time it settles the
 		 * mark turns in the middle of a panel that has already stopped moving.
 		 */
 		holdHeight(frame, body);
 		slideAway(stage, body, went);
-		arriving = slideOn(pane, went);
+		slideOn(pane, went);
 		// The waiting medallion turns against the way the tabs are sweeping,
 		// the same rule the rooms follow. The layout starts the spin; this is
 		// the tab telling it which way things went.
@@ -249,13 +258,12 @@
 	});
 
 	afterNavigate(() => {
-		// Joining the panel mid-flight when the load was quick, or arriving
-		// again — with the content finally in it — when the load outlived the
-		// slide. Never appearing in place: see `landOn`.
-		landOn(pane, body, arriving, went);
+		// The panel arrived at the press carrying the tab's outline, so the
+		// content is revealed where it stands — see the same note in the root
+		// layout.
+		stopHiding(body);
 		releaseHeight(frame);
 		went = 0;
-		arriving = null;
 	});
 
 	/*
@@ -309,7 +317,7 @@
 	<!-- `.slide-frame` is where the movement is clipped, and why it gives the
 	     page gutter back first. -->
 	<div bind:this={frame} class="slide-frame">
-		<div bind:this={pane}>
+		<div bind:this={pane} class="relative">
 			<!--
 				Something solid under the tabs.
 
@@ -320,6 +328,9 @@
 				and Media and Health looked like.
 			-->
 			<div bind:this={body} class={nested ? '' : 'room-body'}>{@render children()}</div>
+			<!-- Beside the body rather than in it: the movement between tabs hides
+			     the body and copies it, and this has to be seen over both. -->
+			{#if pending}<PendingPage />{/if}
 		</div>
 		<div bind:this={stage} class="slide-stage" aria-hidden="true"></div>
 		<!--

@@ -6,7 +6,12 @@ import { goals, goalTargets, weeklyReviews } from '$lib/db/schema.js';
 import { addDays, startOfWeek } from './week-generator.js';
 import { getWeekSettings } from './settings.js';
 import type { Ctx } from './ctx.js';
-import { generateOneOffs, listInstances, setInstanceStatus } from './instances.js';
+import {
+	generateInstances,
+	generateOneOffs,
+	listInstances,
+	setInstanceStatus
+} from './instances.js';
 import { createTodo } from './todos.js';
 import { localDay, stamp, stamps } from './time.js';
 import { str } from './validate.js';
@@ -130,6 +135,20 @@ export function readWeek(
 	 * somebody wrote it on that day.
 	 */
 	generateOneOffs(ctx, first, after);
+
+	/*
+	 * And the week that is running, through today, rules and all.
+	 *
+	 * A repeating block only becomes a record when somebody opens its day, so
+	 * the review of this week showed the days already visited and not today's
+	 * blocks — a review read in the evening, before the day was over, left out
+	 * the day it was read on. Up to today and no further: the days ahead are
+	 * not anything to review yet, and this is still not a reason to run the
+	 * rules over a week long gone.
+	 */
+	const today = new Date(localDay(ctx.now) + 'T00:00:00');
+	if (today >= first && today < after) generateInstances(ctx, first, addDays(today, 1));
+
 	const instances = listInstances(ctx, first, after);
 
 	const buckets = new Map<string, WeekReading['byCategory'][number]>();

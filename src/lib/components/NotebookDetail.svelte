@@ -2097,7 +2097,7 @@
 										— the note stays where it is and comes back unchanged. The
 										button beside it is what deletes, and that one asks.
 									-->
-									<form method="post" action="?/archiveEntry" use:enhance>
+									<form data-leaves method="post" action="?/archiveEntry" use:enhance>
 										<input type="hidden" name="id" value={entry.id} />
 										<input type="hidden" name="away" value={entry.archivedAt ? 'false' : 'true'} />
 										<button
@@ -2115,6 +2115,7 @@
 									</form>
 									{#if confirmDeleteNote === entry.id}
 										<form
+											data-leaves
 											method="post"
 											action="?/deleteEntry"
 											use:enhance={() =>

@@ -21,11 +21,12 @@ import {
 	createDemoAccount,
 	DEMO_ACCOUNTS_PER_ADDRESS,
 	DEMO_WINDOW_MS,
+	fillDemoSpares,
 	isDemoAccount,
 	maybeSweepDemoAccounts,
 	touchDemoAccount
 } from '$lib/server/services/demo';
-import { clientKey, rateLimit, signUpBudget } from '$lib/server/rate-limit';
+import { clientKey, rateLimit, rateLimitWait, signUpBudget } from '$lib/server/rate-limit';
 import { recordFailedSignIn, recordServerError } from '$lib/server/services/attack-watch';
 import { bindFileCaller } from '$lib/services/host';
 import { fileCaller } from '$lib/server/api/media-access';
@@ -628,6 +629,9 @@ const handleDemo: Handle = async ({ event, resolve }) => {
 	 * nothing on the other requests.
 	 */
 	maybeSweepDemoAccounts();
+	// And the spares, so the visitor who presses the button finds one waiting.
+	// A no-op while they are full or already being made.
+	void fillDemoSpares(event.url.hostname);
 
 	const path = event.url.pathname;
 
@@ -683,7 +687,13 @@ const handleDemo: Handle = async ({ event, resolve }) => {
 		 * budget is generous for a person and useless to a script.
 		 */
 		const key = `demo:${clientKey(event.request, event.getClientAddress)}`;
-		const budget = rateLimit(key, DEMO_ACCOUNTS_PER_ADDRESS, DEMO_WINDOW_MS);
+		/*
+		 * Looked at here, spent only where an account is made. Spending it on
+		 * every signed-out page view charged one visit two or three times — the
+		 * page, its bounce, the waiting room's own action — so a second look
+		 * from the same address met "too many" long before five copies.
+		 */
+		const budget = { allowed: rateLimitWait(key, DEMO_ACCOUNTS_PER_ADDRESS) === 0 };
 
 		/*
 		 * One handshake before anything is created.
@@ -730,6 +740,7 @@ const handleDemo: Handle = async ({ event, resolve }) => {
 		}
 
 		if (budget.allowed && handshook) {
+			rateLimit(key, DEMO_ACCOUNTS_PER_ADDRESS, DEMO_WINDOW_MS);
 			try {
 				const account = await createDemoAccount(event.url.hostname);
 				if (account) {

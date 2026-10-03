@@ -70,6 +70,11 @@ const SKIP = [
 	'src/lib/server/services/assistant-notify.ts'
 ];
 
+/**
+ * @param {string} dir
+ * @param {string[]} [found]
+ * @returns {string[]}
+ */
 function walk(dir, found = []) {
 	if (SKIP.some((skip) => dir === skip || dir.startsWith(`${skip}/`))) return found;
 	for (const entry of readdirSync(join(ROOT, dir), { withFileTypes: true })) {
@@ -89,6 +94,8 @@ function walk(dir, found = []) {
  * Script and style blocks go first — a string in a component's script is a
  * different problem, and its class names are not copy. Comments go too: a
  * comment is for whoever reads the code, and this repository's are long.
+ *
+ * @param {string} source
  */
 function markupOf(source) {
 	return source
@@ -161,14 +168,18 @@ const COPY_NAMES = [
  * tag walks out of the tag and reads the rest of it as prose. Braces are
  * counted wherever they are, being inside a tag is remembered across them, and
  * a quoted attribute is skipped whole.
+ *
+ * @param {string} markup
  */
 function textRuns(markup) {
+	/** @type {string[]} */
 	const runs = [];
 	let inTag = false;
 	let braces = 0;
 	let quote = '';
 	let start = -1;
 
+	/** @param {number} at */
 	const close = (at) => {
 		if (start >= 0) runs.push(markup.slice(start, at));
 		start = -1;
@@ -207,7 +218,11 @@ function textRuns(markup) {
 	return runs;
 }
 
-/** The script of a component, with its comments gone. */
+/**
+ * The script of a component, with its comments gone.
+ *
+ * @param {string} source
+ */
 function scriptOf(source, hasMarkup = true) {
 	const code = hasMarkup
 		? [...source.matchAll(/<script[^>]*>([\s\S]*?)<\/script>/g)].map((match) => match[1]).join('\n')
@@ -232,6 +247,8 @@ const CODEY = /[<>{}$\\]|^[a-z-]+$|^[A-Z_]+$|\//;
  * `border-gray-400 bg-gray-400` has spaces and words and is styling. Prose in
  * this app starts with a capital or ends in a full stop; a run of lowercase
  * tokens that all carry a hyphen or a colon is Tailwind.
+ *
+ * @param {string} text
  */
 const CLASSES = (text) => {
 	if (/[A-Z]/.test(text)) return false;
@@ -242,7 +259,9 @@ const CLASSES = (text) => {
 	return tokens.filter((token) => /[-:]/.test(token)).length * 2 > tokens.length;
 };
 
+/** @param {string} source */
 function prosyLiterals(source) {
+	/** @type {string[]} */
 	const found = [];
 	let braces = 0;
 
@@ -252,10 +271,14 @@ function prosyLiterals(source) {
 	 * An apostrophe in one — `// the browser's own refusal` — opens a string
 	 * that runs to the next real quote, and everything between reads as prose.
 	 * Blanked rather than skipped inline, because a comment can hold anything.
+	 * Not after a `:` (a URL) nor a backslash: `/^https:\/\//` ends in an
+	 * escaped slash and its own closing one, and blanking from there took the
+	 * `}` after it, leaving every brace below it off by one.
 	 */
 	const markup = source.replace(
-		/(^|[^:])\/\/[^\n]*/g,
-		(m, lead) => lead + ' '.repeat(m.length - lead.length)
+		/(^|[^:\\])\/\/[^\n]*/g,
+		(/** @type {string} */ m, /** @type {string} */ lead) =>
+			lead + ' '.repeat(m.length - lead.length)
 	);
 
 	for (let i = 0; i < markup.length; i++) {
@@ -302,8 +325,11 @@ function prosyLiterals(source) {
  * and a lookup of sentences is copy.
  *
  * Typed as `Record<X, PlainKey>` once converted, so this stops matching it.
+ *
+ * @param {string} source
  */
 function wordTables(source) {
+	/** @type {string[]} */
 	const found = [];
 
 	for (const match of source.matchAll(/Record<[^>]*,\s*string>\s*=\s*\{/g)) {
@@ -376,7 +402,9 @@ function wordTables(source) {
 const REFUSALS =
 	/\b(?:Validation|Forbidden|Conflict|Unauthorized|PlanLimit|RateLimited)Error\(\s*'((?:[^'\\]|\\.){6,}?)'/g;
 
+/** @param {string} source */
 function refusals(source) {
+	/** @type {string[]} */
 	const found = [];
 	for (const match of source.matchAll(REFUSALS)) {
 		const text = match[1].trim();
@@ -385,7 +413,12 @@ function refusals(source) {
 	return found;
 }
 
-/** The words between tags, and the attributes and properties a person reads. */
+/**
+ * The words between tags, and the attributes and properties a person reads.
+ *
+ * @param {string} source
+ * @returns {string[]}
+ */
 export function copyIn(source, { markup: hasMarkup = true } = {}) {
 	const markup = hasMarkup ? markupOf(source) : '';
 	const found = [];
@@ -453,68 +486,77 @@ export function copyIn(source, { markup: hasMarkup = true } = {}) {
 	return found;
 }
 
-const files = ROOTS.filter((dir) => existsSync(join(ROOT, dir))).flatMap((dir) => walk(dir));
-const counts = {};
-const examples = {};
+/* Run as a script; imported by its test for `copyIn` alone. */
+if (process.argv[1] === fileURLToPath(import.meta.url)) main();
 
-for (const file of files.sort()) {
-	const copy = copyIn(readFileSync(join(ROOT, file), 'utf8'), {
-		markup: file.endsWith('.svelte')
-	});
-	if (!copy.length) continue;
-	counts[file] = copy.length;
-	examples[file] = copy.slice(0, 3);
-}
+function main() {
+	const files = ROOTS.filter((dir) => existsSync(join(ROOT, dir))).flatMap((dir) => walk(dir));
+	/** @type {Record<string, number>} */
+	const counts = {};
+	/** @type {Record<string, string[]>} */
+	const examples = {};
 
-const total = Object.values(counts).reduce((sum, n) => sum + n, 0);
-
-if (RECORD) {
-	writeFileSync(BASELINE, `${JSON.stringify({ total, files: counts }, null, '\t')}\n`, 'utf8');
-	console.log(`copy: ${total} literal(s) across ${Object.keys(counts).length} file(s) — recorded.`);
-	process.exit(0);
-}
-
-if (!CHECK) {
-	for (const [file, count] of Object.entries(counts).sort((a, b) => b[1] - a[1])) {
-		console.log(`${String(count).padStart(5)}  ${file}`);
+	for (const file of files.sort()) {
+		const copy = copyIn(readFileSync(join(ROOT, file), 'utf8'), {
+			markup: file.endsWith('.svelte')
+		});
+		if (!copy.length) continue;
+		counts[file] = copy.length;
+		examples[file] = copy.slice(0, 3);
 	}
-	console.log(`\n${total} literal(s) across ${Object.keys(counts).length} file(s).`);
-	process.exit(0);
-}
 
-const baseline = existsSync(BASELINE) ? JSON.parse(readFileSync(BASELINE, 'utf8')) : null;
+	const total = Object.values(counts).reduce((sum, n) => sum + n, 0);
 
-if (!baseline) {
-	console.error('No floor recorded yet. Run: node scripts/check-copy.mjs --record');
-	process.exit(1);
-}
-
-const worse = [];
-for (const [file, count] of Object.entries(counts)) {
-	const was = baseline.files[file];
-	// A file the floor has never seen is a new screen, and a new screen has no
-	// excuse: it is being written now, with `messages/` already there.
-	const allowed = was ?? 0;
-	if (count > allowed) worse.push({ file, was: allowed, now: count, examples: examples[file] });
-}
-
-if (worse.length) {
-	console.error('copy: these files have more untranslated text than they did.\n');
-	for (const { file, was, now, examples: sample } of worse) {
-		console.error(`  ${file}: ${was} → ${now}`);
-		for (const line of sample) console.error(`      ${line.slice(0, 72)}`);
+	if (RECORD) {
+		writeFileSync(BASELINE, `${JSON.stringify({ total, files: counts }, null, '\t')}\n`, 'utf8');
+		console.log(
+			`copy: ${total} literal(s) across ${Object.keys(counts).length} file(s) — recorded.`
+		);
+		process.exit(0);
 	}
-	console.error(
-		'\nPut the new strings in messages/en.json and reach them with t(), or — if a file ' +
-			'genuinely gained copy that is already translated — run:\n' +
-			'  node scripts/check-copy.mjs --record'
+
+	if (!CHECK) {
+		for (const [file, count] of Object.entries(counts).sort((a, b) => b[1] - a[1])) {
+			console.log(`${String(count).padStart(5)}  ${file}`);
+		}
+		console.log(`\n${total} literal(s) across ${Object.keys(counts).length} file(s).`);
+		process.exit(0);
+	}
+
+	const baseline = existsSync(BASELINE) ? JSON.parse(readFileSync(BASELINE, 'utf8')) : null;
+
+	if (!baseline) {
+		console.error('No floor recorded yet. Run: node scripts/check-copy.mjs --record');
+		process.exit(1);
+	}
+
+	const worse = [];
+	for (const [file, count] of Object.entries(counts)) {
+		const was = baseline.files[file];
+		// A file the floor has never seen is a new screen, and a new screen has no
+		// excuse: it is being written now, with `messages/` already there.
+		const allowed = was ?? 0;
+		if (count > allowed) worse.push({ file, was: allowed, now: count, examples: examples[file] });
+	}
+
+	if (worse.length) {
+		console.error('copy: these files have more untranslated text than they did.\n');
+		for (const { file, was, now, examples: sample } of worse) {
+			console.error(`  ${file}: ${was} → ${now}`);
+			for (const line of sample) console.error(`      ${line.slice(0, 72)}`);
+		}
+		console.error(
+			'\nPut the new strings in messages/en.json and reach them with t(), or — if a file ' +
+				'genuinely gained copy that is already translated — run:\n' +
+				'  node scripts/check-copy.mjs --record'
+		);
+		process.exit(1);
+	}
+
+	const gone = baseline.total - total;
+	console.log(
+		gone > 0
+			? `copy: ${total} literal(s) left, ${gone} fewer than the floor. Run --record to keep it.`
+			: `copy: ${total} literal(s) left to translate.`
 	);
-	process.exit(1);
 }
-
-const gone = baseline.total - total;
-console.log(
-	gone > 0
-		? `copy: ${total} literal(s) left, ${gone} fewer than the floor. Run --record to keep it.`
-		: `copy: ${total} literal(s) left to translate.`
-);

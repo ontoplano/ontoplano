@@ -5,7 +5,19 @@
 	const t = useT();
 	// Rendered from the cache when a navigation fails, so it must not depend on
 	// anything loaded from the server.
+
+	/*
+	 * It stands at the address that failed, so loading again is asking for
+	 * that page once more. Done by itself when the connection comes back or
+	 * the app returns to the front, rather than waiting for the button.
+	 */
+	function again() {
+		if (navigator.onLine && location.pathname !== '/offline') location.reload();
+	}
 </script>
+
+<svelte:window ononline={again} />
+<svelte:document onvisibilitychange={() => document.visibilityState === 'visible' && again()} />
 
 <PageTitle parts={t('titles.offline')} />
 

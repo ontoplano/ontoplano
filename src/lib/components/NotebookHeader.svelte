@@ -90,6 +90,20 @@
 	lead={notebook.mine || notebook.pictureId ? picture : undefined}
 >
 	{#snippet badges()}
+		{#if open}
+			<!-- Beside the name it opens, rather than among the verbs at the far end.
+			     Already resolved by the caller. -->
+			<!-- eslint-disable svelte/no-navigation-without-resolve -->
+			<a
+				href={open}
+				class="icon-btn ml-1 inline-flex align-middle"
+				title={t('ui.open')}
+				aria-label={t('ui.open')}
+			>
+				<Icon name="arrow-right" />
+			</a>
+			<!-- eslint-enable svelte/no-navigation-without-resolve -->
+		{/if}
 		{#if notebook.closedAt}
 			<span class="eyebrow ml-2 align-middle text-gray-500">{t('notebooks.id.closed')}</span>
 		{/if}
@@ -113,13 +127,6 @@
 	{/snippet}
 
 	{#snippet actions()}
-		{#if open}
-			<!-- Already resolved by the caller. -->
-			<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -->
-			<a href={open} class="icon-btn" title={t('ui.open')} aria-label={t('ui.open')}>
-				<Icon name="arrow-right" />
-			</a>
-		{/if}
 		{#if link}
 			<button
 				type="button"

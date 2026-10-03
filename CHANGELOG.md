@@ -18,6 +18,71 @@ the shape of the data changing. Bumping the minor per batch is what ran this
 file to 0.161 in a few months, which tells a reader nothing about which
 releases mattered.
 
+## 0.185.0 — 2026-10-02
+
+- Taking a note back out of the archive no longer leaves it invisible until
+  the page is reloaded.
+- On a phone, deleting a notebook or saving a task from a dialog no longer
+  sometimes leaves the list showing what it showed before.
+- Ticking off the week's first task on the dashboard no longer makes the
+  cards below it jump down.
+- Subscribed calendars draw every event at the hour it actually happens, in
+  your own timezone: Outlook and Microsoft 365 zones such as "Eastern Standard
+  Time" are read, UTC times no longer follow the server's clock, and a series'
+  last occurrence is no longer dropped.
+
+- While a room loads, its header is already the real one — name, colour and
+  tabs — and only the list below it is an outline.
+- On a phone, a room or tab that loads slowly slides in once, not a second
+  time when its content arrives.
+
+- Every form that closes when saved now says so ("Saved"), in every room; a
+  new block on the plan says "Task block added".
+- Confirming a task's ratings, saying you are on a task, and putting one away
+  happen at once, without waiting for the server.
+- Archiving or deleting from a list row takes the row away as you press, and
+  puts it back if the server refuses.
+- Stars and on/off buttons switch as you press them.
+- Pressing a tab or a room takes you there at once: the tab and the menu
+  highlight straight away, and the page shows its outline with "Loading"
+  until its contents arrive.
+
+- Opening the demo for the first time no longer fails with "JSON Parse
+  error" or "Not answering right now": when the request does not get through,
+  the waiting room tries again. A server that is refusing requests says so
+  rather than claiming to be down.
+- The review of the running week includes today's blocks, before the day is
+  over and even if nothing has opened today yet.
+- On a phone, a task's add-a-label button sits in the left column, just above
+  its rating bars.
+- An assistant can list your recordings, rename them and write their notes —
+  a transcript, a summary — over MCP, with the "recordings" permission.
+- An assistant can set a reminder about a task at a time ("remind me at six to
+  send this"), including one that only has access to a single notebook.
+
+- The demo opens straight away: a copy is ready before you press the button,
+  rather than made while you wait.
+- A task you are on is shown by its blue wash alone; the bar down its left
+  edge is gone, and the arrows that reorder two equally rated tasks sit centred
+  in the margin rather than against the card's edge.
+- The new block form has an "Existing task" mode: pick a todo and it goes on
+  the day at that time. Dragging blocks to and from the todo strip is gone, so
+  moving a block on a phone no longer opens the strip over the calendar.
+- The arrow that opens a notebook from the shelf sits beside its name, not at
+  the far end with the other buttons.
+- Changing a task's ratings by pressing its bars, each rating now has an ×
+  that puts it back to unanswered.
+- Saving a form no longer waits on the server: the dialog closes as soon as
+  you press Create or Save, and comes back with what you typed if the save is
+  refused. The arrows that reorder two equally rated tasks move them at once.
+- Opening the app from a notification while the phone is still reconnecting
+  tries again before giving up, and the offline page reloads by itself once
+  the connection is back, instead of a page that just said "Offline".
+- A neutral habit's calendar no longer looks inverted in the dark: the days
+  it was logged are the filled ones, and the gaps are the dark ones.
+- The number on the phone's app icon clears once the bell has nothing unread,
+  including right after the app is launched.
+
 ## 0.184.11 — 2026-09-29
 
 - The puffin in the middle of the menu mark never moves: only the octagon around it turns while a page loads.

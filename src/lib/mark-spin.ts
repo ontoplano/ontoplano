@@ -26,7 +26,7 @@
  */
 
 /** One full turn, in milliseconds, at full speed. */
-export const TURN_MS = 300;
+export const TURN_MS = 200;
 
 /**
  * It does not start at full speed, and it does not stop at it either.

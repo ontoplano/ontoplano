@@ -61,15 +61,26 @@ test('saving Edit notebook never shows its title empty', async ({ page }) => {
 		}
 	);
 	const seen = await watchField(page, title, async () => {
+		// The dialog steps away on the press, so it is the answer that ends
+		// the round trip being watched — and the slowed route has to be done
+		// with before it is taken away.
+		const answered = page.waitForResponse((response) => response.url().includes('?/update'));
 		await dialog.getByRole('button', { name: 'Save', exact: true }).click();
 		await expect(dialog).toBeHidden({ timeout: 30_000 });
+		await answered;
 	});
 
 	expect(seen.length).toBeGreaterThan(0);
 	expect(seen.filter((value) => value !== 'Kitchen renovation')).toEqual([]);
 
 	// And a form that is meant to be emptied still is: New notebook opens blank.
+	// Once the save has finished — the new title is drawn when the page's data
+	// is back: a press while the answer is still being applied lands on the
+	// Edit dialog that is stepping away.
 	await page.unrouteAll();
+	await expect(
+		page.getByRole('heading', { level: 1, name: /^Kitchen renovation\b/ })
+	).toBeVisible();
 	await page
 		.getByRole('button', { name: /New notebook/ })
 		.first()

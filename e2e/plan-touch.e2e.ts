@@ -148,3 +148,43 @@ test.describe('saving a block', () => {
 		expect(wasReset, 'the form was blanked while it was still on screen').toBe(false);
 	});
 });
+
+/**
+ * A todo given a time from the block form.
+ *
+ * Dragging between the grid and the todo strip was the only way on a phone,
+ * and a drag on a phone opened a hundred todos over the calendar it was
+ * meant to move a block in. The form asks instead: the mode "Existing task"
+ * picks one, and saving puts it on the day.
+ */
+test.describe('an existing task', () => {
+	test.use({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
+
+	test('is put on the day from the new block form', async ({ page }) => {
+		test.setTimeout(180_000);
+		await register(page, testEmail('plan-existing-task'));
+		await visit(page, '/tasks/todo');
+		await page
+			.getByRole('button', { name: /New task/ })
+			.first()
+			.click();
+		await page.locator('#todo-form [name="heading"]').fill('call the glazier');
+		await page.getByRole('button', { name: 'Create task' }).click();
+		await expect(page.getByText('call the glazier').first()).toBeVisible({ timeout: 30_000 });
+
+		await visit(page, '/tasks/plan');
+		await page.getByRole('button', { name: 'New task block' }).click();
+		await page.getByRole('button', { name: 'Mode' }).click();
+		await page.getByRole('option', { name: 'Existing task' }).click();
+		await page.getByRole('button', { name: 'Existing task' }).click();
+		await page.getByRole('option', { name: 'call the glazier' }).click();
+		// A todo happens once, so the form says so without being asked.
+		await expect(page.getByRole('button', { name: 'Once only' })).toHaveAttribute(
+			'aria-pressed',
+			'true'
+		);
+		await page.getByRole('button', { name: 'Add one-off' }).click();
+
+		await expect(page.locator('.ec-event').filter({ hasText: 'call the glazier' })).toBeVisible();
+	});
+});

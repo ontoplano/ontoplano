@@ -20,6 +20,7 @@ import { getMovementRow, listMovementRows, listRules } from '$lib/services/state
 import { listTagsWithUses } from '$lib/services/tags.js';
 import { listTodos } from '$lib/services/todos.js';
 import { listSessions, listWorkoutCategories, listWorkouts } from '$lib/services/workouts.js';
+import { list as listRecordings } from '$lib/services/audio.js';
 
 /**
  * The kinds of thing a tool can name, and how one is found.
@@ -116,6 +117,8 @@ export const KINDS = kinds({
 	},
 
 	sortRule: { label: 'sorting rule', rows: (ctx) => listRules(ctx) },
+
+	recording: { label: 'recording', rows: (ctx) => listRecordings(ctx) },
 
 	/** The account's one vocabulary — a label belongs to the account, not to a room. */
 	tag: { label: 'label', rows: (ctx) => listTagsWithUses(ctx.userId) },

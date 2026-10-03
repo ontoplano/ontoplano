@@ -29,7 +29,12 @@ import type { Confinement } from './confinement.js';
 import { mayReadFile } from '$lib/services/media-permission.js';
 import { pictureReferrers, recordingReferrers } from '$lib/services/media-referrers.js';
 import { read as readPicture } from '$lib/services/media.js';
-import { read as readRecording } from '$lib/services/audio.js';
+import {
+	edit as editRecording,
+	get as getRecording,
+	list as listRecordings,
+	read as readRecording
+} from '$lib/services/audio.js';
 
 import {
 	archiveEntry,
@@ -57,6 +62,7 @@ import {
 } from '$lib/services/habits.js';
 import {
 	createFreeReminder,
+	createTodoReminder,
 	editReminder,
 	createReminder,
 	deleteReminder,
@@ -2085,6 +2091,61 @@ export const TOOLS: Tool[] = [
 					base64: Buffer.from(file.bytes).toString('base64')
 				}
 			};
+		}
+	},
+
+	// ── Recordings ───────────────────────────────────────────────────────────
+	/*
+	 * The recordings themselves, which `media` could fetch only by a link
+	 * somebody had already written down. Listed, renamed, and their notes
+	 * written — the notes are what makes a voice memo searchable, and an
+	 * assistant transcribing one needs somewhere to put the words. Deleting
+	 * one is the person's to do: a recording is the one copy of something said.
+	 */
+	{
+		name: 'recordings',
+		title: 'Recordings',
+		description:
+			'The audio recordings, newest first: name, notes, length in seconds and when it was made. `link` is what `media` takes to fetch the sound itself.',
+		scope: 'audio:read',
+		writes: false,
+		input: object({ limit: count('How many.', 50), offset: from('the recordings') }),
+		run: (ctx, args) =>
+			paged(
+				listRecordings(ctx).map((one) => ({
+					id: one.id,
+					name: one.name,
+					notes: one.notes,
+					seconds: one.seconds,
+					createdAt: one.createdAt,
+					link: `/media/audio/${one.id}`
+				})),
+				args,
+				50
+			)
+	},
+	{
+		name: 'change_recording',
+		title: 'Rename a recording, or write its notes',
+		description:
+			'Change a recording’s name, its notes, or both — a transcript, a summary, what it was about. A field left out is untouched; notes replace what was there, and an empty string clears them.',
+		scope: 'audio:write',
+		writes: true,
+		refs: [{ arg: 'id', kind: 'recording', subject: true }],
+		input: object(
+			{
+				id: { type: 'integer', description: 'The recording’s id, as `recordings` gives it.' },
+				name: text('The new name.'),
+				notes: text('The new notes, as Markdown. An empty string clears them.')
+			},
+			['id']
+		),
+		run: (ctx, args) => {
+			const now = getRecording(ctx, Number(args.id));
+			return editRecording(ctx, now.id, {
+				name: args.name ?? now.name,
+				notes: args.notes ?? now.notes
+			});
 		}
 	},
 
@@ -4447,6 +4508,48 @@ export const TOOLS: Tool[] = [
 		destroys: true,
 		input: object({ id: { type: 'integer', description: 'The reminder\u2019s id.' } }, ['id']),
 		run: (ctx, args) => ({ ok: deleteReminder(ctx, Number(args.id)) })
+	},
+	{
+		/*
+		 * A reminder about a todo, at a time somebody names.
+		 *
+		 * The one reminder a key confined to a notebook can set: an alarm names
+		 * nothing and a block is in no notebook, so an assistant working one
+		 * subject — "tell me at six to post this" — had no way to ring at all.
+		 * This names the todo, so the confinement that lets it see the todo
+		 * lets it ring about it, and the todo's status is read back as usual.
+		 */
+		name: 'remind_task',
+		title: 'Ring about a todo at a time',
+		description:
+			'A reminder about one todo, at a time, reaching the phone even with the app closed — "remind me at six to send this". Says the todo\u2019s title unless `message` says otherwise, and pressing it opens the todo list. The todo stays undated; `schedule_task` is for putting it on a day. `change_reminder` and `cancel_alarm` take the answer\u2019s id.',
+		scope: 'tasks:write',
+		writes: true,
+		refs: [{ arg: 'id', kind: 'todo' }],
+		input: object(
+			{
+				id: { type: 'integer', description: 'The todo\u2019s id, as `tasks` gives it.' },
+				at: text(
+					'When, as YYYY-MM-DDTHH:MM in the person\u2019s own timezone. A bare YYYY-MM-DD means the hour their day starts. It has to be ahead of now — check the year.'
+				),
+				message: text('What it should say. The todo\u2019s title if left out.'),
+				sound: {
+					type: 'boolean',
+					description:
+						'Whether it should make a noise. Leave it out for what reminders do by default; do not turn this on unless they said so.'
+				},
+				...RETRY_ARGS
+			},
+			['id', 'at']
+		),
+		run: (ctx, args) => ({
+			id: createTodoReminder(ctx, {
+				todoId: args.id,
+				at: args.at,
+				message: args.message,
+				...(args.sound === undefined ? {} : { audible: args.sound === true })
+			})
+		})
 	},
 	{
 		name: 'remind_before_block',

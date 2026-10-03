@@ -1590,6 +1590,25 @@
 			}
 		}
 	},
+	"change_recording": {
+		"scope": "audio:write",
+		"writes": true,
+		"destroys": false,
+		"params": {
+			"id": {
+				"type": "integer",
+				"required": true
+			},
+			"name": {
+				"type": "string",
+				"required": false
+			},
+			"notes": {
+				"type": "string",
+				"required": false
+			}
+		}
+	},
 	"change_reminder": {
 		"scope": "schedule:write",
 		"writes": true,
@@ -2738,6 +2757,24 @@
 			}
 		}
 	},
+	"recordings": {
+		"scope": "audio:read",
+		"writes": false,
+		"destroys": false,
+		"pages": true,
+		"params": {
+			"limit": {
+				"type": "integer",
+				"required": false,
+				"default": 50
+			},
+			"offset": {
+				"type": "integer",
+				"required": false,
+				"default": 0
+			}
+		}
+	},
 	"remind_before_block": {
 		"scope": "schedule:write",
 		"writes": true,
@@ -2757,6 +2794,33 @@
 			},
 			"requestId": {
 				"type": "string",
+				"required": false
+			}
+		}
+	},
+	"remind_task": {
+		"scope": "tasks:write",
+		"writes": true,
+		"destroys": false,
+		"params": {
+			"at": {
+				"type": "string",
+				"required": true
+			},
+			"id": {
+				"type": "integer",
+				"required": true
+			},
+			"message": {
+				"type": "string",
+				"required": false
+			},
+			"requestId": {
+				"type": "string",
+				"required": false
+			},
+			"sound": {
+				"type": "boolean",
 				"required": false
 			}
 		}

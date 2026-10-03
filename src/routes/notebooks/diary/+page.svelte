@@ -595,6 +595,7 @@
 								</button>
 								{#if confirmingDeleteId === entry.id}
 									<form
+										data-leaves
 										method="post"
 										action="?/delete"
 										use:enhance={() => {

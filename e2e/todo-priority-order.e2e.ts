@@ -243,3 +243,34 @@ test('the list can say which task you are on, and shows it', async ({ page }) =>
 	await page.getByRole('button', { name: 'Not on it any more' }).first().click();
 	await expect(row).toHaveCount(0);
 });
+
+/**
+ * A rating taken back to no answer from the bars' own box.
+ *
+ * Pressing the bars can set any height, and a double press sets nought, but an
+ * unset rating rests in the middle of the scale — so no press reached it. The
+ * box that holds the change offers it beside each number.
+ */
+test('a rating held on a card can be put back to no answer', async ({ page }) => {
+	test.setTimeout(180_000);
+	await page.setViewportSize({ width: 1280, height: 900 });
+	await register(page, testEmail('todo-unrate'));
+	await visit(page, '/tasks/todo');
+	await newTodo(page, 'leave this one open', { Urgency: '4' });
+
+	const card = page.locator('.row-card').filter({ hasText: 'leave this one open' });
+	const bars = card.locator('.rating-bars');
+	await expect(bars).toHaveAttribute('aria-label', /Urgency 4/);
+
+	const box = (await bars.boundingBox())!;
+	await page.mouse.click(box.x + box.width * 0.5, box.y + box.height * 0.5);
+	const holding = page.getByRole('dialog', { name: 'Confirm' });
+	await holding.getByRole('button', { name: 'Leave urgency unanswered' }).click();
+	await holding.getByRole('button', { name: 'Confirm' }).click();
+	await expect(holding).toBeHidden();
+
+	await visit(page, '/tasks/todo');
+	await expect(
+		page.locator('.row-card').filter({ hasText: 'leave this one open' }).locator('.rating-bars')
+	).toHaveAttribute('aria-label', /Urgency –/);
+});

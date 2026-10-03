@@ -1,6 +1,9 @@
 import { enhance as kitEnhance } from '$app/forms';
+import { invalidateAll } from '$app/navigation';
 import { navigating } from '$app/state';
 import type { SubmitFunction } from '@sveltejs/kit';
+import { afterPress } from '$lib/after-press';
+import { historySettled, loadAfterHistory, popsSoFar } from '$lib/back-closes';
 
 /**
  * `use:enhance`, with one press meaning one submission.
@@ -124,6 +127,86 @@ function resetAfterwards(outcome: Outcome): { outcome: Outcome; finish: () => vo
 	};
 }
 
+/**
+ * A dialog saved from its footer gets out of the way before the answer.
+ *
+ * The press on Create or Save is the end of what somebody is doing with the
+ * dialog, and holding it on screen for the round trip made every form in the
+ * app feel a second or two slow. So the dialog steps away at once and the
+ * page behind is usable; `Modal` keeps everything typed. When the answer
+ * arrives, it steps back only if the page has not closed it — which is a
+ * refusal, shown in the dialog's error banner with the fields as they were.
+ *
+ * Only a press from the footer: a button inside the body of a dialog is
+ * usually one step of something still going on there. `data-stays` on the
+ * button or the form opts a footer press out.
+ */
+function steppingAway(event: Parameters<SubmitFunction>[0]): HTMLDialogElement | null {
+	const by = event.submitter;
+	if (!by?.closest('[data-modal-footer]')) return null;
+	if (by.hasAttribute('data-stays') || event.formElement.hasAttribute('data-stays')) return null;
+	return by.closest('dialog');
+}
+
+/**
+ * The two answers a press outside a dialog can give before the server does,
+ * declared on the button (or the form) rather than written per screen.
+ *
+ * - `data-leaves`: the press takes its row off the list — archive, delete,
+ *   put away. The row (`data-leaves="<selector>"`, or the nearest list row)
+ *   goes on the press and comes back if the server refuses — or if the
+ *   page's data, once it returns, still draws it: unarchiving from a list
+ *   that shows both kinds takes nothing off it, and a list that reuses its
+ *   nodes puts the next row in the one that was hidden.
+ * - `aria-pressed`: the press is a switch. It reads as flipped on the press,
+ *   and flips back if refused; when the page's data returns it draws the
+ *   switch from the answer anyway.
+ *
+ * Both after the press has finished landing (`$lib/after-press`): a row taken
+ * away under the pointer would otherwise hand the rest of the click to the
+ * row that moved up into its place.
+ */
+const ROW = '[data-row], .list-row, .row-card, [data-todo-id], li';
+
+function answerAtOnce(event: Parameters<SubmitFunction>[0]): {
+	takeBack: () => void;
+	settle: () => void;
+} {
+	const by = event.submitter as HTMLElement | null;
+	const declares = (name: string) =>
+		by?.hasAttribute(name) ? by : event.formElement.hasAttribute(name) ? event.formElement : null;
+	const undo: (() => void)[] = [];
+	const hidden: HTMLElement[] = [];
+
+	const leaver = declares('data-leaves');
+	if (leaver) {
+		const named = leaver.getAttribute('data-leaves');
+		const row = (named ? leaver.closest(named) : leaver.closest(ROW)) as HTMLElement | null;
+		if (row) {
+			afterPress(() => {
+				row.hidden = true;
+			});
+			undo.push(() => (row.hidden = false));
+			hidden.push(row);
+		}
+	}
+
+	if (by?.hasAttribute('aria-pressed')) {
+		const was = by.getAttribute('aria-pressed');
+		afterPress(() => by.setAttribute('aria-pressed', was === 'true' ? 'false' : 'true'));
+		undo.push(() => was !== null && by.setAttribute('aria-pressed', was));
+	}
+
+	return {
+		takeBack: () => {
+			for (const one of undo) afterPress(one);
+		},
+		settle: () => {
+			for (const row of hidden) if (row.isConnected) row.hidden = false;
+		}
+	};
+}
+
 export function enhance(form: HTMLFormElement, submit?: SubmitFunction) {
 	let sending: string | null = null;
 
@@ -140,17 +223,39 @@ export function enhance(form: HTMLFormElement, submit?: SubmitFunction) {
 		for (const button of pressed) button.disabled = true;
 
 		const after = submit?.(event);
+		const dialog = steppingAway(event);
+		dialog?.dispatchEvent(new Event('stepaway'));
+		const { takeBack, settle } = dialog
+			? { takeBack: () => {}, settle: () => {} }
+			: answerAtOnce(event);
+		const popsBefore = popsSoFar();
 		return async (outcome) => {
+			const saved = outcome.result.type === 'success';
 			try {
 				const { outcome: answered, finish } = resetAfterwards(stayingPut(outcome));
+				if (outcome.result.type === 'failure' || outcome.result.type === 'error') takeBack();
 				if (typeof after === 'function') await after(answered);
 				else await answered.update();
 				finish();
+				settle();
 			} finally {
+				dialog?.dispatchEvent(new Event('stepback'));
 				sending = null;
 				// A form that has been taken off the screen takes its buttons
 				// with it; setting a property on a detached node is harmless.
 				for (const button of pressed) button.disabled = false;
+			}
+			/*
+			 * A phone's dialog gives its history entry back as it closes, and a
+			 * pop that lands while the save's data is still loading cancels that
+			 * load: the task was added, the toast said so, and the list did not
+			 * have it. When any entry was popped meanwhile, load once more after
+			 * the last pop — a cost paid only on the path that lost the data.
+			 */
+			if (saved) {
+				void historySettled().then(() => {
+					if (popsSoFar() !== popsBefore) void loadAfterHistory(invalidateAll);
+				});
 			}
 		};
 	};

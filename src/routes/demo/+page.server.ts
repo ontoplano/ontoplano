@@ -71,6 +71,7 @@ export const actions: Actions = {
 			// Written down with the rule and the room at that moment, so the
 			// operator's digest can tell a rate limiter doing its job from a
 			// demo that is actually full — the two look identical as a count.
+			console.log(`demo: refused ${address}: the per-address limit`);
 			audit(address, 'demo_refused', {
 				detail: { why: 'rate', out: demoAccountCount() },
 				ip: address
@@ -81,6 +82,7 @@ export const actions: Actions = {
 		const account = await createDemoAccount(event.url.hostname);
 		if (!account) {
 			// Every seat taken. The page says so rather than spinning forever.
+			console.log(`demo: refused ${address}: every copy is in use`);
 			audit(address, 'demo_refused', {
 				detail: { why: 'full', out: demoAccountCount() },
 				ip: address

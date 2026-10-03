@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { say } from '$lib/said.svelte';
+	import { afterPress } from '$lib/after-press';
 	import ShowingCount from '$lib/components/ShowingCount.svelte';
 	import SearchField from '$lib/components/SearchField.svelte';
 	import { notebooksHolding } from '$lib/notebook-modules';
@@ -89,7 +90,7 @@
 	 * `$lib/todo-actions`.
 	 */
 	let {
-		todos,
+		todos: given,
 		categories,
 		notebooks,
 		actions,
@@ -172,6 +173,55 @@
 		openNew?: (() => void) | undefined;
 		openTodo?: ((id: number) => void) | undefined;
 	} = $props();
+
+	/**
+	 * The tasks as the screen should show them: what the server last said, with
+	 * whatever this screen has been told and the server has not answered yet.
+	 *
+	 * A press is answered here before the round trip — a tie put the other way
+	 * round, ratings confirmed on a card — and everything below reads this, so
+	 * the order, the place in line and the bars all move at once. Each hold is
+	 * dropped when the page's own data comes back, which then says the same
+	 * thing, or when the server refuses it.
+	 */
+	let held = $state(new Map<number, Partial<Todo>>());
+	$effect(() => {
+		void given;
+		held = new Map();
+	});
+	const todos: Todo[] = $derived(
+		held.size === 0
+			? given
+			: given.map((one: Todo) => (held.has(one.id) ? { ...one, ...held.get(one.id) } : one))
+	);
+
+	/** Show this about a task until the page's data comes back. */
+	function hold(id: number, patch: Partial<Todo>) {
+		held = new Map([...held, [id, { ...held.get(id), ...patch }]]);
+	}
+
+	/** A press refused: let go of everything held; the page's error says why. */
+	function letGo() {
+		held = new Map();
+	}
+
+	/**
+	 * A form whose press is answered at once: `patch` is what the task looks
+	 * like afterwards, shown from the press until the answer, and dropped if
+	 * the answer is a refusal.
+	 */
+	function answered(id: number, patch: () => Partial<Todo>): SubmitFunction {
+		return () => {
+			// After the press has landed: a row that leaves the list under the
+			// pointer must not hand the rest of the click to the row below.
+			const next = patch();
+			afterPress(() => hold(id, next));
+			return async ({ result, update }) => {
+				if (result.type !== 'success') letGo();
+				await update({ reset: false });
+			};
+		};
+	}
 
 	const selection = new Selection<BatchVerb>();
 	const batchLabels = {
@@ -573,6 +623,30 @@
 		return b.completedAt.localeCompare(a.completedAt);
 	}
 
+	/**
+	 * A tie put the other way round, shown before the server has agreed.
+	 *
+	 * The arrows used to do nothing visible until the round trip and the
+	 * reload were over. The swap is held here from the press, and dropped when
+	 * the list's own data comes back — which then says the same thing — or
+	 * when the server refuses it.
+	 */
+	function holdSwap(one: Todo, otherId: number, way: 'up' | 'down') {
+		const other = todos.find((t: Todo) => t.id === otherId);
+		if (!other) return;
+		const at = (t: Todo) => t.sortOrder ?? 0;
+		const [mine, theirs] = [at(one), at(other)];
+		// Equal by hand, the age decided it: step just past the other instead.
+		const moved: [number, number][] =
+			mine !== theirs
+				? [
+						[one.id, theirs],
+						[other.id, mine]
+					]
+				: [[one.id, way === 'up' ? theirs - 0.5 : theirs + 0.5]];
+		for (const [id, sortOrder] of moved) hold(id, { sortOrder });
+	}
+
 	let visibleTodos = $derived.by(() => {
 		// A row whose delete is being held is already gone as far as the person
 		// is concerned — the toast is what is holding it, not the list.
@@ -738,6 +812,12 @@
 			at: held?.sheet ? null : at,
 			sheet: held?.sheet ?? false
 		};
+	}
+
+	/** One of the held ratings back to no answer — the middle of the scale. */
+	function unrate(rating: Rating) {
+		if (!rerating) return;
+		rerating = { ...rerating, values: { ...rerating.values, [rating]: null } };
 	}
 
 	/**
@@ -1264,11 +1344,19 @@
 			id="rate-form"
 			method="post"
 			action={actions.rate}
-			use:enhance={() =>
-				async ({ update }) => {
+			use:enhance={() => {
+				// Answered on the press: the bars keep what was confirmed and the
+				// box goes, after the press has finished landing.
+				const confirmed = rerating;
+				if (confirmed) hold(confirmed.id, { ratings: { ...confirmed.values } });
+				afterPress(() => {
+					if (rerating?.id === confirmed?.id) rerating = null;
+				});
+				return async ({ result, update }) => {
+					if (result.type !== 'success') letGo();
 					await update({ reset: false });
-					rerating = null;
-				}}
+				};
+			}}
 		>
 			<input type="hidden" name="id" value={held.id} />
 			{#each RATING_ORDER as rating (rating)}
@@ -1294,7 +1382,7 @@
 					<Icon name="edit" size={12} />
 				</button>
 			{/snippet}
-			<RatingTable values={held.values} />
+			<RatingTable values={held.values} onunset={unrate} />
 			<div class="mt-2 flex flex-col items-start gap-1 text-sm">
 				{@render underFilters(reratingFilteredPlace)}
 				{@render inQueue(reratingPlace)}
@@ -1315,7 +1403,7 @@
 	{#if rerating?.sheet}
 		{@const held = rerating}
 		<div class="flex flex-col items-center gap-4">
-			<RatingTable values={held.values} />
+			<RatingTable values={held.values} onunset={unrate} />
 			<RatingPress
 				values={held.values}
 				height="min(45dvh, 20rem)"
@@ -1804,51 +1892,65 @@
 								through a dialog that opens somewhere else entirely.
 							-->
 								<!--
-									The tick and the gauges are the whole rail. The number and
-									the add-a-label chip used to stand in it too, which made a
-									one-line task 124px tall with a gap under its title; they
-									lead and end the labels line instead, at every width.
+									The tick and the gauges are the rail on a wide screen. The
+									number and the add-a-label chip used to stand in it too,
+									which made a one-line task 124px tall with a gap under its
+									title; there they lead and end the labels line instead.
+
+									On a phone the add-a-label chip stands in the rail, sitting
+									on the bars rather than hanging off the tick: a phone's row is
+									already tall enough to hold it, and the labels line there is
+									the number and the labels, with nothing trailing after them.
 								-->
-								<div class="relative mt-auto flex">
-									<!--
+								<div class="mt-auto flex flex-col items-center gap-1">
+									<div class="sm:hidden">{@render quickTag()}</div>
+									<div class="relative flex">
+										<!--
 										Beside the bars, in the card's own margin: a task rated the
 										same as the one next to it can be put the other way round.
 										Hung outside the rail rather than in it, so a row that has
 										them starts its words where every other row does.
 									-->
-									{#if ties.get(todo.id)?.up || ties.get(todo.id)?.down}
-										{@const tie = ties.get(todo.id)!}
-										<div class="tie-arrows">
-											{#each [{ other: tie.up, glyph: 'chevron-up', said: t('todoRows.aheadOfTheTie') }, { other: tie.down, glyph: 'chevron-down', said: t('todoRows.behindTheTie') }] as const as way (way.glyph)}
-												<form
-													method="post"
-													action={actions.nudge}
-													use:enhance
-													class:invisible={!way.other}
-												>
-													<input type="hidden" name="id" value={todo.id} />
-													<input type="hidden" name="withId" value={way.other ?? ''} />
-													<button
-														type="submit"
-														disabled={!way.other}
-														title={way.said}
-														aria-label={way.said}
+										{#if ties.get(todo.id)?.up || ties.get(todo.id)?.down}
+											{@const tie = ties.get(todo.id)!}
+											<div class="tie-arrows">
+												{#each [{ other: tie.up, way: 'up', glyph: 'chevron-up', said: t('todoRows.aheadOfTheTie') }, { other: tie.down, way: 'down', glyph: 'chevron-down', said: t('todoRows.behindTheTie') }] as const as way (way.glyph)}
+													<form
+														method="post"
+														action={actions.nudge}
+														use:enhance={() => {
+															if (way.other) holdSwap(todo, way.other, way.way);
+															return async ({ result, update }) => {
+																if (result.type !== 'success') letGo();
+																await update();
+															};
+														}}
+														class:invisible={!way.other}
 													>
-														<Icon name={way.glyph} size={12} />
-													</button>
-												</form>
-											{/each}
-										</div>
-									{/if}
-									<RatingPress
-										values={rerating?.id === todo.id && !rerating.sheet
-											? rerating.values
-											: todo.ratings}
-										muted={isDone(todo)}
-										label={t('todoRows.setTheRatings')}
-										onkeyboard={() => startEdit(todo, { atRatings: true })}
-										onset={(rating, value, at) => rerate(todo, rating, value, at)}
-									/>
+														<input type="hidden" name="id" value={todo.id} />
+														<input type="hidden" name="withId" value={way.other ?? ''} />
+														<button
+															type="submit"
+															disabled={!way.other}
+															title={way.said}
+															aria-label={way.said}
+														>
+															<Icon name={way.glyph} size={12} />
+														</button>
+													</form>
+												{/each}
+											</div>
+										{/if}
+										<RatingPress
+											values={rerating?.id === todo.id && !rerating.sheet
+												? rerating.values
+												: todo.ratings}
+											muted={isDone(todo)}
+											label={t('todoRows.setTheRatings')}
+											onkeyboard={() => startEdit(todo, { atRatings: true })}
+											onset={(rating, value, at) => rerate(todo, rating, value, at)}
+										/>
+									</div>
 								</div>
 							{/snippet}
 							{#snippet labels()}
@@ -1891,7 +1993,7 @@
 										onremove={(pill) => (untagging = { id: todo.id, name: tag.name, pill })}
 									/>
 								{/each}
-								{@render quickTag()}
+								<span class="hidden sm:contents">{@render quickTag()}</span>
 							{/snippet}
 							{#snippet controls()}
 								<!-- First, and only where there is something to read: what the
@@ -1921,7 +2023,13 @@
 										I am on". It is a toggle rather than a step in a cycle:
 										pressing it says so, pressing it again says you are not.
 									-->
-									<form method="post" action={actions.setStatus} use:enhance>
+									<form
+										method="post"
+										action={actions.setStatus}
+										use:enhance={answered(todo.id, () => ({
+											status: todo.status === 'doing' ? 'todo' : 'doing'
+										}))}
+									>
 										<input type="hidden" name="id" value={todo.id} />
 										<input
 											type="hidden"
@@ -1966,9 +2074,14 @@
 									the reversible one — the button beside it is what deletes,
 									and that one asks.
 								-->
-								<!-- Plain `use:enhance`: the default applies the result and
-								     re-reads the page, which is how the row leaves the list. -->
-								<form method="post" action={actions.archive} use:enhance>
+								<!-- Gone from the list on the press; the re-read confirms it. -->
+								<form
+									method="post"
+									action={actions.archive}
+									use:enhance={answered(todo.id, () => ({
+										archivedAt: todo.archivedAt ? null : new Date().toISOString()
+									}))}
+								>
 									<input type="hidden" name="id" value={todo.id} />
 									<input type="hidden" name="away" value={todo.archivedAt ? 'false' : 'true'} />
 									<button

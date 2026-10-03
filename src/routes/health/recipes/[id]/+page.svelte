@@ -210,7 +210,7 @@
 								>
 									<Icon name="shopping" />
 								</a>
-								<form method="post" action="?/removeIngredient" use:enhance>
+								<form data-leaves method="post" action="?/removeIngredient" use:enhance>
 									<input type="hidden" name="id" value={ingredient.id} />
 									<button class="icon-btn" title={t('ui.remove')} aria-label={t('ui.remove')}
 										><Icon name="close" /></button
