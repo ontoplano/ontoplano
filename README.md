@@ -28,6 +28,8 @@ scope all your tasks, recipes, inventory, notes, bills etc. in specific notebook
 
 [![Try the demo](.github/badges/try-the-demo.svg)](https://demo.ontoplano.com)
 
+</div>
+
 I am creating [tutorials for Ontoplano in YouTube](https://www.youtube.com/@eChedieck). Check them out or request one in the comments.
 
 > This software was publicly released on September 5th, 2026.
@@ -37,7 +39,6 @@ I am creating [tutorials for Ontoplano in YouTube](https://www.youtube.com/@eChe
 >
 > Help improve it by creating issues and pull requests.
 
-</div>
 
 ---
 
