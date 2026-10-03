@@ -20,6 +20,7 @@ releases mattered.
 
 ## 0.185.3 — 2026-10-03
 
+- The Tasks room's tabs read Plan, Tasks, Board.
 - Picking a label from the suggestions closes them; typing the next one
   opens them again.
 - Resting the pointer on a task mentioned in a note — or focusing it — shows
