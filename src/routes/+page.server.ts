@@ -20,18 +20,18 @@ import { createEntry, latestEntry, listTags } from '$lib/services/diary';
 import { toActionFailure } from '$lib/http-errors';
 import { listActiveOn } from '$lib/services/goals';
 import { listHabits, today as todayOf } from '$lib/services/habits';
-import { generateForDate, listForDate } from '$lib/services/instances';
+import { generateInstances, listInstances, type Occurrence } from '$lib/services/instances';
 import { listIdeas } from '$lib/services/ideas';
 import { recentlyEditedNotebooks } from '$lib/services/notebooks';
 import { listQuotes } from '$lib/services/quotes';
 import { readWeek, reviewPending, weekStartOf } from '$lib/services/review';
 import { shoppingRun } from '$lib/services/inventory';
-import { listBills, listPayments, monthSummary } from '$lib/services/bills';
+import { billsSettledIn, listBills, monthSummary } from '$lib/services/bills';
 import { listWorkouts } from '$lib/services/workouts';
 import { getCurrency } from '$lib/services/settings';
 import { listTodos } from '$lib/services/todos';
 import { listWins, saveWins } from '$lib/services/wins';
-import { addDays, generateCurrentWeek } from '$lib/services/week-generator';
+import { addDays, getMonday } from '$lib/services/week-generator';
 import { localDay, minutesOfDay } from '$lib/services/time';
 
 /**
@@ -76,12 +76,27 @@ export const load = async ({ locals }: IsolatedEvent) => {
 	const ctx = buildCtx(locals.user!.id);
 	const today = todayOf(ctx);
 
-	generateCurrentWeek(ctx);
-	generateForDate(ctx, ctx.now);
+	/*
+	 * The week and the days ahead made real in one pass, and read in one.
+	 *
+	 * The week was generated, then today again, then each of the next days in
+	 * turn — six passes of the generator over overlapping days, every load.
+	 */
+	const startOfToday = new Date(ctx.now.getFullYear(), ctx.now.getMonth(), ctx.now.getDate());
+	const horizon = addDays(startOfToday, NEXT_DAYS);
+	const weekEnd = addDays(getMonday(ctx.now), 7);
+	generateInstances(ctx, getMonday(ctx.now), horizon > weekEnd ? horizon : weekEnd);
+	const blocksByDay = new Map<string, Occurrence[]>();
+	for (const one of listInstances(ctx, startOfToday, horizon)) {
+		const held = blocksByDay.get(one.date);
+		if (held) held.push(one);
+		else blocksByDay.set(one.date, [one]);
+	}
+	const blocksOn = (day: Date) => blocksByDay.get(localDay(day)) ?? [];
 
 	// One call, both kinds of block. The union that used to live here is why
 	// one-offs were missing from this card in the first place.
-	const todayTasks = listForDate(ctx, ctx.now).map((o) => ({
+	const todayTasks = blocksOn(ctx.now).map((o) => ({
 		id: o.id,
 		kind: o.kind,
 		startTime: o.startTime,
@@ -152,10 +167,9 @@ export const load = async ({ locals }: IsolatedEvent) => {
 	 */
 	const nextDays = Array.from({ length: NEXT_DAYS }, (_, ahead) => {
 		const day = addDays(ctx.now, ahead);
-		generateForDate(ctx, day);
 		return {
 			date: localDay(day),
-			blocks: listForDate(ctx, day).map((o) => ({
+			blocks: blocksOn(day).map((o) => ({
 				id: o.id,
 				startTime: o.startTime,
 				durationMinutes: o.durationMinutes,
@@ -253,12 +267,7 @@ export const load = async ({ locals }: IsolatedEvent) => {
 			const month = localDateOf(ctx.now, ctx.tz).slice(0, 7);
 			// An automatic bill pays itself, so it is never one still to pay.
 			const monthly = listBills(ctx).filter((b) => b.rhythm === 'monthly' && !b.automatic);
-			const paid = new Set(
-				monthly
-					.flatMap((b) => listPayments(ctx, b.id))
-					.filter((p) => p.period === month)
-					.map((p) => p.billId)
-			);
+			const paid = billsSettledIn(ctx, month);
 			return {
 				currency: getCurrency(ctx.userId),
 				summary: monthSummary(ctx, month),

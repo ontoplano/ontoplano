@@ -1238,6 +1238,13 @@ Take a skip back — the period is open again. The inverse of `skipPeriod`.
 
 #### `listPayments(ctx, billId)`
 
+#### `billsSettledIn(ctx, period)`
+
+The bills answered for in one period — paid or skipped — in one statement.
+
+The dashboard's card asked `listPayments` of every monthly bill in turn, two
+statements each, to learn one fact per bill.
+
 #### `monthSummary(ctx, month, flow)`
 
 A month, the way the section's first page reads it: what was expected of the

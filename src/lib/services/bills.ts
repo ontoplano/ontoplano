@@ -672,6 +672,23 @@ export function listPayments(ctx: Ctx, billId: number): BillPayment[] {
 }
 
 /**
+ * The bills answered for in one period — paid or skipped — in one statement.
+ *
+ * The dashboard's card asked `listPayments` of every monthly bill in turn, two
+ * statements each, to learn one fact per bill.
+ */
+export function billsSettledIn(ctx: Ctx, period: string): Set<number> {
+	return new Set(
+		db
+			.select({ billId: billPayments.billId })
+			.from(billPayments)
+			.where(and(eq(billPayments.userId, ctx.userId), eq(billPayments.period, period)))
+			.all()
+			.map((row) => row.billId)
+	);
+}
+
+/**
  * A month, the way the section's first page reads it: what was expected of the
  * monthly bills, what has actually been paid this month across all bills, and
  * the gap between the two. A monthly bill skipped this month expected nothing.
