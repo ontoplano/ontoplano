@@ -1527,7 +1527,7 @@
 					{/each}
 				</div>
 			{:else}
-				<div class="notebook-tabs">{@render strip(-1)}</div>
+				<div class="notebook-tabs" data-tour="notebook-tabs">{@render strip(-1)}</div>
 				{@render tabBody(tab)}
 			{/if}
 		{/if}
@@ -1581,7 +1581,6 @@
 	<TabStrip
 		nested
 		label={t('notebookDetail.sections')}
-		dataTour={pane <= 0 ? 'notebook-tabs' : undefined}
 		tabs={tabs.map((option) => ({
 			label: t(option.label),
 			icon: moduleGlyph(option.key),
