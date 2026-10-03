@@ -27,6 +27,9 @@ releases mattered.
 - Pages load with far less work on the server: the dashboard does half what it
   did, the reminders check an open tab makes every minute does a tenth, and
   settings, sounds and places are read once per page instead of once per use.
+- Self-hosting: `ONTOPLANO_SNAPSHOTS_KEPT` sets how many pre-migration
+  snapshots are kept (ten by default); `0` keeps none. The demo also gives
+  space back to the disk after removing expired visitors.
 
 ## 0.185.4 — 2026-10-03
 

@@ -51,6 +51,28 @@ describe('db snapshot', () => {
 		copy.close();
 	});
 
+	it('keeps as many as ONTOPLANO_SNAPSHOTS_KEPT says', () => {
+		process.env.ONTOPLANO_SNAPSHOTS_KEPT = '2';
+		try {
+			for (let i = 0; i < 4; i++) snapshot('test');
+			expect(readdirSync(dir).filter((f) => f.includes('.test-'))).toHaveLength(2);
+		} finally {
+			delete process.env.ONTOPLANO_SNAPSHOTS_KEPT;
+		}
+	});
+
+	it('takes none at zero, and clears the ones already there', () => {
+		snapshot('test');
+		snapshot('test');
+		process.env.ONTOPLANO_SNAPSHOTS_KEPT = '0';
+		try {
+			expect(snapshot('test')).toBeNull();
+			expect(readdirSync(dir).filter((f) => f.includes('.test-'))).toHaveLength(0);
+		} finally {
+			delete process.env.ONTOPLANO_SNAPSHOTS_KEPT;
+		}
+	});
+
 	it('says nothing to snapshot when there is no database', () => {
 		process.env.DATABASE_URL = join(dir, 'absent.db');
 		expect(snapshot('test')).toBeNull();
