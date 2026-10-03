@@ -34,6 +34,8 @@ releases mattered.
   mailing list.
 - The gallery's Notebooks album also shows pictures pasted into a notebook's
   tasks, goals and ideas, not only its notes.
+- No blinking caret on text that cannot be edited, such as tabs and headings,
+  when Firefox's caret browsing is on.
 
 ## 0.185.3 — 2026-10-03
 

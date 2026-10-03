@@ -170,6 +170,24 @@ html:not([data-style='playful']) *::after {
 }
 
 /*
+ * A caret only where something can be typed.
+ *
+ * Firefox's caret browsing (F7) puts a blinking caret wherever text is
+ * clicked — a tab, a heading — which reads as a field that will not take
+ * typing. The caret is hidden on everything and shown again on what is
+ * editable; the selection and the keys of caret browsing still work.
+ */
+html {
+	caret-color: transparent;
+}
+input,
+textarea,
+select,
+[contenteditable]:not([contenteditable='false']) {
+	caret-color: auto;
+}
+
+/*
  * No number spinners anywhere. A number is typed and the arrow keys step it;
  * the platform's five-pixel arrows were somebody else's chrome in every field.
  * See `NumberBox`, and `Counter` where nudging is the point.
