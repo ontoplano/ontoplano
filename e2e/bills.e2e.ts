@@ -24,7 +24,7 @@ test('a bill can be added, paid for a real amount, and unpaid', async ({ page })
 	await dialog.locator('[name="dueDay"]').fill('5');
 	await dialog.getByRole('button', { name: 'Add', exact: true }).click();
 
-	await expect(page.getByText('Rent')).toBeVisible();
+	await expect(page.getByText('Rent', { exact: true })).toBeVisible();
 
 	// Edit it — the amount changes, and the month summary follows.
 	await page.locator('li', { hasText: 'Rent' }).getByRole('button', { name: 'Edit Rent' }).click();
@@ -50,7 +50,7 @@ test('a bill can be added, paid for a real amount, and unpaid', async ({ page })
 
 	// Phone size, because this ships on the phone too.
 	await page.setViewportSize({ width: 390, height: 844 });
-	await expect(page.getByText('Rent')).toBeVisible();
+	await expect(page.getByText('Rent', { exact: true })).toBeVisible();
 	await page.screenshot({ path: 'test-results/bills-phone.png' });
 
 	// Undo the payment — back to unpaid.
