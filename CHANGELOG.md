@@ -22,6 +22,8 @@ releases mattered.
 
 - A task written from the quick menu opens as wide as the Tasks page's own
   form, and urgency, ease and interest sit on one row.
+- Inventory cards fill the left column first. Zoomed in on Firefox, the first
+  column could be left empty with every card pushed to the right.
 
 ## 0.185.4 — 2026-10-03
 
