@@ -20,9 +20,7 @@ async function slowPosts(page: Page) {
 	});
 }
 
-test('putting a task away and opening the archive at once keeps it put away', async ({
-	page
-}) => {
+test('putting a task away and opening the archive at once keeps it put away', async ({ page }) => {
 	test.setTimeout(180_000);
 	await page.setViewportSize({ width: 1280, height: 900 });
 	await register(page, testEmail('away-then-archive'));
