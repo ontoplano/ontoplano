@@ -20,6 +20,8 @@ releases mattered.
 
 ## 0.185.3 — 2026-10-03
 
+- The plan has a full-screen button beside Schemes: the week, its controls
+  and nothing else, until Escape or the same button.
 - A repeating task block can go back to the task list too: Back to tasks
   ends its repeat, after asking.
 - The tasks beside the plan no longer have a tick: finishing one there sent it

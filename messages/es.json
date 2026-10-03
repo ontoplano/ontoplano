@@ -381,6 +381,8 @@
 	"shortcut.cycleDayWeekMonth": "Recorrer día, semana y mes",
 	"tasks.plan.endTheRepeat": "Terminar la repetición",
 	"tasks.plan.endsTheRepeat": "Deja de repetirse y pasa a la lista de tareas. Sus días pasados se van con él.",
+	"tasks.plan.fullScreen": "Pantalla completa",
+	"tasks.plan.leaveFullScreen": "Salir de pantalla completa",
 	"tasks.plan.showAsCalendar": "Mostrar como calendario (a)",
 	"tasks.plan.showAsList": "Mostrar como lista (a)",
 	"titles.openingTheDemo": "Abriendo la demo",

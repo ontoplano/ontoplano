@@ -4035,6 +4035,7 @@ export const messages: Catalogue = {
 		'Format: h (Uhrzeit), d (Dauer in Minuten), dann die Aktivitätsnamen Mo-So. Uhrzeit: 610 = 06:10,\n\t\t\t\t\t1810 = 18:10.',
 	'tasks.plan.forwardOneUnit': 'Eine(n) {unit} vor ({key})',
 	'tasks.plan.forwardOneUnitPlain': 'Eine(n) {unit} vor',
+	'tasks.plan.fullScreen': 'Vollbild',
 	'tasks.plan.gotIt': 'Verstanden',
 	'tasks.plan.hDMTWTFSSn61030WakeUpWakeUpWakeUpWakeUpW':
 		'h,d,m,t,w,t,f,s,sn610,30,Wake up,Wake up,Wake up,Wake up,Wake up,,n630,60,Stretch,Water the plants,Stretch,Water the plants,Stretch,,',
@@ -4058,6 +4059,7 @@ export const messages: Catalogue = {
 	'tasks.plan.leadHours': '{count} Std',
 	'tasks.plan.leadHoursMinutes': '{hours}Std {minutes}',
 	'tasks.plan.leadMinutes': '{count} Min',
+	'tasks.plan.leaveFullScreen': 'Vollbild verlassen',
 	'tasks.plan.load': 'Laden',
 	'tasks.plan.loadIt': 'Laden',
 	'tasks.plan.makeItOnceOnly': 'Nur einmalig machen',

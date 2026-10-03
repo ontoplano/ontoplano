@@ -381,6 +381,8 @@
 	"shortcut.cycleDayWeekMonth": "Cycle day, week and month",
 	"tasks.plan.endTheRepeat": "End the repeat",
 	"tasks.plan.endsTheRepeat": "Stops it repeating and puts it on the to-do list. Its past days go with it.",
+	"tasks.plan.fullScreen": "Full screen",
+	"tasks.plan.leaveFullScreen": "Leave full screen",
 	"tasks.plan.showAsCalendar": "Show as the calendar (a)",
 	"tasks.plan.showAsList": "Show as a list (a)",
 	"titles.openingTheDemo": "Opening the demo",
