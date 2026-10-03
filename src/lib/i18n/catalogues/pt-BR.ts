@@ -1993,6 +1993,7 @@ export const messages: Catalogue = {
 	'notebookDetail.batchUpdated': '{count} notas atualizadas.',
 	'notebookDetail.biggerType': 'Letra maior',
 	'notebookDetail.clearLabels': 'Limpar etiquetas',
+	'notebookDetail.closePane': 'Fechar este painel',
 	'notebookDetail.deleteSelectedNotes':
 		'Excluir as notas selecionadas? Isso não pode ser desfeito.',
 	'notebookDetail.deleteThisNote': 'Apagar esta nota',
@@ -2013,6 +2014,7 @@ export const messages: Catalogue = {
 		'Nenhuma meta aponta para este caderno. Ele não precisa de uma.',
 	'notebookDetail.nothingChosen': 'Nada escolhido',
 	'notebookDetail.nothingWrittenHereYet': 'Nada escrito aqui ainda.',
+	'notebookDetail.openBeside': 'Solte aqui para abrir ao lado',
 	'notebookDetail.orderAdded': 'Added',
 	'notebookDetail.orderEdited': 'Edição',
 	'notebookDetail.orderName': 'Name',
@@ -2021,6 +2023,7 @@ export const messages: Catalogue = {
 	'notebookDetail.orderTitle': 'Título',
 	'notebookDetail.orderWritten': 'Escrita',
 	'notebookDetail.people': 'Pessoas',
+	'notebookDetail.resizeWidth': 'Arraste para alargar ou estreitar',
 	'notebookDetail.saved': 'Salvo',
 	'notebookDetail.searchTheseBills': 'Search these bills',
 	'notebookDetail.searchTheseGoals': 'Search these goals',
@@ -2037,6 +2040,7 @@ export const messages: Catalogue = {
 	'notebookDetail.selectVisibleNotes': 'Selecionar todas as notas visíveis',
 	'notebookDetail.separateWithCommasOrSpaces':
 		'Separe com vírgulas ou espaços. Um # na frente também serve.',
+	'notebookDetail.sharePanes': 'Arraste para dividir a largura entre os painéis',
 	'notebookDetail.showArchived': 'Mostrar arquivadas ({count})',
 	'notebookDetail.showingCount': { one: '{count} nota à vista', other: '{count} notas à vista' },
 	'notebookDetail.smallerType': 'Letra menor',

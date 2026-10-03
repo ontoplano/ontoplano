@@ -53,9 +53,11 @@ export type Browsing = {
  *
  * A dialog takes the keyboard outright — a form open over a list is where the
  * typing is going, and a list walking underneath it is the bug this prevents.
+ * Except one marked `data-screen`: a dialog that is the screen itself, like a
+ * notebook on the whole screen, whose lists are what the keys are for.
  */
 function typing(event: KeyboardEvent): boolean {
-	if (document.querySelector('dialog[open]')) return true;
+	if (document.querySelector('dialog[open]:not([data-screen])')) return true;
 	const target = event.target;
 	return (
 		target instanceof HTMLInputElement ||

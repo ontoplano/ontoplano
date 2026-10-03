@@ -2001,6 +2001,7 @@ export const messages: Catalogue = {
 	'notebookDetail.batchUpdated': '{count} notas actualizadas.',
 	'notebookDetail.biggerType': 'Letra más grande',
 	'notebookDetail.clearLabels': 'Quitar etiquetas',
+	'notebookDetail.closePane': 'Cerrar este panel',
 	'notebookDetail.deleteSelectedNotes': '¿Eliminar las notas seleccionadas? No se puede deshacer.',
 	'notebookDetail.deleteThisNote': 'Eliminar esta nota',
 	'notebookDetail.descendingPressForAscending': 'Descendente — pulsa para ascendente',
@@ -2019,6 +2020,7 @@ export const messages: Catalogue = {
 	'notebookDetail.noGoalPointsAtThis': 'Ninguna meta apunta a este cuaderno. No necesita una.',
 	'notebookDetail.nothingChosen': 'Nada elegido',
 	'notebookDetail.nothingWrittenHereYet': 'Todavía no hay nada escrito aquí.',
+	'notebookDetail.openBeside': 'Suelta aquí para abrir al lado',
 	'notebookDetail.orderAdded': 'Added',
 	'notebookDetail.orderEdited': 'Edición',
 	'notebookDetail.orderName': 'Name',
@@ -2027,6 +2029,7 @@ export const messages: Catalogue = {
 	'notebookDetail.orderTitle': 'Título',
 	'notebookDetail.orderWritten': 'Escritura',
 	'notebookDetail.people': 'Personas',
+	'notebookDetail.resizeWidth': 'Arrastra para hacerlo más ancho o más estrecho',
 	'notebookDetail.saved': 'Guardado',
 	'notebookDetail.searchTheseBills': 'Search these bills',
 	'notebookDetail.searchTheseGoals': 'Search these goals',
@@ -2043,6 +2046,7 @@ export const messages: Catalogue = {
 	'notebookDetail.selectVisibleNotes': 'Seleccionar todas las notas visibles',
 	'notebookDetail.separateWithCommasOrSpaces':
 		'Sepáralos con comas o espacios. Un # al inicio está bien.',
+	'notebookDetail.sharePanes': 'Arrastra para repartir el ancho entre paneles',
 	'notebookDetail.showArchived': 'Mostrar archivadas ({count})',
 	'notebookDetail.showingCount': {
 		one: '{count} nota a la vista',

@@ -18,6 +18,14 @@ the shape of the data changing. Bumping the minor per batch is what ran this
 file to 0.161 in a few months, which tells a reader nothing about which
 releases mattered.
 
+## 0.185.2 — 2026-10-03
+
+- A notebook on the whole screen can be dragged wider or narrower by either
+  edge, and keeps the width. Drag one of its tabs to the right edge to open it
+  beside the others; each pane has a ×, the bar between panes shares out the
+  width, and the keys act on the pane last pressed. On a computer only.
+- The keyboard works on a notebook's full screen; it did nothing there before.
+
 ## 0.185.1 — 2026-10-03
 
 - The week and day views have an all-day row whenever something lasts all

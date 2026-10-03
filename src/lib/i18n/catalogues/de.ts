@@ -2026,6 +2026,7 @@ export const messages: Catalogue = {
 	'notebookDetail.batchUpdated': '{count} Notizen aktualisiert.',
 	'notebookDetail.biggerType': 'Größere Schrift',
 	'notebookDetail.clearLabels': 'Labels entfernen',
+	'notebookDetail.closePane': 'Diesen Bereich schließen',
 	'notebookDetail.deleteSelectedNotes':
 		'Ausgewählte Notizen löschen? Das lässt sich nicht rückgängig machen.',
 	'notebookDetail.deleteThisNote': 'Diese Notiz löschen',
@@ -2045,6 +2046,7 @@ export const messages: Catalogue = {
 	'notebookDetail.noGoalPointsAtThis': 'Kein Ziel zeigt auf dieses Notizbuch. Es braucht keines.',
 	'notebookDetail.nothingChosen': 'Nichts ausgewählt',
 	'notebookDetail.nothingWrittenHereYet': 'Hier steht noch nichts.',
+	'notebookDetail.openBeside': 'Hier ablegen, um daneben zu öffnen',
 	'notebookDetail.orderAdded': 'Added',
 	'notebookDetail.orderEdited': 'Bearbeitet',
 	'notebookDetail.orderName': 'Name',
@@ -2053,6 +2055,7 @@ export const messages: Catalogue = {
 	'notebookDetail.orderTitle': 'Titel',
 	'notebookDetail.orderWritten': 'Geschrieben',
 	'notebookDetail.people': 'Personen',
+	'notebookDetail.resizeWidth': 'Ziehen, um es breiter oder schmaler zu machen',
 	'notebookDetail.saved': 'Gespeichert',
 	'notebookDetail.searchTheseBills': 'Search these bills',
 	'notebookDetail.searchTheseGoals': 'Search these goals',
@@ -2069,6 +2072,7 @@ export const messages: Catalogue = {
 	'notebookDetail.selectVisibleNotes': 'Alle sichtbaren Notizen auswählen',
 	'notebookDetail.separateWithCommasOrSpaces':
 		'Trennen Sie mit Kommas oder Leerzeichen. Ein vorangestelltes # ist in Ordnung.',
+	'notebookDetail.sharePanes': 'Ziehen, um die Breite zwischen den Bereichen zu teilen',
 	'notebookDetail.showArchived': 'Archivierte zeigen ({count})',
 	'notebookDetail.showingCount': {
 		one: '{count} Notiz sichtbar',
