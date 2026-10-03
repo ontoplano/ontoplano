@@ -26,6 +26,16 @@ import { invalidateAll } from '$app/navigation';
  */
 const SETTLE_MS = 400;
 
+/** The lock that picks the tab holding the stream, and the channel it speaks on. */
+const LIVE_CHANNEL = 'ontoplano-live';
+
+/** What the tab holding the stream tells the others. */
+type LiveMessage =
+	| { kind: 'changed'; data: string }
+	| { kind: 'open'; reconnected: boolean }
+	| { kind: 'down' }
+	| { kind: 'hello' };
+
 export interface LiveChange {
 	rooms: string[];
 	at: string;
@@ -143,31 +153,99 @@ export function live(options: LiveOptions = {}): () => void {
 	 *
 	 * So a reconnection reloads once. It costs one loader run on a thing that
 	 * is already rare, and it is the difference between a stream that drops
-	 * and one that loses data when it drops.
+	 * and one that loses data when it drops. A tab that heard the stream
+	 * through another one and now opens its own counts as reconnecting too:
+	 * there was a gap between the two.
 	 */
 	let everOpened = false;
+
+	const markOpen = (reconnected: boolean) => {
+		document.documentElement.setAttribute(LIVE_MARK, '');
+		if (reconnected) catchUp();
+		everOpened = true;
+	};
+	const markDown = () => document.documentElement.removeAttribute(LIVE_MARK);
+
+	/*
+	 * One stream per browser, not one per tab.
+	 *
+	 * Over HTTP/1.1 a browser allows six connections to a host, and a stream
+	 * is a connection held for as long as the tab is open. Six tabs took all
+	 * six, and from then on every request in every one of them — the next
+	 * page, the next tab — queued behind streams that never finish: the app
+	 * simply never loaded. HTTP/2 lifts the ceiling, but nothing guarantees
+	 * the proxy in front of an instance speaks it.
+	 *
+	 * So one tab holds the stream and tells the others what it hears. Which
+	 * tab is a Web Lock: whoever holds it opens the stream, and when that tab
+	 * closes the browser hands the lock to a waiting one, which opens its own.
+	 * A browser without locks or channels falls back to a stream of its own.
+	 */
+	const channel =
+		typeof BroadcastChannel !== 'undefined' && navigator.locks
+			? new BroadcastChannel(LIVE_CHANNEL)
+			: null;
+	let leading = !channel;
+	let release: (() => void) | null = null;
+
+	const tell = (message: LiveMessage) => channel?.postMessage(message);
 
 	const open = () => {
 		if (closed) return;
 		source = new EventSource('/api/live');
-		source.addEventListener('changed', onChanged);
-		source.addEventListener('open', () => {
-			document.documentElement.setAttribute(LIVE_MARK, '');
-			if (everOpened) catchUp();
-			everOpened = true;
+		source.addEventListener('changed', (event) => {
+			const data = (event as MessageEvent).data as string;
+			tell({ kind: 'changed', data });
+			onChanged(data);
 		});
-		source.addEventListener('error', () => document.documentElement.removeAttribute(LIVE_MARK));
+		source.addEventListener('open', () => {
+			tell({ kind: 'open', reconnected: everOpened });
+			markOpen(everOpened);
+		});
+		source.addEventListener('error', () => {
+			tell({ kind: 'down' });
+			markDown();
+		});
+	};
+
+	if (channel) {
+		channel.onmessage = (event: MessageEvent<LiveMessage>) => {
+			const message = event.data;
+			if (leading) {
+				// A tab that has just arrived asks whether the stream is up.
+				if (message.kind === 'hello' && source?.readyState === EventSource.OPEN)
+					tell({ kind: 'open', reconnected: false });
+				return;
+			}
+			if (message.kind === 'changed') onChanged(message.data);
+			else if (message.kind === 'open') markOpen(message.reconnected && everOpened);
+			else if (message.kind === 'down') markDown();
+		};
+	}
+
+	const start = () => {
+		if (closed) return;
+		if (!channel) return open();
+
+		tell({ kind: 'hello' });
+		void navigator.locks.request(LIVE_CHANNEL, () => {
+			if (closed) return;
+			leading = true;
+			open();
+			// Held until this tab stops listening, which hands the lock on.
+			return new Promise<void>((done) => (release = done));
+		});
 	};
 
 	const idle = (window as Window & { requestIdleCallback?: typeof requestIdleCallback })
 		.requestIdleCallback;
-	if (idle) idle(open, { timeout: 2000 });
-	else setTimeout(open, 1200);
+	if (idle) idle(start, { timeout: 2000 });
+	else setTimeout(start, 1200);
 
-	function onChanged(event: Event) {
+	function onChanged(data: string) {
 		let change: LiveChange;
 		try {
-			change = JSON.parse((event as MessageEvent).data);
+			change = JSON.parse(data);
 		} catch {
 			return;
 		}
@@ -197,7 +275,7 @@ export function live(options: LiveOptions = {}): () => void {
 		if (pending) flush();
 		else catchUp();
 		// `CLOSED` is a stream that will not retry on its own.
-		if (!closed && (source === null || source.readyState === EventSource.CLOSED)) open();
+		if (!closed && leading && (source === null || source.readyState === EventSource.CLOSED)) open();
 	};
 	document.addEventListener('visibilitychange', onVisible);
 
@@ -214,6 +292,8 @@ export function live(options: LiveOptions = {}): () => void {
 		document.removeEventListener('focusout', onBlur);
 		source?.close();
 		source = null;
-		document.documentElement.removeAttribute(LIVE_MARK);
+		channel?.close();
+		release?.();
+		markDown();
 	};
 }

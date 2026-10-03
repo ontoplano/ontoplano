@@ -20,6 +20,9 @@ releases mattered.
 
 ## 0.185.4 — 2026-10-03
 
+- With six or more tabs of the app open, the next one never loaded — every
+  tab held its own live connection and the browser allows six. One tab now
+  listens for all of them, and another takes over when it closes.
 - A key tied to one notebook can now read that notebook's ideas, habits,
   workouts, bills, ledgers, shopping list and task blocks, not only add to
   them. In the permission grid a row is faded only when nothing in it applies,

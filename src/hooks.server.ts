@@ -310,9 +310,14 @@ const handleNativeApp: Handle = async ({ event, resolve }) => {
 		redirect(302, `${clean.pathname}${clean.search}${clean.hash}`);
 	}
 
-	event.locals.nativeApp =
-		event.cookies.get(APP_COOKIE) === APP_LAUNCH_VALUE &&
-		couldBeTheApp(event.request.headers.get('user-agent'));
+	const couldBe = couldBeTheApp(event.request.headers.get('user-agent'));
+	// One written before the check above existed, or synced from a phone: a
+	// desktop holding it is told nothing by it, so it goes.
+	if (!couldBe && event.cookies.get(APP_COOKIE) !== undefined) {
+		event.cookies.delete(APP_COOKIE, { path: '/' });
+		event.cookies.delete(APP_VERSION_COOKIE, { path: '/' });
+	}
+	event.locals.nativeApp = event.cookies.get(APP_COOKIE) === APP_LAUNCH_VALUE && couldBe;
 	event.locals.nativeAppVersion = event.locals.nativeApp
 		? event.cookies.get(APP_VERSION_COOKIE)
 		: undefined;

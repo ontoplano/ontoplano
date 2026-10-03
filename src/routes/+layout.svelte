@@ -938,9 +938,14 @@
 	 *
 	 * Only for somebody signed in, and torn down with the layout. `$effect`
 	 * returns its own cleanup, which is what closes the stream when the tab goes.
+	 *
+	 * Keyed on the id, not on `data.user`: every reload of the page's data
+	 * hands back a new user object, and an effect reading it closed the
+	 * stream and opened another each time.
 	 */
+	const liveFor = $derived(data.user?.id ?? null);
 	$effect(() => {
-		if (!data.user) return;
+		if (!liveFor) return;
 		return live();
 	});
 
