@@ -1,4 +1,5 @@
 import type { IsolatedEvent } from '$lib/isolated/routes';
+import { mediaLimits } from '$lib/services/media';
 import { buildCtx } from '$lib/services/ctx';
 import { pickableNotebooks } from '$lib/services/notebooks';
 import { host } from '$lib/services/host';
@@ -22,6 +23,8 @@ export const load = async ({ locals }: IsolatedEvent) => {
 		// notebook's tab opens this same form with its own notebook chosen.
 		notebooks: pickableNotebooks(ctx),
 		items: listItems(ctx),
+		// The largest picture a thing may have, so the browser can refuse first.
+		pictureKilobytes: mediaLimits().maxKilobytes,
 		// What a trip to the shop actually looks like: see `shoppingRun`.
 		run: shoppingRun(ctx),
 		// The other axis the same rows are read on: where each thing lives.

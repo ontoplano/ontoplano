@@ -403,7 +403,10 @@ export function eventsBetween(
 	// Generous by a day: a series in a zone ahead of `tz` reaches the window's
 	// last day while its own calendar already says tomorrow.
 	const horizon = new Date(instantOfLocal(toWall, tz).getTime() + 86_400_000);
-	const inWindow = (start: string) => start >= fromWall && start < toWall;
+	// Overlapping the window, not starting in it: a week's holiday that began
+	// last Friday is still on this Monday.
+	const inWindow = (start: string, end: string) =>
+		start < toWall && (end > fromWall || start >= fromWall);
 
 	// An occurrence with a RECURRENCE-ID replaces whatever the rule produced for
 	// that day — the meeting somebody moved.
@@ -415,13 +418,14 @@ export function eventsBetween(
 	const out: IcsEvent[] = [];
 	const push = (event: RawEvent, start: Stamp, end: Stamp) => {
 		const at = shown(start, tz);
-		if (!inWindow(at)) return;
+		const until = shown(end, tz);
+		if (!inWindow(at, until)) return;
 		out.push({
 			uid: `${event.uid}:${at}`,
 			summary: event.summary,
 			location: event.location,
 			start: at,
-			end: shown(end, tz),
+			end: until,
 			allDay: event.allDay
 		});
 	};

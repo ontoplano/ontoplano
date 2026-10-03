@@ -705,6 +705,39 @@ function ownedInstance(ctx: Ctx, id: number): { scheduledAt: string; title: stri
  */
 export const CATCH_UP_HOURS = 12;
 
+/**
+ * The reminders a pass can still deliver: unsent, not dismissed, and between
+ * the catch-up floor and a day ahead.
+ *
+ * One definition, because the reminder clock asks the same question to decide
+ * when to wake. It used to ask it without the floor, so a reminder more than
+ * `CATCH_UP_HOURS` old — never rung, so never stamped — was forever "the next
+ * one due", and the clock ran the whole pass again every quarter of a second.
+ */
+export function pushCandidates(now: Date = new Date(), lookBackHours = CATCH_UP_HOURS) {
+	return and(
+		isNull(reminders.pushedAt),
+		isNull(reminders.dismissedAt),
+		// A cheap ceiling in SQL before the per-zone comparison: no zone is more
+		// than a day from any other, so nothing due anywhere can be past this.
+		lte(reminders.remindAt, new Date(now.getTime() + 26 * 3600_000).toISOString().slice(0, 19)),
+		/*
+		 * And a floor, so a box that was down catches up without shouting.
+		 *
+		 * Everything unpushed used to be a candidate however old, which is right
+		 * for an hour of downtime and wrong for a week of it: the machine comes
+		 * back at four in the morning and rings two hundred alarms about times
+		 * that are long gone. Inside the window they still ring — late is the
+		 * point, and a missed reminder is worse than a late one. Outside it they
+		 * stay on the planner, where they have been all along.
+		 */
+		gte(
+			reminders.remindAt,
+			new Date(now.getTime() - lookBackHours * 3600_000).toISOString().slice(0, 19)
+		)
+	);
+}
+
 export function pushableReminders(
 	nowByUser: (userId: string) => string,
 	/**
@@ -735,31 +768,7 @@ export function pushableReminders(
 			ringtoneId: reminders.ringtoneId
 		})
 		.from(reminders)
-		.where(
-			and(
-				isNull(reminders.pushedAt),
-				isNull(reminders.dismissedAt),
-				// A cheap ceiling in SQL before the per-zone comparison below: no
-				// zone is more than a day from any other, so nothing due anywhere
-				// can be past this.
-				lte(reminders.remindAt, new Date(now.getTime() + 26 * 3600_000).toISOString().slice(0, 19)),
-				/*
-				 * And a floor, so a box that was down catches up without shouting.
-				 *
-				 * Everything unpushed used to be a candidate however old, which
-				 * is right for an hour of downtime and wrong for a week of it:
-				 * the machine comes back at four in the morning and rings two
-				 * hundred alarms about times that are long gone. Inside the
-				 * window they still ring — late is the point, and a missed
-				 * reminder is worse than a late one. Outside it they stay on the
-				 * planner, where they have been all along.
-				 */
-				gte(
-					reminders.remindAt,
-					new Date(now.getTime() - lookBackHours * 3600_000).toISOString().slice(0, 19)
-				)
-			)
-		)
+		.where(pushCandidates(now, lookBackHours))
 		.orderBy(asc(reminders.remindAt))
 		.limit(limit)
 		.all();

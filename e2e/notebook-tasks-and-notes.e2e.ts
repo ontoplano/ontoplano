@@ -133,3 +133,37 @@ test('typing TASK:# asks which task, and writes its number', async ({ page }) =>
 	await expect(picker).toHaveCount(0);
 	await expect(box).toHaveValue('see TASK:#1');
 });
+
+test('resting on a task reference shows the task, with nothing to press', async ({ page }) => {
+	test.setTimeout(120_000);
+	await page.setViewportSize({ width: 1280, height: 900 });
+	await register(page, testEmail('nb-ref-peek'));
+	await makeNotebook(page, 'Kitchen');
+	await visit(page, '/notebooks');
+
+	await page.getByRole('button', { name: /^Tasks \d/ }).click();
+	await page.getByRole('button', { name: 'New task', exact: true }).click();
+	await page.locator('#todo-form [name="heading"]').fill('measure the wall');
+	await page.locator('#todo-form textarea[name="notes"]').fill('both sides, floor to ceiling');
+	await page.getByRole('button', { name: 'Create task' }).click();
+	await expect(page.getByText('measure the wall').first()).toBeVisible();
+
+	await page.getByRole('button', { name: /^Notes \d/ }).click();
+	await page.getByRole('button', { name: 'New note', exact: true }).click();
+	await page.locator('form[action="?/addEntry"] textarea[name="content"]').fill('see TASK:#1');
+	await page.getByRole('button', { name: 'Add note' }).click();
+
+	// Folded, a note is its first line; the reference is in the body.
+	await page.getByRole('button', { name: 'see measure the wall' }).click();
+	const ref = page.locator('article a.todo-ref').first();
+	await expect(ref).toHaveText('measure the wall');
+	await ref.hover();
+	const card = page.getByRole('tooltip').filter({ hasText: 'measure the wall' });
+	await expect(card).toBeVisible();
+	await expect(card).toContainText('both sides, floor to ceiling');
+	await expect(card.getByRole('button')).toHaveCount(0);
+	await page.screenshot({ path: 'test-results/task-peek.png' });
+
+	await page.mouse.move(5, 5);
+	await expect(card).toBeHidden();
+});

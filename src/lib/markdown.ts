@@ -282,7 +282,21 @@ function listItem(line: string, todos?: Refs): string {
  * an export, a page that has not loaded one — still gets a link rather than
  * nothing.
  */
-export type TodoRefs = Map<number, { title: string; done: boolean }>;
+export type TodoRefs = Map<number, { title: string; done: boolean; task?: PeekTask }>;
+/**
+ * What a reference shows when it is hovered, where the screen has it — a
+ * read-only card of the task. See `$lib/task-peek`.
+ */
+export type PeekTask = {
+	title: string;
+	notes: string;
+	status: string;
+	scheduledDate: string | null;
+	categoryName: string | null;
+	categoryColor: string | null;
+	notebookTitle: string | null;
+	archivedAt: string | null;
+};
 /** The notes `NOTE:#N` may name, by their number. */
 export type NoteRefs = Map<number, { title: string }>;
 /** What the references in a piece of writing can be resolved against. */

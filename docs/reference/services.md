@@ -120,6 +120,7 @@ shows up here on the next build.
 | [`todo-actions`](#todo-actions)                  | Everything that can be done to a todo, wherever the row is on screen.                                                                                                                                                                                                |
 | [`todos`](#todos)                                | Todos: tasks that have no date yet.                                                                                                                                                                                                                                  |
 | [`tokens`](#tokens)                              | Scopes an API token can hold.                                                                                                                                                                                                                                        |
+| [`unused-media`](#unused-media)                  | The pictures nothing points at any more.                                                                                                                                                                                                                             |
 | [`validate`](#validate)                          | Small hand-rolled validators.                                                                                                                                                                                                                                        |
 | [`version`](#version)                            | What is running here, and since when.                                                                                                                                                                                                                                |
 | [`webhooks`](#webhooks)                          | Webhooks: plugins that listen instead of push.                                                                                                                                                                                                                       |
@@ -3258,10 +3259,11 @@ not found and not yours are the same answer.
 
 Is anything still pointing at this picture?
 
-Two kinds of reference exist and both are checked: a recipe's gallery, which
-is a row, and a mention inside somebody's writing, which is the string
-`/media/<id>` in the text. The `LIKE` is bounded by the characters that can
-follow an id, so `/media/1` does not count `/media/17` as a reference to it.
+Asked of `pictureReferrers`, which is the one list of the things that can
+hold a picture. This used to keep a list of its own — albums, faces,
+recipes and notes — and it did not have todos, ideas or a notebook's own
+picture in it, so replacing somebody's photo deleted the old file even when
+it had also been pasted into a todo.
 
 #### `remove(ctx, id)`
 
@@ -3298,6 +3300,15 @@ because it is what the notebook _is_, and the one it replaces goes if nothing
 else refers to it.
 
 #### `removeNotebookPicture(ctx, notebookId)`
+
+#### `setItemPicture(ctx, itemId, input)`
+
+Give a thing a picture, replacing whatever was there.
+
+The same shape a face and a notebook's picture have: one picture, chosen
+in one gesture, and the old one let go of if nothing else points at it.
+
+#### `removeItemPicture(ctx, itemId)`
 
 #### `picturesOf(ctx, recipeId)`
 
@@ -3428,12 +3439,13 @@ message — one click, nobody signed in to anything.
 
 Every row still carries a token, because that link is what it carries.
 
-## What it never says
+## What it says
 
-Subscribing answers the same thing whether the address was new, already
-confirmed, or previously unsubscribed. The form must not be a way to ask
-"is this person on your list", which it would be the moment the answers
-differed.
+Whether the address was new or already on the list — the owner asked for
+the form to say which. The cost is that the form answers "is this address a
+subscriber?" for anybody who types one, which is why the rate limit in front
+of it stays tight. Mail still follows the stricter rule: an address already
+on the list is sent nothing.
 
 ### Functions
 
@@ -3449,9 +3461,7 @@ The one other origin allowed to post the form, if there is one.
 
 Take an address, and put it on the list.
 
-Answers the same whatever happened, because the caller is a public form and
-the difference between "new" and "already on the list" is not the form's to
-disclose. Mail follows the same rule: a welcome goes to an address that has
+Says whether it was already there. A welcome goes to an address that has
 just joined and to nothing else, so the form cannot be used to send anything
 to an address that did not ask for it twice.
 
@@ -3507,10 +3517,31 @@ Refuses to send twice. Say so rather than silently doing nothing, because
 "it did not send" and "it had already sent" are different things to the
 person running it.
 
+#### `listSubscribers()`
+
+Everybody on the list now, newest first.
+
+#### `removeSubscriber(id)`
+
+Take an address off the list, from the administration page.
+
+The same row the address's own link would write — kept, with a date — so a
+later subscribe starts again rather than quietly resuming.
+
+#### `sentIssues(limit)`
+
+What has gone out to the list, newest first.
+
+#### `announcedVersions()`
+
+The versions already announced, for the release that collects what came since.
+
 ### Types
 
+- `Joined` — What `subscribe` did: put the address on, or found it there.
 - `Subscriber`
 - `Issue`
+- `ListedSubscriber` — One address on the list, for the administration page.
 
 ## note-todos
 
@@ -3609,8 +3640,8 @@ has the same note beside its own version of this.
 
 Every picture that is in a notebook, as a gallery album.
 
-A picture in a note is an ordinary `media` row that the note's markdown
-points at — `![a shelf](/media/12)` — and nothing records which notebook it
+A picture in a note — or in a task, goal or idea filed in the notebook — is
+an ordinary `media` row that the writing's markdown points at — `![a shelf](/media/12)` — and nothing records which notebook it
 belongs to. That is on purpose: the writing is where the picture lives, so
 moving a note between notebooks, deleting the line, or pasting the same
 picture into a second note are all just edits to text, and a table recording
@@ -3655,6 +3686,10 @@ pictures in it and everything under it.
 `path` is the notebook's title. Empty means the album itself, which holds no
 pictures of its own — every picture is in some notebook — and shows one
 folder per notebook at the top of the tree.
+
+#### `picturesById(ctx, ids)`
+
+The gallery's own picture shape, for a list of ids in the order given.
 
 ### Types
 
@@ -4668,8 +4703,9 @@ The instant the next unsent reminder falls due, or null if there is none.
 `remind_at` is wall-clock in the account's own zone — "remind me at ten to
 nine" means ten to nine wherever that person is — so each account's earliest
 has to be converted with that account's offset before they can be compared.
-The SQL ceiling keeps the scan small: nothing anywhere can be due more than
-a day and change from now in any zone.
+The candidates are exactly the ones a pass would deliver
+(`pushCandidates`): one it would skip must not be what the clock wakes for,
+or it wakes for it forever.
 
 #### `wake()`
 
@@ -4931,6 +4967,16 @@ kind of reminder does", which is what a row says before anybody overrides it.
 #### `remindersFor(ctx, id)`
 
 The reminders already set on one block, so its editor can show them.
+
+#### `pushCandidates(now, lookBackHours)`
+
+The reminders a pass can still deliver: unsent, not dismissed, and between
+the catch-up floor and a day ahead.
+
+One definition, because the reminder clock asks the same question to decide
+when to wake. It used to ask it without the floor, so a reminder more than
+`CATCH_UP_HOURS` old — never rung, so never stamped — was forever "the next
+one due", and the clock ran the whole pass again every quarter of a second.
 
 #### `pushableReminders(nowByUser, now, limit, lookBackHours)`
 
@@ -6794,6 +6840,42 @@ the intent and costs nothing.
 - `CreatedToken`
 - `TokenSummary`
 - `AuthenticatedToken`
+
+## unused-media
+
+The pictures nothing points at any more.
+
+A picture pasted into a todo is uploaded the moment it is pasted, and the
+todo only holds the link — `![shot](/media/12)` — in its text. Delete the
+line and the file is still there, with an id, taking up room, and reachable
+from nowhere in the app. The same happens to a note whose words are
+rewritten, a person whose photo was replaced by hand, a draft never saved.
+
+Derived, like the notebooks album: a picture is unused when no album holds
+it, no person, notebook or recipe wears it, and no writing mentions it. The
+writing is read wider than `pictureReferrers` reads it — goal notes and a
+recipe's method can carry a link typed by hand — because the cost of the two
+mistakes is not the same: a picture wrongly called used sits here unlisted,
+while one wrongly called unused is offered for deleting.
+
+### Functions
+
+#### `unusedPictures(ctx)`
+
+The unused pictures, in the gallery's own shape.
+
+#### `unusedPictureCount(ctx)`
+
+How many there are, for the tile on the gallery's index.
+
+#### `removeUnused(ctx, ids)`
+
+Delete unused pictures, and only those.
+
+Asked again at the moment of deleting rather than trusted from the page: a
+picture listed here an hour ago may have been pasted into a note since.
+One still in use is refused and nothing is deleted, so a stale page cannot
+take a picture out of somebody's writing.
 
 ## validate
 

@@ -138,8 +138,8 @@ export const NOTEBOOK_TABS = [
 /** The planner's tabs, in the order it shows them. */
 export const TASK_TABS = [
 	{ href: '/tasks/plan', label: 'rooms.tasks.tabs.plan', glyph: 'calendar' },
-	{ href: '/tasks/board', label: 'rooms.tasks.tabs.board', glyph: 'kanban' },
 	{ href: '/tasks/todo', label: 'rooms.tasks.tabs.todo', glyph: 'checklist' },
+	{ href: '/tasks/board', label: 'rooms.tasks.tabs.board', glyph: 'kanban' },
 	{ href: '/tasks/activities', label: 'rooms.tasks.tabs.activities', glyph: 'blocks' },
 	{ href: '/tasks/review', label: 'rooms.tasks.tabs.review', glyph: 'clipboard' }
 ] as const;

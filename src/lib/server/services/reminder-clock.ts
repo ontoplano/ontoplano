@@ -1,8 +1,9 @@
-import { and, asc, isNull, lte } from 'drizzle-orm';
+import { asc } from 'drizzle-orm';
 
 import { db } from '$lib/db/index.js';
 import { reminders } from '$lib/db/schema.js';
 import { offsetAt } from '$lib/services/time.js';
+import { pushCandidates } from '$lib/services/reminders.js';
 import { serverTimezone } from '$lib/services/ctx.js';
 import { getTimezone } from '$lib/services/settings.js';
 
@@ -74,21 +75,15 @@ const state = (globalThis.__ontoplanoReminderClock ??= {});
  * `remind_at` is wall-clock in the account's own zone — "remind me at ten to
  * nine" means ten to nine wherever that person is — so each account's earliest
  * has to be converted with that account's offset before they can be compared.
- * The SQL ceiling keeps the scan small: nothing anywhere can be due more than
- * a day and change from now in any zone.
+ * The candidates are exactly the ones a pass would deliver
+ * (`pushCandidates`): one it would skip must not be what the clock wakes for,
+ * or it wakes for it forever.
  */
 export function nextDueAt(now = new Date()): Date | null {
-	const horizon = new Date(now.getTime() + 26 * 3600_000).toISOString().slice(0, 19);
 	const rows = db
 		.select({ userId: reminders.userId, remindAt: reminders.remindAt })
 		.from(reminders)
-		.where(
-			and(
-				isNull(reminders.pushedAt),
-				isNull(reminders.dismissedAt),
-				lte(reminders.remindAt, horizon)
-			)
-		)
+		.where(pushCandidates(now))
 		.orderBy(asc(reminders.remindAt))
 		.limit(500)
 		.all();

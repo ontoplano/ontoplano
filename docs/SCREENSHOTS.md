@@ -14,13 +14,13 @@ Every room on a desktop and on a phone. [Back to the README](../README.md).
 
 ![Tasks: Plan](screenshots/tasks/plan.webp)
 
-### Board
-
-![Tasks: Board](screenshots/tasks/board.webp)
-
 ### Tasks
 
 ![Tasks: Tasks](screenshots/tasks/tasks.webp)
+
+### Board
+
+![Tasks: Board](screenshots/tasks/board.webp)
 
 ### Activities
 

@@ -8,6 +8,7 @@
 	import { resolve } from '$app/paths';
 	import { navigating, page } from '$app/state';
 	import PendingPage from '$lib/components/PendingPage.svelte';
+	import { lastDrawnTabs } from '$lib/room-tabs.svelte';
 	import { DESTINATIONS } from '$lib/destinations';
 	import { routeGlyph } from '$lib/glyphs';
 	import { isHidden } from '$lib/sections';
@@ -45,6 +46,7 @@
 	import FanMenu, { type Petal } from '$lib/components/FanMenu.svelte';
 	import ReportDialog from '$lib/components/ReportDialog.svelte';
 	import Tooltips from '$lib/components/Tooltips.svelte';
+	import TaskPeek from '$lib/components/TaskPeek.svelte';
 	import { hasTutorial } from '$lib/tutorials';
 	import Logo from '$lib/components/Logo.svelte';
 	import Modal from '$lib/components/Modal.svelte';
@@ -799,6 +801,17 @@
 			NAV_PLACES.find((one) => one.name === room)?.icon ??
 			routeGlyph(`/${place.href.split('/')[1] ?? ''}`) ??
 			place.icon;
+		// The room's own strip when it has been drawn this session — the menu
+		// lists less than some rooms show.
+		const seen = lastDrawnTabs(to);
+		if (seen) {
+			let current = -1;
+			seen.forEach((one, i) => {
+				const inside = to === one.href || to.startsWith(`${one.href}/`);
+				if (inside && (current === -1 || one.href.length > seen[current].href.length)) current = i;
+			});
+			return { path: to, title: t(room), glyph, tabs: seen, current };
+		}
 		return {
 			path: to,
 			title: t(room),
@@ -925,9 +938,14 @@
 	 *
 	 * Only for somebody signed in, and torn down with the layout. `$effect`
 	 * returns its own cleanup, which is what closes the stream when the tab goes.
+	 *
+	 * Keyed on the id, not on `data.user`: every reload of the page's data
+	 * hands back a new user object, and an effect reading it closed the
+	 * stream and opened another each time.
 	 */
+	const liveFor = $derived(data.user?.id ?? null);
 	$effect(() => {
-		if (!data.user) return;
+		if (!liveFor) return;
 		return live();
 	});
 
@@ -1785,6 +1803,7 @@
 		<!-- Every `title` in the app, drawn by the app rather than by the
 		     browser. One listener; nothing else changes. -->
 		<Tooltips />
+		<TaskPeek />
 		<!--
 			The list, on the phone, opened from the fan.
 

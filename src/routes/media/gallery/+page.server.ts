@@ -20,6 +20,7 @@ import {
 } from '$lib/services/gallery';
 import { mediaLimits } from '$lib/services/media';
 import { notebookMediaCount } from '$lib/services/notebook-media';
+import { unusedPictureCount } from '$lib/services/unused-media';
 import { fail } from '@sveltejs/kit';
 
 /** The gallery opens on albums, because that is how anybody actually keeps pictures. */
@@ -30,7 +31,9 @@ export const load = async ({ locals }: IsolatedEvent) => {
 		tree: albumTree(ctx),
 		// The pictures that are in notebooks, which are not an album anybody
 		// made and cannot be one: see `$lib/services/notebook-media`.
-		notebookPictures: notebookMediaCount(ctx)
+		notebookPictures: notebookMediaCount(ctx),
+		// The ones nothing points at: see `$lib/services/unused-media`.
+		unusedPictures: unusedPictureCount(ctx)
 	};
 };
 

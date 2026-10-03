@@ -114,17 +114,15 @@ describe('the CORS answer', () => {
 });
 
 describe('what it answers', () => {
-	test('the same thing for a new address and one already on the list', async () => {
+	test('whether the address joined or was already on the list', async () => {
 		const first = await endpoint.POST(event(post({ email: 'same@test.invalid' })));
-		const firstBody = await first.json();
-
 		const again = await endpoint.POST(event(post({ email: 'same@test.invalid' })));
-		const againBody = await again.json();
 
-		// If these ever differ the form becomes a way to ask whether an address
-		// is a subscriber, about anybody.
+		// The owner asked for the difference to be said. The status stays the
+		// same, so nothing but the sentence tells the two apart.
 		expect(first.status).toBe(again.status);
-		expect(firstBody).toEqual(againBody);
+		expect((await first.json()).message).toBe("You're now on the list.");
+		expect((await again.json()).message).toBe("You're already on the list.");
 	});
 
 	test('a form post, not only JSON', async () => {

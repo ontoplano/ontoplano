@@ -529,7 +529,10 @@
 			{#snippet footer()}
 				<button type="button" class="btn" onclick={() => (showAreas = false)}>{t('ui.done')}</button
 				>
-				<button type="submit" form="area-form" class="btn btn-primary">{t('goals.addArea')}</button>
+				<!-- `data-stays`: adding an area is one step of arranging them, not the end of it. -->
+				<button type="submit" form="area-form" class="btn btn-primary" data-stays
+					>{t('goals.addArea')}</button
+				>
 			{/snippet}
 		</Modal>
 

@@ -167,6 +167,37 @@ describe('the notebooks album', () => {
 		]);
 	});
 
+	test('a picture in a task, a goal or an idea filed in the notebook is in it too', async () => {
+		const { createTodo } = await import('../src/lib/services/todos');
+		const { createGoal } = await import('../src/lib/services/goals');
+		const { createIdea } = await import('../src/lib/services/ideas');
+		const kitchen = notebooks.createNotebook(ctx, {
+			title: 'Renovation',
+			modules: 'notes,tasks,goals,ideas'
+		});
+		const [tile, plan, sketch] = [
+			await picture('tile.gif'),
+			await picture('plan.gif'),
+			await picture('sketch.gif')
+		];
+		createTodo(ctx, { title: 'buy tiles', notes: tile.markdown, notebookId: kitchen });
+		createGoal(ctx, {
+			title: 'finish the kitchen',
+			horizon: 'year',
+			startDate: '2026-01-01',
+			notes: plan.markdown,
+			notebookId: kitchen
+		});
+		createIdea(ctx, { content: `an island ${sketch.markdown}`, notebookId: kitchen });
+
+		expect(
+			notebookMedia
+				.notebookMediaView(ctx, 'Renovation')
+				.pictures.map((p) => p.id)
+				.sort()
+		).toEqual([tile.id, plan.id, sketch.id].sort());
+	});
+
 	test('a notebook whose notes have no pictures is not a folder at all', () => {
 		notebooks.createNotebook(ctx, { title: 'Empty' });
 		expect(notebookMedia.notebookMediaFolders(ctx).map((f) => f.name)).not.toContain('Empty');

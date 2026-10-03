@@ -40,15 +40,15 @@ manager you already use.
 **Debian, Ubuntu, Mint, Pop!\_OS, Raspberry Pi OS**
 
 ```sh
-curl -LO https://github.com/ontoplano/ontoplano/releases/download/v0.185.0/ontoplano_0.185.0_amd64.deb
-sudo apt install ./ontoplano_0.185.0_amd64.deb
+curl -LO https://github.com/ontoplano/ontoplano/releases/download/v0.185.4/ontoplano_0.185.4_amd64.deb
+sudo apt install ./ontoplano_0.185.4_amd64.deb
 ```
 
 **Fedora, RHEL and its rebuilds, openSUSE**
 
 ```sh
-curl -LO https://github.com/ontoplano/ontoplano/releases/download/v0.185.0/ontoplano-0.185.0-1.x86_64.rpm
-sudo dnf install ./ontoplano-0.185.0-1.x86_64.rpm     # or: sudo zypper install ./ontoplano-0.185.0-1.x86_64.rpm
+curl -LO https://github.com/ontoplano/ontoplano/releases/download/v0.185.4/ontoplano-0.185.4-1.x86_64.rpm
+sudo dnf install ./ontoplano-0.185.4-1.x86_64.rpm     # or: sudo zypper install ./ontoplano-0.185.4-1.x86_64.rpm
 ```
 
 **Arch, Manjaro, EndeavourOS** — a recipe, built on your machine. It is not
@@ -56,8 +56,8 @@ on the AUR yet, so the two files it needs come from the release itself:
 
 ```sh
 mkdir ontoplano && cd ontoplano
-curl -LO https://github.com/ontoplano/ontoplano/releases/download/v0.185.0/PKGBUILD
-curl -LO https://github.com/ontoplano/ontoplano/releases/download/v0.185.0/ontoplano.install
+curl -LO https://github.com/ontoplano/ontoplano/releases/download/v0.185.4/PKGBUILD
+curl -LO https://github.com/ontoplano/ontoplano/releases/download/v0.185.4/ontoplano.install
 makepkg -si
 ```
 
@@ -67,7 +67,7 @@ Every release carries a `SHA256SUMS` covering each file attached to it. In the
 directory you downloaded into:
 
 ```sh
-curl -LO https://github.com/ontoplano/ontoplano/releases/download/v0.185.0/SHA256SUMS
+curl -LO https://github.com/ontoplano/ontoplano/releases/download/v0.185.4/SHA256SUMS
 sha256sum --ignore-missing -c SHA256SUMS
 ```
 
@@ -256,3 +256,22 @@ app's own endpoint:
 Hourly rather than daily because each account is checked against its own
 timezone, and seven in the morning is a different instant for each of them.
 Asking twice in an hour is safe.
+
+## Watching it
+
+With `ONTOPLANO_HEALTH_TOKEN` set, `/metrics` answers in the Prometheus
+format to anything that sends the token — Prometheus, VictoriaMetrics, any
+agent that scrapes:
+
+```yaml
+scrape_configs:
+  - job_name: ontoplano
+    static_configs: [{ targets: ['127.0.0.1:1493'] }]
+    authorization: { credentials: 'the token' }
+```
+
+Beside the process's own numbers (CPU, memory, the event loop's lag), it
+counts every request by route, with how much of its time was spent in SQLite,
+and every SQL statement by its shape — so a slow route says whether the time
+is in the database or in the code around it. Without the token the route does
+not exist.

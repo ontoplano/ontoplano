@@ -2598,6 +2598,62 @@ if (horsePicture) {
 }
 
 /*
+ * A thing in the inventory with a picture, so the rooms are seen with one
+ * and without — the rows keep a picture's room on every line once any has
+ * one. Its own bytes, so it is not the reading notebook's cover row.
+ */
+{
+	const bytes = demoPicture('cover-reading.jpg');
+	const shelf =
+		bytes && picture('board-games.jpg', 'board games', Buffer.concat([bytes, Buffer.from('item')]));
+	if (shelf)
+		run(
+			"update inventory_items set picture_id = ? where user_id = ? and name = 'phrasebook'",
+			shelf,
+			uid
+		);
+}
+
+/*
+ * And the kitchen's staples, each with its own photograph, so the stock and
+ * the shopping list read as a used cupboard rather than a column of names.
+ * Only where the item has no picture yet: one attached by hand stays.
+ */
+for (const name of [
+	'black beans',
+	'coffee beans',
+	'dish soap',
+	'eggs',
+	'garlic',
+	'milk',
+	'olive oil',
+	'pasta',
+	'rice',
+	'tomatoes'
+]) {
+	const file = `item-${name.replace(' ', '-')}.jpg`;
+	const id = picture(file, name, demoPicture(file));
+	if (id)
+		run(
+			'update inventory_items set picture_id = ? where user_id = ? and name = ? and picture_id is null',
+			id,
+			uid,
+			name
+		);
+}
+
+/*
+ * A picture nothing points at: pasted into a todo and then cut out of it. The
+ * gallery's "Unused" tile only appears when there is one, so without this the
+ * screen is never seen in a used state. Distinct bytes — a JPEG ignores what
+ * follows its end marker — so it is not the same row as the kitchen cover.
+ */
+{
+	const bytes = demoPicture('kitchen.jpg');
+	if (bytes) picture('pasted.jpg', '', Buffer.concat([bytes, Buffer.from('unused')]));
+}
+
+/*
  * A cover on every notebook.
  *
  * A shelf is picked by looking at it — that is the whole reason the notebooks
@@ -3784,5 +3840,44 @@ for (const [name, seconds, daysBack, notes] of recordings) {
 	);
 }
 console.log(`  ${recordings.length} recordings`);
+
+/*
+ * The release mailing list, for the administration page: a few addresses and
+ * two mails sent to them. Instance-wide rather than the dev account's, and
+ * only drawn when `[newsletter] enabled` is on.
+ */
+const listed = [
+	['reader@example.test', 'site', 21],
+	['someone@example.test', 'site', 9],
+	['friend@example.test', 'app', 2]
+];
+for (const [email, source, daysBack] of listed) {
+	if (one('select id from subscribers where email = ?', email)) continue;
+	const at = new Date(now);
+	at.setDate(at.getDate() - daysBack);
+	run(
+		'insert into subscribers (email, token, source, confirmed_at) values (?, ?, ?, ?)',
+		email,
+		randomBytes(24).toString('base64url'),
+		source,
+		at.toISOString()
+	);
+}
+for (const [version, daysBack] of [
+	['0.184.0', 12],
+	['0.185.0', 3]
+]) {
+	if (one('select id from newsletter_issues where version = ?', version)) continue;
+	const at = new Date(now);
+	at.setDate(at.getDate() - daysBack);
+	run(
+		'insert into newsletter_issues (version, subject, sent, failed, sent_at) values (?, ?, ?, 0, ?)',
+		version,
+		`Ontoplano ${version}`,
+		listed.length,
+		at.toISOString()
+	);
+}
+console.log(`  ${listed.length} on the mailing list`);
 
 console.log(`seeded synthetic data for ${user.email ?? uid}`);

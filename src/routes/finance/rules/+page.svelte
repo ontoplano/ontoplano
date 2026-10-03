@@ -403,7 +403,15 @@
 			<FormGrid>
 				{#if !editing}
 					<Field label={t('finance.rules.kind')} span={12}>
-						<select name="kind" class="select w-full" bind:value={creating}>
+						<!-- One way, not bound: the form is reset after a save while the dialog
+						     is still mounted, and a binding would write the reset back into
+						     `creating` and open the dialog again. -->
+						<select
+							name="kind"
+							class="select w-full"
+							value={creating}
+							onchange={(e) => (creating = e.currentTarget.value as Rule['kind'])}
+						>
 							<option value="category">{t('finance.rules.aCategory')}</option>
 							<option value="tag">{t('finance.rules.aTag')}</option>
 						</select>

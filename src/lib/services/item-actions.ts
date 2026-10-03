@@ -1,6 +1,8 @@
 import type { Actions, RequestEvent } from '@sveltejs/kit';
 import { buildCtx } from '$lib/services/ctx';
 import { toActionFailure } from '$lib/http-errors';
+import { ValidationError } from '$lib/services/errors';
+import { removeItemPicture, setItemPicture } from '$lib/services/media';
 import {
 	createItem,
 	deleteItem,
@@ -145,6 +147,38 @@ export const itemHandlers = {
 		try {
 			toggleBought(buildCtx(locals.user!.id), Number(formData.get('id')));
 			return { success: true };
+		} catch (e) {
+			return toActionFailure(e);
+		}
+	},
+
+	/**
+	 * What it looks like: chosen in one gesture, from the item's dialog. The
+	 * size is checked in the browser first, because a body over the adapter's
+	 * limit is refused before this code runs.
+	 */
+	setPicture: async ({ request, locals }: Event) => {
+		const formData = await request.formData();
+		const file = formData.get('file');
+		if (!(file instanceof File) || file.size === 0)
+			return toActionFailure(new ValidationError({ key: 'errors.media.chooseAPictureFirst' }));
+		try {
+			await setItemPicture(buildCtx(locals.user!.id), Number(formData.get('id')), {
+				bytes: new Uint8Array(await file.arrayBuffer()),
+				filename: file.name,
+				alt: String(formData.get('title') ?? '')
+			});
+			return { success: true, action: 'setPicture' };
+		} catch (e) {
+			return toActionFailure(e);
+		}
+	},
+
+	removePicture: async ({ request, locals }: Event) => {
+		const formData = await request.formData();
+		try {
+			removeItemPicture(buildCtx(locals.user!.id), Number(formData.get('id')));
+			return { success: true, action: 'removePicture' };
 		} catch (e) {
 			return toActionFailure(e);
 		}

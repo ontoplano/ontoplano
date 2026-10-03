@@ -1290,10 +1290,11 @@ Things caught before they evaporated, newest first. An idea is not a task: nobod
 
 _Needs `ideas:read`; read-only; answers a page._
 
-| Parameter | Type    | Required | What it is                                                                                                                                                |
-| --------- | ------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `limit`   | integer | —        | How many. Default `50`.                                                                                                                                   |
-| `offset`  | integer | —        | Skip this many before counting, so the rest of the ideas can be read a page at a time. `nextOffset` on the answer is what to pass here next. Default `0`. |
+| Parameter    | Type    | Required | What it is                                                                                                                                                |
+| ------------ | ------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `limit`      | integer | —        | How many. Default `50`.                                                                                                                                   |
+| `offset`     | integer | —        | Skip this many before counting, so the rest of the ideas can be read a page at a time. `nextOffset` on the answer is what to pass here next. Default `0`. |
+| `notebookId` | integer | —        | Only what is filed in this notebook, as `notebooks` gives its id. Left out, all of it.                                                                    |
 
 ### `add_idea` — Catch an idea
 
@@ -1409,9 +1410,10 @@ What is to buy and what is already in the cupboard. An item is a thing, not a li
 
 _Needs `inventory:read`; read-only._
 
-| Parameter | Type    | Required | What it is                                                                              |
-| --------- | ------- | -------- | --------------------------------------------------------------------------------------- |
-| `short`   | boolean | —        | Only the things there are fewer of than are kept — what an actual shopping trip is for. |
+| Parameter    | Type    | Required | What it is                                                                              |
+| ------------ | ------- | -------- | --------------------------------------------------------------------------------------- |
+| `short`      | boolean | —        | Only the things there are fewer of than are kept — what an actual shopping trip is for. |
+| `notebookId` | integer | —        | Only what is filed in this notebook, as `notebooks` gives its id. Left out, all of it.  |
 
 ### `add_inventory_item` — Add to the shopping list
 
@@ -1750,9 +1752,10 @@ The full list of habits, due today or not — id, name, type and which days each
 
 _Needs `habits:read`; read-only._
 
-| Parameter         | Type    | Required | What it is       |
-| ----------------- | ------- | -------- | ---------------- |
-| `includeArchived` | boolean | —        | Default `false`. |
+| Parameter         | Type    | Required | What it is                                                                             |
+| ----------------- | ------- | -------- | -------------------------------------------------------------------------------------- |
+| `includeArchived` | boolean | —        | Default `false`.                                                                       |
+| `notebookId`      | integer | —        | Only what is filed in this notebook, as `notebooks` gives its id. Left out, all of it. |
 
 ### `add_habit` — Add a habit
 
@@ -1892,7 +1895,9 @@ The blocks that make up every week — each with its weekday, time, length and c
 
 _Needs `schedule:read`; read-only._
 
-_Takes no parameters._
+| Parameter    | Type    | Required | What it is                                                                             |
+| ------------ | ------- | -------- | -------------------------------------------------------------------------------------- |
+| `notebookId` | integer | —        | Only what is filed in this notebook, as `notebooks` gives its id. Left out, all of it. |
 
 ### `add_repeating_block` — Put a task block on every week
 
@@ -2260,9 +2265,10 @@ The workouts you have written down, under Health. Each has a category and a plan
 
 _Needs `workouts:read`; read-only._
 
-| Parameter          | Type    | Required | What it is             |
-| ------------------ | ------- | -------- | ---------------------- |
-| `include_archived` | boolean | —        | Include ones put away. |
+| Parameter          | Type    | Required | What it is                                                                             |
+| ------------------ | ------- | -------- | -------------------------------------------------------------------------------------- |
+| `include_archived` | boolean | —        | Include ones put away.                                                                 |
+| `notebookId`       | integer | —        | Only what is filed in this notebook, as `notebooks` gives its id. Left out, all of it. |
 
 ### `set_workout_measures` — Say what a workout measures
 
@@ -2455,7 +2461,9 @@ The places money moves through — a current account, a credit card — with how
 
 _Needs `statements:read`; read-only._
 
-_Takes no parameters._
+| Parameter    | Type    | Required | What it is                                                                             |
+| ------------ | ------- | -------- | -------------------------------------------------------------------------------------- |
+| `notebookId` | integer | —        | Only what is filed in this notebook, as `notebooks` gives its id. Left out, all of it. |
 
 ### `add_ledger` — Add a ledger
 
@@ -2615,6 +2623,7 @@ _Needs `bills:read`; read-only._
 | ------------------ | ------- | -------- | ------------------------------------------------------------------------------------------------- |
 | `include_archived` | boolean | —        | Include ones put away.                                                                            |
 | `flow`             | string  | —        | Which direction: 'out' (bills, the default) or 'in' — income, recorded exactly the way bills are. |
+| `notebookId`       | integer | —        | Only what is filed in this notebook, as `notebooks` gives its id. Left out, all of it.            |
 
 ### `bill_payments` — What a bill has cost
 

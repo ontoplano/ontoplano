@@ -183,3 +183,71 @@ test('a note written by an assistant turns up on its notebook', async ({ page, p
 
 	await request.dispose();
 });
+
+/*
+ * More tabs than the browser has connections.
+ *
+ * Over HTTP/1.1 a browser opens six connections to a host, and a stream holds
+ * one for as long as its tab is open. When every tab held its own, the
+ * seventh tab never loaded — nor did the next page in any of the six. So one
+ * tab holds the stream and passes on what it hears, and when that tab closes
+ * another takes over.
+ */
+test('eight tabs share one stream, and it outlives the tab holding it', async ({
+	page,
+	playwright
+}) => {
+	test.setTimeout(120_000);
+	await register(page, testEmail('live-tabs'));
+	const context = page.context();
+	const cookie = (await context.cookies()).map((c) => `${c.name}=${c.value}`).join('; ');
+	const request = await playwright.request.newContext({ baseURL: ORIGIN });
+	const token = await mint(request, cookie, ['tasks:write', 'tasks:read']);
+
+	const holders = new Set<import('@playwright/test').Page>();
+	context.on('request', (r) => {
+		if (new URL(r.url()).pathname === '/api/live') holders.add(r.frame().page());
+	});
+
+	const tabs = [page];
+	while (tabs.length < 8) tabs.push(await context.newPage());
+	for (const tab of tabs) {
+		await visit(tab, '/tasks/todo');
+		await tab.waitForSelector('html[data-live]', { timeout: 20000 });
+	}
+	expect(holders.size, 'every tab opened a stream of its own').toBe(1);
+
+	const add = async (title: string) => {
+		const wrote = await request.post('/api/mcp', {
+			headers: { Authorization: `Bearer ${token}`, 'content-type': 'application/json' },
+			data: {
+				jsonrpc: '2.0',
+				id: 1,
+				method: 'tools/call',
+				params: { name: 'add_task', arguments: { title } }
+			}
+		});
+		expect(wrote.ok(), await wrote.text()).toBe(true);
+	};
+
+	const [holder] = holders;
+	const listener = tabs.find((tab) => tab !== holder)!;
+	await listener.bringToFront();
+
+	const first = `heard through another tab ${Date.now()}`;
+	await add(first);
+	await expect(listener.getByText(first)).toBeVisible({ timeout: 30000 });
+
+	// The tab holding it goes; another picks it up. Its stream is subscribed a
+	// moment after its request is seen, and a change in that gap is not
+	// replayed, so this writes until one arrives rather than once.
+	await holder.close();
+	await expect.poll(() => holders.size, { timeout: 20000 }).toBe(2);
+	await expect(async () => {
+		const second = `heard after the holder closed ${Date.now()}`;
+		await add(second);
+		await expect(listener.getByText(second)).toBeVisible({ timeout: 5000 });
+	}).toPass({ timeout: 30000 });
+
+	await request.dispose();
+});

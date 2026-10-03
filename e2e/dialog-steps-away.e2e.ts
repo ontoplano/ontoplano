@@ -67,6 +67,28 @@ test('a refused save brings the dialog back, with what was typed and why', async
 	await expect(dialog.locator('[name="heading"]')).toHaveValue('this one is refused');
 });
 
+test('the opener pressed again while the save is out opens a fresh dialog', async ({ page }) => {
+	test.setTimeout(180_000);
+	await register(page, testEmail('dialog-again'));
+	await visit(page, '/tasks/todo');
+	await slowPosts(page, null);
+
+	// The next one started before the first is answered: the press used to set
+	// `open` to the true it already was, and the answer then shut it.
+	await startTask(page, 'the first of two');
+	await page.getByRole('button', { name: 'Create task' }).click();
+	await expect(page.locator('dialog[open]')).toHaveCount(0, { timeout: 500 });
+	await page
+		.getByRole('button', { name: /New task/ })
+		.first()
+		.click();
+
+	await expect(page.getByText('the first of two').first()).toBeVisible({ timeout: 30_000 });
+	const dialog = page.locator('dialog[open]');
+	await expect(dialog).toHaveCount(1);
+	await expect(dialog.locator('[name="heading"]')).toHaveValue('');
+});
+
 test('a block saved on the plan says so', async ({ page }) => {
 	test.setTimeout(180_000);
 	await register(page, testEmail('dialog-plan-toast'));

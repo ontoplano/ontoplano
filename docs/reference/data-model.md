@@ -45,7 +45,7 @@ exist.
 | [`ideas`](#ideas)                                           | 9       | yes               |
 | [`inventory_attribute_colors`](#inventory_attribute_colors) | 5       | yes               |
 | [`inventory_categories`](#inventory_categories)             | 8       | yes               |
-| [`inventory_items`](#inventory_items)                       | 17      | yes               |
+| [`inventory_items`](#inventory_items)                       | 18      | yes               |
 | [`invites`](#invites)                                       | 9       | —                 |
 | [`ledgers`](#ledgers)                                       | 11      | yes               |
 | [`locations`](#locations)                                   | 8       | yes               |
@@ -799,6 +799,7 @@ Indexes:
 | `attributes`            | text    | not null | `'{}'`                | —                           |
 | `snoozed`               | integer | not null | `false`               | —                           |
 | `notebook_id`           | integer | null     | —                     | → `notebooks.id`            |
+| `picture_id`            | integer | null     | —                     | → `media.id`                |
 | `created_at`            | text    | not null | `(CURRENT_TIMESTAMP)` | —                           |
 | `updated_at`            | text    | not null | `(CURRENT_TIMESTAMP)` | —                           |
 

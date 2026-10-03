@@ -37,6 +37,7 @@
 		 * short of it instead of running under it.
 		 */
 		corner = undefined,
+		thumb = undefined,
 		children
 	}: {
 		rail: Snippet;
@@ -45,6 +46,12 @@
 		controls?: Snippet;
 		quiet?: boolean;
 		corner?: Snippet;
+		/**
+		 * A picture between the rail and the words, the whole height of the
+		 * card. A list where some rows have one draws the slot on every row,
+		 * empty where there is nothing, so the names line up down the list.
+		 */
+		thumb?: Snippet;
 		children: Snippet;
 	} = $props();
 </script>
@@ -52,6 +59,10 @@
 <div class="row-card-rail row-rail">
 	{@render rail()}
 </div>
+
+{#if thumb}
+	<div class="row-card-thumb shrink-0">{@render thumb()}</div>
+{/if}
 
 <div class="row-card-body flex min-w-0 flex-1 flex-col">
 	{#if corner}

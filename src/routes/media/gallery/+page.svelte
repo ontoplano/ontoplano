@@ -124,6 +124,7 @@
 
 	/** The notebooks' pictures, as the last card of the top level. */
 	const showNotebooks = $derived(folderId === null && needle === '' && data.notebookPictures > 0);
+	const showUnused = $derived(folderId === null && needle === '' && data.unusedPictures > 0);
 
 	/** j/k across the cards; Enter opens one, e renames it. */
 	let at = $state(-1);
@@ -561,7 +562,7 @@
 		</section>
 
 		<div class="min-w-0">
-			{#if data.albums.length === 0}
+			{#if data.albums.length === 0 && !showNotebooks && !showUnused}
 				<EmptyState
 					icon="image"
 					title={t('gallery.noAlbumsYet')}
@@ -600,6 +601,16 @@
 							name={t('gallery.notebooks')}
 							icon="notebook"
 							count={data.notebookPictures}
+						/>
+					{/if}
+					<!-- The pictures nothing points at any more: pasted and then cut
+					     out of the writing. Drawn only when there are some. -->
+					{#if showUnused}
+						<AlbumCard
+							href="{resolve('/media/gallery')}/unused"
+							name={t('gallery.unused.title')}
+							icon="broom"
+							count={data.unusedPictures}
 						/>
 					{/if}
 				</MediaTiles>

@@ -947,6 +947,14 @@ export const inventoryItems = sqliteTable(
 		snoozed: integer('snoozed', { mode: 'boolean' }).notNull().default(false),
 		/** The subject this belongs to, if any — see `habits.notebookId`. */
 		notebookId: integer('notebook_id').references(() => notebooks.id, { onDelete: 'set null' }),
+		/*
+		 * What it looks like, when somebody has said — the same kind of row a
+		 * face is. No `onDelete`: the migration that added it is the column's truth
+		 * (drizzle generates an ALTER that cannot carry one), and nothing
+		 * deletes a picture something still shows — `removeIfUnreferenced`
+		 * asks the referrers, items among them.
+		 */
+		pictureId: integer('picture_id').references(() => media.id),
 		createdAt: text('created_at')
 			.notNull()
 			.default(sql`(CURRENT_TIMESTAMP)`),

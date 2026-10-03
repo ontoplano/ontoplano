@@ -12,7 +12,7 @@
  * somebody only notices after trusting it.
  */
 import { describe, expect, test } from 'vitest';
-import { UNTITLED_BLOCK } from '../src/lib/planner-grid';
+import { UNTITLED_BLOCK, fallsOn } from '../src/lib/planner-grid';
 import { messages as english } from '../src/lib/i18n/catalogues/en';
 import { messages as portuguese } from '../src/lib/i18n/catalogues/pt-BR';
 import { translator } from '../src/lib/i18n/core';
@@ -559,5 +559,33 @@ describe('the colour handed to a block', () => {
 		for (const bad of ['rebeccapurple', '', 'red;background:url(x)', '#1d4ed8;color:red']) {
 			expect(blockHue(bad)).toBe('--block:var(--color-gray-400)');
 		}
+	});
+});
+
+describe('something that lasts all day', () => {
+	const pto = {
+		start: new Date(2026, 7, 17),
+		end: new Date(2026, 7, 22),
+		allDay: true
+	};
+
+	test('is on the list of every day it covers, and not the morning after', () => {
+		expect(fallsOn(pto, '2026-08-16')).toBe(false);
+		for (const date of ['2026-08-17', '2026-08-19', '2026-08-21'])
+			expect(fallsOn(pto, date)).toBe(true);
+		expect(fallsOn(pto, '2026-08-22')).toBe(false);
+	});
+
+	test('a timed one belongs to the day it starts', () => {
+		const late = { start: new Date(2026, 7, 17, 23), end: new Date(2026, 7, 18, 1) };
+		expect(fallsOn(late, '2026-08-17')).toBe(true);
+		expect(fallsOn(late, '2026-08-18')).toBe(false);
+	});
+
+	test('opens the week’s all-day row only when there is one', () => {
+		expect(baseGridOptions('2026-08-17', { allDay: true }).allDaySlot).toBe(true);
+		expect(baseGridOptions('2026-08-17').allDaySlot).toBe(false);
+		// A month has no such row: every day is a whole day there already.
+		expect(baseGridOptions('2026-08-01', { allDay: true, month: true }).allDaySlot).toBe(false);
 	});
 });

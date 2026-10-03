@@ -1,0 +1,1 @@
+ALTER TABLE `inventory_items` ADD `picture_id` integer REFERENCES media(id);

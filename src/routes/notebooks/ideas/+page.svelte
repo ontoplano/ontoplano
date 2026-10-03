@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { Reveal, revealNear } from '$lib/reveal.svelte';
 	/* biome-ignore-all assist/source/organizeImports lint/correctness/noUnusedImports lint/correctness/noUnusedVariables lint/style/useConst: Svelte template and rune usage in this file triggers false positives in current Biome diagnostics. */
 	import { enhance } from '$lib/enhance';
 	import ShowingCount from '$lib/components/ShowingCount.svelte';
@@ -160,6 +161,11 @@
 	);
 
 	let filteredIdeas = $derived.by(() => orderNotes(filteredUnordered(), order, direction));
+	/** Drawn fifty at a time as the end comes near — see `$lib/reveal`. */
+	const reveal = new Reveal(
+		() => filteredIdeas.length,
+		() => data.ideas.length
+	);
 	const shownIds = $derived(filteredIdeas.map((idea) => idea.id));
 	const chosenIds = $derived(shownIds.filter((id) => selection.has(id)));
 	$effect(() => selection.keep(shownIds));
@@ -262,6 +268,7 @@
 		switch (action) {
 			case 'navigate-down':
 				selectedIndex = Math.min(clampedSelectedIndex + 1, Math.max(items.length - 1, 0));
+				reveal.reach(selectedIndex);
 				break;
 			case 'navigate-up':
 				selectedIndex = Math.max(clampedSelectedIndex - 1, 0);
@@ -372,8 +379,11 @@
 			/>
 		{:else}
 			<div class="divide-y divide-gray-200">
-				{#each filteredIdeas as idea, i (idea.id)}
-					<div use:listCursor={i === clampedSelectedIndex}>
+				{#each reveal.of(filteredIdeas) as idea, i (idea.id)}
+					<div
+						use:listCursor={i === clampedSelectedIndex}
+						use:revealNear={{ reveal, index: i, trigger: reveal.trigger }}
+					>
 						<!--
 							The card is a component, so a notebook's Ideas tab shows the
 							same idea this room does — see `IdeaCard`.

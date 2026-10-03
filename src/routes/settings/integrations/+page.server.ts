@@ -13,73 +13,10 @@ import {
 	listTokens,
 	revokeToken
 } from '$lib/server/services/tokens';
-import { scopeWord } from '$lib/scope-words';
+import { scopeCautionWord, scopeWord } from '$lib/scope-words';
 import { capabilities, isSelfHosted } from '$lib/server/settings';
 import { confinementChoices, describeConfinement } from '$lib/server/mcp/confinement';
 import { translatorFor, SOURCE_LOCALE } from '$lib/i18n/core';
-import type { Translate } from '$lib/i18n/core';
-
-/** What each family of permissions is called, in the words the app uses. */
-function subjectLabels(t: Translate): Record<string, string> {
-	return {
-		tasks: t('tasks.board.toDoList'),
-		schedule: t('settings.integrations.yourWeek'),
-		today: t('settings.integrations.todaysPlan'),
-		habits: t('app.habits'),
-		notes: t('settings.integrations.diaryAndNotebooks'),
-		ideas: t('app.ideas'),
-		inventory: t('app.inventory'),
-		locations: t('inventory.whereThingsLive'),
-		kitchen: t('app.recipes'),
-		workouts: t('app.workouts'),
-		bills: t('app.bills'),
-		people: t('app.people'),
-		streams: t('settings.integrations.connections.dataStreams'),
-		statements: t('settings.integrations.bankStatements'),
-		tags: t('app.tags'),
-		audio: t('rooms.media.tabs.audios'),
-		search: t('ui.search')
-	};
-}
-
-function assistantGrid(t: Translate) {
-	const SUBJECT_LABELS = subjectLabels(t);
-	const rows = new Map<
-		string,
-		{ subject: string; label: string; read: string | null; write: string | null; says: string[] }
-	>();
-
-	for (const scope of ASSISTANT_SCOPES) {
-		const [subject, verb] = scope.split(':');
-		const row = rows.get(subject) ?? {
-			subject,
-			// Never the raw key: a family added later with no label here printed
-			// itself, so the permissions table had a row called "statements" in
-			// the middle of a page that was otherwise in the reader's language.
-			// `tests/assistant-grid.test.ts` fails rather than letting that ship.
-			label: SUBJECT_LABELS[subject] ?? subject,
-			read: null,
-			write: null,
-			says: []
-		};
-		if (verb === 'read') row.read = scope;
-		else row.write = scope;
-		// The sentence in the reader's own language, not the English definition
-		// the API reference is generated from. See `$lib/scope-words`.
-		const says = scopeWord(scope);
-		if (says) row.says.push(t(says));
-		rows.set(subject, row);
-	}
-
-	// In the order the labels are written, which is roughly how much of somebody's
-	// life each one is; anything unlabelled falls in after them rather than out.
-	const order = Object.keys(SUBJECT_LABELS);
-	return [...rows.values()].sort((a, b) => {
-		const ai = order.indexOf(a.subject);
-		const bi = order.indexOf(b.subject);
-		return (ai === -1 ? order.length : ai) - (bi === -1 ? order.length : bi);
-	});
-}
 
 import {
 	configuredModelKey,
@@ -94,7 +31,6 @@ import { setAssistantMayDelete } from '$lib/services/preferences';
 
 export const load: PageServerLoad = async ({ locals, url }) => {
 	const ctx = buildCtx(locals.user!.id);
-	const t = await translatorFor(locals.locale ?? SOURCE_LOCALE);
 
 	/*
 	 * The keys that would already work, so the page can say whether making one
@@ -163,7 +99,12 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 		 * label instead of being dropped: a grant that is granted and not shown is
 		 * the one mistake this screen must not make.
 		 */
-		permissions: assistantGrid(t),
+		/** What an assistant can be granted, for the grid. See `PermissionGrid`. */
+		permissions: ASSISTANT_SCOPES.map((key) => ({
+			key,
+			says: scopeWord(key),
+			caution: scopeCautionWord(key)
+		})),
 		/*
 		 * The things a key can be tied to, and what each still grants.
 		 *

@@ -16,6 +16,7 @@
 	import { AUDIO_HREF, splitAudio } from '$lib/audio-markdown';
 	import { splitPictures } from '$lib/picture-markdown';
 	import { renderMarkdown, type TodoRefs } from '$lib/markdown';
+	import { peekRefs } from '$lib/task-peek.svelte';
 	import { overflows } from '$lib/actions/overflows';
 	import { useT } from '$lib/i18n';
 
@@ -146,6 +147,7 @@
 	-->
 	<div
 		use:overflows={ontruncate ?? (() => {})}
+		use:peekRefs={todos}
 		class="md written {folded ? 'written-one-line' : ''} {lines
 			? 'written-clamped'
 			: ''} {type} {klass}"

@@ -44,6 +44,7 @@ export const SCOPE_OF: Record<ReferrerKind, string | null> = {
 	todo: 'tasks:read',
 	person: 'people:read',
 	recipe: 'kitchen:read',
+	item: 'inventory:read',
 	album: null
 };
 

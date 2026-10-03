@@ -18,6 +18,105 @@ the shape of the data changing. Bumping the minor per batch is what ran this
 file to 0.161 in a few months, which tells a reader nothing about which
 releases mattered.
 
+## 0.185.4 — 2026-10-03
+
+- A reminder left unsent for more than twelve hours no longer keeps the server
+  busy. Pages had been slow because the reminder check ran four times a
+  second instead of once a minute.
+- A filter or a tab pressed just after saving something sometimes did
+  nothing: the page reloading for the save cancelled it. The reload now
+  waits for it.
+- With six or more tabs of the app open, the next one never loaded — every
+  tab held its own live connection and the browser allows six. One tab now
+  listens for all of them, and another takes over when it closes.
+- A key tied to one notebook can now read that notebook's ideas, habits,
+  workouts, bills, ledgers, shopping list and task blocks, not only add to
+  them. In the permission grid a row is faded only when nothing in it applies,
+  and the tasks row says it covers goals too.
+- The token form no longer has the "An AI assistant (MCP)" preset buttons.
+- A new AI key starts with no permissions ticked; tick what it may do, or All.
+  The tasks row is called "Tasks and goals".
+- The release mail is shorter: what is new in five lines, a link to the rest,
+  and an Unsubscribe link instead of a printed address.
+- Administration lists the release mails apart from the addresses on the
+  mailing list.
+- The gallery's Notebooks album also shows pictures pasted into a notebook's
+  tasks, goals and ideas, not only its notes.
+- No blinking caret on text that cannot be edited, such as tabs and headings,
+  when Firefox's caret browsing is on.
+- Administration is two columns of cards, and each card folds down to its
+  title; a folded card stays folded in that browser.
+- "ResizeObserver loop completed" is no longer reported as a crash.
+- A tab inside a tab (Settings → AI & Integrations → Widgets) loads under a
+  square placeholder as wide as the room, instead of an inset one with a
+  corner.
+
+## 0.185.3 — 2026-10-03
+
+- While a room loads, the stand-in shows the room's own tabs — Settings no
+  longer loses Billing, Instance and Administration for a moment — and the
+  placeholder rows sit flush under the tabs instead of in an inset card.
+- The plan has a full-screen button beside Schemes: the week, its controls
+  and nothing else, until Escape or the same button.
+- A repeating task block can go back to the task list too: Back to tasks
+  ends its repeat, after asking.
+- The tasks beside the plan no longer have a tick: finishing one there sent it
+  out of sight. They are for putting on the week.
+- The Tasks room's tabs read Plan, Tasks, Board.
+- Picking a label from the suggestions closes them; typing the next one
+  opens them again.
+- Resting the pointer on a task mentioned in a note — or focusing it — shows
+  that task as a card: its state, day, notebook, category and notes, with
+  nothing to press.
+- Self-hosted: with `ONTOPLANO_HEALTH_TOKEN` set, `/metrics` gives
+  Prometheus-format numbers — each route's time and how much of it was SQL,
+  the slowest statements, CPU, memory and event-loop lag.
+- In a note, a task's notes or an idea, Enter on a checklist line starts the
+  next one with an empty box — a bullet with a bullet, a number with the next
+  — and Enter on an empty one ends the list.
+- A thing in the inventory can have a picture: press the square at the top
+  of its dialog to choose one. Lists with any picture keep the same room on
+  every row, empty where there is none, so the names stay in one column.
+
+## 0.185.2 — 2026-10-03
+
+- A notebook on the whole screen can be dragged wider or narrower by either
+  edge, and keeps the width. Drag one of its tabs to the right edge to open it
+  beside the others; each pane has a ×, the bar between panes shares out the
+  width, and the keys act on the pane last pressed. On a computer only.
+- The keyboard works on a notebook's full screen; it did nothing there before.
+- Pressing New again while the last one is still being saved opens a fresh
+  form once the save is in, rather than doing nothing.
+- Long lists open at once: the to-do list, a notebook's notes, goals and
+  ideas, the diary and the ideas room draw fifty and the next fifty as you
+  scroll near the end, so showing hundreds of finished tasks no longer freezes
+  the screen.
+- The mailing list's form says whether an address has just joined or was
+  already on the list, and the administration page lists who is on it, what
+  release mail has gone out, and takes an address off.
+
+## 0.185.1 — 2026-10-03
+
+- The week and day views have an all-day row whenever something lasts all
+  day: bills due and all-day events from a subscribed calendar, which were
+  drawn only on the month before. A holiday that started last week is still
+  on this one, and on the phone's list it is on every day it covers.
+- The gallery has an Unused tile: pictures pasted into writing and then cut
+  out of it, which nothing in the app reached any more. Delete them one at a
+  time or all at once.
+- Replacing a person's or a notebook's picture no longer deletes the old one
+  while it is still pasted into a todo or an idea.
+- Permissions look the same everywhere: one grid of reading and writing, on
+  both key forms and the screen an assistant sends you to approve it. Each
+  column, and the whole grid, can be ticked or cleared at once.
+- A key in the list no longer spells out every permission it holds; its
+  shield button opens them as that same grid, read-only.
+- The instance page's Backups row reads the last copy pulled by a machine
+  elsewhere, and names it, rather than looking for a backup timer on the
+  server itself.
+- Something added just before switching tabs — a thing put on the wishlist,
+  then the Wishlist tab pressed — is there when the tab opens.
+
 ## 0.185.0 — 2026-10-02
 
 - Taking a note back out of the archive no longer leaves it invisible until

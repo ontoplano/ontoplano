@@ -1,4 +1,5 @@
 import { redirect, type Handle, type HandleServerError } from '@sveltejs/kit';
+import { measured } from '$lib/server/metrics';
 import { getRequestEvent } from '$app/server';
 import { SOURCE_LOCALE } from '$lib/i18n/core';
 import { provider } from '$lib/server/billing/index';
@@ -113,8 +114,13 @@ const handleRequestLog: Handle = async ({ event, resolve }) => {
 	if (event.url.pathname.startsWith('/_app/')) return resolve(event);
 
 	event.locals.rid = crypto.randomUUID().slice(0, 6);
-	const startedAt = Date.now();
-	const response = await resolve(event);
+	// Counted for `/metrics` as well — see `$lib/server/metrics`. The route
+	// id rather than the path, so the numbers group the way the code does.
+	const { response, seconds, spent } = await measured(
+		event.route.id ?? '(none)',
+		event.request.method,
+		() => resolve(event)
+	);
 
 	console.log(
 		JSON.stringify({
@@ -124,7 +130,11 @@ const handleRequestLog: Handle = async ({ event, resolve }) => {
 			method: event.request.method,
 			path: event.url.pathname,
 			status: response.status,
-			ms: Date.now() - startedAt,
+			ms: Math.round(seconds * 1000),
+			// Of those, how many were SQLite's, and over how many statements:
+			// "is it the query or the code around it" for one request.
+			sqlMs: Math.round(spent.sqlSeconds * 1000),
+			sql: spent.statements,
 			user: event.locals.user?.id ?? null
 		})
 	);
@@ -300,9 +310,14 @@ const handleNativeApp: Handle = async ({ event, resolve }) => {
 		redirect(302, `${clean.pathname}${clean.search}${clean.hash}`);
 	}
 
-	event.locals.nativeApp =
-		event.cookies.get(APP_COOKIE) === APP_LAUNCH_VALUE &&
-		couldBeTheApp(event.request.headers.get('user-agent'));
+	const couldBe = couldBeTheApp(event.request.headers.get('user-agent'));
+	// One written before the check above existed, or synced from a phone: a
+	// desktop holding it is told nothing by it, so it goes.
+	if (!couldBe && event.cookies.get(APP_COOKIE) !== undefined) {
+		event.cookies.delete(APP_COOKIE, { path: '/' });
+		event.cookies.delete(APP_VERSION_COOKIE, { path: '/' });
+	}
+	event.locals.nativeApp = event.cookies.get(APP_COOKIE) === APP_LAUNCH_VALUE && couldBe;
 	event.locals.nativeAppVersion = event.locals.nativeApp
 		? event.cookies.get(APP_VERSION_COOKIE)
 		: undefined;

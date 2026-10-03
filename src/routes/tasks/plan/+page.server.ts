@@ -602,7 +602,14 @@ export const actions = {
 		if (!id) return fail(400, { message: 'Missing block id' });
 
 		try {
-			demoteToTodo(buildCtx(locals.user!.id), id);
+			const ctx = buildCtx(locals.user!.id);
+			// A repeating block stops repeating first: it becomes a one-off on the
+			// day it was opened from, and that goes back to the list like any other.
+			const oneOff =
+				formData.get('kind') === 'slot'
+					? convertRepeat(ctx, id, { to: 'once', date: formData.get('date') }).id
+					: id;
+			demoteToTodo(ctx, oneOff);
 			return { success: true };
 		} catch (e) {
 			return toActionFailure(e);

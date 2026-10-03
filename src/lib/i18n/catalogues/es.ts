@@ -70,6 +70,7 @@ export const messages: Catalogue = {
 	'admin.id.whatThisAccountDidAnd': 'Lo que hizo esta cuenta, y lo que se le hizo a ella.',
 	'admin.id.willBeAbleToRead': 'podrá leer, cambiar y eliminar cualquier cuenta.',
 	'admin.id.yes': 'Yes',
+	'admin.issueSent': '{sent} enviados, {failed} fallidos · {when}',
 	'admin.itsLinkHasExpired':
 		'Su enlace venció — la solución es pedir uno nuevo. Descartar este registro.',
 	'admin.joined': '· se unió',
@@ -81,14 +82,18 @@ export const messages: Catalogue = {
 	},
 	'admin.lately': 'Recientemente',
 	'admin.mailThatDidNotGo': 'Correos que no se enviaron',
+	'admin.mailingList': 'Lista de correo',
+	'admin.mailingListDescription': '{count} en la lista. Cada versión se les envía una vez.',
 	'admin.makeAdmin': 'Hacer admin',
 	'admin.member': 'member',
 	'admin.minutesAgo': 'hace {count}m',
 	'admin.noAccountsYet': 'No accounts yet',
+	'admin.noIssueYet': 'Aún no se ha enviado ninguna versión.',
 	'admin.noPage': 'sin página',
 	'admin.nobodyCanRegisterUntilThis':
 		'Nadie puede registrarse hasta que esto se resuelva. Las cuentas existentes no se ven afectadas, y aún puedes\n\t\t\tiniciar una prueba a mano desde la página de una cuenta.',
 	'admin.nobodyMatchesThat': 'Nadie coincide con eso',
+	'admin.nobodyOnTheList': 'Nadie en la lista todavía',
 	'admin.notSignedIn': 'sin sesión iniciada',
 	'admin.nothingRecordedYet': 'Nada registrado todavía',
 	'admin.nothingReported': 'Nada reportado',
@@ -99,6 +104,8 @@ export const messages: Catalogue = {
 	'admin.problemsSomebodyReportedIdeasThey':
 		'Problemas que alguien reportó, ideas que sugirió, y fallos que decidió enviar. Descarta uno una vez resuelto.',
 	'admin.refresh': 'Actualizar',
+	'admin.releaseMails': 'Correos de versión',
+	'admin.releaseMailsDescription': 'Cada versión enviada a la lista, la más reciente primero.',
 	'admin.removeAdmin': 'Quitar admin',
 	'admin.reported': 'reportado',
 	'admin.searchAccounts': 'Search by name or address',
@@ -108,7 +115,9 @@ export const messages: Catalogue = {
 	'admin.sessionCount': { one: '{count} session', other: '{count} sessions' },
 	'admin.showOlder': 'Mostrar más antiguos',
 	'admin.somebodyExampleCom': 'somebody@example.com',
+	'admin.subscribedFrom': 'desde {source} · {when}',
 	'admin.suggested': 'sugerido',
+	'admin.takeOffTheList': 'Quitar de la lista',
 	'admin.theWatchersAreToldThis': 'Se avisa a los observadores; esta es la solución.',
 	'admin.unverified': '· sin verificar',
 	'admin.whatPeopleSentIn': 'Lo que la gente envió',
@@ -525,11 +534,14 @@ export const messages: Catalogue = {
 	'errors.mailLog.thatFailureIsGoneResolved': 'Ese fallo ya no está — se resolvió o se descartó',
 	'errors.mailLog.thisMailCannotBeReplayed':
 		'Ese correo no se puede reenviar — su enlace caducó. Pide uno nuevo.',
+	'errors.media.chooseAPictureFirst': 'Elige una imagen primero.',
+	'errors.media.noSuchItem': 'Esa cosa no está en el inventario.',
 	'errors.media.noSuchNotebook': 'Ese cuaderno no existe.',
 	'errors.media.noSuchPerson': 'Esa persona no existe.',
 	'errors.media.noSuchPicture': 'Esa imagen no existe.',
 	'errors.media.noSuchPictureOnThisRecipe': 'Esa receta no tiene esa imagen.',
 	'errors.media.noSuchRecipe': 'Esa receta no existe.',
+	'errors.media.stillInUse': 'Esa imagen vuelve a estar en uso, así que se conservó.',
 	'errors.media.thatFileWasEmpty': 'Ese archivo estaba vacío.',
 	'errors.media.thatIsNotAPicture':
 		'Esta instancia no acepta ese tipo de imagen — JPEG, PNG, GIF o WebP.',
@@ -1008,7 +1020,7 @@ export const messages: Catalogue = {
 	'gallery.notebooks.path.putAPictureInA':
 		'Pon una foto en una nota y aparece aquí, en una carpeta con el nombre de su cuaderno.',
 	'gallery.notebooks.path.thePicturesInYourNotebooks':
-		'Las fotos de tus cuadernos. Cada una vive en la nota que la menciona.',
+		'Las fotos de las notas, tareas, metas e ideas de tus cuadernos.',
 	'gallery.openTheAlbum': 'Abrir el álbum',
 	'gallery.orderBy': 'Order albums by',
 	'gallery.orderName': 'Name',
@@ -1020,6 +1032,15 @@ export const messages: Catalogue = {
 	'gallery.renameAlbum': 'Renombrar álbum',
 	'gallery.searchAlbums': 'Search albums',
 	'gallery.trips': 'Viajes',
+	'gallery.unused.deleteAll': 'Borrar todas',
+	'gallery.unused.deleteAllTitle': '¿Borrar {count} imágenes sin usar?',
+	'gallery.unused.deleteBody': 'Nada apunta a ella, y borrarla no se puede deshacer.',
+	'gallery.unused.deleteOneTitle': '¿Borrar esta imagen?',
+	'gallery.unused.noneBody': 'Cada imagen está en un álbum, una nota, una tarea o en otro lugar.',
+	'gallery.unused.noneTitle': 'No hay imágenes sin usar',
+	'gallery.unused.title': 'Sin usar',
+	'gallery.unused.whatTheseAre':
+		'Imágenes a las que ya nada apunta en la app: pegadas y luego quitadas del texto.',
 	'goals.aGoalIsACommitment':
 		'Una meta es un compromiso con una fecha límite. Empieza con una semana — puedes ascenderla después.',
 	'goals.abandoned': 'Abandonada',
@@ -1550,6 +1571,7 @@ export const messages: Catalogue = {
 	'inventory.aColourForThisAttribute': 'Un color para este atributo',
 	'inventory.aColourForThisCategory': 'A colour for this category',
 	'inventory.aColourForThisValue': 'Un color para este valor',
+	'inventory.aPictureOf': 'Una imagen de {name}',
 	'inventory.aRoomACupboardA':
 		'Una habitación, un armario, un cajón. Uno puede estar dentro de otro.',
 	'inventory.about': 'Acerca de',
@@ -1572,6 +1594,7 @@ export const messages: Catalogue = {
 	'inventory.categories': 'Categorías',
 	'inventory.categoriesAndAttributes': 'Categories & attributes',
 	'inventory.changeIs': 'el cambio es',
+	'inventory.changeThePicture': 'Cambiar la imagen',
 	'inventory.changesAre': 'los cambios son',
 	'inventory.confirm': '¿Confirmar?',
 	'inventory.delete': 'Eliminar {name}',
@@ -1640,9 +1663,12 @@ export const messages: Catalogue = {
 		one: '{count} thing in {name}: {here} here and {inside} in what is inside it',
 		other: '{count} things in {name}: {here} here and {inside} in what is inside it'
 	},
+	'inventory.pressToChangeIt': 'Pulsa la imagen para cambiarla.',
+	'inventory.pressToChooseAPicture': 'Pulsa el cuadro para elegir una imagen.',
 	'inventory.putBackOnTheList': 'Volver a poner en la lista',
 	'inventory.putItBackOnThe': 'Vuelve a ponerlo en la lista',
 	'inventory.remove': 'Quitar {name}',
+	'inventory.removeThePicture': 'Quitar la imagen',
 	'inventory.removeThisLocation': '¿Quitar esta ubicación?',
 	'inventory.rename': 'Renombrar {name}',
 	'inventory.renameOrMove': 'Renombrar o mover',
@@ -1882,7 +1908,11 @@ export const messages: Catalogue = {
 		'Si aceptas, ellos pagan y tú te quedas con todo — tus notas y tu semana siguen siendo tuyas.',
 	'mail.familyOffer.small': 'Si no esperabas esto, recházala y no pasa nada.',
 	'mail.familyOffer.subject': '{owner} se ofreció a pagar tu cuenta de ontoplano',
-	'mail.newsletter.action': 'Ver qué cambió',
+	'mail.newsletter.allOfIt': 'La versión completa está {link}.',
+	'mail.newsletter.andMore': '… ¡y más! Mira todo lo demás que ha cambiado {link}.',
+	'mail.newsletter.here': 'aquí',
+	'mail.newsletter.title': '¡Ontoplano {version} ya está aquí!',
+	'mail.newsletter.whatChanged': '¿Qué ha cambiado?',
 	'mail.newsletterWelcome.action': 'Have a look at ontoplano',
 	'mail.newsletterWelcome.line1':
 		'Nothing to do — you are on the list. This is the only message that is not about a release.',
@@ -1912,7 +1942,6 @@ export const messages: Catalogue = {
 		other:
 			'{count} bloques de tarea todavía no tienen respuesta — {titles}{andMore}. Di qué pasó con ellos, o llévalos a esta semana.'
 	},
-	'mail.stopThese': 'Detener estos: {url}',
 	'mail.trial.action': 'Gestionar tu plan',
 	'mail.trial.billingPage': 'the billing page in your settings',
 	'mail.trial.inYourSettings': 'la página de facturación en tu configuración',
@@ -1930,6 +1959,7 @@ export const messages: Catalogue = {
 		'tu suscripción empieza y el primer cobro ocurre entonces. Si prefieres detenerla, cancela antes de esa fecha y no se te cobrará',
 	'mail.trial.withoutCard':
 		'todo lo que escribiste sigue siendo tuyo y sigue siendo legible, pero no se puede agregar nada nuevo hasta que te suscribas',
+	'mail.unsubscribe': 'Darse de baja',
 	'mail.verify.action': 'Confirmar dirección',
 	'mail.verify.line': 'Confirma que esta dirección es tuya.',
 	'mail.verify.small': 'Si no creaste una cuenta de ontoplano, ignora este mensaje.',
@@ -1991,6 +2021,7 @@ export const messages: Catalogue = {
 	'notebookDetail.batchUpdated': '{count} notas actualizadas.',
 	'notebookDetail.biggerType': 'Letra más grande',
 	'notebookDetail.clearLabels': 'Quitar etiquetas',
+	'notebookDetail.closePane': 'Cerrar este panel',
 	'notebookDetail.deleteSelectedNotes': '¿Eliminar las notas seleccionadas? No se puede deshacer.',
 	'notebookDetail.deleteThisNote': 'Eliminar esta nota',
 	'notebookDetail.descendingPressForAscending': 'Descendente — pulsa para ascendente',
@@ -2009,6 +2040,7 @@ export const messages: Catalogue = {
 	'notebookDetail.noGoalPointsAtThis': 'Ninguna meta apunta a este cuaderno. No necesita una.',
 	'notebookDetail.nothingChosen': 'Nada elegido',
 	'notebookDetail.nothingWrittenHereYet': 'Todavía no hay nada escrito aquí.',
+	'notebookDetail.openBeside': 'Suelta aquí para abrir al lado',
 	'notebookDetail.orderAdded': 'Added',
 	'notebookDetail.orderEdited': 'Edición',
 	'notebookDetail.orderName': 'Name',
@@ -2017,6 +2049,7 @@ export const messages: Catalogue = {
 	'notebookDetail.orderTitle': 'Título',
 	'notebookDetail.orderWritten': 'Escritura',
 	'notebookDetail.people': 'Personas',
+	'notebookDetail.resizeWidth': 'Arrastra para hacerlo más ancho o más estrecho',
 	'notebookDetail.saved': 'Guardado',
 	'notebookDetail.searchTheseBills': 'Search these bills',
 	'notebookDetail.searchTheseGoals': 'Search these goals',
@@ -2033,6 +2066,7 @@ export const messages: Catalogue = {
 	'notebookDetail.selectVisibleNotes': 'Seleccionar todas las notas visibles',
 	'notebookDetail.separateWithCommasOrSpaces':
 		'Sepáralos con comas o espacios. Un # al inicio está bien.',
+	'notebookDetail.sharePanes': 'Arrastra para repartir el ancho entre paneles',
 	'notebookDetail.showArchived': 'Mostrar archivadas ({count})',
 	'notebookDetail.showingCount': {
 		one: '{count} nota a la vista',
@@ -2786,13 +2820,14 @@ export const messages: Catalogue = {
 	'rooms.tasks.tabs.todo': 'Tareas',
 	'rooms.tasks.title': 'Tareas',
 	'scopeGroups.acrossEverything': 'En todo',
+	'scopeGroups.describeItself': 'Su propia descripción',
 	'scopeGroups.habitsAndWorkouts': 'Hábitos y entrenamientos',
 	'scopeGroups.money': 'Dinero',
 	'scopeGroups.neededToWrite': 'necesario para escribir',
 	'scopeGroups.people': 'Personas',
 	'scopeGroups.plumbing': 'Integraciones',
 	'scopeGroups.removingThings': 'Borrar cosas',
-	'scopeGroups.todosAndGoals': 'Tareas y metas',
+	'scopeGroups.tasksAndGoals': 'Tareas y metas',
 	'scopeGroups.whatYouWrite': 'Diario, cuadernos e ideas',
 	'scopeGroups.yourHome': 'Casa, cocina y compras',
 	'scopeGroups.yourWeek': 'Tu semana',
@@ -3265,8 +3300,7 @@ export const messages: Catalogue = {
 	'settings.integrations.addThisToCursorConfig': 'Agrega esto a ~/.cursor/mcp.json.',
 	'settings.integrations.aiAssistant': 'Asistente de IA',
 	'settings.integrations.aiAssistantDefaultName': 'Asistente de IA',
-	'settings.integrations.allOfItUnlessYou':
-		'Todo, a menos que digas lo contrario. Lo que no marques queda fuera de su alcance.',
+	'settings.integrations.allOfIt': 'Todo',
 	'settings.integrations.andLetItDeleteThings': '…y dejar que elimine cosas',
 	'settings.integrations.bankStatements': 'Extractos bancarios',
 	'settings.integrations.chat.answeringAs':
@@ -3351,7 +3385,6 @@ export const messages: Catalogue = {
 		'https://example.com/ontoplano-hook',
 	'settings.integrations.connections.isTheMostRevoke':
 		'{calendarLinkLimit} es el máximo. Revoca uno para crear otro.',
-	'settings.integrations.connections.itMay': 'Puede: {join}',
 	'settings.integrations.connections.itSendsYouBackHere':
 		'Te trae de vuelta aquí para aprobar la conexión, que luego aparece en la lista de abajo como cualquier otra clave.',
 	'settings.integrations.connections.keep': 'Mantener',
@@ -3360,11 +3393,11 @@ export const messages: Catalogue = {
 	'settings.integrations.connections.kindMeasurement': 'Measurement',
 	'settings.integrations.connections.kindState': 'State',
 	'settings.integrations.connections.lastDelivery': '· última entrega',
-	'settings.integrations.connections.lastUsed': '· último uso',
+	'settings.integrations.connections.lastUsed': 'Último uso',
 	'settings.integrations.connections.latest': '· más reciente',
 	'settings.integrations.connections.myPhone': 'mi teléfono',
 	'settings.integrations.connections.never': 'nunca',
-	'settings.integrations.connections.neverUsed': '· nunca usado',
+	'settings.integrations.connections.neverUsed': 'Nunca usado',
 	'settings.integrations.connections.newApiToken': 'Nuevo token de API',
 	'settings.integrations.connections.newToken': 'Nuevo token',
 	'settings.integrations.connections.newWebhook': 'Nuevo webhook',
@@ -3383,6 +3416,7 @@ export const messages: Catalogue = {
 		'Pega la dirección en Google Calendar, Apple Calendar o Thunderbird y tu plan aparecerá ahí, manteniéndose actualizado. Esas apps solo lo leen — nada de lo que hagan puede cambiar tu plan.',
 	'settings.integrations.connections.pasteThisAddressInto':
 		'Pega esta dirección en Claude, ChatGPT, o cualquier cosa con una pantalla de conectores:',
+	'settings.integrations.connections.permissions': 'Permisos',
 	'settings.integrations.connections.points': 'puntos',
 	'settings.integrations.connections.pointsOlderThanThisAre':
 		'Los puntos más antiguos que esto se eliminan cada noche. Déjalo vacío para conservar todo.',
@@ -3411,6 +3445,8 @@ export const messages: Catalogue = {
 	'settings.integrations.connections.tryAgain': 'Intentar de nuevo',
 	'settings.integrations.connections.unreachable': 'unreachable',
 	'settings.integrations.connections.webhooks': 'Webhooks',
+	'settings.integrations.connections.whatThisKeyMayDo':
+		'Lo que esta clave puede hacer. Para cambiarlo, crea otra y revoca esta.',
 	'settings.integrations.connections.whatThisTokenMayDo': 'Qué puede hacer este token',
 	'settings.integrations.connections.whatYourAssistantsDid': 'Qué hicieron tus asistentes',
 	'settings.integrations.connections.when': 'Cuándo',
@@ -3424,6 +3460,8 @@ export const messages: Catalogue = {
 	'settings.integrations.createIt': 'Crearla',
 	'settings.integrations.diaryAndNotebooks': 'Diario y cuadernos',
 	'settings.integrations.doNotShareItWith': 'No la compartas con nadie.',
+	'settings.integrations.everyRead': 'Toda lectura',
+	'settings.integrations.everyWrite': 'Toda escritura',
 	'settings.integrations.everythingAnAssistantHasChanged':
 		'Todo lo que un asistente ha cambiado, más reciente primero. Lo que haya eliminado se puede restaurar.',
 	'settings.integrations.forAnAssistantWithTerminal':
@@ -3441,6 +3479,8 @@ export const messages: Catalogue = {
 	'settings.integrations.notSomething': '{label}: {write} — algo que esto no puede hacer',
 	'settings.integrations.nothingYetEverythingAn':
 		'Todavía nada — aquí se lista todo lo que un asistente cambia',
+	'settings.integrations.onlyWhatYouTick':
+		'Solo lo que marques. Lo que no marques queda fuera de su alcance.',
 	'settings.integrations.outsideWhat':
 		'{label}: {write} — fuera de lo que esta clave tiene permitido',
 	'settings.integrations.pluginAsksKey': 'Clave:',
@@ -3955,6 +3995,9 @@ export const messages: Catalogue = {
 	'tasks.plan.eGDentist': 'p. ej. dentista',
 	'tasks.plan.eGLearnRussian': 'p. ej. aprender ruso',
 	'tasks.plan.editBlock': 'Editar bloque de tarea',
+	'tasks.plan.endTheRepeat': 'Terminar la repetición',
+	'tasks.plan.endsTheRepeat':
+		'Deja de repetirse y pasa a la lista de tareas. Sus días pasados se van con él.',
 	'tasks.plan.every': 'Cada',
 	'tasks.plan.everyNDays': 'Cada N días',
 	'tasks.plan.everyNWeeks': 'Cada N semanas',
@@ -3966,6 +4009,7 @@ export const messages: Catalogue = {
 		'Formato: h (hora), d (duración en min), luego los nombres de actividad de lun a dom. Hora: 610 = 06:10,\n\t\t\t\t\t1810 = 18:10.',
 	'tasks.plan.forwardOneUnit': 'Avanzar un(a) {unit} ({key})',
 	'tasks.plan.forwardOneUnitPlain': 'Avanzar un(a) {unit}',
+	'tasks.plan.fullScreen': 'Pantalla completa',
 	'tasks.plan.gotIt': 'Entendido',
 	'tasks.plan.hDMTWTFSSn61030WakeUpWakeUpWakeUpWakeUpW':
 		'h,d,m,t,w,t,f,s,sn610,30,Despertar,Despertar,Despertar,Despertar,Despertar,,n630,60,Estirarse,Regar las plantas,Estirarse,Regar las plantas,Estirarse,,',
@@ -3988,6 +4032,7 @@ export const messages: Catalogue = {
 	'tasks.plan.leadHours': '{count} h',
 	'tasks.plan.leadHoursMinutes': '{hours}h {minutes}',
 	'tasks.plan.leadMinutes': '{count} min',
+	'tasks.plan.leaveFullScreen': 'Salir de pantalla completa',
 	'tasks.plan.load': 'Cargar',
 	'tasks.plan.loadIt': 'Cargarlo',
 	'tasks.plan.makeItOnceOnly': 'Hacerlo una sola vez',

@@ -190,6 +190,24 @@ export function formatLocalDate(d: Date): string {
 	return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 
+/**
+ * Whether an event belongs on this day's list.
+ *
+ * A timed one belongs to the day it starts. An all-day one to every day it
+ * covers: its end is the morning after its last day, as the calendar format
+ * writes it, so a five-day holiday is on five lists and not only the first.
+ */
+export function fallsOn(
+	event: { start?: unknown; end?: unknown; allDay?: boolean },
+	date: string
+): boolean {
+	if (!(event.start instanceof Date)) return false;
+	const first = formatLocalDate(event.start);
+	if (!event.allDay || !(event.end instanceof Date)) return first === date;
+	const after = formatLocalDate(event.end);
+	return first <= date && (date < after || date === first);
+}
+
 export function formatClock(d: Date): string {
 	return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
 }
@@ -688,6 +706,14 @@ export function baseGridOptions(
 		markLabels?: { done: (title: string) => string; undone: (title: string) => string };
 		/** The first column of a month, Sunday-based as the library counts. */
 		firstDay?: number;
+		/**
+		 * Whether anything on show lasts all day — a bill due, a holiday from a
+		 * subscribed calendar. The time grid draws those only in its all-day
+		 * row, so the row is there when they are and costs nothing when not.
+		 */
+		allDay?: boolean;
+		/** What that row is called, in the reader's language. */
+		allDayLabel?: string;
 	} = {}
 ): Calendar.Options {
 	const slotHeight = opts.slotHeight ?? GRID_ZOOM_LEVELS[GRID_DEFAULT_ZOOM_INDEX];
@@ -767,7 +793,8 @@ export function baseGridOptions(
 		// A month cell is one line tall whatever the zoom, so it stacks and then
 		// says "+2 more" instead of measuring.
 		dayMaxEvents: month,
-		allDaySlot: false,
+		allDaySlot: !month && opts.allDay === true,
+		...(opts.allDayLabel ? { allDayContent: opts.allDayLabel } : {}),
 		slotMinTime: minTime,
 		slotMaxTime: maxTime,
 		slotDuration: GRID_SLOT_DURATION,
@@ -817,9 +844,12 @@ export function baseGridOptions(
 		 * pixels tall, and a clipped word in it is worse than a clean bar you
 		 * can hover.
 		 */
+		// An all-day one has no hours to give, so it is its title alone, as in
+		// the month — otherwise it reads "12:00 – 12:00 AM".
 		eventContent: month
 			? (info) => info.event.title
 			: (info) => {
+					if (info.event.allDay) return info.event.title;
 					const mark = markHtml(info as { event: GridEventLike });
 					if (!eventFitsText(info.event, slotHeight)) {
 						return mark ? { html: mark } : '';

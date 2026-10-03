@@ -45,6 +45,8 @@
 
 	/** Which failed mail is asking to be dropped. */
 	let dismissing = $state<number | null>(null);
+	/** The subscriber whose removal is being confirmed. */
+	let removing = $state<number | null>(null);
 
 	const confirmedDismiss = () => {
 		return async ({ update }: { update: () => Promise<void> }) => {
@@ -150,13 +152,12 @@
 	{/if}
 
 	<!--
-		The accounts and what is happening to them, one band under another on
-		one surface. Two columns left the accounts' side mostly empty beside a
-		long history.
+		Two columns of cards, each one foldable: the page is read two cards at a
+		time, and the rest can be folded out of the way — remembered per card.
 	-->
-	<div class="room-surface">
-		<div class="divide-y divide-gray-200">
-			<Card title={t('admin.accounts')} flush pane>
+	<div>
+		<div class="grid items-start gap-4 xl:grid-cols-2">
+			<Card id="admin-accounts" title={t('admin.accounts')} flush collapsible>
 				<RoomToolbar inset>
 					{#snippet tools()}
 						<FilterBar
@@ -270,10 +271,11 @@
 				<!-- Only rendered when something is wrong: an empty "all mail fine"
 				     card would train the eye to skip this spot. -->
 				<Card
+					id="admin-mail-failures"
 					title={t('admin.mailThatDidNotGo')}
 					description={t('admin.theWatchersAreToldThis')}
 					flush
-					pane
+					collapsible
 				>
 					<div class="divide-y divide-gray-200">
 						{#each data.mailFailures as failure (failure.id)}
@@ -333,7 +335,110 @@
 				</Card>
 			{/if}
 
-			<Card title={t('admin.lately')} description={t('admin.everyAccountSHistoryInOne')} flush pane>
+			{#if data.newsletter}
+				<!-- Who gets the release mail, and what has gone to them. -->
+				<Card
+					id="admin-mailing-list"
+					title={t('admin.mailingList')}
+					description={t('admin.mailingListDescription', {
+						count: data.newsletter.subscribers.length
+					})}
+					flush
+					collapsible
+				>
+					<div class="divide-y divide-gray-200" data-tour="admin-mailing-list">
+						{#each data.newsletter.subscribers as one (one.id)}
+							<div class="list-row" data-row>
+								<span class="row-rail"></span>
+								<div class="list-row-main">
+									<p class="truncate text-sm text-gray-900">{one.email}</p>
+									<p class="mt-0.5 text-xs text-gray-500">
+										{t('admin.subscribedFrom', { source: one.source, when: ago(one.since) })}
+									</p>
+								</div>
+								<div class="list-row-actions">
+									{#if removing === one.id}
+										<form
+											method="post"
+											action="?/unsubscribe"
+											use:enhance={() =>
+												async ({ update }) => {
+													removing = null;
+													await update();
+												}}
+										>
+											<input type="hidden" name="id" value={one.id} />
+											<button class="btn btn-sm btn-danger" use:armed>{t('admin.confirm')}</button>
+										</form>
+										<button
+											type="button"
+											class="icon-btn"
+											title={t('ui.cancel')}
+											aria-label={t('ui.cancel')}
+											onclick={() => (removing = null)}><Icon name="close" /></button
+										>
+									{:else}
+										<button
+											type="button"
+											class="icon-btn icon-btn-danger"
+											title={t('admin.takeOffTheList')}
+											aria-label={t('admin.takeOffTheList')}
+											onclick={() => (removing = one.id)}
+										>
+											<Icon name="trash" />
+										</button>
+									{/if}
+								</div>
+							</div>
+						{:else}
+							<div class="px-4">
+								<EmptyState icon="send" title={t('admin.nobodyOnTheList')} compact />
+							</div>
+						{/each}
+					</div>
+				</Card>
+
+				<!-- What has gone to them: one row per release mail, apart from the
+				     addresses so a mail does not read as one more person on the list. -->
+				<Card
+					id="admin-release-mails"
+					title={t('admin.releaseMails')}
+					description={t('admin.releaseMailsDescription')}
+					flush
+					collapsible
+				>
+					<div class="divide-y divide-gray-200">
+						{#each data.newsletter.issues as issue (issue.id)}
+							<div class="list-row">
+								<span class="row-rail"></span>
+								<div class="list-row-main">
+									<p class="truncate text-sm text-gray-900">{issue.subject}</p>
+									<p class="mt-0.5 text-xs text-gray-500">
+										{t('admin.issueSent', {
+											sent: issue.sent,
+											failed: issue.failed,
+											when: ago(issue.sentAt)
+										})}
+									</p>
+								</div>
+							</div>
+						{:else}
+							<div class="list-row">
+								<span class="row-rail"></span>
+								<p class="list-row-main text-sm text-gray-500">{t('admin.noIssueYet')}</p>
+							</div>
+						{/each}
+					</div>
+				</Card>
+			{/if}
+
+			<Card
+				id="admin-lately"
+				title={t('admin.lately')}
+				description={t('admin.everyAccountSHistoryInOne')}
+				flush
+				collapsible
+			>
 				{#snippet actions()}
 					<button
 						type="button"
@@ -385,10 +490,11 @@
 				it, on an instance that turned the feature on.
 			-->
 			<Card
+				id="admin-sent-in"
 				title={t('admin.whatPeopleSentIn')}
 				description={t('admin.problemsSomebodyReportedIdeasThey')}
 				flush
-				pane
+				collapsible
 			>
 				{#if data.clientErrors.length === 0}
 					<EmptyState icon="info" title={t('admin.nothingReported')} compact />

@@ -40,7 +40,8 @@
 		label,
 		dataTour,
 		nested = false,
-		trailing
+		trailing,
+		dragType
 	}: {
 		tabs: StripTab[];
 		/** The index of the tab you are on, or -1. */
@@ -58,6 +59,12 @@
 		nested?: boolean;
 		/** What stands at the far end of the strip — a room's verb. */
 		trailing?: Snippet;
+		/**
+		 * Lets a tab be picked up and dropped somewhere else, carrying its index
+		 * under this type. Only for tabs without an `href`: a link already drags
+		 * as a link.
+		 */
+		dragType?: string;
 	} = $props();
 
 	let strip = $state<HTMLElement>();
@@ -108,6 +115,13 @@
 							type="button"
 							aria-current={index === current ? 'page' : undefined}
 							onclick={() => onpick?.(index)}
+							draggable={dragType ? 'true' : undefined}
+							ondragstart={dragType
+								? (event) => {
+										event.dataTransfer?.setData(dragType, String(index));
+										if (event.dataTransfer) event.dataTransfer.effectAllowed = 'move';
+									}
+								: undefined}
 						>
 							{#if tab.icon}<Icon name={tab.icon} size={14} />{/if}
 							{tab.label}

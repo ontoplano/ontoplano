@@ -70,6 +70,16 @@ describe('when the next reminder falls due', () => {
 		expect(next!.getTime()).toBeLessThan(new Date('2026-08-24T20:00:00Z').getTime());
 	});
 
+	test('one older than the catch-up window is not waited for', () => {
+		// A pass never rings one this old, so it is never stamped; waking for
+		// it meant waking every quarter second, forever, with the whole pass
+		// behind each wake — half a core on a small box.
+		const later = new Date(
+			new Date('2026-08-24T15:30:45Z').getTime() + (s.reminders.CATCH_UP_HOURS + 1) * 3600_000
+		);
+		expect(s.clock.nextDueAt(later)).toBeNull();
+	});
+
 	test('nothing beyond the horizon is waited for', () => {
 		// A reminder next month must not make the clock compute a month-long
 		// sleep; the ceiling is what keeps that from mattering either way.

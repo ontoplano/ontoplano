@@ -11,7 +11,7 @@ own write surface, the way the endpoints in [the API](api.md) are the
 write surface for everything else; both end up calling the same
 [services](services.md).
 
-**64 pages, 211 actions.**
+**65 pages, 212 actions.**
 
 | Page                                 | Actions                                                                                                                                                                                                                                                                                                                                                                                              |
 | ------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -47,6 +47,7 @@ write surface for everything else; both end up calling the same
 | `/media/gallery`                     | `create`, `planFolder`, `importFolder`, `rename`, `delete`                                                                                                                                                                                                                                                                                                                                           |
 | `/media/gallery/[id]`                | `upload`, `addTo`, `move`, `remove`, `rename`, `tag`                                                                                                                                                                                                                                                                                                                                                 |
 | `/media/gallery/notebooks/[...path]` | —                                                                                                                                                                                                                                                                                                                                                                                                    |
+| `/media/gallery/unused`              | `remove`                                                                                                                                                                                                                                                                                                                                                                                             |
 | `/newsletter/off`                    | —                                                                                                                                                                                                                                                                                                                                                                                                    |
 | `/notebooks`                         | —                                                                                                                                                                                                                                                                                                                                                                                                    |
 | `/notebooks/[id]`                    | —                                                                                                                                                                                                                                                                                                                                                                                                    |
@@ -485,7 +486,9 @@ once roles land.
 
 ### `/settings/integrations`
 
-What each family of permissions is called, in the words the app uses.
+The name the phone's own key wears, so making a second one replaces it.
+Shared with the reminders page, which reads it to know whether this phone
+is set up to ring at all — see `services/tokens.ts`.
 
 **`models`**
 
