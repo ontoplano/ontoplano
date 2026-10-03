@@ -17,12 +17,6 @@
 
 </div>
 
-> This software was released on September 5th, 2026. It's still maturing, and
-> it may contain bugs. LLMs are used extensively during development; their
-> output is reviewed and tested before it lands.
->
-> Help improve it by creating issues and pull requests.
-
 ## Summary
 
 Ontoplano is a central hub for organizing your life. Powerful enough to handle small details,
@@ -33,6 +27,15 @@ scope all your tasks, recipes, inventory, notes, bills etc. in specific notebook
 <div align="center">
 
 [![Try the demo](.github/badges/try-the-demo.svg)](https://demo.ontoplano.com)
+
+I am creating [tutorials for Ontoplano in YouTube](https://www.youtube.com/@eChedieck). Check them out or request one in the comments.
+
+> This software was publicly released on September 5th, 2026.
+> It's still maturing, and it may contain bugs.
+> LLMs are used during development; their
+> output is reviewed and tested before it lands.
+>
+> Help improve it by creating issues and pull requests.
 
 </div>
 
