@@ -291,6 +291,7 @@ kind of thing that stays in a deployment script for years.
 | `ONTOPLANO_SITE_COOKIE_DOMAIN`         | `src/lib/server/settings.ts`                                                                                                                               |
 | `ONTOPLANO_SITE_URL`                   | `src/lib/server/config.ts`                                                                                                                                 |
 | `ONTOPLANO_SKIP_MIGRATION_CHECK`       | `src/lib/server/db/assert-migrated.ts`                                                                                                                     |
+| `ONTOPLANO_SNAPSHOTS_KEPT`             | `scripts/db-snapshot.mjs`                                                                                                                                  |
 | `ONTOPLANO_STAGING`                    | `src/lib/server/settings.ts`                                                                                                                               |
 | `ONTOPLANO_STAGING_HOST`               | `scripts/android-flavours.mjs`                                                                                                                             |
 | `ONTOPLANO_STAGING_ORIGIN`             | `scripts/android-flavours.mjs`                                                                                                                             |
