@@ -3640,8 +3640,8 @@ has the same note beside its own version of this.
 
 Every picture that is in a notebook, as a gallery album.
 
-A picture in a note is an ordinary `media` row that the note's markdown
-points at — `![a shelf](/media/12)` — and nothing records which notebook it
+A picture in a note — or in a task, goal or idea filed in the notebook — is
+an ordinary `media` row that the writing's markdown points at — `![a shelf](/media/12)` — and nothing records which notebook it
 belongs to. That is on purpose: the writing is where the picture lives, so
 moving a note between notebooks, deleting the line, or pasting the same
 picture into a second note are all just edits to text, and a table recording
