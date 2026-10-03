@@ -20,6 +20,9 @@ releases mattered.
 
 ## 0.185.3 — 2026-10-03
 
+- While a room loads, the stand-in shows the room's own tabs — Settings no
+  longer loses Billing, Instance and Administration for a moment — and the
+  placeholder rows sit flush under the tabs instead of in an inset card.
 - The plan has a full-screen button beside Schemes: the week, its controls
   and nothing else, until Escape or the same button.
 - A repeating task block can go back to the task list too: Back to tasks

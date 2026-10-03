@@ -1,3 +1,5 @@
+import type { IconName } from '$lib/components/Icon.svelte';
+import { SvelteMap } from 'svelte/reactivity';
 /**
  * The places inside the room you are in, as the room itself lists them.
  *
@@ -13,14 +15,34 @@
  * disagree with what is on the screen.
  */
 
-export type RoomTab = { href: string; label: string };
+export type RoomTab = { href: string; label: string; icon?: IconName };
 
 /** What the room on screen is showing, or nothing on a screen with no strip. */
 const tabs = $state<{ of: RoomTab[] }>({ of: [] });
 
 /** Set by `TabbedRoom` as it draws, cleared as it leaves. */
+/*
+ * Every room's strip as it last drew it, kept for the screen that stands in
+ * for the room while it loads (`PendingPage`). The menu's list is not the
+ * room's strip — Settings shows Billing, Instance and Administration where
+ * they apply, and the menu does not — so a stand-in drawn from the menu lost
+ * tabs and then grew them back as the room arrived.
+ */
+const drawn = new SvelteMap<string, RoomTab[]>();
+const roomOf = (href: string) => `/${href.split('/')[1] ?? ''}`;
+
 export function setRoomTabs(next: RoomTab[]): void {
 	tabs.of = next;
+	if (next.length > 0)
+		drawn.set(
+			roomOf(next[0].href),
+			next.map((one) => ({ ...one }))
+		);
+}
+
+/** The strip the room at this path drew last, if it has been seen. */
+export function lastDrawnTabs(pathname: string): RoomTab[] | null {
+	return drawn.get(roomOf(pathname)) ?? null;
 }
 
 export function roomTabs(): RoomTab[] {

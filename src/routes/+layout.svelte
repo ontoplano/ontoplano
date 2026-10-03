@@ -8,6 +8,7 @@
 	import { resolve } from '$app/paths';
 	import { navigating, page } from '$app/state';
 	import PendingPage from '$lib/components/PendingPage.svelte';
+	import { lastDrawnTabs } from '$lib/room-tabs.svelte';
 	import { DESTINATIONS } from '$lib/destinations';
 	import { routeGlyph } from '$lib/glyphs';
 	import { isHidden } from '$lib/sections';
@@ -800,6 +801,17 @@
 			NAV_PLACES.find((one) => one.name === room)?.icon ??
 			routeGlyph(`/${place.href.split('/')[1] ?? ''}`) ??
 			place.icon;
+		// The room's own strip when it has been drawn this session — the menu
+		// lists less than some rooms show.
+		const seen = lastDrawnTabs(to);
+		if (seen) {
+			let current = -1;
+			seen.forEach((one, i) => {
+				const inside = to === one.href || to.startsWith(`${one.href}/`);
+				if (inside && (current === -1 || one.href.length > seen[current].href.length)) current = i;
+			});
+			return { path: to, title: t(room), glyph, tabs: seen, current };
+		}
 		return {
 			path: to,
 			title: t(room),

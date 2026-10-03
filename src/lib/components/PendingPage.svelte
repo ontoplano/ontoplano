@@ -75,6 +75,8 @@
 			<div class="room-body">{@render bones()}</div>
 		</div>
 	{:else}
-		<div class="border border-gray-200 bg-white shadow-card">{@render bones()}</div>
+		<!-- On the room's own body surface, flush under its strip: a card of its
+		     own here stood a quarter-rem down with a corner of its own. -->
+		<div class="room-body">{@render bones()}</div>
 	{/if}
 </div>
