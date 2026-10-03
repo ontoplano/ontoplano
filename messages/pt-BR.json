@@ -933,7 +933,7 @@
 	"gallery.notebooks.path.noPicturesInYourNotebooks": "Nenhuma foto nos seus cadernos",
 	"gallery.notebooks.path.pictures": "{title} — fotos",
 	"gallery.notebooks.path.putAPictureInA": "Coloque uma foto em uma nota e ela aparece aqui, em uma pasta com o nome do caderno dela.",
-	"gallery.notebooks.path.thePicturesInYourNotebooks": "As fotos dos seus cadernos. Cada uma fica na nota que a menciona.",
+	"gallery.notebooks.path.thePicturesInYourNotebooks": "As fotos das notas, tarefas, metas e ideias dos seus cadernos.",
 	"gallery.openTheAlbum": "Abrir o álbum",
 	"gallery.pictureIntoAlbum": "{willImport} foto{s} em {length} álbum{s2}",
 	"gallery.picturesCount": null,

@@ -32,6 +32,8 @@ releases mattered.
   and an Unsubscribe link instead of a printed address.
 - Administration lists the release mails apart from the addresses on the
   mailing list.
+- The gallery's Notebooks album also shows pictures pasted into a notebook's
+  tasks, goals and ideas, not only its notes.
 
 ## 0.185.3 — 2026-10-03
 

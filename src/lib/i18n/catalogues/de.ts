@@ -1031,7 +1031,7 @@ export const messages: Catalogue = {
 	'gallery.notebooks.path.putAPictureInA':
 		'Legen Sie ein Bild in eine Notiz, und es erscheint hier, in einem Ordner, der nach seinem Notizbuch benannt ist.',
 	'gallery.notebooks.path.thePicturesInYourNotebooks':
-		'Die Bilder in Ihren Notizbüchern. Jedes liegt in der Notiz, die es erwähnt.',
+		'Die Bilder in den Notizen, Aufgaben, Zielen und Ideen Ihrer Notizbücher.',
 	'gallery.openTheAlbum': 'Das Album öffnen',
 	'gallery.orderBy': 'Order albums by',
 	'gallery.orderName': 'Name',

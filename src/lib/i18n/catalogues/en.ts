@@ -992,7 +992,7 @@ export const messages: Catalogue = {
 	'gallery.notebooks.path.putAPictureInA':
 		'Put a picture in a note and it turns up here, in a folder named after its notebook.',
 	'gallery.notebooks.path.thePicturesInYourNotebooks':
-		'The pictures in your notebooks. Each one lives in the note that mentions it.',
+		"The pictures in your notebooks' notes, tasks, goals and ideas.",
 	'gallery.openTheAlbum': 'Open the album',
 	'gallery.orderBy': 'Order albums by',
 	'gallery.orderName': 'Name',

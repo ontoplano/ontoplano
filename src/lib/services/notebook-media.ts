@@ -1,8 +1,8 @@
 /**
  * Every picture that is in a notebook, as a gallery album.
  *
- * A picture in a note is an ordinary `media` row that the note's markdown
- * points at — `![a shelf](/media/12)` — and nothing records which notebook it
+ * A picture in a note — or in a task, goal or idea filed in the notebook — is
+ * an ordinary `media` row that the writing's markdown points at — `![a shelf](/media/12)` — and nothing records which notebook it
  * belongs to. That is on purpose: the writing is where the picture lives, so
  * moving a note between notebooks, deleting the line, or pasting the same
  * picture into a second note are all just edits to text, and a table recording
@@ -21,7 +21,16 @@
 import { and, eq, inArray, isNotNull, like } from 'drizzle-orm';
 
 import { db } from '$lib/db/index.js';
-import { diaryEntries, media, mediaTags, notebooks, tags } from '$lib/db/schema.js';
+import {
+	diaryEntries,
+	goals,
+	ideas,
+	media,
+	mediaTags,
+	notebooks,
+	tags,
+	todoTasks
+} from '$lib/db/schema.js';
 import type { Ctx } from './ctx.js';
 import { NotFoundError } from './errors.js';
 import type { AlbumPicture } from './gallery.js';
@@ -88,16 +97,42 @@ export type NotebookMediaFolder = {
  * them and a folder's parent always comes before it.
  */
 export function notebookMediaFolders(ctx: Ctx): NotebookMediaFolder[] {
-	const rows = db
-		.select({ title: notebooks.title, folder: notebooks.folder, content: diaryEntries.content })
-		.from(diaryEntries)
-		.innerJoin(notebooks, eq(diaryEntries.notebookId, notebooks.id))
-		.where(and(eq(diaryEntries.userId, ctx.userId), isNotNull(diaryEntries.notebookId)))
-		.all();
+	/*
+	 * Everything in a notebook that is written: its notes, and the notes of its
+	 * tasks and goals and the words of its ideas. A picture pasted into a task
+	 * filed under the kitchen is as much in the kitchen as one in a note.
+	 */
+	const notebook = { title: notebooks.title, folder: notebooks.folder };
+	const rows = [
+		...db
+			.select({ ...notebook, content: diaryEntries.content })
+			.from(diaryEntries)
+			.innerJoin(notebooks, eq(diaryEntries.notebookId, notebooks.id))
+			.where(and(eq(diaryEntries.userId, ctx.userId), isNotNull(diaryEntries.notebookId)))
+			.all(),
+		...db
+			.select({ ...notebook, content: todoTasks.notes })
+			.from(todoTasks)
+			.innerJoin(notebooks, eq(todoTasks.notebookId, notebooks.id))
+			.where(and(eq(todoTasks.userId, ctx.userId), isNotNull(todoTasks.notebookId)))
+			.all(),
+		...db
+			.select({ ...notebook, content: goals.notes })
+			.from(goals)
+			.innerJoin(notebooks, eq(goals.notebookId, notebooks.id))
+			.where(and(eq(goals.userId, ctx.userId), isNotNull(goals.notebookId)))
+			.all(),
+		...db
+			.select({ ...notebook, content: ideas.content })
+			.from(ideas)
+			.innerJoin(notebooks, eq(ideas.notebookId, notebooks.id))
+			.where(and(eq(ideas.userId, ctx.userId), isNotNull(ideas.notebookId)))
+			.all()
+	];
 
 	const byNotebook = new Map<string, Set<number>>();
 	for (const row of rows) {
-		const mentioned = picturesMentionedIn(row.content);
+		const mentioned = picturesMentionedIn(row.content ?? '');
 		if (mentioned.length === 0) continue;
 		const path = [...folderSegments(row.folder), row.title].join(NOTEBOOK_SEPARATOR);
 		const held = byNotebook.get(path) ?? new Set<number>();

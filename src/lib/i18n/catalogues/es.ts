@@ -1020,7 +1020,7 @@ export const messages: Catalogue = {
 	'gallery.notebooks.path.putAPictureInA':
 		'Pon una foto en una nota y aparece aquí, en una carpeta con el nombre de su cuaderno.',
 	'gallery.notebooks.path.thePicturesInYourNotebooks':
-		'Las fotos de tus cuadernos. Cada una vive en la nota que la menciona.',
+		'Las fotos de las notas, tareas, metas e ideas de tus cuadernos.',
 	'gallery.openTheAlbum': 'Abrir el álbum',
 	'gallery.orderBy': 'Order albums by',
 	'gallery.orderName': 'Name',
