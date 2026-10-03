@@ -127,7 +127,10 @@ test('a todo placed on the day becomes repeating, then once only', async ({ page
 	await page.getByRole('button', { name: title }).click();
 	const body = page.locator('.ec-body');
 	const box = (await body.boundingBox())!;
-	await page.mouse.click(box.x + box.width / 2, box.y + Math.min(box.height / 2, 300));
+	// In the grid's first hour: no starter week puts anything before nine, and
+	// the middle of the day lands beside whatever today's weekday has there —
+	// on a Saturday, Cook, whose editor took the click meant for this block.
+	await page.mouse.click(box.x + box.width / 2, box.y + 20);
 	await expect(block(page, title)).toBeVisible({ timeout: 20_000 });
 
 	await openBlock(page, title);
