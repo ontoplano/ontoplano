@@ -45,6 +45,8 @@
 
 	/** Which failed mail is asking to be dropped. */
 	let dismissing = $state<number | null>(null);
+	/** The subscriber whose removal is being confirmed. */
+	let removing = $state<number | null>(null);
 
 	const confirmedDismiss = () => {
 		return async ({ update }: { update: () => Promise<void> }) => {
@@ -327,6 +329,89 @@
 										</button>
 									{/if}
 								</div>
+							</div>
+						{/each}
+					</div>
+				</Card>
+			{/if}
+
+			{#if data.newsletter}
+				<!-- Who gets the release mail, and what has gone to them. -->
+				<Card
+					title={t('admin.mailingList')}
+					description={t('admin.mailingListDescription', {
+						count: data.newsletter.subscribers.length
+					})}
+					flush
+					pane
+				>
+					<div class="divide-y divide-gray-200" data-tour="admin-mailing-list">
+						{#each data.newsletter.issues as issue (issue.id)}
+							<div class="list-row">
+								<span class="row-rail"></span>
+								<div class="list-row-main">
+									<p class="truncate text-sm text-gray-900">{issue.subject}</p>
+									<p class="mt-0.5 text-xs text-gray-500">
+										{t('admin.issueSent', {
+											sent: issue.sent,
+											failed: issue.failed,
+											when: ago(issue.sentAt)
+										})}
+									</p>
+								</div>
+							</div>
+						{:else}
+							<div class="list-row">
+								<span class="row-rail"></span>
+								<p class="list-row-main text-sm text-gray-500">{t('admin.noIssueYet')}</p>
+							</div>
+						{/each}
+						{#each data.newsletter.subscribers as one (one.id)}
+							<div class="list-row" data-row>
+								<span class="row-rail"></span>
+								<div class="list-row-main">
+									<p class="truncate text-sm text-gray-900">{one.email}</p>
+									<p class="mt-0.5 text-xs text-gray-500">
+										{t('admin.subscribedFrom', { source: one.source, when: ago(one.since) })}
+									</p>
+								</div>
+								<div class="list-row-actions">
+									{#if removing === one.id}
+										<form
+											method="post"
+											action="?/unsubscribe"
+											use:enhance={() =>
+												async ({ update }) => {
+													removing = null;
+													await update();
+												}}
+										>
+											<input type="hidden" name="id" value={one.id} />
+											<button class="btn btn-sm btn-danger" use:armed>{t('admin.confirm')}</button>
+										</form>
+										<button
+											type="button"
+											class="icon-btn"
+											title={t('ui.cancel')}
+											aria-label={t('ui.cancel')}
+											onclick={() => (removing = null)}><Icon name="close" /></button
+										>
+									{:else}
+										<button
+											type="button"
+											class="icon-btn icon-btn-danger"
+											title={t('admin.takeOffTheList')}
+											aria-label={t('admin.takeOffTheList')}
+											onclick={() => (removing = one.id)}
+										>
+											<Icon name="trash" />
+										</button>
+									{/if}
+								</div>
+							</div>
+						{:else}
+							<div class="px-4">
+								<EmptyState icon="send" title={t('admin.nobodyOnTheList')} compact />
 							</div>
 						{/each}
 					</div>

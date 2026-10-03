@@ -27,6 +27,9 @@ releases mattered.
 - The keyboard works on a notebook's full screen; it did nothing there before.
 - Pressing New again while the last one is still being saved opens a fresh
   form once the save is in, rather than doing nothing.
+- The mailing list's form says whether an address has just joined or was
+  already on the list, and the administration page lists who is on it, what
+  release mail has gone out, and takes an address off.
 
 ## 0.185.1 — 2026-10-03
 

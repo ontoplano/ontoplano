@@ -107,7 +107,26 @@ describe('subscribing', () => {
 	test('what the form answers promises nothing to go and look for', async () => {
 		await list.subscribe('reader@example.test');
 
-		expect(list.SUBSCRIBE_ACCEPTED).not.toMatch(/inbox|confirm|link|email|mail/i);
+		for (const said of [list.SUBSCRIBE_JOINED, list.SUBSCRIBE_ALREADY])
+			expect(said).not.toMatch(/inbox|confirm|link|email|mail/i);
+	});
+
+	test('says whether the address joined or was already there', async () => {
+		expect(await list.subscribe('reader@example.test')).toBe('joined');
+		expect(await list.subscribe('Reader@example.test')).toBe('already');
+		list.unsubscribe(tokenOf('reader@example.test'));
+		expect(await list.subscribe('reader@example.test')).toBe('joined');
+	});
+
+	test('the administration page lists the list, and takes one off it', async () => {
+		await list.subscribe('one@example.test');
+		await list.subscribe('two@example.test');
+		const listed = list.listSubscribers();
+		expect(listed.map((one) => one.email).sort()).toEqual(['one@example.test', 'two@example.test']);
+
+		list.removeSubscriber(listed[0].id);
+		expect(list.listSubscribers()).toHaveLength(1);
+		expect(() => list.removeSubscriber(listed[0].id)).toThrow();
 	});
 
 	/*

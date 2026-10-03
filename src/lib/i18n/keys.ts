@@ -59,6 +59,7 @@ export type MessageKey =
 	| 'admin.id.whatThisAccountDidAnd'
 	| 'admin.id.willBeAbleToRead'
 	| 'admin.id.yes'
+	| 'admin.issueSent'
 	| 'admin.itsLinkHasExpired'
 	| 'admin.joined'
 	| 'admin.justNow'
@@ -66,13 +67,17 @@ export type MessageKey =
 	| 'admin.lastAttempts'
 	| 'admin.lately'
 	| 'admin.mailThatDidNotGo'
+	| 'admin.mailingList'
+	| 'admin.mailingListDescription'
 	| 'admin.makeAdmin'
 	| 'admin.member'
 	| 'admin.minutesAgo'
 	| 'admin.noAccountsYet'
+	| 'admin.noIssueYet'
 	| 'admin.noPage'
 	| 'admin.nobodyCanRegisterUntilThis'
 	| 'admin.nobodyMatchesThat'
+	| 'admin.nobodyOnTheList'
 	| 'admin.notSignedIn'
 	| 'admin.nothingRecordedYet'
 	| 'admin.nothingReported'
@@ -90,7 +95,9 @@ export type MessageKey =
 	| 'admin.sessionCount'
 	| 'admin.showOlder'
 	| 'admin.somebodyExampleCom'
+	| 'admin.subscribedFrom'
 	| 'admin.suggested'
+	| 'admin.takeOffTheList'
 	| 'admin.theWatchersAreToldThis'
 	| 'admin.unverified'
 	| 'admin.whatPeopleSentIn'
@@ -4064,14 +4071,17 @@ export interface MessageValuesFor {
 	'admin.accountsShowing': { count: number };
 	'admin.hoursAgo': { count: number };
 	'admin.id.typeEmailToConfirm': { email: string | number };
+	'admin.issueSent': { failed: string | number; sent: string | number; when: string | number };
 	'admin.last': {
 		attempts: string | number;
 		attempts2: string | number;
 		lastAttemptAt: string | number;
 	};
 	'admin.lastAttempts': { count: number; lastAttemptAt: string | number };
+	'admin.mailingListDescription': { count: number };
 	'admin.minutesAgo': { count: number };
 	'admin.sessionCount': { count: number };
+	'admin.subscribedFrom': { source: string | number; when: string | number };
 	'assistant.answeringWith': { model: string | number; provider: string | number };
 	'assistant.usedTool': { tool: string | number };
 	'attributes.copy': { key: string | number };

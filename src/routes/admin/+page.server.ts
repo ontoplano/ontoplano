@@ -7,6 +7,12 @@ import { ValidationError } from '$lib/services/errors';
 import { toActionFailure } from '$lib/http-errors';
 import { billingStatus, whyItCannotSell } from '$lib/server/services/billing';
 import { isDemo } from '$lib/server/settings';
+import {
+	listSubscribers,
+	newsletterEnabled,
+	removeSubscriber,
+	sentIssues
+} from '$lib/server/services/newsletter';
 
 /**
  * What the demo may see here, and what it may not.
@@ -42,6 +48,12 @@ export const load: PageServerLoad = async ({ url, locals }) => {
 		// Mail that did not go out. The same list /healthz counts, so the alert
 		// on a phone and the page it points at cannot disagree.
 		mailFailures: demo ? [] : openFailures(),
+		// The mailing list: who is on it, and what has gone out to them. Null
+		// on an instance that keeps no list, so the page draws nothing.
+		newsletter:
+			demo || !newsletterEnabled()
+				? null
+				: { subscribers: listSubscribers(), issues: sentIssues() },
 		/*
 		 * The one thing an operator must never learn from a bank statement.
 		 *
@@ -88,6 +100,15 @@ export const actions: Actions = adminActions({
 					new ValidationError(`Still not going out: ${result.reason ?? 'unknown'}`)
 				);
 			}
+			return { success: true };
+		} catch (e) {
+			return toActionFailure(e);
+		}
+	},
+	unsubscribe: async ({ request }) => {
+		const formData = await request.formData();
+		try {
+			removeSubscriber(Number(formData.get('id')));
 			return { success: true };
 		} catch (e) {
 			return toActionFailure(e);

@@ -1,12 +1,12 @@
 import { randomBytes } from 'node:crypto';
-import { eq, isNotNull, isNull, and } from 'drizzle-orm';
+import { and, desc, eq, isNotNull, isNull } from 'drizzle-orm';
 
 import { db } from '$lib/db/index.js';
 import { newsletterIssues, subscribers } from '$lib/db/schema.js';
 import { renderEmail } from '../email-template.js';
 import { loadConfig } from '../config.js';
 import { sendLogged } from './mail-log.js';
-import { ValidationError } from '$lib/services/errors.js';
+import { NotFoundError, ValidationError } from '$lib/services/errors.js';
 import { translatorFor } from '$lib/i18n/core';
 import { localeForAddress } from '$lib/server/locale';
 
@@ -47,16 +47,17 @@ import { localeForAddress } from '$lib/server/locale';
  *
  * Every row still carries a token, because that link is what it carries.
  *
- * ## What it never says
+ * ## What it says
  *
- * Subscribing answers the same thing whether the address was new, already
- * confirmed, or previously unsubscribed. The form must not be a way to ask
- * "is this person on your list", which it would be the moment the answers
- * differed.
+ * Whether the address was new or already on the list — the owner asked for
+ * the form to say which. The cost is that the form answers "is this address a
+ * subscriber?" for anybody who types one, which is why the rate limit in front
+ * of it stays tight. Mail still follows the stricter rule: an address already
+ * on the list is sent nothing.
  */
 
 /**
- * What the form says when it has worked.
+ * What the form says when it has worked: the two answers it can give.
  *
  * Here rather than in the route, beside the code that decides what actually
  * happens: the sentence went on saying "check your inbox — there is one link
@@ -64,7 +65,14 @@ import { localeForAddress } from '$lib/server/locale';
  * promise kept in a different file from the thing it promises is how that
  * happens. `tests/newsletter.test.ts` holds it to what `subscribe` does.
  */
-export const SUBSCRIBE_ACCEPTED = "You're on the list.";
+export const SUBSCRIBE_JOINED = "You're now on the list.";
+export const SUBSCRIBE_ALREADY = "You're already on the list.";
+
+/** What `subscribe` did: put the address on, or found it there. */
+export type Joined = 'joined' | 'already';
+
+/** How many past issues the administration page lists. */
+const ISSUES_SHOWN = 10;
 
 /** Long enough that a token cannot be guessed, short enough to sit in a URL. */
 const TOKEN_BYTES = 24;
@@ -106,9 +114,7 @@ function normalise(raw: unknown): string {
 /**
  * Take an address, and put it on the list.
  *
- * Answers the same whatever happened, because the caller is a public form and
- * the difference between "new" and "already on the list" is not the form's to
- * disclose. Mail follows the same rule: a welcome goes to an address that has
+ * Says whether it was already there. A welcome goes to an address that has
  * just joined and to nothing else, so the form cannot be used to send anything
  * to an address that did not ask for it twice.
  *
@@ -116,7 +122,7 @@ function normalise(raw: unknown): string {
  * bounced is subscribed — the list is the row — and the failure belongs in the
  * mail log where the operator sees it, not in an answer to a stranger.
  */
-export async function subscribe(rawEmail: unknown, source = 'site'): Promise<void> {
+export async function subscribe(rawEmail: unknown, source = 'site'): Promise<Joined> {
 	if (!newsletterEnabled())
 		throw new ValidationError({ key: 'errors.newsletter.notAvailableHere' });
 
@@ -126,7 +132,7 @@ export async function subscribe(rawEmail: unknown, source = 'site'): Promise<voi
 	// Already on the list: nothing to do, and above all no mail. Somebody
 	// hammering the form must not be able to use it to send anything to an
 	// address that did not ask.
-	if (existing?.confirmedAt && !existing.unsubscribedAt) return;
+	if (existing?.confirmedAt && !existing.unsubscribedAt) return 'already';
 
 	/*
 	 * On the list at once, rather than after a confirming click.
@@ -158,6 +164,7 @@ export async function subscribe(rawEmail: unknown, source = 'site'): Promise<voi
 	}
 
 	await welcome(email);
+	return 'joined';
 }
 
 /**
@@ -354,4 +361,57 @@ function tokenFor(email: string): string {
 			.where(eq(subscribers.email, email))
 			.get()?.token ?? ''
 	);
+}
+
+/** One address on the list, for the administration page. */
+export type ListedSubscriber = { id: number; email: string; source: string; since: string };
+
+/** Everybody on the list now, newest first. */
+export function listSubscribers(): ListedSubscriber[] {
+	return db
+		.select({
+			id: subscribers.id,
+			email: subscribers.email,
+			source: subscribers.source,
+			since: subscribers.confirmedAt
+		})
+		.from(subscribers)
+		.where(and(isNotNull(subscribers.confirmedAt), isNull(subscribers.unsubscribedAt)))
+		.orderBy(desc(subscribers.confirmedAt))
+		.all()
+		.map((row) => ({ ...row, since: row.since ?? '' }));
+}
+
+/**
+ * Take an address off the list, from the administration page.
+ *
+ * The same row the address's own link would write — kept, with a date — so a
+ * later subscribe starts again rather than quietly resuming.
+ */
+export function removeSubscriber(id: number): void {
+	const done = db
+		.update(subscribers)
+		.set({ unsubscribedAt: new Date().toISOString() })
+		.where(and(eq(subscribers.id, id), isNull(subscribers.unsubscribedAt)))
+		.run();
+	if (done.changes === 0) throw new NotFoundError('Subscriber');
+}
+
+/** What has gone out to the list, newest first. */
+export function sentIssues(limit = ISSUES_SHOWN) {
+	return db
+		.select()
+		.from(newsletterIssues)
+		.orderBy(desc(newsletterIssues.sentAt))
+		.limit(limit)
+		.all();
+}
+
+/** The versions already announced, for the release that collects what came since. */
+export function announcedVersions(): string[] {
+	return db
+		.select({ version: newsletterIssues.version })
+		.from(newsletterIssues)
+		.all()
+		.map((row) => row.version);
 }
