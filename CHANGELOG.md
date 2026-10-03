@@ -20,6 +20,8 @@ releases mattered.
 
 ## 0.185.3 — 2026-10-03
 
+- Picking a label from the suggestions closes them; typing the next one
+  opens them again.
 - Resting the pointer on a task mentioned in a note — or focusing it — shows
   that task as a card: its state, day, notebook, category and notes, with
   nothing to press.
