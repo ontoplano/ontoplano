@@ -6,7 +6,7 @@ import { visit } from './helpers/visit';
  * The activity picker, typed at rather than scrolled through.
  *
  * A `<select>` with forty activities in it is a list you hunt through, and the
- * way anybody finds "learn russian" is by typing two letters of it. The two
+ * way anybody finds "learn guitar" is by typing two letters of it. The two
  * things that had to be true: it shows everything the moment it opens — no
  * typing required to see anything — and typing narrows it loosely, so `lr`
  * finds a name whose letters are three words apart.

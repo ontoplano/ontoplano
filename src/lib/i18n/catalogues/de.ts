@@ -3903,7 +3903,7 @@ export const messages: Catalogue = {
 	'taskStatus.doing': 'In Arbeit',
 	'taskStatus.pending': 'Ausstehend',
 	'tasks.activities.anActivityIsANamed':
-		'Eine Aktivität ist eine benannte Sache, die Sie tun — Fitnessstudio, Russisch, konzentriertes Arbeiten. Aufgabenblöcke im Raster verweisen darauf.',
+		'Eine Aktivität ist eine benannte Sache, die Sie tun — Fitnessstudio, Gitarre, konzentriertes Arbeiten. Aufgabenblöcke im Raster verweisen darauf.',
 	'tasks.activities.categories': 'Kategorien',
 	'tasks.activities.colour': 'Colour',
 	'tasks.activities.confirm': 'Bestätigen?',
@@ -4026,7 +4026,7 @@ export const messages: Catalogue = {
 	'tasks.plan.due': 'Fällig',
 	'tasks.plan.duration': 'Dauer',
 	'tasks.plan.eGDentist': 'z. B. Zahnarzt',
-	'tasks.plan.eGLearnRussian': 'z. B. russisch lernen',
+	'tasks.plan.eGLearnGuitar': 'z. B. Gitarre lernen',
 	'tasks.plan.editBlock': 'Aufgabenblock bearbeiten',
 	'tasks.plan.endTheRepeat': 'Wiederholung beenden',
 	'tasks.plan.endsTheRepeat':
@@ -4454,8 +4454,8 @@ export const messages: Catalogue = {
 	'tour.gallery': 'Galerie',
 	'tour.giveItANumberIf': 'Geben Sie ihm eine Zahl, wenn es eine hat',
 	'tour.goals': 'Ziele',
-	'tour.gymRussianReadABlock':
-		'„Fitnessstudio“, „Russisch“, „Lesen“. Ein Aufgabenblock im Plan verweist auf eines davon, sodass ein Jahr Fitnessstudio ein einziges Ding ist.',
+	'tour.gymGuitarReadABlock':
+		'„Fitnessstudio“, „Gitarre“, „Lesen“. Ein Aufgabenblock im Plan verweist auf eines davon, sodass ein Jahr Fitnessstudio ein einziges Ding ist.',
 	'tour.hJKLMove':
 		'h j k l bewegen zwischen Karten und Spalten, H und L nehmen die ausgewählte Karte mit, und c markiert sie als erledigt.',
 	'tour.habits': 'Gewohnheiten',

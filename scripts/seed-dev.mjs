@@ -895,7 +895,7 @@ const deepWork = activity('deep work', work);
 const meetings = activity('meetings', work);
 const gym = activity('gym', health);
 const stretching = activity('stretching', health);
-const russian = activity('learn russian', learning);
+const guitar = activity('learn guitar', learning);
 const reading = activity('reading', learning);
 const piano = activity('piano practice', personal);
 const cooking = activity('cooking', home);
@@ -909,7 +909,7 @@ slot(5, '10:00', 45, gym);
 // Half an hour rather than a quarter: below about twenty minutes a block is
 // too short to draw its own name, and the day opened on an anonymous stripe.
 for (let weekday = 0; weekday < 7; weekday++) slot(weekday, '07:00', 30, stretching);
-slot(2, '20:00', 45, russian);
+slot(2, '20:00', 45, guitar);
 slot(4, '20:00', 45, piano);
 slot(6, '11:00', 90, cooking);
 // Fortnightly, so the recurrence editor has something that is not plain weekly.
@@ -967,18 +967,18 @@ oneOff(iso(dayOffset(1)), '07:30', 45, gym, 'pool is shut — run instead');
 oneOffInCategory(iso(dayOffset(1)), '19:30', 120, personal, 'dinner with M');
 oneOffInCategory(iso(dayOffset(-1)), '08:00', 60, health, 'physio');
 
-// One occurrence of the Wednesday Russian block, dropped for a single week.
-const russianSlot = one(
+// One occurrence of the Wednesday guitar block, dropped for a single week.
+const guitarSlot = one(
 	'select id from recurring_tasks where user_id = ? and activity_id = ? limit 1',
 	uid,
-	russian
+	guitar
 );
 if (
-	russianSlot &&
+	guitarSlot &&
 	!one(
 		'select id from suppressed_slots where user_id = ? and slot_id = ? and date = ?',
 		uid,
-		russianSlot.id,
+		guitarSlot.id,
 		iso(dayOffset(2))
 	)
 )
@@ -986,7 +986,7 @@ if (
 		'insert into suppressed_slots (user_id, date, slot_id) values (?, ?, ?)',
 		uid,
 		iso(dayOffset(2)),
-		russianSlot.id
+		guitarSlot.id
 	);
 
 // History to look at: last week done, this week partly.
@@ -1106,7 +1106,7 @@ const gymSlot = one(
 	gym
 );
 if (gymSlot) linkGoal(monthGoal, { slotId: gymSlot.id });
-linkGoal(yearGoal, { activityId: russian });
+linkGoal(yearGoal, { activityId: guitar });
 
 /*
  * A week counted from its to-dos, part done — the commonest goal there is,

@@ -255,7 +255,7 @@ export const TUTORIALS: Record<string, Tutorial> = {
 		steps: [
 			{
 				title: 'tour.theNamedThingsYouKeep',
-				body: 'tour.gymRussianReadABlock'
+				body: 'tour.gymGuitarReadABlock'
 			},
 			{
 				target: '[data-tour="activity-categories"]',

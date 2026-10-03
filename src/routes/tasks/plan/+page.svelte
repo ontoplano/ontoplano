@@ -4196,7 +4196,7 @@
 						<Field label={t('tasks.plan.activity')} span={6} required>
 							<!-- Typed at rather than scrolled: an account with forty
 							     activities was a list you hunted through, and "lr" is how
-							     anybody actually finds "learn russian". -->
+							     anybody actually finds "learn guitar". -->
 							<Picker
 								name="activityId"
 								required
@@ -4222,7 +4222,7 @@
 							<Field label={t('tasks.plan.newActivity')} span={8} required>
 								<OneLine
 									name="newActivityName"
-									placeholder={t('tasks.plan.eGLearnRussian')}
+									placeholder={t('tasks.plan.eGLearnGuitar')}
 									class="input"
 									required
 									autofocus

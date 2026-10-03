@@ -3855,7 +3855,7 @@ export const messages: Catalogue = {
 	'taskStatus.doing': 'Fazendo',
 	'taskStatus.pending': 'Pendente',
 	'tasks.activities.anActivityIsANamed':
-		'Uma atividade é algo com nome que você faz — academia, russo, trabalho focado. Os blocos de tarefa na grade apontam para elas.',
+		'Uma atividade é algo com nome que você faz — academia, violão, trabalho focado. Os blocos de tarefa na grade apontam para elas.',
 	'tasks.activities.categories': 'Categorias',
 	'tasks.activities.colour': 'Colour',
 	'tasks.activities.confirm': 'Confirmar?',
@@ -3978,7 +3978,7 @@ export const messages: Catalogue = {
 	'tasks.plan.due': 'Prazo',
 	'tasks.plan.duration': 'Duração',
 	'tasks.plan.eGDentist': 'ex.: dentista',
-	'tasks.plan.eGLearnRussian': 'ex.: aprender russo',
+	'tasks.plan.eGLearnGuitar': 'ex.: aprender violão',
 	'tasks.plan.editBlock': 'Editar bloco de tarefa',
 	'tasks.plan.endTheRepeat': 'Encerrar a repetição',
 	'tasks.plan.endsTheRepeat':
@@ -4407,8 +4407,8 @@ export const messages: Catalogue = {
 	'tour.gallery': 'Galeria',
 	'tour.giveItANumberIf': 'Dê um número a ela, se tiver um',
 	'tour.goals': 'Metas',
-	'tour.gymRussianReadABlock':
-		'“Academia”, “Russo”, “Ler”. Um bloco de tarefa no plano aponta para um destes, então um ano de academia é uma coisa só.',
+	'tour.gymGuitarReadABlock':
+		'“Academia”, “Violão”, “Ler”. Um bloco de tarefa no plano aponta para um destes, então um ano de academia é uma coisa só.',
 	'tour.hJKLMove':
 		'h j k l movem entre cartões e colunas, H e L levam o cartão selecionado com você, e c marca como feito.',
 	'tour.habits': 'Hábitos',

@@ -2,7 +2,7 @@
  * Loose matching for a picker somebody is typing into.
  *
  * A `<select>` with forty activities in it is a list you scroll; the way
- * anybody actually finds "learn russian" is by typing three letters of it.
+ * anybody actually finds "learn guitar" is by typing three letters of it.
  * `lr` should find it, and so should `russ`, and `learn ru` — which a
  * substring match does not do.
  *

@@ -3789,7 +3789,7 @@ export const messages: Catalogue = {
 	'taskStatus.doing': 'Doing',
 	'taskStatus.pending': 'Pending',
 	'tasks.activities.anActivityIsANamed':
-		'An activity is a named thing you do — gym, Russian, deep work. Task blocks on the grid point at these.',
+		'An activity is a named thing you do — gym, guitar, deep work. Task blocks on the grid point at these.',
 	'tasks.activities.categories': 'Categories',
 	'tasks.activities.colour': 'Colour',
 	'tasks.activities.confirm': 'Confirm?',
@@ -3910,7 +3910,7 @@ export const messages: Catalogue = {
 	'tasks.plan.due': 'Due',
 	'tasks.plan.duration': 'Duration',
 	'tasks.plan.eGDentist': 'e.g. dentist',
-	'tasks.plan.eGLearnRussian': 'e.g. learn russian',
+	'tasks.plan.eGLearnGuitar': 'e.g. learn guitar',
 	'tasks.plan.editBlock': 'Edit task block',
 	'tasks.plan.endTheRepeat': 'End the repeat',
 	'tasks.plan.endsTheRepeat':
@@ -4331,8 +4331,8 @@ export const messages: Catalogue = {
 	'tour.gallery': 'Gallery',
 	'tour.giveItANumberIf': 'Give it a number if it has one',
 	'tour.goals': 'Goals',
-	'tour.gymRussianReadABlock':
-		'“Gym”, “Russian”, “Read”. A task block on the plan points at one of these, so a year of gym is one thing.',
+	'tour.gymGuitarReadABlock':
+		'“Gym”, “Guitar”, “Read”. A task block on the plan points at one of these, so a year of gym is one thing.',
 	'tour.hJKLMove':
 		'h j k l move between cards and columns, H and L carry the selected card with you, and c marks it done.',
 	'tour.habits': 'Habits',

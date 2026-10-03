@@ -3871,7 +3871,7 @@ export const messages: Catalogue = {
 	'taskStatus.doing': 'En curso',
 	'taskStatus.pending': 'Pendiente',
 	'tasks.activities.anActivityIsANamed':
-		'Una actividad es algo con nombre que haces — gimnasio, ruso, trabajo profundo. Los bloques de tarea de la cuadrícula apuntan a ellas.',
+		'Una actividad es algo con nombre que haces — gimnasio, guitarra, trabajo profundo. Los bloques de tarea de la cuadrícula apuntan a ellas.',
 	'tasks.activities.categories': 'Categorías',
 	'tasks.activities.colour': 'Colour',
 	'tasks.activities.confirm': '¿Confirmar?',
@@ -3994,7 +3994,7 @@ export const messages: Catalogue = {
 	'tasks.plan.due': 'Vencimiento',
 	'tasks.plan.duration': 'Duración',
 	'tasks.plan.eGDentist': 'p. ej. dentista',
-	'tasks.plan.eGLearnRussian': 'p. ej. aprender ruso',
+	'tasks.plan.eGLearnGuitar': 'p. ej. aprender guitarra',
 	'tasks.plan.editBlock': 'Editar bloque de tarea',
 	'tasks.plan.endTheRepeat': 'Terminar la repetición',
 	'tasks.plan.endsTheRepeat':
@@ -4421,8 +4421,8 @@ export const messages: Catalogue = {
 	'tour.gallery': 'Galería',
 	'tour.giveItANumberIf': 'Dale un número si tiene uno',
 	'tour.goals': 'Metas',
-	'tour.gymRussianReadABlock':
-		'“Gimnasio”, “Ruso”, “Leer”. Un bloque de tarea en el plan apunta a uno de estos, así que un año de gimnasio es una sola cosa.',
+	'tour.gymGuitarReadABlock':
+		'“Gimnasio”, “Guitarra”, “Leer”. Un bloque de tarea en el plan apunta a uno de estos, así que un año de gimnasio es una sola cosa.',
 	'tour.hJKLMove':
 		'h j k l se mueven entre tarjetas y columnas, H y L llevan la tarjeta seleccionada contigo, y c la marca como hecha.',
 	'tour.habits': 'Hábitos',

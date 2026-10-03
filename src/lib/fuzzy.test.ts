@@ -1,24 +1,24 @@
 import { describe, expect, it } from 'vitest';
 import { fuzzyMatch, fuzzyRank, markHits } from './fuzzy';
 
-const names = ['learn russian', 'gym', 'morning gym', 'reading', 'deep work', 'lunch'];
+const names = ['learn guitar', 'gym', 'morning gym', 'reading', 'deep work', 'long run', 'lunch'];
 const ranked = (query: string) => fuzzyRank(names, query, (n) => n).map((r) => r.item);
 
 describe('finding a thing by typing at it', () => {
 	it('matches letters in order without needing them adjacent', () => {
-		expect(fuzzyMatch('learn russian', 'lr')).not.toBeNull();
-		expect(fuzzyMatch('learn russian', 'russ')).not.toBeNull();
-		expect(fuzzyMatch('learn russian', 'learn ru')).not.toBeNull();
+		expect(fuzzyMatch('learn guitar', 'lg')).not.toBeNull();
+		expect(fuzzyMatch('learn guitar', 'guit')).not.toBeNull();
+		expect(fuzzyMatch('learn guitar', 'learn gu')).not.toBeNull();
 	});
 
 	it('refuses letters that are not there, or are in the wrong order', () => {
-		expect(fuzzyMatch('learn russian', 'lz')).toBeNull();
-		expect(fuzzyMatch('learn russian', 'rl')).toBeNull();
+		expect(fuzzyMatch('learn guitar', 'lz')).toBeNull();
+		expect(fuzzyMatch('learn guitar', 'gl')).toBeNull();
 	});
 
 	it('ignores case and the spaces in the query', () => {
-		expect(fuzzyMatch('Learn Russian', 'LEARN RU')).not.toBeNull();
-		expect(fuzzyMatch('learn russian', '  l r  ')).not.toBeNull();
+		expect(fuzzyMatch('Learn Guitar', 'LEARN GU')).not.toBeNull();
+		expect(fuzzyMatch('learn guitar', '  l g  ')).not.toBeNull();
 	});
 
 	it('says where every letter landed', () => {
@@ -32,7 +32,7 @@ describe('the order the matches come back in', () => {
 	});
 
 	it('prefers letters that sit close together', () => {
-		// "lunch" holds l…u…n contiguously; "learn russian" spreads them out.
+		// "lunch" holds l…u…n contiguously; "long run" spreads them out.
 		expect(ranked('lun')[0]).toBe('lunch');
 	});
 

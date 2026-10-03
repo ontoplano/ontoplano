@@ -29,6 +29,8 @@ releases mattered.
   settings, sounds and places are read once per page instead of once per use.
 - Marking a bill paid ticks it the moment you press, and a message says it is
   paid once saved. Skipping and undoing are instant too.
+- The activity examples say "guitar" where they said "Russian", in every
+  language.
 - Self-hosting: `ONTOPLANO_SNAPSHOTS_KEPT` sets how many pre-migration
   snapshots are kept (ten by default); `0` keeps none. The demo also gives
   space back to the disk after removing expired visitors.

@@ -147,7 +147,7 @@ describe('copying a block to other days', () => {
 
 describe('skipping one day of a repeating block', () => {
 	test('touches that day and no other', () => {
-		const id = slots.createSlot(ctx, block({ weekday: 0, startTime: '16:00', label: 'Russian' }));
+		const id = slots.createSlot(ctx, block({ weekday: 0, startTime: '16:00', label: 'Guitar' }));
 
 		slots.suppressOccurrence(ctx, id, '2026-08-17');
 
@@ -158,26 +158,26 @@ describe('skipping one day of a repeating block', () => {
 	});
 
 	test('is undone by putting it back', () => {
-		const russian = slots.listWeeklySlots(ctx).find((s) => s.label === 'Russian')!;
-		slots.unsuppressOccurrence(ctx, russian.id, '2026-08-17');
+		const guitar = slots.listWeeklySlots(ctx).find((s) => s.label === 'Guitar')!;
+		slots.unsuppressOccurrence(ctx, guitar.id, '2026-08-17');
 		expect(
-			slots.listSuppressions(ctx, '2026-08-01', '2026-09-01').filter((s) => s.slotId === russian.id)
+			slots.listSuppressions(ctx, '2026-08-01', '2026-09-01').filter((s) => s.slotId === guitar.id)
 		).toHaveLength(0);
 	});
 
 	test('refuses a date that is not one', () => {
-		const russian = slots.listWeeklySlots(ctx).find((s) => s.label === 'Russian')!;
-		expect(() => slots.suppressOccurrence(ctx, russian.id, 'next tuesday')).toThrow();
+		const guitar = slots.listWeeklySlots(ctx).find((s) => s.label === 'Guitar')!;
+		expect(() => slots.suppressOccurrence(ctx, guitar.id, 'next tuesday')).toThrow();
 	});
 
 	test('and the skip goes when the block does', () => {
-		const russian = slots.listWeeklySlots(ctx).find((s) => s.label === 'Russian')!;
-		slots.suppressOccurrence(ctx, russian.id, '2026-08-24');
-		slots.deleteSlots(ctx, [russian.id]);
+		const guitar = slots.listWeeklySlots(ctx).find((s) => s.label === 'Guitar')!;
+		slots.suppressOccurrence(ctx, guitar.id, '2026-08-24');
+		slots.deleteSlots(ctx, [guitar.id]);
 
 		// An exception that outlives its rule is a row nothing can ever explain.
 		expect(
-			slots.listSuppressions(ctx, '2026-08-01', '2026-09-01').some((s) => s.slotId === russian.id)
+			slots.listSuppressions(ctx, '2026-08-01', '2026-09-01').some((s) => s.slotId === guitar.id)
 		).toBe(false);
 	});
 });

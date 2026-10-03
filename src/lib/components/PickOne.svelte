@@ -9,7 +9,7 @@
 	 * A `<select>` with forty activities in it is a list you scroll past, and
 	 * the app's own rule is to prefer the platform's control — but no platform
 	 * control does the thing being asked for here: show everything, and narrow
-	 * it loosely as somebody types, so `lr` finds "learn russian". A
+	 * it loosely as somebody types, so `lg` finds "learn guitar". A
 	 * `<datalist>` is the near miss: it substring-matches, and several browsers
 	 * show nothing at all until a character has been typed, which is exactly
 	 * the behaviour this is supposed to replace.
