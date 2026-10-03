@@ -93,6 +93,7 @@
 		placementFromDates,
 		decodeEventId,
 		weekdayToDate,
+		fallsOn,
 		formatLocalDate,
 		describeGridEvent,
 		eventFitsText,
@@ -2118,7 +2119,7 @@
 		);
 		return days.map((day: { date: string; isToday: boolean }) => {
 			const events = gridEvents
-				.filter((e) => e.start instanceof Date && formatLocalDate(e.start) === day.date)
+				.filter((e) => fallsOn(e, day.date))
 				.filter((e) => !String(e.id ?? '').startsWith('preview:'))
 				.sort((a, b) => (a.start as Date).getTime() - (b.start as Date).getTime())
 				.map((e): AgendaItem => {
@@ -2259,7 +2260,9 @@
 				done: (title) => t('tasks.plan.putBlockBackToPending', { title }),
 				undone: (title) => t('tasks.plan.markBlockAsDone', { title })
 			},
-			firstDay: (data.weekFirstDay + 1) % 7
+			firstDay: (data.weekFirstDay + 1) % 7,
+			allDay: gridEvents.some((e) => e.allDay),
+			allDayLabel: t('tasks.plan.allDay')
 		}),
 		events: gridEvents,
 		editable: true,

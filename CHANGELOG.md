@@ -20,6 +20,10 @@ releases mattered.
 
 ## 0.185.1 — 2026-10-03
 
+- The week and day views have an all-day row whenever something lasts all
+  day: bills due and all-day events from a subscribed calendar, which were
+  drawn only on the month before. A holiday that started last week is still
+  on this one, and on the phone's list it is on every day it covers.
 - The gallery has an Unused tile: pictures pasted into writing and then cut
   out of it, which nothing in the app reached any more. Delete them one at a
   time or all at once.
