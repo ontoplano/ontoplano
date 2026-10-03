@@ -122,7 +122,7 @@ export const SCOPE_SUBJECTS: Record<string, PlainKey> = {
 	today: 'settings.integrations.todaysPlan',
 	reminders: 'app.reminders',
 	calendar: 'settings.integrations.connections.calendarLink',
-	tasks: 'tasks.board.toDoList',
+	tasks: 'scopeGroups.todosAndGoals',
 	notes: 'settings.integrations.diaryAndNotebooks',
 	ideas: 'app.ideas',
 	audio: 'rooms.media.tabs.audios',

@@ -51,7 +51,7 @@ test('the key form offers to tie a key to one notebook', async ({ page }) => {
 	 * meant to be able to add its tiles. Nobody is filed under a subject.
 	 */
 	const people = page.getByRole('checkbox', { name: /People: write/ });
-	const tasks = page.getByRole('checkbox', { name: /Tasks: write/ });
+	const tasks = page.getByRole('checkbox', { name: /Todos and goals: write/ });
 	await expect(people).toBeEnabled();
 
 	await reach.selectOption('notebook');

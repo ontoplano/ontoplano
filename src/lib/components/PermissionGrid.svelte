@@ -55,6 +55,12 @@
 	const rows = $derived(permissionRows(scopes.map((one) => one.key)));
 	const choice = (key: string | null) => scopes.find((one) => one.key === key) ?? null;
 	const reaches = (key: string | null) => !key || !reachable || reachable.includes(key);
+	/*
+	 * Faint only when nothing in the row is within reach. A row faded for its
+	 * read while its write box still took a tick looked disabled and was not.
+	 */
+	const rowReaches = (row: { read: string | null; write: string | null }) =>
+		[row.read, row.write].some((key) => key !== null && reaches(key));
 
 	/*
 	 * Read once, deliberately: the list a form offers does not change while
@@ -182,7 +188,7 @@
 				{@const cautions = [row.read, row.write]
 					.map(choice)
 					.filter((one) => one?.caution && ticked[one.key] && reaches(one.key))}
-				<tr class={reaches(row.read ?? row.write) ? '' : 'opacity-40'} data-subject={row.subject}>
+				<tr class={rowReaches(row) ? '' : 'opacity-40'} data-subject={row.subject}>
 					<td class="py-1.5 text-gray-700" title={titleOf(row)}>{label}</td>
 					{#each [row.read, row.write] as scope, i (i)}
 						<td class="py-1.5 text-center">

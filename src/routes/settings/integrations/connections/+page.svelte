@@ -48,17 +48,6 @@
 		form?.success && form.action === 'createWebhook' ? form.secret : null
 	);
 
-	/**
-	 * The permission boxes, so the presets below can set them.
-	 *
-	 * The grid itself is `PermissionGrid`, shared with the assistant's key
-	 * form and the consent screen an assistant sends somebody to — the same
-	 * question, asked the same way. The presets stay here: "an AI assistant"
-	 * is a sentence that means something on a form where somebody is making a
-	 * key by hand, and nothing on a screen where an assistant is the one asking.
-	 */
-	let scopeChoice = $state<ReturnType<typeof PermissionGrid>>();
-
 	/** What the key being made is tied to; the grid fades what that leaves out. */
 	let tiedTo = $state('');
 	let tiedId = $state('');
@@ -781,42 +770,7 @@ Token: ${token}`;
 					<p class="mt-1 mb-2 text-xs text-gray-500">
 						{t('settings.integrations.connections.grantOnlyWhatTheApp')}
 					</p>
-					<!--
-						Eighteen checkboxes is a form somebody ticks wrong, and both wrong
-						answers are bad: a token that cannot do its job, or one that can do
-						more than it was made for. The one set anybody grants wholesale is
-						an AI assistant's, so that set is a button — read from the tools
-						themselves, so a tool added later is in it without anybody
-						remembering.
-					-->
-					<p class="mb-2 flex flex-wrap items-center gap-2">
-						<!-- The preset is the press a first visitor came to make. It reads
-						     and writes and does not delete — removing things for good is the
-						     quieter button beside it, pressed on purpose. -->
-						<button
-							type="button"
-							class="btn btn-sm"
-							onclick={() => scopeChoice?.tick(data.assistantScopes)}
-						>
-							{t('settings.integrations.connections.anAiAssistantMcp')}
-						</button>
-						<button
-							type="button"
-							class="btn btn-sm btn-quiet"
-							onclick={() => scopeChoice?.tick(data.assistantScopesDestructive)}
-						>
-							{t('settings.integrations.connections.andLetItDeleteThings')}
-						</button>
-						<button
-							type="button"
-							class="btn btn-sm btn-quiet"
-							onclick={() => scopeChoice?.tick([])}
-						>
-							{t('settings.integrations.connections.clear')}
-						</button>
-					</p>
 					<PermissionGrid
-						bind:this={scopeChoice}
 						scopes={data.scopes}
 						reachable={reachableFor(tiedTo)}
 						destructive

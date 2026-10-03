@@ -238,7 +238,7 @@ describe('what it cannot do', () => {
 	it('cannot ask the account questions — only the notebook', () => {
 		// `diary`, `week`, `goals` and the rest are about the whole account and
 		// name nothing, so there is no narrowing that would make them safe.
-		for (const tool of ['diary', 'goals', 'shopping_list', 'habits', 'today'])
+		for (const tool of ['diary', 'goals', 'habits', 'today'])
 			expect(failed(call(tool, {})), `${tool} answered a confined key`).toBe(true);
 	});
 
@@ -334,6 +334,45 @@ describe('recipes and habits, narrowed to the notebook', () => {
 		database
 			.all('select habit_id from habit_occurrences where user_id = ?', OWNER)
 			.some((row) => (row as { habit_id: number }).habit_id === habitId);
+
+	it('lists only the notebook’s things on the shopping list', () => {
+		const answer = call('shopping_list', {});
+		expect(failed(answer), said(answer)).toBe(false);
+		expect(said(answer)).not.toContain('milk');
+	});
+
+	it('lists only the notebook’s habits and ideas, whatever notebook is asked for', async () => {
+		const { createIdea } = await import('../src/lib/services/ideas');
+		createIdea(ctx(), { content: 'a skylight over the stairs', notebookId: mine });
+		createIdea(ctx(), { content: 'a private daydream' });
+		for (const args of [{}, { notebookId: other }]) {
+			const habits = said(call('all_habits', args));
+			expect(habits).toContain('sweep the dust');
+			const ideas = call('ideas', args);
+			expect(failed(ideas), said(ideas)).toBe(false);
+			expect(said(ideas)).toContain('a skylight over the stairs');
+			expect(said(ideas)).not.toContain('a private daydream');
+		}
+	});
+
+	/*
+	 * A room a notebook key may write, it may read. The grid fades a row by
+	 * its read, and a key that could add an idea and never list one again
+	 * was offered exactly that.
+	 */
+	it('reads every room it may write', async () => {
+		const { scopesWithin } = await import('../src/lib/server/mcp/confinement');
+		const within = scopesWithin('notebook');
+		// The one exception: `put_item` moves a notebook's own thing, but the
+		// places in the house are the account's, not the notebook's, so their
+		// list stays out of a notebook key's reach.
+		const theAccounts = ['locations:write'];
+		for (const scope of within.filter((one) => one.endsWith(':write'))) {
+			if (theAccounts.includes(scope)) continue;
+			const read = scope.replace(/:write$/, ':read');
+			if (read in SCOPES) expect(within, `${scope} without ${read}`).toContain(read);
+		}
+	});
 
 	it('lists only the notebook’s recipes, whatever notebook is asked for', () => {
 		for (const args of [{}, { notebookId: other }]) {

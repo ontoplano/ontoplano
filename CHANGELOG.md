@@ -18,6 +18,14 @@ the shape of the data changing. Bumping the minor per batch is what ran this
 file to 0.161 in a few months, which tells a reader nothing about which
 releases mattered.
 
+## 0.185.4 — 2026-10-03
+
+- A key tied to one notebook can now read that notebook's ideas, habits,
+  workouts, bills, ledgers, shopping list and task blocks, not only add to
+  them. In the permission grid a row is faded only when nothing in it applies,
+  and the tasks row says it covers goals too.
+- The token form no longer has the "An AI assistant (MCP)" preset buttons.
+
 ## 0.185.3 — 2026-10-03
 
 - While a room loads, the stand-in shows the room's own tabs — Settings no
