@@ -40,15 +40,15 @@ manager you already use.
 **Debian, Ubuntu, Mint, Pop!\_OS, Raspberry Pi OS**
 
 ```sh
-curl -LO https://github.com/ontoplano/ontoplano/releases/download/v0.185.0/ontoplano_0.185.0_amd64.deb
-sudo apt install ./ontoplano_0.185.0_amd64.deb
+curl -LO https://github.com/ontoplano/ontoplano/releases/download/v0.185.4/ontoplano_0.185.4_amd64.deb
+sudo apt install ./ontoplano_0.185.4_amd64.deb
 ```
 
 **Fedora, RHEL and its rebuilds, openSUSE**
 
 ```sh
-curl -LO https://github.com/ontoplano/ontoplano/releases/download/v0.185.0/ontoplano-0.185.0-1.x86_64.rpm
-sudo dnf install ./ontoplano-0.185.0-1.x86_64.rpm     # or: sudo zypper install ./ontoplano-0.185.0-1.x86_64.rpm
+curl -LO https://github.com/ontoplano/ontoplano/releases/download/v0.185.4/ontoplano-0.185.4-1.x86_64.rpm
+sudo dnf install ./ontoplano-0.185.4-1.x86_64.rpm     # or: sudo zypper install ./ontoplano-0.185.4-1.x86_64.rpm
 ```
 
 **Arch, Manjaro, EndeavourOS** — a recipe, built on your machine. It is not
@@ -56,8 +56,8 @@ on the AUR yet, so the two files it needs come from the release itself:
 
 ```sh
 mkdir ontoplano && cd ontoplano
-curl -LO https://github.com/ontoplano/ontoplano/releases/download/v0.185.0/PKGBUILD
-curl -LO https://github.com/ontoplano/ontoplano/releases/download/v0.185.0/ontoplano.install
+curl -LO https://github.com/ontoplano/ontoplano/releases/download/v0.185.4/PKGBUILD
+curl -LO https://github.com/ontoplano/ontoplano/releases/download/v0.185.4/ontoplano.install
 makepkg -si
 ```
 
@@ -67,7 +67,7 @@ Every release carries a `SHA256SUMS` covering each file attached to it. In the
 directory you downloaded into:
 
 ```sh
-curl -LO https://github.com/ontoplano/ontoplano/releases/download/v0.185.0/SHA256SUMS
+curl -LO https://github.com/ontoplano/ontoplano/releases/download/v0.185.4/SHA256SUMS
 sha256sum --ignore-missing -c SHA256SUMS
 ```
 
