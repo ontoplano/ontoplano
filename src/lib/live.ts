@@ -1,5 +1,6 @@
 import { isIsolated } from '$lib/isolated/mode';
 import { invalidateAll } from '$app/navigation';
+import { navigating } from '$app/state';
 
 /**
  * The browser half: hear that something changed, and reload the page's own data.
@@ -10,7 +11,7 @@ import { invalidateAll } from '$app/navigation';
  * SvelteKit refetches the loaders and Svelte updates only what actually
  * differs, so a list that gained one row does not flash.
  *
- * ## Three rules, each of which was a bug waiting
+ * ## Four rules, each of which was a bug waiting
  *
  * **Only when the tab can be seen.** A laptop with forty tabs would otherwise
  * refetch forty screens nobody is looking at, every time an assistant wrote
@@ -20,6 +21,9 @@ import { invalidateAll } from '$app/navigation';
  * **Never while somebody is typing.** A reload with a half-written note in a
  * textarea is the app eating their sentence. If a field is focused the reload
  * waits for it to be given up.
+ *
+ * **Never over a navigation.** A reload that starts while one is on its way
+ * cancels it, so the press that asked for it is lost. It waits for it to land.
  *
  * **Coalesced.** An assistant doing six things does six announcements in two
  * seconds, and six reloads is a page that strobes. They collapse into one.
@@ -93,6 +97,10 @@ export function live(options: LiveOptions = {}): () => void {
 		 */
 		if (document.visibilityState !== 'visible') return;
 		if (busyTyping()) return later();
+		// Nor over a navigation still on its way: a reload started after it
+		// cancels it, and the press that asked for it — a label pressed as a
+		// filter, a tab — does nothing. The page it lands on is loaded fresh.
+		if (navigating.to) return later();
 
 		const change = pending;
 		pending = null;

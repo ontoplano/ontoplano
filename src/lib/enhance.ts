@@ -245,7 +245,7 @@ export function enhance(form: HTMLFormElement, submit?: SubmitFunction) {
 			? { takeBack: () => {}, settle: () => {} }
 			: answerAtOnce(event);
 		const popsBefore = popsSoFar();
-		const hrefBefore = location.href;
+		const pathBefore = location.pathname;
 		return async (outcome) => {
 			const saved = outcome.result.type === 'success';
 			try {
@@ -280,7 +280,12 @@ export function enhance(form: HTMLFormElement, submit?: SubmitFunction) {
 			 */
 			if (saved) {
 				void historySettled().then(async () => {
-					const moved = Boolean(navigating.to) || location.href !== hrefBefore;
+					// Another page, not another query on this one: a filter pressed
+					// after the save writes the address too, and its own navigation
+					// loads the page fresh. Reloading over it cancelled the next
+					// press's navigation, so a second press on a label did nothing.
+					const elsewhere = (path: string | undefined) => path !== undefined && path !== pathBefore;
+					const moved = elsewhere(navigating.to?.url.pathname) || elsewhere(location.pathname);
 					if (!moved && popsSoFar() === popsBefore) return;
 					await navigationLanded();
 					await loadAfterHistory(invalidateAll);

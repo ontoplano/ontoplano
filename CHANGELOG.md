@@ -20,6 +20,9 @@ releases mattered.
 
 ## 0.185.4 — 2026-10-03
 
+- A filter or a tab pressed just after saving something sometimes did
+  nothing: the page reloading for the save cancelled it. The reload now
+  waits for it.
 - With six or more tabs of the app open, the next one never loaded — every
   tab held its own live connection and the browser allows six. One tab now
   listens for all of them, and another takes over when it closes.
