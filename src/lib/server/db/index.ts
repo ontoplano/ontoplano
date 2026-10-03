@@ -4,6 +4,7 @@ import * as schema from '$lib/db/schema.js';
 import { bindDb, db as bound } from '$lib/db/index.js';
 import { bindServerHost } from '../host.js';
 import { loadConfig, ensureDirectories } from '../config.js';
+import { timeStatements } from '../metrics.js';
 import { assertMigrated } from './assert-migrated.js';
 import { reconcileBodyLimit } from '../body-limit.js';
 
@@ -51,6 +52,8 @@ if (!building) {
 	ensureDirectories();
 	const config = loadConfig();
 	const client = new Database(config.database.path);
+	// Every statement timed, for `/metrics` and the request log.
+	timeStatements(client);
 
 	client.pragma('journal_mode = WAL');
 	client.pragma('foreign_keys = ON');

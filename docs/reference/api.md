@@ -124,6 +124,7 @@ sentence somebody agrees to when they grant it.
 | `/media/[id]`                                | GET    | —                 |
 | `/media/audio`                               | POST   | —                 |
 | `/media/audio/[id]`                          | GET    | —                 |
+| `/metrics`                                   | GET    | —                 |
 | `/oauth/register`                            | POST   | —                 |
 | `/oauth/token`                               | POST   | —                 |
 | `/robots.txt`                                | GET    | —                 |
@@ -536,10 +537,9 @@ self-hosted install does not advertise an endpoint it will refuse.
 
 ## What it answers
 
-The same thing, always: accepted. Whether the address was new, already on
-the list, or previously unsubscribed is not the form's to disclose — the
-moment those answers differ the form is a way to ask "is this person a
-subscriber?" about anybody.
+Whether the address joined or was already there — see "What it says" in
+`$lib/server/services/newsletter`, and the limits below, which are what
+keep that answer from being a way to sweep a list of addresses.
 
 **POST**
 
@@ -941,6 +941,18 @@ that bytes typed as audio are really a document; `attachment` rather than
 `inline` because nothing here needs to be _rendered_ — the page plays it
 through an `<audio>` element pointed at this URL, and a container that lies
 about its insides is then noise rather than a document on this origin.
+
+**GET**
+
+### `/metrics`
+
+The numbers `$lib/server/metrics` keeps, for whatever collects them.
+
+Behind the same token as `/healthz`'s detail, for the same reason: which
+routes are slow and what the process weighs tells somebody which request
+to send a thousand times. Sent as `Authorization: Bearer …` — what a
+Prometheus scrape config writes — or as `x-health-token`. With no token
+configured this route does not exist.
 
 **GET**
 

@@ -20,6 +20,9 @@ releases mattered.
 
 ## 0.185.3 — 2026-10-03
 
+- Self-hosted: with `ONTOPLANO_HEALTH_TOKEN` set, `/metrics` gives
+  Prometheus-format numbers — each route's time and how much of it was SQL,
+  the slowest statements, CPU, memory and event-loop lag.
 - In a note, a task's notes or an idea, Enter on a checklist line starts the
   next one with an empty box — a bullet with a bullet, a number with the next
   — and Enter on an empty one ends the list.
