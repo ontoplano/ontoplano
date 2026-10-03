@@ -1,3 +1,5 @@
+<!-- Generated with the release: edits here are overwritten. -->
+
 # Screenshots
 
 Every room on a desktop and on a phone. [Back to the README](../README.md).
@@ -8,81 +10,73 @@ Every room on a desktop and on a phone. [Back to the README](../README.md).
 
 ## Tasks
 
-The plan:
+### Plan
 
-![The plan](screenshots/tasks/plan.webp)
+![Tasks: Plan](screenshots/tasks/plan.webp)
 
-The board:
+### Board
 
-![The board](screenshots/tasks/board.webp)
+![Tasks: Board](screenshots/tasks/board.webp)
 
-Tasks:
+### Tasks
 
-![Tasks](screenshots/tasks/tasks.webp)
+![Tasks: Tasks](screenshots/tasks/tasks.webp)
 
-To do:
+### Activities
 
-![To do](screenshots/tasks/to-do.webp)
+![Tasks: Activities](screenshots/tasks/activities.webp)
 
-Activities:
+### Review
 
-![Activities](screenshots/tasks/activities.webp)
-
-The weekly review:
-
-![The weekly review](screenshots/tasks/review.webp)
-
-The menu, on the phone:
-
-![The plan, with the phone's menu](screenshots/tasks/plan-menu.webp)
-
-![The weekly review, with the phone's menu](screenshots/tasks/review-menu.webp)
+![Tasks: Review](screenshots/tasks/review.webp)
 
 ## Notebooks
 
-![Notebooks](screenshots/notebooks/notebooks.webp)
+### Notebooks
 
-The diary:
+![Notebooks: Notebooks](screenshots/notebooks/notebooks.webp)
 
-![The diary](screenshots/notebooks/diary.webp)
+### Diary
 
-Weekly notes:
+![Notebooks: Diary](screenshots/notebooks/diary.webp)
 
-![Weekly notes](screenshots/notebooks/weekly-notes.webp)
+### Ideas
 
-People:
+![Notebooks: Ideas](screenshots/notebooks/ideas.webp)
 
-![People](screenshots/notebooks/people.webp)
+### Weekly notes
 
-Ideas:
+![Notebooks: Weekly notes](screenshots/notebooks/weekly-notes.webp)
 
-![Ideas](screenshots/notebooks/ideas.webp)
+### People
 
-Tags:
+![Notebooks: People](screenshots/notebooks/people.webp)
 
-![Tags](screenshots/notebooks/tags.webp)
+### Tags
+
+![Notebooks: Tags](screenshots/notebooks/tags.webp)
 
 ## Health
 
-Habits:
+### Habits
 
-![Habits](screenshots/health/habits.webp)
+![Health: Habits](screenshots/health/habits.webp)
 
-Workouts:
+### Workouts
 
-![Workouts](screenshots/health/workouts.webp)
+![Health: Workouts](screenshots/health/workouts.webp)
 
-Recipes:
+### Recipes
 
-![Recipes](screenshots/health/recipes.webp)
+![Health: Recipes](screenshots/health/recipes.webp)
 
-Sleep:
+### Sleep
 
-![Sleep](screenshots/health/sleep.webp)
+![Health: Sleep](screenshots/health/sleep.webp)
 
-Weight:
+### Weight
 
-![Weight](screenshots/health/weight.webp)
+![Health: Weight](screenshots/health/weight.webp)
 
 ## Inventory
 
@@ -90,21 +84,21 @@ Weight:
 
 ## Finance
 
-Ledgers:
+### Ledgers
 
-![Ledgers](screenshots/finance/ledgers.webp)
+![Finance: Ledgers](screenshots/finance/ledgers.webp)
 
-Rules:
+### Bills
 
-![Rules](screenshots/finance/rules.webp)
+![Finance: Bills](screenshots/finance/bills.webp)
 
-Bills:
+### Rules
 
-![Bills](screenshots/finance/bills.webp)
+![Finance: Rules](screenshots/finance/rules.webp)
 
-Insights:
+### Insights
 
-![Insights](screenshots/finance/insights.webp)
+![Finance: Insights](screenshots/finance/insights.webp)
 
 ## Goals
 
@@ -112,18 +106,18 @@ Insights:
 
 ## Media
 
-The gallery:
+### Recordings
 
-![The gallery](screenshots/media/gallery.webp)
+![Media: Recordings](screenshots/media/recordings.webp)
 
-Recordings:
+### Gallery
 
-![Recordings](screenshots/media/recordings.webp)
+![Media: Gallery](screenshots/media/gallery.webp)
 
 ## Reminders
 
 ![Reminders](screenshots/reminders/reminders.webp)
 
-## AI agents
+## Settings
 
-![AI agents in settings](screenshots/settings/ai.webp)
+![Settings](screenshots/settings/ai-integrations.webp)
