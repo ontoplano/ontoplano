@@ -936,7 +936,7 @@
 						.filter((one: Todo) => one.notebookSeq !== null)
 						.map((one: Todo) => [
 							one.notebookSeq as number,
-							{ title: one.title, done: CLOSED_STATUSES.includes(one.status) }
+							{ title: one.title, done: CLOSED_STATUSES.includes(one.status), task: one }
 						])
 				)
 	);

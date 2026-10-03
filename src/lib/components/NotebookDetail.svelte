@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { peekRefs } from '$lib/task-peek.svelte';
 	import { Reveal, revealNear } from '$lib/reveal.svelte';
 	import GoalFields, { type FormTarget } from '$lib/components/fields/GoalFields.svelte';
 	import ShowingCount from '$lib/components/ShowingCount.svelte';
@@ -704,7 +705,7 @@
 				.filter((one) => one.notebookSeq !== null)
 				.map((one) => [
 					one.notebookSeq as number,
-					{ title: one.title, done: CLOSED_STATUSES.includes(one.status) }
+					{ title: one.title, done: CLOSED_STATUSES.includes(one.status), task: one }
 				])
 		)
 	);
@@ -2527,7 +2528,11 @@
 								-->
 								<!-- svelte-ignore a11y_click_events_have_key_events -->
 								<!-- svelte-ignore a11y_no_static_element_interactions -->
-								<div class="md mt-2 text-sm text-gray-900" onclick={openReferencedTodo}>
+								<div
+									class="md mt-2 text-sm text-gray-900"
+									onclick={openReferencedTodo}
+									use:peekRefs={todoRefs}
+								>
 									<!-- `renderMarkdown` escapes every character of the input before it emits a
 									     tag, and emits only attributes it writes itself. See `$lib/markdown.ts`. -->
 									<!-- eslint-disable-next-line svelte/no-at-html-tags -->

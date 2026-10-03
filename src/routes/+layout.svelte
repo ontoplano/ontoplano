@@ -45,6 +45,7 @@
 	import FanMenu, { type Petal } from '$lib/components/FanMenu.svelte';
 	import ReportDialog from '$lib/components/ReportDialog.svelte';
 	import Tooltips from '$lib/components/Tooltips.svelte';
+	import TaskPeek from '$lib/components/TaskPeek.svelte';
 	import { hasTutorial } from '$lib/tutorials';
 	import Logo from '$lib/components/Logo.svelte';
 	import Modal from '$lib/components/Modal.svelte';
@@ -1785,6 +1786,7 @@
 		<!-- Every `title` in the app, drawn by the app rather than by the
 		     browser. One listener; nothing else changes. -->
 		<Tooltips />
+		<TaskPeek />
 		<!--
 			The list, on the phone, opened from the fan.
 

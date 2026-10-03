@@ -20,6 +20,9 @@ releases mattered.
 
 ## 0.185.3 — 2026-10-03
 
+- Resting the pointer on a task mentioned in a note — or focusing it — shows
+  that task as a card: its state, day, notebook, category and notes, with
+  nothing to press.
 - Self-hosted: with `ONTOPLANO_HEALTH_TOKEN` set, `/metrics` gives
   Prometheus-format numbers — each route's time and how much of it was SQL,
   the slowest statements, CPU, memory and event-loop lag.

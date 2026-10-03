@@ -25,6 +25,7 @@
 	 */
 	import TextBox from './TextBox.svelte';
 	import { continueList } from '$lib/list-continue';
+	import { peekRefs } from '$lib/task-peek.svelte';
 	import Written from './Written.svelte';
 	import { renderMarkdown, type NoteRefs, type TodoRefs } from '$lib/markdown';
 	import RefPicker from './RefPicker.svelte';
@@ -370,6 +371,7 @@
 					: 'invisible absolute inset-0'}"
 			aria-live="off"
 			aria-label={t('markdown.preview')}
+			use:peekRefs={todos}
 			aria-hidden={showing === 'write' ? 'true' : undefined}
 			inert={showing === 'write' ? true : undefined}
 		>
