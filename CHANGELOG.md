@@ -20,6 +20,10 @@ releases mattered.
 
 ## 0.185.3 — 2026-10-03
 
+- A repeating task block can go back to the task list too: Back to tasks
+  ends its repeat, after asking.
+- The tasks beside the plan no longer have a tick: finishing one there sent it
+  out of sight. They are for putting on the week.
 - The Tasks room's tabs read Plan, Tasks, Board.
 - Picking a label from the suggestions closes them; typing the next one
   opens them again.

@@ -3973,6 +3973,9 @@ export const messages: Catalogue = {
 	'tasks.plan.eGDentist': 'ex.: dentista',
 	'tasks.plan.eGLearnRussian': 'ex.: aprender russo',
 	'tasks.plan.editBlock': 'Editar bloco de tarefa',
+	'tasks.plan.endTheRepeat': 'Encerrar a repetição',
+	'tasks.plan.endsTheRepeat':
+		'Para de se repetir e vai para a lista de tarefas. Os dias passados vão junto.',
 	'tasks.plan.every': 'A cada',
 	'tasks.plan.everyNDays': 'A cada N dias',
 	'tasks.plan.everyNWeeks': 'A cada N semanas',

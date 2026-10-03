@@ -405,6 +405,8 @@
 	let editingKind: BlockKind | null = $state(null);
 	let editingBlockId: number | null = $state(null);
 	let confirmingFormDelete = $state(false);
+	/** A repeating block being sent back to the to-do list, which ends its repeat. */
+	let confirmingBackToTodo = $state(false);
 	let formDate = $state('');
 	let formWeekday = $state(0);
 	// The Repeats control extends the weekly/one-off toggle rather than replacing
@@ -907,8 +909,11 @@
 	/** How many cards the strip shows before "Show all": about three rows. */
 	const TRAY_SHOWN = 12;
 	let trayAll = $state(false);
-	/** Ticked here and not yet answered: gone from the strip at once. */
-	let trayTicked = $state<Set<number>>(new Set());
+	/*
+	 * No tick on the strip. Finishing a task here took it off the strip and
+	 * out of sight, to a page somebody had not opened — the strip is for
+	 * putting tasks on the week; the list is where they are finished.
+	 */
 	const TRAY_ORDERS = ['due', 'priority', 'created'] as const;
 	type TrayOrder = (typeof TRAY_ORDERS)[number];
 	const TRAY_ORDER_LABELS: Record<TrayOrder, PlainKey> = {
@@ -942,7 +947,7 @@
 
 	const trayMatches = $derived.by(() => {
 		const wanted = trayLooking.trim().toLowerCase();
-		let rows: TrayTodo[] = data.todos.filter((one: TrayTodo) => !trayTicked.has(one.id));
+		let rows: TrayTodo[] = [...data.todos];
 		rows = rows.filter((one: TrayTodo) =>
 			trayNotebook === ''
 				? true
@@ -990,18 +995,6 @@
 	 */
 	let placingTodoId: number | null = $state(null);
 	const placingTodo = $derived(data.todos.find((t: { id: number }) => t.id === placingTodoId));
-
-	/** A todo in the tray ticked off where it stands, as the list would. */
-	async function tickTrayTodo(todoId: number) {
-		// Off the strip on the press; the answer only puts it back if it failed.
-		trayTicked = new Set([...trayTicked, todoId]);
-		const body = new FormData();
-		body.set('id', String(todoId));
-		body.set('status', 'done');
-		const ok = await postGridAction('setTodoStatus', body, t('errors.unexpected'));
-		if (ok) await invalidateAll();
-		trayTicked = new Set([...trayTicked].filter((id) => id !== todoId));
-	}
 
 	async function scheduleTodoAt(todoId: number, target: { date: string; startTime: string }) {
 		const body = new FormData();
@@ -3002,8 +2995,6 @@
 							hint={t('tasks.plan.tapItThenTapATime')}
 							color={todo.categoryColor}
 							doing={todo.status === 'doing'}
-							tickLabel={t('todoRows.markComplete')}
-							ontick={() => tickTrayTodo(todo.id)}
 						>
 							{#snippet meta()}
 								<!-- What it is filed under and when it is owed, in words: which
@@ -4411,24 +4402,56 @@
 					<!--
 						The same act as dragging the block onto the todo strip, for a
 						screen where that drag is awkward — and the one place somebody
-						looking for it would think to look. One-offs only: a weekly
-						block is a shape of the week, not a task waiting for a time.
+						looking for it would think to look. A repeating block can go back
+						too: it stops repeating and becomes the task, which takes its past
+						days with it, so that one asks first.
 					-->
-					{#if editingKind === 'exceptional'}
+					{#if editingKind}
 						<form
 							method="post"
 							action="?/unscheduleBlock"
+							class="flex items-center gap-1"
 							use:enhance={() => {
 								return async ({ update }) => {
 									await update({ reset: false });
+									confirmingBackToTodo = false;
 									closeForm();
 								};
 							}}
 						>
 							<input type="hidden" name="id" value={editingBlockId} />
-							<button type="submit" class="btn btn-sm" title={t('tasks.plan.takeItOffTheDay')}>
-								{t('tasks.plan.backToToDo')}
-							</button>
+							<input type="hidden" name="kind" value={editingKind} />
+							<input type="hidden" name="date" value={selectedDateStr()} />
+							{#if editingKind === 'slot' && !confirmingBackToTodo}
+								<button
+									type="button"
+									class="btn btn-sm"
+									title={t('tasks.plan.endsTheRepeat')}
+									onclick={() => (confirmingBackToTodo = true)}
+								>
+									{t('tasks.plan.backToToDo')}
+								</button>
+							{:else if editingKind === 'slot'}
+								<button
+									type="submit"
+									class="btn btn-sm btn-danger"
+									title={t('tasks.plan.endsTheRepeat')}
+									use:armed
+								>
+									{t('tasks.plan.endTheRepeat')}
+								</button>
+								<button
+									type="button"
+									class="icon-btn"
+									title={t('ui.cancel')}
+									aria-label={t('ui.cancel')}
+									onclick={() => (confirmingBackToTodo = false)}><Icon name="close" /></button
+								>
+							{:else}
+								<button type="submit" class="btn btn-sm" title={t('tasks.plan.takeItOffTheDay')}>
+									{t('tasks.plan.backToToDo')}
+								</button>
+							{/if}
 						</form>
 					{/if}
 

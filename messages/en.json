@@ -379,6 +379,8 @@
 	"settings.integrations.everyRead": "Every read",
 	"settings.integrations.everyWrite": "Every write",
 	"shortcut.cycleDayWeekMonth": "Cycle day, week and month",
+	"tasks.plan.endTheRepeat": "End the repeat",
+	"tasks.plan.endsTheRepeat": "Stops it repeating and puts it on the to-do list. Its past days go with it.",
 	"tasks.plan.showAsCalendar": "Show as the calendar (a)",
 	"tasks.plan.showAsList": "Show as a list (a)",
 	"titles.openingTheDemo": "Opening the demo",

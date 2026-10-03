@@ -3417,6 +3417,8 @@ export type MessageKey =
 	| 'tasks.plan.eGDentist'
 	| 'tasks.plan.eGLearnRussian'
 	| 'tasks.plan.editBlock'
+	| 'tasks.plan.endTheRepeat'
+	| 'tasks.plan.endsTheRepeat'
 	| 'tasks.plan.every'
 	| 'tasks.plan.everyNDays'
 	| 'tasks.plan.everyNWeeks'

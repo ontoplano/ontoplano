@@ -379,6 +379,8 @@
 	"settings.integrations.everyRead": "Toda lectura",
 	"settings.integrations.everyWrite": "Toda escritura",
 	"shortcut.cycleDayWeekMonth": "Recorrer día, semana y mes",
+	"tasks.plan.endTheRepeat": "Terminar la repetición",
+	"tasks.plan.endsTheRepeat": "Deja de repetirse y pasa a la lista de tareas. Sus días pasados se van con él.",
 	"tasks.plan.showAsCalendar": "Mostrar como calendario (a)",
 	"tasks.plan.showAsList": "Mostrar como lista (a)",
 	"titles.openingTheDemo": "Abriendo la demo",
