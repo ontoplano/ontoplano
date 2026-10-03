@@ -374,6 +374,25 @@ describe('recipes and habits, narrowed to the notebook', () => {
 		}
 	});
 
+	/*
+	 * And the other way round: a room it may read, it may write. A key that
+	 * could list a notebook's bills and never add one was offered half a row.
+	 */
+	it('writes every room it may read', async () => {
+		const { scopesWithin } = await import('../src/lib/server/mcp/confinement');
+		const within = scopesWithin('notebook');
+		// The one exception: a notebook key reads the tags its notebook wears,
+		// but renaming, recolouring or removing a tag changes the account's one
+		// vocabulary, which every other notebook shares.
+		const theAccounts = ['tags:write'];
+		const missing = within
+			.filter((one) => one.endsWith(':read'))
+			.map((one) => one.replace(/:read$/, ':write'))
+			.filter((write) => write in SCOPES && !within.includes(write))
+			.filter((write) => !theAccounts.includes(write));
+		expect(missing).toEqual([]);
+	});
+
 	it('lists only the notebook’s recipes, whatever notebook is asked for', () => {
 		for (const args of [{}, { notebookId: other }]) {
 			const answer = call('recipes', args);

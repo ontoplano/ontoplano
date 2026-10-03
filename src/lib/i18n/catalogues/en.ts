@@ -2764,7 +2764,7 @@ export const messages: Catalogue = {
 	'scopeGroups.people': 'People',
 	'scopeGroups.plumbing': 'Integrations',
 	'scopeGroups.removingThings': 'Removing things',
-	'scopeGroups.todosAndGoals': 'Todos and goals',
+	'scopeGroups.tasksAndGoals': 'Tasks and goals',
 	'scopeGroups.whatYouWrite': 'Diary, notebooks and ideas',
 	'scopeGroups.yourHome': 'Home, kitchen and shopping',
 	'scopeGroups.yourWeek': 'Your week',
@@ -3227,8 +3227,6 @@ export const messages: Catalogue = {
 	'settings.integrations.aiAssistant': 'AI assistant',
 	'settings.integrations.aiAssistantDefaultName': 'AI assistant',
 	'settings.integrations.allOfIt': 'All',
-	'settings.integrations.allOfItUnlessYou':
-		'All of it, unless you say otherwise. Anything unticked stays out of reach.',
 	'settings.integrations.andLetItDeleteThings': '…and let it delete things',
 	'settings.integrations.bankStatements': 'Bank statements',
 	'settings.integrations.chat.answeringAs': '{provider}, key {prefix}…, answering as {model}.',
@@ -3405,6 +3403,8 @@ export const messages: Catalogue = {
 	'settings.integrations.notSomething': '{label}: {write} — not something this can do',
 	'settings.integrations.nothingYetEverythingAn':
 		'Nothing yet — everything an assistant changes is listed here',
+	'settings.integrations.onlyWhatYouTick':
+		'Only what you tick. Anything unticked stays out of reach.',
 	'settings.integrations.outsideWhat': '{label}: {write} — outside what this key is tied to',
 	'settings.integrations.pluginAsksKey': 'Key:',
 	'settings.integrations.pluginAsksYourOntoplano': 'Your ontoplano:',

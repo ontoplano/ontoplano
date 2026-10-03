@@ -2813,7 +2813,7 @@ export const messages: Catalogue = {
 	'scopeGroups.people': 'Pessoas',
 	'scopeGroups.plumbing': 'Integrações',
 	'scopeGroups.removingThings': 'Apagar coisas',
-	'scopeGroups.todosAndGoals': 'Tarefas e metas',
+	'scopeGroups.tasksAndGoals': 'Tarefas e metas',
 	'scopeGroups.whatYouWrite': 'Diário, cadernos e ideias',
 	'scopeGroups.yourHome': 'Casa, cozinha e compras',
 	'scopeGroups.yourWeek': 'Sua semana',
@@ -3284,8 +3284,6 @@ export const messages: Catalogue = {
 	'settings.integrations.aiAssistant': 'Assistente de IA',
 	'settings.integrations.aiAssistantDefaultName': 'Assistente de IA',
 	'settings.integrations.allOfIt': 'Tudo',
-	'settings.integrations.allOfItUnlessYou':
-		'Tudo, a menos que você diga o contrário. O que estiver desmarcado fica fora de alcance.',
 	'settings.integrations.andLetItDeleteThings': '…e deixar que ele exclua coisas',
 	'settings.integrations.bankStatements': 'Extratos bancários',
 	'settings.integrations.chat.answeringAs':
@@ -3464,6 +3462,8 @@ export const messages: Catalogue = {
 	'settings.integrations.notSomething': '{label}: {write} — algo que isso não pode fazer',
 	'settings.integrations.nothingYetEverythingAn':
 		'Nada ainda — tudo que um assistente muda é listado aqui',
+	'settings.integrations.onlyWhatYouTick':
+		'Só o que você marcar. O que estiver desmarcado fica fora de alcance.',
 	'settings.integrations.outsideWhat': '{label}: {write} — fora do que esta chave cobre',
 	'settings.integrations.pluginAsksKey': 'Chave:',
 	'settings.integrations.pluginAsksYourOntoplano': 'Seu ontoplano:',

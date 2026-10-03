@@ -2834,7 +2834,7 @@ export const messages: Catalogue = {
 	'scopeGroups.people': 'Menschen',
 	'scopeGroups.plumbing': 'Integrationen',
 	'scopeGroups.removingThings': 'Dinge löschen',
-	'scopeGroups.todosAndGoals': 'Aufgaben und Ziele',
+	'scopeGroups.tasksAndGoals': 'Aufgaben und Ziele',
 	'scopeGroups.whatYouWrite': 'Tagebuch, Notizbücher und Ideen',
 	'scopeGroups.yourHome': 'Zuhause, Küche und Einkauf',
 	'scopeGroups.yourWeek': 'Ihre Woche',
@@ -3320,8 +3320,6 @@ export const messages: Catalogue = {
 	'settings.integrations.aiAssistant': 'KI-Assistent',
 	'settings.integrations.aiAssistantDefaultName': 'KI-Assistent',
 	'settings.integrations.allOfIt': 'Alles',
-	'settings.integrations.allOfItUnlessYou':
-		'Alles davon, sofern Sie nichts anderes festlegen. Alles Nicht-Angekreuzte bleibt außer Reichweite.',
 	'settings.integrations.andLetItDeleteThings': '…und ihm erlauben, Dinge zu löschen',
 	'settings.integrations.bankStatements': 'Kontoauszüge',
 	'settings.integrations.chat.answeringAs':
@@ -3501,6 +3499,8 @@ export const messages: Catalogue = {
 	'settings.integrations.notSomething': '{label}: {write} — das kann dies nicht',
 	'settings.integrations.nothingYetEverythingAn':
 		'Noch nichts — alles, was ein Assistent ändert, wird hier aufgelistet',
+	'settings.integrations.onlyWhatYouTick':
+		'Nur, was Sie ankreuzen. Alles Nicht-Angekreuzte bleibt außer Reichweite.',
 	'settings.integrations.outsideWhat':
 		'{label}: {write} — außerhalb dessen, woran dieser Schlüssel gebunden ist',
 	'settings.integrations.pluginAsksKey': 'Schlüssel:',

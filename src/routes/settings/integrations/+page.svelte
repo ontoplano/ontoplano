@@ -490,21 +490,16 @@ bearer_token_env_var = "ONTOPLANO_KEY"
 				<KeyReach choices={data.reach} bind:kind={tiedTo} bind:id={tiedId} />
 			</div>
 			<!--
-				What it may do, ticked and changeable. Every box is on to begin with;
-				deleting is its own box under the table, unticked, because it is the
-				one grant that should be given on purpose.
+				What it may do. Every box starts off: a grant is given on purpose, one
+				row or the All box at a time, and deleting is its own box under the
+				table.
 			-->
 			<fieldset>
 				<legend class="eyebrow text-gray-600">{t('settings.integrations.whatItMayDo')}</legend>
 				<p class="mt-1 mb-3 max-w-2xl text-xs leading-relaxed text-gray-500">
-					{t('settings.integrations.allOfItUnlessYou')}
+					{t('settings.integrations.onlyWhatYouTick')}
 				</p>
-				<PermissionGrid
-					scopes={data.permissions}
-					checked={data.permissions.map((one) => one.key)}
-					{reachable}
-					destructive
-				/>
+				<PermissionGrid scopes={data.permissions} {reachable} destructive />
 			</fieldset>
 			<!-- Naming it, last: what a thing is called is the last thing you decide
 			     about it. Named after what it is tied to, when it is tied. -->

@@ -51,7 +51,7 @@ test('the key form offers to tie a key to one notebook', async ({ page }) => {
 	 * meant to be able to add its tiles. Nobody is filed under a subject.
 	 */
 	const people = page.getByRole('checkbox', { name: /People: write/ });
-	const tasks = page.getByRole('checkbox', { name: /Todos and goals: write/ });
+	const tasks = page.getByRole('checkbox', { name: /Tasks and goals: write/ });
 	await expect(people).toBeEnabled();
 
 	await reach.selectOption('notebook');
@@ -75,6 +75,8 @@ test('the key form offers to tie a key to one notebook', async ({ page }) => {
 	await page
 		.getByRole('textbox', { name: 'What to call this key' })
 		.fill('a key tied to one notebook');
+	// Nothing starts ticked, and a key with no grant is refused.
+	await tasks.check();
 
 	await page.getByRole('button', { name: 'Create it' }).click();
 	await expect(page.getByText(/^onto_/).first()).toBeVisible({ timeout: 10000 });

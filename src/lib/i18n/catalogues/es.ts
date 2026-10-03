@@ -2827,7 +2827,7 @@ export const messages: Catalogue = {
 	'scopeGroups.people': 'Personas',
 	'scopeGroups.plumbing': 'Integraciones',
 	'scopeGroups.removingThings': 'Borrar cosas',
-	'scopeGroups.todosAndGoals': 'Tareas y metas',
+	'scopeGroups.tasksAndGoals': 'Tareas y metas',
 	'scopeGroups.whatYouWrite': 'Diario, cuadernos e ideas',
 	'scopeGroups.yourHome': 'Casa, cocina y compras',
 	'scopeGroups.yourWeek': 'Tu semana',
@@ -3301,8 +3301,6 @@ export const messages: Catalogue = {
 	'settings.integrations.aiAssistant': 'Asistente de IA',
 	'settings.integrations.aiAssistantDefaultName': 'Asistente de IA',
 	'settings.integrations.allOfIt': 'Todo',
-	'settings.integrations.allOfItUnlessYou':
-		'Todo, a menos que digas lo contrario. Lo que no marques queda fuera de su alcance.',
 	'settings.integrations.andLetItDeleteThings': '…y dejar que elimine cosas',
 	'settings.integrations.bankStatements': 'Extractos bancarios',
 	'settings.integrations.chat.answeringAs':
@@ -3481,6 +3479,8 @@ export const messages: Catalogue = {
 	'settings.integrations.notSomething': '{label}: {write} — algo que esto no puede hacer',
 	'settings.integrations.nothingYetEverythingAn':
 		'Todavía nada — aquí se lista todo lo que un asistente cambia',
+	'settings.integrations.onlyWhatYouTick':
+		'Solo lo que marques. Lo que no marques queda fuera de su alcance.',
 	'settings.integrations.outsideWhat':
 		'{label}: {write} — fuera de lo que esta clave tiene permitido',
 	'settings.integrations.pluginAsksKey': 'Clave:',

@@ -22,7 +22,7 @@ export const SCOPE_GROUPS = [
 		says: 'scopeGroups.yourWeek',
 		scopes: ['schedule:read', 'schedule:write', 'today:read', 'reminders:read', 'calendar:read']
 	},
-	{ key: 'tasks', says: 'scopeGroups.todosAndGoals', scopes: ['tasks:read', 'tasks:write'] },
+	{ key: 'tasks', says: 'scopeGroups.tasksAndGoals', scopes: ['tasks:read', 'tasks:write'] },
 	{
 		key: 'writing',
 		says: 'scopeGroups.whatYouWrite',
@@ -122,7 +122,7 @@ export const SCOPE_SUBJECTS: Record<string, PlainKey> = {
 	today: 'settings.integrations.todaysPlan',
 	reminders: 'app.reminders',
 	calendar: 'settings.integrations.connections.calendarLink',
-	tasks: 'scopeGroups.todosAndGoals',
+	tasks: 'scopeGroups.tasksAndGoals',
 	notes: 'settings.integrations.diaryAndNotebooks',
 	ideas: 'app.ideas',
 	audio: 'rooms.media.tabs.audios',

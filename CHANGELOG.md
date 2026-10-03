@@ -28,6 +28,8 @@ releases mattered.
   them. In the permission grid a row is faded only when nothing in it applies,
   and the tasks row says it covers goals too.
 - The token form no longer has the "An AI assistant (MCP)" preset buttons.
+- A new AI key starts with no permissions ticked; tick what it may do, or All.
+  The tasks row is called "Tasks and goals".
 - The release mail is shorter: what is new in five lines, a link to the rest,
   and an Unsubscribe link instead of a printed address.
 - Administration lists the release mails apart from the addresses on the
