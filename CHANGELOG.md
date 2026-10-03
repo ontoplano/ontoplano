@@ -18,6 +18,11 @@ the shape of the data changing. Bumping the minor per batch is what ran this
 file to 0.161 in a few months, which tells a reader nothing about which
 releases mattered.
 
+## 0.185.1 — 2026-10-03
+
+- Something added just before switching tabs — a thing put on the wishlist,
+  then the Wishlist tab pressed — is there when the tab opens.
+
 ## 0.185.0 — 2026-10-02
 
 - Taking a note back out of the archive no longer leaves it invisible until
@@ -26,8 +31,6 @@ releases mattered.
   sometimes leaves the list showing what it showed before.
 - Ticking off the week's first task on the dashboard no longer makes the
   cards below it jump down.
-- Something added just before switching tabs — a thing put on the wishlist,
-  then the Wishlist tab pressed — is there when the tab opens.
 - Subscribed calendars draw every event at the hour it actually happens, in
   your own timezone: Outlook and Microsoft 365 zones such as "Eastern Standard
   Time" are read, UTC times no longer follow the server's clock, and a series'
