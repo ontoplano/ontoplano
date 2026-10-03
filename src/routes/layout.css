@@ -4183,6 +4183,13 @@ input[type='radio']:checked {
 	border-color: var(--control-on);
 }
 
+/* Half-ticked — some of what a box stands for is on. The forms plugin draws
+   the dash; the fill above would otherwise leave it white on nothing. */
+input[type='checkbox']:not(.toggle):indeterminate {
+	background-color: var(--control-on);
+	border-color: var(--control-on);
+}
+
 /*
  * A box that cannot be pressed has to look like one.
  *
@@ -4197,6 +4204,13 @@ input[type='radio']:disabled {
 	opacity: 0.3;
 	border-style: dashed;
 	cursor: not-allowed;
+}
+
+/* …but one that is ticked and held — a read that a ticked write needs — is
+   granted, and drawn faint enough to read as "no" it would be a lie. */
+input[type='checkbox']:disabled:checked {
+	opacity: 0.6;
+	border-style: solid;
 }
 
 /*

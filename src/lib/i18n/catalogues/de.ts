@@ -2791,6 +2791,7 @@ export const messages: Catalogue = {
 	'rooms.tasks.tabs.todo': 'Aufgaben',
 	'rooms.tasks.title': 'Aufgaben',
 	'scopeGroups.acrossEverything': 'Über alles hinweg',
+	'scopeGroups.describeItself': 'Eigene Beschreibung',
 	'scopeGroups.habitsAndWorkouts': 'Gewohnheiten und Workouts',
 	'scopeGroups.money': 'Geld',
 	'scopeGroups.neededToWrite': 'nötig zum Schreiben',
@@ -3282,6 +3283,7 @@ export const messages: Catalogue = {
 	'settings.integrations.addThisToCursorConfig': 'Fügen Sie dies zu ~/.cursor/mcp.json hinzu.',
 	'settings.integrations.aiAssistant': 'KI-Assistent',
 	'settings.integrations.aiAssistantDefaultName': 'KI-Assistent',
+	'settings.integrations.allOfIt': 'Alles',
 	'settings.integrations.allOfItUnlessYou':
 		'Alles davon, sofern Sie nichts anderes festlegen. Alles Nicht-Angekreuzte bleibt außer Reichweite.',
 	'settings.integrations.andLetItDeleteThings': '…und ihm erlauben, Dinge zu löschen',
@@ -3369,7 +3371,6 @@ export const messages: Catalogue = {
 		'https://example.com/ontoplano-hook',
 	'settings.integrations.connections.isTheMostRevoke':
 		'{calendarLinkLimit} ist das Maximum. Widerrufen Sie einen, um einen weiteren zu erstellen.',
-	'settings.integrations.connections.itMay': 'Es darf: {join}',
 	'settings.integrations.connections.itSendsYouBackHere':
 		'Sie werden hierher zurückgeschickt, um die Verbindung zu bestätigen; sie erscheint dann in der Liste unten wie jeder andere Schlüssel.',
 	'settings.integrations.connections.keep': 'Behalten',
@@ -3378,11 +3379,11 @@ export const messages: Catalogue = {
 	'settings.integrations.connections.kindMeasurement': 'Measurement',
 	'settings.integrations.connections.kindState': 'State',
 	'settings.integrations.connections.lastDelivery': '· letzte Zustellung',
-	'settings.integrations.connections.lastUsed': '· zuletzt verwendet',
+	'settings.integrations.connections.lastUsed': 'Zuletzt verwendet',
 	'settings.integrations.connections.latest': '· neueste',
 	'settings.integrations.connections.myPhone': 'mein Telefon',
 	'settings.integrations.connections.never': 'nie',
-	'settings.integrations.connections.neverUsed': '· nie verwendet',
+	'settings.integrations.connections.neverUsed': 'Nie verwendet',
 	'settings.integrations.connections.newApiToken': 'Neues API-Token',
 	'settings.integrations.connections.newToken': 'Neues Token',
 	'settings.integrations.connections.newWebhook': 'Neuer Webhook',
@@ -3401,6 +3402,7 @@ export const messages: Catalogue = {
 		'Fügen Sie die Adresse in Google Kalender, Apple Kalender oder Thunderbird ein, und Ihr Plan erscheint dort und hält sich selbst aktuell. Diese Apps lesen sie nur — nichts, was sie tun, kann Ihren Plan ändern.',
 	'settings.integrations.connections.pasteThisAddressInto':
 		'Fügen Sie diese Adresse in Claude, ChatGPT oder etwas anderes mit einem Konnektor-Bildschirm ein:',
+	'settings.integrations.connections.permissions': 'Berechtigungen',
 	'settings.integrations.connections.points': 'Punkte',
 	'settings.integrations.connections.pointsOlderThanThisAre':
 		'Punkte, die älter sind, werden nächtlich gelöscht. Leer lassen, um alles zu behalten.',
@@ -3430,6 +3432,8 @@ export const messages: Catalogue = {
 	'settings.integrations.connections.tryAgain': 'Erneut versuchen',
 	'settings.integrations.connections.unreachable': 'unreachable',
 	'settings.integrations.connections.webhooks': 'Webhooks',
+	'settings.integrations.connections.whatThisKeyMayDo':
+		'Was dieser Schlüssel darf. Um das zu ändern, erstelle einen neuen und widerrufe diesen.',
 	'settings.integrations.connections.whatThisTokenMayDo': 'Was dieses Token darf',
 	'settings.integrations.connections.whatYourAssistantsDid': 'Was Ihre Assistenten getan haben',
 	'settings.integrations.connections.when': 'Wann',
@@ -3443,6 +3447,8 @@ export const messages: Catalogue = {
 	'settings.integrations.createIt': 'Erstellen',
 	'settings.integrations.diaryAndNotebooks': 'Tagebuch und Notizbücher',
 	'settings.integrations.doNotShareItWith': 'Teilen Sie ihn mit niemandem.',
+	'settings.integrations.everyRead': 'Jedes Lesen',
+	'settings.integrations.everyWrite': 'Jedes Schreiben',
 	'settings.integrations.everythingAnAssistantHasChanged':
 		'Alles, was ein Assistent geändert hat, neueste zuerst. Alles, was er entfernt hat, kann wiederhergestellt werden.',
 	'settings.integrations.forAnAssistantWithTerminal':

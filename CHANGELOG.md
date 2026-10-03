@@ -20,6 +20,11 @@ releases mattered.
 
 ## 0.185.1 — 2026-10-03
 
+- Permissions look the same everywhere: one grid of reading and writing, on
+  both key forms and the screen an assistant sends you to approve it. Each
+  column, and the whole grid, can be ticked or cleared at once.
+- A key in the list no longer spells out every permission it holds; its
+  shield button opens them as that same grid, read-only.
 - The instance page's Backups row reads the last copy pulled by a machine
   elsewhere, and names it, rather than looking for a backup timer on the
   server itself.

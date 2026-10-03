@@ -1,7 +1,7 @@
 <script lang="ts">
 	import Card from '$lib/components/Card.svelte';
 	import FormError from '$lib/components/FormError.svelte';
-	import ScopeChoice from '$lib/components/ScopeChoice.svelte';
+	import PermissionGrid from '$lib/components/PermissionGrid.svelte';
 	import { useT } from '$lib/i18n';
 	import type { PageServerData, ActionData } from './$types';
 
@@ -41,7 +41,7 @@
 				question. The only decision on the page was the deleting box, so
 				an assistant that asked for everything got everything or nothing.
 			-->
-			<ScopeChoice scopes={data.granted} checked={data.granted.map((one) => one.key)} />
+			<PermissionGrid scopes={data.granted} checked={data.granted.map((one) => one.key)} />
 
 			{#if form?.error}
 				<div class="mt-3">

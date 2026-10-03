@@ -2771,6 +2771,7 @@ export const messages: Catalogue = {
 	'rooms.tasks.tabs.todo': 'Tarefas',
 	'rooms.tasks.title': 'Tarefas',
 	'scopeGroups.acrossEverything': 'Em tudo',
+	'scopeGroups.describeItself': 'A própria descrição',
 	'scopeGroups.habitsAndWorkouts': 'Hábitos e treinos',
 	'scopeGroups.money': 'Dinheiro',
 	'scopeGroups.neededToWrite': 'necessário para escrever',
@@ -3247,6 +3248,7 @@ export const messages: Catalogue = {
 	'settings.integrations.addThisToCursorConfig': 'Adicione isso a ~/.cursor/mcp.json.',
 	'settings.integrations.aiAssistant': 'Assistente de IA',
 	'settings.integrations.aiAssistantDefaultName': 'Assistente de IA',
+	'settings.integrations.allOfIt': 'Tudo',
 	'settings.integrations.allOfItUnlessYou':
 		'Tudo, a menos que você diga o contrário. O que estiver desmarcado fica fora de alcance.',
 	'settings.integrations.andLetItDeleteThings': '…e deixar que ele exclua coisas',
@@ -3333,7 +3335,6 @@ export const messages: Catalogue = {
 		'https://example.com/ontoplano-hook',
 	'settings.integrations.connections.isTheMostRevoke':
 		'{calendarLinkLimit} é o máximo. Revogue um para criar outro.',
-	'settings.integrations.connections.itMay': 'Ele pode: {join}',
 	'settings.integrations.connections.itSendsYouBackHere':
 		'Ele te traz de volta aqui para aprovar a conexão, que então aparece na lista abaixo como qualquer outra chave.',
 	'settings.integrations.connections.keep': 'Manter',
@@ -3342,11 +3343,11 @@ export const messages: Catalogue = {
 	'settings.integrations.connections.kindMeasurement': 'Measurement',
 	'settings.integrations.connections.kindState': 'State',
 	'settings.integrations.connections.lastDelivery': '· última entrega',
-	'settings.integrations.connections.lastUsed': '· último uso',
+	'settings.integrations.connections.lastUsed': 'Último uso',
 	'settings.integrations.connections.latest': '· mais recente',
 	'settings.integrations.connections.myPhone': 'meu telefone',
 	'settings.integrations.connections.never': 'nunca',
-	'settings.integrations.connections.neverUsed': '· nunca usado',
+	'settings.integrations.connections.neverUsed': 'Nunca usado',
 	'settings.integrations.connections.newApiToken': 'Novo token de API',
 	'settings.integrations.connections.newToken': 'Novo token',
 	'settings.integrations.connections.newWebhook': 'Novo webhook',
@@ -3365,6 +3366,7 @@ export const messages: Catalogue = {
 		'Cole o endereço no Google Calendar, Apple Calendar ou Thunderbird e seu plano aparece lá, mantendo-se atualizado. Esses apps só leem — nada que fizerem pode mudar seu plano.',
 	'settings.integrations.connections.pasteThisAddressInto':
 		'Cole este endereço no Claude, no ChatGPT, ou em qualquer coisa com uma tela de conectores:',
+	'settings.integrations.connections.permissions': 'Permissões',
 	'settings.integrations.connections.points': 'pontos',
 	'settings.integrations.connections.pointsOlderThanThisAre':
 		'Pontos mais antigos que isso são excluídos, todas as noites. Deixe vazio para manter tudo.',
@@ -3393,6 +3395,8 @@ export const messages: Catalogue = {
 	'settings.integrations.connections.tryAgain': 'Tentar de novo',
 	'settings.integrations.connections.unreachable': 'unreachable',
 	'settings.integrations.connections.webhooks': 'Webhooks',
+	'settings.integrations.connections.whatThisKeyMayDo':
+		'O que esta chave pode fazer. Para mudar, crie outra e revogue esta.',
 	'settings.integrations.connections.whatThisTokenMayDo': 'O que este token pode fazer',
 	'settings.integrations.connections.whatYourAssistantsDid': 'O que seus assistentes fizeram',
 	'settings.integrations.connections.when': 'Quando',
@@ -3406,6 +3410,8 @@ export const messages: Catalogue = {
 	'settings.integrations.createIt': 'Criar',
 	'settings.integrations.diaryAndNotebooks': 'Diário e cadernos',
 	'settings.integrations.doNotShareItWith': 'Não compartilhe com ninguém.',
+	'settings.integrations.everyRead': 'Toda leitura',
+	'settings.integrations.everyWrite': 'Toda escrita',
 	'settings.integrations.everythingAnAssistantHasChanged':
 		'Tudo que um assistente mudou, mais recente primeiro. Qualquer coisa que ele removeu pode ser recolocada.',
 	'settings.integrations.forAnAssistantWithTerminal':

@@ -2723,6 +2723,7 @@ export const messages: Catalogue = {
 	'rooms.tasks.tabs.todo': 'Tasks',
 	'rooms.tasks.title': 'Tasks',
 	'scopeGroups.acrossEverything': 'Across everything',
+	'scopeGroups.describeItself': 'Its own description',
 	'scopeGroups.habitsAndWorkouts': 'Habits and workouts',
 	'scopeGroups.money': 'Money',
 	'scopeGroups.neededToWrite': 'needed to write',
@@ -3191,6 +3192,7 @@ export const messages: Catalogue = {
 	'settings.integrations.addThisToCursorConfig': 'Add this to ~/.cursor/mcp.json.',
 	'settings.integrations.aiAssistant': 'AI assistant',
 	'settings.integrations.aiAssistantDefaultName': 'AI assistant',
+	'settings.integrations.allOfIt': 'All',
 	'settings.integrations.allOfItUnlessYou':
 		'All of it, unless you say otherwise. Anything unticked stays out of reach.',
 	'settings.integrations.andLetItDeleteThings': '…and let it delete things',
@@ -3276,7 +3278,6 @@ export const messages: Catalogue = {
 		'https://example.com/ontoplano-hook',
 	'settings.integrations.connections.isTheMostRevoke':
 		'{calendarLinkLimit} is the most. Revoke one to make another.',
-	'settings.integrations.connections.itMay': 'It may: {join}',
 	'settings.integrations.connections.itSendsYouBackHere':
 		'It sends you back here to approve the connection, which then stands in the list below like any other key.',
 	'settings.integrations.connections.keep': 'Keep',
@@ -3285,11 +3286,11 @@ export const messages: Catalogue = {
 	'settings.integrations.connections.kindMeasurement': 'Measurement',
 	'settings.integrations.connections.kindState': 'State',
 	'settings.integrations.connections.lastDelivery': '· last delivery',
-	'settings.integrations.connections.lastUsed': '· last used',
+	'settings.integrations.connections.lastUsed': 'Last used',
 	'settings.integrations.connections.latest': '· latest',
 	'settings.integrations.connections.myPhone': 'my phone',
 	'settings.integrations.connections.never': 'never',
-	'settings.integrations.connections.neverUsed': '· never used',
+	'settings.integrations.connections.neverUsed': 'Never used',
 	'settings.integrations.connections.newApiToken': 'New API token',
 	'settings.integrations.connections.newToken': 'New token',
 	'settings.integrations.connections.newWebhook': 'New webhook',
@@ -3308,6 +3309,7 @@ export const messages: Catalogue = {
 		'Paste the address into Google Calendar, Apple Calendar or Thunderbird and your plan appears there, keeping itself current. Those apps only read it — nothing they do can change your plan.',
 	'settings.integrations.connections.pasteThisAddressInto':
 		'Paste this address into Claude, ChatGPT, or anything else with a connector screen:',
+	'settings.integrations.connections.permissions': 'Permissions',
 	'settings.integrations.connections.points': 'points',
 	'settings.integrations.connections.pointsOlderThanThisAre':
 		'Points older than this are deleted, nightly. Leave empty to keep everything.',
@@ -3336,6 +3338,8 @@ export const messages: Catalogue = {
 	'settings.integrations.connections.tryAgain': 'Try again',
 	'settings.integrations.connections.unreachable': 'unreachable',
 	'settings.integrations.connections.webhooks': 'Webhooks',
+	'settings.integrations.connections.whatThisKeyMayDo':
+		'What this key may do. To change it, make another and revoke this one.',
 	'settings.integrations.connections.whatThisTokenMayDo': 'What this token may do',
 	'settings.integrations.connections.whatYourAssistantsDid': 'What your assistants did',
 	'settings.integrations.connections.when': 'When',
@@ -3349,6 +3353,8 @@ export const messages: Catalogue = {
 	'settings.integrations.createIt': 'Create it',
 	'settings.integrations.diaryAndNotebooks': 'Diary and notebooks',
 	'settings.integrations.doNotShareItWith': 'Do not share it with anyone.',
+	'settings.integrations.everyRead': 'Every read',
+	'settings.integrations.everyWrite': 'Every write',
 	'settings.integrations.everythingAnAssistantHasChanged':
 		'Everything an assistant has changed, newest first. Anything it removed can be put back.',
 	'settings.integrations.forAnAssistantWithTerminal':

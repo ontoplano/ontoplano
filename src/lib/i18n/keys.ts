@@ -2424,6 +2424,7 @@ export type MessageKey =
 	| 'rooms.tasks.tabs.todo'
 	| 'rooms.tasks.title'
 	| 'scopeGroups.acrossEverything'
+	| 'scopeGroups.describeItself'
 	| 'scopeGroups.habitsAndWorkouts'
 	| 'scopeGroups.money'
 	| 'scopeGroups.neededToWrite'
@@ -2799,6 +2800,7 @@ export type MessageKey =
 	| 'settings.integrations.addThisToCursorConfig'
 	| 'settings.integrations.aiAssistant'
 	| 'settings.integrations.aiAssistantDefaultName'
+	| 'settings.integrations.allOfIt'
 	| 'settings.integrations.allOfItUnlessYou'
 	| 'settings.integrations.andLetItDeleteThings'
 	| 'settings.integrations.bankStatements'
@@ -2865,7 +2867,6 @@ export type MessageKey =
 	| 'settings.integrations.connections.howOntoplanoSMcpServerWorks'
 	| 'settings.integrations.connections.httpsExampleComOntoplanoHook'
 	| 'settings.integrations.connections.isTheMostRevoke'
-	| 'settings.integrations.connections.itMay'
 	| 'settings.integrations.connections.itSendsYouBackHere'
 	| 'settings.integrations.connections.keep'
 	| 'settings.integrations.connections.kindCounter'
@@ -2891,6 +2892,7 @@ export type MessageKey =
 	| 'settings.integrations.connections.orPasteThisToIt'
 	| 'settings.integrations.connections.pasteTheAddressIntoGoogle'
 	| 'settings.integrations.connections.pasteThisAddressInto'
+	| 'settings.integrations.connections.permissions'
 	| 'settings.integrations.connections.points'
 	| 'settings.integrations.connections.pointsOlderThanThisAre'
 	| 'settings.integrations.connections.putBack'
@@ -2913,6 +2915,7 @@ export type MessageKey =
 	| 'settings.integrations.connections.tryAgain'
 	| 'settings.integrations.connections.unreachable'
 	| 'settings.integrations.connections.webhooks'
+	| 'settings.integrations.connections.whatThisKeyMayDo'
 	| 'settings.integrations.connections.whatThisTokenMayDo'
 	| 'settings.integrations.connections.whatYourAssistantsDid'
 	| 'settings.integrations.connections.when'
@@ -2926,6 +2929,8 @@ export type MessageKey =
 	| 'settings.integrations.createIt'
 	| 'settings.integrations.diaryAndNotebooks'
 	| 'settings.integrations.doNotShareItWith'
+	| 'settings.integrations.everyRead'
+	| 'settings.integrations.everyWrite'
 	| 'settings.integrations.everythingAnAssistantHasChanged'
 	| 'settings.integrations.forAnAssistantWithTerminal'
 	| 'settings.integrations.hasTheFullFormWith'
@@ -4561,7 +4566,6 @@ export interface MessageValuesFor {
 	'settings.integrations.connections.apiV1Streams': { origin: string | number };
 	'settings.integrations.connections.confirmThisDeletesPoints': { count: number };
 	'settings.integrations.connections.isTheMostRevoke': { calendarLinkLimit: string | number };
-	'settings.integrations.connections.itMay': { join: string | number };
 	'settings.integrations.notSomething': { label: string | number; write: string | number };
 	'settings.integrations.outsideWhat': { label: string | number; write: string | number };
 	'settings.integrations.seeYourKeys': { count: number };

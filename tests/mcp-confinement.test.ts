@@ -242,6 +242,14 @@ describe('what it cannot do', () => {
 			expect(failed(call(tool, {})), `${tool} answered a confined key`).toBe(true);
 	});
 
+	it('cannot search the account, even holding search:read', () => {
+		// One grant that reads across every room is the widest question there
+		// is. The same call answers for a key that is not tied to anything, so
+		// the refusal is the confinement and not a malformed question.
+		expect(failed(call('search', { query: 'dust' }, false))).toBe(false);
+		expect(failed(call('search', { query: 'dust' }))).toBe(true);
+	});
+
 	it('reaches what its notebook holds, and no other room’s rows', () => {
 		// The flat's tiles: filed under the notebook this key was given.
 		expect(failed(call('tick_bought', { id: inside.item }))).toBe(false);

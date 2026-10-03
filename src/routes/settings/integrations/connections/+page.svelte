@@ -18,7 +18,7 @@
 	import { resolve } from '$app/paths';
 	import Field from '$lib/components/Field.svelte';
 	import KeyReach from '$lib/components/KeyReach.svelte';
-	import ScopeChoice from '$lib/components/ScopeChoice.svelte';
+	import PermissionGrid from '$lib/components/PermissionGrid.svelte';
 	import FormGrid from '$lib/components/FormGrid.svelte';
 	import Modal from '$lib/components/Modal.svelte';
 	import type { PageServerData, ActionData } from './$types';
@@ -48,23 +48,25 @@
 		form?.success && form.action === 'createWebhook' ? form.secret : null
 	);
 
-	// The sentence a scope was granted as, everywhere a scope is shown — the
-	// key is for the developer, the sentence is for the owner of the data.
-	const scopeSentence = (key: string) => {
-		const says = data.scopes.find((s) => s.key === key)?.says;
-		return says ? t(says) : key;
-	};
-
 	/**
 	 * The permission boxes, so the presets below can set them.
 	 *
-	 * The list itself is `ScopeChoice`, shared with the consent screen an
-	 * assistant sends somebody to — the same question, asked the same way. The
-	 * presets stay here: "an AI assistant" is a sentence that means something
-	 * on a form where somebody is making a key by hand, and nothing on a screen
-	 * where an assistant is the one asking.
+	 * The grid itself is `PermissionGrid`, shared with the assistant's key
+	 * form and the consent screen an assistant sends somebody to — the same
+	 * question, asked the same way. The presets stay here: "an AI assistant"
+	 * is a sentence that means something on a form where somebody is making a
+	 * key by hand, and nothing on a screen where an assistant is the one asking.
 	 */
-	let scopeChoice = $state<ReturnType<typeof ScopeChoice>>();
+	let scopeChoice = $state<ReturnType<typeof PermissionGrid>>();
+
+	/** What the key being made is tied to; the grid fades what that leaves out. */
+	let tiedTo = $state('');
+	let tiedId = $state('');
+	const reachableFor = (kind: string | null | undefined) =>
+		kind ? (data.reach.find((choice) => choice.kind === kind)?.scopes ?? []) : null;
+
+	/** The key whose permissions are open, read-only. */
+	let viewing = $state<(typeof data.tokens)[number] | null>(null);
 
 	function closeForms() {
 		showTokenForm = false;
@@ -197,11 +199,6 @@ Token: ${token}`;
 			<div class="mt-2">
 				<CopyBlock text={newToken.plaintext} label={t('ui.copy')} wrap={false} />
 			</div>
-			<p class="mt-2 text-xs text-gray-600">
-				{t('settings.integrations.connections.itMay', {
-					join: newToken.scopes.map(scopeSentence).join(' · ')
-				})}
-			</p>
 			<details class="mt-3">
 				<summary class="cursor-pointer text-xs font-medium text-gray-900">
 					{t('settings.integrations.connections.connectAnAiAssistantWith')}
@@ -358,9 +355,9 @@ Token: ${token}`;
 								<strong class="font-semibold">{token.tiedTo}</strong>
 							</p>
 						{/if}
-						<p class="mt-1 max-w-3xl text-xs text-gray-500">
-							{token.scopes.map(scopeSentence).join(' · ') ||
-								t('settings.integrations.connections.noScopes')}
+						<!-- What it may do is one press away, drawn as the grid it was made
+						     with, rather than every sentence run together here. -->
+						<p class="mt-1 text-xs text-gray-500">
 							{#if token.lastUsedAt}
 								{t('settings.integrations.connections.lastUsed')}
 								{momentOf(token.lastUsedAt, now())}
@@ -374,6 +371,15 @@ Token: ${token}`;
 					</div>
 					<form method="post" action="?/revokeToken" use:enhance class="list-row-actions">
 						<input type="hidden" name="id" value={token.id} />
+						<button
+							type="button"
+							onclick={() => (viewing = token)}
+							class="icon-btn"
+							title={t('settings.integrations.connections.permissions')}
+							aria-label={t('settings.integrations.connections.permissions')}
+						>
+							<Icon name="shield" />
+						</button>
 						{#if confirmRevoke === token.id}
 							<button type="submit" class="btn btn-danger btn-sm" use:armed>
 								{t('settings.integrations.connections.revoke')}
@@ -765,7 +771,7 @@ Token: ${token}`;
 				<!-- What it may work on, before what it may do: the narrower answer
 				     is the one that decides whether the boxes below mean anything. -->
 				<div class="col-span-12">
-					<KeyReach choices={data.reach} />
+					<KeyReach choices={data.reach} bind:kind={tiedTo} bind:id={tiedId} />
 				</div>
 
 				<fieldset class="col-span-12">
@@ -809,7 +815,13 @@ Token: ${token}`;
 							{t('settings.integrations.connections.clear')}
 						</button>
 					</p>
-					<ScopeChoice bind:this={scopeChoice} scopes={data.scopes} showKeys />
+					<PermissionGrid
+						bind:this={scopeChoice}
+						scopes={data.scopes}
+						reachable={reachableFor(tiedTo)}
+						destructive
+						showKeys
+					/>
 				</fieldset>
 			</FormGrid>
 		</form>
@@ -822,6 +834,32 @@ Token: ${token}`;
 				>{t('settings.integrations.connections.createToken')}</button
 			>
 		{/snippet}
+	</Modal>
+
+	<Modal
+		open={viewing !== null}
+		onclose={() => (viewing = null)}
+		title={viewing?.name ?? ''}
+		description={t('settings.integrations.connections.whatThisKeyMayDo')}
+	>
+		{#if viewing}
+			{#if viewing.tiedTo}
+				<p class="mb-3 text-sm text-gray-700">
+					{t('settings.integrations.connections.tiedToOne')}
+					<strong class="font-semibold">{viewing.tiedTo}</strong>
+				</p>
+			{/if}
+			{#key viewing.id}
+				<PermissionGrid
+					scopes={data.scopes}
+					checked={viewing.scopes}
+					reachable={reachableFor(viewing.confinement?.kind)}
+					readonly
+					destructive
+					showKeys
+				/>
+			{/key}
+		{/if}
 	</Modal>
 
 	<Modal

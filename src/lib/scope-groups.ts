@@ -108,3 +108,71 @@ export function withNeededReads<T extends string>(scopes: readonly T[], known: r
 	}
 	return [...out];
 }
+
+/**
+ * What each family of permissions is called — the row names of the grid.
+ *
+ * A family is the part of a scope before the colon. Every family needs one,
+ * and `tests/scope-groups.test.ts` refuses a scope whose family has none: a
+ * row named `statements` in the middle of a page in Portuguese is how this
+ * map was first found missing an entry.
+ */
+export const SCOPE_SUBJECTS: Record<string, PlainKey> = {
+	schedule: 'settings.integrations.yourWeek',
+	today: 'settings.integrations.todaysPlan',
+	reminders: 'app.reminders',
+	calendar: 'settings.integrations.connections.calendarLink',
+	tasks: 'tasks.board.toDoList',
+	notes: 'settings.integrations.diaryAndNotebooks',
+	ideas: 'app.ideas',
+	audio: 'rooms.media.tabs.audios',
+	people: 'app.people',
+	habits: 'app.habits',
+	workouts: 'app.workouts',
+	inventory: 'app.inventory',
+	locations: 'inventory.whereThingsLive',
+	kitchen: 'app.recipes',
+	bills: 'app.bills',
+	statements: 'settings.integrations.bankStatements',
+	search: 'ui.search',
+	tags: 'app.tags',
+	streams: 'settings.integrations.connections.dataStreams',
+	plugin: 'scopeGroups.describeItself',
+	webhooks: 'settings.integrations.connections.webhooks'
+};
+
+/** One row of the permission grid: a family, and its two halves where they exist. */
+export type PermissionRow = {
+	subject: string;
+	/** Null only for a family missing from `SCOPE_SUBJECTS`, which a test refuses. */
+	label: PlainKey | null;
+	/** The grant that reads it, or null where reading is not a thing. */
+	read: string | null;
+	/** The grant that changes it — `x:write`, or a family's one verb (`webhooks:manage`). */
+	write: string | null;
+};
+
+/**
+ * The grid's rows for whatever a screen offers, in the order of the groups.
+ *
+ * `destructive` is never a row: it is not a family, and it is drawn apart, on
+ * the danger ground, because it is the one grant given on purpose.
+ */
+export function permissionRows(offered: readonly string[]): PermissionRow[] {
+	const order = SCOPE_GROUPS.flatMap((group) => group.scopes as readonly string[]);
+	const rows = new Map<string, PermissionRow>();
+	for (const scope of [...offered].sort((a, b) => order.indexOf(a) - order.indexOf(b))) {
+		if (scope === 'destructive') continue;
+		const [subject, verb] = scope.split(':');
+		const row = rows.get(subject) ?? {
+			subject,
+			label: SCOPE_SUBJECTS[subject] ?? null,
+			read: null,
+			write: null
+		};
+		if (verb === 'read') row.read = scope;
+		else row.write = scope;
+		rows.set(subject, row);
+	}
+	return [...rows.values()];
+}
