@@ -24,6 +24,8 @@ releases mattered.
   the page is reloaded.
 - On a phone, deleting a notebook or saving a task from a dialog no longer
   sometimes leaves the list showing what it showed before.
+- Ticking off the week's first task on the dashboard no longer makes the
+  cards below it jump down.
 - Subscribed calendars draw every event at the hour it actually happens, in
   your own timezone: Outlook and Microsoft 365 zones such as "Eastern Standard
   Time" are read, UTC times no longer follow the server's clock, and a series'

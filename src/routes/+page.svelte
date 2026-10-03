@@ -51,6 +51,8 @@
 	const SHOPPING_PREVIEW = 6;
 	/** How many categories the ring names beside it before folding the rest in. */
 	const PIE_LEGEND = 5;
+	/** The week's ring, in pixels — and the room its empty state keeps for it. */
+	const PIE_SIZE = 116;
 	const MINUTES_IN_HOUR = 60;
 
 	let { data, form }: { data: PageServerData; form: ActionData } = $props();
@@ -904,7 +906,13 @@
 					{@render openLink(resolve('/tasks/review'))}
 				{/snippet}
 				{#if data.weekSoFar.minutesDone === 0}
-					<p class="text-sm text-gray-500">{t('home.nothingTickedOffThisWeek')}</p>
+					<!--
+						As tall as the ring, so the week's first tick — from the card
+						beside this one — does not grow the row both of them stand in.
+					-->
+					<p class="text-sm text-gray-500" style:min-height="{PIE_SIZE}px">
+						{t('home.nothingTickedOffThisWeek')}
+					</p>
 				{:else}
 					<div class="flex flex-wrap items-center gap-4">
 						<Pie
@@ -914,7 +922,7 @@
 								color: cat.color ?? CATEGORY_FALLBACK_COLOR
 							}))}
 							label={hoursAndMinutes(data.weekSoFar.minutesDone)}
-							size={116}
+							size={PIE_SIZE}
 						/>
 						<!--
 							Names and hours in two columns as wide as their longest entry,
