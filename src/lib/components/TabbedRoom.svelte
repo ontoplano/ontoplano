@@ -330,7 +330,7 @@
 			<div bind:this={body} class={nested ? '' : 'room-body'}>{@render children()}</div>
 			<!-- Beside the body rather than in it: the movement between tabs hides
 			     the body and copies it, and this has to be seen over both. -->
-			{#if pending}<PendingPage />{/if}
+			{#if pending}<PendingPage {nested} />{/if}
 		</div>
 		<div bind:this={stage} class="slide-stage" aria-hidden="true"></div>
 		<!--

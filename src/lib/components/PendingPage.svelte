@@ -28,8 +28,15 @@
 	const t = useT();
 
 	let {
-		room
+		room,
+		nested = false
 	}: {
+		/**
+		 * Inside a room that is itself a tab of another — Settings → AI &
+		 * Integrations → Widgets. There is no room body of its own to stand on
+		 * there, only the outer room's, so this is the rows and nothing else.
+		 */
+		nested?: boolean;
 		/**
 		 * The room being gone to, when it is another room: its name, its glyph,
 		 * and its tabs with the one being gone to marked. No tabs is a screen
@@ -60,7 +67,7 @@
 {/snippet}
 
 <div
-	class="pending-page {room ? 'pending-room' : ''}"
+	class="pending-page {room ? 'pending-room' : ''} {nested ? 'pending-nested' : ''}"
 	role="status"
 	aria-label={t('home.loading')}
 	aria-busy="true"
@@ -74,6 +81,8 @@
 			</RoomBar>
 			<div class="room-body">{@render bones()}</div>
 		</div>
+	{:else if nested}
+		{@render bones()}
 	{:else}
 		<!-- On the room's own body surface, flush under its strip: a card of its
 		     own here stood a quarter-rem down with a corner of its own. -->

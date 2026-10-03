@@ -97,5 +97,30 @@ test.describe('a navigation that takes a while', () => {
 		const bones = page.locator('.pending-page .room-body');
 		await expect(bones).toBeVisible({ timeout: 1000 });
 		expect(Math.abs((await bones.boundingBox())!.y - bodyTop)).toBeLessThan(1);
+		await expect(page.locator('.pending-page')).toHaveCount(0, { timeout: 10_000 });
+
+		/*
+		 * A tab of a tab — Settings → AI & Integrations → Widgets. The cover is
+		 * as wide as the outer room's body and square, or the screen being
+		 * left shows down both sides of it under a corner of its own.
+		 */
+		await page.unroute(/__data\.json/);
+		await go('/settings/integrations');
+		await page.waitForURL('**/settings/integrations**');
+		const outer = (await page.locator('.room-body').first().boundingBox())!;
+		await page.route(/__data\.json/, async (route) => {
+			await new Promise((done) => setTimeout(done, 2000));
+			await route.continue();
+		});
+		await page
+			.getByRole('link', { name: /widgets/i })
+			.first()
+			.click();
+		const cover = page.locator('.pending-page.pending-nested');
+		await expect(cover).toBeVisible({ timeout: 1000 });
+		const box = (await cover.boundingBox())!;
+		expect(Math.abs(box.x - outer.x)).toBeLessThan(1);
+		expect(Math.abs(box.width - outer.width)).toBeLessThan(1);
+		expect(await cover.evaluate((el) => getComputedStyle(el).borderTopLeftRadius)).toBe('0px');
 	});
 });

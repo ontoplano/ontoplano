@@ -6264,6 +6264,30 @@ input[type='search']::-webkit-search-cancel-button:hover {
 	--pending-page-delay: 120ms;
 }
 
+/*
+ * Square, whatever the style: it stands exactly over the thing it replaces,
+ * and the playful style's rounding of every div gave it a corner of its own
+ * that the screen under it does not have.
+ */
+.pending-page,
+.pending-page .room-body {
+	border-radius: 0 !important;
+}
+
+/*
+ * A nested room's: the outer room's white body, rows edge to edge — out over
+ * the body's gutter too, since the cards under it step out into it (see the
+ * `.room-body > .room-surface` rule) and showed down both sides of the cover.
+ */
+.pending-page.pending-nested {
+	background-color: var(--color-white);
+}
+@media (width >= 40rem) {
+	.pending-page.pending-nested {
+		inset-inline: -1rem;
+	}
+}
+
 .pending-page {
 	position: absolute;
 	inset: 0;

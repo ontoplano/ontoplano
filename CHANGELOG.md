@@ -39,6 +39,9 @@ releases mattered.
 - Administration is two columns of cards, and each card folds down to its
   title; a folded card stays folded in that browser.
 - "ResizeObserver loop completed" is no longer reported as a crash.
+- A tab inside a tab (Settings → AI & Integrations → Widgets) loads under a
+  square placeholder as wide as the room, instead of an inset one with a
+  corner.
 
 ## 0.185.3 — 2026-10-03
 
