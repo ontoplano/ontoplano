@@ -29,6 +29,9 @@ releases mattered.
   settings, sounds and places are read once per page instead of once per use.
 - Marking a bill paid ticks it the moment you press, and a message says it is
   paid once saved. Skipping and undoing are instant too.
+- Portuguese, Spanish and German are complete again: about 460 newer
+  sentences (search boxes, sort menus, counts, the tours, the trial mail) were
+  showing in English, and a few dozen more had been copied over in English.
 - The activity examples say "guitar" where they said "Russian", in every
   language.
 - Self-hosting: `ONTOPLANO_SNAPSHOTS_KEPT` sets how many pre-migration
