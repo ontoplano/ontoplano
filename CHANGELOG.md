@@ -20,6 +20,9 @@ releases mattered.
 
 ## 0.185.3 — 2026-10-03
 
+- In a note, a task's notes or an idea, Enter on a checklist line starts the
+  next one with an empty box — a bullet with a bullet, a number with the next
+  — and Enter on an empty one ends the list.
 - A thing in the inventory can have a picture: press the square at the top
   of its dialog to choose one. Lists with any picture keep the same room on
   every row, empty where there is none, so the names stay in one column.

@@ -24,6 +24,7 @@
 	 * somebody glanced at the preview.
 	 */
 	import TextBox from './TextBox.svelte';
+	import { continueList } from '$lib/list-continue';
 	import Written from './Written.svelte';
 	import { renderMarkdown, type NoteRefs, type TodoRefs } from '$lib/markdown';
 	import RefPicker from './RefPicker.svelte';
@@ -120,6 +121,29 @@
 		if (!(kind === 'task' ? todos?.size : notes?.size)) return;
 		pointing = kind;
 		pickerOpen = true;
+	}
+
+	/**
+	 * Enter on a line of a list continues it — a tick box with a tick box —
+	 * and on a bare marker ends it. See `$lib/list-continue`. Through
+	 * `insertText`, so Undo takes it back like anything typed.
+	 */
+	function continueOnEnter(event: KeyboardEvent) {
+		rest.onkeydown?.(event as never);
+		if (event.defaultPrevented || event.key !== 'Enter' || event.isComposing) return;
+		if (event.shiftKey || event.ctrlKey || event.metaKey || event.altKey) return;
+		const box = event.currentTarget as HTMLTextAreaElement;
+		const edit = continueList(box.value, box.selectionStart ?? 0, box.selectionEnd ?? 0);
+		if (!edit) return;
+		event.preventDefault();
+		box.setSelectionRange(edit.from, edit.to);
+		const typed = edit.text
+			? document.execCommand?.('insertText', false, edit.text)
+			: document.execCommand?.('delete');
+		if (!typed) {
+			box.setRangeText(edit.text, edit.from, edit.to, 'end');
+			box.dispatchEvent(new Event('input', { bubbles: true }));
+		}
 	}
 
 	function putRef(seq: number) {
@@ -322,7 +346,15 @@
 			aria-hidden={showing === 'preview' ? 'true' : undefined}
 			inert={showing === 'preview' ? true : undefined}
 		>
-			<TextBox bind:value={text} bind:element {rows} {maxHeight} {...rest} oninput={offerRef} />
+			<TextBox
+				bind:value={text}
+				bind:element
+				{rows}
+				{maxHeight}
+				{...rest}
+				oninput={offerRef}
+				onkeydown={continueOnEnter}
+			/>
 		</div>
 
 		<!--
