@@ -4703,8 +4703,9 @@ The instant the next unsent reminder falls due, or null if there is none.
 `remind_at` is wall-clock in the account's own zone — "remind me at ten to
 nine" means ten to nine wherever that person is — so each account's earliest
 has to be converted with that account's offset before they can be compared.
-The SQL ceiling keeps the scan small: nothing anywhere can be due more than
-a day and change from now in any zone.
+The candidates are exactly the ones a pass would deliver
+(`pushCandidates`): one it would skip must not be what the clock wakes for,
+or it wakes for it forever.
 
 #### `wake()`
 
@@ -4966,6 +4967,16 @@ kind of reminder does", which is what a row says before anybody overrides it.
 #### `remindersFor(ctx, id)`
 
 The reminders already set on one block, so its editor can show them.
+
+#### `pushCandidates(now, lookBackHours)`
+
+The reminders a pass can still deliver: unsent, not dismissed, and between
+the catch-up floor and a day ahead.
+
+One definition, because the reminder clock asks the same question to decide
+when to wake. It used to ask it without the floor, so a reminder more than
+`CATCH_UP_HOURS` old — never rung, so never stamped — was forever "the next
+one due", and the clock ran the whole pass again every quarter of a second.
 
 #### `pushableReminders(nowByUser, now, limit, lookBackHours)`
 

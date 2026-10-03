@@ -20,6 +20,9 @@ releases mattered.
 
 ## 0.185.4 — 2026-10-03
 
+- A reminder left unsent for more than twelve hours no longer keeps the server
+  busy. Pages had been slow because the reminder check ran four times a
+  second instead of once a minute.
 - A filter or a tab pressed just after saving something sometimes did
   nothing: the page reloading for the save cancelled it. The reload now
   waits for it.
