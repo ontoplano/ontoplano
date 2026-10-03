@@ -532,6 +532,8 @@ export const messages: Catalogue = {
 	'errors.mailLog.thatFailureIsGoneResolved': 'Ese fallo ya no está — se resolvió o se descartó',
 	'errors.mailLog.thisMailCannotBeReplayed':
 		'Ese correo no se puede reenviar — su enlace caducó. Pide uno nuevo.',
+	'errors.media.chooseAPictureFirst': 'Elige una imagen primero.',
+	'errors.media.noSuchItem': 'Esa cosa no está en el inventario.',
 	'errors.media.noSuchNotebook': 'Ese cuaderno no existe.',
 	'errors.media.noSuchPerson': 'Esa persona no existe.',
 	'errors.media.noSuchPicture': 'Esa imagen no existe.',
@@ -1567,6 +1569,7 @@ export const messages: Catalogue = {
 	'inventory.aColourForThisAttribute': 'Un color para este atributo',
 	'inventory.aColourForThisCategory': 'A colour for this category',
 	'inventory.aColourForThisValue': 'Un color para este valor',
+	'inventory.aPictureOf': 'Una imagen de {name}',
 	'inventory.aRoomACupboardA':
 		'Una habitación, un armario, un cajón. Uno puede estar dentro de otro.',
 	'inventory.about': 'Acerca de',
@@ -1589,6 +1592,7 @@ export const messages: Catalogue = {
 	'inventory.categories': 'Categorías',
 	'inventory.categoriesAndAttributes': 'Categories & attributes',
 	'inventory.changeIs': 'el cambio es',
+	'inventory.changeThePicture': 'Cambiar la imagen',
 	'inventory.changesAre': 'los cambios son',
 	'inventory.confirm': '¿Confirmar?',
 	'inventory.delete': 'Eliminar {name}',
@@ -1657,9 +1661,12 @@ export const messages: Catalogue = {
 		one: '{count} thing in {name}: {here} here and {inside} in what is inside it',
 		other: '{count} things in {name}: {here} here and {inside} in what is inside it'
 	},
+	'inventory.pressToChangeIt': 'Pulsa la imagen para cambiarla.',
+	'inventory.pressToChooseAPicture': 'Pulsa el cuadro para elegir una imagen.',
 	'inventory.putBackOnTheList': 'Volver a poner en la lista',
 	'inventory.putItBackOnThe': 'Vuelve a ponerlo en la lista',
 	'inventory.remove': 'Quitar {name}',
+	'inventory.removeThePicture': 'Quitar la imagen',
 	'inventory.removeThisLocation': '¿Quitar esta ubicación?',
 	'inventory.rename': 'Renombrar {name}',
 	'inventory.renameOrMove': 'Renombrar o mover',

@@ -116,6 +116,7 @@ export function listItems(ctx: Ctx, scope: { notebookId?: number } = {}) {
 			boughtAt: inventoryItems.boughtAt,
 			snoozed: inventoryItems.snoozed,
 			notebookId: inventoryItems.notebookId,
+			pictureId: inventoryItems.pictureId,
 			createdAt: inventoryItems.createdAt,
 			ownerId: inventoryItems.userId
 		})
@@ -128,7 +129,13 @@ export function listItems(ctx: Ctx, scope: { notebookId?: number } = {}) {
 		)
 		.orderBy(inventoryItems.bought, desc(inventoryItems.createdAt))
 		.all()
-		.map(({ ownerId, ...item }) => ({ ...item, mine: ownerId === ctx.userId }));
+		.map(({ ownerId, pictureId, ...item }) => ({
+			...item,
+			mine: ownerId === ctx.userId,
+			// A picture is its owner's file, which only its owner can fetch: a
+			// family member sees the thing without it rather than a broken image.
+			pictureId: ownerId === ctx.userId ? pictureId : null
+		}));
 }
 
 export function listCategories(ctx: Ctx) {

@@ -30,7 +30,7 @@
 import { and, eq, like, sql } from 'drizzle-orm';
 
 import { db } from '$lib/db/index.js';
-import { media, notebooks, people, recipeImages, recipes } from '$lib/db/schema.js';
+import { inventoryItems, media, notebooks, people, recipeImages, recipes } from '$lib/db/schema.js';
 import type { Ctx } from './ctx.js';
 import { pictureReferrers } from './media-referrers.js';
 import { sha256Hex } from './digest.js';
@@ -435,6 +435,63 @@ export function removeNotebookPicture(ctx: Ctx, notebookId: number): void {
 	db.update(notebooks)
 		.set({ pictureId: null })
 		.where(and(eq(notebooks.id, notebookId), eq(notebooks.userId, ctx.userId)))
+		.run();
+	removeIfUnreferenced(ctx, current);
+}
+
+// ── A thing in the inventory ─────────────────────────────────────────────────
+
+function assertOwnsItem(ctx: Ctx, itemId: number): void {
+	const found = db
+		.select({ id: inventoryItems.id })
+		.from(inventoryItems)
+		.where(and(eq(inventoryItems.id, itemId), eq(inventoryItems.userId, ctx.userId)))
+		.get();
+	if (!found) throw new NotFoundError({ key: 'errors.media.noSuchItem' });
+}
+
+/**
+ * Give a thing a picture, replacing whatever was there.
+ *
+ * The same shape a face and a notebook's picture have: one picture, chosen
+ * in one gesture, and the old one let go of if nothing else points at it.
+ */
+export async function setItemPicture(
+	ctx: Ctx,
+	itemId: number,
+	input: { bytes: Uint8Array; filename?: string; alt?: string }
+): Promise<Picture> {
+	assertOwnsItem(ctx, itemId);
+
+	const previous = db
+		.select({ pictureId: inventoryItems.pictureId })
+		.from(inventoryItems)
+		.where(and(eq(inventoryItems.id, itemId), eq(inventoryItems.userId, ctx.userId)))
+		.get()?.pictureId;
+
+	const picture = await store(ctx, input);
+	db.update(inventoryItems)
+		.set({ pictureId: picture.id })
+		.where(and(eq(inventoryItems.id, itemId), eq(inventoryItems.userId, ctx.userId)))
+		.run();
+
+	if (previous && previous !== picture.id) removeIfUnreferenced(ctx, previous);
+	return picture;
+}
+
+export function removeItemPicture(ctx: Ctx, itemId: number): void {
+	assertOwnsItem(ctx, itemId);
+
+	const current = db
+		.select({ pictureId: inventoryItems.pictureId })
+		.from(inventoryItems)
+		.where(and(eq(inventoryItems.id, itemId), eq(inventoryItems.userId, ctx.userId)))
+		.get()?.pictureId;
+	if (!current) return;
+
+	db.update(inventoryItems)
+		.set({ pictureId: null })
+		.where(and(eq(inventoryItems.id, itemId), eq(inventoryItems.userId, ctx.userId)))
 		.run();
 	removeIfUnreferenced(ctx, current);
 }

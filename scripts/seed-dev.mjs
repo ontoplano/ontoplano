@@ -2597,6 +2597,22 @@ if (horsePicture) {
 		);
 }
 
+/*
+ * A thing in the inventory with a picture, so the rooms are seen with one
+ * and without — the rows keep a picture's room on every line once any has
+ * one. Its own bytes, so it is not the reading notebook's cover row.
+ */
+{
+	const bytes = demoPicture('cover-reading.jpg');
+	const shelf =
+		bytes && picture('board-games.jpg', 'board games', Buffer.concat([bytes, Buffer.from('item')]));
+	if (shelf)
+		run(
+			"update inventory_items set picture_id = ? where user_id = ? and name = 'phrasebook'",
+			shelf,
+			uid
+		);
+}
 
 /*
  * A picture nothing points at: pasted into a todo and then cut out of it. The

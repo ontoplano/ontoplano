@@ -22,6 +22,7 @@ import {
 	diaryEntries,
 	goals,
 	ideas,
+	inventoryItems,
 	media,
 	notebooks,
 	people,
@@ -68,6 +69,14 @@ function usedPictureIds(ctx: Ctx): Set<number> {
 			.select({ id: people.pictureId })
 			.from(people)
 			.where(and(eq(people.userId, ctx.userId), isNotNull(people.pictureId)))
+			.all()
+			.map((row) => row.id)
+	);
+	add(
+		db
+			.select({ id: inventoryItems.pictureId })
+			.from(inventoryItems)
+			.where(and(eq(inventoryItems.userId, ctx.userId), isNotNull(inventoryItems.pictureId)))
 			.all()
 			.map((row) => row.id)
 	);

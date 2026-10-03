@@ -474,6 +474,8 @@ export type MessageKey =
 	| 'errors.locations.aLocationCannotBeInside'
 	| 'errors.mailLog.thatFailureIsGoneResolved'
 	| 'errors.mailLog.thisMailCannotBeReplayed'
+	| 'errors.media.chooseAPictureFirst'
+	| 'errors.media.noSuchItem'
 	| 'errors.media.noSuchNotebook'
 	| 'errors.media.noSuchPerson'
 	| 'errors.media.noSuchPicture'
@@ -1405,6 +1407,7 @@ export type MessageKey =
 	| 'inventory.aColourForThisAttribute'
 	| 'inventory.aColourForThisCategory'
 	| 'inventory.aColourForThisValue'
+	| 'inventory.aPictureOf'
 	| 'inventory.aRoomACupboardA'
 	| 'inventory.about'
 	| 'inventory.addItem'
@@ -1425,6 +1428,7 @@ export type MessageKey =
 	| 'inventory.categories'
 	| 'inventory.categoriesAndAttributes'
 	| 'inventory.changeIs'
+	| 'inventory.changeThePicture'
 	| 'inventory.changesAre'
 	| 'inventory.confirm'
 	| 'inventory.delete'
@@ -1483,9 +1487,12 @@ export type MessageKey =
 	| 'inventory.placeEmpty'
 	| 'inventory.placeHolds'
 	| 'inventory.placeHoldsSplit'
+	| 'inventory.pressToChangeIt'
+	| 'inventory.pressToChooseAPicture'
 	| 'inventory.putBackOnTheList'
 	| 'inventory.putItBackOnThe'
 	| 'inventory.remove'
+	| 'inventory.removeThePicture'
 	| 'inventory.removeThisLocation'
 	| 'inventory.rename'
 	| 'inventory.renameOrMove'
@@ -4290,6 +4297,7 @@ export interface MessageValuesFor {
 	'home.streakDays': { count: number };
 	'home.undoMarkingDone': { name: string | number };
 	'instance.enterAnyInstanceUrl': { https: string | number };
+	'inventory.aPictureOf': { name: string | number };
 	'inventory.anyValueCount': { count: number };
 	'inventory.archivedCount': { count: number };
 	'inventory.boughtCount': { count: number };

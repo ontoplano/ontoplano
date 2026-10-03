@@ -58,6 +58,7 @@
 	import { SvelteSet } from 'svelte/reactivity';
 	import SplitColumns from '$lib/components/SplitColumns.svelte';
 	import ItemRow, { itemRowWash } from '$lib/components/ItemRow.svelte';
+	import PicturePicker from '$lib/components/PicturePicker.svelte';
 	import { ITEM_ROOM_ACTIONS } from '$lib/item-action-names';
 	import { useT } from '$lib/i18n';
 
@@ -539,6 +540,10 @@
 	}
 
 	let filteredItems = $derived(allowedItems.filter(inChosenLocation));
+	/** Any picture on show keeps a picture's room on every row — see `ItemRow`. */
+	const anyPictured = $derived(filteredItems.some((one) => one.pictureId));
+	/** The thing whose dialog is open, for its picture, which is set apart from the form. */
+	const editingItem = $derived(data.items.find((one) => one.id === editingId) ?? null);
 
 	/** How many things sit in each location's own subtree, for the panel. */
 	/**
@@ -1198,6 +1203,32 @@
 		onclose={cancelEdit}
 		size="sm"
 	>
+		<!-- Its own form beside the item's, since a file goes up the moment it
+		     is chosen. Only on a thing of your own: a shared one's picture is
+		     its owner's to choose. -->
+		{#if editingItem?.mine}
+			<div class="mb-3 flex items-center gap-3">
+				<PicturePicker
+					id={editingItem.id}
+					pictureId={editingItem.pictureId}
+					icon="box"
+					kilobytes={data.pictureKilobytes}
+					setAction={ITEM_ROOM_ACTIONS.setPicture}
+					removeAction={ITEM_ROOM_ACTIONS.removePicture}
+					fields={{ title: editingItem.name }}
+					chooseLabel={t('inventory.aPictureOf', { name: editingItem.name })}
+					changeLabel={t('inventory.changeThePicture')}
+					removeLabel={t('inventory.removeThePicture')}
+					size="size-16"
+					removable
+				/>
+				<p class="text-xs text-gray-500">
+					{editingItem.pictureId
+						? t('inventory.pressToChangeIt')
+						: t('inventory.pressToChooseAPicture')}
+				</p>
+			</div>
+		{/if}
 		<form
 			id="item-form"
 			method="POST"
@@ -1622,6 +1653,7 @@
 																ondeletesubmit={(one) => deferDelete(one.id, one.name)}
 																confirming={confirmingDelete === item.id}
 																onconfirm={(id) => (confirmingDelete = id)}
+																thumb={anyPictured}
 															/>
 														</div>
 													{/each}

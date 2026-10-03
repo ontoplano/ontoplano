@@ -542,6 +542,8 @@ export const messages: Catalogue = {
 		'Dieser Fehler ist weg — schon behoben oder verworfen',
 	'errors.mailLog.thisMailCannotBeReplayed':
 		'Diese Mail lässt sich nicht erneut senden — ihr Link ist abgelaufen. Fordere einen neuen an.',
+	'errors.media.chooseAPictureFirst': 'Zuerst ein Bild wählen.',
+	'errors.media.noSuchItem': 'Das gibt es im Inventar nicht.',
 	'errors.media.noSuchNotebook': 'Dieses Notizbuch gibt es nicht.',
 	'errors.media.noSuchPerson': 'Diese Person gibt es nicht.',
 	'errors.media.noSuchPicture': 'Dieses Bild gibt es nicht.',
@@ -1583,6 +1585,7 @@ export const messages: Catalogue = {
 	'inventory.aColourForThisAttribute': 'Eine Farbe für dieses Attribut',
 	'inventory.aColourForThisCategory': 'A colour for this category',
 	'inventory.aColourForThisValue': 'Eine Farbe für diesen Wert',
+	'inventory.aPictureOf': 'Ein Bild von {name}',
 	'inventory.aRoomACupboardA':
 		'Ein Raum, ein Schrank, eine Schublade. Eines kann in einem anderen liegen.',
 	'inventory.about': 'Über',
@@ -1605,6 +1608,7 @@ export const messages: Catalogue = {
 	'inventory.categories': 'Kategorien',
 	'inventory.categoriesAndAttributes': 'Categories & attributes',
 	'inventory.changeIs': 'Änderung ist',
+	'inventory.changeThePicture': 'Bild ändern',
 	'inventory.changesAre': 'Änderungen sind',
 	'inventory.confirm': 'Bestätigen?',
 	'inventory.delete': '{name} löschen',
@@ -1675,9 +1679,12 @@ export const messages: Catalogue = {
 		one: '{count} thing in {name}: {here} here and {inside} in what is inside it',
 		other: '{count} things in {name}: {here} here and {inside} in what is inside it'
 	},
+	'inventory.pressToChangeIt': 'Auf das Bild drücken, um es zu ändern.',
+	'inventory.pressToChooseAPicture': 'Auf das Quadrat drücken, um ein Bild zu wählen.',
 	'inventory.putBackOnTheList': 'Zurück auf die Liste setzen',
 	'inventory.putItBackOnThe': 'Es zurück auf die Liste setzen',
 	'inventory.remove': '{name} entfernen',
+	'inventory.removeThePicture': 'Bild entfernen',
 	'inventory.removeThisLocation': 'Diesen Ort entfernen?',
 	'inventory.rename': '{name} umbenennen',
 	'inventory.renameOrMove': 'Umbenennen oder verschieben',

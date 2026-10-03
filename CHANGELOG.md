@@ -18,6 +18,12 @@ the shape of the data changing. Bumping the minor per batch is what ran this
 file to 0.161 in a few months, which tells a reader nothing about which
 releases mattered.
 
+## 0.185.3 — 2026-10-03
+
+- A thing in the inventory can have a picture: press the square at the top
+  of its dialog to choose one. Lists with any picture keep the same room on
+  every row, empty where there is none, so the names stay in one column.
+
 ## 0.185.2 — 2026-10-03
 
 - A notebook on the whole screen can be dragged wider or narrower by either

@@ -210,7 +210,9 @@
 	async function focusFirstField() {
 		await tick();
 		const field = dialog?.querySelector<HTMLElement>(
-			'input:not([type=hidden]):not([disabled]), select:not([disabled]), textarea:not([disabled])'
+			// Not a file chooser: focusing one rings a picture somebody has not
+			// pressed, and the field to type into is the one wanted.
+			'input:not([type=hidden]):not([type=file]):not([disabled]), select:not([disabled]), textarea:not([disabled])'
 		);
 		// `preventScroll`, because this element is inside the box the app
 		// scrolls and focusing it otherwise drags that box to the top.

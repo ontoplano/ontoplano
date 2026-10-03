@@ -1899,7 +1899,12 @@
 				<div class="divide-y divide-gray-200">
 					{#each shownInventory as item (item.id)}
 						<div class="row-card {itemRowWash(item)}">
-							<ItemRow {item} {currency} actions={NOTEBOOK_ITEM_ACTIONS} />
+							<ItemRow
+								{item}
+								{currency}
+								actions={NOTEBOOK_ITEM_ACTIONS}
+								thumb={shownInventory.some((one) => one.pictureId)}
+							/>
 						</div>
 					{/each}
 				</div>
