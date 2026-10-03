@@ -3,7 +3,7 @@
 	import { resolve } from '$app/paths';
 	import { enhance } from '$lib/enhance';
 	import { armed } from '$lib/actions/armed';
-	import { historySettled } from '$lib/back-closes';
+	import { loadAfterHistory } from '$lib/back-closes';
 	import Modal from '$lib/components/Modal.svelte';
 	import { useT } from '$lib/i18n';
 
@@ -21,7 +21,7 @@
 	 * `history.back()`, and a navigation fired before that pop lands is undone
 	 * by it — the notebook was deleted and the shelf still showed it. The Edit
 	 * notebook dialogue under this one gives its entry back too, a moment
-	 * later, so the redirect waits for every pop rather than only this one.
+	 * later, so the redirect is made once no pop can land on it.
 	 */
 	let {
 		open = $bindable(false),
@@ -48,8 +48,7 @@
 	onclosed={async () => {
 		if (!leaving) return;
 		leaving = false;
-		await historySettled();
-		void goto(resolve('/notebooks'), { invalidateAll: true });
+		await loadAfterHistory(() => goto(resolve('/notebooks'), { invalidateAll: true }));
 	}}
 >
 	<p class="text-sm text-gray-600">

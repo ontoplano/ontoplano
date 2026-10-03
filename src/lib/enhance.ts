@@ -3,7 +3,7 @@ import { invalidateAll } from '$app/navigation';
 import { navigating } from '$app/state';
 import type { SubmitFunction } from '@sveltejs/kit';
 import { afterPress } from '$lib/after-press';
-import { historySettled, popsSoFar } from '$lib/back-closes';
+import { historySettled, loadAfterHistory, popsSoFar } from '$lib/back-closes';
 
 /**
  * `use:enhance`, with one press meaning one submission.
@@ -254,7 +254,7 @@ export function enhance(form: HTMLFormElement, submit?: SubmitFunction) {
 			 */
 			if (saved) {
 				void historySettled().then(() => {
-					if (popsSoFar() !== popsBefore) void invalidateAll();
+					if (popsSoFar() !== popsBefore) void loadAfterHistory(invalidateAll);
 				});
 			}
 		};
