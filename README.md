@@ -15,6 +15,8 @@
 
 `.deb` · `.rpm` · Arch · Docker · Android
 
+<a href="https://play.google.com/store/apps/details?id=app.ontoplano"><img src="https://play.google.com/intl/en_us/badges/static/images/badges/en_badge_web_generic.png" alt="Get it on Google Play" height="80"></a>
+
 [Screenshots](docs/SCREENSHOTS.md)
 
 </div>
@@ -40,7 +42,6 @@ I am creating [tutorials for Ontoplano in YouTube](https://www.youtube.com/@eChe
 > output is reviewed and tested before it lands.
 >
 > Help improve it by creating issues and pull requests.
-
 
 ---
 
