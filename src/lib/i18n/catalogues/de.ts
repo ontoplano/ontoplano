@@ -540,6 +540,7 @@ export const messages: Catalogue = {
 	'errors.media.noSuchPicture': 'Dieses Bild gibt es nicht.',
 	'errors.media.noSuchPictureOnThisRecipe': 'Dieses Rezept hat dieses Bild nicht.',
 	'errors.media.noSuchRecipe': 'Dieses Rezept gibt es nicht.',
+	'errors.media.stillInUse': 'Das Bild wird wieder verwendet und wurde behalten.',
 	'errors.media.thatFileWasEmpty': 'Diese Datei war leer.',
 	'errors.media.thatIsNotAPicture':
 		'Dieses Bildformat nimmt diese Instanz nicht — JPEG, PNG, GIF oder WebP.',
@@ -1031,6 +1032,17 @@ export const messages: Catalogue = {
 	'gallery.renameAlbum': 'Album umbenennen',
 	'gallery.searchAlbums': 'Search albums',
 	'gallery.trips': 'Reisen',
+	'gallery.unused.deleteAll': 'Alle löschen',
+	'gallery.unused.deleteAllTitle': '{count} unbenutzte Bilder löschen?',
+	'gallery.unused.deleteBody':
+		'Nichts verweist darauf, und Löschen lässt sich nicht rückgängig machen.',
+	'gallery.unused.deleteOneTitle': 'Dieses Bild löschen?',
+	'gallery.unused.noneBody':
+		'Jedes Bild steckt in einem Album, einer Notiz, einer Aufgabe oder anderswo.',
+	'gallery.unused.noneTitle': 'Keine unbenutzten Bilder',
+	'gallery.unused.title': 'Unbenutzt',
+	'gallery.unused.whatTheseAre':
+		'Bilder, auf die in der App nichts mehr verweist – eingefügt und dann aus dem Text entfernt.',
 	'goals.aGoalIsACommitment':
 		'Ein Ziel ist eine Verpflichtung mit einer Frist. Fangen Sie mit einer Woche an — Sie können es später hochstufen.',
 	'goals.abandoned': 'Aufgegeben',

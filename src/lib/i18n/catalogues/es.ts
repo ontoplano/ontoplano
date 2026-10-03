@@ -530,6 +530,7 @@ export const messages: Catalogue = {
 	'errors.media.noSuchPicture': 'Esa imagen no existe.',
 	'errors.media.noSuchPictureOnThisRecipe': 'Esa receta no tiene esa imagen.',
 	'errors.media.noSuchRecipe': 'Esa receta no existe.',
+	'errors.media.stillInUse': 'Esa imagen vuelve a estar en uso, así que se conservó.',
 	'errors.media.thatFileWasEmpty': 'Ese archivo estaba vacío.',
 	'errors.media.thatIsNotAPicture':
 		'Esta instancia no acepta ese tipo de imagen — JPEG, PNG, GIF o WebP.',
@@ -1020,6 +1021,15 @@ export const messages: Catalogue = {
 	'gallery.renameAlbum': 'Renombrar álbum',
 	'gallery.searchAlbums': 'Search albums',
 	'gallery.trips': 'Viajes',
+	'gallery.unused.deleteAll': 'Borrar todas',
+	'gallery.unused.deleteAllTitle': '¿Borrar {count} imágenes sin usar?',
+	'gallery.unused.deleteBody': 'Nada apunta a ella, y borrarla no se puede deshacer.',
+	'gallery.unused.deleteOneTitle': '¿Borrar esta imagen?',
+	'gallery.unused.noneBody': 'Cada imagen está en un álbum, una nota, una tarea o en otro lugar.',
+	'gallery.unused.noneTitle': 'No hay imágenes sin usar',
+	'gallery.unused.title': 'Sin usar',
+	'gallery.unused.whatTheseAre':
+		'Imágenes a las que ya nada apunta en la app: pegadas y luego quitadas del texto.',
 	'goals.aGoalIsACommitment':
 		'Una meta es un compromiso con una fecha límite. Empieza con una semana — puedes ascenderla después.',
 	'goals.abandoned': 'Abandonada',

@@ -472,6 +472,7 @@ export type MessageKey =
 	| 'errors.media.noSuchPicture'
 	| 'errors.media.noSuchPictureOnThisRecipe'
 	| 'errors.media.noSuchRecipe'
+	| 'errors.media.stillInUse'
 	| 'errors.media.thatFileWasEmpty'
 	| 'errors.media.thatIsNotAPicture'
 	| 'errors.media.thatPictureIsAlready'
@@ -911,6 +912,14 @@ export type MessageKey =
 	| 'gallery.renameAlbum'
 	| 'gallery.searchAlbums'
 	| 'gallery.trips'
+	| 'gallery.unused.deleteAll'
+	| 'gallery.unused.deleteAllTitle'
+	| 'gallery.unused.deleteBody'
+	| 'gallery.unused.deleteOneTitle'
+	| 'gallery.unused.noneBody'
+	| 'gallery.unused.noneTitle'
+	| 'gallery.unused.title'
+	| 'gallery.unused.whatTheseAre'
 	| 'goals.aGoalIsACommitment'
 	| 'goals.abandoned'
 	| 'goals.achieved'
@@ -4163,6 +4172,7 @@ export interface MessageValuesFor {
 	'gallery.picturesCount': { count: number };
 	'gallery.refused': { willRefuse: string | number };
 	'gallery.rename': { name: string | number };
+	'gallery.unused.deleteAllTitle': { count: number };
 	'goals.areaColour': { name: string | number };
 	'goals.closedCount': { count: number };
 	'goals.countedFromActivity': { activity: string | number };

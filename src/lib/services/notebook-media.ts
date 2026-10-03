@@ -214,7 +214,7 @@ export function notebookMediaView(
 }
 
 /** The gallery's own picture shape, for a list of ids in the order given. */
-function picturesById(ctx: Ctx, ids: number[]): AlbumPicture[] {
+export function picturesById(ctx: Ctx, ids: number[]): AlbumPicture[] {
 	const rows = db
 		.select({ id: media.id, alt: media.alt, filename: media.filename, createdAt: media.createdAt })
 		.from(media)

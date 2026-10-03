@@ -517,6 +517,7 @@ export const messages: Catalogue = {
 	'errors.media.noSuchPicture': 'No such picture.',
 	'errors.media.noSuchPictureOnThisRecipe': 'No such picture on this recipe.',
 	'errors.media.noSuchRecipe': 'No such recipe.',
+	'errors.media.stillInUse': 'That picture is in use again, so it was kept.',
 	'errors.media.thatFileWasEmpty': 'That file was empty.',
 	'errors.media.thatIsNotAPicture':
 		'That is not a picture this instance takes — JPEG, PNG, GIF or WebP.',
@@ -992,6 +993,15 @@ export const messages: Catalogue = {
 	'gallery.renameAlbum': 'Rename album',
 	'gallery.searchAlbums': 'Search albums',
 	'gallery.trips': 'Trips',
+	'gallery.unused.deleteAll': 'Delete all',
+	'gallery.unused.deleteAllTitle': 'Delete {count} unused pictures?',
+	'gallery.unused.deleteBody': 'Nothing points at it, and deleting cannot be undone.',
+	'gallery.unused.deleteOneTitle': 'Delete this picture?',
+	'gallery.unused.noneBody': 'Every picture is in an album, a note, a todo or somewhere else.',
+	'gallery.unused.noneTitle': 'No unused pictures',
+	'gallery.unused.title': 'Unused',
+	'gallery.unused.whatTheseAre':
+		'Pictures nothing in the app points at any more — pasted, then cut out of the writing.',
 	'goals.aGoalIsACommitment':
 		'A goal is a commitment with a deadline attached. Start with a week — you can promote it later.',
 	'goals.abandoned': 'Abandoned',

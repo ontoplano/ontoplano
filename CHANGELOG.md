@@ -20,6 +20,11 @@ releases mattered.
 
 ## 0.185.1 — 2026-10-03
 
+- The gallery has an Unused tile: pictures pasted into writing and then cut
+  out of it, which nothing in the app reached any more. Delete them one at a
+  time or all at once.
+- Replacing a person's or a notebook's picture no longer deletes the old one
+  while it is still pasted into a todo or an idea.
 - Permissions look the same everywhere: one grid of reading and writing, on
   both key forms and the screen an assistant sends you to approve it. Each
   column, and the whole grid, can be ticked or cleared at once.

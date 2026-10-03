@@ -2597,6 +2597,18 @@ if (horsePicture) {
 		);
 }
 
+
+/*
+ * A picture nothing points at: pasted into a todo and then cut out of it. The
+ * gallery's "Unused" tile only appears when there is one, so without this the
+ * screen is never seen in a used state. Distinct bytes — a JPEG ignores what
+ * follows its end marker — so it is not the same row as the kitchen cover.
+ */
+{
+	const bytes = demoPicture('kitchen.jpg');
+	if (bytes) picture('pasted.jpg', '', Buffer.concat([bytes, Buffer.from('unused')]));
+}
+
 /*
  * A cover on every notebook.
  *
