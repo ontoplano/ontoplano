@@ -20,6 +20,9 @@ releases mattered.
 
 ## 0.185.1 — 2026-10-03
 
+- The instance page's Backups row reads the last copy pulled by a machine
+  elsewhere, and names it, rather than looking for a backup timer on the
+  server itself.
 - Something added just before switching tabs — a thing put on the wishlist,
   then the Wishlist tab pressed — is there when the tab opens.
 
