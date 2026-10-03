@@ -76,6 +76,16 @@ describe('an error report', () => {
 		expect(report.email).toBeTruthy();
 	});
 
+	it('does not keep a browser notice that is not a crash', () => {
+		service.setClientErrorConsent(ctx, 'yes');
+		const before = service.recentClientErrors().length;
+		service.recordClientError(ctx, {
+			message: 'ResizeObserver loop completed with undelivered notifications.',
+			url: '/notebooks'
+		});
+		expect(service.recentClientErrors()).toHaveLength(before);
+	});
+
 	/*
 	 * Which build it happened on, without anybody being asked.
 	 *

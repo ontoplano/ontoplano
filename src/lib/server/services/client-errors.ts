@@ -11,6 +11,7 @@ import { getUserSetting, setUserSetting } from '../settings.js';
 import type { Ctx } from '$lib/services/ctx.js';
 import { ForbiddenError } from '$lib/services/errors.js';
 import { oneOf, optionalStr, str } from '$lib/services/validate.js';
+import { isBrowserNoise } from '$lib/browser-noise.js';
 
 /**
  * Client-side errors, sent in with permission.
@@ -174,6 +175,8 @@ function write(
 	kind: 'crash' | 'report' | 'suggestion' = 'crash'
 ): void {
 	const message = str(input.message, 'message', { max: MAX_REPORT_LENGTH });
+	// Sent by a page from before it knew to hold these back.
+	if (kind === 'crash' && isBrowserNoise(message)) return;
 	const url = optionalStr(input.url, 'url', { max: 300 });
 	const stack = optionalStr(input.stack, 'stack', { max: 8000 });
 	const userAgent = optionalStr(input.userAgent, 'userAgent', { max: 300 });
