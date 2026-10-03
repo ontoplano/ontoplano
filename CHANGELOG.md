@@ -36,6 +36,9 @@ releases mattered.
   tasks, goals and ideas, not only its notes.
 - No blinking caret on text that cannot be edited, such as tabs and headings,
   when Firefox's caret browsing is on.
+- Administration is two columns of cards, and each card folds down to its
+  title; a folded card stays folded in that browser.
+- "ResizeObserver loop completed" is no longer reported as a crash.
 
 ## 0.185.3 — 2026-10-03
 
