@@ -717,6 +717,7 @@
 	"finance.bills.keepIt": "Keep it",
 	"finance.bills.markPaid": "Mark paid",
 	"finance.bills.markPaid2": "Mark {name} paid",
+	"finance.bills.namePaid": "{name} is paid",
 	"finance.bills.newBill": "New bill",
 	"finance.bills.noBillsYet": "No bills yet",
 	"finance.bills.noneMatch": "No bill has that in its name.",

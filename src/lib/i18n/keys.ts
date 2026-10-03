@@ -694,6 +694,7 @@ export type MessageKey =
 	| 'finance.bills.keepIt'
 	| 'finance.bills.markPaid'
 	| 'finance.bills.markPaid2'
+	| 'finance.bills.namePaid'
 	| 'finance.bills.newBill'
 	| 'finance.bills.noBillsYet'
 	| 'finance.bills.noneMatch'
@@ -4148,6 +4149,7 @@ export interface MessageValuesFor {
 	'finance.bills.expectedAmountShort': { amount: string | number };
 	'finance.bills.historyOf': { name: string | number };
 	'finance.bills.markPaid2': { name: string | number };
+	'finance.bills.namePaid': { name: string | number };
 	'finance.bills.payDaysBefore': { count: number };
 	'finance.bills.showingCount': { count: number };
 	'finance.bills.skipName': { name: string | number };

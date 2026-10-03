@@ -773,6 +773,7 @@ export const messages: Catalogue = {
 	'finance.bills.keepIt': 'Conservarla',
 	'finance.bills.markPaid': 'Marcar como pagada',
 	'finance.bills.markPaid2': 'Marcar {name} como pagada',
+	'finance.bills.namePaid': '{name} está pagada',
 	'finance.bills.newBill': 'Nueva factura',
 	'finance.bills.noBillsYet': 'Todavía no hay facturas',
 	'finance.bills.noneMatch': 'No bill has that in its name.',
