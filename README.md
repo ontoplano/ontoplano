@@ -15,6 +15,8 @@
 
 `.deb` · `.rpm` · Arch · Docker · Android
 
+[Screenshots](docs/SCREENSHOTS.md)
+
 </div>
 
 ## Summary
