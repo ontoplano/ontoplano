@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { openFromUrl } from '$lib/open-from-url.svelte';
 	import Backlinks from '$lib/components/Backlinks.svelte';
 	import ShowingCount from '$lib/components/ShowingCount.svelte';
 	import SearchField from '$lib/components/SearchField.svelte';
@@ -110,6 +111,9 @@
 		editingId = null;
 		showForm = true;
 	}
+
+	// `?edit=<id>` opens its editor: how a notification or a receipt leads here (`$lib/object-links`).
+	openFromUrl((id) => openEdit(id));
 
 	function openEdit(id: number) {
 		editingId = id;

@@ -667,6 +667,15 @@ its underscores opened out. That is not a language, but it is a true
 sentence about somebody's data, which is the thing that matters most here —
 and it only happens for a tool added without its noun being added beside it.
 
+#### `whereBurstOpens(calls)`
+
+Where a burst's notification opens: the one thing it was about, or the log.
+
+"An assistant added a task" opens that task; the log stays the answer for a
+burst that touched several things, where no one of them is what happened,
+and for one that deleted what it touched. A kind `$lib/object-links` has no
+room for falls back to the log too.
+
 #### `notifyAssistantBursts(now)`
 
 Say what the assistants did, to whoever is not watching.
@@ -2998,7 +3007,7 @@ rest of the app gives things that took effort to enter.
 
 The whole tree, each node carrying how many items sit directly in it.
 
-#### `pathOf(ctx, id)`
+#### `pathOf(ctx, id, byId)`
 
 The chain of names from the root down to this location, for "Living room › chest › drawer".
 
@@ -4820,7 +4829,15 @@ Written ahead of its time like everything else here — the row has to exist
 before the clock looks for it, and on a phone it has to exist before the app
 is closed, which is hours earlier.
 
-#### `ensureOwnReminders(ctx, now, tz, t)`
+#### `passesRunOnAClock()`
+
+Said by the clock when it starts: from now on a pass runs without the polls.
+
+#### `forgetReminderPass(userId)`
+
+Something of this account's changed: its next poll runs the pass in full.
+
+#### `ensureOwnReminders(ctx, now, tz, t, { always = false })`
 
 Every reminder nobody types, written for one account.
 
@@ -5284,7 +5301,7 @@ has touched this or not.
 
 #### `setSoundChoice(ctx, kind, choice)`
 
-#### `soundFor(ctx, reminder)`
+#### `soundFor(ctx, reminder, choices)`
 
 What this particular reminder should sound like, if anything.
 
@@ -5501,6 +5518,10 @@ the _deployment_ is (self-hosted, staging, local) stays in
 `$lib/server/settings.ts`, because a browser has no environment to ask.
 
 ### Functions
+
+#### `forgetUserSettings(userId)`
+
+An account's settings were written around this module: read them afresh.
 
 #### `getUserSetting(userId, key)`
 
@@ -6109,6 +6130,10 @@ The circle that "share with family" shares into: the payer and every seat,
 whichever of them is asking. An account on no family plan is a circle of
 one, which is what makes the sharing predicates below safe to apply
 unconditionally — alone, they reduce to the ordinary ownership check.
+
+#### `forgetFamilies()`
+
+Somebody joined, left or was offered a seat: every circle is read afresh.
 
 #### `seatOwnerOf(memberId)`
 

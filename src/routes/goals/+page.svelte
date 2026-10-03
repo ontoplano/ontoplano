@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { openFromUrl } from '$lib/open-from-url.svelte';
 	import { useWhen } from '$lib/when-context.svelte';
 	import ShowingCount from '$lib/components/ShowingCount.svelte';
 	import SearchField from '$lib/components/SearchField.svelte';
@@ -281,6 +282,12 @@
 		if (url.searchParams.get('new') !== '1') return;
 		const asked = Number(url.searchParams.get('notebookId'));
 		openCreate(Number.isInteger(asked) && asked > 0 ? asked : null);
+	});
+
+	// `?edit=<id>` opens its editor: how a notification or a receipt leads here (`$lib/object-links`).
+	openFromUrl((id) => {
+		const goal = data.goals.find((one) => one.id === id);
+		if (goal) openEdit(goal);
 	});
 
 	function openEdit(goal: Goal) {

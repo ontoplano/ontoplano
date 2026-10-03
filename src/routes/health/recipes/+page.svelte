@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { openFromUrl } from '$lib/open-from-url.svelte';
 	import NumberBox from '$lib/components/NumberBox.svelte';
 	import ShowingCount from '$lib/components/ShowingCount.svelte';
 	import SearchField from '$lib/components/SearchField.svelte';
@@ -33,6 +34,11 @@
 	/** The recipe whose edit form is open, or null. */
 	let editingId = $state<number | null>(null);
 	const editingRecipe = $derived(data.recipes.find((r) => r.id === editingId) ?? null);
+	// `?edit=<id>` opens its editor: how a notification or a receipt leads here (`$lib/object-links`).
+	openFromUrl((id) => {
+		if (data.recipes.some((one) => one.id === id)) editingId = id;
+	});
+
 	let selected = $state(0);
 	/** Put away, and shown only when asked for — with how many there are. */
 	let showArchived = $state(false);

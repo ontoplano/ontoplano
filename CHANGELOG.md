@@ -29,6 +29,11 @@ releases mattered.
   settings, sounds and places are read once per page instead of once per use.
 - Marking a bill paid ticks it the moment you press, and a message says it is
   paid once saved. Skipping and undoing are instant too.
+- A notification opens the thing it is about. "An assistant added a task"
+  opens that task, and a bill or to-do reminder opens that bill or to-do.
+  Goals, habits, exercises, recipes, activities and bills can all be opened
+  from a link. A notification about several things still opens the
+  assistant's log.
 - Portuguese, Spanish and German are complete again: about 460 newer
   sentences (search boxes, sort menus, counts, the tours, the trial mail) were
   showing in English, and a few dozen more had been copied over in English.

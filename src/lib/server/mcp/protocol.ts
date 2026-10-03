@@ -263,6 +263,29 @@ function fileResult(value: Bytes) {
 }
 
 /** The id a create answered with, wherever it put it. */
+/**
+ * The one thing a write made or changed, for the log — and so for the
+ * notification that says what an assistant did, which opens it. A create's is
+ * the row it answered with; anything else's is the argument its refs mark as
+ * the subject, or the one called `id`. Null where a call names no one thing.
+ */
+function subjectOf(
+	tool: Tool,
+	args: Record<string, unknown>,
+	createdId: unknown
+): { kind: string; id: string } | null {
+	const plain = (id: unknown) =>
+		typeof id === 'number' || (typeof id === 'string' && id !== '') ? String(id) : null;
+	if (tool.creates) {
+		const id = plain(createdId);
+		return id === null ? null : { kind: tool.creates, id };
+	}
+	const ref = tool.refs?.find((one) => one.subject) ?? tool.refs?.find((one) => one.arg === 'id');
+	if (!ref || ref.arg.includes('.') || ref.arg.includes('[')) return null;
+	const id = plain(args[ref.arg]);
+	return id === null ? null : { kind: ref.kind, id };
+}
+
 function idOf(value: unknown): unknown {
 	return value && typeof value === 'object' ? (value as { id?: unknown }).id : undefined;
 }
@@ -598,6 +621,8 @@ export function handle(caller: Caller, request: RpcRequest): RpcResponse | null 
 				 * next time. See `concurrency.ts`.
 				 */
 				const stamped = 'ifUpdatedAt' in tool.input.properties ? stampedRef(tool.refs) : undefined;
+				/** The id a create handed back, for the log's subject below. */
+				let createdId: unknown;
 				const settle = () => {
 					if (stamped) assertUnchanged(tool.refs, args);
 					let value = tool.run(caller.ctx, args, {
@@ -615,6 +640,7 @@ export function handle(caller: Caller, request: RpcRequest): RpcResponse | null 
 					 * did not once, and the caller found out by being told the task it
 					 * had just made did not exist.
 					 */
+					if (tool.creates) createdId = idOf(value);
 					const made = tool.creates ? madeRow(caller.ctx, tool.creates, idOf(value)) : undefined;
 					if (tool.creates && made === null)
 						throw new Error(
@@ -667,7 +693,8 @@ export function handle(caller: Caller, request: RpcRequest): RpcResponse | null 
 						tool: tool.name,
 						args,
 						before,
-						destroyed: Boolean(tool.destroys)
+						destroyed: Boolean(tool.destroys),
+						subject: subjectOf(tool, args, createdId)
 					});
 
 				/*

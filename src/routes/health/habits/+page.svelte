@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { openFromUrl } from '$lib/open-from-url.svelte';
 	import { routeGlyph } from '$lib/glyphs';
 	import ShowingCount from '$lib/components/ShowingCount.svelte';
 	import SearchField from '$lib/components/SearchField.svelte';
@@ -195,6 +196,12 @@
 		newHabitType = 'bad';
 		scheduledDaysState = [false, false, false, false, false, false, false];
 	}
+
+	// `?edit=<id>` opens its editor: how a notification or a receipt leads here (`$lib/object-links`).
+	openFromUrl((id) => {
+		const habit = (data.habits as Habit[]).find((one) => one.id === id);
+		if (habit) startEdit(habit);
+	});
 
 	function startEdit(habit: Habit) {
 		editingId = habit.id;

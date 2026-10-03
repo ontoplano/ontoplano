@@ -4,6 +4,7 @@ import { db } from '$lib/db/index.js';
 import { apiTokens, assistantCalls } from '$lib/db/schema.js';
 import { getUserSetting, setUserSetting } from '../settings.js';
 import { pushToUser } from './push.js';
+import { linkTo } from '$lib/object-links.js';
 import { translatorFor, type Translate } from '$lib/i18n/core.js';
 import { localeForUser } from '../locale.js';
 import type { KeyWithValues, PlainKey } from '$lib/i18n/keys.js';
@@ -418,6 +419,10 @@ type Pending = {
 	before: string | null;
 	tokenId: number | null;
 	createdAt: string;
+	/** What the call made or changed, if one thing — see `subjectOf` in `mcp/protocol`. */
+	subjectKind: string | null;
+	subjectId: string | null;
+	destroyed: boolean;
 };
 
 /** One logged row as a write the sentence can read, its JSON opened out. */
@@ -436,20 +441,45 @@ function fromJson(text: string | null): unknown {
 }
 
 /**
- * Where a notification opens: the log of what an assistant did, always.
+ * The log of what an assistant did, where a burst of writes opens.
  *
  * It used to work out the room a burst was about — "added 4 tasks" opened the
  * todo list — and that was the wrong guess about what somebody is asking when
  * they press it: "i don't like it taking to tasks either, i wanted to go to
  * integrations in the logs of AI changes". The tasks are already where they
  * were; what a notification is about is what was done, and only the log says
- * that.
+ * that — unless the burst was one thing, which then opens itself
+ * (`whereBurstOpens`).
  *
  * `$lib/scroll-to-hash` is what makes the hash mean anything: the app scrolls
  * its own `main` rather than the window, so the browser's own anchor handling
  * never applied and this landed at the top of a long settings page.
  */
 export const ASSISTANT_LOG_PATH = '/settings/integrations#assistant-activity';
+
+/**
+ * Where a burst's notification opens: the one thing it was about, or the log.
+ *
+ * "An assistant added a task" opens that task; the log stays the answer for a
+ * burst that touched several things, where no one of them is what happened,
+ * and for one that deleted what it touched. A kind `$lib/object-links` has no
+ * room for falls back to the log too.
+ */
+export function whereBurstOpens(
+	calls: { subjectKind: string | null; subjectId: string | null; destroyed: boolean }[]
+): string {
+	const first = calls[0];
+	if (!first?.subjectKind || !first.subjectId) return ASSISTANT_LOG_PATH;
+	const one = calls.every(
+		(call) =>
+			!call.destroyed &&
+			call.subjectKind === first.subjectKind &&
+			call.subjectId === first.subjectId
+	);
+	if (!one) return ASSISTANT_LOG_PATH;
+	const numeric = /^\d+$/.test(first.subjectId) ? Number(first.subjectId) : first.subjectId;
+	return linkTo({ kind: first.subjectKind, id: numeric }) ?? ASSISTANT_LOG_PATH;
+}
 
 /**
  * Every account with writes nobody has been told about, and the writes.
@@ -466,7 +496,10 @@ function pendingByAccount(limit: number): Map<string, Pending[]> {
 			args: assistantCalls.args,
 			before: assistantCalls.before,
 			tokenId: assistantCalls.tokenId,
-			createdAt: assistantCalls.createdAt
+			createdAt: assistantCalls.createdAt,
+			subjectKind: assistantCalls.subjectKind,
+			subjectId: assistantCalls.subjectId,
+			destroyed: assistantCalls.destroyed
 		})
 		.from(assistantCalls)
 		.orderBy(asc(assistantCalls.id))
@@ -571,8 +604,8 @@ export async function notifyAssistantBursts(now = new Date()): Promise<SweepResu
 		const outcome = await pushToUser(userId, {
 			title,
 			body,
-			// The log, not the room the writes landed in — see above.
-			url: ASSISTANT_LOG_PATH,
+			// The thing itself when the burst was about one, the log otherwise.
+			url: whereBurstOpens(calls),
 			// One tag, so a second burst replaces the first on the lock screen
 			// rather than stacking up behind it.
 			tag: 'assistant-activity'

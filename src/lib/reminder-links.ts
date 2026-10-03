@@ -15,6 +15,8 @@
  * different things — the weekly review's notification landed on the board,
  * which is not the review.
  */
+import { EDIT_PARAM } from './open-from-url-param.js';
+
 export type ReminderRef = {
 	remindAt: string;
 	subjectKind?: string | null;
@@ -43,6 +45,11 @@ function dayBefore(day: string): string {
 	return d.toISOString().slice(0, 10);
 }
 
+/** `?edit=<id>` for a real id, nothing otherwise. */
+function editQuery(id: number | null | undefined): string {
+	return id && id > 0 ? `?${EDIT_PARAM}=${id}` : '';
+}
+
 export function reminderLink(reminder: ReminderRef): ReminderLink {
 	const day = reminder.remindAt.slice(0, 10);
 
@@ -64,11 +71,12 @@ export function reminderLink(reminder: ReminderRef): ReminderLink {
 		case 'review':
 			return { route: '/tasks/review', query: `?week=${dayBefore(day)}` };
 
+		// The thing itself, opened in its editor — see `$lib/object-links`.
 		case 'bill':
-			return { route: '/finance/bills', query: '' };
+			return { route: '/finance/bills', query: editQuery(reminder.subjectId) };
 
 		case 'todo':
-			return { route: '/tasks/todo', query: '' };
+			return { route: '/tasks/todo', query: editQuery(reminder.subjectId) };
 
 		/*
 		 * A block, the end of a day, and an alarm about nothing in particular

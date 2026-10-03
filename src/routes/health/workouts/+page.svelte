@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { openFromUrl } from '$lib/open-from-url.svelte';
 	import { useWhen } from '$lib/when-context.svelte';
 	import { civilOf, today } from '$lib/when';
 	import { routeGlyph } from '$lib/glyphs';
@@ -151,6 +152,12 @@
 		declared = [blankDeclared()];
 		showForm = true;
 	}
+	// `?edit=<id>` opens its editor: how a notification or a receipt leads here (`$lib/object-links`).
+	openFromUrl((id) => {
+		const workout = data.workouts.find((one) => one.id === id);
+		if (workout) openEdit(workout);
+	});
+
 	function openEdit(chosen: (typeof data.workouts)[number]) {
 		editing = chosen;
 		declared = [...chosen.measures.map((m) => ({ ...m })), blankDeclared()];
