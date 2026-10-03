@@ -39,6 +39,9 @@ releases mattered.
   showing in English, and a few dozen more had been copied over in English.
 - The activity examples say "guitar" where they said "Russian", in every
   language.
+- Self-hosting: `/metrics` reports how many accounts are online and how many
+  tabs hold a live connection (`ontoplano_users_online`,
+  `ontoplano_live_streams`).
 - Self-hosting: `ONTOPLANO_SNAPSHOTS_KEPT` sets how many pre-migration
   snapshots are kept (ten by default); `0` keeps none. The demo also gives
   space back to the disk after removing expired visitors.

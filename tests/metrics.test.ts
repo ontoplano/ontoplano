@@ -67,3 +67,19 @@ describe('a request', () => {
 		expect(three.spent.statements).toBe(3);
 	});
 });
+
+describe('who is here', () => {
+	test('counts the accounts seen in the last five minutes, and forgets the rest', async () => {
+		const { seen, ONLINE_WINDOW_MS } = await import('../src/lib/server/presence');
+		const now = Date.now();
+		seen('long-gone', now - ONLINE_WINDOW_MS - 1000);
+		seen('just-now', now);
+		seen('a-minute-ago', now - 60_000);
+
+		expect(await sample('ontoplano_users_online', {})).toBe(2);
+	});
+
+	test('reports the open live streams beside it', async () => {
+		expect(await sample('ontoplano_live_streams', {})).toBe(0);
+	});
+});

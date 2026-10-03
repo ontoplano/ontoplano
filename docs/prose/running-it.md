@@ -230,5 +230,7 @@ scrape_configs:
 Beside the process's own numbers (CPU, memory, the event loop's lag), it
 counts every request by route, with how much of its time was spent in SQLite,
 and every SQL statement by its shape — so a slow route says whether the time
-is in the database or in the code around it. Without the token the route does
-not exist.
+is in the database or in the code around it. Two gauges say who is here:
+`ontoplano_users_online` (accounts that made a request in the last five
+minutes) and `ontoplano_live_streams` (tabs holding a live connection open).
+Without the token the route does not exist.

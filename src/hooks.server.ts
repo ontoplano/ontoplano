@@ -1,5 +1,6 @@
 import { redirect, type Handle, type HandleServerError } from '@sveltejs/kit';
 import { measured } from '$lib/server/metrics';
+import { seen } from '$lib/server/presence';
 import { forgetReminderPass } from '$lib/services/reminder-sources';
 import { getRequestEvent } from '$app/server';
 import { SOURCE_LOCALE } from '$lib/i18n/core';
@@ -122,6 +123,9 @@ const handleRequestLog: Handle = async ({ event, resolve }) => {
 		event.request.method,
 		() => resolve(event)
 	);
+
+	// Counted as online for the next few minutes — see `$lib/server/presence`.
+	if (event.locals.user) seen(event.locals.user.id);
 
 	// A write by this account: its reminders may owe something new, so its
 	// next poll runs the whole pass — see `forgetReminderPass`.

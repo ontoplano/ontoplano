@@ -23,7 +23,9 @@
 import { AsyncLocalStorage } from 'node:async_hooks';
 import { performance } from 'node:perf_hooks';
 import type Database from 'better-sqlite3';
-import { Counter, Histogram, Registry, collectDefaultMetrics } from 'prom-client';
+import { Counter, Gauge, Histogram, Registry, collectDefaultMetrics } from 'prom-client';
+import { onlineCount } from './presence.js';
+import { openStreams } from './live.js';
 
 export const registry = new Registry();
 collectDefaultMetrics({ register: registry });
@@ -67,6 +69,29 @@ const statementRuns = new Counter({
 	help: 'How often each statement shape ran.',
 	labelNames: ['statement'],
 	registers: [registry]
+});
+
+/*
+ * Who is here: accounts seen in the last five minutes (`$lib/server/presence`)
+ * and tabs holding a live stream open. Read at scrape time, so they cost
+ * nothing between scrapes.
+ */
+new Gauge({
+	name: 'ontoplano_users_online',
+	help: 'Accounts that made a request in the last five minutes.',
+	registers: [registry],
+	collect() {
+		this.set(onlineCount());
+	}
+});
+
+new Gauge({
+	name: 'ontoplano_live_streams',
+	help: 'Tabs holding a live stream open.',
+	registers: [registry],
+	collect() {
+		this.set(openStreams());
+	}
 });
 
 /** What one request has spent in SQL so far. */
