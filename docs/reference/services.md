@@ -103,7 +103,7 @@ shows up here on the next build.
 | [`saved-filters`](#saved-filters)                | A narrowing somebody wants back, under a name they chose.                                                                                                                                                                                                            |
 | [`schedule`](#schedule)                          | Read-only view of what's coming up.                                                                                                                                                                                                                                  |
 | [`schemes`](#schemes)                            | Saved weeks.                                                                                                                                                                                                                                                         |
-| [`scoped-actions`](#scoped-actions)              | A room's handlers, mounted under a prefix.                                                                                                                                                                                                                           |
+| [`scoped-actions`](#scoped-actions)              | What a form handler needs of the request: the body, and who is signed in.                                                                                                                                                                                            |
 | [`search`](#search)                              | One box over everything the account owns.                                                                                                                                                                                                                            |
 | [`sent-notifications`](#sent-notifications)      | What the app has told somebody, kept so they can read it again.                                                                                                                                                                                                      |
 | [`sessions`](#sessions)                          | The sessions an account currently has open.                                                                                                                                                                                                                          |
@@ -189,6 +189,10 @@ Deliberately the raw rows rather than a prettied-up shape: an export is for
 being complete and re-importable, not for reading nicely.
 
 /\*\* "in about 7 hours", for a message a person reads once and acts on.
+
+#### `accountRow(userId)`
+
+Who the export is of: the three facts about the account it opens with.
 
 #### `collectAccount(userId, now)`
 
@@ -428,6 +432,11 @@ Switched on or off by saying which, for a caller that should not have to read fi
 
 A category id from a form or a call, or null for none — one of this
 account's own, or a 404.
+
+#### `ownedActivity(ctx, value)`
+
+An activity id from a form or a call, or null for none — one of this
+account's own, or a 404. The planner's three services each had a copy.
 
 #### `deleteCategory(ctx, id)`
 
@@ -853,8 +862,6 @@ instance running on a phone stores a recording the same way.
 ### Functions
 
 #### `audioLimits()`
-
-#### `sniffAudio(bytes)`
 
 #### `defaultAudioName(at, tz)`
 
@@ -1529,6 +1536,13 @@ The civil (calendar) date of an instant in a given timezone.
 Data points are stamped with this on write so that "did I weigh myself
 today" and calendar heatmaps are plain string comparisons rather than
 per-row timezone maths at read time.
+
+#### `chosenDay(ctx, value)`
+
+A day the person chose, or today where they are when they chose none.
+
+Never converted to UTC (I5): the string is kept as the civil date it is.
+Three services each parsed this for themselves before.
 
 ### Types
 
@@ -2562,8 +2576,6 @@ different set of tasks than the list beneath them displayed.
 
 ### Functions
 
-#### `formatDate(d)`
-
 #### `generateInstances(ctx, from, to)`
 
 #### `generateOneOffs(ctx, from, to)`
@@ -3115,6 +3127,14 @@ broken picture in somebody's gallery.
 
 #### `isAudioMime(mime)`
 
+#### `sniffer(signatures)`
+
+What these bytes are, by this table, or nothing.
+
+### Types
+
+- `Signature` — Telling bytes what they are.
+
 ## media-limits
 
 What an instance allows a picture to be.
@@ -3245,10 +3265,6 @@ It is never a path here — the bytes are a column, not a file — but it is
 echoed back into a `Content-Disposition` header and into markup, so anything
 that could steer either is removed rather than escaped: no separators, no
 control characters, no quotes.
-
-#### `sniff(bytes)`
-
-What these bytes actually are, or nothing.
 
 #### `bytesStored(ctx)`
 
@@ -3624,6 +3640,13 @@ Both the things filed nowhere and the things filed under another subject: a
 tin of tomatoes bought for the kitchen is a fair thing to move to the
 renovation, and refusing that would mean deleting it to re-make it. The ones
 that are elsewhere say so, so moving one is a choice rather than a surprise.
+
+#### `linkablesInto(ctx, modules, notebookId)`
+
+Every module's candidates for one notebook, checked once.
+
+The notebook page asked `linkableInto` per module, and each asked whether
+the notebook could be reached — eleven identical statements per load.
 
 #### `fileUnderNotebook(ctx, module, id, notebookId)`
 
@@ -5403,6 +5426,22 @@ Replace the weekly plan with a saved one.
 
 ## scoped-actions
 
+What a form handler needs of the request: the body, and who is signed in.
+
+### Functions
+
+#### `formAction(run)`
+
+A form action: the body read, the account's context built, the service
+called, and a service's refusal turned into the `fail()` the page shows.
+
+Every handler in the app did these four things by hand around one line of
+its own — two hundred and eighty copies of the same try/catch. What is left
+to write is the line: which service, with which fields. Returning nothing
+answers `{ success: true }`; returning something answers with that.
+
+#### `under(prefix, handlers)`
+
 A room's handlers, mounted under a prefix.
 
 The notebook page answers for every module it can hold, and each module's
@@ -5415,9 +5454,9 @@ What the markup posts to is the matching `*-action-names.ts` beside each
 card — `$lib/habit-action-names`, `$lib/bill-action-names` and the rest —
 which spell the same names out for the two screens that draw the card.
 
-### Functions
+### Types
 
-#### `under(prefix, handlers)`
+- `FormEvent`
 
 ## search
 
@@ -6538,6 +6577,38 @@ A `Date` as the day it is, where it is — `2026-09-19`.
 yesterday for anybody west of Greenwich in the evening. Written out of the
 local parts instead, which is what every table keyed by day holds.
 
+#### `pad2(n)`
+
+Two digits, for a month, a day or a clock.
+
+#### `addDays(date, days)`
+
+The same instant on another calendar day, by the local calendar.
+
+#### `toLocalISOString(d)`
+
+A Date as a naive `YYYY-MM-DDTHH:MM:SS`, with no zone.
+
+For **wall-clock** values only — `task_records.scheduled_at` and the day
+bounds compared against it. Instants are UTC and come from `stamp()`;
+writing one of those with this is finding S7 all over again.
+
+#### `startOfDay(d)`
+
+Local midnight of the day the instant falls on.
+
+#### `shiftDay(day, days)`
+
+A civil day moved by so many days — `2026-03-31` + 1 is `2026-04-01`.
+
+#### `daysBetween(from, to)`
+
+Whole calendar days from one civil day to another; negative when `to` is earlier.
+
+#### `dayOf(local)`
+
+The civil day of a local timestamp — `2026-03-31T18:00:00` → `2026-03-31`.
+
 #### `instantInWords(iso, when, now)`
 
 An instant, said where the reader is.
@@ -6937,6 +7008,13 @@ Validate that a value is a JSON object and serialise it within a size cap.
 
 #### `slug(value, field)`
 
+#### `chosenIds(raw, max, keys)`
+
+The ids a batch press chose, each a positive whole number, none twice.
+
+Refused as nothing chosen or as too many at once, in the room's own words —
+the notes, the ideas and the todos each said this for themselves.
+
 ## version
 
 What is running here, and since when.
@@ -7021,15 +7099,6 @@ Format a Date as 'YYYY-MM-DDTHH:MM:SS' in local time (no UTC conversion).
 
 ### Functions
 
-#### `toLocalISOString(d)`
-
-A Date as a naive `YYYY-MM-DDTHH:MM:SS`, with no zone.
-
-This is for **wall-clock** values only — `task_records.scheduled_at` and
-the day bounds compared against it. Instants are UTC and come from
-`services/time.ts`; writing one of those with this function is finding S7
-all over again.
-
 #### `getISOWeekNumber(date)`
 
 Get ISO 8601 week number for a date.
@@ -7050,8 +7119,6 @@ stores it.
 _generator_ is about the ISO week whatever anybody's preference is. What
 moved is the review: a plan that starts on Saturday and a review keyed on
 Monday disagreed about which week a Saturday belonged to.
-
-#### `addDays(date, days)`
 
 #### `generateWeekInstances(ctx, weekStart)`
 

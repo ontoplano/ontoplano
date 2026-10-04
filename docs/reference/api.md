@@ -279,10 +279,7 @@ as it should have been: by somebody reading the journal and asking whether
 that could possibly be right.
 
 The app has the code loaded and the database open. Asking it costs a request.
-
-Behind the health token, which the box already has for `/healthz`: this
-writes and sends, so it is not for the public. Absent token, absent
-endpoint — never open, whatever is misconfigured.
+The token gate and the stamp the instance page reads are `jobEndpoint`'s.
 
 **POST**
 
@@ -290,15 +287,10 @@ endpoint — never open, whatever is misconfigured.
 
 The hour's weekly review mail, done by the process that is already running.
 
-The same shape as `/api/jobs/reminders`, for the same reason: the app has
-the code loaded and the database open, so a timer — or the Docker image's
-own scheduler, which has no systemd to lean on — asks it instead of booting
-a second copy of everything. Hourly, because seven in the morning is a
-different instant for every timezone; `sendWeeklyReviews` already does
-nothing for the twenty-three runs that are not somebody's seven.
-
-Behind the health token, like the reminders job: it sends mail, so it is
-not for the public. Absent token, absent endpoint.
+The same shape as `/api/jobs/reminders`, for the same reason — see
+`$lib/server/jobs`. Hourly, because seven in the morning is a different
+instant for every timezone; `sendWeeklyReviews` already does nothing for
+the twenty-three runs that are not somebody's seven.
 
 **POST**
 

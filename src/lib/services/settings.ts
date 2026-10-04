@@ -34,7 +34,7 @@ import {
  * answered from that. Writes through this module clear it at once; the
  * window only bounds how stale a write from somewhere else can look.
  */
-const SETTINGS_KEPT_MS = 1000;
+export const SETTINGS_KEPT_MS = 1000;
 const kept = new Map<string, { at: number; values: Map<string, string> }>();
 
 function settingsOf(userId: string): Map<string, string> {
