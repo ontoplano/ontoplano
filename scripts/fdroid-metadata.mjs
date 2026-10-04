@@ -266,7 +266,7 @@ if (FROM) {
  */
 const STORE = process.env.FDROID_STORE
 	? resolve(process.env.FDROID_STORE)
-	: join(ROOT, 'ontoplano-marketing', 'store');
+	: join(ROOT, '..', 'ontoplano-marketing', 'store');
 const PLAY = join(STORE, 'play');
 const listingOut = join(OUT, 'metadata', PACKAGE);
 let listed = false;

@@ -281,8 +281,8 @@ dev-local: _dev-deps
 DOCS_PORT ?= 1494
 SITE_PORT ?= 1495
 # Where the marketing site's checkout is, if it is here at all.
-#: SITE_SRC_LOCAL=ontoplano-site  where the marketing site is checked out
-SITE_SRC_LOCAL ?= ontoplano-site
+#: SITE_SRC_LOCAL=../ontoplano-site  where the marketing site is checked out
+SITE_SRC_LOCAL ?= ../ontoplano-site
 
 # There is no commit hook any more.
 #
@@ -434,8 +434,8 @@ dev-fg: _dev-deps _dev-migrated
 #
 # Copied rather than symlinked so that what was built is a file in the tree, and
 # `git status` in the private repo still says whether it has been edited here.
-#: BILLING_SRC=ontoplano-billing  where the payment provider is checked out
-BILLING_SRC ?= ontoplano-billing
+#: BILLING_SRC=../ontoplano-billing  where the payment provider is checked out
+BILLING_SRC ?= ../ontoplano-billing
 
 _billing-provider:
 	@if [ -f "$(BILLING_SRC)/paddle.ts" ]; then \
