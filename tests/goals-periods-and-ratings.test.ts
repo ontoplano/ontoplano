@@ -17,10 +17,10 @@ import { describe, expect, test } from 'vitest';
 import { translator } from '../src/lib/i18n';
 import { messages as english } from '../src/lib/i18n/catalogues/en';
 import { messages as portuguese } from '../src/lib/i18n/catalogues/pt-BR';
+import { localDay } from '../src/lib/services/time';
 import {
 	canNestUnder,
 	describePeriod,
-	formatDate,
 	HORIZONS,
 	isGoalStatus,
 	isHorizon,
@@ -89,7 +89,7 @@ describe('where a period ends', () => {
 			const start = periodStart(horizon, DAY);
 			expect(periodContains(horizon, start, start), horizon).toBe(true);
 			expect(periodContains(horizon, start, periodEnd(horizon, start)), horizon).toBe(false);
-			expect(periodContains(horizon, start, formatDate(DAY)), horizon).toBe(true);
+			expect(periodContains(horizon, start, localDay(DAY)), horizon).toBe(true);
 		}
 	});
 

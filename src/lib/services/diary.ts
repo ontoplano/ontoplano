@@ -11,7 +11,7 @@ import {
 	parseTags,
 	replaceDiaryTags
 } from './tags.js';
-import { localDateOf, type Ctx } from './ctx.js';
+import { localDateOf, type Ctx, chosenDay } from './ctx.js';
 import { NotFoundError, ValidationError } from './errors.js';
 import { host } from './host.js';
 import { defaultTagsOf, ownedNotebookId } from './notebooks.js';
@@ -170,7 +170,7 @@ export function createWins(
 
 	if (wins.length === 0) throw new ValidationError({ key: 'errors.diary.atLeastOneWin' });
 
-	const forDate = civilDate(ctx, raw.forDate);
+	const forDate = chosenDay(ctx, raw.forDate);
 	const content = wins.map((w, i) => `Win ${i + 1}: ${w}`).join('\n');
 	const entryId = insertEntry(ctx, content, forDate, ownedNotebookId(ctx, raw.notebookId, 'notes'));
 
@@ -557,13 +557,6 @@ export const MAX_NOTE_TITLE_LENGTH = 120;
 function noteTitle(value: unknown): string {
 	if (value === undefined || value === null) return '';
 	return String(value).trim().slice(0, MAX_NOTE_TITLE_LENGTH);
-}
-
-/** A day the user chose, or today where the user is. Never converted to UTC (I5). */
-function civilDate(ctx: Ctx, value: unknown): string {
-	const s = value === undefined || value === null ? '' : String(value).trim();
-	if (!s) return localDateOf(ctx.now, ctx.tz);
-	return str(s, 'date', { max: 10, pattern: /^\d{4}-\d{2}-\d{2}$/ });
 }
 
 /**

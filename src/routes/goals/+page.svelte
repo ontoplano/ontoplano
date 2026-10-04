@@ -35,11 +35,11 @@
 		HORIZON_LABELS,
 		canNestUnder,
 		describePeriod,
-		formatDate,
 		periodStart,
 		type Horizon
 	} from '$lib/goals.js';
 	import { useT } from '$lib/i18n';
+	import { localDay } from '$lib/services/time';
 
 	const t = useT();
 	const now = useWhen();
@@ -308,7 +308,7 @@
 	}
 
 	function today(): string {
-		return formatDate(new Date());
+		return localDay(new Date());
 	}
 
 	function handleKeydown(e: KeyboardEvent) {

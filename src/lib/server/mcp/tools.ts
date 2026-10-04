@@ -88,12 +88,12 @@ import {
 } from '$lib/services/slots.js';
 import {
 	describeRecurrence,
-	formatDate as recFormatDate,
 	MAX_INTERVAL,
 	parseRecurrence,
 	serialiseRecurrence
 } from '../../recurrence.js';
 import { translator } from '../../i18n/core.js';
+import { localDay } from '../../services/time.js';
 import { messages as englishMessages } from '../../i18n/catalogues/en.js';
 import {
 	createIdea,
@@ -4687,7 +4687,7 @@ export const TOOLS: Tool[] = [
 			const chosen = categoryByName(ctx, args.category);
 			// Every-N counts from the next of the chosen weekday, so "every other
 			// Tuesday" starts on a Tuesday rather than on whatever today is.
-			const anchor = recFormatDate(nextWeekdayOnOrAfter(ctx.now, args.weekday));
+			const anchor = localDay(nextWeekdayOnOrAfter(ctx.now, args.weekday));
 			const id = createSlot(ctx, {
 				weekday: args.weekday,
 				startTime: args.start_time,
@@ -4779,7 +4779,7 @@ export const TOOLS: Tool[] = [
 				recurrence:
 					recurrenceFromArgs(
 						args,
-						recFormatDate(nextWeekdayOnOrAfter(ctx.now, args.weekday ?? current.weekday))
+						localDay(nextWeekdayOnOrAfter(ctx.now, args.weekday ?? current.weekday))
 					) ??
 					current.recurrence ??
 					undefined,

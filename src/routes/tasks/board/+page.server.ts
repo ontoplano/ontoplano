@@ -1,5 +1,5 @@
 import type { IsolatedEvent } from '$lib/isolated/routes';
-import { clockOfDay, localOfInstant } from '$lib/services/time';
+import { clockOfDay, localOfInstant, localDay, pad2 } from '$lib/services/time';
 import { pickableNotebooks } from '$lib/services/notebooks';
 import { fail } from '@sveltejs/kit';
 import { ratingsFromForm } from '$lib/ratings';
@@ -35,14 +35,6 @@ import {
 	setTodoStatus
 } from '$lib/services/todos';
 
-function pad(n: number): string {
-	return String(n).padStart(2, '0');
-}
-
-function formatDate(d: Date): string {
-	return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
-}
-
 function parseDate(param: string | null): Date {
 	if (param && /^\d{4}-\d{2}-\d{2}$/.test(param)) {
 		const parsed = new Date(param + 'T00:00:00');
@@ -58,7 +50,7 @@ function parseDate(param: string | null): Date {
  * rather than in the past; another day starts at nine.
  */
 function nextFreeTime(dateStr: string, now: Date, tz: string): string {
-	const isToday = formatDate(now) === dateStr;
+	const isToday = localDay(now) === dateStr;
 	if (!isToday) return '09:00';
 
 	// The clock the person is reading, not the one the box keeps. Landing a
@@ -67,7 +59,7 @@ function nextFreeTime(dateStr: string, now: Date, tz: string): string {
 	const minutes = nowMinute <= 30 ? 30 : 0;
 	const hour = minutes === 0 ? nowHour + 1 : nowHour;
 	if (hour > 23) return '23:30';
-	return `${pad(hour)}:${pad(minutes)}`;
+	return `${pad2(hour)}:${pad2(minutes)}`;
 }
 
 /**
@@ -115,7 +107,7 @@ export type Card = {
 export const load = async ({ locals, url }: IsolatedEvent) => {
 	const ctx = buildCtx(locals.user!.id);
 	const date = parseDate(url.searchParams.get('date'));
-	const dateStr = formatDate(date);
+	const dateStr = localDay(date);
 
 	generateForDate(ctx, date);
 
@@ -207,7 +199,7 @@ export const load = async ({ locals, url }: IsolatedEvent) => {
 
 	return {
 		date: dateStr,
-		today: formatDate(ctx.now),
+		today: localDay(ctx.now),
 		todayCards,
 		generalCards,
 		categories: listCategories(ctx)

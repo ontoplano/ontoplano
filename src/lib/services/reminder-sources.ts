@@ -15,6 +15,7 @@ import { createReminder } from './reminders.js';
 import { formatMoney } from '../money.js';
 import { dayInWords, localOfInstant } from '$lib/services/time.js';
 import type { Translate } from '$lib/i18n/core.js';
+import { dayOf, daysBetween, shiftDay } from './time.js';
 
 /**
  * The reminders nobody types.
@@ -45,16 +46,6 @@ import type { Translate } from '$lib/i18n/core.js';
  */
 function priceOf(ctx: Ctx, bill: { amountExpected: number; currency: string | null }): string {
 	return formatMoney(bill.amountExpected, bill.currency ?? getCurrency(ctx.userId));
-}
-
-function dayOf(local: string): string {
-	return local.slice(0, 10);
-}
-
-function addDays(day: string, n: number): string {
-	const d = new Date(day + 'T00:00:00Z');
-	d.setUTCDate(d.getUTCDate() + n);
-	return d.toISOString().slice(0, 10);
 }
 
 /** Whether the row `writeOnce` would write is already there. */
@@ -163,7 +154,7 @@ export function ensureBillReminders(ctx: Ctx, now: Date, tz: string, t: Translat
 
 	// A fortnight back for the ones already overdue, a fortnight on for the
 	// ones about to be.
-	const due = billsDueBetween(ctx, addDays(today, -14), addDays(today, 14));
+	const due = billsDueBetween(ctx, shiftDay(today, -14), shiftDay(today, 14));
 	let written = 0;
 
 	for (const bill of due) {
@@ -440,7 +431,7 @@ export function upcomingWindow(raw: unknown): number {
  * "the next day" answers with something in December.
  */
 export function windowEnd(now: Date, tz: string, days: number): string {
-	return addDays(dayOf(localOfInstant(now, tz)), days);
+	return shiftDay(dayOf(localOfInstant(now, tz)), days);
 }
 
 export function upcomingDerived(
@@ -470,7 +461,7 @@ export function upcomingDerived(
 	}
 
 	// Bills that want paying, up to the same horizon.
-	for (const bill of billsDueBetween(ctx, today, addDays(today, days))) {
+	for (const bill of billsDueBetween(ctx, today, shiftDay(today, days))) {
 		if (bill.paid) continue;
 		const money = priceOf(ctx, bill);
 		out.push({
@@ -511,8 +502,4 @@ function nextOccurrenceOf(birthday: string, onOrAfter: string): string | null {
 	const thisYear = `${onOrAfter.slice(0, 4)}-${monthDay}`;
 	if (thisYear >= onOrAfter) return thisYear;
 	return `${Number(onOrAfter.slice(0, 4)) + 1}-${monthDay}`;
-}
-
-function daysBetween(from: string, to: string): number {
-	return Math.round((Date.parse(`${to}T00:00:00Z`) - Date.parse(`${from}T00:00:00Z`)) / 86_400_000);
 }

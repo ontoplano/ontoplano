@@ -1,4 +1,8 @@
 import type { Ctx } from './ctx.js';
+import { addDays } from './time.js';
+
+// Still exported from here: the planner's callers have always found it here.
+export { addDays };
 import { generateInstances } from './instances.js';
 
 /** Format a Date as 'YYYY-MM-DDTHH:MM:SS' in local time (no UTC conversion). */
@@ -71,12 +75,6 @@ export function startOfWeek(date: Date, firstDay: number): Date {
 	const back = (fromMonday - firstDay + 7) % 7;
 	d.setDate(d.getDate() - back);
 	d.setHours(0, 0, 0, 0);
-	return d;
-}
-
-export function addDays(date: Date, days: number): Date {
-	const d = new Date(date);
-	d.setDate(d.getDate() + days);
 	return d;
 }
 

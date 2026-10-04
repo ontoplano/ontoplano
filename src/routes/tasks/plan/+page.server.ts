@@ -52,6 +52,7 @@ import { listInstances, setStatusOn } from '$lib/services/instances';
 import { addDays, startOfWeek } from '$lib/services/week-generator';
 import { getGridHours, getWeekSettings } from '$lib/services/settings';
 import { LIST_PARAM, LIST_VALUE } from '$lib/planner-grid';
+import { localDay, startOfDay } from '$lib/services/time';
 
 /**
  * What the browser last knew about its own width.
@@ -71,14 +72,6 @@ const NARROW_COOKIE = 'onto_narrow';
  */
 const SPAN_DAYS = { day: 1, week: 7, month: 42 } as const;
 type PlanView = keyof typeof SPAN_DAYS;
-
-function formatDate(d: Date): string {
-	return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-}
-
-function startOfDay(d: Date): Date {
-	return new Date(d.getFullYear(), d.getMonth(), d.getDate());
-}
 
 /**
  * Start of the visible window, clamped so it never begins before today.
@@ -136,7 +129,7 @@ function marksFor(ctx: Ctx, from: Date, to: Date): Record<string, 'done' | 'undo
 					? `x${occurrence.exceptionalSlotId}`
 					: null;
 		if (!ref) continue;
-		marks[`${ref}|${formatDate(new Date(occurrence.scheduledAt))}`] =
+		marks[`${ref}|${localDay(new Date(occurrence.scheduledAt))}`] =
 			occurrence.status === 'done' ? 'done' : 'undone';
 	}
 	return marks;
@@ -272,9 +265,9 @@ export const load = async ({ locals, url, cookies }: IsolatedEvent) => {
 		const d = addDays(from, offset);
 		const weekday = (d.getDay() + 6) % 7;
 		return {
-			date: formatDate(d),
+			date: localDay(d),
 			weekday,
-			isToday: formatDate(d) === formatDate(today)
+			isToday: localDay(d) === localDay(today)
 		};
 	});
 
@@ -288,18 +281,18 @@ export const load = async ({ locals, url, cookies }: IsolatedEvent) => {
 	const prevMonth = new Date(anchor.getFullYear(), anchor.getMonth() - 1, 1);
 	const nextMonth = new Date(anchor.getFullYear(), anchor.getMonth() + 1, 1);
 	const range = {
-		from: formatDate(from),
-		last: formatDate(addDays(from, span - 1)),
+		from: localDay(from),
+		last: localDay(addDays(from, span - 1)),
 		// What the heading names: the month itself, not the grid's first cell,
 		// which usually belongs to the month before.
-		month: formatDate(monthFirst),
+		month: localDay(monthFirst),
 		isCurrent:
 			view === 'month'
 				? monthFirst.getFullYear() === today.getFullYear() &&
 					monthFirst.getMonth() === today.getMonth()
-				: formatDate(from) === formatDate(today),
-		prev: view === 'month' ? formatDate(prevMonth) : formatDate(prevFrom),
-		next: view === 'month' ? formatDate(nextMonth) : formatDate(to),
+				: localDay(from) === localDay(today),
+		prev: view === 'month' ? localDay(prevMonth) : localDay(prevFrom),
+		next: view === 'month' ? localDay(nextMonth) : localDay(to),
 		/*
 		 * The same window, starting a day earlier or a day later.
 		 *
@@ -310,8 +303,8 @@ export const load = async ({ locals, url, cookies }: IsolatedEvent) => {
 		 * one that starts on Sunday are different weeks to the person living
 		 * them, and this is how you slide between them.
 		 */
-		backOne: formatDate(addDays(from, -1)),
-		forwardOne: formatDate(addDays(from, 1)),
+		backOne: localDay(addDays(from, -1)),
+		forwardOne: localDay(addDays(from, 1)),
 		days
 	};
 
@@ -334,7 +327,7 @@ export const load = async ({ locals, url, cookies }: IsolatedEvent) => {
 		 * place, and it was visible only on the board. They are marked so the
 		 * strip can say which is which; the undated ones are the general pile.
 		 */
-		todos: trayTodos(ctx, formatDate(today)),
+		todos: trayTodos(ctx, localDay(today)),
 		slots: listWeeklySlots(ctx),
 		range,
 		view,
@@ -347,7 +340,7 @@ export const load = async ({ locals, url, cookies }: IsolatedEvent) => {
 		schemes: listSchemes(ctx),
 		// The starter weeks onboarding offers, offered again.
 		templates: TEMPLATES.map((t) => ({ key: t.key, label: t.label, description: t.description })),
-		today: formatDate(today),
+		today: localDay(today),
 		/*
 		 * What became of each block, for the days that have been.
 		 *
@@ -357,8 +350,8 @@ export const load = async ({ locals, url, cookies }: IsolatedEvent) => {
 		 * the same service the history page and the `past` tool read.
 		 */
 		marks: marksFor(ctx, from, to),
-		suppressions: listSuppressions(ctx, formatDate(from), formatDate(to)),
-		exceptionals: listExceptionals(ctx, formatDate(from), formatDate(to)),
+		suppressions: listSuppressions(ctx, localDay(from), localDay(to)),
+		exceptionals: listExceptionals(ctx, localDay(from), localDay(to)),
 		/**
 		 * Calendars somebody else controls, drawn where they will get in the way.
 		 *
@@ -375,7 +368,7 @@ export const load = async ({ locals, url, cookies }: IsolatedEvent) => {
 		 * step. The planner draws them from the bills themselves, and ticking
 		 * one marks the bill paid for its period.
 		 */
-		billsDue: billsDueBetween(ctx, formatDate(from), formatDate(to)),
+		billsDue: billsDueBetween(ctx, localDay(from), localDay(to)),
 		// The workouts a block can be about. Empty for an account that keeps
 		// none, which is what hides the mode entirely.
 		// `categoryName` for the block form's header, which says what the block

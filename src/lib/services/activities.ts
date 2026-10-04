@@ -219,6 +219,22 @@ export function ownedCategory(ctx: Ctx, value: unknown): number | null {
 	return id;
 }
 
+/**
+ * An activity id from a form or a call, or null for none — one of this
+ * account's own, or a 404. The planner's three services each had a copy.
+ */
+export function ownedActivity(ctx: Ctx, value: unknown): number | null {
+	if (value === undefined || value === null || value === '') return null;
+	const id = num(value, 'activity', { int: true, min: 1 });
+	const owned = db
+		.select({ id: activities.id })
+		.from(activities)
+		.where(and(eq(activities.id, id), eq(activities.userId, ctx.userId)))
+		.get();
+	if (!owned) throw new NotFoundError('activity');
+	return id;
+}
+
 export function deleteCategory(ctx: Ctx, id: number): void {
 	const activityRefs = countRows(
 		db

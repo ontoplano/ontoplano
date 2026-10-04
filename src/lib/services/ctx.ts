@@ -7,6 +7,7 @@
  * test with equal ease.
  */
 import { getTimezone } from './settings.js';
+import { str } from './validate.js';
 
 export interface Ctx {
 	userId: string;
@@ -45,4 +46,19 @@ export function localDateOf(instant: Date, tz: string): string {
 		month: '2-digit',
 		day: '2-digit'
 	}).format(instant);
+}
+
+/** `YYYY-MM-DD`, and nothing else, for a day typed or posted. */
+const CIVIL_DAY = /^\d{4}-\d{2}-\d{2}$/;
+
+/**
+ * A day the person chose, or today where they are when they chose none.
+ *
+ * Never converted to UTC (I5): the string is kept as the civil date it is.
+ * Three services each parsed this for themselves before.
+ */
+export function chosenDay(ctx: Ctx, value: unknown): string {
+	const said = value === undefined || value === null ? '' : String(value).trim();
+	if (!said) return localDateOf(ctx.now, ctx.tz);
+	return str(said, 'date', { max: 10, pattern: CIVIL_DAY });
 }

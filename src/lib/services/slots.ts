@@ -2,11 +2,7 @@ import { optionalTagInput, parseTags, replaceBlockTags, tagsForBlock } from './t
 import { and, eq, gte, inArray, isNull, lt, sql } from 'drizzle-orm';
 
 import { ratingsFromForm, type RatingValues } from '../ratings.js';
-import {
-	formatDate as recFormatDate,
-	parseRecurrence,
-	serialiseRecurrence
-} from '../recurrence.js';
+import { parseRecurrence, serialiseRecurrence } from '../recurrence.js';
 import { db } from '$lib/db/index.js';
 import {
 	activities,
@@ -24,9 +20,10 @@ import { localDateOf, type Ctx } from './ctx.js';
 import { NotFoundError, ValidationError } from './errors.js';
 import { createReminder } from './reminders.js';
 import { ownedNotebookId, type FiledRow } from './notebooks.js';
-import { created, stamp, stamps } from './time.js';
+import { created, stamp, stamps, localDay } from './time.js';
 import { TIME_PATTERN, num, oneOf, optionalStr, str } from './validate.js';
 import { MAX_BLOCK_NOTES } from '../planner-grid.js';
+import { ownedActivity, ownedCategory } from './activities.js';
 
 /**
  * The plan itself: blocks that repeat (`recurring_tasks`) and blocks that happen
@@ -523,7 +520,7 @@ function copiedRecurrence(raw: string | null, from: number, to: number): string 
 	if (rule.kind !== 'weeks') return 'weekly';
 	const anchor = new Date(`${rule.anchor}T00:00:00`);
 	anchor.setDate(anchor.getDate() + (to - from));
-	return serialiseRecurrence({ ...rule, anchor: recFormatDate(anchor) });
+	return serialiseRecurrence({ ...rule, anchor: localDay(anchor) });
 }
 
 export function copySlotsToWeekdays(ctx: Ctx, ids: number[], days: number[]): void {
@@ -1045,9 +1042,7 @@ export function readRecurrence(formData: FormData, now: Date): string {
 	if (kind === 'weeks' || kind === 'days') {
 		// Round-tripping through the parser is the validation: anything out of
 		// range comes back as plain weekly rather than reaching the database.
-		return serialiseRecurrence(
-			parseRecurrence(`${kind}:${interval}:${given || recFormatDate(now)}`)
-		);
+		return serialiseRecurrence(parseRecurrence(`${kind}:${interval}:${given || localDay(now)}`));
 	}
 	if (kind === 'monthly') {
 		return serialiseRecurrence(parseRecurrence(`monthly:${monthDay}:${given}`));
@@ -1092,7 +1087,7 @@ function parseBlock(ctx: Ctx, raw: BlockInput) {
 	const label = optionalStr(raw.label, 'label', { max: MAX_LABEL_LENGTH });
 	const remindLeadMinutes = parseRemindLead(raw.remindLeadMinutes);
 
-	const categoryId = ownedCategoryId(ctx, raw.categoryId);
+	const categoryId = ownedCategory(ctx, raw.categoryId);
 	if (mode === 'category' && !categoryId)
 		throw new ValidationError({ key: 'errors.slots.categoryRequired' });
 
@@ -1166,10 +1161,10 @@ function resolveActivityId(ctx: Ctx, raw: BlockInput): number | null {
 	const submitted =
 		raw.activityId === undefined || raw.activityId === null ? '' : String(raw.activityId).trim();
 
-	if (submitted !== NEW_ACTIVITY_VALUE) return submitted ? ownedActivityId(ctx, submitted) : null;
+	if (submitted !== NEW_ACTIVITY_VALUE) return submitted ? ownedActivity(ctx, submitted) : null;
 
 	const name = str(raw.newActivityName, 'Activity name', { max: MAX_ACTIVITY_NAME_LENGTH });
-	const categoryId = ownedCategoryId(ctx, raw.newActivityCategoryId);
+	const categoryId = ownedCategory(ctx, raw.newActivityCategoryId);
 	if (!categoryId) throw new ValidationError({ key: 'errors.slots.categoryIsRequired' });
 
 	const existing = db
@@ -1200,32 +1195,6 @@ function assertOwnedSlot(ctx: Ctx, id: number): void {
 		.get();
 
 	if (!owned) throw new NotFoundError('slot');
-}
-
-function ownedCategoryId(ctx: Ctx, value: unknown): number | null {
-	if (value === undefined || value === null || value === '') return null;
-
-	const id = num(value, 'category', { int: true, min: 1 });
-	const owned = db
-		.select({ id: categories.id })
-		.from(categories)
-		.where(and(eq(categories.id, id), eq(categories.userId, ctx.userId)))
-		.get();
-
-	if (!owned) throw new NotFoundError('category');
-	return id;
-}
-
-function ownedActivityId(ctx: Ctx, value: unknown): number | null {
-	const id = num(value, 'activity', { int: true, min: 1 });
-	const owned = db
-		.select({ id: activities.id })
-		.from(activities)
-		.where(and(eq(activities.id, id), eq(activities.userId, ctx.userId)))
-		.get();
-
-	if (!owned) throw new NotFoundError('activity');
-	return id;
 }
 
 function parseDuration(value: unknown, fallback: number): number {

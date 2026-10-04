@@ -2,7 +2,7 @@ import { and, eq } from 'drizzle-orm';
 
 import { db } from '$lib/db/index.js';
 import { dailyWins } from '$lib/db/schema.js';
-import { localDateOf, type Ctx } from './ctx.js';
+import { localDateOf, type Ctx, chosenDay } from './ctx.js';
 import { created, stamps } from './time.js';
 import { str } from './validate.js';
 
@@ -32,7 +32,7 @@ export function listWins(ctx: Ctx, date: string) {
  * storing a blank.
  */
 export function saveWins(ctx: Ctx, raw: { forDate?: unknown; contents: unknown[] }): void {
-	const forDate = parseDate(ctx, raw.forDate);
+	const forDate = chosenDay(ctx, raw.forDate);
 
 	db.transaction((tx) => {
 		for (let position = 1; position <= WINS_PER_DAY; position++) {
@@ -62,10 +62,4 @@ export function saveWins(ctx: Ctx, raw: { forDate?: unknown; contents: unknown[]
 					.run();
 		}
 	});
-}
-
-function parseDate(ctx: Ctx, value: unknown): string {
-	const s = value === undefined || value === null ? '' : String(value).trim();
-	if (!s) return localDateOf(ctx.now, ctx.tz);
-	return str(s, 'date', { max: 10, pattern: /^\d{4}-\d{2}-\d{2}$/ });
 }

@@ -28,6 +28,7 @@ import { NotFoundError, ValidationError } from './errors.js';
 import { notebookPatch } from './notebooks.js';
 import { created, instantOfLocal, stamp, stamps } from './time.js';
 import { num, oneOf, optionalStr, str } from './validate.js';
+import { ownedCategory } from './activities.js';
 
 export const RHYTHMS = ['weekly', 'monthly', 'yearly', 'once'] as const;
 export type Rhythm = (typeof RHYTHMS)[number];
@@ -287,19 +288,6 @@ export function getBill(ctx: Ctx, id: number): Bill {
 		.get();
 	if (!found) throw new NotFoundError('bill');
 	return row(found);
-}
-
-/** category/goal references are checked to belong to the same account. */
-function ownedCategory(ctx: Ctx, value: unknown): number | null {
-	if (value === undefined || value === null || value === '') return null;
-	const id = num(value, 'category', { int: true });
-	const owned = db
-		.select({ id: categories.id })
-		.from(categories)
-		.where(and(eq(categories.id, id), eq(categories.userId, ctx.userId)))
-		.get();
-	if (!owned) throw new ValidationError({ key: 'errors.bills.thatCategoryIsNotYours' });
-	return id;
 }
 
 function ownedGoal(ctx: Ctx, value: unknown): number | null {

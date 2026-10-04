@@ -228,7 +228,7 @@ function scopedByNotebook(
 			.where(eq(table.userId, ctx.userId))
 			.groupBy(table.notebookId)
 	);
-	const rows = rest.length === 0 ? first.all() : unionAll(first, ...rest).all();
+	const rows = rest.length === 0 ? first.all() : unionAll(first, rest[0], ...rest.slice(1)).all();
 	return rows.map((r) => ({
 		module: r.module,
 		id: r.id as number | null,

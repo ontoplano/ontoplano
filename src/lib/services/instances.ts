@@ -24,7 +24,7 @@ import {
 } from './slots.js';
 import { NotFoundError, ValidationError } from './errors.js';
 // `created` is also a local counter in this file, hence the alias.
-import { created as createdStamp, stamp } from './time.js';
+import { created as createdStamp, stamp, addDays, localDay, pad2 } from './time.js';
 import { TIME_PATTERN, num, optionalStr, str } from './validate.js';
 import {
 	activities,
@@ -40,6 +40,7 @@ import {
 import type { Status } from '../task-status.js';
 import type { RatingValues } from '../ratings.js';
 import { occursOn, parseRecurrence } from '../recurrence.js';
+import { ownedActivity } from './activities.js';
 
 /** A single occurrence, whichever kind of block produced it. */
 export type Occurrence = {
@@ -87,31 +88,17 @@ export type Occurrence = {
 	attributes: string;
 };
 
-function pad(n: number): string {
-	return String(n).padStart(2, '0');
-}
-
 /** 'YYYY-MM-DDTHH:MM:SS' in local time. Defined here rather than imported from
  * week-generator, which imports this module. */
 function localISO(d: Date): string {
 	return (
-		`${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}` +
-		`T${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`
+		`${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}` +
+		`T${pad2(d.getHours())}:${pad2(d.getMinutes())}:${pad2(d.getSeconds())}`
 	);
-}
-
-export function formatDate(d: Date): string {
-	return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 }
 
 function atLocal(date: string, startTime: string): string {
 	return `${date}T${startTime}:00`;
-}
-
-function addDays(d: Date, n: number): Date {
-	const out = new Date(d);
-	out.setDate(out.getDate() + n);
-	return out;
 }
 
 /**
@@ -209,8 +196,8 @@ function repairDriftedDays(ctx: Ctx, fromStr: string): void {
 }
 
 export function generateInstances(ctx: Ctx, from: Date, to: Date): number {
-	const fromDate = formatDate(from);
-	const toDate = formatDate(to);
+	const fromDate = localDay(from);
+	const toDate = localDay(to);
 	const fromStr = localISO(new Date(from.getFullYear(), from.getMonth(), from.getDate()));
 	const toStr = localISO(new Date(to.getFullYear(), to.getMonth(), to.getDate()));
 
@@ -256,7 +243,7 @@ export function generateInstances(ctx: Ctx, from: Date, to: Date): number {
 	);
 
 	for (let day = new Date(from); day < to; day = addDays(day, 1)) {
-		const dateStr = formatDate(day);
+		const dateStr = localDay(day);
 
 		for (const slot of slots) {
 			// The weekday check moved into the rule: an every-3-days slot lands on
@@ -302,8 +289,8 @@ export function generateInstances(ctx: Ctx, from: Date, to: Date): number {
  * only these.
  */
 export function generateOneOffs(ctx: Ctx, from: Date, to: Date): number {
-	const fromDate = formatDate(from);
-	const toDate = formatDate(to);
+	const fromDate = localDay(from);
+	const toDate = localDay(to);
 	let created = 0;
 
 	// A one-off produces exactly one instance, guaranteed by a unique index on
@@ -815,20 +802,6 @@ export function deleteInstance(ctx: Ctx, id: number): void {
 		.run();
 
 	if (res.changes === 0) throw new NotFoundError('task');
-}
-
-function ownedActivity(ctx: Ctx, value: unknown): number | null {
-	if (value === undefined || value === null || value === '') return null;
-
-	const id = num(value, 'activity', { int: true, min: 1 });
-	const owned = db
-		.select({ id: activities.id })
-		.from(activities)
-		.where(and(eq(activities.id, id), eq(activities.userId, ctx.userId)))
-		.get();
-
-	if (!owned) throw new NotFoundError('activity');
-	return id;
 }
 
 /**

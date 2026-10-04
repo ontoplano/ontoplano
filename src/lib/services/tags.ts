@@ -765,7 +765,7 @@ export function tagsByNotebook(userId: string): Record<number, string[]> {
 			.innerJoin(tags, and(eq(tags.id, join.tagId), eq(tags.userId, userId)))
 			.where(and(eq(join.userId, userId), isNotNull(thing.notebookId)))
 	);
-	const rows = rest.length === 0 ? first.all() : unionAll(first, ...rest).all();
+	const rows = rest.length === 0 ? first.all() : unionAll(first, rest[0], ...rest.slice(1)).all();
 	for (const row of rows) add(row.notebookId, row.name);
 
 	const defaults = db

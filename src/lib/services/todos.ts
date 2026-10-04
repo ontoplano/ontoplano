@@ -60,6 +60,7 @@ import { cleanupOrphanTags, optionalTagInput, parseTags, replaceTodoTags } from 
 import { created, stamp, stamps } from './time.js';
 import { host } from './host.js';
 import { TIME_PATTERN, num, oneOf, optionalStr, str } from './validate.js';
+import { ownedActivity, ownedCategory } from './activities.js';
 import {
 	parseAttributes,
 	serialiseAttributes,
@@ -934,7 +935,7 @@ export function createTodo(ctx: Ctx, raw: TodoInput): number {
 			categoryId:
 				raw.categoryId === undefined
 					? defaultCategoryOf(ctx, notebookId)
-					: ownedCategoryId(ctx, raw.categoryId),
+					: ownedCategory(ctx, raw.categoryId),
 			notebookId,
 			notebookSeq: nextNotebookSeq(ctx, notebookId),
 			scheduledDate: optionalDate(raw.scheduledDate),
@@ -976,7 +977,7 @@ export function updateTodo(ctx: Ctx, id: number, raw: TodoInput): void {
 		.set({
 			title: str(raw.title, 'title', { max: MAX_TITLE_LENGTH }),
 			notes: optionalStr(raw.notes, 'notes', { max: MAX_NOTES_LENGTH }),
-			categoryId: ownedCategoryId(ctx, raw.categoryId),
+			categoryId: ownedCategory(ctx, raw.categoryId),
 			notebookId,
 			notebookSeq: seq,
 			...(raw.ratings ?? {}),
@@ -1141,8 +1142,8 @@ export function delegateTodo(
 		Number(raw.remindLeadMinutes) === 0
 			? null
 			: num(raw.remindLeadMinutes, 'reminder', { int: true, min: 0, max: 24 * 60 });
-	const categoryId = ownedCategoryId(ctx, raw.categoryId);
-	const activityId = ownedActivityId(ctx, raw.activityId);
+	const categoryId = ownedCategory(ctx, raw.categoryId);
+	const activityId = ownedActivity(ctx, raw.activityId);
 
 	if (mode === 'category' && !categoryId)
 		throw new ValidationError({ key: 'errors.todos.categoryRequired' });
@@ -1200,35 +1201,6 @@ function requiredDate(value: unknown): string {
 function optionalDate(value: unknown): string | null {
 	if (value === undefined || value === null || String(value).trim() === '') return null;
 	return requiredDate(String(value).trim());
-}
-
-/** An id from a form is a claim until it is checked against the account. */
-function ownedCategoryId(ctx: Ctx, value: unknown): number | null {
-	if (value === undefined || value === null || value === '') return null;
-
-	const id = num(value, 'category', { int: true, min: 1 });
-	const owned = db
-		.select({ id: categories.id })
-		.from(categories)
-		.where(and(eq(categories.id, id), eq(categories.userId, ctx.userId)))
-		.get();
-
-	if (!owned) throw new NotFoundError('category');
-	return id;
-}
-
-function ownedActivityId(ctx: Ctx, value: unknown): number | null {
-	if (value === undefined || value === null || value === '') return null;
-
-	const id = num(value, 'activity', { int: true, min: 1 });
-	const owned = db
-		.select({ id: activities.id })
-		.from(activities)
-		.where(and(eq(activities.id, id), eq(activities.userId, ctx.userId)))
-		.get();
-
-	if (!owned) throw new NotFoundError('activity');
-	return id;
 }
 
 /**

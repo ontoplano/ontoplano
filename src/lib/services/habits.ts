@@ -2,8 +2,8 @@ import { and, desc, eq, gte, isNull } from 'drizzle-orm';
 
 import { db } from '$lib/db/index.js';
 import { habitOccurrences, habits } from '$lib/db/schema.js';
-import { localDateOf, type Ctx } from './ctx.js';
-import { created, stamp } from './time.js';
+import { localDateOf, type Ctx, chosenDay } from './ctx.js';
+import { created, stamp, daysBetween, shiftDay } from './time.js';
 import { NotFoundError } from './errors.js';
 import { notebookPatch } from './notebooks.js';
 import { MAX_DAY_COUNT } from '$lib/habit-heatmap';
@@ -88,7 +88,7 @@ export function listHabits(
 
 /** A year of history, which is what the heatmap draws. */
 export function listOccurrences(ctx: Ctx) {
-	const cutoff = shiftDate(localDateOf(ctx.now, ctx.tz), -HISTORY_DAYS);
+	const cutoff = shiftDay(localDateOf(ctx.now, ctx.tz), -HISTORY_DAYS);
 
 	return db
 		.select({
@@ -174,7 +174,7 @@ export function logOccurrence(
 	raw: { habitId: unknown; date?: unknown; notes?: unknown }
 ) {
 	const habitId = ownedHabitId(ctx, raw.habitId);
-	const date = parseDate(ctx, raw.date);
+	const date = chosenDay(ctx, raw.date);
 	const notes = optionalStr(raw.notes, 'notes', { max: MAX_NOTES_LENGTH });
 
 	writeOccurrence(ctx, { habitId, date, notes });
@@ -193,7 +193,7 @@ export function setDayCount(
 	raw: { habitId: unknown; date?: unknown; count: unknown }
 ): void {
 	const habitId = ownedHabitId(ctx, raw.habitId);
-	const date = parseDate(ctx, raw.date);
+	const date = chosenDay(ctx, raw.date);
 	const count = num(raw.count, 'count', { min: 0, max: MAX_DAY_COUNT, int: true });
 
 	db.transaction(() => {
@@ -283,7 +283,7 @@ export function computeStreak(
 	let streak = 0;
 
 	for (let i = 0; i < HISTORY_DAYS; i++) {
-		const date = shiftDate(todayDate, -i);
+		const date = shiftDay(todayDate, -i);
 		if (scheduled.length > 0 && !scheduled.includes(weekdayOf(date))) continue;
 
 		if (done.has(date)) streak++;
@@ -337,27 +337,6 @@ function occurrenceOn(habitId: number, date: string) {
 		.from(habitOccurrences)
 		.where(and(eq(habitOccurrences.habitId, habitId), eq(habitOccurrences.date, date)))
 		.get();
-}
-
-/** A day the user named, or today where they are. Civil dates stay civil (I5). */
-function parseDate(ctx: Ctx, value: unknown): string {
-	const s = value === undefined || value === null ? '' : String(value).trim();
-	if (!s) return localDateOf(ctx.now, ctx.tz);
-	return str(s, 'date', { max: 10, pattern: DATE_PATTERN });
-}
-
-/** Calendar arithmetic on YYYY-MM-DD, done at noon so DST cannot shift the day. */
-function shiftDate(date: string, days: number): string {
-	const d = new Date(`${date}T12:00:00`);
-	d.setDate(d.getDate() + days);
-	const pad = (n: number) => String(n).padStart(2, '0');
-	return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
-}
-
-function daysBetween(from: string, to: string): number {
-	const a = new Date(`${from}T12:00:00`).getTime();
-	const b = new Date(`${to}T12:00:00`).getTime();
-	return Math.round((b - a) / 86400000);
 }
 
 /** Monday is 0 here, which is how `scheduled_days` is stored. */

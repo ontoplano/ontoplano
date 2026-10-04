@@ -14,6 +14,7 @@ import type { Ctx } from './ctx.js';
 import { META_REMOVED_IN, parseAttributes, type TaskAttributes } from './task-attributes.js';
 import { num } from './validate.js';
 import { ValidationError } from './errors.js';
+import { localDay, startOfDay } from './time.js';
 
 /**
  * Read-only view of what's coming up.
@@ -66,16 +67,6 @@ export const SCHEDULE_META_WARNING =
 function attributesOf(raw: string | null): Pick<ScheduleOccurrence, 'attributes' | 'meta'> {
 	const attributes = parseAttributes(raw);
 	return { attributes, meta: attributes };
-}
-
-function formatDate(d: Date): string {
-	return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-}
-
-function startOfDay(d: Date): Date {
-	const c = new Date(d);
-	c.setHours(0, 0, 0, 0);
-	return c;
 }
 
 /**
@@ -212,8 +203,8 @@ export function getUpcomingSchedule(
 		.where(
 			and(
 				eq(exceptionalTasks.userId, ctx.userId),
-				gte(exceptionalTasks.date, formatDate(from)),
-				lt(exceptionalTasks.date, formatDate(to))
+				gte(exceptionalTasks.date, localDay(from)),
+				lt(exceptionalTasks.date, localDay(to))
 			)
 		)
 		.all();

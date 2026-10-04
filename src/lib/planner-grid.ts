@@ -2,7 +2,8 @@ import type { PlainKey } from './i18n/keys.js';
 import type { Translate } from './i18n/core.js';
 import type { Calendar } from '@event-calendar/core';
 import { CATEGORY_FALLBACK_COLOR } from './colors.js';
-import { describeRecurrence, formatDate, occursOn, parseRecurrence } from './recurrence.js';
+import { describeRecurrence, occursOn, parseRecurrence } from './recurrence.js';
+import { localDay } from './services/time.js';
 
 /**
  * The default stretch of the day, when the account has not said otherwise.
@@ -340,7 +341,7 @@ function slotToEvent(
 	const end = new Date(start.getTime() + slot.durationMinutes * 60_000);
 	const bg =
 		slot.mode === 'workout' ? WORKOUT_COLOR : categoryColor(categories, effectiveCategoryId(slot));
-	const suppressed = opts.suppressed?.has(occurrenceKey(slot.id, formatDate(dayDate))) ?? false;
+	const suppressed = opts.suppressed?.has(occurrenceKey(slot.id, localDay(dayDate))) ?? false;
 	const inactive = !slot.active || suppressed;
 	// A slot skipped for this date is a stand-in for something that isn't
 	// happening, so there is nothing meaningful to drag it to.
@@ -473,7 +474,7 @@ export function buildSlotEvents(
 ): Calendar.EventInput[] {
 	const monday = parseLocalDate(mondayStr);
 	const week = Array.from({ length: 7 }, (_, i) =>
-		formatDate(new Date(monday.getFullYear(), monday.getMonth(), monday.getDate() + i))
+		localDay(new Date(monday.getFullYear(), monday.getMonth(), monday.getDate() + i))
 	);
 	return buildSlotEventsForDates(slots, week, categories, opts);
 }
