@@ -1,6 +1,4 @@
 import type { Actions } from '@sveltejs/kit';
-import { buildCtx } from '$lib/services/ctx';
-import { toActionFailure } from '$lib/http-errors';
 import {
 	createHabit,
 	deleteHabit,
@@ -12,7 +10,7 @@ import {
 	updateHabit,
 	updateOccurrence
 } from '$lib/services/habits';
-import type { RequestEvent } from '@sveltejs/kit';
+import { formAction } from '$lib/services/scoped-actions';
 
 /**
  * Everything that can be done to a habit, wherever the row is on screen.
@@ -23,138 +21,72 @@ import type { RequestEvent } from '@sveltejs/kit';
  * notebook mounts them under a prefix, and `$lib/habit-action-names` for the
  * names the markup posts to.
  */
-type Event = Pick<RequestEvent, 'request'> & { locals: App.Locals };
-
 export const habitHandlers = {
-	create: async ({ request, locals }: Event) => {
-		const formData = await request.formData();
-		try {
-			createHabit(buildCtx(locals.user!.id), {
-				name: formData.get('label'),
-				description: formData.get('description'),
-				type: formData.get('type'),
-				scheduledDays: formData.get('scheduledDays'),
-				// `has` rather than `get`: the Health room's form says nothing about
-				// a notebook and must not be read as taking the habit out of one.
-				...(formData.has('notebookId') ? { notebookId: formData.get('notebookId') } : {})
-			});
-			return { success: true };
-		} catch (e) {
-			return toActionFailure(e);
-		}
-	},
+	create: formAction((ctx, formData) => {
+		createHabit(ctx, {
+			name: formData.get('label'),
+			description: formData.get('description'),
+			type: formData.get('type'),
+			scheduledDays: formData.get('scheduledDays'),
+			// `has` rather than `get`: the Health room's form says nothing about
+			// a notebook and must not be read as taking the habit out of one.
+			...(formData.has('notebookId') ? { notebookId: formData.get('notebookId') } : {})
+		});
+	}),
 
-	update: async ({ request, locals }: Event) => {
-		const formData = await request.formData();
-		try {
-			updateHabit(buildCtx(locals.user!.id), Number(formData.get('id')), {
-				name: formData.get('label'),
-				description: formData.get('description'),
-				type: formData.get('type'),
-				scheduledDays: formData.get('scheduledDays'),
-				...(formData.has('notebookId') ? { notebookId: formData.get('notebookId') } : {})
-			});
-			return { success: true };
-		} catch (e) {
-			return toActionFailure(e);
-		}
-	},
+	update: formAction((ctx, formData) => {
+		updateHabit(ctx, Number(formData.get('id')), {
+			name: formData.get('label'),
+			description: formData.get('description'),
+			type: formData.get('type'),
+			scheduledDays: formData.get('scheduledDays'),
+			...(formData.has('notebookId') ? { notebookId: formData.get('notebookId') } : {})
+		});
+	}),
 
 	/** Put away: off the room and today's list, every logged day kept. */
-	archive: async ({ request, locals }: Event) => {
-		const formData = await request.formData();
-		try {
-			setHabitArchived(buildCtx(locals.user!.id), Number(formData.get('id')), true);
-			return { success: true };
-		} catch (e) {
-			return toActionFailure(e);
-		}
-	},
+	archive: formAction((ctx, formData) => {
+		setHabitArchived(ctx, Number(formData.get('id')), true);
+	}),
 
-	unarchive: async ({ request, locals }: Event) => {
-		const formData = await request.formData();
-		try {
-			setHabitArchived(buildCtx(locals.user!.id), Number(formData.get('id')), false);
-			return { success: true };
-		} catch (e) {
-			return toActionFailure(e);
-		}
-	},
+	unarchive: formAction((ctx, formData) => {
+		setHabitArchived(ctx, Number(formData.get('id')), false);
+	}),
 
-	delete: async ({ request, locals }: Event) => {
-		const formData = await request.formData();
-		try {
-			deleteHabit(buildCtx(locals.user!.id), Number(formData.get('id')));
-			return { success: true };
-		} catch (e) {
-			return toActionFailure(e);
-		}
-	},
+	delete: formAction((ctx, formData) => {
+		deleteHabit(ctx, Number(formData.get('id')));
+	}),
 
-	logOccurrence: async ({ request, locals }: Event) => {
-		const formData = await request.formData();
-		try {
-			logOccurrence(buildCtx(locals.user!.id), {
-				habitId: formData.get('habitId'),
-				date: formData.get('date'),
-				notes: formData.get('notes')
-			});
-			return { success: true };
-		} catch (e) {
-			return toActionFailure(e);
-		}
-	},
+	logOccurrence: formAction((ctx, formData) => {
+		logOccurrence(ctx, {
+			habitId: formData.get('habitId'),
+			date: formData.get('date'),
+			notes: formData.get('notes')
+		});
+	}),
 
 	/** The counter on a card: the day's count, set outright once the pressing stops. */
-	setDayCount: async ({ request, locals }: Event) => {
-		const formData = await request.formData();
-		try {
-			setDayCount(buildCtx(locals.user!.id), {
-				habitId: formData.get('habitId'),
-				date: formData.get('date'),
-				count: formData.get('count')
-			});
-			return { success: true };
-		} catch (e) {
-			return toActionFailure(e);
-		}
-	},
+	setDayCount: formAction((ctx, formData) => {
+		setDayCount(ctx, {
+			habitId: formData.get('habitId'),
+			date: formData.get('date'),
+			count: formData.get('count')
+		});
+	}),
 
 	/** Clicking a day in the heatmap: log it, or take it back. */
-	toggleOccurrence: async ({ request, locals }: Event) => {
-		const formData = await request.formData();
-		try {
-			toggleOccurrence(buildCtx(locals.user!.id), {
-				habitId: formData.get('habitId'),
-				date: formData.get('date')
-			});
-			return { success: true };
-		} catch (e) {
-			return toActionFailure(e);
-		}
-	},
+	toggleOccurrence: formAction((ctx, formData) => {
+		toggleOccurrence(ctx, {
+			habitId: formData.get('habitId'),
+			date: formData.get('date')
+		});
+	}),
 
-	updateOccurrence: async ({ request, locals }: Event) => {
-		const formData = await request.formData();
-		try {
-			updateOccurrence(
-				buildCtx(locals.user!.id),
-				Number(formData.get('id')),
-				formData.get('notes')
-			);
-			return { success: true };
-		} catch (e) {
-			return toActionFailure(e);
-		}
-	},
+	updateOccurrence: formAction((ctx, formData) => {
+		updateOccurrence(ctx, Number(formData.get('id')), formData.get('notes'));
+	}),
 
-	deleteOccurrence: async ({ request, locals }: Event) => {
-		const formData = await request.formData();
-		try {
-			deleteOccurrence(buildCtx(locals.user!.id), Number(formData.get('id')));
-			return { success: true };
-		} catch (e) {
-			return toActionFailure(e);
-		}
-	}
+	deleteOccurrence: formAction((ctx, formData) => {
+		deleteOccurrence(ctx, Number(formData.get('id')));
+	})
 } satisfies Actions;

@@ -14,6 +14,7 @@ import {
 import { toActionFailure } from '$lib/http-errors';
 import { entryHandlers } from '$lib/services/entry-actions';
 import { listPeople, peopleForEntries, setEntryPeople } from '$lib/services/people';
+import { formAction } from '$lib/services/scoped-actions';
 
 export const load = async ({ locals }: IsolatedEvent) => {
 	const ctx = buildCtx(locals.user!.id);
@@ -40,22 +41,16 @@ export const load = async ({ locals }: IsolatedEvent) => {
 };
 
 export const actions = {
-	create: async ({ request, locals }: IsolatedEvent) => {
-		const formData = await request.formData();
-		try {
-			const ctx = buildCtx(locals.user!.id);
-			const id = createEntry(ctx, {
-				content: formData.get('content'),
-				tags: formData.get('tags'),
-				notebookId: formData.get('notebookId')
-			});
-			setEntryPeople(ctx, id, formData.get('people'));
-			// The id comes back so a receipt can offer a way straight into it.
-			return { success: true, id };
-		} catch (e) {
-			return toActionFailure(e);
-		}
-	},
+	create: formAction((ctx, formData) => {
+		const id = createEntry(ctx, {
+			content: formData.get('content'),
+			tags: formData.get('tags'),
+			notebookId: formData.get('notebookId')
+		});
+		setEntryPeople(ctx, id, formData.get('people'));
+		// The id comes back so a receipt can offer a way straight into it.
+		return { success: true, id };
+	}),
 
 	createWins: async ({ request, locals }: IsolatedEvent) => {
 		const formData = await request.formData();
@@ -76,32 +71,19 @@ export const actions = {
 		}
 	},
 
-	update: async ({ request, locals }: IsolatedEvent) => {
-		const formData = await request.formData();
-		try {
-			const ctx = buildCtx(locals.user!.id);
-			const id = Number(formData.get('id'));
-			updateEntry(ctx, id, {
-				content: formData.get('content'),
-				tags: formData.get('tags'),
-				notebookId: formData.get('notebookId')
-			});
-			setEntryPeople(ctx, id, formData.get('people'));
-			return { success: true };
-		} catch (e) {
-			return toActionFailure(e);
-		}
-	},
+	update: formAction((ctx, formData) => {
+		const id = Number(formData.get('id'));
+		updateEntry(ctx, id, {
+			content: formData.get('content'),
+			tags: formData.get('tags'),
+			notebookId: formData.get('notebookId')
+		});
+		setEntryPeople(ctx, id, formData.get('people'));
+	}),
 
 	batch: entryHandlers.batch,
 
-	delete: async ({ request, locals }: IsolatedEvent) => {
-		const formData = await request.formData();
-		try {
-			deleteEntry(buildCtx(locals.user!.id), Number(formData.get('id')));
-			return { success: true };
-		} catch (e) {
-			return toActionFailure(e);
-		}
-	}
+	delete: formAction((ctx, formData) => {
+		deleteEntry(ctx, Number(formData.get('id')));
+	})
 };

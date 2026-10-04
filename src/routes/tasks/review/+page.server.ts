@@ -1,7 +1,6 @@
 import type { IsolatedEvent } from '$lib/isolated/routes';
 import { buildCtx } from '$lib/services/ctx';
 import { ValidationError } from '$lib/services/errors';
-import { toActionFailure } from '$lib/http-errors';
 import {
 	carryIntoTodos,
 	goalsTouched,
@@ -16,10 +15,8 @@ import {
 import { completeStale, dropStale, keepStale, listStale, STALE_MONTHS } from '$lib/services/stale';
 import { setInstanceStatus } from '$lib/services/instances';
 import { addDays, getISOWeekNumber, getISOWeekYear } from '$lib/services/week-generator';
-
-function dateString(d: Date): string {
-	return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-}
+import { formAction } from '$lib/services/scoped-actions';
+import { localDay } from '$lib/services/time';
 
 /**
  * This week, by default.
@@ -34,11 +31,11 @@ function dateString(d: Date): string {
 export const load = async ({ locals, url }: IsolatedEvent) => {
 	const ctx = buildCtx(locals.user!.id);
 	const param = url.searchParams.get('week');
-	const weekStart = weekStartOf(ctx, param ?? dateString(ctx.now));
+	const weekStart = weekStartOf(ctx, param ?? localDay(ctx.now));
 
 	const monday = new Date(weekStart + 'T00:00:00');
 	const { reading, loose, done, skipped } = readWeek(ctx, weekStart);
-	const isCurrent = weekStart === weekStartOf(ctx, dateString(ctx.now));
+	const isCurrent = weekStart === weekStartOf(ctx, localDay(ctx.now));
 
 	return {
 		reading,
@@ -53,8 +50,8 @@ export const load = async ({ locals, url }: IsolatedEvent) => {
 		week: {
 			number: getISOWeekNumber(monday),
 			year: getISOWeekYear(monday),
-			prev: dateString(addDays(monday, -7)),
-			next: dateString(addDays(monday, 7)),
+			prev: localDay(addDays(monday, -7)),
+			next: localDay(addDays(monday, 7)),
 			isCurrent
 		}
 	};
@@ -68,81 +65,40 @@ function sortOf(raw: FormDataEntryValue | null): 'todo' | 'idea' | 'inventory' {
 }
 
 export const actions = {
-	saveNote: async ({ request, locals }: IsolatedEvent) => {
-		const formData = await request.formData();
-		try {
-			saveNote(buildCtx(locals.user!.id), {
-				weekStart: formData.get('weekStart'),
-				content: formData.get('note')
-			});
-			return { success: true, saved: true };
-		} catch (e) {
-			return toActionFailure(e);
-		}
-	},
+	saveNote: formAction((ctx, formData) => {
+		saveNote(ctx, {
+			weekStart: formData.get('weekStart'),
+			content: formData.get('note')
+		});
+		return { success: true, saved: true };
+	}),
 
-	keepStale: async ({ request, locals }: IsolatedEvent) => {
-		const formData = await request.formData();
-		try {
-			keepStale(
-				buildCtx(locals.user!.id),
-				sortOf(formData.get('sort')),
-				Number(formData.get('id'))
-			);
-			return { success: true };
-		} catch (e) {
-			return toActionFailure(e);
-		}
-	},
+	keepStale: formAction((ctx, formData) => {
+		keepStale(ctx, sortOf(formData.get('sort')), Number(formData.get('id')));
+	}),
 
-	completeStale: async ({ request, locals }: IsolatedEvent) => {
-		const formData = await request.formData();
-		try {
-			completeStale(
-				buildCtx(locals.user!.id),
-				sortOf(formData.get('sort')),
-				Number(formData.get('id'))
-			);
-			return { success: true };
-		} catch (e) {
-			return toActionFailure(e);
-		}
-	},
+	completeStale: formAction((ctx, formData) => {
+		completeStale(ctx, sortOf(formData.get('sort')), Number(formData.get('id')));
+	}),
 
-	dropStale: async ({ request, locals }: IsolatedEvent) => {
-		const formData = await request.formData();
-		try {
-			dropStale(
-				buildCtx(locals.user!.id),
-				sortOf(formData.get('sort')),
-				Number(formData.get('id'))
-			);
-			return { success: true };
-		} catch (e) {
-			return toActionFailure(e);
-		}
-	},
+	dropStale: formAction((ctx, formData) => {
+		dropStale(ctx, sortOf(formData.get('sort')), Number(formData.get('id')));
+	}),
 
 	/** Done, or skipped — the two answers that are not "carry it forward". */
-	resolve: async ({ request, locals }: IsolatedEvent) => {
-		const formData = await request.formData();
-		try {
-			const raw = String(formData.get('status') ?? '');
-			if (raw !== 'done' && raw !== 'skipped')
-				throw new ValidationError({ key: 'errors.review.invalidStatus' });
+	resolve: formAction((ctx, formData) => {
+		const raw = String(formData.get('status') ?? '');
+		if (raw !== 'done' && raw !== 'skipped')
+			throw new ValidationError({ key: 'errors.review.invalidStatus' });
 
-			const ctx = buildCtx(locals.user!.id);
-			const resolved = resolveLoose(
-				ctx,
-				weekStartOf(ctx, formData.get('weekStart')),
-				formData.getAll('instanceId'),
-				raw
-			);
-			return { success: true, resolved };
-		} catch (e) {
-			return toActionFailure(e);
-		}
-	},
+		const resolved = resolveLoose(
+			ctx,
+			weekStartOf(ctx, formData.get('weekStart')),
+			formData.getAll('instanceId'),
+			raw
+		);
+		return { success: true, resolved };
+	}),
 
 	/**
 	 * "I did not actually do that."
@@ -152,15 +108,10 @@ export const actions = {
 	 * it rejoins the list of open questions, where the four ordinary answers
 	 * are — including the ones that make a todo out of it.
 	 */
-	reopen: async ({ request, locals }: IsolatedEvent) => {
-		const formData = await request.formData();
-		try {
-			setInstanceStatus(buildCtx(locals.user!.id), Number(formData.get('instanceId')), 'todo');
-			return { success: true, action: 'reopen' };
-		} catch (e) {
-			return toActionFailure(e);
-		}
-	},
+	reopen: formAction((ctx, formData) => {
+		setInstanceStatus(ctx, Number(formData.get('instanceId')), 'todo');
+		return { success: true, action: 'reopen' };
+	}),
 
 	/**
 	 * Everything marked up on the page, applied at once.
@@ -170,41 +121,29 @@ export const actions = {
 	 * list and this is one list rather than four parallel ones that could get
 	 * out of step with each other.
 	 */
-	settle: async ({ request, locals }: IsolatedEvent) => {
-		const formData = await request.formData();
-		try {
-			const verdicts: Verdict[] = [];
-			for (const raw of formData.getAll('verdict')) {
-				const [id, verb, date] = String(raw).split(':');
-				if (!Number.isInteger(Number(id))) continue;
-				if (verb !== 'done' && verb !== 'skipped' && verb !== 'todo') continue;
-				verdicts.push({ id: Number(id), verb, ...(date ? { date } : {}) });
-			}
-
-			const ctx = buildCtx(locals.user!.id);
-			const settled = settleWeek(ctx, weekStartOf(ctx, formData.get('weekStart')), verdicts);
-			return { success: true, settled };
-		} catch (e) {
-			return toActionFailure(e);
+	settle: formAction((ctx, formData) => {
+		const verdicts: Verdict[] = [];
+		for (const raw of formData.getAll('verdict')) {
+			const [id, verb, date] = String(raw).split(':');
+			if (!Number.isInteger(Number(id))) continue;
+			if (verb !== 'done' && verb !== 'skipped' && verb !== 'todo') continue;
+			verdicts.push({ id: Number(id), verb, ...(date ? { date } : {}) });
 		}
-	},
 
-	carry: async ({ request, locals }: IsolatedEvent) => {
-		const formData = await request.formData();
-		try {
-			// A date, when the answer was "not then, but on this day". Without one
-			// it lands on the undated pile, which is what carrying always meant.
-			const day = String(formData.get('scheduledDate') ?? '').trim();
-			const ctx = buildCtx(locals.user!.id);
-			const carried = carryIntoTodos(
-				ctx,
-				weekStartOf(ctx, formData.get('weekStart')),
-				formData.getAll('instanceId'),
-				day || undefined
-			);
-			return { success: true, carried, scheduled: Boolean(day) };
-		} catch (e) {
-			return toActionFailure(e);
-		}
-	}
+		const settled = settleWeek(ctx, weekStartOf(ctx, formData.get('weekStart')), verdicts);
+		return { success: true, settled };
+	}),
+
+	carry: formAction((ctx, formData) => {
+		// A date, when the answer was "not then, but on this day". Without one
+		// it lands on the undated pile, which is what carrying always meant.
+		const day = String(formData.get('scheduledDate') ?? '').trim();
+		const carried = carryIntoTodos(
+			ctx,
+			weekStartOf(ctx, formData.get('weekStart')),
+			formData.getAll('instanceId'),
+			day || undefined
+		);
+		return { success: true, carried, scheduled: Boolean(day) };
+	})
 };

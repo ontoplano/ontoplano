@@ -6,22 +6,16 @@
  */
 import type { IsolatedEvent } from '$lib/isolated/routes';
 import { buildCtx } from '$lib/services/ctx';
-import { toActionFailure } from '$lib/http-errors';
 import { removeUnused, unusedPictures } from '$lib/services/unused-media';
+import { formAction } from '$lib/services/scoped-actions';
 
 export const load = async ({ locals }: IsolatedEvent) => ({
 	pictures: unusedPictures(buildCtx(locals.user!.id))
 });
 
 export const actions = {
-	remove: async ({ request, locals }: IsolatedEvent) => {
-		const form = await request.formData();
-		try {
-			const ids = form.getAll('mediaId').map(Number).filter(Number.isInteger);
-			removeUnused(buildCtx(locals.user!.id), ids);
-			return { success: true };
-		} catch (e) {
-			return toActionFailure(e);
-		}
-	}
+	remove: formAction((ctx, form) => {
+		const ids = form.getAll('mediaId').map(Number).filter(Number.isInteger);
+		removeUnused(ctx, ids);
+	})
 };

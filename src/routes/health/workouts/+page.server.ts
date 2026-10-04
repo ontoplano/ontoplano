@@ -2,7 +2,7 @@ import type { IsolatedEvent } from '$lib/isolated/routes';
 import { buildCtx } from '$lib/services/ctx';
 import { pickableNotebooks } from '$lib/services/notebooks';
 import { workoutHandlers } from '$lib/services/workout-actions';
-import { toActionFailure } from '$lib/http-errors';
+import { formAction } from '$lib/services/scoped-actions';
 import {
 	listWorkouts,
 	listSessions,
@@ -55,34 +55,19 @@ export const actions = {
 	 */
 	...workoutHandlers,
 
-	createCategory: async ({ request, locals }: IsolatedEvent) => {
-		const form = await request.formData();
-		try {
-			createWorkoutCategory(buildCtx(locals.user!.id), form.get('label'));
-			return { success: true, action: 'createCategory' };
-		} catch (e) {
-			return toActionFailure(e);
-		}
-	},
+	createCategory: formAction((ctx, form) => {
+		createWorkoutCategory(ctx, form.get('label'));
+		return { success: true, action: 'createCategory' };
+	}),
 
-	renameCategory: async ({ request, locals }: IsolatedEvent) => {
-		const form = await request.formData();
-		try {
-			renameWorkoutCategory(buildCtx(locals.user!.id), Number(form.get('id')), form.get('name'));
-			return { success: true, action: 'renameCategory' };
-		} catch (e) {
-			return toActionFailure(e);
-		}
-	},
+	renameCategory: formAction((ctx, form) => {
+		renameWorkoutCategory(ctx, Number(form.get('id')), form.get('name'));
+		return { success: true, action: 'renameCategory' };
+	}),
 
 	/** The workouts filed under it keep existing, without a kind. */
-	deleteCategory: async ({ request, locals }: IsolatedEvent) => {
-		const form = await request.formData();
-		try {
-			deleteWorkoutCategory(buildCtx(locals.user!.id), Number(form.get('id')));
-			return { success: true, action: 'deleteCategory' };
-		} catch (e) {
-			return toActionFailure(e);
-		}
-	}
+	deleteCategory: formAction((ctx, form) => {
+		deleteWorkoutCategory(ctx, Number(form.get('id')));
+		return { success: true, action: 'deleteCategory' };
+	})
 };

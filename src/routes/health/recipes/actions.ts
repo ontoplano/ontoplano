@@ -16,6 +16,7 @@ import {
 } from '$lib/services/recipes';
 import { attachToRecipe, detachFromRecipe, setMain } from '$lib/services/media';
 import { parseRecipeFromHtml } from '$lib/recipe-import';
+import { formAction } from '$lib/services/scoped-actions';
 
 /** A recipe page is tens of kilobytes. This is where a paste stops being one. */
 const MAX_PAGE_LENGTH = 1_000_000;
@@ -109,37 +110,23 @@ export const recipeActions = {
 		redirect(303, `/health/recipes/${id}`);
 	},
 
-	update: async ({ request, locals }) => {
-		const formData = await request.formData();
-		try {
-			updateRecipe(buildCtx(locals.user!.id), Number(formData.get('id')), {
-				title: formData.get('heading'),
-				method: formData.get('method'),
-				notes: formData.get('notes'),
-				servings: formData.get('servings'),
-				minutes: formData.get('minutes'),
-				source: formData.get('source'),
-				...(formData.has('notebookId') ? { notebookId: formData.get('notebookId') } : {})
-			});
-			return { success: true, action: 'update' };
-		} catch (e) {
-			return toActionFailure(e);
-		}
-	},
+	update: formAction((ctx, formData) => {
+		updateRecipe(ctx, Number(formData.get('id')), {
+			title: formData.get('heading'),
+			method: formData.get('method'),
+			notes: formData.get('notes'),
+			servings: formData.get('servings'),
+			minutes: formData.get('minutes'),
+			source: formData.get('source'),
+			...(formData.has('notebookId') ? { notebookId: formData.get('notebookId') } : {})
+		});
+		return { success: true, action: 'update' };
+	}),
 
-	importIngredients: async ({ request, locals }) => {
-		const formData = await request.formData();
-		try {
-			const added = importIngredients(
-				buildCtx(locals.user!.id),
-				Number(formData.get('recipeId')),
-				formData.get('list')
-			);
-			return { success: true, added };
-		} catch (e) {
-			return toActionFailure(e);
-		}
-	},
+	importIngredients: formAction((ctx, formData) => {
+		const added = importIngredients(ctx, Number(formData.get('recipeId')), formData.get('list'));
+		return { success: true, added };
+	}),
 
 	addIngredient: async ({ request, locals }) => {
 		const formData = await request.formData();
@@ -189,58 +176,30 @@ export const recipeActions = {
 		}
 	},
 
-	removePicture: async ({ request, locals }) => {
-		const formData = await request.formData();
-		try {
-			detachFromRecipe(
-				buildCtx(locals.user!.id),
-				Number(formData.get('recipeId')),
-				Number(formData.get('mediaId'))
-			);
-			return { success: true, action: 'removePicture' };
-		} catch (e) {
-			return toActionFailure(e);
-		}
-	},
+	removePicture: formAction((ctx, formData) => {
+		detachFromRecipe(ctx, Number(formData.get('recipeId')), Number(formData.get('mediaId')));
+		return { success: true, action: 'removePicture' };
+	}),
 
-	setMainPicture: async ({ request, locals }) => {
-		const formData = await request.formData();
-		try {
-			setMain(
-				buildCtx(locals.user!.id),
-				Number(formData.get('recipeId')),
-				Number(formData.get('mediaId'))
-			);
-			return { success: true, action: 'setMainPicture' };
-		} catch (e) {
-			return toActionFailure(e);
-		}
-	},
+	setMainPicture: formAction((ctx, formData) => {
+		setMain(ctx, Number(formData.get('recipeId')), Number(formData.get('mediaId')));
+		return { success: true, action: 'setMainPicture' };
+	}),
 
-	removeIngredient: async ({ request, locals }) => {
-		const formData = await request.formData();
-		try {
-			removeIngredient(buildCtx(locals.user!.id), Number(formData.get('id')));
-			return { success: true, action: 'removeIngredient' };
-		} catch (e) {
-			return toActionFailure(e);
-		}
-	},
+	removeIngredient: formAction((ctx, formData) => {
+		removeIngredient(ctx, Number(formData.get('id')));
+		return { success: true, action: 'removeIngredient' };
+	}),
 
-	cooked: async ({ request, locals }) => {
-		const formData = await request.formData();
-		try {
-			const ranOut = formData
-				.getAll('ranOut')
-				.map((v) => Number(v))
-				.filter(Boolean);
+	cooked: formAction((ctx, formData) => {
+		const ranOut = formData
+			.getAll('ranOut')
+			.map((v) => Number(v))
+			.filter(Boolean);
 
-			cooked(buildCtx(locals.user!.id), Number(formData.get('id')), ranOut);
-			return { success: true, action: 'cooked', ranOut: ranOut.length };
-		} catch (e) {
-			return toActionFailure(e);
-		}
-	},
+		cooked(ctx, Number(formData.get('id')), ranOut);
+		return { success: true, action: 'cooked', ranOut: ranOut.length };
+	}),
 
 	/**
 	 * Put a recipe on a day.
@@ -273,19 +232,10 @@ export const recipeActions = {
 		}
 	},
 
-	setArchived: async ({ request, locals }) => {
-		const formData = await request.formData();
-		try {
-			setArchived(
-				buildCtx(locals.user!.id),
-				Number(formData.get('id')),
-				formData.get('archived') === 'true'
-			);
-			return { success: true, action: 'setArchived' };
-		} catch (e) {
-			return toActionFailure(e);
-		}
-	},
+	setArchived: formAction((ctx, formData) => {
+		setArchived(ctx, Number(formData.get('id')), formData.get('archived') === 'true');
+		return { success: true, action: 'setArchived' };
+	}),
 
 	delete: async ({ request, locals }) => {
 		const formData = await request.formData();

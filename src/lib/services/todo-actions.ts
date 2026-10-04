@@ -1,6 +1,4 @@
 import { ratingsFromForm } from '$lib/ratings';
-import { buildCtx } from '$lib/services/ctx';
-import { toActionFailure } from '$lib/http-errors';
 import {
 	archiveTodo,
 	createTodo,
@@ -18,7 +16,7 @@ import {
 } from '$lib/services/todos';
 import { ValidationError } from '$lib/services/errors';
 import { attributesPatchFromFormData } from '$lib/services/task-attributes';
-import type { RequestEvent } from '@sveltejs/kit';
+import { formAction } from '$lib/services/scoped-actions';
 
 /**
  * Everything that can be done to a todo, wherever the row is on screen.
@@ -40,8 +38,6 @@ import type { RequestEvent } from '@sveltejs/kit';
  * `todoDelete` and `todoUpdate`. `TODO_ACTIONS` below names them for the
  * markup, so a form never spells an action out.
  */
-type Event = Pick<RequestEvent, 'request'> & { locals: App.Locals };
-
 /**
  * `{ attributes }` when the form carried the attributes fold, nothing when it
  * did not: the board's inline editor has no fold and must not clear them.
@@ -52,68 +48,46 @@ function attributesFrom(formData: FormData) {
 }
 
 export const todoHandlers = {
-	create: async ({ request, locals }: Event) => {
-		const formData = await request.formData();
-		try {
-			const made = createTodo(buildCtx(locals.user!.id), {
-				title: formData.get('heading'),
-				notes: formData.get('notes'),
-				categoryId: formData.get('categoryId'),
-				notebookId: formData.get('notebookId'),
-				// `has` rather than `get`: a form with no tags box must leave the
-				// labels alone, and one with an empty box must clear them.
-				...(formData.has('tags') ? { tags: formData.get('tags') } : {}),
-				scheduledDate: formData.get('scheduledDate'),
-				ratings: ratingsFromForm(formData),
-				...attributesFrom(formData)
-			});
-			/*
-			 * The id comes back, so the toast can offer a way straight into the
-			 * thing just made. Without it the only route to "say more about
-			 * this" is finding the row again in a list that has just reordered.
-			 */
-			return { success: true, id: made };
-		} catch (e) {
-			return toActionFailure(e);
-		}
-	},
+	create: formAction((ctx, formData) => {
+		const made = createTodo(ctx, {
+			title: formData.get('heading'),
+			notes: formData.get('notes'),
+			categoryId: formData.get('categoryId'),
+			notebookId: formData.get('notebookId'),
+			// `has` rather than `get`: a form with no tags box must leave the
+			// labels alone, and one with an empty box must clear them.
+			...(formData.has('tags') ? { tags: formData.get('tags') } : {}),
+			scheduledDate: formData.get('scheduledDate'),
+			ratings: ratingsFromForm(formData),
+			...attributesFrom(formData)
+		});
+		/*
+		 * The id comes back, so the toast can offer a way straight into the
+		 * thing just made. Without it the only route to "say more about
+		 * this" is finding the row again in a list that has just reordered.
+		 */
+		return { success: true, id: made };
+	}),
 
-	update: async ({ request, locals }: Event) => {
-		const formData = await request.formData();
-		try {
-			updateTodo(buildCtx(locals.user!.id), Number(formData.get('id')), {
-				title: formData.get('heading'),
-				notes: formData.get('notes'),
-				categoryId: formData.get('categoryId'),
-				notebookId: formData.get('notebookId'),
-				...(formData.has('tags') ? { tags: formData.get('tags') } : {}),
-				ratings: ratingsFromForm(formData),
-				...attributesFrom(formData)
-			});
-			return { success: true };
-		} catch (e) {
-			return toActionFailure(e);
-		}
-	},
+	update: formAction((ctx, formData) => {
+		updateTodo(ctx, Number(formData.get('id')), {
+			title: formData.get('heading'),
+			notes: formData.get('notes'),
+			categoryId: formData.get('categoryId'),
+			notebookId: formData.get('notebookId'),
+			...(formData.has('tags') ? { tags: formData.get('tags') } : {}),
+			ratings: ratingsFromForm(formData),
+			...attributesFrom(formData)
+		});
+	}),
 
 	/**
 	 * One attribute changed in place — the pencil in the ⓘ dialog. An empty
 	 * value removes it.
 	 */
-	attribute: async ({ request, locals }: Event) => {
-		const formData = await request.formData();
-		try {
-			setTodoAttribute(
-				buildCtx(locals.user!.id),
-				Number(formData.get('id')),
-				formData.get('key'),
-				formData.get('value')
-			);
-			return { success: true };
-		} catch (e) {
-			return toActionFailure(e);
-		}
-	},
+	attribute: formAction((ctx, formData) => {
+		setTodoAttribute(ctx, Number(formData.get('id')), formData.get('key'), formData.get('value'));
+	}),
 
 	/*
 	 * A label on or off, and nothing else touched.
@@ -124,50 +98,28 @@ export const todoHandlers = {
 	 * the one beside the labels themselves. The same pair the MCP tool takes,
 	 * over the same service function.
 	 */
-	tag: async ({ request, locals }: Event) => {
-		const formData = await request.formData();
-		try {
-			tagTodo(buildCtx(locals.user!.id), Number(formData.get('id')), {
-				add: formData.get('add'),
-				remove: formData.get('remove')
-			});
-			return { success: true };
-		} catch (e) {
-			return toActionFailure(e);
-		}
-	},
+	tag: formAction((ctx, formData) => {
+		tagTodo(ctx, Number(formData.get('id')), {
+			add: formData.get('add'),
+			remove: formData.get('remove')
+		});
+	}),
 
 	/*
 	 * The three ratings and nothing else — pressed on a card's bars and
 	 * confirmed beside them, without the whole row going back through a form.
 	 */
-	rate: async ({ request, locals }: Event) => {
-		const formData = await request.formData();
-		try {
-			setTodoRatings(
-				buildCtx(locals.user!.id),
-				Number(formData.get('id')),
-				ratingsFromForm(formData)
-			);
-			return { success: true };
-		} catch (e) {
-			return toActionFailure(e);
-		}
-	},
+	rate: formAction((ctx, formData) => {
+		setTodoRatings(ctx, Number(formData.get('id')), ratingsFromForm(formData));
+	}),
 
 	/*
 	 * Two tasks the ratings cannot tell apart, the other way round — the
 	 * arrows beside a tie. See `swapTiedTodos`.
 	 */
-	nudge: async ({ request, locals }: Event) => {
-		const formData = await request.formData();
-		try {
-			swapTiedTodos(buildCtx(locals.user!.id), formData.get('id'), formData.get('withId'));
-			return { success: true };
-		} catch (e) {
-			return toActionFailure(e);
-		}
-	},
+	nudge: formAction((ctx, formData) => {
+		swapTiedTodos(ctx, formData.get('id'), formData.get('withId'));
+	}),
 
 	/*
 	 * The same verbs, over a selection.
@@ -178,88 +130,46 @@ export const todoHandlers = {
 	 * names for one idea in two places each. `batchTodos` is where the rule
 	 * that matters lives: all of them or none.
 	 */
-	batch: async ({ request, locals }: Event) => {
-		const formData = await request.formData();
-		try {
-			const verb = formData.get('do');
-			if (!isBatchVerb(verb)) throw new ValidationError({ key: 'errors.todos.invalidBatch' });
+	batch: formAction((ctx, formData) => {
+		const verb = formData.get('do');
+		if (!isBatchVerb(verb)) throw new ValidationError({ key: 'errors.todos.invalidBatch' });
 
-			const count = batchTodos(buildCtx(locals.user!.id), verb, formData.getAll('id'), {
-				status: formData.get('status'),
-				add: formData.get('add'),
-				remove: formData.get('remove'),
-				notebookId: formData.get('notebookId')
-			});
-			return { success: true, count };
-		} catch (e) {
-			return toActionFailure(e);
-		}
-	},
+		const count = batchTodos(ctx, verb, formData.getAll('id'), {
+			status: formData.get('status'),
+			add: formData.get('add'),
+			remove: formData.get('remove'),
+			notebookId: formData.get('notebookId')
+		});
+		return { success: true, count };
+	}),
 
 	/** Put one away, or take it back out. Neither done nor gone. */
-	archive: async ({ request, locals }: Event) => {
-		const formData = await request.formData();
-		try {
-			archiveTodo(
-				buildCtx(locals.user!.id),
-				Number(formData.get('id')),
-				formData.get('away') !== 'false'
-			);
-			return { success: true, action: 'archive' };
-		} catch (e) {
-			return toActionFailure(e);
-		}
-	},
+	archive: formAction((ctx, formData) => {
+		archiveTodo(ctx, Number(formData.get('id')), formData.get('away') !== 'false');
+		return { success: true, action: 'archive' };
+	}),
 
-	setStatus: async ({ request, locals }: Event) => {
-		const formData = await request.formData();
-		try {
-			setTodoStatus(buildCtx(locals.user!.id), Number(formData.get('id')), formData.get('status'));
-			return { success: true };
-		} catch (e) {
-			return toActionFailure(e);
-		}
-	},
+	setStatus: formAction((ctx, formData) => {
+		setTodoStatus(ctx, Number(formData.get('id')), formData.get('status'));
+	}),
 
-	schedule: async ({ request, locals }: Event) => {
-		const formData = await request.formData();
-		try {
-			scheduleTodo(
-				buildCtx(locals.user!.id),
-				Number(formData.get('id')),
-				formData.get('scheduledDate')
-			);
-			return { success: true };
-		} catch (e) {
-			return toActionFailure(e);
-		}
-	},
+	schedule: formAction((ctx, formData) => {
+		scheduleTodo(ctx, Number(formData.get('id')), formData.get('scheduledDate'));
+	}),
 
-	remove: async ({ request, locals }: Event) => {
-		const formData = await request.formData();
-		try {
-			deleteTodo(buildCtx(locals.user!.id), Number(formData.get('id')));
-			return { success: true };
-		} catch (e) {
-			return toActionFailure(e);
-		}
-	},
+	remove: formAction((ctx, formData) => {
+		deleteTodo(ctx, Number(formData.get('id')));
+	}),
 
-	delegate: async ({ request, locals }: Event) => {
-		const formData = await request.formData();
-		try {
-			delegateTodo(buildCtx(locals.user!.id), Number(formData.get('id')), {
-				date: formData.get('date'),
-				startTime: formData.get('startTime'),
-				durationMinutes: formData.get('durationMinutes'),
-				mode: formData.get('mode'),
-				categoryId: formData.get('categoryId'),
-				activityId: formData.get('activityId'),
-				remindLeadMinutes: formData.get('remindLeadMinutes')
-			});
-			return { success: true };
-		} catch (e) {
-			return toActionFailure(e);
-		}
-	}
+	delegate: formAction((ctx, formData) => {
+		delegateTodo(ctx, Number(formData.get('id')), {
+			date: formData.get('date'),
+			startTime: formData.get('startTime'),
+			durationMinutes: formData.get('durationMinutes'),
+			mode: formData.get('mode'),
+			categoryId: formData.get('categoryId'),
+			activityId: formData.get('activityId'),
+			remindLeadMinutes: formData.get('remindLeadMinutes')
+		});
+	})
 };

@@ -11,6 +11,7 @@ import {
 } from '$lib/services/attributes';
 import { createLocation, deleteLocation, updateLocation } from '$lib/services/locations';
 import { setPanelWidth, LOCATION_PANEL_WIDTH_KEY } from '$lib/services/settings';
+import { formAction } from '$lib/services/scoped-actions';
 import {
 	createCategory,
 	deleteCategory,
@@ -34,150 +35,74 @@ import {
  */
 export const inventoryActions = {
 	/** Rename an attribute everywhere it is used — or merge it into another. */
-	renameAttribute: async ({ request, locals }: IsolatedEvent) => {
-		const formData = await request.formData();
-		try {
-			renameAttribute(buildCtx(locals.user!.id), formData.get('from'), formData.get('to'));
-			return { success: true, action: 'renameAttribute' };
-		} catch (e) {
-			return toActionFailure(e);
-		}
-	},
+	renameAttribute: formAction((ctx, formData) => {
+		renameAttribute(ctx, formData.get('from'), formData.get('to'));
+		return { success: true, action: 'renameAttribute' };
+	}),
 
 	/** Rename one value of one, wherever a thing says it. */
-	renameAttributeValue: async ({ request, locals }: IsolatedEvent) => {
-		const formData = await request.formData();
-		try {
-			renameAttributeValue(
-				buildCtx(locals.user!.id),
-				formData.get('key'),
-				formData.get('from'),
-				formData.get('to')
-			);
-			return { success: true, action: 'renameAttributeValue' };
-		} catch (e) {
-			return toActionFailure(e);
-		}
-	},
+	renameAttributeValue: formAction((ctx, formData) => {
+		renameAttributeValue(ctx, formData.get('key'), formData.get('from'), formData.get('to'));
+		return { success: true, action: 'renameAttributeValue' };
+	}),
 
 	/** Take an attribute off everything that has it. The things stay. */
-	removeAttribute: async ({ request, locals }: IsolatedEvent) => {
-		const formData = await request.formData();
-		try {
-			removeAttribute(buildCtx(locals.user!.id), formData.get('key'));
-			return { success: true, action: 'removeAttribute' };
-		} catch (e) {
-			return toActionFailure(e);
-		}
-	},
+	removeAttribute: formAction((ctx, formData) => {
+		removeAttribute(ctx, formData.get('key'));
+		return { success: true, action: 'removeAttribute' };
+	}),
 
 	/** Take one value off everything that says it. The attribute stays on the rest. */
-	removeAttributeValue: async ({ request, locals }: IsolatedEvent) => {
-		const formData = await request.formData();
-		try {
-			removeAttributeValue(buildCtx(locals.user!.id), formData.get('key'), formData.get('value'));
-			return { success: true, action: 'removeAttributeValue' };
-		} catch (e) {
-			return toActionFailure(e);
-		}
-	},
+	removeAttributeValue: formAction((ctx, formData) => {
+		removeAttributeValue(ctx, formData.get('key'), formData.get('value'));
+		return { success: true, action: 'removeAttributeValue' };
+	}),
 
 	/** A colour on an attribute, or on one of its values. Empty takes it off. */
-	setAttributeColor: async ({ request, locals }: IsolatedEvent) => {
-		const formData = await request.formData();
-		try {
-			setAttributeColor(
-				buildCtx(locals.user!.id),
-				formData.get('key'),
-				formData.get('value') ?? '',
-				formData.get('color') ?? ''
-			);
-			return { success: true, action: 'setAttributeColor' };
-		} catch (e) {
-			return toActionFailure(e);
-		}
-	},
+	setAttributeColor: formAction((ctx, formData) => {
+		setAttributeColor(
+			ctx,
+			formData.get('key'),
+			formData.get('value') ?? '',
+			formData.get('color') ?? ''
+		);
+		return { success: true, action: 'setAttributeColor' };
+	}),
 
 	/** Which categories hold food, and therefore what can be an ingredient. */
 	/** One tick, saved as it lands — the modal has no save button any more. */
-	setCategoryFood: async ({ request, locals }: IsolatedEvent) => {
-		const formData = await request.formData();
-		try {
-			setCategoryFood(
-				buildCtx(locals.user!.id),
-				Number(formData.get('id')),
-				formData.get('isFood') === 'true'
-			);
-			return { success: true, action: 'setCategoryFood' };
-		} catch (e) {
-			return toActionFailure(e);
-		}
-	},
+	setCategoryFood: formAction((ctx, formData) => {
+		setCategoryFood(ctx, Number(formData.get('id')), formData.get('isFood') === 'true');
+		return { success: true, action: 'setCategoryFood' };
+	}),
 
 	/** The owner's switch: the family sees the section and fills it. */
-	setCategoryShared: async ({ request, locals }: IsolatedEvent) => {
-		const formData = await request.formData();
-		try {
-			setCategoryShared(
-				buildCtx(locals.user!.id),
-				Number(formData.get('id')),
-				formData.get('shared') === 'true'
-			);
-			return { success: true, action: 'setCategoryShared' };
-		} catch (e) {
-			return toActionFailure(e);
-		}
-	},
+	setCategoryShared: formAction((ctx, formData) => {
+		setCategoryShared(ctx, Number(formData.get('id')), formData.get('shared') === 'true');
+		return { success: true, action: 'setCategoryShared' };
+	}),
 
-	renameCategory: async ({ request, locals }: IsolatedEvent) => {
-		const formData = await request.formData();
-		try {
-			renameCategory(buildCtx(locals.user!.id), Number(formData.get('id')), formData.get('name'));
-			return { success: true, action: 'renameCategory' };
-		} catch (e) {
-			return toActionFailure(e);
-		}
-	},
+	renameCategory: formAction((ctx, formData) => {
+		renameCategory(ctx, Number(formData.get('id')), formData.get('name'));
+		return { success: true, action: 'renameCategory' };
+	}),
 
 	/** The colour a category's cards wear. Empty takes it off. */
-	setCategoryColor: async ({ request, locals }: IsolatedEvent) => {
-		const formData = await request.formData();
-		try {
-			setCategoryColor(
-				buildCtx(locals.user!.id),
-				Number(formData.get('id')),
-				formData.get('color')
-			);
-			return { success: true, action: 'setCategoryColor' };
-		} catch (e) {
-			return toActionFailure(e);
-		}
-	},
+	setCategoryColor: formAction((ctx, formData) => {
+		setCategoryColor(ctx, Number(formData.get('id')), formData.get('color'));
+		return { success: true, action: 'setCategoryColor' };
+	}),
 
 	/** One place up (-1) or down (1) the order the cards are drawn in. */
-	moveCategory: async ({ request, locals }: IsolatedEvent) => {
-		const formData = await request.formData();
-		try {
-			moveCategory(
-				buildCtx(locals.user!.id),
-				Number(formData.get('id')),
-				Number(formData.get('delta'))
-			);
-			return { success: true, action: 'moveCategory' };
-		} catch (e) {
-			return toActionFailure(e);
-		}
-	},
+	moveCategory: formAction((ctx, formData) => {
+		moveCategory(ctx, Number(formData.get('id')), Number(formData.get('delta')));
+		return { success: true, action: 'moveCategory' };
+	}),
 
-	deleteCategory: async ({ request, locals }: IsolatedEvent) => {
-		const formData = await request.formData();
-		try {
-			deleteCategory(buildCtx(locals.user!.id), Number(formData.get('id')));
-			return { success: true, action: 'deleteCategory' };
-		} catch (e) {
-			return toActionFailure(e);
-		}
-	},
+	deleteCategory: formAction((ctx, formData) => {
+		deleteCategory(ctx, Number(formData.get('id')));
+		return { success: true, action: 'deleteCategory' };
+	}),
 
 	saveCategories: async ({ request, locals }: IsolatedEvent) => {
 		const formData = await request.formData();
@@ -202,58 +127,38 @@ export const inventoryActions = {
 	 * new form posted here and there was nothing here to post to, so the dialog
 	 * simply did nothing and said nothing about it.
 	 */
-	createCategory: async ({ request, locals }: IsolatedEvent) => {
-		const formData = await request.formData();
-		try {
-			createCategory(buildCtx(locals.user!.id), {
-				name: formData.get('label'),
-				isFood: formData.get('isFood') === 'true'
-			});
-			return { success: true, action: 'createCategory' };
-		} catch (e) {
-			return toActionFailure(e);
-		}
-	},
+	createCategory: formAction((ctx, formData) => {
+		createCategory(ctx, {
+			name: formData.get('label'),
+			isFood: formData.get('isFood') === 'true'
+		});
+		return { success: true, action: 'createCategory' };
+	}),
 
 	...itemHandlers,
 
-	createLocation: async ({ request, locals }: IsolatedEvent) => {
-		const formData = await request.formData();
-		try {
-			createLocation(buildCtx(locals.user!.id), {
-				name: formData.get('heading'),
-				parentId: formData.get('parentId'),
-				notes: formData.get('notes')
-			});
-			return { success: true, action: 'createLocation' };
-		} catch (e) {
-			return toActionFailure(e);
-		}
-	},
+	createLocation: formAction((ctx, formData) => {
+		createLocation(ctx, {
+			name: formData.get('heading'),
+			parentId: formData.get('parentId'),
+			notes: formData.get('notes')
+		});
+		return { success: true, action: 'createLocation' };
+	}),
 
-	updateLocation: async ({ request, locals }: IsolatedEvent) => {
-		const formData = await request.formData();
-		try {
-			updateLocation(buildCtx(locals.user!.id), Number(formData.get('id')), {
-				name: formData.get('heading'),
-				parentId: formData.get('parentId'),
-				notes: formData.get('notes')
-			});
-			return { success: true, action: 'updateLocation' };
-		} catch (e) {
-			return toActionFailure(e);
-		}
-	},
+	updateLocation: formAction((ctx, formData) => {
+		updateLocation(ctx, Number(formData.get('id')), {
+			name: formData.get('heading'),
+			parentId: formData.get('parentId'),
+			notes: formData.get('notes')
+		});
+		return { success: true, action: 'updateLocation' };
+	}),
 
-	deleteLocation: async ({ request, locals }: IsolatedEvent) => {
-		const formData = await request.formData();
-		try {
-			deleteLocation(buildCtx(locals.user!.id), Number(formData.get('id')));
-			return { success: true, action: 'deleteLocation' };
-		} catch (e) {
-			return toActionFailure(e);
-		}
-	},
+	deleteLocation: formAction((ctx, formData) => {
+		deleteLocation(ctx, Number(formData.get('id')));
+		return { success: true, action: 'deleteLocation' };
+	}),
 
 	/** Where the reader dragged the divider. Posted once, when they let go. */
 	setLocationPanelWidth: async ({ request, locals }: IsolatedEvent) => {

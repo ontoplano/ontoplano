@@ -7,6 +7,7 @@ import { error, fail } from '@sveltejs/kit';
 import { buildCtx } from '$lib/services/ctx';
 import { toActionFailure } from '$lib/http-errors';
 import { mediaLimits } from '$lib/services/media';
+import { formAction } from '$lib/services/scoped-actions';
 import {
 	addToAlbum,
 	albumPicturesDeep,
@@ -58,19 +59,9 @@ export const actions = {
 		}
 	},
 
-	addTo: async ({ request, locals }: IsolatedEvent) => {
-		const form = await request.formData();
-		try {
-			addToAlbum(
-				buildCtx(locals.user!.id),
-				Number(form.get('albumId')),
-				Number(form.get('mediaId'))
-			);
-			return { success: true };
-		} catch (e) {
-			return toActionFailure(e);
-		}
-	},
+	addTo: formAction((ctx, form) => {
+		addToAlbum(ctx, Number(form.get('albumId')), Number(form.get('mediaId')));
+	}),
 
 	move: async ({ request, locals, params }: IsolatedEvent) => {
 		const form = await request.formData();
@@ -97,26 +88,14 @@ export const actions = {
 		}
 	},
 
-	rename: async ({ request, locals }: IsolatedEvent) => {
-		const form = await request.formData();
-		try {
-			renamePicture(buildCtx(locals.user!.id), Number(form.get('mediaId')), {
-				name: form.get('heading'),
-				alt: form.get('alt')
-			});
-			return { success: true };
-		} catch (e) {
-			return toActionFailure(e);
-		}
-	},
+	rename: formAction((ctx, form) => {
+		renamePicture(ctx, Number(form.get('mediaId')), {
+			name: form.get('heading'),
+			alt: form.get('alt')
+		});
+	}),
 
-	tag: async ({ request, locals }: IsolatedEvent) => {
-		const form = await request.formData();
-		try {
-			tagPicture(buildCtx(locals.user!.id), Number(form.get('mediaId')), form.get('tags'));
-			return { success: true };
-		} catch (e) {
-			return toActionFailure(e);
-		}
-	}
+	tag: formAction((ctx, form) => {
+		tagPicture(ctx, Number(form.get('mediaId')), form.get('tags'));
+	})
 };

@@ -8,7 +8,6 @@
  */
 import type { IsolatedEvent } from '$lib/isolated/routes';
 import { buildCtx } from '$lib/services/ctx';
-import { toActionFailure } from '$lib/http-errors';
 import {
 	albumTree,
 	createAlbum,
@@ -22,6 +21,7 @@ import { mediaLimits } from '$lib/services/media';
 import { notebookMediaCount } from '$lib/services/notebook-media';
 import { unusedPictureCount } from '$lib/services/unused-media';
 import { fail } from '@sveltejs/kit';
+import { formAction } from '$lib/services/scoped-actions';
 
 /** The gallery opens on albums, because that is how anybody actually keeps pictures. */
 export const load = async ({ locals }: IsolatedEvent) => {
@@ -38,15 +38,9 @@ export const load = async ({ locals }: IsolatedEvent) => {
 };
 
 export const actions = {
-	create: async ({ request, locals }: IsolatedEvent) => {
-		const form = await request.formData();
-		try {
-			createAlbum(buildCtx(locals.user!.id), { name: form.get('heading') });
-			return { success: true };
-		} catch (e) {
-			return toActionFailure(e);
-		}
-	},
+	create: formAction((ctx, form) => {
+		createAlbum(ctx, { name: form.get('heading') });
+	}),
 
 	/*
 	 * A whole folder at once, with its subfolders as albums of their own.
@@ -62,33 +56,28 @@ export const actions = {
 	 * has seen the list and said go. A folder of two hundred photographs is
 	 * exactly where "18 in, 10 refused" after the fact is useless.
 	 */
-	planFolder: async ({ request, locals }: IsolatedEvent) => {
-		const form = await request.formData();
-		try {
-			const listed = JSON.parse(String(form.get('files') ?? '[]')) as {
-				path: string;
-				bytes: number;
-			}[];
-			if (!Array.isArray(listed) || listed.length === 0)
-				return fail(400, { message: 'Choose a folder first.' });
-			return {
-				success: true,
-				plan: planFolder(
-					buildCtx(locals.user!.id),
-					// One more than the ceiling is enough to say "and more" —
-					// a listing of a hundred thousand names is itself a body
-					// this has no reason to hold.
-					listed.slice(0, mediaLimits().importFiles + 1).map((f) => ({
-						path: String(f.path ?? ''),
-						bytes: Number(f.bytes ?? 0)
-					})),
-					{ under: String(form.get('under') ?? '').trim() || undefined }
-				)
-			};
-		} catch (e) {
-			return toActionFailure(e);
-		}
-	},
+	planFolder: formAction((ctx, form) => {
+		const listed = JSON.parse(String(form.get('files') ?? '[]')) as {
+			path: string;
+			bytes: number;
+		}[];
+		if (!Array.isArray(listed) || listed.length === 0)
+			return fail(400, { message: 'Choose a folder first.' });
+		return {
+			success: true,
+			plan: planFolder(
+				ctx,
+				// One more than the ceiling is enough to say "and more" —
+				// a listing of a hundred thousand names is itself a body
+				// this has no reason to hold.
+				listed.slice(0, mediaLimits().importFiles + 1).map((f) => ({
+					path: String(f.path ?? ''),
+					bytes: Number(f.bytes ?? 0)
+				})),
+				{ under: String(form.get('under') ?? '').trim() || undefined }
+			)
+		};
+	}),
 
 	/*
 	 * One batch of the tree, as bytes.
@@ -99,59 +88,42 @@ export const actions = {
 	 * file is read in turn rather than all at once, so the memory this holds
 	 * is one picture and not the batch.
 	 */
-	importFolder: async ({ request, locals }: IsolatedEvent) => {
-		const form = await request.formData();
-		try {
-			const limits = mediaLimits();
-			const files = form
-				.getAll('file')
-				.filter((f): f is File => f instanceof File && f.size > 0)
-				.slice(0, limits.importFiles);
-			const paths = form.getAll('path').map(String);
-			if (files.length === 0) return fail(400, { message: 'Choose a folder first.' });
+	importFolder: formAction(async (ctx, form) => {
+		const limits = mediaLimits();
+		const files = form
+			.getAll('file')
+			.filter((f): f is File => f instanceof File && f.size > 0)
+			.slice(0, limits.importFiles);
+		const paths = form.getAll('path').map(String);
+		if (files.length === 0) return fail(400, { message: 'Choose a folder first.' });
 
-			const read: { path: string; filename: string; bytes: Uint8Array }[] = [];
-			for (const [i, file] of files.entries()) {
-				// Over the ceiling never becomes a buffer: the service would
-				// refuse it, and reading it first is the cost without the use.
-				if (file.size > limits.maxBytes) continue;
-				read.push({
-					// The relative path when the picker gave one, else the bare name.
-					path: paths[i] || file.name,
-					filename: file.name,
-					bytes: new Uint8Array(await file.arrayBuffer())
-				});
-			}
-			const skippedBySize = files.length - read.length;
-
-			const result = await importFolder(buildCtx(locals.user!.id), read, {
-				under: String(form.get('under') ?? '').trim() || undefined
+		const read: { path: string; filename: string; bytes: Uint8Array }[] = [];
+		for (const [i, file] of files.entries()) {
+			// Over the ceiling never becomes a buffer: the service would
+			// refuse it, and reading it first is the cost without the use.
+			if (file.size > limits.maxBytes) continue;
+			read.push({
+				// The relative path when the picker gave one, else the bare name.
+				path: paths[i] || file.name,
+				filename: file.name,
+				bytes: new Uint8Array(await file.arrayBuffer())
 			});
-			return { success: true, ...result, skipped: result.skipped + skippedBySize };
-		} catch (e) {
-			return toActionFailure(e);
 		}
-	},
+		const skippedBySize = files.length - read.length;
 
-	rename: async ({ request, locals }: IsolatedEvent) => {
-		const form = await request.formData();
-		try {
-			renameAlbum(buildCtx(locals.user!.id), Number(form.get('id')), {
-				name: form.get('heading')
-			});
-			return { success: true };
-		} catch (e) {
-			return toActionFailure(e);
-		}
-	},
+		const result = await importFolder(ctx, read, {
+			under: String(form.get('under') ?? '').trim() || undefined
+		});
+		return { success: true, ...result, skipped: result.skipped + skippedBySize };
+	}),
 
-	delete: async ({ request, locals }: IsolatedEvent) => {
-		const form = await request.formData();
-		try {
-			deleteAlbum(buildCtx(locals.user!.id), Number(form.get('id')));
-			return { success: true };
-		} catch (e) {
-			return toActionFailure(e);
-		}
-	}
+	rename: formAction((ctx, form) => {
+		renameAlbum(ctx, Number(form.get('id')), {
+			name: form.get('heading')
+		});
+	}),
+
+	delete: formAction((ctx, form) => {
+		deleteAlbum(ctx, Number(form.get('id')));
+	})
 };

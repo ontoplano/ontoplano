@@ -1,7 +1,7 @@
 import type { IsolatedEvent } from '$lib/isolated/routes';
 import { buildCtx } from '$lib/services/ctx';
-import { toActionFailure } from '$lib/http-errors';
 import { getCurrency } from '$lib/services/settings';
+import { formAction } from '$lib/services/scoped-actions';
 import {
 	createRule,
 	deleteRule,
@@ -63,52 +63,28 @@ export const load = async ({ locals, url }: IsolatedEvent) => {
 };
 
 export const actions = {
-	create: async ({ request, locals }: IsolatedEvent) => {
-		const form = await request.formData();
-		try {
-			createRule(buildCtx(locals.user!.id), {
-				kind: form.get('kind'),
-				name: form.get('heading'),
-				pattern: form.get('pattern'),
-				color: form.get('color')
-			});
-			return { success: true };
-		} catch (e) {
-			return toActionFailure(e);
-		}
-	},
+	create: formAction((ctx, form) => {
+		createRule(ctx, {
+			kind: form.get('kind'),
+			name: form.get('heading'),
+			pattern: form.get('pattern'),
+			color: form.get('color')
+		});
+	}),
 
-	update: async ({ request, locals }: IsolatedEvent) => {
-		const form = await request.formData();
-		try {
-			updateRule(buildCtx(locals.user!.id), Number(form.get('id')), {
-				name: form.get('heading') ?? undefined,
-				pattern: form.get('pattern') ?? undefined,
-				color: form.get('color') ?? undefined
-			});
-			return { success: true };
-		} catch (e) {
-			return toActionFailure(e);
-		}
-	},
+	update: formAction((ctx, form) => {
+		updateRule(ctx, Number(form.get('id')), {
+			name: form.get('heading') ?? undefined,
+			pattern: form.get('pattern') ?? undefined,
+			color: form.get('color') ?? undefined
+		});
+	}),
 
-	move: async ({ request, locals }: IsolatedEvent) => {
-		const form = await request.formData();
-		try {
-			moveRule(buildCtx(locals.user!.id), Number(form.get('id')), Number(form.get('delta')));
-			return { success: true };
-		} catch (e) {
-			return toActionFailure(e);
-		}
-	},
+	move: formAction((ctx, form) => {
+		moveRule(ctx, Number(form.get('id')), Number(form.get('delta')));
+	}),
 
-	delete: async ({ request, locals }: IsolatedEvent) => {
-		const form = await request.formData();
-		try {
-			deleteRule(buildCtx(locals.user!.id), Number(form.get('id')));
-			return { success: true };
-		} catch (e) {
-			return toActionFailure(e);
-		}
-	}
+	delete: formAction((ctx, form) => {
+		deleteRule(ctx, Number(form.get('id')));
+	})
 };

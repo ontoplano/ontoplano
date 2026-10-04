@@ -2,7 +2,6 @@ import type { Actions } from './$types';
 import type { IsolatedEvent } from '$lib/isolated/routes';
 
 import { buildCtx } from '$lib/services/ctx';
-import { toActionFailure } from '$lib/http-errors';
 import {
 	MAX_AUDIO_NOTES_LENGTH,
 	audioLimits,
@@ -12,6 +11,7 @@ import {
 	remove
 } from '$lib/services/audio';
 import { createIdea } from '$lib/services/ideas';
+import { formAction } from '$lib/services/scoped-actions';
 
 /**
  * What the recordings tab needs, and the two things it can do without bytes.
@@ -42,28 +42,18 @@ export const load = async ({ locals }: IsolatedEvent) => {
 };
 
 export const actions: Actions = {
-	edit: async ({ request, locals }: IsolatedEvent) => {
-		const form = await request.formData();
-		try {
-			edit(buildCtx(locals.user!.id), Number(form.get('id')), {
-				name: form.get('label'),
-				notes: form.get('notes')
-			});
-			return { success: true, action: 'edit' };
-		} catch (e) {
-			return toActionFailure(e);
-		}
-	},
+	edit: formAction((ctx, form) => {
+		edit(ctx, Number(form.get('id')), {
+			name: form.get('label'),
+			notes: form.get('notes')
+		});
+		return { success: true, action: 'edit' };
+	}),
 
-	remove: async ({ request, locals }: IsolatedEvent) => {
-		const form = await request.formData();
-		try {
-			remove(buildCtx(locals.user!.id), Number(form.get('id')));
-			return { success: true, action: 'remove' };
-		} catch (e) {
-			return toActionFailure(e);
-		}
-	},
+	remove: formAction((ctx, form) => {
+		remove(ctx, Number(form.get('id')));
+		return { success: true, action: 'remove' };
+	}),
 
 	/**
 	 * The recording, as an idea.
@@ -75,16 +65,11 @@ export const actions: Actions = {
 	 * and idea forms already write, so it is one recording with something
 	 * pointing at it.
 	 */
-	toIdea: async ({ request, locals }: IsolatedEvent) => {
-		const form = await request.formData();
-		try {
-			createIdea(buildCtx(locals.user!.id), {
-				content: form.get('content'),
-				tags: form.get('tags')
-			});
-			return { success: true, action: 'toIdea' };
-		} catch (e) {
-			return toActionFailure(e);
-		}
-	}
+	toIdea: formAction((ctx, form) => {
+		createIdea(ctx, {
+			content: form.get('content'),
+			tags: form.get('tags')
+		});
+		return { success: true, action: 'toIdea' };
+	})
 };

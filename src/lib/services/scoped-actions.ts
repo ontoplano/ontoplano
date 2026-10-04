@@ -1,4 +1,32 @@
-import type { Actions } from '@sveltejs/kit';
+import type { Actions, RequestEvent } from '@sveltejs/kit';
+import { buildCtx, type Ctx } from './ctx.js';
+import { toActionFailure } from '$lib/http-errors';
+
+/** What a form handler needs of the request: the body, and who is signed in. */
+export type FormEvent = Pick<RequestEvent, 'request'> & {
+	locals: { user?: { id: string } | null };
+};
+
+/**
+ * A form action: the body read, the account's context built, the service
+ * called, and a service's refusal turned into the `fail()` the page shows.
+ *
+ * Every handler in the app did these four things by hand around one line of
+ * its own — two hundred and eighty copies of the same try/catch. What is left
+ * to write is the line: which service, with which fields. Returning nothing
+ * answers `{ success: true }`; returning something answers with that.
+ */
+export function formAction<T>(run: (ctx: Ctx, form: FormData, event: FormEvent) => T | Promise<T>) {
+	return async (event: FormEvent) => {
+		const form = await event.request.formData();
+		try {
+			const result = await run(buildCtx(event.locals.user!.id), form, event);
+			return result === undefined ? { success: true as const } : result;
+		} catch (e) {
+			return toActionFailure(e);
+		}
+	};
+}
 
 /**
  * A room's handlers, mounted under a prefix.

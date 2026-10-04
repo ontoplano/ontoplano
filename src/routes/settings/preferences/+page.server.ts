@@ -50,6 +50,7 @@ import {
 import { LOCALES, LOCALE_NAMES } from '$lib/i18n/locales';
 import { pickableNotebooks } from '$lib/services/notebooks';
 import { untranslatedCount } from '$lib/i18n/coverage';
+import { formAction } from '$lib/services/scoped-actions';
 
 /** Everything on this page belongs to the account, never to the instance (I9). */
 export const load = async ({ locals }: IsolatedEvent) => {
@@ -190,30 +191,20 @@ export const load = async ({ locals }: IsolatedEvent) => {
 
 export const actions = {
 	/** One row of the notifications list: whether it happens, and when. */
-	setNotification: async ({ request, locals }: IsolatedEvent) => {
-		const form = await request.formData();
-		try {
-			setNotification(buildCtx(locals.user!.id), form.get('id'), {
-				on: form.get('on') === 'on',
-				// Only the timed ones post this; the rest leave it alone rather
-				// than writing an empty string over an hour somebody chose.
-				at: form.get('at') ?? undefined
-			});
-			return { success: true, action: 'setNotification' };
-		} catch (e) {
-			return toActionFailure(e);
-		}
-	},
+	setNotification: formAction((ctx, form) => {
+		setNotification(ctx, form.get('id'), {
+			on: form.get('on') === 'on',
+			// Only the timed ones post this; the rest leave it alone rather
+			// than writing an empty string over an hour somebody chose.
+			at: form.get('at') ?? undefined
+		});
+		return { success: true, action: 'setNotification' };
+	}),
 
-	setErrorReports: async ({ request, locals }: IsolatedEvent) => {
-		const formData = await request.formData();
-		try {
-			host.setClientErrorReports(buildCtx(locals.user!.id), formData.get('decision'));
-			return { success: true, action: 'setErrorReports' };
-		} catch (e) {
-			return toActionFailure(e);
-		}
-	},
+	setErrorReports: formAction((ctx, formData) => {
+		host.setClientErrorReports(ctx, formData.get('decision'));
+		return { success: true, action: 'setErrorReports' };
+	}),
 
 	saveCurrency: async ({ request, locals }: IsolatedEvent) => {
 		const formData = await request.formData();
@@ -234,32 +225,22 @@ export const actions = {
 	 * The capture wheel's wedges and notebook. Posted from this page and from
 	 * the gear beside the wheel itself, which is the same form in a dialog.
 	 */
-	saveCapture: async ({ request, locals }: IsolatedEvent) => {
-		const formData = await request.formData();
-		try {
-			saveCaptureSettings(buildCtx(locals.user!.id), {
-				notebookId: formData.get('notebookId'),
-				order: formData.getAll('kind'),
-				on: formData.getAll('on')
-			});
-			return { success: true, action: 'saveCapture' };
-		} catch (e) {
-			return toActionFailure(e);
-		}
-	},
+	saveCapture: formAction((ctx, formData) => {
+		saveCaptureSettings(ctx, {
+			notebookId: formData.get('notebookId'),
+			order: formData.getAll('kind'),
+			on: formData.getAll('on')
+		});
+		return { success: true, action: 'saveCapture' };
+	}),
 
-	saveGridHours: async ({ request, locals }: IsolatedEvent) => {
-		const formData = await request.formData();
-		try {
-			saveGridHours(buildCtx(locals.user!.id), {
-				start: formData.get('start'),
-				end: formData.get('end')
-			});
-			return { success: true, action: 'saveGridHours' };
-		} catch (e) {
-			return toActionFailure(e);
-		}
-	},
+	saveGridHours: formAction((ctx, formData) => {
+		saveGridHours(ctx, {
+			start: formData.get('start'),
+			end: formData.get('end')
+		});
+		return { success: true, action: 'saveGridHours' };
+	}),
 
 	/**
 	 * The menu: its order, what is put away, and the colours. One form.

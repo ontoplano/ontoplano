@@ -17,7 +17,6 @@ import {
 import { getHiddenSections, getUserSetting, setUserSetting } from '$lib/services/settings';
 import { buildCtx, localDateOf } from '$lib/services/ctx';
 import { createEntry, latestEntry, listTags } from '$lib/services/diary';
-import { toActionFailure } from '$lib/http-errors';
 import { listActiveOn } from '$lib/services/goals';
 import { listHabits, today as todayOf } from '$lib/services/habits';
 import { generateInstances, listInstances, type Occurrence } from '$lib/services/instances';
@@ -33,6 +32,7 @@ import { listTodos } from '$lib/services/todos';
 import { listWins, saveWins } from '$lib/services/wins';
 import { addDays, getMonday } from '$lib/services/week-generator';
 import { localDay, minutesOfDay } from '$lib/services/time';
+import { formAction } from '$lib/services/scoped-actions';
 
 /**
  * How far ahead the planner card looks.
@@ -314,31 +314,19 @@ export const load = async ({ locals }: IsolatedEvent) => {
 };
 
 export const actions = {
-	createDiaryEntry: async ({ request, locals }: IsolatedEvent) => {
-		const formData = await request.formData();
-		try {
-			createEntry(buildCtx(locals.user!.id), {
-				content: formData.get('content'),
-				tags: formData.get('tags')
-			});
-			return { success: true };
-		} catch (e) {
-			return toActionFailure(e);
-		}
-	},
+	createDiaryEntry: formAction((ctx, formData) => {
+		createEntry(ctx, {
+			content: formData.get('content'),
+			tags: formData.get('tags')
+		});
+	}),
 
-	saveWins: async ({ request, locals }: IsolatedEvent) => {
-		const formData = await request.formData();
-		try {
-			saveWins(buildCtx(locals.user!.id), {
-				forDate: formData.get('forDate'),
-				contents: [formData.get('win_1'), formData.get('win_2'), formData.get('win_3')]
-			});
-			return { success: true };
-		} catch (e) {
-			return toActionFailure(e);
-		}
-	},
+	saveWins: formAction((ctx, formData) => {
+		saveWins(ctx, {
+			forDate: formData.get('forDate'),
+			contents: [formData.get('win_1'), formData.get('win_2'), formData.get('win_3')]
+		});
+	}),
 
 	setLayout: async ({ request, locals }: IsolatedEvent) => {
 		const formData = await request.formData();
