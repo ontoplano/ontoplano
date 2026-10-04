@@ -20,6 +20,8 @@ releases mattered.
 
 ## 0.185.6 — 2026-10-04
 
+- Ratings confirmed on a task card stay put while they save. Another change
+  finishing at the same moment could briefly put the old bars back.
 - Pages answer faster. Bills, activities, the notebook shelf and the tag
   suggestions are each read in one go instead of once per row, the server
   keeps its settings file and the language's words between pages rather than
