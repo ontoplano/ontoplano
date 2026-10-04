@@ -35,15 +35,6 @@
 		...hits.slice(0, 12).map((hit) => ({ sort: 'thing' as const, hit }))
 	]);
 
-	function show() {
-		palette.open = true;
-		query = '';
-		hits = [];
-		cursor = 0;
-		// The input only exists once the dialog has rendered.
-		queueMicrotask(() => input?.focus());
-	}
-
 	function hide() {
 		palette.open = false;
 	}
@@ -54,23 +45,15 @@
 			e.target instanceof HTMLTextAreaElement ||
 			e.target instanceof HTMLSelectElement;
 
+		// Opening is the shell's: it asks `opensPalette` on every key and loads
+		// this component on the first yes. Here is only what happens once open.
+		if (!palette.open) return;
+
 		if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
 			e.preventDefault();
-			if (palette.open) hide();
-			else show();
+			hide();
 			return;
 		}
-
-		// `/` as well, because Ctrl+K is the browser's own search box in Firefox
-		// and this should not be a fight over a key. Only when nothing is being
-		// typed into, which is the same guard every other shortcut here uses.
-		if (!palette.open && e.key === '/' && !typing && !e.metaKey && !e.ctrlKey && !e.altKey) {
-			e.preventDefault();
-			show();
-			return;
-		}
-
-		if (!palette.open) return;
 
 		if (e.key === 'Escape') {
 			e.preventDefault();
@@ -109,9 +92,14 @@
 		await goto(row.sort === 'place' ? row.place.href : row.hit.href);
 	}
 
-	// It can also be opened from outside, by the header button.
+	// Opened from outside — the shell's shortcut, the header button — so every
+	// opening starts clean, and the input only exists once the dialog has drawn.
 	$effect(() => {
-		if (palette.open) queueMicrotask(() => input?.focus());
+		if (!palette.open) return;
+		query = '';
+		hits = [];
+		cursor = 0;
+		queueMicrotask(() => input?.focus());
 	});
 
 	// Debounced, and only once there is enough to be worth asking about.

@@ -33,6 +33,9 @@ releases mattered.
   danger button.
 - The order a list is read in is remembered the same way in every room. Goals,
   habits and recipes start from their default order once after this update.
+- A first visit downloads less: the guided tour, the search palette and the
+  report form are fetched the first time they are opened rather than with
+  every page.
 
 ## 0.185.5 — 2026-10-03
 
