@@ -18,6 +18,14 @@ the shape of the data changing. Bumping the minor per batch is what ran this
 file to 0.161 in a few months, which tells a reader nothing about which
 releases mattered.
 
+## 0.185.6 — 2026-10-04
+
+- Pages answer faster. Bills, activities, the notebook shelf and the tag
+  suggestions are each read in one go instead of once per row, the server
+  keeps its settings file and the language's words between pages rather than
+  reading them again for every one, and the timezone picker in Preferences no
+  longer recomputes every zone's offset on each visit.
+
 ## 0.185.5 — 2026-10-03
 
 - A task written from the quick menu opens as wide as the Tasks page's own

@@ -259,9 +259,10 @@ export function listBillsThisPeriod(
 	history: BillHistory;
 })[] {
 	recordAutomaticPayments(ctx);
+	const payments = paymentsByBill(ctx);
 	return listBills(ctx, opts).map((bill) => {
 		const period = periodFor(bill.rhythm, ctx.now);
-		const entries = listPayments(ctx, bill.id);
+		const entries = payments.get(bill.id) ?? [];
 		const settled = entries.find((payment) => payment.period === period);
 		return {
 			...bill,
@@ -672,6 +673,31 @@ export function listPayments(ctx: Ctx, billId: number): BillPayment[] {
 }
 
 /**
+ * Every payment of every bill this account holds, by bill, in one statement.
+ *
+ * The lists that show several bills at once asked `listPayments` of each in
+ * turn — two statements per bill, one of them an ownership check the list
+ * had already made — so the Finance room, the plan and the reminders page
+ * each cost two statements per bill the account had. Ownership is the
+ * `user_id` in the `WHERE`; a bill with no payments is simply absent.
+ */
+function paymentsByBill(ctx: Ctx): Map<number, BillPayment[]> {
+	const byBill = new Map<number, BillPayment[]>();
+	const rows = db
+		.select()
+		.from(billPayments)
+		.where(eq(billPayments.userId, ctx.userId))
+		.orderBy(desc(billPayments.period))
+		.all();
+	for (const row of rows) {
+		const held = byBill.get(row.billId);
+		if (held) held.push(payment(row));
+		else byBill.set(row.billId, [payment(row)]);
+	}
+	return byBill;
+}
+
+/**
  * The bills answered for in one period — paid or skipped — in one statement.
  *
  * The dashboard's card asked `listPayments` of every monthly bill in turn, two
@@ -879,9 +905,10 @@ export function billsDueBetween(ctx: Ctx, from: string, to: string): BillDue[] {
 	);
 	if (active.length === 0) return [];
 
+	const payments = paymentsByBill(ctx);
 	const settled = new Map(
 		active
-			.flatMap((b) => listPayments(ctx, b.id))
+			.flatMap((b) => payments.get(b.id) ?? [])
 			.map((p) => [`${p.billId}|${p.period}`, p.status] as const)
 	);
 

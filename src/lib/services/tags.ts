@@ -14,6 +14,7 @@ import {
 	todoTasks
 } from '$lib/db/schema';
 import { eq, and, count, inArray, isNotNull, notInArray, sql } from 'drizzle-orm';
+import { unionAll } from 'drizzle-orm/sqlite-core';
 import { NotFoundError, ValidationError } from './errors.js';
 import { optionalStr, str } from './validate.js';
 
@@ -752,16 +753,20 @@ export function tagsByNotebook(userId: string): Record<number, string[]> {
 		byNotebook.set(notebookId, names);
 	};
 
-	for (const { join, owner, thing } of FILED) {
-		const rows = db
+	/*
+	 * The four kinds in one statement — this runs on every request, for the
+	 * shell, so four round trips through the query builder were four per page.
+	 */
+	const [first, ...rest] = FILED.map(({ join, owner, thing }) =>
+		db
 			.selectDistinct({ notebookId: thing.notebookId, name: tags.name })
 			.from(join)
 			.innerJoin(thing, and(eq(thing.id, owner), eq(thing.userId, userId)))
 			.innerJoin(tags, and(eq(tags.id, join.tagId), eq(tags.userId, userId)))
 			.where(and(eq(join.userId, userId), isNotNull(thing.notebookId)))
-			.all();
-		for (const row of rows) add(row.notebookId, row.name);
-	}
+	);
+	const rows = rest.length === 0 ? first.all() : unionAll(first, ...rest).all();
+	for (const row of rows) add(row.notebookId, row.name);
 
 	const defaults = db
 		.select({ id: notebooks.id, defaultTags: notebooks.defaultTags })
