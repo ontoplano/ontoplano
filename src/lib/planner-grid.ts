@@ -187,10 +187,6 @@ export function parseLocalDate(dateStr: string): Date {
 	return new Date(`${dateStr}T00:00:00`);
 }
 
-export function formatLocalDate(d: Date): string {
-	return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-}
-
 /**
  * Whether an event belongs on this day's list.
  *
@@ -203,9 +199,9 @@ export function fallsOn(
 	date: string
 ): boolean {
 	if (!(event.start instanceof Date)) return false;
-	const first = formatLocalDate(event.start);
+	const first = localDay(event.start);
 	if (!event.allDay || !(event.end instanceof Date)) return first === date;
-	const after = formatLocalDate(event.end);
+	const after = localDay(event.end);
 	return first <= date && (date < after || date === first);
 }
 
@@ -744,10 +740,7 @@ export function baseGridOptions(
 	};
 
 	/** A block's own date, in the same `YYYY-MM-DD` the server speaks. */
-	const dateOf = (start: Date) =>
-		`${start.getFullYear()}-${String(start.getMonth() + 1).padStart(2, '0')}-${String(
-			start.getDate()
-		).padStart(2, '0')}`;
+	const dateOf = localDay;
 
 	/**
 	 * The corner mark: a tick for done, an empty box for not.
@@ -931,14 +924,6 @@ export function baseGridOptions(
  */
 function weekdayShort(date: Date, locale: string | undefined): string {
 	return date.toLocaleDateString(locale, { weekday: 'short' }).replace(/\.+$/, '');
-}
-
-/** A `YYYY-MM-DD` shifted by whole days, staying a civil date. */
-export function addDaysStr(date: string, days: number): string {
-	const d = parseLocalDate(date);
-	d.setDate(d.getDate() + days);
-	const pad = (n: number) => String(n).padStart(2, '0');
-	return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 }
 
 /** 'HH:MM' or 'HH:MM:SS' as minutes past midnight. */

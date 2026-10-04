@@ -74,6 +74,7 @@
 	import type { Todo } from '$lib/services/todos';
 	import type { TodoActionNames } from '$lib/todo-actions';
 	import { useT } from '$lib/i18n';
+	import { localDay } from '$lib/services/time';
 	import type { PlainKey } from '$lib/i18n/keys';
 
 	const t = useT();
@@ -1209,10 +1210,6 @@
 		// Each task is asked afresh: a reminder carried over from the last one
 		// is a nudge nobody asked for about something else.
 		delegateLead = 0;
-	}
-
-	function formatDate(d: Date): string {
-		return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 	}
 
 	function handleKeydown(e: KeyboardEvent) {
@@ -2523,7 +2520,7 @@
 							name="date"
 							type="date"
 							required
-							value={formatDate(new Date())}
+							value={localDay(new Date())}
 							class="input"
 						/>
 					</Field>

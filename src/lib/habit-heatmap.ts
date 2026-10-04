@@ -1,3 +1,4 @@
+import { localDay } from './services/time.js';
 /**
  * The arithmetic behind a habit's year at a glance.
  *
@@ -49,7 +50,7 @@ export function buildHeatmapWeeks(days: number, firstDay: number): string[][] {
 	let week: string[] = [];
 
 	while (current <= endDay || week.length > 0) {
-		const dateStr = `${current.getFullYear()}-${String(current.getMonth() + 1).padStart(2, '0')}-${String(current.getDate()).padStart(2, '0')}`;
+		const dateStr = localDay(current);
 		week.push(dateStr);
 
 		if (week.length === 7) {

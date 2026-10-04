@@ -24,7 +24,7 @@ import {
 } from './slots.js';
 import { NotFoundError, ValidationError } from './errors.js';
 // `created` is also a local counter in this file, hence the alias.
-import { created as createdStamp, stamp, addDays, localDay, pad2 } from './time.js';
+import { created as createdStamp, stamp, addDays, localDay, toLocalISOString } from './time.js';
 import { TIME_PATTERN, num, optionalStr, str } from './validate.js';
 import {
 	activities,
@@ -87,15 +87,6 @@ export type Occurrence = {
 	/** The block's attributes, as stored. See `services/task-attributes.ts`. */
 	attributes: string;
 };
-
-/** 'YYYY-MM-DDTHH:MM:SS' in local time. Defined here rather than imported from
- * week-generator, which imports this module. */
-function localISO(d: Date): string {
-	return (
-		`${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}` +
-		`T${pad2(d.getHours())}:${pad2(d.getMinutes())}:${pad2(d.getSeconds())}`
-	);
-}
 
 function atLocal(date: string, startTime: string): string {
 	return `${date}T${startTime}:00`;
@@ -198,8 +189,8 @@ function repairDriftedDays(ctx: Ctx, fromStr: string): void {
 export function generateInstances(ctx: Ctx, from: Date, to: Date): number {
 	const fromDate = localDay(from);
 	const toDate = localDay(to);
-	const fromStr = localISO(new Date(from.getFullYear(), from.getMonth(), from.getDate()));
-	const toStr = localISO(new Date(to.getFullYear(), to.getMonth(), to.getDate()));
+	const fromStr = toLocalISOString(new Date(from.getFullYear(), from.getMonth(), from.getDate()));
+	const toStr = toLocalISOString(new Date(to.getFullYear(), to.getMonth(), to.getDate()));
 
 	let created = 0;
 
@@ -348,8 +339,8 @@ export function generateForDate(ctx: Ctx, date: Date): number {
  * exclusive, both dates rather than datetimes.
  */
 export function listInstances(ctx: Ctx, from: Date, to: Date): Occurrence[] {
-	const fromStr = localISO(new Date(from.getFullYear(), from.getMonth(), from.getDate()));
-	const toStr = localISO(new Date(to.getFullYear(), to.getMonth(), to.getDate()));
+	const fromStr = toLocalISOString(new Date(from.getFullYear(), from.getMonth(), from.getDate()));
+	const toStr = toLocalISOString(new Date(to.getFullYear(), to.getMonth(), to.getDate()));
 
 	const slotActivities = alias(activities, 'i_slot_activities');
 	const oneOffActivities = alias(activities, 'i_oneoff_activities');

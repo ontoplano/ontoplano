@@ -1,36 +1,11 @@
 import type { Ctx } from './ctx.js';
-import { addDays } from './time.js';
+import { addDays, toLocalISOString } from './time.js';
 
-// Still exported from here: the planner's callers have always found it here.
-export { addDays };
+// Still exported from here: the planner's callers have always found them here.
+export { addDays, toLocalISOString };
 import { generateInstances } from './instances.js';
 
 /** Format a Date as 'YYYY-MM-DDTHH:MM:SS' in local time (no UTC conversion). */
-/**
- * A Date as a naive `YYYY-MM-DDTHH:MM:SS`, with no zone.
- *
- * This is for **wall-clock** values only — `task_records.scheduled_at` and
- * the day bounds compared against it. Instants are UTC and come from
- * `services/time.ts`; writing one of those with this function is finding S7
- * all over again.
- */
-export function toLocalISOString(d: Date): string {
-	const pad = (n: number) => String(n).padStart(2, '0');
-	return (
-		d.getFullYear() +
-		'-' +
-		pad(d.getMonth() + 1) +
-		'-' +
-		pad(d.getDate()) +
-		'T' +
-		pad(d.getHours()) +
-		':' +
-		pad(d.getMinutes()) +
-		':' +
-		pad(d.getSeconds())
-	);
-}
-
 /** Get ISO 8601 week number for a date. */
 export function getISOWeekNumber(date: Date): number {
 	const d = new Date(date);

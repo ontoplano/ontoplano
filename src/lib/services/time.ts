@@ -175,6 +175,17 @@ export function addDays(date: Date, days: number): Date {
 	return d;
 }
 
+/**
+ * A Date as a naive `YYYY-MM-DDTHH:MM:SS`, with no zone.
+ *
+ * For **wall-clock** values only — `task_records.scheduled_at` and the day
+ * bounds compared against it. Instants are UTC and come from `stamp()`;
+ * writing one of those with this is finding S7 all over again.
+ */
+export function toLocalISOString(d: Date): string {
+	return `${localDay(d)}T${pad2(d.getHours())}:${pad2(d.getMinutes())}:${pad2(d.getSeconds())}`;
+}
+
 /** Local midnight of the day the instant falls on. */
 export function startOfDay(d: Date): Date {
 	return new Date(d.getFullYear(), d.getMonth(), d.getDate());

@@ -64,6 +64,7 @@
 	import { Calendar, DayGrid, TimeGrid, Interaction } from '@event-calendar/core';
 	import '@event-calendar/core/index.css';
 	import { useT } from '$lib/i18n';
+	import { localDay, shiftDay } from '$lib/services/time';
 	import { WEEKDAYS } from '$lib/bill-summary';
 	import { say } from '$lib/said.svelte';
 	import { notify } from '$lib/notify.svelte';
@@ -82,7 +83,6 @@
 	];
 	import {
 		baseGridOptions,
-		addDaysStr,
 		buildSlotEventsForDates,
 		MAX_BLOCK_NOTES,
 		occurrenceKey,
@@ -94,7 +94,6 @@
 		decodeEventId,
 		weekdayToDate,
 		fallsOn,
-		formatLocalDate,
 		describeGridEvent,
 		eventFitsText,
 		GRID_ZOOM_LEVELS,
@@ -913,7 +912,7 @@
 	function startWeekOn(weekday: number) {
 		let shift = (weekday - weekStartWeekday + 7) % 7;
 		if (shift > 3) shift -= 7;
-		if (shift !== 0) goToRange(addDaysStr(data.range.from, shift));
+		if (shift !== 0) goToRange(shiftDay(data.range.from, shift));
 	}
 
 	/*
@@ -1510,7 +1509,7 @@
 	 * belong to the previous month; the fourth row never does.
 	 */
 	function monthLabel(from: string): string {
-		return dayOf(`${addDaysStr(from, 21)}T12:00:00`, now(), {
+		return dayOf(`${shiftDay(from, 21)}T12:00:00`, now(), {
 			day: undefined,
 			month: 'long',
 			year: 'numeric'
@@ -2250,7 +2249,7 @@
 	 * date can be in the previous month — handing that to the calendar renders
 	 * the wrong month. Three weeks in is always the right one.
 	 */
-	const monthAnchor = $derived(addDaysStr(data.range.from, 21));
+	const monthAnchor = $derived(shiftDay(data.range.from, 21));
 
 	const gridOptions = $derived({
 		...baseGridOptions(effectiveView === 'month' ? monthAnchor : gridFrom, {
@@ -2320,7 +2319,7 @@
 			(props.kind === 'slot' || props.kind === 'exceptional') &&
 			typeof props.refId === 'number'
 		) {
-			void toggleMark(String(props.kind), props.refId, formatLocalDate(info.event.start));
+			void toggleMark(String(props.kind), props.refId, localDay(info.event.start));
 			return;
 		}
 		if (props.kind === 'bill') {
@@ -2333,7 +2332,7 @@
 			const slot = findSlot(decoded.refId);
 			if (!slot) return;
 			// The occurrence that was clicked is what "skip this day" acts on.
-			selectOffsetForDate(formatLocalDate(info.event.start));
+			selectOffsetForDate(localDay(info.event.start));
 			startEdit(slot);
 		} else {
 			const exc = findExceptional(decoded.refId);
@@ -2358,10 +2357,10 @@
 		}
 
 		const placement = placementFromDates(info.start, info.end);
-		selectOffsetForDate(formatLocalDate(info.start));
+		selectOffsetForDate(localDay(info.start));
 		prefillTime = placement.startTime;
 		prefillDuration = placement.durationMinutes;
-		startNew(repeat, formatLocalDate(info.start));
+		startNew(repeat, localDay(info.start));
 		tick().then(() => createFormEl?.scrollIntoView({ block: 'center', behavior: 'smooth' }));
 	}
 
@@ -2532,7 +2531,7 @@
 				body.set('weekday', String(placement.weekday));
 				const rule = parseRecurrence((source as Slot).recurrence);
 				if (rule.kind !== 'weekly') setRecurrenceFields(body, reanchor(rule, moved));
-			} else body.set('date', formatLocalDate(moved));
+			} else body.set('date', localDay(moved));
 
 			const result = await postGridAction(
 				decoded.kind === 'slot' ? 'update' : 'updateExceptional',
@@ -2599,15 +2598,15 @@
 		}
 
 		const placement = placementFromDates(info.event.start, info.event.end);
-		const toDate = formatLocalDate(info.event.start);
+		const toDate = localDay(info.event.start);
 
 		// Where the occurrence was before the drag. Taken from the event rather
 		// than derived from the slot's weekday: with non-weekly recurrence a
 		// block can appear on several dates in the window, and only the calendar
 		// knows which one was picked up.
 		const fromDate = info.oldEvent
-			? formatLocalDate(info.oldEvent.start)
-			: formatLocalDate(weekdayToDate(data.range.from, slot.weekday));
+			? localDay(info.oldEvent.start)
+			: localDay(weekdayToDate(data.range.from, slot.weekday));
 
 		// The original disappears and a one-off appears; both arrive from the
 		// server rather than being guessed at here.
@@ -2629,7 +2628,7 @@
 	async function duplicateBlock(info: DragInfo) {
 		const decoded = decodeEventId(info.event.id);
 		const placement = placementFromDates(info.event.start, info.event.end);
-		const date = formatLocalDate(info.event.start);
+		const date = localDay(info.event.start);
 		// The dragged copy is only a gesture; the original stays put and the new
 		// block arrives from the server.
 		info.revert();
@@ -2712,7 +2711,7 @@
 		}
 
 		const placement = placementFromDates(info.event.start, info.event.end);
-		const date = formatLocalDate(info.event.start);
+		const date = localDay(info.event.start);
 
 		// Captured before the write, while `source` still says where it was.
 		pushUndo({
