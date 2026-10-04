@@ -1037,9 +1037,11 @@
 		root.dataset.tourPending = '';
 		const timer = setTimeout(() => {
 			tourOffered = true;
-			void startTour();
 			// Once it is on screen, so "no longer pending" means "open or not coming".
-			void tick().then(() => delete root.dataset.tourPending);
+			// The tour is fetched on first use, so that is after the fetch, not a tick.
+			void startTour()
+				.then(tick)
+				.finally(() => delete root.dataset.tourPending);
 		}, 500);
 		return () => {
 			clearTimeout(timer);
