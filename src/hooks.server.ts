@@ -358,6 +358,9 @@ const handleSiteHint: Handle = async ({ event, resolve }) => {
 	return resolve(event);
 };
 
+/** The placeholders `app.html` carries, filled per request below. */
+const PAGE_STAMPS = /%ontoplano\.(lang|theme|style|mark|appname)%/g;
+
 /**
  * Stamp the user's theme and language into <html> before anything renders.
  *
@@ -397,14 +400,12 @@ const handleTheme: Handle = ({ event, resolve }) => {
 	const mark = isStaging() ? '-staging' : isDemo() ? '-demo' : dev ? '-dev' : '';
 	const appname = appName();
 
+	// One pass over the page rather than five: the page carries its whole
+	// stylesheet inline, so each pass is a quarter of a megabyte scanned.
+	const stamps: Record<string, string> = { lang: locale, theme, style, mark, appname };
 	return resolve(event, {
 		transformPageChunk: ({ html }) =>
-			html
-				.replace('%ontoplano.lang%', locale)
-				.replace('%ontoplano.theme%', theme)
-				.replace('%ontoplano.style%', style)
-				.replaceAll('%ontoplano.mark%', mark)
-				.replaceAll('%ontoplano.appname%', appname)
+			html.replace(PAGE_STAMPS, (whole, name: string) => stamps[name] ?? whole)
 	});
 };
 

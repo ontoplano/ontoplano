@@ -10,7 +10,25 @@
 import type { Catalogue } from './core.js';
 import type { Locale } from './locales.js';
 
-export async function loadCatalogue(locale: Locale): Promise<Catalogue> {
+/**
+ * Each language once: the import is a module-system lookup that the server
+ * paid on every page it rendered, and the words do not change while the
+ * process runs.
+ */
+const held = new Map<Locale, Promise<Catalogue>>();
+
+export function loadCatalogue(locale: Locale): Promise<Catalogue> {
+	let loading = held.get(locale);
+	if (!loading) {
+		loading = importCatalogue(locale);
+		// A fetch that failed is not an answer to keep: the next ask tries again.
+		loading.catch(() => held.delete(locale));
+		held.set(locale, loading);
+	}
+	return loading;
+}
+
+async function importCatalogue(locale: Locale): Promise<Catalogue> {
 	switch (locale) {
 		case 'pt-BR':
 			return (await import('./catalogues/pt-BR.js')).messages;

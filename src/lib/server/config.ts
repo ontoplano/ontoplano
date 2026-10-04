@@ -1,7 +1,7 @@
 import { DEFAULT_PICTURE_KILOBYTES, DEFAULT_UNDO_SECONDS } from '$lib/instance-defaults.js';
 import { DEFAULT_PRICING } from '$lib/plans.js';
 import { SOURCE_LOCALE, isLocale, type Locale } from '$lib/i18n/locales.js';
-import { readFileSync, mkdirSync, writeFileSync, existsSync } from 'node:fs';
+import { readFileSync, mkdirSync, writeFileSync, existsSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { homedir } from 'node:os';
 
@@ -425,6 +425,7 @@ export function ensureDirectories(): void {
 export function ensureConfig(): void {
 	ensureDirectories();
 	if (!existsSync(configFile())) {
+		forgetConfig();
 		writeFileSync(configFile(), DEFAULT_CONFIG, 'utf-8');
 	}
 }
@@ -556,6 +557,7 @@ export function saveConfig(config: OntoplanoConfig): void {
 	const had = existsSync(configFile())
 		? pathAlreadyInTheFile(readFileSync(configFile(), 'utf-8'))
 		: null;
+	forgetConfig();
 	writeFileSync(configFile(), toToml(config, had), 'utf-8');
 }
 
@@ -602,6 +604,7 @@ function grow(config: OntoplanoConfig, content: string): void {
 	if (missing.length === 0) return;
 
 	try {
+		forgetConfig();
 		writeFileSync(configFile(), toToml(config, had), 'utf-8');
 		// stderr, not stdout: scripts read this process's output, and a
 		// diagnostic that lands in the middle of it is a broken script.
@@ -616,9 +619,41 @@ function grow(config: OntoplanoConfig, content: string): void {
 	}
 }
 
+/**
+ * The parsed file, kept until the file changes.
+ *
+ * `loadConfig` is asked half a dozen times per request — the shell, the media
+ * limits, the access holds, the error-report switch — and each ask read and
+ * parsed the file again. The file's size and modification time are the key:
+ * a write by this process goes through `forgetConfig` below, and a write by
+ * hand changes the stamp. The directory is part of the key too, because the
+ * tests move it.
+ */
+let configHeld: { file: string; size: number; mtimeMs: number; config: OntoplanoConfig } | null =
+	null;
+
+/** The file was written: the next read parses it again. */
+function forgetConfig(): void {
+	configHeld = null;
+}
+
 export function loadConfig(): OntoplanoConfig {
 	ensureConfig();
+	const file = configFile();
+	const stamp = statSync(file);
+	if (
+		configHeld &&
+		configHeld.file === file &&
+		configHeld.size === stamp.size &&
+		configHeld.mtimeMs === stamp.mtimeMs
+	)
+		return configHeld.config;
+	const config = readConfig();
+	configHeld = { file, size: stamp.size, mtimeMs: stamp.mtimeMs, config };
+	return config;
+}
 
+function readConfig(): OntoplanoConfig {
 	const content = readFileSync(configFile(), 'utf-8');
 	const parsed = parseToml(content);
 
