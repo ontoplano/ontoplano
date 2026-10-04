@@ -17,6 +17,8 @@ import { readFileSync } from 'node:fs';
 describe('replaying a window', () => {
 	const config = readFileSync('src/lib/server/config.ts', 'utf8');
 	const endpoint = readFileSync('src/routes/api/jobs/reminders/+server.ts', 'utf8');
+	// The gate every job endpoint is wrapped in — see `$lib/server/jobs`.
+	const gate = readFileSync('src/lib/server/jobs.ts', 'utf8');
 
 	test('is off unless the instance says otherwise', () => {
 		// The shipped template, which is what a fresh instance writes out.
@@ -35,9 +37,11 @@ describe('replaying a window', () => {
 	});
 
 	test('still needs the health token, as the whole endpoint does', () => {
-		expect(endpoint).toMatch(/tokenMatches\(want, given\)/);
-		// The token check comes first: an unauthorised caller learns nothing
-		// about whether this instance allows a replay.
-		expect(endpoint.indexOf('tokenMatches')).toBeLessThan(endpoint.indexOf('jobReplay'));
+		expect(endpoint).toMatch(/jobEndpoint\(/);
+		expect(gate).toMatch(/tokenMatches\(want, given\)/);
+		// The token check comes first: the gate refuses before it runs the
+		// handler, so an unauthorised caller learns nothing about whether this
+		// instance allows a replay.
+		expect(gate.indexOf('tokenMatches')).toBeLessThan(gate.indexOf('await run('));
 	});
 });

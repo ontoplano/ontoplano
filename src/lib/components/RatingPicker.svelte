@@ -283,7 +283,7 @@
 				aria-label={t('ratingPicker.leaveUnanswered', {
 					rating: t(RATING_LABELS[rating]).toLowerCase()
 				})}
-				class="-my-1 shrink-0 px-1.5 py-1 text-sm leading-none text-gray-500 hover:text-gray-900 disabled:invisible"
+				class="-my-1 shrink-0 px-1.5 py-1 text-sm leading-none text-gray-400 hover:text-gray-900 disabled:invisible"
 			>
 				×
 			</button>

@@ -283,7 +283,7 @@
 					? 'border-gray-900 bg-gray-50'
 					: 'border-gray-200 hover:border-gray-400'}"
 			>
-				<span class={kind === option ? 'text-gray-900' : 'text-gray-500'}>
+				<span class={kind === option ? 'text-gray-900' : 'text-gray-400'}>
 					<Icon name={CHOICES[option].glyph} size={44} />
 				</span>
 				<span class="text-base font-bold text-gray-900">{t(CHOICES[option].label)}</span>

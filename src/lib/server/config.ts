@@ -629,8 +629,29 @@ function grow(config: OntoplanoConfig, content: string): void {
  * hand changes the stamp. The directory is part of the key too, because the
  * tests move it.
  */
-let configHeld: { file: string; size: number; mtimeMs: number; config: OntoplanoConfig } | null =
-	null;
+let configHeld: {
+	file: string;
+	size: number;
+	mtimeMs: number;
+	environment: string;
+	config: OntoplanoConfig;
+} | null = null;
+
+/**
+ * The environment the file is read against, as one string.
+ *
+ * Every `ONTOPLANO_*` variable may override a line of the file, and the
+ * database path comes from `DATABASE_URL`, so a config read under one
+ * environment is not the answer under another — the tests flip
+ * `ONTOPLANO_SELF_HOST` between cases, and a served instance's environment
+ * is fixed for the life of the process, so this costs a cheap string per read.
+ */
+function configEnvironment(): string {
+	const lines = [`DATABASE_URL=${process.env.DATABASE_URL ?? ''}`];
+	for (const name of Object.keys(process.env).sort())
+		if (name.startsWith('ONTOPLANO_')) lines.push(`${name}=${process.env[name]}`);
+	return lines.join('\n');
+}
 
 /** The file was written: the next read parses it again. */
 function forgetConfig(): void {
@@ -641,15 +662,17 @@ export function loadConfig(): OntoplanoConfig {
 	ensureConfig();
 	const file = configFile();
 	const stamp = statSync(file);
+	const environment = configEnvironment();
 	if (
 		configHeld &&
 		configHeld.file === file &&
 		configHeld.size === stamp.size &&
-		configHeld.mtimeMs === stamp.mtimeMs
+		configHeld.mtimeMs === stamp.mtimeMs &&
+		configHeld.environment === environment
 	)
 		return configHeld.config;
 	const config = readConfig();
-	configHeld = { file, size: stamp.size, mtimeMs: stamp.mtimeMs, config };
+	configHeld = { file, size: stamp.size, mtimeMs: stamp.mtimeMs, environment, config };
 	return config;
 }
 

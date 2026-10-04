@@ -78,7 +78,7 @@
 						{:else if part.type === 'dynamic-tool'}
 							<!-- What it touched, named — a chat that works your plan in
 							     silence is a chat you cannot trust. -->
-							<p class="font-mono text-xs text-gray-500">
+							<p class="font-mono text-xs text-gray-400">
 								{t('assistant.usedTool', { tool: part.toolName })}
 							</p>
 						{/if}
@@ -88,7 +88,7 @@
 		{/each}
 
 		{#if chat.status === 'submitted'}
-			<p class="text-sm text-gray-500">{t('assistant.thinking')}</p>
+			<p class="text-sm text-gray-400">{t('assistant.thinking')}</p>
 		{/if}
 
 		{#if chat.status === 'error'}

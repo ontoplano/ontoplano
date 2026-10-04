@@ -2,7 +2,7 @@ import { and, eq } from 'drizzle-orm';
 
 import { db } from '$lib/db/index.js';
 import { dailyWins } from '$lib/db/schema.js';
-import { localDateOf, type Ctx, chosenDay } from './ctx.js';
+import { type Ctx, chosenDay } from './ctx.js';
 import { created, stamps } from './time.js';
 import { str } from './validate.js';
 
