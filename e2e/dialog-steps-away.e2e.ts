@@ -70,6 +70,57 @@ test('a refused save brings the dialog back, with what was typed and why', async
 	await expect(dialog.locator('[name="heading"]')).toHaveValue('this one is refused');
 });
 
+/**
+ * The refusal is said in the dialog and nowhere else.
+ *
+ * A notebook's own goal dialog was handed no error, so a target of zero came
+ * back as a banner under the tabs — the page's own — while the dialog
+ * returned saying nothing. The dialog is where the fields are, so the
+ * reason belongs in it; and the page's banner stays down while a dialog is
+ * away, so the moment before the dialog steps back in cannot flash it.
+ */
+test('a refusal is said in the dialog, never under the tabs', async ({ page }) => {
+	test.setTimeout(180_000);
+	await register(page, testEmail('dialog-no-flash'));
+	const origin = new URL(page.url()).origin;
+	await page.request.post('/notebooks?/create', {
+		headers: { Origin: origin, 'x-sveltekit-action': 'true' },
+		form: { heading: 'The kitchen', modules: 'notes,tasks,goals' }
+	});
+	await visit(page, '/notebooks');
+	await page.getByRole('button', { name: /^Goals \d/ }).click();
+	await page.getByRole('button', { name: 'New goal', exact: true }).click();
+	const form = page.locator('#notebook-goal-form');
+	await expect(form).toBeVisible({ timeout: 30_000 });
+	await form.locator('[name="heading"]').first().fill('Read more');
+	await form.getByRole('button', { name: 'Add measure' }).click();
+	await form.locator('[name="targetValue"]').first().fill('0');
+
+	// Watched from inside the page, every frame from the press until the
+	// refusal is on screen: a screenshot would miss a flash of one frame.
+	await page.evaluate(() => {
+		const w = window as unknown as { __flashed?: boolean };
+		w.__flashed = false;
+		const look = () => {
+			const onPage = [...document.querySelectorAll('main .banner.error')].some(
+				(el) => !el.closest('dialog') && el.textContent?.includes('more than zero')
+			);
+			if (onPage) w.__flashed = true;
+			requestAnimationFrame(look);
+		};
+		look();
+	});
+	await page.getByRole('button', { name: 'Create goal' }).click();
+
+	const dialog = page.locator('dialog[open]');
+	await expect(dialog).toContainText('Target has to be more than zero', { timeout: 10_000 });
+	await expect(dialog.locator('[name="heading"]')).toHaveValue('Read more');
+	expect(
+		await page.evaluate(() => (window as unknown as { __flashed?: boolean }).__flashed),
+		'the refusal showed under the tabs'
+	).toBe(false);
+});
+
 test('the opener pressed again while the save is out opens a fresh dialog', async ({ page }) => {
 	test.setTimeout(180_000);
 	await register(page, testEmail('dialog-again'));

@@ -18,6 +18,14 @@ the shape of the data changing. Bumping the minor per batch is what ran this
 file to 0.161 in a few months, which tells a reader nothing about which
 releases mattered.
 
+## 0.185.7 — 2026-10-04
+
+- A goal refused from a notebook's own New goal dialog — a target of zero, say
+  — says why inside the dialog, with what was typed still there, instead of
+  flashing the reason under the tabs behind it.
+- The administration page's cards sit inside the room's gutter on every side,
+  instead of touching the tab strip along the top.
+
 ## 0.185.6 — 2026-10-04
 
 - Ratings confirmed on a task card stay put while they save. Another change

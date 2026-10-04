@@ -139,6 +139,13 @@
 		activities = [],
 		composing = $bindable(false),
 		/**
+		 * What the page's last action refused, for whichever dialog here sent
+		 * it. A dialog saved from its footer steps away and comes back only to
+		 * say why; without this the reason had nowhere to land but the page's
+		 * own banner, under the tabs, while the dialog came back saying nothing.
+		 */
+		error = null,
+		/**
 		 * The New button for whichever tab is showing, for the page to draw.
 		 *
 		 * It lives in the page's own header — the card's corner on the index, the
@@ -242,6 +249,7 @@
 		activities?: { id: number; name: string }[];
 		/** Whether the composer is open, so a page can put the button elsewhere. */
 		composing?: boolean;
+		error?: string | null;
 		newAction?: { label: string; labels: string[]; run?: () => void; href?: string } | undefined;
 		linkAction?: { label: string; run: () => void } | undefined;
 	} = $props();
@@ -2553,6 +2561,7 @@
 <Modal
 	open={listifying !== null}
 	onclose={() => (listifying = null)}
+	{error}
 	title={t('notebookDetail.makeTodosOfThisNote')}
 	size="md"
 >
@@ -2615,6 +2624,7 @@
 	bind:open={composingGoal}
 	title={editingGoal ? t('goals.editGoal') : t('notebookDetail.newGoal')}
 	onclose={() => (editingGoalId = null)}
+	{error}
 >
 	<!-- Only ever opened from a notebook's own header, so there is one. -->
 	<form
@@ -2672,6 +2682,7 @@
 	bind:open={composingIdea}
 	title={editedIdea ? t('ui.edit') : t('notebooks.newIdea')}
 	onclose={closeIdeaForm}
+	{error}
 >
 	<form
 		id="notebook-idea-form"
@@ -2717,7 +2728,12 @@
 -->
 {#if notebook && composingModule}
 	{@const module = composingModule}
-	<Modal open title={t(NEW_LABELS[module] ?? 'ui.add')} onclose={() => (composingModule = null)}>
+	<Modal
+		open
+		title={t(NEW_LABELS[module] ?? 'ui.add')}
+		onclose={() => (composingModule = null)}
+		{error}
+	>
 		<form
 			id="notebook-module-form"
 			method="post"

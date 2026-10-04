@@ -688,6 +688,7 @@
 								todos={data.todos}
 								allTodos={data.allTodos}
 								activities={data.activities}
+								error={form?.message ?? null}
 								bind:composing
 								bind:newAction
 								bind:linkAction

@@ -361,6 +361,7 @@
 	onclick={handleClick}
 	aria-label={title}
 	class:docked={dock === 'side'}
+	data-away={away ? '' : undefined}
 	style="--modal-width: calc({WIDTHS[size]} + {widened}px)"
 >
 	{#if open || away}
