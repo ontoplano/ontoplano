@@ -339,7 +339,8 @@ await write(
 	].join('\n')
 );
 
-for (const locale of LOCALES) {
+// Not for the source language: nothing is borrowed from itself, and nothing reads it.
+for (const locale of LOCALES.filter((one) => one !== SOURCE_LOCALE)) {
 	await write(
 		`src/lib/i18n/borrowed/${locale}.ts`,
 		[

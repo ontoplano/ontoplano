@@ -29,7 +29,7 @@ function bulletsOf(body: string): string[] {
 }
 
 /** Every version in the changelog with its bullets, newest first. */
-export function changelogSections(changelog: string): { version: string; lines: string[] }[] {
+function changelogSections(changelog: string): { version: string; lines: string[] }[] {
 	const parts = changelog.split(/\n(?=## \d+\.\d+\.\d+ — )/);
 	return parts.flatMap((part) => {
 		const heading = HEADING.exec(part);

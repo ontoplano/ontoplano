@@ -3,6 +3,7 @@
 	import { resolve } from '$app/paths';
 	import type { PageServerData } from './$types';
 	import { useT } from '$lib/i18n';
+	import Banner from '$lib/components/Banner.svelte';
 
 	const t = useT();
 
@@ -103,9 +104,7 @@
 <div class="flex min-h-screen items-center justify-center bg-gray-100">
 	<div class="w-full max-w-md p-8 text-center">
 		{#if failed}
-			<p class="text-sm text-red-600">
-				{failure || t('buy.thePaymentWindowCouldNot')}
-			</p>
+			<Banner kind="error" message={failure || t('buy.thePaymentWindowCouldNot')} />
 		{:else}
 			<p class="text-sm text-gray-500">{t('buy.openingTheSecurePaymentWindow')}</p>
 		{/if}

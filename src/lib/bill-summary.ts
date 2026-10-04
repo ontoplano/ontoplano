@@ -53,7 +53,7 @@ export const MONTHS = [
 ];
 
 /** The rhythm's own word, not the key it is under. */
-export function rhythmLabel(t: Translate, rhythm: string): string {
+function rhythmLabel(t: Translate, rhythm: string): string {
 	const found = RHYTHMS.find((one) => one.value === rhythm);
 	return found ? t(found.label) : rhythm;
 }

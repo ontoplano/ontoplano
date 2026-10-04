@@ -59,7 +59,7 @@
 			>
 				<input type="checkbox" name="mayDelete" value="on" class="mt-0.5" />
 				<span>
-					<strong class="font-semibold text-red-600">{t('oauth.andLetItDeleteThings')}</strong>
+					<strong class="font-semibold text-gray-900">{t('oauth.andLetItDeleteThings')}</strong>
 					<span class="mt-0.5 block text-xs leading-relaxed text-gray-500">
 						{t('oauth.whatItDeletesIsGone')}
 					</span>

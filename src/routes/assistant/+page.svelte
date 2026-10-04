@@ -7,6 +7,7 @@
 	import OneLine from '$lib/components/OneLine.svelte';
 	import { resolve } from '$app/paths';
 	import { useT } from '$lib/i18n';
+	import Banner from '$lib/components/Banner.svelte';
 	import type { PageServerData } from './$types';
 
 	const t = useT();
@@ -77,7 +78,7 @@
 						{:else if part.type === 'dynamic-tool'}
 							<!-- What it touched, named — a chat that works your plan in
 							     silence is a chat you cannot trust. -->
-							<p class="font-mono text-xs text-gray-400">
+							<p class="font-mono text-xs text-gray-500">
 								{t('assistant.usedTool', { tool: part.toolName })}
 							</p>
 						{/if}
@@ -87,16 +88,16 @@
 		{/each}
 
 		{#if chat.status === 'submitted'}
-			<p class="text-sm text-gray-400">{t('assistant.thinking')}</p>
+			<p class="text-sm text-gray-500">{t('assistant.thinking')}</p>
 		{/if}
 
 		{#if chat.status === 'error'}
-			<p class="text-sm text-red-600">
+			<Banner kind="error">
 				{t('assistant.didNotGoThrough')}
 				<button type="button" class="ml-2 underline" onclick={() => chat.regenerate()}>
 					{t('assistant.tryAgain')}
 				</button>
-			</p>
+			</Banner>
 		{/if}
 
 		<div bind:this={floor}></div>

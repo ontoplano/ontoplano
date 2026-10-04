@@ -44,12 +44,12 @@ export function parentFolder(folder: string): string {
 }
 
 /** A folder's own name, without the path in front of it. */
-export function folderName(folder: string): string {
+function folderName(folder: string): string {
 	return folderSegments(folder).at(-1) ?? '';
 }
 
 /** Whether `folder` is `ancestor` itself or somewhere inside it. */
-export function isInsideFolder(folder: string, ancestor: string): boolean {
+function isInsideFolder(folder: string, ancestor: string): boolean {
 	return folder === ancestor || folder.startsWith(ancestor + FOLDER_SEPARATOR);
 }
 

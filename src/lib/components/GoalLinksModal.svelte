@@ -154,7 +154,7 @@
 									checked={goal.linkedTodoIds.includes(t.id)}
 									class="h-3 w-3"
 								/>
-								<span class={'status' in t && t.status === 'done' ? 'text-gray-400' : ''}
+								<span class={'status' in t && t.status === 'done' ? 'text-gray-500' : ''}
 									>{t.title}</span
 								>
 							</label>

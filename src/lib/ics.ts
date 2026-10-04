@@ -149,7 +149,7 @@ function isZone(name: string): boolean {
  * (`/mozilla.org/20050126_1/Europe/Berlin`). A feed's own `VTIMEZONE` blocks
  * are not read — every zone they describe is one of these.
  */
-export function zoneOf(tzid: string): string | null {
+function zoneOf(tzid: string): string | null {
 	const name = tzid.trim();
 	if (WINDOWS_ZONES[name]) return WINDOWS_ZONES[name];
 	if (name.includes('/') && isZone(name)) return name;

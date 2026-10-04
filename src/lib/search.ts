@@ -112,8 +112,6 @@ const KIND_ALIASES: Record<string, SearchKind[]> = {
 	activities: ['activity']
 };
 
-export const SEARCH_PREFIXES = [...Object.keys(KIND_ALIASES), 'in'].sort();
-
 export function parseQuery(raw: string): ParsedQuery {
 	let kinds: SearchKind[] | null = null;
 	let notebook: string | null = null;

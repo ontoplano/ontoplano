@@ -126,20 +126,11 @@ export type { PlanTier, ClientConfig, WebhookOutcome } from './contract.js';
  * one-provider rule tripping over the store's billing. Null is the ordinary
  * answer: a self-hosted copy, a dev machine, an instance not in the store.
  */
-let registeredPlay: PlayChannel | null = null;
-
-/** For a script outside Vite, the way `useProvider` is. */
-export function usePlayChannel(channel: PlayChannel): void {
-	registeredPlay = channel;
-	cachedPlay = undefined;
-}
-
 let cachedPlay: PlayChannel | null | undefined;
 
 export function playChannel(): PlayChannel | null {
 	if (cachedPlay === undefined) {
-		cachedPlay =
-			registeredPlay ?? Object.values(found).find((m) => m?.playChannel)?.playChannel ?? null;
+		cachedPlay = Object.values(found).find((m) => m?.playChannel)?.playChannel ?? null;
 	}
 	return cachedPlay;
 }

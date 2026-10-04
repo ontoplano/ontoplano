@@ -1444,7 +1444,7 @@
 							>
 								<button
 									onclick={() => hideCard(id)}
-									class="card-control pointer-events-auto hover:text-red-600"
+									class="card-control pointer-events-auto hover:text-gray-900"
 									title={t('home.hideThisCard')}
 									aria-label={t('home.hideCard', { card: t(card.label) })}
 								>

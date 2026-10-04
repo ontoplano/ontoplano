@@ -77,7 +77,7 @@ export type Manifest = Record<string, ManifestTool>;
  * and the answer to a call using it says the same; a deprecation that names
  * no release is refused by the manifest test.
  */
-export function removalOf(description: unknown): string | undefined {
+function removalOf(description: unknown): string | undefined {
 	if (typeof description !== 'string') return undefined;
 	return /removed in (\d+(?:\.\d+)+)/i.exec(description)?.[1];
 }

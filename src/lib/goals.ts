@@ -29,7 +29,7 @@ export const HORIZON_LABELS: Record<Horizon, PlainKey> = {
 	year: 'goals.year'
 };
 
-export const GOAL_STATUSES = ['open', 'achieved', 'missed', 'abandoned'] as const;
+const GOAL_STATUSES = ['open', 'achieved', 'missed', 'abandoned'] as const;
 export type GoalStatus = (typeof GOAL_STATUSES)[number];
 
 export function isHorizon(v: unknown): v is Horizon {

@@ -16,11 +16,6 @@ export const NUMBER_KINDS = [
 	{ whole: false, symbol: 'ℚ', word: 'goals.kindMeasured', label: 'app.fractionsMeasuredTypedIn' }
 ] as const;
 
-/** The symbol for one of them, for a control that shows the current choice. */
-export function numberSymbol(whole: boolean): string {
-	return whole ? 'ℤ' : 'ℚ';
-}
-
 /**
  * How much one press of a stepper moves a counted number.
  *

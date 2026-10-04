@@ -172,7 +172,7 @@ const guardedConnector: buildConnector.connector = (opts, cb) => {
  */
 const MAX_SOCKETS_PER_HOST = 8;
 
-export const publicDispatcher: Dispatcher = new Agent({
+const publicDispatcher: Dispatcher = new Agent({
 	connect: guardedConnector,
 	connections: MAX_SOCKETS_PER_HOST
 });

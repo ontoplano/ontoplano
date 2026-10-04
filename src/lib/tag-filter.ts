@@ -30,7 +30,7 @@ export type TagFilter = {
 export const NO_TAG_FILTER: TagFilter = { include: [], exclude: [], mode: 'any' };
 
 /** The query parameters a filter is written into, so it survives a reload. */
-export const TAG_QUERY = { include: 'tag', exclude: 'nottag', mode: 'tagmode' } as const;
+const TAG_QUERY = { include: 'tag', exclude: 'nottag', mode: 'tagmode' } as const;
 
 /** Whether this filter narrows anything at all. */
 export function isTagFiltering(filter: TagFilter): boolean {

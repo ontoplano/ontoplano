@@ -4509,10 +4509,7 @@
 									}}
 								>
 									<input type="hidden" name="id" value={editingBlockId} />
-									<button
-										type="submit"
-										class="border border-red-300 bg-red-50 px-3 py-2 text-sm font-medium text-red-700 transition hover:bg-red-100"
-									>
+									<button type="submit" class="btn btn-danger">
 										{editingKind === 'slot'
 											? t('tasks.plan.deleteEveryWeekConfirm')
 											: t('tasks.plan.deleteConfirm')}

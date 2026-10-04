@@ -15,7 +15,7 @@
 export const NOTE_ORDERS = ['written', 'title', 'edited'] as const;
 export type NoteOrder = (typeof NOTE_ORDERS)[number];
 
-export const NOTE_DIRECTIONS = ['asc', 'desc'] as const;
+const NOTE_DIRECTIONS = ['asc', 'desc'] as const;
 export type NoteDirection = (typeof NOTE_DIRECTIONS)[number];
 
 /**

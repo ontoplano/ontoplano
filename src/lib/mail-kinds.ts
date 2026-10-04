@@ -8,7 +8,7 @@
  *
  * Not under `server/` because the page that lists failures is a component.
  */
-export const MAIL_KINDS = {
+const MAIL_KINDS = {
 	verification: 'Address confirmation',
 	'password-reset': 'Password reset',
 	'address-change': 'Address change',

@@ -56,7 +56,7 @@ export const OBJECT_ROOMS = {
 
 export type ObjectKind = keyof typeof OBJECT_ROOMS;
 
-export function isObjectKind(kind: string): kind is ObjectKind {
+function isObjectKind(kind: string): kind is ObjectKind {
 	return Object.hasOwn(OBJECT_ROOMS, kind);
 }
 

@@ -35,7 +35,7 @@ import type { Referrer, ReferrerKind } from './media-referrers';
  */
 
 /** Which grant each kind of referrer answers to. `null` is "no grant reaches it". */
-export const SCOPE_OF: Record<ReferrerKind, string | null> = {
+const SCOPE_OF: Record<ReferrerKind, string | null> = {
 	note: 'notes:read',
 	// A notebook's own picture answers to the same grant its notes do: it is
 	// what the notebook is, and somebody who may read the notebook may see it.

@@ -2165,7 +2165,7 @@
 									-->
 								<span
 									class="min-w-0 text-sm font-medium break-words {isDone(todo)
-										? 'text-gray-400'
+										? 'text-gray-500'
 										: 'text-gray-900'}">{todo.title}</span
 								>
 								<!-- Its category, worn after the title rather than as a bar in

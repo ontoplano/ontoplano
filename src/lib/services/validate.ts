@@ -100,7 +100,7 @@ export function jsonObject(value: unknown, field: string, maxBytes: number): str
  * Stream slugs are used in URLs and namespaced by producer, e.g.
  * `scale.weight`. Lowercase, dot-separated segments.
  */
-export const SLUG_PATTERN = /^[a-z0-9]+(?:[-_][a-z0-9]+)*(?:\.[a-z0-9]+(?:[-_][a-z0-9]+)*)*$/;
+const SLUG_PATTERN = /^[a-z0-9]+(?:[-_][a-z0-9]+)*(?:\.[a-z0-9]+(?:[-_][a-z0-9]+)*)*$/;
 
 export function slug(value: unknown, field: string): string {
 	return str(value, field, { max: 64, pattern: SLUG_PATTERN });

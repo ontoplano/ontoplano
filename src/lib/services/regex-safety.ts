@@ -22,7 +22,7 @@
  */
 
 /** The most a `{n,m}` may ask for before it is a denial of service in itself. */
-export const MAX_REPETITION = 20;
+const MAX_REPETITION = 20;
 
 /** Characters a first-set is tested against. Enough to catch real overlap. */
 const SAMPLES = ['a', 'z', 'A', 'Z', '0', '9', ' ', '-', '_', '.', '/', '@'];

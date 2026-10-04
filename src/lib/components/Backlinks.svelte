@@ -45,7 +45,7 @@
 				class="inline-flex items-center gap-1 hover:text-gray-900 hover:underline {goal.status ===
 				'open'
 					? ''
-					: 'text-gray-400'}"
+					: 'text-gray-500'}"
 				title={goal.status === 'open' ? 'Goal' : `Goal — ${goal.status}`}
 			>
 				<Icon name="goals" size={12} />
