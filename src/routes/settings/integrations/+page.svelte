@@ -23,6 +23,7 @@
 	import PermissionGrid from '$lib/components/PermissionGrid.svelte';
 	import { whyNot } from '$lib/capabilities';
 	import { useT } from '$lib/i18n';
+	import { callLine } from '$lib/assistant-calls';
 
 	const t = useT();
 	const now = useWhen();
@@ -219,19 +220,6 @@ bearer_token_env_var = "ONTOPLANO_KEY"
 			{ name: '', note: chosen.note ?? '', wrap: chosen.wrap, text: chosen.text ?? '' }
 		]
 	);
-
-	/** One legible line per call: whatever names the thing, never the raw JSON. */
-	function callLine(one: {
-		args: Record<string, unknown>;
-		before: unknown;
-		destroyed: boolean;
-	}): string {
-		const from = { ...(one.args ?? {}), ...((one.before as Record<string, unknown>) ?? {}) };
-		const said = [from.title, from.name, from.label, from.content, from.message].find(
-			(v) => typeof v === 'string' && v.trim()
-		);
-		return typeof said === 'string' ? said.slice(0, 80) : '';
-	}
 </script>
 
 <div class="space-y-4">

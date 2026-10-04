@@ -25,6 +25,7 @@
 	import type { PageServerData, ActionData } from './$types';
 	import RecipeCard from '$lib/components/RecipeCard.svelte';
 	import { useT } from '$lib/i18n';
+	import { RememberedOrder } from '$lib/remembered-order.svelte';
 
 	const t = useT();
 
@@ -66,41 +67,22 @@
 		minutes: 'health.recipes.orderMinutes',
 		cooked: 'health.recipes.orderCooked'
 	};
-	/** Where this browser keeps the order it was last given. */
-	const ORDER_KEY = 'recipes.order';
-	let order = $state<Order>('title');
-	let direction = $state<'asc' | 'desc'>('asc');
-	$effect(() => {
-		try {
-			const kept = JSON.parse(localStorage.getItem(ORDER_KEY) ?? 'null');
-			if (kept && ORDERS.includes(kept.order)) order = kept.order;
-			if (kept?.direction === 'asc' || kept?.direction === 'desc') direction = kept.direction;
-		} catch {
-			/* A private window keeps nothing; the default order stands. */
-		}
-	});
-	function keepOrder() {
-		try {
-			localStorage.setItem(ORDER_KEY, JSON.stringify({ order, direction }));
-		} catch {
-			/* As above. */
-		}
-	}
+	const sorting = new RememberedOrder<Order>('recipes', ORDERS, 'title');
 
 	type Recipe = (typeof data.recipes)[number];
 	function compare(a: Recipe, b: Recipe): number {
 		/* A recipe with no time, or never cooked, sorts after every one that has. */
-		const last = direction === 'asc' ? Infinity : -Infinity;
+		const last = sorting.direction === 'asc' ? Infinity : -Infinity;
 		const by =
-			order === 'missing'
+			sorting.order === 'missing'
 				? a.missing - b.missing
-				: order === 'minutes'
+				: sorting.order === 'minutes'
 					? (a.minutes ?? last) - (b.minutes ?? last)
-					: order === 'cooked'
+					: sorting.order === 'cooked'
 						? (a.lastCookedAt ?? '').localeCompare(b.lastCookedAt ?? '')
 						: 0;
 		const tie = a.title.localeCompare(b.title);
-		return (direction === 'asc' ? 1 : -1) * (by || tie) || 0;
+		return (sorting.direction === 'asc' ? 1 : -1) * (by || tie) || 0;
 	}
 
 	const visible = $derived.by(() => {
@@ -205,18 +187,12 @@
 			{/snippet}
 			{#snippet trailing()}
 				<SortControl
-					value={order}
+					value={sorting.order}
 					options={ORDERS}
 					labels={ORDER_LABELS}
-					{direction}
-					onpick={(next) => {
-						order = next;
-						keepOrder();
-					}}
-					onflip={() => {
-						direction = direction === 'asc' ? 'desc' : 'asc';
-						keepOrder();
-					}}
+					direction={sorting.direction}
+					onpick={(next) => sorting.pick(next)}
+					onflip={() => sorting.flip()}
 					label={t('health.recipes.orderRecipesBy')}
 				/>
 			{/snippet}

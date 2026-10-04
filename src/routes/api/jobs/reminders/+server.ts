@@ -1,10 +1,8 @@
 import { json } from '@sveltejs/kit';
-import type { RequestHandler } from './$types';
 import { loadConfig } from '$lib/server/config';
-import { tokenMatches } from '$lib/server/services/health';
+import { jobEndpoint } from '$lib/server/jobs';
 import { deliverDueReminders } from '$lib/server/services/reminder-delivery';
 import { notifyAssistantBursts } from '$lib/server/services/assistant-notify';
-import { markJobRan } from '$lib/server/services/companions';
 
 /**
  * The minute's reminders, done by the process that is already running.
@@ -18,22 +16,9 @@ import { markJobRan } from '$lib/server/services/companions';
  * that could possibly be right.
  *
  * The app has the code loaded and the database open. Asking it costs a request.
- *
- * Behind the health token, which the box already has for `/healthz`: this
- * writes and sends, so it is not for the public. Absent token, absent
- * endpoint — never open, whatever is misconfigured.
+ * The token gate and the stamp the instance page reads are `jobEndpoint`'s.
  */
-export const POST: RequestHandler = async ({ request, url }) => {
-	const want = process.env.ONTOPLANO_HEALTH_TOKEN ?? '';
-	const given = request.headers.get('x-health-token') ?? url.searchParams.get('token');
-
-	// No token set means no way in, rather than a way in for everybody.
-	if (!want || !tokenMatches(want, given)) return json({ ok: false }, { status: 404 });
-
-	// The instance page reads this stamp: "last asked a minute ago" is the
-	// honest answer to "are reminders running", whoever is doing the asking.
-	markJobRan('reminders');
-
+export const POST = jobEndpoint('reminders', async (url) => {
 	/*
 	 * The moment to work from, if the caller names one and the instance allows
 	 * it.
@@ -79,5 +64,5 @@ export const POST: RequestHandler = async ({ request, url }) => {
 		failed: String(error)
 	}));
 
-	return json({ ok: true, ...result, assistants });
-};
+	return { ...result, assistants };
+});

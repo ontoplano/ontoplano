@@ -26,6 +26,7 @@
 	import type { StreamDisplay, StreamKind } from '$lib/services/streams';
 	import type { PlainKey } from '$lib/i18n/keys';
 	import { useT } from '$lib/i18n';
+	import { callLine } from '$lib/assistant-calls';
 
 	const t = useT();
 	const now = useWhen();
@@ -100,22 +101,6 @@
 		const says = data.webhookEvents.find((e) => e.key === key)?.says;
 		return says ? t(says) : key;
 	};
-
-	/**
-	 * One legible line per assistant call: whatever names the thing best, from
-	 * the state it replaced or the arguments — never the raw JSON.
-	 */
-	function callLine(one: {
-		args: Record<string, unknown>;
-		before: unknown;
-		destroyed: boolean;
-	}): string {
-		const from = { ...(one.args ?? {}), ...((one.before as Record<string, unknown>) ?? {}) };
-		const said = [from.title, from.name, from.label, from.content, from.message].find(
-			(v) => typeof v === 'string' && v.trim()
-		);
-		return typeof said === 'string' ? said.slice(0, 80) : '';
-	}
 
 	/**
 	 * The two things somebody pastes, with the token already in them.

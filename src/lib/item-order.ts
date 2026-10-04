@@ -14,10 +14,6 @@ export type ItemDirection = 'asc' | 'desc';
 
 export const DEFAULT_ITEM_ORDER: ItemOrder = 'added';
 
-/** Where the choice is kept: a way of looking at a list, not a fact about the account. */
-export const ITEM_ORDER_KEY = 'ontoplano:inventory-order';
-export const ITEM_DIRECTION_KEY = 'ontoplano:inventory-direction';
-
 export const ITEM_ORDER_LABELS: Record<ItemOrder, PlainKey> = {
 	added: 'inventory.orderAdded',
 	name: 'inventory.orderName',

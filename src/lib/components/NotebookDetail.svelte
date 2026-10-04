@@ -37,13 +37,8 @@
 	import {
 		DEFAULT_NOTE_ORDER,
 		defaultDirectionFor,
-		NOTE_DIRECTION_KEY,
 		NOTE_ORDERS,
-		NOTE_ORDER_KEY,
-		isNoteDirection,
-		isNoteOrder,
 		orderNotes,
-		type NoteDirection,
 		type NoteOrder
 	} from '$lib/note-order';
 	import TodoRows from '$lib/components/TodoRows.svelte';
@@ -85,6 +80,7 @@
 	import { renderMarkdown } from '$lib/markdown';
 	import { say } from '$lib/said.svelte';
 	import { useT } from '$lib/i18n';
+	import { RememberedOrder } from '$lib/remembered-order.svelte';
 	import { describeRecurrence, parseRecurrence } from '$lib/recurrence';
 	import type { PlainKey } from '$lib/i18n/keys';
 
@@ -1008,46 +1004,12 @@
 	 * comparison itself lives in `$lib/note-order.ts`, where it can be tested
 	 * without a page.
 	 */
-	let noteOrder = $state<NoteOrder>(DEFAULT_NOTE_ORDER);
-	let noteDirection = $state<NoteDirection>(defaultDirectionFor(DEFAULT_NOTE_ORDER));
-
-	$effect(() => {
-		try {
-			const order = localStorage.getItem(NOTE_ORDER_KEY);
-			if (isNoteOrder(order)) noteOrder = order;
-			const direction = localStorage.getItem(NOTE_DIRECTION_KEY);
-			if (isNoteDirection(direction)) noteDirection = direction;
-		} catch {
-			// A private window, or storage refused. The defaults stand.
-		}
-	});
-
-	function remember(key: string, value: string) {
-		try {
-			localStorage.setItem(key, value);
-		} catch {
-			// It still holds for this visit; only the memory is lost.
-		}
-	}
-
-	/**
-	 * Choosing a field also chooses the direction somebody meant by it.
-	 *
-	 * "Edited" asked ascending is the note nobody has touched since February,
-	 * which is not the question anybody opens that order to ask. The arrow is
-	 * still right there to turn it round.
-	 */
-	function pickOrder(order: NoteOrder) {
-		noteOrder = order;
-		noteDirection = defaultDirectionFor(order);
-		remember(NOTE_ORDER_KEY, order);
-		remember(NOTE_DIRECTION_KEY, noteDirection);
-	}
-
-	function flipDirection() {
-		noteDirection = noteDirection === 'asc' ? 'desc' : 'asc';
-		remember(NOTE_DIRECTION_KEY, noteDirection);
-	}
+	const sorting = new RememberedOrder<NoteOrder>(
+		'notes',
+		NOTE_ORDERS,
+		DEFAULT_NOTE_ORDER,
+		defaultDirectionFor
+	);
 
 	const ORDER_LABELS: Record<NoteOrder, PlainKey> = {
 		written: 'notebookDetail.orderWritten',
@@ -1198,7 +1160,7 @@
 					(entry.title ?? '').toLowerCase().includes(wanted) ||
 					(entry.content ?? '').toLowerCase().includes(wanted)
 			);
-		return orderNotes(out, noteOrder, noteDirection);
+		return orderNotes(out, sorting.order, sorting.direction);
 	});
 
 	/*
@@ -2201,12 +2163,12 @@
 {#snippet orderControl()}
 	<!-- The same control the task list uses, always in the same place. See `SortControl`. -->
 	<SortControl
-		value={noteOrder}
+		value={sorting.order}
 		options={NOTE_ORDERS}
 		labels={ORDER_LABELS}
-		direction={noteDirection}
-		onpick={pickOrder}
-		onflip={flipDirection}
+		direction={sorting.direction}
+		onpick={(next) => sorting.pick(next)}
+		onflip={() => sorting.flip()}
 		label={t('notebookDetail.orderNotesBy')}
 	/>
 {/snippet}

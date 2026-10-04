@@ -34,6 +34,7 @@
 	import IdeaCard from '$lib/components/IdeaCard.svelte';
 	import { IDEA_ROOM_ACTIONS } from '$lib/idea-action-names';
 	import { useT } from '$lib/i18n';
+	import { RememberedOrder } from '$lib/remembered-order.svelte';
 	import type { Snippet } from 'svelte';
 
 	const t = useT();
@@ -106,36 +107,13 @@
 	 * orders and the same comparison (`$lib/note-order`). Newest first until
 	 * somebody says otherwise; a title reads A to Z.
 	 */
-	const ORDER_KEY = 'ontoplano:ideas-order';
-	const DIRECTION_KEY = 'ontoplano:ideas-direction';
-	const DEFAULT_ORDER: NoteOrder = 'written';
 	const ORDER_LABELS: Record<NoteOrder, PlainKey> = {
 		written: 'notebookDetail.orderWritten',
 		title: 'notebookDetail.orderTitle',
 		edited: 'notebookDetail.orderEdited'
 	};
 	const directionFor = (one: NoteOrder): NoteDirection => (one === 'title' ? 'asc' : 'desc');
-	let order = $state<NoteOrder>(DEFAULT_ORDER);
-	let direction = $state<NoteDirection>(directionFor(DEFAULT_ORDER));
-
-	$effect(() => {
-		try {
-			const kept = localStorage.getItem(ORDER_KEY);
-			if ((NOTE_ORDERS as readonly string[]).includes(kept ?? '')) order = kept as NoteOrder;
-			const way = localStorage.getItem(DIRECTION_KEY);
-			if (way === 'asc' || way === 'desc') direction = way;
-		} catch {
-			// A private window, or storage refused: the defaults stand.
-		}
-	});
-
-	function remember(key: string, value: string) {
-		try {
-			localStorage.setItem(key, value);
-		} catch {
-			// It still holds for this visit.
-		}
-	}
+	const sorting = new RememberedOrder<NoteOrder>('ideas', NOTE_ORDERS, 'written', directionFor);
 
 	/*
 	 * Several at once, with the task list's own selection — see `SelectionBar`.
@@ -160,7 +138,9 @@
 		).map(([key, icon]) => ({ key, icon, label: t(BATCH_LABELS[key]) }))
 	);
 
-	let filteredIdeas = $derived.by(() => orderNotes(filteredUnordered(), order, direction));
+	let filteredIdeas = $derived.by(() =>
+		orderNotes(filteredUnordered(), sorting.order, sorting.direction)
+	);
 	/** Drawn fifty at a time as the end comes near — see `$lib/reveal`. */
 	const reveal = new Reveal(
 		() => filteredIdeas.length,
@@ -471,21 +451,15 @@
 
 {#snippet sortControl()}
 	<SortControl
-		value={order}
+		value={sorting.order}
 		options={NOTE_ORDERS}
 		labels={ORDER_LABELS}
-		{direction}
+		direction={sorting.direction}
 		onpick={(next) => {
-			order = next;
-			direction = directionFor(next);
-			remember(ORDER_KEY, next);
-			remember(DIRECTION_KEY, direction);
+			sorting.pick(next);
 			selectedIndex = -1;
 		}}
-		onflip={() => {
-			direction = direction === 'asc' ? 'desc' : 'asc';
-			remember(DIRECTION_KEY, direction);
-		}}
+		onflip={() => sorting.flip()}
 		label={t('notebooks.ideas.orderIdeasBy')}
 	/>
 {/snippet}

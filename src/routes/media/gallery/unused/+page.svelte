@@ -12,6 +12,7 @@
 	import { browsable } from '$lib/browse.svelte';
 	import type { ActionData, PageServerData } from './$types';
 	import { useT } from '$lib/i18n';
+	import PictureTile from '$lib/components/PictureTile.svelte';
 
 	const t = useT();
 
@@ -79,18 +80,11 @@
 		<MediaTiles kind="pictures">
 			{#each data.pictures as picture, i (picture.id)}
 				<li data-row use:listCursor={at === i}>
-					<button
-						class="block w-full overflow-hidden"
-						aria-label={picture.alt || picture.filename || t('gallery.notebooks.path.aPicture')}
-						onclick={() => (viewingId = picture.id)}
-					>
-						<img
-							src="/media/{picture.id}"
-							alt={picture.alt}
-							loading="lazy"
-							class="aspect-square w-full bg-gray-50 object-cover"
-						/>
-					</button>
+					<PictureTile
+						{picture}
+						fallback={t('gallery.notebooks.path.aPicture')}
+						onopen={() => (viewingId = picture.id)}
+					/>
 				</li>
 			{/each}
 		</MediaTiles>

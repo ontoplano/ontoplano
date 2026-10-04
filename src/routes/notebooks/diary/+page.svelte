@@ -38,16 +38,12 @@
 	import {
 		DEFAULT_DIARY_DIRECTION,
 		DEFAULT_DIARY_ORDER,
-		DIARY_DIRECTION_KEY,
-		DIARY_ORDER_KEY,
 		DIARY_ORDERS,
-		isDiaryDirection,
-		isDiaryOrder,
 		orderDiary,
-		type DiaryDirection,
 		type DiaryOrder
 	} from '$lib/diary-order';
 	import { useT } from '$lib/i18n';
+	import { RememberedOrder } from '$lib/remembered-order.svelte';
 	import { Selection } from '$lib/selection.svelte';
 	import SelectionBar from '$lib/components/SelectionBar.svelte';
 	import SelectBox from '$lib/components/SelectBox.svelte';
@@ -120,32 +116,18 @@
 	 * The order, chosen on the strip and kept in this browser — see
 	 * `$lib/diary-order`. Newest written first until somebody says otherwise.
 	 */
-	let order = $state<DiaryOrder>(DEFAULT_DIARY_ORDER);
-	let direction = $state<DiaryDirection>(DEFAULT_DIARY_DIRECTION);
 	const ORDER_LABELS: Record<DiaryOrder, PlainKey> = {
 		written: 'notebookDetail.orderWritten',
 		day: 'notebooks.diary.orderDay',
 		edited: 'notebookDetail.orderEdited'
 	};
-
-	$effect(() => {
-		try {
-			const kept = localStorage.getItem(DIARY_ORDER_KEY);
-			if (isDiaryOrder(kept)) order = kept;
-			const way = localStorage.getItem(DIARY_DIRECTION_KEY);
-			if (isDiaryDirection(way)) direction = way;
-		} catch {
-			// A private window, or storage refused: the defaults stand.
-		}
-	});
-
-	function remember(key: string, value: string) {
-		try {
-			localStorage.setItem(key, value);
-		} catch {
-			// It still holds for this visit.
-		}
-	}
+	const sorting = new RememberedOrder<DiaryOrder>(
+		'diary',
+		DIARY_ORDERS,
+		DEFAULT_DIARY_ORDER,
+		() => DEFAULT_DIARY_DIRECTION,
+		DEFAULT_DIARY_DIRECTION
+	);
 
 	const shownEntries = $derived.by(() => {
 		const needle = looking.trim().toLowerCase();
@@ -157,8 +139,8 @@
 						tagFilter.current
 					) && matchesSearch(e, needle)
 			),
-			order,
-			direction
+			sorting.order,
+			sorting.direction
 		);
 	});
 
@@ -742,21 +724,15 @@
 
 {#snippet sortControl()}
 	<SortControl
-		value={order}
+		value={sorting.order}
 		options={DIARY_ORDERS}
 		labels={ORDER_LABELS}
-		{direction}
+		direction={sorting.direction}
 		onpick={(next) => {
-			order = next;
-			direction = DEFAULT_DIARY_DIRECTION;
-			remember(DIARY_ORDER_KEY, next);
-			remember(DIARY_DIRECTION_KEY, direction);
+			sorting.pick(next);
 			selectedIndex = 0;
 		}}
-		onflip={() => {
-			direction = direction === 'asc' ? 'desc' : 'asc';
-			remember(DIARY_DIRECTION_KEY, direction);
-		}}
+		onflip={() => sorting.flip()}
 		label={t('notebooks.diary.orderDiaryBy')}
 	/>
 {/snippet}

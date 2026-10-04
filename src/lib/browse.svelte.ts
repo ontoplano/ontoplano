@@ -56,7 +56,7 @@ export type Browsing = {
  * Except one marked `data-screen`: a dialog that is the screen itself, like a
  * notebook on the whole screen, whose lists are what the keys are for.
  */
-function typing(event: KeyboardEvent): boolean {
+export function typing(event: KeyboardEvent): boolean {
 	if (document.querySelector('dialog[open]:not([data-screen])')) return true;
 	const target = event.target;
 	return (

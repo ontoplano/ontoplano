@@ -14,7 +14,7 @@
 	import type { Snippet } from 'svelte';
 	import RoomSurface from '$lib/components/RoomSurface.svelte';
 	import { getAction, keyFor } from '$lib/shortcuts';
-	import { browsable } from '$lib/browse.svelte';
+	import { browsable, typing } from '$lib/browse.svelte';
 	import { listCursor } from '$lib/actions/list-cursor';
 	import Kbd from '$lib/components/Kbd.svelte';
 	import Modal from '$lib/components/Modal.svelte';
@@ -116,14 +116,7 @@
 
 	/* `[` and `]` step the week, as PeriodNav's tooltips promise. */
 	function handleKeydown(e: KeyboardEvent) {
-		if (
-			e.target instanceof HTMLInputElement ||
-			e.target instanceof HTMLTextAreaElement ||
-			e.target instanceof HTMLSelectElement ||
-			(e.target instanceof HTMLElement && e.target.isContentEditable)
-		)
-			return;
-		if (document.querySelector('dialog[open]')) return;
+		if (typing(e)) return;
 		const action = getAction(ROOM, e.key);
 		if (action === 'prev-week') toWeek(data.week.prev);
 		else if (action === 'next-week') toWeek(data.week.next);

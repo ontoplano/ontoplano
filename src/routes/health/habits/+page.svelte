@@ -22,6 +22,7 @@
 	import { HABIT_ROOM_ACTIONS } from '$lib/habit-action-names';
 	import HabitFields from '$lib/components/fields/HabitFields.svelte';
 	import { useT } from '$lib/i18n';
+	import { RememberedOrder } from '$lib/remembered-order.svelte';
 
 	const t = useT();
 
@@ -70,26 +71,7 @@
 		total: 'health.habits.orderTotal',
 		created: 'health.habits.orderCreated'
 	};
-	/** Where this browser keeps the order it was last given. */
-	const ORDER_KEY = 'habits.order';
-	let order = $state<Order>('name');
-	let direction = $state<'asc' | 'desc'>('asc');
-	$effect(() => {
-		try {
-			const kept = JSON.parse(localStorage.getItem(ORDER_KEY) ?? 'null');
-			if (kept && ORDERS.includes(kept.order)) order = kept.order;
-			if (kept?.direction === 'asc' || kept?.direction === 'desc') direction = kept.direction;
-		} catch {
-			/* A private window keeps nothing; the default order stands. */
-		}
-	});
-	function keepOrder() {
-		try {
-			localStorage.setItem(ORDER_KEY, JSON.stringify({ order, direction }));
-		} catch {
-			/* As above. */
-		}
-	}
+	const sorting = new RememberedOrder<Order>('habits', ORDERS, 'name');
 
 	/** How many days of the year each habit was logged, for ordering by it. */
 	const totals = $derived.by(() => {
@@ -100,15 +82,15 @@
 
 	function compare(a: Habit, b: Habit): number {
 		const by =
-			order === 'streak'
+			sorting.order === 'streak'
 				? a.streak - b.streak
-				: order === 'total'
+				: sorting.order === 'total'
 					? (totals[a.id] ?? 0) - (totals[b.id] ?? 0)
-					: order === 'created'
+					: sorting.order === 'created'
 						? a.createdAt.localeCompare(b.createdAt)
 						: 0;
 		const tie = a.name.localeCompare(b.name);
-		return (direction === 'asc' ? 1 : -1) * (by || tie);
+		return (sorting.direction === 'asc' ? 1 : -1) * (by || tie);
 	}
 
 	function filteredHabits() {
@@ -288,18 +270,12 @@
 				{/snippet}
 				{#snippet trailing()}
 					<SortControl
-						value={order}
+						value={sorting.order}
 						options={ORDERS}
 						labels={ORDER_LABELS}
-						{direction}
-						onpick={(next) => {
-							order = next;
-							keepOrder();
-						}}
-						onflip={() => {
-							direction = direction === 'asc' ? 'desc' : 'asc';
-							keepOrder();
-						}}
+						direction={sorting.direction}
+						onpick={(next) => sorting.pick(next)}
+						onflip={() => sorting.flip()}
 						label={t('health.habits.orderHabitsBy')}
 					/>
 				{/snippet}

@@ -20,15 +20,11 @@
 	import TickBox from '$lib/components/TickBox.svelte';
 	import ColorWell from '$lib/components/ColorWell.svelte';
 	import {
-		ITEM_DIRECTION_KEY,
-		ITEM_ORDER_KEY,
 		ITEM_ORDER_LABELS,
 		ITEM_ORDERS,
 		DEFAULT_ITEM_ORDER,
 		compareItems,
-		isItemOrder,
 		itemDirectionFor,
-		type ItemDirection,
 		type ItemOrder
 	} from '$lib/item-order';
 	import Icon from '$lib/components/Icon.svelte';
@@ -62,6 +58,7 @@
 	import PicturePicker from '$lib/components/PicturePicker.svelte';
 	import { ITEM_ROOM_ACTIONS } from '$lib/item-action-names';
 	import { useT } from '$lib/i18n';
+	import { RememberedOrder } from '$lib/remembered-order.svelte';
 
 	const t = useT();
 
@@ -358,28 +355,12 @@
 	 * The order of the rows inside each card. Kept in the browser: it is a way
 	 * of looking at the list, not a fact about the account. See `$lib/item-order`.
 	 */
-	let order = $state<ItemOrder>(DEFAULT_ITEM_ORDER);
-	let direction = $state<ItemDirection>(itemDirectionFor(DEFAULT_ITEM_ORDER));
-
-	onMount(() => {
-		try {
-			const kept = localStorage.getItem(ITEM_ORDER_KEY);
-			if (isItemOrder(kept)) order = kept;
-			const way = localStorage.getItem(ITEM_DIRECTION_KEY);
-			if (way === 'asc' || way === 'desc') direction = way;
-		} catch {
-			// A private window, or storage refused: the defaults stand.
-		}
-	});
-
-	function rememberOrder() {
-		try {
-			localStorage.setItem(ITEM_ORDER_KEY, order);
-			localStorage.setItem(ITEM_DIRECTION_KEY, direction);
-		} catch {
-			// It still holds for this visit.
-		}
-	}
+	const sorting = new RememberedOrder<ItemOrder>(
+		'inventory',
+		ITEM_ORDERS,
+		DEFAULT_ITEM_ORDER,
+		itemDirectionFor
+	);
 
 	/** Which of the room's two managing screens is up, and on which tab. */
 	let organising = $state(false);
@@ -675,7 +656,7 @@
 
 	/** Every row on screen is on this tab's list, so the two lists group alike. */
 	let replenishItems = $derived(
-		[...filteredItems].sort((a, b) => compareItems(a, b, order, direction))
+		[...filteredItems].sort((a, b) => compareItems(a, b, sorting.order, sorting.direction))
 	);
 	/** Items grouped into category cards, in the order the categories are kept. */
 	function byCategory(rows: typeof replenishItems) {
@@ -1485,20 +1466,15 @@
 				{/snippet}
 				{#snippet trailing()}
 					<SortControl
-						value={order}
+						value={sorting.order}
 						options={ITEM_ORDERS}
 						labels={ITEM_ORDER_LABELS}
-						{direction}
+						direction={sorting.direction}
 						onpick={(next) => {
-							order = next;
-							direction = itemDirectionFor(next);
-							rememberOrder();
+							sorting.pick(next);
 							selectedIndex = -1;
 						}}
-						onflip={() => {
-							direction = direction === 'asc' ? 'desc' : 'asc';
-							rememberOrder();
-						}}
+						onflip={() => sorting.flip()}
 						label={t('inventory.orderThingsBy')}
 					/>
 				{/snippet}
