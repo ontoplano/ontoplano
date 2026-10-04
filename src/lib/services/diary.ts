@@ -11,14 +11,14 @@ import {
 	parseTags,
 	replaceDiaryTags
 } from './tags.js';
-import { localDateOf, type Ctx, chosenDay } from './ctx.js';
+import { type Ctx, chosenDay } from './ctx.js';
 import { NotFoundError, ValidationError } from './errors.js';
 import { host } from './host.js';
 import { defaultTagsOf, ownedNotebookId } from './notebooks.js';
 import { fileUnderNotebook } from './notebook-linking.js';
 import { MAX_BATCH } from './todos.js';
 import { stamp, stamps } from './time.js';
-import { num, str } from './validate.js';
+import { str, chosenIds } from './validate.js';
 
 /** The journal: free text, free-form tags, one running number per account. */
 
@@ -391,10 +391,10 @@ export function batchEntries(
 	what: { add?: unknown; remove?: unknown; notebookId?: unknown }
 ): number {
 	if (!isEntryBatchVerb(verb)) throw new ValidationError({ key: 'errors.diary.invalidBatch' });
-	if (rawIds.length === 0) throw new ValidationError({ key: 'errors.diary.nothingWasChosen' });
-	if (rawIds.length > MAX_BATCH)
-		throw new ValidationError({ key: 'errors.diary.thatIsTooManyAtOnce' });
-	const ids = [...new Set(rawIds.map((id) => num(id, 'id', { int: true, min: 1 })))];
+	const ids = chosenIds(rawIds, MAX_BATCH, {
+		nothing: 'errors.diary.nothingWasChosen',
+		tooMany: 'errors.diary.thatIsTooManyAtOnce'
+	});
 	if (verb === 'notebook' && what.notebookId === undefined)
 		throw new ValidationError({ key: 'errors.diary.invalidBatch' });
 

@@ -180,6 +180,26 @@ function itemFor(ctx: Ctx, raw: { itemId?: unknown; name?: unknown }): number {
 }
 
 // --- recipes --------------------------------------------------------------------
+/** What a recipe is, read the same way by the list and the single read. */
+const RECIPE_COLUMNS = {
+	id: recipes.id,
+	title: recipes.title,
+	method: recipes.method,
+	notes: recipes.notes,
+	servings: recipes.servings,
+	minutes: recipes.minutes,
+	source: recipes.source,
+	lastCookedAt: recipes.lastCookedAt,
+	archivedAt: recipes.archivedAt,
+	notebookId: recipes.notebookId
+};
+
+/** A row as the rest of the app wants it: nothing where a column was null. */
+function asRecipe(r: {
+	[K in keyof typeof RECIPE_COLUMNS]: (typeof RECIPE_COLUMNS)[K]['_']['data'] | null;
+}): Recipe {
+	return { ...r, notes: r.notes ?? '', source: r.source ?? '' } as Recipe;
+}
 
 /**
  * The recipes, all of them or one subject's.
@@ -193,18 +213,7 @@ export function listRecipes(
 	options: { includeArchived?: boolean; notebookId?: number } = {}
 ): Recipe[] {
 	return db
-		.select({
-			id: recipes.id,
-			title: recipes.title,
-			method: recipes.method,
-			notes: recipes.notes,
-			servings: recipes.servings,
-			minutes: recipes.minutes,
-			source: recipes.source,
-			lastCookedAt: recipes.lastCookedAt,
-			archivedAt: recipes.archivedAt,
-			notebookId: recipes.notebookId
-		})
+		.select(RECIPE_COLUMNS)
 		.from(recipes)
 		.where(
 			and(
@@ -215,29 +224,18 @@ export function listRecipes(
 		)
 		.orderBy(asc(recipes.title))
 		.all()
-		.map((r) => ({ ...r, notes: r.notes ?? '', source: r.source ?? '' }));
+		.map(asRecipe);
 }
 
 export function getRecipe(ctx: Ctx, id: number): Recipe {
 	const found = db
-		.select({
-			id: recipes.id,
-			title: recipes.title,
-			method: recipes.method,
-			notes: recipes.notes,
-			servings: recipes.servings,
-			minutes: recipes.minutes,
-			source: recipes.source,
-			lastCookedAt: recipes.lastCookedAt,
-			archivedAt: recipes.archivedAt,
-			notebookId: recipes.notebookId
-		})
+		.select(RECIPE_COLUMNS)
 		.from(recipes)
 		.where(and(eq(recipes.id, id), eq(recipes.userId, ctx.userId)))
 		.get();
 
 	if (!found) throw new NotFoundError('recipe');
-	return { ...found, notes: found.notes ?? '', source: found.source ?? '' };
+	return asRecipe(found);
 }
 
 export function ingredientsOf(ctx: Ctx, recipeId: number): Ingredient[] {

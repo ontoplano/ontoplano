@@ -442,16 +442,7 @@ export function renameTag(userId: string, id: number, name: unknown): TagRow {
 	const wanted = tagName(name);
 	if (wanted === tag.name) return tag;
 
-	const existing = db
-		.select({
-			id: tags.id,
-			name: tags.name,
-			color: tags.color,
-			description: tags.description
-		})
-		.from(tags)
-		.where(and(eq(tags.name, wanted), eq(tags.userId, userId)))
-		.get();
+	const existing = tagNamed(userId, wanted);
 
 	if (!existing) {
 		db.update(tags).set({ name: wanted }).where(eq(tags.id, tag.id)).run();
@@ -508,6 +499,14 @@ export function renameTag(userId: string, id: number, name: unknown): TagRow {
 
 	return { ...existing, color: existing.color ?? tag.color };
 }
+/** The account's label with exactly this name, if it has one. */
+function tagNamed(userId: string, name: string): TagRow | undefined {
+	return db
+		.select({ id: tags.id, name: tags.name, color: tags.color, description: tags.description })
+		.from(tags)
+		.where(and(eq(tags.name, name), eq(tags.userId, userId)))
+		.get();
+}
 
 /**
  * Take a label out of the vocabulary, and off everything that carried it.
@@ -528,16 +527,7 @@ export function deleteTag(userId: string, id: number): void {
 /** The label the account calls this word, if it has one. */
 export function tagByName(userId: string, name: unknown): TagRow {
 	const wanted = tagName(name);
-	const found = db
-		.select({
-			id: tags.id,
-			name: tags.name,
-			color: tags.color,
-			description: tags.description
-		})
-		.from(tags)
-		.where(and(eq(tags.name, wanted), eq(tags.userId, userId)))
-		.get();
+	const found = tagNamed(userId, wanted);
 	if (!found) throw new NotFoundError('tag');
 	return found;
 }

@@ -37,7 +37,13 @@ import { sha256Hex } from './digest.js';
 import { NotFoundError, ValidationError } from './errors.js';
 import { host } from './host.js';
 import type { MediaLimits } from './media-limits.js';
-import { IMAGE_MIME_PREFIX } from './media-kind.js';
+import {
+	IMAGE_MIME_PREFIX,
+	asciiAt,
+	sniffer,
+	startsWithBytes,
+	type Signature
+} from './media-kind.js';
 import { stamp } from './time.js';
 
 /**
@@ -46,34 +52,26 @@ import { stamp } from './time.js';
  * Raster formats a browser renders inertly, and nothing else. GIF is here
  * because an animation is a picture; SVG is not, and never will be.
  */
-/** Do these bytes start with exactly this run of bytes? */
-const starts = (b: Uint8Array, at: number, expected: number[]) =>
-	expected.every((byte, i) => b[at + i] === byte);
-
-/** The ASCII a run of bytes spells, for the formats whose marker is a word. */
-const ascii = (b: Uint8Array, from: number, to: number) =>
-	String.fromCharCode(...b.subarray(from, to));
-
-const SIGNATURES: { mime: string; extension: string; matches: (b: Uint8Array) => boolean }[] = [
+const SIGNATURES: Signature[] = [
 	{
 		mime: 'image/jpeg',
 		extension: 'jpg',
-		matches: (b) => starts(b, 0, [0xff, 0xd8, 0xff])
+		matches: (b) => startsWithBytes(b, 0, [0xff, 0xd8, 0xff])
 	},
 	{
 		mime: 'image/png',
 		extension: 'png',
-		matches: (b) => starts(b, 0, [137, 80, 78, 71, 13, 10, 26, 10])
+		matches: (b) => startsWithBytes(b, 0, [137, 80, 78, 71, 13, 10, 26, 10])
 	},
 	{
 		mime: 'image/gif',
 		extension: 'gif',
-		matches: (b) => /^GIF8[79]a$/.test(ascii(b, 0, 6))
+		matches: (b) => /^GIF8[79]a$/.test(asciiAt(b, 0, 6))
 	},
 	{
 		mime: 'image/webp',
 		extension: 'webp',
-		matches: (b) => ascii(b, 0, 4) === 'RIFF' && ascii(b, 8, 12) === 'WEBP'
+		matches: (b) => asciiAt(b, 0, 4) === 'RIFF' && asciiAt(b, 8, 12) === 'WEBP'
 	}
 ];
 
@@ -148,11 +146,7 @@ export function tidyFilename(raw: string): string {
 }
 
 /** What these bytes actually are, or nothing. */
-export function sniff(bytes: Uint8Array): { mime: string; extension: string } | null {
-	if (bytes.length < 12) return null;
-	const hit = SIGNATURES.find((s) => s.matches(bytes));
-	return hit ? { mime: hit.mime, extension: hit.extension } : null;
-}
+export const sniff = sniffer(SIGNATURES);
 
 /** What this account's pictures already add up to. */
 export function bytesStored(ctx: Ctx): number {

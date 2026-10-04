@@ -59,7 +59,7 @@ import { getUserSetting, setUserSetting } from './settings.js';
 import { cleanupOrphanTags, optionalTagInput, parseTags, replaceTodoTags } from './tags.js';
 import { created, stamp, stamps } from './time.js';
 import { host } from './host.js';
-import { TIME_PATTERN, num, oneOf, optionalStr, str } from './validate.js';
+import { TIME_PATTERN, num, oneOf, optionalStr, str, chosenIds } from './validate.js';
 import { ownedActivity, ownedCategory } from './activities.js';
 import {
 	parseAttributes,
@@ -213,6 +213,15 @@ export function tagsForTodos(ctx: Ctx, todoIds: number[]): Map<number, Tag[]> {
 	}
 	return byTodo;
 }
+/** This account's todo, or the same 404 a stranger's gets. */
+function assertOwnedTodo(ctx: Ctx, id: number): void {
+	const owned = db
+		.select({ id: todoTasks.id })
+		.from(todoTasks)
+		.where(and(eq(todoTasks.id, id), eq(todoTasks.userId, ctx.userId)))
+		.get();
+	if (!owned) throw new NotFoundError('todo');
+}
 
 /** Every list of todos goes out through here, so none of them is missing its labels. */
 function withTags(ctx: Ctx, todos: Todo[]): Todo[] {
@@ -234,12 +243,7 @@ function withTags(ctx: Ctx, todos: Todo[]): Todo[] {
  * would have had to remember what it used to be.
  */
 export function archiveTodo(ctx: Ctx, id: number, away = true): void {
-	const owned = db
-		.select({ id: todoTasks.id })
-		.from(todoTasks)
-		.where(and(eq(todoTasks.id, id), eq(todoTasks.userId, ctx.userId)))
-		.get();
-	if (!owned) throw new NotFoundError('todo');
+	assertOwnedTodo(ctx, id);
 
 	const now = stamp(ctx);
 	db.update(todoTasks)
@@ -1018,12 +1022,7 @@ export function tagTodo(
 	id: number,
 	change: { add?: unknown; remove?: unknown }
 ): string[] {
-	const owned = db
-		.select({ id: todoTasks.id })
-		.from(todoTasks)
-		.where(and(eq(todoTasks.id, id), eq(todoTasks.userId, ctx.userId)))
-		.get();
-	if (!owned) throw new NotFoundError('todo');
+	assertOwnedTodo(ctx, id);
 
 	const add = parseTags(optionalTagInput(change.add));
 	const remove = new Set(parseTags(optionalTagInput(change.remove)));
@@ -1438,10 +1437,10 @@ export function batchTodos(
 	what: { status?: unknown; add?: unknown; remove?: unknown; notebookId?: unknown }
 ): number {
 	if (!isBatchVerb(verb)) throw new ValidationError({ key: 'errors.todos.invalidBatch' });
-	if (rawIds.length === 0) throw new ValidationError({ key: 'errors.todos.nothingWasChosen' });
-	if (rawIds.length > MAX_BATCH)
-		throw new ValidationError({ key: 'errors.todos.thatIsTooManyAtOnce' });
-	const ids = [...new Set(rawIds.map((id) => num(id, 'id', { int: true, min: 1 })))];
+	const ids = chosenIds(rawIds, MAX_BATCH, {
+		nothing: 'errors.todos.nothingWasChosen',
+		tooMany: 'errors.todos.thatIsTooManyAtOnce'
+	});
 	if (verb === 'notebook' && what.notebookId === undefined)
 		throw new ValidationError({ key: 'errors.todos.invalidBatch' });
 

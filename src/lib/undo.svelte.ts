@@ -81,6 +81,11 @@ export function isLeaving(key: string): boolean {
 export function isPending(key: string): boolean {
 	return undo.pending.some((p) => p.key === key);
 }
+/** Whatever was pending on this key is off: a newer press replaces it. */
+function forget(key: string): void {
+	for (const p of undo.pending.filter((p) => p.key === key)) clearTimeout(p.timer);
+	undo.pending = undo.pending.filter((p) => p.key !== key);
+}
 
 /** The ones still worth a toast: sent is past taking back. */
 export function undoable(): Pending[] {
@@ -105,8 +110,7 @@ function hold(
 		return;
 	}
 
-	for (const p of undo.pending.filter((p) => p.key === key)) clearTimeout(p.timer);
-	undo.pending = undo.pending.filter((p) => p.key !== key);
+	forget(key);
 
 	const id = nextId++;
 	const timer = setTimeout(() => dispatch(id), undo.seconds * 1000);
@@ -175,8 +179,7 @@ export function changeNow(
 		return;
 	}
 
-	for (const p of undo.pending.filter((p) => p.key === key)) clearTimeout(p.timer);
-	undo.pending = undo.pending.filter((p) => p.key !== key);
+	forget(key);
 
 	const id = nextId++;
 

@@ -258,6 +258,22 @@ function lastTouched(ctx: Ctx): Map<number, string> {
 
 	return newest;
 }
+/** A notebook row with its owner and category, the same for the list and the one. */
+const NOTEBOOK_COLUMNS = {
+	id: notebooks.id,
+	title: notebooks.title,
+	folder: notebooks.folder,
+	description: notebooks.description,
+	pictureId: notebooks.pictureId,
+	defaultTags: notebooks.defaultTags,
+	categoryId: notebooks.categoryId,
+	categoryName: categories.name,
+	modules: notebooks.modules,
+	closedAt: notebooks.closedAt,
+	sharedWithFamily: notebooks.sharedWithFamily,
+	ownerId: notebooks.userId,
+	ownerName: user.name
+};
 
 /** Open ones first: a closed notebook is history, not a place you are writing. */
 export function listNotebooks(ctx: Ctx): Notebook[] {
@@ -271,21 +287,7 @@ export function listNotebooks(ctx: Ctx): Notebook[] {
 	const starred = favouriteIds(ctx);
 
 	const rows = db
-		.select({
-			id: notebooks.id,
-			title: notebooks.title,
-			folder: notebooks.folder,
-			description: notebooks.description,
-			pictureId: notebooks.pictureId,
-			defaultTags: notebooks.defaultTags,
-			categoryId: notebooks.categoryId,
-			categoryName: categories.name,
-			modules: notebooks.modules,
-			closedAt: notebooks.closedAt,
-			sharedWithFamily: notebooks.sharedWithFamily,
-			ownerId: notebooks.userId,
-			ownerName: user.name
-		})
+		.select(NOTEBOOK_COLUMNS)
 		.from(notebooks)
 		.innerJoin(user, eq(notebooks.userId, user.id))
 		.leftJoin(categories, eq(notebooks.categoryId, categories.id))
@@ -465,21 +467,7 @@ function withTagsAndPeople<T extends { id: number }>(ctx: Ctx, entries: T[]) {
 export function getNotebook(ctx: Ctx, id: number): Notebook {
 	assertReachable(ctx, id);
 	const found = db
-		.select({
-			id: notebooks.id,
-			title: notebooks.title,
-			folder: notebooks.folder,
-			description: notebooks.description,
-			pictureId: notebooks.pictureId,
-			defaultTags: notebooks.defaultTags,
-			categoryId: notebooks.categoryId,
-			categoryName: categories.name,
-			modules: notebooks.modules,
-			closedAt: notebooks.closedAt,
-			sharedWithFamily: notebooks.sharedWithFamily,
-			ownerId: notebooks.userId,
-			ownerName: user.name
-		})
+		.select(NOTEBOOK_COLUMNS)
 		.from(notebooks)
 		.innerJoin(user, eq(notebooks.userId, user.id))
 		.leftJoin(categories, eq(notebooks.categoryId, categories.id))

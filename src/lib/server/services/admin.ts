@@ -120,8 +120,19 @@ export function searchAccounts(query: string, limit = 25): Account[] {
 		.orderBy(sql`case when ${user.role} = 'admin' then 0 else 1 end`, desc(user.createdAt))
 		.limit(limit)
 		.all();
+	return rows.map(asAccount);
+}
 
-	return rows.map((row) => ({
+/** A user row as the admin page reads it: what the list and the one share. */
+function asAccount(row: {
+	id: string;
+	email: string;
+	name: string;
+	emailVerified: boolean;
+	role: string | null;
+	createdAt: Date | string;
+}): Account {
+	return {
 		id: row.id,
 		email: row.email,
 		name: row.name,
@@ -131,7 +142,7 @@ export function searchAccounts(query: string, limit = 25): Account[] {
 		sessions: sessionCount(row.id),
 		plan: describePlan(row.id),
 		isOwner: isInstanceOwner(row.id)
-	}));
+	};
 }
 
 export function accountById(id: string): Account {
@@ -151,15 +162,7 @@ export function accountById(id: string): Account {
 	if (!row) throw new NotFoundError('account');
 
 	return {
-		id: row.id,
-		email: row.email,
-		name: row.name,
-		emailVerified: row.emailVerified,
-		role: isRole(row.role) ? row.role : 'member',
-		createdAt: new Date(row.createdAt).toISOString(),
-		sessions: sessionCount(row.id),
-		plan: describePlan(row.id),
-		isOwner: isInstanceOwner(row.id),
+		...asAccount(row),
 		canGrantTrial: !isSelfHosted() && !hasPlanHistory(row.id),
 		canEndPlan: !isSelfHosted() && hasPlanHistory(row.id),
 		planEndsAt: planEndsAt(row.id)

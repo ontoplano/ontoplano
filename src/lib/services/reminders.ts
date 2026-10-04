@@ -133,6 +133,18 @@ export function reminderClock(ctx: Ctx): ReminderClock {
 		leadMinutes: REMINDER_LEAD_MINUTES
 	};
 }
+/** What a reminder is, read the same way by every reader here. */
+const REMINDER_COLUMNS = {
+	id: reminders.id,
+	subjectKind: reminders.subjectKind,
+	subjectId: reminders.subjectId,
+	remindAt: reminders.remindAt,
+	message: reminders.message,
+	deliveredAt: reminders.deliveredAt,
+	dismissedAt: reminders.dismissedAt,
+	audible: reminders.audible,
+	ringtoneId: reminders.ringtoneId
+};
 
 /**
  * How much of what is coming a phone is handed, and why it is a number.
@@ -217,17 +229,7 @@ export function listReminders(
 	chosen: { audible: boolean | null; ringtoneId: number | null };
 })[] {
 	const rows = db
-		.select({
-			id: reminders.id,
-			subjectKind: reminders.subjectKind,
-			subjectId: reminders.subjectId,
-			remindAt: reminders.remindAt,
-			message: reminders.message,
-			deliveredAt: reminders.deliveredAt,
-			dismissedAt: reminders.dismissedAt,
-			audible: reminders.audible,
-			ringtoneId: reminders.ringtoneId
-		})
+		.select(REMINDER_COLUMNS)
 		.from(reminders)
 		.where(eq(reminders.userId, ctx.userId))
 		.orderBy(asc(reminders.remindAt))
@@ -258,17 +260,7 @@ export function listReminders(
  */
 export function dueReminders(ctx: Ctx): (Reminder & { sound: string | null })[] {
 	const rows = db
-		.select({
-			id: reminders.id,
-			subjectKind: reminders.subjectKind,
-			subjectId: reminders.subjectId,
-			remindAt: reminders.remindAt,
-			message: reminders.message,
-			deliveredAt: reminders.deliveredAt,
-			dismissedAt: reminders.dismissedAt,
-			audible: reminders.audible,
-			ringtoneId: reminders.ringtoneId
-		})
+		.select(REMINDER_COLUMNS)
 		.from(reminders)
 		.where(
 			and(

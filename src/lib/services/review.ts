@@ -10,7 +10,8 @@ import {
 	generateInstances,
 	generateOneOffs,
 	listInstances,
-	setInstanceStatus
+	setInstanceStatus,
+	type Occurrence
 } from './instances.js';
 import { createTodo } from './todos.js';
 import { localDay, stamp, stamps } from './time.js';
@@ -98,6 +99,17 @@ export type Done = {
 	categoryName: string | null;
 	categoryColor: string | null;
 };
+/** A block that was answered, as the review reads it back. */
+function asDone(i: Occurrence): Done {
+	return {
+		id: i.id,
+		title: blockName(i),
+		date: i.scheduledAt.slice(0, 10),
+		minutes: i.durationMinutes,
+		categoryName: i.categoryName,
+		categoryColor: i.categoryColor
+	};
+}
 
 /** An unfinished block, in the shape the review offers to carry it. */
 export type Loose = {
@@ -203,14 +215,7 @@ export function readWeek(
 	/** And what did happen, newest first: the week read back rather than audited. */
 	const done: Done[] = instances
 		.filter((i) => i.status === 'done')
-		.map((i) => ({
-			id: i.id,
-			title: blockName(i),
-			date: i.scheduledAt.slice(0, 10),
-			minutes: i.durationMinutes,
-			categoryName: i.categoryName,
-			categoryColor: i.categoryColor
-		}))
+		.map(asDone)
 		.sort((a, b) => b.date.localeCompare(a.date));
 
 	/*
@@ -223,14 +228,7 @@ export function readWeek(
 	 */
 	const skipped: Done[] = instances
 		.filter((i) => i.status === 'skipped')
-		.map((i) => ({
-			id: i.id,
-			title: blockName(i),
-			date: i.scheduledAt.slice(0, 10),
-			minutes: i.durationMinutes,
-			categoryName: i.categoryName,
-			categoryColor: i.categoryColor
-		}))
+		.map(asDone)
 		.sort((a, b) => b.date.localeCompare(a.date));
 
 	return {

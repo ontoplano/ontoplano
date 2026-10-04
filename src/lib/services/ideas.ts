@@ -15,7 +15,7 @@ import { NotFoundError, ValidationError } from './errors.js';
 import { notebookPatch } from './notebooks.js';
 import { stamp, stamps } from './time.js';
 import { host } from './host.js';
-import { num, str } from './validate.js';
+import { str, chosenIds } from './validate.js';
 import { MAX_BATCH } from './todos.js';
 
 /** Quick capture: a thought, optionally tagged, optionally marked as applied. */
@@ -255,10 +255,10 @@ export function batchIdeas(
 	what: { add?: unknown; remove?: unknown; notebookId?: unknown } = {}
 ): number {
 	if (!isIdeaBatchVerb(verb)) throw new ValidationError({ key: 'errors.diary.invalidBatch' });
-	if (rawIds.length === 0) throw new ValidationError({ key: 'errors.diary.nothingWasChosen' });
-	if (rawIds.length > MAX_BATCH)
-		throw new ValidationError({ key: 'errors.diary.thatIsTooManyAtOnce' });
-	const ids = [...new Set(rawIds.map((id) => num(id, 'id', { int: true, min: 1 })))];
+	const ids = chosenIds(rawIds, MAX_BATCH, {
+		nothing: 'errors.diary.nothingWasChosen',
+		tooMany: 'errors.diary.thatIsTooManyAtOnce'
+	});
 	if (verb === 'notebook' && what.notebookId === undefined)
 		throw new ValidationError({ key: 'errors.diary.invalidBatch' });
 

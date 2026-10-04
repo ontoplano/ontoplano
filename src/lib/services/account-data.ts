@@ -302,6 +302,17 @@ export function hoursUntil(iso: string | null, now: Date = new Date()): string {
 	return `in about ${hours} hours`;
 }
 
+/** Who the export is of: the three facts about the account it opens with. */
+export function accountRow(userId: string): { id: string; name: string; email: string } {
+	const account = db
+		.select({ id: schema.user.id, name: schema.user.name, email: schema.user.email })
+		.from(schema.user)
+		.where(eq(schema.user.id, userId))
+		.get();
+	if (!account) throw new Error('Account not found');
+	return account;
+}
+
 /**
  * The same file the export produces, without asking permission.
  *
@@ -311,12 +322,7 @@ export function hoursUntil(iso: string | null, now: Date = new Date()): string {
  * rows and nothing else.
  */
 export function collectAccount(userId: string, now: Date = new Date()): AccountExport {
-	const account = db
-		.select({ id: schema.user.id, name: schema.user.name, email: schema.user.email })
-		.from(schema.user)
-		.where(eq(schema.user.id, userId))
-		.get();
-	if (!account) throw new Error('Account not found');
+	const account = accountRow(userId);
 
 	const data: Record<string, unknown[]> = {};
 	for (const table of USER_TABLES) data[table.name] = table.rows(userId);

@@ -32,17 +32,15 @@ import type { Ctx } from './ctx.js';
 import { sha256Hex } from './digest.js';
 import { ConflictError, NotFoundError, ValidationError } from './errors.js';
 import { host } from './host.js';
-import { AUDIO_MIME_PREFIX } from './media-kind.js';
+import {
+	AUDIO_MIME_PREFIX,
+	asciiAt,
+	sniffer,
+	startsWithBytes,
+	type Signature
+} from './media-kind.js';
 import { MAX_AUDIO_NOTES_LENGTH, audioSecondsFor, type MediaLimits } from './media-limits.js';
 import { stamp } from './time.js';
-
-/** Do these bytes start with exactly this run of bytes? */
-const starts = (b: Uint8Array, at: number, expected: number[]) =>
-	expected.every((byte, i) => b[at + i] === byte);
-
-/** The ASCII a run of bytes spells, for the containers marked with a word. */
-const ascii = (b: Uint8Array, from: number, to: number) =>
-	String.fromCharCode(...b.subarray(from, to));
 
 /**
  * What a recording may be, and how its first bytes look.
@@ -59,21 +57,21 @@ const ascii = (b: Uint8Array, from: number, to: number) =>
  * one, the bytes are served as audio, and refusing it would mean parsing the
  * track table of every upload to find out what is in it.
  */
-const SIGNATURES: { mime: string; extension: string; matches: (b: Uint8Array) => boolean }[] = [
+const SIGNATURES: Signature[] = [
 	{
 		mime: 'audio/webm',
 		extension: 'webm',
-		matches: (b) => starts(b, 0, [0x1a, 0x45, 0xdf, 0xa3])
+		matches: (b) => startsWithBytes(b, 0, [0x1a, 0x45, 0xdf, 0xa3])
 	},
 	{
 		mime: 'audio/ogg',
 		extension: 'ogg',
-		matches: (b) => ascii(b, 0, 4) === 'OggS'
+		matches: (b) => asciiAt(b, 0, 4) === 'OggS'
 	},
 	{
 		mime: 'audio/mp4',
 		extension: 'm4a',
-		matches: (b) => ascii(b, 4, 8) === 'ftyp'
+		matches: (b) => asciiAt(b, 4, 8) === 'ftyp'
 	},
 	{
 		mime: 'audio/mpeg',
@@ -81,7 +79,7 @@ const SIGNATURES: { mime: string; extension: string; matches: (b: Uint8Array) =>
 		matches: (b) =>
 			// An ID3 tag, or a bare frame header: eleven set bits, then a version
 			// and layer that are not the reserved values.
-			ascii(b, 0, 3) === 'ID3' ||
+			asciiAt(b, 0, 3) === 'ID3' ||
 			(b[0] === 0xff && (b[1] & 0xe0) === 0xe0 && (b[1] & 0x18) !== 0x08 && (b[1] & 0x06) !== 0)
 	}
 ];
@@ -119,11 +117,7 @@ export function audioLimits(): MediaLimits {
 /** Only rows that are recordings. Every query here is scoped by it. */
 const isRecording = like(media.mime, `${AUDIO_MIME_PREFIX}%`);
 
-export function sniffAudio(bytes: Uint8Array): { mime: string; extension: string } | null {
-	if (bytes.length < 12) return null;
-	const hit = SIGNATURES.find((s) => s.matches(bytes));
-	return hit ? { mime: hit.mime, extension: hit.extension } : null;
-}
+export const sniffAudio = sniffer(SIGNATURES);
 
 /**
  * What a recording is called when nobody says.
