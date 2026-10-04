@@ -25,6 +25,14 @@ releases mattered.
   keeps its settings file and the language's words between pages rather than
   reading them again for every one, and the timezone picker in Preferences no
   longer recomputes every zone's offset on each visit.
+- Error messages on the assistant, checkout, recording and chat-settings
+  screens are drawn as the app's one banner, not as a line of red text, and
+  the "may delete" consent on the connect and chat screens says so in dark
+  words rather than red — small red text is the one place colour cannot carry
+  meaning for everyone. The planner's delete confirmation is the ordinary
+  danger button.
+- The order a list is read in is remembered the same way in every room. Goals,
+  habits and recipes start from their default order once after this update.
 
 ## 0.185.5 — 2026-10-03
 
