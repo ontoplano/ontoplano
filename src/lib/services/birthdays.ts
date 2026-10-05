@@ -4,7 +4,7 @@ import { db } from '$lib/db/index.js';
 import { people, reminders } from '$lib/db/schema.js';
 import { getGridHours } from './settings.js';
 import { notifies } from './notifications.js';
-import { localOfInstant } from './time.js';
+import { localOfInstant, dayOf } from './time.js';
 
 /**
  * Being told it is somebody's birthday, on the morning of it.
@@ -36,11 +36,6 @@ import { localOfInstant } from './time.js';
  * was not — which is the `--MM-DD` shape an address book needs and a date type
  * cannot hold. Nothing computes an age from a year it does not have.
  */
-
-/** How the day is written on a reminder, from a wall-clock local time. */
-function dayOf(local: string): string {
-	return local.slice(0, 10);
-}
 
 /** "--03-14" from either shape of stored birthday. */
 function monthDay(birthday: string): string {

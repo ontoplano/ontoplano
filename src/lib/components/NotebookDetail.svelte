@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { peekRefs } from '$lib/task-peek.svelte';
+	import { Reveal, revealNear } from '$lib/reveal.svelte';
 	import GoalFields, { type FormTarget } from '$lib/components/fields/GoalFields.svelte';
 	import ShowingCount from '$lib/components/ShowingCount.svelte';
 	import SearchField from '$lib/components/SearchField.svelte';
@@ -10,12 +12,12 @@
 	import { useWhen } from '$lib/when-context.svelte';
 	import { tick, untrack, type ComponentProps, type Snippet } from 'svelte';
 	import { enhance } from '$lib/enhance';
-	import { SvelteSet } from 'svelte/reactivity';
+	import { MediaQuery, SvelteSet } from 'svelte/reactivity';
 	import OneLine from '$lib/components/OneLine.svelte';
 	import { resolve } from '$app/paths';
 	import { armed } from '$lib/actions/armed';
 	import { BackCloses } from '$lib/back-closes';
-	import { isPhone } from '$lib/breakpoints';
+	import { SPLIT_MEDIA, isPhone } from '$lib/breakpoints';
 	import { keepInView } from '$lib/actions/keep-in-view';
 	import TabStrip from '$lib/components/TabStrip.svelte';
 	import EmptyState from '$lib/components/EmptyState.svelte';
@@ -35,13 +37,8 @@
 	import {
 		DEFAULT_NOTE_ORDER,
 		defaultDirectionFor,
-		NOTE_DIRECTION_KEY,
 		NOTE_ORDERS,
-		NOTE_ORDER_KEY,
-		isNoteDirection,
-		isNoteOrder,
 		orderNotes,
-		type NoteDirection,
 		type NoteOrder
 	} from '$lib/note-order';
 	import TodoRows from '$lib/components/TodoRows.svelte';
@@ -83,6 +80,7 @@
 	import { renderMarkdown } from '$lib/markdown';
 	import { say } from '$lib/said.svelte';
 	import { useT } from '$lib/i18n';
+	import { RememberedOrder } from '$lib/remembered-order.svelte';
 	import { describeRecurrence, parseRecurrence } from '$lib/recurrence';
 	import type { PlainKey } from '$lib/i18n/keys';
 
@@ -140,6 +138,13 @@
 		allTodos = [],
 		activities = [],
 		composing = $bindable(false),
+		/**
+		 * What the page's last action refused, for whichever dialog here sent
+		 * it. A dialog saved from its footer steps away and comes back only to
+		 * say why; without this the reason had nowhere to land but the page's
+		 * own banner, under the tabs, while the dialog came back saying nothing.
+		 */
+		error = null,
 		/**
 		 * The New button for whichever tab is showing, for the page to draw.
 		 *
@@ -244,6 +249,7 @@
 		activities?: { id: number; name: string }[];
 		/** Whether the composer is open, so a page can put the button elsewhere. */
 		composing?: boolean;
+		error?: string | null;
 		newAction?: { label: string; labels: string[]; run?: () => void; href?: string } | undefined;
 		linkAction?: { label: string; run: () => void } | undefined;
 	} = $props();
@@ -370,6 +376,208 @@
 		} catch {
 			// Blocked storage loses the preference, not the feature.
 		}
+	}
+
+	/*
+	 * The full screen, on a desk: its column can be dragged wider or narrower,
+	 * and a tab dragged to its right edge opens beside the others.
+	 *
+	 * `tab` stays what it always was — the tab the keys, the cursor and the
+	 * room's New button act on — and with panes that is the pane last pressed.
+	 * `paneTabs` is every tab showing, in order; outside the split it is just
+	 * `[tab]`. A tab is in one pane at most: picking one already open goes to it.
+	 */
+	const TAB_DRAG = 'application/x-ontoplano-notebook-tab';
+	/** More than this and a pane is narrower than a list row reads at. */
+	const MAX_PANES = 3;
+	/** The narrowest the column or a pane may be dragged, in pixels. */
+	const MIN_COLUMN_PX = 480;
+	const MIN_PANE_PX = 280;
+	/** How far an arrow key moves an edge or a divider. */
+	const NUDGE_PX = 32;
+	const WIDTH_KEY = 'notebook.width';
+
+	const wide = new MediaQuery(SPLIT_MEDIA);
+	const canSplit = $derived(maximized && wide.current);
+	let paneTabs = $state<Tab[]>([]);
+	let paneShare = $state<number[]>([]);
+	let activePane = $state(0);
+	let panesEl = $state<HTMLElement>();
+	let draggingTab = $state(false);
+	const split = $derived(canSplit && paneTabs.length > 1);
+
+	// The keys can change the tab too (h/l, a link to a task): it lands in
+	// the pane it is already showing in, or replaces the active pane's.
+	$effect(() => {
+		const k = tab;
+		untrack(() => {
+			const at = paneTabs.indexOf(k);
+			if (at >= 0) activePane = at;
+			else if (paneTabs.length < 2) paneTabs = [k];
+			else paneTabs[activePane] = k;
+		});
+	});
+
+	// A module switched off while it was showing in a pane takes the pane.
+	$effect(() => {
+		const offered = TAB_KEYS;
+		untrack(() => {
+			if (paneTabs.every((k) => offered.includes(k))) return;
+			const kept = paneTabs.filter((k) => offered.includes(k));
+			paneTabs = kept.length ? kept : [tab];
+			paneShare = paneTabs.map(() => 1);
+			activePane = Math.min(activePane, paneTabs.length - 1);
+		});
+	});
+
+	function showTab(key: Tab) {
+		moduleSearches[key] = '';
+		tab = key;
+	}
+
+	function focusPane(i: number) {
+		if (paneTabs[i] === undefined || (activePane === i && tab === paneTabs[i])) return;
+		activePane = i;
+		tab = paneTabs[i];
+	}
+
+	function pickInPane(i: number, key: Tab) {
+		const open = paneTabs.indexOf(key);
+		if (open >= 0 && open !== i) return focusPane(open);
+		moduleSearches[key] = '';
+		paneTabs[i] = key;
+		activePane = i;
+		tab = key;
+	}
+
+	function openBeside(key: Tab) {
+		const open = paneTabs.indexOf(key);
+		if (open >= 0 && paneTabs.length > 1) return focusPane(open);
+		const others = paneTabs.filter((k) => k !== key);
+		if (others.length >= MAX_PANES) return;
+		// Dragging the only tab showing out beside itself leaves the next one
+		// in its place, so there is something on each side.
+		const left = others.length ? others : [TAB_KEYS.find((k) => k !== key) ?? key];
+		paneTabs = [...left, key];
+		paneShare = paneTabs.map(() => 1);
+		activePane = paneTabs.length - 1;
+		moduleSearches[key] = '';
+		tab = key;
+	}
+
+	function closePane(i: number) {
+		const next = paneTabs.filter((_, at) => at !== i);
+		const shares = paneShare.filter((_, at) => at !== i);
+		paneTabs = next;
+		paneShare = shares;
+		activePane = Math.max(
+			0,
+			Math.min(activePane > i ? activePane - 1 : activePane, next.length - 1)
+		);
+		tab = next[activePane];
+	}
+
+	function dropBeside(event: DragEvent) {
+		event.preventDefault();
+		draggingTab = false;
+		const index = Number(event.dataTransfer?.getData(TAB_DRAG));
+		const key = tabs[index]?.key;
+		if (key) openBeside(key);
+	}
+
+	/** Only a tab of this notebook raises the drop zone, not a file or a link. */
+	function noticeDrag(event: DragEvent) {
+		draggingTab = canSplit && Boolean(event.dataTransfer?.types.includes(TAB_DRAG));
+	}
+
+	/** The column's width in pixels, or null for the reading width (one pane) or the screen (several). */
+	let columnPx = $state<number | null>(readWidth());
+
+	function readWidth(): number | null {
+		if (typeof localStorage === 'undefined') return null;
+		try {
+			const raw = Number(localStorage.getItem(WIDTH_KEY));
+			return Number.isFinite(raw) && raw >= MIN_COLUMN_PX ? raw : null;
+		} catch {
+			return null;
+		}
+	}
+
+	function setWidth(px: number | null) {
+		columnPx =
+			px === null ? null : Math.round(Math.max(MIN_COLUMN_PX, Math.min(px, window.innerWidth)));
+		try {
+			if (columnPx === null) localStorage.removeItem(WIDTH_KEY);
+			else localStorage.setItem(WIDTH_KEY, String(columnPx));
+		} catch {
+			// Blocked storage loses the width, not the feature.
+		}
+	}
+
+	/** What the column measures now, whatever it was set by. */
+	function currentWidth(): number {
+		return surface?.querySelector<HTMLElement>('.nb-body')?.getBoundingClientRect().width ?? 0;
+	}
+
+	function startGrip(event: PointerEvent) {
+		const grip = event.currentTarget as HTMLElement;
+		grip.setPointerCapture(event.pointerId);
+		const move = (e: PointerEvent) => setWidth(2 * Math.abs(e.clientX - window.innerWidth / 2));
+		const stop = () => {
+			grip.removeEventListener('pointermove', move);
+			grip.removeEventListener('pointerup', stop);
+			grip.removeEventListener('pointercancel', stop);
+		};
+		grip.addEventListener('pointermove', move);
+		grip.addEventListener('pointerup', stop);
+		grip.addEventListener('pointercancel', stop);
+	}
+
+	function nudgeWidth(event: KeyboardEvent, side: number) {
+		const outward = event.key === 'ArrowRight' ? side : event.key === 'ArrowLeft' ? -side : 0;
+		if (!outward) return;
+		event.preventDefault();
+		setWidth(currentWidth() + 2 * outward * NUDGE_PX);
+	}
+
+	/** The panes' widths now, which is what a divider starts from. */
+	function measuredShares(): number[] {
+		return [...(panesEl?.querySelectorAll<HTMLElement>(':scope > .nb-pane') ?? [])].map(
+			(pane) => pane.getBoundingClientRect().width
+		);
+	}
+
+	/** Move the line between pane `i - 1` and pane `i` by `dx` pixels. */
+	function shiftDivider(widths: number[], i: number, dx: number) {
+		const pair = widths[i - 1] + widths[i];
+		const left = Math.max(MIN_PANE_PX, Math.min(widths[i - 1] + dx, pair - MIN_PANE_PX));
+		const next = [...widths];
+		next[i - 1] = left;
+		next[i] = pair - left;
+		paneShare = next;
+	}
+
+	function startDivider(event: PointerEvent, i: number) {
+		const divider = event.currentTarget as HTMLElement;
+		divider.setPointerCapture(event.pointerId);
+		const from = event.clientX;
+		const widths = measuredShares();
+		const move = (e: PointerEvent) => shiftDivider(widths, i, e.clientX - from);
+		const stop = () => {
+			divider.removeEventListener('pointermove', move);
+			divider.removeEventListener('pointerup', stop);
+			divider.removeEventListener('pointercancel', stop);
+		};
+		divider.addEventListener('pointermove', move);
+		divider.addEventListener('pointerup', stop);
+		divider.addEventListener('pointercancel', stop);
+	}
+
+	function nudgeDivider(event: KeyboardEvent, i: number) {
+		const dx = event.key === 'ArrowRight' ? NUDGE_PX : event.key === 'ArrowLeft' ? -NUDGE_PX : 0;
+		if (!dx) return;
+		event.preventDefault();
+		shiftDivider(measuredShares(), i, dx);
 	}
 
 	/** On a phone the maximized notebook is a screen, so back closes it. */
@@ -501,7 +709,7 @@
 				.filter((one) => one.notebookSeq !== null)
 				.map((one) => [
 					one.notebookSeq as number,
-					{ title: one.title, done: CLOSED_STATUSES.includes(one.status) }
+					{ title: one.title, done: CLOSED_STATUSES.includes(one.status), task: one }
 				])
 		)
 	);
@@ -804,46 +1012,12 @@
 	 * comparison itself lives in `$lib/note-order.ts`, where it can be tested
 	 * without a page.
 	 */
-	let noteOrder = $state<NoteOrder>(DEFAULT_NOTE_ORDER);
-	let noteDirection = $state<NoteDirection>(defaultDirectionFor(DEFAULT_NOTE_ORDER));
-
-	$effect(() => {
-		try {
-			const order = localStorage.getItem(NOTE_ORDER_KEY);
-			if (isNoteOrder(order)) noteOrder = order;
-			const direction = localStorage.getItem(NOTE_DIRECTION_KEY);
-			if (isNoteDirection(direction)) noteDirection = direction;
-		} catch {
-			// A private window, or storage refused. The defaults stand.
-		}
-	});
-
-	function remember(key: string, value: string) {
-		try {
-			localStorage.setItem(key, value);
-		} catch {
-			// It still holds for this visit; only the memory is lost.
-		}
-	}
-
-	/**
-	 * Choosing a field also chooses the direction somebody meant by it.
-	 *
-	 * "Edited" asked ascending is the note nobody has touched since February,
-	 * which is not the question anybody opens that order to ask. The arrow is
-	 * still right there to turn it round.
-	 */
-	function pickOrder(order: NoteOrder) {
-		noteOrder = order;
-		noteDirection = defaultDirectionFor(order);
-		remember(NOTE_ORDER_KEY, order);
-		remember(NOTE_DIRECTION_KEY, noteDirection);
-	}
-
-	function flipDirection() {
-		noteDirection = noteDirection === 'asc' ? 'desc' : 'asc';
-		remember(NOTE_DIRECTION_KEY, noteDirection);
-	}
+	const sorting = new RememberedOrder<NoteOrder>(
+		'notes',
+		NOTE_ORDERS,
+		DEFAULT_NOTE_ORDER,
+		defaultDirectionFor
+	);
 
 	const ORDER_LABELS: Record<NoteOrder, PlainKey> = {
 		written: 'notebookDetail.orderWritten',
@@ -885,11 +1059,12 @@
 		noteSearch = '';
 	}
 
-	let moduleSearch = $state('');
-	$effect(() => {
-		void tab;
-		untrack(() => (moduleSearch = ''));
-	});
+	/*
+	 * Each tab's own search. One box used to serve every tab and was emptied on
+	 * a change of tab; with two tabs side by side, typing in one must not
+	 * filter the other. It is still emptied when a pane changes to that tab.
+	 */
+	let moduleSearches = $state<Record<string, string>>({});
 
 	/** The words of whatever a module tab lists, for the search box above it. */
 	function wordsOf(item: Record<string, unknown>): string {
@@ -927,8 +1102,8 @@
 	}
 
 	/** A module tab's list, narrowed by its search box and put in its order. */
-	function searched<T>(items: readonly T[]): T[] {
-		const needle = moduleSearch.trim().toLowerCase();
+	function searched<T>(items: readonly T[], key: Tab): T[] {
+		const needle = (moduleSearches[key] ?? '').trim().toLowerCase();
 		const out = needle
 			? items.filter((item) => wordsOf(item as Record<string, unknown>).includes(needle))
 			: [...items];
@@ -945,17 +1120,17 @@
 		});
 	}
 
-	const shownGoals = $derived(searched(contents?.goals ?? []));
-	const shownIdeas = $derived(searched(contents?.ideas ?? []));
-	const shownInventory = $derived(searched(contents?.inventory ?? []));
-	const shownWorkouts = $derived(searched(contents?.workouts ?? []));
-	const shownRecipes = $derived(searched(contents?.recipes ?? []));
-	const shownLedgers = $derived(searched(contents?.ledgers ?? []));
-	const shownHabits = $derived(searched(contents?.habits ?? []));
-	const shownBills = $derived(searched(contents?.bills ?? []));
+	const shownGoals = $derived(searched(contents?.goals ?? [], 'goals'));
+	const shownIdeas = $derived(searched(contents?.ideas ?? [], 'ideas'));
+	const shownInventory = $derived(searched(contents?.inventory ?? [], 'inventory'));
+	const shownWorkouts = $derived(searched(contents?.workouts ?? [], 'workouts'));
+	const shownRecipes = $derived(searched(contents?.recipes ?? [], 'recipes'));
+	const shownLedgers = $derived(searched(contents?.ledgers ?? [], 'ledgers'));
+	const shownHabits = $derived(searched(contents?.habits ?? [], 'habits'));
+	const shownBills = $derived(searched(contents?.bills ?? [], 'bills'));
 
-	/** How many the showing tab holds, and how many of them the search leaves. */
-	const moduleTally = $derived.by(() => {
+	/** How many a module tab holds, and how many of them its search leaves. */
+	const moduleTallies = $derived.by(() => {
 		const pairs: Partial<Record<Tab, [number, number]>> = {
 			goals: [contents?.goals.length ?? 0, shownGoals.length],
 			ideas: [contents?.ideas.length ?? 0, shownIdeas.length],
@@ -966,8 +1141,9 @@
 			habits: [contents?.habits.length ?? 0, shownHabits.length],
 			bills: [contents?.bills.length ?? 0, shownBills.length]
 		};
-		return pairs[tab] ?? null;
+		return pairs;
 	});
+	const tallyOf = (key: Tab) => moduleTallies[key] ?? null;
 
 	function toggleNoteTag(name: string) {
 		noteTagFilter = noteTagFilter.includes(name)
@@ -992,7 +1168,7 @@
 					(entry.title ?? '').toLowerCase().includes(wanted) ||
 					(entry.content ?? '').toLowerCase().includes(wanted)
 			);
-		return orderNotes(out, noteOrder, noteDirection);
+		return orderNotes(out, sorting.order, sorting.direction);
 	});
 
 	/*
@@ -1118,10 +1294,30 @@
 	 * to-do room's own component and takes the keys itself, so this hands them
 	 * over rather than fighting it for them.
 	 */
+	/*
+	 * The long lists, drawn fifty at a time as their end comes near — see
+	 * `$lib/reveal`. A notebook of years of notes froze opening otherwise.
+	 */
+	const noteReveal = new Reveal(
+		() => shownNotes.length,
+		() => (contents?.entries ?? orphaned).length
+	);
+	const goalReveal = new Reveal(
+		() => shownGoals.length,
+		() => contents?.goals.length ?? 0
+	);
+	const ideaReveal = new Reveal(
+		() => shownIdeas.length,
+		() => contents?.ideas.length ?? 0
+	);
+
 	browsable(() => ({
 		items: () => (tab === 'notes' ? shownNotes : tab === 'goals' ? shownGoals : []),
 		cursor: () => cursor,
-		moveTo: (at: number) => (cursor = at),
+		moveTo: (at: number) => {
+			cursor = at;
+			(tab === 'goals' ? goalReveal : noteReveal).reach(at);
+		},
 		tabs: { of: TAB_KEYS, current: () => tab, go: (key: string) => (tab = key as Tab) },
 		open: (at: number) => {
 			if (tab === 'notes') toggleNote(shownNotes[at].id);
@@ -1144,7 +1340,12 @@
 	}
 </script>
 
-<svelte:window onkeydown={noteSelectionKeys} />
+<svelte:window
+	onkeydown={noteSelectionKeys}
+	ondragstart={noticeDrag}
+	ondragend={() => (draggingTab = false)}
+	ondrop={() => (draggingTab = false)}
+/>
 
 <!--
 	The dialog is the notebook's own surface, inline until `showModal()` — see
@@ -1156,7 +1357,11 @@
 	onclose={leaveMaximized}
 	aria-label={notebook?.title ?? 'Notes'}
 	class="nb-surface as-surface bg-white"
-	style="--nb-type: {TYPE_STEPS[typeStep]}"
+	class:nb-split={split}
+	data-screen
+	style="--nb-type: {TYPE_STEPS[typeStep]}{canSplit
+		? `; --nb-width: ${columnPx === null ? (split ? '100%' : 'var(--max-width-reading)') : `${columnPx}px`}`
+		: ''}"
 >
 	{#if maximized}
 		<header class="flex shrink-0 items-center gap-2 border-b border-gray-200 px-3 py-2">
@@ -1258,430 +1463,539 @@
 			-->
 			<!-- The same strip a room's tabs are, one level down; the whole-screen
 			     button stands at its far end, as a room's verb does. -->
-			<div class="notebook-tabs">
-				<TabStrip
-					nested
-					label={t('notebookDetail.sections')}
-					dataTour="notebook-tabs"
-					tabs={tabs.map((option) => ({
-						label: t(option.label),
-						icon: moduleGlyph(option.key),
-						count: String(option.count)
-					}))}
-					current={tabs.findIndex((option) => option.key === tab)}
-					onpick={(index) => (tab = tabs[index].key)}
-				>
-					{#snippet trailing()}
-						<button
-							type="button"
-							onclick={() => (maximized ? leaveMaximized() : enterMaximized())}
-							class="icon-btn ml-auto shrink-0"
-							title={maximized
-								? t('notebookDetail.backToThePage')
-								: t('notebookDetail.theWholeScreen')}
-							aria-label={maximized
-								? t('notebookDetail.backToThePage')
-								: t('notebookDetail.theWholeScreen')}
+			{#if split}
+				<!--
+					Side by side: one pane per tab, each with its own strip and a ×,
+					the widths shared out by the bars between them. A press anywhere in
+					a pane makes it the one the keys and the room's New button act on.
+				-->
+				<div class="nb-panes" bind:this={panesEl}>
+					{#each paneTabs as k, i (k)}
+						{#if i > 0}
+							<div
+								role="separator"
+								aria-orientation="vertical"
+								aria-label={t('notebookDetail.sharePanes')}
+								title={t('notebookDetail.sharePanes')}
+								tabindex="0"
+								class="nb-divider"
+								onpointerdown={(event) => startDivider(event, i)}
+								onkeydown={(event) => nudgeDivider(event, i)}
+							></div>
+						{/if}
+						<section
+							class="nb-pane"
+							class:nb-pane-active={k === tab}
+							style="flex: {paneShare[i] ?? 1} 1 0"
+							aria-label={t(tabs.find((option) => option.key === k)?.label ?? 'ui.notes')}
+							onpointerdowncapture={() => focusPane(i)}
+							onfocusin={() => focusPane(i)}
 						>
-							<Icon name="maximize" />
-						</button>
-					{/snippet}
-				</TabStrip>
-			</div>
-
-			{#if tab === 'notes'}
-				<!--
-					The same block the Tasks tab draws, by the same component.
-
-					This was a hand-rolled row with `px-2 py-1.5` on it while Tasks
-					used `RoomToolbar inset`, which is a whole rem — so the search
-					box, the filter button, the count and the sort all sat eight
-					pixels further left here, and the strip was a different height.
-					Changing tab moved every control in it. One component, so the
-					two cannot drift again.
-				-->
-				<RoomToolbar inset>
-					{#snippet tools()}
-						{@render noteControls()}
-					{/snippet}
-				</RoomToolbar>
-			{:else if moduleTally && moduleTally[0] > 0}
-				<!-- The strip every tab of a notebook opens on: search and count, in
-				     the places the Notes and Tasks tabs put them. -->
-				<RoomToolbar inset>
-					{#snippet tools()}
-						{@render moduleControls(moduleTally[0], moduleTally[1])}
-					{/snippet}
-				</RoomToolbar>
+							<div class="notebook-tabs">{@render strip(i)}</div>
+							{@render tabBody(k)}
+						</section>
+					{/each}
+				</div>
+			{:else}
+				<div class="notebook-tabs" data-tour="notebook-tabs">{@render strip(-1)}</div>
+				{@render tabBody(tab)}
 			{/if}
+		{/if}
+	</div>
 
-			{#if moduleTally && moduleTally[0] > 0 && moduleTally[1] === 0}
-				<EmptyState filtered onclear={() => (moduleSearch = '')} compact />
-			{/if}
-
-			{#if tab === 'notes'}
-				<!--
-			Writing about the kitchen renovation used to mean going to the Diary and
-			remembering to pick the notebook from a dropdown.
-
-			Behind a button, on every screen. Standing open it took the top of the
-			notebook whether or not anybody was writing — a title box, a text box,
-			a picture button and a fold of tags, above the notes somebody came to
-			read. The button is where the form was, so opening it costs one press
-			and closing it gives the space back.
-
-			It is tinted and it ends in a rule: the notes below are separated from
-			each other by exactly that line, so a composer with no edge of its own
-			read as the first note in the list. A different surface says "this is
-			where you write" without another heading to say it.
+	{#if canSplit}
+		<!--
+			The column's two edges, to drag it wider or narrower. Centred, so
+			either edge moves both; a double press puts it back.
 		-->
-				{#if composing}
-					<form
-						method="post"
-						action="?/addEntry"
-						use:enhance={() =>
-							async ({ update, result }) => {
-								await update({ reset: result.type === 'success' });
-								// Written and gone: the space belongs to the notes again.
-								if (result.type === 'success') composing = false;
-							}}
-						class="border-b border-gray-200 bg-gray-50 px-4 pt-3 pb-4"
-					>
-						<input type="hidden" name="notebookId" value={notebook.id} />
-						<!--
-						A name first, because the list is names.
+		{#each [-1, 1] as side (side)}
+			<div
+				role="separator"
+				aria-orientation="vertical"
+				aria-label={t('notebookDetail.resizeWidth')}
+				title={t('notebookDetail.resizeWidth')}
+				tabindex="0"
+				class="nb-grip {side < 0 ? 'nb-grip-left' : 'nb-grip-right'}"
+				onpointerdown={startGrip}
+				ondblclick={() => setWidth(null)}
+				onkeydown={(event) => nudgeWidth(event, side)}
+			></div>
+		{/each}
+		{#if draggingTab}
+			<!-- Where a dragged tab opens beside the ones showing. -->
+			<div
+				class="nb-drop"
+				role="region"
+				aria-label={t('notebookDetail.openBeside')}
+				ondragover={(event) => {
+					event.preventDefault();
+					if (event.dataTransfer) event.dataTransfer.dropEffect = 'move';
+				}}
+				ondrop={dropBeside}
+			>
+				<Icon name="plus" />
+				<span>{t('notebookDetail.openBeside')}</span>
+			</div>
+		{/if}
+	{/if}
+</dialog>
 
-						Not required: a note jotted in a hurry should not be held up by a
-						form asking what to call it, and one without a name is listed by
-						its first line.
-					-->
-						<OneLine
-							name="heading"
-							placeholder={t('ui.title')}
-							class="input mb-2 w-full font-medium"
-						/>
-						<!-- The same box the modal has, preview and all: a note written
-						     here is the same note, and it was the one place that got a
-						     bare textarea. -->
-						<MarkdownBox
-							bind:element={addBox}
-							bind:value={composing_content}
-							name="content"
-							rows={6}
-							required
-							todos={todoRefs}
-							notes={noteRefs}
-							placeholder={t('notebookDetail.writeANoteAbout', { title: notebook.title })}
-						/>
-						<!-- A note written here takes a picture the same way a note written in
-			     the diary does. It was missing here, which made pictures look like
-			     a feature of one screen rather than of notes. -->
-						<PictureAttach target={addBox} />
-						<!--
-				Tags and people, the same as a note written in the diary.
+<!--
+	A tab strip: the notebook's (`pane` -1), or one pane's when split. Its tabs
+	can be dragged to the right edge on the full screen, which opens them beside.
+-->
+{#snippet strip(pane: number)}
+	{@const showing = pane < 0 ? tab : paneTabs[pane]}
+	<!-- The same strip a room's tabs are, one level down; the whole-screen
+	     button stands at its far end, as a room's verb does. -->
+	<TabStrip
+		nested
+		label={t('notebookDetail.sections')}
+		tabs={tabs.map((option) => ({
+			label: t(option.label),
+			icon: moduleGlyph(option.key),
+			count: String(option.count)
+		}))}
+		current={tabs.findIndex((option) => option.key === showing)}
+		onpick={(index) => (pane < 0 ? showTab(tabs[index].key) : pickInPane(pane, tabs[index].key))}
+		dragType={canSplit ? TAB_DRAG : undefined}
+	>
+		{#snippet trailing()}
+			{#if pane < 0}
+				<button
+					type="button"
+					onclick={() => (maximized ? leaveMaximized() : enterMaximized())}
+					class="icon-btn ml-auto shrink-0"
+					title={maximized ? t('notebookDetail.backToThePage') : t('notebookDetail.theWholeScreen')}
+					aria-label={maximized
+						? t('notebookDetail.backToThePage')
+						: t('notebookDetail.theWholeScreen')}
+				>
+					<Icon name="maximize" />
+				</button>
+			{:else}
+				<button
+					type="button"
+					onclick={() => closePane(pane)}
+					class="icon-btn ml-auto shrink-0"
+					title={t('notebookDetail.closePane')}
+					aria-label={t('notebookDetail.closePane')}
+				>
+					<Icon name="close" />
+				</button>
+			{/if}
+		{/snippet}
+	</TabStrip>
+{/snippet}
 
-				Folded away because the common act here is typing a line and
-				pressing add, and two more boxes in front of that is a form where
-				there was a composer. Open, they are the same two fields, posting
-				the same two names.
+<!--
+	What one tab shows, below its strip: drawn once for the notebook, or once
+	per pane when the full screen is split. `k` is the tab; `tab` is the pane
+	last pressed, which is the one the keys and the room's New button act on.
+-->
+{#snippet tabBody(k: Tab)}
+	<!-- Only ever drawn with a notebook open; said again for the types. -->
+	{#if notebook && contents}
+		{#if k === 'notes'}
+			<!--
+				The same block the Tasks tab draws, by the same component.
 
-				Indented to `btn-sm`'s own left padding so its marker starts where
-				the picture button's icon starts: two controls stacked under a text
-				box, reading as one column rather than as two half-aligned rows.
+				This was a hand-rolled row with `px-2 py-1.5` on it while Tasks
+				used `RoomToolbar inset`, which is a whole rem — so the search
+				box, the filter button, the count and the sort all sat eight
+				pixels further left here, and the strip was a different height.
+				Changing tab moved every control in it. One component, so the
+				two cannot drift again.
 			-->
-						<div class="mt-1 pl-2.5">
-							<MoreOptions label={t('notebookDetail.tagsPeople')} count={0} divided={false}>
-								{@render tagsAndPeople('', '')}
-							</MoreOptions>
-						</div>
-						<!--
-							The checklist offer, where the checkboxes are being typed.
+			<RoomToolbar inset>
+				{#snippet tools()}
+					{@render noteControls()}
+				{/snippet}
+			</RoomToolbar>
+		{:else if (tallyOf(k)?.[0] ?? 0) > 0}
+			<!-- The strip every tab of a notebook opens on: search and count, in
+			     the places the Notes and Tasks tabs put them. -->
+			<RoomToolbar inset>
+				{#snippet tools()}
+					{@render moduleControls(k, tallyOf(k)![0], tallyOf(k)![1])}
+				{/snippet}
+			</RoomToolbar>
+		{/if}
 
-							It used to be an icon on the finished note's row, found
-							afterwards by somebody who went looking. The moment it is
-							wanted is while the list is being written, so it appears the
-							instant a `- [ ]` does.
+		{#if (tallyOf(k)?.[0] ?? 0) > 0 && tallyOf(k)![1] === 0}
+			<EmptyState filtered onclear={() => (moduleSearches[k] = '')} compact />
+		{/if}
 
-							The row holds its height whether or not the button is in it,
-							so a checkbox typed into the third line does not shift the
-							composer under the hand about to press Add.
-						-->
-						<div class="mt-2 flex min-h-8 items-center justify-end gap-2">
-							{#if composingTodoCount > 0}
-								<button
-									type="submit"
-									name="alsoTodos"
-									value="1"
-									class="btn btn-sm"
-									title={t('notebookDetail.makeTodosOfTheCheckboxes')}
-								>
-									<Icon name="check" />
-									{t('notebookDetail.addWithTodos', { count: composingTodoCount })}
-								</button>
-							{/if}
-							<button class="btn btn-primary btn-sm"
-								><Icon name="plus" /> {t('notebookDetail.addNote')}</button
+		{#if k === 'notes'}
+			<!--
+		Writing about the kitchen renovation used to mean going to the Diary and
+		remembering to pick the notebook from a dropdown.
+
+		Behind a button, on every screen. Standing open it took the top of the
+		notebook whether or not anybody was writing — a title box, a text box,
+		a picture button and a fold of tags, above the notes somebody came to
+		read. The button is where the form was, so opening it costs one press
+		and closing it gives the space back.
+
+		It is tinted and it ends in a rule: the notes below are separated from
+		each other by exactly that line, so a composer with no edge of its own
+		read as the first note in the list. A different surface says "this is
+		where you write" without another heading to say it.
+	-->
+			{#if composing}
+				<form
+					method="post"
+					action="?/addEntry"
+					use:enhance={() =>
+						async ({ update, result }) => {
+							await update({ reset: result.type === 'success' });
+							// Written and gone: the space belongs to the notes again.
+							if (result.type === 'success') composing = false;
+						}}
+					class="border-b border-gray-200 bg-gray-50 px-4 pt-3 pb-4"
+				>
+					<input type="hidden" name="notebookId" value={notebook.id} />
+					<!--
+					A name first, because the list is names.
+
+					Not required: a note jotted in a hurry should not be held up by a
+					form asking what to call it, and one without a name is listed by
+					its first line.
+				-->
+					<OneLine
+						name="heading"
+						placeholder={t('ui.title')}
+						class="input mb-2 w-full font-medium"
+					/>
+					<!-- The same box the modal has, preview and all: a note written
+					     here is the same note, and it was the one place that got a
+					     bare textarea. -->
+					<MarkdownBox
+						bind:element={addBox}
+						bind:value={composing_content}
+						name="content"
+						rows={6}
+						required
+						todos={todoRefs}
+						notes={noteRefs}
+						placeholder={t('notebookDetail.writeANoteAbout', { title: notebook.title })}
+					/>
+					<!-- A note written here takes a picture the same way a note written in
+		     the diary does. It was missing here, which made pictures look like
+		     a feature of one screen rather than of notes. -->
+					<PictureAttach target={addBox} />
+					<!--
+			Tags and people, the same as a note written in the diary.
+
+			Folded away because the common act here is typing a line and
+			pressing add, and two more boxes in front of that is a form where
+			there was a composer. Open, they are the same two fields, posting
+			the same two names.
+
+			Indented to `btn-sm`'s own left padding so its marker starts where
+			the picture button's icon starts: two controls stacked under a text
+			box, reading as one column rather than as two half-aligned rows.
+		-->
+					<div class="mt-1 pl-2.5">
+						<MoreOptions label={t('notebookDetail.tagsPeople')} count={0} divided={false}>
+							{@render tagsAndPeople('', '')}
+						</MoreOptions>
+					</div>
+					<!--
+						The checklist offer, where the checkboxes are being typed.
+
+						It used to be an icon on the finished note's row, found
+						afterwards by somebody who went looking. The moment it is
+						wanted is while the list is being written, so it appears the
+						instant a `- [ ]` does.
+
+						The row holds its height whether or not the button is in it,
+						so a checkbox typed into the third line does not shift the
+						composer under the hand about to press Add.
+					-->
+					<div class="mt-2 flex min-h-8 items-center justify-end gap-2">
+						{#if composingTodoCount > 0}
+							<button
+								type="submit"
+								name="alsoTodos"
+								value="1"
+								class="btn btn-sm"
+								title={t('notebookDetail.makeTodosOfTheCheckboxes')}
 							>
-						</div>
-					</form>
-				{/if}
+								<Icon name="check" />
+								{t('notebookDetail.addWithTodos', { count: composingTodoCount })}
+							</button>
+						{/if}
+						<button class="btn btn-primary btn-sm"
+							><Icon name="plus" /> {t('notebookDetail.addNote')}</button
+						>
+					</div>
+				</form>
+			{/if}
 
-				{@render noteList(shownNotes, notebook.id)}
-			{:else if tab === 'tasks'}
-				<!--
-					The to-do room, looking at one subject.
+			{@render noteList(shownNotes, notebook.id)}
+		{:else if k === 'tasks'}
+			<!--
+				The to-do room, looking at one subject.
 
-					A notebook's tasks used to be a read-only list: you could see that
-					four things about the kitchen were waiting and could not tick one
-					off without going somewhere else. It is the same component the
-					room uses, so a todo behaves the same way wherever it is found —
-					and a new one written here lands in this notebook.
-				-->
-				<!--
-					`shortcutRoom` so the rows answer to j/k here as they do in the
-					room. The keys did nothing on this tab: the view above declares
-					its items as the notes and gives back none on any other tab, and
-					the list was never told to take them itself. It reads the to-do
-					room's own bindings, which is the point — the same list behaves
-					the same way wherever it is found.
+				A notebook's tasks used to be a read-only list: you could see that
+				four things about the kitchen were waiting and could not tick one
+				off without going somewhere else. It is the same component the
+				room uses, so a todo behaves the same way wherever it is found —
+				and a new one written here lands in this notebook.
+			-->
+			<!--
+				`shortcutRoom` so the rows answer to j/k here as they do in the
+				room. The keys did nothing on this tab: the view above declares
+				its items as the notes and gives back none on any other tab, and
+				the list was never told to take them itself. It reads the to-do
+				room's own bindings, which is the point — the same list behaves
+				the same way wherever it is found.
 
-					`framed` off because the card here is the notebook's: the filters
-					and the rows are panes of it, edge to edge, rather than a second
-					card drawn inside the first.
-				-->
-				<TodoRows
-					todos={contents.todos}
-					{categories}
-					notebooks={pickableNotebooks}
-					actions={NOTEBOOK_TODO_ACTIONS}
-					notebookId={notebook.id}
-					shortcutRoom={tab === 'tasks' ? '/tasks/todo' : null}
-					claimsRoomBar={false}
-					framed={false}
-					bind:openNew={openNewTodo}
-					bind:openTodo={openTodoById}
+				`framed` off because the card here is the notebook's: the filters
+				and the rows are panes of it, edge to edge, rather than a second
+				card drawn inside the first.
+			-->
+			<TodoRows
+				todos={contents.todos}
+				{categories}
+				notebooks={pickableNotebooks}
+				actions={NOTEBOOK_TODO_ACTIONS}
+				notebookId={notebook.id}
+				shortcutRoom={k === tab ? '/tasks/todo' : null}
+				claimsRoomBar={false}
+				framed={false}
+				bind:openNew={openNewTodo}
+				bind:openTodo={openTodoById}
+			/>
+
+			<!--
+				Blocks below, and still a list: a block is a thing that happens at
+				a time rather than a thing to finish, and it is edited on the day
+				it sits on.
+			-->
+			{#if contents.blocks.length > 0}
+				<ul class="divide-y divide-gray-200 border-t border-gray-200">
+					{#each contents.blocks as block (`${block.kind}${block.id}`)}
+						<li class="flex items-center gap-3 px-4 py-2 text-sm">
+							<Icon name="calendar" class="shrink-0 text-gray-500" />
+							<span class="min-w-0 flex-1 truncate text-gray-900"
+								>{block.label || t('tasks.plan.untitledBlock')}</span
+							>
+							<span class="tabular shrink-0 text-xs text-gray-500">
+								{block.kind === 'weekly'
+									? describeRecurrence(parseRecurrence(block.recurrence), block.weekday ?? 0, t)
+									: civilOf(block.date, now())}
+								{block.startTime}
+							</span>
+						</li>
+					{/each}
+				</ul>
+			{/if}
+		{:else if k === 'goals'}
+			<!--
+				The goals room's own card, not a line of text.
+
+				This was a list of titles linking to `/goals`: you could see
+				that a goal existed and do nothing to it — no edit, no delete,
+				no way to say it was achieved or missed, nothing about what
+				counts towards it. Filing a goal under a notebook is supposed
+				to scope it, not strip it.
+			-->
+			<div class="divide-y divide-gray-200">
+				{#each goalReveal.of(shownGoals) as goal, at (goal.id)}
+					<div
+						class={k === tab && cursor === at ? 'kb-cursor' : ''}
+						use:revealNear={{ reveal: goalReveal, index: at, trigger: goalReveal.trigger }}
+					>
+						<GoalCard
+							{goal}
+							goals={contents.goals}
+							{allTodos}
+							{slots}
+							{activities}
+							actions={NOTEBOOK_GOAL_ACTIONS}
+							onedit={(id) => openGoalEdit(id)}
+							onlink={(id) => (linkingGoalId = id)}
+						/>
+					</div>
+				{/each}
+			</div>
+		{:else if k === 'ideas'}
+			<!--
+				The Ideas room's own card, not a line with a tick beside it.
+
+				An idea filed under a subject is an idea: its star, its tags, the
+				note saying what was applied, and its verbs. Drawing a thinner version of it here is how the two screens
+				stopped agreeing about what an idea is — see `IdeaCard`.
+			-->
+			{#if contents.ideas.length === 0}
+				<EmptyState
+					icon={moduleGlyph('ideas')}
+					title={t('notebooks.nothingUnderThisSubjectYet')}
+					compact
 				/>
-
-				<!--
-					Blocks below, and still a list: a block is a thing that happens at
-					a time rather than a thing to finish, and it is edited on the day
-					it sits on.
-				-->
-				{#if contents.blocks.length > 0}
-					<ul class="divide-y divide-gray-200 border-t border-gray-200">
-						{#each contents.blocks as block (`${block.kind}${block.id}`)}
-							<li class="flex items-center gap-3 px-4 py-2 text-sm">
-								<Icon name="calendar" class="shrink-0 text-gray-500" />
-								<span class="min-w-0 flex-1 truncate text-gray-900"
-									>{block.label || t('tasks.plan.untitledBlock')}</span
-								>
-								<span class="tabular shrink-0 text-xs text-gray-500">
-									{block.kind === 'weekly'
-										? describeRecurrence(parseRecurrence(block.recurrence), block.weekday ?? 0, t)
-										: civilOf(block.date, now())}
-									{block.startTime}
-								</span>
-							</li>
-						{/each}
-					</ul>
-				{/if}
-			{:else if tab === 'goals'}
-				<!--
-					The goals room's own card, not a line of text.
-
-					This was a list of titles linking to `/goals`: you could see
-					that a goal existed and do nothing to it — no edit, no delete,
-					no way to say it was achieved or missed, nothing about what
-					counts towards it. Filing a goal under a notebook is supposed
-					to scope it, not strip it.
-				-->
+			{:else}
 				<div class="divide-y divide-gray-200">
-					{#each shownGoals as goal, at (goal.id)}
-						<div class={tab === 'goals' && cursor === at ? 'kb-cursor' : ''}>
-							<GoalCard
-								{goal}
-								goals={contents.goals}
-								{allTodos}
-								{slots}
-								{activities}
-								actions={NOTEBOOK_GOAL_ACTIONS}
-								onedit={(id) => openGoalEdit(id)}
-								onlink={(id) => (linkingGoalId = id)}
+					{#each ideaReveal.of(shownIdeas) as idea, at (idea.id)}
+						<div use:revealNear={{ reveal: ideaReveal, index: at, trigger: ideaReveal.trigger }}>
+							<IdeaCard
+								{idea}
+								actions={NOTEBOOK_IDEA_ACTIONS}
+								selected
+								onedit={(id) => {
+									editingIdeaId = id;
+									composingIdea = true;
+								}}
 							/>
 						</div>
 					{/each}
 				</div>
-			{:else if tab === 'ideas'}
-				<!--
-					The Ideas room's own card, not a line with a tick beside it.
-
-					An idea filed under a subject is an idea: its star, its tags, the
-					note saying what was applied, and its verbs. Drawing a thinner version of it here is how the two screens
-					stopped agreeing about what an idea is — see `IdeaCard`.
-				-->
-				{#if contents.ideas.length === 0}
-					<EmptyState
-						icon={moduleGlyph('ideas')}
-						title={t('notebooks.nothingUnderThisSubjectYet')}
-						compact
-					/>
-				{:else}
-					<div class="divide-y divide-gray-200">
-						{#each shownIdeas as idea (idea.id)}
-							<div>
-								<IdeaCard
-									{idea}
-									actions={NOTEBOOK_IDEA_ACTIONS}
-									selected
-									onedit={(id) => {
-										editingIdeaId = id;
-										composingIdea = true;
-									}}
-								/>
-							</div>
-						{/each}
-					</div>
-				{/if}
-			{:else if tab === 'inventory'}
-				<!--
-					The Inventory room's own row: the count you press up and down, the
-					price, the thing's own fields and the recipes that use it. The
-					count is the whole point of the list — two tins and none are both
-					"unticked" until you look — see `ItemRow`.
-				-->
-				{#if contents.inventory.length === 0}
-					<EmptyState
-						icon={moduleGlyph('inventory')}
-						title={t('notebooks.nothingUnderThisSubjectYet')}
-						compact
-					/>
-				{:else}
-					<div class="divide-y divide-gray-200">
-						{#each shownInventory as item (item.id)}
-							<div class="row-card {itemRowWash(item)}">
-								<ItemRow {item} {currency} actions={NOTEBOOK_ITEM_ACTIONS} />
-							</div>
-						{/each}
-					</div>
-				{/if}
-			{:else if tab === 'workouts'}
-				<!--
-					The Health room's own card: the plan, and the record of what was
-					actually done under it. Writing a session down is the room's own
-					dialog, which is why that one is a link out rather than a form
-					here — see `WorkoutCard`.
-				-->
-				{#if contents.workouts.length === 0}
-					<EmptyState
-						icon={moduleGlyph('workouts')}
-						title={t('notebooks.nothingUnderThisSubjectYet')}
-						compact
-					/>
-				{:else}
-					<ul class="divide-y divide-gray-200">
-						{#each shownWorkouts as workout (workout.id)}
-							<WorkoutCard
-								{workout}
-								sessions={contents.workoutSessions}
-								actions={NOTEBOOK_WORKOUT_ACTIONS}
-							/>
-						{/each}
-					</ul>
-				{/if}
-			{:else if tab === 'recipes'}
-				<!--
-					The Kitchen's own card: the picture it is known by, and what it
-					needs that the cupboard has not got. The loop between a recipe, the
-					week and the shopping list is what the room is for, and a card
-					without it is a title in a list — see `RecipeCard`.
-				-->
-				{#if contents.recipes.length === 0}
-					<EmptyState
-						icon={moduleGlyph('recipes')}
-						title={t('notebooks.nothingUnderThisSubjectYet')}
-						compact
-					/>
-				{:else}
-					<div class="divide-y divide-gray-200">
-						{#each shownRecipes as recipe (recipe.id)}
-							<RecipeCard {recipe} />
-						{/each}
-					</div>
-				{/if}
-			{:else if tab === 'ledgers'}
-				<!--
-					The Finance room's own tile: what it is called over what it holds,
-					with the balance at the end. A statement is a page rather than a
-					panel, so pressing one goes there — a notebook is not where
-					somebody reads a bank export.
-				-->
-				{#if contents.ledgers.length === 0}
-					<EmptyState
-						icon={moduleGlyph('ledgers')}
-						title={t('notebooks.nothingUnderThisSubjectYet')}
-						compact
-					/>
-				{:else}
-					<div class="flex flex-wrap gap-2 px-4 py-3">
-						{#each shownLedgers as ledger (ledger.id)}
-							<LedgerTile
-								{ledger}
-								{currency}
-								href={`${resolve('/finance/ledgers')}?ledger=${ledger.id}`}
-							/>
-						{/each}
-					</div>
-				{/if}
-			{:else if tab === 'habits'}
-				<!--
-					The Health room's own card: the streak, the year at a glance, the
-					backdating and the note on each day. A habit without those is a
-					checkbox — see `HabitCard`.
-				-->
-				{#if contents.habits.length === 0}
-					<EmptyState
-						icon={moduleGlyph('habits')}
-						title={t('notebooks.nothingUnderThisSubjectYet')}
-						compact
-					/>
-				{:else}
-					<div class="divide-y divide-gray-200">
-						{#each shownHabits as habit (habit.id)}
-							<HabitCard
-								{habit}
-								occurrences={contents.habitOccurrences}
-								today={contents.today}
-								firstDay={contents.weekFirstDay}
-								actions={NOTEBOOK_HABIT_ACTIONS}
-							/>
-						{/each}
-					</div>
-				{/if}
-			{:else if tab === 'bills'}
-				<!--
-					The Finance room's own list: the rows, the form that edits them and
-					the confirmation that deletes an archived one — see `BillList`.
-				-->
-				<BillList
-					bind:this={billList}
-					bills={shownBills}
-					{currency}
-					actions={NOTEBOOK_BILL_ACTIONS}
-					notebooks={pickableNotebooks}
-					startingNotebook={notebook?.id ?? null}
-				>
-					{#snippet empty()}
-						<EmptyState
-							icon={moduleGlyph('bills')}
-							title={t('notebooks.nothingUnderThisSubjectYet')}
-							compact
-						/>
-					{/snippet}
-				</BillList>
 			{/if}
+		{:else if k === 'inventory'}
+			<!--
+				The Inventory room's own row: the count you press up and down, the
+				price, the thing's own fields and the recipes that use it. The
+				count is the whole point of the list — two tins and none are both
+				"unticked" until you look — see `ItemRow`.
+			-->
+			{#if contents.inventory.length === 0}
+				<EmptyState
+					icon={moduleGlyph('inventory')}
+					title={t('notebooks.nothingUnderThisSubjectYet')}
+					compact
+				/>
+			{:else}
+				<div class="divide-y divide-gray-200">
+					{#each shownInventory as item (item.id)}
+						<div class="row-card {itemRowWash(item)}">
+							<ItemRow
+								{item}
+								{currency}
+								actions={NOTEBOOK_ITEM_ACTIONS}
+								thumb={shownInventory.some((one) => one.pictureId)}
+							/>
+						</div>
+					{/each}
+				</div>
+			{/if}
+		{:else if k === 'workouts'}
+			<!--
+				The Health room's own card: the plan, and the record of what was
+				actually done under it. Writing a session down is the room's own
+				dialog, which is why that one is a link out rather than a form
+				here — see `WorkoutCard`.
+			-->
+			{#if contents.workouts.length === 0}
+				<EmptyState
+					icon={moduleGlyph('workouts')}
+					title={t('notebooks.nothingUnderThisSubjectYet')}
+					compact
+				/>
+			{:else}
+				<ul class="divide-y divide-gray-200">
+					{#each shownWorkouts as workout (workout.id)}
+						<WorkoutCard
+							{workout}
+							sessions={contents.workoutSessions}
+							actions={NOTEBOOK_WORKOUT_ACTIONS}
+						/>
+					{/each}
+				</ul>
+			{/if}
+		{:else if k === 'recipes'}
+			<!--
+				The Kitchen's own card: the picture it is known by, and what it
+				needs that the cupboard has not got. The loop between a recipe, the
+				week and the shopping list is what the room is for, and a card
+				without it is a title in a list — see `RecipeCard`.
+			-->
+			{#if contents.recipes.length === 0}
+				<EmptyState
+					icon={moduleGlyph('recipes')}
+					title={t('notebooks.nothingUnderThisSubjectYet')}
+					compact
+				/>
+			{:else}
+				<div class="divide-y divide-gray-200">
+					{#each shownRecipes as recipe (recipe.id)}
+						<RecipeCard {recipe} />
+					{/each}
+				</div>
+			{/if}
+		{:else if k === 'ledgers'}
+			<!--
+				The Finance room's own tile: what it is called over what it holds,
+				with the balance at the end. A statement is a page rather than a
+				panel, so pressing one goes there — a notebook is not where
+				somebody reads a bank export.
+			-->
+			{#if contents.ledgers.length === 0}
+				<EmptyState
+					icon={moduleGlyph('ledgers')}
+					title={t('notebooks.nothingUnderThisSubjectYet')}
+					compact
+				/>
+			{:else}
+				<div class="flex flex-wrap gap-2 px-4 py-3">
+					{#each shownLedgers as ledger (ledger.id)}
+						<LedgerTile
+							{ledger}
+							{currency}
+							href={`${resolve('/finance/ledgers')}?ledger=${ledger.id}`}
+						/>
+					{/each}
+				</div>
+			{/if}
+		{:else if k === 'habits'}
+			<!--
+				The Health room's own card: the streak, the year at a glance, the
+				backdating and the note on each day. A habit without those is a
+				checkbox — see `HabitCard`.
+			-->
+			{#if contents.habits.length === 0}
+				<EmptyState
+					icon={moduleGlyph('habits')}
+					title={t('notebooks.nothingUnderThisSubjectYet')}
+					compact
+				/>
+			{:else}
+				<div class="divide-y divide-gray-200">
+					{#each shownHabits as habit (habit.id)}
+						<HabitCard
+							{habit}
+							occurrences={contents.habitOccurrences}
+							today={contents.today}
+							firstDay={contents.weekFirstDay}
+							actions={NOTEBOOK_HABIT_ACTIONS}
+						/>
+					{/each}
+				</div>
+			{/if}
+		{:else if k === 'bills'}
+			<!--
+				The Finance room's own list: the rows, the form that edits them and
+				the confirmation that deletes an archived one — see `BillList`.
+			-->
+			<BillList
+				bind:this={billList}
+				bills={shownBills}
+				{currency}
+				actions={NOTEBOOK_BILL_ACTIONS}
+				notebooks={pickableNotebooks}
+				startingNotebook={notebook?.id ?? null}
+			>
+				{#snippet empty()}
+					<EmptyState
+						icon={moduleGlyph('bills')}
+						title={t('notebooks.nothingUnderThisSubjectYet')}
+						compact
+					/>
+				{/snippet}
+			</BillList>
 		{/if}
-	</div>
-</dialog>
+	{/if}
+{/snippet}
 
 <!--
 	One note, and the two things you can do to it.
@@ -1742,14 +2056,14 @@
 	One snippet, drawn either beside the tabs or on a row below them depending
 	on the width — never twice at once, and never two versions of it.
 -->
-{#snippet moduleControls(total: number, shown: number)}
+{#snippet moduleControls(key: Tab, total: number, shown: number)}
 	<!-- The Notes tab's search and count, in the same slots; these tabs have
 	     nothing else to narrow by. -->
 	<FilterBar name="notebook-module">
 		{#snippet lead()}
 			<SearchField
-				bind:value={moduleSearch}
-				label={t(SEARCH_LABEL[tab] ?? 'notebookDetail.searchThisTab')}
+				bind:value={moduleSearches[key]}
+				label={t(SEARCH_LABEL[key] ?? 'notebookDetail.searchThisTab')}
 			/>
 		{/snippet}
 		{#snippet count()}
@@ -1857,12 +2171,12 @@
 {#snippet orderControl()}
 	<!-- The same control the task list uses, always in the same place. See `SortControl`. -->
 	<SortControl
-		value={noteOrder}
+		value={sorting.order}
 		options={NOTE_ORDERS}
 		labels={ORDER_LABELS}
-		direction={noteDirection}
-		onpick={pickOrder}
-		onflip={flipDirection}
+		direction={sorting.direction}
+		onpick={(next) => sorting.pick(next)}
+		onflip={() => sorting.flip()}
 		label={t('notebookDetail.orderNotesBy')}
 	/>
 {/snippet}
@@ -1875,7 +2189,7 @@
 		<EmptyState compact icon="note" title={t('notebookDetail.nothingWrittenHereYet')} />
 	{:else}
 		<div class="divide-y divide-gray-200">
-			{#each entries as entry, at (entry.id)}
+			{#each noteReveal.of(entries) as entry, at (entry.id)}
 				<!--
 					A pinned note is marked, not just moved.
 
@@ -1890,6 +2204,7 @@
 				-->
 				<article
 					use:keepInView={notebookId !== null && cursor === at}
+					use:revealNear={{ reveal: noteReveal, index: at, trigger: noteReveal.trigger }}
 					class="{editingNoteId === entry.id ? 'px-4 py-3' : 'row-card'} {cursor === at
 						? 'kb-cursor'
 						: ''}"
@@ -2182,7 +2497,11 @@
 								-->
 								<!-- svelte-ignore a11y_click_events_have_key_events -->
 								<!-- svelte-ignore a11y_no_static_element_interactions -->
-								<div class="md mt-2 text-sm text-gray-900" onclick={openReferencedTodo}>
+								<div
+									class="md mt-2 text-sm text-gray-900"
+									onclick={openReferencedTodo}
+									use:peekRefs={todoRefs}
+								>
 									<!-- `renderMarkdown` escapes every character of the input before it emits a
 									     tag, and emits only attributes it writes itself. See `$lib/markdown.ts`. -->
 									<!-- eslint-disable-next-line svelte/no-at-html-tags -->
@@ -2242,6 +2561,7 @@
 <Modal
 	open={listifying !== null}
 	onclose={() => (listifying = null)}
+	{error}
 	title={t('notebookDetail.makeTodosOfThisNote')}
 	size="md"
 >
@@ -2304,6 +2624,7 @@
 	bind:open={composingGoal}
 	title={editingGoal ? t('goals.editGoal') : t('notebookDetail.newGoal')}
 	onclose={() => (editingGoalId = null)}
+	{error}
 >
 	<!-- Only ever opened from a notebook's own header, so there is one. -->
 	<form
@@ -2361,6 +2682,7 @@
 	bind:open={composingIdea}
 	title={editedIdea ? t('ui.edit') : t('notebooks.newIdea')}
 	onclose={closeIdeaForm}
+	{error}
 >
 	<form
 		id="notebook-idea-form"
@@ -2406,7 +2728,12 @@
 -->
 {#if notebook && composingModule}
 	{@const module = composingModule}
-	<Modal open title={t(NEW_LABELS[module] ?? 'ui.add')} onclose={() => (composingModule = null)}>
+	<Modal
+		open
+		title={t(NEW_LABELS[module] ?? 'ui.add')}
+		onclose={() => (composingModule = null)}
+		{error}
+	>
 		<form
 			id="notebook-module-form"
 			method="post"
@@ -2532,8 +2859,99 @@
 		overflow-y: auto;
 		overscroll-behavior-y: contain;
 		width: 100%;
-		max-width: var(--max-width-reading);
+		max-width: var(--nb-width, var(--max-width-reading));
 		margin-inline: auto;
+	}
+
+	/* Split: the panes scroll, each on its own; the body only holds them. */
+	dialog.nb-surface.nb-split[open] .nb-body {
+		overflow: hidden;
+		display: flex;
+		flex-direction: column;
+	}
+
+	.nb-panes {
+		display: flex;
+		flex: 1;
+		min-height: 0;
+	}
+
+	.nb-pane {
+		min-width: 0;
+		overflow-y: auto;
+		overscroll-behavior-y: contain;
+		border-top: 2px solid transparent;
+	}
+
+	/* The pane the keys go to. */
+	.nb-pane-active {
+		border-top-color: var(--section-accent);
+	}
+
+	.nb-divider {
+		flex: 0 0 0.5rem;
+		cursor: col-resize;
+		background: var(--color-gray-100);
+		border-inline: 1px solid var(--color-gray-200);
+		touch-action: none;
+	}
+
+	.nb-divider:hover,
+	.nb-divider:focus-visible {
+		background: var(--color-gray-300);
+	}
+
+	/* The column's edges: a strip either side of it, over the gutter. */
+	.nb-grip {
+		position: fixed;
+		top: 3.5rem;
+		bottom: 0;
+		width: 0.5rem;
+		cursor: col-resize;
+		touch-action: none;
+	}
+
+	.nb-grip:hover,
+	.nb-grip:focus-visible {
+		background: var(--color-gray-200);
+	}
+
+	/* A small handle in the middle, so the edge says it can be taken hold of. */
+	.nb-grip::after {
+		content: '';
+		position: absolute;
+		top: 50%;
+		left: calc(50% - 1px);
+		width: 2px;
+		height: 2.5rem;
+		margin-top: -1.25rem;
+		background: var(--color-gray-300);
+	}
+
+	.nb-grip-left {
+		left: max(0px, calc(50% - var(--nb-width) / 2 - 0.5rem));
+	}
+
+	.nb-grip-right {
+		right: max(0px, calc(50% - var(--nb-width) / 2 - 0.5rem));
+	}
+
+	.nb-drop {
+		position: fixed;
+		top: 3.5rem;
+		right: 0;
+		bottom: 0;
+		width: 8rem;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+		gap: 0.5rem;
+		text-align: center;
+		font-size: 0.75rem;
+		color: var(--color-gray-700);
+		background: var(--color-gray-100);
+		border-left: 2px dashed var(--color-gray-400);
 	}
 
 	/*

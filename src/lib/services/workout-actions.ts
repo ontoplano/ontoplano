@@ -1,6 +1,5 @@
-import type { Actions, RequestEvent } from '@sveltejs/kit';
-import { buildCtx } from '$lib/services/ctx';
-import { toActionFailure } from '$lib/http-errors';
+import type { Actions } from '@sveltejs/kit';
+import { formAction } from '$lib/services/scoped-actions';
 import {
 	createWorkout,
 	deleteSession,
@@ -24,8 +23,6 @@ import {
  * The categories are not here: those are the room's own vocabulary, managed
  * where they are used everywhere rather than from inside one subject.
  */
-type Event = Pick<RequestEvent, 'request'> & { locals: App.Locals };
-
 /**
  * The lines of one session, as a form sends them.
  *
@@ -59,131 +56,76 @@ function declaredFrom(form: FormData) {
 }
 
 export const workoutHandlers = {
-	create: async ({ request, locals }: Event) => {
-		const form = await request.formData();
-		try {
-			createWorkout(buildCtx(locals.user!.id), {
-				title: form.get('heading'),
-				categoryId: form.get('categoryId'),
-				plan: form.get('plan'),
-				minutes: form.get('minutes') || null,
-				notes: form.get('notes'),
-				measures: declaredFrom(form),
-				// `has` rather than `get`: the room's form says nothing about a
-				// notebook and must not be read as taking the workout out of one.
-				...(form.has('notebookId') ? { notebookId: form.get('notebookId') } : {})
-			});
-			return { success: true };
-		} catch (e) {
-			return toActionFailure(e);
-		}
-	},
+	create: formAction((ctx, form) => {
+		createWorkout(ctx, {
+			title: form.get('heading'),
+			categoryId: form.get('categoryId'),
+			plan: form.get('plan'),
+			minutes: form.get('minutes') || null,
+			notes: form.get('notes'),
+			measures: declaredFrom(form),
+			// `has` rather than `get`: the room's form says nothing about a
+			// notebook and must not be read as taking the workout out of one.
+			...(form.has('notebookId') ? { notebookId: form.get('notebookId') } : {})
+		});
+	}),
 
-	update: async ({ request, locals }: Event) => {
-		const form = await request.formData();
-		try {
-			updateWorkout(buildCtx(locals.user!.id), Number(form.get('id')), {
-				title: form.get('heading'),
-				categoryId: form.get('categoryId'),
-				plan: form.get('plan'),
-				minutes: form.get('minutes') || null,
-				notes: form.get('notes'),
-				measures: declaredFrom(form),
-				...(form.has('notebookId') ? { notebookId: form.get('notebookId') } : {})
-			});
-			return { success: true };
-		} catch (e) {
-			return toActionFailure(e);
-		}
-	},
+	update: formAction((ctx, form) => {
+		updateWorkout(ctx, Number(form.get('id')), {
+			title: form.get('heading'),
+			categoryId: form.get('categoryId'),
+			plan: form.get('plan'),
+			minutes: form.get('minutes') || null,
+			notes: form.get('notes'),
+			measures: declaredFrom(form),
+			...(form.has('notebookId') ? { notebookId: form.get('notebookId') } : {})
+		});
+	}),
 
-	done: async ({ request, locals }: Event) => {
-		const form = await request.formData();
-		try {
-			// Ticks today's block too, if the workout is on today's plan.
-			doneToday(buildCtx(locals.user!.id), Number(form.get('id')));
-			return { success: true };
-		} catch (e) {
-			return toActionFailure(e);
-		}
-	},
+	done: formAction((ctx, form) => {
+		// Ticks today's block too, if the workout is on today's plan.
+		doneToday(ctx, Number(form.get('id')));
+	}),
 
 	/** Write down a session: the day, anything noted, and the lines. */
-	log: async ({ request, locals }: Event) => {
-		const form = await request.formData();
-		try {
-			logWorkout(buildCtx(locals.user!.id), Number(form.get('id')), {
-				doneOn: form.get('doneOn'),
-				notes: form.get('notes'),
-				measures: measuresFrom(form)
-			});
-			return { success: true, action: 'log' };
-		} catch (e) {
-			return toActionFailure(e);
-		}
-	},
+	log: formAction((ctx, form) => {
+		logWorkout(ctx, Number(form.get('id')), {
+			doneOn: form.get('doneOn'),
+			notes: form.get('notes'),
+			measures: measuresFrom(form)
+		});
+		return { success: true, action: 'log' };
+	}),
 
 	/** Correct one that was written down wrong. */
-	updateSession: async ({ request, locals }: Event) => {
-		const form = await request.formData();
-		try {
-			updateSession(buildCtx(locals.user!.id), Number(form.get('sessionId')), {
-				doneOn: form.get('doneOn'),
-				notes: form.get('notes'),
-				measures: measuresFrom(form)
-			});
-			return { success: true, action: 'updateSession' };
-		} catch (e) {
-			return toActionFailure(e);
-		}
-	},
+	updateSession: formAction((ctx, form) => {
+		updateSession(ctx, Number(form.get('sessionId')), {
+			doneOn: form.get('doneOn'),
+			notes: form.get('notes'),
+			measures: measuresFrom(form)
+		});
+		return { success: true, action: 'updateSession' };
+	}),
 
 	/** For one logged by accident. Its lines go with it. */
-	deleteSession: async ({ request, locals }: Event) => {
-		const form = await request.formData();
-		try {
-			deleteSession(buildCtx(locals.user!.id), Number(form.get('sessionId')));
-			return { success: true, action: 'deleteSession' };
-		} catch (e) {
-			return toActionFailure(e);
-		}
-	},
+	deleteSession: formAction((ctx, form) => {
+		deleteSession(ctx, Number(form.get('sessionId')));
+		return { success: true, action: 'deleteSession' };
+	}),
 
-	schedule: async ({ request, locals }: Event) => {
-		const form = await request.formData();
-		try {
-			scheduleWorkout(buildCtx(locals.user!.id), Number(form.get('id')), {
-				date: form.get('date'),
-				startTime: form.get('startTime'),
-				durationMinutes: form.get('durationMinutes')
-			});
-			return { success: true };
-		} catch (e) {
-			return toActionFailure(e);
-		}
-	},
+	schedule: formAction((ctx, form) => {
+		scheduleWorkout(ctx, Number(form.get('id')), {
+			date: form.get('date'),
+			startTime: form.get('startTime'),
+			durationMinutes: form.get('durationMinutes')
+		});
+	}),
 
-	archive: async ({ request, locals }: Event) => {
-		const form = await request.formData();
-		try {
-			setArchived(
-				buildCtx(locals.user!.id),
-				Number(form.get('id')),
-				form.get('archived') === 'true'
-			);
-			return { success: true };
-		} catch (e) {
-			return toActionFailure(e);
-		}
-	},
+	archive: formAction((ctx, form) => {
+		setArchived(ctx, Number(form.get('id')), form.get('archived') === 'true');
+	}),
 
-	delete: async ({ request, locals }: Event) => {
-		const form = await request.formData();
-		try {
-			deleteWorkout(buildCtx(locals.user!.id), Number(form.get('id')));
-			return { success: true };
-		} catch (e) {
-			return toActionFailure(e);
-		}
-	}
+	delete: formAction((ctx, form) => {
+		deleteWorkout(ctx, Number(form.get('id')));
+	})
 } satisfies Actions;

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { openFromUrl } from '$lib/open-from-url.svelte';
 	import { useWhen } from '$lib/when-context.svelte';
 	import { civilOf, today } from '$lib/when';
 	import { routeGlyph } from '$lib/glyphs';
@@ -12,7 +13,7 @@
 	import SortControl from '$lib/components/SortControl.svelte';
 	import CategoryMark from '$lib/components/CategoryMark.svelte';
 	import { listCursor } from '$lib/actions/list-cursor';
-	import { browsable } from '$lib/browse.svelte';
+	import { browsable, typing } from '$lib/browse.svelte';
 	import { getAction, keyFor } from '$lib/shortcuts';
 	import Picker from '$lib/components/Picker.svelte';
 	import Field from '$lib/components/Field.svelte';
@@ -151,6 +152,12 @@
 		declared = [blankDeclared()];
 		showForm = true;
 	}
+	// `?edit=<id>` opens its editor: how a notification or a receipt leads here (`$lib/object-links`).
+	openFromUrl((id) => {
+		const workout = data.workouts.find((one) => one.id === id);
+		if (workout) openEdit(workout);
+	});
+
 	function openEdit(chosen: (typeof data.workouts)[number]) {
 		editing = chosen;
 		declared = [...chosen.measures.map((m) => ({ ...m })), blankDeclared()];
@@ -177,15 +184,7 @@
 
 	function onkeydown(event: KeyboardEvent) {
 		if (event.metaKey || event.ctrlKey || event.altKey) return;
-		const target = event.target;
-		if (
-			document.querySelector('dialog[open]') ||
-			target instanceof HTMLInputElement ||
-			target instanceof HTMLTextAreaElement ||
-			target instanceof HTMLSelectElement ||
-			(target instanceof HTMLElement && target.isContentEditable)
-		)
-			return;
+		if (typing(event)) return;
 		if (getAction(ROOM, event.key) === 'new') {
 			event.preventDefault();
 			openNew();

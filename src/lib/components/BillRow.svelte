@@ -16,6 +16,8 @@
 	import Icon from '$lib/components/Icon.svelte';
 	import RowCard from '$lib/components/RowCard.svelte';
 	import { enhance } from '$lib/enhance';
+	import { say } from '$lib/said.svelte';
+	import type { SubmitFunction } from '@sveltejs/kit';
 	import { listCursor } from '$lib/actions/list-cursor';
 	import { autofocus } from '$lib/actions/autofocus';
 	import { AVERAGE_LABEL, asDecimal, summaryOf } from '$lib/bill-summary';
@@ -94,6 +96,33 @@
 	let expanded = $state(false);
 
 	const money = (cents: number) => formatMoney(cents, currency);
+
+	/*
+	 * What the row shows while a press is on its way.
+	 *
+	 * Paying waited for the server before the tick appeared, long enough to
+	 * press again. The press sets this, the row draws it at once, and the
+	 * page's data replacing `paid`/`skipped` clears it; a refusal puts it back.
+	 */
+	let pressed = $state<{ paid: boolean; skipped: boolean } | null>(null);
+	$effect(() => {
+		void paid;
+		void skipped;
+		pressed = null;
+	});
+	const shownPaid = $derived(pressed ? pressed.paid : paid);
+	const shownSkipped = $derived(pressed ? pressed.skipped : skipped);
+
+	/** A press that flips the row now and keeps it flipped unless refused. */
+	function flips(to: { paid: boolean; skipped: boolean }): SubmitFunction {
+		return () => {
+			pressed = to;
+			return async ({ result, update }) => {
+				if (result.type !== 'success') pressed = null;
+				await update();
+			};
+		};
+	}
 </script>
 
 <li data-row use:listCursor={here}>
@@ -110,23 +139,27 @@
 					<span class="-m-1 flex shrink-0 self-start p-1 pointer-coarse:w-11" aria-hidden="true">
 						<span class="size-7 border border-dashed border-gray-300"></span>
 					</span>
-				{:else if paid || skipped}
-					<form method="post" action={paid ? actions.unpay : actions.unskip} use:enhance>
+				{:else if shownPaid || shownSkipped}
+					<form
+						method="post"
+						action={shownPaid ? actions.unpay : actions.unskip}
+						use:enhance={flips({ paid: false, skipped: false })}
+					>
 						<input type="hidden" name="id" value={bill.id} />
 						<input type="hidden" name="period" value={period} />
 						<button
 							class="-m-1 flex shrink-0 items-start justify-center self-start p-1 pointer-coarse:w-11"
-							title={paid
+							title={shownPaid
 								? t('finance.bills.undoThisPeriodSPayment')
 								: t('finance.bills.undoThisPeriodSSkip')}
-							aria-label={paid
+							aria-label={shownPaid
 								? t('finance.bills.undoThePaymentFor', { name: bill.name })
 								: t('finance.bills.undoTheSkipFor', { name: bill.name })}
 						>
 							<span
 								class="flex size-7 items-center justify-center border border-gray-400 bg-gray-400 text-white"
 							>
-								<Icon name={paid ? 'check' : 'skip'} size={14} />
+								<Icon name={shownPaid ? 'check' : 'skip'} size={14} />
 							</span>
 						</button>
 					</form>
@@ -151,17 +184,26 @@
 			{/snippet}
 
 			{#snippet controls()}
-				{#if bill.active && !paid && !skipped}
+				{#if bill.active && !shownPaid && !shownSkipped}
 					{#if paying}
 						<form
 							method="post"
 							action={actions.pay}
 							class="flex items-center gap-1"
-							use:enhance={() =>
-								({ result, update }) => {
-									if (result.type === 'success') paying = false;
-									return update();
-								}}
+							use:enhance={() => {
+								// Ticked now; the box comes back only if the payment is refused.
+								pressed = { paid: true, skipped: false };
+								paying = false;
+								return async ({ result, update }) => {
+									if (result.type !== 'success') {
+										pressed = null;
+										paying = true;
+									}
+									await update();
+									if (result.type === 'success')
+										say(t('finance.bills.namePaid', { name: bill.name }));
+								};
+							}}
 						>
 							<input type="hidden" name="id" value={bill.id} />
 							<input type="hidden" name="period" value={period} />
@@ -190,7 +232,11 @@
 							</button>
 						</form>
 					{:else}
-						<form method="post" action={actions.skip} use:enhance>
+						<form
+							method="post"
+							action={actions.skip}
+							use:enhance={flips({ paid: false, skipped: true })}
+						>
 							<input type="hidden" name="id" value={bill.id} />
 							<input type="hidden" name="period" value={period} />
 							<button
@@ -292,9 +338,9 @@
 					than a name, a sentence and a row of buttons on a third.
 				-->
 				<div class="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-gray-500">
-					{#if paid}
+					{#if shownPaid}
 						<span class="font-medium text-blue-700">{t('finance.bills.paid')}</span>
-					{:else if skipped}
+					{:else if shownSkipped}
 						<span class="font-medium text-gray-600">{t('finance.bills.skipped')}</span>
 					{/if}
 					{#if bill.automatic}

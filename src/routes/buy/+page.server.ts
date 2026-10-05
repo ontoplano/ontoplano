@@ -16,13 +16,18 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 
 	/*
 	 * The store copy: no provider transaction exists and none is minted. The
-	 * purchase happens in Play's own sheet, on this page, and the page then
-	 * hands the purchase token to /api/billing/play/claim. Which product to
-	 * buy is in the query, put there by the checkout action.
+	 * purchase happens in Play's own sheet, on the device's copy of the app
+	 * (`$lib/play-billing`), and comes back here to be claimed. Which product
+	 * to buy is in the query, put there by the checkout action — or, on the
+	 * way back, the product that was bought.
 	 */
 	if (url.searchParams.get('play')) {
 		const skus = playSkus();
 		if (!playConfigured() || !skus) error(404, 'Not found');
+		const returned = url.searchParams.get('sku');
+		if (returned && Object.values(skus).includes(returned)) {
+			return { play: { sku: returned, account: locals.user.id }, paddle: null, successUrl };
+		}
 		const interval = url.searchParams.get('interval') === 'yearly' ? 'yearly' : 'monthly';
 		const family = url.searchParams.get('tier') === 'family';
 		const sku = family
@@ -32,7 +37,7 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 			: interval === 'yearly'
 				? skus.yearly
 				: skus.monthly;
-		return { play: { sku }, paddle: null, successUrl };
+		return { play: { sku, account: locals.user.id }, paddle: null, successUrl };
 	}
 
 	const paddle = checkoutClientConfig();

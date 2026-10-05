@@ -14,6 +14,13 @@
 	 * task's or an idea's notes draw theirs. A screen that renders either gets
 	 * this without knowing it exists.
 	 *
+	 * Two more ways in, for the pictures that are not writing: an `img` wearing
+	 * `data-view` opens itself — a thing's thumbnail, a face, a notebook's
+	 * cover on somebody else's shelf — and any control wearing `data-view-src`
+	 * opens that address, which is how a picture that is itself a control (the
+	 * notebook's, where pressing it changes it) still gets looked at: a small
+	 * badge beside it says "view".
+	 *
 	 * Pinch, drag, wheel and double-tap zoom are `@panzoom/panzoom`'s. Back —
 	 * the phone's gesture or the browser's button — closes it, like any other
 	 * screen laid over the page (`$lib/back-closes`).
@@ -51,17 +58,20 @@
 		const target = event.target instanceof Element ? event.target : null;
 		if (!target || dialog?.contains(target)) return;
 
-		const image = target.closest('img.md-image') as HTMLImageElement | null;
+		const image = target.closest('img.md-image, img[data-view]') as HTMLImageElement | null;
 		const link = target.closest('a.written-picture') as HTMLAnchorElement | null;
-		if (!image && !link) return;
+		const control = target.closest('[data-view-src]') as HTMLElement | null;
+		if (!image && !link && !control) return;
 		// A modified press on a link still means a new tab, as it does anywhere.
 		if (link && (event.metaKey || event.ctrlKey || event.shiftKey || event.button !== 0)) return;
 
 		event.preventDefault();
 		event.stopPropagation();
-		showing = image
-			? { src: image.currentSrc || image.src, alt: image.alt }
-			: { src: link!.href, alt: link!.getAttribute('aria-label') ?? '' };
+		showing = control
+			? { src: control.dataset.viewSrc ?? '', alt: control.getAttribute('aria-label') ?? '' }
+			: image
+				? { src: image.currentSrc || image.src, alt: image.alt }
+				: { src: link!.href, alt: link!.getAttribute('aria-label') ?? '' };
 		back.claim();
 	}
 

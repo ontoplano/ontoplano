@@ -1,6 +1,7 @@
 import { dateOf, dayOf, type When } from './when.js';
 import type { PlainKey } from './i18n/keys.js';
 import type { Translate } from './i18n/core.js';
+import { localDay, pad2 } from './services/time.js';
 /**
  * Goal horizons and the periods they live in.
  *
@@ -28,7 +29,7 @@ export const HORIZON_LABELS: Record<Horizon, PlainKey> = {
 	year: 'goals.year'
 };
 
-export const GOAL_STATUSES = ['open', 'achieved', 'missed', 'abandoned'] as const;
+const GOAL_STATUSES = ['open', 'achieved', 'missed', 'abandoned'] as const;
 export type GoalStatus = (typeof GOAL_STATUSES)[number];
 
 export function isHorizon(v: unknown): v is Horizon {
@@ -37,14 +38,6 @@ export function isHorizon(v: unknown): v is Horizon {
 
 export function isGoalStatus(v: unknown): v is GoalStatus {
 	return typeof v === 'string' && (GOAL_STATUSES as readonly string[]).includes(v);
-}
-
-function pad(n: number): string {
-	return String(n).padStart(2, '0');
-}
-
-export function formatDate(d: Date): string {
-	return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 }
 
 /** Monday of the week containing `d`, matching the rest of the planner. */
@@ -60,13 +53,13 @@ export function periodStart(horizon: Horizon, d: Date): string {
 	const y = d.getFullYear();
 	switch (horizon) {
 		case 'day':
-			return formatDate(d);
+			return localDay(d);
 		case 'week':
-			return formatDate(mondayOf(d));
+			return localDay(mondayOf(d));
 		case 'month':
-			return `${y}-${pad(d.getMonth() + 1)}-01`;
+			return `${y}-${pad2(d.getMonth() + 1)}-01`;
 		case 'quarter':
-			return `${y}-${pad(Math.floor(d.getMonth() / 3) * 3 + 1)}-01`;
+			return `${y}-${pad2(Math.floor(d.getMonth() / 3) * 3 + 1)}-01`;
 		case 'semester':
 			return `${y}-${d.getMonth() < 6 ? '01' : '07'}-01`;
 		case 'year':
@@ -97,7 +90,7 @@ export function periodEnd(horizon: Horizon, start: string): string {
 			d.setFullYear(d.getFullYear() + 1);
 			break;
 	}
-	return formatDate(d);
+	return localDay(d);
 }
 
 /** How the period reads to a human: "Q3 2026", "Aug 2026", "week of 17 Aug". */

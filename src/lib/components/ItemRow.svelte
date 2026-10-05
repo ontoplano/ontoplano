@@ -53,6 +53,7 @@
 		type: string;
 		bought: boolean;
 		snoozed: boolean;
+		pictureId?: number | null;
 	};
 
 	let {
@@ -87,7 +88,12 @@
 		 * because Escape there cancels the question from anywhere on the page.
 		 */
 		confirming = null,
-		onconfirm
+		onconfirm,
+		/**
+		 * Keep a picture's room on this row, picture or not — the list passes
+		 * it when any row in it has one, so the names stay in one column.
+		 */
+		thumb = false
 	}: {
 		item: Shown;
 		currency: Currency;
@@ -99,6 +105,7 @@
 		ondeletesubmit?: (item: { id: number; name: string }) => SubmitFunction;
 		confirming?: boolean | null;
 		onconfirm?: (id: number | null) => void;
+		thumb?: boolean;
 	} = $props();
 
 	let ownConfirming = $state(false);
@@ -126,7 +133,22 @@
 	the foot, with the verbs at the end of that line. The row around it keeps
 	the padding, the cursor and the drag.
 -->
-<RowCard>
+{#snippet picture()}
+	<!-- Empty where there is no picture: no placeholder asking for one. -->
+	<span class="item-thumb block">
+		{#if item.pictureId}
+			<img
+				src="/media/{item.pictureId}"
+				alt={item.name}
+				loading="lazy"
+				data-view
+				class="size-full cursor-zoom-in border border-gray-200 bg-gray-50 object-cover"
+			/>
+		{/if}
+	</span>
+{/snippet}
+
+<RowCard thumb={thumb ? picture : undefined}>
 	{#snippet rail()}
 		{#if item.type === 'someday'}
 			<!--
@@ -311,3 +333,19 @@
 		{/if}
 	</p>
 </RowCard>
+
+<style>
+	/* The size of the thing, beside the name; smaller on a phone, where the
+	   width is the name's. */
+	.item-thumb {
+		width: 3.5rem;
+		height: 3.5rem;
+	}
+
+	@media (width < 40rem) {
+		.item-thumb {
+			width: 2.75rem;
+			height: 2.75rem;
+		}
+	}
+</style>

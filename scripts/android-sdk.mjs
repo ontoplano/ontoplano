@@ -4,31 +4,17 @@
  *
  * Printed on stdout so a make recipe can use it, and looked for in the places
  * it actually turns up rather than in one: an SDK installed by Android Studio
- * is not where one installed by `sdkmanager` is, and neither is where
- * bubblewrap put the one it downloaded for itself. That last one is here
- * because it is where this project's SDK came from for a year — the Trusted
- * Web Activity build fetched it — and retiring that build should not take the
- * toolchain with it.
+ * is not where one installed by `sdkmanager` is.
  *
  * Says nothing and exits 1 when there is none, so the caller can print
  * something useful about the command being run.
  */
 import { execFileSync } from 'node:child_process';
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
 
 const home = homedir();
-
-/** Bubblewrap keeps the path to the SDK it downloaded in its own config. */
-function fromBubblewrap() {
-	try {
-		const config = JSON.parse(readFileSync(join(home, '.bubblewrap', 'config.json'), 'utf8'));
-		return config.androidSdkPath || null;
-	} catch {
-		return null;
-	}
-}
 
 /** An `adb` on PATH is inside `platform-tools`, which is inside the SDK. */
 function fromAdb() {
@@ -45,7 +31,6 @@ function fromAdb() {
 const candidates = [
 	process.env.ANDROID_HOME,
 	process.env.ANDROID_SDK_ROOT,
-	fromBubblewrap(),
 	join(home, 'android-sdk'),
 	join(home, 'Android', 'Sdk'),
 	join(home, 'Library', 'Android', 'sdk'),

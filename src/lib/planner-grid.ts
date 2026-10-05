@@ -2,7 +2,8 @@ import type { PlainKey } from './i18n/keys.js';
 import type { Translate } from './i18n/core.js';
 import type { Calendar } from '@event-calendar/core';
 import { CATEGORY_FALLBACK_COLOR } from './colors.js';
-import { describeRecurrence, formatDate, occursOn, parseRecurrence } from './recurrence.js';
+import { describeRecurrence, occursOn, parseRecurrence } from './recurrence.js';
+import { localDay } from './services/time.js';
 
 /**
  * The default stretch of the day, when the account has not said otherwise.
@@ -100,9 +101,9 @@ export interface GridCategory {
 	color?: string | null;
 }
 
-export interface GridSlotInput {
+/** What every block on the grid carries, whether it repeats or happens once. */
+interface GridBlockInput {
 	id: number;
-	weekday: number;
 	startTime: string;
 	durationMinutes: number;
 	mode: 'category' | 'activity' | 'workout';
@@ -115,30 +116,19 @@ export interface GridSlotInput {
 	workoutName?: string | null;
 	label?: string | null;
 	active: boolean;
-	/** How often it comes round. Absent is weekly, which is what it used to be. */
-	recurrence?: string | null;
 	/** The notebook it is filed under, drawn small under the time. */
 	notebookTitle?: string | null;
 }
 
-export interface GridExceptionalInput {
-	id: number;
+export interface GridSlotInput extends GridBlockInput {
+	weekday: number;
+	/** How often it comes round. Absent is weekly, which is what it used to be. */
+	recurrence?: string | null;
+}
+
+export interface GridExceptionalInput extends GridBlockInput {
 	date: string;
-	startTime: string;
-	durationMinutes: number;
-	mode: 'category' | 'activity' | 'workout';
-	categoryId: number | null;
-	activityId: number | null;
-	categoryName?: string | null;
-	activityName?: string | null;
-	activityCategoryId?: number | null;
-	workoutId?: number | null;
-	workoutName?: string | null;
-	label?: string | null;
-	active: boolean;
 	status?: string;
-	/** The notebook it is filed under, drawn small under the time. */
-	notebookTitle?: string | null;
 }
 
 export interface SlotPlacement {
@@ -186,8 +176,22 @@ export function parseLocalDate(dateStr: string): Date {
 	return new Date(`${dateStr}T00:00:00`);
 }
 
-export function formatLocalDate(d: Date): string {
-	return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+/**
+ * Whether an event belongs on this day's list.
+ *
+ * A timed one belongs to the day it starts. An all-day one to every day it
+ * covers: its end is the morning after its last day, as the calendar format
+ * writes it, so a five-day holiday is on five lists and not only the first.
+ */
+export function fallsOn(
+	event: { start?: unknown; end?: unknown; allDay?: boolean },
+	date: string
+): boolean {
+	if (!(event.start instanceof Date)) return false;
+	const first = localDay(event.start);
+	if (!event.allDay || !(event.end instanceof Date)) return first === date;
+	const after = localDay(event.end);
+	return first <= date && (date < after || date === first);
 }
 
 export function formatClock(d: Date): string {
@@ -322,7 +326,7 @@ function slotToEvent(
 	const end = new Date(start.getTime() + slot.durationMinutes * 60_000);
 	const bg =
 		slot.mode === 'workout' ? WORKOUT_COLOR : categoryColor(categories, effectiveCategoryId(slot));
-	const suppressed = opts.suppressed?.has(occurrenceKey(slot.id, formatDate(dayDate))) ?? false;
+	const suppressed = opts.suppressed?.has(occurrenceKey(slot.id, localDay(dayDate))) ?? false;
 	const inactive = !slot.active || suppressed;
 	// A slot skipped for this date is a stand-in for something that isn't
 	// happening, so there is nothing meaningful to drag it to.
@@ -455,7 +459,7 @@ export function buildSlotEvents(
 ): Calendar.EventInput[] {
 	const monday = parseLocalDate(mondayStr);
 	const week = Array.from({ length: 7 }, (_, i) =>
-		formatDate(new Date(monday.getFullYear(), monday.getMonth(), monday.getDate() + i))
+		localDay(new Date(monday.getFullYear(), monday.getMonth(), monday.getDate() + i))
 	);
 	return buildSlotEventsForDates(slots, week, categories, opts);
 }
@@ -688,6 +692,14 @@ export function baseGridOptions(
 		markLabels?: { done: (title: string) => string; undone: (title: string) => string };
 		/** The first column of a month, Sunday-based as the library counts. */
 		firstDay?: number;
+		/**
+		 * Whether anything on show lasts all day — a bill due, a holiday from a
+		 * subscribed calendar. The time grid draws those only in its all-day
+		 * row, so the row is there when they are and costs nothing when not.
+		 */
+		allDay?: boolean;
+		/** What that row is called, in the reader's language. */
+		allDayLabel?: string;
 	} = {}
 ): Calendar.Options {
 	const slotHeight = opts.slotHeight ?? GRID_ZOOM_LEVELS[GRID_DEFAULT_ZOOM_INDEX];
@@ -717,10 +729,7 @@ export function baseGridOptions(
 	};
 
 	/** A block's own date, in the same `YYYY-MM-DD` the server speaks. */
-	const dateOf = (start: Date) =>
-		`${start.getFullYear()}-${String(start.getMonth() + 1).padStart(2, '0')}-${String(
-			start.getDate()
-		).padStart(2, '0')}`;
+	const dateOf = localDay;
 
 	/**
 	 * The corner mark: a tick for done, an empty box for not.
@@ -767,7 +776,8 @@ export function baseGridOptions(
 		// A month cell is one line tall whatever the zoom, so it stacks and then
 		// says "+2 more" instead of measuring.
 		dayMaxEvents: month,
-		allDaySlot: false,
+		allDaySlot: !month && opts.allDay === true,
+		...(opts.allDayLabel ? { allDayContent: opts.allDayLabel } : {}),
 		slotMinTime: minTime,
 		slotMaxTime: maxTime,
 		slotDuration: GRID_SLOT_DURATION,
@@ -817,9 +827,12 @@ export function baseGridOptions(
 		 * pixels tall, and a clipped word in it is worse than a clean bar you
 		 * can hover.
 		 */
+		// An all-day one has no hours to give, so it is its title alone, as in
+		// the month — otherwise it reads "12:00 – 12:00 AM".
 		eventContent: month
 			? (info) => info.event.title
 			: (info) => {
+					if (info.event.allDay) return info.event.title;
 					const mark = markHtml(info as { event: GridEventLike });
 					if (!eventFitsText(info.event, slotHeight)) {
 						return mark ? { html: mark } : '';
@@ -900,14 +913,6 @@ export function baseGridOptions(
  */
 function weekdayShort(date: Date, locale: string | undefined): string {
 	return date.toLocaleDateString(locale, { weekday: 'short' }).replace(/\.+$/, '');
-}
-
-/** A `YYYY-MM-DD` shifted by whole days, staying a civil date. */
-export function addDaysStr(date: string, days: number): string {
-	const d = parseLocalDate(date);
-	d.setDate(d.getDate() + days);
-	const pad = (n: number) => String(n).padStart(2, '0');
-	return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 }
 
 /** 'HH:MM' or 'HH:MM:SS' as minutes past midnight. */

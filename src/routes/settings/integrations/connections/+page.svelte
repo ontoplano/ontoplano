@@ -18,7 +18,7 @@
 	import { resolve } from '$app/paths';
 	import Field from '$lib/components/Field.svelte';
 	import KeyReach from '$lib/components/KeyReach.svelte';
-	import ScopeChoice from '$lib/components/ScopeChoice.svelte';
+	import PermissionGrid from '$lib/components/PermissionGrid.svelte';
 	import FormGrid from '$lib/components/FormGrid.svelte';
 	import Modal from '$lib/components/Modal.svelte';
 	import type { PageServerData, ActionData } from './$types';
@@ -26,6 +26,7 @@
 	import type { StreamDisplay, StreamKind } from '$lib/services/streams';
 	import type { PlainKey } from '$lib/i18n/keys';
 	import { useT } from '$lib/i18n';
+	import { callLine } from '$lib/assistant-calls';
 
 	const t = useT();
 	const now = useWhen();
@@ -48,23 +49,14 @@
 		form?.success && form.action === 'createWebhook' ? form.secret : null
 	);
 
-	// The sentence a scope was granted as, everywhere a scope is shown — the
-	// key is for the developer, the sentence is for the owner of the data.
-	const scopeSentence = (key: string) => {
-		const says = data.scopes.find((s) => s.key === key)?.says;
-		return says ? t(says) : key;
-	};
+	/** What the key being made is tied to; the grid fades what that leaves out. */
+	let tiedTo = $state('');
+	let tiedId = $state('');
+	const reachableFor = (kind: string | null | undefined) =>
+		kind ? (data.reach.find((choice) => choice.kind === kind)?.scopes ?? []) : null;
 
-	/**
-	 * The permission boxes, so the presets below can set them.
-	 *
-	 * The list itself is `ScopeChoice`, shared with the consent screen an
-	 * assistant sends somebody to — the same question, asked the same way. The
-	 * presets stay here: "an AI assistant" is a sentence that means something
-	 * on a form where somebody is making a key by hand, and nothing on a screen
-	 * where an assistant is the one asking.
-	 */
-	let scopeChoice = $state<ReturnType<typeof ScopeChoice>>();
+	/** The key whose permissions are open, read-only. */
+	let viewing = $state<(typeof data.tokens)[number] | null>(null);
 
 	function closeForms() {
 		showTokenForm = false;
@@ -109,22 +101,6 @@
 		const says = data.webhookEvents.find((e) => e.key === key)?.says;
 		return says ? t(says) : key;
 	};
-
-	/**
-	 * One legible line per assistant call: whatever names the thing best, from
-	 * the state it replaced or the arguments — never the raw JSON.
-	 */
-	function callLine(one: {
-		args: Record<string, unknown>;
-		before: unknown;
-		destroyed: boolean;
-	}): string {
-		const from = { ...(one.args ?? {}), ...((one.before as Record<string, unknown>) ?? {}) };
-		const said = [from.title, from.name, from.label, from.content, from.message].find(
-			(v) => typeof v === 'string' && v.trim()
-		);
-		return typeof said === 'string' ? said.slice(0, 80) : '';
-	}
 
 	/**
 	 * The two things somebody pastes, with the token already in them.
@@ -197,11 +173,6 @@ Token: ${token}`;
 			<div class="mt-2">
 				<CopyBlock text={newToken.plaintext} label={t('ui.copy')} wrap={false} />
 			</div>
-			<p class="mt-2 text-xs text-gray-600">
-				{t('settings.integrations.connections.itMay', {
-					join: newToken.scopes.map(scopeSentence).join(' · ')
-				})}
-			</p>
 			<details class="mt-3">
 				<summary class="cursor-pointer text-xs font-medium text-gray-900">
 					{t('settings.integrations.connections.connectAnAiAssistantWith')}
@@ -358,9 +329,9 @@ Token: ${token}`;
 								<strong class="font-semibold">{token.tiedTo}</strong>
 							</p>
 						{/if}
-						<p class="mt-1 max-w-3xl text-xs text-gray-500">
-							{token.scopes.map(scopeSentence).join(' · ') ||
-								t('settings.integrations.connections.noScopes')}
+						<!-- What it may do is one press away, drawn as the grid it was made
+						     with, rather than every sentence run together here. -->
+						<p class="mt-1 text-xs text-gray-500">
 							{#if token.lastUsedAt}
 								{t('settings.integrations.connections.lastUsed')}
 								{momentOf(token.lastUsedAt, now())}
@@ -374,6 +345,15 @@ Token: ${token}`;
 					</div>
 					<form method="post" action="?/revokeToken" use:enhance class="list-row-actions">
 						<input type="hidden" name="id" value={token.id} />
+						<button
+							type="button"
+							onclick={() => (viewing = token)}
+							class="icon-btn"
+							title={t('settings.integrations.connections.permissions')}
+							aria-label={t('settings.integrations.connections.permissions')}
+						>
+							<Icon name="shield" />
+						</button>
 						{#if confirmRevoke === token.id}
 							<button type="submit" class="btn btn-danger btn-sm" use:armed>
 								{t('settings.integrations.connections.revoke')}
@@ -765,7 +745,7 @@ Token: ${token}`;
 				<!-- What it may work on, before what it may do: the narrower answer
 				     is the one that decides whether the boxes below mean anything. -->
 				<div class="col-span-12">
-					<KeyReach choices={data.reach} />
+					<KeyReach choices={data.reach} bind:kind={tiedTo} bind:id={tiedId} />
 				</div>
 
 				<fieldset class="col-span-12">
@@ -775,41 +755,12 @@ Token: ${token}`;
 					<p class="mt-1 mb-2 text-xs text-gray-500">
 						{t('settings.integrations.connections.grantOnlyWhatTheApp')}
 					</p>
-					<!--
-						Eighteen checkboxes is a form somebody ticks wrong, and both wrong
-						answers are bad: a token that cannot do its job, or one that can do
-						more than it was made for. The one set anybody grants wholesale is
-						an AI assistant's, so that set is a button — read from the tools
-						themselves, so a tool added later is in it without anybody
-						remembering.
-					-->
-					<p class="mb-2 flex flex-wrap items-center gap-2">
-						<!-- The preset is the press a first visitor came to make. It reads
-						     and writes and does not delete — removing things for good is the
-						     quieter button beside it, pressed on purpose. -->
-						<button
-							type="button"
-							class="btn btn-sm"
-							onclick={() => scopeChoice?.tick(data.assistantScopes)}
-						>
-							{t('settings.integrations.connections.anAiAssistantMcp')}
-						</button>
-						<button
-							type="button"
-							class="btn btn-sm btn-quiet"
-							onclick={() => scopeChoice?.tick(data.assistantScopesDestructive)}
-						>
-							{t('settings.integrations.connections.andLetItDeleteThings')}
-						</button>
-						<button
-							type="button"
-							class="btn btn-sm btn-quiet"
-							onclick={() => scopeChoice?.tick([])}
-						>
-							{t('settings.integrations.connections.clear')}
-						</button>
-					</p>
-					<ScopeChoice bind:this={scopeChoice} scopes={data.scopes} showKeys />
+					<PermissionGrid
+						scopes={data.scopes}
+						reachable={reachableFor(tiedTo)}
+						destructive
+						showKeys
+					/>
 				</fieldset>
 			</FormGrid>
 		</form>
@@ -822,6 +773,32 @@ Token: ${token}`;
 				>{t('settings.integrations.connections.createToken')}</button
 			>
 		{/snippet}
+	</Modal>
+
+	<Modal
+		open={viewing !== null}
+		onclose={() => (viewing = null)}
+		title={viewing?.name ?? ''}
+		description={t('settings.integrations.connections.whatThisKeyMayDo')}
+	>
+		{#if viewing}
+			{#if viewing.tiedTo}
+				<p class="mb-3 text-sm text-gray-700">
+					{t('settings.integrations.connections.tiedToOne')}
+					<strong class="font-semibold">{viewing.tiedTo}</strong>
+				</p>
+			{/if}
+			{#key viewing.id}
+				<PermissionGrid
+					scopes={data.scopes}
+					checked={viewing.scopes}
+					reachable={reachableFor(viewing.confinement?.kind)}
+					readonly
+					destructive
+					showKeys
+				/>
+			{/key}
+		{/if}
 	</Modal>
 
 	<Modal

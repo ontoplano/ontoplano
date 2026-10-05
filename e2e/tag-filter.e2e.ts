@@ -177,6 +177,9 @@ test('the diary filters by the same control', async ({ page }) => {
 		const post = page.getByRole('button', { name: 'Post entry', exact: true });
 		await post.click();
 		await expect(post).toBeHidden();
+		// Once it is written: a New pressed while the last save is still being
+		// applied lands on the dialog that is stepping away.
+		await expect(page.getByText(content).first()).toBeVisible();
 	}
 
 	const diaryFace = page.locator('[aria-controls="diary-tags-panel"]');

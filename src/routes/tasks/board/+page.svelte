@@ -53,6 +53,7 @@
 	import { CATEGORY_FALLBACK_COLOR } from '$lib/colors.js';
 	import { cancelFor, changeNow, isPending } from '$lib/undo.svelte';
 	import { useT } from '$lib/i18n';
+	import { localDay } from '$lib/services/time';
 
 	const t = useT();
 	const now = useWhen();
@@ -728,10 +729,7 @@
 		// eslint-disable-next-line svelte/prefer-svelte-reactivity -- built, read once and thrown away inside this function; nothing tracks it.
 		const d = new Date(data.date + 'T00:00:00');
 		d.setDate(d.getDate() + days);
-		const pad = (n: number) => String(n).padStart(2, '0');
-		goto(
-			resolve(`/tasks/board?date=${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`)
-		);
+		goto(resolve(`/tasks/board?date=${localDay(d)}`));
 	}
 
 	/* This screen's one verb, drawn by the room's bar — see $lib/room-action. */

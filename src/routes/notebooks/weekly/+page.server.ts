@@ -1,8 +1,8 @@
 import type { IsolatedEvent } from '$lib/isolated/routes';
 import { buildCtx } from '$lib/services/ctx';
 import { ValidationError } from '$lib/services/errors';
-import { toActionFailure } from '$lib/http-errors';
 import { MAX_NOTE_LENGTH, pastNotes, readNote, saveNote, weekStartOf } from '$lib/services/review';
+import { formAction } from '$lib/services/scoped-actions';
 
 /** A civil date. Anything else would quietly fall back to this week. */
 const CIVIL_DATE = /^\d{4}-\d{2}-\d{2}$/;
@@ -36,29 +36,15 @@ export const actions = {
 	 * that already has one is refused rather than written over: the dialog
 	 * that asked for a new one did not show the old one.
 	 */
-	save: async ({ request, locals }: IsolatedEvent) => {
-		const formData = await request.formData();
-		const ctx = buildCtx(locals.user!.id);
-		try {
-			const weekStart = weekAsked(ctx, formData.get('weekStart'));
-			if (formData.get('fresh') && readNote(ctx, weekStart))
-				throw new ValidationError({ key: 'errors.weekly.alreadyWritten' });
-			saveNote(ctx, { weekStart, content: formData.get('note') });
-			return { success: true };
-		} catch (e) {
-			return toActionFailure(e);
-		}
-	},
+	save: formAction((ctx, formData) => {
+		const weekStart = weekAsked(ctx, formData.get('weekStart'));
+		if (formData.get('fresh') && readNote(ctx, weekStart))
+			throw new ValidationError({ key: 'errors.weekly.alreadyWritten' });
+		saveNote(ctx, { weekStart, content: formData.get('note') });
+	}),
 
 	/* An emptied note is no note: `saveNote` removes the row. */
-	remove: async ({ request, locals }: IsolatedEvent) => {
-		const formData = await request.formData();
-		const ctx = buildCtx(locals.user!.id);
-		try {
-			saveNote(ctx, { weekStart: weekAsked(ctx, formData.get('weekStart')), content: '' });
-			return { success: true };
-		} catch (e) {
-			return toActionFailure(e);
-		}
-	}
+	remove: formAction((ctx, formData) => {
+		saveNote(ctx, { weekStart: weekAsked(ctx, formData.get('weekStart')), content: '' });
+	})
 };

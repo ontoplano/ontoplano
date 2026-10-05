@@ -96,13 +96,25 @@
 	 * draft offers what this account already uses, capped; a letter narrows it
 	 * by the app's own fuzzy.
 	 */
-	const suggestions = $derived(focused ? suggestTags(known, draft, tags) : []);
+
+	/*
+	 * A label just taken closes the list until somebody types again.
+	 *
+	 * Left open, the list sat over the form after every pick, offering the
+	 * next word before anybody had asked for one — and in the way of the
+	 * field below. The first look at the box still offers the vocabulary;
+	 * after a pick, a letter (or the down arrow) is what asks again.
+	 */
+	let settled = $state(false);
+
+	const suggestions = $derived(focused && !settled ? suggestTags(known, draft, tags) : []);
 
 	function add(...made: string[]) {
 		const fresh = made.filter((tag) => tag && !tags.includes(tag));
 		if (fresh.length > 0) tags = [...tags, ...fresh];
 		draft = '';
 		at = -1;
+		settled = true;
 	}
 
 	/**
@@ -155,7 +167,10 @@
 			return;
 		}
 
-		if (e.key === 'ArrowDown' && suggestions.length > 0) {
+		if (e.key === 'ArrowDown' && settled) {
+			e.preventDefault();
+			settled = false;
+		} else if (e.key === 'ArrowDown' && suggestions.length > 0) {
 			e.preventDefault();
 			at = (at + 1) % suggestions.length;
 		} else if (e.key === 'ArrowUp' && suggestions.length > 0) {
@@ -180,7 +195,11 @@
 	const BLUR_DELAY_MS = 150;
 	function onBlur() {
 		setTimeout(() => {
-			if (document.activeElement !== box) focused = false;
+			if (document.activeElement !== box) {
+				focused = false;
+				// Coming back to the box is a fresh look, and offers the list again.
+				settled = false;
+			}
 		}, BLUR_DELAY_MS);
 	}
 
@@ -238,6 +257,7 @@
 		aria-expanded={suggestions.length > 0}
 		aria-controls="{name}-suggestions"
 		onfocus={() => (focused = true)}
+		oninput={() => (settled = false)}
 		onblur={onBlur}
 		onkeydown={onKeydown}
 	/>

@@ -8,21 +8,19 @@
  * day, the log that counts them, and the audit line each one writes. Both
  * halves are re-exported from here so the rest of the server keeps one import.
  */
-import { eq } from 'drizzle-orm';
 
-import { db } from '$lib/db/index.js';
 import { getUserSetting, setUserSetting } from '../settings.js';
 import { PLANS } from '../../plans.js';
 import { record as audit } from '$lib/services/audit.js';
 import { RateLimitedError } from '$lib/services/errors.js';
 import { resolvePlan } from './subscriptions.js';
 import { build } from './version.js';
-import * as schema from '$lib/db/schema.js';
 import {
 	PICTURE_TABLES,
 	USER_TABLES,
 	hoursUntil,
-	type AccountExport
+	type AccountExport,
+	accountRow
 } from '$lib/services/account-data.js';
 
 export * from '$lib/services/account-data.js';
@@ -122,13 +120,7 @@ export function exportAccount(
 	now: Date = new Date(),
 	opts: { withoutPictures?: boolean; key?: string | null } = {}
 ): AccountExport {
-	const account = db
-		.select({ id: schema.user.id, name: schema.user.name, email: schema.user.email })
-		.from(schema.user)
-		.where(eq(schema.user.id, userId))
-		.get();
-
-	if (!account) throw new Error('Account not found');
+	const account = accountRow(userId);
 
 	const key = opts.key && EXPORT_KEY.test(opts.key) ? opts.key : null;
 	const repeated = key !== null && exportLog(userId, now).some((e) => e.key === key);

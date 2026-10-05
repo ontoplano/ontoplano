@@ -136,10 +136,10 @@ export const NOTEBOOK_TABS = [
 ] as const;
 
 /** The planner's tabs, in the order it shows them. */
-export const TASK_TABS = [
+const TASK_TABS = [
 	{ href: '/tasks/plan', label: 'rooms.tasks.tabs.plan', glyph: 'calendar' },
-	{ href: '/tasks/board', label: 'rooms.tasks.tabs.board', glyph: 'kanban' },
 	{ href: '/tasks/todo', label: 'rooms.tasks.tabs.todo', glyph: 'checklist' },
+	{ href: '/tasks/board', label: 'rooms.tasks.tabs.board', glyph: 'kanban' },
 	{ href: '/tasks/activities', label: 'rooms.tasks.tabs.activities', glyph: 'blocks' },
 	{ href: '/tasks/review', label: 'rooms.tasks.tabs.review', glyph: 'clipboard' }
 ] as const;
@@ -156,7 +156,7 @@ export const HEALTH_TABS = [
 ] as const;
 
 /** The Finance room's tabs, in the order it shows them. */
-export const FINANCE_TABS = [
+const FINANCE_TABS = [
 	{ href: '/finance/ledgers', label: 'rooms.finance.tabs.ledgers', glyph: 'bank' },
 	// Bills had a room and nothing pointing at it, which is a room nobody
 	// finds. Beside Ledgers, because a bill is money leaving on a date and
@@ -172,13 +172,13 @@ export const FINANCE_TABS = [
  * Recordings first: a picture is chosen from a disk, a recording is made
  * here, so it is the one the room lands on.
  */
-export const MEDIA_TABS = [
+const MEDIA_TABS = [
 	{ id: 'audios', href: '/media/audios', label: 'rooms.media.tabs.audios', glyph: 'mic' },
 	{ id: 'gallery', href: '/media/gallery', label: 'rooms.media.tabs.gallery', glyph: 'image' }
 ] as const;
 
 /** The Inventory room's tabs: what you keep, and what you might get one day. */
-export const INVENTORY_TABS = [
+const INVENTORY_TABS = [
 	{ href: '/inventory/stock', label: 'inventory.stock', glyph: 'shopping' },
 	{ href: '/inventory/wishlist', label: 'inventory.wishlist', glyph: 'star' }
 ] as const;

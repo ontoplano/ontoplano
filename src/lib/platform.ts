@@ -68,6 +68,23 @@ export function isStandalone(): boolean {
 /** The token the shell appends to its web view's agent. See `android-flavours.mjs`. */
 export const APP_USER_AGENT = 'OntoplanoApp';
 
+/**
+ * The second token, carried only by the copy Google Play distributes.
+ *
+ * That copy is the one with Play's purchase sheet compiled in (the `play`
+ * flavour, `scripts/android-flavours.mjs`); every other build — F-Droid's, the
+ * APK on a GitHub release, dev, staging — is free software and has none. A page
+ * on an instance cannot see the shell's plugins, so this is how it learns that
+ * money goes through Play here. Pretending to have it only routes a purchase
+ * to a sheet that will not open.
+ */
+export const PLAY_STORE_USER_AGENT = 'OntoplanoPlay';
+
+/** Whether the page is drawn by the copy installed from Google Play. */
+export function fromPlayStore(userAgent = globalThis.navigator?.userAgent ?? ''): boolean {
+	return userAgent.includes(PLAY_STORE_USER_AGENT);
+}
+
 export const APP_LAUNCH_PARAM = 'app';
 export const APP_LAUNCH_VALUE = 'android';
 export const APP_COOKIE = 'ontoplano_app';

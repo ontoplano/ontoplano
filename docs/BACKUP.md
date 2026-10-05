@@ -7,7 +7,10 @@ Two mechanisms, doing different jobs:
 
 - **Snapshots** (`make db-snapshot`) — a consistent copy taken with
   `VACUUM INTO`, kept beside the database, and taken automatically before every
-  migration. Good for "the migration was wrong, put it back".
+  migration. Good for "the migration was wrong, put it back". The newest ten of
+  each kind are kept; `ONTOPLANO_SNAPSHOTS_KEPT` sets how many, and `0` takes
+  none and clears the ones there are, for a database that is reseeded rather
+  than restored.
 - **Replication** (Litestream) — the write-ahead log shipped to a replica as it
   is written, so the recovery point is seconds rather than the last snapshot.
   Good for "the machine is gone".

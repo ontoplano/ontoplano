@@ -20,8 +20,10 @@
 	import type { ActionData, PageData } from './$types';
 	import Banner from '$lib/components/Banner.svelte';
 	import KeyReach from '$lib/components/KeyReach.svelte';
+	import PermissionGrid from '$lib/components/PermissionGrid.svelte';
 	import { whyNot } from '$lib/capabilities';
 	import { useT } from '$lib/i18n';
+	import { callLine } from '$lib/assistant-calls';
 
 	const t = useT();
 	const now = useWhen();
@@ -60,7 +62,6 @@
 	const reachable = $derived(
 		tiedTo ? (data.reach.find((choice) => choice.kind === tiedTo)?.scopes ?? []) : null
 	);
-	const reaches = (scope: string | null) => !scope || !reachable || reachable.includes(scope);
 
 	/** The name of the thing it is tied to, which is the name the key wants. */
 	const tiedName = $derived(
@@ -219,19 +220,6 @@ bearer_token_env_var = "ONTOPLANO_KEY"
 			{ name: '', note: chosen.note ?? '', wrap: chosen.wrap, text: chosen.text ?? '' }
 		]
 	);
-
-	/** One legible line per call: whatever names the thing, never the raw JSON. */
-	function callLine(one: {
-		args: Record<string, unknown>;
-		before: unknown;
-		destroyed: boolean;
-	}): string {
-		const from = { ...(one.args ?? {}), ...((one.before as Record<string, unknown>) ?? {}) };
-		const said = [from.title, from.name, from.label, from.content, from.message].find(
-			(v) => typeof v === 'string' && v.trim()
-		);
-		return typeof said === 'string' ? said.slice(0, 80) : '';
-	}
 </script>
 
 <div class="space-y-4">
@@ -490,93 +478,16 @@ bearer_token_env_var = "ONTOPLANO_KEY"
 				<KeyReach choices={data.reach} bind:kind={tiedTo} bind:id={tiedId} />
 			</div>
 			<!--
-				What it may do, ticked and changeable. Every box is on to begin with;
-				deleting is its own box under the table, unticked, because it is the
-				one grant that should be given on purpose.
+				What it may do. Every box starts off: a grant is given on purpose, one
+				row or the All box at a time, and deleting is its own box under the
+				table.
 			-->
 			<fieldset>
 				<legend class="eyebrow text-gray-600">{t('settings.integrations.whatItMayDo')}</legend>
 				<p class="mt-1 mb-3 max-w-2xl text-xs leading-relaxed text-gray-500">
-					{t('settings.integrations.allOfItUnlessYou')}
+					{t('settings.integrations.onlyWhatYouTick')}
 				</p>
-				<!-- A grid, not a column of sentences: one row per thing, a column each
-				     for reading and writing, and a disabled box where the pair does not
-				     exist. The sentence is still on the row, as its title. -->
-				<div class="max-w-md overflow-x-auto">
-					<table class="w-full text-sm">
-						<thead>
-							<tr class="border-b border-gray-200">
-								<th class="py-1 text-left font-normal text-gray-500"></th>
-								<th class="eyebrow w-16 py-1 text-center text-gray-600"
-									>{t('settings.integrations.read')}</th
-								>
-								<th class="eyebrow w-16 py-1 text-center text-gray-600"
-									>{t('settings.integrations.write')}</th
-								>
-							</tr>
-						</thead>
-						<tbody class="divide-y divide-gray-200">
-							{#each data.permissions as row (row.subject)}
-								<!-- A row a confinement cannot reach is drawn faint, not removed,
-								     so the table does not jump as somebody changes their mind. -->
-								<tr class={reaches(row.read ?? row.write) ? '' : 'opacity-40'}>
-									<td class="py-1.5 text-gray-700" title={row.says.join('\n')}>{row.label}</td>
-									{#each [row.read, row.write] as scope, i (i)}
-										<td class="py-1.5 text-center">
-											{#if scope && reaches(scope)}
-												<input
-													type="checkbox"
-													name="scopes"
-													value={scope}
-													checked
-													aria-label="{row.label}: {i === 0 ? t('ui.read') : t('ui.write')}"
-												/>
-											{:else if scope}
-												<input
-													type="checkbox"
-													disabled
-													aria-label={t('settings.integrations.outsideWhat', {
-														label: row.label,
-														write: i === 0 ? 'read' : 'write'
-													})}
-												/>
-											{:else}
-												<input
-													type="checkbox"
-													disabled
-													aria-label={t('settings.integrations.notSomething', {
-														label: row.label,
-														write: i === 0 ? 'read' : 'write'
-													})}
-												/>
-											{/if}
-										</td>
-									{/each}
-								</tr>
-							{/each}
-						</tbody>
-					</table>
-				</div>
-				<!--
-					Deleting, apart from the rest and unticked, on the danger ground.
-					The words stay dark: small red text is the one place colour cannot
-					carry meaning for everyone; the tint and the glyph say it.
-				-->
-				<label
-					class="mt-3 flex max-w-md items-start gap-2 border border-red-200 bg-red-50 px-3 py-2 text-sm text-gray-700"
-				>
-					<input type="checkbox" name="scopes" value="destructive" class="mt-0.5" />
-					<span>
-						<strong class="flex items-center gap-1.5 font-semibold text-gray-900"
-							><Icon name="warning" size={14} />{t(
-								'settings.integrations.andLetItDeleteThings'
-							)}</strong
-						>
-						<span class="mt-0.5 block text-xs leading-relaxed text-gray-600">
-							{t('settings.integrations.removingIsPermanentWithoutThis')}
-						</span>
-					</span>
-				</label>
+				<PermissionGrid scopes={data.permissions} {reachable} destructive />
 			</fieldset>
 			<!-- Naming it, last: what a thing is called is the last thing you decide
 			     about it. Named after what it is tied to, when it is tied. -->

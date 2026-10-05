@@ -1,4 +1,5 @@
 import { ValidationError } from './errors.js';
+import type { MessageKey } from '$lib/i18n/core.js';
 
 /**
  * Small hand-rolled validators.
@@ -99,7 +100,7 @@ export function jsonObject(value: unknown, field: string, maxBytes: number): str
  * Stream slugs are used in URLs and namespaced by producer, e.g.
  * `scale.weight`. Lowercase, dot-separated segments.
  */
-export const SLUG_PATTERN = /^[a-z0-9]+(?:[-_][a-z0-9]+)*(?:\.[a-z0-9]+(?:[-_][a-z0-9]+)*)*$/;
+const SLUG_PATTERN = /^[a-z0-9]+(?:[-_][a-z0-9]+)*(?:\.[a-z0-9]+(?:[-_][a-z0-9]+)*)*$/;
 
 export function slug(value: unknown, field: string): string {
 	return str(value, field, { max: 64, pattern: SLUG_PATTERN });
@@ -117,3 +118,19 @@ export function slug(value: unknown, field: string): string {
  * preference and validated where preferences are.
  */
 export const TIME_PATTERN = /^([01]\d|2[0-3]):[0-5]\d$/;
+
+/**
+ * The ids a batch press chose, each a positive whole number, none twice.
+ *
+ * Refused as nothing chosen or as too many at once, in the room's own words —
+ * the notes, the ideas and the todos each said this for themselves.
+ */
+export function chosenIds(
+	raw: unknown[],
+	max: number,
+	keys: { nothing: MessageKey; tooMany: MessageKey }
+): number[] {
+	if (raw.length === 0) throw new ValidationError({ key: keys.nothing });
+	if (raw.length > max) throw new ValidationError({ key: keys.tooMany });
+	return [...new Set(raw.map((id) => num(id, 'id', { int: true, min: 1 })))];
+}

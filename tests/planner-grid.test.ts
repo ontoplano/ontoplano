@@ -12,12 +12,12 @@
  * somebody only notices after trusting it.
  */
 import { describe, expect, test } from 'vitest';
-import { UNTITLED_BLOCK } from '../src/lib/planner-grid';
+import { UNTITLED_BLOCK, fallsOn } from '../src/lib/planner-grid';
 import { messages as english } from '../src/lib/i18n/catalogues/en';
 import { messages as portuguese } from '../src/lib/i18n/catalogues/pt-BR';
 import { translator } from '../src/lib/i18n/core';
+import { localDay, shiftDay } from '../src/lib/services/time';
 import {
-	addDaysStr,
 	baseGridOptions,
 	GRID_ZOOM_LEVELS,
 	GRID_DEFAULT_ZOOM_INDEX,
@@ -35,7 +35,6 @@ import {
 	eventFitsText,
 	formatClock,
 	formatGridDuration,
-	formatLocalDate,
 	GRID_MIN_TEXT_PX,
 	GRID_SLOT_MINUTES,
 	hourToTime,
@@ -124,8 +123,8 @@ describe('putting a weekly block on a date', () => {
 	});
 
 	test('lands on the right day of the window', () => {
-		expect(formatLocalDate(weekdayToDate(MONDAY, 0))).toBe('2026-08-17');
-		expect(formatLocalDate(weekdayToDate(MONDAY, 6))).toBe('2026-08-23');
+		expect(localDay(weekdayToDate(MONDAY, 0))).toBe('2026-08-17');
+		expect(localDay(weekdayToDate(MONDAY, 6))).toBe('2026-08-23');
 	});
 
 	test('and on a window that does not start on a Monday, stays inside it', () => {
@@ -135,15 +134,15 @@ describe('putting a weekly block on a date', () => {
 		for (let weekday = 0; weekday < 7; weekday++) {
 			const landed = weekdayToDate(from, weekday);
 			expect(dateToWeekday(landed)).toBe(weekday);
-			expect(formatLocalDate(landed) >= from).toBe(true);
-			expect(formatLocalDate(landed) <= addDaysStr(from, 6)).toBe(true);
+			expect(localDay(landed) >= from).toBe(true);
+			expect(localDay(landed) <= shiftDay(from, 6)).toBe(true);
 		}
 	});
 
 	test('a block becomes a rectangle at the time it says', () => {
 		const [event] = buildSlotEvents([aSlot()], MONDAY, CATEGORIES);
 
-		expect(formatLocalDate(event.start as Date)).toBe('2026-08-17');
+		expect(localDay(event.start as Date)).toBe('2026-08-17');
 		expect(formatClock(event.start as Date)).toBe('09:00');
 		expect(formatClock(event.end as Date)).toBe('10:00');
 		expect(event.title).toBe('Work');
@@ -159,7 +158,7 @@ describe('putting a weekly block on a date', () => {
 			CATEGORIES
 		);
 		expect(formatClock(event.end as Date)).toBe('00:30');
-		expect(formatLocalDate(event.end as Date)).toBe('2026-08-18');
+		expect(localDay(event.end as Date)).toBe('2026-08-18');
 	});
 
 	test('takes its colour from the activity when it has no category of its own', () => {
@@ -253,7 +252,7 @@ describe('a one-off', () => {
 			CATEGORIES
 		);
 
-		expect(formatLocalDate(event.start as Date)).toBe('2026-08-19');
+		expect(localDay(event.start as Date)).toBe('2026-08-19');
 		expect(formatClock(event.end as Date)).toBe('14:45');
 		expect(event.title).toBe('Dentist');
 		expect(event.classNames).toContain('og-event--exceptional');
@@ -300,7 +299,7 @@ describe("somebody else's calendar", () => {
 describe('a month of weekly blocks', () => {
 	const month = () => {
 		// Five weeks of dates, as the calendar itself lays them out.
-		const dates = Array.from({ length: 35 }, (_, i) => addDaysStr(MONDAY, i));
+		const dates = Array.from({ length: 35 }, (_, i) => shiftDay(MONDAY, i));
 		return buildSlotEventsForDates([aSlot()], dates, CATEGORIES);
 	};
 
@@ -309,7 +308,7 @@ describe('a month of weekly blocks', () => {
 	});
 
 	test('on the same weekday each time, a week apart', () => {
-		const days = month().map((e) => formatLocalDate(e.start as Date));
+		const days = month().map((e) => localDay(e.start as Date));
 		expect(days).toEqual(['2026-08-17', '2026-08-24', '2026-08-31', '2026-09-07', '2026-09-14']);
 	});
 });
@@ -432,7 +431,7 @@ describe('the grid the calendar is handed', () => {
 		// `{ days: 7 }` and not `{ weeks: 1 }`: a week-shaped duration snaps back
 		// to firstDay and puts elapsed days on the left of a plan.
 		expect(options.duration).toEqual({ days: 7 });
-		expect(formatLocalDate(options.date as Date)).toBe(MONDAY);
+		expect(localDay(options.date as Date)).toBe(MONDAY);
 	});
 
 	test('a phone gets one full-width day rather than seven squashed ones', () => {
@@ -491,10 +490,10 @@ describe('the small conversions', () => {
 	});
 
 	test('a date shifts by whole days and stays a civil date', () => {
-		expect(addDaysStr('2026-08-31', 1)).toBe('2026-09-01');
-		expect(addDaysStr('2026-01-01', -1)).toBe('2025-12-31');
+		expect(shiftDay('2026-08-31', 1)).toBe('2026-09-01');
+		expect(shiftDay('2026-01-01', -1)).toBe('2025-12-31');
 		// Across a daylight-saving boundary it is still the next day, not 23 hours.
-		expect(addDaysStr('2026-02-28', 1)).toBe('2026-03-01');
+		expect(shiftDay('2026-02-28', 1)).toBe('2026-03-01');
 	});
 });
 
@@ -559,5 +558,33 @@ describe('the colour handed to a block', () => {
 		for (const bad of ['rebeccapurple', '', 'red;background:url(x)', '#1d4ed8;color:red']) {
 			expect(blockHue(bad)).toBe('--block:var(--color-gray-400)');
 		}
+	});
+});
+
+describe('something that lasts all day', () => {
+	const pto = {
+		start: new Date(2026, 7, 17),
+		end: new Date(2026, 7, 22),
+		allDay: true
+	};
+
+	test('is on the list of every day it covers, and not the morning after', () => {
+		expect(fallsOn(pto, '2026-08-16')).toBe(false);
+		for (const date of ['2026-08-17', '2026-08-19', '2026-08-21'])
+			expect(fallsOn(pto, date)).toBe(true);
+		expect(fallsOn(pto, '2026-08-22')).toBe(false);
+	});
+
+	test('a timed one belongs to the day it starts', () => {
+		const late = { start: new Date(2026, 7, 17, 23), end: new Date(2026, 7, 18, 1) };
+		expect(fallsOn(late, '2026-08-17')).toBe(true);
+		expect(fallsOn(late, '2026-08-18')).toBe(false);
+	});
+
+	test('opens the week’s all-day row only when there is one', () => {
+		expect(baseGridOptions('2026-08-17', { allDay: true }).allDaySlot).toBe(true);
+		expect(baseGridOptions('2026-08-17').allDaySlot).toBe(false);
+		// A month has no such row: every day is a whole day there already.
+		expect(baseGridOptions('2026-08-01', { allDay: true, month: true }).allDaySlot).toBe(false);
 	});
 });

@@ -149,8 +149,67 @@ export function dayInWords(day: string, locale: string): string {
  * local parts instead, which is what every table keyed by day holds.
  */
 export function localDay(d: Date): string {
-	return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+	return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
 }
+
+/*
+ * Civil-day arithmetic, in one place.
+ *
+ * Every one of these was written three to six times over — `pad`, `formatDate`,
+ * `addDays`, `daysBetween` — in services, in page loads and in the shared
+ * modules the client runs, each copy a little different (one at midnight UTC,
+ * one at noon, one by `setDate`), which is how a week once rolled over on the
+ * wrong day. A `YYYY-MM-DD` is a civil date and never converted (I5): the
+ * arithmetic below moves along the calendar, not along a clock.
+ */
+
+/** Two digits, for a month, a day or a clock. */
+export function pad2(n: number): string {
+	return String(n).padStart(2, '0');
+}
+
+/** The same instant on another calendar day, by the local calendar. */
+export function addDays(date: Date, days: number): Date {
+	const d = new Date(date);
+	d.setDate(d.getDate() + days);
+	return d;
+}
+
+/**
+ * A Date as a naive `YYYY-MM-DDTHH:MM:SS`, with no zone.
+ *
+ * For **wall-clock** values only — `task_records.scheduled_at` and the day
+ * bounds compared against it. Instants are UTC and come from `stamp()`;
+ * writing one of those with this is finding S7 all over again.
+ */
+export function toLocalISOString(d: Date): string {
+	return `${localDay(d)}T${pad2(d.getHours())}:${pad2(d.getMinutes())}:${pad2(d.getSeconds())}`;
+}
+
+/** Local midnight of the day the instant falls on. */
+export function startOfDay(d: Date): Date {
+	return new Date(d.getFullYear(), d.getMonth(), d.getDate());
+}
+
+/** A civil day moved by so many days — `2026-03-31` + 1 is `2026-04-01`. */
+export function shiftDay(day: string, days: number): string {
+	// Noon, so a clock change on the day cannot carry it into the one beside.
+	const d = new Date(`${day}T12:00:00`);
+	d.setDate(d.getDate() + days);
+	return localDay(d);
+}
+
+/** Whole calendar days from one civil day to another; negative when `to` is earlier. */
+export function daysBetween(from: string, to: string): number {
+	return Math.round((Date.parse(`${to}T00:00:00Z`) - Date.parse(`${from}T00:00:00Z`)) / DAY_MS);
+}
+
+/** The civil day of a local timestamp — `2026-03-31T18:00:00` → `2026-03-31`. */
+export function dayOf(local: string): string {
+	return local.slice(0, 10);
+}
+
+const DAY_MS = 86_400_000;
 
 /**
  * An instant, said where the reader is.

@@ -89,6 +89,8 @@ describe('the planner grid hours', () => {
 			"insert into user_settings (user_id, key, value) values (?, 'planner.grid_start_hour', '5')",
 			OWNER
 		);
+		// Written behind the settings module, so it is told.
+		settings.forgetUserSettings(OWNER);
 
 		expect(settings.getGridHours(OWNER).start).toBe(5);
 	});

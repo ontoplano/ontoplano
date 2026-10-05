@@ -4,6 +4,10 @@ import { navigating } from '$app/state';
 import type { SubmitFunction } from '@sveltejs/kit';
 import { afterPress } from '$lib/after-press';
 import { historySettled, loadAfterHistory, popsSoFar } from '$lib/back-closes';
+import { FORM_ANSWERED, actionName, type FormAnswer } from '$lib/form-answers';
+import { notices } from '$lib/notify.svelte';
+import { spokenCount } from '$lib/said.svelte';
+import { undo as undoStore } from '$lib/undo.svelte';
 
 /**
  * `use:enhance`, with one press meaning one submission.
@@ -67,7 +71,10 @@ function said(data: FormData): string {
  * an invalidation win over a navigation already under way — so writing a note
  * and pressing another notebook before the write came back left you on the
  * first one, with the press silently dropped. The page being left does not
- * need fresh data: the one being opened loads its own.
+ * need fresh data — but the one being opened does not load all of its own
+ * either: a layout it shares with the page being left is reused as it stood
+ * when the navigation began, before the write. `enhance` loads once more after
+ * it lands (`reloadAfterMoving`).
  */
 type Outcome = Parameters<
 	Extract<Awaited<ReturnType<SubmitFunction>>, (...args: never[]) => unknown>
@@ -168,6 +175,19 @@ function steppingAway(event: Parameters<SubmitFunction>[0]): HTMLDialogElement |
  */
 const ROW = '[data-row], .list-row, .row-card, [data-todo-id], li';
 
+/** How often to look whether a navigation under way has landed. */
+const NAVIGATION_POLL_MS = 50;
+/** And for how long, before giving up on it. */
+const NAVIGATION_WAIT_MS = 10_000;
+
+/** Until no navigation is under way: an invalidation started during one cancels it. */
+async function navigationLanded(): Promise<void> {
+	const until = Date.now() + NAVIGATION_WAIT_MS;
+	while (navigating.to && Date.now() < until) {
+		await new Promise((next) => setTimeout(next, NAVIGATION_POLL_MS));
+	}
+}
+
 function answerAtOnce(event: Parameters<SubmitFunction>[0]): {
 	takeBack: () => void;
 	settle: () => void;
@@ -207,6 +227,61 @@ function answerAtOnce(event: Parameters<SubmitFunction>[0]): {
 	};
 }
 
+/** Whatever has been said so far, as one comparable string. */
+function saidSoFar(): string {
+	return [
+		spokenCount(),
+		notices.items.at(-1)?.id ?? 0,
+		undoStore.pending.map((one) => one.id).join(',')
+	].join('|');
+}
+
+/** What an answer says back, if it says anything. */
+function messageOf(result: Outcome['result']): { message: string | null; refused: boolean } {
+	if (result.type === 'failure' || result.type === 'success') {
+		const data = result.data as { message?: unknown; refused?: unknown } | undefined;
+		return {
+			message: typeof data?.message === 'string' && data.message ? data.message : null,
+			refused: data?.refused === true
+		};
+	}
+	if (result.type === 'error') {
+		const error = result.error as { message?: unknown } | undefined;
+		return { message: typeof error?.message === 'string' ? error.message : null, refused: false };
+	}
+	return { message: null, refused: false };
+}
+
+/** Tell the toast layer (`$lib/form-answers`) how a submission was answered. */
+function announce(
+	event: Parameters<SubmitFunction>[0],
+	outcome: Outcome,
+	detail: Partial<FormAnswer>
+) {
+	const quiet =
+		event.formElement.hasAttribute('data-quiet') ||
+		(event.submitter?.hasAttribute('data-quiet') ?? false);
+	// A redirect back to the page the form is on is a save that reloads,
+	// not a trip somewhere else.
+	const result = outcome.result;
+	const stays =
+		result.type === 'redirect' &&
+		new URL(result.location, event.action).pathname === event.action.pathname;
+	window.dispatchEvent(
+		new CustomEvent<FormAnswer>(FORM_ANSWERED, {
+			detail: {
+				action: actionName(event.action),
+				outcome: stays ? 'success' : result.type,
+				...messageOf(outcome.result),
+				answered: false,
+				fromDialog: false,
+				quiet,
+				...detail
+			}
+		})
+	);
+}
+
 export function enhance(form: HTMLFormElement, submit?: SubmitFunction) {
 	let sending: string | null = null;
 
@@ -219,6 +294,7 @@ export function enhance(form: HTMLFormElement, submit?: SubmitFunction) {
 			return;
 		}
 		sending = saying;
+		const before = saidSoFar();
 		const pressed = submitters(event.formElement);
 		for (const button of pressed) button.disabled = true;
 
@@ -229,6 +305,7 @@ export function enhance(form: HTMLFormElement, submit?: SubmitFunction) {
 			? { takeBack: () => {}, settle: () => {} }
 			: answerAtOnce(event);
 		const popsBefore = popsSoFar();
+		const pathBefore = location.pathname;
 		return async (outcome) => {
 			const saved = outcome.result.type === 'success';
 			try {
@@ -239,22 +316,40 @@ export function enhance(form: HTMLFormElement, submit?: SubmitFunction) {
 				finish();
 				settle();
 			} finally {
-				dialog?.dispatchEvent(new Event('stepback'));
+				// With the outcome: the dialog comes back for a refusal, and for
+				// nothing else — see `stepBack` in Modal.
+				const refused = outcome.result.type === 'failure' || outcome.result.type === 'error';
+				dialog?.dispatchEvent(new CustomEvent('stepback', { detail: { refused } }));
 				sending = null;
 				// A form that has been taken off the screen takes its buttons
 				// with it; setting a property on a detached node is harmless.
 				for (const button of pressed) button.disabled = false;
+				announce(event, outcome, { answered: saidSoFar() !== before, fromDialog: !!dialog });
 			}
 			/*
-			 * A phone's dialog gives its history entry back as it closes, and a
-			 * pop that lands while the save's data is still loading cancels that
-			 * load: the task was added, the toast said so, and the list did not
-			 * have it. When any entry was popped meanwhile, load once more after
-			 * the last pop — a cost paid only on the path that lost the data.
+			 * The save's data can be lost on its way to the screen two ways, and
+			 * both are paid for only on the path that lost it — a load once more,
+			 * after the thing that got in the way.
+			 *
+			 * - A phone's dialog gives its history entry back as it closes, and a
+			 *   pop that lands while the data is loading cancels the load: the
+			 *   task was added, the toast said so, and the list did not have it.
+			 * - Somebody moved on while it was being sent — the dialog steps away
+			 *   on the press, so the next press comes quickly — and the page they
+			 *   went to reused a layout as it stood before the write: the
+			 *   wishlist opened without the thing just put on it.
 			 */
 			if (saved) {
-				void historySettled().then(() => {
-					if (popsSoFar() !== popsBefore) void loadAfterHistory(invalidateAll);
+				void historySettled().then(async () => {
+					// Another page, not another query on this one: a filter pressed
+					// after the save writes the address too, and its own navigation
+					// loads the page fresh. Reloading over it cancelled the next
+					// press's navigation, so a second press on a label did nothing.
+					const elsewhere = (path: string | undefined) => path !== undefined && path !== pathBefore;
+					const moved = elsewhere(navigating.to?.url.pathname) || elsewhere(location.pathname);
+					if (!moved && popsSoFar() === popsBefore) return;
+					await navigationLanded();
+					await loadAfterHistory(invalidateAll);
 				});
 			}
 		};

@@ -8,6 +8,7 @@
 	import { resolve } from '$app/paths';
 	import { navigating, page } from '$app/state';
 	import PendingPage from '$lib/components/PendingPage.svelte';
+	import { lastDrawnTabs } from '$lib/room-tabs.svelte';
 	import { DESTINATIONS } from '$lib/destinations';
 	import { routeGlyph } from '$lib/glyphs';
 	import { isHidden } from '$lib/sections';
@@ -39,24 +40,23 @@
 	import { THEMES, THEME_LABELS } from '$lib/theme.js';
 	import SectionPattern from '$lib/components/SectionPattern.svelte';
 	import HelpDock from '$lib/components/HelpDock.svelte';
-	import Tutorial from '$lib/components/Tutorial.svelte';
+	import type Tutorial from '$lib/components/Tutorial.svelte';
 	import CapturePie from '$lib/components/CapturePie.svelte';
 	import NavPie from '$lib/components/NavPie.svelte';
 	import FanMenu, { type Petal } from '$lib/components/FanMenu.svelte';
-	import ReportDialog from '$lib/components/ReportDialog.svelte';
 	import Tooltips from '$lib/components/Tooltips.svelte';
+	import TaskPeek from '$lib/components/TaskPeek.svelte';
 	import { hasTutorial } from '$lib/tutorials';
 	import Logo from '$lib/components/Logo.svelte';
 	import Modal from '$lib/components/Modal.svelte';
 	import NotificationBell from '$lib/components/NotificationBell.svelte';
 	import NotificationPanel from '$lib/components/NotificationPanel.svelte';
 	import Reminders from '$lib/components/Reminders.svelte';
-	import CommandPalette from '$lib/components/CommandPalette.svelte';
 	import Toasts from '$lib/components/Toasts.svelte';
 	import { notify } from '$lib/notify.svelte';
 	import ClientErrorPrompt from '$lib/components/ClientErrorPrompt.svelte';
 	import { undo } from '$lib/undo.svelte';
-	import { palette } from '$lib/palette.svelte';
+	import { opensPalette, palette } from '$lib/palette.svelte';
 	import { suppressAutofill } from '$lib/autofill';
 	import { APP_UPDATE_HUSH_KEY } from '$lib/platform';
 	import { startMarkSpin, stopMarkSpin } from '$lib/mark-spin';
@@ -273,7 +273,7 @@
 			return;
 		}
 		if (key === 'tutorial') {
-			tour?.start(true);
+			void startTour(true);
 			return;
 		}
 		if (key === 'report') {
@@ -405,6 +405,13 @@
 	import { dev } from '$app/environment';
 	import { commandKey } from '$lib/platform';
 	function handleGlobalKeydown(e: KeyboardEvent) {
+		// Before the typing guard: Ctrl+K opens the palette from inside a field too.
+		if (opensPalette(e)) {
+			e.preventDefault();
+			palette.open = true;
+			return;
+		}
+
 		if (
 			e.target instanceof HTMLInputElement ||
 			e.target instanceof HTMLTextAreaElement ||
@@ -799,6 +806,17 @@
 			NAV_PLACES.find((one) => one.name === room)?.icon ??
 			routeGlyph(`/${place.href.split('/')[1] ?? ''}`) ??
 			place.icon;
+		// The room's own strip when it has been drawn this session — the menu
+		// lists less than some rooms show.
+		const seen = lastDrawnTabs(to);
+		if (seen) {
+			let current = -1;
+			seen.forEach((one, i) => {
+				const inside = to === one.href || to.startsWith(`${one.href}/`);
+				if (inside && (current === -1 || one.href.length > seen[current].href.length)) current = i;
+			});
+			return { path: to, title: t(room), glyph, tabs: seen, current };
+		}
 		return {
 			path: to,
 			title: t(room),
@@ -925,9 +943,14 @@
 	 *
 	 * Only for somebody signed in, and torn down with the layout. `$effect`
 	 * returns its own cleanup, which is what closes the stream when the tab goes.
+	 *
+	 * Keyed on the id, not on `data.user`: every reload of the page's data
+	 * hands back a new user object, and an effect reading it closed the
+	 * stream and opened another each time.
 	 */
+	const liveFor = $derived(data.user?.id ?? null);
 	$effect(() => {
-		if (!data.user) return;
+		if (!liveFor) return;
 		return live();
 	});
 
@@ -943,6 +966,40 @@
 	/* ------------------------------------------------------------- the tour */
 
 	let tour = $state<Tutorial | undefined>();
+
+	/*
+	 * The three dialogs almost nobody opens on a given visit — the tour, the
+	 * palette, the report form — are fetched the first time they are wanted
+	 * rather than carried in the shell's chunk by every page. Each stays
+	 * loaded once it has been.
+	 */
+	let TutorialComponent = $state<typeof Tutorial | null>(null);
+	let PaletteComponent = $state<
+		typeof import('$lib/components/CommandPalette.svelte').default | null
+	>(null);
+	let ReportComponent = $state<typeof import('$lib/components/ReportDialog.svelte').default | null>(
+		null
+	);
+
+	/** The tour, fetched if it has not been, then started. */
+	async function startTour(asked = false) {
+		if (!TutorialComponent) {
+			TutorialComponent = (await import('$lib/components/Tutorial.svelte')).default;
+			await tick();
+		}
+		tour?.start(asked);
+	}
+
+	$effect(() => {
+		if (palette.open && !PaletteComponent)
+			void import('$lib/components/CommandPalette.svelte').then(
+				(m) => (PaletteComponent = m.default)
+			);
+	});
+	$effect(() => {
+		if (reporting && !ReportComponent)
+			void import('$lib/components/ReportDialog.svelte').then((m) => (ReportComponent = m.default));
+	});
 
 	/**
 	 * Shown around once, on the way in.
@@ -980,9 +1037,11 @@
 		root.dataset.tourPending = '';
 		const timer = setTimeout(() => {
 			tourOffered = true;
-			tour?.start();
 			// Once it is on screen, so "no longer pending" means "open or not coming".
-			void tick().then(() => delete root.dataset.tourPending);
+			// The tour is fetched on first use, so that is after the fetch, not a tick.
+			void startTour()
+				.then(tick)
+				.finally(() => delete root.dataset.tourPending);
 		}, 500);
 		return () => {
 			clearTimeout(timer);
@@ -1332,7 +1391,7 @@
 					<!-- Help, in the header rather than over the page: the corner it
 					     used to be fixed in sat over the right edge of every room. A
 					     wide screen's affordance; on a phone the fan carries it. -->
-					<HelpDock onstart={() => tour?.start(true)} />
+					<HelpDock onstart={() => void startTour(true)} />
 					<NotificationBell
 						held={data.notifications ?? []}
 						unread={data.unreadNotifications ?? 0}
@@ -1766,9 +1825,15 @@
 			onselect={chooseFan}
 			onclose={() => (fanOpen = false)}
 		/>
-		<ReportDialog open={reporting} onclose={() => (reporting = false)} />
-		<Tutorial bind:this={tour} accent={section.accent} ondismiss={tourDismissed} />
-		<CommandPalette hidden={data.hiddenSections} />
+		{#if ReportComponent}
+			<ReportComponent open={reporting} onclose={() => (reporting = false)} />
+		{/if}
+		{#if TutorialComponent}
+			<TutorialComponent bind:this={tour} accent={section.accent} ondismiss={tourDismissed} />
+		{/if}
+		{#if PaletteComponent}
+			<PaletteComponent hidden={data.hiddenSections} />
+		{/if}
 		<CapturePie
 			bind:this={pie}
 			onopenchange={(v) => (pieOpen = v)}
@@ -1785,6 +1850,7 @@
 		<!-- Every `title` in the app, drawn by the app rather than by the
 		     browser. One listener; nothing else changes. -->
 		<Tooltips />
+		<TaskPeek />
 		<!--
 			The list, on the phone, opened from the fan.
 

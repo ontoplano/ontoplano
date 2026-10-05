@@ -1,8 +1,9 @@
 import type { PlainKey } from '$lib/i18n/keys';
 import { execFile } from 'node:child_process';
-import { existsSync } from 'node:fs';
+import { existsSync, readFileSync, statSync } from 'node:fs';
 import { instanceSells } from './billing.js';
 import { isEmailConfigured } from '../email.js';
+import { loadConfig } from '../config.js';
 
 /**
  * The processes an instance needs BESIDE the app, and whether they exist.
@@ -80,6 +81,34 @@ export type Companion = {
 };
 
 const MINUTE = 60_000;
+
+/**
+ * Written beside the database by every verified pull — `ontoplano-backup.sh`
+ * touches it over ssh, with the puller's host name inside. The pull runs on
+ * other machines on purpose (a box cannot back itself up off-site), so a
+ * timer on this one is the wrong thing to look for.
+ */
+export const BACKUP_STAMP_SUFFIX = '.backed-up';
+/** The pull is every 30 minutes; four missed in a row is a stopped backup. */
+const BACKUP_FRESH = 2 * 60 * MINUTE;
+
+function lastPull(): { at: number; by: string } | null {
+	const stamp = loadConfig().database.path + BACKUP_STAMP_SUFFIX;
+	try {
+		const at = statSync(stamp).mtimeMs;
+		const by = readFileSync(stamp, 'utf8').trim().split('\n')[0] ?? '';
+		return { at, by };
+	} catch {
+		return null;
+	}
+}
+
+function ago(at: number): string {
+	const minutes = Math.round((Date.now() - at) / MINUTE);
+	if (minutes <= 1) return 'a minute ago';
+	if (minutes < 120) return `${minutes} minutes ago`;
+	return `${Math.round(minutes / 60)} hours ago`;
+}
 
 /**
  * The command that fixes a missing unit, said for the install that is here.
@@ -172,9 +201,30 @@ export async function companions(): Promise<Companion[]> {
 			: []),
 		...(instanceSells()
 			? [['ops.billingReconciliation', 'ontoplano-reconcile.timer'] as [PlainKey, string]]
-			: []),
-		['ops.backups', 'ontoplano-backup.timer']
+			: [])
 	];
+	// Backups: a pull from elsewhere outranks a timer here, which is the
+	// single-machine arrangement and the fallback when nothing has pulled.
+	const pulled = lastPull();
+	let pulledRow: Companion | null = null;
+	if (pulled) {
+		const fresh = Date.now() - pulled.at < BACKUP_FRESH;
+		const from = pulled.by ? ` by ${pulled.by}` : '';
+		pulledRow = {
+			label: 'ops.backups',
+			unit: 'ontoplano-backup.timer',
+			ok: fresh,
+			status: fresh ? 'running' : 'stopped',
+			detail: fresh
+				? `last copy pulled ${ago(pulled.at)}${from}`
+				: `no copy pulled since ${ago(pulled.at)}${from}`,
+			fix: fresh
+				? ''
+				: 'systemctl --user status ontoplano-backup.timer   # on the machine that pulls'
+		};
+	} else {
+		timers.push(['ops.backups', 'ontoplano-backup.timer']);
+	}
 	for (const [label, unit] of timers) {
 		const state = await unitState(unit);
 		rows.push({
@@ -191,6 +241,7 @@ export async function companions(): Promise<Companion[]> {
 			fix: state === 'active' ? '' : enableCommand(unit, 'enable --now')
 		});
 	}
+	if (pulledRow) rows.push(pulledRow);
 
 	return rows;
 }

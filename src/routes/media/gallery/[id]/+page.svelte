@@ -28,6 +28,7 @@
 	import type { PlainKey } from '$lib/i18n/keys';
 	import type { PageServerData, ActionData } from './$types';
 	import { useT } from '$lib/i18n';
+	import PictureTile from '$lib/components/PictureTile.svelte';
 
 	const t = useT();
 
@@ -332,9 +333,10 @@
 		<MediaTiles kind="pictures">
 			{#each shown as picture, i (picture.id)}
 				<li data-row use:listCursor={at === i}>
-					<button
-						class="block w-full overflow-hidden"
-						aria-label={picture.alt || picture.filename || t('gallery.id.aPicture')}
+					<PictureTile
+						{picture}
+						fallback={t('gallery.id.aPicture')}
+						onopen={() => (viewingId = picture.id)}
 						title={picture.filename || undefined}
 						draggable="true"
 						ondragstart={() => (dragging = picture.id)}
@@ -342,15 +344,7 @@
 							dragging = null;
 							dropTarget = null;
 						}}
-						onclick={() => (viewingId = picture.id)}
-					>
-						<img
-							src="/media/{picture.id}"
-							alt={picture.alt}
-							loading="lazy"
-							class="aspect-square w-full bg-gray-50 object-cover"
-						/>
-					</button>
+					/>
 				</li>
 			{/each}
 		</MediaTiles>

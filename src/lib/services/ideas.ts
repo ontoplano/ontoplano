@@ -15,7 +15,7 @@ import { NotFoundError, ValidationError } from './errors.js';
 import { notebookPatch } from './notebooks.js';
 import { stamp, stamps } from './time.js';
 import { host } from './host.js';
-import { num, str } from './validate.js';
+import { str, chosenIds } from './validate.js';
 import { MAX_BATCH } from './todos.js';
 
 /** Quick capture: a thought, optionally tagged, optionally marked as applied. */
@@ -67,15 +67,22 @@ export function listIdeas(ctx: Ctx, scope: { notebookId?: number } = {}): Idea[]
 		.orderBy(desc(ideas.createdAt))
 		.all();
 
-	return rows.map((idea) => ({
-		...idea,
-		tags: db
-			.select({ id: tags.id, name: tags.name })
+	// Every idea's labels in one read, grouped here: a read per idea was the
+	// ideas page's whole cost once there were a few hundred of them.
+	const labels = new Map<number, { id: number; name: string }[]>();
+	if (rows.length > 0)
+		for (const row of db
+			.select({ ideaId: ideaTags.ideaId, id: tags.id, name: tags.name })
 			.from(ideaTags)
 			.innerJoin(tags, eq(ideaTags.tagId, tags.id))
-			.where(and(eq(ideaTags.ideaId, idea.id), eq(tags.userId, ctx.userId)))
-			.all()
-	}));
+			.where(and(eq(ideaTags.userId, ctx.userId), eq(tags.userId, ctx.userId)))
+			.all()) {
+			const held = labels.get(row.ideaId);
+			if (held) held.push({ id: row.id, name: row.name });
+			else labels.set(row.ideaId, [{ id: row.id, name: row.name }]);
+		}
+
+	return rows.map((idea) => ({ ...idea, tags: labels.get(idea.id) ?? [] }));
 }
 
 export function listTags(ctx: Ctx): { id: number; userId: string; name: string }[] {
@@ -248,10 +255,10 @@ export function batchIdeas(
 	what: { add?: unknown; remove?: unknown; notebookId?: unknown } = {}
 ): number {
 	if (!isIdeaBatchVerb(verb)) throw new ValidationError({ key: 'errors.diary.invalidBatch' });
-	if (rawIds.length === 0) throw new ValidationError({ key: 'errors.diary.nothingWasChosen' });
-	if (rawIds.length > MAX_BATCH)
-		throw new ValidationError({ key: 'errors.diary.thatIsTooManyAtOnce' });
-	const ids = [...new Set(rawIds.map((id) => num(id, 'id', { int: true, min: 1 })))];
+	const ids = chosenIds(rawIds, MAX_BATCH, {
+		nothing: 'errors.diary.nothingWasChosen',
+		tooMany: 'errors.diary.thatIsTooManyAtOnce'
+	});
 	if (verb === 'notebook' && what.notebookId === undefined)
 		throw new ValidationError({ key: 'errors.diary.invalidBatch' });
 

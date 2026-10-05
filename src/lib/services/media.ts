@@ -27,24 +27,23 @@
  * config file. That is why `store` is asynchronous: `crypto.subtle` is the one
  * digest both worlds have.
  */
-import { and, eq, like, or, sql } from 'drizzle-orm';
+import { and, eq, like, sql } from 'drizzle-orm';
 
 import { db } from '$lib/db/index.js';
-import {
-	albumMedia,
-	diaryEntries,
-	media,
-	notebooks,
-	people,
-	recipeImages,
-	recipes
-} from '$lib/db/schema.js';
+import { inventoryItems, media, notebooks, people, recipeImages, recipes } from '$lib/db/schema.js';
 import type { Ctx } from './ctx.js';
+import { pictureReferrers } from './media-referrers.js';
 import { sha256Hex } from './digest.js';
 import { NotFoundError, ValidationError } from './errors.js';
 import { host } from './host.js';
 import type { MediaLimits } from './media-limits.js';
-import { IMAGE_MIME_PREFIX } from './media-kind.js';
+import {
+	IMAGE_MIME_PREFIX,
+	asciiAt,
+	sniffer,
+	startsWithBytes,
+	type Signature
+} from './media-kind.js';
 import { stamp } from './time.js';
 
 /**
@@ -53,34 +52,26 @@ import { stamp } from './time.js';
  * Raster formats a browser renders inertly, and nothing else. GIF is here
  * because an animation is a picture; SVG is not, and never will be.
  */
-/** Do these bytes start with exactly this run of bytes? */
-const starts = (b: Uint8Array, at: number, expected: number[]) =>
-	expected.every((byte, i) => b[at + i] === byte);
-
-/** The ASCII a run of bytes spells, for the formats whose marker is a word. */
-const ascii = (b: Uint8Array, from: number, to: number) =>
-	String.fromCharCode(...b.subarray(from, to));
-
-const SIGNATURES: { mime: string; extension: string; matches: (b: Uint8Array) => boolean }[] = [
+const SIGNATURES: Signature[] = [
 	{
 		mime: 'image/jpeg',
 		extension: 'jpg',
-		matches: (b) => starts(b, 0, [0xff, 0xd8, 0xff])
+		matches: (b) => startsWithBytes(b, 0, [0xff, 0xd8, 0xff])
 	},
 	{
 		mime: 'image/png',
 		extension: 'png',
-		matches: (b) => starts(b, 0, [137, 80, 78, 71, 13, 10, 26, 10])
+		matches: (b) => startsWithBytes(b, 0, [137, 80, 78, 71, 13, 10, 26, 10])
 	},
 	{
 		mime: 'image/gif',
 		extension: 'gif',
-		matches: (b) => /^GIF8[79]a$/.test(ascii(b, 0, 6))
+		matches: (b) => /^GIF8[79]a$/.test(asciiAt(b, 0, 6))
 	},
 	{
 		mime: 'image/webp',
 		extension: 'webp',
-		matches: (b) => ascii(b, 0, 4) === 'RIFF' && ascii(b, 8, 12) === 'WEBP'
+		matches: (b) => asciiAt(b, 0, 4) === 'RIFF' && asciiAt(b, 8, 12) === 'WEBP'
 	}
 ];
 
@@ -155,11 +146,7 @@ export function tidyFilename(raw: string): string {
 }
 
 /** What these bytes actually are, or nothing. */
-export function sniff(bytes: Uint8Array): { mime: string; extension: string } | null {
-	if (bytes.length < 12) return null;
-	const hit = SIGNATURES.find((s) => s.matches(bytes));
-	return hit ? { mime: hit.mime, extension: hit.extension } : null;
-}
+export const sniff = sniffer(SIGNATURES);
 
 /** What this account's pictures already add up to. */
 export function bytesStored(ctx: Ctx): number {
@@ -273,48 +260,14 @@ export function list(ctx: Ctx): Picture[] {
 /**
  * Is anything still pointing at this picture?
  *
- * Two kinds of reference exist and both are checked: a recipe's gallery, which
- * is a row, and a mention inside somebody's writing, which is the string
- * `/media/<id>` in the text. The `LIKE` is bounded by the characters that can
- * follow an id, so `/media/1` does not count `/media/17` as a reference to it.
+ * Asked of `pictureReferrers`, which is the one list of the things that can
+ * hold a picture. This used to keep a list of its own — albums, faces,
+ * recipes and notes — and it did not have todos, ideas or a notebook's own
+ * picture in it, so replacing somebody's photo deleted the old file even when
+ * it had also been pasted into a todo.
  */
 export function isReferenced(ctx: Ctx, id: number): boolean {
-	const inAlbum = db
-		.select({ id: albumMedia.id })
-		.from(albumMedia)
-		.where(and(eq(albumMedia.userId, ctx.userId), eq(albumMedia.mediaId, id)))
-		.get();
-	if (inAlbum) return true;
-
-	const isAFace = db
-		.select({ id: people.id })
-		.from(people)
-		.where(and(eq(people.userId, ctx.userId), eq(people.pictureId, id)))
-		.get();
-	if (isAFace) return true;
-
-	const inRecipe = db
-		.select({ id: recipeImages.id })
-		.from(recipeImages)
-		.where(and(eq(recipeImages.userId, ctx.userId), eq(recipeImages.mediaId, id)))
-		.get();
-	if (inRecipe) return true;
-
-	const written = db
-		.select({ id: diaryEntries.id })
-		.from(diaryEntries)
-		.where(
-			and(
-				eq(diaryEntries.userId, ctx.userId),
-				or(
-					like(diaryEntries.content, `%(/media/${id})%`),
-					like(diaryEntries.content, `%/media/${id} %`),
-					like(diaryEntries.content, `%/media/${id}`)
-				)
-			)
-		)
-		.get();
-	return Boolean(written);
+	return pictureReferrers(ctx, id).length > 0;
 }
 
 /** Remove a picture outright. */
@@ -476,6 +429,63 @@ export function removeNotebookPicture(ctx: Ctx, notebookId: number): void {
 	db.update(notebooks)
 		.set({ pictureId: null })
 		.where(and(eq(notebooks.id, notebookId), eq(notebooks.userId, ctx.userId)))
+		.run();
+	removeIfUnreferenced(ctx, current);
+}
+
+// ── A thing in the inventory ─────────────────────────────────────────────────
+
+function assertOwnsItem(ctx: Ctx, itemId: number): void {
+	const found = db
+		.select({ id: inventoryItems.id })
+		.from(inventoryItems)
+		.where(and(eq(inventoryItems.id, itemId), eq(inventoryItems.userId, ctx.userId)))
+		.get();
+	if (!found) throw new NotFoundError({ key: 'errors.media.noSuchItem' });
+}
+
+/**
+ * Give a thing a picture, replacing whatever was there.
+ *
+ * The same shape a face and a notebook's picture have: one picture, chosen
+ * in one gesture, and the old one let go of if nothing else points at it.
+ */
+export async function setItemPicture(
+	ctx: Ctx,
+	itemId: number,
+	input: { bytes: Uint8Array; filename?: string; alt?: string }
+): Promise<Picture> {
+	assertOwnsItem(ctx, itemId);
+
+	const previous = db
+		.select({ pictureId: inventoryItems.pictureId })
+		.from(inventoryItems)
+		.where(and(eq(inventoryItems.id, itemId), eq(inventoryItems.userId, ctx.userId)))
+		.get()?.pictureId;
+
+	const picture = await store(ctx, input);
+	db.update(inventoryItems)
+		.set({ pictureId: picture.id })
+		.where(and(eq(inventoryItems.id, itemId), eq(inventoryItems.userId, ctx.userId)))
+		.run();
+
+	if (previous && previous !== picture.id) removeIfUnreferenced(ctx, previous);
+	return picture;
+}
+
+export function removeItemPicture(ctx: Ctx, itemId: number): void {
+	assertOwnsItem(ctx, itemId);
+
+	const current = db
+		.select({ pictureId: inventoryItems.pictureId })
+		.from(inventoryItems)
+		.where(and(eq(inventoryItems.id, itemId), eq(inventoryItems.userId, ctx.userId)))
+		.get()?.pictureId;
+	if (!current) return;
+
+	db.update(inventoryItems)
+		.set({ pictureId: null })
+		.where(and(eq(inventoryItems.id, itemId), eq(inventoryItems.userId, ctx.userId)))
 		.run();
 	removeIfUnreferenced(ctx, current);
 }

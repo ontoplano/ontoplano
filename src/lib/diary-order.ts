@@ -17,9 +17,6 @@ export const DEFAULT_DIARY_ORDER: DiaryOrder = 'written';
 /** Every order opens newest first, which is how a diary is read. */
 export const DEFAULT_DIARY_DIRECTION: DiaryDirection = 'desc';
 
-export const DIARY_ORDER_KEY = 'ontoplano:diary-order';
-export const DIARY_DIRECTION_KEY = 'ontoplano:diary-direction';
-
 export function isDiaryOrder(value: unknown): value is DiaryOrder {
 	return typeof value === 'string' && (DIARY_ORDERS as readonly string[]).includes(value);
 }

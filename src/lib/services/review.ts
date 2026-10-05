@@ -10,7 +10,8 @@ import {
 	generateInstances,
 	generateOneOffs,
 	listInstances,
-	setInstanceStatus
+	setInstanceStatus,
+	type Occurrence
 } from './instances.js';
 import { createTodo } from './todos.js';
 import { localDay, stamp, stamps } from './time.js';
@@ -98,6 +99,17 @@ export type Done = {
 	categoryName: string | null;
 	categoryColor: string | null;
 };
+/** A block that was answered, as the review reads it back. */
+function asDone(i: Occurrence): Done {
+	return {
+		id: i.id,
+		title: blockName(i),
+		date: i.scheduledAt.slice(0, 10),
+		minutes: i.durationMinutes,
+		categoryName: i.categoryName,
+		categoryColor: i.categoryColor
+	};
+}
 
 /** An unfinished block, in the shape the review offers to carry it. */
 export type Loose = {
@@ -203,14 +215,7 @@ export function readWeek(
 	/** And what did happen, newest first: the week read back rather than audited. */
 	const done: Done[] = instances
 		.filter((i) => i.status === 'done')
-		.map((i) => ({
-			id: i.id,
-			title: blockName(i),
-			date: i.scheduledAt.slice(0, 10),
-			minutes: i.durationMinutes,
-			categoryName: i.categoryName,
-			categoryColor: i.categoryColor
-		}))
+		.map(asDone)
 		.sort((a, b) => b.date.localeCompare(a.date));
 
 	/*
@@ -223,14 +228,7 @@ export function readWeek(
 	 */
 	const skipped: Done[] = instances
 		.filter((i) => i.status === 'skipped')
-		.map((i) => ({
-			id: i.id,
-			title: blockName(i),
-			date: i.scheduledAt.slice(0, 10),
-			minutes: i.durationMinutes,
-			categoryName: i.categoryName,
-			categoryColor: i.categoryColor
-		}))
+		.map(asDone)
 		.sort((a, b) => b.date.localeCompare(a.date));
 
 	return {
@@ -500,10 +498,34 @@ export function reviewPending(
 	let oldest: { weekStart: string; unanswered: number } | null = null;
 	let weeks = 0;
 
+	/*
+	 * The whole span read once, then cut into its weeks.
+	 *
+	 * It was `readWeek` twelve times — twelve generations and twelve reads, on
+	 * every dashboard load and every reminder pass, for two numbers a week.
+	 * Every week here is over, so `readWeek`'s extra step for the running week
+	 * never applied: what it counted is exactly the one-offs made real and the
+	 * records in the window, which is what this reads.
+	 */
+	const spanStart = addDays(thisWeek, -7 * REVIEW_LOOKBACK_WEEKS);
+	generateOneOffs(ctx, spanStart, thisWeek);
+	const byWeek = new Map<string, { planned: number; unfinished: number }>();
+	const starts = Array.from({ length: REVIEW_LOOKBACK_WEEKS }, (_, i) =>
+		localDay(addDays(thisWeek, -7 * (REVIEW_LOOKBACK_WEEKS - i)))
+	);
+	for (const instance of listInstances(ctx, spanStart, thisWeek)) {
+		const day = instance.scheduledAt.slice(0, 10);
+		const start = starts.findLast((one) => one <= day);
+		if (!start) continue;
+		const week = byWeek.get(start) ?? { planned: 0, unfinished: 0 };
+		week.planned += 1;
+		if (instance.status === 'todo' || instance.status === 'doing') week.unfinished += 1;
+		byWeek.set(start, week);
+	}
+
 	for (let back = 1; back <= REVIEW_LOOKBACK_WEEKS; back++) {
 		const start = localDay(addDays(thisWeek, -7 * back));
-
-		const { reading } = readWeek(ctx, start);
+		const reading = byWeek.get(start) ?? { planned: 0, unfinished: 0 };
 		// A week nobody planned is not a week anybody owes an answer for, and it
 		// must not stop the walk either: a fortnight away leaves a gap in the
 		// middle that says nothing about the weeks either side of it.

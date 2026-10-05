@@ -227,11 +227,15 @@
 {/snippet}
 
 {#snippet scales()}
-	{#each RATINGS as r (r)}
-		<div class="col-span-12 sm:col-span-4">
-			<RatingPicker rating={r} bind:value={ratings[r]} />
-		</div>
-	{/each}
+	<!-- A row of their own: loose in the grid, urgency filled the space beside
+	     the notebook and the other two wrapped under it. -->
+	<div class="col-span-12 grid grid-cols-12 items-start gap-x-4 gap-y-3">
+		{#each RATINGS as r (r)}
+			<div class="col-span-12 sm:col-span-4">
+				<RatingPicker rating={r} bind:value={ratings[r]} />
+			</div>
+		{/each}
+	</div>
 {/snippet}
 
 {#if compact}

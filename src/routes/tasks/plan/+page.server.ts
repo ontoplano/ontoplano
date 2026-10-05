@@ -52,6 +52,8 @@ import { listInstances, setStatusOn } from '$lib/services/instances';
 import { addDays, startOfWeek } from '$lib/services/week-generator';
 import { getGridHours, getWeekSettings } from '$lib/services/settings';
 import { LIST_PARAM, LIST_VALUE } from '$lib/planner-grid';
+import { localDay, startOfDay } from '$lib/services/time';
+import { formAction } from '$lib/services/scoped-actions';
 
 /**
  * What the browser last knew about its own width.
@@ -71,14 +73,6 @@ const NARROW_COOKIE = 'onto_narrow';
  */
 const SPAN_DAYS = { day: 1, week: 7, month: 42 } as const;
 type PlanView = keyof typeof SPAN_DAYS;
-
-function formatDate(d: Date): string {
-	return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-}
-
-function startOfDay(d: Date): Date {
-	return new Date(d.getFullYear(), d.getMonth(), d.getDate());
-}
 
 /**
  * Start of the visible window, clamped so it never begins before today.
@@ -136,7 +130,7 @@ function marksFor(ctx: Ctx, from: Date, to: Date): Record<string, 'done' | 'undo
 					? `x${occurrence.exceptionalSlotId}`
 					: null;
 		if (!ref) continue;
-		marks[`${ref}|${formatDate(new Date(occurrence.scheduledAt))}`] =
+		marks[`${ref}|${localDay(new Date(occurrence.scheduledAt))}`] =
 			occurrence.status === 'done' ? 'done' : 'undone';
 	}
 	return marks;
@@ -272,9 +266,9 @@ export const load = async ({ locals, url, cookies }: IsolatedEvent) => {
 		const d = addDays(from, offset);
 		const weekday = (d.getDay() + 6) % 7;
 		return {
-			date: formatDate(d),
+			date: localDay(d),
 			weekday,
-			isToday: formatDate(d) === formatDate(today)
+			isToday: localDay(d) === localDay(today)
 		};
 	});
 
@@ -288,18 +282,18 @@ export const load = async ({ locals, url, cookies }: IsolatedEvent) => {
 	const prevMonth = new Date(anchor.getFullYear(), anchor.getMonth() - 1, 1);
 	const nextMonth = new Date(anchor.getFullYear(), anchor.getMonth() + 1, 1);
 	const range = {
-		from: formatDate(from),
-		last: formatDate(addDays(from, span - 1)),
+		from: localDay(from),
+		last: localDay(addDays(from, span - 1)),
 		// What the heading names: the month itself, not the grid's first cell,
 		// which usually belongs to the month before.
-		month: formatDate(monthFirst),
+		month: localDay(monthFirst),
 		isCurrent:
 			view === 'month'
 				? monthFirst.getFullYear() === today.getFullYear() &&
 					monthFirst.getMonth() === today.getMonth()
-				: formatDate(from) === formatDate(today),
-		prev: view === 'month' ? formatDate(prevMonth) : formatDate(prevFrom),
-		next: view === 'month' ? formatDate(nextMonth) : formatDate(to),
+				: localDay(from) === localDay(today),
+		prev: view === 'month' ? localDay(prevMonth) : localDay(prevFrom),
+		next: view === 'month' ? localDay(nextMonth) : localDay(to),
 		/*
 		 * The same window, starting a day earlier or a day later.
 		 *
@@ -310,8 +304,8 @@ export const load = async ({ locals, url, cookies }: IsolatedEvent) => {
 		 * one that starts on Sunday are different weeks to the person living
 		 * them, and this is how you slide between them.
 		 */
-		backOne: formatDate(addDays(from, -1)),
-		forwardOne: formatDate(addDays(from, 1)),
+		backOne: localDay(addDays(from, -1)),
+		forwardOne: localDay(addDays(from, 1)),
 		days
 	};
 
@@ -334,7 +328,7 @@ export const load = async ({ locals, url, cookies }: IsolatedEvent) => {
 		 * place, and it was visible only on the board. They are marked so the
 		 * strip can say which is which; the undated ones are the general pile.
 		 */
-		todos: trayTodos(ctx, formatDate(today)),
+		todos: trayTodos(ctx, localDay(today)),
 		slots: listWeeklySlots(ctx),
 		range,
 		view,
@@ -347,7 +341,7 @@ export const load = async ({ locals, url, cookies }: IsolatedEvent) => {
 		schemes: listSchemes(ctx),
 		// The starter weeks onboarding offers, offered again.
 		templates: TEMPLATES.map((t) => ({ key: t.key, label: t.label, description: t.description })),
-		today: formatDate(today),
+		today: localDay(today),
 		/*
 		 * What became of each block, for the days that have been.
 		 *
@@ -357,8 +351,8 @@ export const load = async ({ locals, url, cookies }: IsolatedEvent) => {
 		 * the same service the history page and the `past` tool read.
 		 */
 		marks: marksFor(ctx, from, to),
-		suppressions: listSuppressions(ctx, formatDate(from), formatDate(to)),
-		exceptionals: listExceptionals(ctx, formatDate(from), formatDate(to)),
+		suppressions: listSuppressions(ctx, localDay(from), localDay(to)),
+		exceptionals: listExceptionals(ctx, localDay(from), localDay(to)),
 		/**
 		 * Calendars somebody else controls, drawn where they will get in the way.
 		 *
@@ -375,7 +369,7 @@ export const load = async ({ locals, url, cookies }: IsolatedEvent) => {
 		 * step. The planner draws them from the bills themselves, and ticking
 		 * one marks the bill paid for its period.
 		 */
-		billsDue: billsDueBetween(ctx, formatDate(from), formatDate(to)),
+		billsDue: billsDueBetween(ctx, localDay(from), localDay(to)),
 		// The workouts a block can be about. Empty for an account that keeps
 		// none, which is what hides the mode entirely.
 		// `categoryName` for the block form's header, which says what the block
@@ -436,135 +430,61 @@ export const actions = {
 		}
 	},
 
-	toggleActive: async ({ request, locals }: IsolatedEvent) => {
-		const formData = await request.formData();
-		try {
-			toggleSlotActive(buildCtx(locals.user!.id), Number(formData.get('id')));
-			return { success: true };
-		} catch (e) {
-			return toActionFailure(e);
-		}
-	},
+	toggleActive: formAction((ctx, formData) => {
+		toggleSlotActive(ctx, Number(formData.get('id')));
+	}),
 
-	delete: async ({ request, locals }: IsolatedEvent) => {
-		const formData = await request.formData();
-		try {
-			deleteSlots(buildCtx(locals.user!.id), [Number(formData.get('id'))]);
-			return { success: true };
-		} catch (e) {
-			return toActionFailure(e);
-		}
-	},
+	delete: formAction((ctx, formData) => {
+		deleteSlots(ctx, [Number(formData.get('id'))]);
+	}),
 
-	bulkDelete: async ({ request, locals }: IsolatedEvent) => {
-		const formData = await request.formData();
-		try {
-			deleteSlots(buildCtx(locals.user!.id), idList(formData.get('ids')));
-			return { success: true };
-		} catch (e) {
-			return toActionFailure(e);
-		}
-	},
+	bulkDelete: formAction((ctx, formData) => {
+		deleteSlots(ctx, idList(formData.get('ids')));
+	}),
 
-	copyToWeekdays: async ({ request, locals }: IsolatedEvent) => {
-		const formData = await request.formData();
-		try {
-			copySlotsToWeekdays(
-				buildCtx(locals.user!.id),
-				idList(formData.get('ids')),
-				idList(formData.get('targetDays'), { allowZero: true })
-			);
-			return { success: true };
-		} catch (e) {
-			return toActionFailure(e);
-		}
-	},
+	copyToWeekdays: formAction((ctx, formData) => {
+		copySlotsToWeekdays(
+			ctx,
+			idList(formData.get('ids')),
+			idList(formData.get('targetDays'), { allowZero: true })
+		);
+	}),
 
-	addCalendar: async ({ request, locals }: IsolatedEvent) => {
-		const formData = await request.formData();
-		try {
-			const id = addFeed(buildCtx(locals.user!.id), {
-				name: formData.get('label'),
-				url: formData.get('url'),
-				color: formData.get('color')
-			});
-			// Fetch it now, so adding one shows whether the address works.
-			await refreshFeed(buildCtx(locals.user!.id), id);
-			return { success: true };
-		} catch (e) {
-			return toActionFailure(e);
-		}
-	},
+	addCalendar: formAction(async (ctx, formData) => {
+		const id = addFeed(ctx, {
+			name: formData.get('label'),
+			url: formData.get('url'),
+			color: formData.get('color')
+		});
+		// Fetch it now, so adding one shows whether the address works.
+		await refreshFeed(ctx, id);
+	}),
 
-	removeCalendar: async ({ request, locals }: IsolatedEvent) => {
-		const formData = await request.formData();
-		try {
-			removeFeed(buildCtx(locals.user!.id), Number(formData.get('id')));
-			return { success: true };
-		} catch (e) {
-			return toActionFailure(e);
-		}
-	},
+	removeCalendar: formAction((ctx, formData) => {
+		removeFeed(ctx, Number(formData.get('id')));
+	}),
 
-	applyTemplate: async ({ request, locals }: IsolatedEvent) => {
-		const formData = await request.formData();
-		try {
-			applyTemplate(
-				buildCtx(locals.user!.id),
-				oneOf(formData.get('key'), 'template', TEMPLATE_KEYS),
-				{
-					replacePlan: true
-				}
-			);
-			return { success: true };
-		} catch (e) {
-			return toActionFailure(e);
-		}
-	},
+	applyTemplate: formAction((ctx, formData) => {
+		applyTemplate(ctx, oneOf(formData.get('key'), 'template', TEMPLATE_KEYS), {
+			replacePlan: true
+		});
+	}),
 
-	saveScheme: async ({ request, locals }: IsolatedEvent) => {
-		const formData = await request.formData();
-		try {
-			saveScheme(buildCtx(locals.user!.id), formData.get('label'));
-			return { success: true };
-		} catch (e) {
-			return toActionFailure(e);
-		}
-	},
+	saveScheme: formAction((ctx, formData) => {
+		saveScheme(ctx, formData.get('label'));
+	}),
 
-	loadScheme: async ({ request, locals }: IsolatedEvent) => {
-		const formData = await request.formData();
-		try {
-			applyScheme(buildCtx(locals.user!.id), Number(formData.get('schemeId')));
-			return { success: true };
-		} catch (e) {
-			return toActionFailure(e);
-		}
-	},
+	loadScheme: formAction((ctx, formData) => {
+		applyScheme(ctx, Number(formData.get('schemeId')));
+	}),
 
-	deleteScheme: async ({ request, locals }: IsolatedEvent) => {
-		const formData = await request.formData();
-		try {
-			deleteScheme(buildCtx(locals.user!.id), Number(formData.get('schemeId')));
-			return { success: true };
-		} catch (e) {
-			return toActionFailure(e);
-		}
-	},
+	deleteScheme: formAction((ctx, formData) => {
+		deleteScheme(ctx, Number(formData.get('schemeId')));
+	}),
 
-	renameScheme: async ({ request, locals }: IsolatedEvent) => {
-		const formData = await request.formData();
-		try {
-			renameScheme(
-				buildCtx(locals.user!.id),
-				Number(formData.get('schemeId')),
-				formData.get('label')
-			);
-			return { success: true };
-		} catch (e) {
-			return toActionFailure(e);
-		}
-	},
+	renameScheme: formAction((ctx, formData) => {
+		renameScheme(ctx, Number(formData.get('schemeId')), formData.get('label'));
+	}),
 
 	/** Drop an undated todo onto the grid: it becomes a block at that hour. */
 	scheduleTodo: async ({ request, locals }: IsolatedEvent) => {
@@ -602,42 +522,39 @@ export const actions = {
 		if (!id) return fail(400, { message: 'Missing block id' });
 
 		try {
-			demoteToTodo(buildCtx(locals.user!.id), id);
+			const ctx = buildCtx(locals.user!.id);
+			// A repeating block stops repeating first: it becomes a one-off on the
+			// day it was opened from, and that goes back to the list like any other.
+			const oneOff =
+				formData.get('kind') === 'slot'
+					? convertRepeat(ctx, id, { to: 'once', date: formData.get('date') }).id
+					: id;
+			demoteToTodo(ctx, oneOff);
 			return { success: true };
 		} catch (e) {
 			return toActionFailure(e);
 		}
 	},
 
-	convertRepeat: async ({ request, locals }: IsolatedEvent) => {
-		const formData = await request.formData();
-		try {
-			// The block has a new id in its new table; the editor carries on with it.
-			const made = convertRepeat(buildCtx(locals.user!.id), Number(formData.get('id')), {
-				to: formData.get('to'),
-				date: formData.get('date')
-			});
-			return { success: true, kind: made.kind, id: made.id };
-		} catch (e) {
-			return toActionFailure(e);
-		}
-	},
+	convertRepeat: formAction((ctx, formData) => {
+		// The block has a new id in its new table; the editor carries on with it.
+		const made = convertRepeat(ctx, Number(formData.get('id')), {
+			to: formData.get('to'),
+			date: formData.get('date')
+		});
+		return { success: true, kind: made.kind, id: made.id };
+	}),
 
-	moveOccurrence: async ({ request, locals }: IsolatedEvent) => {
-		const formData = await request.formData();
-		try {
-			const id = moveOccurrence(buildCtx(locals.user!.id), {
-				slotId: Number(formData.get('slotId')),
-				fromDate: formData.get('fromDate'),
-				date: formData.get('date'),
-				startTime: formData.get('startTime'),
-				durationMinutes: formData.get('durationMinutes')
-			});
-			return { success: true, id };
-		} catch (e) {
-			return toActionFailure(e);
-		}
-	},
+	moveOccurrence: formAction((ctx, formData) => {
+		const id = moveOccurrence(ctx, {
+			slotId: Number(formData.get('slotId')),
+			fromDate: formData.get('fromDate'),
+			date: formData.get('date'),
+			startTime: formData.get('startTime'),
+			durationMinutes: formData.get('durationMinutes')
+		});
+		return { success: true, id };
+	}),
 
 	/*
 	 * Ticking a block off without leaving the grid.
@@ -649,85 +566,58 @@ export const actions = {
 	/** A todo in the tray ticked off where it stands — the list's own handler. */
 	setTodoStatus: todoHandlers.setStatus,
 
-	setStatus: async ({ request, locals }: IsolatedEvent) => {
-		const formData = await request.formData();
-		try {
-			const ctx = buildCtx(locals.user!.id);
-			setStatusOn(
-				ctx,
-				formData.get('kind') === 'exceptional' ? 'exceptional' : 'slot',
-				Number(formData.get('refId')),
-				String(formData.get('date') ?? ''),
-				formData.get('status')
-			);
+	setStatus: formAction((ctx, formData) => {
+		setStatusOn(
+			ctx,
+			formData.get('kind') === 'exceptional' ? 'exceptional' : 'slot',
+			Number(formData.get('refId')),
+			String(formData.get('date') ?? ''),
+			formData.get('status')
+		);
 
-			/*
-			 * How much of it was actually done, said in the same breath.
-			 *
-			 * Marking a workout block done already opens a session for that day
-			 * — `ensureSession`, through the status change — and the moment
-			 * somebody knows what they lifted is the moment they are ticking it
-			 * off. Asking them to go to Health afterwards is asking twice, and
-			 * the second ask is the one that does not happen.
-			 *
-			 * Only when the form carried lines, so a tick from anywhere else
-			 * leaves a session's existing lines alone rather than wiping them.
-			 */
-			const workoutId = Number(formData.get('workoutId'));
-			if (
-				formData.get('status') === 'done' &&
-				Number.isInteger(workoutId) &&
-				workoutId > 0 &&
-				formData.has('measureActivity')
-			) {
-				const activities = formData.getAll('measureActivity').map(String);
-				const amounts = formData.getAll('measureAmount').map(String);
-				const units = formData.getAll('measureUnit').map(String);
-				const measures = activities
-					.map((activity, i) => ({ activity, amount: amounts[i] ?? '', unit: units[i] ?? '' }))
-					.filter((line) => line.activity.trim() !== '' && line.amount.trim() !== '');
+		/*
+		 * How much of it was actually done, said in the same breath.
+		 *
+		 * Marking a workout block done already opens a session for that day
+		 * — `ensureSession`, through the status change — and the moment
+		 * somebody knows what they lifted is the moment they are ticking it
+		 * off. Asking them to go to Health afterwards is asking twice, and
+		 * the second ask is the one that does not happen.
+		 *
+		 * Only when the form carried lines, so a tick from anywhere else
+		 * leaves a session's existing lines alone rather than wiping them.
+		 */
+		const workoutId = Number(formData.get('workoutId'));
+		if (
+			formData.get('status') === 'done' &&
+			Number.isInteger(workoutId) &&
+			workoutId > 0 &&
+			formData.has('measureActivity')
+		) {
+			const activities = formData.getAll('measureActivity').map(String);
+			const amounts = formData.getAll('measureAmount').map(String);
+			const units = formData.getAll('measureUnit').map(String);
+			const measures = activities
+				.map((activity, i) => ({ activity, amount: amounts[i] ?? '', unit: units[i] ?? '' }))
+				.filter((line) => line.activity.trim() !== '' && line.amount.trim() !== '');
 
-				if (measures.length > 0) {
-					const day = String(formData.get('date') ?? '');
-					updateSession(ctx, ensureSession(ctx, workoutId, day), {
-						doneOn: day,
-						measures
-					});
-				}
+			if (measures.length > 0) {
+				const day = String(formData.get('date') ?? '');
+				updateSession(ctx, ensureSession(ctx, workoutId, day), {
+					doneOn: day,
+					measures
+				});
 			}
-			return { success: true };
-		} catch (e) {
-			return toActionFailure(e);
 		}
-	},
+	}),
 
-	suppress: async ({ request, locals }: IsolatedEvent) => {
-		const formData = await request.formData();
-		try {
-			suppressOccurrence(
-				buildCtx(locals.user!.id),
-				Number(formData.get('slotId')),
-				formData.get('date')
-			);
-			return { success: true };
-		} catch (e) {
-			return toActionFailure(e);
-		}
-	},
+	suppress: formAction((ctx, formData) => {
+		suppressOccurrence(ctx, Number(formData.get('slotId')), formData.get('date'));
+	}),
 
-	unsuppress: async ({ request, locals }: IsolatedEvent) => {
-		const formData = await request.formData();
-		try {
-			unsuppressOccurrence(
-				buildCtx(locals.user!.id),
-				Number(formData.get('slotId')),
-				formData.get('date')
-			);
-			return { success: true };
-		} catch (e) {
-			return toActionFailure(e);
-		}
-	},
+	unsuppress: formAction((ctx, formData) => {
+		unsuppressOccurrence(ctx, Number(formData.get('slotId')), formData.get('date'));
+	}),
 
 	createExceptional: async ({ request, locals }: IsolatedEvent) => {
 		const formData = await request.formData();
@@ -769,35 +659,24 @@ export const actions = {
 		}
 	},
 
-	deleteExceptional: async ({ request, locals }: IsolatedEvent) => {
-		const formData = await request.formData();
-		try {
-			deleteExceptional(buildCtx(locals.user!.id), Number(formData.get('id')));
-			return { success: true };
-		} catch (e) {
-			return toActionFailure(e);
-		}
-	},
+	deleteExceptional: formAction((ctx, formData) => {
+		deleteExceptional(ctx, Number(formData.get('id')));
+	}),
 
-	importCsv: async ({ request, locals }: IsolatedEvent) => {
-		const formData = await request.formData();
-		try {
-			const result = importWeekCsv(buildCtx(locals.user!.id), {
-				csv: formData.get('csv'),
-				clearExisting: formData.get('clearExisting') === 'on'
-			});
+	importCsv: formAction((ctx, formData) => {
+		const result = importWeekCsv(ctx, {
+			csv: formData.get('csv'),
+			clearExisting: formData.get('clearExisting') === 'on'
+		});
 
-			return {
-				success: true,
-				message:
-					result.unmatched.length > 0
-						? `Imported ${result.imported} slots. Activities not found (used as labels): ${result.unmatched.join(', ')}`
-						: `Imported ${result.imported} slots.`
-			};
-		} catch (e) {
-			return toActionFailure(e);
-		}
-	}
+		return {
+			success: true,
+			message:
+				result.unmatched.length > 0
+					? `Imported ${result.imported} slots. Activities not found (used as labels): ${result.unmatched.join(', ')}`
+					: `Imported ${result.imported} slots.`
+		};
+	})
 };
 
 /** A comma-separated id list from a bulk form. */

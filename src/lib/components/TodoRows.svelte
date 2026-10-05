@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { Reveal, revealNear } from '$lib/reveal.svelte';
 	import { say } from '$lib/said.svelte';
 	import { afterPress } from '$lib/after-press';
 	import ShowingCount from '$lib/components/ShowingCount.svelte';
@@ -73,6 +74,7 @@
 	import type { Todo } from '$lib/services/todos';
 	import type { TodoActionNames } from '$lib/todo-actions';
 	import { useT } from '$lib/i18n';
+	import { localDay } from '$lib/services/time';
 	import type { PlainKey } from '$lib/i18n/keys';
 
 	const t = useT();
@@ -180,29 +182,50 @@
 	 *
 	 * A press is answered here before the round trip — a tie put the other way
 	 * round, ratings confirmed on a card — and everything below reads this, so
-	 * the order, the place in line and the bars all move at once. Each hold is
-	 * dropped when the page's own data comes back, which then says the same
-	 * thing, or when the server refuses it.
+	 * the order, the place in line and the bars all move at once. Each hold
+	 * belongs to the press that made it, and is dropped once that press's own
+	 * answer and the data after it are in — which then say the same thing, or
+	 * the page's error says why not. Not on any new data: a reload that some
+	 * earlier press asked for can land after this press and before its answer,
+	 * and it does not know about this one yet.
 	 */
-	let held = $state(new Map<number, Partial<Todo>>());
-	$effect(() => {
-		void given;
-		held = new Map();
-	});
+	type Hold = { id: number; patch: Partial<Todo>; press: Press };
+	type Press = { over: boolean };
+	let held = $state<Hold[]>([]);
 	const todos: Todo[] = $derived(
-		held.size === 0
+		held.length === 0
 			? given
-			: given.map((one: Todo) => (held.has(one.id) ? { ...one, ...held.get(one.id) } : one))
+			: given.map((one: Todo) =>
+					held.reduce((todo, hold) => (hold.id === one.id ? { ...todo, ...hold.patch } : todo), one)
+				)
 	);
 
-	/** Show this about a task until the page's data comes back. */
-	function hold(id: number, patch: Partial<Todo>) {
-		held = new Map([...held, [id, { ...held.get(id), ...patch }]]);
+	/** A press that will hold things until it is answered. */
+	function press(): Press {
+		return { over: false };
 	}
 
-	/** A press refused: let go of everything held; the page's error says why. */
-	function letGo() {
-		held = new Map();
+	/** Show this about a task until `by` is answered. */
+	function hold(by: Press, id: number, patch: Partial<Todo>) {
+		if (by.over) return;
+		held = [...held, { id, patch, press: by }];
+	}
+
+	/** `by` is answered and the page's data is fresh: what it held goes. */
+	function letGo(by: Press) {
+		by.over = true;
+		if (held.some((one) => one.press === by)) held = held.filter((one) => one.press !== by);
+	}
+
+	/** Run the press's update, then let go of what it held, whatever the answer. */
+	function answeredBy(by: Press, reset = false): ReturnType<SubmitFunction> {
+		return async ({ update }) => {
+			try {
+				await update({ reset });
+			} finally {
+				letGo(by);
+			}
+		};
 	}
 
 	/**
@@ -215,11 +238,9 @@
 			// After the press has landed: a row that leaves the list under the
 			// pointer must not hand the rest of the click to the row below.
 			const next = patch();
-			afterPress(() => hold(id, next));
-			return async ({ result, update }) => {
-				if (result.type !== 'success') letGo();
-				await update({ reset: false });
-			};
+			const by = press();
+			afterPress(() => hold(by, id, next));
+			return answeredBy(by);
 		};
 	}
 
@@ -631,7 +652,7 @@
 	 * the list's own data comes back — which then says the same thing — or
 	 * when the server refuses it.
 	 */
-	function holdSwap(one: Todo, otherId: number, way: 'up' | 'down') {
+	function holdSwap(by: Press, one: Todo, otherId: number, way: 'up' | 'down') {
 		const other = todos.find((t: Todo) => t.id === otherId);
 		if (!other) return;
 		const at = (t: Todo) => t.sortOrder ?? 0;
@@ -644,7 +665,7 @@
 						[other.id, mine]
 					]
 				: [[one.id, way === 'up' ? theirs - 0.5 : theirs + 0.5]];
-		for (const [id, sortOrder] of moved) hold(id, { sortOrder });
+		for (const [id, sortOrder] of moved) hold(by, id, { sortOrder });
 	}
 
 	let visibleTodos = $derived.by(() => {
@@ -698,6 +719,12 @@
 			direction === 'desc' ? field(b).localeCompare(field(a)) : field(a).localeCompare(field(b))
 		);
 	});
+
+	/** Drawn fifty at a time as the end comes near — see `$lib/reveal`. */
+	const reveal = new Reveal(
+		() => visibleTodos.length,
+		() => todos.length
+	);
 
 	// Only visible rows participate. Filtering cannot leave hidden tasks selected.
 	const selectedTodos = $derived(visibleTodos.filter((todo) => selection.has(todo.id)));
@@ -929,7 +956,7 @@
 						.filter((one: Todo) => one.notebookSeq !== null)
 						.map((one: Todo) => [
 							one.notebookSeq as number,
-							{ title: one.title, done: CLOSED_STATUSES.includes(one.status) }
+							{ title: one.title, done: CLOSED_STATUSES.includes(one.status), task: one }
 						])
 				)
 	);
@@ -1204,10 +1231,6 @@
 		delegateLead = 0;
 	}
 
-	function formatDate(d: Date): string {
-		return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-	}
-
 	function handleKeydown(e: KeyboardEvent) {
 		if (!shortcutRoom) return;
 
@@ -1244,6 +1267,7 @@
 				confirmingDelete = null;
 				if (visibleTodos.length > 0) {
 					selectedIndex = Math.min(selectedIndex + 1, visibleTodos.length - 1);
+					reveal.reach(selectedIndex);
 				}
 				break;
 			case 'navigate-up':
@@ -1348,14 +1372,12 @@
 				// Answered on the press: the bars keep what was confirmed and the
 				// box goes, after the press has finished landing.
 				const confirmed = rerating;
-				if (confirmed) hold(confirmed.id, { ratings: { ...confirmed.values } });
+				const by = press();
+				if (confirmed) hold(by, confirmed.id, { ratings: { ...confirmed.values } });
 				afterPress(() => {
 					if (rerating?.id === confirmed?.id) rerating = null;
 				});
-				return async ({ result, update }) => {
-					if (result.type !== 'success') letGo();
-					await update({ reset: false });
-				};
+				return answeredBy(by);
 			}}
 		>
 			<input type="hidden" name="id" value={held.id} />
@@ -1760,9 +1782,10 @@
 			{/if}
 		{:else}
 			<div class="divide-y divide-gray-200" data-tour={listTour}>
-				{#each visibleTodos as todo, i (todo.id)}
+				{#each reveal.of(visibleTodos) as todo, i (todo.id)}
 					<div
 						data-todo-id={todo.id}
+						use:revealNear={{ reveal, index: i, trigger: reveal.trigger }}
 						class:bg-gray-100={selection.selecting && selection.has(todo.id)}
 						use:keepInView={shortcutRoom !== null && selectedIndex === i}
 						class="row-card {shortcutRoom && selectedIndex === i ? 'kb-cursor' : ''} {isDone(todo)
@@ -1919,11 +1942,9 @@
 														method="post"
 														action={actions.nudge}
 														use:enhance={() => {
-															if (way.other) holdSwap(todo, way.other, way.way);
-															return async ({ result, update }) => {
-																if (result.type !== 'success') letGo();
-																await update();
-															};
+															const by = press();
+															if (way.other) holdSwap(by, todo, way.other, way.way);
+															return answeredBy(by, true);
 														}}
 														class:invisible={!way.other}
 													>
@@ -2514,7 +2535,7 @@
 							name="date"
 							type="date"
 							required
-							value={formatDate(new Date())}
+							value={localDay(new Date())}
 							class="input"
 						/>
 					</Field>

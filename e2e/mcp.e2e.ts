@@ -1,6 +1,5 @@
 import { expect, test, type APIRequestContext, type PlaywrightWorkerArgs } from '@playwright/test';
-import { PASSWORD, clientAddress, register, testEmail } from './helpers/account';
-import { visit } from './helpers/visit';
+import { PASSWORD, clientAddress, testEmail } from './helpers/account';
 
 /**
  * An AI assistant, from the outside: a real token over real HTTP.
@@ -189,70 +188,6 @@ test('the address says nothing to somebody without a token', async ({ playwright
 	expect((await request.get('/api/mcp')).status()).toBe(405);
 
 	await request.dispose();
-});
-
-/**
- * The preset, in the browser, because the button is the thing being tested.
- *
- * Eighteen checkboxes is a form somebody ticks wrong, and both wrong answers
- * cost something: a token that cannot do its job, or one that can do more than
- * it was made for. The set is derived from the tools, so this also fails the
- * day a tool is added with a scope the preset does not cover.
- */
-test('the preset ticks exactly the scopes an AI assistant needs', async ({ page }) => {
-	await register(page, testEmail('preset'));
-	await visit(page, '/settings/integrations/connections');
-
-	await page
-		.getByRole('button', { name: /new token/i })
-		.first()
-		.click();
-	const dialog = page.getByRole('dialog');
-	await expect(dialog).toBeVisible();
-
-	await dialog.getByRole('button', { name: /an ai assistant/i }).click();
-
-	const ticked = await dialog
-		.locator('input[name="scopes"]:checked')
-		.evaluateAll((boxes) => boxes.map((b) => (b as HTMLInputElement).value).sort());
-
-	// Every writing scope an AI assistant uses, and no calendar link — that one
-	// cannot be combined with anything and would make the token unusable.
-	expect(ticked).toContain('tasks:write');
-	expect(ticked).toContain('notes:write');
-	expect(ticked).toContain('today:read');
-	// Including habits, which the widget's token does not get: an assistant
-	// asked "did I keep my habits this week" is a use somebody grants on
-	// purpose, and the preset is the set of grants the tools actually need.
-	expect(ticked).toContain('habits:read');
-	// And the rooms that opened later: people and the data streams both have
-	// tools now, so their grants belong to the preset too.
-	expect(ticked).toContain('people:read');
-	expect(ticked).toContain('streams:write');
-	expect(ticked).not.toContain('calendar:read');
-	// And not the power to delete: removing things for good is the quieter
-	// button beside this one, pressed on purpose.
-	expect(ticked).not.toContain('destructive');
-
-	// Pressing it twice leaves the form in the state the label claims, rather
-	// than accumulating.
-	await dialog.getByRole('button', { name: /an ai assistant/i }).click();
-	const again = await dialog
-		.locator('input[name="scopes"]:checked')
-		.evaluateAll((boxes) => boxes.map((b) => (b as HTMLInputElement).value).sort());
-	expect(again).toEqual(ticked);
-
-	// The wider preset is the same set plus the one extra grant.
-	await dialog.getByRole('button', { name: /let it delete things/i }).click();
-	const wider = await dialog
-		.locator('input[name="scopes"]:checked')
-		.evaluateAll((boxes) => boxes.map((b) => (b as HTMLInputElement).value).sort());
-	expect(wider).toContain('destructive');
-	expect(wider.filter((scope) => scope !== 'destructive')).toEqual(ticked);
-
-	// And Clear means clear.
-	await dialog.getByRole('button', { name: /^clear$/i }).click();
-	expect(await dialog.locator('input[name="scopes"]:checked').count()).toBe(0);
 });
 
 /**

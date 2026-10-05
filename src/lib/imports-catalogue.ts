@@ -42,10 +42,3 @@ export const IMPORT_KINDS: ImportKind[] = [
 	{ id: 'org', name: 'Org mode', file: 'a .org file', becomes: 'todos and notes' },
 	{ id: 'obsidian', name: 'Obsidian', file: "the vault's folder", becomes: 'entries' }
 ];
-
-/** "Todoist, Google Tasks, Google Keep and Obsidian". */
-export function importNames(kinds: ImportKind[] = IMPORT_KINDS): string {
-	const names = kinds.map((k) => k.name);
-	if (names.length <= 1) return names[0] ?? '';
-	return `${names.slice(0, -1).join(', ')} and ${names[names.length - 1]}`;
-}

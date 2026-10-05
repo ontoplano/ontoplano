@@ -93,8 +93,7 @@ function itemCounts(ctx: Ctx): Map<number, number> {
 }
 
 /** The chain of names from the root down to this location, for "Living room › chest › drawer". */
-export function pathOf(ctx: Ctx, id: number): string[] {
-	const byId = indexLocations(ctx);
+export function pathOf(ctx: Ctx, id: number, byId = indexLocations(ctx)): string[] {
 	const chain: string[] = [];
 	const seen = new Set<number>();
 	let cur: number | null = id;
@@ -113,10 +112,13 @@ export const LOCATION_PATH_SEPARATOR = ' › ';
 
 /** Every location with its whole path, for a form's location picker. */
 export function locationChoices(ctx: Ctx): { id: number; name: string; path: string }[] {
-	return listLocations(ctx).map((one) => ({
+	// Read once and walked in memory: a read per path was the whole table again
+	// for every location.
+	const byId = indexLocations(ctx);
+	return [...byId.values()].map((one) => ({
 		id: one.id,
 		name: one.name,
-		path: pathOf(ctx, one.id).join(LOCATION_PATH_SEPARATOR)
+		path: pathOf(ctx, one.id, byId).join(LOCATION_PATH_SEPARATOR)
 	}));
 }
 

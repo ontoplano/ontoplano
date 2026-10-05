@@ -11,20 +11,21 @@
 	import { formatPrice, tierPricing, yearlyParts, type Pricing } from '$lib/plans';
 	import type { PageServerData, ActionData } from './$types';
 	import { useT } from '$lib/i18n';
+	import { fromPlayStore } from '$lib/platform';
 
 	const t = useT();
 	const now = useWhen();
 
 	let { data, form }: { data: PageServerData; form: ActionData } = $props();
 	/**
-	 * Which way money goes. Only the copy installed from Google Play has the
-	 * Digital Goods API; when it is there, the checkout action routes to Play
-	 * Billing instead of minting a provider transaction. Detected once — a
-	 * browser never grows the API mid-visit.
+	 * Which way money goes. Only the copy installed from Google Play can open
+	 * Play's purchase sheet, and it says so in its user agent; when it is that
+	 * copy, the checkout action routes to Play Billing instead of minting a
+	 * provider transaction.
 	 */
 	let payChannel = $state('');
 	$effect(() => {
-		if ('getDigitalGoodsService' in window) payChannel = 'play';
+		if (fromPlayStore()) payChannel = 'play';
 	});
 	/** The billing page's rule, on the other page that charges: inside the
 	 * installed app with no Play sheet, nothing here may open a checkout. */

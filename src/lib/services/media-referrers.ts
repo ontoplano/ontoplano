@@ -19,6 +19,7 @@ import {
 	albumMedia,
 	diaryEntries,
 	ideas,
+	inventoryItems,
 	notebooks,
 	people,
 	recipeImages,
@@ -30,7 +31,15 @@ import type { Ctx } from './ctx.js';
  * The kinds of thing that can hold a file, named for the room a person would
  * say it was in rather than for the table it is stored in.
  */
-export type ReferrerKind = 'note' | 'idea' | 'todo' | 'person' | 'recipe' | 'album' | 'notebook';
+export type ReferrerKind =
+	| 'note'
+	| 'idea'
+	| 'todo'
+	| 'person'
+	| 'recipe'
+	| 'album'
+	| 'notebook'
+	| 'item';
 
 export type Referrer = {
 	kind: ReferrerKind;
@@ -57,17 +66,44 @@ function mentions(column: Parameters<typeof like>[0], path: string) {
 	return or(like(column, `%(${path})%`), like(column, `%${path} %`), like(column, `%${path}`));
 }
 
-/** Everything of this account's that points at the picture with this id. */
-export function pictureReferrers(ctx: Ctx, id: number): Referrer[] {
-	const path = `/media/${id}`;
+/**
+ * The writing that mentions this path: notes, ideas and todos hold their
+ * pictures and recordings alike, as markdown in a text column.
+ *
+ * Both kinds ask the same three tables. The picture side once lacked two of
+ * them, so a picture pasted into a task was referred to by nothing and
+ * therefore reachable by nobody — including the person who pasted it, once
+ * they were reading over an assistant key.
+ */
+function mentionedIn(ctx: Ctx, path: string): Referrer[] {
 	const found: Referrer[] = [];
-
 	for (const row of db
 		.select({ id: diaryEntries.id, notebookId: diaryEntries.notebookId })
 		.from(diaryEntries)
 		.where(and(eq(diaryEntries.userId, ctx.userId), mentions(diaryEntries.content, path)))
 		.all())
 		found.push({ kind: 'note', id: row.id, notebookId: row.notebookId });
+	for (const row of db
+		.select({ id: ideas.id })
+		.from(ideas)
+		.where(and(eq(ideas.userId, ctx.userId), mentions(ideas.content, path)))
+		.all())
+		found.push({ kind: 'idea', id: row.id, notebookId: null });
+	for (const row of db
+		.select({ id: todoTasks.id, notebookId: todoTasks.notebookId })
+		.from(todoTasks)
+		.where(and(eq(todoTasks.userId, ctx.userId), mentions(todoTasks.notes, path)))
+		.all())
+		found.push({ kind: 'todo', id: row.id, notebookId: row.notebookId });
+	return found;
+}
+
+/** Everything of this account's that points at the picture with this id. */
+export function pictureReferrers(ctx: Ctx, id: number): Referrer[] {
+	const path = `/media/${id}`;
+	const found: Referrer[] = [];
+
+	found.push(...mentionedIn(ctx, path));
 
 	for (const row of db
 		.select({ id: people.id })
@@ -90,33 +126,20 @@ export function pictureReferrers(ctx: Ctx, id: number): Referrer[] {
 		.all())
 		found.push({ kind: 'notebook', id: row.id, notebookId: row.id });
 
+	// A thing in the inventory, which may be filed under a notebook.
+	for (const row of db
+		.select({ id: inventoryItems.id, notebookId: inventoryItems.notebookId })
+		.from(inventoryItems)
+		.where(and(eq(inventoryItems.userId, ctx.userId), eq(inventoryItems.pictureId, id)))
+		.all())
+		found.push({ kind: 'item', id: row.id, notebookId: row.notebookId });
+
 	for (const row of db
 		.select({ id: recipeImages.recipeId })
 		.from(recipeImages)
 		.where(and(eq(recipeImages.userId, ctx.userId), eq(recipeImages.mediaId, id)))
 		.all())
 		found.push({ kind: 'recipe', id: row.id, notebookId: null });
-
-	/*
-	 * An idea and a todo hold their pictures the same way a note does: as
-	 * markdown in a text column. These two were missing while the recording
-	 * side had them, so a picture pasted into a task was referred to by
-	 * nothing and therefore reachable by nobody — including the person who
-	 * pasted it, once they were reading over an assistant key.
-	 */
-	for (const row of db
-		.select({ id: ideas.id })
-		.from(ideas)
-		.where(and(eq(ideas.userId, ctx.userId), mentions(ideas.content, path)))
-		.all())
-		found.push({ kind: 'idea', id: row.id, notebookId: null });
-
-	for (const row of db
-		.select({ id: todoTasks.id, notebookId: todoTasks.notebookId })
-		.from(todoTasks)
-		.where(and(eq(todoTasks.userId, ctx.userId), mentions(todoTasks.notes, path)))
-		.all())
-		found.push({ kind: 'todo', id: row.id, notebookId: row.notebookId });
 
 	for (const row of db
 		.select({ id: albumMedia.albumId })
@@ -133,26 +156,7 @@ export function recordingReferrers(ctx: Ctx, id: number): Referrer[] {
 	const path = `/media/audio/${id}`;
 	const found: Referrer[] = [];
 
-	for (const row of db
-		.select({ id: diaryEntries.id, notebookId: diaryEntries.notebookId })
-		.from(diaryEntries)
-		.where(and(eq(diaryEntries.userId, ctx.userId), mentions(diaryEntries.content, path)))
-		.all())
-		found.push({ kind: 'note', id: row.id, notebookId: row.notebookId });
-
-	for (const row of db
-		.select({ id: ideas.id })
-		.from(ideas)
-		.where(and(eq(ideas.userId, ctx.userId), mentions(ideas.content, path)))
-		.all())
-		found.push({ kind: 'idea', id: row.id, notebookId: null });
-
-	for (const row of db
-		.select({ id: todoTasks.id, notebookId: todoTasks.notebookId })
-		.from(todoTasks)
-		.where(and(eq(todoTasks.userId, ctx.userId), mentions(todoTasks.notes, path)))
-		.all())
-		found.push({ kind: 'todo', id: row.id, notebookId: row.notebookId });
+	found.push(...mentionedIn(ctx, path));
 
 	return found;
 }

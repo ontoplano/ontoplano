@@ -12,13 +12,11 @@
  * one in the built APK against the one in its recipe — so a wrong number here
  * is a release that cannot be uploaded or one that nobody is offered.
  *
- * It also checks that Play Billing is not in it. `androidbrowserhelper:billing`
- * pulls `com.android.billingclient`, which is proprietary, and F-Droid builds
- * from source with free dependencies only — so its presence here is not a
- * stale file but a submission that gets rejected. `make android` writes the
- * Play build, with billing, into an ignored directory; regenerating this one
- * with the wrong command is the easy mistake, and this is the thing that
- * catches it.
+ * It also checks that Play Billing stays inside the `play` flavour. The
+ * Billing Library is proprietary and F-Droid builds `official` from source
+ * with free dependencies only — so the library linked any other way, or the
+ * billing permission in the shared manifest, is not a stale file but a
+ * submission that gets rejected.
  *
  * `make android-project` regenerates it. This only checks, so it runs
  * anywhere, including a CI machine with no Android SDK.
@@ -50,11 +48,14 @@ const wrong = [];
 if (name !== version) wrong.push(`versionName is "${name}", package.json says "${version}"`);
 if (code !== expected) wrong.push(`versionCode is ${code}, ${version} is ${expected}`);
 
-if (/androidbrowserhelper:billing/.test(gradle)) {
-	wrong.push('Play Billing is linked — F-Droid cannot build a proprietary dependency');
+for (const line of gradle.split('\n')) {
+	if (/billingclient/.test(line) && !/^\s*playImplementation\s/.test(line)) {
+		wrong.push(`Play Billing is linked outside the play flavour: ${line.trim()}`);
+	}
 }
 
-const MANIFEST = join(ROOT, 'android', 'app', 'src', 'main', 'AndroidManifest.xml');
+const MAIN = join(ROOT, 'capacitor', 'android', 'app', 'src', 'main');
+const MANIFEST = join(MAIN, 'AndroidManifest.xml');
 if (existsSync(MANIFEST) && /com\.android\.vending\.BILLING/.test(readFileSync(MANIFEST, 'utf8'))) {
 	wrong.push('the manifest declares com.android.vending.BILLING');
 }
@@ -66,4 +67,4 @@ if (wrong.length > 0) {
 	process.exit(1);
 }
 
-console.log(`android: the committed project is ${version} (${code}), no billing`);
+console.log(`android: the committed project is ${version} (${code}), billing only in play`);

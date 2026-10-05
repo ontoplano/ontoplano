@@ -204,11 +204,12 @@
 	{#if person.pictureId}
 		<img
 			src="/media/{person.pictureId}"
-			alt=""
+			alt={person.name}
 			loading="lazy"
+			data-view
 			class="{size === 'row'
 				? 'size-8'
-				: 'size-12'} shrink-0 rounded-full border border-gray-200 bg-white object-cover"
+				: 'size-12'} shrink-0 cursor-zoom-in rounded-full border border-gray-200 bg-white object-cover"
 		/>
 	{:else}
 		<span
@@ -517,6 +518,7 @@
 	<form
 		method="POST"
 		action="?/setPanelWidth"
+		data-quiet
 		class="hidden"
 		bind:this={panelForm}
 		use:enhance={() => async () => {}}

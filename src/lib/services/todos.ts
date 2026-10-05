@@ -59,7 +59,8 @@ import { getUserSetting, setUserSetting } from './settings.js';
 import { cleanupOrphanTags, optionalTagInput, parseTags, replaceTodoTags } from './tags.js';
 import { created, stamp, stamps } from './time.js';
 import { host } from './host.js';
-import { TIME_PATTERN, num, oneOf, optionalStr, str } from './validate.js';
+import { TIME_PATTERN, num, oneOf, optionalStr, str, chosenIds } from './validate.js';
+import { ownedActivity, ownedCategory } from './activities.js';
 import {
 	parseAttributes,
 	serialiseAttributes,
@@ -212,6 +213,15 @@ export function tagsForTodos(ctx: Ctx, todoIds: number[]): Map<number, Tag[]> {
 	}
 	return byTodo;
 }
+/** This account's todo, or the same 404 a stranger's gets. */
+function assertOwnedTodo(ctx: Ctx, id: number): void {
+	const owned = db
+		.select({ id: todoTasks.id })
+		.from(todoTasks)
+		.where(and(eq(todoTasks.id, id), eq(todoTasks.userId, ctx.userId)))
+		.get();
+	if (!owned) throw new NotFoundError('todo');
+}
 
 /** Every list of todos goes out through here, so none of them is missing its labels. */
 function withTags(ctx: Ctx, todos: Todo[]): Todo[] {
@@ -233,12 +243,7 @@ function withTags(ctx: Ctx, todos: Todo[]): Todo[] {
  * would have had to remember what it used to be.
  */
 export function archiveTodo(ctx: Ctx, id: number, away = true): void {
-	const owned = db
-		.select({ id: todoTasks.id })
-		.from(todoTasks)
-		.where(and(eq(todoTasks.id, id), eq(todoTasks.userId, ctx.userId)))
-		.get();
-	if (!owned) throw new NotFoundError('todo');
+	assertOwnedTodo(ctx, id);
 
 	const now = stamp(ctx);
 	db.update(todoTasks)
@@ -934,7 +939,7 @@ export function createTodo(ctx: Ctx, raw: TodoInput): number {
 			categoryId:
 				raw.categoryId === undefined
 					? defaultCategoryOf(ctx, notebookId)
-					: ownedCategoryId(ctx, raw.categoryId),
+					: ownedCategory(ctx, raw.categoryId),
 			notebookId,
 			notebookSeq: nextNotebookSeq(ctx, notebookId),
 			scheduledDate: optionalDate(raw.scheduledDate),
@@ -976,7 +981,7 @@ export function updateTodo(ctx: Ctx, id: number, raw: TodoInput): void {
 		.set({
 			title: str(raw.title, 'title', { max: MAX_TITLE_LENGTH }),
 			notes: optionalStr(raw.notes, 'notes', { max: MAX_NOTES_LENGTH }),
-			categoryId: ownedCategoryId(ctx, raw.categoryId),
+			categoryId: ownedCategory(ctx, raw.categoryId),
 			notebookId,
 			notebookSeq: seq,
 			...(raw.ratings ?? {}),
@@ -1017,12 +1022,7 @@ export function tagTodo(
 	id: number,
 	change: { add?: unknown; remove?: unknown }
 ): string[] {
-	const owned = db
-		.select({ id: todoTasks.id })
-		.from(todoTasks)
-		.where(and(eq(todoTasks.id, id), eq(todoTasks.userId, ctx.userId)))
-		.get();
-	if (!owned) throw new NotFoundError('todo');
+	assertOwnedTodo(ctx, id);
 
 	const add = parseTags(optionalTagInput(change.add));
 	const remove = new Set(parseTags(optionalTagInput(change.remove)));
@@ -1141,8 +1141,8 @@ export function delegateTodo(
 		Number(raw.remindLeadMinutes) === 0
 			? null
 			: num(raw.remindLeadMinutes, 'reminder', { int: true, min: 0, max: 24 * 60 });
-	const categoryId = ownedCategoryId(ctx, raw.categoryId);
-	const activityId = ownedActivityId(ctx, raw.activityId);
+	const categoryId = ownedCategory(ctx, raw.categoryId);
+	const activityId = ownedActivity(ctx, raw.activityId);
 
 	if (mode === 'category' && !categoryId)
 		throw new ValidationError({ key: 'errors.todos.categoryRequired' });
@@ -1200,35 +1200,6 @@ function requiredDate(value: unknown): string {
 function optionalDate(value: unknown): string | null {
 	if (value === undefined || value === null || String(value).trim() === '') return null;
 	return requiredDate(String(value).trim());
-}
-
-/** An id from a form is a claim until it is checked against the account. */
-function ownedCategoryId(ctx: Ctx, value: unknown): number | null {
-	if (value === undefined || value === null || value === '') return null;
-
-	const id = num(value, 'category', { int: true, min: 1 });
-	const owned = db
-		.select({ id: categories.id })
-		.from(categories)
-		.where(and(eq(categories.id, id), eq(categories.userId, ctx.userId)))
-		.get();
-
-	if (!owned) throw new NotFoundError('category');
-	return id;
-}
-
-function ownedActivityId(ctx: Ctx, value: unknown): number | null {
-	if (value === undefined || value === null || value === '') return null;
-
-	const id = num(value, 'activity', { int: true, min: 1 });
-	const owned = db
-		.select({ id: activities.id })
-		.from(activities)
-		.where(and(eq(activities.id, id), eq(activities.userId, ctx.userId)))
-		.get();
-
-	if (!owned) throw new NotFoundError('activity');
-	return id;
 }
 
 /**
@@ -1466,10 +1437,10 @@ export function batchTodos(
 	what: { status?: unknown; add?: unknown; remove?: unknown; notebookId?: unknown }
 ): number {
 	if (!isBatchVerb(verb)) throw new ValidationError({ key: 'errors.todos.invalidBatch' });
-	if (rawIds.length === 0) throw new ValidationError({ key: 'errors.todos.nothingWasChosen' });
-	if (rawIds.length > MAX_BATCH)
-		throw new ValidationError({ key: 'errors.todos.thatIsTooManyAtOnce' });
-	const ids = [...new Set(rawIds.map((id) => num(id, 'id', { int: true, min: 1 })))];
+	const ids = chosenIds(rawIds, MAX_BATCH, {
+		nothing: 'errors.todos.nothingWasChosen',
+		tooMany: 'errors.todos.thatIsTooManyAtOnce'
+	});
 	if (verb === 'notebook' && what.notebookId === undefined)
 		throw new ValidationError({ key: 'errors.todos.invalidBatch' });
 

@@ -69,7 +69,7 @@ export const actions: Actions = {
 		const tier = formData.get('tier') === 'family' ? 'family' : 'solo';
 
 		// The store copy pays through Play, not Paddle — the page said so (it
-		// found the Digital Goods API, which only the Play-installed app has),
+		// is the copy Google Play distributes, the only one with Play's sheet),
 		// and no Paddle transaction is minted for a purchase Paddle will never
 		// see. Everyone else falls through to the provider as before.
 		if (formData.get('channel') === 'play' && playConfigured()) {

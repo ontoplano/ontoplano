@@ -30,7 +30,7 @@ export type GlyphThing = {
 };
 
 /** A notebook module's key in the index. Its id alone is a room's key. */
-export const moduleKey = (id: NotebookModule): string => `notebook/${id}`;
+const moduleKey = (id: NotebookModule): string => `notebook/${id}`;
 
 const own: GlyphThing[] = [
 	...NAV_PLACES.map((place) => ({ key: place.key, glyph: place.icon, is: place.is })),

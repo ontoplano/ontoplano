@@ -5,6 +5,7 @@ import android.net.Uri;
 import android.os.Bundle;
 
 import com.getcapacitor.BridgeActivity;
+import com.getcapacitor.Plugin;
 
 public class MainActivity extends BridgeActivity {
     /**
@@ -22,8 +23,27 @@ public class MainActivity extends BridgeActivity {
         // Before super, which is where the bridge is built: a plugin registered
         // afterwards is not in the bridge the web view is handed.
         registerPlugin(OntoplanoSettings.class);
+        registerStorePlugins();
         super.onCreate(savedInstanceState);
     }
+
+    /**
+     * Google Play's purchase sheet, in the copy Play distributes.
+     *
+     * `PlayBilling` lives in the `play` flavour's own sources, because the
+     * library behind it is not free software and every other build has to be
+     * buildable without it. Looked up by name so this file compiles in both.
+     */
+    @SuppressWarnings("unchecked")
+    private void registerStorePlugins() {
+        try {
+            registerPlugin((Class<? extends Plugin>) Class.forName(PLAY_BILLING));
+        } catch (ClassNotFoundException notThisBuild) {
+            // F-Droid's, the GitHub APK, dev and staging: nothing to sell through.
+        }
+    }
+
+    private static final String PLAY_BILLING = "app.ontoplano.isolated.PlayBilling";
 
     /** Every launch passes here, the first one included — see `BridgeActivity.load`. */
     @Override

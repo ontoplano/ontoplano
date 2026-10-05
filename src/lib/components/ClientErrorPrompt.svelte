@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { isBrowserNoise } from '$lib/browser-noise';
 	import Icon from '$lib/components/Icon.svelte';
 	import { useT } from '$lib/i18n';
 
@@ -34,7 +35,7 @@
 	}
 
 	function report(message: string, stack?: string) {
-		if (decision === 'no' || sent >= 3) return;
+		if (decision === 'no' || sent >= 3 || isBrowserNoise(message)) return;
 		const error: Report = {
 			message: message.slice(0, 500),
 			stack: stack?.slice(0, 8000),

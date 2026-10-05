@@ -57,4 +57,70 @@ test.describe('a navigation that takes a while', () => {
 			expect(Math.round(after!.y)).toBe(Math.round(before!.y));
 			expect(Math.round(after!.height)).toBe(Math.round(before!.height));
 		});
+
+	test('a room seen before stands in with its own tabs, and its bones sit flush', async ({
+		page
+	}) => {
+		test.setTimeout(180_000);
+		await page.setViewportSize({ width: 1400, height: 900 });
+		await register(page, testEmail('nav-pending-tabs'));
+		await visit(page, '/settings/account');
+		const strip = page.locator('.room-bar nav').first();
+		const real = await strip.locator('a').allInnerTexts();
+		// Away inside the app, not by loading a page: what the app remembers
+		// about a room lasts as long as the app does.
+		const go = (href: string) =>
+			page.evaluate((to) => {
+				const link = document.createElement('a');
+				link.href = to;
+				document.body.append(link);
+				link.click();
+			}, href);
+		await go('/notebooks');
+		await page.waitForURL('**/notebooks');
+
+		await page.route(/__data\.json/, async (route) => {
+			await new Promise((done) => setTimeout(done, 2000));
+			await route.continue();
+		});
+		await go('/settings/preferences');
+		// Every tab the room draws, not the menu's shorter list.
+		const standIn = page.locator('.pending-page .room-bar nav a');
+		await expect(standIn.first()).toBeVisible({ timeout: 1000 });
+		expect(await standIn.allInnerTexts()).toEqual(real);
+		await page.waitForURL('**/settings/**');
+		await expect(page.locator('.pending-page')).toHaveCount(0);
+
+		// A tab inside the room: the bones start where the body does.
+		const bodyTop = (await page.locator('.room-body').first().boundingBox())!.y;
+		await page.getByRole('link', { name: 'Account' }).first().click();
+		const bones = page.locator('.pending-page .room-body');
+		await expect(bones).toBeVisible({ timeout: 1000 });
+		expect(Math.abs((await bones.boundingBox())!.y - bodyTop)).toBeLessThan(1);
+		await expect(page.locator('.pending-page')).toHaveCount(0, { timeout: 10_000 });
+
+		/*
+		 * A tab of a tab — Settings → AI & Integrations → Widgets. The cover is
+		 * as wide as the outer room's body and square, or the screen being
+		 * left shows down both sides of it under a corner of its own.
+		 */
+		await page.unroute(/__data\.json/);
+		await go('/settings/integrations');
+		await page.waitForURL('**/settings/integrations**');
+		const outer = (await page.locator('.room-body').first().boundingBox())!;
+		await page.route(/__data\.json/, async (route) => {
+			await new Promise((done) => setTimeout(done, 2000));
+			await route.continue();
+		});
+		await page
+			.getByRole('link', { name: /widgets/i })
+			.first()
+			.click();
+		const cover = page.locator('.pending-page.pending-nested');
+		await expect(cover).toBeVisible({ timeout: 1000 });
+		const box = (await cover.boundingBox())!;
+		expect(Math.abs(box.x - outer.x)).toBeLessThan(1);
+		expect(Math.abs(box.width - outer.width)).toBeLessThan(1);
+		expect(await cover.evaluate((el) => getComputedStyle(el).borderTopLeftRadius)).toBe('0px');
+	});
 });

@@ -164,6 +164,31 @@ describe('the sweep', () => {
 		).toBe(0);
 	});
 
+	it('and gives the space back to the disk once enough of the file is free', async () => {
+		const { sql } = await import('drizzle-orm');
+		const free = () =>
+			db.db.get<{ freelist_count: number }>(sql`PRAGMA freelist_count`)!.freelist_count;
+
+		// Enough rows that deleting them frees well over a quarter of the file.
+		pretendVisitor('visitor-heavy', new Date(Date.now() - 60_000).toISOString());
+		for (let i = 0; i < 40; i++)
+			db.db
+				.insert(schema.media)
+				.values({
+					userId: 'visitor-heavy',
+					mime: 'image/png',
+					byteSize: 256_000,
+					bytes: Buffer.alloc(256_000, i),
+					sha256: `heavy-${i}`,
+					createdAt: new Date().toISOString()
+				})
+				.run();
+
+		demo.sweepDemoAccounts();
+
+		expect(free(), 'the deleted pages were left in the file').toBe(0);
+	});
+
 	it('takes the whole account with it', async () => {
 		pretendVisitor('visitor-gone', new Date(Date.now() - 60_000).toISOString());
 		demo.sweepDemoAccounts();

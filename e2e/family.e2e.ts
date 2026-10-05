@@ -3,6 +3,7 @@ import Database from 'better-sqlite3';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
+import { SETTINGS_KEPT_MS } from '../src/lib/services/settings';
 import { PASSWORD, clientAddress, testEmail } from './helpers/account';
 
 /**
@@ -21,6 +22,16 @@ const ORIGIN = 'http://localhost:4173';
 
 function openDb() {
 	return new Database(process.env.PLAYWRIGHT_DB ?? join(tmpdir(), 'ontoplano-e2e.db'));
+}
+
+/**
+ * Wait until the server stops answering from its copy of an account's settings.
+ *
+ * The rows written here go around the settings module, which keeps what it
+ * read for this long and only forgets it on its own writes.
+ */
+function settingsWritten() {
+	return new Promise((resolve) => setTimeout(resolve, SETTINGS_KEPT_MS));
 }
 
 /** A signed-up account: its id, cookie, and request context. */
@@ -119,6 +130,7 @@ test('a flagged account is walked to the password page, and through it', async (
 		'true'
 	);
 	db.close();
+	await settingsWritten();
 
 	// /welcome sends them to the password page first.
 	const welcome = await seat.request.get('/welcome', {
@@ -200,6 +212,7 @@ test('an existing account is offered a seat, and joins only by accepting', async
 			.run(id);
 	}
 	onboard.close();
+	await settingsWritten();
 
 	const offered = await payer.request.post('/settings/family?/addSeat', {
 		headers: { Origin: ORIGIN, Cookie: payer.cookie, 'x-sveltekit-action': 'true' },

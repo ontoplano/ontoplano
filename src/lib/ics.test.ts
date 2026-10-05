@@ -40,6 +40,39 @@ describe('one event', () => {
 		expect(only.start).toBe('2026-08-18T00:00');
 	});
 
+	test('a holiday that began last week is still on this one', () => {
+		const [only] = eventsBetween(
+			ics(
+				event([
+					'UID:pto',
+					'SUMMARY:Holiday',
+					'DTSTART;VALUE=DATE:20260814',
+					'DTEND;VALUE=DATE:20260820'
+				])
+			),
+			WEEK_FROM,
+			WEEK_TO
+		);
+		expect(only?.start).toBe('2026-08-14T00:00');
+		expect(only?.end).toBe('2026-08-20T00:00');
+	});
+
+	test('one that ended before the week is not', () => {
+		const found = eventsBetween(
+			ics(
+				event([
+					'UID:gone',
+					'SUMMARY:Away',
+					'DTSTART;VALUE=DATE:20260810',
+					'DTEND;VALUE=DATE:20260817'
+				])
+			),
+			WEEK_FROM,
+			WEEK_TO
+		);
+		expect(found).toHaveLength(0);
+	});
+
 	test('an event with no end gets half an hour, so there is something to draw', () => {
 		const [only] = eventsBetween(
 			ics(event(['UID:c', 'SUMMARY:Call', 'DTSTART:20260817T140000'])),

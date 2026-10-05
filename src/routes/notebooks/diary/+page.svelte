@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { Reveal, revealNear } from '$lib/reveal.svelte';
 	import { page } from '$app/state';
 	import ShowingCount from '$lib/components/ShowingCount.svelte';
 	import SearchField from '$lib/components/SearchField.svelte';
@@ -37,16 +38,12 @@
 	import {
 		DEFAULT_DIARY_DIRECTION,
 		DEFAULT_DIARY_ORDER,
-		DIARY_DIRECTION_KEY,
-		DIARY_ORDER_KEY,
 		DIARY_ORDERS,
-		isDiaryDirection,
-		isDiaryOrder,
 		orderDiary,
-		type DiaryDirection,
 		type DiaryOrder
 	} from '$lib/diary-order';
 	import { useT } from '$lib/i18n';
+	import { RememberedOrder } from '$lib/remembered-order.svelte';
 	import { Selection } from '$lib/selection.svelte';
 	import SelectionBar from '$lib/components/SelectionBar.svelte';
 	import SelectBox from '$lib/components/SelectBox.svelte';
@@ -119,32 +116,18 @@
 	 * The order, chosen on the strip and kept in this browser — see
 	 * `$lib/diary-order`. Newest written first until somebody says otherwise.
 	 */
-	let order = $state<DiaryOrder>(DEFAULT_DIARY_ORDER);
-	let direction = $state<DiaryDirection>(DEFAULT_DIARY_DIRECTION);
 	const ORDER_LABELS: Record<DiaryOrder, PlainKey> = {
 		written: 'notebookDetail.orderWritten',
 		day: 'notebooks.diary.orderDay',
 		edited: 'notebookDetail.orderEdited'
 	};
-
-	$effect(() => {
-		try {
-			const kept = localStorage.getItem(DIARY_ORDER_KEY);
-			if (isDiaryOrder(kept)) order = kept;
-			const way = localStorage.getItem(DIARY_DIRECTION_KEY);
-			if (isDiaryDirection(way)) direction = way;
-		} catch {
-			// A private window, or storage refused: the defaults stand.
-		}
-	});
-
-	function remember(key: string, value: string) {
-		try {
-			localStorage.setItem(key, value);
-		} catch {
-			// It still holds for this visit.
-		}
-	}
+	const sorting = new RememberedOrder<DiaryOrder>(
+		'diary',
+		DIARY_ORDERS,
+		DEFAULT_DIARY_ORDER,
+		() => DEFAULT_DIARY_DIRECTION,
+		DEFAULT_DIARY_DIRECTION
+	);
 
 	const shownEntries = $derived.by(() => {
 		const needle = looking.trim().toLowerCase();
@@ -156,10 +139,16 @@
 						tagFilter.current
 					) && matchesSearch(e, needle)
 			),
-			order,
-			direction
+			sorting.order,
+			sorting.direction
 		);
 	});
+
+	/** Drawn fifty at a time as the end comes near — see `$lib/reveal`. */
+	const reveal = new Reveal(
+		() => shownEntries.length,
+		() => data.entries.length
+	);
 
 	/** When it was written, the day it is for, and when it was last changed — one line, one separator. */
 	function metaOf(entry: PageServerData['entries'][number]): string {
@@ -305,6 +294,7 @@
 		switch (action) {
 			case 'navigate-down':
 				selectedIndex = Math.min(selectedIndex + 1, items.length - 1);
+				reveal.reach(selectedIndex);
 				break;
 			case 'navigate-up':
 				selectedIndex = Math.max(selectedIndex - 1, 0);
@@ -529,7 +519,7 @@
 				onpointerout={handleEntriesPointerOut}
 				onclick={handleEntriesClick}
 			>
-				{#each shownEntries as entry, i (entry.id)}
+				{#each reveal.of(shownEntries) as entry, i (entry.id)}
 					<!--
 						The card a note is drawn on — `RowCard`: the entry's number in the
 						rail, the writing and when beside it, the people and labels along
@@ -537,6 +527,7 @@
 					-->
 					<article
 						use:listCursor={i === selectedIndex}
+						use:revealNear={{ reveal, index: i, trigger: reveal.trigger }}
 						id="diary-{entry.diarySeq ?? entry.seq}"
 						class="row-card"
 						class:bg-gray-100={selection.selecting && selection.has(entry.id)}
@@ -733,21 +724,15 @@
 
 {#snippet sortControl()}
 	<SortControl
-		value={order}
+		value={sorting.order}
 		options={DIARY_ORDERS}
 		labels={ORDER_LABELS}
-		{direction}
+		direction={sorting.direction}
 		onpick={(next) => {
-			order = next;
-			direction = DEFAULT_DIARY_DIRECTION;
-			remember(DIARY_ORDER_KEY, next);
-			remember(DIARY_DIRECTION_KEY, direction);
+			sorting.pick(next);
 			selectedIndex = 0;
 		}}
-		onflip={() => {
-			direction = direction === 'asc' ? 'desc' : 'asc';
-			remember(DIARY_DIRECTION_KEY, direction);
-		}}
+		onflip={() => sorting.flip()}
 		label={t('notebooks.diary.orderDiaryBy')}
 	/>
 {/snippet}

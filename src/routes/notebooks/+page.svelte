@@ -688,6 +688,7 @@
 								todos={data.todos}
 								allTodos={data.allTodos}
 								activities={data.activities}
+								error={form?.message ?? null}
 								bind:composing
 								bind:newAction
 								bind:linkAction
@@ -718,6 +719,7 @@
 	<form
 		method="POST"
 		action="?/setPanelWidth"
+		data-quiet
 		class="hidden"
 		bind:this={panelForm}
 		use:enhance={() => async () => {}}

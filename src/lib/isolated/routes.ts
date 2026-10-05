@@ -297,7 +297,7 @@ const matchers: Matcher[] = Object.keys(screens)
 	// Static segments outrank dynamic ones, the way SvelteKit ranks routes.
 	.sort((a, b) => Number(a.dir.includes('[')) - Number(b.dir.includes('[')));
 
-export function matchIsolatedRoute(
+function matchIsolatedRoute(
 	pathname: string
 ): { matcher: Matcher; params: Record<string, string> } | null {
 	const clean = pathname !== '/' && pathname.endsWith('/') ? pathname.slice(0, -1) : pathname;

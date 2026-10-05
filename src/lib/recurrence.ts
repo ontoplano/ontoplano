@@ -43,6 +43,7 @@
  */
 import { WEEKDAYS } from './bill-summary.js';
 import type { Translate } from './i18n/core.js';
+import { daysBetween, localDay } from './services/time.js';
 
 export type Recurrence =
 	| { kind: 'weekly'; anchor?: string }
@@ -55,25 +56,6 @@ export const WEEKLY: Recurrence = { kind: 'weekly' };
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 export const MAX_INTERVAL = 52;
-
-function pad(n: number): string {
-	return String(n).padStart(2, '0');
-}
-
-export function formatDate(d: Date): string {
-	return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
-}
-
-/** Whole days between two dates, ignoring clock time and DST. */
-function daysBetween(from: string, to: string): number {
-	const a = Date.UTC(
-		Number(from.slice(0, 4)),
-		Number(from.slice(5, 7)) - 1,
-		Number(from.slice(8, 10))
-	);
-	const b = Date.UTC(Number(to.slice(0, 4)), Number(to.slice(5, 7)) - 1, Number(to.slice(8, 10)));
-	return Math.round((b - a) / 86_400_000);
-}
 
 export function parseRecurrence(raw: string | null | undefined): Recurrence {
 	if (!raw) return WEEKLY;
@@ -158,7 +140,7 @@ export function occursOn(r: Recurrence, date: Date, weekday: number): boolean {
 
 	// Nothing happens before a rhythm starts. Checked once, here, so every shape
 	// obeys it and a shape added later cannot forget to.
-	if (r.anchor && daysBetween(r.anchor, formatDate(date)) < 0) return false;
+	if (r.anchor && daysBetween(r.anchor, localDay(date)) < 0) return false;
 
 	switch (r.kind) {
 		case 'weekly':
@@ -169,14 +151,14 @@ export function occursOn(r: Recurrence, date: Date, weekday: number): boolean {
 
 		case 'weeks': {
 			if (dateWeekday !== weekday) return false;
-			const delta = daysBetween(r.anchor, formatDate(date));
+			const delta = daysBetween(r.anchor, localDay(date));
 			if (delta < 0) return false;
 			// Whole weeks since the anchor, so "every 2 weeks" lands on alternate ones.
 			return Math.floor(delta / 7) % r.interval === 0;
 		}
 
 		case 'days': {
-			const delta = daysBetween(r.anchor, formatDate(date));
+			const delta = daysBetween(r.anchor, localDay(date));
 			return delta >= 0 && delta % r.interval === 0;
 		}
 
@@ -207,7 +189,7 @@ export function reanchor(r: Recurrence, date: Date): Recurrence {
 			return r;
 		case 'weeks':
 		case 'days':
-			return { ...r, anchor: formatDate(date) };
+			return { ...r, anchor: localDay(date) };
 		case 'monthly':
 			return { ...r, day: date.getDate() };
 	}

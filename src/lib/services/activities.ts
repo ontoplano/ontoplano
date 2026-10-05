@@ -1,4 +1,4 @@
-import { and, count, eq } from 'drizzle-orm';
+import { and, count, eq, isNotNull } from 'drizzle-orm';
 
 import { CATEGORY_DEFAULT_NEW } from '../colors.js';
 import { db } from '$lib/db/index.js';
@@ -50,7 +50,26 @@ export function listActivitiesWithUsage(ctx: Ctx) {
 		.orderBy(activities.name)
 		.all();
 
-	return rows.map((a) => ({ ...a, hasReferences: activityReferences(ctx, a.id) > 0 }));
+	const referenced = referencedActivityIds(ctx);
+	return rows.map((a) => ({ ...a, hasReferences: referenced.has(a.id) }));
+}
+
+/**
+ * Every activity something still points at, in two statements for the whole
+ * account rather than two per activity — the page asked each one in turn.
+ */
+function referencedActivityIds(ctx: Ctx): Set<number> {
+	const inSlots = db
+		.selectDistinct({ id: recurringTasks.activityId })
+		.from(recurringTasks)
+		.where(and(eq(recurringTasks.userId, ctx.userId), isNotNull(recurringTasks.activityId)))
+		.all();
+	const inRecords = db
+		.selectDistinct({ id: taskRecords.resolvedActivityId })
+		.from(taskRecords)
+		.where(and(eq(taskRecords.userId, ctx.userId), isNotNull(taskRecords.resolvedActivityId)))
+		.all();
+	return new Set([...inSlots, ...inRecords].map((row) => row.id as number));
 }
 
 export function createActivity(
@@ -197,6 +216,22 @@ export function ownedCategory(ctx: Ctx, value: unknown): number | null {
 		.where(and(eq(categories.id, id), eq(categories.userId, ctx.userId)))
 		.get();
 	if (!owned) throw new NotFoundError('category');
+	return id;
+}
+
+/**
+ * An activity id from a form or a call, or null for none — one of this
+ * account's own, or a 404. The planner's three services each had a copy.
+ */
+export function ownedActivity(ctx: Ctx, value: unknown): number | null {
+	if (value === undefined || value === null || value === '') return null;
+	const id = num(value, 'activity', { int: true, min: 1 });
+	const owned = db
+		.select({ id: activities.id })
+		.from(activities)
+		.where(and(eq(activities.id, id), eq(activities.userId, ctx.userId)))
+		.get();
+	if (!owned) throw new NotFoundError('activity');
 	return id;
 }
 

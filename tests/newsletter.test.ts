@@ -30,7 +30,7 @@ import { makeDatabase } from './helpers/db';
 const database = makeDatabase();
 afterAll(() => database.remove());
 
-type Mail = { to: string; subject: string; text: string };
+type Mail = { to: string; subject: string; text: string; html?: string };
 const sendEmail = vi.fn<(email: Mail) => Promise<{ delivered: boolean; reason?: string }>>(
 	async () => ({ delivered: true })
 );
@@ -107,7 +107,26 @@ describe('subscribing', () => {
 	test('what the form answers promises nothing to go and look for', async () => {
 		await list.subscribe('reader@example.test');
 
-		expect(list.SUBSCRIBE_ACCEPTED).not.toMatch(/inbox|confirm|link|email|mail/i);
+		for (const said of [list.SUBSCRIBE_JOINED, list.SUBSCRIBE_ALREADY])
+			expect(said).not.toMatch(/inbox|confirm|link|email|mail/i);
+	});
+
+	test('says whether the address joined or was already there', async () => {
+		expect(await list.subscribe('reader@example.test')).toBe('joined');
+		expect(await list.subscribe('Reader@example.test')).toBe('already');
+		list.unsubscribe(tokenOf('reader@example.test'));
+		expect(await list.subscribe('reader@example.test')).toBe('joined');
+	});
+
+	test('the administration page lists the list, and takes one off it', async () => {
+		await list.subscribe('one@example.test');
+		await list.subscribe('two@example.test');
+		const listed = list.listSubscribers();
+		expect(listed.map((one) => one.email).sort()).toEqual(['one@example.test', 'two@example.test']);
+
+		list.removeSubscriber(listed[0].id);
+		expect(list.listSubscribers()).toHaveLength(1);
+		expect(() => list.removeSubscriber(listed[0].id)).toThrow();
 	});
 
 	/*
@@ -227,6 +246,46 @@ describe('announcing a release', () => {
 		await list.announce(issue);
 
 		expect(sendEmail.mock.calls[0][0].text).toContain(tokenOf('reader@example.test'));
+	});
+
+	test('lists five of the changelog’s lines and links to the rest', async () => {
+		await list.subscribe('reader@example.test');
+		sendEmail.mockClear();
+		const lines = ['one', 'two', 'three', 'four', 'five', 'six', 'seven'];
+		await list.announce({ ...issue, lines, more: 'https://example.test/pull/9' });
+
+		const { html, text } = sendEmail.mock.calls[0][0];
+		expect(html).toContain('<li style="margin:0 0 6px;">five</li>');
+		expect(html).not.toContain('>six<');
+		expect(html).toContain('href="https://example.test/pull/9"');
+		expect(text).toContain('1.2.3');
+	});
+
+	test('without a page named, "the rest" is the release itself', async () => {
+		await list.subscribe('reader@example.test');
+		sendEmail.mockClear();
+		await list.announce(issue);
+
+		expect(sendEmail.mock.calls[0][0].html).toContain(`href="${list.releasePage('1.2.3')}"`);
+	});
+
+	test('the way off is a link, not an address printed out', async () => {
+		await list.subscribe('reader@example.test');
+		sendEmail.mockClear();
+		await list.announce(issue);
+
+		const { html } = sendEmail.mock.calls[0][0];
+		const token = tokenOf('reader@example.test');
+		expect(html).toMatch(new RegExp(`<a href="[^"]*/newsletter/off\\?t=${token}"`));
+		expect(html).not.toMatch(new RegExp(`>[^<]*newsletter/off\\?t=${token}`));
+	});
+
+	test('its link takes that address off and nobody else', async () => {
+		await list.subscribe('one@example.test');
+		await list.subscribe('two@example.test');
+
+		expect(list.unsubscribe(tokenOf('one@example.test'))).toBe('one@example.test');
+		expect(list.confirmedAddresses()).toEqual(['two@example.test']);
 	});
 
 	test('refuses to send the same version twice', async () => {

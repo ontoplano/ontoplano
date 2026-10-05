@@ -9,7 +9,13 @@
  */
 import { describe, expect, test } from 'vitest';
 
-import { SCOPE_GROUPS, groupOf, groupsOf } from '../src/lib/scope-groups';
+import {
+	SCOPE_GROUPS,
+	SCOPE_SUBJECTS,
+	groupOf,
+	groupsOf,
+	permissionRows
+} from '../src/lib/scope-groups';
 import { ALL_SCOPES } from '../src/lib/server/services/tokens';
 import { LOCALES } from '../src/lib/i18n/locales';
 import { messages as english } from '../src/lib/i18n/catalogues/en';
@@ -50,6 +56,25 @@ describe('the groups the tick boxes are drawn in', () => {
 			for (const group of SCOPE_GROUPS)
 				expect(catalogue, `${locale} ${group.says}`).toHaveProperty(group.says);
 		}
+	});
+});
+
+describe('the rows of the permission grid', () => {
+	test('name every family of permissions, in every language', () => {
+		for (const row of permissionRows(ALL_SCOPES)) {
+			expect(row.label, row.subject).not.toBeNull();
+			for (const locale of LOCALES)
+				expect(CATALOGUES[locale], `${locale} ${row.label}`).toHaveProperty(row.label!);
+		}
+		for (const key of Object.values(SCOPE_SUBJECTS)) expect(english).toHaveProperty(key);
+	});
+
+	test('pair reading and writing on one row, and leave deleting out', () => {
+		const rows = permissionRows(['tasks:write', 'tasks:read', 'today:read', 'destructive']);
+		expect(rows).toEqual([
+			expect.objectContaining({ subject: 'today', read: 'today:read', write: null }),
+			expect.objectContaining({ subject: 'tasks', read: 'tasks:read', write: 'tasks:write' })
+		]);
 	});
 });
 

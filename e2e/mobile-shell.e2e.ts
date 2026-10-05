@@ -27,7 +27,7 @@ async function layoutWidth(page: import('@playwright/test').Page): Promise<numbe
 /**
  * The shell, held in a hand.
  *
- * Installed as a TWA this is an app, and the app-ness is specific things:
+ * Installed as the Android app this is an app, and the app-ness is specific things:
  * the bottom bar carries Home and raises the pie out of its middle, the pie
  * spends no wedge on Home, dragging past the top must not reload the page
  * (while the elastic stretch stays — `contain`, never `none`), and a dialog

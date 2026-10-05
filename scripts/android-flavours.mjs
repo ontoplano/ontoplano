@@ -47,7 +47,7 @@ const APP = join(ROOT, 'capacitor/android/app');
  * against TypeScript. The failure it produces is the honest one: naming the
  * file it looked in, so whoever moved the constant is told where to look.
  */
-const { APP_USER_AGENT, INSTANCE_SUGGESTION_FILE } = (() => {
+const { APP_USER_AGENT, PLAY_STORE_USER_AGENT, INSTANCE_SUGGESTION_FILE } = (() => {
 	const read = (where, name) => {
 		const source = readFileSync(join(ROOT, where), 'utf8');
 		const found = source.match(new RegExp(`export const ${name} = '([^']+)';`));
@@ -56,6 +56,7 @@ const { APP_USER_AGENT, INSTANCE_SUGGESTION_FILE } = (() => {
 	};
 	return {
 		APP_USER_AGENT: read('src/lib/platform.ts', 'APP_USER_AGENT'),
+		PLAY_STORE_USER_AGENT: read('src/lib/platform.ts', 'PLAY_STORE_USER_AGENT'),
 		INSTANCE_SUGGESTION_FILE: read('src/lib/instance-choice.ts', 'INSTANCE_SUGGESTION_FILE')
 	};
 })();
@@ -151,13 +152,37 @@ function lanAddress() {
  */
 const ALLOWED_INSTANCES = ['*'];
 
+/**
+ * Google Play's Billing Library, for the `play` flavour alone.
+ *
+ * It is not free software, so it never reaches the build F-Droid makes or the
+ * APK on a GitHub release — those are `official`. The copy Play distributes is
+ * `play`: the same app, the same id, plus Play's purchase sheet
+ * (`src/play/java/…/PlayBilling.java`). Play refuses to let a listing sell a
+ * subscription until it has received a bundle carrying this library.
+ */
+const PLAY_BILLING_LIBRARY = 'com.android.billingclient:billing:9.1.0';
+
+const OFFICIAL_ORIGIN = process.env.ONTOPLANO_ORIGIN || 'https://app.ontoplano.com';
+
 const FLAVOURS = [
 	{
 		key: 'official',
 		id: 'app.ontoplano',
 		label: 'Ontoplano',
 		icons: '',
-		suggests: process.env.ONTOPLANO_ORIGIN || 'https://app.ontoplano.com'
+		suggests: OFFICIAL_ORIGIN,
+		store: true
+	},
+	{
+		key: 'play',
+		id: 'app.ontoplano',
+		label: 'Ontoplano',
+		icons: '',
+		suggests: OFFICIAL_ORIGIN,
+		store: true,
+		userAgent: `${APP_USER_AGENT} ${PLAY_STORE_USER_AGENT}`,
+		dependencies: [PLAY_BILLING_LIBRARY]
 	},
 	{
 		key: 'dev',
@@ -271,7 +296,11 @@ const work = alreadyDone({
 		join(ROOT, 'src/lib/instance-choice.ts'),
 		fileURLToPath(import.meta.url),
 		{ value: version },
-		{ value: FLAVOURS.map((f) => `${f.key}:${f.id}:${f.label}:${f.suggests}`).join('|') }
+		{
+			value: FLAVOURS.map(
+				(f) => `${f.key}:${f.id}:${f.label}:${f.suggests}:${f.userAgent}:${f.dependencies}`
+			).join('|')
+		}
 	],
 	outputs: ICON_OUTPUTS
 });
@@ -284,8 +313,9 @@ if (work.done) {
 for (const flavour of FLAVOURS) {
 	const src = join(APP, 'src', flavour.key);
 
-	// Only a development build trusts a certificate you installed yourself.
-	if (flavour.key !== 'official') {
+	// Only a development build trusts a certificate you installed yourself;
+	// the two that go to stores do not.
+	if (!flavour.store) {
 		mkdirSync(join(src, 'res/xml'), { recursive: true });
 		writeFileSync(join(src, 'res/xml/network_security_config.xml'), NETWORK_SECURITY_DEV);
 	}
@@ -350,7 +380,7 @@ for (const flavour of FLAVOURS) {
 		appId: flavour.id,
 		appName: flavour.label,
 		webDir: 'public',
-		appendUserAgent: APP_USER_AGENT,
+		appendUserAgent: flavour.userAgent ?? APP_USER_AGENT,
 		server: { allowNavigation: ALLOWED_INSTANCES }
 	};
 	writeFileSync(join(src, 'assets/capacitor.config.json'), JSON.stringify(config, null, 2) + '\n');
@@ -484,6 +514,27 @@ if (gradle.includes(START)) {
 	// After `defaultConfig { … }`, which is where a flavour block belongs.
 	gradle = gradle.replace(/(\n {4}buildTypes \{)/, `\n${block}\n$1`);
 }
+
+/*
+ * And what a flavour adds to the build, as `<flavour>Implementation`.
+ *
+ * Its own `dependencies { }` at the end of the file, between markers for the
+ * same reason as the block above. Gradle reads two dependency blocks as one.
+ */
+const DEPS_START = '// <<< ontoplano flavour dependencies';
+const DEPS_END = '// ontoplano flavour dependencies >>>';
+const deps = [
+	DEPS_START,
+	'dependencies {',
+	...FLAVOURS.flatMap((f) =>
+		(f.dependencies ?? []).map((d) => `    ${f.key}Implementation "${d}"`)
+	),
+	'}',
+	DEPS_END
+].join('\n');
+gradle = gradle.includes(DEPS_START)
+	? gradle.replace(new RegExp(`${DEPS_START}[\\s\\S]*?${DEPS_END}`), deps)
+	: `${gradle.trimEnd()}\n\n${deps}\n`;
 writeFileSync(BUILD, gradle);
 
 console.log(`flavours: ${FLAVOURS.map((f) => `${f.label} (${f.id})`).join(', ')}`);

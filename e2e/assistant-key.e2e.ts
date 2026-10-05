@@ -25,13 +25,15 @@ test('a key made on the AI tab arrives inside the words you paste', async ({ pag
 	);
 
 	/*
-	 * The permissions are the caller's to change, which is the whole reason
-	 * they are drawn — and every one of them starts ticked, because the set an
-	 * assistant uses is the set an assistant uses.
+	 * The permissions are the caller's to give, which is the whole reason
+	 * they are drawn — so every one starts unticked, and the All box ticks
+	 * them in one press.
 	 */
 	const boxes = page.locator('input[name="scopes"]:not([value="destructive"])');
 	const count = await boxes.count();
 	expect(count).toBeGreaterThan(1);
+	for (let i = 0; i < count; i++) await expect(boxes.nth(i)).not.toBeChecked();
+	await page.getByRole('checkbox', { name: 'All', exact: true }).check();
 	for (let i = 0; i < count; i++) await expect(boxes.nth(i)).toBeChecked();
 
 	/*

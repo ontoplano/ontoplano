@@ -18,16 +18,11 @@
 	 * that can see all of them.
 	 */
 	import { enhance } from '$lib/enhance';
-	import Field from '$lib/components/Field.svelte';
-	import FormGrid from '$lib/components/FormGrid.svelte';
 	import Icon from '$lib/components/Icon.svelte';
 	import Modal from '$lib/components/Modal.svelte';
-	import OneLine from '$lib/components/OneLine.svelte';
-	import TagChip from '$lib/components/TagChip.svelte';
+	import TagFields from '$lib/components/TagFields.svelte';
 	import TagRows from '$lib/components/TagRows.svelte';
-	import TextBox from '$lib/components/TextBox.svelte';
 	import EmptyState from '$lib/components/EmptyState.svelte';
-	import { TAG_COLOR_DEFAULT } from '$lib/colors';
 	import { resolve } from '$app/paths';
 	import { useT } from '$lib/i18n';
 	import type { NotebookTag } from '$lib/services/tags';
@@ -121,36 +116,7 @@
 				}}
 		>
 			<input type="hidden" name="id" value={editing.id} />
-			<!-- What the server reads for the colour: a colour input has no empty. -->
-			<input type="hidden" name="color" value={color ?? ''} />
-			<FormGrid>
-				<Field label={t('ui.name')} span={12}>
-					<OneLine name="label" bind:value={name} class="input" required autofocus />
-				</Field>
-				<Field label={t('tags.whatItMeans')} span={12} hint={t('tags.whatItMeansHint')}>
-					<TextBox name="description" bind:value={description} rows={2} />
-				</Field>
-				<Field label={t('ui.colour')} span={12} hint={t('notebooks.tags.aTagWithNoColour')}>
-					<div class="flex items-center gap-2">
-						<input
-							type="color"
-							value={color ?? TAG_COLOR_DEFAULT}
-							aria-label={t('ui.colour')}
-							oninput={(e) => (color = e.currentTarget.value)}
-							class="input h-9 w-14 p-1"
-						/>
-						<TagChip name={name || editing.name} {color} />
-						<button
-							type="button"
-							onclick={() => (color = null)}
-							disabled={color === null}
-							class="btn btn-sm ml-auto"
-						>
-							{t('notebooks.tags.noColour')}
-						</button>
-					</div>
-				</Field>
-			</FormGrid>
+			<TagFields bind:name bind:description bind:color was={editing.name} />
 		</form>
 	{/if}
 

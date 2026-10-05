@@ -339,7 +339,8 @@ await write(
 	].join('\n')
 );
 
-for (const locale of LOCALES) {
+// Not for the source language: nothing is borrowed from itself, and nothing reads it.
+for (const locale of LOCALES.filter((one) => one !== SOURCE_LOCALE)) {
 	await write(
 		`src/lib/i18n/borrowed/${locale}.ts`,
 		[
@@ -376,7 +377,25 @@ write(
 		"import type { Catalogue } from './core.js';",
 		"import type { Locale } from './locales.js';",
 		'',
-		'export async function loadCatalogue(locale: Locale): Promise<Catalogue> {',
+		'/**',
+		' * Each language once: the import is a module-system lookup that the server',
+		' * paid on every page it rendered, and the words do not change while the',
+		' * process runs.',
+		' */',
+		'const held = new Map<Locale, Promise<Catalogue>>();',
+		'',
+		'export function loadCatalogue(locale: Locale): Promise<Catalogue> {',
+		'\tlet loading = held.get(locale);',
+		'\tif (!loading) {',
+		'\t\tloading = importCatalogue(locale);',
+		'\t\t// A fetch that failed is not an answer to keep: the next ask tries again.',
+		'\t\tloading.catch(() => held.delete(locale));',
+		'\t\theld.set(locale, loading);',
+		'\t}',
+		'\treturn loading;',
+		'}',
+		'',
+		'async function importCatalogue(locale: Locale): Promise<Catalogue> {',
 		'\tswitch (locale) {',
 		...LOCALES.filter((locale) => locale !== SOURCE_LOCALE).flatMap((locale) => [
 			`\t\tcase '${locale}':`,

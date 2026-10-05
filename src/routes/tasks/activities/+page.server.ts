@@ -12,7 +12,7 @@ import {
 } from '$lib/services/activities';
 import { goalBacklinks } from '$lib/services/backlinks';
 import { buildCtx } from '$lib/services/ctx';
-import { toActionFailure } from '$lib/http-errors';
+import { formAction } from '$lib/services/scoped-actions';
 
 export const load = async ({ locals }: IsolatedEvent) => {
 	const ctx = buildCtx(locals.user!.id);
@@ -24,87 +24,45 @@ export const load = async ({ locals }: IsolatedEvent) => {
 };
 
 export const actions = {
-	create: async ({ request, locals }: IsolatedEvent) => {
-		const formData = await request.formData();
-		try {
-			createActivity(buildCtx(locals.user!.id), {
-				name: formData.get('label'),
-				categoryId: formData.get('categoryId'),
-				description: formData.get('description')
-			});
-			return { success: true };
-		} catch (e) {
-			return toActionFailure(e);
-		}
-	},
+	create: formAction((ctx, formData) => {
+		createActivity(ctx, {
+			name: formData.get('label'),
+			categoryId: formData.get('categoryId'),
+			description: formData.get('description')
+		});
+	}),
 
-	update: async ({ request, locals }: IsolatedEvent) => {
-		const formData = await request.formData();
-		try {
-			updateActivity(buildCtx(locals.user!.id), Number(formData.get('id')), {
-				name: formData.get('label'),
-				categoryId: formData.get('categoryId'),
-				description: formData.get('description')
-			});
-			return { success: true };
-		} catch (e) {
-			return toActionFailure(e);
-		}
-	},
+	update: formAction((ctx, formData) => {
+		updateActivity(ctx, Number(formData.get('id')), {
+			name: formData.get('label'),
+			categoryId: formData.get('categoryId'),
+			description: formData.get('description')
+		});
+	}),
 
-	toggleActive: async ({ request, locals }: IsolatedEvent) => {
-		const formData = await request.formData();
-		try {
-			toggleActivityActive(buildCtx(locals.user!.id), Number(formData.get('id')));
-			return { success: true };
-		} catch (e) {
-			return toActionFailure(e);
-		}
-	},
+	toggleActive: formAction((ctx, formData) => {
+		toggleActivityActive(ctx, Number(formData.get('id')));
+	}),
 
-	delete: async ({ request, locals }: IsolatedEvent) => {
-		const formData = await request.formData();
-		try {
-			deleteActivity(buildCtx(locals.user!.id), Number(formData.get('id')));
-			return { success: true };
-		} catch (e) {
-			return toActionFailure(e);
-		}
-	},
+	delete: formAction((ctx, formData) => {
+		deleteActivity(ctx, Number(formData.get('id')));
+	}),
 
-	createCategory: async ({ request, locals }: IsolatedEvent) => {
-		const formData = await request.formData();
-		try {
-			createCategory(buildCtx(locals.user!.id), {
-				name: formData.get('label'),
-				color: formData.get('color')
-			});
-			return { success: true };
-		} catch (e) {
-			return toActionFailure(e);
-		}
-	},
+	createCategory: formAction((ctx, formData) => {
+		createCategory(ctx, {
+			name: formData.get('label'),
+			color: formData.get('color')
+		});
+	}),
 
-	updateCategory: async ({ request, locals }: IsolatedEvent) => {
-		const formData = await request.formData();
-		try {
-			updateCategory(buildCtx(locals.user!.id), Number(formData.get('id')), {
-				name: formData.get('label'),
-				color: formData.get('color')
-			});
-			return { success: true };
-		} catch (e) {
-			return toActionFailure(e);
-		}
-	},
+	updateCategory: formAction((ctx, formData) => {
+		updateCategory(ctx, Number(formData.get('id')), {
+			name: formData.get('label'),
+			color: formData.get('color')
+		});
+	}),
 
-	deleteCategory: async ({ request, locals }: IsolatedEvent) => {
-		const formData = await request.formData();
-		try {
-			deleteCategory(buildCtx(locals.user!.id), Number(formData.get('id')));
-			return { success: true };
-		} catch (e) {
-			return toActionFailure(e);
-		}
-	}
+	deleteCategory: formAction((ctx, formData) => {
+		deleteCategory(ctx, Number(formData.get('id')));
+	})
 };

@@ -14,6 +14,7 @@ import {
 	todoTasks
 } from '$lib/db/schema';
 import { eq, and, count, inArray, isNotNull, notInArray, sql } from 'drizzle-orm';
+import { unionAll } from 'drizzle-orm/sqlite-core';
 import { NotFoundError, ValidationError } from './errors.js';
 import { optionalStr, str } from './validate.js';
 
@@ -441,16 +442,7 @@ export function renameTag(userId: string, id: number, name: unknown): TagRow {
 	const wanted = tagName(name);
 	if (wanted === tag.name) return tag;
 
-	const existing = db
-		.select({
-			id: tags.id,
-			name: tags.name,
-			color: tags.color,
-			description: tags.description
-		})
-		.from(tags)
-		.where(and(eq(tags.name, wanted), eq(tags.userId, userId)))
-		.get();
+	const existing = tagNamed(userId, wanted);
 
 	if (!existing) {
 		db.update(tags).set({ name: wanted }).where(eq(tags.id, tag.id)).run();
@@ -507,6 +499,14 @@ export function renameTag(userId: string, id: number, name: unknown): TagRow {
 
 	return { ...existing, color: existing.color ?? tag.color };
 }
+/** The account's label with exactly this name, if it has one. */
+function tagNamed(userId: string, name: string): TagRow | undefined {
+	return db
+		.select({ id: tags.id, name: tags.name, color: tags.color, description: tags.description })
+		.from(tags)
+		.where(and(eq(tags.name, name), eq(tags.userId, userId)))
+		.get();
+}
 
 /**
  * Take a label out of the vocabulary, and off everything that carried it.
@@ -527,16 +527,7 @@ export function deleteTag(userId: string, id: number): void {
 /** The label the account calls this word, if it has one. */
 export function tagByName(userId: string, name: unknown): TagRow {
 	const wanted = tagName(name);
-	const found = db
-		.select({
-			id: tags.id,
-			name: tags.name,
-			color: tags.color,
-			description: tags.description
-		})
-		.from(tags)
-		.where(and(eq(tags.name, wanted), eq(tags.userId, userId)))
-		.get();
+	const found = tagNamed(userId, wanted);
 	if (!found) throw new NotFoundError('tag');
 	return found;
 }
@@ -752,16 +743,20 @@ export function tagsByNotebook(userId: string): Record<number, string[]> {
 		byNotebook.set(notebookId, names);
 	};
 
-	for (const { join, owner, thing } of FILED) {
-		const rows = db
+	/*
+	 * The four kinds in one statement — this runs on every request, for the
+	 * shell, so four round trips through the query builder were four per page.
+	 */
+	const [first, ...rest] = FILED.map(({ join, owner, thing }) =>
+		db
 			.selectDistinct({ notebookId: thing.notebookId, name: tags.name })
 			.from(join)
 			.innerJoin(thing, and(eq(thing.id, owner), eq(thing.userId, userId)))
 			.innerJoin(tags, and(eq(tags.id, join.tagId), eq(tags.userId, userId)))
 			.where(and(eq(join.userId, userId), isNotNull(thing.notebookId)))
-			.all();
-		for (const row of rows) add(row.notebookId, row.name);
-	}
+	);
+	const rows = rest.length === 0 ? first.all() : unionAll(first, rest[0], ...rest.slice(1)).all();
+	for (const row of rows) add(row.notebookId, row.name);
 
 	const defaults = db
 		.select({ id: notebooks.id, defaultTags: notebooks.defaultTags })

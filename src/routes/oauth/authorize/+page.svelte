@@ -1,7 +1,7 @@
 <script lang="ts">
 	import Card from '$lib/components/Card.svelte';
 	import FormError from '$lib/components/FormError.svelte';
-	import ScopeChoice from '$lib/components/ScopeChoice.svelte';
+	import PermissionGrid from '$lib/components/PermissionGrid.svelte';
 	import { useT } from '$lib/i18n';
 	import type { PageServerData, ActionData } from './$types';
 
@@ -41,7 +41,7 @@
 				question. The only decision on the page was the deleting box, so
 				an assistant that asked for everything got everything or nothing.
 			-->
-			<ScopeChoice scopes={data.granted} checked={data.granted.map((one) => one.key)} />
+			<PermissionGrid scopes={data.granted} checked={data.granted.map((one) => one.key)} />
 
 			{#if form?.error}
 				<div class="mt-3">
@@ -59,7 +59,7 @@
 			>
 				<input type="checkbox" name="mayDelete" value="on" class="mt-0.5" />
 				<span>
-					<strong class="font-semibold text-red-600">{t('oauth.andLetItDeleteThings')}</strong>
+					<strong class="font-semibold text-gray-900">{t('oauth.andLetItDeleteThings')}</strong>
 					<span class="mt-0.5 block text-xs leading-relaxed text-gray-500">
 						{t('oauth.whatItDeletesIsGone')}
 					</span>

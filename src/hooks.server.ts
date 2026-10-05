@@ -1,4 +1,7 @@
 import { redirect, type Handle, type HandleServerError } from '@sveltejs/kit';
+import { measured } from '$lib/server/metrics';
+import { seen } from '$lib/server/presence';
+import { forgetReminderPass } from '$lib/services/reminder-sources';
 import { getRequestEvent } from '$app/server';
 import { SOURCE_LOCALE } from '$lib/i18n/core';
 import { provider } from '$lib/server/billing/index';
@@ -113,8 +116,20 @@ const handleRequestLog: Handle = async ({ event, resolve }) => {
 	if (event.url.pathname.startsWith('/_app/')) return resolve(event);
 
 	event.locals.rid = crypto.randomUUID().slice(0, 6);
-	const startedAt = Date.now();
-	const response = await resolve(event);
+	// Counted for `/metrics` as well — see `$lib/server/metrics`. The route
+	// id rather than the path, so the numbers group the way the code does.
+	const { response, seconds, spent } = await measured(
+		event.route.id ?? '(none)',
+		event.request.method,
+		() => resolve(event)
+	);
+
+	// Counted as online for the next few minutes — see `$lib/server/presence`.
+	if (event.locals.user) seen(event.locals.user.id);
+
+	// A write by this account: its reminders may owe something new, so its
+	// next poll runs the whole pass — see `forgetReminderPass`.
+	if (event.request.method !== 'GET' && event.locals.user) forgetReminderPass(event.locals.user.id);
 
 	console.log(
 		JSON.stringify({
@@ -124,7 +139,11 @@ const handleRequestLog: Handle = async ({ event, resolve }) => {
 			method: event.request.method,
 			path: event.url.pathname,
 			status: response.status,
-			ms: Date.now() - startedAt,
+			ms: Math.round(seconds * 1000),
+			// Of those, how many were SQLite's, and over how many statements:
+			// "is it the query or the code around it" for one request.
+			sqlMs: Math.round(spent.sqlSeconds * 1000),
+			sql: spent.statements,
 			user: event.locals.user?.id ?? null
 		})
 	);
@@ -252,8 +271,9 @@ const handleBetterAuth: Handle = async ({ event, resolve }) => {
  * Whether this request comes from the Android app.
  *
  * The app opens every launch on `?app=android` — the one thing that can tell
- * the difference, since a Trusted Web Activity *is* Chrome and answers every
- * browser question exactly as Chrome does. See `$lib/platform.ts`.
+ * the difference once the web view is on an instance's origin, where it
+ * answers every browser question exactly as a browser does. See
+ * `$lib/platform.ts`.
  *
  * Kept in a cookie and taken straight back off the address, for two reasons:
  * the app says it once per launch and the pages that care are three taps
@@ -300,9 +320,14 @@ const handleNativeApp: Handle = async ({ event, resolve }) => {
 		redirect(302, `${clean.pathname}${clean.search}${clean.hash}`);
 	}
 
-	event.locals.nativeApp =
-		event.cookies.get(APP_COOKIE) === APP_LAUNCH_VALUE &&
-		couldBeTheApp(event.request.headers.get('user-agent'));
+	const couldBe = couldBeTheApp(event.request.headers.get('user-agent'));
+	// One written before the check above existed, or synced from a phone: a
+	// desktop holding it is told nothing by it, so it goes.
+	if (!couldBe && event.cookies.get(APP_COOKIE) !== undefined) {
+		event.cookies.delete(APP_COOKIE, { path: '/' });
+		event.cookies.delete(APP_VERSION_COOKIE, { path: '/' });
+	}
+	event.locals.nativeApp = event.cookies.get(APP_COOKIE) === APP_LAUNCH_VALUE && couldBe;
 	event.locals.nativeAppVersion = event.locals.nativeApp
 		? event.cookies.get(APP_VERSION_COOKIE)
 		: undefined;
@@ -333,6 +358,9 @@ const handleSiteHint: Handle = async ({ event, resolve }) => {
 
 	return resolve(event);
 };
+
+/** The placeholders `app.html` carries, filled per request below. */
+const PAGE_STAMPS = /%ontoplano\.(lang|theme|style|mark|appname)%/g;
 
 /**
  * Stamp the user's theme and language into <html> before anything renders.
@@ -373,14 +401,12 @@ const handleTheme: Handle = ({ event, resolve }) => {
 	const mark = isStaging() ? '-staging' : isDemo() ? '-demo' : dev ? '-dev' : '';
 	const appname = appName();
 
+	// One pass over the page rather than five: the page carries its whole
+	// stylesheet inline, so each pass is a quarter of a megabyte scanned.
+	const stamps: Record<string, string> = { lang: locale, theme, style, mark, appname };
 	return resolve(event, {
 		transformPageChunk: ({ html }) =>
-			html
-				.replace('%ontoplano.lang%', locale)
-				.replace('%ontoplano.theme%', theme)
-				.replace('%ontoplano.style%', style)
-				.replaceAll('%ontoplano.mark%', mark)
-				.replaceAll('%ontoplano.appname%', appname)
+			html.replace(PAGE_STAMPS, (whole, name: string) => stamps[name] ?? whole)
 	});
 };
 

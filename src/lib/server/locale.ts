@@ -19,7 +19,7 @@ import { user } from '$lib/db/schema.js';
 import { loadConfig } from './config.js';
 
 /** What this instance answers in when nothing else has said. */
-export function instanceLocale(): Locale {
+function instanceLocale(): Locale {
 	return loadConfig().instance.language;
 }
 

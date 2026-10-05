@@ -115,6 +115,27 @@ export type Linkables = {
  */
 export function linkableInto(ctx: Ctx, module: string, notebookId: number): Linkables {
 	assertReachableNotebook(ctx, notebookId);
+	return linkableIntoReachable(ctx, module, notebookId);
+}
+
+/**
+ * Every module's candidates for one notebook, checked once.
+ *
+ * The notebook page asked `linkableInto` per module, and each asked whether
+ * the notebook could be reached — eleven identical statements per load.
+ */
+export function linkablesInto(
+	ctx: Ctx,
+	modules: readonly NotebookModule[],
+	notebookId: number
+): Record<NotebookModule, Linkables> {
+	assertReachableNotebook(ctx, notebookId);
+	return Object.fromEntries(
+		modules.map((module) => [module, linkableIntoReachable(ctx, module, notebookId)])
+	) as Record<NotebookModule, Linkables>;
+}
+
+function linkableIntoReachable(ctx: Ctx, module: string, notebookId: number): Linkables {
 	if (!isNotebookModule(module)) throw new NotFoundError('module');
 	const linkable = TABLES[module];
 	if (!linkable) throw new NotFoundError('module');

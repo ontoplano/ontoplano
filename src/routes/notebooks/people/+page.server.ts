@@ -11,6 +11,7 @@ import {
 } from '$lib/services/people';
 import { mediaLimits, removePersonPicture, setPersonPicture } from '$lib/services/media';
 import { getPanelWidth, PEOPLE_PANEL_WIDTH_KEY, setPanelWidth } from '$lib/services/settings';
+import { formAction } from '$lib/services/scoped-actions';
 
 export const load: PageServerLoad = async ({ locals, url }) => {
 	const ctx = buildCtx(locals.user!.id);
@@ -30,41 +31,29 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 };
 
 export const actions: Actions = {
-	create: async ({ request, locals }) => {
-		const formData = await request.formData();
-		try {
-			createPerson(buildCtx(locals.user!.id), {
-				name: formData.get('label'),
-				relationship: formData.get('relationship'),
-				birthday: formData.get('bornOn'),
-				remindOnBirthday: formData.get('tellMe'),
-				phone: formData.get('theirPhone'),
-				email: formData.get('theirEmail'),
-				notes: formData.get('notes')
-			});
-			return { success: true };
-		} catch (e) {
-			return toActionFailure(e);
-		}
-	},
+	create: formAction((ctx, formData) => {
+		createPerson(ctx, {
+			name: formData.get('label'),
+			relationship: formData.get('relationship'),
+			birthday: formData.get('bornOn'),
+			remindOnBirthday: formData.get('tellMe'),
+			phone: formData.get('theirPhone'),
+			email: formData.get('theirEmail'),
+			notes: formData.get('notes')
+		});
+	}),
 
-	update: async ({ request, locals }) => {
-		const formData = await request.formData();
-		try {
-			updatePerson(buildCtx(locals.user!.id), Number(formData.get('id')), {
-				name: formData.get('label'),
-				relationship: formData.get('relationship'),
-				birthday: formData.get('bornOn'),
-				remindOnBirthday: formData.get('tellMe'),
-				phone: formData.get('theirPhone'),
-				email: formData.get('theirEmail'),
-				notes: formData.get('notes')
-			});
-			return { success: true };
-		} catch (e) {
-			return toActionFailure(e);
-		}
-	},
+	update: formAction((ctx, formData) => {
+		updatePerson(ctx, Number(formData.get('id')), {
+			name: formData.get('label'),
+			relationship: formData.get('relationship'),
+			birthday: formData.get('bornOn'),
+			remindOnBirthday: formData.get('tellMe'),
+			phone: formData.get('theirPhone'),
+			email: formData.get('theirEmail'),
+			notes: formData.get('notes')
+		});
+	}),
 
 	/*
 	 * A face, in one gesture.
@@ -94,15 +83,10 @@ export const actions: Actions = {
 		}
 	},
 
-	removePicture: async ({ request, locals }) => {
-		const formData = await request.formData();
-		try {
-			removePersonPicture(buildCtx(locals.user!.id), Number(formData.get('id')));
-			return { success: true, action: 'removePicture' };
-		} catch (e) {
-			return toActionFailure(e);
-		}
-	},
+	removePicture: formAction((ctx, formData) => {
+		removePersonPicture(ctx, Number(formData.get('id')));
+		return { success: true, action: 'removePicture' };
+	}),
 
 	/** Where the divider between the list and the person was left — once, on release. */
 	setPanelWidth: async ({ request, locals }) => {
@@ -115,13 +99,7 @@ export const actions: Actions = {
 		}
 	},
 
-	delete: async ({ request, locals }) => {
-		const formData = await request.formData();
-		try {
-			deletePerson(buildCtx(locals.user!.id), Number(formData.get('id')));
-			return { success: true };
-		} catch (e) {
-			return toActionFailure(e);
-		}
-	}
+	delete: formAction((ctx, formData) => {
+		deletePerson(ctx, Number(formData.get('id')));
+	})
 };

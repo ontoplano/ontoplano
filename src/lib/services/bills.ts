@@ -28,6 +28,7 @@ import { NotFoundError, ValidationError } from './errors.js';
 import { notebookPatch } from './notebooks.js';
 import { created, instantOfLocal, stamp, stamps } from './time.js';
 import { num, oneOf, optionalStr, str } from './validate.js';
+import { ownedCategory } from './activities.js';
 
 export const RHYTHMS = ['weekly', 'monthly', 'yearly', 'once'] as const;
 export type Rhythm = (typeof RHYTHMS)[number];
@@ -259,9 +260,10 @@ export function listBillsThisPeriod(
 	history: BillHistory;
 })[] {
 	recordAutomaticPayments(ctx);
+	const payments = paymentsByBill(ctx);
 	return listBills(ctx, opts).map((bill) => {
 		const period = periodFor(bill.rhythm, ctx.now);
-		const entries = listPayments(ctx, bill.id);
+		const entries = payments.get(bill.id) ?? [];
 		const settled = entries.find((payment) => payment.period === period);
 		return {
 			...bill,
@@ -286,19 +288,6 @@ export function getBill(ctx: Ctx, id: number): Bill {
 		.get();
 	if (!found) throw new NotFoundError('bill');
 	return row(found);
-}
-
-/** category/goal references are checked to belong to the same account. */
-function ownedCategory(ctx: Ctx, value: unknown): number | null {
-	if (value === undefined || value === null || value === '') return null;
-	const id = num(value, 'category', { int: true });
-	const owned = db
-		.select({ id: categories.id })
-		.from(categories)
-		.where(and(eq(categories.id, id), eq(categories.userId, ctx.userId)))
-		.get();
-	if (!owned) throw new ValidationError({ key: 'errors.bills.thatCategoryIsNotYours' });
-	return id;
 }
 
 function ownedGoal(ctx: Ctx, value: unknown): number | null {
@@ -672,6 +661,48 @@ export function listPayments(ctx: Ctx, billId: number): BillPayment[] {
 }
 
 /**
+ * Every payment of every bill this account holds, by bill, in one statement.
+ *
+ * The lists that show several bills at once asked `listPayments` of each in
+ * turn — two statements per bill, one of them an ownership check the list
+ * had already made — so the Finance room, the plan and the reminders page
+ * each cost two statements per bill the account had. Ownership is the
+ * `user_id` in the `WHERE`; a bill with no payments is simply absent.
+ */
+function paymentsByBill(ctx: Ctx): Map<number, BillPayment[]> {
+	const byBill = new Map<number, BillPayment[]>();
+	const rows = db
+		.select()
+		.from(billPayments)
+		.where(eq(billPayments.userId, ctx.userId))
+		.orderBy(desc(billPayments.period))
+		.all();
+	for (const row of rows) {
+		const held = byBill.get(row.billId);
+		if (held) held.push(payment(row));
+		else byBill.set(row.billId, [payment(row)]);
+	}
+	return byBill;
+}
+
+/**
+ * The bills answered for in one period — paid or skipped — in one statement.
+ *
+ * The dashboard's card asked `listPayments` of every monthly bill in turn, two
+ * statements each, to learn one fact per bill.
+ */
+export function billsSettledIn(ctx: Ctx, period: string): Set<number> {
+	return new Set(
+		db
+			.select({ billId: billPayments.billId })
+			.from(billPayments)
+			.where(and(eq(billPayments.userId, ctx.userId), eq(billPayments.period, period)))
+			.all()
+			.map((row) => row.billId)
+	);
+}
+
+/**
  * A month, the way the section's first page reads it: what was expected of the
  * monthly bills, what has actually been paid this month across all bills, and
  * the gap between the two. A monthly bill skipped this month expected nothing.
@@ -862,9 +893,10 @@ export function billsDueBetween(ctx: Ctx, from: string, to: string): BillDue[] {
 	);
 	if (active.length === 0) return [];
 
+	const payments = paymentsByBill(ctx);
 	const settled = new Map(
 		active
-			.flatMap((b) => listPayments(ctx, b.id))
+			.flatMap((b) => payments.get(b.id) ?? [])
 			.map((p) => [`${p.billId}|${p.period}`, p.status] as const)
 	);
 

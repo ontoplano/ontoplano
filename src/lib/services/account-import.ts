@@ -47,6 +47,7 @@ import type { PlainKey } from '../i18n/keys.js';
  * database on a disk does. What stayed behind is the copy the server keeps
  * beside that disk first — see `server/services/account-import.ts`.
  */
+import { forgetUserSettings } from './settings.js';
 import { getTableConfig } from 'drizzle-orm/sqlite-core';
 
 import { db } from '$lib/db/index.js';
@@ -636,6 +637,8 @@ export async function importAccount(
 		}
 	});
 
+	// Its settings came in with everything else, around the settings module.
+	forgetUserSettings(userId);
 	return {
 		tables: counts.sort((a, b) => b.rows - a.rows),
 		total,

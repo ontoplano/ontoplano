@@ -1,5 +1,5 @@
-import { and, asc, inArray, max, or, count, desc, eq, isNotNull, isNull } from 'drizzle-orm';
-import type { SQLiteColumn, SQLiteTable } from 'drizzle-orm/sqlite-core';
+import { and, asc, inArray, max, or, count, desc, eq, isNotNull, isNull, sql } from 'drizzle-orm';
+import { unionAll, type SQLiteColumn, type SQLiteTable } from 'drizzle-orm/sqlite-core';
 
 import { db } from '$lib/db/index.js';
 import { user } from '$lib/db/auth.schema.js';
@@ -44,7 +44,7 @@ import { listWorkouts, listSessions as listWorkoutSessions } from './workouts.js
 import { withMissingCounts } from './recipes.js';
 import { mainPictures } from './media.js';
 import { getHiddenSections, getWeekSettings } from './settings.js';
-import { linkableInto } from './notebook-linking.js';
+import { linkablesInto } from './notebook-linking.js';
 import { isHidden } from '../sections.js';
 import { ConflictError, NotFoundError, ValidationError } from './errors.js';
 import type { MessageKey } from '../i18n/keys.js';
@@ -195,28 +195,46 @@ const NOTHING: Tally = Object.fromEntries(NOTEBOOK_MODULES.map((m) => [m.id, 0])
  */
 function tallies(ctx: Ctx): Map<number, Tally> {
 	const totals = new Map<number, Tally>();
-
-	const add = (id: number | null, key: NotebookModule, n: number) => {
-		if (id === null) return;
+	for (const { id, module, n } of scopedByNotebook(ctx)) {
+		if (id === null) continue;
 		const tally = totals.get(id) ?? { ...NOTHING };
-		tally[key] += n;
+		tally[module] += n;
 		totals.set(id, tally);
-	};
+	}
+	return totals;
+}
 
-	/** Every row of one table, grouped by the notebook it points at. */
-	const countBy = (key: NotebookModule, table: Scopable) => {
-		for (const r of db
-			.select({ id: table.notebookId, n: count() })
+/**
+ * Every scoped table at once: how many rows each notebook holds in it, and
+ * the newest stamp among them.
+ *
+ * One statement rather than one per table. The two readers below each
+ * walked `SCOPED` with a grouped query of their own — twelve for the counts,
+ * twelve for the stamps — and the dashboard's notebooks card ran both, so a
+ * quarter of what the home page asked the database was this.
+ */
+function scopedByNotebook(
+	ctx: Ctx
+): { module: NotebookModule; id: number | null; n: number; at: string | null }[] {
+	const [first, ...rest] = SCOPED.map(({ module, table, stamp }) =>
+		db
+			.select({
+				module: sql<NotebookModule>`${module}`,
+				id: table.notebookId,
+				n: count(),
+				at: max(stamp)
+			})
 			.from(table)
 			.where(eq(table.userId, ctx.userId))
 			.groupBy(table.notebookId)
-			.all())
-			add(r.id as number | null, key, r.n);
-	};
-
-	for (const { module, table } of SCOPED) countBy(module, table);
-
-	return totals;
+	);
+	const rows = rest.length === 0 ? first.all() : unionAll(first, rest[0], ...rest.slice(1)).all();
+	return rows.map((r) => ({
+		module: r.module,
+		id: r.id as number | null,
+		n: r.n,
+		at: r.at as string | null
+	}));
 }
 
 /**
@@ -236,17 +254,26 @@ function lastTouched(ctx: Ctx): Map<number, string> {
 		if (!held || at > held) newest.set(id, at);
 	};
 
-	for (const { table, stamp } of SCOPED)
-		for (const r of db
-			.select({ id: table.notebookId, at: max(stamp) })
-			.from(table)
-			.where(eq(table.userId, ctx.userId))
-			.groupBy(table.notebookId)
-			.all())
-			note(r.id as number | null, r.at as string | null);
+	for (const { id, at } of scopedByNotebook(ctx)) note(id, at);
 
 	return newest;
 }
+/** A notebook row with its owner and category, the same for the list and the one. */
+const NOTEBOOK_COLUMNS = {
+	id: notebooks.id,
+	title: notebooks.title,
+	folder: notebooks.folder,
+	description: notebooks.description,
+	pictureId: notebooks.pictureId,
+	defaultTags: notebooks.defaultTags,
+	categoryId: notebooks.categoryId,
+	categoryName: categories.name,
+	modules: notebooks.modules,
+	closedAt: notebooks.closedAt,
+	sharedWithFamily: notebooks.sharedWithFamily,
+	ownerId: notebooks.userId,
+	ownerName: user.name
+};
 
 /** Open ones first: a closed notebook is history, not a place you are writing. */
 export function listNotebooks(ctx: Ctx): Notebook[] {
@@ -260,21 +287,7 @@ export function listNotebooks(ctx: Ctx): Notebook[] {
 	const starred = favouriteIds(ctx);
 
 	const rows = db
-		.select({
-			id: notebooks.id,
-			title: notebooks.title,
-			folder: notebooks.folder,
-			description: notebooks.description,
-			pictureId: notebooks.pictureId,
-			defaultTags: notebooks.defaultTags,
-			categoryId: notebooks.categoryId,
-			categoryName: categories.name,
-			modules: notebooks.modules,
-			closedAt: notebooks.closedAt,
-			sharedWithFamily: notebooks.sharedWithFamily,
-			ownerId: notebooks.userId,
-			ownerName: user.name
-		})
+		.select(NOTEBOOK_COLUMNS)
 		.from(notebooks)
 		.innerJoin(user, eq(notebooks.userId, user.id))
 		.leftJoin(categories, eq(notebooks.categoryId, categories.id))
@@ -454,21 +467,7 @@ function withTagsAndPeople<T extends { id: number }>(ctx: Ctx, entries: T[]) {
 export function getNotebook(ctx: Ctx, id: number): Notebook {
 	assertReachable(ctx, id);
 	const found = db
-		.select({
-			id: notebooks.id,
-			title: notebooks.title,
-			folder: notebooks.folder,
-			description: notebooks.description,
-			pictureId: notebooks.pictureId,
-			defaultTags: notebooks.defaultTags,
-			categoryId: notebooks.categoryId,
-			categoryName: categories.name,
-			modules: notebooks.modules,
-			closedAt: notebooks.closedAt,
-			sharedWithFamily: notebooks.sharedWithFamily,
-			ownerId: notebooks.userId,
-			ownerName: user.name
-		})
+		.select(NOTEBOOK_COLUMNS)
 		.from(notebooks)
 		.innerJoin(user, eq(notebooks.userId, user.id))
 		.leftJoin(categories, eq(notebooks.categoryId, categories.id))
@@ -678,9 +677,11 @@ export function contentsOf(ctx: Ctx, id: number) {
 		 * dialog filters what it was given, and a device instance has nowhere
 		 * to fetch from anyway.
 		 */
-		linkable: Object.fromEntries(
-			NOTEBOOK_MODULES.map((module) => [module.id, linkableInto(ctx, module.id, id)])
-		) as Record<NotebookModule, ReturnType<typeof linkableInto>>
+		linkable: linkablesInto(
+			ctx,
+			NOTEBOOK_MODULES.map((module) => module.id),
+			id
+		)
 	};
 }
 

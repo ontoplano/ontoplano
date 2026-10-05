@@ -25,6 +25,7 @@
 	import type { PlainKey } from '$lib/i18n/keys';
 	import type { ActionData, PageServerData } from './$types';
 	import { useT } from '$lib/i18n';
+	import { typing } from '$lib/browse.svelte';
 
 	const t = useT();
 	const now = useWhen();
@@ -122,13 +123,7 @@
 	let confirmDelete = $state<string | null>(null);
 
 	function handleKeydown(e: KeyboardEvent) {
-		if (
-			e.target instanceof HTMLInputElement ||
-			e.target instanceof HTMLTextAreaElement ||
-			e.target instanceof HTMLSelectElement
-		)
-			return;
-		if (document.querySelector('dialog[open]')) return;
+		if (typing(e)) return;
 
 		if (e.key === 'Escape') {
 			confirmDelete = null;

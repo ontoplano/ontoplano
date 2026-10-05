@@ -281,8 +281,8 @@ dev-local: _dev-deps
 DOCS_PORT ?= 1494
 SITE_PORT ?= 1495
 # Where the marketing site's checkout is, if it is here at all.
-#: SITE_SRC_LOCAL=ontoplano-site  where the marketing site is checked out
-SITE_SRC_LOCAL ?= ontoplano-site
+#: SITE_SRC_LOCAL=../ontoplano-site  where the marketing site is checked out
+SITE_SRC_LOCAL ?= ../ontoplano-site
 
 # There is no commit hook any more.
 #
@@ -434,8 +434,8 @@ dev-fg: _dev-deps _dev-migrated
 #
 # Copied rather than symlinked so that what was built is a file in the tree, and
 # `git status` in the private repo still says whether it has been edited here.
-#: BILLING_SRC=ontoplano-billing  where the payment provider is checked out
-BILLING_SRC ?= ontoplano-billing
+#: BILLING_SRC=../ontoplano-billing  where the payment provider is checked out
+BILLING_SRC ?= ../ontoplano-billing
 
 _billing-provider:
 	@if [ -f "$(BILLING_SRC)/paddle.ts" ]; then \
@@ -628,7 +628,7 @@ android-all: _a-real-workstation isolated
 	$(call timed,ONTOPLANO_DEV_ORIGIN="$(ONTOPLANO_DEV_ORIGIN)" node scripts/android-flavours.mjs,the three flavours)
 	@sdk=$$(node scripts/android-sdk.mjs) || { \
 		echo "No Android SDK here. It is looked for in ANDROID_HOME, ANDROID_SDK_ROOT,"; \
-		echo "~/.bubblewrap/config.json, ~/android-sdk, ~/Android/Sdk and beside adb."; \
+		echo "~/android-sdk, ~/Android/Sdk and beside adb."; \
 		echo "  make $@ ANDROID_HOME=/path/to/sdk"; \
 		exit 1; \
 	}; \
@@ -1166,17 +1166,13 @@ uninstall-service:
 # ─── Android ─────────────────────────────────────────────────────────────────
 #
 # One shell, and it is Capacitor's: `capacitor/` holds the native project and
-# it wraps the same build a browser gets. What used to be here was a Trusted
-# Web Activity — a Chrome tab in an app's clothing, built by bubblewrap into
-# `android-twa/`, bound to one origin by Digital Asset Links and needing a
-# keystore, a fingerprint and a served `assetlinks.json` before it would even
-# hide its address bar. Everything it did the shell does better, and the shell
-# can also carry the instance that runs on the device itself, which a tab
-# never could. It is gone rather than kept beside the new one.
+# it wraps the same build a browser gets, plus the instance that runs on the
+# device itself.
 #
 # Which instance an app opens is a build flavour, not a cage — see
 # `android-install-all` above for the three that go on a developer's own phone.
-# `android` is the one that goes to a store.
+# `official` goes to F-Droid and GitHub releases; `play` is the same app with
+# Google Play's purchase sheet, built by `android-gapp`.
 
 ### phone
 
@@ -1251,7 +1247,7 @@ _a-real-workstation:
 android: _a-real-workstation isolated android-project
 	@sdk=$$(node scripts/android-sdk.mjs) || { \
 		echo "No Android SDK here. It is looked for in ANDROID_HOME, ANDROID_SDK_ROOT,"; \
-		echo "~/.bubblewrap/config.json, ~/android-sdk, ~/Android/Sdk and beside adb."; \
+		echo "~/android-sdk, ~/Android/Sdk and beside adb."; \
 		echo "  make $@ ANDROID_HOME=/path/to/sdk"; \
 		exit 1; \
 	}; \
@@ -1267,7 +1263,7 @@ android: _a-real-workstation isolated android-project
 android-store: _a-real-workstation isolated android-project
 	@sdk=$$(node scripts/android-sdk.mjs) || { \
 		echo "No Android SDK here. It is looked for in ANDROID_HOME, ANDROID_SDK_ROOT,"; \
-		echo "~/.bubblewrap/config.json, ~/android-sdk, ~/Android/Sdk and beside adb."; \
+		echo "~/android-sdk, ~/Android/Sdk and beside adb."; \
 		echo "  make $@ ANDROID_HOME=/path/to/sdk"; \
 		exit 1; \
 	}; \

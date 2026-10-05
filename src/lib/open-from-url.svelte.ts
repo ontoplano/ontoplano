@@ -1,5 +1,6 @@
 import { page } from '$app/state';
 import { replaceState } from '$app/navigation';
+import { EDIT_PARAM } from './open-from-url-param.js';
 
 /**
  * Open a thing's editor because the address asked for it.
@@ -25,8 +26,7 @@ import { replaceState } from '$app/navigation';
  * handled".
  */
 
-/** What the address calls it. One word, the same in every room. */
-export const EDIT_PARAM = 'edit';
+export { EDIT_PARAM };
 
 export function openFromUrl(open: (id: number) => void, param: string = EDIT_PARAM): void {
 	let acted: string | null = null;

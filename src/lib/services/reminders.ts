@@ -22,7 +22,7 @@ import { num, str } from './validate.js';
 // The clock recomputes its sleep whenever the set of pending reminders changes;
 // without this a new alarm would wait for the next ceiling tick to be noticed.
 import { host } from './host.js';
-import { soundFor } from './ringtones.js';
+import { soundChoices, soundFor } from './ringtones.js';
 import { getGridHours } from './settings.js';
 
 /**
@@ -133,6 +133,18 @@ export function reminderClock(ctx: Ctx): ReminderClock {
 		leadMinutes: REMINDER_LEAD_MINUTES
 	};
 }
+/** What a reminder is, read the same way by every reader here. */
+const REMINDER_COLUMNS = {
+	id: reminders.id,
+	subjectKind: reminders.subjectKind,
+	subjectId: reminders.subjectId,
+	remindAt: reminders.remindAt,
+	message: reminders.message,
+	deliveredAt: reminders.deliveredAt,
+	dismissedAt: reminders.dismissedAt,
+	audible: reminders.audible,
+	ringtoneId: reminders.ringtoneId
+};
 
 /**
  * How much of what is coming a phone is handed, and why it is a number.
@@ -217,17 +229,7 @@ export function listReminders(
 	chosen: { audible: boolean | null; ringtoneId: number | null };
 })[] {
 	const rows = db
-		.select({
-			id: reminders.id,
-			subjectKind: reminders.subjectKind,
-			subjectId: reminders.subjectId,
-			remindAt: reminders.remindAt,
-			message: reminders.message,
-			deliveredAt: reminders.deliveredAt,
-			dismissedAt: reminders.dismissedAt,
-			audible: reminders.audible,
-			ringtoneId: reminders.ringtoneId
-		})
+		.select(REMINDER_COLUMNS)
 		.from(reminders)
 		.where(eq(reminders.userId, ctx.userId))
 		.orderBy(asc(reminders.remindAt))
@@ -238,11 +240,12 @@ export function listReminders(
 	// Whether each one will make a noise, resolved here rather than by the page:
 	// it is a question about the reminder, its kind's setting and a ringtone
 	// that may have been deleted, which is three tables the page cannot see.
+	const choices = soundChoices(ctx);
 	return wanted.map((row) => {
 		const { audible, ringtoneId, ...rest } = row;
 		return {
 			...rest,
-			audible: soundFor(ctx, { ...rest, audible, ringtoneId }) !== null,
+			audible: soundFor(ctx, { ...rest, audible, ringtoneId }, choices) !== null,
 			chosen: { audible, ringtoneId }
 		};
 	});
@@ -257,17 +260,7 @@ export function listReminders(
  */
 export function dueReminders(ctx: Ctx): (Reminder & { sound: string | null })[] {
 	const rows = db
-		.select({
-			id: reminders.id,
-			subjectKind: reminders.subjectKind,
-			subjectId: reminders.subjectId,
-			remindAt: reminders.remindAt,
-			message: reminders.message,
-			deliveredAt: reminders.deliveredAt,
-			dismissedAt: reminders.dismissedAt,
-			audible: reminders.audible,
-			ringtoneId: reminders.ringtoneId
-		})
+		.select(REMINDER_COLUMNS)
 		.from(reminders)
 		.where(
 			and(
@@ -286,9 +279,13 @@ export function dueReminders(ctx: Ctx): (Reminder & { sound: string | null })[] 
 	 * one is audible at all is three tables' worth of question and belongs on
 	 * the side that can see them.
 	 */
+	const choices = soundChoices(ctx);
 	return rows.map((row) => {
 		const { audible, ringtoneId, ...rest } = row;
-		return { ...rest, sound: soundFor(ctx, { ...rest, audible, ringtoneId })?.url ?? null };
+		return {
+			...rest,
+			sound: soundFor(ctx, { ...rest, audible, ringtoneId }, choices)?.url ?? null
+		};
 	});
 }
 
@@ -705,6 +702,39 @@ function ownedInstance(ctx: Ctx, id: number): { scheduledAt: string; title: stri
  */
 export const CATCH_UP_HOURS = 12;
 
+/**
+ * The reminders a pass can still deliver: unsent, not dismissed, and between
+ * the catch-up floor and a day ahead.
+ *
+ * One definition, because the reminder clock asks the same question to decide
+ * when to wake. It used to ask it without the floor, so a reminder more than
+ * `CATCH_UP_HOURS` old — never rung, so never stamped — was forever "the next
+ * one due", and the clock ran the whole pass again every quarter of a second.
+ */
+export function pushCandidates(now: Date = new Date(), lookBackHours = CATCH_UP_HOURS) {
+	return and(
+		isNull(reminders.pushedAt),
+		isNull(reminders.dismissedAt),
+		// A cheap ceiling in SQL before the per-zone comparison: no zone is more
+		// than a day from any other, so nothing due anywhere can be past this.
+		lte(reminders.remindAt, new Date(now.getTime() + 26 * 3600_000).toISOString().slice(0, 19)),
+		/*
+		 * And a floor, so a box that was down catches up without shouting.
+		 *
+		 * Everything unpushed used to be a candidate however old, which is right
+		 * for an hour of downtime and wrong for a week of it: the machine comes
+		 * back at four in the morning and rings two hundred alarms about times
+		 * that are long gone. Inside the window they still ring — late is the
+		 * point, and a missed reminder is worse than a late one. Outside it they
+		 * stay on the planner, where they have been all along.
+		 */
+		gte(
+			reminders.remindAt,
+			new Date(now.getTime() - lookBackHours * 3600_000).toISOString().slice(0, 19)
+		)
+	);
+}
+
 export function pushableReminders(
 	nowByUser: (userId: string) => string,
 	/**
@@ -735,31 +765,7 @@ export function pushableReminders(
 			ringtoneId: reminders.ringtoneId
 		})
 		.from(reminders)
-		.where(
-			and(
-				isNull(reminders.pushedAt),
-				isNull(reminders.dismissedAt),
-				// A cheap ceiling in SQL before the per-zone comparison below: no
-				// zone is more than a day from any other, so nothing due anywhere
-				// can be past this.
-				lte(reminders.remindAt, new Date(now.getTime() + 26 * 3600_000).toISOString().slice(0, 19)),
-				/*
-				 * And a floor, so a box that was down catches up without shouting.
-				 *
-				 * Everything unpushed used to be a candidate however old, which
-				 * is right for an hour of downtime and wrong for a week of it:
-				 * the machine comes back at four in the morning and rings two
-				 * hundred alarms about times that are long gone. Inside the
-				 * window they still ring — late is the point, and a missed
-				 * reminder is worse than a late one. Outside it they stay on the
-				 * planner, where they have been all along.
-				 */
-				gte(
-					reminders.remindAt,
-					new Date(now.getTime() - lookBackHours * 3600_000).toISOString().slice(0, 19)
-				)
-			)
-		)
+		.where(pushCandidates(now, lookBackHours))
 		.orderBy(asc(reminders.remindAt))
 		.limit(limit)
 		.all();

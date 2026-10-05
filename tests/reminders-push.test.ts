@@ -46,6 +46,7 @@ const reminders = await import('../src/lib/services/reminders');
 const birthdays = await import('../src/lib/services/birthdays');
 const delivery = await import('../src/lib/server/services/reminder-delivery');
 const { buildCtx } = await import('../src/lib/services/ctx');
+const { forgetUserSettings } = await import('../src/lib/services/settings');
 
 const ctx = () => buildCtx(OWNER, { tz: 'UTC', now: new Date('2026-03-14T09:00:00Z') });
 
@@ -357,6 +358,8 @@ describe('a birthday', () => {
 			"insert into user_settings (user_id, key, value) values (?, 'planner.grid_start_hour', '5')",
 			OWNER
 		);
+		// Written behind the settings module, so it is told.
+		forgetUserSettings(OWNER);
 		person('Ana', '1992-03-14');
 
 		birthdays.ensureBirthdayReminders(OWNER, onTheDay, 'UTC');
@@ -364,6 +367,7 @@ describe('a birthday', () => {
 		const row = database.get('select remind_at from reminders') as { remind_at: string };
 		expect(row.remind_at).toBe('2026-03-14T05:00:00');
 		database.exec("delete from user_settings where key = 'planner.grid_start_hour'");
+		forgetUserSettings(OWNER);
 	});
 
 	test('says the plain thing when the year was never known', () => {

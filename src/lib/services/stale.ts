@@ -4,7 +4,7 @@ import { db } from '$lib/db/index.js';
 import { ideas, todoTasks, inventoryItems } from '$lib/db/schema.js';
 import { CLOSED_STATUSES } from '../task-status.js';
 import type { Ctx } from './ctx.js';
-import { stamp } from './time.js';
+import { stamp, localDay } from './time.js';
 
 /**
  * Things that never ended.
@@ -33,7 +33,7 @@ export type StaleThing = {
 function cutoff(ctx: Ctx, months: number): string {
 	const d = new Date(ctx.now);
 	d.setMonth(d.getMonth() - months);
-	return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+	return localDay(d);
 }
 
 export function listStale(ctx: Ctx, months = STALE_MONTHS): StaleThing[] {

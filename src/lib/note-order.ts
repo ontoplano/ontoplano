@@ -15,12 +15,8 @@
 export const NOTE_ORDERS = ['written', 'title', 'edited'] as const;
 export type NoteOrder = (typeof NOTE_ORDERS)[number];
 
-export const NOTE_DIRECTIONS = ['asc', 'desc'] as const;
+const NOTE_DIRECTIONS = ['asc', 'desc'] as const;
 export type NoteDirection = (typeof NOTE_DIRECTIONS)[number];
-
-/** Where the choice is kept: a way of looking at a list, not a fact about the account. */
-export const NOTE_ORDER_KEY = 'ontoplano:notes-order';
-export const NOTE_DIRECTION_KEY = 'ontoplano:notes-direction';
 
 /**
  * The direction a field starts in, which is the one somebody means by it.

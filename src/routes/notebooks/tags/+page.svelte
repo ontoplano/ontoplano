@@ -5,17 +5,12 @@
 	import SearchField from '$lib/components/SearchField.svelte';
 	import ShowingCount from '$lib/components/ShowingCount.svelte';
 	import EmptyState from '$lib/components/EmptyState.svelte';
-	import Field from '$lib/components/Field.svelte';
 	import FormError from '$lib/components/FormError.svelte';
-	import FormGrid from '$lib/components/FormGrid.svelte';
 	import Modal from '$lib/components/Modal.svelte';
-	import OneLine from '$lib/components/OneLine.svelte';
-	import TagChip from '$lib/components/TagChip.svelte';
 	import TagRows from '$lib/components/TagRows.svelte';
-	import TextBox from '$lib/components/TextBox.svelte';
 	import SortControl from '$lib/components/SortControl.svelte';
 	import type { PlainKey } from '$lib/i18n/keys';
-	import { TAG_COLOR_DEFAULT } from '$lib/colors';
+	import TagFields from '$lib/components/TagFields.svelte';
 	import { getAction } from '$lib/shortcuts';
 	import { useT } from '$lib/i18n';
 	import type { PageServerData, ActionData } from './$types';
@@ -203,39 +198,7 @@
 				}}
 		>
 			<input type="hidden" name="id" value={editing.id} />
-			<!-- What the server reads for the colour: the box below writes into
-			     it, and "no colour" empties it. A colour input has no empty. -->
-			<input type="hidden" name="color" value={color ?? ''} />
-			<FormGrid>
-				<Field label={t('ui.name')} span={12}>
-					<OneLine name="label" bind:value={name} class="input" required autofocus />
-				</Field>
-				<!-- What the word means here. `#short` on the shopping is low on
-				     something; `#short` on a book is the book. -->
-				<Field label={t('tags.whatItMeans')} span={12} hint={t('tags.whatItMeansHint')}>
-					<TextBox name="description" bind:value={description} rows={2} />
-				</Field>
-				<Field label={t('ui.colour')} span={12} hint={t('notebooks.tags.aTagWithNoColour')}>
-					<div class="flex items-center gap-2">
-						<input
-							type="color"
-							value={color ?? TAG_COLOR_DEFAULT}
-							aria-label={t('ui.colour')}
-							oninput={(e) => (color = e.currentTarget.value)}
-							class="input h-9 w-14 p-1"
-						/>
-						<TagChip name={name || editing.name} {color} />
-						<button
-							type="button"
-							onclick={() => (color = null)}
-							disabled={color === null}
-							class="btn btn-sm ml-auto"
-						>
-							{t('notebooks.tags.noColour')}
-						</button>
-					</div>
-				</Field>
-			</FormGrid>
+			<TagFields bind:name bind:description bind:color was={editing.name} />
 		</form>
 	{/if}
 

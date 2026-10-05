@@ -1,6 +1,8 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
 	import FoldedText from '$lib/components/FoldedText.svelte';
+	import Icon from '$lib/components/Icon.svelte';
+	import { useT } from '$lib/i18n';
 
 	/**
 	 * A card, everywhere.
@@ -51,6 +53,12 @@
 		class: className = '',
 		/** The anchor a tutorial step points at. */
 		dataTour = '',
+		/**
+		 * Folds down to its header with the chevron in the corner, for a page of
+		 * many cards where somebody reads two and wants the rest out of the way.
+		 * Remembered per card, by `id`, in this browser.
+		 */
+		collapsible = false,
 		lead,
 		titleActions,
 		actions,
@@ -65,6 +73,7 @@
 		class?: string;
 		dataTour?: string;
 		id?: string;
+		collapsible?: boolean;
 		/** Drawn before the title: the picture of whatever this card is about. */
 		lead?: Snippet;
 		/**
@@ -81,6 +90,38 @@
 	 * A named card keeps a little air above it when something scrolls to it —
 	 * `scroll-margin-top`, so it does not sit flush under the header.
 	 */
+
+	const t = useT();
+
+	/** Where a folded card is remembered; per browser, a convenience only. */
+	const FOLDED_KEY = 'ontoplano:card-folded:';
+
+	function readFolded(): boolean {
+		if (!collapsible || !id || typeof localStorage === 'undefined') return false;
+		try {
+			return localStorage.getItem(FOLDED_KEY + id) === '1';
+		} catch {
+			return false;
+		}
+	}
+
+	let folded = $state(false);
+	// After mount: the server cannot read this browser's memory, and a page
+	// drawn folded there and open here would disagree on hydration.
+	$effect(() => {
+		folded = readFolded();
+	});
+
+	function toggle() {
+		folded = !folded;
+		if (!id) return;
+		try {
+			if (folded) localStorage.setItem(FOLDED_KEY + id, '1');
+			else localStorage.removeItem(FOLDED_KEY + id);
+		} catch {
+			// Not remembered; the card still folds.
+		}
+	}
 </script>
 
 <!--
@@ -112,7 +153,7 @@
 	-->
 	<header
 		class="section-tint card-header flex flex-wrap items-start justify-between gap-x-4 gap-y-2 border-b border-gray-200"
-		hidden={!title && !description && !actions && !lead}
+		hidden={!title && !description && !actions && !lead && !collapsible}
 	>
 		{#if lead}
 			<!-- Whatever the card is *of*, beside what it is called — a notebook's
@@ -157,17 +198,29 @@
 				{/if}
 			{/if}
 		</div>
-		{#if actions}
+		{#if actions || collapsible}
 			<!-- Named, because the dashboard takes this corner over while cards are
 			     being rearranged: the handle goes where "Open →" was rather than in
 			     a bar of its own. -->
 			<div class="card-actions ml-auto flex flex-wrap items-center gap-2">
-				{@render actions()}
+				{@render actions?.()}
+				{#if collapsible}
+					<button
+						type="button"
+						class="icon-btn"
+						aria-expanded={!folded}
+						title={folded ? t('ui.show') : t('ui.hide')}
+						aria-label={folded ? t('ui.show') : t('ui.hide')}
+						onclick={toggle}
+					>
+						<Icon name={folded ? 'chevron-down' : 'chevron-up'} />
+					</button>
+				{/if}
 			</div>
 		{/if}
 	</header>
 
-	<div class={flush ? 'flex-1' : 'flex-1 p-4'}>
+	<div class={flush ? 'flex-1' : 'flex-1 p-4'} hidden={folded}>
 		{@render children?.()}
 	</div>
 </section>

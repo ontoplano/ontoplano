@@ -200,8 +200,8 @@ export interface BillingProvider {
  * store.
  *
  * Not a second `BillingProvider` — a different shape entirely. Paddle opens a
- * checkout we mint; Play purchases happen on the device (the Digital Goods
- * API inside the trusted web activity) and the server's whole job is to
+ * checkout we mint; Play purchases happen on the device (Play's own sheet,
+ * opened by the shell — `$lib/play-billing`) and the server's whole job is to
  * VERIFY the purchase token with Google and keep the entitlement in step
  * afterwards. Both write the same subscription rows through the same
  * `applySubscription`, which is what makes the two channels seamless: a row

@@ -67,7 +67,12 @@ const SKIP = [
 	 * it translatable is a redesign rather than a sweep. Its header says the
 	 * same thing; this is what stops the counter calling it undone work.
 	 */
-	'src/lib/server/services/assistant-notify.ts'
+	'src/lib/server/services/assistant-notify.ts',
+	/*
+	 * A metric's help text, read by a collector beside its name — part of the
+	 * Prometheus interface, like an MCP tool's description, never a screen.
+	 */
+	'src/lib/server/metrics.ts'
 ];
 
 /**

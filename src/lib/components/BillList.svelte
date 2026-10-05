@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { openFromUrl } from '$lib/open-from-url.svelte';
 	/**
 	 * Bills, with everything that can be done to them.
 	 *
@@ -92,6 +93,11 @@
 		formKey++;
 		showForm = true;
 	}
+
+	// `?edit=<id>` opens its editor: how a notification or a receipt leads here (`$lib/object-links`).
+	openFromUrl((id) => {
+		if (bills.some((one) => one.id === id)) openEdit(id);
+	});
 
 	export function openEdit(id: number) {
 		editingId = id;

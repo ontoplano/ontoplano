@@ -1,8 +1,7 @@
-import type { Actions, RequestEvent } from '@sveltejs/kit';
-import { buildCtx } from '$lib/services/ctx';
-import { toActionFailure } from '$lib/http-errors';
+import type { Actions } from '@sveltejs/kit';
 import { parseMoney } from '$lib/money';
 import { getCurrency } from '$lib/services/settings';
+import { formAction } from '$lib/services/scoped-actions';
 import {
 	createBill,
 	deleteBill,
@@ -23,69 +22,46 @@ import {
  * mean the same thing. The notebook mounts these under a prefix; see
  * `$lib/bill-action-names` for the names each screen posts to.
  */
-type Event = Pick<RequestEvent, 'request'> & { locals: App.Locals };
-
 export const billHandlers = {
-	create: async ({ request, locals }: Event) => {
-		const form = await request.formData();
-		const ctx = buildCtx(locals.user!.id);
-		try {
-			createBill(ctx, {
-				name: form.get('heading'),
-				amountExpected: parseMoney(form.get('amount'), getCurrency(ctx.userId)) ?? 0,
-				rhythm: form.get('rhythm') || 'monthly',
-				dueDay: form.get('dueDay') || null,
-				dueMonth: form.get('dueMonth') || null,
-				payLeadDays: form.get('payLeadDays') || 0,
-				// A checkbox: present when ticked, absent when not.
-				automatic: form.has('automatic'),
-				notes: form.get('notes'),
-				// `has` rather than `get`: the room's form says nothing about a
-				// notebook and must not be read as taking the bill out of one.
-				...(form.has('notebookId') ? { notebookId: form.get('notebookId') } : {})
-			});
-			return { success: true };
-		} catch (e) {
-			return toActionFailure(e);
-		}
-	},
+	create: formAction((ctx, form) => {
+		createBill(ctx, {
+			name: form.get('heading'),
+			amountExpected: parseMoney(form.get('amount'), getCurrency(ctx.userId)) ?? 0,
+			rhythm: form.get('rhythm') || 'monthly',
+			dueDay: form.get('dueDay') || null,
+			dueMonth: form.get('dueMonth') || null,
+			payLeadDays: form.get('payLeadDays') || 0,
+			// A checkbox: present when ticked, absent when not.
+			automatic: form.has('automatic'),
+			notes: form.get('notes'),
+			// `has` rather than `get`: the room's form says nothing about a
+			// notebook and must not be read as taking the bill out of one.
+			...(form.has('notebookId') ? { notebookId: form.get('notebookId') } : {})
+		});
+	}),
 
-	update: async ({ request, locals }: Event) => {
-		const form = await request.formData();
-		const ctx = buildCtx(locals.user!.id);
-		try {
-			updateBill(ctx, Number(form.get('id')), {
-				name: form.get('heading'),
-				amountExpected: parseMoney(form.get('amount'), getCurrency(ctx.userId)) ?? 0,
-				rhythm: form.get('rhythm') || 'monthly',
-				dueDay: form.get('dueDay') || null,
-				dueMonth: form.get('dueMonth') || null,
-				payLeadDays: form.get('payLeadDays') || 0,
-				// A checkbox: present when ticked, absent when not.
-				automatic: form.has('automatic'),
-				notes: form.get('notes'),
-				...(form.has('notebookId') ? { notebookId: form.get('notebookId') } : {})
-			});
-			return { success: true };
-		} catch (e) {
-			return toActionFailure(e);
-		}
-	},
+	update: formAction((ctx, form) => {
+		updateBill(ctx, Number(form.get('id')), {
+			name: form.get('heading'),
+			amountExpected: parseMoney(form.get('amount'), getCurrency(ctx.userId)) ?? 0,
+			rhythm: form.get('rhythm') || 'monthly',
+			dueDay: form.get('dueDay') || null,
+			dueMonth: form.get('dueMonth') || null,
+			payLeadDays: form.get('payLeadDays') || 0,
+			// A checkbox: present when ticked, absent when not.
+			automatic: form.has('automatic'),
+			notes: form.get('notes'),
+			...(form.has('notebookId') ? { notebookId: form.get('notebookId') } : {})
+		});
+	}),
 
-	pay: async ({ request, locals }: Event) => {
-		const form = await request.formData();
-		const ctx = buildCtx(locals.user!.id);
-		try {
-			const paid = form.get('amount');
-			markPaid(ctx, Number(form.get('id')), {
-				amountPaid: paid ? (parseMoney(paid, getCurrency(ctx.userId)) ?? undefined) : undefined,
-				period: form.get('period') || undefined
-			});
-			return { success: true };
-		} catch (e) {
-			return toActionFailure(e);
-		}
-	},
+	pay: formAction((ctx, form) => {
+		const paid = form.get('amount');
+		markPaid(ctx, Number(form.get('id')), {
+			amountPaid: paid ? (parseMoney(paid, getCurrency(ctx.userId)) ?? undefined) : undefined,
+			period: form.get('period') || undefined
+		});
+	}),
 
 	/*
 	 * Paid, and here is the line that paid it.
@@ -94,76 +70,36 @@ export const billHandlers = {
 	 * expected — the gap between the two is the number this room exists to
 	 * show, and typing it in by hand is how that number becomes fiction.
 	 */
-	payFromMovement: async ({ request, locals }: Event) => {
-		const form = await request.formData();
-		try {
-			markPaidFromMovement(
-				buildCtx(locals.user!.id),
-				Number(form.get('id')),
-				form.get('movementId'),
-				form.get('period') || undefined
-			);
-			return { success: true };
-		} catch (e) {
-			return toActionFailure(e);
-		}
-	},
+	payFromMovement: formAction((ctx, form) => {
+		markPaidFromMovement(
+			ctx,
+			Number(form.get('id')),
+			form.get('movementId'),
+			form.get('period') || undefined
+		);
+	}),
 
-	unpay: async ({ request, locals }: Event) => {
-		const form = await request.formData();
-		try {
-			unmarkPaid(buildCtx(locals.user!.id), Number(form.get('id')), String(form.get('period')));
-			return { success: true };
-		} catch (e) {
-			return toActionFailure(e);
-		}
-	},
+	unpay: formAction((ctx, form) => {
+		unmarkPaid(ctx, Number(form.get('id')), String(form.get('period')));
+	}),
 
 	/** Nothing was owed this period: settled without a payment. */
-	skip: async ({ request, locals }: Event) => {
-		const form = await request.formData();
-		try {
-			skipPeriod(buildCtx(locals.user!.id), Number(form.get('id')), {
-				period: form.get('period') || undefined
-			});
-			return { success: true };
-		} catch (e) {
-			return toActionFailure(e);
-		}
-	},
+	skip: formAction((ctx, form) => {
+		skipPeriod(ctx, Number(form.get('id')), {
+			period: form.get('period') || undefined
+		});
+	}),
 
-	unskip: async ({ request, locals }: Event) => {
-		const form = await request.formData();
-		try {
-			unskipPeriod(buildCtx(locals.user!.id), Number(form.get('id')), String(form.get('period')));
-			return { success: true };
-		} catch (e) {
-			return toActionFailure(e);
-		}
-	},
+	unskip: formAction((ctx, form) => {
+		unskipPeriod(ctx, Number(form.get('id')), String(form.get('period')));
+	}),
 
 	/** Archive keeps the history; the bill leaves the active list and its funnel. */
-	archive: async ({ request, locals }: Event) => {
-		const form = await request.formData();
-		try {
-			setArchived(
-				buildCtx(locals.user!.id),
-				Number(form.get('id')),
-				form.get('archived') === 'true'
-			);
-			return { success: true };
-		} catch (e) {
-			return toActionFailure(e);
-		}
-	},
+	archive: formAction((ctx, form) => {
+		setArchived(ctx, Number(form.get('id')), form.get('archived') === 'true');
+	}),
 
-	delete: async ({ request, locals }: Event) => {
-		const form = await request.formData();
-		try {
-			deleteBill(buildCtx(locals.user!.id), Number(form.get('id')));
-			return { success: true };
-		} catch (e) {
-			return toActionFailure(e);
-		}
-	}
+	delete: formAction((ctx, form) => {
+		deleteBill(ctx, Number(form.get('id')));
+	})
 } satisfies Actions;

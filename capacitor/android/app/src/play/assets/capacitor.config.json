@@ -1,0 +1,11 @@
+{
+  "appId": "app.ontoplano",
+  "appName": "Ontoplano",
+  "webDir": "public",
+  "appendUserAgent": "OntoplanoApp OntoplanoPlay",
+  "server": {
+    "allowNavigation": [
+      "*"
+    ]
+  }
+}

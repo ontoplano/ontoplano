@@ -365,6 +365,14 @@ export function userIdForSubscription(provider: string, subscriptionId: string):
 	return row?.userId ?? null;
 }
 
+/**
+ * Whether an account with this id exists — for a provider naming an account
+ * the app stamped on a purchase, before anything is written against it.
+ */
+export function accountExists(userId: string): boolean {
+	return db.select({ id: user.id }).from(user).where(eq(user.id, userId)).get() !== undefined;
+}
+
 // --- Limits -------------------------------------------------------------------
 
 /** How many of a thing this account already has. */
@@ -503,10 +511,29 @@ export function invitationFor(
  * unconditionally — alone, they reduce to the ordinary ownership check.
  */
 export function familyUserIds(userId: string): string[] {
+	const now = performance.now();
+	const held = circles.get(userId);
+	if (held && now - held.at < FAMILY_KEPT_MS) return held.ids;
 	const payer = seatOwnerOf(userId) ?? userId;
 	const seats = membersOf(payer).map((m) => m.id);
-	const circle = new Set([payer, ...seats, userId]);
-	return [...circle];
+	const ids = [...new Set([payer, ...seats, userId])];
+	circles.set(userId, { at: now, ids });
+	return ids;
+}
+
+/**
+ * How long a family circle is kept once read, in milliseconds.
+ *
+ * Every sharing predicate asks it, so one notebooks page asked seventeen
+ * times, two queries each. Every write to `plan_members` clears the lot with
+ * `forgetFamilies`; the window only bounds a write made somewhere else.
+ */
+const FAMILY_KEPT_MS = 1000;
+const circles = new Map<string, { at: number; ids: string[] }>();
+
+/** Somebody joined, left or was offered a seat: every circle is read afresh. */
+export function forgetFamilies(): void {
+	circles.clear();
 }
 
 export function seatOwnerOf(memberId: string): string | null {
@@ -607,6 +634,7 @@ export function addToPlan(ownerId: string, email: string): { id: string; name: s
 	// says yes — see the column's own note for why a payer cannot simply move
 	// somebody onto their plan.
 	db.insert(planMembers).values({ ownerId, memberId: account.id }).run();
+	forgetFamilies();
 	record(ownerId, 'seat_offered', { detail: { member: account.id } });
 
 	return { id: account.id, name: account.name };
@@ -642,6 +670,7 @@ export function acceptPlanInvite(memberId: string): { ownerId: string } {
 		.set({ acceptedAt: new Date().toISOString() })
 		.where(eq(planMembers.id, row.id))
 		.run();
+	forgetFamilies();
 	record(memberId, 'seat_accepted', { detail: { owner: row.ownerId } });
 	return { ownerId: row.ownerId };
 }
@@ -652,6 +681,7 @@ export function declinePlanInvite(memberId: string): void {
 		.delete(planMembers)
 		.where(and(eq(planMembers.memberId, memberId), isNull(planMembers.acceptedAt)))
 		.run();
+	forgetFamilies();
 	if (result.changes === 0)
 		throw new NotFoundError({ key: 'errors.subscriptions.thereIsNoInvitationWaiting' });
 	record(memberId, 'seat_declined');
@@ -669,6 +699,7 @@ export function cancelPlanInvite(ownerId: string, memberId: string): void {
 			)
 		)
 		.run();
+	forgetFamilies();
 	if (result.changes === 0)
 		throw new NotFoundError({ key: 'errors.subscriptions.thereIsNoInvitationWaiting' });
 	record(ownerId, 'seat_offer_withdrawn', { detail: { member: memberId } });
@@ -680,6 +711,7 @@ export function removeFromPlan(ownerId: string, memberId: string): void {
 		.delete(planMembers)
 		.where(and(eq(planMembers.ownerId, ownerId), eq(planMembers.memberId, memberId)))
 		.run();
+	forgetFamilies();
 	if (result.changes === 0) throw new NotFoundError('seat');
 	record(ownerId, 'seat_removed', { detail: { member: memberId } });
 }

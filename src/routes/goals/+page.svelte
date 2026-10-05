@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { openFromUrl } from '$lib/open-from-url.svelte';
 	import { useWhen } from '$lib/when-context.svelte';
 	import ShowingCount from '$lib/components/ShowingCount.svelte';
 	import SearchField from '$lib/components/SearchField.svelte';
@@ -34,11 +35,12 @@
 		HORIZON_LABELS,
 		canNestUnder,
 		describePeriod,
-		formatDate,
 		periodStart,
 		type Horizon
 	} from '$lib/goals.js';
 	import { useT } from '$lib/i18n';
+	import { RememberedOrder } from '$lib/remembered-order.svelte';
+	import { localDay } from '$lib/services/time';
 
 	const t = useT();
 	const now = useWhen();
@@ -123,25 +125,7 @@
 		progress: 'goals.orderProgress',
 		created: 'goals.orderAdded'
 	};
-	const ORDER_KEY = 'goals.order';
-	let order = $state<Order>('period');
-	let direction = $state<'asc' | 'desc'>('asc');
-	$effect(() => {
-		try {
-			const kept = JSON.parse(localStorage.getItem(ORDER_KEY) ?? 'null');
-			if (kept && ORDERS.includes(kept.order)) order = kept.order;
-			if (kept?.direction === 'asc' || kept?.direction === 'desc') direction = kept.direction;
-		} catch {
-			/* A private window keeps nothing; the default order stands. */
-		}
-	});
-	function keepOrder() {
-		try {
-			localStorage.setItem(ORDER_KEY, JSON.stringify({ order, direction }));
-		} catch {
-			/* As above. */
-		}
-	}
+	const sorting = new RememberedOrder<Order>('goals', ORDERS, 'period');
 
 	/** How far along a goal is, 0–1; one with nothing counted sorts first. */
 	function progressOf(g: Goal): number {
@@ -150,14 +134,14 @@
 	const sorted = $derived(
 		[...visible].sort((a, b) => {
 			const by =
-				order === 'title'
+				sorting.order === 'title'
 					? a.title.localeCompare(b.title)
-					: order === 'progress'
+					: sorting.order === 'progress'
 						? progressOf(a) - progressOf(b)
-						: order === 'created'
+						: sorting.order === 'created'
 							? a.id - b.id
 							: a.periodStart.localeCompare(b.periodStart) || a.title.localeCompare(b.title);
-			return direction === 'asc' ? by : -by;
+			return sorting.direction === 'asc' ? by : -by;
 		})
 	);
 
@@ -283,6 +267,12 @@
 		openCreate(Number.isInteger(asked) && asked > 0 ? asked : null);
 	});
 
+	// `?edit=<id>` opens its editor: how a notification or a receipt leads here (`$lib/object-links`).
+	openFromUrl((id) => {
+		const goal = data.goals.find((one) => one.id === id);
+		if (goal) openEdit(goal);
+	});
+
 	function openEdit(goal: Goal) {
 		editingId = goal.id;
 		formHorizon = goal.horizon;
@@ -301,7 +291,7 @@
 	}
 
 	function today(): string {
-		return formatDate(new Date());
+		return localDay(new Date());
 	}
 
 	function handleKeydown(e: KeyboardEvent) {
@@ -529,7 +519,10 @@
 			{#snippet footer()}
 				<button type="button" class="btn" onclick={() => (showAreas = false)}>{t('ui.done')}</button
 				>
-				<button type="submit" form="area-form" class="btn btn-primary">{t('goals.addArea')}</button>
+				<!-- `data-stays`: adding an area is one step of arranging them, not the end of it. -->
+				<button type="submit" form="area-form" class="btn btn-primary" data-stays
+					>{t('goals.addArea')}</button
+				>
 			{/snippet}
 		</Modal>
 
@@ -631,18 +624,12 @@
 					{/snippet}
 					{#snippet trailing()}
 						<SortControl
-							value={order}
+							value={sorting.order}
 							options={ORDERS}
 							labels={ORDER_LABELS}
-							{direction}
-							onpick={(next) => {
-								order = next;
-								keepOrder();
-							}}
-							onflip={() => {
-								direction = direction === 'asc' ? 'desc' : 'asc';
-								keepOrder();
-							}}
+							direction={sorting.direction}
+							onpick={(next) => sorting.pick(next)}
+							onflip={() => sorting.flip()}
 							label={t('goals.orderGoalsBy')}
 						/>
 					{/snippet}

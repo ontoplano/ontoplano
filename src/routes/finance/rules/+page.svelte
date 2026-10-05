@@ -11,7 +11,7 @@
 	import SearchField from '$lib/components/SearchField.svelte';
 	import ShowingCount from '$lib/components/ShowingCount.svelte';
 	import { setRoomAction } from '$lib/room-action.svelte';
-	import { browsable } from '$lib/browse.svelte';
+	import { browsable, typing } from '$lib/browse.svelte';
 	import { listCursor } from '$lib/actions/list-cursor';
 	import { getAction } from '$lib/shortcuts';
 	import { goto } from '$app/navigation';
@@ -128,15 +128,7 @@
 
 	function onkeydown(event: KeyboardEvent) {
 		if (event.metaKey || event.ctrlKey || event.altKey) return;
-		const target = event.target;
-		if (
-			document.querySelector('dialog[open]') ||
-			target instanceof HTMLInputElement ||
-			target instanceof HTMLTextAreaElement ||
-			target instanceof HTMLSelectElement ||
-			(target instanceof HTMLElement && target.isContentEditable)
-		)
-			return;
+		if (typing(event)) return;
 		const action = getAction(ROOM, event.key);
 		if (action === 'new') {
 			event.preventDefault();
@@ -403,7 +395,15 @@
 			<FormGrid>
 				{#if !editing}
 					<Field label={t('finance.rules.kind')} span={12}>
-						<select name="kind" class="select w-full" bind:value={creating}>
+						<!-- One way, not bound: the form is reset after a save while the dialog
+						     is still mounted, and a binding would write the reset back into
+						     `creating` and open the dialog again. -->
+						<select
+							name="kind"
+							class="select w-full"
+							value={creating}
+							onchange={(e) => (creating = e.currentTarget.value as Rule['kind'])}
+						>
 							<option value="category">{t('finance.rules.aCategory')}</option>
 							<option value="tag">{t('finance.rules.aTag')}</option>
 						</select>

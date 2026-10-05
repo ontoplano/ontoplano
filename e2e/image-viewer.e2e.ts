@@ -111,3 +111,47 @@ test('a tall picture opens whole and centred on a phone', async ({ page }) => {
 	expect(box.y + box.height).toBeLessThanOrEqual(844);
 	expect(Math.abs(box.y + box.height / 2 - 422)).toBeLessThan(2);
 });
+
+/**
+ * A notebook's picture is a control — pressing it changes it — so looking at
+ * it is the badge beside it. The square can be dragged bigger on a desktop.
+ */
+test('a notebook’s picture has a view badge, and a corner to drag', async ({ page }) => {
+	test.setTimeout(120_000);
+	await page.setViewportSize({ width: 1280, height: 900 });
+	await register(page, testEmail('image-viewer-notebook'));
+	await visit(page, '/notebooks');
+
+	await page
+		.getByRole('button', { name: /new notebook/i })
+		.first()
+		.click();
+	await page.locator('[name="heading"]').first().fill('Kitchen');
+	await page.getByRole('button', { name: 'Create notebook' }).click();
+	// The notebook opens beside the shelf, picture control and all.
+	await expect(page.getByRole('button', { name: 'New note', exact: true }).first()).toBeVisible({
+		timeout: 30_000
+	});
+
+	// Its one picture: the notebook's own file input, not a note's `multiple` one.
+	const { pngOfSize } = await import('./helpers/png');
+	await page
+		.locator('input[type="file"][name="file"]:not([multiple])')
+		.first()
+		.setInputFiles({ ...pngOfSize(24, 8), name: 'cover.png' });
+	const badge = page.locator('button[data-view-src]').first();
+	await expect(badge).toBeVisible({ timeout: 30_000 });
+	await page.screenshot({ path: 'test-results/shots/notebook-picture-badge.png' });
+
+	// Dragged bigger by its corner, on a desktop.
+	const box = page.locator('.picture-box.resizable').first();
+	await expect(box).toHaveCSS('resize', 'both');
+
+	// The badge opens the viewer over the page; the picture itself still does not.
+	await badge.click();
+	const viewer = page.getByRole('dialog', { name: /View the picture|Picture/ });
+	await expect(viewer).toBeVisible();
+	await expect(viewer.locator('img')).toHaveAttribute('src', /\/media\/\d+/);
+	await page.keyboard.press('Escape');
+	await expect(viewer).toHaveCount(0);
+});

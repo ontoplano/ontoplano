@@ -53,6 +53,8 @@ import { fileURLToPath } from 'node:url';
 const OUT = join(dirname(fileURLToPath(import.meta.url)), 'demo-media');
 /** Originals that are not the museum's, kept so a rebuild is offline for them. */
 const SRC = join(dirname(fileURLToPath(import.meta.url)), 'demo-media-src');
+/** An inventory thumbnail's side: twice the largest it is drawn, for sharp screens. */
+const ITEM_PICTURE_SIZE = 240;
 const API = 'https://collectionapi.metmuseum.org/public/collection/v1/objects';
 
 /**
@@ -175,7 +177,33 @@ const PICTURES = [
 		width: 480,
 		height: 480,
 		crop: { x: 0.14, y: 0.02, w: 0.72, h: 0.96 }
-	}
+	},
+	/*
+	 * The inventory's things.
+	 *
+	 * Generated photographs, one per seeded item, drawn as a square thumbnail
+	 * at the start of the item's row — so the crop is the whole picture.
+	 */
+	...[
+		'black-beans',
+		'coffee-beans',
+		'dish-soap',
+		'eggs',
+		'garlic',
+		'milk',
+		'olive-oil',
+		'pasta',
+		'rice',
+		'tomatoes'
+	].map((name) => ({
+		out: `item-${name}.jpg`,
+		file: `items/${name}.jpg`,
+		credit: 'generated',
+		what: `the ${name.replace('-', ' ')} in the inventory`,
+		width: ITEM_PICTURE_SIZE,
+		height: ITEM_PICTURE_SIZE,
+		crop: { x: 0, y: 0, w: 1, h: 1 }
+	}))
 ];
 
 /**
@@ -286,9 +314,9 @@ writeFileSync(
 	join(OUT, 'SOURCES.md'),
 	`# Where the demo's pictures come from
 
-The faces and the notebook covers are generated — nobody in this repository is
-a photograph of a real person, which is the only honest way to put a face on a
-made-up contact called Ana. Their originals are \`scripts/demo-media-src/\`,
+The faces, the notebook covers and the inventory's things are generated —
+nobody in this repository is a photograph of a real person, which is the only
+honest way to put a face on a made-up contact called Ana. Their originals are \`scripts/demo-media-src/\`,
 committed so a rebuild needs nothing but this checkout.
 
 Everything else is from the Metropolitan Museum of Art's Open Access

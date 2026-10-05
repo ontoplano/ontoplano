@@ -11,6 +11,8 @@ export type ItemActionNames = {
 	toggleBought: string;
 	toggleSnoozed: string;
 	remove: string;
+	setPicture: string;
+	removePicture: string;
 };
 
 /** The Inventory room, where a thing is what the page is about. */
@@ -18,7 +20,9 @@ export const ITEM_ROOM_ACTIONS: ItemActionNames = {
 	setQty: '?/setQty',
 	toggleBought: '?/toggleBought',
 	toggleSnoozed: '?/toggleSnoozed',
-	remove: '?/delete'
+	remove: '?/delete',
+	setPicture: '?/setPicture',
+	removePicture: '?/removePicture'
 };
 
 /** Inside a notebook, where the unprefixed names belong to the notebook. */
@@ -26,5 +30,7 @@ export const NOTEBOOK_ITEM_ACTIONS: ItemActionNames = {
 	setQty: '?/itemSetQty',
 	toggleBought: '?/itemToggleBought',
 	toggleSnoozed: '?/itemToggleSnoozed',
-	remove: '?/itemDelete'
+	remove: '?/itemDelete',
+	setPicture: '?/itemSetPicture',
+	removePicture: '?/itemRemovePicture'
 };

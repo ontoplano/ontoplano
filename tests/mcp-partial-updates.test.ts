@@ -422,19 +422,19 @@ describe('the task blocks', () => {
 describe('change_activity', () => {
 	it('keeps the description when renamed; writes nothing for a category that is not there', () => {
 		const { id } = ok('add_activity', {
-			name: 'russian',
+			name: 'guitar',
 			category: 'work',
-			description: 'Duolingo and a book'
+			description: 'lessons and a songbook'
 		});
 		const activity = () =>
 			(
 				s.activities.listActivities(s.ctx) as { id: number; name: string; description: string }[]
 			).find((a) => a.id === Number(id))!;
-		ok('change_activity', { id, name: 'learn russian' });
-		expect(activity().description).toBe('Duolingo and a book');
+		ok('change_activity', { id, name: 'learn guitar' });
+		expect(activity().description).toBe('lessons and a songbook');
 
 		refused('change_activity', { id, name: 'renamed anyway', category: 'no such thing' });
-		expect(activity().name).toBe('learn russian');
+		expect(activity().name).toBe('learn guitar');
 	});
 });
 

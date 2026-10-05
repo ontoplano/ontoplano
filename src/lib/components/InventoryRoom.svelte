@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { pillStyle } from '$lib/pill-ink';
+	import { MediaQuery } from 'svelte/reactivity';
 	import { openFromUrl } from '$lib/open-from-url.svelte';
 	import { setRoomAction } from '$lib/room-action.svelte';
 	import { enhance } from '$lib/enhance';
@@ -19,15 +20,11 @@
 	import TickBox from '$lib/components/TickBox.svelte';
 	import ColorWell from '$lib/components/ColorWell.svelte';
 	import {
-		ITEM_DIRECTION_KEY,
-		ITEM_ORDER_KEY,
 		ITEM_ORDER_LABELS,
 		ITEM_ORDERS,
 		DEFAULT_ITEM_ORDER,
 		compareItems,
-		isItemOrder,
 		itemDirectionFor,
-		type ItemDirection,
 		type ItemOrder
 	} from '$lib/item-order';
 	import Icon from '$lib/components/Icon.svelte';
@@ -58,8 +55,10 @@
 	import { SvelteSet } from 'svelte/reactivity';
 	import SplitColumns from '$lib/components/SplitColumns.svelte';
 	import ItemRow, { itemRowWash } from '$lib/components/ItemRow.svelte';
+	import PicturePicker from '$lib/components/PicturePicker.svelte';
 	import { ITEM_ROOM_ACTIONS } from '$lib/item-action-names';
 	import { useT } from '$lib/i18n';
+	import { RememberedOrder } from '$lib/remembered-order.svelte';
 
 	const t = useT();
 
@@ -356,28 +355,12 @@
 	 * The order of the rows inside each card. Kept in the browser: it is a way
 	 * of looking at the list, not a fact about the account. See `$lib/item-order`.
 	 */
-	let order = $state<ItemOrder>(DEFAULT_ITEM_ORDER);
-	let direction = $state<ItemDirection>(itemDirectionFor(DEFAULT_ITEM_ORDER));
-
-	onMount(() => {
-		try {
-			const kept = localStorage.getItem(ITEM_ORDER_KEY);
-			if (isItemOrder(kept)) order = kept;
-			const way = localStorage.getItem(ITEM_DIRECTION_KEY);
-			if (way === 'asc' || way === 'desc') direction = way;
-		} catch {
-			// A private window, or storage refused: the defaults stand.
-		}
-	});
-
-	function rememberOrder() {
-		try {
-			localStorage.setItem(ITEM_ORDER_KEY, order);
-			localStorage.setItem(ITEM_DIRECTION_KEY, direction);
-		} catch {
-			// It still holds for this visit.
-		}
-	}
+	const sorting = new RememberedOrder<ItemOrder>(
+		'inventory',
+		ITEM_ORDERS,
+		DEFAULT_ITEM_ORDER,
+		itemDirectionFor
+	);
 
 	/** Which of the room's two managing screens is up, and on which tab. */
 	let organising = $state(false);
@@ -539,6 +522,10 @@
 	}
 
 	let filteredItems = $derived(allowedItems.filter(inChosenLocation));
+	/** Any picture on show keeps a picture's room on every row — see `ItemRow`. */
+	const anyPictured = $derived(filteredItems.some((one) => one.pictureId));
+	/** The thing whose dialog is open, for its picture, which is set apart from the form. */
+	const editingItem = $derived(data.items.find((one) => one.id === editingId) ?? null);
 
 	/** How many things sit in each location's own subtree, for the panel. */
 	/**
@@ -669,7 +656,7 @@
 
 	/** Every row on screen is on this tab's list, so the two lists group alike. */
 	let replenishItems = $derived(
-		[...filteredItems].sort((a, b) => compareItems(a, b, order, direction))
+		[...filteredItems].sort((a, b) => compareItems(a, b, sorting.order, sorting.direction))
 	);
 	/** Items grouped into category cards, in the order the categories are kept. */
 	function byCategory(rows: typeof replenishItems) {
@@ -799,6 +786,45 @@
 		const total = categories.reduce((sum, one) => sum + one.items.length, 0);
 		const largest = Math.max(...categories.map((one) => one.items.length));
 		return largest > total * COLUMN_SHARE ? 1 : Math.min(categories.length, MAX_COLUMNS);
+	}
+
+	/** Where a third column of cards starts to fit: Tailwind's `2xl`. */
+	const THIRD_COLUMN_MEDIA = 'min-width: 96rem';
+	const roomForThree = new MediaQuery(THIRD_COLUMN_MEDIA, false);
+
+	/**
+	 * A place's cards cut into columns, in their own order, as evenly as their
+	 * rows allow.
+	 *
+	 * The cut is made here rather than left to CSS columns, which balance by
+	 * measuring and then place unbreakable cards wherever the measurement
+	 * says: Firefox, zoomed in, put the first card in the second column and
+	 * left the first one empty. A cut in order fills the first column first,
+	 * always, and stacks back into the same order on a phone.
+	 */
+	function inColumns<T extends { items: unknown[] }>(categories: T[]): T[][] {
+		const count = Math.min(columnsFor(categories), roomForThree.current ? MAX_COLUMNS : 2);
+		if (count < 2) return [categories];
+		// A card's weight is its rows plus its heading.
+		const weights = categories.map((one) => one.items.length + 1);
+		const sum = (from: number, to: number) =>
+			weights.slice(from, to).reduce((total, weight) => total + weight, 0);
+		let best: number[] = [];
+		let bestHeaviest = Infinity;
+		const n = categories.length;
+		for (let a = 1; a < n; a++) {
+			if (count === 2) {
+				const heaviest = Math.max(sum(0, a), sum(a, n));
+				if (heaviest < bestHeaviest) [best, bestHeaviest] = [[a], heaviest];
+				continue;
+			}
+			for (let b = a + 1; b < n; b++) {
+				const heaviest = Math.max(sum(0, a), sum(a, b), sum(b, n));
+				if (heaviest < bestHeaviest) [best, bestHeaviest] = [[a, b], heaviest];
+			}
+		}
+		const cuts = [0, ...best, n];
+		return cuts.slice(1).map((end, i) => categories.slice(cuts[i], end));
 	}
 
 	/** The rows in the order they are drawn, which is the order j and k walk. */
@@ -1198,6 +1224,32 @@
 		onclose={cancelEdit}
 		size="sm"
 	>
+		<!-- Its own form beside the item's, since a file goes up the moment it
+		     is chosen. Only on a thing of your own: a shared one's picture is
+		     its owner's to choose. -->
+		{#if editingItem?.mine}
+			<div class="mb-3 flex items-center gap-3">
+				<PicturePicker
+					id={editingItem.id}
+					pictureId={editingItem.pictureId}
+					icon="box"
+					kilobytes={data.pictureKilobytes}
+					setAction={ITEM_ROOM_ACTIONS.setPicture}
+					removeAction={ITEM_ROOM_ACTIONS.removePicture}
+					fields={{ title: editingItem.name }}
+					chooseLabel={t('inventory.aPictureOf', { name: editingItem.name })}
+					changeLabel={t('inventory.changeThePicture')}
+					removeLabel={t('inventory.removeThePicture')}
+					size="size-16"
+					removable
+				/>
+				<p class="text-xs text-gray-500">
+					{editingItem.pictureId
+						? t('inventory.pressToChangeIt')
+						: t('inventory.pressToChooseAPicture')}
+				</p>
+			</div>
+		{/if}
 		<form
 			id="item-form"
 			method="POST"
@@ -1414,20 +1466,15 @@
 				{/snippet}
 				{#snippet trailing()}
 					<SortControl
-						value={order}
+						value={sorting.order}
 						options={ITEM_ORDERS}
 						labels={ITEM_ORDER_LABELS}
-						{direction}
+						direction={sorting.direction}
 						onpick={(next) => {
-							order = next;
-							direction = itemDirectionFor(next);
-							rememberOrder();
+							sorting.pick(next);
 							selectedIndex = -1;
 						}}
-						onflip={() => {
-							direction = direction === 'asc' ? 'desc' : 'asc';
-							rememberOrder();
-						}}
+						onflip={() => sorting.flip()}
 						label={t('inventory.orderThingsBy')}
 					/>
 				{/snippet}
@@ -1554,79 +1601,79 @@
 										</h3>
 									{/if}
 									<!--
-										Cards flow down columns rather than across a grid: a grid row is
+										Cards stack down columns rather than across a grid: a grid row is
 										as tall as its tallest card, which left a short category holding
 										hundreds of pixels of empty body beside a long one. A place with
 										one category takes the whole width, rather than half of it beside
-										nothing, and the columns only appear once there are cards to
-										fill them.
+										nothing. See `inColumns` for where each column is cut.
 									-->
-									<div
-										class="item-cards {columnsFor(place.categories) > 1
-											? 'md:columns-2'
-											: ''} {columnsFor(place.categories) > 2 ? '2xl:columns-3' : ''}"
-									>
-										{#each place.categories as category (category.name)}
-											<section
-												class="item-card mb-4 break-inside-avoid border border-gray-300 bg-white max-sm:border-x-0 sm:shadow-card"
-											>
-												<h4 class="border-b border-gray-200 px-4 py-2">
-													{#if category.color}
-														<span class="pill" style={pillStyle(category.color) ?? ''}
-															>{category.name}</span
-														>
-													{:else}
-														<span class="eyebrow text-gray-500">{category.name}</span>
-													{/if}
-												</h4>
-												<div class="divide-y divide-gray-200">
-													{#each category.items as item (item.id)}
-														{@const globalIdx = shownItems.indexOf(item)}
-														<!--
+									<div class="item-cards md:flex md:items-start md:gap-4">
+										{#each inColumns(place.categories) as column, c (c)}
+											<div class="md:min-w-0 md:flex-1">
+												{#each column as category (category.name)}
+													<section
+														class="item-card mb-4 border border-gray-300 bg-white max-sm:border-x-0 sm:shadow-card"
+													>
+														<h4 class="border-b border-gray-200 px-4 py-2">
+															{#if category.color}
+																<span class="pill" style={pillStyle(category.color) ?? ''}
+																	>{category.name}</span
+																>
+															{:else}
+																<span class="eyebrow text-gray-500">{category.name}</span>
+															{/if}
+														</h4>
+														<div class="divide-y divide-gray-200">
+															{#each category.items as item (item.id)}
+																{@const globalIdx = shownItems.indexOf(item)}
+																<!--
 															What you have is washed blue and what you put away
 															dimmed — see `itemRowWash`. Neither moves the row.
 														-->
-														<div
-															use:keepInView={globalIdx === selectedIndex}
-															draggable="true"
-															ondragstart={(e) => {
-																dragging = item.id;
-																// Firefox refuses to start a drag with no payload set.
-																e.dataTransfer?.setData('text/plain', String(item.id));
-															}}
-															ondragend={() => {
-																dragging = null;
-																dragOver = null;
-																stopFollowing();
-															}}
-															class="row-card cursor-grab {itemRowWash(item)} {globalIdx ===
-															selectedIndex
-																? 'kb-cursor'
-																: ''}"
-														>
-															<!--
+																<div
+																	use:keepInView={globalIdx === selectedIndex}
+																	draggable="true"
+																	ondragstart={(e) => {
+																		dragging = item.id;
+																		// Firefox refuses to start a drag with no payload set.
+																		e.dataTransfer?.setData('text/plain', String(item.id));
+																	}}
+																	ondragend={() => {
+																		dragging = null;
+																		dragOver = null;
+																		stopFollowing();
+																	}}
+																	class="row-card cursor-grab {itemRowWash(item)} {globalIdx ===
+																	selectedIndex
+																		? 'kb-cursor'
+																		: ''}"
+																>
+																	<!--
 																The row is a component, so a thing filed under a notebook is the
 																same thing this room shows — its count, its price, its own fields
 																and the recipes that use it. See `ItemRow`.
 															-->
-															<ItemRow
-																{item}
-																currency={data.currency}
-																actions={ITEM_ROOM_ACTIONS}
-																usedIn={data.usedIn[item.id] ?? []}
-																{chipColor}
-																onedit={() => startEdit(item)}
-																onsubmit={tick(
-																	item.type === 'someday' ? 'toggleBought' : 'toggleSnoozed'
-																)}
-																ondeletesubmit={(one) => deferDelete(one.id, one.name)}
-																confirming={confirmingDelete === item.id}
-																onconfirm={(id) => (confirmingDelete = id)}
-															/>
+																	<ItemRow
+																		{item}
+																		currency={data.currency}
+																		actions={ITEM_ROOM_ACTIONS}
+																		usedIn={data.usedIn[item.id] ?? []}
+																		{chipColor}
+																		onedit={() => startEdit(item)}
+																		onsubmit={tick(
+																			item.type === 'someday' ? 'toggleBought' : 'toggleSnoozed'
+																		)}
+																		ondeletesubmit={(one) => deferDelete(one.id, one.name)}
+																		confirming={confirmingDelete === item.id}
+																		onconfirm={(id) => (confirmingDelete = id)}
+																		thumb={anyPictured}
+																	/>
+																</div>
+															{/each}
 														</div>
-													{/each}
-												</div>
-											</section>
+													</section>
+												{/each}
+											</div>
 										{/each}
 									</div>
 								{/each}
@@ -1665,6 +1712,7 @@
 			<form
 				method="POST"
 				action="?/setLocationPanelWidth"
+				data-quiet
 				class="hidden"
 				bind:this={panelForm}
 				use:enhance={() => async () => {}}

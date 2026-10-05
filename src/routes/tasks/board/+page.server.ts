@@ -1,5 +1,5 @@
 import type { IsolatedEvent } from '$lib/isolated/routes';
-import { clockOfDay, localOfInstant } from '$lib/services/time';
+import { clockOfDay, localOfInstant, localDay, pad2 } from '$lib/services/time';
 import { pickableNotebooks } from '$lib/services/notebooks';
 import { fail } from '@sveltejs/kit';
 import { ratingsFromForm } from '$lib/ratings';
@@ -11,6 +11,7 @@ import { buildCtx, type Ctx } from '$lib/services/ctx';
 import { toActionFailure } from '$lib/http-errors';
 import { createReminder, deleteReminder, listReminders } from '$lib/services/reminders';
 import { moveOccurrence } from '$lib/services/slots';
+import { formAction } from '$lib/services/scoped-actions';
 import {
 	cancelOccurrence,
 	generateForDate,
@@ -35,14 +36,6 @@ import {
 	setTodoStatus
 } from '$lib/services/todos';
 
-function pad(n: number): string {
-	return String(n).padStart(2, '0');
-}
-
-function formatDate(d: Date): string {
-	return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
-}
-
 function parseDate(param: string | null): Date {
 	if (param && /^\d{4}-\d{2}-\d{2}$/.test(param)) {
 		const parsed = new Date(param + 'T00:00:00');
@@ -58,7 +51,7 @@ function parseDate(param: string | null): Date {
  * rather than in the past; another day starts at nine.
  */
 function nextFreeTime(dateStr: string, now: Date, tz: string): string {
-	const isToday = formatDate(now) === dateStr;
+	const isToday = localDay(now) === dateStr;
 	if (!isToday) return '09:00';
 
 	// The clock the person is reading, not the one the box keeps. Landing a
@@ -67,7 +60,7 @@ function nextFreeTime(dateStr: string, now: Date, tz: string): string {
 	const minutes = nowMinute <= 30 ? 30 : 0;
 	const hour = minutes === 0 ? nowHour + 1 : nowHour;
 	if (hour > 23) return '23:30';
-	return `${pad(hour)}:${pad(minutes)}`;
+	return `${pad2(hour)}:${pad2(minutes)}`;
 }
 
 /**
@@ -115,7 +108,7 @@ export type Card = {
 export const load = async ({ locals, url }: IsolatedEvent) => {
 	const ctx = buildCtx(locals.user!.id);
 	const date = parseDate(url.searchParams.get('date'));
-	const dateStr = formatDate(date);
+	const dateStr = localDay(date);
 
 	generateForDate(ctx, date);
 
@@ -207,7 +200,7 @@ export const load = async ({ locals, url }: IsolatedEvent) => {
 
 	return {
 		date: dateStr,
-		today: formatDate(ctx.now),
+		today: localDay(ctx.now),
 		todayCards,
 		generalCards,
 		categories: listCategories(ctx)
@@ -268,15 +261,9 @@ export const actions = {
 	 * of day, and letting a drag override that would put the board and the
 	 * calendar into disagreement over the same task.
 	 */
-	reorder: async ({ request, locals }: IsolatedEvent) => {
-		const formData = await request.formData();
-		try {
-			reorderTodos(buildCtx(locals.user!.id), formData.getAll('todoId'));
-			return { success: true };
-		} catch (e) {
-			return toActionFailure(e);
-		}
-	},
+	reorder: formAction((ctx, formData) => {
+		reorderTodos(ctx, formData.getAll('todoId'));
+	}),
 
 	/** Dragging between the two tabs: a todo gains a day, or gives one up. */
 	schedule: async ({ request, locals }: IsolatedEvent) => {
@@ -324,36 +311,24 @@ export const actions = {
 	},
 
 	/** The reverse: a one-off goes back to being an undated todo. */
-	demote: async ({ request, locals }: IsolatedEvent) => {
-		const formData = await request.formData();
-		try {
-			demoteInstance(buildCtx(locals.user!.id), Number(formData.get('id')));
-			return { success: true };
-		} catch (e) {
-			return toActionFailure(e);
-		}
-	},
+	demote: formAction((ctx, formData) => {
+		demoteInstance(ctx, Number(formData.get('id')));
+	}),
 
-	createTodo: async ({ request, locals }: IsolatedEvent) => {
-		const formData = await request.formData();
-		try {
-			createTodo(buildCtx(locals.user!.id), {
-				title: formData.get('heading'),
-				notes: formData.get('notes'),
-				categoryId: formData.get('categoryId'),
-				// The card form offers both; they were being dropped here.
-				notebookId: formData.get('notebookId'),
-				...(formData.has('tags') ? { tags: formData.get('tags') } : {}),
-				scheduledDate: formData.get('scheduledDate'),
-				status: formData.get('status'),
-				ratings: ratingsFromForm(formData),
-				attributes: attributesFromFormData(formData)
-			});
-			return { success: true };
-		} catch (e) {
-			return toActionFailure(e);
-		}
-	},
+	createTodo: formAction((ctx, formData) => {
+		createTodo(ctx, {
+			title: formData.get('heading'),
+			notes: formData.get('notes'),
+			categoryId: formData.get('categoryId'),
+			// The card form offers both; they were being dropped here.
+			notebookId: formData.get('notebookId'),
+			...(formData.has('tags') ? { tags: formData.get('tags') } : {}),
+			scheduledDate: formData.get('scheduledDate'),
+			status: formData.get('status'),
+			ratings: ratingsFromForm(formData),
+			attributes: attributesFromFormData(formData)
+		});
+	}),
 
 	setRatings: async ({ request, locals }: IsolatedEvent) => {
 		const ctx = buildCtx(locals.user!.id);
@@ -377,31 +352,19 @@ export const actions = {
 	 * same card as the one on this board, so they are the same card's editor.
 	 */
 	/** "Remind me before this one." A lead time, not a clock reading. */
-	remind: async ({ request, locals }: IsolatedEvent) => {
-		const formData = await request.formData();
-		try {
-			createReminder(
-				buildCtx(locals.user!.id),
-				{ subjectId: formData.get('id'), at: formData.get('minutes') },
-				// Somebody chose this lead, so the floor applies: a reminder the
-				// phone could not hear about in time is not one to promise.
-				{ chosen: true }
-			);
-			return { success: true };
-		} catch (e) {
-			return toActionFailure(e);
-		}
-	},
+	remind: formAction((ctx, formData) => {
+		createReminder(
+			ctx,
+			{ subjectId: formData.get('id'), at: formData.get('minutes') },
+			// Somebody chose this lead, so the floor applies: a reminder the
+			// phone could not hear about in time is not one to promise.
+			{ chosen: true }
+		);
+	}),
 
-	unremind: async ({ request, locals }: IsolatedEvent) => {
-		const formData = await request.formData();
-		try {
-			deleteReminder(buildCtx(locals.user!.id), Number(formData.get('reminderId')));
-			return { success: true };
-		} catch (e) {
-			return toActionFailure(e);
-		}
-	},
+	unremind: formAction((ctx, formData) => {
+		deleteReminder(ctx, Number(formData.get('reminderId')));
+	}),
 
 	editInstance: async ({ request, locals }: IsolatedEvent) => {
 		const ctx = buildCtx(locals.user!.id);
@@ -459,19 +422,9 @@ export const actions = {
 	},
 
 	/** Which activity a category-shaped block turned out to be. */
-	resolveActivity: async ({ request, locals }: IsolatedEvent) => {
-		const formData = await request.formData();
-		try {
-			resolveInstanceActivity(
-				buildCtx(locals.user!.id),
-				Number(formData.get('id')),
-				formData.get('activityId')
-			);
-			return { success: true };
-		} catch (e) {
-			return toActionFailure(e);
-		}
-	},
+	resolveActivity: formAction((ctx, formData) => {
+		resolveInstanceActivity(ctx, Number(formData.get('id')), formData.get('activityId'));
+	}),
 
 	/*
 	 * Taking a block off the day, which is not the same as deleting its row.
@@ -487,15 +440,9 @@ export const actions = {
 	 * outright. It is what the planner's own cancel does, and what
 	 * `cancel_block` does over MCP.
 	 */
-	deleteInstance: async ({ request, locals }: IsolatedEvent) => {
-		const formData = await request.formData();
-		try {
-			cancelOccurrence(buildCtx(locals.user!.id), formData.get('id'));
-			return { success: true };
-		} catch (e) {
-			return toActionFailure(e);
-		}
-	},
+	deleteInstance: formAction((ctx, formData) => {
+		cancelOccurrence(ctx, formData.get('id'));
+	}),
 
 	deleteTodo: async ({ request, locals }: IsolatedEvent) => {
 		const target = await readTarget(request);

@@ -11,8 +11,8 @@ import {
 	upcomingWindow,
 	windowEnd
 } from '$lib/services/reminder-sources';
-import { toActionFailure } from '$lib/http-errors';
 import { host } from '$lib/services/host';
+import { formAction } from '$lib/services/scoped-actions';
 import {
 	createFreeReminder,
 	editReminder,
@@ -150,26 +150,20 @@ export const load = async ({ locals, url }: IsolatedEvent) => {
 };
 
 export const actions = {
-	create: async ({ request, locals }: IsolatedEvent) => {
-		const form = await request.formData();
-		try {
-			// Two fields, one instant: the form asks the day and the time
-			// separately because a single datetime control is one box carrying
-			// two questions and looks it. Only the day is required — a day on its
-			// own means the hour the account's day starts, filled in downstairs.
-			const day = String(form.get('day') ?? '').trim();
-			const time = String(form.get('time') ?? '').trim();
-			createFreeReminder(buildCtx(locals.user!.id), {
-				at: day && time ? `${day}T${time}` : day,
-				message: form.get('label'),
-				audible: form.get('audible') === 'on',
-				ringtoneId: form.get('ringtoneId')
-			});
-			return { success: true };
-		} catch (e) {
-			return toActionFailure(e);
-		}
-	},
+	create: formAction((ctx, form) => {
+		// Two fields, one instant: the form asks the day and the time
+		// separately because a single datetime control is one box carrying
+		// two questions and looks it. Only the day is required — a day on its
+		// own means the hour the account's day starts, filled in downstairs.
+		const day = String(form.get('day') ?? '').trim();
+		const time = String(form.get('time') ?? '').trim();
+		createFreeReminder(ctx, {
+			at: day && time ? `${day}T${time}` : day,
+			message: form.get('label'),
+			audible: form.get('audible') === 'on',
+			ringtoneId: form.get('ringtoneId')
+		});
+	}),
 
 	/**
 	 * The same four questions the form above asked, asked again about a row.
@@ -179,23 +173,17 @@ export const actions = {
 	 * block says before anybody overrides it, meaning "whatever this kind of
 	 * reminder does". A checkbox has no way to say the third thing.
 	 */
-	edit: async ({ request, locals }: IsolatedEvent) => {
-		const form = await request.formData();
-		try {
-			const day = String(form.get('day') ?? '').trim();
-			const time = String(form.get('time') ?? '').trim();
-			const sound = String(form.get('sound') ?? 'kind');
-			editReminder(buildCtx(locals.user!.id), Number(form.get('id')), {
-				at: day && time ? `${day}T${time}` : day,
-				message: form.get('label'),
-				audible: sound === 'kind' ? null : sound === 'on',
-				ringtoneId: form.get('ringtoneId')
-			});
-			return { success: true };
-		} catch (e) {
-			return toActionFailure(e);
-		}
-	},
+	edit: formAction((ctx, form) => {
+		const day = String(form.get('day') ?? '').trim();
+		const time = String(form.get('time') ?? '').trim();
+		const sound = String(form.get('sound') ?? 'kind');
+		editReminder(ctx, Number(form.get('id')), {
+			at: day && time ? `${day}T${time}` : day,
+			message: form.get('label'),
+			audible: sound === 'kind' ? null : sound === 'on',
+			ringtoneId: form.get('ringtoneId')
+		});
+	}),
 
 	dismiss: async ({ request, locals }: IsolatedEvent) => {
 		const form = await request.formData();
@@ -209,43 +197,25 @@ export const actions = {
 		return { success: true };
 	},
 
-	addSound: async ({ request, locals }: IsolatedEvent) => {
-		const form = await request.formData();
-		try {
-			const file = form.get('sound');
-			if (!(file instanceof File)) throw new Error('No file');
-			addRingtone(buildCtx(locals.user!.id), {
-				name: (form.get('label') || file.name.replace(/\.[^.]+$/, '')) as string,
-				mime: file.type,
-				data: new Uint8Array(await file.arrayBuffer())
-			});
-			return { success: true };
-		} catch (e) {
-			return toActionFailure(e);
-		}
-	},
+	addSound: formAction(async (ctx, form) => {
+		const file = form.get('sound');
+		if (!(file instanceof File)) throw new Error('No file');
+		addRingtone(ctx, {
+			name: (form.get('label') || file.name.replace(/\.[^.]+$/, '')) as string,
+			mime: file.type,
+			data: new Uint8Array(await file.arrayBuffer())
+		});
+	}),
 
-	removeSound: async ({ request, locals }: IsolatedEvent) => {
-		const form = await request.formData();
-		try {
-			removeRingtone(buildCtx(locals.user!.id), Number(form.get('id')));
-			return { success: true };
-		} catch (e) {
-			return toActionFailure(e);
-		}
-	},
+	removeSound: formAction((ctx, form) => {
+		removeRingtone(ctx, Number(form.get('id')));
+	}),
 
-	setSound: async ({ request, locals }: IsolatedEvent) => {
-		const form = await request.formData();
-		try {
-			const chosen = String(form.get('ringtoneId') ?? '');
-			setSoundChoice(buildCtx(locals.user!.id), form.get('kind'), {
-				audible: form.get('audible') === 'on',
-				ringtoneId: chosen ? Number(chosen) : null
-			});
-			return { success: true };
-		} catch (e) {
-			return toActionFailure(e);
-		}
-	}
+	setSound: formAction((ctx, form) => {
+		const chosen = String(form.get('ringtoneId') ?? '');
+		setSoundChoice(ctx, form.get('kind'), {
+			audible: form.get('audible') === 'on',
+			ringtoneId: chosen ? Number(chosen) : null
+		});
+	})
 };

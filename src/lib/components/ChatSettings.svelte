@@ -11,6 +11,7 @@
 	import { armed } from '$lib/actions/armed';
 	import { resolve } from '$app/paths';
 	import { useT } from '$lib/i18n';
+	import Banner from '$lib/components/Banner.svelte';
 	import { providerOf, OLLAMA_DEFAULT_BASE_URL } from '$lib/assistant-providers';
 	import type { ChatSettingsData, ChatSettingsForm } from '$lib/chat-settings';
 
@@ -184,7 +185,7 @@
 						onchange={(e) => e.currentTarget.form?.requestSubmit()}
 					/>
 					<span>
-						<strong class="font-semibold text-red-600"
+						<strong class="font-semibold text-gray-900"
 							>{t('settings.integrations.chat.mayDelete')}</strong
 						>
 						<span class="mt-0.5 block text-xs leading-relaxed text-gray-500">
@@ -321,7 +322,7 @@
 						</div>
 
 						{#if askFailed}
-							<p class="mt-1 text-xs text-red-600">{askFailed}</p>
+							<div class="mt-1"><Banner kind="error" message={askFailed} /></div>
 						{/if}
 					</Field>
 

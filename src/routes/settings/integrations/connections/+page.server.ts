@@ -1,6 +1,5 @@
 import type { Actions, PageServerLoad } from './$types';
 
-import { ASSISTANT_SCOPES, ASSISTANT_SCOPES_DESTRUCTIVE } from '$lib/server/mcp/tools';
 import { buildCtx } from '$lib/services/ctx';
 import { toActionFailure } from '$lib/http-errors';
 import {
@@ -64,21 +63,6 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 			...s,
 			stats: streamStats(ctx, s.id)
 		})),
-		/*
-		 * What an AI assistant asks for, as one button.
-		 *
-		 * Eighteen checkboxes is a form somebody ticks wrong, and the wrong tick
-		 * here is either a token that cannot do its job or one that can do more
-		 * than it needs. The set is read from the tools themselves, so a tool
-		 * added later is in the preset without anybody remembering.
-		 */
-		assistantScopes: ASSISTANT_SCOPES,
-		/*
-		 * …and the wider set, behind its own quieter button. Deleting is not the
-		 * same grant as writing, so the preset everybody presses does not carry
-		 * it — see `destructive` in tokens.ts.
-		 */
-		assistantScopesDestructive: ASSISTANT_SCOPES_DESTRUCTIVE,
 		/*
 		 * The permissions, as catalogue keys rather than sentences.
 		 *

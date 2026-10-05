@@ -1,6 +1,5 @@
-import type { Actions, RequestEvent } from '@sveltejs/kit';
-import { buildCtx } from '$lib/services/ctx';
-import { toActionFailure } from '$lib/http-errors';
+import type { Actions } from '@sveltejs/kit';
+import { formAction } from '$lib/services/scoped-actions';
 import {
 	createLedger,
 	deleteLedger,
@@ -21,73 +20,38 @@ import {
  * Mounted under the room's older names there and under a prefix inside a
  * notebook — see `$lib/ledger-action-names`.
  */
-type Event = Pick<RequestEvent, 'request'> & { locals: App.Locals };
-
 export const ledgerHandlers = {
-	create: async ({ request, locals }: Event) => {
-		const form = await request.formData();
-		try {
-			const made = createLedger(buildCtx(locals.user!.id), {
-				name: form.get('heading'),
-				kind: form.get('kind') || 'bank',
-				defaultParser: form.get('defaultParser'),
-				// `has` rather than `get`: the room's form says nothing about a
-				// notebook and must not be read as taking the ledger out of one.
-				...(form.has('notebookId') ? { notebookId: form.get('notebookId') } : {})
-			});
-			return { success: true, ledgerId: made.id };
-		} catch (e) {
-			return toActionFailure(e);
-		}
-	},
+	create: formAction((ctx, form) => {
+		const made = createLedger(ctx, {
+			name: form.get('heading'),
+			kind: form.get('kind') || 'bank',
+			defaultParser: form.get('defaultParser'),
+			// `has` rather than `get`: the room's form says nothing about a
+			// notebook and must not be read as taking the ledger out of one.
+			...(form.has('notebookId') ? { notebookId: form.get('notebookId') } : {})
+		});
+		return { success: true, ledgerId: made.id };
+	}),
 
-	update: async ({ request, locals }: Event) => {
-		const form = await request.formData();
-		try {
-			updateLedger(buildCtx(locals.user!.id), Number(form.get('id')), {
-				name: form.get('heading'),
-				kind: form.get('kind'),
-				defaultParser: form.get('defaultParser'),
-				...(form.has('notebookId') ? { notebookId: form.get('notebookId') } : {})
-			});
-			return { success: true };
-		} catch (e) {
-			return toActionFailure(e);
-		}
-	},
+	update: formAction((ctx, form) => {
+		updateLedger(ctx, Number(form.get('id')), {
+			name: form.get('heading'),
+			kind: form.get('kind'),
+			defaultParser: form.get('defaultParser'),
+			...(form.has('notebookId') ? { notebookId: form.get('notebookId') } : {})
+		});
+	}),
 
-	move: async ({ request, locals }: Event) => {
-		const form = await request.formData();
-		try {
-			moveLedger(buildCtx(locals.user!.id), Number(form.get('id')), Number(form.get('delta')));
-			return { success: true };
-		} catch (e) {
-			return toActionFailure(e);
-		}
-	},
+	move: formAction((ctx, form) => {
+		moveLedger(ctx, Number(form.get('id')), Number(form.get('delta')));
+	}),
 
 	/** Put away without losing anything: its lines stay, and its totals with them. */
-	archive: async ({ request, locals }: Event) => {
-		const form = await request.formData();
-		try {
-			setLedgerArchived(
-				buildCtx(locals.user!.id),
-				Number(form.get('id')),
-				form.get('archived') === 'true'
-			);
-			return { success: true };
-		} catch (e) {
-			return toActionFailure(e);
-		}
-	},
+	archive: formAction((ctx, form) => {
+		setLedgerArchived(ctx, Number(form.get('id')), form.get('archived') === 'true');
+	}),
 
-	delete: async ({ request, locals }: Event) => {
-		const form = await request.formData();
-		try {
-			deleteLedger(buildCtx(locals.user!.id), Number(form.get('id')));
-			return { success: true };
-		} catch (e) {
-			return toActionFailure(e);
-		}
-	}
+	delete: formAction((ctx, form) => {
+		deleteLedger(ctx, Number(form.get('id')));
+	})
 } satisfies Actions;

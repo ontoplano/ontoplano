@@ -110,6 +110,28 @@ function offsetOf(id: string, at: Date): { label: string; minutes: number } {
  * is short and a name is what is being looked for.
  */
 export function zoneGroups(at = new Date()): { label: string; zones: Zone[] }[] {
+	const hour = Math.floor(at.getTime() / HOUR_MS);
+	const held = groupsHeld.get(hour);
+	if (held) return held;
+	const groups = computeZoneGroups(at);
+	groupsHeld.clear();
+	groupsHeld.set(hour, groups);
+	return groups;
+}
+
+/**
+ * The list is kept for an hour at a time.
+ *
+ * Asking `Intl` for four hundred offsets costs about forty milliseconds, and
+ * the preferences page asked on every load — the single most expensive thing
+ * the server did for that page. The offsets only move when clocks change,
+ * which is always on the hour, so an hour's answer is the right answer for the
+ * whole hour.
+ */
+const HOUR_MS = 60 * 60 * 1000;
+const groupsHeld = new Map<number, { label: string; zones: Zone[] }[]>();
+
+function computeZoneGroups(at: Date): { label: string; zones: Zone[] }[] {
 	const all: Zone[] = supported().map((id) => {
 		const { label, minutes } = offsetOf(id, at);
 		return { id, city: cityOf(id), region: regionOf(id), offset: label, minutes };

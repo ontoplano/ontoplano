@@ -1,4 +1,3 @@
-import type { RequestEvent } from '@sveltejs/kit';
 import {
 	closeGoal,
 	createGoal,
@@ -8,8 +7,7 @@ import {
 	updateGoal
 } from './goals.js';
 import { setTodoStatus } from './todos.js';
-import { buildCtx } from './ctx.js';
-import { toActionFailure } from '$lib/http-errors';
+import { formAction } from '$lib/services/scoped-actions';
 
 /**
  * Everything done to a goal, from wherever a goal is shown.
@@ -48,114 +46,62 @@ export function targetsFrom(formData: FormData) {
 	}));
 }
 
-type Event = Pick<RequestEvent, 'request'> & { locals: { user?: { id: string } | null } };
-
 export const goalHandlers = {
-	create: async ({ request, locals }: Event) => {
-		const formData = await request.formData();
-		try {
-			createGoal(buildCtx(locals.user!.id), {
-				title: formData.get('heading'),
-				horizon: formData.get('horizon'),
-				notes: formData.get('notes'),
-				startDate: formData.get('startDate'),
-				areaId: formData.get('areaId'),
-				notebookId: formData.get('notebookId'),
-				parentId: formData.get('parentId'),
-				targets: targetsFrom(formData)
-			});
-			return { success: true };
-		} catch (e) {
-			return toActionFailure(e);
-		}
-	},
+	create: formAction((ctx, formData) => {
+		createGoal(ctx, {
+			title: formData.get('heading'),
+			horizon: formData.get('horizon'),
+			notes: formData.get('notes'),
+			startDate: formData.get('startDate'),
+			areaId: formData.get('areaId'),
+			notebookId: formData.get('notebookId'),
+			parentId: formData.get('parentId'),
+			targets: targetsFrom(formData)
+		});
+	}),
 
-	update: async ({ request, locals }: Event) => {
-		const formData = await request.formData();
-		try {
-			updateGoal(buildCtx(locals.user!.id), Number(formData.get('id')), {
-				title: formData.get('heading'),
-				notes: formData.get('notes'),
-				areaId: formData.get('areaId'),
-				notebookId: formData.get('notebookId'),
-				targets: targetsFrom(formData),
-				horizon: formData.get('horizon'),
-				startDate: formData.get('startDate')
-			});
-			return { success: true };
-		} catch (e) {
-			return toActionFailure(e);
-		}
-	},
+	update: formAction((ctx, formData) => {
+		updateGoal(ctx, Number(formData.get('id')), {
+			title: formData.get('heading'),
+			notes: formData.get('notes'),
+			areaId: formData.get('areaId'),
+			notebookId: formData.get('notebookId'),
+			targets: targetsFrom(formData),
+			horizon: formData.get('horizon'),
+			startDate: formData.get('startDate')
+		});
+	}),
 
-	setProgress: async ({ request, locals }: Event) => {
-		const formData = await request.formData();
-		try {
-			setTargetProgress(
-				buildCtx(locals.user!.id),
-				Number(formData.get('targetId')),
-				formData.get('currentValue')
-			);
-			return { success: true };
-		} catch (e) {
-			return toActionFailure(e);
-		}
-	},
+	setProgress: formAction((ctx, formData) => {
+		setTargetProgress(ctx, Number(formData.get('targetId')), formData.get('currentValue'));
+	}),
 
 	/** Achieved, missed, or reopened — `close` clears the date for `open`. */
-	close: async ({ request, locals }: Event) => {
-		const formData = await request.formData();
-		try {
-			closeGoal(buildCtx(locals.user!.id), Number(formData.get('id')), {
-				status: formData.get('status'),
-				outcome: formData.get('outcome')
-			});
-			return { success: true };
-		} catch (e) {
-			return toActionFailure(e);
-		}
-	},
+	close: formAction((ctx, formData) => {
+		closeGoal(ctx, Number(formData.get('id')), {
+			status: formData.get('status'),
+			outcome: formData.get('outcome')
+		});
+	}),
 
-	setLinks: async ({ request, locals }: Event) => {
-		const formData = await request.formData();
-		try {
-			setGoalLinks(buildCtx(locals.user!.id), Number(formData.get('id')), {
-				slotIds: formData.getAll('slotId'),
-				todoIds: formData.getAll('todoId'),
-				activityIds: formData.getAll('activityId')
-			});
-			return { success: true };
-		} catch (e) {
-			return toActionFailure(e);
-		}
-	},
+	setLinks: formAction((ctx, formData) => {
+		setGoalLinks(ctx, Number(formData.get('id')), {
+			slotIds: formData.getAll('slotId'),
+			todoIds: formData.getAll('todoId'),
+			activityIds: formData.getAll('activityId')
+		});
+	}),
 
 	/*
 	 * Tick a linked todo from the goal card. The card lists what counts
 	 * towards the goal, and a list you can see but not tick sends you to
 	 * another page for the one action the list exists for.
 	 */
-	setTodoStatus: async ({ request, locals }: Event) => {
-		const formData = await request.formData();
-		try {
-			setTodoStatus(
-				buildCtx(locals.user!.id),
-				Number(formData.get('todoId')),
-				String(formData.get('status'))
-			);
-			return { success: true };
-		} catch (e) {
-			return toActionFailure(e);
-		}
-	},
+	setTodoStatus: formAction((ctx, formData) => {
+		setTodoStatus(ctx, Number(formData.get('todoId')), String(formData.get('status')));
+	}),
 
-	remove: async ({ request, locals }: Event) => {
-		const formData = await request.formData();
-		try {
-			deleteGoal(buildCtx(locals.user!.id), Number(formData.get('id')));
-			return { success: true };
-		} catch (e) {
-			return toActionFailure(e);
-		}
-	}
+	remove: formAction((ctx, formData) => {
+		deleteGoal(ctx, Number(formData.get('id')));
+	})
 };

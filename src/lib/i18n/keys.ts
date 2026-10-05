@@ -59,6 +59,7 @@ export type MessageKey =
 	| 'admin.id.whatThisAccountDidAnd'
 	| 'admin.id.willBeAbleToRead'
 	| 'admin.id.yes'
+	| 'admin.issueSent'
 	| 'admin.itsLinkHasExpired'
 	| 'admin.joined'
 	| 'admin.justNow'
@@ -66,13 +67,17 @@ export type MessageKey =
 	| 'admin.lastAttempts'
 	| 'admin.lately'
 	| 'admin.mailThatDidNotGo'
+	| 'admin.mailingList'
+	| 'admin.mailingListDescription'
 	| 'admin.makeAdmin'
 	| 'admin.member'
 	| 'admin.minutesAgo'
 	| 'admin.noAccountsYet'
+	| 'admin.noIssueYet'
 	| 'admin.noPage'
 	| 'admin.nobodyCanRegisterUntilThis'
 	| 'admin.nobodyMatchesThat'
+	| 'admin.nobodyOnTheList'
 	| 'admin.notSignedIn'
 	| 'admin.nothingRecordedYet'
 	| 'admin.nothingReported'
@@ -82,6 +87,8 @@ export type MessageKey =
 	| 'admin.owner'
 	| 'admin.problemsSomebodyReportedIdeasThey'
 	| 'admin.refresh'
+	| 'admin.releaseMails'
+	| 'admin.releaseMailsDescription'
 	| 'admin.removeAdmin'
 	| 'admin.reported'
 	| 'admin.searchAccounts'
@@ -90,7 +97,9 @@ export type MessageKey =
 	| 'admin.sessionCount'
 	| 'admin.showOlder'
 	| 'admin.somebodyExampleCom'
+	| 'admin.subscribedFrom'
 	| 'admin.suggested'
+	| 'admin.takeOffTheList'
 	| 'admin.theWatchersAreToldThis'
 	| 'admin.unverified'
 	| 'admin.whatPeopleSentIn'
@@ -295,6 +304,9 @@ export type MessageKey =
 	| 'audio.tooLong'
 	| 'buy.backToBilling'
 	| 'buy.openingTheSecurePaymentWindow'
+	| 'buy.playCouldNotStart'
+	| 'buy.playNotConfirmed'
+	| 'buy.playOnlyInStoreCopy'
 	| 'buy.thePaymentWindowCouldNot'
 	| 'capture.addedTo'
 	| 'capture.addedToWithContent'
@@ -467,11 +479,14 @@ export type MessageKey =
 	| 'errors.locations.aLocationCannotBeInside'
 	| 'errors.mailLog.thatFailureIsGoneResolved'
 	| 'errors.mailLog.thisMailCannotBeReplayed'
+	| 'errors.media.chooseAPictureFirst'
+	| 'errors.media.noSuchItem'
 	| 'errors.media.noSuchNotebook'
 	| 'errors.media.noSuchPerson'
 	| 'errors.media.noSuchPicture'
 	| 'errors.media.noSuchPictureOnThisRecipe'
 	| 'errors.media.noSuchRecipe'
+	| 'errors.media.stillInUse'
 	| 'errors.media.thatFileWasEmpty'
 	| 'errors.media.thatIsNotAPicture'
 	| 'errors.media.thatPictureIsAlready'
@@ -682,6 +697,7 @@ export type MessageKey =
 	| 'finance.bills.keepIt'
 	| 'finance.bills.markPaid'
 	| 'finance.bills.markPaid2'
+	| 'finance.bills.namePaid'
 	| 'finance.bills.newBill'
 	| 'finance.bills.noBillsYet'
 	| 'finance.bills.noneMatch'
@@ -911,6 +927,14 @@ export type MessageKey =
 	| 'gallery.renameAlbum'
 	| 'gallery.searchAlbums'
 	| 'gallery.trips'
+	| 'gallery.unused.deleteAll'
+	| 'gallery.unused.deleteAllTitle'
+	| 'gallery.unused.deleteBody'
+	| 'gallery.unused.deleteOneTitle'
+	| 'gallery.unused.noneBody'
+	| 'gallery.unused.noneTitle'
+	| 'gallery.unused.title'
+	| 'gallery.unused.whatTheseAre'
 	| 'goals.aGoalIsACommitment'
 	| 'goals.abandoned'
 	| 'goals.achieved'
@@ -1389,6 +1413,7 @@ export type MessageKey =
 	| 'inventory.aColourForThisAttribute'
 	| 'inventory.aColourForThisCategory'
 	| 'inventory.aColourForThisValue'
+	| 'inventory.aPictureOf'
 	| 'inventory.aRoomACupboardA'
 	| 'inventory.about'
 	| 'inventory.addItem'
@@ -1409,6 +1434,7 @@ export type MessageKey =
 	| 'inventory.categories'
 	| 'inventory.categoriesAndAttributes'
 	| 'inventory.changeIs'
+	| 'inventory.changeThePicture'
 	| 'inventory.changesAre'
 	| 'inventory.confirm'
 	| 'inventory.delete'
@@ -1467,9 +1493,12 @@ export type MessageKey =
 	| 'inventory.placeEmpty'
 	| 'inventory.placeHolds'
 	| 'inventory.placeHoldsSplit'
+	| 'inventory.pressToChangeIt'
+	| 'inventory.pressToChooseAPicture'
 	| 'inventory.putBackOnTheList'
 	| 'inventory.putItBackOnThe'
 	| 'inventory.remove'
+	| 'inventory.removeThePicture'
 	| 'inventory.removeThisLocation'
 	| 'inventory.rename'
 	| 'inventory.renameOrMove'
@@ -1656,7 +1685,11 @@ export type MessageKey =
 	| 'mail.familyOffer.line2'
 	| 'mail.familyOffer.small'
 	| 'mail.familyOffer.subject'
-	| 'mail.newsletter.action'
+	| 'mail.newsletter.allOfIt'
+	| 'mail.newsletter.andMore'
+	| 'mail.newsletter.here'
+	| 'mail.newsletter.title'
+	| 'mail.newsletter.whatChanged'
 	| 'mail.newsletterWelcome.action'
 	| 'mail.newsletterWelcome.line1'
 	| 'mail.newsletterWelcome.line2'
@@ -1676,7 +1709,6 @@ export type MessageKey =
 	| 'mail.review.summary'
 	| 'mail.review.threeLines'
 	| 'mail.review.unanswered'
-	| 'mail.stopThese'
 	| 'mail.trial.action'
 	| 'mail.trial.billingPage'
 	| 'mail.trial.inYourSettings'
@@ -1690,6 +1722,7 @@ export type MessageKey =
 	| 'mail.trial.subject'
 	| 'mail.trial.withCard'
 	| 'mail.trial.withoutCard'
+	| 'mail.unsubscribe'
 	| 'mail.verify.action'
 	| 'mail.verify.line'
 	| 'mail.verify.small'
@@ -1744,6 +1777,7 @@ export type MessageKey =
 	| 'notebookDetail.batchUpdated'
 	| 'notebookDetail.biggerType'
 	| 'notebookDetail.clearLabels'
+	| 'notebookDetail.closePane'
 	| 'notebookDetail.deleteSelectedNotes'
 	| 'notebookDetail.deleteThisNote'
 	| 'notebookDetail.descendingPressForAscending'
@@ -1762,6 +1796,7 @@ export type MessageKey =
 	| 'notebookDetail.noGoalPointsAtThis'
 	| 'notebookDetail.nothingChosen'
 	| 'notebookDetail.nothingWrittenHereYet'
+	| 'notebookDetail.openBeside'
 	| 'notebookDetail.orderAdded'
 	| 'notebookDetail.orderEdited'
 	| 'notebookDetail.orderName'
@@ -1770,6 +1805,7 @@ export type MessageKey =
 	| 'notebookDetail.orderTitle'
 	| 'notebookDetail.orderWritten'
 	| 'notebookDetail.people'
+	| 'notebookDetail.resizeWidth'
 	| 'notebookDetail.saved'
 	| 'notebookDetail.searchTheseBills'
 	| 'notebookDetail.searchTheseGoals'
@@ -1785,6 +1821,7 @@ export type MessageKey =
 	| 'notebookDetail.selectNote'
 	| 'notebookDetail.selectVisibleNotes'
 	| 'notebookDetail.separateWithCommasOrSpaces'
+	| 'notebookDetail.sharePanes'
 	| 'notebookDetail.showArchived'
 	| 'notebookDetail.showingCount'
 	| 'notebookDetail.smallerType'
@@ -2218,8 +2255,11 @@ export type MessageKey =
 	| 'pictures.hint'
 	| 'pictures.tooBig'
 	| 'pictures.uploading'
+	| 'pictures.view'
 	| 'plans.exportsPerDay'
 	| 'plans.storedDataPoints'
+	| 'play.nothingToBuy'
+	| 'play.opening'
 	| 'quickTag.addATag'
 	| 'quickTag.placeholder'
 	| 'ratingPicker.leaveUnanswered'
@@ -2424,13 +2464,14 @@ export type MessageKey =
 	| 'rooms.tasks.tabs.todo'
 	| 'rooms.tasks.title'
 	| 'scopeGroups.acrossEverything'
+	| 'scopeGroups.describeItself'
 	| 'scopeGroups.habitsAndWorkouts'
 	| 'scopeGroups.money'
 	| 'scopeGroups.neededToWrite'
 	| 'scopeGroups.people'
 	| 'scopeGroups.plumbing'
 	| 'scopeGroups.removingThings'
-	| 'scopeGroups.todosAndGoals'
+	| 'scopeGroups.tasksAndGoals'
 	| 'scopeGroups.whatYouWrite'
 	| 'scopeGroups.yourHome'
 	| 'scopeGroups.yourWeek'
@@ -2799,7 +2840,7 @@ export type MessageKey =
 	| 'settings.integrations.addThisToCursorConfig'
 	| 'settings.integrations.aiAssistant'
 	| 'settings.integrations.aiAssistantDefaultName'
-	| 'settings.integrations.allOfItUnlessYou'
+	| 'settings.integrations.allOfIt'
 	| 'settings.integrations.andLetItDeleteThings'
 	| 'settings.integrations.bankStatements'
 	| 'settings.integrations.chat.answeringAs'
@@ -2865,7 +2906,6 @@ export type MessageKey =
 	| 'settings.integrations.connections.howOntoplanoSMcpServerWorks'
 	| 'settings.integrations.connections.httpsExampleComOntoplanoHook'
 	| 'settings.integrations.connections.isTheMostRevoke'
-	| 'settings.integrations.connections.itMay'
 	| 'settings.integrations.connections.itSendsYouBackHere'
 	| 'settings.integrations.connections.keep'
 	| 'settings.integrations.connections.kindCounter'
@@ -2891,6 +2931,7 @@ export type MessageKey =
 	| 'settings.integrations.connections.orPasteThisToIt'
 	| 'settings.integrations.connections.pasteTheAddressIntoGoogle'
 	| 'settings.integrations.connections.pasteThisAddressInto'
+	| 'settings.integrations.connections.permissions'
 	| 'settings.integrations.connections.points'
 	| 'settings.integrations.connections.pointsOlderThanThisAre'
 	| 'settings.integrations.connections.putBack'
@@ -2913,6 +2954,7 @@ export type MessageKey =
 	| 'settings.integrations.connections.tryAgain'
 	| 'settings.integrations.connections.unreachable'
 	| 'settings.integrations.connections.webhooks'
+	| 'settings.integrations.connections.whatThisKeyMayDo'
 	| 'settings.integrations.connections.whatThisTokenMayDo'
 	| 'settings.integrations.connections.whatYourAssistantsDid'
 	| 'settings.integrations.connections.when'
@@ -2926,6 +2968,8 @@ export type MessageKey =
 	| 'settings.integrations.createIt'
 	| 'settings.integrations.diaryAndNotebooks'
 	| 'settings.integrations.doNotShareItWith'
+	| 'settings.integrations.everyRead'
+	| 'settings.integrations.everyWrite'
 	| 'settings.integrations.everythingAnAssistantHasChanged'
 	| 'settings.integrations.forAnAssistantWithTerminal'
 	| 'settings.integrations.hasTheFullFormWith'
@@ -2937,6 +2981,7 @@ export type MessageKey =
 	| 'settings.integrations.letAnAiAssistantUse'
 	| 'settings.integrations.notSomething'
 	| 'settings.integrations.nothingYetEverythingAn'
+	| 'settings.integrations.onlyWhatYouTick'
 	| 'settings.integrations.outsideWhat'
 	| 'settings.integrations.pluginAsksKey'
 	| 'settings.integrations.pluginAsksYourOntoplano'
@@ -3383,8 +3428,10 @@ export type MessageKey =
 	| 'tasks.plan.due'
 	| 'tasks.plan.duration'
 	| 'tasks.plan.eGDentist'
-	| 'tasks.plan.eGLearnRussian'
+	| 'tasks.plan.eGLearnGuitar'
 	| 'tasks.plan.editBlock'
+	| 'tasks.plan.endTheRepeat'
+	| 'tasks.plan.endsTheRepeat'
 	| 'tasks.plan.every'
 	| 'tasks.plan.everyNDays'
 	| 'tasks.plan.everyNWeeks'
@@ -3395,6 +3442,7 @@ export type MessageKey =
 	| 'tasks.plan.formatHTimeDDuration'
 	| 'tasks.plan.forwardOneUnit'
 	| 'tasks.plan.forwardOneUnitPlain'
+	| 'tasks.plan.fullScreen'
 	| 'tasks.plan.gotIt'
 	| 'tasks.plan.hDMTWTFSSn61030WakeUpWakeUpWakeUpWakeUpW'
 	| 'tasks.plan.happensOnceOnOneDay'
@@ -3414,6 +3462,7 @@ export type MessageKey =
 	| 'tasks.plan.leadHours'
 	| 'tasks.plan.leadHoursMinutes'
 	| 'tasks.plan.leadMinutes'
+	| 'tasks.plan.leaveFullScreen'
 	| 'tasks.plan.load'
 	| 'tasks.plan.loadIt'
 	| 'tasks.plan.makeItOnceOnly'
@@ -3589,6 +3638,21 @@ export type MessageKey =
 	| 'titles.terms'
 	| 'titles.unsubscribed'
 	| 'titles.weeklyReviewTurnedOff'
+	| 'toast.added'
+	| 'toast.archived'
+	| 'toast.copied'
+	| 'toast.deleted'
+	| 'toast.done'
+	| 'toast.moved'
+	| 'toast.notDone'
+	| 'toast.pinned'
+	| 'toast.removed'
+	| 'toast.renamed'
+	| 'toast.reopened'
+	| 'toast.revoked'
+	| 'toast.saved'
+	| 'toast.scheduled'
+	| 'toast.unscheduled'
 	| 'todoRows.aToDoIsATask'
 	| 'todoRows.addLabels'
 	| 'todoRows.added'
@@ -3744,7 +3808,7 @@ export type MessageKey =
 	| 'tour.gallery'
 	| 'tour.giveItANumberIf'
 	| 'tour.goals'
-	| 'tour.gymRussianReadABlock'
+	| 'tour.gymGuitarReadABlock'
 	| 'tour.hJKLMove'
 	| 'tour.habits'
 	| 'tour.handOffATodoWith'
@@ -4046,14 +4110,17 @@ export interface MessageValuesFor {
 	'admin.accountsShowing': { count: number };
 	'admin.hoursAgo': { count: number };
 	'admin.id.typeEmailToConfirm': { email: string | number };
+	'admin.issueSent': { failed: string | number; sent: string | number; when: string | number };
 	'admin.last': {
 		attempts: string | number;
 		attempts2: string | number;
 		lastAttemptAt: string | number;
 	};
 	'admin.lastAttempts': { count: number; lastAttemptAt: string | number };
+	'admin.mailingListDescription': { count: number };
 	'admin.minutesAgo': { count: number };
 	'admin.sessionCount': { count: number };
+	'admin.subscribedFrom': { source: string | number; when: string | number };
 	'assistant.answeringWith': { model: string | number; provider: string | number };
 	'assistant.usedTool': { tool: string | number };
 	'attributes.copy': { key: string | number };
@@ -4067,6 +4134,7 @@ export interface MessageValuesFor {
 	'audio.justRecorded': { name: string | number };
 	'audio.sizeKB': { size: string | number };
 	'audio.tooLong': { kilobytes: string | number };
+	'buy.playCouldNotStart': { code: string | number };
 	'capture.addedTo': { into: string | number };
 	'capture.addedToWithContent': { content: string | number; into: string | number };
 	'capture.newThing': { thing: string | number };
@@ -4103,6 +4171,7 @@ export interface MessageValuesFor {
 	'finance.bills.expectedAmountShort': { amount: string | number };
 	'finance.bills.historyOf': { name: string | number };
 	'finance.bills.markPaid2': { name: string | number };
+	'finance.bills.namePaid': { name: string | number };
 	'finance.bills.payDaysBefore': { count: number };
 	'finance.bills.showingCount': { count: number };
 	'finance.bills.skipName': { name: string | number };
@@ -4158,6 +4227,7 @@ export interface MessageValuesFor {
 	'gallery.picturesCount': { count: number };
 	'gallery.refused': { willRefuse: string | number };
 	'gallery.rename': { name: string | number };
+	'gallery.unused.deleteAllTitle': { count: number };
 	'goals.areaColour': { name: string | number };
 	'goals.closedCount': { count: number };
 	'goals.countedFromActivity': { activity: string | number };
@@ -4261,6 +4331,7 @@ export interface MessageValuesFor {
 	'home.streakDays': { count: number };
 	'home.undoMarkingDone': { name: string | number };
 	'instance.enterAnyInstanceUrl': { https: string | number };
+	'inventory.aPictureOf': { name: string | number };
 	'inventory.anyValueCount': { count: number };
 	'inventory.archivedCount': { count: number };
 	'inventory.boughtCount': { count: number };
@@ -4318,6 +4389,9 @@ export interface MessageValuesFor {
 	'mail.familyInvite.subject': { owner: string | number };
 	'mail.familyOffer.line1': { owner: string | number };
 	'mail.familyOffer.subject': { owner: string | number };
+	'mail.newsletter.allOfIt': { link: string | number };
+	'mail.newsletter.andMore': { link: string | number };
+	'mail.newsletter.title': { version: string | number };
 	'mail.review.andMore': { count: number };
 	'mail.review.busiest': {
 		category: string | number;
@@ -4336,7 +4410,6 @@ export interface MessageValuesFor {
 		span: string | number;
 	};
 	'mail.review.unanswered': { andMore: string | number; count: number; titles: string | number };
-	'mail.stopThese': { url: string | number };
 	'mail.trial.line': { consequence: string | number; date: string | number };
 	'mail.trial.lineCard': { date: string | number };
 	'mail.trial.lineNoCard': { date: string | number };
@@ -4561,7 +4634,6 @@ export interface MessageValuesFor {
 	'settings.integrations.connections.apiV1Streams': { origin: string | number };
 	'settings.integrations.connections.confirmThisDeletesPoints': { count: number };
 	'settings.integrations.connections.isTheMostRevoke': { calendarLinkLimit: string | number };
-	'settings.integrations.connections.itMay': { join: string | number };
 	'settings.integrations.notSomething': { label: string | number; write: string | number };
 	'settings.integrations.outsideWhat': { label: string | number; write: string | number };
 	'settings.integrations.seeYourKeys': { count: number };

@@ -1,6 +1,5 @@
-import type { Actions, RequestEvent } from '@sveltejs/kit';
-import { buildCtx } from '$lib/services/ctx';
-import { toActionFailure } from '$lib/http-errors';
+import type { Actions } from '@sveltejs/kit';
+import { formAction } from '$lib/services/scoped-actions';
 import {
 	createIdea,
 	deleteIdea,
@@ -17,86 +16,41 @@ import {
  * and marking one applied there has to mean the same thing. The notebook
  * mounts these under a prefix — see `$lib/services/scoped-actions`.
  */
-type Event = Pick<RequestEvent, 'request'> & { locals: App.Locals };
-
 export const ideaHandlers = {
-	create: async ({ request, locals }: Event) => {
-		const formData = await request.formData();
-		try {
-			const made = createIdea(buildCtx(locals.user!.id), {
-				content: formData.get('content'),
-				tags: formData.get('tags'),
-				// `has` rather than `get`: the room's form says nothing about a
-				// notebook and must not be read as taking the idea out of one.
-				...(formData.has('notebookId') ? { notebookId: formData.get('notebookId') } : {})
-			});
-			// The id comes back so a receipt can offer a way straight into it —
-			// the same reason a todo's does. See `$lib/open-from-url`.
-			return { success: true, id: made };
-		} catch (e) {
-			return toActionFailure(e);
-		}
-	},
+	create: formAction((ctx, formData) => {
+		const made = createIdea(ctx, {
+			content: formData.get('content'),
+			tags: formData.get('tags'),
+			// `has` rather than `get`: the room's form says nothing about a
+			// notebook and must not be read as taking the idea out of one.
+			...(formData.has('notebookId') ? { notebookId: formData.get('notebookId') } : {})
+		});
+		// The id comes back so a receipt can offer a way straight into it —
+		// the same reason a todo's does. See `$lib/open-from-url`.
+		return { success: true, id: made };
+	}),
 
-	update: async ({ request, locals }: Event) => {
-		const formData = await request.formData();
-		try {
-			updateIdea(buildCtx(locals.user!.id), Number(formData.get('id')), {
-				content: formData.get('content'),
-				tags: formData.get('tags'),
-				...(formData.has('notebookId') ? { notebookId: formData.get('notebookId') } : {})
-			});
-			return { success: true };
-		} catch (e) {
-			return toActionFailure(e);
-		}
-	},
+	update: formAction((ctx, formData) => {
+		updateIdea(ctx, Number(formData.get('id')), {
+			content: formData.get('content'),
+			tags: formData.get('tags'),
+			...(formData.has('notebookId') ? { notebookId: formData.get('notebookId') } : {})
+		});
+	}),
 
-	delete: async ({ request, locals }: Event) => {
-		const formData = await request.formData();
-		try {
-			deleteIdea(buildCtx(locals.user!.id), Number(formData.get('id')));
-			return { success: true };
-		} catch (e) {
-			return toActionFailure(e);
-		}
-	},
+	delete: formAction((ctx, formData) => {
+		deleteIdea(ctx, Number(formData.get('id')));
+	}),
 
-	toggleApplied: async ({ request, locals }: Event) => {
-		const formData = await request.formData();
-		try {
-			toggleApplied(
-				buildCtx(locals.user!.id),
-				Number(formData.get('id')),
-				formData.get('appliedNote')
-			);
-			return { success: true };
-		} catch (e) {
-			return toActionFailure(e);
-		}
-	},
+	toggleApplied: formAction((ctx, formData) => {
+		toggleApplied(ctx, Number(formData.get('id')), formData.get('appliedNote'));
+	}),
 
-	updateAppliedNote: async ({ request, locals }: Event) => {
-		const formData = await request.formData();
-		try {
-			updateAppliedNote(
-				buildCtx(locals.user!.id),
-				Number(formData.get('id')),
-				formData.get('appliedNote')
-			);
-			return { success: true };
-		} catch (e) {
-			return toActionFailure(e);
-		}
-	},
+	updateAppliedNote: formAction((ctx, formData) => {
+		updateAppliedNote(ctx, Number(formData.get('id')), formData.get('appliedNote'));
+	}),
 
-	toggleFavorite: async ({ request, locals }: Event) => {
-		const formData = await request.formData();
-		try {
-			toggleFavorite(buildCtx(locals.user!.id), Number(formData.get('id')));
-			return { success: true };
-		} catch (e) {
-			return toActionFailure(e);
-		}
-	}
+	toggleFavorite: formAction((ctx, formData) => {
+		toggleFavorite(ctx, Number(formData.get('id')));
+	})
 } satisfies Actions;

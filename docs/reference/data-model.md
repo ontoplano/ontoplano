@@ -16,7 +16,7 @@ exist.
 | [`album_media`](#album_media)                               | 6       | yes               |
 | [`albums`](#albums)                                         | 6       | yes               |
 | [`api_tokens`](#api_tokens)                                 | 14      | yes               |
-| [`assistant_calls`](#assistant_calls)                       | 9       | yes               |
+| [`assistant_calls`](#assistant_calls)                       | 11      | yes               |
 | [`audit_events`](#audit_events)                             | 7       | yes               |
 | [`bill_payments`](#bill_payments)                           | 13      | yes               |
 | [`billing_checkouts`](#billing_checkouts)                   | 8       | yes               |
@@ -45,7 +45,7 @@ exist.
 | [`ideas`](#ideas)                                           | 9       | yes               |
 | [`inventory_attribute_colors`](#inventory_attribute_colors) | 5       | yes               |
 | [`inventory_categories`](#inventory_categories)             | 8       | yes               |
-| [`inventory_items`](#inventory_items)                       | 17      | yes               |
+| [`inventory_items`](#inventory_items)                       | 18      | yes               |
 | [`invites`](#invites)                                       | 9       | —                 |
 | [`ledgers`](#ledgers)                                       | 11      | yes               |
 | [`locations`](#locations)                                   | 8       | yes               |
@@ -197,17 +197,19 @@ Indexes:
 
 ## assistant_calls
 
-| Column        | Type    | Null     | Default               | Notes             |
-| ------------- | ------- | -------- | --------------------- | ----------------- |
-| `id`          | integer | not null | —                     | primary key, auto |
-| `user_id`     | text    | not null | —                     | → `user.id`       |
-| `token_id`    | integer | null     | —                     | —                 |
-| `tool`        | text    | not null | —                     | —                 |
-| `args`        | text    | not null | `'{}'`                | —                 |
-| `before`      | text    | null     | —                     | —                 |
-| `destroyed`   | integer | not null | `false`               | —                 |
-| `restored_at` | text    | null     | —                     | —                 |
-| `created_at`  | text    | not null | `(CURRENT_TIMESTAMP)` | —                 |
+| Column         | Type    | Null     | Default               | Notes             |
+| -------------- | ------- | -------- | --------------------- | ----------------- |
+| `id`           | integer | not null | —                     | primary key, auto |
+| `user_id`      | text    | not null | —                     | → `user.id`       |
+| `token_id`     | integer | null     | —                     | —                 |
+| `tool`         | text    | not null | —                     | —                 |
+| `args`         | text    | not null | `'{}'`                | —                 |
+| `before`       | text    | null     | —                     | —                 |
+| `destroyed`    | integer | not null | `false`               | —                 |
+| `subject_kind` | text    | null     | —                     | —                 |
+| `subject_id`   | text    | null     | —                     | —                 |
+| `restored_at`  | text    | null     | —                     | —                 |
+| `created_at`   | text    | not null | `(CURRENT_TIMESTAMP)` | —                 |
 
 Indexes:
 
@@ -799,6 +801,7 @@ Indexes:
 | `attributes`            | text    | not null | `'{}'`                | —                           |
 | `snoozed`               | integer | not null | `false`               | —                           |
 | `notebook_id`           | integer | null     | —                     | → `notebooks.id`            |
+| `picture_id`            | integer | null     | —                     | → `media.id`                |
 | `created_at`            | text    | not null | `(CURRENT_TIMESTAMP)` | —                           |
 | `updated_at`            | text    | not null | `(CURRENT_TIMESTAMP)` | —                           |
 

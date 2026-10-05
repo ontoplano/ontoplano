@@ -15,7 +15,7 @@
 	import CategoryMark from '$lib/components/CategoryMark.svelte';
 	import RoomToolbar from '$lib/components/RoomToolbar.svelte';
 	import { setRoomAction } from '$lib/room-action.svelte';
-	import { browsable } from '$lib/browse.svelte';
+	import { browsable, typing } from '$lib/browse.svelte';
 	import { listCursor } from '$lib/actions/list-cursor';
 	import { getAction, keyFor } from '$lib/shortcuts';
 	import { CSV_PARSER_KEY, sniffCsv, type CsvMapping } from '$lib/bank-parsers';
@@ -227,15 +227,7 @@
 
 	function onkeydown(event: KeyboardEvent) {
 		if (event.metaKey || event.ctrlKey || event.altKey) return;
-		const target = event.target;
-		if (
-			document.querySelector('dialog[open]') ||
-			target instanceof HTMLInputElement ||
-			target instanceof HTMLTextAreaElement ||
-			target instanceof HTMLSelectElement ||
-			(target instanceof HTMLElement && target.isContentEditable)
-		)
-			return;
+		if (typing(event)) return;
 		if (!data.current) return;
 		const action = getAction(ROOM, event.key);
 		if (action === 'new') {

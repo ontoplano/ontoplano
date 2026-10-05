@@ -48,30 +48,29 @@ function browserSqlite() {
 }
 
 /**
- * What the dev server does not watch: whatever this checkout excludes locally.
+ * What the dev server does not watch: every directory git ignores.
  *
- * Vite watches the whole project root, and a working checkout tends to hold
- * other things beside the app — sibling repositories, tool caches, a clone of
- * somebody else's project. Watched, those can run the machine out of inotify
- * watches (ENOSPC), and the dev server dies before serving a page. The files a
- * developer listed in `.git/info/exclude` are by definition not the app, and
- * that list lives on their machine, so nothing about it is written here. Only
- * root-anchored entries (`/name/`), which name one place rather than a pattern.
+ * Vite watches the whole project root, and a working checkout holds a great
+ * deal beside the app — build output, the Android projects' Gradle trees, the
+ * Node toolchain `scripts/package.mjs` stages, sibling checkouts listed in
+ * `.git/info/exclude`. Watched, those run the machine out of inotify watches
+ * (ENOSPC) and the dev server dies before serving a page; ignoring them one
+ * by one lost to whichever directory was next. Git already knows the whole
+ * list, `.gitignore` and the local excludes both. Two are kept: `.svelte-kit`,
+ * which SvelteKit writes and Vite has to see, and `node_modules`, which Vite
+ * handles itself.
  */
-function locallyExcluded(): string[] {
-	try {
-		return readFileSync('.git/info/exclude', 'utf8')
-			.split('\n')
-			.map((line) => line.trim())
-			.filter((line) => line.startsWith('/') && !line.includes('*'))
-			.flatMap((line) => {
-				const path = `${import.meta.dirname}${line.replace(/\/$/, '')}`;
-				return [path, `${path}/**`];
-			});
-	} catch {
-		// A worktree's `.git` is a file, and a tarball has none: watch everything.
-		return [];
-	}
+function ignoredDirectories(): string[] {
+	const listed = git('git ls-files --others --ignored --exclude-standard --directory');
+	if (listed === 'unknown') return [];
+	return listed
+		.split('\n')
+		.filter((line) => line.endsWith('/'))
+		.filter((line) => !/(^|\/)(\.svelte-kit|node_modules)\/$/.test(line))
+		.flatMap((line) => {
+			const path = `${import.meta.dirname}/${line.replace(/\/$/, '')}`;
+			return [path, `${path}/**`];
+		});
 }
 
 const pkg = JSON.parse(readFileSync('package.json', 'utf8')) as { version: string };
@@ -189,6 +188,6 @@ export default defineConfig({
 		 * first one is talking to nobody.
 		 */
 		strictPort: true,
-		watch: { ignored: locallyExcluded() }
+		watch: { ignored: ignoredDirectories() }
 	}
 });

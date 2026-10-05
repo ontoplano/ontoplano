@@ -37,7 +37,7 @@
 import type { Locale } from '$lib/i18n/locales';
 
 /** What a person can choose. `auto` defers to the language. */
-export const CLOCKS = ['auto', '12', '24'] as const;
+const CLOCKS = ['auto', '12', '24'] as const;
 export type Clock = (typeof CLOCKS)[number];
 
 export function isClock(value: unknown): value is Clock {

@@ -55,6 +55,8 @@ export function recordAssistantCall(
 		args: Record<string, unknown>;
 		before: unknown;
 		destroyed: boolean;
+		/** What it made or changed; see `subjectOf` in `mcp/protocol`. */
+		subject?: { kind: string; id: string } | null;
 	}
 ): void {
 	try {
@@ -67,6 +69,8 @@ export function recordAssistantCall(
 				before:
 					entry.before === null || entry.before === undefined ? null : JSON.stringify(entry.before),
 				destroyed: entry.destroyed,
+				subjectKind: entry.subject?.kind ?? null,
+				subjectId: entry.subject?.id ?? null,
 				createdAt: stamp(ctx)
 			})
 			.run();

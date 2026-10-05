@@ -12,6 +12,9 @@ import { visit } from './helpers/visit';
  */
 
 /** Hold every form post for a while, and optionally refuse it. */
+/** How long the rating's save is kept from the server while another press lands. */
+const RATING_SAVE_HELD_MS = 4000;
+
 async function slowPosts(page: Page, refuse: string | null) {
 	await page.route(/\?\//, async (route) => {
 		if (route.request().method() !== 'POST') return route.continue();
@@ -67,6 +70,79 @@ test('a refused save brings the dialog back, with what was typed and why', async
 	await expect(dialog.locator('[name="heading"]')).toHaveValue('this one is refused');
 });
 
+/**
+ * The refusal is said in the dialog and nowhere else.
+ *
+ * A notebook's own goal dialog was handed no error, so a target of zero came
+ * back as a banner under the tabs — the page's own — while the dialog
+ * returned saying nothing. The dialog is where the fields are, so the
+ * reason belongs in it; and the page's banner stays down while a dialog is
+ * away, so the moment before the dialog steps back in cannot flash it.
+ */
+test('a refusal is said in the dialog, never under the tabs', async ({ page }) => {
+	test.setTimeout(180_000);
+	await register(page, testEmail('dialog-no-flash'));
+	const origin = new URL(page.url()).origin;
+	await page.request.post('/notebooks?/create', {
+		headers: { Origin: origin, 'x-sveltekit-action': 'true' },
+		form: { heading: 'The kitchen', modules: 'notes,tasks,goals' }
+	});
+	await visit(page, '/notebooks');
+	await page.getByRole('button', { name: /^Goals \d/ }).click();
+	await page.getByRole('button', { name: 'New goal', exact: true }).click();
+	const form = page.locator('#notebook-goal-form');
+	await expect(form).toBeVisible({ timeout: 30_000 });
+	await form.locator('[name="heading"]').first().fill('Read more');
+	await form.getByRole('button', { name: 'Add measure' }).click();
+	await form.locator('[name="targetValue"]').first().fill('0');
+
+	// Watched from inside the page, every frame from the press until the
+	// refusal is on screen: a screenshot would miss a flash of one frame.
+	await page.evaluate(() => {
+		const w = window as unknown as { __flashed?: boolean };
+		w.__flashed = false;
+		const look = () => {
+			const onPage = [...document.querySelectorAll('main .banner.error')].some(
+				(el) => !el.closest('dialog') && el.textContent?.includes('more than zero')
+			);
+			if (onPage) w.__flashed = true;
+			requestAnimationFrame(look);
+		};
+		look();
+	});
+	await page.getByRole('button', { name: 'Create goal' }).click();
+
+	const dialog = page.locator('dialog[open]');
+	await expect(dialog).toContainText('Target has to be more than zero', { timeout: 10_000 });
+	await expect(dialog.locator('[name="heading"]')).toHaveValue('Read more');
+	expect(
+		await page.evaluate(() => (window as unknown as { __flashed?: boolean }).__flashed),
+		'the refusal showed under the tabs'
+	).toBe(false);
+});
+
+test('the opener pressed again while the save is out opens a fresh dialog', async ({ page }) => {
+	test.setTimeout(180_000);
+	await register(page, testEmail('dialog-again'));
+	await visit(page, '/tasks/todo');
+	await slowPosts(page, null);
+
+	// The next one started before the first is answered: the press used to set
+	// `open` to the true it already was, and the answer then shut it.
+	await startTask(page, 'the first of two');
+	await page.getByRole('button', { name: 'Create task' }).click();
+	await expect(page.locator('dialog[open]')).toHaveCount(0, { timeout: 500 });
+	await page
+		.getByRole('button', { name: /New task/ })
+		.first()
+		.click();
+
+	await expect(page.getByText('the first of two').first()).toBeVisible({ timeout: 30_000 });
+	const dialog = page.locator('dialog[open]');
+	await expect(dialog).toHaveCount(1);
+	await expect(dialog.locator('[name="heading"]')).toHaveValue('');
+});
+
 test('a block saved on the plan says so', async ({ page }) => {
 	test.setTimeout(180_000);
 	await register(page, testEmail('dialog-plan-toast'));
@@ -104,4 +180,55 @@ test('a confirmed rating and an archived task answer before the server', async (
 	const away = page.locator('.row-card').filter({ hasText: 'put me away' });
 	await away.getByRole('button', { name: 'Put it away' }).click();
 	await expect(away).toHaveCount(0, { timeout: 500 });
+});
+
+/**
+ * A press is held until its own answer, not until any data at all.
+ *
+ * The rating's save is slow and another press's is not: the other one's
+ * reload lands first, and it knows nothing of the rating yet. The bars used
+ * to fall back to it — confirmed, then unset, then set again a second later.
+ */
+test('a confirmed rating outlives a reload some other press asked for', async ({ page }) => {
+	test.setTimeout(180_000);
+	await page.setViewportSize({ width: 1280, height: 900 });
+	await register(page, testEmail('press-outlives'));
+	await visit(page, '/tasks/todo');
+	for (const title of ['rate me', 'put me away']) {
+		await startTask(page, title);
+		await page.getByRole('button', { name: 'Create task' }).click();
+		await expect(page.getByText(title).first()).toBeVisible({ timeout: 30_000 });
+	}
+	const ratingSaved = { done: false };
+	await page.route(/\?\/rate$/, async (route) => {
+		await new Promise((done) => setTimeout(done, RATING_SAVE_HELD_MS));
+		await route.continue();
+		ratingSaved.done = true;
+	});
+
+	const rated = page.locator('.row-card').filter({ hasText: 'rate me' });
+	const bars = rated.locator('.rating-bars');
+	const box = (await bars.boundingBox())!;
+	await page.mouse.click(box.x + box.width * 0.15, box.y + box.height * 0.05);
+	await page
+		.getByRole('dialog', { name: 'Confirm' })
+		.getByRole('button', { name: 'Confirm' })
+		.click();
+	await expect(bars).toHaveAttribute('aria-label', /Urgency 5/, { timeout: 500 });
+
+	const reloaded = page.waitForResponse(/__data\.json/);
+	await rated
+		.page()
+		.locator('.row-card')
+		.filter({ hasText: 'put me away' })
+		.getByRole('button', { name: 'Put it away' })
+		.click();
+	await reloaded;
+	// Read once that reload is drawn, not retried until the rating's own save
+	// lands and makes it true anyway.
+	await page.evaluate(
+		() => new Promise((drawn) => requestAnimationFrame(() => requestAnimationFrame(drawn)))
+	);
+	expect(ratingSaved.done, 'the other press answered first').toBe(false);
+	expect(await bars.getAttribute('aria-label')).toMatch(/Urgency 5/);
 });

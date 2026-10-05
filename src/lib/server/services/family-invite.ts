@@ -13,7 +13,7 @@ import { record } from '$lib/services/audit.js';
 import { registrationMode } from './registration.js';
 import { ValidationError } from '$lib/services/errors.js';
 import { sendLogged } from './mail-log.js';
-import { addToPlan, membersOf, resolvePlan, seatsFor } from './subscriptions.js';
+import { addToPlan, forgetFamilies, membersOf, resolvePlan, seatsFor } from './subscriptions.js';
 
 /**
  * Inviting somebody to the plan, and the account that makes for them.
@@ -195,6 +195,7 @@ export async function inviteToPlan(
 	// so there is nobody to ask. The mail below is how its owner first hears
 	// of it at all.
 	db.insert(planMembers).values({ ownerId, memberId, acceptedAt: new Date().toISOString() }).run();
+	forgetFamilies();
 	record(ownerId, 'seat_added', { detail: { member: memberId, invited: true } });
 
 	// Delivery is not the transaction: the seat exists either way, the failure

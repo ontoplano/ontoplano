@@ -14,22 +14,23 @@
 	import { LIMIT_LABELS, describeYearly, formatPrice, tierPricing } from '$lib/plans';
 	import type { ActionData, PageServerData } from './$types';
 	import { useT } from '$lib/i18n';
+	import { fromPlayStore } from '$lib/platform';
 
 	const t = useT();
 	const now = useWhen();
 
 	let { data, form }: { data: PageServerData; form: ActionData } = $props();
-	/** Only the Play-installed copy has the Digital Goods API — see /start. */
+	/** Only the copy installed from Google Play can open Play's sheet — see /start. */
 	let payChannel = $state('');
 	$effect(() => {
-		if ('getDigitalGoodsService' in window) payChannel = 'play';
+		if (fromPlayStore()) payChannel = 'play';
 	});
 	/**
 	 * Whether money may move from this page.
 	 *
 	 * Inside the installed app the provider's checkout must not open — Google
-	 * pulls apps that sell around Play Billing — and the app's web view has no
-	 * Play sheet unless the Digital Goods API is actually there. So the page
+	 * pulls apps that sell around Play Billing — and only the copy Play
+	 * distributes can open Play's sheet. So the page
 	 * that is both inside the app and without the API offers nothing that
 	 * charges: no subscribe, no cycle switch, no payment portal. Status,
 	 * seats and cancellation stay; none of them move money.

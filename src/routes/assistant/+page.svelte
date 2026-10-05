@@ -7,6 +7,7 @@
 	import OneLine from '$lib/components/OneLine.svelte';
 	import { resolve } from '$app/paths';
 	import { useT } from '$lib/i18n';
+	import Banner from '$lib/components/Banner.svelte';
 	import type { PageServerData } from './$types';
 
 	const t = useT();
@@ -91,12 +92,12 @@
 		{/if}
 
 		{#if chat.status === 'error'}
-			<p class="text-sm text-red-600">
+			<Banner kind="error">
 				{t('assistant.didNotGoThrough')}
 				<button type="button" class="ml-2 underline" onclick={() => chat.regenerate()}>
 					{t('assistant.tryAgain')}
 				</button>
-			</p>
+			</Banner>
 		{/if}
 
 		<div bind:this={floor}></div>

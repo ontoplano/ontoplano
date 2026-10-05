@@ -16,18 +16,18 @@
 	import SearchField from '$lib/components/SearchField.svelte';
 	import SortControl from '$lib/components/SortControl.svelte';
 	import StatTiles from '$lib/components/StatTiles.svelte';
-	import { browsable } from '$lib/browse.svelte';
+	import { browsable, typing } from '$lib/browse.svelte';
 	import { getAction } from '$lib/shortcuts';
 	import {
 		BILL_ORDERS,
 		BILL_ORDER_LABELS,
 		directionFor,
 		orderBills,
-		type BillDirection,
 		type BillOrder
 	} from '$lib/bill-order';
 	import { BILL_ROOM_ACTIONS } from '$lib/bill-action-names';
 	import { useT } from '$lib/i18n';
+	import { RememberedOrder } from '$lib/remembered-order.svelte';
 
 	const t = useT();
 	const now = useWhen();
@@ -74,35 +74,18 @@
 	 * (`$lib/bill-order`). What falls due next first, until somebody says
 	 * otherwise.
 	 */
-	const ORDER_KEY = 'ontoplano:bills-order';
-	const DIRECTION_KEY = 'ontoplano:bills-direction';
-	let order = $state<BillOrder>(BILL_ORDERS[0]);
-	let direction = $state<BillDirection>(directionFor(BILL_ORDERS[0]));
-
-	$effect(() => {
-		try {
-			const kept = localStorage.getItem(ORDER_KEY);
-			if ((BILL_ORDERS as readonly string[]).includes(kept ?? '')) order = kept as BillOrder;
-			const way = localStorage.getItem(DIRECTION_KEY);
-			if (way === 'asc' || way === 'desc') direction = way;
-		} catch {
-			// A private window, or storage refused: the defaults stand.
-		}
-	});
-
-	function remember(key: string, value: string) {
-		try {
-			localStorage.setItem(key, value);
-		} catch {
-			// It still holds for this visit.
-		}
-	}
+	const sorting = new RememberedOrder<BillOrder>(
+		'bills',
+		BILL_ORDERS,
+		BILL_ORDERS[0],
+		directionFor
+	);
 
 	const shownBills = $derived(
 		orderBills(
 			needle === '' ? data.bills : data.bills.filter((b) => b.name.toLowerCase().includes(needle)),
-			order,
-			direction,
+			sorting.order,
+			sorting.direction,
 			today(now())
 		)
 	);
@@ -124,15 +107,7 @@
 
 	function onkeydown(event: KeyboardEvent) {
 		if (event.metaKey || event.ctrlKey || event.altKey) return;
-		const target = event.target;
-		if (
-			document.querySelector('dialog[open]') ||
-			target instanceof HTMLInputElement ||
-			target instanceof HTMLTextAreaElement ||
-			target instanceof HTMLSelectElement ||
-			(target instanceof HTMLElement && target.isContentEditable)
-		)
-			return;
+		if (typing(event)) return;
 		if (getAction(ROOM, event.key) === 'new') {
 			event.preventDefault();
 			list?.openNew();
@@ -193,20 +168,12 @@
 			{/snippet}
 			{#snippet trailing()}
 				<SortControl
-					value={order}
+					value={sorting.order}
 					options={BILL_ORDERS}
 					labels={BILL_ORDER_LABELS}
-					{direction}
-					onpick={(next) => {
-						order = next;
-						direction = directionFor(next);
-						remember(ORDER_KEY, next);
-						remember(DIRECTION_KEY, direction);
-					}}
-					onflip={() => {
-						direction = direction === 'asc' ? 'desc' : 'asc';
-						remember(DIRECTION_KEY, direction);
-					}}
+					direction={sorting.direction}
+					onpick={(next) => sorting.pick(next)}
+					onflip={() => sorting.flip()}
 					label={t('sort.order')}
 				/>
 			{/snippet}

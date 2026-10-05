@@ -10,22 +10,31 @@ instance **on the device itself** — SQLite compiled to WebAssembly over the
 phone's own storage, no server anywhere — and it can carry a home-screen
 widget. Both are below.
 
-It replaced a Trusted Web Activity, which was Chrome rendering one origin the
-build was bound to, with a keystore, a fingerprint and a served
-`assetlinks.json` standing between you and a hidden address bar. Everything it
-did this does, and it could never have held an instance of its own.
+## The apps, and which is which
 
-## The four apps, and which is which
+One project, four flavours. They differ in an application id, a name, an icon
+and the address their first screen suggests, and the same code runs in all of
+them.
 
-One project, three flavours. They differ in an application id, a name, an icon
-and the address their first screen suggests — nothing else, and the same code
-runs in all of them.
+| Flavour    | Application id          | Suggests                | Goes to                  |
+| ---------- | ----------------------- | ----------------------- | ------------------------ |
+| `official` | `app.ontoplano`         | `app.ontoplano.com`     | F-Droid, GitHub releases |
+| `play`     | `app.ontoplano`         | `app.ontoplano.com`     | Google Play              |
+| `dev`      | `app.ontoplano.dev`     | `$ONTOPLANO_DEV_ORIGIN` | a developer's phone      |
+| `staging`  | `app.ontoplano.staging` | `staging.ontoplano.com` | a developer's phone      |
 
-| Flavour    | Application id          | Suggests                |
-| ---------- | ----------------------- | ----------------------- |
-| `official` | `app.ontoplano`         | `app.ontoplano.com`     |
-| `dev`      | `app.ontoplano.dev`     | `$ONTOPLANO_DEV_ORIGIN` |
-| `staging`  | `app.ontoplano.staging` | `staging.ontoplano.com` |
+`play` is `official` plus Google Play's purchase sheet. The Billing Library
+behind it is not free software, so it is linked only as `playImplementation`
+and its plugin (`PlayBilling.java`) lives in the flavour's own sources;
+`scripts/check-android-version.mjs` fails if it leaks into any other build.
+Play will not let a listing sell a subscription until it has received a bundle
+carrying the library — `make android-gapp` builds that bundle.
+
+A purchase crosses two origins. The page on the instance cannot reach the
+shell, so it sends the person to `/play` on the copy the phone carries, which
+opens the sheet with the account id stamped on the purchase and sends the token
+back to `/buy` to be claimed. Pages learn they are in the Play copy from the
+extra `OntoplanoPlay` token in the user agent. See `src/lib/play-billing.ts`.
 
 Every one of them carries the whole app and boots on the copy it carries. No
 flavour is pointed at a server by the native layer, which is what lets any
@@ -61,7 +70,7 @@ ONTOPLANO_DEV_ORIGIN=http://192.168.1.10:1493 make android-install-all
 ```
 
 Everything needs an Android SDK. It is looked for in `ANDROID_HOME`,
-`ANDROID_SDK_ROOT`, `~/.bubblewrap/config.json`, `~/android-sdk`,
+`ANDROID_SDK_ROOT`, `~/android-sdk`,
 `~/Android/Sdk` and beside whatever `adb` is on the path; pass
 `ANDROID_HOME=/path/to/sdk` if it lives somewhere else.
 
@@ -126,43 +135,14 @@ a real certificate needs nothing installed on any device.
 
 ## The home-screen widget
 
-The app carries one native component: a home-screen widget showing today's
-blocks, habits and tasks. It is the one thing that cannot be a web page — a
-widget is drawn by the launcher, out of process, from a `RemoteViews` tree.
-
-It reads a single endpoint, `/api/v1/today`, with a scoped API token. Blocks,
-habits and tasks arrive together because a widget refreshes on a timer, often
-over mobile data, and three round trips to draw one screen is three chances to
-be half-drawn.
-
-### Putting one on the home screen
-
-1. Long-press the home screen, pick **Ontoplano — today**, and drop it.
-2. The setup screen opens. Tap **Connect**: it opens your instance in the
-   browser — already signed in, since the app is that browser — where one tap
-   mints the widget its own key and hands it straight back over
-   `ontoplano://widget`. Nobody sees or pastes a token.
-
-The key is scoped to **`today:read`** and nothing else: a widget sits on a
-lock screen; it should not carry a key to the diary. It appears under
-**Settings → AI & Integrations → Integrations** as "Phone widget", where revoking it disconnects
-the widget. The address field on the setup screen is prefilled with the
-instance the app was built for; somebody self-hosting can point it elsewhere
-before tapping Connect.
-
-Tap the header to open the app, **Refresh** to read again. The launcher also
-refreshes it every half hour, which is the shortest period it honours for a
-widget that wakes itself.
-
-To reconnect or change the address later: long-press the widget and choose the
-launcher's own "reconfigure" (Android 12 and up), or remove it and place it
-again.
+The app carries one native component a web page cannot be: a home-screen
+widget, drawn by the launcher out of process from a `RemoteViews` tree.
 
 ### The notebook widget
 
 **Ontoplano — notebook** shows one tab of one notebook: its tasks, notes,
 goals, ideas or things to buy, filtered and ordered the way that tab's own
-list can be. Unlike the widget above it is wired into the Capacitor shell
+list can be
 (`capacitor/android/app/src/main/java/app/ontoplano/isolated/NotebookWidget*.java`).
 
 1. Long-press the home screen, pick **Ontoplano — notebook**, and drop it.
@@ -185,24 +165,3 @@ read scope; deleting the widget there revokes it, and the widget says so.
 
 It needs an instance with a server: the phone-only instance has no API for a
 launcher to call, and Settings → Integrations is not on a device build.
-
-### How it is built
-
-The widget's sources are in `capacitor/native/` — Java, layouts and drawables
-for the provider, the list service and the configuration activity.
-
-**They are not yet wired into the Capacitor shell.** They were built against
-the generated TWA project, which copied them in and added the three components
-to its manifest; that project is gone and this one has no equivalent step yet.
-The code is kept here because the widget is a real feature and rewriting it
-from nothing would be silly, but until the shell declares those components a
-freshly installed app offers no widget. That is the last piece of the move off
-the TWA.
-
-`__PACKAGE__` in those sources is a placeholder replaced at copy time so the
-classes sit in the app's own package and `R` resolves; `__ORIGIN__` is the
-instance the build opens on, so the widget's Connect button reaches the same
-place the app does.
-
-They are Java rather than Kotlin, which was the right call for a generated
-project and is worth revisiting now that the project is committed and ours.

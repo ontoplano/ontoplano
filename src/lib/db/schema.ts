@@ -947,6 +947,14 @@ export const inventoryItems = sqliteTable(
 		snoozed: integer('snoozed', { mode: 'boolean' }).notNull().default(false),
 		/** The subject this belongs to, if any — see `habits.notebookId`. */
 		notebookId: integer('notebook_id').references(() => notebooks.id, { onDelete: 'set null' }),
+		/*
+		 * What it looks like, when somebody has said — the same kind of row a
+		 * face is. No `onDelete`: the migration that added it is the column's truth
+		 * (drizzle generates an ALTER that cannot carry one), and nothing
+		 * deletes a picture something still shows — `removeIfUnreferenced`
+		 * asks the referrers, items among them.
+		 */
+		pictureId: integer('picture_id').references(() => media.id),
 		createdAt: text('created_at')
 			.notNull()
 			.default(sql`(CURRENT_TIMESTAMP)`),
@@ -1674,6 +1682,13 @@ export const assistantCalls = sqliteTable(
 		before: text('before'),
 		/** Whether the call removed a row for good — the ones Put it back offers. */
 		destroyed: integer('destroyed', { mode: 'boolean' }).notNull().default(false),
+		/**
+		 * What the call made or changed, as a kind from `$lib/object-links` and
+		 * its id — the new row's for a create. Text, because a block's id is
+		 * `slot:12`. Null where a call names no one thing.
+		 */
+		subjectKind: text('subject_kind'),
+		subjectId: text('subject_id'),
 		/** When Put it back recreated what this deleted, so it is offered once. */
 		restoredAt: text('restored_at'),
 		createdAt: text('created_at')

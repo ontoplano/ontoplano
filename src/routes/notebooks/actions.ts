@@ -12,7 +12,7 @@ import { describeTag, recolorTag, renameTag, untagNotebook } from '$lib/services
 import { importVaultAction } from '$lib/import-vault-action';
 import { todoHandlers } from '$lib/services/todo-actions';
 import { entryHandlers } from '$lib/services/entry-actions';
-import { under } from '$lib/services/scoped-actions';
+import { under, formAction } from '$lib/services/scoped-actions';
 import { fileUnderNotebook } from '$lib/services/notebook-linking';
 import { billHandlers } from '$lib/services/bill-actions';
 import { habitHandlers } from '$lib/services/habit-actions';
@@ -76,115 +76,72 @@ export const notebookActions = {
 		}
 	},
 
-	create: async ({ request, locals }) => {
-		const formData = await request.formData();
-		try {
-			createNotebook(buildCtx(locals.user!.id), {
-				title: formData.get('heading'),
-				// Where it sits on the shelf: a path, '' at the top.
-				folder: formData.get('folder') ?? '',
-				description: formData.get('description'),
-				defaultTags: formData.get('defaultTags'),
-				categoryId: formData.get('categoryId'),
-				// What it holds, when whoever is making it said. The dialog does
-				// not ask — a notebook is made in one field and answered for
-				// afterwards — so this is usually the default.
-				modules: formData.has('modules') ? formData.getAll('modules') : undefined
-			});
-			return { success: true };
-		} catch (e) {
-			return toActionFailure(e);
-		}
-	},
+	create: formAction((ctx, formData) => {
+		createNotebook(ctx, {
+			title: formData.get('heading'),
+			// Where it sits on the shelf: a path, '' at the top.
+			folder: formData.get('folder') ?? '',
+			description: formData.get('description'),
+			defaultTags: formData.get('defaultTags'),
+			categoryId: formData.get('categoryId'),
+			// What it holds, when whoever is making it said. The dialog does
+			// not ask — a notebook is made in one field and answered for
+			// afterwards — so this is usually the default.
+			modules: formData.has('modules') ? formData.getAll('modules') : undefined
+		});
+	}),
 
 	/*
 	 * Into a folder, and nothing else about it touched — what dropping a
 	 * notebook on a folder of the shelf asks. `''` is the shelf itself.
 	 */
-	move: async ({ request, locals }) => {
-		const formData = await request.formData();
-		try {
-			updateNotebook(buildCtx(locals.user!.id), Number(formData.get('id')), {
-				folder: formData.get('folder') ?? ''
-			});
-			return { success: true };
-		} catch (e) {
-			return toActionFailure(e);
-		}
-	},
+	move: formAction((ctx, formData) => {
+		updateNotebook(ctx, Number(formData.get('id')), {
+			folder: formData.get('folder') ?? ''
+		});
+	}),
 
-	update: async ({ request, locals }) => {
-		const formData = await request.formData();
-		try {
-			updateNotebook(buildCtx(locals.user!.id), Number(formData.get('id')), {
-				title: formData.get('heading'),
-				// Absent (the inline rename) keeps the folder it is in.
-				folder: formData.get('folder'),
-				// Absent means untouched, as for the fields below; an emptied box clears.
-				description: formData.has('description') ? formData.get('description') : undefined,
-				defaultTags: formData.has('defaultTags') ? formData.get('defaultTags') : undefined,
-				// Absent where the form does not ask, which leaves it as it was.
-				categoryId: formData.has('categoryId') ? formData.get('categoryId') : undefined,
-				/*
-				 * What it holds, when the form asked about it.
-				 *
-				 * `modulesPosted` rather than the boxes themselves: unticking
-				 * every one of them sends no `modules` field at all, which is
-				 * indistinguishable from a form that never asked — and would
-				 * quietly leave the tabs as they were instead of clearing them.
-				 * A form that asked says so.
-				 */
-				modules: formData.has('modulesPosted') ? formData.getAll('modules') : undefined
-			});
-			return { success: true };
-		} catch (e) {
-			return toActionFailure(e);
-		}
-	},
+	update: formAction((ctx, formData) => {
+		updateNotebook(ctx, Number(formData.get('id')), {
+			title: formData.get('heading'),
+			// Absent (the inline rename) keeps the folder it is in.
+			folder: formData.get('folder'),
+			// Absent means untouched, as for the fields below; an emptied box clears.
+			description: formData.has('description') ? formData.get('description') : undefined,
+			defaultTags: formData.has('defaultTags') ? formData.get('defaultTags') : undefined,
+			// Absent where the form does not ask, which leaves it as it was.
+			categoryId: formData.has('categoryId') ? formData.get('categoryId') : undefined,
+			/*
+			 * What it holds, when the form asked about it.
+			 *
+			 * `modulesPosted` rather than the boxes themselves: unticking
+			 * every one of them sends no `modules` field at all, which is
+			 * indistinguishable from a form that never asked — and would
+			 * quietly leave the tabs as they were instead of clearing them.
+			 * A form that asked says so.
+			 */
+			modules: formData.has('modulesPosted') ? formData.getAll('modules') : undefined
+		});
+	}),
 
 	/**
 	 * Rename or move a folder: the prefix of every notebook in it is rewritten.
 	 * Moving it into its own parent is how the shelf removes one.
 	 */
-	renameFolder: async ({ request, locals }) => {
-		const formData = await request.formData();
-		try {
-			renameFolder(buildCtx(locals.user!.id), formData.get('from'), formData.get('to') ?? '');
-			return { success: true };
-		} catch (e) {
-			return toActionFailure(e);
-		}
-	},
+	renameFolder: formAction((ctx, formData) => {
+		renameFolder(ctx, formData.get('from'), formData.get('to') ?? '');
+	}),
 
 	/** Keep it at the front of the shelf, or stop. The reader's own star. */
-	setFavourite: async ({ request, locals }) => {
-		const formData = await request.formData();
-		try {
-			setNotebookFavourite(
-				buildCtx(locals.user!.id),
-				Number(formData.get('id')),
-				formData.get('favourite') === 'true'
-			);
-			return { success: true, action: 'setFavourite' };
-		} catch (e) {
-			return toActionFailure(e);
-		}
-	},
+	setFavourite: formAction((ctx, formData) => {
+		setNotebookFavourite(ctx, Number(formData.get('id')), formData.get('favourite') === 'true');
+		return { success: true, action: 'setFavourite' };
+	}),
 
 	/** The owner's switch: everybody on their family plan may read and write. */
-	setShared: async ({ request, locals }) => {
-		const formData = await request.formData();
-		try {
-			setNotebookShared(
-				buildCtx(locals.user!.id),
-				Number(formData.get('id')),
-				formData.get('shared') === 'true'
-			);
-			return { success: true };
-		} catch (e) {
-			return toActionFailure(e);
-		}
-	},
+	setShared: formAction((ctx, formData) => {
+		setNotebookShared(ctx, Number(formData.get('id')), formData.get('shared') === 'true');
+	}),
 
 	/**
 	 * A picture for the notebook, replacing whatever was there.
@@ -214,29 +171,14 @@ export const notebookActions = {
 		}
 	},
 
-	removePicture: async ({ request, locals }) => {
-		const formData = await request.formData();
-		try {
-			removeNotebookPicture(buildCtx(locals.user!.id), Number(formData.get('id')));
-			return { success: true, action: 'removePicture' };
-		} catch (e) {
-			return toActionFailure(e);
-		}
-	},
+	removePicture: formAction((ctx, formData) => {
+		removeNotebookPicture(ctx, Number(formData.get('id')));
+		return { success: true, action: 'removePicture' };
+	}),
 
-	setClosed: async ({ request, locals }) => {
-		const formData = await request.formData();
-		try {
-			setNotebookClosed(
-				buildCtx(locals.user!.id),
-				Number(formData.get('id')),
-				formData.get('closed') === 'true'
-			);
-			return { success: true };
-		} catch (e) {
-			return toActionFailure(e);
-		}
-	},
+	setClosed: formAction((ctx, formData) => {
+		setNotebookClosed(ctx, Number(formData.get('id')), formData.get('closed') === 'true');
+	}),
 
 	/**
 	 * Write a note against this notebook, here.
@@ -290,27 +232,21 @@ export const notebookActions = {
 	 * `notebookId` goes back in on the way through, so editing a note does not
 	 * quietly take it out of its notebook.
 	 */
-	updateEntry: async ({ request, locals }) => {
-		const formData = await request.formData();
-		try {
-			// Absent for a note whose notebook was deleted: editing one must not
-			// adopt it into whatever notebook happens to be on screen.
-			const notebookId = Number(formData.get('notebookId')) || null;
+	updateEntry: formAction((ctx, formData) => {
+		// Absent for a note whose notebook was deleted: editing one must not
+		// adopt it into whatever notebook happens to be on screen.
+		const notebookId = Number(formData.get('notebookId')) || null;
 
-			const ctx = buildCtx(locals.user!.id);
-			const id = Number(formData.get('id'));
-			updateEntry(ctx, id, {
-				title: formData.get('heading'),
-				content: formData.get('content'),
-				tags: formData.get('tags'),
-				notebookId
-			});
-			setEntryPeople(ctx, id, formData.get('people'));
-			return { success: true, action: 'updateEntry' };
-		} catch (e) {
-			return toActionFailure(e);
-		}
-	},
+		const id = Number(formData.get('id'));
+		updateEntry(ctx, id, {
+			title: formData.get('heading'),
+			content: formData.get('content'),
+			tags: formData.get('tags'),
+			notebookId
+		});
+		setEntryPeople(ctx, id, formData.get('people'));
+		return { success: true, action: 'updateEntry' };
+	}),
 
 	/**
 	 * Put a note away, or take it back out.
@@ -319,19 +255,10 @@ export const notebookActions = {
 	 * unchanged. No confirmation, because this is the reversible one — the
 	 * button beside it is what deletes, and that one asks.
 	 */
-	archiveEntry: async ({ request, locals }) => {
-		const formData = await request.formData();
-		try {
-			archiveEntry(
-				buildCtx(locals.user!.id),
-				Number(formData.get('id')),
-				formData.get('away') !== 'false'
-			);
-			return { success: true, action: 'archiveEntry' };
-		} catch (e) {
-			return toActionFailure(e);
-		}
-	},
+	archiveEntry: formAction((ctx, formData) => {
+		archiveEntry(ctx, Number(formData.get('id')), formData.get('away') !== 'false');
+		return { success: true, action: 'archiveEntry' };
+	}),
 
 	/**
 	 * Keep a note at the top of its notebook, or stop.
@@ -339,19 +266,10 @@ export const notebookActions = {
 	 * As many as somebody likes: what is worth having in front of you when you
 	 * open a notebook is not a number anybody else can pick for you.
 	 */
-	pinEntry: async ({ request, locals }) => {
-		const formData = await request.formData();
-		try {
-			pinEntry(
-				buildCtx(locals.user!.id),
-				Number(formData.get('id')),
-				formData.get('pinned') !== 'false'
-			);
-			return { success: true, action: 'pinEntry' };
-		} catch (e) {
-			return toActionFailure(e);
-		}
-	},
+	pinEntry: formAction((ctx, formData) => {
+		pinEntry(ctx, Number(formData.get('id')), formData.get('pinned') !== 'false');
+		return { success: true, action: 'pinEntry' };
+	}),
 
 	/**
 	 * A note that is a checklist, made into the todos it describes.
@@ -361,23 +279,18 @@ export const notebookActions = {
 	 * left alone — deleting it is the button beside this one, because "also put
 	 * these on my list" and "move these onto my list" are both real answers.
 	 */
-	entryToTodos: async ({ request, locals }) => {
-		const formData = await request.formData();
-		try {
-			const only = formData
-				.getAll('only')
-				.map(Number)
-				.filter((at) => Number.isInteger(at));
-			const made = makeTodosFromEntry(
-				buildCtx(locals.user!.id),
-				Number(formData.get('id')),
-				formData.has('only') ? only : undefined
-			);
-			return { success: true, action: 'entryToTodos', made: made.ids.length };
-		} catch (e) {
-			return toActionFailure(e);
-		}
-	},
+	entryToTodos: formAction((ctx, formData) => {
+		const only = formData
+			.getAll('only')
+			.map(Number)
+			.filter((at) => Number.isInteger(at));
+		const made = makeTodosFromEntry(
+			ctx,
+			Number(formData.get('id')),
+			formData.has('only') ? only : undefined
+		);
+		return { success: true, action: 'entryToTodos', made: made.ids.length };
+	}),
 
 	/**
 	 * Where the reader dragged the divider between the list and the panel.
@@ -385,32 +298,18 @@ export const notebookActions = {
 	 * Posted once, when they let go — a drag across the screen is two hundred
 	 * pixels and would otherwise be two hundred writes.
 	 */
-	setPanelWidth: async ({ request, locals }) => {
-		const formData = await request.formData();
-		try {
-			setPanelWidth(
-				buildCtx(locals.user!.id).userId,
-				NOTEBOOK_PANEL_WIDTH_KEY,
-				Number(formData.get('rem'))
-			);
-			return { success: true, action: 'setPanelWidth' };
-		} catch (e) {
-			return toActionFailure(e);
-		}
-	},
+	setPanelWidth: formAction((ctx, formData) => {
+		setPanelWidth(ctx.userId, NOTEBOOK_PANEL_WIDTH_KEY, Number(formData.get('rem')));
+		return { success: true, action: 'setPanelWidth' };
+	}),
 
 	/** Move, label, put away or delete several notes in one press. */
 	batchEntries: entryHandlers.batch,
 
-	deleteEntry: async ({ request, locals }) => {
-		const formData = await request.formData();
-		try {
-			deleteEntry(buildCtx(locals.user!.id), Number(formData.get('id')));
-			return { success: true, action: 'deleteEntry' };
-		} catch (e) {
-			return toActionFailure(e);
-		}
-	},
+	deleteEntry: formAction((ctx, formData) => {
+		deleteEntry(ctx, Number(formData.get('id')));
+		return { success: true, action: 'deleteEntry' };
+	}),
 
 	delete: async ({ request, locals }) => {
 		const formData = await request.formData();

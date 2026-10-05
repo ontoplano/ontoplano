@@ -32,7 +32,7 @@ export const MAX_AUDIO_NOTES_LENGTH = 100_000;
  * Opus at 16 kbps in one channel is a well-known point on that curve: plainly
  * intelligible speech, and nothing anybody would call hi-fi. It puts the
  * ceiling at around a hundred seconds, which is the number that matters —
- * `AUDIO_SECONDS` below is it, and the recorder counts down against it.
+ * `audioSecondsFor` says how long that is, and the recorder counts down against it.
  *
  * Louder is not better here. A voice note is a sentence you did not want to
  * type; the format should be the cheapest one that carries a sentence.
@@ -48,8 +48,6 @@ export const AUDIO_BITS_PER_SECOND = 16_000;
  */
 export const audioSecondsFor = (kilobytes: number) =>
 	Math.floor((kilobytes * 1024 * 8) / AUDIO_BITS_PER_SECOND);
-
-export const AUDIO_SECONDS = audioSecondsFor(AUDIO_KILOBYTES);
 
 export type MediaLimits = {
 	/** The biggest single picture, in bytes and in the number people read. */

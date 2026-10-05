@@ -3,7 +3,8 @@ import type { RequestHandler } from './$types';
 import { clientKey, rateLimit } from '$lib/server/rate-limit';
 import { ValidationError } from '$lib/services/errors';
 import {
-	SUBSCRIBE_ACCEPTED,
+	SUBSCRIBE_ALREADY,
+	SUBSCRIBE_JOINED,
 	newsletterEnabled,
 	newsletterOrigin,
 	subscribe
@@ -24,10 +25,9 @@ import {
  *
  * ## What it answers
  *
- * The same thing, always: accepted. Whether the address was new, already on
- * the list, or previously unsubscribed is not the form's to disclose — the
- * moment those answers differ the form is a way to ask "is this person a
- * subscriber?" about anybody.
+ * Whether the address joined or was already there — see "What it says" in
+ * `$lib/server/services/newsletter`, and the limits below, which are what
+ * keep that answer from being a way to sweep a list of addresses.
  */
 
 /**
@@ -101,8 +101,9 @@ export const POST: RequestHandler = async ({ request, getClientAddress }) => {
 		email = (await request.formData().catch(() => null))?.get('email');
 	}
 
+	let joined: Awaited<ReturnType<typeof subscribe>>;
 	try {
-		await subscribe(email, 'site');
+		joined = await subscribe(email, 'site');
 	} catch (error) {
 		if (error instanceof ValidationError) {
 			return json({ ok: false, message: error.message }, { status: 400, headers });
@@ -111,6 +112,9 @@ export const POST: RequestHandler = async ({ request, getClientAddress }) => {
 	}
 
 	// The site prints what it is told, so this is the one sentence a stranger
-	// reads. It lives with the service — see `SUBSCRIBE_ACCEPTED`.
-	return json({ ok: true, message: SUBSCRIBE_ACCEPTED }, { headers });
+	// reads. It lives with the service — see `SUBSCRIBE_JOINED`.
+	return json(
+		{ ok: true, message: joined === 'joined' ? SUBSCRIBE_JOINED : SUBSCRIBE_ALREADY, joined },
+		{ headers }
+	);
 };

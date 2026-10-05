@@ -3,7 +3,6 @@ import { measuredActivities } from '$lib/services/workouts';
 import type { IsolatedEvent } from '$lib/isolated/routes';
 import { listActivities } from '$lib/services/activities';
 import { buildCtx } from '$lib/services/ctx';
-import { toActionFailure } from '$lib/http-errors';
 import {
 	createArea,
 	deleteArea,
@@ -15,6 +14,7 @@ import {
 } from '$lib/services/goals';
 import { pickableNotebooks } from '$lib/services/notebooks';
 import { listTodos } from '$lib/services/todos';
+import { formAction } from '$lib/services/scoped-actions';
 
 export const load = async ({ locals, url }: IsolatedEvent) => {
 	const ctx = buildCtx(locals.user!.id);
@@ -56,55 +56,27 @@ export const load = async ({ locals, url }: IsolatedEvent) => {
 };
 
 export const actions = {
-	createArea: async ({ request, locals }: IsolatedEvent) => {
-		const formData = await request.formData();
-		try {
-			createArea(buildCtx(locals.user!.id), {
-				name: formData.get('label'),
-				color: formData.get('color')
-			});
-			return { success: true };
-		} catch (e) {
-			return toActionFailure(e);
-		}
-	},
+	createArea: formAction((ctx, formData) => {
+		createArea(ctx, {
+			name: formData.get('label'),
+			color: formData.get('color')
+		});
+	}),
 
-	updateArea: async ({ request, locals }: IsolatedEvent) => {
-		const formData = await request.formData();
-		try {
-			updateArea(buildCtx(locals.user!.id), Number(formData.get('id')), {
-				name: formData.get('label'),
-				color: formData.get('color')
-			});
-			return { success: true };
-		} catch (e) {
-			return toActionFailure(e);
-		}
-	},
+	updateArea: formAction((ctx, formData) => {
+		updateArea(ctx, Number(formData.get('id')), {
+			name: formData.get('label'),
+			color: formData.get('color')
+		});
+	}),
 
-	moveArea: async ({ request, locals }: IsolatedEvent) => {
-		const formData = await request.formData();
-		try {
-			moveArea(
-				buildCtx(locals.user!.id),
-				Number(formData.get('id')),
-				Number(formData.get('delta'))
-			);
-			return { success: true };
-		} catch (e) {
-			return toActionFailure(e);
-		}
-	},
+	moveArea: formAction((ctx, formData) => {
+		moveArea(ctx, Number(formData.get('id')), Number(formData.get('delta')));
+	}),
 
-	deleteArea: async ({ request, locals }: IsolatedEvent) => {
-		const formData = await request.formData();
-		try {
-			deleteArea(buildCtx(locals.user!.id), Number(formData.get('id')));
-			return { success: true };
-		} catch (e) {
-			return toActionFailure(e);
-		}
-	},
+	deleteArea: formAction((ctx, formData) => {
+		deleteArea(ctx, Number(formData.get('id')));
+	}),
 
 	/*
 	 * The goal verbs themselves are shared, so a goal is made, edited, closed

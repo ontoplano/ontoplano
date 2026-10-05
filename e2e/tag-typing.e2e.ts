@@ -58,6 +58,11 @@ test('a space makes a chip and empties the box, and typing suggests', async ({ p
 	// Choosing one also leaves the box empty.
 	await expect(chips().filter({ hasText: 'household' })).toBeVisible();
 	await expect(tags()).toHaveValue('');
+	// And closes the list: the next one is asked for by typing, not offered.
+	await expect(suggestions).toHaveCount(0);
+	await tags().pressSequentially('u');
+	await expect(suggestions.getByRole('option', { name: 'urgent' })).toBeVisible();
+	await tags().fill('');
 
 	// Backspace on an empty box takes the last chip off.
 	await tags().press('Backspace');

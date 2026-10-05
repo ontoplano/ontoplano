@@ -56,7 +56,6 @@ sentence somebody agrees to when they grant it.
 
 | Endpoint                                     | Method | Scope             |
 | -------------------------------------------- | ------ | ----------------- |
-| `/.well-known/assetlinks.json`               | GET    | —                 |
 | `/.well-known/oauth-authorization-server`    | GET    | —                 |
 | `/.well-known/oauth-protected-resource`      | GET    | —                 |
 | `/account/export`                            | GET    | —                 |
@@ -124,32 +123,12 @@ sentence somebody agrees to when they grant it.
 | `/media/[id]`                                | GET    | —                 |
 | `/media/audio`                               | POST   | —                 |
 | `/media/audio/[id]`                          | GET    | —                 |
+| `/metrics`                                   | GET    | —                 |
 | `/oauth/register`                            | POST   | —                 |
 | `/oauth/token`                               | POST   | —                 |
 | `/robots.txt`                                | GET    | —                 |
 | `/settings/account/export`                   | GET    | —                 |
 | `/shopping`                                  | GET    | —                 |
-
-### `/.well-known/assetlinks.json`
-
-Digital Asset Links, which is what removes the URL bar from the Android app.
-
-A Trusted Web Activity is Chrome rendering this site inside our own APK. It
-only drops the address bar once it can prove the two belong together, and the
-proof is mutual: the APK names this domain, and this file names the APK's
-signing certificate. Get it wrong and the app still works — it just looks like
-a browser, which is the single most common TWA complaint.
-
-The fingerprints come from the environment because they are a property of the
-signing keys, which differ between a local debug build and whatever Play
-signs. `ANDROID_CERT_FINGERPRINTS` is a comma-separated list of SHA-256
-fingerprints in the usual colon-separated hex form.
-
-List both your upload key and Play's app-signing key: Play re-signs uploads,
-so an app that only trusts the upload key shows the URL bar for every user
-who installs from the store while working perfectly on the developer's phone.
-
-**GET**
 
 ### `/.well-known/oauth-authorization-server`
 
@@ -278,10 +257,7 @@ as it should have been: by somebody reading the journal and asking whether
 that could possibly be right.
 
 The app has the code loaded and the database open. Asking it costs a request.
-
-Behind the health token, which the box already has for `/healthz`: this
-writes and sends, so it is not for the public. Absent token, absent
-endpoint — never open, whatever is misconfigured.
+The token gate and the stamp the instance page reads are `jobEndpoint`'s.
 
 **POST**
 
@@ -289,15 +265,10 @@ endpoint — never open, whatever is misconfigured.
 
 The hour's weekly review mail, done by the process that is already running.
 
-The same shape as `/api/jobs/reminders`, for the same reason: the app has
-the code loaded and the database open, so a timer — or the Docker image's
-own scheduler, which has no systemd to lean on — asks it instead of booting
-a second copy of everything. Hourly, because seven in the morning is a
-different instant for every timezone; `sendWeeklyReviews` already does
-nothing for the twenty-three runs that are not somebody's seven.
-
-Behind the health token, like the reminders job: it sends mail, so it is
-not for the public. Absent token, absent endpoint.
+The same shape as `/api/jobs/reminders`, for the same reason — see
+`$lib/server/jobs`. Hourly, because seven in the morning is a different
+instant for every timezone; `sendWeeklyReviews` already does nothing for
+the twenty-three runs that are not somebody's seven.
 
 **POST**
 
@@ -536,10 +507,9 @@ self-hosted install does not advertise an endpoint it will refuse.
 
 ## What it answers
 
-The same thing, always: accepted. Whether the address was new, already on
-the list, or previously unsubscribed is not the form's to disclose — the
-moment those answers differ the form is a way to ask "is this person a
-subscriber?" about anybody.
+Whether the address joined or was already there — see "What it says" in
+`$lib/server/services/newsletter`, and the limits below, which are what
+keep that answer from being a way to sweep a list of addresses.
 
 **POST**
 
@@ -941,6 +911,18 @@ that bytes typed as audio are really a document; `attachment` rather than
 `inline` because nothing here needs to be _rendered_ — the page plays it
 through an `<audio>` element pointed at this URL, and a container that lies
 about its insides is then noise rather than a document on this origin.
+
+**GET**
+
+### `/metrics`
+
+The numbers `$lib/server/metrics` keeps, for whatever collects them.
+
+Behind the same token as `/healthz`'s detail, for the same reason: which
+routes are slow and what the process weighs tells somebody which request
+to send a thousand times. Sent as `Authorization: Bearer …` — what a
+Prometheus scrape config writes — or as `x-health-token`. With no token
+configured this route does not exist.
 
 **GET**
 

@@ -99,9 +99,12 @@ try {
 /*
  * The build entry, and every line of it is a fact about this repository:
  *
- * - `gradle: - official`: the project has flavours (official, dev, staging —
- *   one per instance a developer talks to) and F-Droid builds the official
- *   one. `yes` would ask for a flavourless project this is not.
+ * - `gradle: - official`: the project has flavours (official, play, dev,
+ *   staging) and F-Droid builds the official one. `yes` would ask for a
+ *   flavourless project this is not.
+ * - The `play` flavour carries Google's Billing Library, which is not free
+ *   software. It is never built here, but the scanner reads every gradle line
+ *   and source set, so the first prebuild step deletes both.
  * - The web app the shell carries is NOT committed (`assets/public` is
  *   ignored), so the builder makes it from source: the root yarn workspace,
  *   the isolated build (`ONTOPLANO_ISOLATED_BUILD=1`, the same thing `make
@@ -150,6 +153,7 @@ const buildEntry = `  - versionName: ${version}
     init:
       - cd ../../.. && yarn install --frozen-lockfile && cd capacitor && npm ci --no-audit --no-fund
     prebuild:
+      - sed -i -e '/billingclient/d' build.gradle && rm -rf src/play
       - cd ../../.. && NODE_OPTIONS=--max-old-space-size=4096 ONTOPLANO_ISOLATED_BUILD=1
         PUBLIC_ONTOPLANO_ISOLATED=true yarn build && cd capacitor && npx cap sync android
     scandelete:
@@ -266,7 +270,7 @@ if (FROM) {
  */
 const STORE = process.env.FDROID_STORE
 	? resolve(process.env.FDROID_STORE)
-	: join(ROOT, 'ontoplano-marketing', 'store');
+	: join(ROOT, '..', 'ontoplano-marketing', 'store');
 const PLAY = join(STORE, 'play');
 const listingOut = join(OUT, 'metadata', PACKAGE);
 let listed = false;

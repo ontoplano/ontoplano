@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { useWhen } from '$lib/when-context.svelte';
+	import { localDay } from '$lib/services/time';
 	import { civilOf, momentOf } from '$lib/when';
 	import EmptyState from '$lib/components/EmptyState.svelte';
 	import { useT } from '$lib/i18n';
@@ -109,10 +110,7 @@
 
 	const DAY_MS = 86400_000;
 
-	function isoDate(ms: number): string {
-		const d = new Date(ms);
-		return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-	}
+	const isoDate = (ms: number) => localDay(new Date(ms));
 
 	const heatmapWeeks = $derived.by(() => {
 		const today = new Date();

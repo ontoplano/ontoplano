@@ -59,6 +59,19 @@ function newestCall(user = OWNER) {
 }
 
 describe('what gets written down', () => {
+	it('a write names what it made or changed, so its notification can open it', () => {
+		const subject = () =>
+			database.get(
+				'select subject_kind as kind, subject_id as id from assistant_calls order by id desc limit 1'
+			) as { kind: string | null; id: string | null };
+
+		const made = rpc('add_task', { title: 'water the ferns' });
+		expect(subject()).toEqual({ kind: 'todo', id: String(made.id) });
+
+		rpc('change_task', { id: made.id, title: 'water the ferns, all of them' });
+		expect(subject()).toEqual({ kind: 'todo', id: String(made.id) });
+	});
+
 	it('a write lands in the log with its before; a read leaves no trace', () => {
 		const countBefore = log.listAssistantCalls(ctx(), { limit: 200 }).length;
 		rpc('tasks', {});

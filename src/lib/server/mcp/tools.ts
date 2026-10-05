@@ -88,12 +88,12 @@ import {
 } from '$lib/services/slots.js';
 import {
 	describeRecurrence,
-	formatDate as recFormatDate,
 	MAX_INTERVAL,
 	parseRecurrence,
 	serialiseRecurrence
 } from '../../recurrence.js';
 import { translator } from '../../i18n/core.js';
+import { localDay } from '../../services/time.js';
 import { messages as englishMessages } from '../../i18n/catalogues/en.js';
 import {
 	createIdea,
@@ -923,6 +923,27 @@ const TODO_QUERY_REFS: Ref[] = [
 	{ arg: 'notebookId', kind: 'notebook', zeroIsNone: true },
 	{ arg: 'ids', kind: 'todo' }
 ];
+
+/**
+ * A listing narrowed to one notebook.
+ *
+ * Also what lets a key tied to a notebook read the room at all: a listing that
+ * names no notebook is about the whole account, which such a key is refused,
+ * while one that names it has the argument pinned to the key's own. Without
+ * this a notebook key could add an idea and never see it again.
+ */
+const IN_NOTEBOOK_REF: Ref = { arg: 'notebookId', kind: 'notebook' };
+// A shared table rather than a function of the noun: the docs read a
+// parameter's words out of this file, and they follow a spread of a table.
+const IN_NOTEBOOK_ARG = {
+	notebookId: {
+		type: 'integer',
+		description:
+			'Only what is filed in this notebook, as `notebooks` gives its id. Left out, all of it.'
+	}
+} as const;
+const inNotebook = (args: Record<string, unknown>) =>
+	args.notebookId === undefined ? {} : { notebookId: Number(args.notebookId) };
 
 /** Bounds on each rating, inclusive; an unset rating counts as `RATING_UNRATED`. */
 const RATING_BOUND_ARGS = {
@@ -3271,8 +3292,13 @@ export const TOOLS: Tool[] = [
 			'Things caught before they evaporated, newest first. An idea is not a task: nobody has committed to doing it, which is what makes it cheap to write down.',
 		scope: 'ideas:read',
 		writes: false,
-		input: object({ limit: count('How many.', 50), offset: from('the ideas') }),
-		run: (ctx, args) => paged(listIdeas(ctx), args, 50)
+		refs: [IN_NOTEBOOK_REF],
+		input: object({
+			limit: count('How many.', 50),
+			offset: from('the ideas'),
+			...IN_NOTEBOOK_ARG
+		}),
+		run: (ctx, args) => paged(listIdeas(ctx, inNotebook(args)), args, 50)
 	},
 	{
 		name: 'add_idea',
@@ -3520,15 +3546,17 @@ export const TOOLS: Tool[] = [
 			'What is to buy and what is already in the cupboard. An item is a thing, not a line: ticking it bought puts it back in the cupboard rather than deleting it. Each carries how many there are and how many are kept, so "what am I short of" is `qty` below `idealQty` — `short: true` asks for exactly those.',
 		scope: 'inventory:read',
 		writes: false,
+		refs: [IN_NOTEBOOK_REF],
 		input: object({
 			short: {
 				type: 'boolean',
 				description:
 					'Only the things there are fewer of than are kept — what an actual shopping trip is for.'
-			}
+			},
+			...IN_NOTEBOOK_ARG
 		}),
 		run: (ctx, args) => {
-			const items = listItems(ctx);
+			const items = listItems(ctx, inNotebook(args));
 			return args.short === true
 				? items.filter((item) => item.type === 'replenish' && item.qty < item.idealQty)
 				: items;
@@ -4297,8 +4325,13 @@ export const TOOLS: Tool[] = [
 			'The full list of habits, due today or not — id, name, type and which days each is scheduled. `habits` is today\u2019s view with streaks; this is the one to read before adding or changing one. Archived habits are left out unless `includeArchived` is set; those carry an `archivedAt`.',
 		scope: 'habits:read',
 		writes: false,
-		input: object({ includeArchived: { type: 'boolean', default: false } }),
-		run: (ctx, args) => listHabits(ctx, { includeArchived: Boolean(args.includeArchived) })
+		refs: [IN_NOTEBOOK_REF],
+		input: object({
+			includeArchived: { type: 'boolean', default: false },
+			...IN_NOTEBOOK_ARG
+		}),
+		run: (ctx, args) =>
+			listHabits(ctx, { includeArchived: Boolean(args.includeArchived), ...inNotebook(args) })
 	},
 	{
 		name: 'add_habit',
@@ -4604,13 +4637,18 @@ export const TOOLS: Tool[] = [
 			'The blocks that make up every week — each with its weekday, time, length and category. Weekdays are numbered from Monday: 0 is Monday, 6 is Sunday. Not all of them are weekly: `repeats` says in words how often each one comes back, which can be every N weeks, every N days, or a day of the month. This is the template the days are generated from; `today` and `upcoming` show what it produced. Read it before changing Tuesdays rather than a Tuesday.',
 		scope: 'schedule:read',
 		writes: false,
-		input: object({}),
-		run: (ctx) =>
-			listWeeklySlots(ctx).map((slot) => ({
-				...slot,
-				attributes: parseAttributes(slot.attributes),
-				repeats: repeatsInWords(slot.recurrence, slot.weekday)
-			}))
+		refs: [IN_NOTEBOOK_REF],
+		input: object({ ...IN_NOTEBOOK_ARG }),
+		run: (ctx, args) =>
+			listWeeklySlots(ctx)
+				.filter(
+					(slot) => args.notebookId === undefined || slot.notebookId === Number(args.notebookId)
+				)
+				.map((slot) => ({
+					...slot,
+					attributes: parseAttributes(slot.attributes),
+					repeats: repeatsInWords(slot.recurrence, slot.weekday)
+				}))
 	},
 	{
 		name: 'add_repeating_block',
@@ -4649,7 +4687,7 @@ export const TOOLS: Tool[] = [
 			const chosen = categoryByName(ctx, args.category);
 			// Every-N counts from the next of the chosen weekday, so "every other
 			// Tuesday" starts on a Tuesday rather than on whatever today is.
-			const anchor = recFormatDate(nextWeekdayOnOrAfter(ctx.now, args.weekday));
+			const anchor = localDay(nextWeekdayOnOrAfter(ctx.now, args.weekday));
 			const id = createSlot(ctx, {
 				weekday: args.weekday,
 				startTime: args.start_time,
@@ -4741,7 +4779,7 @@ export const TOOLS: Tool[] = [
 				recurrence:
 					recurrenceFromArgs(
 						args,
-						recFormatDate(nextWeekdayOnOrAfter(ctx.now, args.weekday ?? current.weekday))
+						localDay(nextWeekdayOnOrAfter(ctx.now, args.weekday ?? current.weekday))
 					) ??
 					current.recurrence ??
 					undefined,
@@ -5431,11 +5469,13 @@ export const TOOLS: Tool[] = [
 			'The workouts you have written down, under Health. Each has a category and a plan; put one on the week with add_block and its workoutId to have it planned like a meal.',
 		scope: 'workouts:read',
 		writes: false,
+		refs: [IN_NOTEBOOK_REF],
 		input: object({
-			include_archived: { type: 'boolean', description: 'Include ones put away.' }
+			include_archived: { type: 'boolean', description: 'Include ones put away.' },
+			...IN_NOTEBOOK_ARG
 		}),
 		run: (ctx, args) => ({
-			workouts: listWorkouts(ctx, { includeArchived: !!args.include_archived })
+			workouts: listWorkouts(ctx, { includeArchived: !!args.include_archived, ...inNotebook(args) })
 		})
 	},
 	{
@@ -5830,8 +5870,11 @@ export const TOOLS: Tool[] = [
 			'The places money moves through — a current account, a credit card — with how many lines each holds and what they add up to. Amounts are in minor units (cents).',
 		scope: 'statements:read',
 		writes: false,
-		input: object({}),
-		run: (ctx) => ({ ledgers: listLedgers(ctx, { includeArchived: true }) })
+		refs: [IN_NOTEBOOK_REF],
+		input: object({ ...IN_NOTEBOOK_ARG }),
+		run: (ctx, args) => ({
+			ledgers: listLedgers(ctx, { includeArchived: true, ...inNotebook(args) })
+		})
 	},
 	{
 		name: 'add_ledger',
@@ -6158,11 +6201,13 @@ export const TOOLS: Tool[] = [
 			'The bills you expect to pay, and what you have actually paid. Amounts are in minor units (cents): 12000 is R$120,00. Marking one paid records the real amount, which can differ from the expected one. An `automatic` bill pays itself (a subscription, a direct debit): it is never reminded, and its payment is recorded on each due day.',
 		scope: 'bills:read',
 		writes: false,
+		refs: [IN_NOTEBOOK_REF],
 		input: object({
 			include_archived: { type: 'boolean', description: 'Include ones put away.' },
 			flow: text(
 				"Which direction: 'out' (bills, the default) or 'in' — income, recorded exactly the way bills are."
-			)
+			),
+			...IN_NOTEBOOK_ARG
 		}),
 		run: (ctx, args) => {
 			// Reading bills is when automatic ones catch up on what they paid.
@@ -6170,7 +6215,8 @@ export const TOOLS: Tool[] = [
 			return {
 				bills: listBills(ctx, {
 					includeArchived: !!args.include_archived,
-					flow: args.flow === 'in' ? 'in' : 'out'
+					flow: args.flow === 'in' ? 'in' : 'out',
+					...inNotebook(args)
 				})
 			};
 		}

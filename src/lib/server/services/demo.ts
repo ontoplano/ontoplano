@@ -2,7 +2,7 @@ import { execFile } from 'node:child_process';
 import { randomBytes } from 'node:crypto';
 import { existsSync } from 'node:fs';
 import { promisify } from 'node:util';
-import { and, eq, like, lt } from 'drizzle-orm';
+import { and, eq, like, lt, sql } from 'drizzle-orm';
 
 import { auth } from '../auth.js';
 import { loadConfig } from '../config.js';
@@ -12,6 +12,7 @@ import { demoLifetimeMinutes, demoMaxAccounts } from '../settings.js';
 import { USER_TABLES } from './account.js';
 import { NotFoundError } from '$lib/services/errors.js';
 import { deleteAccount } from './account.js';
+import { forgetUserSettings } from '$lib/services/settings.js';
 
 const run = promisify(execFile);
 
@@ -209,6 +210,7 @@ async function makeDemoAccount(host: string): Promise<DemoAccount | null> {
 			set: { value: expiresAt }
 		})
 		.run();
+	forgetUserSettings(userId);
 
 	await seed(email);
 
@@ -348,8 +350,30 @@ export function sweepDemoAccounts(now = new Date()): number {
 		.all();
 
 	for (const { userId } of expired) deleteAccount(userId);
-	if (expired.length) console.log(`demo: deleted ${expired.length} expired account(s)`);
+	if (expired.length) {
+		console.log(`demo: deleted ${expired.length} expired account(s)`);
+		reclaimSpace();
+	}
 	return expired.length;
+}
+
+/**
+ * How much of the demo's file may be free pages before it is vacuumed.
+ *
+ * A deleted account's pages stay in the file for SQLite to reuse; nothing
+ * hands them back to the disk. With an account made per visitor and deleted
+ * hours later, the demo's database reached 1.2 GB on a box with 25. A vacuum
+ * pauses writes for as long as it takes, which on the demo is a price worth
+ * paying and on a real instance is not — so this lives here and only here.
+ */
+const DEMO_VACUUM_FREE_SHARE = 0.25;
+
+function reclaimSpace(): void {
+	const pages = db.get<{ page_count: number }>(sql`PRAGMA page_count`)?.page_count ?? 0;
+	const free = db.get<{ freelist_count: number }>(sql`PRAGMA freelist_count`)?.freelist_count ?? 0;
+	if (pages === 0 || free / pages < DEMO_VACUUM_FREE_SHARE) return;
+	db.run(sql`VACUUM`);
+	console.log(`demo: vacuumed ${free} free page(s) of ${pages}`);
 }
 
 /**

@@ -9,6 +9,7 @@
 	import { audioMarkdown } from '$lib/audio-markdown';
 	import { invalidateAll } from '$app/navigation';
 	import { useT } from '$lib/i18n';
+	import Banner from '$lib/components/Banner.svelte';
 
 	/**
 	 * Put a recording into whatever is being written.
@@ -116,7 +117,7 @@
 
 <Modal open={choosing} title={t('attach.chooseOne')} onclose={() => (choosing = false)}>
 	{#if trouble}
-		<p class="text-sm text-red-600">{trouble}</p>
+		<Banner kind="error" message={trouble} />
 	{:else if held.length === 0}
 		<EmptyState compact icon="sound" title={t('attach.noneYet')} />
 	{:else}

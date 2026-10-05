@@ -798,6 +798,10 @@
 				"type": "boolean",
 				"required": false,
 				"default": false
+			},
+			"notebookId": {
+				"type": "integer",
+				"required": false
 			}
 		}
 	},
@@ -939,6 +943,10 @@
 			},
 			"include_archived": {
 				"type": "boolean",
+				"required": false
+			},
+			"notebookId": {
+				"type": "integer",
 				"required": false
 			}
 		}
@@ -2214,6 +2222,10 @@
 				"required": false,
 				"default": 50
 			},
+			"notebookId": {
+				"type": "integer",
+				"required": false
+			},
 			"offset": {
 				"type": "integer",
 				"required": false,
@@ -2237,7 +2249,12 @@
 		"scope": "statements:read",
 		"writes": false,
 		"destroys": false,
-		"params": {}
+		"params": {
+			"notebookId": {
+				"type": "integer",
+				"required": false
+			}
+		}
 	},
 	"link_to_goal": {
 		"scope": "tasks:write",
@@ -3058,7 +3075,12 @@
 		"scope": "schedule:read",
 		"writes": false,
 		"destroys": false,
-		"params": {}
+		"params": {
+			"notebookId": {
+				"type": "integer",
+				"required": false
+			}
+		}
 	},
 	"schedule_task": {
 		"scope": "tasks:write",
@@ -3208,6 +3230,10 @@
 		"writes": false,
 		"destroys": false,
 		"params": {
+			"notebookId": {
+				"type": "integer",
+				"required": false
+			},
 			"short": {
 				"type": "boolean",
 				"required": false
@@ -3937,6 +3963,10 @@
 		"params": {
 			"include_archived": {
 				"type": "boolean",
+				"required": false
+			},
+			"notebookId": {
+				"type": "integer",
 				"required": false
 			}
 		}

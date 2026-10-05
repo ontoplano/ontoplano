@@ -58,19 +58,19 @@ describe('categories and activities', () => {
 
 	test('an activity the plan points at is not deleted out from under it', () => {
 		const health = activities.listCategories(ctx).find((c) => c.name === 'Health')!;
-		const russian = activities.createActivity(ctx, { name: 'Russian', categoryId: health.id });
+		const guitar = activities.createActivity(ctx, { name: 'Guitar', categoryId: health.id });
 
 		slots.createSlot(ctx, {
 			weekday: 1,
 			startTime: '18:00',
 			durationMinutes: 60,
 			mode: 'activity',
-			activityId: russian
+			activityId: guitar
 		});
 
 		// A block pointing at a row that is gone is a block that cannot say what
 		// it is for.
-		expect(() => activities.deleteActivity(ctx, russian)).toThrow();
+		expect(() => activities.deleteActivity(ctx, guitar)).toThrow();
 	});
 
 	test("another account's category is not yours to rename", () => {
@@ -250,12 +250,12 @@ describe('goals', () => {
 	// only renames a goal knows nothing about what it counts.
 	test('an update that says nothing about measures leaves them', () => {
 		const id = goals.createGoal(ctx, {
-			title: 'Learn Russian',
+			title: 'Learn guitar',
 			horizon: 'year',
 			targets: [{ value: 500, unit: 'words' }]
 		});
 
-		goals.updateGoal(ctx, id, { title: 'Learn Russian properly' });
+		goals.updateGoal(ctx, id, { title: 'Learn guitar properly' });
 		expect(goals.listGoals(ctx).find((g) => g.id === id)!.targets).toHaveLength(1);
 	});
 
