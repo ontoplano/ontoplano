@@ -304,6 +304,9 @@ export type MessageKey =
 	| 'audio.tooLong'
 	| 'buy.backToBilling'
 	| 'buy.openingTheSecurePaymentWindow'
+	| 'buy.playCouldNotStart'
+	| 'buy.playNotConfirmed'
+	| 'buy.playOnlyInStoreCopy'
 	| 'buy.thePaymentWindowCouldNot'
 	| 'capture.addedTo'
 	| 'capture.addedToWithContent'
@@ -2255,6 +2258,8 @@ export type MessageKey =
 	| 'pictures.view'
 	| 'plans.exportsPerDay'
 	| 'plans.storedDataPoints'
+	| 'play.nothingToBuy'
+	| 'play.opening'
 	| 'quickTag.addATag'
 	| 'quickTag.placeholder'
 	| 'ratingPicker.leaveUnanswered'
@@ -4129,6 +4134,7 @@ export interface MessageValuesFor {
 	'audio.justRecorded': { name: string | number };
 	'audio.sizeKB': { size: string | number };
 	'audio.tooLong': { kilobytes: string | number };
+	'buy.playCouldNotStart': { code: string | number };
 	'capture.addedTo': { into: string | number };
 	'capture.addedToWithContent': { content: string | number; into: string | number };
 	'capture.newThing': { thing: string | number };

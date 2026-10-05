@@ -18,6 +18,13 @@ the shape of the data changing. Bumping the minor per batch is what ran this
 file to 0.161 in a few months, which tells a reader nothing about which
 releases mattered.
 
+## 0.185.9 — 2026-10-05
+
+- The app from Google Play sells Pro through Google Play: choosing a plan opens
+  Play's own purchase sheet, the plan switches on as soon as Play confirms it,
+  and a subscription the Google account already holds is picked up rather than
+  bought twice — after a reinstall or on a new phone.
+
 ## 0.185.8 — 2026-10-05
 
 - Every picture can be looked at full screen: a notebook's picture has a small

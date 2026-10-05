@@ -121,6 +121,21 @@ describe.skipIf(!hasPlayChannel())('a purchase made in the store copy', () => {
 		expect(subscriptions.resolvePlan(STRANGER).plan).not.toBe('pro');
 	});
 
+	test('a purchase the app stamped for another account cannot be claimed', async () => {
+		// The phone names the account when it opens Play's sheet; Google keeps
+		// that name on the purchase, and it outranks whoever holds the token.
+		const stamped = activePurchase('ontoplano.solo.monthly', {
+			externalAccountIdentifiers: { obfuscatedExternalAccountId: OWNER }
+		});
+		vi.stubGlobal('fetch', googleAnswers(stamped));
+		expect(
+			await refusalOf(() =>
+				billing.playClaim(STRANGER, { sku: 'ontoplano.solo.monthly', purchaseToken: 'tok-fresh' })
+			)
+		).toMatch(/another account/);
+		expect(subscriptions.resolvePlan(STRANGER).plan).not.toBe('pro');
+	});
+
 	test('a token Google does not recognise is refused, loudly', async () => {
 		vi.stubGlobal('fetch', googleAnswers(activePurchase('ontoplano.solo.monthly')));
 		expect(
@@ -160,7 +175,7 @@ describe.skipIf(!hasPlayChannel())('a notification from Play', () => {
 		);
 		const outcome = await billing.playRtdn(
 			push({
-				packageName: 'app.ontoplano.twa',
+				packageName: 'app.ontoplano',
 				subscriptionNotification: { purchaseToken: 'tok-good-1', notificationType: 13 }
 			})
 		);
@@ -172,8 +187,47 @@ describe.skipIf(!hasPlayChannel())('a notification from Play', () => {
 		vi.stubGlobal('fetch', googleAnswers(activePurchase('ontoplano.solo.monthly')));
 		const outcome = await billing.playRtdn(
 			push({
-				packageName: 'app.ontoplano.twa',
+				packageName: 'app.ontoplano',
 				subscriptionNotification: { purchaseToken: 'tok-nobody', notificationType: 2 }
+			})
+		);
+		expect(outcome).toEqual({ applied: false, reason: 'unknown_account' });
+	});
+
+	test('a purchase whose token never came back reaches the account stamped on it', async () => {
+		// The app killed with Play's sheet open: the claim never happened, but
+		// Play still tells the server, and the purchase names its account.
+		vi.stubGlobal(
+			'fetch',
+			googleAnswers(
+				activePurchase('ontoplano.solo.monthly', {
+					externalAccountIdentifiers: { obfuscatedExternalAccountId: STRANGER }
+				})
+			)
+		);
+		const outcome = await billing.playRtdn(
+			push({
+				packageName: 'app.ontoplano',
+				subscriptionNotification: { purchaseToken: 'tok-orphan', notificationType: 4 }
+			})
+		);
+		expect(outcome).toMatchObject({ applied: true, userId: STRANGER });
+		expect(subscriptions.resolvePlan(STRANGER).plan).toBe('pro');
+	});
+
+	test('a stamp naming no account here is not guessed at', async () => {
+		vi.stubGlobal(
+			'fetch',
+			googleAnswers(
+				activePurchase('ontoplano.solo.monthly', {
+					externalAccountIdentifiers: { obfuscatedExternalAccountId: 'nobody-here' }
+				})
+			)
+		);
+		const outcome = await billing.playRtdn(
+			push({
+				packageName: 'app.ontoplano',
+				subscriptionNotification: { purchaseToken: 'tok-stray', notificationType: 4 }
 			})
 		);
 		expect(outcome).toEqual({ applied: false, reason: 'unknown_account' });

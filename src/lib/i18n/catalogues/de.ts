@@ -329,6 +329,11 @@ export const messages: Catalogue = {
 		'Das hat die {kilobytes}KB erreicht, die eine Aufnahme haben darf, deshalb wurde dort gestoppt.',
 	'buy.backToBilling': 'Zurück zur Abrechnung',
 	'buy.openingTheSecurePaymentWindow': 'Das sichere Zahlungsfenster wird geöffnet…',
+	'buy.playCouldNotStart':
+		'Google Play konnte den Kauf nicht ausführen ({code}). Es wurde nichts berechnet.',
+	'buy.playNotConfirmed':
+		'Der Kauf ist durch, konnte aber noch nicht bestätigt werden. Er wird in Kürze erkannt, oder wende dich an den Support.',
+	'buy.playOnlyInStoreCopy': 'Kaufen über Google Play geht in der App aus Google Play.',
 	'buy.thePaymentWindowCouldNot':
 		'Das Zahlungsfenster konnte nicht geladen werden — manchmal blockiert das ein Ad-Blocker. Erlauben Sie diese Seite, oder versuchen Sie einen anderen Browser.',
 	'capture.addedTo': 'Zu {into} hinzugefügt.',
@@ -2611,6 +2616,8 @@ export const messages: Catalogue = {
 	'pictures.view': 'Bild ansehen',
 	'plans.exportsPerDay': 'Exporte pro Tag',
 	'plans.storedDataPoints': 'Gespeicherte Datenpunkte',
+	'play.nothingToBuy': 'Hier gibt es nichts zu kaufen. ontoplano wird geöffnet…',
+	'play.opening': 'Google Play wird geöffnet…',
 	'quickTag.addATag': 'Schlagwort hinzufügen',
 	'quickTag.placeholder': 'Schlagwort',
 	'ratingPicker.leaveUnanswered': '{rating} unbeantwortet lassen',

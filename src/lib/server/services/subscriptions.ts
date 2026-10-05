@@ -365,6 +365,14 @@ export function userIdForSubscription(provider: string, subscriptionId: string):
 	return row?.userId ?? null;
 }
 
+/**
+ * Whether an account with this id exists — for a provider naming an account
+ * the app stamped on a purchase, before anything is written against it.
+ */
+export function accountExists(userId: string): boolean {
+	return db.select({ id: user.id }).from(user).where(eq(user.id, userId)).get() !== undefined;
+}
+
 // --- Limits -------------------------------------------------------------------
 
 /** How many of a thing this account already has. */

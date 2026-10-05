@@ -4,6 +4,8 @@
 	import type { PageServerData } from './$types';
 	import { useT } from '$lib/i18n';
 	import Banner from '$lib/components/Banner.svelte';
+	import { fromPlayStore } from '$lib/platform';
+	import { PLAY_PARAMS, playTripAddress } from '$lib/play-billing';
 
 	const t = useT();
 
@@ -15,63 +17,48 @@
 	/**
 	 * The store copy: Play's own purchase sheet, then the token to the server.
 	 *
-	 * The Digital Goods API only exists inside the Play-installed app, which is
-	 * how this page can be certain the sheet will open. `complete()` is called
-	 * only after the server verified and wrote the entitlement — completing
-	 * first would tell Play the purchase was delivered before it was.
+	 * The sheet opens on the device's copy of the app, the only origin with a
+	 * bridge to the shell, and the answer comes back here in the address —
+	 * see `$lib/play-billing`. The server verifies the token with Google and
+	 * acknowledges it; only then is the purchase delivered.
 	 */
-	async function buyThroughPlay(sku: string) {
-		try {
-			const w = window as unknown as {
-				getDigitalGoodsService?: (id: string) => Promise<{
-					getDetails(ids: string[]): Promise<{ itemId: string }[]>;
-				}>;
-			};
-			if (!w.getDigitalGoodsService) {
-				failure = 'This copy of the app cannot open the Play purchase sheet.';
+	async function buyThroughPlay(sku: string, account: string) {
+		const carried = new URLSearchParams(location.search);
+		const purchaseToken = carried.get(PLAY_PARAMS.purchase);
+		const refused = carried.get(PLAY_PARAMS.failed);
+
+		if (refused) {
+			failure = t('buy.playCouldNotStart', { code: refused });
+			failed = true;
+			return;
+		}
+		if (!purchaseToken) {
+			if (!fromPlayStore()) {
+				failure = t('buy.playOnlyInStoreCopy');
 				failed = true;
 				return;
 			}
-			const service = await w.getDigitalGoodsService('https://play.google.com/billing');
-			await service.getDetails([sku]);
+			location.replace(playTripAddress(location.origin, sku, account));
+			return;
+		}
 
-			const request = new PaymentRequest(
-				[{ supportedMethods: 'https://play.google.com/billing', data: { sku } }],
-				// Play draws its own sheet with its own numbers; this total is a
-				// required formality the sheet never shows.
-				{ total: { label: 'app.ontoplano', amount: { currency: 'USD', value: '0' } } }
-			);
-			const response = await request.show();
-			const { purchaseToken } = response.details as { purchaseToken: string };
-
+		try {
 			const claimed = await fetch(resolve('/api/billing/play/claim'), {
 				method: 'POST',
 				headers: { 'content-type': 'application/json' },
 				body: JSON.stringify({ sku, purchaseToken })
 			});
-			if (!claimed.ok) {
-				await response.complete('fail');
-				failure =
-					'The purchase went through but could not be confirmed — it will be picked up shortly, or contact support.';
-				failed = true;
-				return;
-			}
-			await response.complete('success');
-			location.assign(data.successUrl);
-		} catch (e) {
-			// The person closing Play's sheet lands here too — not an error.
-			if ((e as { name?: string })?.name === 'AbortError') {
-				location.assign(resolve('/settings/billing'));
-				return;
-			}
-			failure = 'The Play purchase could not start.';
+			if (!claimed.ok) throw new Error(String(claimed.status));
+			location.replace(data.successUrl);
+		} catch {
+			failure = t('buy.playNotConfirmed');
 			failed = true;
 		}
 	}
 
 	onMount(() => {
 		if (data.play) {
-			void buyThroughPlay(data.play.sku);
+			void buyThroughPlay(data.play.sku, data.play.account);
 			return;
 		}
 		// Injected here rather than in app.html: this is the only page allowed

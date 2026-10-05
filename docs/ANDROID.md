@@ -15,17 +15,31 @@ build was bound to, with a keystore, a fingerprint and a served
 `assetlinks.json` standing between you and a hidden address bar. Everything it
 did this does, and it could never have held an instance of its own.
 
-## The four apps, and which is which
+## The apps, and which is which
 
-One project, three flavours. They differ in an application id, a name, an icon
-and the address their first screen suggests — nothing else, and the same code
-runs in all of them.
+One project, four flavours. They differ in an application id, a name, an icon
+and the address their first screen suggests, and the same code runs in all of
+them.
 
-| Flavour    | Application id          | Suggests                |
-| ---------- | ----------------------- | ----------------------- |
-| `official` | `app.ontoplano`         | `app.ontoplano.com`     |
-| `dev`      | `app.ontoplano.dev`     | `$ONTOPLANO_DEV_ORIGIN` |
-| `staging`  | `app.ontoplano.staging` | `staging.ontoplano.com` |
+| Flavour    | Application id          | Suggests                | Goes to                  |
+| ---------- | ----------------------- | ----------------------- | ------------------------ |
+| `official` | `app.ontoplano`         | `app.ontoplano.com`     | F-Droid, GitHub releases |
+| `play`     | `app.ontoplano`         | `app.ontoplano.com`     | Google Play              |
+| `dev`      | `app.ontoplano.dev`     | `$ONTOPLANO_DEV_ORIGIN` | a developer's phone      |
+| `staging`  | `app.ontoplano.staging` | `staging.ontoplano.com` | a developer's phone      |
+
+`play` is `official` plus Google Play's purchase sheet. The Billing Library
+behind it is not free software, so it is linked only as `playImplementation`
+and its plugin (`PlayBilling.java`) lives in the flavour's own sources;
+`scripts/check-android-version.mjs` fails if it leaks into any other build.
+Play will not let a listing sell a subscription until it has received a bundle
+carrying the library — `make android-gapp` builds that bundle.
+
+A purchase crosses two origins. The page on the instance cannot reach the
+shell, so it sends the person to `/play` on the copy the phone carries, which
+opens the sheet with the account id stamped on the purchase and sends the token
+back to `/buy` to be claimed. Pages learn they are in the Play copy from the
+extra `OntoplanoPlay` token in the user agent. See `src/lib/play-billing.ts`.
 
 Every one of them carries the whole app and boots on the copy it carries. No
 flavour is pointed at a server by the native layer, which is what lets any

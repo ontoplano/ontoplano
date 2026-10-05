@@ -326,6 +326,10 @@ export const messages: Catalogue = {
 	'audio.tooLong': 'Isso chegou aos {kilobytes}KB que uma gravação pode ter, então parou ali.',
 	'buy.backToBilling': 'Voltar para pagamento',
 	'buy.openingTheSecurePaymentWindow': 'Abrindo a janela de pagamento segura…',
+	'buy.playCouldNotStart': 'O Google Play não conseguiu fazer a compra ({code}). Nada foi cobrado.',
+	'buy.playNotConfirmed':
+		'A compra foi feita mas ainda não foi confirmada. Ela será reconhecida em breve, ou fale com o suporte.',
+	'buy.playOnlyInStoreCopy': 'Comprar pelo Google Play funciona no app instalado pelo Google Play.',
 	'buy.thePaymentWindowCouldNot':
 		'A janela de pagamento não carregou — às vezes um bloqueador de anúncios a derruba. Libere esta página, ou tente outro navegador.',
 	'capture.addedTo': 'Adicionado a {into}.',
@@ -2583,6 +2587,8 @@ export const messages: Catalogue = {
 	'pictures.view': 'Ver a imagem',
 	'plans.exportsPerDay': 'Exportações por dia',
 	'plans.storedDataPoints': 'Pontos de dados armazenados',
+	'play.nothingToBuy': 'Nada para comprar aqui. Abrindo o ontoplano…',
+	'play.opening': 'Abrindo o Google Play…',
 	'quickTag.addATag': 'Adicionar etiqueta',
 	'quickTag.placeholder': 'etiqueta',
 	'ratingPicker.leaveUnanswered': 'Deixar {rating} sem resposta',
