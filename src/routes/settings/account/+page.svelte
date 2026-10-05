@@ -605,9 +605,9 @@
 				In the app it goes to the copy of the app on the phone, never to
 				`/instance` on the server being left — see `askAgainOnThisPhone`.
 				Either signal, because neither covers the other: the cookie is set
-				from `?app=android` at launch and is the only thing that sees a
-				Trusted Web Activity; the user agent is what a page still sees once
-				the app has sent it to a server. A browser has no copy of the app to
+				from `?app=android` at launch and survives the service worker, whose
+				requests drop the shell's user agent; the user agent is what a page
+				still sees once the app has sent it to a server. A browser has no copy of the app to
 				hand back to, so it goes to the chooser on this instance instead.
 			-->
 			<SettingRow label={t('settings.account.thisInstance')}>

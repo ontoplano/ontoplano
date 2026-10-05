@@ -5,12 +5,12 @@ import { visit } from './helpers/visit';
 /**
  * The Android app says it is the Android app, and the account page answers.
  *
- * The app is a Trusted Web Activity — Chrome, with Chrome's user agent, in a
- * window with no address bar. Every browser question you could ask it about
- * the phone answers the same for a browser, so none of them can be the test:
- * `display-mode: standalone` is equally true of the site saved to somebody's
- * home screen on a phone that has never had the app. The app marks its own
- * launch (`?app=android`, from `Instance.launchUrl`) and the server keeps it.
+ * The app is a web view in a window with no address bar. Every browser
+ * question you could ask it about the phone answers the same for a browser,
+ * so none of them can be the test: `display-mode: standalone` is equally true
+ * of the site saved to somebody's home screen on a phone that has never had
+ * the app. The app marks its own launch (`?app=android`, from
+ * `launchAddress`) and the server keeps it.
  *
  * What hangs off the answer is the only thing the app can do and a browser
  * cannot: leave this instance for another one.

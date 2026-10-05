@@ -6135,6 +6135,11 @@ all; fourteen fresh days per card would make cancelling a renewal ritual.
 
 The account a provider subscription belongs to, for a webhook.
 
+#### `accountExists(userId)`
+
+Whether an account with this id exists — for a provider naming an account
+the app stamped on a purchase, before anything is written against it.
+
 #### `usage(userId)`
 
 How many of a thing this account already has.

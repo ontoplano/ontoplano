@@ -56,7 +56,6 @@ sentence somebody agrees to when they grant it.
 
 | Endpoint                                     | Method | Scope             |
 | -------------------------------------------- | ------ | ----------------- |
-| `/.well-known/assetlinks.json`               | GET    | —                 |
 | `/.well-known/oauth-authorization-server`    | GET    | —                 |
 | `/.well-known/oauth-protected-resource`      | GET    | —                 |
 | `/account/export`                            | GET    | —                 |
@@ -130,27 +129,6 @@ sentence somebody agrees to when they grant it.
 | `/robots.txt`                                | GET    | —                 |
 | `/settings/account/export`                   | GET    | —                 |
 | `/shopping`                                  | GET    | —                 |
-
-### `/.well-known/assetlinks.json`
-
-Digital Asset Links, which is what removes the URL bar from the Android app.
-
-A Trusted Web Activity is Chrome rendering this site inside our own APK. It
-only drops the address bar once it can prove the two belong together, and the
-proof is mutual: the APK names this domain, and this file names the APK's
-signing certificate. Get it wrong and the app still works — it just looks like
-a browser, which is the single most common TWA complaint.
-
-The fingerprints come from the environment because they are a property of the
-signing keys, which differ between a local debug build and whatever Play
-signs. `ANDROID_CERT_FINGERPRINTS` is a comma-separated list of SHA-256
-fingerprints in the usual colon-separated hex form.
-
-List both your upload key and Play's app-signing key: Play re-signs uploads,
-so an app that only trusts the upload key shows the URL bar for every user
-who installs from the store while working perfectly on the developer's phone.
-
-**GET**
 
 ### `/.well-known/oauth-authorization-server`
 

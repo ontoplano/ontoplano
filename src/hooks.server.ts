@@ -271,8 +271,9 @@ const handleBetterAuth: Handle = async ({ event, resolve }) => {
  * Whether this request comes from the Android app.
  *
  * The app opens every launch on `?app=android` — the one thing that can tell
- * the difference, since a Trusted Web Activity *is* Chrome and answers every
- * browser question exactly as Chrome does. See `$lib/platform.ts`.
+ * the difference once the web view is on an instance's origin, where it
+ * answers every browser question exactly as a browser does. See
+ * `$lib/platform.ts`.
  *
  * Kept in a cookie and taken straight back off the address, for two reasons:
  * the app says it once per launch and the pages that care are three taps
