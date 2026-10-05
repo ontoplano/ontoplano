@@ -27,6 +27,9 @@ releases mattered.
   wheel and double-tap zoom, as writing's pictures already did.
 - On a desktop, a notebook's picture can be dragged bigger by its corner, and
   stays the size it was dragged to on that device.
+- Every change made in place says so: a setting switched, a row archived,
+  renamed, moved or removed shows a short receipt in the corner, and a change
+  the app refuses says why there, wherever on the page it was pressed.
 
 ## 0.185.7 — 2026-10-04
 

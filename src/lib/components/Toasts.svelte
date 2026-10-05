@@ -13,8 +13,41 @@
 	import { said, unsay } from '$lib/said.svelte';
 	import { flushNow, takeBack, undo, undoable } from '$lib/undo.svelte';
 	import { useT } from '$lib/i18n';
+	import { tick } from 'svelte';
+	import { FORM_ANSWERED, speechFor, type FormAnswer } from '$lib/form-answers';
+	import { notify } from '$lib/notify.svelte';
+	import { say } from '$lib/said.svelte';
 
 	const t = useT();
+
+	/**
+	 * Whether the page already shows this sentence where it can be read — a
+	 * banner in view says it better than a toast repeating it.
+	 */
+	function shownInView(text: string): boolean {
+		for (const one of document.querySelectorAll<HTMLElement>('[role="alert"], [role="status"]')) {
+			if (layer?.contains(one) || !one.textContent?.includes(text)) continue;
+			const box = one.getBoundingClientRect();
+			if (box.height > 0 && box.bottom > 0 && box.top < window.innerHeight) return true;
+		}
+		return false;
+	}
+
+	/** Every form answered through `$lib/enhance`, said here — see `$lib/form-answers`. */
+	async function answered(event: Event) {
+		const speech = speechFor((event as CustomEvent<FormAnswer>).detail);
+		if (!speech) return;
+		await tick();
+		if ('key' in speech) return say(t(speech.key));
+		if (speech.text && shownInView(speech.text)) return;
+		if (speech.kind === 'receipt') say(speech.text);
+		else notify.error(speech.text || t('toast.notDone'));
+	}
+
+	$effect(() => {
+		window.addEventListener(FORM_ANSWERED, answered);
+		return () => window.removeEventListener(FORM_ANSWERED, answered);
+	});
 
 	/** How often the counts are redrawn and the expired notices dropped. */
 	const TICK_MS = 200;

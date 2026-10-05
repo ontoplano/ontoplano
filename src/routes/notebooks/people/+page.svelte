@@ -518,6 +518,7 @@
 	<form
 		method="POST"
 		action="?/setPanelWidth"
+		data-quiet
 		class="hidden"
 		bind:this={panelForm}
 		use:enhance={() => async () => {}}

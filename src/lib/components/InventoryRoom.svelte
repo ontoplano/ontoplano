@@ -1712,6 +1712,7 @@
 			<form
 				method="POST"
 				action="?/setLocationPanelWidth"
+				data-quiet
 				class="hidden"
 				bind:this={panelForm}
 				use:enhance={() => async () => {}}

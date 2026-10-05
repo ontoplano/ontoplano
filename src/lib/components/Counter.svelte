@@ -147,6 +147,7 @@
 	method="post"
 	{action}
 	use:enhance={sync}
+	data-quiet
 	class="counter {vertical ? 'counter-vertical' : ''} {extra}"
 >
 	{#each Object.entries(fields) as [key, field] (key)}

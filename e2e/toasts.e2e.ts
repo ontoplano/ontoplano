@@ -130,3 +130,33 @@ test('the edit form can delete the task it is editing', async ({ page }) => {
 	await toast.getByRole('button', { name: 'Undo' }).click();
 	await expect(page.getByText('Renew the domain').first()).toBeVisible({ timeout: 30_000 });
 });
+
+/**
+ * A form outside a dialog answers too, without the screen saying anything
+ * itself: `$lib/enhance` reports every answer and the toast layer reads a
+ * receipt off the action's name, or says the refusal.
+ */
+test('a setting changed in place says so, and so does a refusal', async ({ page }) => {
+	test.setTimeout(120_000);
+	await page.setViewportSize({ width: 390, height: 844 });
+	await register(page, testEmail('toast-inline'));
+	await visit(page, '/settings/preferences');
+
+	const clock = page.locator('select[name="clock"]');
+	const now = await clock.inputValue();
+	const other = await clock
+		.locator('option')
+		.evaluateAll(
+			(all, now) => all.map((o) => (o as HTMLOptionElement).value).find((v) => v !== now),
+			now
+		);
+	await clock.selectOption(other!);
+	await expect(page.locator('[role="status"]').filter({ hasText: 'Saved' })).toBeVisible({
+		timeout: 30_000
+	});
+
+	// A value the server refuses: its sentence comes back where it can be read.
+	await clock.evaluate((select) => select.append(new Option('bogus', 'bogus')));
+	await clock.selectOption('bogus');
+	await expect(page.locator('.toasts').getByText('Unknown clock')).toBeVisible({ timeout: 30_000 });
+});

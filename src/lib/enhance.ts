@@ -4,6 +4,10 @@ import { navigating } from '$app/state';
 import type { SubmitFunction } from '@sveltejs/kit';
 import { afterPress } from '$lib/after-press';
 import { historySettled, loadAfterHistory, popsSoFar } from '$lib/back-closes';
+import { FORM_ANSWERED, actionName, type FormAnswer } from '$lib/form-answers';
+import { notices } from '$lib/notify.svelte';
+import { spokenCount } from '$lib/said.svelte';
+import { undo as undoStore } from '$lib/undo.svelte';
 
 /**
  * `use:enhance`, with one press meaning one submission.
@@ -223,6 +227,61 @@ function answerAtOnce(event: Parameters<SubmitFunction>[0]): {
 	};
 }
 
+/** Whatever has been said so far, as one comparable string. */
+function saidSoFar(): string {
+	return [
+		spokenCount(),
+		notices.items.at(-1)?.id ?? 0,
+		undoStore.pending.map((one) => one.id).join(',')
+	].join('|');
+}
+
+/** What an answer says back, if it says anything. */
+function messageOf(result: Outcome['result']): { message: string | null; refused: boolean } {
+	if (result.type === 'failure' || result.type === 'success') {
+		const data = result.data as { message?: unknown; refused?: unknown } | undefined;
+		return {
+			message: typeof data?.message === 'string' && data.message ? data.message : null,
+			refused: data?.refused === true
+		};
+	}
+	if (result.type === 'error') {
+		const error = result.error as { message?: unknown } | undefined;
+		return { message: typeof error?.message === 'string' ? error.message : null, refused: false };
+	}
+	return { message: null, refused: false };
+}
+
+/** Tell the toast layer (`$lib/form-answers`) how a submission was answered. */
+function announce(
+	event: Parameters<SubmitFunction>[0],
+	outcome: Outcome,
+	detail: Partial<FormAnswer>
+) {
+	const quiet =
+		event.formElement.hasAttribute('data-quiet') ||
+		(event.submitter?.hasAttribute('data-quiet') ?? false);
+	// A redirect back to the page the form is on is a save that reloads,
+	// not a trip somewhere else.
+	const result = outcome.result;
+	const stays =
+		result.type === 'redirect' &&
+		new URL(result.location, event.action).pathname === event.action.pathname;
+	window.dispatchEvent(
+		new CustomEvent<FormAnswer>(FORM_ANSWERED, {
+			detail: {
+				action: actionName(event.action),
+				outcome: stays ? 'success' : result.type,
+				...messageOf(outcome.result),
+				answered: false,
+				fromDialog: false,
+				quiet,
+				...detail
+			}
+		})
+	);
+}
+
 export function enhance(form: HTMLFormElement, submit?: SubmitFunction) {
 	let sending: string | null = null;
 
@@ -235,6 +294,7 @@ export function enhance(form: HTMLFormElement, submit?: SubmitFunction) {
 			return;
 		}
 		sending = saying;
+		const before = saidSoFar();
 		const pressed = submitters(event.formElement);
 		for (const button of pressed) button.disabled = true;
 
@@ -264,6 +324,7 @@ export function enhance(form: HTMLFormElement, submit?: SubmitFunction) {
 				// A form that has been taken off the screen takes its buttons
 				// with it; setting a property on a detached node is harmless.
 				for (const button of pressed) button.disabled = false;
+				announce(event, outcome, { answered: saidSoFar() !== before, fromDialog: !!dialog });
 			}
 			/*
 			 * The save's data can be lost on its way to the screen two ways, and
