@@ -141,7 +141,8 @@
 				src="/media/{item.pictureId}"
 				alt={item.name}
 				loading="lazy"
-				class="size-full border border-gray-200 bg-gray-50 object-cover"
+				data-view
+				class="size-full cursor-zoom-in border border-gray-200 bg-gray-50 object-cover"
 			/>
 		{/if}
 	</span>

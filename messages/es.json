@@ -2546,6 +2546,7 @@
 	"pictures.dropAnywhere": "suéltala en cualquier parte del cuadro",
 	"pictures.hint": "…o pega una, o suelta una — hasta {kilobytes}KB",
 	"pictures.tooBig": "Las imágenes aquí son de {limit}KB como máximo, y {name} tiene {size}KB.",
+	"pictures.view": "Ver la imagen",
 	"pictures.uploading": "subiendo…",
 	"plans.exportsPerDay": "Exportaciones por día",
 	"plans.storedDataPoints": "Puntos de datos almacenados",

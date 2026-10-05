@@ -11,6 +11,12 @@
 	 * chosen, which is not the same submission as the rest of the thing's
 	 * fields. That is why a caller puts this beside its form rather than inside
 	 * one — a form cannot nest in a form.
+	 *
+	 * Pressing the picture is spoken for, so looking at it is a badge beside
+	 * it: `data-view-src`, which the shell's `ImageViewer` answers with the
+	 * picture over the whole screen. And where the caller says `resizable`,
+	 * the square has a handle in its corner — a desktop thing — and the size
+	 * it is dragged to is remembered on this device, under `sizeKey`.
 	 */
 	import Banner from '$lib/components/Banner.svelte';
 	import Icon, { type IconName } from '$lib/components/Icon.svelte';
@@ -44,7 +50,10 @@
 		 * what that press is called.
 		 */
 		onpress,
-		pressLabel = ''
+		pressLabel = '',
+		/** A corner handle, and the size it is dragged to kept under `sizeKey`. */
+		resizable = false,
+		sizeKey = ''
 	}: {
 		id: number;
 		pictureId: number | null;
@@ -60,21 +69,79 @@
 		removable?: boolean;
 		onpress?: () => void;
 		pressLabel?: string;
+		resizable?: boolean;
+		sizeKey?: string;
 	} = $props();
 
 	let form: HTMLFormElement | undefined = $state();
 	let uploading = $state(false);
 	let problem = $state('');
+
+	/** Where a dragged size is kept: per kind of thing, per device. */
+	const STORAGE_PREFIX = 'onto.pictureSize.';
+
+	/** The size the square was last dragged to here, or nothing. */
+	function remembered(): { width: number; height: number } | null {
+		if (!resizable || !sizeKey) return null;
+		try {
+			const raw = localStorage.getItem(STORAGE_PREFIX + sizeKey);
+			if (!raw) return null;
+			const parsed = JSON.parse(raw) as { width?: number; height?: number };
+			if (typeof parsed.width !== 'number' || typeof parsed.height !== 'number') return null;
+			return { width: parsed.width, height: parsed.height };
+		} catch {
+			return null;
+		}
+	}
+
+	function remember(width: number, height: number) {
+		if (!resizable || !sizeKey) return;
+		try {
+			localStorage.setItem(STORAGE_PREFIX + sizeKey, JSON.stringify({ width, height }));
+		} catch {
+			// nowhere to keep it: the square is still resizable for this visit
+		}
+	}
+
+	let kept = $state<{ width: number; height: number } | null>(null);
+	$effect(() => {
+		kept = remembered();
+	});
+
+	/** Watches the square the person drags, and keeps where it ends up. */
+	function watched(box: HTMLElement) {
+		if (!resizable) return;
+		let first = true;
+		const observer = new ResizeObserver(([entry]) => {
+			// The first call reports the size it opened at, not a drag.
+			if (first) {
+				first = false;
+				return;
+			}
+			const { width, height } = entry!.contentRect;
+			if (width > 0 && height > 0) remember(Math.round(width), Math.round(height));
+		});
+		observer.observe(box);
+		return { destroy: () => observer.disconnect() };
+	}
 </script>
 
 {#snippet face()}
 	{#if pictureId}
-		<img
-			src="/media/{pictureId}"
-			alt=""
-			loading="lazy"
-			class="{size} rounded-lg border border-gray-200 bg-white object-cover"
-		/>
+		<span
+			class="picture-box {size} block rounded-lg border border-gray-200 bg-white"
+			class:resizable
+			style:width={kept ? `${kept.width}px` : undefined}
+			style:height={kept ? `${kept.height}px` : undefined}
+			use:watched
+		>
+			<img
+				src="/media/{pictureId}"
+				alt=""
+				loading="lazy"
+				class="size-full rounded-lg object-cover"
+			/>
+		</span>
 	{:else}
 		<!-- Not a photograph: the empty square says what the thing is, the way
 		     every other empty picture in the app draws the mark of its owner. -->
@@ -88,70 +155,86 @@
 {/snippet}
 
 <div class="shrink-0">
-	<form
-		bind:this={form}
-		method="post"
-		action={setAction}
-		enctype="multipart/form-data"
-		use:enhance={() =>
-			async ({ update }) => {
-				uploading = false;
-				await update({ reset: false });
-			}}
-	>
-		<input type="hidden" name="id" value={id} />
-		{#each Object.entries(fields) as [key, value] (key)}
-			<input type="hidden" name={key} {value} />
-		{/each}
-		<!--
+	<div class="relative w-fit">
+		<form
+			bind:this={form}
+			method="post"
+			action={setAction}
+			enctype="multipart/form-data"
+			use:enhance={() =>
+				async ({ update }) => {
+					uploading = false;
+					await update({ reset: false });
+				}}
+		>
+			<input type="hidden" name="id" value={id} />
+			{#each Object.entries(fields) as [key, value] (key)}
+				<input type="hidden" name={key} {value} />
+			{/each}
+			<!--
 			As wide as the picture and no wider: a ring around a column-wide
 			label drew a rounded rectangle twice the square, which reads as a
 			switch somebody has flipped.
 		-->
-		<label
-			class="block w-fit cursor-pointer rounded-lg transition focus-within:ring-2 focus-within:ring-gray-900 hover:opacity-80"
-			hidden={Boolean(onpress)}
-			title={pictureId ? changeLabel : chooseLabel}
-		>
-			{@render face()}
-			<span class="sr-only">{chooseLabel}</span>
-			<input
-				type="file"
-				name="file"
-				accept="image/png,image/jpeg,image/webp,image/gif"
-				class="sr-only"
-				onchange={(e) => {
-					const field = e.currentTarget as HTMLInputElement;
-					const file = field.files?.[0];
-					problem = '';
-					if (!file) return;
-					if (file.size > kilobytes * 1024) {
-						problem = t('pictures.tooBig', {
-							limit: kilobytes,
-							name: file.name,
-							size: Math.ceil(file.size / 1024)
-						});
-						field.value = '';
-						return;
-					}
-					uploading = true;
-					form?.requestSubmit();
-				}}
-			/>
-		</label>
-	</form>
+			<label
+				class="block w-fit cursor-pointer rounded-lg transition focus-within:ring-2 focus-within:ring-gray-900 hover:opacity-80"
+				hidden={Boolean(onpress)}
+				title={pictureId ? changeLabel : chooseLabel}
+			>
+				{@render face()}
+				<span class="sr-only">{chooseLabel}</span>
+				<input
+					type="file"
+					name="file"
+					accept="image/png,image/jpeg,image/webp,image/gif"
+					class="sr-only"
+					onchange={(e) => {
+						const field = e.currentTarget as HTMLInputElement;
+						const file = field.files?.[0];
+						problem = '';
+						if (!file) return;
+						if (file.size > kilobytes * 1024) {
+							problem = t('pictures.tooBig', {
+								limit: kilobytes,
+								name: file.name,
+								size: Math.ceil(file.size / 1024)
+							});
+							field.value = '';
+							return;
+						}
+						uploading = true;
+						form?.requestSubmit();
+					}}
+				/>
+			</label>
+		</form>
 
-	{#if onpress}
-		<button
-			type="button"
-			onclick={onpress}
-			class="block w-fit cursor-pointer rounded-lg transition hover:opacity-80 focus-visible:ring-2 focus-visible:ring-gray-900"
-			aria-label={pressLabel}
-			title={pressLabel}
-		>
-			{@render face()}
-		</button>
-	{/if}
+		{#if onpress}
+			<button
+				type="button"
+				onclick={onpress}
+				class="block w-fit cursor-pointer rounded-lg transition hover:opacity-80 focus-visible:ring-2 focus-visible:ring-gray-900"
+				aria-label={pressLabel}
+				title={pressLabel}
+			>
+				{@render face()}
+			</button>
+		{/if}
+
+		<!-- Looking at it, since pressing it is spoken for. The shell's viewer
+	     answers `data-view-src`. Top corner: the bottom one is the resize handle. -->
+		{#if pictureId}
+			<button
+				type="button"
+				class="picture-view icon-btn"
+				data-view-src="/media/{pictureId}"
+				aria-label={t('pictures.view')}
+				title={t('pictures.view')}
+			>
+				<Icon name="maximize" size={12} />
+			</button>
+		{/if}
+	</div>
 
 	{#if uploading}
 		<p class="mt-1 text-xs text-gray-500">{t('pictures.uploading')}</p>
@@ -171,3 +254,36 @@
 		</form>
 	{/if}
 </div>
+
+<style>
+	.picture-box {
+		overflow: hidden;
+	}
+
+	/*
+	 * A handle in the corner, which only a pointer finds — a phone pinches the
+	 * viewer instead. The floor is the square it started as; the ceiling keeps
+	 * a header a header.
+	 */
+	.picture-box.resizable {
+		resize: both;
+		min-width: 3rem;
+		min-height: 3rem;
+		max-width: 30rem;
+		max-height: 30rem;
+	}
+
+	.picture-view {
+		position: absolute;
+		top: -0.4rem;
+		right: -0.4rem;
+		width: 1.4rem;
+		height: 1.4rem;
+		min-width: 0;
+		min-height: 0;
+		padding: 0;
+		border-radius: 9999px;
+		border: 1px solid var(--color-gray-300);
+		background: var(--color-white);
+	}
+</style>

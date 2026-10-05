@@ -2520,6 +2520,7 @@ export const messages: Catalogue = {
 	'pictures.hint': '…or paste one, or drop one in — up to {kilobytes}KB',
 	'pictures.tooBig': 'Pictures here are at most {limit}KB, and {name} is {size}KB.',
 	'pictures.uploading': 'uploading…',
+	'pictures.view': 'View the picture',
 	'plans.exportsPerDay': 'Exports per day',
 	'plans.storedDataPoints': 'Stored data points',
 	'quickTag.addATag': 'Add a tag',

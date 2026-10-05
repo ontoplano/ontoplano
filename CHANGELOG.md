@@ -18,6 +18,16 @@ the shape of the data changing. Bumping the minor per batch is what ran this
 file to 0.161 in a few months, which tells a reader nothing about which
 releases mattered.
 
+## 0.185.8 — 2026-10-05
+
+- Every picture can be looked at full screen: a notebook's picture has a small
+  view badge beside it (pressing the picture itself still changes it), and a
+  thing's thumbnail in the inventory, a person's face and the picture on a
+  notebook somebody shared with you open over the page when pressed — pinch,
+  wheel and double-tap zoom, as writing's pictures already did.
+- On a desktop, a notebook's picture can be dragged bigger by its corner, and
+  stays the size it was dragged to on that device.
+
 ## 0.185.7 — 2026-10-04
 
 - A goal refused from a notebook's own New goal dialog — a target of zero, say

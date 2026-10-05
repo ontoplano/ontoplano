@@ -2546,6 +2546,7 @@
 	"pictures.dropAnywhere": "an beliebiger Stelle im Feld ablegen",
 	"pictures.hint": "…oder eins einfügen, oder eins hier ablegen — bis zu {kilobytes}KB",
 	"pictures.tooBig": "Bilder sind hier höchstens {limit}KB groß, und {name} hat {size}KB.",
+	"pictures.view": "Bild ansehen",
 	"pictures.uploading": "wird hochgeladen…",
 	"plans.exportsPerDay": "Exporte pro Tag",
 	"plans.storedDataPoints": "Gespeicherte Datenpunkte",

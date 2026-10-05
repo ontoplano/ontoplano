@@ -2546,6 +2546,7 @@
 	"pictures.dropAnywhere": "drop it anywhere in the box",
 	"pictures.hint": "…or paste one, or drop one in — up to {kilobytes}KB",
 	"pictures.tooBig": "Pictures here are at most {limit}KB, and {name} is {size}KB.",
+	"pictures.view": "View the picture",
 	"pictures.uploading": "uploading…",
 	"plans.exportsPerDay": "Exports per day",
 	"plans.storedDataPoints": "Stored data points",

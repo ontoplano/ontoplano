@@ -71,13 +71,20 @@
 	{#if notebook.mine}
 		<!-- Beside the shelf the picture opens the editor; on the page it is the
 		     picture's own control. See `NotebookPicture`. -->
-		<NotebookPicture {notebook} kilobytes={pictureKilobytes} onpress={open ? onedit : undefined} />
+		<NotebookPicture
+			{notebook}
+			kilobytes={pictureKilobytes}
+			onpress={open ? onedit : undefined}
+			resizable
+		/>
 	{:else if notebook.pictureId}
+		<!-- Not yours to change, but yours to look at: the viewer answers `data-view`. -->
 		<img
 			src="/media/{notebook.pictureId}"
-			alt=""
+			alt={notebook.title}
 			loading="lazy"
-			class="size-12 shrink-0 border border-gray-200 bg-white object-cover"
+			data-view
+			class="size-12 shrink-0 cursor-zoom-in border border-gray-200 bg-white object-cover"
 		/>
 	{/if}
 {/snippet}

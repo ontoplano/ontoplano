@@ -20,13 +20,16 @@
 		/** Offer a bin under the picture. The page has its own; a dialog does not. */
 		removable = false,
 		/** Where pressing it opens the notebook rather than the file chooser. */
-		onpress
+		onpress,
+		/** A corner handle: the picture dragged bigger, and the size kept on this device. */
+		resizable = false
 	}: {
 		notebook: { id: number; title: string; pictureId: number | null; mine?: boolean };
 		kilobytes: number;
 		size?: string;
 		removable?: boolean;
 		onpress?: () => void;
+		resizable?: boolean;
 	} = $props();
 </script>
 
@@ -45,4 +48,6 @@
 	{removable}
 	{onpress}
 	pressLabel={t('notebooks.id.editNotebook')}
+	{resizable}
+	sizeKey="notebook"
 />

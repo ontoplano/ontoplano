@@ -2602,6 +2602,7 @@ export const messages: Catalogue = {
 	'pictures.hint': '…o pega una, o suelta una — hasta {kilobytes}KB',
 	'pictures.tooBig': 'Las imágenes aquí son de {limit}KB como máximo, y {name} tiene {size}KB.',
 	'pictures.uploading': 'subiendo…',
+	'pictures.view': 'Ver la imagen',
 	'plans.exportsPerDay': 'Exportaciones por día',
 	'plans.storedDataPoints': 'Puntos de datos almacenados',
 	'quickTag.addATag': 'Añadir etiqueta',

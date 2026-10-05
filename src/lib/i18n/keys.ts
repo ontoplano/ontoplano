@@ -2252,6 +2252,7 @@ export type MessageKey =
 	| 'pictures.hint'
 	| 'pictures.tooBig'
 	| 'pictures.uploading'
+	| 'pictures.view'
 	| 'plans.exportsPerDay'
 	| 'plans.storedDataPoints'
 	| 'quickTag.addATag'
