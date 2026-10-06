@@ -3,13 +3,14 @@ import { register, testEmail } from './helpers/account';
 import { visit } from './helpers/visit';
 
 /**
- * A workout card's buttons work inside a notebook, and keep you there.
+ * A card's buttons work inside a notebook, and keep you there.
  *
  * The card is the Health room's, and its pencil, calendar and note button
  * used to send you into the room to open its dialogs. A task's or a note's
- * buttons open where they are, so a workout's do too — see `WorkoutDialogs`.
+ * buttons open where they are, so a workout's and a thing's do too — see
+ * `WorkoutDialogs` and `ItemDialog`.
  */
-async function makeNotebook(page: Page, title: string): Promise<string> {
+async function makeNotebook(page: Page, title: string, module = 'Workouts'): Promise<string> {
 	await visit(page, '/notebooks');
 	await page.getByRole('button', { name: 'New notebook' }).first().click();
 	await page.getByLabel('Title').fill(title);
@@ -22,7 +23,7 @@ async function makeNotebook(page: Page, title: string): Promise<string> {
 	await visit(page, `/notebooks/${id}`);
 
 	await page.getByRole('button', { name: 'Rename' }).click();
-	await page.getByRole('checkbox', { name: 'Workouts' }).check();
+	await page.getByRole('checkbox', { name: module }).check();
 	await page.getByRole('button', { name: 'Save' }).click();
 	await page.waitForTimeout(600);
 	return id;
@@ -66,4 +67,26 @@ test("a workout's buttons on a notebook tab open its dialogs there", async ({ pa
 	await log.getByRole('button', { name: 'Write it down' }).click();
 	await expect(log).toBeHidden();
 	await expect(page).toHaveURL(here);
+});
+
+test("a thing's pencil on a notebook's Inventory tab edits it there", async ({ page }) => {
+	test.setTimeout(120_000);
+	await register(page, testEmail('nb-item-pencil'));
+	const id = await makeNotebook(page, 'Workshop', 'Inventory');
+
+	await page.getByRole('button', { name: /^Inventory/ }).click();
+	await page.getByRole('button', { name: 'New item' }).click();
+	const form = page.getByRole('dialog', { name: 'New item' });
+	await form.locator('[name="label"]').fill('Sandpaper');
+	await form.getByRole('button', { name: 'Save', exact: true }).click();
+	await expect(page.getByText('Sandpaper').first()).toBeVisible();
+
+	await page.getByRole('button', { name: 'Edit Sandpaper' }).click();
+	const editing = page.getByRole('dialog', { name: 'Edit item' });
+	await expect(editing.locator('[name="label"]')).toHaveValue('Sandpaper');
+	await editing.locator('[name="label"]').fill('Sandpaper, 120 grit');
+	await editing.getByRole('button', { name: 'Save', exact: true }).click();
+	await expect(editing).toBeHidden();
+	await expect(page.getByText('Sandpaper, 120 grit').first()).toBeVisible();
+	await expect(page).toHaveURL(new RegExp(`/notebooks/${id}`));
 });

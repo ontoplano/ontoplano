@@ -58,6 +58,7 @@
 	import ItemRow, { itemRowWash } from '$lib/components/ItemRow.svelte';
 	import LinkIntoNotebook from '$lib/components/LinkIntoNotebook.svelte';
 	import { NOTEBOOK_ITEM_ACTIONS } from '$lib/item-action-names';
+	import ItemDialog from '$lib/components/ItemDialog.svelte';
 	import { NOTEBOOK_WORKOUT_ACTIONS } from '$lib/workout-action-names';
 	import WorkoutDialogs from '$lib/components/WorkoutDialogs.svelte';
 	import { NOTEBOOK_HABIT_ACTIONS } from '$lib/habit-action-names';
@@ -76,6 +77,7 @@
 	import { NOTEBOOK_TODO_ACTIONS } from '$lib/todo-actions';
 	import type { Todo } from '$lib/services/todos';
 	import type { Workout } from '$lib/services/workouts';
+	import type { listItems } from '$lib/services/inventory';
 	import { browsable } from '$lib/browse.svelte';
 	import { checklistItems } from '$lib/checklist';
 	import { refAt, renderMarkdown, taskRefs, type Refs } from '$lib/markdown';
@@ -132,6 +134,8 @@
 		currency = 'BRL',
 		pickableNotebooks = [],
 		locations = [],
+		/** How big a picture the server takes, for a thing's picture in its dialog. */
+		pictureKilobytes = 0,
 		areas = [],
 		workoutMeasures = [],
 		slots = [],
@@ -214,7 +218,7 @@
 			workouts: Workout[];
 			workoutSessions: ComponentProps<typeof WorkoutCard>['sessions'];
 			/* And the whole thing, with its count and its own fields. */
-			inventory: ComponentProps<typeof ItemRow>['item'][];
+			inventory: ReturnType<typeof listItems>;
 			/* What each tab could take that it has not got — see `LinkIntoNotebook`. */
 			linkable: Record<string, LinkableList>;
 			/*
@@ -242,6 +246,7 @@
 		pickableNotebooks?: { id: number; title: string; modules: readonly string[] }[];
 		/** Where a thing can live, for the Inventory tab's form. */
 		locations?: { id: number; name: string; path: string }[];
+		pictureKilobytes?: number;
 		areas?: { id: number; name: string }[];
 		workoutMeasures?: { activity: string; unit: string }[];
 		/* What a goal on this notebook can be told to count. */
@@ -1183,6 +1188,8 @@
 	 * a task's or a note's buttons do either.
 	 */
 	let workoutDialogs: WorkoutDialogs | undefined = $state();
+	/** And a thing's pencil, its dialog — see `ItemDialog`. */
+	let itemDialog: ItemDialog | undefined = $state();
 	const shownRecipes = $derived(searched(contents?.recipes ?? [], 'recipes'));
 	const shownLedgers = $derived(searched(contents?.ledgers ?? [], 'ledgers'));
 	const shownHabits = $derived(searched(contents?.habits ?? [], 'habits'));
@@ -1933,6 +1940,7 @@
 								{currency}
 								actions={NOTEBOOK_ITEM_ACTIONS}
 								thumb={shownInventory.some((one) => one.pictureId)}
+								onedit={() => itemDialog?.edit(item)}
 							/>
 						</div>
 					{/each}
@@ -2860,7 +2868,18 @@
 		notebooks={pickableNotebooks}
 		activityNames={workoutMeasures}
 		actions={NOTEBOOK_WORKOUT_ACTIONS}
+		error={error ?? undefined}
 		startingNotebook={notebook.id}
+	/>
+	<ItemDialog
+		bind:this={itemDialog}
+		items={contents.inventory}
+		categories={inventoryCategories}
+		{locations}
+		notebooks={pickableNotebooks}
+		kilobytes={pictureKilobytes}
+		actions={NOTEBOOK_ITEM_ACTIONS}
+		error={error ?? undefined}
 	/>
 {/if}
 

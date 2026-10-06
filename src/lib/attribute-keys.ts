@@ -16,6 +16,15 @@ export function attributePairs(attributes: Record<string, string> | null | undef
 	return Object.entries(attributes ?? {}) as [string, string][];
 }
 
+/** Attributes as a thing in the cupboard stores them — a JSON text — as rows. */
+export function storedAttributePairs(raw: string | null | undefined): [string, string][] {
+	try {
+		return attributePairs(JSON.parse(raw || '{}') as Record<string, string>);
+	} catch {
+		return [];
+	}
+}
+
 export type AttributeKeySuggestion = {
 	key: string;
 	description: string;

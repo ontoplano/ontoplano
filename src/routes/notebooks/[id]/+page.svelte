@@ -109,6 +109,7 @@
 				currency={data.currency}
 				pickableNotebooks={data.pickableNotebooks}
 				locations={data.locations}
+				pictureKilobytes={data.pictureKilobytes}
 				areas={data.areas}
 				workoutMeasures={data.workoutMeasures}
 				slots={data.slots}

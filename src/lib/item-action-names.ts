@@ -7,6 +7,8 @@
  * goals, ideas, bills, habits and workouts already do.
  */
 export type ItemActionNames = {
+	create: string;
+	update: string;
 	setQty: string;
 	toggleBought: string;
 	toggleSnoozed: string;
@@ -17,6 +19,8 @@ export type ItemActionNames = {
 
 /** The Inventory room, where a thing is what the page is about. */
 export const ITEM_ROOM_ACTIONS: ItemActionNames = {
+	create: '?/create',
+	update: '?/update',
 	setQty: '?/setQty',
 	toggleBought: '?/toggleBought',
 	toggleSnoozed: '?/toggleSnoozed',
@@ -27,6 +31,8 @@ export const ITEM_ROOM_ACTIONS: ItemActionNames = {
 
 /** Inside a notebook, where the unprefixed names belong to the notebook. */
 export const NOTEBOOK_ITEM_ACTIONS: ItemActionNames = {
+	create: '?/itemCreate',
+	update: '?/itemUpdate',
 	setQty: '?/itemSetQty',
 	toggleBought: '?/itemToggleBought',
 	toggleSnoozed: '?/itemToggleSnoozed',
