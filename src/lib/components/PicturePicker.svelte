@@ -17,10 +17,14 @@
 	 * picture over the whole screen. And where the caller says `resizable`,
 	 * the square has a handle in its corner — a desktop thing — and the size
 	 * it is dragged to is remembered on this device, under `sizeKey`.
+	 *
+	 * A picture can also be dropped on the square, from the desktop or another
+	 * tab: the same file the chooser would have given, sent the same way.
 	 */
 	import Banner from '$lib/components/Banner.svelte';
 	import Icon, { type IconName } from '$lib/components/Icon.svelte';
 	import { enhance } from '$lib/enhance';
+	import { ACCEPTED_TYPES } from '$lib/services/media';
 	import { useT } from '$lib/i18n';
 
 	const t = useT();
@@ -74,8 +78,51 @@
 	} = $props();
 
 	let form: HTMLFormElement | undefined = $state();
+	let field: HTMLInputElement | undefined = $state();
 	let uploading = $state(false);
 	let problem = $state('');
+	/** Whether a file is being held over the square. */
+	let dropping = $state(false);
+
+	/** The chosen or dropped file goes up at once, if the server would take it. */
+	function send(file: File | undefined) {
+		problem = '';
+		if (!file || !field) return;
+		if (file.size > kilobytes * 1024) {
+			problem = t('pictures.tooBig', {
+				limit: kilobytes,
+				name: file.name,
+				size: Math.ceil(file.size / 1024)
+			});
+			field.value = '';
+			return;
+		}
+		uploading = true;
+		form?.requestSubmit();
+	}
+
+	const carriesFiles = (e: DragEvent) => Array.from(e.dataTransfer?.types ?? []).includes('Files');
+
+	function onDragOver(e: DragEvent) {
+		if (!carriesFiles(e)) return;
+		e.preventDefault();
+		dropping = true;
+	}
+
+	function onDrop(e: DragEvent) {
+		if (!carriesFiles(e)) return;
+		e.preventDefault();
+		dropping = false;
+		const file = Array.from(e.dataTransfer?.files ?? []).find((one) =>
+			ACCEPTED_TYPES.includes(one.type)
+		);
+		if (!file || !field) return;
+		// Into the form's own field, so the drop posts exactly what choosing would.
+		const carried = new DataTransfer();
+		carried.items.add(file);
+		field.files = carried.files;
+		send(file);
+	}
 
 	/** Where a dragged size is kept: per kind of thing, per device. */
 	const STORAGE_PREFIX = 'onto.pictureSize.';
@@ -155,7 +202,16 @@
 {/snippet}
 
 <div class="shrink-0">
-	<div class="relative w-fit">
+	<div
+		class="relative w-fit rounded-lg"
+		class:ring-2={dropping}
+		class:ring-gray-900={dropping}
+		role="group"
+		aria-label={pictureId ? changeLabel : chooseLabel}
+		ondragover={onDragOver}
+		ondragleave={() => (dropping = false)}
+		ondrop={onDrop}
+	>
 		<form
 			bind:this={form}
 			method="post"
@@ -186,25 +242,10 @@
 				<input
 					type="file"
 					name="file"
-					accept="image/png,image/jpeg,image/webp,image/gif"
+					bind:this={field}
+					accept={ACCEPTED_TYPES.join(',')}
 					class="sr-only"
-					onchange={(e) => {
-						const field = e.currentTarget as HTMLInputElement;
-						const file = field.files?.[0];
-						problem = '';
-						if (!file) return;
-						if (file.size > kilobytes * 1024) {
-							problem = t('pictures.tooBig', {
-								limit: kilobytes,
-								name: file.name,
-								size: Math.ceil(file.size / 1024)
-							});
-							field.value = '';
-							return;
-						}
-						uploading = true;
-						form?.requestSubmit();
-					}}
+					onchange={(e) => send((e.currentTarget as HTMLInputElement).files?.[0])}
 				/>
 			</label>
 		</form>
