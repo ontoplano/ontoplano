@@ -83,17 +83,24 @@ test('a note named by its number opens from another note', async ({ page }) => {
 		.click();
 	await expect(page.getByText('Garden').first()).toBeVisible({ timeout: 30_000 });
 
-	for (const content of ['The hedge\n\nsixty metres of laurel', 'Plan\n\nstart from NOTE:#1']) {
+	// Waited for in the list, by its title: the composer is a form in the
+	// panel, and its live preview already draws the reference.
+	for (const [title, body] of [
+		['The hedge', 'sixty metres of laurel'],
+		['Plan', 'start from NOTE:#1']
+	]) {
 		await page.getByRole('button', { name: 'New note', exact: true }).first().click();
-		await page.locator('textarea[name="content"]').first().fill(content);
+		await page.locator('textarea[name="content"]').first().fill(`${title}\n\n${body}`);
 		await page
 			.getByRole('button', { name: /Save|Add note|Create/ })
 			.last()
 			.click();
-		await expect(page.locator('dialog[open]')).toHaveCount(0, { timeout: 30_000 });
+		await expect(page.getByRole('button', { name: title, exact: true })).toBeVisible({
+			timeout: 30_000
+		});
 	}
 
-	await page.getByText('Plan', { exact: true }).first().click();
+	await page.getByRole('button', { name: 'Plan', exact: true }).click();
 	const reference = page.locator('a[data-ref="note"]').first();
 	await expect(reference).toHaveText('The hedge');
 	await expect(page.getByText('sixty metres of laurel')).toHaveCount(0);
@@ -132,9 +139,11 @@ test('a goal named by its number opens from a note', async ({ page }) => {
 		.getByRole('button', { name: /Save|Add note|Create/ })
 		.last()
 		.click();
-	await expect(page.locator('dialog[open]')).toHaveCount(0, { timeout: 30_000 });
+	// The note in the list, not the composer's preview of it.
+	const training = page.getByRole('button', { name: 'Training', exact: true });
+	await expect(training).toBeVisible({ timeout: 30_000 });
 
-	await page.getByText('Training', { exact: true }).first().click();
+	await training.click();
 	const reference = page.locator('a[data-ref="goal"]').first();
 	await expect(reference).toHaveText('Run a 10k');
 
