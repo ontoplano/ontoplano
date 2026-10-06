@@ -24,6 +24,8 @@ releases mattered.
   Play's own purchase sheet, the plan switches on as soon as Play confirms it,
   and a subscription the Google account already holds is picked up rather than
   bought twice — after a reinstall or on a new phone.
+- The Android app now needs Android 7.0 or newer; Android 6 is no longer
+  supported.
 
 ## 0.185.8 — 2026-10-05
 
