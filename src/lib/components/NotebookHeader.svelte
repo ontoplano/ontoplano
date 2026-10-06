@@ -24,6 +24,9 @@
 
 	const t = useT();
 
+	/** The picture is a cover, the shelf's 3:4 rather than a square — see `.cover-art`. */
+	const COVER = 'w-12 aspect-[3/4]';
+
 	let {
 		notebook,
 		pictureKilobytes,
@@ -75,6 +78,7 @@
 			{notebook}
 			kilobytes={pictureKilobytes}
 			onpress={open ? onedit : undefined}
+			size={COVER}
 			resizable
 		/>
 	{:else if notebook.pictureId}
@@ -84,7 +88,7 @@
 			alt={notebook.title}
 			loading="lazy"
 			data-view
-			class="size-12 shrink-0 cursor-zoom-in border border-gray-200 bg-white object-cover"
+			class="{COVER} shrink-0 cursor-zoom-in border border-gray-200 bg-white object-cover"
 		/>
 	{/if}
 {/snippet}

@@ -179,3 +179,78 @@ test('f stars the notebook open beside the shelf, and f again takes it off', asy
 	await page.keyboard.press('f');
 	await expect(page.locator('[data-favourites]')).toHaveCount(0);
 });
+
+/*
+ * A cover's buttons are for whoever is pointing at it: hidden until hover,
+ * the star included — the name says it is a favourite.
+ */
+test('a cover keeps its buttons until it is hovered, starred or not', async ({ page }) => {
+	test.setTimeout(180_000);
+	await page.setViewportSize({ width: 1280, height: 900 });
+	await register(page, testEmail('nb-cover-hover'));
+
+	await makeNotebook(page, 'Reading');
+	await visit(page, '/notebooks');
+	const cover = page.locator('.notebook-shelf .notebook-cover').filter({ hasText: 'Reading' });
+	const tools = cover.locator('.cover-actions');
+
+	await cover.hover();
+	await cover.getByRole('button', { name: 'Add Reading to favourites' }).click();
+	await page.mouse.move(1, 1);
+	await page.locator('body').click({ position: { x: 1, y: 1 } });
+	await expect(tools.first()).toHaveCSS('opacity', '0');
+	await expect(cover.locator('.cover-star').first()).toBeVisible();
+
+	await cover.first().hover();
+	await expect(tools.first()).toHaveCSS('opacity', '1');
+	// Where a pointer can hover, the cover is what opens it.
+	await expect(page.getByRole('link', { name: 'Open Reading' })).toHaveCount(0);
+});
+
+test.describe('on a touch screen', () => {
+	test.use({ hasTouch: true, isMobile: true, viewport: { width: 390, height: 844 } });
+
+	test('the first tap shows the buttons and Open is one of them', async ({ page, browserName }) => {
+		test.skip(browserName === 'firefox', 'Firefox has no mobile emulation');
+		test.setTimeout(180_000);
+		await register(page, testEmail('nb-cover-tap'));
+
+		await makeNotebook(page, 'Reading');
+		await visit(page, '/notebooks');
+		const cover = page.locator('.notebook-shelf .notebook-cover').filter({ hasText: 'Reading' });
+		const tools = cover.locator('.cover-actions');
+		await expect(tools).toHaveCSS('opacity', '0');
+
+		const at = page.url();
+		await cover.locator('.cover-art').tap();
+		await expect(tools).toHaveCSS('opacity', '1');
+		expect(page.url()).toBe(at);
+
+		// They fill the picture, and leave the name under it to be read.
+		const art = (await cover.locator('.cover-art').boundingBox())!;
+		const box = (await tools.boundingBox())!;
+		const named = (await cover.locator('.cover-name').boundingBox())!;
+		expect(Math.abs(box.width - art.width)).toBeLessThan(2);
+		expect(Math.abs(box.height - art.height)).toBeLessThan(2);
+		expect(box.y + box.height).toBeLessThanOrEqual(named.y + 1);
+		await page.screenshot({ path: 'test-results/shots/cover-tapped-phone.png' });
+
+		await cover.getByRole('link', { name: 'Open Reading' }).tap();
+		await expect(page.getByRole('heading', { name: 'Reading' })).toBeVisible();
+		expect(page.url()).not.toBe(at);
+	});
+
+	test('a tap on the name opens it straight away', async ({ page, browserName }) => {
+		test.skip(browserName === 'firefox', 'Firefox has no mobile emulation');
+		test.setTimeout(180_000);
+		await register(page, testEmail('nb-cover-name-tap'));
+
+		await makeNotebook(page, 'Reading');
+		await visit(page, '/notebooks');
+		const cover = page.locator('.notebook-shelf .notebook-cover').filter({ hasText: 'Reading' });
+		const at = page.url();
+		await cover.locator('.cover-name').tap();
+		await expect(page.getByRole('heading', { name: 'Reading' })).toBeVisible();
+		expect(page.url()).not.toBe(at);
+	});
+});

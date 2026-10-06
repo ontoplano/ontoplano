@@ -11,13 +11,14 @@
  * songs recorded is a single commitment with two numbers under it. The goal is
  * as far along as everything measuring it is on average.
  */
-import { and, asc, eq, gte, inArray, lt, type SQL } from 'drizzle-orm';
+import { and, asc, desc, eq, gte, inArray, lt, type SQL } from 'drizzle-orm';
 
 import { db } from '$lib/db/index.js';
 import {
 	activities,
 	categories,
 	goalAreas,
+	goalEvents,
 	goalLinks,
 	goalTargets,
 	goals,
@@ -30,6 +31,7 @@ import { periodEnd, periodStart, isGoalStatus, isHorizon, type Horizon } from '.
 import type { Ctx } from './ctx.js';
 import { ConflictError, NotFoundError, ValidationError } from './errors.js';
 import { ownedNotebookId } from './notebooks.js';
+import { nextNotebookSeq, notebookSeqFor } from './notebook-seq.js';
 import { measureTotal } from './workouts.js';
 import { created, stamp, stamps } from './time.js';
 import { num, optionalStr, str } from './validate.js';
@@ -71,6 +73,25 @@ export type GoalTarget = {
 	fraction: number;
 };
 
+/**
+ * One thing that happened to a goal — see `goalEvents` in the schema.
+ *
+ * `targetId` and `unit` name the measure a `progress` row moved; `status` is
+ * where a `status` row moved the goal to; `note` is whatever was said.
+ */
+export type GoalEvent = {
+	id: number;
+	kind: 'progress' | 'status' | 'note';
+	at: string;
+	targetId: number | null;
+	value: number | null;
+	status: Goal['status'] | null;
+	note: string;
+};
+
+/** How long a note on a goal may be: the same as what is said on closing one. */
+export const MAX_GOAL_NOTE_LENGTH = 2000;
+
 export type Goal = {
 	id: number;
 	areaId: number | null;
@@ -78,6 +99,8 @@ export type Goal = {
 	areaColor: string | null;
 	notebookId: number | null;
 	notebookTitle: string | null;
+	/** Its number in that notebook, which `GOAL:#3` points at. */
+	notebookSeq: number | null;
 	parentId: number | null;
 	title: string;
 	notes: string;
@@ -91,6 +114,8 @@ export type Goal = {
 	linkedTodoIds: number[];
 	linkedActivityIds: number[];
 	progress: GoalProgress;
+	/** What happened to it, newest first. */
+	events: GoalEvent[];
 };
 
 export function listAreas(ctx: Ctx): GoalArea[] {
@@ -202,6 +227,7 @@ export function listGoals(
 			areaColor: goalAreas.color,
 			notebookId: goals.notebookId,
 			notebookTitle: notebooks.title,
+			notebookSeq: goals.notebookSeq,
 			parentId: goals.parentId,
 			title: goals.title,
 			notes: goals.notes,
@@ -225,6 +251,15 @@ export function listGoals(
 	const ids = rows.map((r) => r.id);
 	const links =
 		ids.length > 0 ? db.select().from(goalLinks).where(inArray(goalLinks.goalId, ids)).all() : [];
+	const happened =
+		ids.length > 0
+			? db
+					.select()
+					.from(goalEvents)
+					.where(and(eq(goalEvents.userId, ctx.userId), inArray(goalEvents.goalId, ids)))
+					.orderBy(desc(goalEvents.at), desc(goalEvents.id))
+					.all()
+			: [];
 	const measures =
 		ids.length > 0
 			? db
@@ -274,6 +309,7 @@ export function listGoals(
 				areaColor: r.areaColor,
 				notebookId: r.notebookId,
 				notebookTitle: r.notebookTitle,
+				notebookSeq: r.notebookSeq,
 				parentId: r.parentId,
 				title: r.title,
 				notes: r.notes ?? '',
@@ -286,7 +322,18 @@ export function listGoals(
 				linkedSlotIds,
 				linkedTodoIds,
 				linkedActivityIds,
-				progress: progressFor(ctx, r, linkedSlotIds, linkedTodoIds, linkedActivityIds, targets)
+				progress: progressFor(ctx, r, linkedSlotIds, linkedTodoIds, linkedActivityIds, targets),
+				events: happened
+					.filter((e) => e.goalId === r.id)
+					.map((e) => ({
+						id: e.id,
+						kind: e.kind,
+						at: e.at,
+						targetId: e.targetId,
+						value: e.value,
+						status: e.status,
+						note: e.note
+					}))
 			};
 		});
 }
@@ -464,6 +511,7 @@ export function createGoal(
 				periodStart: periodStart(horizon, anchor),
 				areaId,
 				notebookId,
+				notebookSeq: nextNotebookSeq(ctx, goals, notebookId),
 				parentId
 			})
 			.run();
@@ -520,6 +568,7 @@ export function updateGoal(
 	const targets = parseTargets(raw.targets);
 	const areaId = ownedAreaId(ctx, raw.areaId);
 	const notebookId = ownedNotebookId(ctx, raw.notebookId, 'goals', { table: goals, id });
+	const notebookSeq = notebookSeqFor(ctx, goals, id, notebookId);
 	const title = str(raw.title, 'title', { max: MAX_TITLE_LENGTH });
 	const notes = optionalStr(raw.notes, 'notes', { max: MAX_NOTES_LENGTH });
 
@@ -531,6 +580,7 @@ export function updateGoal(
 				notes,
 				areaId,
 				notebookId,
+				notebookSeq,
 				horizon,
 				periodStart: periodStart(horizon, anchor),
 				updatedAt: stamp(ctx)
@@ -665,9 +715,33 @@ export function setTargetProgress(ctx: Ctx, targetId: number, value: unknown): v
 		.run();
 
 	if (res.changes === 0) throw new NotFoundError('target');
+	logGoalEvent(ctx, goalId, { kind: 'progress', targetId, value: currentValue });
 	// The weekly review asks which goals moved, and it asks the goal — so a
 	// number typed into one of its measures has to reach the goal's own row.
 	touchGoal(ctx, goalId);
+}
+
+/** One row of a goal's history, stamped now. */
+function logGoalEvent(
+	ctx: Ctx,
+	goalId: number,
+	event: Pick<typeof goalEvents.$inferInsert, 'kind' | 'targetId' | 'value' | 'status' | 'note'>
+): void {
+	db.insert(goalEvents)
+		.values({ ...event, userId: ctx.userId, goalId, at: stamp(ctx) })
+		.run();
+}
+
+/**
+ * Words on a goal, written down whenever — a closed one's afterthought, or a
+ * line on how an open one is going. They join its history rather than
+ * replacing what was said on closing.
+ */
+export function addGoalNote(ctx: Ctx, id: number, raw: unknown): void {
+	assertOwnedGoal(ctx, id);
+	const note = str(raw, 'note', { max: MAX_GOAL_NOTE_LENGTH });
+	logGoalEvent(ctx, id, { kind: 'note', note });
+	touchGoal(ctx, id);
 }
 
 export function closeGoal(ctx: Ctx, id: number, raw: { status: unknown; outcome?: unknown }): void {
@@ -675,11 +749,12 @@ export function closeGoal(ctx: Ctx, id: number, raw: { status: unknown; outcome?
 	if (!isGoalStatus(status)) throw new ValidationError({ key: 'errors.goals.invalidStatus' });
 
 	const now = stamp(ctx);
+	const outcome = optionalStr(raw.outcome, 'outcome', { max: MAX_OUTCOME_LENGTH });
 	const res = db
 		.update(goals)
 		.set({
 			status,
-			outcome: optionalStr(raw.outcome, 'outcome', { max: MAX_OUTCOME_LENGTH }),
+			outcome,
 			// Reopening clears the closing date, so a reopened goal does not read
 			// as having been finished at some point in the past.
 			closedAt: status === 'open' ? null : now,
@@ -689,6 +764,7 @@ export function closeGoal(ctx: Ctx, id: number, raw: { status: unknown; outcome?
 		.run();
 
 	if (res.changes === 0) throw new NotFoundError('goal');
+	logGoalEvent(ctx, id, { kind: 'status', status, note: outcome ?? '' });
 }
 
 /** Replace a goal's links wholesale — simpler than diffing, and idempotent. */

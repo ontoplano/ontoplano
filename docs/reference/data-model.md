@@ -7,7 +7,7 @@ out of the schema — so this page cannot disagree with the schema, and a
 column added without a migration does not appear here because it does not
 exist.
 
-**84 tables.**
+**85 tables.**
 
 | Table                                                       | Columns | Belongs to a user |
 | ----------------------------------------------------------- | ------- | ----------------- |
@@ -36,13 +36,14 @@ exist.
 | [`finance_rules`](#finance_rules)                           | 8       | yes               |
 | [`finance_transactions`](#finance_transactions)             | 10      | yes               |
 | [`goal_areas`](#goal_areas)                                 | 6       | yes               |
+| [`goal_events`](#goal_events)                               | 9       | yes               |
 | [`goal_links`](#goal_links)                                 | 6       | yes               |
 | [`goal_targets`](#goal_targets)                             | 9       | yes               |
-| [`goals`](#goals)                                           | 14      | yes               |
+| [`goals`](#goals)                                           | 15      | yes               |
 | [`habit_occurrences`](#habit_occurrences)                   | 6       | yes               |
 | [`habits`](#habits)                                         | 9       | yes               |
 | [`idea_tags`](#idea_tags)                                   | 4       | yes               |
-| [`ideas`](#ideas)                                           | 9       | yes               |
+| [`ideas`](#ideas)                                           | 10      | yes               |
 | [`inventory_attribute_colors`](#inventory_attribute_colors) | 5       | yes               |
 | [`inventory_categories`](#inventory_categories)             | 8       | yes               |
 | [`inventory_items`](#inventory_items)                       | 18      | yes               |
@@ -608,6 +609,25 @@ Indexes:
 - `goal_areas_user_idx` on `user_id`
 - `goal_areas_user_name_unique` on `user_id`, `name` — unique
 
+## goal_events
+
+| Column      | Type    | Null     | Default               | Notes               |
+| ----------- | ------- | -------- | --------------------- | ------------------- |
+| `id`        | integer | not null | —                     | primary key, auto   |
+| `user_id`   | text    | not null | —                     | → `user.id`         |
+| `goal_id`   | integer | not null | —                     | → `goals.id`        |
+| `kind`      | text    | not null | —                     | —                   |
+| `target_id` | integer | null     | —                     | → `goal_targets.id` |
+| `value`     | real    | null     | —                     | —                   |
+| `status`    | text    | null     | —                     | —                   |
+| `note`      | text    | not null | `''`                  | —                   |
+| `at`        | text    | not null | `(CURRENT_TIMESTAMP)` | —                   |
+
+Indexes:
+
+- `goal_events_user_idx` on `user_id`
+- `goal_events_goal_idx` on `goal_id`, `at`
+
 ## goal_links
 
 | Column        | Type    | Null     | Default | Notes                  |
@@ -659,6 +679,7 @@ Checks — enforced by the database, not only by the service layer:
 | `user_id`      | text    | not null | —                     | → `user.id`       |
 | `area_id`      | integer | null     | —                     | → `goal_areas.id` |
 | `notebook_id`  | integer | null     | —                     | → `notebooks.id`  |
+| `notebook_seq` | integer | null     | —                     | —                 |
 | `parent_id`    | integer | null     | —                     | —                 |
 | `title`        | text    | not null | —                     | —                 |
 | `notes`        | text    | null     | `''`                  | —                 |
@@ -677,6 +698,7 @@ Indexes:
 - `goals_parent_idx` on `parent_id`
 - `goals_area_idx` on `area_id`
 - `goals_notebook_idx` on `notebook_id`
+- `goals_notebook_seq_unique` on `notebook_id`, `notebook_seq` — unique
 
 ## habit_occurrences
 
@@ -740,6 +762,7 @@ Indexes:
 | `applied_note` | text    | null     | —                     | —                 |
 | `favorite`     | integer | not null | `false`               | —                 |
 | `notebook_id`  | integer | null     | —                     | → `notebooks.id`  |
+| `notebook_seq` | integer | null     | —                     | —                 |
 | `created_at`   | text    | not null | `(CURRENT_TIMESTAMP)` | —                 |
 | `updated_at`   | text    | not null | `(CURRENT_TIMESTAMP)` | —                 |
 
@@ -747,6 +770,7 @@ Indexes:
 
 - `ideas_user_idx` on `user_id`
 - `ideas_notebook_idx` on `notebook_id`
+- `ideas_notebook_seq_unique` on `notebook_id`, `notebook_seq` — unique
 - `ideas_created_idx` on `created_at`
 
 ## inventory_attribute_colors

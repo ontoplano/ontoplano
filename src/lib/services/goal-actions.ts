@@ -1,4 +1,5 @@
 import {
+	addGoalNote,
 	closeGoal,
 	createGoal,
 	deleteGoal,
@@ -82,6 +83,11 @@ export const goalHandlers = {
 			status: formData.get('status'),
 			outcome: formData.get('outcome')
 		});
+	}),
+
+	/** Words on a goal's history, open or closed. */
+	note: formAction((ctx, formData) => {
+		addGoalNote(ctx, Number(formData.get('id')), formData.get('note'));
 	}),
 
 	setLinks: formAction((ctx, formData) => {

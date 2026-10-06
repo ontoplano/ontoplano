@@ -1,4 +1,4 @@
-import { and, desc, eq, isNull, max, ne, notInArray, or, type SQL } from 'drizzle-orm';
+import { and, desc, eq, isNull, ne, notInArray, or, type SQL } from 'drizzle-orm';
 import type { SQLiteColumn, SQLiteTable } from 'drizzle-orm/sqlite-core';
 
 import { db } from '$lib/db/index.js';
@@ -17,6 +17,7 @@ import {
 import type { Ctx } from './ctx.js';
 import { NotFoundError } from './errors.js';
 import { num } from './validate.js';
+import { nextNotebookSeq, type Numbered } from './notebook-seq.js';
 import { assertNotebookHolds, assertReachableNotebook } from './notebooks.js';
 import { isNotebookModule, type NotebookModule } from '../notebook-modules.js';
 import { CLOSED_STATUSES } from '../task-status.js';
@@ -191,7 +192,7 @@ function linkableIntoReachable(ctx: Ctx, module: string, notebookId: number): Li
  *
  * ## The number goes with the notebook
  *
- * A note and a task are numbered inside their notebook as well as in the
+ * A note, a task, a goal and an idea are numbered inside their notebook as well as in the
  * account — `#4` on a card, and what `TASK:#4` in somebody's writing points
  * at — and `(notebook_id, notebook_seq)` is unique. So moving one that already
  * had a number into a notebook that already has that number is a constraint
@@ -224,7 +225,7 @@ export function fileUnderNotebook(
 		.update(table)
 		.set(
 			numbered(table)
-				? { notebookId, notebookSeq: nextSeqIn(ctx, table, notebookId) }
+				? { notebookId, notebookSeq: nextNotebookSeq(ctx, table, notebookId) }
 				: { notebookId }
 		)
 		.where(mine)
@@ -234,26 +235,6 @@ export function fileUnderNotebook(
 }
 
 /** Whether this table numbers its rows inside their notebook as well. */
-function numbered(table: Linkable['table']): table is Linkable['table'] & {
-	notebookSeq: SQLiteColumn;
-} {
+function numbered(table: Linkable['table']): table is Linkable['table'] & Numbered {
 	return 'notebookSeq' in table;
-}
-
-/**
- * The next number free in that notebook — or nothing, for a thing being
- * unfiled, which has no notebook to be numbered inside.
- */
-function nextSeqIn(
-	ctx: Ctx,
-	table: Linkable['table'] & { notebookSeq: SQLiteColumn },
-	notebookId: number | null
-): number | null {
-	if (notebookId === null) return null;
-	const highest = db
-		.select({ seq: max(table.notebookSeq) })
-		.from(table)
-		.where(and(eq(table.userId, ctx.userId), eq(table.notebookId, notebookId)))
-		.get();
-	return Number(highest?.seq ?? 0) + 1;
 }

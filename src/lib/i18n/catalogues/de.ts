@@ -1074,10 +1074,12 @@ export const messages: Catalogue = {
 	'goals.aGoalIsACommitment':
 		'Ein Ziel ist eine Verpflichtung mit einer Frist. Fangen Sie mit einer Woche an — Sie können es später hochstufen.',
 	'goals.abandoned': 'Aufgegeben',
+	'goals.achieveIt': '{title} erreichen',
 	'goals.achieved': 'Erreicht',
 	'goals.activities': 'Aktivitäten',
 	'goals.addArea': 'Bereich hinzufügen',
 	'goals.addMeasure': 'Maßeinheit hinzufügen',
+	'goals.addNote': 'Notiz hinzufügen',
 	'goals.allAreas': 'Alle Bereiche',
 	'goals.area': 'Bereich',
 	'goals.areaColour': 'Farbe von {name}',
@@ -1087,6 +1089,7 @@ export const messages: Catalogue = {
 	'goals.closeItAsDone': 'Als erledigt abschließen',
 	'goals.closeItAsNotDone': 'Als nicht erledigt abschließen',
 	'goals.closedCount': 'Abgeschlossen ({count})',
+	'goals.closedOn': 'Abgeschlossen am {date}',
 	'goals.confirm': 'Bestätigen?',
 	'goals.countedFrom': 'Gezählt aus',
 	'goals.countedFromActivity': 'Gezählt aus {activity}',
@@ -1099,18 +1102,25 @@ export const messages: Catalogue = {
 	'goals.eGFitness': 'z. B. Fitness',
 	'goals.eGTrainThreeTimesA': 'z. B. dreimal die Woche trainieren',
 	'goals.editGoal': 'Ziel bearbeiten',
+	'goals.eventProgress': 'Auf {value} {unit} gesetzt',
 	'goals.everyBlockOf': '{name} — jeder Aufgabenblock davon zählt, sobald er erledigt ist',
 	'goals.everyWeekIts': '{name} — jede Woche; seine Vorkommen zählen, sobald sie erledigt sind',
 	'goals.fitnessStudyMoney': 'Fitness, Studium, Geld — was auch immer Sie verfolgen.',
 	'goals.goal': 'Ziel',
 	'goals.goals': 'Ziele',
+	'goals.historyEmpty': 'Noch nichts abgeschlossen',
+	'goals.historyEmptyBody':
+		'Ein erreichtes oder verpasstes Ziel landet hier, mit allem, was unterwegs passiert ist.',
+	'goals.historyFold': 'Verlauf · {n}',
 	'goals.horizon': 'Horizont',
+	'goals.howDidItGo': 'Wie lief es?',
 	'goals.iKeepThisOneMyself': 'Führe ich selbst',
 	'goals.kindCounted': 'Gezählt',
 	'goals.kindMeasured': 'Gemessen',
 	'goals.linkedTasks': 'Verknüpfte Aufgaben',
 	'goals.linkedTasksMakeProgress':
 		'Verknüpfte Aufgaben machen den Fortschritt zählbar — wie viele davon tatsächlich im Zeitraum erledigt wurden, statt einer Zahl, die Sie eintippen.',
+	'goals.markAchieved': 'Als erreicht markieren',
 	'goals.measuredBy': 'Gemessen in',
 	'goals.measuresCount': '{count} Messwerte',
 	'goals.missed': 'Verpasst',
@@ -1128,7 +1138,9 @@ export const messages: Catalogue = {
 	'goals.noWeeklyBlocksYet': 'Noch keine wöchentlichen Aufgabenblöcke',
 	'goals.none': '— keine —',
 	'goals.noneOfTheseMatch': 'Keines der {count} hier passt zu Ihrem Filter.',
+	'goals.notePlaceholder': 'Was passiert ist, was du gelernt hast …',
 	'goals.nothingCountedYet': 'Noch nichts gezählt',
+	'goals.nothingHappenedYet': 'Noch ist nichts passiert.',
 	'goals.nothingLinkedYetProgress':
 		'Noch nichts verknüpft — der Fortschritt ist die Zahl, die Sie eingeben.',
 	'goals.oneFewer': 'Eins weniger',
@@ -1149,6 +1161,7 @@ export const messages: Catalogue = {
 	'goals.removeMeasure': 'Maßeinheit entfernen',
 	'goals.renameArea': '{name} umbenennen',
 	'goals.reopen': 'Wieder eröffnen',
+	'goals.reopened': 'Wieder geöffnet',
 	'goals.saveLinks': 'Verknüpfungen speichern',
 	'goals.saveProgress': 'Fortschritt speichern',
 	'goals.searchGoals': 'Ziele durchsuchen',
@@ -1168,6 +1181,9 @@ export const messages: Catalogue = {
 	'goals.whatCountsTowardsThisGoal': 'Was für dieses Ziel zählt',
 	'goals.whatKindOfNumber': 'Welche Art von Zahl',
 	'goals.year': 'Jahr',
+	'goals.youDidIt': 'Geschafft!',
+	'goals.youDidItBody':
+		'{title}, erledigt. Schreib auf, wie es lief, solange es frisch ist — es bleibt beim Ziel.',
 	'health.habits.aBadHabitCountsDays':
 		'Eine schlechte Gewohnheit zählt Tage seit dem letzten Ausrutscher.',
 	'health.habits.aHabitIsSomethingYou':
@@ -2016,6 +2032,35 @@ export const messages: Catalogue = {
 	'manifest.newDiaryEntry': 'Neuer Tagebucheintrag',
 	'manifest.todaysColumns': 'Die heutigen Spalten',
 	'manifest.writeAnEntry': 'Einen Eintrag schreiben',
+	'markdown.help.checklist':
+		'Eine Checkliste — ihre Kästchen lassen sich dort abhaken, wo sie angezeigt wird',
+	'markdown.help.code': 'Code, genau wie getippt',
+	'markdown.help.emphasis': 'Hervorhebung',
+	'markdown.help.goal':
+		'Ziel 2 dieses Notizbuchs, mit der Nummer, die seine Karte zeigt. Drücken öffnet es',
+	'markdown.help.heading': 'Eine Überschrift — ein bis sechs #',
+	'markdown.help.idea':
+		'Idee 7 dieses Notizbuchs, mit der Nummer, die ihre Karte zeigt. Drücken öffnet sie',
+	'markdown.help.intro': 'Was du links tippst, und was daraus wird.',
+	'markdown.help.link':
+		'Ein Link, in einem neuen Tab geöffnet. Nur Web-, Mail- und App-eigene Adressen',
+	'markdown.help.list': 'Eine Liste',
+	'markdown.help.note':
+		'Dieselbe Notiz, ausdrücklich als Notiz — mit ihrem Titel, wo er bekannt ist',
+	'markdown.help.noteBare':
+		'Die Notiz Nummer 12 dort, wo dies steht: die Nummerierung des Tagebuchs im Tagebuch, die des Notizbuchs in einem Notizbuch',
+	'markdown.help.numbered': 'Eine nummerierte Liste',
+	'markdown.help.open': 'Was kann ich hier schreiben?',
+	'markdown.help.picker':
+		'Tippe in einem Notizbuch NOTE:# oder TASK:#, und eine Liste öffnet sich, um die gemeinte nach ihrem Titel zu finden.',
+	'markdown.help.pictures':
+		'Füge ein Bild oder eine Aufnahme ein oder ziehe sie in das Feld. Nur deine eigenen Dateien werden gezeigt; eine fremde Adresse bleibt Text.',
+	'markdown.help.quote': 'Ein Zitat',
+	'markdown.help.references': 'Auf anderes verweisen',
+	'markdown.help.table': 'Eine Tabelle',
+	'markdown.help.task':
+		'Aufgabe 4 dieses Notizbuchs, mit der Nummer, die ihre Liste zeigt. Zeiger darauf zeigt die Aufgabe; Drücken öffnet sie',
+	'markdown.help.title': 'Hier schreiben',
 	'markdown.nothingToPreviewYet': 'Noch nichts in der Vorschau',
 	'markdown.preview': 'Vorschau',
 	'markdown.sideBySide': 'Nebeneinander',
@@ -2334,6 +2379,7 @@ export const messages: Catalogue = {
 	'notebooks.onlyTheFirstAreListed':
 		'Nur die neuesten paar hundert werden gezeigt — grenze es mit dem Feld oben ein.',
 	'notebooks.openInItsRoom': 'Dort öffnen, wo es liegt',
+	'notebooks.openNamed': '{title} öffnen',
 	'notebooks.orImportAFolderOf': '…oder einen Ordner mit Markdown importieren',
 	'notebooks.people.19900314Or0314WithoutThe': '1990-03-14, oder --03-14 ohne Jahr',
 	'notebooks.people.aPictureOf': '{add} ein Bild von {name}',
@@ -2645,8 +2691,10 @@ export const messages: Catalogue = {
 	'recurrence.weekdays': 'Jeden {days}',
 	'recurrence.weekly': 'Jeden {weekday}',
 	'refPicker.nothingMatches': 'Nichts passt.',
+	'refPicker.pointAtAGoal': 'Auf ein Ziel verweisen',
 	'refPicker.pointAtANote': 'Auf eine Notiz verweisen',
 	'refPicker.pointAtATask': 'Auf eine Aufgabe verweisen',
+	'refPicker.pointAtAnIdea': 'Auf eine Idee verweisen',
 	'refPicker.search': 'Ein Wort aus dem Titel oder die Nummer',
 	'reminders.aDayAndSomethingTo': 'Ein Tag und etwas, das vorab gesagt wird',
 	'reminders.aDayAndWhatTo': 'Ein Tag und was gesagt werden soll. Mehr nicht.',
@@ -2817,6 +2865,9 @@ export const messages: Catalogue = {
 	'rooms.finance.tabs.ledgers': 'Buchungen',
 	'rooms.finance.tabs.rules': 'Regeln',
 	'rooms.finance.title': 'Finanzen',
+	'rooms.goals.sections': 'Ziel-Bereiche',
+	'rooms.goals.tabs.current': 'Ziele',
+	'rooms.goals.tabs.history': 'Verlauf',
 	'rooms.health.sections': 'Gesundheit-Bereiche',
 	'rooms.health.tabs.habits': 'Gewohnheiten',
 	'rooms.health.tabs.recipes': 'Rezepte',
@@ -3380,6 +3431,8 @@ export const messages: Catalogue = {
 		'Den Aufruf macht diese Instanz, nicht Ihr Browser — eine Adresse auf Ihrem eigenen Rechner ist von hier nicht erreichbar.',
 	'settings.integrations.chat.title': 'Chat',
 	'settings.integrations.chat.typeOneInstead': 'Modellnamen eingeben',
+	'settings.integrations.comesWith':
+		'Kommt mit dem Lesen von {with} — die Aufnahmen in dem, was er dort lesen darf',
 	'settings.integrations.connections.aUrlOfYoursThat':
 		'Eine URL von Ihnen, die informiert wird, wenn hier etwas passiert — neue Aufgaben, Häkchen, Ideen.\nStreams schieben Daten hinein, Webhooks lassen Ihre Programme mithören.',
 	'settings.integrations.connections.address': 'Adresse',
@@ -3532,6 +3585,8 @@ export const messages: Catalogue = {
 		'Noch nichts — alles, was ein Assistent ändert, wird hier aufgelistet',
 	'settings.integrations.onlyWhatYouTick':
 		'Nur, was Sie ankreuzen. Alles Nicht-Angekreuzte bleibt außer Reichweite.',
+	'settings.integrations.outsideTheTie':
+		'Außer Reichweite: ein an eine Sache gebundener Schlüssel sieht nur, was darunter abgelegt ist',
 	'settings.integrations.outsideWhat':
 		'{label}: {write} — außerhalb dessen, woran dieser Schlüssel gebunden ist',
 	'settings.integrations.pluginAsksKey': 'Schlüssel:',

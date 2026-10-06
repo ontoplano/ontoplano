@@ -848,6 +848,20 @@
       "when": 1791068841703,
       "tag": "0120_assistant_calls_remember_their_subject",
       "breakpoints": true
+    },
+    {
+      "idx": 121,
+      "version": "6",
+      "when": 1791263452816,
+      "tag": "0121_goals_and_ideas_are_numbered_inside_their_notebook",
+      "breakpoints": true
+    },
+    {
+      "idx": 122,
+      "version": "6",
+      "when": 1791306309739,
+      "tag": "0122_goals_keep_what_happened_to_them",
+      "breakpoints": true
     }
   ]
 }

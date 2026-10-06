@@ -334,7 +334,7 @@
 	     filters are out; the start of the second line where they are folded. -->
 	{#if verb || trailing}
 		<div class="filter-tail ml-auto flex shrink-0 items-center gap-2">
-			{#if verb}{@render verb()}{/if}
+			{#if verb}<div class="filter-verb flex">{@render verb()}</div>{/if}
 			{#if trailing}{@render trailing()}{/if}
 		</div>
 	{/if}
@@ -416,6 +416,33 @@
 
 	.filter-two-rows > .filter-toggle {
 		order: 5;
+	}
+
+	/*
+	 * And on that second line the controls are a thumb's, not a mouse's.
+	 *
+	 * Folded is a phone. Each control is as tall as a fingertip and a glyph
+	 * alone is a fingertip square — but none of them grows into whatever the
+	 * line has spare: a control's size is its own, so a tab with fewer of them
+	 * does not stretch the rest across the gap, and changing tab moves nothing.
+	 */
+	.filter-two-rows :global(:is(.btn, .icon-btn)) {
+		min-height: var(--control-touch);
+		min-width: var(--control-touch);
+	}
+
+	/*
+	 * The order first and the verb after it: not every tab has a verb, and with
+	 * it in front the order sat in a different place on each.
+	 */
+	.filter-two-rows > .filter-tail > .filter-verb {
+		order: 1;
+	}
+
+	/* The direction is a button among buttons here, not a bare glyph. */
+	.filter-two-rows > .filter-tail :global(.icon-btn) {
+		border: 1px solid var(--color-gray-300);
+		background-color: var(--btn-face);
 	}
 
 	.filter-inline-below > :global(*) {

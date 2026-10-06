@@ -2,7 +2,12 @@ import { defineConfig } from '@playwright/test';
 import { existsSync, readdirSync } from 'node:fs';
 import { homedir, tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { browserChecks, chromiumBrowser, DEVICE_TEST_TIMEOUT } from './e2e/settings';
+import {
+	browserChecks,
+	chromiumBrowser,
+	DEVICE_CI_RETRIES,
+	DEVICE_TEST_TIMEOUT
+} from './e2e/settings';
 
 // CI shards ordinary app tests; instance-wide mutations and the device build
 // get their own runners. With no selection, local runs still cover everything.
@@ -238,6 +243,7 @@ export default defineConfig({
 		{
 			name: 'device',
 			timeout: DEVICE_TEST_TIMEOUT,
+			retries: DEVICE_CI_RETRIES,
 			testDir: 'e2e-isolated',
 			testIgnore: ['**/.*/**', ...otherCheckouts],
 			use: { ...chromiumBrowser, baseURL: 'http://localhost:4180' }

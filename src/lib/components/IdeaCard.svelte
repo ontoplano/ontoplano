@@ -14,6 +14,7 @@
 	 * same handler either way (`$lib/services/idea-actions`).
 	 */
 	import Icon from '$lib/components/Icon.svelte';
+	import NotebookSeq from '$lib/components/NotebookSeq.svelte';
 	import RowCard from '$lib/components/RowCard.svelte';
 	import OneLine from '$lib/components/OneLine.svelte';
 	import SelectBox from '$lib/components/SelectBox.svelte';
@@ -38,6 +39,7 @@
 		favorite: boolean;
 		createdAt: string;
 		updatedAt: string;
+		notebookSeq?: number | null;
 		tags: { id: number; name: string }[];
 	};
 
@@ -224,7 +226,9 @@
 
 		<!-- When it was written, and whether it was applied: the line a task's
 		     notebook sits on. -->
-		<span class="tabular mt-0.5 text-xs text-gray-500">{meta}</span>
+		<span class="tabular mt-0.5 text-xs text-gray-500"
+			><NotebookSeq seq={idea.notebookSeq} class="mr-1" />{meta}</span
+		>
 
 		{#if idea.isApplied && selected}
 			<div class="mt-3 border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-900">

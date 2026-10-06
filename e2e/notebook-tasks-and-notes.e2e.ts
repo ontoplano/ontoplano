@@ -167,3 +167,32 @@ test('resting on a task reference shows the task, with nothing to press', async 
 	await page.mouse.move(5, 5);
 	await expect(card).toBeHidden();
 });
+
+test('a task reference in a task’s own notes resolves and peeks in its dialog', async ({
+	page
+}) => {
+	test.setTimeout(120_000);
+	await page.setViewportSize({ width: 1280, height: 900 });
+	await register(page, testEmail('nb-ref-peek-dialog'));
+	await makeNotebook(page, 'Kitchen');
+	await visit(page, '/notebooks');
+
+	await page.getByRole('button', { name: /^Tasks \d/ }).click();
+	await page.getByRole('button', { name: 'New task', exact: true }).click();
+	await page.locator('#todo-form [name="heading"]').fill('measure the wall');
+	await page.locator('#todo-form textarea[name="notes"]').fill('both sides, floor to ceiling');
+	await page.getByRole('button', { name: 'Create task' }).click();
+	await expect(page.getByText('measure the wall').first()).toBeVisible();
+
+	// The next one points at it from its notes, before it is even saved.
+	await page.getByRole('button', { name: 'New task', exact: true }).click();
+	await page.locator('#todo-form [name="heading"]').fill('buy the shelf');
+	await page.locator('#todo-form textarea[name="notes"]').fill('after TASK:#1');
+	await page.locator('#todo-form').getByRole('tab', { name: 'Preview', exact: true }).click();
+	const ref = page.locator('#todo-form a.todo-ref').first();
+	await expect(ref).toHaveText('measure the wall');
+	await ref.hover();
+	const card = page.getByRole('tooltip').filter({ hasText: 'measure the wall' });
+	await expect(card).toBeVisible();
+	await expect(card).toContainText('both sides, floor to ceiling');
+});

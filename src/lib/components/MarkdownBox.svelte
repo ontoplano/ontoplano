@@ -27,8 +27,9 @@
 	import { continueList } from '$lib/list-continue';
 	import { peekRefs } from '$lib/task-peek.svelte';
 	import Written from './Written.svelte';
-	import { renderMarkdown, type NoteRefs, type TodoRefs } from '$lib/markdown';
+	import { REFS, refKindOf, renderMarkdown, type RefKind, type Refs } from '$lib/markdown';
 	import RefPicker from './RefPicker.svelte';
+	import MarkdownHelp from './MarkdownHelp.svelte';
 	import { sliding } from '$lib/actions/sliding';
 	import { useT } from '$lib/i18n';
 	import type { HTMLTextareaAttributes } from 'svelte/elements';
@@ -51,8 +52,7 @@
 		maxHeight = Infinity,
 		preview = 'markdown',
 		start = 'both',
-		todos = undefined,
-		notes = undefined,
+		refs = undefined,
 		class: extra = '',
 		...rest
 	}: HTMLTextareaAttributes & {
@@ -80,36 +80,47 @@
 		/** Which pane it opens on. See the note on `showing`. */
 		start?: 'write' | 'preview' | 'both';
 		/**
-		 * The tasks a reference in the writing may name, by their number in the
-		 * notebook — what `renderMarkdown` resolves `TASK:#4` against.
+		 * What a reference in the writing may name, by its number in the
+		 * notebook — what `renderMarkdown` resolves `TASK:#4`, `NOTE:#12`,
+		 * `GOAL:#2` and `IDEA:#7` against.
 		 *
 		 * Optional, and left out by everything written outside a notebook: the
 		 * diary and the capture wheel have no list to point at. Without it the
 		 * preview drew the bare chip while the saved note drew the task's
 		 * title, so the preview was showing something the note would not be.
 		 */
-		todos?: TodoRefs;
-		/** The notes `NOTE:#12` may name, where the writing has a notebook's notes to hand. */
-		notes?: NoteRefs;
+		refs?: Refs;
 		class?: string;
 	} = $props();
 
 	const t = useT();
 
 	/*
-	 * Typing `TASK:#` or `NOTE:#` asks which one: a search over what this
+	 * Typing `TASK:#`, `NOTE:#`, `GOAL:#` or `IDEA:#` asks which one: a search over what this
 	 * writing can point at, and the number goes in where the cursor is.
 	 * Only where there is something to point at — outside a notebook the
 	 * number would mean nothing.
 	 */
-	let pointing = $state<'task' | 'note' | null>(null);
+	let pointing = $state<RefKind | null>(null);
 	let pickerOpen = $state(false);
-	const REF_PREFIX = /(TASK|NOTE):#$/;
+	// Each kind's own spelling; a legacy one (`TODO:`) is read but not offered.
+	const REF_PREFIX = new RegExp(
+		`(${Object.values(REFS)
+			.map((kind) => kind.prefixes[0])
+			.join('|')}):#$`
+	);
 
+	const todos = $derived(refs?.tasks);
 	const pointable = $derived(
-		pointing === 'task'
-			? [...(todos ?? [])].map(([seq, one]) => ({ seq, title: one.title, done: one.done }))
-			: [...(notes ?? [])].map(([seq, one]) => ({ seq, title: one.title }))
+		pointing === null
+			? []
+			: [...(refs?.[REFS[pointing].refs] ?? [])].map(
+					([seq, one]: [number, { title: string; done?: boolean }]) => ({
+						seq,
+						title: one.title,
+						done: one.done
+					})
+				)
 	);
 
 	function offerRef(event: Event) {
@@ -118,8 +129,8 @@
 		if (!box) return;
 		const typed = REF_PREFIX.exec(box.value.slice(0, box.selectionStart ?? 0));
 		if (!typed) return;
-		const kind = typed[1] === 'TASK' ? 'task' : 'note';
-		if (!(kind === 'task' ? todos?.size : notes?.size)) return;
+		const kind = refKindOf(typed[1]);
+		if (!refs?.[REFS[kind].refs]?.size) return;
 		pointing = kind;
 		pickerOpen = true;
 	}
@@ -291,6 +302,8 @@
 				{t('markdown.preview')}
 			</button>
 		</div>
+		<!-- What the box understands, beside the pair it is about. -->
+		<MarkdownHelp />
 
 		<!--
 			And the one that takes in both, at the far end of the strip.
@@ -383,7 +396,7 @@
 				<!-- `renderMarkdown` escapes every character of the input before it emits a
 				     tag, and emits only attributes it writes itself. See `$lib/markdown.ts`. -->
 				<!-- eslint-disable-next-line svelte/no-at-html-tags -->
-				{@html renderMarkdown(settled, { tasks: todos, notes })}
+				{@html renderMarkdown(settled, refs)}
 			{/if}
 		</div>
 	</div>

@@ -7,7 +7,6 @@
 	import { setRoomAction } from '$lib/room-action.svelte';
 	import RoomSurface from '$lib/components/RoomSurface.svelte';
 	import FilterBar from '$lib/components/FilterBar.svelte';
-	import TabbedRoom from '$lib/components/TabbedRoom.svelte';
 	import { page } from '$app/state';
 	import { resolve } from '$app/paths';
 	import { goto } from '$app/navigation';
@@ -345,385 +344,375 @@
 
 <svelte:window onkeydown={handleKeydown} />
 
-<TabbedRoom title={t('goals.goals')} room="goals" label={t('goals.goals')}>
-	<div class="space-y-4">
-		<FormError message={form?.message} />
+<div class="space-y-4">
+	<FormError message={form?.message} />
 
-		<Modal
-			bind:open={showAreas}
-			onclose={() => {
-				renamingArea = null;
-				removingArea = null;
-			}}
-			error={form?.message}
-			title={t('goals.areas')}
-			description={t('goals.fitnessStudyMoney')}
-			size="sm"
-		>
-			{#if data.areas.length > 0}
-				<div class="divide-y divide-gray-200 border border-gray-200">
-					{#each data.areas as area, index (area.id)}
-						<div class="list-row" data-area={area.name}>
-							{#if renamingArea === area.id}
-								<form
-									method="post"
-									action="?/updateArea"
-									use:enhance={() =>
-										async ({ update, result }) => {
-											await update({ reset: false });
-											if (result.type === 'success') renamingArea = null;
-										}}
-									class="flex min-w-0 flex-1 items-center gap-2"
+	<Modal
+		bind:open={showAreas}
+		onclose={() => {
+			renamingArea = null;
+			removingArea = null;
+		}}
+		error={form?.message}
+		title={t('goals.areas')}
+		description={t('goals.fitnessStudyMoney')}
+		size="sm"
+	>
+		{#if data.areas.length > 0}
+			<div class="divide-y divide-gray-200 border border-gray-200">
+				{#each data.areas as area, index (area.id)}
+					<div class="list-row" data-area={area.name}>
+						{#if renamingArea === area.id}
+							<form
+								method="post"
+								action="?/updateArea"
+								use:enhance={() =>
+									async ({ update, result }) => {
+										await update({ reset: false });
+										if (result.type === 'success') renamingArea = null;
+									}}
+								class="flex min-w-0 flex-1 items-center gap-2"
+							>
+								<input type="hidden" name="id" value={area.id} />
+								<OneLine
+									name="label"
+									value={area.name}
+									class="input min-w-0 flex-1"
+									required
+									autofocus
+								/>
+								<button class="icon-btn" title={t('ui.save')} aria-label={t('ui.save')}>
+									<Icon name="check" />
+								</button>
+								<button
+									type="button"
+									class="icon-btn"
+									title={t('ui.cancel')}
+									aria-label={t('ui.cancel')}
+									onclick={() => (renamingArea = null)}
 								>
+									<Icon name="close" />
+								</button>
+							</form>
+						{:else}
+							<div class="list-row-main flex items-center gap-3">
+								<!-- The browser's own colour control, saved as it is let go of:
+								     there is nothing else on the row a Save would cover. -->
+								<form method="post" action="?/updateArea" use:enhance class="flex shrink-0">
 									<input type="hidden" name="id" value={area.id} />
-									<OneLine
-										name="label"
-										value={area.name}
-										class="input min-w-0 flex-1"
-										required
-										autofocus
+									<input
+										type="color"
+										name="color"
+										value={area.color}
+										class="h-7 w-8 cursor-pointer border border-gray-300 bg-transparent p-0"
+										title={t('goals.areaColour', { name: area.name })}
+										aria-label={t('goals.areaColour', { name: area.name })}
+										onchange={(e) => e.currentTarget.form?.requestSubmit()}
 									/>
-									<button class="icon-btn" title={t('ui.save')} aria-label={t('ui.save')}>
-										<Icon name="check" />
-									</button>
+								</form>
+								<span class="min-w-0 text-sm break-words text-gray-900">{area.name}</span>
+							</div>
+							<!-- Two steps, like every removal: the bin arms it, the worded
+							     button does it, and Cancel sits where the bin was. -->
+							<div class="list-row-actions">
+								{#if removingArea === area.id}
+									<form
+										method="post"
+										action="?/deleteArea"
+										use:enhance={() =>
+											async ({ update }) => {
+												removingArea = null;
+												await update();
+											}}
+									>
+										<input type="hidden" name="id" value={area.id} />
+										<button class="btn btn-sm btn-danger" use:armed>{t('ui.remove')}</button>
+									</form>
+									<button type="button" class="btn btn-sm" onclick={() => (removingArea = null)}
+										>{t('ui.cancel')}</button
+									>
+								{:else}
+									<!-- The order here is the order of the area filter and of
+									     the goal form's list. The end rows keep both arrows,
+									     disabled, so the row does not shift as an area moves. -->
+									<form method="post" action="?/moveArea" use:enhance class="contents">
+										<input type="hidden" name="id" value={area.id} />
+										<input type="hidden" name="delta" value="-1" />
+										<button
+											class="icon-btn"
+											disabled={index === 0}
+											title={t('goals.moveAreaEarlier', { name: area.name })}
+											aria-label={t('goals.moveAreaEarlier', { name: area.name })}
+										>
+											<Icon name="chevron-up" />
+										</button>
+									</form>
+									<form method="post" action="?/moveArea" use:enhance class="contents">
+										<input type="hidden" name="id" value={area.id} />
+										<input type="hidden" name="delta" value="1" />
+										<button
+											class="icon-btn"
+											disabled={index === data.areas.length - 1}
+											title={t('goals.moveAreaLater', { name: area.name })}
+											aria-label={t('goals.moveAreaLater', { name: area.name })}
+										>
+											<Icon name="chevron-down" />
+										</button>
+									</form>
 									<button
 										type="button"
 										class="icon-btn"
-										title={t('ui.cancel')}
-										aria-label={t('ui.cancel')}
-										onclick={() => (renamingArea = null)}
+										title={t('ui.rename')}
+										aria-label={t('goals.renameArea', { name: area.name })}
+										onclick={() => {
+											removingArea = null;
+											renamingArea = area.id;
+										}}
 									>
-										<Icon name="close" />
+										<Icon name="edit" />
 									</button>
-								</form>
-							{:else}
-								<div class="list-row-main flex items-center gap-3">
-									<!-- The browser's own colour control, saved as it is let go of:
-								     there is nothing else on the row a Save would cover. -->
-									<form method="post" action="?/updateArea" use:enhance class="flex shrink-0">
-										<input type="hidden" name="id" value={area.id} />
-										<input
-											type="color"
-											name="color"
-											value={area.color}
-											class="h-7 w-8 cursor-pointer border border-gray-300 bg-transparent p-0"
-											title={t('goals.areaColour', { name: area.name })}
-											aria-label={t('goals.areaColour', { name: area.name })}
-											onchange={(e) => e.currentTarget.form?.requestSubmit()}
-										/>
-									</form>
-									<span class="min-w-0 text-sm break-words text-gray-900">{area.name}</span>
-								</div>
-								<!-- Two steps, like every removal: the bin arms it, the worded
-							     button does it, and Cancel sits where the bin was. -->
-								<div class="list-row-actions">
-									{#if removingArea === area.id}
-										<form
-											method="post"
-											action="?/deleteArea"
-											use:enhance={() =>
-												async ({ update }) => {
-													removingArea = null;
-													await update();
-												}}
-										>
-											<input type="hidden" name="id" value={area.id} />
-											<button class="btn btn-sm btn-danger" use:armed>{t('ui.remove')}</button>
-										</form>
-										<button type="button" class="btn btn-sm" onclick={() => (removingArea = null)}
-											>{t('ui.cancel')}</button
-										>
-									{:else}
-										<!-- The order here is the order of the area filter and of
-									     the goal form's list. The end rows keep both arrows,
-									     disabled, so the row does not shift as an area moves. -->
-										<form method="post" action="?/moveArea" use:enhance class="contents">
-											<input type="hidden" name="id" value={area.id} />
-											<input type="hidden" name="delta" value="-1" />
-											<button
-												class="icon-btn"
-												disabled={index === 0}
-												title={t('goals.moveAreaEarlier', { name: area.name })}
-												aria-label={t('goals.moveAreaEarlier', { name: area.name })}
-											>
-												<Icon name="chevron-up" />
-											</button>
-										</form>
-										<form method="post" action="?/moveArea" use:enhance class="contents">
-											<input type="hidden" name="id" value={area.id} />
-											<input type="hidden" name="delta" value="1" />
-											<button
-												class="icon-btn"
-												disabled={index === data.areas.length - 1}
-												title={t('goals.moveAreaLater', { name: area.name })}
-												aria-label={t('goals.moveAreaLater', { name: area.name })}
-											>
-												<Icon name="chevron-down" />
-											</button>
-										</form>
-										<button
-											type="button"
-											class="icon-btn"
-											title={t('ui.rename')}
-											aria-label={t('goals.renameArea', { name: area.name })}
-											onclick={() => {
-												removingArea = null;
-												renamingArea = area.id;
-											}}
-										>
-											<Icon name="edit" />
-										</button>
-										<button
-											type="button"
-											class="icon-btn icon-btn-danger"
-											title={t('ui.remove')}
-											aria-label={t('ui.remove')}
-											onclick={() => (removingArea = area.id)}
-										>
-											<Icon name="trash" />
-										</button>
-									{/if}
-								</div>
-							{/if}
-						</div>
-					{/each}
-				</div>
-			{:else}
-				<EmptyState icon="tag" title={t('goals.noAreasYet')} compact />
+									<button
+										type="button"
+										class="icon-btn icon-btn-danger"
+										title={t('ui.remove')}
+										aria-label={t('ui.remove')}
+										onclick={() => (removingArea = area.id)}
+									>
+										<Icon name="trash" />
+									</button>
+								{/if}
+							</div>
+						{/if}
+					</div>
+				{/each}
+			</div>
+		{:else}
+			<EmptyState icon="tag" title={t('goals.noAreasYet')} compact />
+		{/if}
+
+		<form
+			id="area-form"
+			method="post"
+			action="?/createArea"
+			use:enhance={() =>
+				async ({ update }) =>
+					update({ reset: true })}
+			class="mt-4"
+		>
+			<FormGrid>
+				<Field label={t('goals.newArea')} span={8}>
+					<OneLine name="label" placeholder={t('goals.eGFitness')} class="input" required />
+				</Field>
+				<Field label={t('ui.colour')} span={4}>
+					<input name="color" type="color" value={CATEGORY_FALLBACK_COLOR} class="input h-9 p-1" />
+				</Field>
+			</FormGrid>
+		</form>
+
+		{#snippet footer()}
+			<button type="button" class="btn" onclick={() => (showAreas = false)}>{t('ui.done')}</button>
+			<!-- `data-stays`: adding an area is one step of arranging them, not the end of it. -->
+			<button type="submit" form="area-form" class="btn btn-primary" data-stays
+				>{t('goals.addArea')}</button
+			>
+		{/snippet}
+	</Modal>
+
+	<Modal
+		bind:open={showForm}
+		error={form?.message}
+		title={editingId ? t('goals.editGoal') : t('goals.newGoal')}
+		onclose={() => (editingId = null)}
+	>
+		<form
+			id="goal-form"
+			method="post"
+			action={editingId ? '?/update' : '?/create'}
+			use:enhance={() =>
+				async ({ result, update }) => {
+					await update({ reset: false });
+					if (result.type === 'success') {
+						showForm = false;
+						editingId = null;
+					}
+				}}
+		>
+			{#if editingId}
+				<input type="hidden" name="id" value={editingId} />
 			{/if}
 
-			<form
-				id="area-form"
-				method="post"
-				action="?/createArea"
-				use:enhance={() =>
-					async ({ update }) =>
-						update({ reset: true })}
-				class="mt-4"
-			>
-				<FormGrid>
-					<Field label={t('goals.newArea')} span={8}>
-						<OneLine name="label" placeholder={t('goals.eGFitness')} class="input" required />
-					</Field>
-					<Field label={t('ui.colour')} span={4}>
-						<input
-							name="color"
-							type="color"
-							value={CATEGORY_FALLBACK_COLOR}
-							class="input h-9 p-1"
-						/>
-					</Field>
-				</FormGrid>
-			</form>
-
-			{#snippet footer()}
-				<button type="button" class="btn" onclick={() => (showAreas = false)}>{t('ui.done')}</button
-				>
-				<!-- `data-stays`: adding an area is one step of arranging them, not the end of it. -->
-				<button type="submit" form="area-form" class="btn btn-primary" data-stays
-					>{t('goals.addArea')}</button
-				>
-			{/snippet}
-		</Modal>
-
-		<Modal
-			bind:open={showForm}
-			error={form?.message}
-			title={editingId ? t('goals.editGoal') : t('goals.newGoal')}
-			onclose={() => (editingId = null)}
-		>
-			<form
-				id="goal-form"
-				method="post"
-				action={editingId ? '?/update' : '?/create'}
-				use:enhance={() =>
-					async ({ result, update }) => {
-						await update({ reset: false });
-						if (result.type === 'success') {
-							showForm = false;
-							editingId = null;
-						}
-					}}
-			>
-				{#if editingId}
-					<input type="hidden" name="id" value={editingId} />
-				{/if}
-
-				<GoalFields
-					{editing}
-					{editingId}
-					bind:horizon={formHorizon}
-					bind:start={formStart}
-					bind:targets={formTargets}
-					period={formPeriod}
-					areas={data.areas}
-					notebooks={data.notebooks}
-					workoutMeasures={data.workoutMeasures}
-					{parentOptions}
-					{knownUnits}
-					{startingNotebook}
-				/>
-			</form>
-
-			{#snippet footer()}
-				<button type="button" class="btn" onclick={() => (showForm = false)}
-					>{t('ui.cancel')}</button
-				>
-				<button type="submit" form="goal-form" class="btn btn-primary">
-					{editingId ? t('ui.save') : t('goals.createGoal')}
-				</button>
-			{/snippet}
-		</Modal>
-
-		{#snippet card(goal: Goal)}
-			<GoalCard
-				{goal}
-				goals={data.goals}
-				allTodos={data.allTodos}
-				slots={data.slots}
-				activities={data.activities}
-				actions={GOAL_ROOM_ACTIONS}
-				onedit={(id) => {
-					const one = data.goals.find((g) => g.id === id);
-					if (one) openEdit(one);
-				}}
-				onlink={(id) => (linkingId = id)}
-				selected={cursorShown && goal.id === cursorId}
+			<GoalFields
+				{editing}
+				{editingId}
+				bind:horizon={formHorizon}
+				bind:start={formStart}
+				bind:targets={formTargets}
+				period={formPeriod}
+				areas={data.areas}
+				notebooks={data.notebooks}
+				workoutMeasures={data.workoutMeasures}
+				{parentOptions}
+				{knownUnits}
+				{startingNotebook}
 			/>
+		</form>
+
+		{#snippet footer()}
+			<button type="button" class="btn" onclick={() => (showForm = false)}>{t('ui.cancel')}</button>
+			<button type="submit" form="goal-form" class="btn btn-primary">
+				{editingId ? t('ui.save') : t('goals.createGoal')}
+			</button>
+		{/snippet}
+	</Modal>
+
+	{#snippet card(goal: Goal)}
+		<GoalCard
+			{goal}
+			goals={data.goals}
+			allTodos={data.allTodos}
+			slots={data.slots}
+			activities={data.activities}
+			actions={GOAL_ROOM_ACTIONS}
+			onedit={(id) => {
+				const one = data.goals.find((g) => g.id === id);
+				if (one) openEdit(one);
+			}}
+			onlink={(id) => (linkingId = id)}
+			selected={cursorShown && goal.id === cursorId}
+		/>
+	{/snippet}
+
+	<RoomSurface dataTour="goal-list">
+		{#snippet tools()}
+			<FilterBar
+				name="goals"
+				inlineBelow
+				on={narrowed || data.includeClosed}
+				{summary}
+				onclear={clearFilters}
+			>
+				{#snippet lead()}
+					<SearchField bind:value={looking} label={t('goals.searchGoals')} />
+				{/snippet}
+				<!-- Managing the areas is not narrowing the list, so it stands at the
+				     far end of the strip, where another room keeps its order. -->
+				{#snippet verb()}
+					<StripVerb
+						icon="sliders"
+						label={t('goals.areas')}
+						onclick={() => (showAreas = true)}
+						data-tour="goal-areas"
+					/>
+				{/snippet}
+				{#snippet count()}
+					<!-- Held open by the whole list's count, so narrowing it moves nothing. -->
+					<ShowingCount
+						total={data.goals.length}
+						shown={visible.length}
+						said={(count) => t('goals.showingCount', { count })}
+					/>
+				{/snippet}
+				{#snippet trailing()}
+					<SortControl
+						value={sorting.order}
+						options={ORDERS}
+						labels={ORDER_LABELS}
+						direction={sorting.direction}
+						onpick={(next) => sorting.pick(next)}
+						onflip={() => sorting.flip()}
+						label={t('goals.orderGoalsBy')}
+					/>
+				{/snippet}
+				<!-- Two filters: out on the strip at every width, not a sheet of two. -->
+				{#snippet inline()}
+					{#if data.areas.length > 0}
+						<Picker
+							value={areaFilter === null ? ALL_AREAS : String(areaFilter)}
+							options={areaOptions}
+							onpick={(next) => (areaFilter = next === ALL_AREAS ? null : Number(next))}
+							label={t('goals.area')}
+							class="sm:w-36"
+						/>
+					{/if}
+					<!-- One label either way, with the number of goals it puts away. -->
+					<button
+						type="button"
+						class="btn btn-sm shrink-0"
+						aria-pressed={data.includeClosed}
+						onclick={toggleClosed}
+						hidden={data.closedCount === 0 && !data.includeClosed}
+					>
+						{t('goals.closedCount', { count: data.closedCount })}
+					</button>
+				{/snippet}
+			</FilterBar>
 		{/snippet}
 
-		<RoomSurface dataTour="goal-list">
-			{#snippet tools()}
-				<FilterBar
-					name="goals"
-					inlineBelow
-					on={narrowed || data.includeClosed}
-					{summary}
-					onclear={clearFilters}
+		{#if visible.length === 0}
+			{#if narrowed}
+				<EmptyState
+					icon="search"
+					title={t('goals.noGoalsMatch')}
+					description={t('goals.noneOfTheseMatch', { count: data.goals.length })}
 				>
-					{#snippet lead()}
-						<SearchField bind:value={looking} label={t('goals.searchGoals')} />
+					{#snippet action()}
+						<button onclick={clearFilters} class="btn btn-sm">{t('filters.clear')}</button>
 					{/snippet}
-					<!-- Managing the areas is not narrowing the list, so it stands at the
-				     far end of the strip, where another room keeps its order. -->
-					{#snippet verb()}
-						<StripVerb
-							icon="sliders"
-							label={t('goals.areas')}
-							onclick={() => (showAreas = true)}
-							data-tour="goal-areas"
-						/>
-					{/snippet}
-					{#snippet count()}
-						<!-- Held open by the whole list's count, so narrowing it moves nothing. -->
-						<ShowingCount
-							total={data.goals.length}
-							shown={visible.length}
-							said={(count) => t('goals.showingCount', { count })}
-						/>
-					{/snippet}
-					{#snippet trailing()}
-						<SortControl
-							value={sorting.order}
-							options={ORDERS}
-							labels={ORDER_LABELS}
-							direction={sorting.direction}
-							onpick={(next) => sorting.pick(next)}
-							onflip={() => sorting.flip()}
-							label={t('goals.orderGoalsBy')}
-						/>
-					{/snippet}
-					<!-- Two filters: out on the strip at every width, not a sheet of two. -->
-					{#snippet inline()}
-						{#if data.areas.length > 0}
-							<Picker
-								value={areaFilter === null ? ALL_AREAS : String(areaFilter)}
-								options={areaOptions}
-								onpick={(next) => (areaFilter = next === ALL_AREAS ? null : Number(next))}
-								label={t('goals.area')}
-								class="sm:w-36"
-							/>
-						{/if}
-						<!-- One label either way, with the number of goals it puts away. -->
-						<button
-							type="button"
-							class="btn btn-sm shrink-0"
-							aria-pressed={data.includeClosed}
-							onclick={toggleClosed}
-							hidden={data.closedCount === 0 && !data.includeClosed}
-						>
-							{t('goals.closedCount', { count: data.closedCount })}
-						</button>
-					{/snippet}
-				</FilterBar>
-			{/snippet}
-
-			{#if visible.length === 0}
-				{#if narrowed}
-					<EmptyState
-						icon="search"
-						title={t('goals.noGoalsMatch')}
-						description={t('goals.noneOfTheseMatch', { count: data.goals.length })}
-					>
-						{#snippet action()}
-							<button onclick={clearFilters} class="btn btn-sm">{t('filters.clear')}</button>
-						{/snippet}
-					</EmptyState>
-				{:else}
-					<EmptyState
-						icon="goals"
-						title={t('goals.noGoalsYet')}
-						description={t('goals.aGoalIsACommitment')}
-					/>
-				{/if}
+				</EmptyState>
 			{:else}
-				<!--
+				<EmptyState
+					icon="goals"
+					title={t('goals.noGoalsYet')}
+					description={t('goals.aGoalIsACommitment')}
+				/>
+			{/if}
+		{:else}
+			<!--
 				One band per group, headed the way the review heads its days: a quiet
 				band with the name and how many, the rows edge to edge under it. A
 				notebook's own goals get the same band, naming the horizon and the
 				notebook — the name is a link, since the notebook holds the rest.
 			-->
-				<div class="divide-y divide-gray-200">
-					{#each groups as group (`${group.horizon}:${group.notebook?.id ?? ''}`)}
-						{@const headId = `goals-${group.horizon}-${group.notebook?.id ?? 'loose'}`}
-						<section aria-labelledby={headId}>
-							<h2
-								id={headId}
-								class="eyebrow flex items-center gap-2 border-b border-gray-200 bg-gray-50 px-4 py-1.5 text-gray-600"
-							>
-								<span>{t(HORIZON_LABELS[group.horizon])}</span>
-								{#if group.notebook}
-									<span aria-hidden="true">·</span>
-									<a
-										href={resolve('/notebooks/[id]', { id: String(group.notebook.id) })}
-										class="inline-flex min-w-0 items-center gap-1 hover:text-gray-900 hover:underline"
-									>
-										<Icon name="notebook" size={12} />
-										<span class="truncate">{group.notebook.title}</span>
-									</a>
-								{/if}
-								<span class="tabular ml-auto">{group.goals.length}</span>
-							</h2>
-							<div class="divide-y divide-gray-200">
-								{#each group.goals as goal (goal.id)}
-									{@render card(goal)}
-								{/each}
-							</div>
-						</section>
-					{/each}
-				</div>
-			{/if}
-		</RoomSurface>
+			<div class="divide-y divide-gray-200">
+				{#each groups as group (`${group.horizon}:${group.notebook?.id ?? ''}`)}
+					{@const headId = `goals-${group.horizon}-${group.notebook?.id ?? 'loose'}`}
+					<section aria-labelledby={headId}>
+						<h2
+							id={headId}
+							class="eyebrow flex items-center gap-2 border-b border-gray-200 bg-gray-50 px-4 py-1.5 text-gray-600"
+						>
+							<span>{t(HORIZON_LABELS[group.horizon])}</span>
+							{#if group.notebook}
+								<span aria-hidden="true">·</span>
+								<a
+									href={resolve('/notebooks/[id]', { id: String(group.notebook.id) })}
+									class="inline-flex min-w-0 items-center gap-1 hover:text-gray-900 hover:underline"
+								>
+									<Icon name="notebook" size={12} />
+									<span class="truncate">{group.notebook.title}</span>
+								</a>
+							{/if}
+							<span class="tabular ml-auto">{group.goals.length}</span>
+						</h2>
+						<div class="divide-y divide-gray-200">
+							{#each group.goals as goal (goal.id)}
+								{@render card(goal)}
+							{/each}
+						</div>
+					</section>
+				{/each}
+			</div>
+		{/if}
+	</RoomSurface>
 
-		<GoalLinksModal
-			goal={linking}
-			activities={data.activities}
-			slots={data.slots}
-			todos={data.todos}
-			allTodos={data.allTodos}
-			action={GOAL_ROOM_ACTIONS.setLinks}
-			error={form?.message}
-			onclose={() => (linkingId = null)}
-		/>
-	</div>
-</TabbedRoom>
+	<GoalLinksModal
+		goal={linking}
+		activities={data.activities}
+		slots={data.slots}
+		todos={data.todos}
+		allTodos={data.allTodos}
+		action={GOAL_ROOM_ACTIONS.setLinks}
+		error={form?.message}
+		onclose={() => (linkingId = null)}
+	/>
+</div>

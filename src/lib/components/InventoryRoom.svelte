@@ -6,7 +6,6 @@
 	import { enhance } from '$lib/enhance';
 	import OneLine from '$lib/components/OneLine.svelte';
 	import Banner from '$lib/components/Banner.svelte';
-	import BuyFields from '$lib/components/fields/BuyFields.svelte';
 	import FormError from '$lib/components/FormError.svelte';
 	import EmptyState from '$lib/components/EmptyState.svelte';
 	import FilterBar from '$lib/components/FilterBar.svelte';
@@ -55,7 +54,8 @@
 	import { SvelteSet } from 'svelte/reactivity';
 	import SplitColumns from '$lib/components/SplitColumns.svelte';
 	import ItemRow, { itemRowWash } from '$lib/components/ItemRow.svelte';
-	import PicturePicker from '$lib/components/PicturePicker.svelte';
+	import ItemDialog from '$lib/components/ItemDialog.svelte';
+	import { storedAttributePairs } from '$lib/attribute-keys';
 	import { ITEM_ROOM_ACTIONS } from '$lib/item-action-names';
 	import { useT } from '$lib/i18n';
 	import { RememberedOrder } from '$lib/remembered-order.svelte';
@@ -96,19 +96,9 @@
 
 	let showForm = $state(false);
 	let selectedIndex = $state(-1);
-	let editingId: number | null = $state(null);
-	let editName = $state('');
-	let editInventoryCategoryId: number | null = $state(null);
-	let editNotes = $state('');
-	let editPrice = $state('');
-	/** Only asked when writing something down; an edit leaves it where it is. */
-	let newLocationId = $state<number | null>(null);
+	/** The thing's dialog, shared with a notebook's Inventory tab — see `ItemDialog`. */
+	let itemDialog: ItemDialog | undefined = $state();
 	/** A count that changed, kept on screen until the page catches up. */
-	/** The thing's own fields, while it is being edited. */
-	let editFields = $state<[string, string][]>([]);
-	/** The subject it is filed under, so an edit does not take it out of one. */
-	let editNotebookId = $state<number | null>(null);
-	let editIdealQty = $state('1');
 
 	/** Which row is asking "really delete?" — Escape cancels it from anywhere. */
 	let confirmingDelete = $state<number | null>(null);
@@ -122,7 +112,6 @@
 	 */
 	/** Whether the cupboard is narrowed to what has run low. */
 	let onlyShort = $state(false);
-	let newItemType = $state<'replenish' | 'someday'>('replenish');
 	let showBought = $state(false);
 	let showSnoozed = $state(false);
 	/** Which location is open. `null` is everything; `0` is the unfiled pile. */
@@ -498,7 +487,7 @@
 			 * every value of it and hope none was missed.
 			 */
 			if (attributeFilter !== null) {
-				const fields = fieldsOf(item.attributes);
+				const fields = storedAttributePairs(item.attributes);
 				if (attributeFilter.includes('\u0000')) {
 					const [key, value] = attributeFilter.split('\u0000');
 					if (!fields.some(([k, v]) => k === key && v === value)) return false;
@@ -524,8 +513,6 @@
 	let filteredItems = $derived(allowedItems.filter(inChosenLocation));
 	/** Any picture on show keeps a picture's room on every row — see `ItemRow`. */
 	const anyPictured = $derived(filteredItems.some((one) => one.pictureId));
-	/** The thing whose dialog is open, for its picture, which is set apart from the form. */
-	const editingItem = $derived(data.items.find((one) => one.id === editingId) ?? null);
 
 	/** How many things sit in each location's own subtree, for the panel. */
 	/**
@@ -837,36 +824,17 @@
 	);
 
 	function openCreateForm() {
-		cancelEdit();
-		editIdealQty = '1';
-		// One blank pair, so a thing can be described as it is written down
-		// rather than added and then opened again to say what it is.
-		editFields = [['', '']];
-		// Standing in a drawer and adding something puts it in that drawer.
-		newLocationId = location !== null && location !== 0 ? location : null;
-		// Written down on the tab you are standing on.
-		newItemType = list;
-		editInventoryCategoryId = defaultInventoryCategoryId;
-		editNotebookId = null;
-		showForm = true;
+		itemDialog?.openNew({
+			// Standing in a drawer and adding something puts it in that drawer.
+			locationId: location !== null && location !== 0 ? location : null,
+			// Written down on the tab you are standing on.
+			type: list,
+			inventoryCategoryId: defaultInventoryCategoryId
+		});
 	}
 
 	function startEdit(item: (typeof data.items)[0]) {
-		editingId = item.id;
-		editName = item.name;
-		newItemType = item.type;
-		editInventoryCategoryId = item.inventoryCategoryId;
-		editNotes = item.notes ?? '';
-		editPrice = item.priceCents === null ? '' : (item.priceCents / 100).toFixed(2);
-		// One blank pair at the end, so adding a field is typing rather than
-		// finding the button that lets you type.
-		editFields = [...fieldsOf(item.attributes), ['', '']];
-		// Where it lives, on the edit form too: a drag is the quick way and not
-		// everybody's way, and on a phone it is not always the possible one.
-		newLocationId = item.locationId;
-		editIdealQty = String(item.idealQty ?? 1);
-		editNotebookId = item.notebookId;
-		showForm = true;
+		itemDialog?.edit(item);
 	}
 
 	/*
@@ -880,22 +848,6 @@
 	});
 
 	/** An item's attributes, as pairs, from the JSON they are stored as. */
-	function fieldsOf(raw: string | null | undefined): [string, string][] {
-		try {
-			return Object.entries(JSON.parse(raw || '{}') as Record<string, string>);
-		} catch {
-			return [];
-		}
-	}
-
-	function cancelEdit() {
-		editingId = null;
-		editName = '';
-		editInventoryCategoryId = null;
-		editNotes = '';
-		editPrice = '';
-	}
-
 	function handleKeydown(e: KeyboardEvent) {
 		if (e.key === 'Escape') {
 			// A `<dialog>` closes itself on Escape; `preventDefault()` here cancels
@@ -904,7 +856,7 @@
 
 			e.preventDefault();
 			showForm = false;
-			cancelEdit();
+			itemDialog?.close();
 			confirmingDelete = null;
 			(document.activeElement as HTMLElement)?.blur?.();
 			return;
@@ -1214,86 +1166,17 @@
 		<Banner kind="info" message={form.notice} />
 	{/if}
 
-	<!-- Editing happens here too. It used to happen in the row: six controls
-	     squeezed into a column a quarter of the screen wide, which is what a
-	     modal is for. -->
-	<Modal
+	<ItemDialog
+		bind:this={itemDialog}
 		bind:open={showForm}
+		items={data.items}
+		categories={data.inventoryCategories}
+		locations={locationChoices}
+		notebooks={data.notebooks}
+		kilobytes={data.pictureKilobytes}
+		actions={ITEM_ROOM_ACTIONS}
 		error={form?.message}
-		title={editingId ? t('inventory.editItem') : t('inventory.newItem')}
-		onclose={cancelEdit}
-		size="sm"
-	>
-		<!-- Its own form beside the item's, since a file goes up the moment it
-		     is chosen. Only on a thing of your own: a shared one's picture is
-		     its owner's to choose. -->
-		{#if editingItem?.mine}
-			<div class="mb-3 flex items-center gap-3">
-				<PicturePicker
-					id={editingItem.id}
-					pictureId={editingItem.pictureId}
-					icon="box"
-					kilobytes={data.pictureKilobytes}
-					setAction={ITEM_ROOM_ACTIONS.setPicture}
-					removeAction={ITEM_ROOM_ACTIONS.removePicture}
-					fields={{ title: editingItem.name }}
-					chooseLabel={t('inventory.aPictureOf', { name: editingItem.name })}
-					changeLabel={t('inventory.changeThePicture')}
-					removeLabel={t('inventory.removeThePicture')}
-					size="size-16"
-					removable
-				/>
-				<p class="text-xs text-gray-500">
-					{editingItem.pictureId
-						? t('inventory.pressToChangeIt')
-						: t('inventory.pressToChooseAPicture')}
-				</p>
-			</div>
-		{/if}
-		<form
-			id="item-form"
-			method="POST"
-			action={editingId ? '?/update' : '?/create'}
-			use:enhance={() => {
-				return async ({ update, result }) => {
-					await update({ reset: result.type === 'success' });
-					if (result.type === 'success') {
-						showForm = false;
-						cancelEdit();
-					}
-				};
-			}}
-		>
-			{#if editingId}
-				<input type="hidden" name="id" value={editingId} />
-			{/if}
-			<FormGrid>
-				<BuyFields
-					bind:label={editName}
-					bind:notes={editNotes}
-					bind:price={editPrice}
-					bind:type={newItemType}
-					bind:inventoryCategoryId={editInventoryCategoryId}
-					bind:locationId={newLocationId}
-					bind:fields={editFields}
-					bind:idealQty={editIdealQty}
-					bind:notebookId={editNotebookId}
-					categories={data.inventoryCategories}
-					locations={locationChoices}
-					notebooks={data.notebooks}
-					askLocation={true}
-					showFields
-				/>
-			</FormGrid>
-		</form>
-
-		{#snippet footer()}
-			<button type="button" class="btn" onclick={() => (showForm = false)}>{t('ui.cancel')}</button>
-			<button type="submit" form="item-form" class="btn btn-primary">
-				{editingId ? 'Save' : t('inventory.addItem')}
-			</button>
-		{/snippet}
-	</Modal>
+	/>
 
 	<!--
 		The house down the left, the things down the right.

@@ -13,6 +13,8 @@
  * diary entry, and `TASK:#4` as a reference to a task in the same notebook.
  */
 
+import { CLOSED_STATUSES, type Status } from './task-status.js';
+
 const ESCAPES: Record<string, string> = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' };
 
 /** What stands in for a span of code while the rest of a line is read. */
@@ -47,9 +49,127 @@ function safeHref(href: string): string | null {
 	return /^(https?:\/\/|mailto:|\/|#)/i.test(href) ? href : null;
 }
 
+/**
+ * Every kind of thing writing can point at by its number.
+ *
+ * One table, so the regex that finds a reference, the link it becomes and the
+ * code that reads a pressed link back all agree — and a kind added later
+ * (goals, ideas) is an entry here rather than another hand-written replace.
+ *
+ * - `#12` is a note: it is how one entry refers to another, from before there
+ *   was anything else to refer to, and it means the note numbered 12 where it
+ *   is written — the diary's own numbering in the diary, the notebook's in a
+ *   notebook.
+ * - `NOTE:#12` is the same pointer spelled out — how an assistant writes it,
+ *   and how somebody writes it who wants the kind said.
+ * - `TASK:#4` is a task in the same notebook, by its number *inside that
+ *   notebook* — the fourth task about the kitchen is #4 — because a reference
+ *   somebody types by hand has to be a number they can see. Turning a note's
+ *   checkboxes into tasks writes these in place of the boxes.
+ * - `GOAL:#2` and `IDEA:#7` are a goal and an idea in the same notebook,
+ *   numbered there the way a task is.
+ * - `TODO:#4` is read as `TASK:#4`. The room was called Todos when the
+ *   reference was invented, and notes written then still carry that spelling;
+ *   refusing it now would blank a reference in writing somebody already has.
+ *   Nothing writes it any more.
+ *
+ * What a link carries is the kind and the number, and nothing typed: the
+ * number is digits by the pattern, and the class and attribute names are this
+ * table's. The thing it names is looked up by whoever caught the press, among
+ * what that screen already loaded for its owner — see `refAt`.
+ */
+export const REFS = {
+	note: {
+		prefixes: ['NOTE'],
+		bare: true,
+		className: 'diary-ref',
+		fragment: 'diary',
+		refs: 'notes'
+	},
+	task: {
+		prefixes: ['TASK', 'TODO'],
+		bare: false,
+		className: 'todo-ref',
+		fragment: 'todo',
+		refs: 'tasks'
+	},
+	goal: { prefixes: ['GOAL'], bare: false, className: 'goal-ref', fragment: 'goal', refs: 'goals' },
+	idea: { prefixes: ['IDEA'], bare: false, className: 'idea-ref', fragment: 'idea', refs: 'ideas' }
+} as const satisfies Record<
+	string,
+	{
+		prefixes: readonly string[];
+		bare: boolean;
+		className: string;
+		fragment: string;
+		refs: keyof Refs;
+	}
+>;
+
+export type RefKind = keyof typeof REFS;
+
+/** The kind a typed prefix names, or the kind a bare `#12` means. */
+export function refKindOf(prefix: string | undefined): RefKind {
+	const kinds = Object.keys(REFS) as RefKind[];
+	return prefix
+		? kinds.find((kind) => (REFS[kind].prefixes as readonly string[]).includes(prefix))!
+		: kinds.find((kind) => REFS[kind].bare)!;
+}
+
+/** Any reference: an optional `PREFIX:` and `#digits`, at the start or after a space or `(`. */
+const REF_PATTERN = new RegExp(
+	`(^|[\\s(])(?:(${Object.values(REFS)
+		.flatMap((kind) => kind.prefixes)
+		.join('|')}):)?#(\\d+)\\b`,
+	'g'
+);
+
+/**
+ * The link one reference becomes.
+ *
+ * The title and whether it is done (a task finished, a goal closed) are drawn
+ * where the caller passed them; a reference rendered without them still gets a
+ * link, which is what an export or a page that has not loaded the list should
+ * show.
+ */
+function reference(before: string, prefix: string | undefined, seq: number, refs?: Refs): string {
+	const kind = refKindOf(prefix);
+	const { className, fragment } = REFS[kind];
+	const typed = prefix ? `${prefix === 'TODO' ? 'TASK' : prefix}:#${seq}` : `#${seq}`;
+	const attrs = `data-ref="${kind}" data-ref-seq="${seq}" href="#${fragment}-${seq}"`;
+	// What the older readers of a link still look for: the task peek and the diary.
+	const legacy =
+		kind === 'task' ? ` data-todo-seq="${seq}"` : kind === 'note' ? ` data-seq="${seq}"` : '';
+
+	// A bare `#12` keeps saying `#12`: it is how a diary reads, and naming it
+	// would turn every number somebody wrote into a sentence.
+	const one: { title: string; done?: boolean } | undefined = prefix
+		? refs?.[REFS[kind].refs]?.get(seq)
+		: undefined;
+	const done = one?.done ? ' is-done' : '';
+	const label = one ? `${one.done ? '\u2713 ' : ''}${escape(one.title)}` : typed;
+	return `${before}<a class="${className}${done}"${legacy} ${attrs}>${label}</a>`;
+}
+
+/**
+ * The reference a press or a pointer landed on, if it landed on one.
+ *
+ * For a screen catching presses on writing it rendered with `{@html}`, which
+ * has no components to put a handler on: it listens on the block and asks
+ * this what was pressed, then looks the number up among what it already has.
+ */
+export function refAt(
+	target: EventTarget | null
+): { kind: RefKind; seq: number; link: HTMLElement } | null {
+	if (!(target instanceof Element)) return null;
+	const link = target.closest<HTMLElement>('a[data-ref][data-ref-seq]');
+	if (!link) return null;
+	const kind = link.dataset.ref as RefKind;
+	const seq = Number(link.dataset.refSeq);
+	return kind in REFS && Number.isInteger(seq) ? { kind, seq, link } : null;
+}
+
 function inline(raw: string, refs?: Refs): string {
-	const todos = refs?.tasks;
-	const notes = refs?.notes;
 	let html = escape(raw);
 
 	/*
@@ -119,47 +239,12 @@ function inline(raw: string, refs?: Refs): string {
 	html = html.replace(/(^|[^_\w])_([^_\n]+)_/g, '$1<em>$2</em>');
 	html = html.replace(/~~([^~]+)~~/g, '<s>$1</s>');
 
-	// `#12` is how one entry refers to another.
+	// `#12`, `NOTE:#12` and `TASK:#4` — see `REFS` below.
 	html = html.replace(
-		/(^|[\s(])#(\d+)\b/g,
-		'$1<a class="diary-ref" data-seq="$2" href="#diary-$2">#$2</a>'
+		REF_PATTERN,
+		(_match, before: string, prefix: string | undefined, seq: string) =>
+			reference(before, prefix, Number(seq), refs)
 	);
-
-	/*
-	 * `TASK:#4` is how a note points at a task in the same notebook.
-	 *
-	 * The number is the task's own number *inside that notebook* — the fourth
-	 * task about the kitchen is #4 — because a reference somebody types by
-	 * hand has to be a number they can see. Turning a note's checkboxes into
-	 * tasks writes these in place of the boxes, so the note keeps saying what
-	 * it said and the list is where the work now lives.
-	 *
-	 * `TODO:#4` is read as the same thing. The room these live in was called
-	 * Todos when the reference was invented, and notes written then still
-	 * carry that spelling; refusing it now would blank a reference in writing
-	 * somebody already has. Nothing writes it any more.
-	 *
-	 * The task's title and whether it is done are drawn where the caller
-	 * passed them: a note rendered without them still gets a link, which is
-	 * what an export or a page that has not loaded the list should show.
-	 */
-	/*
-	 * `NOTE:#12` is the same pointer as `#12`, spelled out — how an assistant
-	 * writes it, and how somebody writes it who wants the kind said. It links
-	 * where `#12` does, and says the note's title where the caller knows it.
-	 */
-	html = html.replace(/(^|[\s(])NOTE:#(\d+)\b/g, (_match, before: string, seq: string) => {
-		const one = notes?.get(Number(seq));
-		const label = one ? escape(one.title) : `NOTE:#${seq}`;
-		return `${before}<a class="diary-ref" data-seq="${seq}" href="#diary-${seq}">${label}</a>`;
-	});
-
-	html = html.replace(/(^|[\s(])(?:TASK|TODO):#(\d+)\b/g, (_match, before: string, seq: string) => {
-		const one = todos?.get(Number(seq));
-		const done = one?.done ? ' is-done' : '';
-		const label = one ? `${one.done ? '\u2713 ' : ''}${escape(one.title)}` : `TASK:#${seq}`;
-		return `${before}<a class="todo-ref${done}" data-todo-seq="${seq}" href="#todo-${seq}">${label}</a>`;
-	});
 
 	// And the code goes back, untouched by any of the above.
 	return html.replace(
@@ -297,10 +382,28 @@ export type PeekTask = {
 	notebookTitle: string | null;
 	archivedAt: string | null;
 };
+/**
+ * Tasks keyed by their number in their notebook, as `TASK:#4` resolves them.
+ * The caller says which notebook's: a number is only unique inside one.
+ */
+export function taskRefs(
+	todos: readonly (PeekTask & { notebookSeq: number | null; status: Status })[]
+): TodoRefs {
+	return new Map(
+		todos
+			.filter((one) => one.notebookSeq !== null)
+			.map((one) => [
+				one.notebookSeq as number,
+				{ title: one.title, done: CLOSED_STATUSES.includes(one.status), task: one }
+			])
+	);
+}
 /** The notes `NOTE:#N` may name, by their number. */
 export type NoteRefs = Map<number, { title: string }>;
+/** The goals `GOAL:#N` or ideas `IDEA:#N` may name, by their number — done is a closed goal. */
+export type TitleRefs = Map<number, { title: string; done?: boolean }>;
 /** What the references in a piece of writing can be resolved against. */
-export type Refs = { tasks?: TodoRefs; notes?: NoteRefs };
+export type Refs = { tasks?: TodoRefs; notes?: NoteRefs; goals?: TitleRefs; ideas?: TitleRefs };
 
 export function renderMarkdown(text: string, given?: TodoRefs | Refs): string {
 	// A bare map is the tasks, which is all a reference could be before notes.

@@ -15,12 +15,14 @@
 	 * same handler either way (`$lib/services/goal-actions`).
 	 */
 	import Icon from '$lib/components/Icon.svelte';
+	import NotebookSeq from '$lib/components/NotebookSeq.svelte';
 	import RowCard from '$lib/components/RowCard.svelte';
 	import Written from '$lib/components/Written.svelte';
 	import Counter from '$lib/components/Counter.svelte';
 	import Modal from '$lib/components/Modal.svelte';
 	import CategoryMark from '$lib/components/CategoryMark.svelte';
 	import { listCursor } from '$lib/actions/list-cursor';
+	import { civilOf } from '$lib/when';
 	import { enhance } from '$lib/enhance';
 	import { invalidateAll } from '$app/navigation';
 	import { armed } from '$lib/actions/armed';
@@ -42,6 +44,7 @@
 		parentId: number | null;
 		areaId: number | null;
 		notebookId: number | null;
+		notebookSeq?: number | null;
 		areaName: string | null;
 		areaColor: string | null;
 		linkedSlotIds: number[];
@@ -57,6 +60,16 @@
 			fraction: number;
 			measureActivity: string | null;
 		}[];
+		/** What happened to it, newest first — `goalEvents`. */
+		events?: {
+			id: number;
+			kind: 'progress' | 'status' | 'note';
+			at: string;
+			targetId: number | null;
+			value: number | null;
+			status: string | null;
+			note: string;
+		}[];
 	};
 
 	let {
@@ -68,7 +81,9 @@
 		actions,
 		onedit,
 		onlink,
-		selected = false
+		selected = false,
+		/** Its history unfolded from the start — the History tab, which is about it. */
+		historyOpen = false
 	}: {
 		goal: Shown;
 		/** The others, only so a nested goal can name its parent. */
@@ -79,19 +94,46 @@
 		actions: GoalActionNames;
 		/* By id: the page holds the whole goal already, and handing back a
 		   narrowed copy of it would make the caller widen it again. */
-		onedit: (id: number) => void;
-		onlink: (id: number) => void;
+		onedit?: (id: number) => void;
+		onlink?: (id: number) => void;
 		/** Where the keyboard's cursor is, on a page that has one. */
 		selected?: boolean;
+		historyOpen?: boolean;
 	} = $props();
 
 	const t = useT();
 	const now = useWhen();
 
+	/** The ring's radius in its 36-unit box, and the length of its line. */
+	const RING_R = 15;
+	const RING_LENGTH = 2 * Math.PI * RING_R;
+	/** How many sparks fly off the cup when a goal is reached. */
+	const BURST = 12;
+
 	/* Both of these are about this one card, so they live on it: the page had
 	   to hold an id for each and compare it on every row. */
 	let confirmingDelete = $state(false);
 	let openTasks = $state(false);
+	// svelte-ignore state_referenced_locally
+	let openHistory = $state(historyOpen);
+	/** The dialog that says so when it is reached, and asks how it went. */
+	let celebrating = $state(false);
+
+	const events = $derived(goal.events ?? []);
+
+	/** One line of the history, in words. */
+	function eventLine(e: NonNullable<Shown['events']>[number]): string {
+		if (e.kind === 'progress') {
+			const unit = goal.targets.find((one) => one.id === e.targetId)?.unit ?? '';
+			return t('goals.eventProgress', { value: e.value ?? 0, unit }).trim();
+		}
+		if (e.kind === 'status') {
+			if (e.status === 'open') return t('goals.reopened');
+			if (e.status && isGoalStatus(e.status) && e.status in STATUS_LABELS)
+				return t(STATUS_LABELS[e.status as keyof typeof STATUS_LABELS]);
+		}
+		return '';
+	}
 
 	function percent(g: Shown): number | null {
 		return g.progress.fraction === null ? null : Math.round(g.progress.fraction * 100);
@@ -183,20 +225,20 @@
 	<RowCard>
 		{#snippet rail()}
 			<!--
-				The tick box a task has, and it means the same: this one is done.
-				Closing waits a few seconds before it is final, so a slip is one
-				press on Undo; a closed goal's box reopens it.
+				Not a tick box: a tick is a task done, and a goal is not one more
+				task. A ring of how far it has come, with the cup in it — pressing
+				it says it was reached, in a dialog worth reaching. A closed goal's
+				cup is filled (or its skip mark shown) and pressing it reopens.
 			-->
 			{#if open}
 				<button
 					type="button"
-					class="-m-1 flex shrink-0 items-start justify-center self-start p-1 pointer-coarse:w-11"
-					title={t('goals.achieved')}
-					aria-label={t('goals.achieved')}
-					onclick={() => closeLater('achieved')}
+					class="goal-ring -m-1 flex shrink-0 items-start justify-center self-start p-1 pointer-coarse:w-11"
+					title={t('goals.achieveIt', { title: goal.title })}
+					aria-label={t('goals.achieveIt', { title: goal.title })}
+					onclick={() => (celebrating = true)}
 				>
-					<span class="flex size-7 items-center justify-center border border-gray-400 bg-white"
-					></span>
+					{@render ring(pct ?? 0)}
 				</button>
 			{:else}
 				<form method="post" action={actions.close} use:enhance class="flex">
@@ -208,9 +250,10 @@
 						aria-label={t('goals.reopen')}
 					>
 						<span
-							class="flex size-7 items-center justify-center border border-gray-400 bg-gray-400 text-white"
+							class="goal-medal flex size-8 items-center justify-center rounded-full"
+							class:is-achieved={goal.status === 'achieved'}
 						>
-							<Icon name={goal.status === 'achieved' ? 'check' : 'skip'} />
+							<Icon name={goal.status === 'achieved' ? 'trophy' : 'skip'} />
 						</span>
 					</button>
 				</form>
@@ -253,6 +296,17 @@
 						size={12}
 					/>
 				</button>
+				<!-- What happened to it: the numbers typed, the closing, the notes. -->
+				<button
+					type="button"
+					onclick={() => (openHistory = !openHistory)}
+					class="goal-fold"
+					aria-expanded={openHistory}
+					>{t('goals.historyFold', { n: events.length })}<Icon
+						name={openHistory ? 'chevron-up' : 'chevron-down'}
+						size={12}
+					/>
+				</button>
 			</span>
 		{/snippet}
 
@@ -268,22 +322,26 @@
 					<Icon name="skip" />
 				</button>
 			{/if}
-			<button
-				type="button"
-				class="icon-btn"
-				title={t('goals.linkedTasks')}
-				aria-label={t('goals.linkedTasks')}
-				onclick={() => onlink(goal.id)}
-			>
-				<Icon name="link" />
-			</button>
-			<button
-				type="button"
-				title={t('ui.edit')}
-				aria-label={t('ui.edit')}
-				onclick={() => onedit(goal.id)}
-				class="icon-btn"><Icon name="edit" /></button
-			>
+			{#if onlink}
+				<button
+					type="button"
+					class="icon-btn"
+					title={t('goals.linkedTasks')}
+					aria-label={t('goals.linkedTasks')}
+					onclick={() => onlink(goal.id)}
+				>
+					<Icon name="link" />
+				</button>
+			{/if}
+			{#if onedit}
+				<button
+					type="button"
+					title={t('ui.edit')}
+					aria-label={t('ui.edit')}
+					onclick={() => onedit(goal.id)}
+					class="icon-btn"><Icon name="edit" /></button
+				>
+			{/if}
 			<button
 				type="button"
 				title={t('ui.delete')}
@@ -298,7 +356,7 @@
 				? 'text-gray-900'
 				: 'text-gray-500'}"
 		>
-			{goal.title}
+			<NotebookSeq seq={goal.notebookSeq} class="mr-1 font-normal" />{goal.title}
 		</p>
 		{#if goal.notes}
 			<Written content={goal.notes} compact class="mt-1" />
@@ -430,19 +488,140 @@
 					</p>
 				{/if}
 
-				<button type="button" class="btn btn-sm mt-2" onclick={() => onlink(goal.id)}>
-					{t('goals.chooseTasks')}
-				</button>
+				{#if onlink}
+					<button type="button" class="btn btn-sm mt-2" onclick={() => onlink(goal.id)}>
+						{t('goals.chooseTasks')}
+					</button>
+				{/if}
+			</div>
+		{/if}
+
+		{#if openHistory}
+			<!--
+				Its history, the way a habit keeps its days and a workout its
+				sessions: newest first, each line a day and what happened on it.
+				A note can be added whenever — to a closed goal most of all.
+			-->
+			<div class="goal-history mt-1 border-l-2 border-gray-200 pl-3">
+				{#if events.length === 0}
+					<p class="py-1 text-xs text-gray-500">{t('goals.nothingHappenedYet')}</p>
+				{:else}
+					<ol class="space-y-1 py-1">
+						{#each events as e (e.id)}
+							<li class="flex gap-3 text-sm">
+								<span class="tabular w-24 shrink-0 text-xs text-gray-500"
+									>{civilOf(e.at, now())}</span
+								>
+								<span class="min-w-0 flex-1">
+									{#if eventLine(e)}
+										<span class="text-gray-800" class:font-medium={e.kind === 'status'}
+											>{eventLine(e)}</span
+										>
+									{/if}
+									{#if e.note}
+										<Written content={e.note} compact class="text-gray-700" />
+									{/if}
+								</span>
+							</li>
+						{/each}
+					</ol>
+				{/if}
+				<form
+					method="post"
+					action={actions.note}
+					use:enhance={() =>
+						async ({ update, result }) => {
+							await update({ reset: result.type === 'success' });
+						}}
+					class="mt-2 flex items-start gap-2"
+				>
+					<input type="hidden" name="id" value={goal.id} />
+					<textarea
+						name="note"
+						rows="1"
+						required
+						class="textarea min-w-0 flex-1"
+						placeholder={t('goals.notePlaceholder')}
+						aria-label={t('goals.addNote')}
+					></textarea>
+					<button class="btn btn-sm shrink-0">{t('goals.addNote')}</button>
+				</form>
 			</div>
 		{/if}
 	</RowCard>
 </div>
+
+{#snippet ring(percentDone: number)}
+	<!-- The goal's whole progress, round, with the cup it is for in the middle. -->
+	<span class="relative flex size-8 items-center justify-center">
+		<svg viewBox="0 0 36 36" class="absolute inset-0 size-full -rotate-90" aria-hidden="true">
+			<circle cx="18" cy="18" r={RING_R} class="goal-ring-track" />
+			<circle
+				cx="18"
+				cy="18"
+				r={RING_R}
+				class="goal-ring-fill"
+				stroke-dasharray={RING_LENGTH}
+				stroke-dashoffset={RING_LENGTH * (1 - percentDone / 100)}
+			/>
+		</svg>
+		<Icon name="trophy" size={14} class="goal-ring-cup" />
+	</span>
+{/snippet}
 
 {#snippet bar(width: number)}
 	<div class="progress-track h-1.5 min-w-16 flex-1 sm:max-w-xs">
 		<div class="progress-fill h-full" style="width: {width}%"></div>
 	</div>
 {/snippet}
+
+<!--
+	Reaching a goal is not ticking a box, so it does not look like one: the cup
+	goes up with a burst around it, and the one question worth asking then —
+	how did it go — is asked while the answer is fresh. It stays with the goal.
+-->
+<Modal bind:open={celebrating} title={t('goals.youDidIt')} size="sm">
+	<div class="goal-cheer" aria-hidden="true">
+		<span class="goal-cheer-cup"><Icon name="trophy" size={40} /></span>
+		{#each { length: BURST }, i (i)}
+			<span class="goal-cheer-spark" style="--turn: {i / BURST}turn"></span>
+		{/each}
+	</div>
+	<p class="mb-3 text-center text-sm text-gray-700">
+		{t('goals.youDidItBody', { title: goal.title })}
+	</p>
+	<form
+		id="goal-achieve-{goal.id}"
+		method="post"
+		action={actions.close}
+		use:enhance={() =>
+			async ({ update, result }) => {
+				if (result.type === 'success') celebrating = false;
+				await update();
+			}}
+	>
+		<input type="hidden" name="id" value={goal.id} />
+		<input type="hidden" name="status" value="achieved" />
+		<label class="block text-xs font-medium text-gray-600" for="goal-outcome-{goal.id}"
+			>{t('goals.howDidItGo')}</label
+		>
+		<textarea
+			id="goal-outcome-{goal.id}"
+			name="outcome"
+			rows="3"
+			class="textarea mt-1 w-full"
+			placeholder={t('goals.notePlaceholder')}
+		></textarea>
+	</form>
+	{#snippet footer()}
+		<button type="button" class="btn" onclick={() => (celebrating = false)}>{t('ui.cancel')}</button
+		>
+		<button type="submit" form="goal-achieve-{goal.id}" class="btn btn-primary">
+			<Icon name="trophy" />
+			{t('goals.markAchieved')}
+		</button>
+	{/snippet}
+</Modal>
 
 <Modal bind:open={confirmingDelete} title={t('goals.deleteGoal')} size="sm">
 	<p class="text-sm text-gray-700">{t('goals.deleteGoalBody', { title: goal.title })}</p>
@@ -494,7 +673,110 @@
 	}
 
 	/* A rule down one side is a line, not a box: it has no corners to round. */
-	.goal-tasks {
+	.goal-tasks,
+	.goal-history {
 		border-radius: 0;
+	}
+
+	/* The ring: a wash for the whole way, the goals' own colour for how far. */
+	.goal-ring-track,
+	.goal-ring-fill {
+		fill: none;
+		stroke-width: 3.5;
+	}
+
+	.goal-ring-track {
+		stroke: color-mix(in srgb, var(--color-gray-500) 25%, transparent);
+	}
+
+	.goal-ring-fill {
+		stroke: var(--section-accent, var(--color-gray-700));
+		stroke-linecap: butt;
+		transition: stroke-dashoffset 300ms ease;
+	}
+
+	.goal-ring :global(.goal-ring-cup) {
+		color: var(--color-gray-500);
+		transition: color 120ms ease;
+	}
+
+	.goal-ring:hover :global(.goal-ring-cup) {
+		color: var(--section-accent, var(--color-gray-900));
+	}
+
+	/* Closed: reached is the cup on the goals' colour; missed is quiet. */
+	.goal-medal {
+		background-color: color-mix(in srgb, var(--color-gray-500) 18%, transparent);
+		color: var(--color-gray-500);
+	}
+
+	.goal-medal.is-achieved {
+		background-color: var(--section-accent, var(--color-gray-900));
+		color: var(--ink-on-fill);
+	}
+
+	/* The cheer: the cup rises, and sparks fly out from behind it. */
+	.goal-cheer {
+		position: relative;
+		display: flex;
+		height: 6rem;
+		align-items: center;
+		justify-content: center;
+		color: var(--section-accent, var(--color-gray-900));
+	}
+
+	.goal-cheer-cup {
+		position: relative;
+		z-index: 1;
+		animation: goal-cup-rise 520ms cubic-bezier(0.2, 1.4, 0.4, 1) both;
+	}
+
+	.goal-cheer-spark {
+		position: absolute;
+		top: 50%;
+		left: 50%;
+		width: 0.375rem;
+		height: 0.375rem;
+		border-radius: 999px;
+		background-color: currentColor;
+		opacity: 0;
+		animation: goal-spark 700ms ease-out 120ms both;
+	}
+
+	.goal-cheer-spark:nth-child(odd) {
+		background-color: var(--color-yellow-500, currentColor);
+	}
+
+	@keyframes goal-cup-rise {
+		from {
+			transform: translateY(1rem) scale(0.6);
+			opacity: 0;
+		}
+		to {
+			transform: none;
+			opacity: 1;
+		}
+	}
+
+	@keyframes goal-spark {
+		0% {
+			transform: rotate(var(--turn)) translateX(0.5rem);
+			opacity: 1;
+		}
+		100% {
+			transform: rotate(var(--turn)) translateX(3rem);
+			opacity: 0;
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.goal-cheer-cup,
+		.goal-cheer-spark {
+			animation: none;
+		}
+
+		.goal-cheer-spark {
+			display: none;
+		}
 	}
 </style>

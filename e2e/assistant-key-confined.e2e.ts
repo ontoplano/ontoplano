@@ -68,6 +68,25 @@ test('the key form offers to tie a key to one notebook', async ({ page }) => {
 	await expect(tasks).toBeEnabled();
 	// And one the tie brought into reach, which it did not have before.
 	await expect(page.getByRole('checkbox', { name: /Inventory: write/ })).toBeEnabled();
+	// A locked box says why on its cell, where a pointer can find it.
+	await expect(people.locator('xpath=..')).toHaveAttribute(
+		'title',
+		/outside what this key is tied to/
+	);
+
+	/*
+	 * Recordings are out of reach as a room, but the recordings in the
+	 * notebook's notes come with reading those — so the box is locked, and
+	 * ticked by the grant that carries it rather than claiming they are hidden.
+	 */
+	const recordings = page.getByRole('checkbox', { name: /Recordings: read/ });
+	await expect(recordings).toBeDisabled();
+	await expect(recordings).not.toBeChecked();
+	const notes = page.getByRole('checkbox', { name: /Diary and notebooks: read/ });
+	await notes.check();
+	await expect(recordings).toBeChecked();
+	await notes.uncheck();
+	await expect(recordings).not.toBeChecked();
 
 	// Named, because the field is required — an unnamed key is one you
 	// cannot pick out of the list afterwards, which is the one moment the

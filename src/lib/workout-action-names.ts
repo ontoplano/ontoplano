@@ -7,6 +7,10 @@
  * goals, ideas, bills and habits already do.
  */
 export type WorkoutActionNames = {
+	create: string;
+	update: string;
+	log: string;
+	schedule: string;
 	done: string;
 	archive: string;
 	updateSession: string;
@@ -15,6 +19,10 @@ export type WorkoutActionNames = {
 
 /** The Health room's Workouts tab, where a workout is what the page is about. */
 export const WORKOUT_ROOM_ACTIONS: WorkoutActionNames = {
+	create: '?/create',
+	update: '?/update',
+	log: '?/log',
+	schedule: '?/schedule',
 	done: '?/done',
 	archive: '?/archive',
 	updateSession: '?/updateSession',
@@ -23,6 +31,10 @@ export const WORKOUT_ROOM_ACTIONS: WorkoutActionNames = {
 
 /** Inside a notebook, where the unprefixed names belong to the notebook. */
 export const NOTEBOOK_WORKOUT_ACTIONS: WorkoutActionNames = {
+	create: '?/workoutCreate',
+	update: '?/workoutUpdate',
+	log: '?/workoutLog',
+	schedule: '?/workoutSchedule',
 	done: '?/workoutDone',
 	archive: '?/workoutArchive',
 	updateSession: '?/workoutUpdateSession',

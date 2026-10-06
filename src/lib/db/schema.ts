@@ -1234,6 +1234,8 @@ export const ideas = sqliteTable(
 		favorite: integer('favorite', { mode: 'boolean' }).notNull().default(false),
 		/** The subject this belongs to, if any — see `habits.notebookId`. */
 		notebookId: integer('notebook_id').references(() => notebooks.id, { onDelete: 'set null' }),
+		/** Its number inside its notebook, for `IDEA:#3` — see `todoTasks.notebookSeq`. */
+		notebookSeq: integer('notebook_seq'),
 		createdAt: text('created_at')
 			.notNull()
 			.default(sql`(CURRENT_TIMESTAMP)`),
@@ -1244,6 +1246,7 @@ export const ideas = sqliteTable(
 	(table) => [
 		index('ideas_user_idx').on(table.userId),
 		index('ideas_notebook_idx').on(table.notebookId),
+		uniqueIndex('ideas_notebook_seq_unique').on(table.notebookId, table.notebookSeq),
 		index('ideas_created_idx').on(table.createdAt)
 	]
 );
@@ -2112,6 +2115,8 @@ export const goals = sqliteTable(
 			.references(() => user.id),
 		areaId: integer('area_id').references(() => goalAreas.id, { onDelete: 'set null' }),
 		notebookId: integer('notebook_id').references(() => notebooks.id, { onDelete: 'set null' }),
+		/** Its number inside its notebook, for `GOAL:#3` — see `todoTasks.notebookSeq`. */
+		notebookSeq: integer('notebook_seq'),
 		parentId: integer('parent_id'),
 		title: text('title').notNull(),
 		notes: text('notes').default(''),
@@ -2136,7 +2141,8 @@ export const goals = sqliteTable(
 		index('goals_period_idx').on(table.userId, table.horizon, table.periodStart),
 		index('goals_parent_idx').on(table.parentId),
 		index('goals_area_idx').on(table.areaId),
-		index('goals_notebook_idx').on(table.notebookId)
+		index('goals_notebook_idx').on(table.notebookId),
+		uniqueIndex('goals_notebook_seq_unique').on(table.notebookId, table.notebookSeq)
 	]
 );
 
@@ -2230,6 +2236,44 @@ export const goalLinks = sqliteTable(
 			'goal_link_has_exactly_one_target',
 			sql`(CASE WHEN ${table.slotId} IS NULL THEN 0 ELSE 1 END) + (CASE WHEN ${table.todoId} IS NULL THEN 0 ELSE 1 END) + (CASE WHEN ${table.activityId} IS NULL THEN 0 ELSE 1 END) = 1`
 		)
+	]
+);
+
+/**
+ * What happened to a goal, in the order it happened.
+ *
+ * A measure kept only the number it stands at now, and a goal only whether it
+ * is open — so a goal finished in March said nothing of how it got there, and
+ * there was no line to draw. Each typed number, each closing or reopening and
+ * each note somebody writes afterwards is one row here, the way a habit keeps
+ * its days and a workout its sessions.
+ *
+ * `kind` says which: `progress` carries the measure and the number it was set
+ * to, `status` the status it moved to (and the outcome said with it, in
+ * `note`), `note` only words.
+ */
+export const goalEvents = sqliteTable(
+	'goal_events',
+	{
+		id: integer('id').primaryKey({ autoIncrement: true }),
+		userId: text('user_id')
+			.notNull()
+			.references(() => user.id),
+		goalId: integer('goal_id')
+			.notNull()
+			.references(() => goals.id, { onDelete: 'cascade' }),
+		kind: text('kind', { enum: ['progress', 'status', 'note'] }).notNull(),
+		targetId: integer('target_id').references(() => goalTargets.id, { onDelete: 'set null' }),
+		value: real('value'),
+		status: text('status', { enum: ['open', 'achieved', 'missed', 'abandoned'] }),
+		note: text('note').notNull().default(''),
+		at: text('at')
+			.notNull()
+			.default(sql`(CURRENT_TIMESTAMP)`)
+	},
+	(table) => [
+		index('goal_events_user_idx').on(table.userId),
+		index('goal_events_goal_idx').on(table.goalId, table.at)
 	]
 );
 

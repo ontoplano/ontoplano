@@ -2,6 +2,7 @@ import { expect, test, type Page } from '@playwright/test';
 import { register, testEmail } from './helpers/account';
 import { openFilters } from './helpers/filters';
 import { visit } from './helpers/visit';
+import { expectStill } from './helpers/position';
 
 /**
  * Narrowing by labels: some to show, some to hide, any or all.
@@ -84,7 +85,7 @@ test('labels to show, labels to hide, any or all — and the address keeps it', 
 	await panel(page).getByRole('tab', { name: 'Carrying all of them' }).click();
 	await expect.poll(() => showing(page)).toEqual(['fix the roof']);
 
-	expect((await list.first().boundingBox())!.y).toBe(listTop);
+	expectStill((await list.first().boundingBox())!.y, listTop);
 	expect(await face(page).boundingBox()).toEqual(faceBox);
 
 	// Escape folds it, back onto the button — which says what is on.

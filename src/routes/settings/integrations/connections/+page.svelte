@@ -54,6 +54,8 @@
 	let tiedId = $state('');
 	const reachableFor = (kind: string | null | undefined) =>
 		kind ? (data.reach.find((choice) => choice.kind === kind)?.scopes ?? []) : null;
+	const carriedFor = (kind: string | null | undefined) =>
+		kind ? (data.reach.find((choice) => choice.kind === kind)?.carried ?? null) : null;
 
 	/** The key whose permissions are open, read-only. */
 	let viewing = $state<(typeof data.tokens)[number] | null>(null);
@@ -426,7 +428,15 @@ Token: ${token}`;
 				-->
 				<SettingRow label={t('settings.integrations.connections.tellMeWhenThisHappens')}>
 					{#snippet control()}
-						<form method="post" action="?/notifyAssistant" use:enhance>
+						<!-- Not reset after it posts: the live stream can land the new value
+						     first, and a reset then would put the switch back to off under it. -->
+						<form
+							method="post"
+							action="?/notifyAssistant"
+							use:enhance={() =>
+								async ({ update }) =>
+									update({ reset: false })}
+						>
 							<input type="hidden" name="on" value={data.notifyAssistant ? 'false' : 'true'} />
 							<input
 								type="checkbox"
@@ -758,6 +768,7 @@ Token: ${token}`;
 					<PermissionGrid
 						scopes={data.scopes}
 						reachable={reachableFor(tiedTo)}
+						carried={carriedFor(tiedTo)}
 						destructive
 						showKeys
 					/>
@@ -793,6 +804,7 @@ Token: ${token}`;
 					scopes={data.scopes}
 					checked={viewing.scopes}
 					reachable={reachableFor(viewing.confinement?.kind)}
+					carried={carriedFor(viewing.confinement?.kind)}
 					readonly
 					destructive
 					showKeys

@@ -11,7 +11,7 @@ own write surface, the way the endpoints in [the API](api.md) are the
 write surface for everything else; both end up calling the same
 [services](services.md).
 
-**66 pages, 212 actions.**
+**67 pages, 218 actions.**
 
 | Page                                 | Actions                                                                                                                                                                                                                                                                                                                                                                                              |
 | ------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -27,7 +27,8 @@ write surface for everything else; both end up calling the same
 | `/finance/insights`                  | —                                                                                                                                                                                                                                                                                                                                                                                                    |
 | `/finance/ledgers`                   | `createLedger`, `updateLedger`, `moveLedger`, `archiveLedger`, `deleteLedger`, `import`, `addMovement`, `updateMovement`, `deleteMovement`                                                                                                                                                                                                                                                           |
 | `/finance/rules`                     | `create`, `update`, `move`, `delete`                                                                                                                                                                                                                                                                                                                                                                 |
-| `/goals`                             | `createArea`, `updateArea`, `moveArea`, `deleteArea`, `create`, `update`, `setProgress`, `close`, `setLinks`, `setTodoStatus`, `remove`                                                                                                                                                                                                                                                              |
+| `/goals`                             | `createArea`, `updateArea`, `moveArea`, `deleteArea`, `create`, `update`, `setProgress`, `close`, `note`, `setLinks`, `setTodoStatus`, `remove`                                                                                                                                                                                                                                                      |
+| `/goals/history`                     | `setProgress`, `close`, `note`, `setTodoStatus`, `remove`                                                                                                                                                                                                                                                                                                                                            |
 | `/health/habits`                     | —                                                                                                                                                                                                                                                                                                                                                                                                    |
 | `/health/recipes`                    | —                                                                                                                                                                                                                                                                                                                                                                                                    |
 | `/health/recipes/[id]`               | —                                                                                                                                                                                                                                                                                                                                                                                                    |
@@ -164,6 +165,12 @@ never corrected is a statement somebody stops trusting.
 ### `/finance/rules`
 
 The most lines a rule's "which lines" panel lists.
+
+### `/goals/history`
+
+The goals that are over — reached, missed or let go — newest first, each
+with what happened to it on the way. The room's other tab is what is still
+under way; this one is the record.
 
 ### `/health/recipes`
 

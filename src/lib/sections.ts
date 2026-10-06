@@ -177,6 +177,16 @@ const MEDIA_TABS = [
 	{ id: 'gallery', href: '/media/gallery', label: 'rooms.media.tabs.gallery', glyph: 'image' }
 ] as const;
 
+/**
+ * The Goals room's tabs: what is under way, and what was finished or let go —
+ * kept with what happened to it on the way, rather than a toggle that mixes
+ * the two into one list.
+ */
+const GOAL_TABS = [
+	{ href: '/goals', label: 'rooms.goals.tabs.current', glyph: 'summit' },
+	{ href: '/goals/history', label: 'rooms.goals.tabs.history', glyph: 'trophy' }
+] as const;
+
 /** The Inventory room's tabs: what you keep, and what you might get one day. */
 const INVENTORY_TABS = [
 	{ href: '/inventory/stock', label: 'inventory.stock', glyph: 'shopping' },
@@ -219,7 +229,7 @@ export const ROOM_TABS: Record<NavKey, readonly RoomTab[]> = {
 	health: HEALTH_TABS,
 	inventory: INVENTORY_TABS,
 	finance: FINANCE_TABS,
-	goals: [],
+	goals: GOAL_TABS,
 	media: MEDIA_TABS,
 	reminders: []
 };

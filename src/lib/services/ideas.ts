@@ -12,7 +12,7 @@ import {
 } from './tags.js';
 import type { Ctx } from './ctx.js';
 import { NotFoundError, ValidationError } from './errors.js';
-import { notebookPatch } from './notebooks.js';
+import { numberedNotebookPatch } from './notebook-seq.js';
 import { stamp, stamps } from './time.js';
 import { host } from './host.js';
 import { str, chosenIds } from './validate.js';
@@ -36,6 +36,8 @@ export type Idea = {
 	createdAt: string;
 	updatedAt: string;
 	notebookId: number | null;
+	/** Its number in that notebook, which `IDEA:#3` points at. */
+	notebookSeq: number | null;
 	tags: IdeaTag[];
 };
 
@@ -55,6 +57,7 @@ export function listIdeas(ctx: Ctx, scope: { notebookId?: number } = {}): Idea[]
 			appliedNote: ideas.appliedNote,
 			favorite: ideas.favorite,
 			notebookId: ideas.notebookId,
+			notebookSeq: ideas.notebookSeq,
 			createdAt: ideas.createdAt,
 			updatedAt: ideas.updatedAt
 		})
@@ -103,7 +106,7 @@ export function createIdea(
 			...stamps(ctx),
 			userId: ctx.userId,
 			content,
-			...notebookPatch(ctx, raw, 'ideas'),
+			...numberedNotebookPatch(ctx, raw, 'ideas', ideas),
 			createdAt: now,
 			updatedAt: now
 		})
@@ -129,7 +132,7 @@ export function updateIdea(
 		.update(ideas)
 		.set({
 			content,
-			...notebookPatch(ctx, raw, 'ideas', { table: ideas, id }),
+			...numberedNotebookPatch(ctx, raw, 'ideas', ideas, id),
 			updatedAt: stamp(ctx)
 		})
 		.where(and(eq(ideas.id, id), eq(ideas.userId, ctx.userId)))
@@ -277,7 +280,7 @@ export function batchIdeas(
 					? { favorite: true }
 					: verb === 'apply'
 						? { isApplied: true }
-						: notebookPatch(ctx, { notebookId: what.notebookId }, 'ideas', { table: ideas, id });
+						: numberedNotebookPatch(ctx, { notebookId: what.notebookId }, 'ideas', ideas, id);
 			const res = db
 				.update(ideas)
 				.set(patch)

@@ -33,7 +33,6 @@
 	import GoalCard from '$lib/components/GoalCard.svelte';
 	import GoalLinksModal from '$lib/components/GoalLinksModal.svelte';
 	import { NOTEBOOK_GOAL_ACTIONS } from '$lib/goal-action-names';
-	import { CLOSED_STATUSES } from '$lib/task-status';
 	import {
 		DEFAULT_NOTE_ORDER,
 		defaultDirectionFor,
@@ -59,7 +58,9 @@
 	import ItemRow, { itemRowWash } from '$lib/components/ItemRow.svelte';
 	import LinkIntoNotebook from '$lib/components/LinkIntoNotebook.svelte';
 	import { NOTEBOOK_ITEM_ACTIONS } from '$lib/item-action-names';
+	import ItemDialog from '$lib/components/ItemDialog.svelte';
 	import { NOTEBOOK_WORKOUT_ACTIONS } from '$lib/workout-action-names';
+	import WorkoutDialogs from '$lib/components/WorkoutDialogs.svelte';
 	import { NOTEBOOK_HABIT_ACTIONS } from '$lib/habit-action-names';
 	import { NOTEBOOK_BILL_ACTIONS } from '$lib/bill-action-names';
 	import IdeaFields from '$lib/components/fields/IdeaFields.svelte';
@@ -75,9 +76,11 @@
 	import type { Currency } from '$lib/money';
 	import { NOTEBOOK_TODO_ACTIONS } from '$lib/todo-actions';
 	import type { Todo } from '$lib/services/todos';
+	import type { Workout } from '$lib/services/workouts';
+	import type { listItems } from '$lib/services/inventory';
 	import { browsable } from '$lib/browse.svelte';
 	import { checklistItems } from '$lib/checklist';
-	import { renderMarkdown } from '$lib/markdown';
+	import { refAt, renderMarkdown, taskRefs, type Refs } from '$lib/markdown';
 	import { say } from '$lib/said.svelte';
 	import { useT } from '$lib/i18n';
 	import { RememberedOrder } from '$lib/remembered-order.svelte';
@@ -131,6 +134,8 @@
 		currency = 'BRL',
 		pickableNotebooks = [],
 		locations = [],
+		/** How big a picture the server takes, for a thing's picture in its dialog. */
+		pictureKilobytes = 0,
 		areas = [],
 		workoutMeasures = [],
 		slots = [],
@@ -208,11 +213,12 @@
 			ledgers: ComponentProps<typeof LedgerTile>['ledger'][];
 			/* And the whole recipe, with what the cupboard has not got. */
 			recipes: ComponentProps<typeof RecipeCard>['recipe'][];
-			/* And the whole workout, with the register under its plan. */
-			workouts: ComponentProps<typeof WorkoutCard>['workout'][];
+			/* And the whole workout, with the register under its plan — and its
+			   measures, which its dialogs ask about. */
+			workouts: Workout[];
 			workoutSessions: ComponentProps<typeof WorkoutCard>['sessions'];
 			/* And the whole thing, with its count and its own fields. */
-			inventory: ComponentProps<typeof ItemRow>['item'][];
+			inventory: ReturnType<typeof listItems>;
 			/* What each tab could take that it has not got — see `LinkIntoNotebook`. */
 			linkable: Record<string, LinkableList>;
 			/*
@@ -240,6 +246,7 @@
 		pickableNotebooks?: { id: number; title: string; modules: readonly string[] }[];
 		/** Where a thing can live, for the Inventory tab's form. */
 		locations?: { id: number; name: string; path: string }[];
+		pictureKilobytes?: number;
 		areas?: { id: number; name: string }[];
 		workoutMeasures?: { activity: string; unit: string }[];
 		/* What a goal on this notebook can be told to count. */
@@ -703,16 +710,7 @@
 	 * note that points at a list says what is on the list and how far along it
 	 * is, rather than a row of numbers.
 	 */
-	const todoRefs = $derived(
-		new Map(
-			(contents?.todos ?? [])
-				.filter((one) => one.notebookSeq !== null)
-				.map((one) => [
-					one.notebookSeq as number,
-					{ title: one.title, done: CLOSED_STATUSES.includes(one.status), task: one }
-				])
-		)
-	);
+	const todoRefs = $derived(taskRefs(contents?.todos ?? []));
 
 	/** The notes `NOTE:#12` may name here, by their number, as they are listed. */
 	const noteRefs = $derived(
@@ -723,17 +721,73 @@
 		)
 	);
 
-	function openReferencedTodo(press: MouseEvent) {
-		const link = (press.target as HTMLElement).closest('.todo-ref') as HTMLElement | null;
-		if (!link) return;
+	/** The goals `GOAL:#2` may name here; a closed one carries its tick. */
+	const goalRefs = $derived(
+		new Map(
+			(contents?.goals ?? [])
+				.filter((goal) => goal.notebookSeq !== null)
+				.map((goal) => [
+					goal.notebookSeq as number,
+					{ title: goal.title, done: goal.status !== 'open' }
+				])
+		)
+	);
+
+	/** The ideas `IDEA:#7` may name here, by their first line. */
+	const ideaRefs = $derived(
+		new Map(
+			(contents?.ideas ?? [])
+				.filter((idea) => idea.notebookSeq !== null)
+				.map((idea) => [idea.notebookSeq as number, { title: noteName({ content: idea.content }) }])
+		)
+	);
+
+	/** Everything writing in this notebook can point at, for the renderer and the picker. */
+	const writingRefs = $derived<Refs>({
+		tasks: todoRefs,
+		notes: noteRefs,
+		goals: goalRefs,
+		ideas: ideaRefs
+	});
+
+	/**
+	 * A reference pressed in a note, opened where it lives here.
+	 *
+	 * Looked up among this notebook's own things, which is all the number can
+	 * mean — the link carries a kind and digits, nothing else.
+	 */
+	function openReference(press: MouseEvent) {
+		const ref = refAt(press.target);
+		if (!ref) return;
 		press.preventDefault();
-		const seq = Number(link.dataset.todoSeq);
-		const one = (contents?.todos ?? []).find((task) => task.notebookSeq === seq);
-		if (!one) return;
-		// The task lives on the Tasks tab, and its editor is that list's own.
-		tab = 'tasks';
-		// After the tab has drawn, so the list is there to be asked.
-		void tick().then(() => openTodoById?.(one.id));
+		const found: { tab: Tab; id: number } | undefined =
+			ref.kind === 'task'
+				? at(
+						'tasks',
+						(contents?.todos ?? []).find((task) => task.notebookSeq === ref.seq)
+					)
+				: ref.kind === 'goal'
+					? at(
+							'goals',
+							(contents?.goals ?? []).find((goal) => goal.notebookSeq === ref.seq)
+						)
+					: ref.kind === 'idea'
+						? at(
+								'ideas',
+								(contents?.ideas ?? []).find((idea) => idea.notebookSeq === ref.seq)
+							)
+						: at(
+								'notes',
+								(contents?.entries ?? []).find((entry) => entry.seq === ref.seq)
+							);
+		if (!found) return;
+		tab = found.tab;
+		// After the tab has drawn, so its list is there to be asked.
+		void tick().then(() => openItem(found.tab, found.id));
+	}
+
+	function at(tab: Tab, one: { id: number } | undefined) {
+		return one ? { tab, id: one.id } : undefined;
 	}
 
 	/** Units this account already counts things in, offered rather than imposed. */
@@ -993,6 +1047,10 @@
 			});
 		} else if (module === 'tasks') openTodoById?.(id);
 		else if (module === 'goals') openGoalEdit(id);
+		else if (module === 'ideas') {
+			editingIdeaId = id;
+			composingIdea = true;
+		}
 	}
 
 	/**
@@ -1124,6 +1182,14 @@
 	const shownIdeas = $derived(searched(contents?.ideas ?? [], 'ideas'));
 	const shownInventory = $derived(searched(contents?.inventory ?? [], 'inventory'));
 	const shownWorkouts = $derived(searched(contents?.workouts ?? [], 'workouts'));
+	/**
+	 * A workout card's buttons open the Health room's own dialogs, here — see
+	 * `WorkoutDialogs`. Leaving the notebook to edit a thing on it is not what
+	 * a task's or a note's buttons do either.
+	 */
+	let workoutDialogs: WorkoutDialogs | undefined = $state();
+	/** And a thing's pencil, its dialog — see `ItemDialog`. */
+	let itemDialog: ItemDialog | undefined = $state();
 	const shownRecipes = $derived(searched(contents?.recipes ?? [], 'recipes'));
 	const shownLedgers = $derived(searched(contents?.ledgers ?? [], 'ledgers'));
 	const shownHabits = $derived(searched(contents?.habits ?? [], 'habits'));
@@ -1676,8 +1742,7 @@
 						name="content"
 						rows={6}
 						required
-						todos={todoRefs}
-						notes={noteRefs}
+						refs={writingRefs}
 						placeholder={t('notebookDetail.writeANoteAbout', { title: notebook.title })}
 					/>
 					<!-- A note written here takes a picture the same way a note written in
@@ -1762,6 +1827,7 @@
 				notebooks={pickableNotebooks}
 				actions={NOTEBOOK_TODO_ACTIONS}
 				notebookId={notebook.id}
+				refs={writingRefs}
 				shortcutRoom={k === tab ? '/tasks/todo' : null}
 				claimsRoomBar={false}
 				framed={false}
@@ -1874,6 +1940,7 @@
 								{currency}
 								actions={NOTEBOOK_ITEM_ACTIONS}
 								thumb={shownInventory.some((one) => one.pictureId)}
+								onedit={() => itemDialog?.edit(item)}
 							/>
 						</div>
 					{/each}
@@ -1882,9 +1949,8 @@
 		{:else if k === 'workouts'}
 			<!--
 				The Health room's own card: the plan, and the record of what was
-				actually done under it. Writing a session down is the room's own
-				dialog, which is why that one is a link out rather than a form
-				here — see `WorkoutCard`.
+				actually done under it, and the room's own dialogs for its buttons,
+				opened here — see `WorkoutCard` and `WorkoutDialogs`.
 			-->
 			{#if contents.workouts.length === 0}
 				<EmptyState
@@ -1899,6 +1965,11 @@
 							{workout}
 							sessions={contents.workoutSessions}
 							actions={NOTEBOOK_WORKOUT_ACTIONS}
+							onedit={() => workoutDialogs?.edit(workout)}
+							onlog={() => workoutDialogs?.log(workout)}
+							onschedule={() => workoutDialogs?.schedule(workout)}
+							onsession={(_, sessionId) => workoutDialogs?.editSession(workout, sessionId)}
+							ondeletesession={(sessionId) => workoutDialogs?.removeSession(sessionId)}
 						/>
 					{/each}
 				</ul>
@@ -2241,8 +2312,7 @@
 								name="content"
 								rows={8}
 								required
-								todos={todoRefs}
-								notes={noteRefs}
+								refs={writingRefs}
 							/>
 							<PictureAttach target={editBox} />
 							<div class="mt-3">
@@ -2499,13 +2569,13 @@
 								<!-- svelte-ignore a11y_no_static_element_interactions -->
 								<div
 									class="md mt-2 text-sm text-gray-900"
-									onclick={openReferencedTodo}
+									onclick={openReference}
 									use:peekRefs={todoRefs}
 								>
 									<!-- `renderMarkdown` escapes every character of the input before it emits a
 									     tag, and emits only attributes it writes itself. See `$lib/markdown.ts`. -->
 									<!-- eslint-disable-next-line svelte/no-at-html-tags -->
-									{@html renderMarkdown(entry.content, { tasks: todoRefs, notes: noteRefs })}
+									{@html renderMarkdown(entry.content, writingRefs)}
 								</div>
 							{/if}
 						</RowCard>
@@ -2787,6 +2857,30 @@
 			>
 		{/snippet}
 	</Modal>
+{/if}
+
+<!-- What a workout card's buttons open, here rather than in the Health room. -->
+{#if notebook && contents}
+	<WorkoutDialogs
+		bind:this={workoutDialogs}
+		sessions={contents.workoutSessions}
+		categories={workoutCategories}
+		notebooks={pickableNotebooks}
+		activityNames={workoutMeasures}
+		actions={NOTEBOOK_WORKOUT_ACTIONS}
+		error={error ?? undefined}
+		startingNotebook={notebook.id}
+	/>
+	<ItemDialog
+		bind:this={itemDialog}
+		items={contents.inventory}
+		categories={inventoryCategories}
+		{locations}
+		notebooks={pickableNotebooks}
+		kilobytes={pictureKilobytes}
+		actions={NOTEBOOK_ITEM_ACTIONS}
+		error={error ?? undefined}
+	/>
 {/if}
 
 <!--

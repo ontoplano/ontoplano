@@ -40,6 +40,7 @@
 	import TodoFields from '$lib/components/fields/TodoFields.svelte';
 	import AttributesDialog from '$lib/components/AttributesDialog.svelte';
 	import Written from '$lib/components/Written.svelte';
+	import NotebookSeq from '$lib/components/NotebookSeq.svelte';
 	import EmptyState from '$lib/components/EmptyState.svelte';
 	import Icon from '$lib/components/Icon.svelte';
 	import { autofocus } from '$lib/actions/autofocus';
@@ -64,6 +65,7 @@
 	import FormGrid from '$lib/components/FormGrid.svelte';
 	import Modal from '$lib/components/Modal.svelte';
 	import { STATUSES, STATUS_LABELS, CLOSED_STATUSES } from '$lib/task-status';
+	import { taskRefs, type Refs } from '$lib/markdown';
 	import { ordinal } from '$lib/ordinal';
 	import { keepInView } from '$lib/actions/keep-in-view';
 	import { invalidateAll } from '$app/navigation';
@@ -137,11 +139,21 @@
 		 * second editor to keep in step with this one.
 		 */
 		// eslint-disable-next-line no-useless-assignment
-		openTodo = $bindable()
+		openTodo = $bindable(),
+		/**
+		 * Everything writing in this notebook can point at, from the notebook
+		 * page. Without it, a task's notes still find the tasks of its notebook.
+		 */
+		refs = undefined
 	}: {
 		todos: Todo[];
 		categories: { id: number; name: string }[];
-		notebooks: { id: number; title: string; modules: readonly string[] }[];
+		notebooks: {
+			id: number;
+			title: string;
+			modules: readonly string[];
+			categoryId?: number | null;
+		}[];
 		actions: TodoActionNames;
 		goalLinks?: Record<number, GoalBacklink[]>;
 		error?: string | undefined;
@@ -174,6 +186,7 @@
 		newTour?: string | null;
 		openNew?: (() => void) | undefined;
 		openTodo?: ((id: number) => void) | undefined;
+		refs?: Refs;
 	} = $props();
 
 	/**
@@ -948,18 +961,35 @@
 	 * characters somebody typed, which is the honest answer to an ambiguous
 	 * number.
 	 */
-	const todoRefs = $derived(
-		notebookId === null
+	const todoRefs = $derived(notebookId === null ? undefined : taskRefs(todos));
+
+	/**
+	 * What the form's notes point at: the notebook the task is being filed in.
+	 * Unlike a room row, the form knows which one that is, so the number is not
+	 * ambiguous there — and the hover card works in the dialog too.
+	 */
+	const formRefs = $derived<Refs | undefined>(
+		formNotebookId === null
 			? undefined
-			: new Map(
-					todos
-						.filter((one: Todo) => one.notebookSeq !== null)
-						.map((one: Todo) => [
-							one.notebookSeq as number,
-							{ title: one.title, done: CLOSED_STATUSES.includes(one.status), task: one }
-						])
-				)
+			: refs && formNotebookId === notebookId
+				? refs
+				: { tasks: taskRefs(todos.filter((one: Todo) => one.notebookId === formNotebookId)) }
 	);
+
+	/**
+	 * Whether a row wears its category.
+	 *
+	 * Not inside a notebook whose own category it is: every task written there
+	 * starts with it, so on each row it says the same word again and nothing else.
+	 */
+	const notebookCategory = $derived(
+		notebookId === null
+			? null
+			: (notebooks.find((one) => one.id === notebookId)?.categoryId ?? null)
+	);
+	const wearsCategory = (todo: Todo) =>
+		Boolean(todo.categoryColor && todo.categoryName) &&
+		(notebookCategory === null || todo.categoryId !== notebookCategory);
 
 	/** Every label on this list, so the picker offers what is actually there. */
 	let tagsInUse = $derived(
@@ -1820,11 +1850,20 @@
 							{#snippet corner()}
 								{@const place = placeOnScreen.get(todo.id)}
 								<!-- Drawn empty on a finished task, so every title wraps at the same place. -->
-								<span
-									class="tabular inline-block min-w-[4ch] text-right text-xs text-gray-500"
-									title={place ? t('todoRows.placeOnScreen') : undefined}
-								>
-									{place ? ordinal(t, place) : ''}
+								<span class="flex flex-col items-end gap-1">
+									<span
+										class="tabular inline-block min-w-[4ch] text-right text-xs text-gray-500"
+										title={place ? t('todoRows.placeOnScreen') : undefined}
+									>
+										{place ? ordinal(t, place) : ''}
+									</span>
+									<!-- On a phone the category stands under the place, out of the
+									     title's line, which is narrow enough already. -->
+									{#if wearsCategory(todo)}
+										<span class="sm:hidden">
+											<CategoryMark name={todo.categoryName!} color={todo.categoryColor!} />
+										</span>
+									{/if}
 								</span>
 							{/snippet}
 							{#snippet rail()}
@@ -1975,11 +2014,7 @@
 								</div>
 							{/snippet}
 							{#snippet labels()}
-								{#if todo.notebookSeq !== null}
-									<span class="tabular mr-1 text-[11px] text-gray-500" title={whenOf(todo)}>
-										#{todo.notebookSeq}
-									</span>
-								{/if}
+								<NotebookSeq seq={todo.notebookSeq} title={whenOf(todo)} class="mr-1" />
 								{#each todo.tags as tag (tag.id)}
 									<!--
 										The chip says when it went on.
@@ -2185,8 +2220,10 @@
 								>
 								<!-- Its category, worn after the title rather than as a bar in
 								     front of it, which pushed the title off the row's column. -->
-								{#if todo.categoryColor && todo.categoryName}
-									<CategoryMark name={todo.categoryName} color={todo.categoryColor} />
+								{#if wearsCategory(todo)}
+									<span class="hidden sm:contents">
+										<CategoryMark name={todo.categoryName!} color={todo.categoryColor!} />
+									</span>
 								{/if}
 								{#if todo.scheduledDate}
 									<span
@@ -2420,6 +2457,7 @@
 					{notebooks}
 					bind:ratings={formRatings}
 					place={whereItWouldSit}
+					refs={formRefs}
 				/>
 			</FormGrid>
 		</form>

@@ -149,24 +149,36 @@
 		min-width: 0;
 	}
 
+	/*
+	 * Narrow, the name goes up to the first line with the way back at its far
+	 * end, and the actions sit under it at the same far end — beside the
+	 * picture rather than in a row of their own beneath it, which left the
+	 * picture alone in a corner and a line of small buttons along the bottom.
+	 */
 	@container (width < 40rem) {
 		.detail-header {
-			grid-template-columns: minmax(0, 1fr);
-			grid-template-areas: 'back' 'title' 'meta' 'actions';
+			grid-template-columns: minmax(0, 1fr) auto;
+			grid-template-areas: 'title back' 'meta meta' 'actions actions';
 		}
 
 		.detail-header.has-lead {
-			grid-template-columns: auto minmax(0, 1fr);
-			grid-template-areas: 'lead back' 'lead title' 'lead meta' 'actions actions';
+			grid-template-columns: auto minmax(0, 1fr) auto;
+			grid-template-areas: 'lead title back' 'lead meta meta' 'lead actions actions';
 		}
 
 		.detail-header.is-surface.has-lead {
-			grid-template-columns: var(--row-rail) minmax(0, 1fr);
+			grid-template-columns: auto minmax(0, 1fr) auto;
+		}
+
+		.detail-back {
+			justify-self: end;
+			align-self: center;
+			white-space: nowrap;
 		}
 
 		.detail-actions {
-			justify-content: flex-start;
-			margin-top: 0.5rem;
+			align-self: end;
+			justify-content: flex-end;
 		}
 	}
 </style>

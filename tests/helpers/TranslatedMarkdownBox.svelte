@@ -18,4 +18,4 @@
 	provideT(() => t);
 </script>
 
-<MarkdownBox {value} {todos} />
+<MarkdownBox {value} refs={{ tasks: todos }} />

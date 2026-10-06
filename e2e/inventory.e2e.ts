@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test';
 import { register, testEmail } from './helpers/account';
 import { visit } from './helpers/visit';
+import { expectStill } from './helpers/position';
 
 /**
  * How long a dialog gets to close.
@@ -528,12 +529,12 @@ test.describe('what the filters are hiding', () => {
 		// Nothing around it moved: the count sits in a slot as wide as its
 		// longest, and nothing appears or disappears to say it.
 		expect(before, 'the panel is on screen').not.toBeNull();
-		expect((await panel.boundingBox())!.y).toBe(before!.y);
+		expectStill((await panel.boundingBox())!.y, before!.y);
 		expect((await short.boundingBox())!.x).toBe(shortBefore!.x);
 
 		await short.click();
 		await expect(count).toHaveText(all!);
-		expect((await panel.boundingBox())!.y).toBe(before!.y);
+		expectStill((await panel.boundingBox())!.y, before!.y);
 	});
 
 	test('a location folds away what is inside it, keeping itself and its number', async ({

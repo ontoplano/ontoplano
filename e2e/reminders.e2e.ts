@@ -4,6 +4,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { register, testEmail } from './helpers/account';
 import { visit } from './helpers/visit';
+import { expectStill } from './helpers/position';
 
 /**
  * Everything with a time on it.
@@ -269,7 +270,7 @@ test.describe('on a phone', () => {
 		// These were links, and a link is a navigation, which puts you back at
 		// the top — so pressing "30" threw you away from the row you pressed.
 		const after = (await howFar.boundingBox())!;
-		expect(Math.round(after.y)).toBe(Math.round(before.y));
+		expectStill(after.y, before.y);
 	});
 });
 
