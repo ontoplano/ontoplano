@@ -102,7 +102,13 @@ Every room on a desktop and on a phone. [Back to the README](../README.md).
 
 ## Goals
 
-![Goals](screenshots/goals/goals.webp)
+### Goals
+
+![Goals: Goals](screenshots/goals/goals.webp)
+
+### History
+
+![Goals: History](screenshots/goals/history.webp)
 
 ## Media
 
