@@ -4690,6 +4690,8 @@ html button.tab-link {
 }
 
 .notebook-cover {
+	/* The face's padding, which the touch buttons line up with — see below. */
+	--cover-face-pad: 0.375rem;
 	position: relative;
 }
 
@@ -4735,7 +4737,7 @@ html button.tab-link {
 	flex-direction: column;
 	gap: 0.375rem;
 	border-radius: var(--radius, 0);
-	padding: 0.375rem;
+	padding: var(--cover-face-pad);
 	text-decoration: none;
 }
 
@@ -4916,9 +4918,11 @@ html button.tab-link {
 }
 
 /*
- * No hover: a folder's buttons stay showing, and a notebook's wait for the
- * first tap — see `NotebookCover`. Two by two there, so a thumb's squares fit
- * on the picture, with Open filled as the one that matters.
+ * No hover: a folder's buttons stay showing, and a notebook's wait for a tap
+ * on the picture — see `NotebookCover`. Then they are the picture: two by two
+ * over exactly its face, each a thumb's whole quarter rather than a mouse's
+ * square, and the name under it still says which notebook it is. Open is
+ * filled, as the one that matters.
  */
 @media (hover: none) {
 	.cover-actions {
@@ -4926,8 +4930,22 @@ html button.tab-link {
 	}
 
 	.notebook-cover.taps-to-reveal .cover-actions {
+		/* The picture's box: the face's padding in, at its 3:4 — see `.cover-art`. */
+		inset: var(--cover-face-pad) var(--cover-face-pad) auto;
+		aspect-ratio: 3 / 4;
 		display: grid;
-		grid-template-columns: repeat(2, auto);
+		grid-template-columns: repeat(2, 1fr);
+		grid-auto-rows: 1fr;
+		gap: 1px;
+		overflow: hidden;
+		border-radius: calc(var(--radius, 0px) - 2px);
+	}
+
+	.notebook-cover.taps-to-reveal .cover-actions > *,
+	.notebook-cover.taps-to-reveal .cover-actions .icon-btn {
+		width: 100%;
+		height: 100%;
+		border-radius: 0;
 	}
 
 	.notebook-cover.taps-to-reveal:not(.is-revealed) .cover-actions {

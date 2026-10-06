@@ -42,8 +42,9 @@
 	/*
 	 * Its buttons show on hover, and a screen with no hover has to ask for them.
 	 *
-	 * So there the first tap on a cover shows them rather than opening it, and
-	 * Open is one of them; a tap anywhere else puts them away again.
+	 * So there a tap on the picture shows them rather than opening it, and
+	 * Open is one of them; a tap on the name still opens it straight away, and
+	 * a tap anywhere else puts them away again.
 	 */
 	const hasTools = $derived(Boolean(actions || star));
 	let revealed = $state(false);
@@ -51,6 +52,7 @@
 
 	function onFaceClick(event: MouseEvent) {
 		if (!hasTools || revealed || !window.matchMedia(HOVERLESS).matches) return;
+		if (!(event.target as Element).closest('.cover-art')) return;
 		event.preventDefault();
 		revealed = true;
 	}
@@ -149,7 +151,8 @@
 		<!--
 			What you do to it, on the cover rather than in a column of their own:
 			a shelf has no columns. One column of buttons, the star first; Open
-			leads it only where there is no hover and the first tap brought them.
+			leads it only where there is no hover and a tap on the picture brought
+			them, and there they fill the picture.
 		-->
 		<div class="cover-actions">
 			<a
