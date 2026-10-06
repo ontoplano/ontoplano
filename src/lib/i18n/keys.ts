@@ -2865,6 +2865,7 @@ export type MessageKey =
 	| 'settings.integrations.chat.thisInstanceMakesTheCall'
 	| 'settings.integrations.chat.title'
 	| 'settings.integrations.chat.typeOneInstead'
+	| 'settings.integrations.comesWith'
 	| 'settings.integrations.connections.aUrlOfYoursThat'
 	| 'settings.integrations.connections.address'
 	| 'settings.integrations.connections.anAiAssistantMcp'
@@ -2982,6 +2983,7 @@ export type MessageKey =
 	| 'settings.integrations.notSomething'
 	| 'settings.integrations.nothingYetEverythingAn'
 	| 'settings.integrations.onlyWhatYouTick'
+	| 'settings.integrations.outsideTheTie'
 	| 'settings.integrations.outsideWhat'
 	| 'settings.integrations.pluginAsksKey'
 	| 'settings.integrations.pluginAsksYourOntoplano'
@@ -4631,6 +4633,7 @@ export interface MessageValuesFor {
 		prefix: string | number;
 		provider: string | number;
 	};
+	'settings.integrations.comesWith': { with: string | number };
 	'settings.integrations.connections.apiV1Streams': { origin: string | number };
 	'settings.integrations.connections.confirmThisDeletesPoints': { count: number };
 	'settings.integrations.connections.isTheMostRevoke': { calendarLinkLimit: string | number };

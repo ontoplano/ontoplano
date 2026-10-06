@@ -3380,6 +3380,8 @@ export const messages: Catalogue = {
 		'Den Aufruf macht diese Instanz, nicht Ihr Browser — eine Adresse auf Ihrem eigenen Rechner ist von hier nicht erreichbar.',
 	'settings.integrations.chat.title': 'Chat',
 	'settings.integrations.chat.typeOneInstead': 'Modellnamen eingeben',
+	'settings.integrations.comesWith':
+		'Kommt mit dem Lesen von {with} — die Aufnahmen in dem, was er dort lesen darf',
 	'settings.integrations.connections.aUrlOfYoursThat':
 		'Eine URL von Ihnen, die informiert wird, wenn hier etwas passiert — neue Aufgaben, Häkchen, Ideen.\nStreams schieben Daten hinein, Webhooks lassen Ihre Programme mithören.',
 	'settings.integrations.connections.address': 'Adresse',
@@ -3532,6 +3534,8 @@ export const messages: Catalogue = {
 		'Noch nichts — alles, was ein Assistent ändert, wird hier aufgelistet',
 	'settings.integrations.onlyWhatYouTick':
 		'Nur, was Sie ankreuzen. Alles Nicht-Angekreuzte bleibt außer Reichweite.',
+	'settings.integrations.outsideTheTie':
+		'Außer Reichweite: ein an eine Sache gebundener Schlüssel sieht nur, was darunter abgelegt ist',
 	'settings.integrations.outsideWhat':
 		'{label}: {write} — außerhalb dessen, woran dieser Schlüssel gebunden ist',
 	'settings.integrations.pluginAsksKey': 'Schlüssel:',

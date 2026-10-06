@@ -3264,6 +3264,8 @@ export const messages: Catalogue = {
 		'This instance makes the call, not your browser — an address on your own machine cannot be reached from here.',
 	'settings.integrations.chat.title': 'Chat',
 	'settings.integrations.chat.typeOneInstead': 'Type a model name instead',
+	'settings.integrations.comesWith':
+		'Comes with reading {with} — the recordings in what it may read there',
 	'settings.integrations.connections.aUrlOfYoursThat':
 		'A URL of yours that is told when things happen here — new todos, ticks, ideas.\nStreams push data in, webhooks let your programs listen.',
 	'settings.integrations.connections.address': 'Address',
@@ -3414,6 +3416,8 @@ export const messages: Catalogue = {
 		'Nothing yet — everything an assistant changes is listed here',
 	'settings.integrations.onlyWhatYouTick':
 		'Only what you tick. Anything unticked stays out of reach.',
+	'settings.integrations.outsideTheTie':
+		'Out of reach: a key tied to one thing only sees what is filed under it',
 	'settings.integrations.outsideWhat': '{label}: {write} — outside what this key is tied to',
 	'settings.integrations.pluginAsksKey': 'Key:',
 	'settings.integrations.pluginAsksYourOntoplano': 'Your ontoplano:',

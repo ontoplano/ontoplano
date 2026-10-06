@@ -26,6 +26,7 @@
 		checked = [],
 		readonly = false,
 		reachable = null,
+		carried = null,
 		destructive = false,
 		showKeys = false,
 		name = 'scopes'
@@ -42,6 +43,12 @@
 		 * as somebody changes what the key is tied to.
 		 */
 		reachable?: string[] | null;
+		/**
+		 * Out-of-reach grants that come in through others under the same
+		 * confinement, each with the grants that carry it. Drawn as a locked box,
+		 * ticked whenever one of those is.
+		 */
+		carried?: Record<string, string[]> | null;
 		/** Offer deleting, apart from the rest and unticked. */
 		destructive?: boolean;
 		/** Put `bills:write` in the row's title, for somebody wiring up a script. */
@@ -60,7 +67,17 @@
 	 * read while its write box still took a tick looked disabled and was not.
 	 */
 	const rowReaches = (row: { read: string | null; write: string | null }) =>
-		[row.read, row.write].some((key) => key !== null && reaches(key));
+		[row.read, row.write].some((key) => key !== null && (reaches(key) || carriers(key).length > 0));
+	/** What lets this grant in by another door, under the current confinement. */
+	const carriers = (key: string) => (reaches(key) ? [] : (carried?.[key] ?? []));
+	const carriedOn = (key: string) => carriers(key).some((one) => ticked[one]);
+	/** The rows the carrying grants sit on, by name, for the sentence. */
+	const carrierNames = (key: string) =>
+		[...new Set(carriers(key).map((one) => rowLabel(rows.find((row) => row.read === one))))].join(
+			', '
+		);
+	const rowLabel = (row: { label: PlainKey | null; subject: string } | undefined) =>
+		row ? (row.label ? t(row.label) : row.subject) : '';
 
 	/*
 	 * Read once, deliberately: the list a form offers does not change while
@@ -107,14 +124,26 @@
 	});
 
 	const titleOf = (row: { read: string | null; write: string | null }) =>
-		[row.read, row.write]
-			.map(choice)
-			.filter((one) => one !== null)
-			.map((one) => {
-				const says = one.says ? t(one.says) : one.key;
-				return showKeys ? `${one.key} — ${says}` : says;
-			})
-			.join('\n');
+		[
+			...[row.read, row.write]
+				.map(choice)
+				.filter((one) => one !== null)
+				.map((one) => {
+					const says = one.says ? t(one.says) : one.key;
+					return showKeys ? `${one.key} — ${says}` : says;
+				}),
+			...(rowReaches(row) ? [] : [t('settings.integrations.outsideTheTie')])
+		].join('\n');
+
+	/** Why a box is the way it is, when it is not simply there to tick. */
+	function cellTitle(scope: string | null, i: number, label: string): string | undefined {
+		if (!scope) return t('settings.integrations.notSomething', { label, write: verb(i) });
+		if (carriers(scope).length)
+			return t('settings.integrations.comesWith', { with: carrierNames(scope) });
+		if (!reaches(scope)) return t('settings.integrations.outsideWhat', { label, write: verb(i) });
+		if (heldBy(scope)) return t('scopeGroups.neededToWrite');
+		return undefined;
+	}
 
 	/*
 	 * Everything at once, by column or in all. A column's box is ticked when
@@ -191,11 +220,18 @@
 				<tr class={rowReaches(row) ? '' : 'opacity-40'} data-subject={row.subject}>
 					<td class="py-1.5 text-gray-700" title={titleOf(row)}>{label}</td>
 					{#each [row.read, row.write] as scope, i (i)}
-						<td class="py-1.5 text-center">
+						<!--
+							The reason a box is locked sits on its cell: a disabled input
+							gets no pointer events, so a title on it is never shown.
+						-->
+						<td
+							class="py-1.5 text-center [&_input:disabled]:pointer-events-none"
+							title={readonly ? undefined : cellTitle(scope, i, label)}
+						>
 							{#if readonly}
 								<!-- An answer, not a control: a tick where it is granted and an
 								     empty box where it is not, so the columns still read. -->
-								{#if scope && ticked[scope]}
+								{#if scope && (ticked[scope] || carriedOn(scope))}
 									<span
 										class="inline-flex size-4 items-center justify-center bg-gray-900 align-middle text-white"
 										role="img"
@@ -215,8 +251,14 @@
 									value={scope}
 									bind:checked={ticked[scope]}
 									disabled={heldBy(scope) !== null}
-									title={heldBy(scope) ? t('scopeGroups.neededToWrite') : undefined}
 									aria-label="{label}: {verbWord(i)}"
+								/>
+							{:else if scope && carriers(scope).length}
+								<input
+									type="checkbox"
+									disabled
+									checked={carriedOn(scope)}
+									aria-label="{label}: {verbWord(i)} — {cellTitle(scope, i, label)}"
 								/>
 							{:else if scope}
 								<input

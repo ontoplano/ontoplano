@@ -3339,6 +3339,8 @@ export const messages: Catalogue = {
 		'Quem faz a chamada é esta instância, não o seu navegador — um endereço na sua própria máquina não é alcançável daqui.',
 	'settings.integrations.chat.title': 'Chat',
 	'settings.integrations.chat.typeOneInstead': 'Digitar o nome de um modelo',
+	'settings.integrations.comesWith':
+		'Vem junto com ler {with} — as gravações no que ela pode ler ali',
 	'settings.integrations.connections.aUrlOfYoursThat':
 		'Uma URL sua que é avisada quando coisas acontecem aqui — novas tarefas, marcações, ideias.\nStreams empurram dados para dentro, webhooks deixam seus programas escutarem.',
 	'settings.integrations.connections.address': 'Endereço',
@@ -3490,6 +3492,8 @@ export const messages: Catalogue = {
 		'Nada ainda — tudo que um assistente muda é listado aqui',
 	'settings.integrations.onlyWhatYouTick':
 		'Só o que você marcar. O que estiver desmarcado fica fora de alcance.',
+	'settings.integrations.outsideTheTie':
+		'Fora de alcance: uma chave presa a uma coisa só vê o que está guardado nela',
 	'settings.integrations.outsideWhat': '{label}: {write} — fora do que esta chave cobre',
 	'settings.integrations.pluginAsksKey': 'Chave:',
 	'settings.integrations.pluginAsksYourOntoplano': 'Seu ontoplano:',

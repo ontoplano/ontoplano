@@ -54,6 +54,8 @@
 	let tiedId = $state('');
 	const reachableFor = (kind: string | null | undefined) =>
 		kind ? (data.reach.find((choice) => choice.kind === kind)?.scopes ?? []) : null;
+	const carriedFor = (kind: string | null | undefined) =>
+		kind ? (data.reach.find((choice) => choice.kind === kind)?.carried ?? null) : null;
 
 	/** The key whose permissions are open, read-only. */
 	let viewing = $state<(typeof data.tokens)[number] | null>(null);
@@ -758,6 +760,7 @@ Token: ${token}`;
 					<PermissionGrid
 						scopes={data.scopes}
 						reachable={reachableFor(tiedTo)}
+						carried={carriedFor(tiedTo)}
 						destructive
 						showKeys
 					/>
@@ -793,6 +796,7 @@ Token: ${token}`;
 					scopes={data.scopes}
 					checked={viewing.scopes}
 					reachable={reachableFor(viewing.confinement?.kind)}
+					carried={carriedFor(viewing.confinement?.kind)}
 					readonly
 					destructive
 					showKeys

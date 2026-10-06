@@ -57,6 +57,12 @@ type Confinable = {
 	contains: Contains;
 	/** The ones there are to choose from, named as the person named them. */
 	options: (ctx: Ctx) => { id: number; label: string }[];
+	/**
+	 * Grants out of reach as a room that still come in by another door: the
+	 * scope, and the grants that let it through. Shown on the form as a box
+	 * ticked by those, so it does not claim a thing is hidden that is not.
+	 */
+	carries?: Record<string, string[]>;
 };
 
 export const CONFINEMENTS: Record<string, Confinable> = Object.freeze({
@@ -66,6 +72,12 @@ export const CONFINEMENTS: Record<string, Confinable> = Object.freeze({
 		noun: 'notebook',
 		kind: 'notebook',
 		options: (ctx) => listNotebooks(ctx).map((one) => ({ id: one.id, label: one.title })),
+		/*
+		 * The recordings room is outside a notebook, but `media` hands over a
+		 * recording to whoever may read the note or idea that links it — so
+		 * reading those is reading the recordings in them.
+		 */
+		carries: { 'audio:read': ['notes:read', 'ideas:read'] },
 		/*
 		 * What is inside a notebook, which is more than writing now.
 		 *
@@ -216,6 +228,7 @@ export function confinementChoices(ctx: Ctx) {
 			noun: table.noun,
 			label: table.label,
 			scopes: scopesWithin(kind),
+			carried: table.carries ?? {},
 			things: table.options(ctx)
 		}))
 		.filter((choice) => choice.things.length > 0);
