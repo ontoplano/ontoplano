@@ -141,6 +141,11 @@ test('a notebook’s picture has a view badge, and a corner to drag', async ({ p
 		.setInputFiles({ ...pngOfSize(24, 8), name: 'cover.png' });
 	const badge = page.locator('button[data-view-src]').first();
 	await expect(badge).toBeVisible({ timeout: 30_000 });
+	// It waits for the pointer, like a cover's buttons.
+	await page.mouse.move(0, 0);
+	await expect(badge).toHaveCSS('opacity', '0');
+	await page.locator('.picture-square').first().hover();
+	await expect(badge).toHaveCSS('opacity', '1');
 	await page.screenshot({ path: 'test-results/shots/notebook-picture-badge.png' });
 
 	// Dragged bigger by its corner, on a desktop.

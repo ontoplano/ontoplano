@@ -203,7 +203,7 @@
 
 <div class="shrink-0">
 	<div
-		class="relative w-fit rounded-lg"
+		class="picture-square relative w-fit rounded-lg"
 		class:ring-2={dropping}
 		class:ring-gray-900={dropping}
 		role="group"
@@ -263,7 +263,8 @@
 		{/if}
 
 		<!-- Looking at it, since pressing it is spoken for. The shell's viewer
-	     answers `data-view-src`. Top corner: the bottom one is the resize handle. -->
+	     answers `data-view-src`. Top corner: the bottom one is the resize handle.
+	     It waits for the pointer, as a notebook cover's buttons do. -->
 		{#if pictureId}
 			<button
 				type="button"
@@ -326,5 +327,19 @@
 		border-radius: 9999px;
 		border: 1px solid var(--color-gray-300);
 		background: var(--color-white);
+		opacity: 0;
+		transition: opacity 120ms ease;
+	}
+
+	.picture-square:hover .picture-view,
+	.picture-square:focus-within .picture-view {
+		opacity: 1;
+	}
+
+	/* No hover to come up on: a touch screen keeps it showing. */
+	@media (hover: none) {
+		.picture-view {
+			opacity: 1;
+		}
 	}
 </style>
