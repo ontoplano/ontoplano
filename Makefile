@@ -628,7 +628,7 @@ android-all: _a-real-workstation _android-sdk-ready isolated
 	$(call timed,ONTOPLANO_DEV_ORIGIN="$(ONTOPLANO_DEV_ORIGIN)" node scripts/android-flavours.mjs,the three flavours)
 	@$(FIND_SDK); \
 	start=$$(date +%s); \
-	cd capacitor/android && ANDROID_HOME="$$sdk" ./gradlew -q \
+	$(call GRADLE,three APKs) \
 		assembleOfficialDebug assembleDevDebug assembleStagingDebug; \
 	printf '  \033[2m%s — %ss\033[0m\n' "gradle, three APKs" "$$(( $$(date +%s) - start ))"
 	@echo "Built all three. Put them on the phone with: make android-install-all"
@@ -1230,6 +1230,12 @@ FIND_SDK = sdk=$$(node scripts/android-sdk.mjs) || { \
 _android-sdk-ready:
 	@$(FIND_SDK)
 
+# Gradle as it is run here. Not `-q`: that turned a minute or two of building
+# and shrinking into a terminal that said nothing at all, which reads as hung.
+# Without it Gradle draws its own progress line and says when it is done.
+GRADLE = echo "gradle: $(1) — a minute or two"; \
+	cd capacitor/android && ANDROID_HOME="$$sdk" ./gradlew
+
 _a-real-workstation:
 	@[ -z "$(PHONE_BUILD_ANYWHERE)" ] || exit 0; \
 	total=$$(free -m 2>/dev/null | awk '/^Mem:/ {print $$2}'); \
@@ -1251,7 +1257,7 @@ _a-real-workstation:
 ## build the phone app
 android: _a-real-workstation _android-sdk-ready isolated android-project
 	@$(FIND_SDK); \
-	cd capacitor/android && ANDROID_HOME="$$sdk" ./gradlew -q assembleOfficialDebug
+	$(call GRADLE,the APK) assembleOfficialDebug
 	@echo "APK: capacitor/android/app/build/outputs/apk/official/debug/app-official-debug.apk"
 
 # The store artifact: the official flavour, release, unsigned.
@@ -1262,7 +1268,7 @@ android: _a-real-workstation _android-sdk-ready isolated android-project
 ## the release APK for the stores
 android-store: _a-real-workstation _android-sdk-ready isolated android-project
 	@$(FIND_SDK); \
-	cd capacitor/android && ANDROID_HOME="$$sdk" ./gradlew -q assembleOfficialRelease
+	$(call GRADLE,the store APK) assembleOfficialRelease
 	@echo "APK: capacitor/android/app/build/outputs/apk/official/release/app-official-release-unsigned.apk"
 
 ## remove the app from the phone over adb
