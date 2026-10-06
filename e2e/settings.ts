@@ -2,6 +2,16 @@ import type { PlaywrightTestConfig } from '@playwright/test';
 
 export const DEVICE_TEST_TIMEOUT = 60_000;
 
+/*
+ * One more go for the device build, on CI only.
+ *
+ * The runner's Chromium segfaults now and then while a context of this suite
+ * is being closed, and whichever test asks that worker for the next context
+ * fails without having run. A retry gets a new worker and a new browser; a
+ * test that fails for itself fails twice.
+ */
+export const DEVICE_CI_RETRIES = process.env.CI ? 1 : 0;
+
 // The bundled headless shell crashes while opening new contexts on both local
 // Linux and CI. Use Playwright's full Chromium in headless mode instead.
 export const chromiumBrowser = { channel: 'chromium' as const };
