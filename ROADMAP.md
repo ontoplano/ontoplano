@@ -15,23 +15,12 @@ the REST API also probably lack obvious necessary endpoints
 
 ---
 
-## Small improvements
-
-- **An `.ics` importer**, beside the Todoist, Google Tasks, Google Keep,
-  org-mode and Obsidian ones. Subscribing to a calendar already works;
-  importing one does not.
-- **A token's own log** on the page that lists them: a token says when it was
-  last used and not what it did.
-- **Filter the plan by kind.** On `/tasks/plan`, show only the recurring
-  blocks or only the one-off ones — the repeating week versus what is unique
-  to these days.
-
----
-
 ## Big features
 
 - **Sharing notebooks and its contents.** : Maybe family/organization kind of thing with an invite link with scoped permissions.
 - **Organizations**: Family / organization to do the above with multiple people
+- Sheets
+- Keep
 - **CLI**: A CLI tool that uses the REST API for easier scripting
 
 ## One day, maybe
