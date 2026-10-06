@@ -2094,6 +2094,12 @@ sum of what was actually logged, and letting it be overwritten would leave
 the goal saying something the register contradicts — with nothing on screen
 to say which of the two is the truth.
 
+#### `addGoalNote(ctx, id, raw)`
+
+Words on a goal, written down whenever — a closed one's afterthought, or a
+line on how an open one is going. They join its history rather than
+replacing what was said on closing.
+
 #### `closeGoal(ctx, id, raw)`
 
 #### `setGoalLinks(ctx, id, links)`
@@ -2124,6 +2130,7 @@ And the way back off it, one link at a time.
 - `GoalArea`
 - `GoalProgress`
 - `GoalTarget` — One thing a goal is measured by. A goal can want several at once.
+- `GoalEvent` — One thing that happened to a goal — see `goalEvents` in the schema.
 - `Goal`
 
 ## habit-actions

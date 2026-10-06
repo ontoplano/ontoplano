@@ -7,7 +7,7 @@ out of the schema — so this page cannot disagree with the schema, and a
 column added without a migration does not appear here because it does not
 exist.
 
-**84 tables.**
+**85 tables.**
 
 | Table                                                       | Columns | Belongs to a user |
 | ----------------------------------------------------------- | ------- | ----------------- |
@@ -36,6 +36,7 @@ exist.
 | [`finance_rules`](#finance_rules)                           | 8       | yes               |
 | [`finance_transactions`](#finance_transactions)             | 10      | yes               |
 | [`goal_areas`](#goal_areas)                                 | 6       | yes               |
+| [`goal_events`](#goal_events)                               | 9       | yes               |
 | [`goal_links`](#goal_links)                                 | 6       | yes               |
 | [`goal_targets`](#goal_targets)                             | 9       | yes               |
 | [`goals`](#goals)                                           | 15      | yes               |
@@ -607,6 +608,25 @@ Indexes:
 
 - `goal_areas_user_idx` on `user_id`
 - `goal_areas_user_name_unique` on `user_id`, `name` — unique
+
+## goal_events
+
+| Column      | Type    | Null     | Default               | Notes               |
+| ----------- | ------- | -------- | --------------------- | ------------------- |
+| `id`        | integer | not null | —                     | primary key, auto   |
+| `user_id`   | text    | not null | —                     | → `user.id`         |
+| `goal_id`   | integer | not null | —                     | → `goals.id`        |
+| `kind`      | text    | not null | —                     | —                   |
+| `target_id` | integer | null     | —                     | → `goal_targets.id` |
+| `value`     | real    | null     | —                     | —                   |
+| `status`    | text    | null     | —                     | —                   |
+| `note`      | text    | not null | `''`                  | —                   |
+| `at`        | text    | not null | `(CURRENT_TIMESTAMP)` | —                   |
+
+Indexes:
+
+- `goal_events_user_idx` on `user_id`
+- `goal_events_goal_idx` on `goal_id`, `at`
 
 ## goal_links
 
