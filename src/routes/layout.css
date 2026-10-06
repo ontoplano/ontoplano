@@ -3208,11 +3208,16 @@ label:has(> input[type='radio']:not(:disabled)) {
  * after taps.
  */
 @media (hover: hover) {
-	.divide-y > * {
+	/*
+	 * Not a dialog, though: a card's own dialogs are mounted beside it in the
+	 * list, and a modal is a full-height box — so resting on one washed a
+	 * screen-tall column through the backdrop behind the panel.
+	 */
+	.divide-y > :not(dialog) {
 		position: relative;
 	}
 
-	.divide-y > *::after {
+	.divide-y > :not(dialog)::after {
 		content: '';
 		position: absolute;
 		inset: 0;
@@ -3231,7 +3236,7 @@ label:has(> input[type='radio']:not(:disabled)) {
 		transition: opacity 120ms ease;
 	}
 
-	.divide-y > *:hover::after {
+	.divide-y > :not(dialog):hover::after {
 		opacity: 1;
 	}
 }
