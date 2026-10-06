@@ -4700,9 +4700,14 @@ html button.tab-link {
 	position: relative;
 }
 
-/* A cover keeps its size whatever the column it sits in has to spare. */
-.notebook-shelf > .notebook-cover,
-.notebook-family > .notebook-cover {
+/*
+ * A cover keeps its size whatever the column it sits in has to spare — and
+ * whatever its tally says: the shelf wraps each one in a `contents` box for
+ * dragging, so a direct-child rule missed them and a cover was as wide as its
+ * caption, its buttons spilling over its name.
+ */
+.notebook-shelf .notebook-cover,
+.notebook-family .notebook-cover {
 	width: 6.5rem;
 }
 
