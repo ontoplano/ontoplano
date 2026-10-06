@@ -11,6 +11,7 @@ export type GoalActionNames = {
 	update: string;
 	setProgress: string;
 	close: string;
+	note: string;
 	setLinks: string;
 	setTodoStatus: string;
 	remove: string;
@@ -21,6 +22,7 @@ export const GOAL_ROOM_ACTIONS: GoalActionNames = {
 	update: '?/update',
 	setProgress: '?/setProgress',
 	close: '?/close',
+	note: '?/note',
 	setLinks: '?/setLinks',
 	setTodoStatus: '?/setTodoStatus',
 	remove: '?/remove'
@@ -31,6 +33,7 @@ export const NOTEBOOK_GOAL_ACTIONS: GoalActionNames = {
 	update: '?/goalUpdate',
 	setProgress: '?/goalProgress',
 	close: '?/goalClose',
+	note: '?/goalNote',
 	setLinks: '?/goalLinks',
 	setTodoStatus: '?/goalTodoStatus',
 	remove: '?/goalDelete'

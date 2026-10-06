@@ -2239,6 +2239,44 @@ export const goalLinks = sqliteTable(
 	]
 );
 
+/**
+ * What happened to a goal, in the order it happened.
+ *
+ * A measure kept only the number it stands at now, and a goal only whether it
+ * is open — so a goal finished in March said nothing of how it got there, and
+ * there was no line to draw. Each typed number, each closing or reopening and
+ * each note somebody writes afterwards is one row here, the way a habit keeps
+ * its days and a workout its sessions.
+ *
+ * `kind` says which: `progress` carries the measure and the number it was set
+ * to, `status` the status it moved to (and the outcome said with it, in
+ * `note`), `note` only words.
+ */
+export const goalEvents = sqliteTable(
+	'goal_events',
+	{
+		id: integer('id').primaryKey({ autoIncrement: true }),
+		userId: text('user_id')
+			.notNull()
+			.references(() => user.id),
+		goalId: integer('goal_id')
+			.notNull()
+			.references(() => goals.id, { onDelete: 'cascade' }),
+		kind: text('kind', { enum: ['progress', 'status', 'note'] }).notNull(),
+		targetId: integer('target_id').references(() => goalTargets.id, { onDelete: 'set null' }),
+		value: real('value'),
+		status: text('status', { enum: ['open', 'achieved', 'missed', 'abandoned'] }),
+		note: text('note').notNull().default(''),
+		at: text('at')
+			.notNull()
+			.default(sql`(CURRENT_TIMESTAMP)`)
+	},
+	(table) => [
+		index('goal_events_user_idx').on(table.userId),
+		index('goal_events_goal_idx').on(table.goalId, table.at)
+	]
+);
+
 // --- Dashboard -----------------------------------------------------------------
 
 /**

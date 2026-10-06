@@ -88,6 +88,7 @@ export const actions = {
 	update: goalHandlers.update,
 	setProgress: goalHandlers.setProgress,
 	close: goalHandlers.close,
+	note: goalHandlers.note,
 	setLinks: goalHandlers.setLinks,
 	setTodoStatus: goalHandlers.setTodoStatus,
 	remove: goalHandlers.remove

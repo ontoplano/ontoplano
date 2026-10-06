@@ -376,3 +376,47 @@ for (const [label, viewport] of [
 		await expect(dialog.getByLabel('Colour of Health')).toHaveValue('#1d4ed8');
 	});
 }
+
+/**
+ * A goal is reached, not ticked, and it keeps what happened to it.
+ *
+ * Its rail was a task's tick box. Now it is a ring with a cup that opens a
+ * dialog asking how it went; the goal then moves to the History tab with that
+ * answer, and a note can be added there afterwards.
+ */
+test('a goal is reached in its own dialog and lands in History with its notes', async ({
+	page
+}) => {
+	test.setTimeout(120_000);
+	await register(page, testEmail('goal-history'));
+	await visit(page, '/goals');
+	{
+		const field = page.locator('[name="heading"]');
+		await pressUntil(page, page.getByRole('button', { name: /New goal/ }).first(), field);
+		await field.fill('run a half marathon');
+	}
+	await page.getByRole('button', { name: 'Create goal' }).click();
+	await expect(page.getByText('run a half marathon').first()).toBeVisible();
+
+	await page.getByRole('button', { name: 'Achieve run a half marathon' }).click();
+	const cheer = page.getByRole('dialog', { name: 'You did it!' });
+	await expect(cheer).toBeVisible();
+	await cheer.locator('[name="outcome"]').fill('2h05, legs gone at km 18');
+	await page.getByRole('button', { name: 'Mark achieved' }).click();
+	await expect(cheer).toBeHidden();
+
+	await page
+		.getByRole('link', { name: /History/ })
+		.first()
+		.click();
+	await page.waitForURL('**/goals/history');
+	const card = page.locator('.goal-row', { hasText: 'run a half marathon' });
+	await expect(card).toBeVisible();
+	await expect(card.getByText('2h05, legs gone at km 18')).toBeVisible();
+	await expect(card.getByText('Achieved').first()).toBeVisible();
+
+	await card.locator('textarea[name="note"]').fill('next: under two hours');
+	await card.getByRole('button', { name: 'Add a note' }).click();
+	await expect(card.getByText('next: under two hours')).toBeVisible();
+	await page.screenshot({ path: 'test-results/shots/goal-history.png' });
+});

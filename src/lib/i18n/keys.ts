@@ -937,10 +937,12 @@ export type MessageKey =
 	| 'gallery.unused.whatTheseAre'
 	| 'goals.aGoalIsACommitment'
 	| 'goals.abandoned'
+	| 'goals.achieveIt'
 	| 'goals.achieved'
 	| 'goals.activities'
 	| 'goals.addArea'
 	| 'goals.addMeasure'
+	| 'goals.addNote'
 	| 'goals.allAreas'
 	| 'goals.area'
 	| 'goals.areaColour'
@@ -950,6 +952,7 @@ export type MessageKey =
 	| 'goals.closeItAsDone'
 	| 'goals.closeItAsNotDone'
 	| 'goals.closedCount'
+	| 'goals.closedOn'
 	| 'goals.confirm'
 	| 'goals.countedFrom'
 	| 'goals.countedFromActivity'
@@ -962,17 +965,23 @@ export type MessageKey =
 	| 'goals.eGFitness'
 	| 'goals.eGTrainThreeTimesA'
 	| 'goals.editGoal'
+	| 'goals.eventProgress'
 	| 'goals.everyBlockOf'
 	| 'goals.everyWeekIts'
 	| 'goals.fitnessStudyMoney'
 	| 'goals.goal'
 	| 'goals.goals'
+	| 'goals.historyEmpty'
+	| 'goals.historyEmptyBody'
+	| 'goals.historyFold'
 	| 'goals.horizon'
+	| 'goals.howDidItGo'
 	| 'goals.iKeepThisOneMyself'
 	| 'goals.kindCounted'
 	| 'goals.kindMeasured'
 	| 'goals.linkedTasks'
 	| 'goals.linkedTasksMakeProgress'
+	| 'goals.markAchieved'
 	| 'goals.measuredBy'
 	| 'goals.measuresCount'
 	| 'goals.missed'
@@ -990,7 +999,9 @@ export type MessageKey =
 	| 'goals.noWeeklyBlocksYet'
 	| 'goals.none'
 	| 'goals.noneOfTheseMatch'
+	| 'goals.notePlaceholder'
 	| 'goals.nothingCountedYet'
+	| 'goals.nothingHappenedYet'
 	| 'goals.nothingLinkedYetProgress'
 	| 'goals.oneFewer'
 	| 'goals.oneFewerUnit'
@@ -1009,6 +1020,7 @@ export type MessageKey =
 	| 'goals.removeMeasure'
 	| 'goals.renameArea'
 	| 'goals.reopen'
+	| 'goals.reopened'
 	| 'goals.saveLinks'
 	| 'goals.saveProgress'
 	| 'goals.searchGoals'
@@ -1028,6 +1040,8 @@ export type MessageKey =
 	| 'goals.whatCountsTowardsThisGoal'
 	| 'goals.whatKindOfNumber'
 	| 'goals.year'
+	| 'goals.youDidIt'
+	| 'goals.youDidItBody'
 	| 'health.habits.aBadHabitCountsDays'
 	| 'health.habits.aHabitIsSomethingYou'
 	| 'health.habits.addNote'
@@ -2447,6 +2461,9 @@ export type MessageKey =
 	| 'rooms.finance.tabs.ledgers'
 	| 'rooms.finance.tabs.rules'
 	| 'rooms.finance.title'
+	| 'rooms.goals.sections'
+	| 'rooms.goals.tabs.current'
+	| 'rooms.goals.tabs.history'
 	| 'rooms.health.sections'
 	| 'rooms.health.tabs.habits'
 	| 'rooms.health.tabs.recipes'
@@ -4253,14 +4270,18 @@ export interface MessageValuesFor {
 	'gallery.refused': { willRefuse: string | number };
 	'gallery.rename': { name: string | number };
 	'gallery.unused.deleteAllTitle': { count: number };
+	'goals.achieveIt': { title: string | number };
 	'goals.areaColour': { name: string | number };
 	'goals.closedCount': { count: number };
+	'goals.closedOn': { date: string | number };
 	'goals.countedFromActivity': { activity: string | number };
 	'goals.countsFor': { period: string | number };
 	'goals.deleteGoalBody': { title: string | number };
 	'goals.doneOfTotal': { done: string | number; total: string | number };
+	'goals.eventProgress': { unit: string | number; value: string | number };
 	'goals.everyBlockOf': { name: string | number };
 	'goals.everyWeekIts': { name: string | number };
+	'goals.historyFold': { n: string | number };
 	'goals.measuresCount': { count: number };
 	'goals.moveAreaEarlier': { name: string | number };
 	'goals.moveAreaLater': { name: string | number };
@@ -4273,6 +4294,7 @@ export interface MessageValuesFor {
 	'goals.showingCount': { count: number };
 	'goals.tasks': { length: string | number };
 	'goals.weekOfDateYear': { date: string | number };
+	'goals.youDidItBody': { title: string | number };
 	'health.habits.dayStreak': { count: number };
 	'health.habits.daysClean': { count: number };
 	'health.habits.inAllScroll': { length: string | number };

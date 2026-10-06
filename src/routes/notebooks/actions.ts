@@ -388,6 +388,7 @@ export const notebookActions = {
 	goalUpdate: goalHandlers.update,
 	goalProgress: goalHandlers.setProgress,
 	goalClose: goalHandlers.close,
+	goalNote: goalHandlers.note,
 	goalLinks: goalHandlers.setLinks,
 	goalTodoStatus: goalHandlers.setTodoStatus,
 	goalDelete: goalHandlers.remove,
