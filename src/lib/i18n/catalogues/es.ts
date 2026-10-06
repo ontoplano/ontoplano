@@ -1995,6 +1995,30 @@ export const messages: Catalogue = {
 	'manifest.newDiaryEntry': 'Nueva entrada de diario',
 	'manifest.todaysColumns': 'Las columnas de hoy',
 	'manifest.writeAnEntry': 'Escribir una entrada',
+	'markdown.help.checklist': 'Una lista de tareas — sus casillas se pueden marcar donde se muestra',
+	'markdown.help.code': 'Código, tal como se escribió',
+	'markdown.help.emphasis': 'Énfasis',
+	'markdown.help.heading': 'Un título — de uno a seis #',
+	'markdown.help.intro': 'Lo que escribes a la izquierda, y en qué se convierte.',
+	'markdown.help.link':
+		'Un enlace, abierto en otra pestaña. Solo direcciones web, de correo y de la propia app',
+	'markdown.help.list': 'Una lista',
+	'markdown.help.note':
+		'La misma nota, dicha como nota — se muestra con su título cuando se conoce',
+	'markdown.help.noteBare':
+		'La nota número 12 de donde esto está escrito: la numeración del diario en el diario, la del cuaderno en un cuaderno',
+	'markdown.help.numbered': 'Una lista numerada',
+	'markdown.help.open': '¿Qué puedo escribir aquí?',
+	'markdown.help.picker':
+		'En un cuaderno, escribe NOTE:# o TASK:# y se abre una lista para encontrar la que buscas por su título.',
+	'markdown.help.pictures':
+		'Pega o suelta una imagen o una grabación en el cuadro para añadirla. Solo se muestran tus propios archivos; una dirección de fuera queda como texto.',
+	'markdown.help.quote': 'Una cita',
+	'markdown.help.references': 'Señalar otras cosas',
+	'markdown.help.table': 'Una tabla',
+	'markdown.help.task':
+		'La tarea 4 de este cuaderno, por el número que muestra su lista. Deja el puntero encima para verla; púlsala para abrirla',
+	'markdown.help.title': 'Escribir aquí',
 	'markdown.nothingToPreviewYet': 'Nada que previsualizar todavía',
 	'markdown.preview': 'Vista previa',
 	'markdown.sideBySide': 'Lado a lado',

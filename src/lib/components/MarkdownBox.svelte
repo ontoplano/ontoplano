@@ -27,8 +27,16 @@
 	import { continueList } from '$lib/list-continue';
 	import { peekRefs } from '$lib/task-peek.svelte';
 	import Written from './Written.svelte';
-	import { renderMarkdown, type NoteRefs, type TodoRefs } from '$lib/markdown';
+	import {
+		REFS,
+		refKindOf,
+		renderMarkdown,
+		type NoteRefs,
+		type RefKind,
+		type TodoRefs
+	} from '$lib/markdown';
 	import RefPicker from './RefPicker.svelte';
+	import MarkdownHelp from './MarkdownHelp.svelte';
 	import { sliding } from '$lib/actions/sliding';
 	import { useT } from '$lib/i18n';
 	import type { HTMLTextareaAttributes } from 'svelte/elements';
@@ -102,9 +110,14 @@
 	 * Only where there is something to point at — outside a notebook the
 	 * number would mean nothing.
 	 */
-	let pointing = $state<'task' | 'note' | null>(null);
+	let pointing = $state<RefKind | null>(null);
 	let pickerOpen = $state(false);
-	const REF_PREFIX = /(TASK|NOTE):#$/;
+	// Each kind's own spelling; a legacy one (`TODO:`) is read but not offered.
+	const REF_PREFIX = new RegExp(
+		`(${Object.values(REFS)
+			.map((kind) => kind.prefixes[0])
+			.join('|')}):#$`
+	);
 
 	const pointable = $derived(
 		pointing === 'task'
@@ -118,7 +131,7 @@
 		if (!box) return;
 		const typed = REF_PREFIX.exec(box.value.slice(0, box.selectionStart ?? 0));
 		if (!typed) return;
-		const kind = typed[1] === 'TASK' ? 'task' : 'note';
+		const kind = refKindOf(typed[1]);
 		if (!(kind === 'task' ? todos?.size : notes?.size)) return;
 		pointing = kind;
 		pickerOpen = true;
@@ -291,6 +304,8 @@
 				{t('markdown.preview')}
 			</button>
 		</div>
+		<!-- What the box understands, beside the pair it is about. -->
+		<MarkdownHelp />
 
 		<!--
 			And the one that takes in both, at the far end of the strip.

@@ -183,3 +183,17 @@ test('NOTE:#12 links to the note, named by its title where it is known', () => {
 		'href="#diary-12">Paperclip &lt;instructions&gt;</a>'
 	);
 });
+
+test('every reference says its kind and number, and nothing that was typed', () => {
+	const html = renderMarkdown('#3, NOTE:#12, TASK:#4 and TODO:#5');
+	expect(html).toContain('data-ref="note" data-ref-seq="3"');
+	expect(html).toContain('data-ref="note" data-ref-seq="12"');
+	expect(html).toContain('data-ref="task" data-ref-seq="4"');
+	// The old spelling is read as a task, and shown in the current one.
+	expect(html).toContain('data-ref="task" data-ref-seq="5" href="#todo-5">TASK:#5</a>');
+});
+
+test('a prefix nobody defined is not a reference', () => {
+	expect(renderMarkdown('GOAL:#2')).not.toContain('data-ref=');
+	expect(renderMarkdown('x<b>:#2')).not.toContain('data-ref=');
+});

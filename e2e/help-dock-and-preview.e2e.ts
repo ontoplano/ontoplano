@@ -59,6 +59,17 @@ test('a note shows what its markdown will look like, without saving it', async (
 	const writeTab = page.locator('dialog').getByRole('tab', { name: 'Write' }).first();
 	if (await writeTab.isVisible().catch(() => false)) await writeTab.click();
 	await expect(box).toHaveValue('# A heading\n\n- one\n- two');
+
+	// What the box understands is one press away, drawn by the same renderer,
+	// and closing it leaves the writing where it was.
+	await page.getByRole('button', { name: 'What can I write here?' }).first().click();
+	const help = page.getByRole('dialog', { name: 'Writing here' });
+	await expect(help).toBeVisible();
+	await expect(help.locator('.md li')).not.toHaveCount(0);
+	await expect(help.getByText('TASK:#4')).toBeVisible();
+	await page.keyboard.press('Escape');
+	await expect(help).toBeHidden();
+	await expect(box).toHaveValue('# A heading\n\n- one\n- two');
 });
 
 /**

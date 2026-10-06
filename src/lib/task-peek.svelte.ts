@@ -1,5 +1,5 @@
 import type { Action } from 'svelte/action';
-import type { PeekTask, TodoRefs } from '$lib/markdown';
+import { refAt, type PeekTask, type TodoRefs } from '$lib/markdown';
 
 /**
  * A task reference, looked at without leaving the writing it is in.
@@ -33,14 +33,16 @@ export const peekRefs: Action<HTMLElement, TodoRefs | undefined> = (node, initia
 	let refs = initial;
 	let timer: ReturnType<typeof setTimeout> | undefined;
 
-	const refOf = (target: EventTarget | null) =>
-		target instanceof Element ? target.closest<HTMLElement>('a.todo-ref[data-todo-seq]') : null;
+	const refOf = (target: EventTarget | null) => {
+		const ref = refAt(target);
+		return ref?.kind === 'task' ? ref : null;
+	};
 
-	function show(ref: HTMLElement) {
-		const task = refs?.get(Number(ref.dataset.todoSeq))?.task;
+	function show(ref: { seq: number; link: HTMLElement }) {
+		const task = refs?.get(ref.seq)?.task;
 		if (!task) return;
 		peek.task = task;
-		peek.rect = ref.getBoundingClientRect();
+		peek.rect = ref.link.getBoundingClientRect();
 	}
 
 	function enter(event: Event) {

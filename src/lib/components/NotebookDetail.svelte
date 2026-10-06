@@ -77,7 +77,7 @@
 	import type { Todo } from '$lib/services/todos';
 	import { browsable } from '$lib/browse.svelte';
 	import { checklistItems } from '$lib/checklist';
-	import { renderMarkdown } from '$lib/markdown';
+	import { refAt, renderMarkdown } from '$lib/markdown';
 	import { say } from '$lib/said.svelte';
 	import { useT } from '$lib/i18n';
 	import { RememberedOrder } from '$lib/remembered-order.svelte';
@@ -723,17 +723,29 @@
 		)
 	);
 
-	function openReferencedTodo(press: MouseEvent) {
-		const link = (press.target as HTMLElement).closest('.todo-ref') as HTMLElement | null;
-		if (!link) return;
+	/**
+	 * A `TASK:#4` or `NOTE:#12` pressed in a note, opened where it lives here.
+	 *
+	 * Looked up among this notebook's own tasks and notes, which is all the
+	 * number can mean — the link carries a kind and digits, nothing else.
+	 */
+	function openReference(press: MouseEvent) {
+		const ref = refAt(press.target);
+		if (!ref) return;
 		press.preventDefault();
-		const seq = Number(link.dataset.todoSeq);
-		const one = (contents?.todos ?? []).find((task) => task.notebookSeq === seq);
-		if (!one) return;
-		// The task lives on the Tasks tab, and its editor is that list's own.
-		tab = 'tasks';
-		// After the tab has drawn, so the list is there to be asked.
-		void tick().then(() => openTodoById?.(one.id));
+		if (ref.kind === 'task') {
+			const one = (contents?.todos ?? []).find((task) => task.notebookSeq === ref.seq);
+			if (!one) return;
+			// The task lives on the Tasks tab, and its editor is that list's own.
+			tab = 'tasks';
+			// After the tab has drawn, so the list is there to be asked.
+			void tick().then(() => openTodoById?.(one.id));
+		} else {
+			const one = (contents?.entries ?? []).find((entry) => entry.seq === ref.seq);
+			if (!one) return;
+			tab = 'notes';
+			void tick().then(() => openItem('notes', one.id));
+		}
 	}
 
 	/** Units this account already counts things in, offered rather than imposed. */
@@ -2499,7 +2511,7 @@
 								<!-- svelte-ignore a11y_no_static_element_interactions -->
 								<div
 									class="md mt-2 text-sm text-gray-900"
-									onclick={openReferencedTodo}
+									onclick={openReference}
 									use:peekRefs={todoRefs}
 								>
 									<!-- `renderMarkdown` escapes every character of the input before it emits a

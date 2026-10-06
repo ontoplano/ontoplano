@@ -22,7 +22,7 @@
 	import FormError from '$lib/components/FormError.svelte';
 	import NoteFields from '$lib/components/fields/NoteFields.svelte';
 	import { resolve } from '$app/paths';
-	import { renderMarkdown } from '$lib/markdown';
+	import { refAt, renderMarkdown } from '$lib/markdown';
 	import EmptyState from '$lib/components/EmptyState.svelte';
 	import Icon from '$lib/components/Icon.svelte';
 	import { armed } from '$lib/actions/armed';
@@ -225,12 +225,11 @@
 	}
 
 	function handleEntriesPointerOver(e: PointerEvent) {
-		const target = (e.target as HTMLElement).closest('.diary-ref') as HTMLElement | null;
-		if (!target) return;
-		const seq = Number(target.dataset.seq);
-		const entry = seqMap().get(seq);
+		const ref = refAt(e.target);
+		if (ref?.kind !== 'note') return;
+		const entry = seqMap().get(ref.seq);
 		if (!entry) return;
-		const rect = target.getBoundingClientRect();
+		const rect = ref.link.getBoundingClientRect();
 		const preview = entry.content.length > 120 ? entry.content.slice(0, 120) + '…' : entry.content;
 		tooltip = {
 			visible: true,
@@ -242,17 +241,15 @@
 	}
 
 	function handleEntriesPointerOut(e: PointerEvent) {
-		const target = (e.target as HTMLElement).closest('.diary-ref');
-		if (!target) return;
+		if (refAt(e.target)?.kind !== 'note') return;
 		tooltip.visible = false;
 	}
 
 	function handleEntriesClick(e: MouseEvent) {
-		const target = (e.target as HTMLElement).closest('.diary-ref') as HTMLElement | null;
-		if (!target) return;
+		const ref = refAt(e.target);
+		if (ref?.kind !== 'note') return;
 		e.preventDefault();
-		const seq = Number(target.dataset.seq);
-		const el = document.getElementById(`diary-${seq}`);
+		const el = document.getElementById(`diary-${ref.seq}`);
 		if (el) {
 			el.scrollIntoView({ behavior: 'smooth', block: 'center' });
 			// Briefly highlight

@@ -2016,6 +2016,31 @@ export const messages: Catalogue = {
 	'manifest.newDiaryEntry': 'Neuer Tagebucheintrag',
 	'manifest.todaysColumns': 'Die heutigen Spalten',
 	'manifest.writeAnEntry': 'Einen Eintrag schreiben',
+	'markdown.help.checklist':
+		'Eine Checkliste — ihre Kästchen lassen sich dort abhaken, wo sie angezeigt wird',
+	'markdown.help.code': 'Code, genau wie getippt',
+	'markdown.help.emphasis': 'Hervorhebung',
+	'markdown.help.heading': 'Eine Überschrift — ein bis sechs #',
+	'markdown.help.intro': 'Was du links tippst, und was daraus wird.',
+	'markdown.help.link':
+		'Ein Link, in einem neuen Tab geöffnet. Nur Web-, Mail- und App-eigene Adressen',
+	'markdown.help.list': 'Eine Liste',
+	'markdown.help.note':
+		'Dieselbe Notiz, ausdrücklich als Notiz — mit ihrem Titel, wo er bekannt ist',
+	'markdown.help.noteBare':
+		'Die Notiz Nummer 12 dort, wo dies steht: die Nummerierung des Tagebuchs im Tagebuch, die des Notizbuchs in einem Notizbuch',
+	'markdown.help.numbered': 'Eine nummerierte Liste',
+	'markdown.help.open': 'Was kann ich hier schreiben?',
+	'markdown.help.picker':
+		'Tippe in einem Notizbuch NOTE:# oder TASK:#, und eine Liste öffnet sich, um die gemeinte nach ihrem Titel zu finden.',
+	'markdown.help.pictures':
+		'Füge ein Bild oder eine Aufnahme ein oder ziehe sie in das Feld. Nur deine eigenen Dateien werden gezeigt; eine fremde Adresse bleibt Text.',
+	'markdown.help.quote': 'Ein Zitat',
+	'markdown.help.references': 'Auf anderes verweisen',
+	'markdown.help.table': 'Eine Tabelle',
+	'markdown.help.task':
+		'Aufgabe 4 dieses Notizbuchs, mit der Nummer, die ihre Liste zeigt. Zeiger darauf zeigt die Aufgabe; Drücken öffnet sie',
+	'markdown.help.title': 'Hier schreiben',
 	'markdown.nothingToPreviewYet': 'Noch nichts in der Vorschau',
 	'markdown.preview': 'Vorschau',
 	'markdown.sideBySide': 'Nebeneinander',

@@ -12,6 +12,7 @@
 	import { matchScore } from '$lib/destinations';
 	import { autofocus } from '$lib/actions/autofocus';
 	import { useT } from '$lib/i18n';
+	import type { RefKind } from '$lib/markdown';
 
 	/** How many matches are listed; typing narrows the rest. */
 	const SHOWN = 50;
@@ -23,7 +24,7 @@
 		onpick
 	}: {
 		open?: boolean;
-		kind: 'task' | 'note';
+		kind: RefKind;
 		choices: { seq: number; title: string; done?: boolean }[];
 		onpick: (seq: number) => void;
 	} = $props();

@@ -59,3 +59,45 @@ test('a checklist becomes references, and a reference opens its task', async ({ 
 	await expect(page.locator('dialog[open]')).toBeVisible({ timeout: 15_000 });
 	await expect(page.locator('dialog[open] [name="heading"]')).toHaveValue('ring the plumber');
 });
+
+/**
+ * A note points at another note the same way, and that opens too.
+ *
+ * `NOTE:#1` used to be a link to `#diary-1` — an address only the diary
+ * answers — so inside a notebook it was a link to nowhere.
+ */
+test('a note named by its number opens from another note', async ({ page }) => {
+	test.setTimeout(180_000);
+	await register(page, testEmail('note-note-links'));
+	await visit(page, '/notebooks');
+
+	await page
+		.getByRole('button', { name: /New notebook/ })
+		.first()
+		.click();
+	const create = page.getByRole('dialog');
+	await create.locator('[name="heading"]').fill('Garden');
+	await create
+		.getByRole('button', { name: /Create|Add/ })
+		.last()
+		.click();
+	await expect(page.getByText('Garden').first()).toBeVisible({ timeout: 30_000 });
+
+	for (const content of ['The hedge\n\nsixty metres of laurel', 'Plan\n\nstart from NOTE:#1']) {
+		await page.getByRole('button', { name: 'New note', exact: true }).first().click();
+		await page.locator('textarea[name="content"]').first().fill(content);
+		await page
+			.getByRole('button', { name: /Save|Add note|Create/ })
+			.last()
+			.click();
+		await expect(page.locator('dialog[open]')).toHaveCount(0, { timeout: 30_000 });
+	}
+
+	await page.getByText('Plan', { exact: true }).first().click();
+	const reference = page.locator('a[data-ref="note"]').first();
+	await expect(reference).toHaveText('The hedge');
+	await expect(page.getByText('sixty metres of laurel')).toHaveCount(0);
+
+	await reference.click();
+	await expect(page.getByText('sixty metres of laurel')).toBeVisible();
+});
