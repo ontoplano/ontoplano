@@ -33,7 +33,6 @@
 	import GoalCard from '$lib/components/GoalCard.svelte';
 	import GoalLinksModal from '$lib/components/GoalLinksModal.svelte';
 	import { NOTEBOOK_GOAL_ACTIONS } from '$lib/goal-action-names';
-	import { CLOSED_STATUSES } from '$lib/task-status';
 	import {
 		DEFAULT_NOTE_ORDER,
 		defaultDirectionFor,
@@ -79,7 +78,7 @@
 	import type { Todo } from '$lib/services/todos';
 	import { browsable } from '$lib/browse.svelte';
 	import { checklistItems } from '$lib/checklist';
-	import { refAt, renderMarkdown, type Refs } from '$lib/markdown';
+	import { refAt, renderMarkdown, taskRefs, type Refs } from '$lib/markdown';
 	import { say } from '$lib/said.svelte';
 	import { useT } from '$lib/i18n';
 	import { RememberedOrder } from '$lib/remembered-order.svelte';
@@ -705,16 +704,7 @@
 	 * note that points at a list says what is on the list and how far along it
 	 * is, rather than a row of numbers.
 	 */
-	const todoRefs = $derived(
-		new Map(
-			(contents?.todos ?? [])
-				.filter((one) => one.notebookSeq !== null)
-				.map((one) => [
-					one.notebookSeq as number,
-					{ title: one.title, done: CLOSED_STATUSES.includes(one.status), task: one }
-				])
-		)
-	);
+	const todoRefs = $derived(taskRefs(contents?.todos ?? []));
 
 	/** The notes `NOTE:#12` may name here, by their number, as they are listed. */
 	const noteRefs = $derived(
@@ -1829,6 +1819,7 @@
 				notebooks={pickableNotebooks}
 				actions={NOTEBOOK_TODO_ACTIONS}
 				notebookId={notebook.id}
+				refs={writingRefs}
 				shortcutRoom={k === tab ? '/tasks/todo' : null}
 				claimsRoomBar={false}
 				framed={false}

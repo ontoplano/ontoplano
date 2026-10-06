@@ -65,6 +65,7 @@
 	import FormGrid from '$lib/components/FormGrid.svelte';
 	import Modal from '$lib/components/Modal.svelte';
 	import { STATUSES, STATUS_LABELS, CLOSED_STATUSES } from '$lib/task-status';
+	import { taskRefs, type Refs } from '$lib/markdown';
 	import { ordinal } from '$lib/ordinal';
 	import { keepInView } from '$lib/actions/keep-in-view';
 	import { invalidateAll } from '$app/navigation';
@@ -138,7 +139,12 @@
 		 * second editor to keep in step with this one.
 		 */
 		// eslint-disable-next-line no-useless-assignment
-		openTodo = $bindable()
+		openTodo = $bindable(),
+		/**
+		 * Everything writing in this notebook can point at, from the notebook
+		 * page. Without it, a task's notes still find the tasks of its notebook.
+		 */
+		refs = undefined
 	}: {
 		todos: Todo[];
 		categories: { id: number; name: string }[];
@@ -175,6 +181,7 @@
 		newTour?: string | null;
 		openNew?: (() => void) | undefined;
 		openTodo?: ((id: number) => void) | undefined;
+		refs?: Refs;
 	} = $props();
 
 	/**
@@ -949,17 +956,19 @@
 	 * characters somebody typed, which is the honest answer to an ambiguous
 	 * number.
 	 */
-	const todoRefs = $derived(
-		notebookId === null
+	const todoRefs = $derived(notebookId === null ? undefined : taskRefs(todos));
+
+	/**
+	 * What the form's notes point at: the notebook the task is being filed in.
+	 * Unlike a room row, the form knows which one that is, so the number is not
+	 * ambiguous there — and the hover card works in the dialog too.
+	 */
+	const formRefs = $derived<Refs | undefined>(
+		formNotebookId === null
 			? undefined
-			: new Map(
-					todos
-						.filter((one: Todo) => one.notebookSeq !== null)
-						.map((one: Todo) => [
-							one.notebookSeq as number,
-							{ title: one.title, done: CLOSED_STATUSES.includes(one.status), task: one }
-						])
-				)
+			: refs && formNotebookId === notebookId
+				? refs
+				: { tasks: taskRefs(todos.filter((one: Todo) => one.notebookId === formNotebookId)) }
 	);
 
 	/** Every label on this list, so the picker offers what is actually there. */
@@ -2417,6 +2426,7 @@
 					{notebooks}
 					bind:ratings={formRatings}
 					place={whereItWouldSit}
+					refs={formRefs}
 				/>
 			</FormGrid>
 		</form>

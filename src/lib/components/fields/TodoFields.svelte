@@ -8,6 +8,7 @@
 	import NotebookField from '$lib/components/NotebookField.svelte';
 	import RatingPicker from '$lib/components/RatingPicker.svelte';
 	import MarkdownBox from '$lib/components/MarkdownBox.svelte';
+	import type { Refs } from '$lib/markdown';
 	import PictureAttach from '$lib/components/PictureAttach.svelte';
 	import RecordingAttach from '$lib/components/RecordingAttach.svelte';
 	import AttributeFields from '$lib/components/AttributeFields.svelte';
@@ -61,7 +62,9 @@
 		place = undefined,
 		scheduledDate = '',
 		/** What it says about itself: `{ url, room, … }`. See `AttributeFields`. */
-		attributes = {}
+		attributes = {},
+		/** What `TASK:#4` in its notes resolves against: its notebook's things. */
+		refs = undefined
 	}: {
 		title?: string;
 		notes?: string;
@@ -81,6 +84,7 @@
 		/** The day it sits on, or '' for a task with no day yet. */
 		scheduledDate?: string;
 		attributes?: Record<string, string>;
+		refs?: Refs;
 	} = $props();
 
 	// Seeded once: the dialog is rebuilt on every opening, as the category is.
@@ -170,6 +174,7 @@
 			name="notes"
 			rows={compact ? 3 : NOTES_ROWS}
 			preview="written"
+			{refs}
 		/>
 		<!-- A task said out loud is still a task, and a task is as often a
 		     screenshot: the same two attachments a note and an idea have,

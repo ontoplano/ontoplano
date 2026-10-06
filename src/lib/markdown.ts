@@ -13,6 +13,8 @@
  * diary entry, and `TASK:#4` as a reference to a task in the same notebook.
  */
 
+import { CLOSED_STATUSES, type Status } from './task-status.js';
+
 const ESCAPES: Record<string, string> = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' };
 
 /** What stands in for a span of code while the rest of a line is read. */
@@ -380,6 +382,22 @@ export type PeekTask = {
 	notebookTitle: string | null;
 	archivedAt: string | null;
 };
+/**
+ * Tasks keyed by their number in their notebook, as `TASK:#4` resolves them.
+ * The caller says which notebook's: a number is only unique inside one.
+ */
+export function taskRefs(
+	todos: readonly (PeekTask & { notebookSeq: number | null; status: Status })[]
+): TodoRefs {
+	return new Map(
+		todos
+			.filter((one) => one.notebookSeq !== null)
+			.map((one) => [
+				one.notebookSeq as number,
+				{ title: one.title, done: CLOSED_STATUSES.includes(one.status), task: one }
+			])
+	);
+}
 /** The notes `NOTE:#N` may name, by their number. */
 export type NoteRefs = Map<number, { title: string }>;
 /** The goals `GOAL:#N` or ideas `IDEA:#N` may name, by their number — done is a closed goal. */
