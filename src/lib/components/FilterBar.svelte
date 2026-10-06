@@ -418,6 +418,41 @@
 		order: 5;
 	}
 
+	/*
+	 * And on that second line the controls are a thumb's, not a mouse's.
+	 *
+	 * Folded is a phone. Small buttons with page between them are sized for a
+	 * pointer that lands where it is aimed; a thumb wants the line itself. So
+	 * the verb, the order, its direction and Filters share the line edge to
+	 * edge, as tall as a control there, and only the count keeps its width.
+	 */
+	.filter-two-rows > .filter-tail {
+		flex: 3 1 0;
+		min-width: 0;
+	}
+
+	.filter-two-rows > .filter-tail > :global(*),
+	.filter-two-rows > .filter-tail :global([data-picker]),
+	.filter-two-rows > .filter-tail :global([data-picker] > button) {
+		flex: 1 1 0;
+		min-width: 0;
+	}
+
+	.filter-two-rows > .filter-toggle {
+		flex: 1 1 0;
+	}
+
+	.filter-two-rows :global(:is(.btn, .icon-btn)) {
+		min-height: var(--control-touch);
+	}
+
+	/* The direction is a button among buttons here, not a bare glyph. */
+	.filter-two-rows > .filter-tail :global(.icon-btn) {
+		flex: 1 1 0;
+		border: 1px solid var(--color-gray-300);
+		background-color: var(--btn-face);
+	}
+
 	.filter-inline-below > :global(*) {
 		flex: 1 1 0;
 		min-width: 0;

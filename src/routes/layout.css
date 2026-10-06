@@ -5162,6 +5162,43 @@ html[data-style='playful'] .room-surface {
 	color: var(--color-gray-900);
 	font-weight: 700;
 	box-shadow: inset 0 -2px 0 var(--section-accent, var(--color-gray-900));
+	/*
+	 * And the whole tab is lit, not only its foot: a two-pixel line under a
+	 * word is a thing to look for on a phone, a tinted block is not.
+	 */
+	background-color: color-mix(
+		in srgb,
+		var(--section-accent, var(--color-gray-900)) var(--tab-lit-share),
+		transparent
+	);
+}
+
+/*
+ * A tab runs the strip's full height, so its line is the strip's bottom edge.
+ *
+ * The track's own padding sat under every tab, which left a sliver of track
+ * between the line and the room it opens — and the playful style rounds every
+ * anchor and button, which bent the line up at both ends and notched the lit
+ * block's corners. Square, edge to edge, and the padding moved inside the tab
+ * so the strip is as tall as it was.
+ */
+.room-tabs {
+	--tab-lit-share: 12%;
+}
+
+.room-tabs > .seg-track,
+.room-tabs .seg-scroll {
+	padding-block: 0;
+	align-items: stretch;
+}
+
+.room-tabs .tab-strip-view {
+	align-items: stretch;
+}
+
+html .room-tabs .seg-scroll > :is(a, button) {
+	padding-block: calc(0.5rem + var(--seg-pad, 0px));
+	border-radius: 0 !important;
 }
 
 /*
