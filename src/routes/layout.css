@@ -4889,6 +4889,7 @@ html button.tab-link {
 	top: 0.5rem;
 	right: 0.5rem;
 	display: flex;
+	flex-direction: column;
 	align-items: center;
 	gap: 0.125rem;
 	border-radius: var(--radius, 0);
@@ -4902,9 +4903,35 @@ html button.tab-link {
 	opacity: 1;
 }
 
+/* Open is the cover itself, wherever a pointer can hover over it. */
+.cover-open {
+	display: none;
+}
+
+/*
+ * No hover: a folder's buttons stay showing, and a notebook's wait for the
+ * first tap — see `NotebookCover`. Two by two there, so a thumb's squares fit
+ * on the picture, with Open filled as the one that matters.
+ */
 @media (hover: none) {
 	.cover-actions {
 		opacity: 1;
+	}
+
+	.notebook-cover.taps-to-reveal .cover-actions {
+		display: grid;
+		grid-template-columns: repeat(2, auto);
+	}
+
+	.notebook-cover.taps-to-reveal:not(.is-revealed) .cover-actions {
+		opacity: 0;
+		pointer-events: none;
+	}
+
+	.taps-to-reveal .cover-open {
+		display: inline-flex;
+		background-color: var(--btn-primary-face);
+		color: var(--ink-on-fill);
 	}
 }
 

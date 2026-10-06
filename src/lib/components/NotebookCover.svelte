@@ -20,6 +20,9 @@
 
 	const t = useT();
 
+	/** A screen that cannot hover — the same query as `.taps-to-reveal` in `layout.css`. */
+	const HOVERLESS = '(hover: none)';
+
 	let {
 		notebook,
 		href,
@@ -35,6 +38,26 @@
 		actions?: Snippet;
 		star?: Snippet;
 	} = $props();
+
+	/*
+	 * Its buttons show on hover, and a screen with no hover has to ask for them.
+	 *
+	 * So there the first tap on a cover shows them rather than opening it, and
+	 * Open is one of them; a tap anywhere else puts them away again.
+	 */
+	const hasTools = $derived(Boolean(actions || star));
+	let revealed = $state(false);
+	let root: HTMLDivElement | undefined = $state();
+
+	function onFaceClick(event: MouseEvent) {
+		if (!hasTools || revealed || !window.matchMedia(HOVERLESS).matches) return;
+		event.preventDefault();
+		revealed = true;
+	}
+
+	function onWindowPointerDown(event: PointerEvent) {
+		if (revealed && !root?.contains(event.target as Node)) revealed = false;
+	}
 
 	/** Its own name: the folder it is in is the shelf's to show. */
 	const name = $derived(notebook.title);
@@ -74,14 +97,22 @@
 	});
 </script>
 
+<svelte:window onpointerdown={onWindowPointerDown} />
+
 <!-- eslint-disable svelte/no-navigation-without-resolve -->
-<div class="notebook-cover">
+<div
+	bind:this={root}
+	class="notebook-cover"
+	class:taps-to-reveal={hasTools}
+	class:is-revealed={revealed}
+>
 	<!-- Already resolved: the caller builds this with `resolve()`. -->
 	<a
 		{href}
 		class="cover-face {chosen ? 'is-chosen' : ''}"
 		title="{name} · {tally}"
 		aria-current={chosen ? 'true' : undefined}
+		onclick={onFaceClick}
 	>
 		<!-- A cover with no picture is a blank cover, not a cover with a notebook
 		     drawn on it: a shelf of identical glyphs is noise where the picture is
@@ -93,8 +124,8 @@
 		{/if}
 
 		<span class="cover-name" class:text-gray-500={notebook.closedAt}>
-			{#if notebook.favourite && !star}
-				<!-- Said on the cover where there is no star button to say it. -->
+			{#if notebook.favourite}
+				<!-- Said on the cover, because the star button only shows on hover. -->
 				<span class="cover-star" title={t('notebooks.favourites')}>
 					<Icon name="star" size={11} />
 				</span>
@@ -114,16 +145,23 @@
 		</span>
 	</a>
 
-	{#if actions}
+	{#if hasTools}
 		<!--
 			What you do to it, on the cover rather than in a column of their own:
-			a shelf has no columns.
+			a shelf has no columns. One column of buttons, the star first; Open
+			leads it only where there is no hover and the first tap brought them.
 		-->
-		<div class="cover-actions">{@render actions()}</div>
-	{/if}
-	{#if star}
-		<div class="cover-actions cover-actions-start" class:is-held={notebook.favourite}>
-			{@render star()}
+		<div class="cover-actions">
+			<a
+				{href}
+				class="icon-btn cover-open"
+				title={t('ui.open')}
+				aria-label={t('notebooks.openNamed', { title: name })}
+			>
+				<Icon name="arrow-right" />
+			</a>
+			{@render star?.()}
+			{@render actions?.()}
 		</div>
 	{/if}
 </div>
@@ -135,19 +173,5 @@
 	}
 	.cover-star :global(path) {
 		fill: currentColor;
-	}
-	/* A star that is on stays showing, so the shelf says which are favourites. */
-	/*
-	 * In the bottom corner of the picture: a cover is one row of buttons wide,
-	 * and the top one is taken. The picture is the shelf's column (6.5rem) less
-	 * the face's padding, at 3:4 — see `.notebook-shelf` and `.cover-art`.
-	 */
-	.cover-actions-start {
-		top: calc(0.375rem + (6.5rem - 0.75rem) * 4 / 3 - 2.25rem - 0.25rem);
-		right: auto;
-		left: 0.625rem;
-	}
-	.cover-actions-start.is-held {
-		opacity: 1;
 	}
 </style>

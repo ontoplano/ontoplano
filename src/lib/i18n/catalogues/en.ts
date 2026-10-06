@@ -2270,6 +2270,7 @@ export const messages: Catalogue = {
 	'notebooks.onlyTheFirstAreListed':
 		'Only the newest few hundred are listed — narrow it with the box above.',
 	'notebooks.openInItsRoom': 'Open where it lives',
+	'notebooks.openNamed': 'Open {title}',
 	'notebooks.orImportAFolderOf': '…or import a folder of markdown',
 	'notebooks.people.19900314Or0314WithoutThe': '1990-03-14, or --03-14 without the year',
 	'notebooks.people.aPictureOf': '{add} a picture of {name}',

@@ -2317,6 +2317,7 @@ export const messages: Catalogue = {
 	'notebooks.onlyTheFirstAreListed':
 		'Só as poucas centenas mais recentes aparecem — use o campo acima para filtrar.',
 	'notebooks.openInItsRoom': 'Abrir onde fica',
+	'notebooks.openNamed': 'Abrir {title}',
 	'notebooks.orImportAFolderOf': '…ou importe uma pasta de markdown',
 	'notebooks.people.19900314Or0314WithoutThe': '1990-03-14, ou --03-14 sem o ano',
 	'notebooks.people.aPictureOf': '{add} uma foto de {name}',

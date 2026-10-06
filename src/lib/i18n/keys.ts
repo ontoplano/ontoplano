@@ -2040,6 +2040,7 @@ export type MessageKey =
 	| 'notebooks.nothingUnderThisSubjectYet'
 	| 'notebooks.onlyTheFirstAreListed'
 	| 'notebooks.openInItsRoom'
+	| 'notebooks.openNamed'
 	| 'notebooks.orImportAFolderOf'
 	| 'notebooks.people.19900314Or0314WithoutThe'
 	| 'notebooks.people.aPictureOf'
@@ -4478,6 +4479,7 @@ export interface MessageValuesFor {
 	'notebooks.inventoryCount': { count: number };
 	'notebooks.ledgersCount': { count: number };
 	'notebooks.notesCount': { count: number };
+	'notebooks.openNamed': { title: string | number };
 	'notebooks.people.aPictureOf': { add: string | number; name: string | number };
 	'notebooks.people.addAPictureOf': { name: string | number };
 	'notebooks.people.changeTheirPicture': { name: string | number };

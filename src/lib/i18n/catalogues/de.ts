@@ -2359,6 +2359,7 @@ export const messages: Catalogue = {
 	'notebooks.onlyTheFirstAreListed':
 		'Nur die neuesten paar hundert werden gezeigt — grenze es mit dem Feld oben ein.',
 	'notebooks.openInItsRoom': 'Dort öffnen, wo es liegt',
+	'notebooks.openNamed': '{title} öffnen',
 	'notebooks.orImportAFolderOf': '…oder einen Ordner mit Markdown importieren',
 	'notebooks.people.19900314Or0314WithoutThe': '1990-03-14, oder --03-14 ohne Jahr',
 	'notebooks.people.aPictureOf': '{add} ein Bild von {name}',
