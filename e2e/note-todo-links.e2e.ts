@@ -101,3 +101,46 @@ test('a note named by its number opens from another note', async ({ page }) => {
 	await reference.click();
 	await expect(page.getByText('sixty metres of laurel')).toBeVisible();
 });
+
+/**
+ * A goal is numbered in its notebook the way a task is, and `GOAL:#1` in a
+ * note names it and opens it.
+ */
+test('a goal named by its number opens from a note', async ({ page }) => {
+	test.setTimeout(180_000);
+	await register(page, testEmail('note-goal-links'));
+	const origin = new URL(page.url()).origin;
+	await page.request.post('/notebooks?/create', {
+		headers: { Origin: origin, 'x-sveltekit-action': 'true' },
+		form: { heading: 'Running', modules: 'notes,tasks,goals' }
+	});
+	await visit(page, '/notebooks');
+
+	await page.getByRole('button', { name: /^Goals \d/ }).click();
+	await page.getByRole('button', { name: 'New goal', exact: true }).click();
+	const form = page.locator('#notebook-goal-form');
+	await expect(form).toBeVisible({ timeout: 30_000 });
+	await form.locator('[name="heading"]').first().fill('Run a 10k');
+	await page.getByRole('button', { name: 'Create goal' }).click();
+	// Its number, on its card, is what a note points at.
+	await expect(page.getByText('#1Run a 10k').first()).toBeVisible({ timeout: 30_000 });
+
+	await page.getByRole('button', { name: /^Notes/ }).click();
+	await page.getByRole('button', { name: 'New note', exact: true }).first().click();
+	await page.locator('textarea[name="content"]').first().fill('Training\n\ntowards GOAL:#1');
+	await page
+		.getByRole('button', { name: /Save|Add note|Create/ })
+		.last()
+		.click();
+	await expect(page.locator('dialog[open]')).toHaveCount(0, { timeout: 30_000 });
+
+	await page.getByText('Training', { exact: true }).first().click();
+	const reference = page.locator('a[data-ref="goal"]').first();
+	await expect(reference).toHaveText('Run a 10k');
+
+	await reference.click();
+	await expect(page.locator('#notebook-goal-form')).toBeVisible({ timeout: 15_000 });
+	await expect(page.locator('#notebook-goal-form [name="heading"]').first()).toHaveValue(
+		'Run a 10k'
+	);
+});

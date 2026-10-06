@@ -18,7 +18,6 @@ import {
 	isNotNull,
 	isNull,
 	lte,
-	max,
 	not,
 	notExists,
 	notInArray,
@@ -55,7 +54,7 @@ import type { Ctx } from './ctx.js';
 import { NotFoundError, ValidationError } from './errors.js';
 import { defaultCategoryOf, ownedNotebookId } from './notebooks.js';
 import { fileUnderNotebook } from './notebook-linking.js';
-import { getUserSetting, setUserSetting } from './settings.js';
+import { nextNotebookSeq, notebookSeqFor } from './notebook-seq.js';
 import { cleanupOrphanTags, optionalTagInput, parseTags, replaceTodoTags } from './tags.js';
 import { created, stamp, stamps } from './time.js';
 import { host } from './host.js';
@@ -817,7 +816,7 @@ export function demoteToTodo(ctx: Ctx, slotId: number): { ok: true; todoId: numb
 				sortOrder: nextSortOrder(ctx),
 				categoryId: slot.categoryId,
 				notebookId: slot.notebookId,
-				notebookSeq: nextNotebookSeq(ctx, slot.notebookId),
+				notebookSeq: nextTaskSeq(ctx, slot.notebookId),
 				urgency: slot.urgency,
 				interest: slot.interest,
 				ease: slot.ease,
@@ -893,36 +892,9 @@ export type TodoInput = {
 	tags?: unknown;
 };
 
-/**
- * This task's number inside the notebook it is filed under.
- *
- * So a note can point at it: `TASK:#4` is the fourth task about the kitchen,
- * which is a number somebody can see on the screen in front of them — the row
- * id is not. The same arrangement notes already have.
- *
- * The high-water mark rather than `max + 1`, and for the same reason a note's
- * is: deleting the newest task would hand its number to the next one, and a
- * reference written in a note months ago would silently come to mean something
- * else. A reference that can change what it refers to is not a reference.
- *
- * Null for a task filed under nothing: there is nowhere for it to be fourth of.
- */
-/** Where a notebook's highest-ever task number is remembered. */
-const SEQ_MARK_KEY = (notebookId: number) => `todos.seq.highest.${notebookId}`;
-
-function nextNotebookSeq(ctx: Ctx, notebookId: number | null | undefined): number | null {
-	if (!notebookId) return null;
-	const present =
-		db
-			.select({ value: max(todoTasks.notebookSeq) })
-			.from(todoTasks)
-			.where(eq(todoTasks.notebookId, notebookId))
-			.get()?.value ?? 0;
-	const everUsed = Number(getUserSetting(ctx.userId, SEQ_MARK_KEY(notebookId)) ?? 0);
-	const highest = Math.max(present, everUsed);
-	setUserSetting(ctx.userId, SEQ_MARK_KEY(notebookId), String(highest + 1));
-	return highest + 1;
-}
+/** A task's number inside its notebook, for `TASK:#4` — see `notebook-seq.ts`. */
+const nextTaskSeq = (ctx: Ctx, notebookId: number | null | undefined) =>
+	nextNotebookSeq(ctx, todoTasks, notebookId);
 
 export function createTodo(ctx: Ctx, raw: TodoInput): number {
 	const title = str(raw.title, 'title', { max: MAX_TITLE_LENGTH });
@@ -941,7 +913,7 @@ export function createTodo(ctx: Ctx, raw: TodoInput): number {
 					? defaultCategoryOf(ctx, notebookId)
 					: ownedCategory(ctx, raw.categoryId),
 			notebookId,
-			notebookSeq: nextNotebookSeq(ctx, notebookId),
+			notebookSeq: nextTaskSeq(ctx, notebookId),
 			scheduledDate: optionalDate(raw.scheduledDate),
 			status: isStatus(raw.status) ? raw.status : 'todo',
 			sortOrder: nextSortOrder(ctx),
@@ -959,22 +931,8 @@ export function createTodo(ctx: Ctx, raw: TodoInput): number {
 
 export function updateTodo(ctx: Ctx, id: number, raw: TodoInput): void {
 	const notebookId = ownedNotebookId(ctx, raw.notebookId, 'tasks', { table: todoTasks, id });
-	/*
-	 * A task moved into a notebook is numbered there, once.
-	 *
-	 * Kept if it already has one for this notebook — a task edited twice must
-	 * not change its own reference — and taken away if it leaves, because a
-	 * number in a notebook it is no longer in is a reference to nothing.
-	 */
-	const was = db
-		.select({ notebookId: todoTasks.notebookId, notebookSeq: todoTasks.notebookSeq })
-		.from(todoTasks)
-		.where(and(eq(todoTasks.id, id), eq(todoTasks.userId, ctx.userId)))
-		.get();
-	const seq =
-		was && was.notebookId === notebookId && was.notebookSeq !== null
-			? was.notebookSeq
-			: nextNotebookSeq(ctx, notebookId);
+	// Numbered there once, kept while it stays — see `notebookSeqFor`.
+	const seq = notebookSeqFor(ctx, todoTasks, id, notebookId);
 
 	const res = db
 		.update(todoTasks)
@@ -1374,7 +1332,7 @@ export function demoteInstance(ctx: Ctx, instanceId: number): void {
 				// The same two `demoteToTodo` keeps: going back to the list does
 				// not take it out of its subject or strip what it says about itself.
 				notebookId: instance.notebookId,
-				notebookSeq: nextNotebookSeq(ctx, instance.notebookId),
+				notebookSeq: nextTaskSeq(ctx, instance.notebookId),
 				attributes: instance.attributes,
 				status: instance.status,
 				completed: instance.status === 'done',

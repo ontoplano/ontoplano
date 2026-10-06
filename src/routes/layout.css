@@ -1323,13 +1323,17 @@ label:has(> input[type='radio']:not(:disabled)) {
 	/*
 	 * A note pointing at a task: `TASK:#4`.
 	 *
+	 * A goal or an idea is drawn the same way (`GOAL:#2`, `IDEA:#7`).
+	 *
 	 * A chip rather than a plain link, because it is a thing rather than a
 	 * word — the same treatment a tag gets — and because what follows it in a
 	 * note is usually the writing that explains it. A finished one is greyed
 	 * and carries its tick; it is not struck through, which is the rule
 	 * everywhere else a completed task appears.
 	 */
-	.todo-ref {
+	.todo-ref,
+	.goal-ref,
+	.idea-ref {
 		display: inline-flex;
 		align-items: baseline;
 		gap: 0.25rem;
@@ -1341,11 +1345,14 @@ label:has(> input[type='radio']:not(:disabled)) {
 		cursor: pointer;
 	}
 
-	.todo-ref:hover {
+	.todo-ref:hover,
+	.goal-ref:hover,
+	.idea-ref:hover {
 		background-color: var(--hover-wash);
 	}
 
-	.todo-ref.is-done {
+	.todo-ref.is-done,
+	.goal-ref.is-done {
 		color: var(--color-gray-500);
 	}
 

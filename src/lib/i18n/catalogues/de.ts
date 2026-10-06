@@ -2020,7 +2020,11 @@ export const messages: Catalogue = {
 		'Eine Checkliste — ihre Kästchen lassen sich dort abhaken, wo sie angezeigt wird',
 	'markdown.help.code': 'Code, genau wie getippt',
 	'markdown.help.emphasis': 'Hervorhebung',
+	'markdown.help.goal':
+		'Ziel 2 dieses Notizbuchs, mit der Nummer, die seine Karte zeigt. Drücken öffnet es',
 	'markdown.help.heading': 'Eine Überschrift — ein bis sechs #',
+	'markdown.help.idea':
+		'Idee 7 dieses Notizbuchs, mit der Nummer, die ihre Karte zeigt. Drücken öffnet sie',
 	'markdown.help.intro': 'Was du links tippst, und was daraus wird.',
 	'markdown.help.link':
 		'Ein Link, in einem neuen Tab geöffnet. Nur Web-, Mail- und App-eigene Adressen',
@@ -2671,8 +2675,10 @@ export const messages: Catalogue = {
 	'recurrence.weekdays': 'Jeden {days}',
 	'recurrence.weekly': 'Jeden {weekday}',
 	'refPicker.nothingMatches': 'Nichts passt.',
+	'refPicker.pointAtAGoal': 'Auf ein Ziel verweisen',
 	'refPicker.pointAtANote': 'Auf eine Notiz verweisen',
 	'refPicker.pointAtATask': 'Auf eine Aufgabe verweisen',
+	'refPicker.pointAtAnIdea': 'Auf eine Idee verweisen',
 	'refPicker.search': 'Ein Wort aus dem Titel oder die Nummer',
 	'reminders.aDayAndSomethingTo': 'Ein Tag und etwas, das vorab gesagt wird',
 	'reminders.aDayAndWhatTo': 'Ein Tag und was gesagt werden soll. Mehr nicht.',

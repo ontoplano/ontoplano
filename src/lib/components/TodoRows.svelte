@@ -40,6 +40,7 @@
 	import TodoFields from '$lib/components/fields/TodoFields.svelte';
 	import AttributesDialog from '$lib/components/AttributesDialog.svelte';
 	import Written from '$lib/components/Written.svelte';
+	import NotebookSeq from '$lib/components/NotebookSeq.svelte';
 	import EmptyState from '$lib/components/EmptyState.svelte';
 	import Icon from '$lib/components/Icon.svelte';
 	import { autofocus } from '$lib/actions/autofocus';
@@ -1975,11 +1976,7 @@
 								</div>
 							{/snippet}
 							{#snippet labels()}
-								{#if todo.notebookSeq !== null}
-									<span class="tabular mr-1 text-[11px] text-gray-500" title={whenOf(todo)}>
-										#{todo.notebookSeq}
-									</span>
-								{/if}
+								<NotebookSeq seq={todo.notebookSeq} title={whenOf(todo)} class="mr-1" />
 								{#each todo.tags as tag (tag.id)}
 									<!--
 										The chip says when it went on.

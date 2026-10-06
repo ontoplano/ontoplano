@@ -64,6 +64,8 @@ function safeHref(href: string): string | null {
  *   notebook* — the fourth task about the kitchen is #4 — because a reference
  *   somebody types by hand has to be a number they can see. Turning a note's
  *   checkboxes into tasks writes these in place of the boxes.
+ * - `GOAL:#2` and `IDEA:#7` are a goal and an idea in the same notebook,
+ *   numbered there the way a task is.
  * - `TODO:#4` is read as `TASK:#4`. The room was called Todos when the
  *   reference was invented, and notes written then still carry that spelling;
  *   refusing it now would blank a reference in writing somebody already has.
@@ -75,9 +77,32 @@ function safeHref(href: string): string | null {
  * what that screen already loaded for its owner — see `refAt`.
  */
 export const REFS = {
-	note: { prefixes: ['NOTE'], bare: true, className: 'diary-ref', fragment: 'diary' },
-	task: { prefixes: ['TASK', 'TODO'], bare: false, className: 'todo-ref', fragment: 'todo' }
-} as const;
+	note: {
+		prefixes: ['NOTE'],
+		bare: true,
+		className: 'diary-ref',
+		fragment: 'diary',
+		refs: 'notes'
+	},
+	task: {
+		prefixes: ['TASK', 'TODO'],
+		bare: false,
+		className: 'todo-ref',
+		fragment: 'todo',
+		refs: 'tasks'
+	},
+	goal: { prefixes: ['GOAL'], bare: false, className: 'goal-ref', fragment: 'goal', refs: 'goals' },
+	idea: { prefixes: ['IDEA'], bare: false, className: 'idea-ref', fragment: 'idea', refs: 'ideas' }
+} as const satisfies Record<
+	string,
+	{
+		prefixes: readonly string[];
+		bare: boolean;
+		className: string;
+		fragment: string;
+		refs: keyof Refs;
+	}
+>;
 
 export type RefKind = keyof typeof REFS;
 
@@ -100,27 +125,28 @@ const REF_PATTERN = new RegExp(
 /**
  * The link one reference becomes.
  *
- * The title and, for a task, whether it is done are drawn where the caller
- * passed them; a reference rendered without them still gets a link, which is
- * what an export or a page that has not loaded the list should show.
+ * The title and whether it is done (a task finished, a goal closed) are drawn
+ * where the caller passed them; a reference rendered without them still gets a
+ * link, which is what an export or a page that has not loaded the list should
+ * show.
  */
 function reference(before: string, prefix: string | undefined, seq: number, refs?: Refs): string {
 	const kind = refKindOf(prefix);
 	const { className, fragment } = REFS[kind];
 	const typed = prefix ? `${prefix === 'TODO' ? 'TASK' : prefix}:#${seq}` : `#${seq}`;
 	const attrs = `data-ref="${kind}" data-ref-seq="${seq}" href="#${fragment}-${seq}"`;
+	// What the older readers of a link still look for: the task peek and the diary.
+	const legacy =
+		kind === 'task' ? ` data-todo-seq="${seq}"` : kind === 'note' ? ` data-seq="${seq}"` : '';
 
-	if (kind === 'task') {
-		const one = refs?.tasks?.get(seq);
-		const done = one?.done ? ' is-done' : '';
-		const label = one ? `${one.done ? '\u2713 ' : ''}${escape(one.title)}` : typed;
-		return `${before}<a class="${className}${done}" data-todo-seq="${seq}" ${attrs}>${label}</a>`;
-	}
 	// A bare `#12` keeps saying `#12`: it is how a diary reads, and naming it
 	// would turn every number somebody wrote into a sentence.
-	const one = prefix ? refs?.notes?.get(seq) : undefined;
-	const label = one ? escape(one.title) : typed;
-	return `${before}<a class="${className}" data-seq="${seq}" ${attrs}>${label}</a>`;
+	const one: { title: string; done?: boolean } | undefined = prefix
+		? refs?.[REFS[kind].refs]?.get(seq)
+		: undefined;
+	const done = one?.done ? ' is-done' : '';
+	const label = one ? `${one.done ? '\u2713 ' : ''}${escape(one.title)}` : typed;
+	return `${before}<a class="${className}${done}"${legacy} ${attrs}>${label}</a>`;
 }
 
 /**
@@ -356,8 +382,10 @@ export type PeekTask = {
 };
 /** The notes `NOTE:#N` may name, by their number. */
 export type NoteRefs = Map<number, { title: string }>;
+/** The goals `GOAL:#N` or ideas `IDEA:#N` may name, by their number — done is a closed goal. */
+export type TitleRefs = Map<number, { title: string; done?: boolean }>;
 /** What the references in a piece of writing can be resolved against. */
-export type Refs = { tasks?: TodoRefs; notes?: NoteRefs };
+export type Refs = { tasks?: TodoRefs; notes?: NoteRefs; goals?: TitleRefs; ideas?: TitleRefs };
 
 export function renderMarkdown(text: string, given?: TodoRefs | Refs): string {
 	// A bare map is the tasks, which is all a reference could be before notes.

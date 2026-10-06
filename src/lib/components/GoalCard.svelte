@@ -15,6 +15,7 @@
 	 * same handler either way (`$lib/services/goal-actions`).
 	 */
 	import Icon from '$lib/components/Icon.svelte';
+	import NotebookSeq from '$lib/components/NotebookSeq.svelte';
 	import RowCard from '$lib/components/RowCard.svelte';
 	import Written from '$lib/components/Written.svelte';
 	import Counter from '$lib/components/Counter.svelte';
@@ -42,6 +43,7 @@
 		parentId: number | null;
 		areaId: number | null;
 		notebookId: number | null;
+		notebookSeq?: number | null;
 		areaName: string | null;
 		areaColor: string | null;
 		linkedSlotIds: number[];
@@ -298,7 +300,7 @@
 				? 'text-gray-900'
 				: 'text-gray-500'}"
 		>
-			{goal.title}
+			<NotebookSeq seq={goal.notebookSeq} class="mr-1 font-normal" />{goal.title}
 		</p>
 		{#if goal.notes}
 			<Written content={goal.notes} compact class="mt-1" />

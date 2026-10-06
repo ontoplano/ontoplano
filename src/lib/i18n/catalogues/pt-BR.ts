@@ -1982,7 +1982,11 @@ export const messages: Catalogue = {
 	'markdown.help.checklist': 'Uma lista de tarefas — as caixas podem ser marcadas onde ela aparece',
 	'markdown.help.code': 'Código, mantido exatamente como digitado',
 	'markdown.help.emphasis': 'Ênfase',
+	'markdown.help.goal':
+		'A meta 2 deste caderno, pelo número que o cartão mostra. Clique para abri-la',
 	'markdown.help.heading': 'Um título — de um a seis #',
+	'markdown.help.idea':
+		'A ideia 7 deste caderno, pelo número que o cartão mostra. Clique para abri-la',
 	'markdown.help.intro': 'O que você digita à esquerda, e o que isso vira.',
 	'markdown.help.link':
 		'Um link, aberto em outra aba. Só endereços web, de e-mail e do próprio app',
@@ -2644,8 +2648,10 @@ export const messages: Catalogue = {
 	'recurrence.weekdays': 'Toda semana: {days}',
 	'recurrence.weekly': 'Toda semana: {weekday}',
 	'refPicker.nothingMatches': 'Nada corresponde.',
+	'refPicker.pointAtAGoal': 'Apontar para uma meta',
 	'refPicker.pointAtANote': 'Apontar para uma nota',
 	'refPicker.pointAtATask': 'Apontar para uma tarefa',
+	'refPicker.pointAtAnIdea': 'Apontar para uma ideia',
 	'refPicker.search': 'Qualquer palavra do título, ou o número',
 	'reminders.aDayAndSomethingTo': 'Um dia e algo para dizer primeiro',
 	'reminders.aDayAndWhatTo': 'Um dia e o que dizer. Não é sobre mais nada.',

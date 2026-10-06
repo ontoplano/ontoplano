@@ -1234,6 +1234,8 @@ export const ideas = sqliteTable(
 		favorite: integer('favorite', { mode: 'boolean' }).notNull().default(false),
 		/** The subject this belongs to, if any — see `habits.notebookId`. */
 		notebookId: integer('notebook_id').references(() => notebooks.id, { onDelete: 'set null' }),
+		/** Its number inside its notebook, for `IDEA:#3` — see `todoTasks.notebookSeq`. */
+		notebookSeq: integer('notebook_seq'),
 		createdAt: text('created_at')
 			.notNull()
 			.default(sql`(CURRENT_TIMESTAMP)`),
@@ -1244,6 +1246,7 @@ export const ideas = sqliteTable(
 	(table) => [
 		index('ideas_user_idx').on(table.userId),
 		index('ideas_notebook_idx').on(table.notebookId),
+		uniqueIndex('ideas_notebook_seq_unique').on(table.notebookId, table.notebookSeq),
 		index('ideas_created_idx').on(table.createdAt)
 	]
 );
@@ -2112,6 +2115,8 @@ export const goals = sqliteTable(
 			.references(() => user.id),
 		areaId: integer('area_id').references(() => goalAreas.id, { onDelete: 'set null' }),
 		notebookId: integer('notebook_id').references(() => notebooks.id, { onDelete: 'set null' }),
+		/** Its number inside its notebook, for `GOAL:#3` — see `todoTasks.notebookSeq`. */
+		notebookSeq: integer('notebook_seq'),
 		parentId: integer('parent_id'),
 		title: text('title').notNull(),
 		notes: text('notes').default(''),
@@ -2136,7 +2141,8 @@ export const goals = sqliteTable(
 		index('goals_period_idx').on(table.userId, table.horizon, table.periodStart),
 		index('goals_parent_idx').on(table.parentId),
 		index('goals_area_idx').on(table.areaId),
-		index('goals_notebook_idx').on(table.notebookId)
+		index('goals_notebook_idx').on(table.notebookId),
+		uniqueIndex('goals_notebook_seq_unique').on(table.notebookId, table.notebookSeq)
 	]
 );
 

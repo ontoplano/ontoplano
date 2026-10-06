@@ -315,24 +315,31 @@ const notebookTodo = (notebookId, title, extra = {}) => {
 	return id;
 };
 
-/** Number what is in a notebook, once everything is in it. */
-const renumber = (notebookId) => {
-	for (const table of ['diary_entries', 'todo_tasks']) {
-		run(
-			`update ${table} set notebook_seq = null where user_id = ? and notebook_id = ?`,
-			uid,
-			notebookId
-		);
-		db.prepare(`select id from ${table} where user_id = ? and notebook_id = ? order by id`)
-			.all(uid, notebookId)
-			.forEach((row, i) => {
-				db.prepare(`update ${table} set notebook_seq = ? where id = ?`).run(i + 1, row.id);
-			});
-	}
+/** The tables whose rows are numbered inside their notebook as well as overall. */
+const NUMBERED_IN_NOTEBOOK = ['diary_entries', 'todo_tasks', 'goals', 'ideas'];
+
+/**
+ * Number one table's rows in a notebook, cleared first — an UPDATE walks the
+ * rows one at a time and would otherwise trip over a number it has not
+ * reached yet, since (notebook_id, notebook_seq) is unique.
+ */
+const renumberIn = (table, notebookId) => {
+	run(
+		`update ${table} set notebook_seq = null where user_id = ? and notebook_id = ?`,
+		uid,
+		notebookId
+	);
+	db.prepare(`select id from ${table} where user_id = ? and notebook_id = ? order by id`)
+		.all(uid, notebookId)
+		.forEach((row, i) => {
+			db.prepare(`update ${table} set notebook_seq = ? where id = ?`).run(i + 1, row.id);
+		});
 };
 
-/** The tables whose rows are numbered inside their notebook as well as overall. */
-const NUMBERED_IN_NOTEBOOK = ['diary_entries', 'todo_tasks'];
+/** Number what is in a notebook, once everything is in it. */
+const renumber = (notebookId) => {
+	for (const table of NUMBERED_IN_NOTEBOOK) renumberIn(table, notebookId);
+};
 
 /** Point an already-seeded row at a notebook, by whatever identifies it here. */
 const inNotebook = (table, column, value, notebookId) => {
@@ -351,26 +358,8 @@ const inNotebook = (table, column, value, notebookId) => {
 	// A note is numbered by its notebook as well as by the account, and the
 	// pair is unique. Numbering only the row just moved collides as soon as a
 	// notebook holds more than one: the count it lands on is already taken.
-	// So the whole notebook is renumbered, cleared first — an UPDATE walks the
-	// rows one at a time and would otherwise trip over a number it has not
-	// reached yet.
-	//
-	// Tasks are numbered the same way, and were not: a seeded notebook's tasks
-	// had no number on their cards, and `TASK:#4` in a note beside them
-	// pointed at nothing.
-	if (numbered) {
-		run(
-			`update ${table} set notebook_seq = null where user_id = ? and notebook_id = ?`,
-			uid,
-			notebookId
-		);
-		const inBook = db
-			.prepare(`select id from ${table} where user_id = ? and notebook_id = ? order by id`)
-			.all(uid, notebookId);
-		inBook.forEach((row, i) => {
-			db.prepare(`update ${table} set notebook_seq = ? where id = ?`).run(i + 1, row.id);
-		});
-	}
+	// So the whole notebook is renumbered.
+	if (numbered) renumberIn(table, notebookId);
 };
 
 /**

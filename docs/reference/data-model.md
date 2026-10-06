@@ -38,11 +38,11 @@ exist.
 | [`goal_areas`](#goal_areas)                                 | 6       | yes               |
 | [`goal_links`](#goal_links)                                 | 6       | yes               |
 | [`goal_targets`](#goal_targets)                             | 9       | yes               |
-| [`goals`](#goals)                                           | 14      | yes               |
+| [`goals`](#goals)                                           | 15      | yes               |
 | [`habit_occurrences`](#habit_occurrences)                   | 6       | yes               |
 | [`habits`](#habits)                                         | 9       | yes               |
 | [`idea_tags`](#idea_tags)                                   | 4       | yes               |
-| [`ideas`](#ideas)                                           | 9       | yes               |
+| [`ideas`](#ideas)                                           | 10      | yes               |
 | [`inventory_attribute_colors`](#inventory_attribute_colors) | 5       | yes               |
 | [`inventory_categories`](#inventory_categories)             | 8       | yes               |
 | [`inventory_items`](#inventory_items)                       | 18      | yes               |
@@ -659,6 +659,7 @@ Checks — enforced by the database, not only by the service layer:
 | `user_id`      | text    | not null | —                     | → `user.id`       |
 | `area_id`      | integer | null     | —                     | → `goal_areas.id` |
 | `notebook_id`  | integer | null     | —                     | → `notebooks.id`  |
+| `notebook_seq` | integer | null     | —                     | —                 |
 | `parent_id`    | integer | null     | —                     | —                 |
 | `title`        | text    | not null | —                     | —                 |
 | `notes`        | text    | null     | `''`                  | —                 |
@@ -677,6 +678,7 @@ Indexes:
 - `goals_parent_idx` on `parent_id`
 - `goals_area_idx` on `area_id`
 - `goals_notebook_idx` on `notebook_id`
+- `goals_notebook_seq_unique` on `notebook_id`, `notebook_seq` — unique
 
 ## habit_occurrences
 
@@ -740,6 +742,7 @@ Indexes:
 | `applied_note` | text    | null     | —                     | —                 |
 | `favorite`     | integer | not null | `false`               | —                 |
 | `notebook_id`  | integer | null     | —                     | → `notebooks.id`  |
+| `notebook_seq` | integer | null     | —                     | —                 |
 | `created_at`   | text    | not null | `(CURRENT_TIMESTAMP)` | —                 |
 | `updated_at`   | text    | not null | `(CURRENT_TIMESTAMP)` | —                 |
 
@@ -747,6 +750,7 @@ Indexes:
 
 - `ideas_user_idx` on `user_id`
 - `ideas_notebook_idx` on `notebook_id`
+- `ideas_notebook_seq_unique` on `notebook_id`, `notebook_seq` — unique
 - `ideas_created_idx` on `created_at`
 
 ## inventory_attribute_colors

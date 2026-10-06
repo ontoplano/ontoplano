@@ -30,6 +30,7 @@ import { periodEnd, periodStart, isGoalStatus, isHorizon, type Horizon } from '.
 import type { Ctx } from './ctx.js';
 import { ConflictError, NotFoundError, ValidationError } from './errors.js';
 import { ownedNotebookId } from './notebooks.js';
+import { nextNotebookSeq, notebookSeqFor } from './notebook-seq.js';
 import { measureTotal } from './workouts.js';
 import { created, stamp, stamps } from './time.js';
 import { num, optionalStr, str } from './validate.js';
@@ -78,6 +79,8 @@ export type Goal = {
 	areaColor: string | null;
 	notebookId: number | null;
 	notebookTitle: string | null;
+	/** Its number in that notebook, which `GOAL:#3` points at. */
+	notebookSeq: number | null;
 	parentId: number | null;
 	title: string;
 	notes: string;
@@ -202,6 +205,7 @@ export function listGoals(
 			areaColor: goalAreas.color,
 			notebookId: goals.notebookId,
 			notebookTitle: notebooks.title,
+			notebookSeq: goals.notebookSeq,
 			parentId: goals.parentId,
 			title: goals.title,
 			notes: goals.notes,
@@ -274,6 +278,7 @@ export function listGoals(
 				areaColor: r.areaColor,
 				notebookId: r.notebookId,
 				notebookTitle: r.notebookTitle,
+				notebookSeq: r.notebookSeq,
 				parentId: r.parentId,
 				title: r.title,
 				notes: r.notes ?? '',
@@ -464,6 +469,7 @@ export function createGoal(
 				periodStart: periodStart(horizon, anchor),
 				areaId,
 				notebookId,
+				notebookSeq: nextNotebookSeq(ctx, goals, notebookId),
 				parentId
 			})
 			.run();
@@ -520,6 +526,7 @@ export function updateGoal(
 	const targets = parseTargets(raw.targets);
 	const areaId = ownedAreaId(ctx, raw.areaId);
 	const notebookId = ownedNotebookId(ctx, raw.notebookId, 'goals', { table: goals, id });
+	const notebookSeq = notebookSeqFor(ctx, goals, id, notebookId);
 	const title = str(raw.title, 'title', { max: MAX_TITLE_LENGTH });
 	const notes = optionalStr(raw.notes, 'notes', { max: MAX_NOTES_LENGTH });
 
@@ -531,6 +538,7 @@ export function updateGoal(
 				notes,
 				areaId,
 				notebookId,
+				notebookSeq,
 				horizon,
 				periodStart: periodStart(horizon, anchor),
 				updatedAt: stamp(ctx)

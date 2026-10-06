@@ -34,7 +34,9 @@
 	const REFERENCES: { typed: string; says: PlainKey }[] = [
 		{ typed: '#12', says: 'markdown.help.noteBare' },
 		{ typed: 'NOTE:#12', says: 'markdown.help.note' },
-		{ typed: 'TASK:#4', says: 'markdown.help.task' }
+		{ typed: 'TASK:#4', says: 'markdown.help.task' },
+		{ typed: 'GOAL:#2', says: 'markdown.help.goal' },
+		{ typed: 'IDEA:#7', says: 'markdown.help.idea' }
 	];
 </script>
 

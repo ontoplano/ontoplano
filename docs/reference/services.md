@@ -77,6 +77,7 @@ shows up here on the next build.
 | [`notebook-linking`](#notebook-linking)          | Putting something that already exists under a subject.                                                                                                                                                                                                               |
 | [`notebook-media`](#notebook-media)              | Every picture that is in a notebook, as a gallery album.                                                                                                                                                                                                             |
 | [`notebook-sections`](#notebook-sections)        | One tab of one notebook, as lines.                                                                                                                                                                                                                                   |
+| [`notebook-seq`](#notebook-seq)                  | Numbers inside a notebook — what `TASK:#4`, `GOAL:#2` and `IDEA:#7` point at.                                                                                                                                                                                        |
 | [`notebooks`](#notebooks)                        | Notebooks: a subject you write against, with no deadline.                                                                                                                                                                                                            |
 | [`notifications`](#notifications)                | Everything the app will tell you about, in one list.                                                                                                                                                                                                                 |
 | [`oauth`](#oauth)                                | Connecting an assistant without anybody handling a key.                                                                                                                                                                                                              |
@@ -3658,7 +3659,7 @@ act in reverse.
 
 ## The number goes with the notebook
 
-A note and a task are numbered inside their notebook as well as in the
+A note, a task, a goal and an idea are numbered inside their notebook as well as in the
 account — `#4` on a card, and what `TASK:#4` in somebody's writing points
 at — and `(notebook_id, notebook_seq)` is unique. So moving one that already
 had a number into a notebook that already has that number is a constraint
@@ -3754,6 +3755,45 @@ cannot reach — somebody else's and one that does not exist answer alike.
 
 - `SectionItem`
 - `SectionAnswer`
+
+## notebook-seq
+
+Numbers inside a notebook — what `TASK:#4`, `GOAL:#2` and `IDEA:#7` point at.
+
+A reference somebody types by hand has to be a number they can see, so a
+thing filed under a notebook is numbered there: the fourth task about the
+kitchen is #4 rather than #312. One allocator for every kind that has the
+column, so they cannot come to disagree about what a number means.
+
+The high-water mark rather than `max + 1`: deleting the newest one would
+hand its number to the next, and a reference written months ago would
+silently come to mean something else. A reference that can change what it
+refers to is not a reference.
+
+Null for a thing filed under nothing: there is nowhere for it to be fourth of.
+
+### Functions
+
+#### `nextNotebookSeq(ctx, table, notebookId)`
+
+The next number free in that notebook, taken.
+
+#### `notebookSeqFor(ctx, table, id, notebookId)`
+
+The number a row should have once it is filed in `notebookId`.
+
+Kept if it already has one there — a thing edited twice must not change its
+own reference — and otherwise the next one, or none if it leaves: a number
+in a notebook it is no longer in is a reference to nothing.
+
+#### `numberedNotebookPatch(ctx, raw, holds, table, id)`
+
+`notebookPatch`, numbered: the notebook a form chose, and the number that
+goes with it. Left out means left alone, the number included.
+
+### Types
+
+- `Numbered`
 
 ## notebooks
 

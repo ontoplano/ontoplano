@@ -1944,7 +1944,11 @@ export const messages: Catalogue = {
 	'markdown.help.checklist': 'A checklist — its boxes can be ticked where it is shown',
 	'markdown.help.code': 'Code, kept exactly as typed',
 	'markdown.help.emphasis': 'Emphasis',
+	'markdown.help.goal':
+		'Goal 2 of this notebook, by the number its card shows. Press it to open the goal',
 	'markdown.help.heading': 'A heading — one to six #',
+	'markdown.help.idea':
+		'Idea 7 of this notebook, by the number its card shows. Press it to open the idea',
 	'markdown.help.intro': 'What you type on the left, and what it becomes.',
 	'markdown.help.link': 'A link, opened in a new tab. Only web, mail and in-app addresses',
 	'markdown.help.list': 'A list',
@@ -2583,8 +2587,10 @@ export const messages: Catalogue = {
 	'recurrence.weekdays': 'Every {days}',
 	'recurrence.weekly': 'Every {weekday}',
 	'refPicker.nothingMatches': 'Nothing here matches.',
+	'refPicker.pointAtAGoal': 'Point at a goal',
 	'refPicker.pointAtANote': 'Point at a note',
 	'refPicker.pointAtATask': 'Point at a task',
+	'refPicker.pointAtAnIdea': 'Point at an idea',
 	'refPicker.search': 'Any word of its title, or its number',
 	'reminders.aDayAndSomethingTo': 'A day and something to say first',
 	'reminders.aDayAndWhatTo': 'A day and what to say. It is about nothing else.',

@@ -193,7 +193,22 @@ test('every reference says its kind and number, and nothing that was typed', () 
 	expect(html).toContain('data-ref="task" data-ref-seq="5" href="#todo-5">TASK:#5</a>');
 });
 
+test('GOAL:#2 and IDEA:#7 link to the goal and the idea, named where they are known', () => {
+	expect(renderMarkdown('GOAL:#2')).toContain(
+		'data-ref="goal" data-ref-seq="2" href="#goal-2">GOAL:#2</a>'
+	);
+	expect(renderMarkdown('IDEA:#7')).toContain(
+		'data-ref="idea" data-ref-seq="7" href="#idea-7">IDEA:#7</a>'
+	);
+	const goals = new Map([[2, { title: 'Run <10k>', done: true }]]);
+	const ideas = new Map([[7, { title: 'Paint the door' }]]);
+	const html = renderMarkdown('GOAL:#2 then IDEA:#7', { goals, ideas });
+	expect(html).toContain('class="goal-ref is-done"');
+	expect(html).toContain('>\u2713 Run &lt;10k&gt;</a>');
+	expect(html).toContain('>Paint the door</a>');
+});
+
 test('a prefix nobody defined is not a reference', () => {
-	expect(renderMarkdown('GOAL:#2')).not.toContain('data-ref=');
+	expect(renderMarkdown('PLAN:#2')).not.toContain('data-ref=');
 	expect(renderMarkdown('x<b>:#2')).not.toContain('data-ref=');
 });

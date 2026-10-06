@@ -1,7 +1,7 @@
 <script lang="ts">
 	import EmptyState from '$lib/components/EmptyState.svelte';
 	/**
-	 * Find the task or note a reference should point at, by what it says.
+	 * Find the task, note, goal or idea a reference should point at, by what it says.
 	 *
 	 * `TASK:#4` wants a number, and nobody remembers the number of the task
 	 * about the plumber. Typing the prefix opens this over the writing: type
@@ -13,6 +13,7 @@
 	import { autofocus } from '$lib/actions/autofocus';
 	import { useT } from '$lib/i18n';
 	import type { RefKind } from '$lib/markdown';
+	import type { PlainKey } from '$lib/i18n/keys';
 
 	/** How many matches are listed; typing narrows the rest. */
 	const SHOWN = 50;
@@ -30,6 +31,13 @@
 	} = $props();
 
 	const t = useT();
+
+	const TITLE: Record<RefKind, PlainKey> = {
+		task: 'refPicker.pointAtATask',
+		note: 'refPicker.pointAtANote',
+		goal: 'refPicker.pointAtAGoal',
+		idea: 'refPicker.pointAtAnIdea'
+	};
 
 	let looking = $state('');
 	let at = $state(0);
@@ -72,11 +80,7 @@
 	}
 </script>
 
-<Modal
-	bind:open
-	title={kind === 'task' ? t('refPicker.pointAtATask') : t('refPicker.pointAtANote')}
-	size="sm"
->
+<Modal bind:open title={t(TITLE[kind])} size="sm">
 	<label class="block">
 		<span class="sr-only">{t('refPicker.search')}</span>
 		<input

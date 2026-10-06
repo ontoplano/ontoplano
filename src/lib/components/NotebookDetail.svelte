@@ -79,7 +79,7 @@
 	import type { Todo } from '$lib/services/todos';
 	import { browsable } from '$lib/browse.svelte';
 	import { checklistItems } from '$lib/checklist';
-	import { refAt, renderMarkdown } from '$lib/markdown';
+	import { refAt, renderMarkdown, type Refs } from '$lib/markdown';
 	import { say } from '$lib/said.svelte';
 	import { useT } from '$lib/i18n';
 	import { RememberedOrder } from '$lib/remembered-order.svelte';
@@ -725,29 +725,73 @@
 		)
 	);
 
+	/** The goals `GOAL:#2` may name here; a closed one carries its tick. */
+	const goalRefs = $derived(
+		new Map(
+			(contents?.goals ?? [])
+				.filter((goal) => goal.notebookSeq !== null)
+				.map((goal) => [
+					goal.notebookSeq as number,
+					{ title: goal.title, done: goal.status !== 'open' }
+				])
+		)
+	);
+
+	/** The ideas `IDEA:#7` may name here, by their first line. */
+	const ideaRefs = $derived(
+		new Map(
+			(contents?.ideas ?? [])
+				.filter((idea) => idea.notebookSeq !== null)
+				.map((idea) => [idea.notebookSeq as number, { title: noteName({ content: idea.content }) }])
+		)
+	);
+
+	/** Everything writing in this notebook can point at, for the renderer and the picker. */
+	const writingRefs = $derived<Refs>({
+		tasks: todoRefs,
+		notes: noteRefs,
+		goals: goalRefs,
+		ideas: ideaRefs
+	});
+
 	/**
-	 * A `TASK:#4` or `NOTE:#12` pressed in a note, opened where it lives here.
+	 * A reference pressed in a note, opened where it lives here.
 	 *
-	 * Looked up among this notebook's own tasks and notes, which is all the
-	 * number can mean — the link carries a kind and digits, nothing else.
+	 * Looked up among this notebook's own things, which is all the number can
+	 * mean — the link carries a kind and digits, nothing else.
 	 */
 	function openReference(press: MouseEvent) {
 		const ref = refAt(press.target);
 		if (!ref) return;
 		press.preventDefault();
-		if (ref.kind === 'task') {
-			const one = (contents?.todos ?? []).find((task) => task.notebookSeq === ref.seq);
-			if (!one) return;
-			// The task lives on the Tasks tab, and its editor is that list's own.
-			tab = 'tasks';
-			// After the tab has drawn, so the list is there to be asked.
-			void tick().then(() => openTodoById?.(one.id));
-		} else {
-			const one = (contents?.entries ?? []).find((entry) => entry.seq === ref.seq);
-			if (!one) return;
-			tab = 'notes';
-			void tick().then(() => openItem('notes', one.id));
-		}
+		const found: { tab: Tab; id: number } | undefined =
+			ref.kind === 'task'
+				? at(
+						'tasks',
+						(contents?.todos ?? []).find((task) => task.notebookSeq === ref.seq)
+					)
+				: ref.kind === 'goal'
+					? at(
+							'goals',
+							(contents?.goals ?? []).find((goal) => goal.notebookSeq === ref.seq)
+						)
+					: ref.kind === 'idea'
+						? at(
+								'ideas',
+								(contents?.ideas ?? []).find((idea) => idea.notebookSeq === ref.seq)
+							)
+						: at(
+								'notes',
+								(contents?.entries ?? []).find((entry) => entry.seq === ref.seq)
+							);
+		if (!found) return;
+		tab = found.tab;
+		// After the tab has drawn, so its list is there to be asked.
+		void tick().then(() => openItem(found.tab, found.id));
+	}
+
+	function at(tab: Tab, one: { id: number } | undefined) {
+		return one ? { tab, id: one.id } : undefined;
 	}
 
 	/** Units this account already counts things in, offered rather than imposed. */
@@ -1007,6 +1051,10 @@
 			});
 		} else if (module === 'tasks') openTodoById?.(id);
 		else if (module === 'goals') openGoalEdit(id);
+		else if (module === 'ideas') {
+			editingIdeaId = id;
+			composingIdea = true;
+		}
 	}
 
 	/**
@@ -1696,8 +1744,7 @@
 						name="content"
 						rows={6}
 						required
-						todos={todoRefs}
-						notes={noteRefs}
+						refs={writingRefs}
 						placeholder={t('notebookDetail.writeANoteAbout', { title: notebook.title })}
 					/>
 					<!-- A note written here takes a picture the same way a note written in
@@ -2266,8 +2313,7 @@
 								name="content"
 								rows={8}
 								required
-								todos={todoRefs}
-								notes={noteRefs}
+								refs={writingRefs}
 							/>
 							<PictureAttach target={editBox} />
 							<div class="mt-3">
@@ -2530,7 +2576,7 @@
 									<!-- `renderMarkdown` escapes every character of the input before it emits a
 									     tag, and emits only attributes it writes itself. See `$lib/markdown.ts`. -->
 									<!-- eslint-disable-next-line svelte/no-at-html-tags -->
-									{@html renderMarkdown(entry.content, { tasks: todoRefs, notes: noteRefs })}
+									{@html renderMarkdown(entry.content, writingRefs)}
 								</div>
 							{/if}
 						</RowCard>
