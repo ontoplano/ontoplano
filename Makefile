@@ -1224,8 +1224,6 @@ fdroid:
 # build is the half a minute, and finding out there is nothing to hand it to
 # only once it is done is that half minute thrown away.
 FIND_SDK = sdk=$$(node scripts/android-sdk.mjs) || { \
-	echo "No Android SDK here. It is looked for in ANDROID_HOME, ANDROID_SDK_ROOT,"; \
-	echo "~/android-sdk, ~/Android/Sdk and beside adb."; \
 	echo "  make $(or $(MAKECMDGOALS),<target>) ANDROID_HOME=/path/to/sdk"; \
 	exit 1; }
 
