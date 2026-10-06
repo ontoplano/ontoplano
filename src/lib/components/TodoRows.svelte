@@ -148,7 +148,12 @@
 	}: {
 		todos: Todo[];
 		categories: { id: number; name: string }[];
-		notebooks: { id: number; title: string; modules: readonly string[] }[];
+		notebooks: {
+			id: number;
+			title: string;
+			modules: readonly string[];
+			categoryId?: number | null;
+		}[];
 		actions: TodoActionNames;
 		goalLinks?: Record<number, GoalBacklink[]>;
 		error?: string | undefined;
@@ -970,6 +975,21 @@
 				? refs
 				: { tasks: taskRefs(todos.filter((one: Todo) => one.notebookId === formNotebookId)) }
 	);
+
+	/**
+	 * Whether a row wears its category.
+	 *
+	 * Not inside a notebook whose own category it is: every task written there
+	 * starts with it, so on each row it says the same word again and nothing else.
+	 */
+	const notebookCategory = $derived(
+		notebookId === null
+			? null
+			: (notebooks.find((one) => one.id === notebookId)?.categoryId ?? null)
+	);
+	const wearsCategory = (todo: Todo) =>
+		Boolean(todo.categoryColor && todo.categoryName) &&
+		(notebookCategory === null || todo.categoryId !== notebookCategory);
 
 	/** Every label on this list, so the picker offers what is actually there. */
 	let tagsInUse = $derived(
@@ -1830,11 +1850,20 @@
 							{#snippet corner()}
 								{@const place = placeOnScreen.get(todo.id)}
 								<!-- Drawn empty on a finished task, so every title wraps at the same place. -->
-								<span
-									class="tabular inline-block min-w-[4ch] text-right text-xs text-gray-500"
-									title={place ? t('todoRows.placeOnScreen') : undefined}
-								>
-									{place ? ordinal(t, place) : ''}
+								<span class="flex flex-col items-end gap-1">
+									<span
+										class="tabular inline-block min-w-[4ch] text-right text-xs text-gray-500"
+										title={place ? t('todoRows.placeOnScreen') : undefined}
+									>
+										{place ? ordinal(t, place) : ''}
+									</span>
+									<!-- On a phone the category stands under the place, out of the
+									     title's line, which is narrow enough already. -->
+									{#if wearsCategory(todo)}
+										<span class="sm:hidden">
+											<CategoryMark name={todo.categoryName!} color={todo.categoryColor!} />
+										</span>
+									{/if}
 								</span>
 							{/snippet}
 							{#snippet rail()}
@@ -2191,8 +2220,10 @@
 								>
 								<!-- Its category, worn after the title rather than as a bar in
 								     front of it, which pushed the title off the row's column. -->
-								{#if todo.categoryColor && todo.categoryName}
-									<CategoryMark name={todo.categoryName} color={todo.categoryColor} />
+								{#if wearsCategory(todo)}
+									<span class="hidden sm:contents">
+										<CategoryMark name={todo.categoryName!} color={todo.categoryColor!} />
+									</span>
 								{/if}
 								{#if todo.scheduledDate}
 									<span

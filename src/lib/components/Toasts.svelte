@@ -196,9 +196,23 @@
 <style>
 	.toasts {
 		position: fixed;
-		/* Above the bar the rooms are on, and above whatever the phone itself
-		   keeps down there. The same two numbers the bar is built from. */
-		bottom: calc(var(--safe-bottom) + var(--mobile-nav-height) + 0.75rem);
+		/*
+		 * Standing on the bar the rooms are on, with nothing between: a strip of
+		 * page under a toast reads as a toast that missed. The mark rises out of
+		 * the bar's middle, and the stack is in the top layer, where nothing can
+		 * be drawn over it — so the stack gives way instead, with a round notch
+		 * in its bottom edge the mark stands in (`mask` below). The same numbers
+		 * the bar and the mark are built from.
+		 */
+		--notch-gap: 0.25rem;
+		--notch-radius: calc(var(--bar-mark) / 2 + var(--notch-gap));
+		--notch-dip: calc(var(--bar-mark) / 2 - var(--bar-mark-rise));
+		bottom: calc(var(--safe-bottom) + var(--mobile-nav-height));
+		mask: radial-gradient(
+			circle at 50% calc(100% + var(--notch-dip)),
+			transparent var(--notch-radius),
+			#000 calc(var(--notch-radius) + 0.5px)
+		);
 		right: 0.75rem;
 		left: 0.75rem;
 		z-index: 60;
@@ -220,6 +234,7 @@
 
 	@media (width >= 64rem) {
 		.toasts {
+			mask: none;
 			bottom: 1.5rem;
 			right: 1.5rem;
 			left: auto;
@@ -232,6 +247,7 @@
 	.toasts.over-dialog {
 		top: calc(var(--safe-top) + 0.75rem);
 		bottom: auto;
+		mask: none;
 	}
 
 	@media (width >= 64rem) {
