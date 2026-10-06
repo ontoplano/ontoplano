@@ -32,10 +32,10 @@ export type Numbered = SQLiteTable & {
  * Where each kind remembers a notebook's highest-ever number. Tasks had the
  * key before there was anything else numbered, so theirs keeps its name.
  */
-const MARK_PREFIX: Record<string, string> = { todo_tasks: 'todos' };
+const markPrefix = (name: string) => (name === 'todo_tasks' ? 'todos' : name);
 
 const markKey = (table: Numbered, notebookId: number) =>
-	`${MARK_PREFIX[getTableName(table)] ?? getTableName(table)}.seq.highest.${notebookId}`;
+	`${markPrefix(getTableName(table))}.seq.highest.${notebookId}`;
 
 /** The next number free in that notebook, taken. */
 export function nextNotebookSeq(
