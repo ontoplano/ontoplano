@@ -933,6 +933,16 @@
 	});
 
 	/*
+	 * `<html lang>` follows the language the page is in. A server writes it
+	 * into the HTML; the phone's build is static, so its HTML says whatever it
+	 * was built with, and a screen reader or the WebView's hyphenation then
+	 * read Portuguese text as English.
+	 */
+	$effect(() => {
+		document.documentElement.lang = data.locale;
+	});
+
+	/*
 	 * The page keeps itself current while something else is writing.
 	 *
 	 * The browser is no longer the only thing that changes this account — an

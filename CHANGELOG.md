@@ -18,6 +18,12 @@ the shape of the data changing. Bumping the minor per batch is what ran this
 file to 0.161 in a few months, which tells a reader nothing about which
 releases mattered.
 
+## 0.185.11 — 2026-10-06
+
+- The Android app opens in the language the phone is set to, from the first
+  screen, until another one is chosen in Preferences. It used to open in
+  English everywhere.
+
 ## 0.185.10 — 2026-10-06
 
 - The Android app now needs Android 7.0 or newer; Android 6 is no longer

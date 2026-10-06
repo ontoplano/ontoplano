@@ -477,6 +477,25 @@ test('the main menu’s mark wears the device’s own field', async ({ page }) =
  * Instance tab names which of the two this is before it says anything about
  * versions.
  */
+/**
+ * A phone set to Portuguese opens the app in Portuguese.
+ *
+ * Nobody has chosen a language on a fresh install, and the device's own
+ * setting is the only answer there is. The isolated layout used to answer
+ * "the account's choice, or English", which meant every Brazilian install
+ * opened in English — down to the screen for choosing an instance, before
+ * the person had decided to use this one at all.
+ */
+test.describe('in the phone’s own language', () => {
+	test.use({ locale: 'pt-BR' });
+
+	test('a fresh install speaks the language the phone is set to', async ({ page }) => {
+		await page.goto('/');
+		await expect(page.getByText(/tarefas de hoje/i)).toBeVisible({ timeout: 20_000 });
+		await expect(page.locator('html')).toHaveAttribute('lang', 'pt-BR');
+	});
+});
+
 test('the Instance tab says this one is isolated', async ({ page }) => {
 	await page.goto('/settings/instance');
 
