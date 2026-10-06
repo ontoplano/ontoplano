@@ -58,9 +58,8 @@
 	import ItemRow, { itemRowWash } from '$lib/components/ItemRow.svelte';
 	import LinkIntoNotebook from '$lib/components/LinkIntoNotebook.svelte';
 	import { NOTEBOOK_ITEM_ACTIONS } from '$lib/item-action-names';
-	import { NOTEBOOK_WORKOUT_ACTIONS, workoutRoomLink } from '$lib/workout-action-names';
-	import { linkTo } from '$lib/object-links';
-	import { goto } from '$app/navigation';
+	import { NOTEBOOK_WORKOUT_ACTIONS } from '$lib/workout-action-names';
+	import WorkoutDialogs from '$lib/components/WorkoutDialogs.svelte';
 	import { NOTEBOOK_HABIT_ACTIONS } from '$lib/habit-action-names';
 	import { NOTEBOOK_BILL_ACTIONS } from '$lib/bill-action-names';
 	import IdeaFields from '$lib/components/fields/IdeaFields.svelte';
@@ -76,6 +75,7 @@
 	import type { Currency } from '$lib/money';
 	import { NOTEBOOK_TODO_ACTIONS } from '$lib/todo-actions';
 	import type { Todo } from '$lib/services/todos';
+	import type { Workout } from '$lib/services/workouts';
 	import { browsable } from '$lib/browse.svelte';
 	import { checklistItems } from '$lib/checklist';
 	import { refAt, renderMarkdown, taskRefs, type Refs } from '$lib/markdown';
@@ -209,8 +209,9 @@
 			ledgers: ComponentProps<typeof LedgerTile>['ledger'][];
 			/* And the whole recipe, with what the cupboard has not got. */
 			recipes: ComponentProps<typeof RecipeCard>['recipe'][];
-			/* And the whole workout, with the register under its plan. */
-			workouts: ComponentProps<typeof WorkoutCard>['workout'][];
+			/* And the whole workout, with the register under its plan — and its
+			   measures, which its dialogs ask about. */
+			workouts: Workout[];
 			workoutSessions: ComponentProps<typeof WorkoutCard>['sessions'];
 			/* And the whole thing, with its count and its own fields. */
 			inventory: ComponentProps<typeof ItemRow>['item'][];
@@ -1176,12 +1177,12 @@
 	const shownIdeas = $derived(searched(contents?.ideas ?? [], 'ideas'));
 	const shownInventory = $derived(searched(contents?.inventory ?? [], 'inventory'));
 	const shownWorkouts = $derived(searched(contents?.workouts ?? [], 'workouts'));
-	/** A workout card's buttons open the Health room's dialogs — see `workoutRoomLink`. */
-	function toHealth(href: string | null) {
-		// Already a room this app owns; the link only puts an id on its address.
-		// eslint-disable-next-line svelte/no-navigation-without-resolve
-		if (href) goto(href);
-	}
+	/**
+	 * A workout card's buttons open the Health room's own dialogs, here — see
+	 * `WorkoutDialogs`. Leaving the notebook to edit a thing on it is not what
+	 * a task's or a note's buttons do either.
+	 */
+	let workoutDialogs: WorkoutDialogs | undefined = $state();
 	const shownRecipes = $derived(searched(contents?.recipes ?? [], 'recipes'));
 	const shownLedgers = $derived(searched(contents?.ledgers ?? [], 'ledgers'));
 	const shownHabits = $derived(searched(contents?.habits ?? [], 'habits'));
@@ -1940,9 +1941,8 @@
 		{:else if k === 'workouts'}
 			<!--
 				The Health room's own card: the plan, and the record of what was
-				actually done under it. Writing a session down is the room's own
-				dialog, which is why its buttons are links out rather than forms
-				here — see `WorkoutCard` and `workoutRoomLink`.
+				actually done under it, and the room's own dialogs for its buttons,
+				opened here — see `WorkoutCard` and `WorkoutDialogs`.
 			-->
 			{#if contents.workouts.length === 0}
 				<EmptyState
@@ -1957,11 +1957,11 @@
 							{workout}
 							sessions={contents.workoutSessions}
 							actions={NOTEBOOK_WORKOUT_ACTIONS}
-							onedit={(id) => toHealth(linkTo({ kind: 'workout', id }))}
-							onlog={(id) => toHealth(workoutRoomLink('log', id))}
-							onschedule={(id) => toHealth(workoutRoomLink('schedule', id))}
-							onsession={(_, sessionId) => toHealth(workoutRoomLink('session', sessionId))}
-							ondeletesession={(sessionId) => toHealth(workoutRoomLink('deleteSession', sessionId))}
+							onedit={() => workoutDialogs?.edit(workout)}
+							onlog={() => workoutDialogs?.log(workout)}
+							onschedule={() => workoutDialogs?.schedule(workout)}
+							onsession={(_, sessionId) => workoutDialogs?.editSession(workout, sessionId)}
+							ondeletesession={(sessionId) => workoutDialogs?.removeSession(sessionId)}
 						/>
 					{/each}
 				</ul>
@@ -2849,6 +2849,19 @@
 			>
 		{/snippet}
 	</Modal>
+{/if}
+
+<!-- What a workout card's buttons open, here rather than in the Health room. -->
+{#if notebook && contents}
+	<WorkoutDialogs
+		bind:this={workoutDialogs}
+		sessions={contents.workoutSessions}
+		categories={workoutCategories}
+		notebooks={pickableNotebooks}
+		activityNames={workoutMeasures}
+		actions={NOTEBOOK_WORKOUT_ACTIONS}
+		startingNotebook={notebook.id}
+	/>
 {/if}
 
 <!--

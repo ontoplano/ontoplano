@@ -11,8 +11,8 @@
 	 *
 	 * The same move as `GoalCard`, `IdeaCard`, `BillRow` and `HabitCard`. Where
 	 * it posts is a prop (`$lib/workout-action-names`); the forms that write a
-	 * session are the room's own dialogs, so the card asks for them by callback
-	 * rather than carrying them.
+	 * session are `WorkoutDialogs`, mounted once per screen, so the card asks
+	 * for them by callback rather than carrying one set per card.
 	 */
 	import Icon from '$lib/components/Icon.svelte';
 	import RowCard from '$lib/components/RowCard.svelte';

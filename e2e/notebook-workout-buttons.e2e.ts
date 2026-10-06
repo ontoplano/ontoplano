@@ -3,11 +3,11 @@ import { register, testEmail } from './helpers/account';
 import { visit } from './helpers/visit';
 
 /**
- * A workout card's buttons work inside a notebook.
+ * A workout card's buttons work inside a notebook, and keep you there.
  *
- * The card is the Health room's, but the notebook drew it without saying what
- * its pencil, its calendar or its note button should do, so all three were
- * dead. They open the room's own dialogs, by address.
+ * The card is the Health room's, and its pencil, calendar and note button
+ * used to send you into the room to open its dialogs. A task's or a note's
+ * buttons open where they are, so a workout's do too — see `WorkoutDialogs`.
  */
 async function makeNotebook(page: Page, title: string): Promise<string> {
 	await visit(page, '/notebooks');
@@ -28,10 +28,11 @@ async function makeNotebook(page: Page, title: string): Promise<string> {
 	return id;
 }
 
-test("a workout's buttons on a notebook tab open the room's dialogs", async ({ page }) => {
+test("a workout's buttons on a notebook tab open its dialogs there", async ({ page }) => {
 	test.setTimeout(120_000);
 	await register(page, testEmail('nb-workout-buttons'));
 	const id = await makeNotebook(page, 'Climbing');
+	const here = new RegExp(`/notebooks/${id}`);
 
 	await page.getByRole('button', { name: /^Workouts/ }).click();
 	await page.getByRole('button', { name: 'New workout' }).click();
@@ -40,20 +41,29 @@ test("a workout's buttons on a notebook tab open the room's dialogs", async ({ p
 	await form.getByRole('button', { name: 'Save', exact: true }).click();
 	await expect(page.getByText('Pull-up day').first()).toBeVisible();
 
-	const back = async () => {
-		await visit(page, `/notebooks/${id}`);
-		await page.getByRole('button', { name: /^Workouts/ }).click();
-	};
-
+	// Edited where it is.
 	await page.getByRole('button', { name: 'Edit Pull-up day' }).click();
-	await expect(page.getByRole('dialog', { name: 'Edit workout' })).toBeVisible();
-	await expect(page.getByRole('dialog').locator('[name="heading"]')).toHaveValue('Pull-up day');
+	const editing = page.getByRole('dialog', { name: 'Edit workout' });
+	await expect(editing).toBeVisible();
+	await expect(editing.locator('[name="heading"]')).toHaveValue('Pull-up day');
+	await editing.locator('[name="heading"]').fill('Pull-up night');
+	await editing.getByRole('button', { name: 'Save', exact: true }).click();
+	await expect(editing).toBeHidden();
+	await expect(page.getByText('Pull-up night').first()).toBeVisible();
+	await expect(page).toHaveURL(here);
 
-	await back();
-	await page.getByRole('button', { name: 'Plan Pull-up day onto a day' }).click();
-	await expect(page.getByRole('dialog', { name: 'Put it on a day' })).toBeVisible();
+	await page.getByRole('button', { name: 'Plan Pull-up night onto a day' }).click();
+	const day = page.getByRole('dialog', { name: 'Put it on a day' });
+	await expect(day).toBeVisible();
+	await day.getByRole('button', { name: 'Cancel' }).click();
+	await expect(page).toHaveURL(here);
 
-	await back();
-	await page.getByRole('button', { name: 'Write down what you did for Pull-up day' }).click();
-	await expect(page.getByRole('dialog').locator('[name="doneOn"]')).toBeVisible();
+	// Written down here, and it shows on the card.
+	await page.getByRole('button', { name: 'Write down what you did for Pull-up night' }).click();
+	const log = page.getByRole('dialog', { name: /what did you do/i });
+	await expect(log.locator('[name="doneOn"]')).toBeVisible();
+	await log.locator('[name="notes"]').fill('felt strong');
+	await log.getByRole('button', { name: 'Write it down' }).click();
+	await expect(log).toBeHidden();
+	await expect(page).toHaveURL(here);
 });
