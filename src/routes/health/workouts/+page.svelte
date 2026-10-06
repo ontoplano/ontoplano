@@ -27,7 +27,7 @@
 	import { armed } from '$lib/actions/armed';
 	import type { PageServerData, ActionData } from './$types';
 	import WorkoutCard from '$lib/components/WorkoutCard.svelte';
-	import { WORKOUT_ROOM_ACTIONS } from '$lib/workout-action-names';
+	import { WORKOUT_ROOM_ACTIONS, WORKOUT_ROOM_PARAMS } from '$lib/workout-action-names';
 	import { useT } from '$lib/i18n';
 
 	const t = useT();
@@ -157,6 +157,27 @@
 		const workout = data.workouts.find((one) => one.id === id);
 		if (workout) openEdit(workout);
 	});
+
+	// And the room's other dialogs, which a notebook's Workouts tab links to
+	// rather than carrying copies of (`$lib/workout-action-names`).
+	const workoutById = (id: number) => data.workouts.find((one) => one.id === id);
+	const sessionById = (id: number) => data.sessions.find((one) => one.id === id);
+	openFromUrl((id) => {
+		const workout = workoutById(id);
+		if (workout) startLog(workout);
+	}, WORKOUT_ROOM_PARAMS.log);
+	openFromUrl((id) => {
+		const workout = workoutById(id);
+		if (workout) scheduling = workout;
+	}, WORKOUT_ROOM_PARAMS.schedule);
+	openFromUrl((id) => {
+		const session = sessionById(id);
+		const workout = session && workoutById(session.workoutId);
+		if (session && workout) startEditSession(workout, session);
+	}, WORKOUT_ROOM_PARAMS.session);
+	openFromUrl((id) => {
+		confirmDeleteSession = sessionById(id) ?? null;
+	}, WORKOUT_ROOM_PARAMS.deleteSession);
 
 	function openEdit(chosen: (typeof data.workouts)[number]) {
 		editing = chosen;

@@ -1,3 +1,5 @@
+import { OBJECT_ROOMS } from './object-links.js';
+
 /**
  * Where a workout card posts, on each screen that shows one.
  *
@@ -28,3 +30,26 @@ export const NOTEBOOK_WORKOUT_ACTIONS: WorkoutActionNames = {
 	updateSession: '?/workoutUpdateSession',
 	deleteSession: '?/workoutDeleteSession'
 };
+
+/**
+ * What a notebook's card asks the Health room to open, by address.
+ *
+ * Writing a session down, correcting one and putting a workout on a day are
+ * the room's own dialogs, and a notebook's tab is not going to carry a second
+ * copy of each. So the card's buttons there are links into the room, and the
+ * room opens the dialog the address names (`openFromUrl`). Editing the workout
+ * itself is the room's ordinary `?edit=` — see `$lib/object-links`.
+ */
+export const WORKOUT_ROOM_PARAMS = {
+	log: 'log',
+	schedule: 'schedule',
+	session: 'session',
+	deleteSession: 'deleteSession'
+} as const;
+
+export type WorkoutRoomParam = keyof typeof WORKOUT_ROOM_PARAMS;
+
+/** The Health room's address with one of its dialogs asked for. */
+export function workoutRoomLink(param: WorkoutRoomParam, id: number): string {
+	return `${OBJECT_ROOMS.workout.room}?${WORKOUT_ROOM_PARAMS[param]}=${id}`;
+}

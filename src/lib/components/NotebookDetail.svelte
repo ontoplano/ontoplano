@@ -59,7 +59,9 @@
 	import ItemRow, { itemRowWash } from '$lib/components/ItemRow.svelte';
 	import LinkIntoNotebook from '$lib/components/LinkIntoNotebook.svelte';
 	import { NOTEBOOK_ITEM_ACTIONS } from '$lib/item-action-names';
-	import { NOTEBOOK_WORKOUT_ACTIONS } from '$lib/workout-action-names';
+	import { NOTEBOOK_WORKOUT_ACTIONS, workoutRoomLink } from '$lib/workout-action-names';
+	import { linkTo } from '$lib/object-links';
+	import { goto } from '$app/navigation';
 	import { NOTEBOOK_HABIT_ACTIONS } from '$lib/habit-action-names';
 	import { NOTEBOOK_BILL_ACTIONS } from '$lib/bill-action-names';
 	import IdeaFields from '$lib/components/fields/IdeaFields.svelte';
@@ -1136,6 +1138,12 @@
 	const shownIdeas = $derived(searched(contents?.ideas ?? [], 'ideas'));
 	const shownInventory = $derived(searched(contents?.inventory ?? [], 'inventory'));
 	const shownWorkouts = $derived(searched(contents?.workouts ?? [], 'workouts'));
+	/** A workout card's buttons open the Health room's dialogs — see `workoutRoomLink`. */
+	function toHealth(href: string | null) {
+		// Already a room this app owns; the link only puts an id on its address.
+		// eslint-disable-next-line svelte/no-navigation-without-resolve
+		if (href) goto(href);
+	}
 	const shownRecipes = $derived(searched(contents?.recipes ?? [], 'recipes'));
 	const shownLedgers = $derived(searched(contents?.ledgers ?? [], 'ledgers'));
 	const shownHabits = $derived(searched(contents?.habits ?? [], 'habits'));
@@ -1895,8 +1903,8 @@
 			<!--
 				The Health room's own card: the plan, and the record of what was
 				actually done under it. Writing a session down is the room's own
-				dialog, which is why that one is a link out rather than a form
-				here — see `WorkoutCard`.
+				dialog, which is why its buttons are links out rather than forms
+				here — see `WorkoutCard` and `workoutRoomLink`.
 			-->
 			{#if contents.workouts.length === 0}
 				<EmptyState
@@ -1911,6 +1919,11 @@
 							{workout}
 							sessions={contents.workoutSessions}
 							actions={NOTEBOOK_WORKOUT_ACTIONS}
+							onedit={(id) => toHealth(linkTo({ kind: 'workout', id }))}
+							onlog={(id) => toHealth(workoutRoomLink('log', id))}
+							onschedule={(id) => toHealth(workoutRoomLink('schedule', id))}
+							onsession={(_, sessionId) => toHealth(workoutRoomLink('session', sessionId))}
+							ondeletesession={(sessionId) => toHealth(workoutRoomLink('deleteSession', sessionId))}
 						/>
 					{/each}
 				</ul>
