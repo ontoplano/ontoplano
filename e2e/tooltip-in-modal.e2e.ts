@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test';
 import { register, testEmail } from './helpers/account';
 import { visit } from './helpers/visit';
+import { hoverUntil } from './helpers/press-until';
 
 /**
  * The app's own tooltip is drawn in the top layer.
@@ -18,12 +19,9 @@ test('the tooltip is a popover, so a dialog cannot cover it', async ({ page }) =
 
 	const target = page.locator('[title]').first();
 	const words = (await target.getAttribute('title'))!;
-	await target.hover();
-	await page.waitForTimeout(900);
-
 	// The task peek is a tooltip of its own, mounted and closed; ask for ours by its words.
 	const tip = page.getByRole('tooltip', { name: words });
-	await expect(tip).toBeVisible();
+	await hoverUntil(page, target, tip);
 	// `:popover-open` matches only while it is in the top layer.
 	expect(await tip.evaluate((el) => el.matches(':popover-open'))).toBe(true);
 });

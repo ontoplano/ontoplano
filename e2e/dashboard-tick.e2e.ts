@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test';
 import { register, testEmail } from './helpers/account';
 import { visit } from './helpers/visit';
+import { expectStill } from './helpers/position';
 
 /**
  * Ticking something off Today's tasks, and the few seconds to have meant
@@ -106,15 +107,25 @@ test('ticking one off moves nothing on the card', async ({ page }) => {
 	// down the card is the one anything growing above it would move.
 	const below = await rows.last().boundingBox();
 	const box = await card.boundingBox();
+	// The tally line under the list, which ends what the card holds.
+	const tally = card.locator('ul.dash-rows ~ div').last();
+	const ends = await tally.boundingBox();
 
 	await page.getByRole('button', { name: `Mark ${title} done`, exact: true }).click();
 	await expect(card.getByText('1 done', { exact: true })).toBeVisible();
 
-	// To the pixel: nothing under the press has moved, and the card has not
-	// grown under it either — the count going from none to one is a line the
-	// card was already paying for.
-	expect(await rows.last().boundingBox()).toMatchObject({ y: below!.y });
-	expect(await card.boundingBox()).toMatchObject({ y: box!.y, height: box!.height });
+	// Nothing under the press has moved, and the card's content has not grown
+	// under it either — the count going from none to one is a line the card
+	// was already paying for.
+	//
+	// Measured to the tally rather than the card's own box: a card stretches to
+	// the row it shares, so a neighbour that grows from the same tick — the
+	// week's tally gaining the time just done — made this card taller too.
+	expectStill((await rows.last().boundingBox())!.y, below!.y);
+	expectStill((await card.boundingBox())!.y, box!.y);
+	const after = (await tally.boundingBox())!;
+	expectStill(after.y, ends!.y);
+	expectStill(after.height, ends!.height);
 });
 
 /*

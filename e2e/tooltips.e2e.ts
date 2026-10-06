@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test';
 import { register, testEmail } from './helpers/account';
 import { visit } from './helpers/visit';
+import { hoverUntil } from './helpers/press-until';
 
 /** Where a run's own pictures go, beside everything else Playwright writes. */
 const SHOTS = 'test-results/tooltips';
@@ -19,9 +20,8 @@ test('a title becomes ours, and goes back when the pointer leaves', async ({ pag
 	const wheel = page.getByRole('button', { name: 'Jump to a section' });
 	await expect(wheel).toHaveAttribute('title', /section/i);
 
-	await wheel.hover();
 	const tip = page.getByRole('tooltip');
-	await expect(tip).toBeVisible({ timeout: 5000 });
+	await hoverUntil(page, wheel, tip);
 	await expect(tip).toHaveText(/section/i);
 	await page.screenshot({ path: `${SHOTS}/tip.png` });
 
@@ -57,11 +57,8 @@ test('it stays on screen at the edges', async ({ page }) => {
 	const rightmost = boxes.sort((a, b) => b.right - a.right)[0];
 	expect(rightmost, 'the header has nothing with a title on it').toBeTruthy();
 
-	await titled.nth(rightmost.i).hover();
 	const tip = page.getByRole('tooltip');
-	// Generous: the tooltip waits before it appears, on purpose, and a loaded
-	// machine is slow to give it the frame it is placed in.
-	await expect(tip).toBeVisible({ timeout: 20_000 });
+	await hoverUntil(page, titled.nth(rightmost.i), tip);
 
 	const box = (await tip.boundingBox())!;
 	expect(box.x).toBeGreaterThanOrEqual(0);
@@ -84,8 +81,7 @@ test('a button named only by its title keeps that name while ours is up', async 
 	await visit(page, '/');
 
 	const wheel = page.getByRole('button', { name: 'Jump to a section' });
-	await wheel.hover();
-	await expect(page.getByRole('tooltip')).toBeVisible({ timeout: 20_000 });
+	await hoverUntil(page, wheel, page.getByRole('tooltip'));
 
 	// Still findable by the same name, with the attribute borrowed.
 	await expect(page.getByRole('button', { name: 'Jump to a section' })).toBeVisible();

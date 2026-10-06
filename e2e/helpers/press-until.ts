@@ -25,3 +25,19 @@ export async function pressUntil(page: Page, control: Locator, shows: Locator) {
 		await expect(shows.first()).toBeVisible({ timeout: 3000 });
 	}).toPass({ timeout: 45_000 });
 }
+
+/**
+ * Point at something, and keep pointing until the page shows it noticed.
+ *
+ * A hover is one `pointerover`. If the page moves under a resting pointer — a
+ * card filling in after load — the target slides out from under it, the
+ * tooltip is hidden on the way out, and nothing arrives to bring it back. So
+ * each attempt leaves first, from a corner nothing sits in, and comes back.
+ */
+export async function hoverUntil(page: Page, control: Locator, shows: Locator) {
+	await expect(async () => {
+		await page.mouse.move(2, 2);
+		await control.hover();
+		await expect(shows.first()).toBeVisible({ timeout: 3000 });
+	}).toPass({ timeout: 45_000 });
+}

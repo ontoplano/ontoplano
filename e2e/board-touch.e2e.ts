@@ -1,6 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 import { register, testEmail } from './helpers/account';
 import { visit } from './helpers/visit';
+import { expectStill } from './helpers/position';
 
 /**
  * The board, for a finger and for anybody who wants to read a card.
@@ -69,7 +70,7 @@ test('the move can be put back down without going anywhere', async ({ page }) =>
 	const before = (await lanes.boundingBox())!.y;
 	await card.getByRole('button', { name: /Move this to another column/ }).click();
 	await expect(page.getByText(/Moving /)).toBeVisible();
-	expect((await lanes.boundingBox())!.y).toBe(before);
+	expectStill((await lanes.boundingBox())!.y, before);
 
 	await page.getByRole('button', { name: 'Cancel', exact: true }).click();
 	await expect(page.getByText(/Moving /)).toHaveCount(0);

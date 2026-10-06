@@ -1,6 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 import { register, testEmail } from './helpers/account';
 import { visit } from './helpers/visit';
+import { expectStill } from './helpers/position';
 
 /**
  * A task's attributes, and the notebook a task block is filed under.
@@ -67,7 +68,7 @@ for (const { name, viewport } of WIDTHS) {
 			const before = (await hint.boundingBox())!.y;
 			await dialog.getByRole('button', { name: 'Edit phone' }).click();
 			// Within half a pixel: a centred dialog lands on sub-pixel rounding.
-			expect(Math.abs((await hint.boundingBox())!.y - before)).toBeLessThan(0.5);
+			expectStill((await hint.boundingBox())!.y, before);
 			await dialog.locator('[name="value"]').fill('555 0101');
 			await dialog.getByRole('button', { name: 'Save' }).click();
 			await expect(dialog.getByText('555 0101')).toBeVisible();

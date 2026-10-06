@@ -77,7 +77,9 @@ test('saving Edit notebook never shows its title empty', async ({ page }) => {
 	// Once the save has finished — the new title is drawn when the page's data
 	// is back: a press while the answer is still being applied lands on the
 	// Edit dialog that is stepping away.
-	await page.unrouteAll();
+	// Waiting for a handler still holding a request, which would otherwise
+	// throw "already handled" when it continues one the route no longer owns.
+	await page.unrouteAll({ behavior: 'wait' });
 	await expect(
 		page.getByRole('heading', { level: 1, name: /^Kitchen renovation\b/ })
 	).toBeVisible();
