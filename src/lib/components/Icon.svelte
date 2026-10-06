@@ -73,7 +73,8 @@
 		planner: 'M4 5h16v16H4zM4 9h16M9 9v12M15 9v12',
 		goals: 'M12 3v18M4 6h14l-3 4 3 4H4z',
 		// A cup on a stem: a goal reached, which a tick — a task done — is not.
-		trophy: 'M8 4h8v5a4 4 0 0 1-8 0zM8 6H5v1a3 3 0 0 0 3 3M16 6h3v1a3 3 0 0 1-3 3M12 13v4M8 20h8M9 17h6',
+		trophy:
+			'M8 4h8v5a4 4 0 0 1-8 0zM8 6H5v1a3 3 0 0 0 3 3M16 6h3v1a3 3 0 0 1-3 3M12 13v4M8 20h8M9 17h6',
 		// A peak with a lower one beside it: what is still being climbed.
 		summit: 'M3 20l6-11 4 6 2.5-3.5L21 20z',
 		diary: 'M5 3h14v18H5zM9 3v18M12 8h4M12 12h4',
