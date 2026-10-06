@@ -428,7 +428,15 @@ Token: ${token}`;
 				-->
 				<SettingRow label={t('settings.integrations.connections.tellMeWhenThisHappens')}>
 					{#snippet control()}
-						<form method="post" action="?/notifyAssistant" use:enhance>
+						<!-- Not reset after it posts: the live stream can land the new value
+						     first, and a reset then would put the switch back to off under it. -->
+						<form
+							method="post"
+							action="?/notifyAssistant"
+							use:enhance={() =>
+								async ({ update }) =>
+									update({ reset: false })}
+						>
 							<input type="hidden" name="on" value={data.notifyAssistant ? 'false' : 'true'} />
 							<input
 								type="checkbox"
