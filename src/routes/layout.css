@@ -5081,7 +5081,7 @@ html[data-style='playful'] .room-surface {
 .room-tabs > .seg-track {
 	display: flex;
 	flex: 1 1 auto;
-	padding-inline: 0.75rem;
+	padding-inline: 0 0.75rem;
 }
 
 .room-tabs .tab-strip-view {
@@ -5208,7 +5208,20 @@ html[data-style='playful'] .room-surface {
 
 html .room-tabs .seg-scroll > :is(a, button) {
 	padding-block: calc(0.5rem + var(--seg-pad, 0px));
+	border-bottom: 0;
 	border-radius: 0 !important;
+}
+
+.room-tabs:not(.room-tabs-nested) .seg-scroll > :first-child {
+	padding-inline-start: 1.5rem;
+}
+
+html[data-style='playful'] .room-tabs:not(.room-tabs-nested) .seg-scroll > :first-child {
+	border-start-start-radius: var(--radius) !important;
+}
+
+html[data-style='playful'] .room-tabs .seg-scroll > :last-child {
+	border-start-end-radius: var(--radius) !important;
 }
 
 /*
@@ -5220,6 +5233,10 @@ html .room-tabs .seg-scroll > :is(a, button) {
 @media (width < 40rem) {
 	.room-tabs .seg-scroll {
 		padding-inline: 0.75rem;
+	}
+
+	.room-tabs:not(.room-tabs-nested) .seg-scroll > :first-child {
+		padding-inline-start: 0.75rem;
 	}
 }
 

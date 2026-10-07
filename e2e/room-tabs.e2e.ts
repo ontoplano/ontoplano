@@ -250,6 +250,35 @@ test.describe('the strip itself', () => {
 	});
 });
 
+test('the active tab meets the room and fills the playful outer corner', async ({ page }) => {
+	await page.setViewportSize({ width: 1280, height: 900 });
+	await register(page, testEmail('tabs-corner'));
+	await visit(page, '/notebooks');
+	await page.evaluate(() => {
+		document.documentElement.dataset.style = 'playful';
+	});
+
+	const geometry = await page.evaluate(() => {
+		const track = document.querySelector('.room-tabs:not(.room-tabs-nested) > .seg-track')!;
+		const tabs = track.querySelectorAll('.seg-scroll > a');
+		const first = tabs[0];
+		const middle = tabs[1];
+		const body = document.querySelector('.room-body')!;
+		return {
+			left: first.getBoundingClientRect().left - track.getBoundingClientRect().left,
+			bottom: body.getBoundingClientRect().top - first.getBoundingClientRect().bottom,
+			bottomBorder: getComputedStyle(first).borderBottomWidth,
+			firstCorner: parseFloat(getComputedStyle(first).borderTopLeftRadius),
+			middleCorner: parseFloat(getComputedStyle(middle).borderTopLeftRadius)
+		};
+	});
+	expect(geometry.left).toBe(0);
+	expect(geometry.bottom).toBe(0);
+	expect(geometry.bottomBorder).toBe('0px');
+	expect(geometry.firstCorner).toBeGreaterThan(0);
+	expect(geometry.middleCorner).toBe(0);
+});
+
 /**
  * Rooms are a row too, in the order they sit in the menu.
  *

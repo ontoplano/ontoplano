@@ -20,6 +20,7 @@ releases mattered.
 
 ## 0.185.14 — 2026-10-07
 
+- Room tabs meet the content below and fill the outer corner in the playful style.
 - Keyboard shortcuts leave Ctrl, Command, and Alt combinations to the browser and other apps.
 
 ## 0.185.13 — 2026-10-07
