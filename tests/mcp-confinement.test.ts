@@ -156,6 +156,28 @@ beforeAll(async () => {
 	outside.item = idOf(createItem(ctx(), { name: 'milk', type: 'replenish' }));
 });
 
+it('reports the token boundary during initialize without exposing other notebooks', () => {
+	const answer = handleBody(
+		{
+			ctx: ctx(),
+			scopes: Object.keys(SCOPES),
+			confinement: { kind: 'notebook', id: mine }
+		} as never,
+		{ jsonrpc: '2.0', id: 1, method: 'initialize' }
+	) as { result: { _access: { kind: string; id: number; label: string } } };
+	expect(answer.result._access).toEqual({
+		kind: 'notebook',
+		id: mine,
+		label: 'notebook: The flat'
+	});
+	expect(JSON.stringify(answer.result._access)).not.toContain('Private');
+	const writeOnly = handleBody(
+		{ ctx: ctx(), scopes: ['notes:write'], confinement: { kind: 'notebook', id: mine } } as never,
+		{ jsonrpc: '2.0', id: 2, method: 'initialize' }
+	) as { result: { _access: unknown } };
+	expect(writeOnly.result._access).toEqual({ kind: 'notebook', id: mine });
+});
+
 describe('what a key tied to one notebook can do', () => {
 	it('reads the notebook’s own tasks', () => {
 		const answer = call('tasks', {});

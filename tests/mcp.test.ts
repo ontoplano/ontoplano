@@ -52,6 +52,7 @@ describe('the handshake', () => {
 		const answer = call([], { jsonrpc: '2.0', id: 1, method: 'initialize' });
 		expect(answer.result.protocolVersion).toMatch(/^\d{4}-\d{2}-\d{2}$/);
 		expect(answer.result.serverInfo.name).toBe('ontoplano');
+		expect(answer.result._access).toEqual({ kind: 'account' });
 		// Tools and nothing else: advertising a capability that is not there is
 		// how a client ends up calling something that does not answer.
 		expect(Object.keys(answer.result.capabilities)).toEqual(['tools']);
