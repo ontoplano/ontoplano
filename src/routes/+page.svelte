@@ -389,7 +389,7 @@
 			return;
 		}
 
-		const action = getAction('/', e.key);
+		const action = getAction('/', e);
 		if (!action) return;
 		e.preventDefault();
 

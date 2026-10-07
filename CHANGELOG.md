@@ -18,6 +18,10 @@ the shape of the data changing. Bumping the minor per batch is what ran this
 file to 0.161 in a few months, which tells a reader nothing about which
 releases mattered.
 
+## 0.185.14 — 2026-10-07
+
+- Keyboard shortcuts leave Ctrl, Command, and Alt combinations to the browser and other apps.
+
 ## 0.185.13 — 2026-10-07
 
 - MCP clients can tell whether their token reaches the account or one notebook, so an assistant can use the right notebook without asking you to choose it.

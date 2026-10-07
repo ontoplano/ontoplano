@@ -1288,7 +1288,7 @@
 
 		if (selection.verb || showForm || delegatingId !== null || attributesId !== null) return;
 		if (selection.handleKey(e, () => visibleTodos[selectedIndex]?.id)) return;
-		const action = getAction(shortcutRoom, e.key);
+		const action = getAction(shortcutRoom, e);
 		if (!action) return;
 		e.preventDefault();
 

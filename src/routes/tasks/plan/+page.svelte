@@ -1647,7 +1647,7 @@
 		)
 			return;
 
-		const action = getAction('/tasks/plan', e.key);
+		const action = getAction('/tasks/plan', e);
 		if (!action) {
 			if (showCopyPanel) {
 				return;

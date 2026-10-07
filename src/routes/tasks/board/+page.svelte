@@ -621,7 +621,7 @@
 
 		// Every other key answers to the registry in $lib/shortcuts.ts — the
 		// binding lives there, only the behaviour lives here.
-		const action = getAction('/tasks/board', e.key);
+		const action = getAction('/tasks/board', e);
 		if (!action) return;
 
 		switch (action) {

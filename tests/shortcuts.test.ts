@@ -69,5 +69,16 @@ describe('the registry', () => {
 		expect(getAction('/tasks/board', 'Enter')).toBe('edit');
 		expect(getAction('/tasks/board', '3')).toBe('rate');
 		expect(getAction('/tasks/board', 'z')).toBeNull();
+		for (const modifier of ['ctrlKey', 'metaKey', 'altKey'] as const) {
+			expect(
+				getAction('/notebooks', {
+					key: 'f',
+					ctrlKey: false,
+					metaKey: false,
+					altKey: false,
+					[modifier]: true
+				})
+			).toBeNull();
+		}
 	});
 });

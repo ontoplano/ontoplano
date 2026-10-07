@@ -135,7 +135,7 @@
 			return;
 
 		const habits = filteredHabits();
-		const action = getAction('/health/habits', e.key);
+		const action = getAction('/health/habits', e);
 		if (!action) return;
 		e.preventDefault();
 

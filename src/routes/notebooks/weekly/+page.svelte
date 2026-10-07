@@ -130,7 +130,7 @@
 			return;
 		}
 
-		const action = getAction('/notebooks/weekly', e.key);
+		const action = getAction('/notebooks/weekly', e);
 		const here = shownWeeks[cursor];
 		if (action === 'new') {
 			e.preventDefault();

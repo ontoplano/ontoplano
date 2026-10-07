@@ -58,7 +58,7 @@
 			editing = false;
 			confirmingDelete = false;
 		} else if (
-			getAction('/notebooks', e.key) === 'new' &&
+			getAction('/notebooks', e) === 'new' &&
 			newAction?.run &&
 			!editing &&
 			!e.defaultPrevented

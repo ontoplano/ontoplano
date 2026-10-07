@@ -411,6 +411,7 @@
 			palette.open = true;
 			return;
 		}
+		if (e.ctrlKey || e.metaKey || e.altKey) return;
 
 		if (
 			e.target instanceof HTMLInputElement ||

@@ -144,7 +144,7 @@ Token: ${token}`;
 			closeForms();
 			return;
 		}
-		const action = getAction('/settings/integrations/connections', e.key);
+		const action = getAction('/settings/integrations/connections', e);
 		if (action === 'new' && !showTokenForm) {
 			e.preventDefault();
 			showTokenForm = true;

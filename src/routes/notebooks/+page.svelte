@@ -264,7 +264,7 @@
 			renameOpen = false;
 			return;
 		}
-		const action = getAction('/notebooks', e.key);
+		const action = getAction('/notebooks', e);
 		if (action === 'new') {
 			e.preventDefault();
 			openCreate();
