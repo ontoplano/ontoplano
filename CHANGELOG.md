@@ -19,6 +19,7 @@ file to 0.161 in a few months, which tells a reader nothing about which
 releases mattered.
 
 ## 0.185.12 — 2026-10-07
+
 - Fix crashing on start.
 
 ## 0.185.11 — 2026-10-06
