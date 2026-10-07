@@ -1,8 +1,14 @@
-# R8 shrinks the libraries; our own classes stay whole. MainActivity loads
-# PlayBilling by name (Class.forName), Capacitor finds plugins and their
-# @PluginMethod methods by reflection, and the widget and the ringer are named
-# in the manifest — renaming any of them breaks the app only on a phone.
+# Capacitor reads plugin annotations and calls plugin methods by reflection.
+# Our own classes stay whole: loaded by name (PlayBilling) or named in the manifest (widget, ringer).
 -keep class app.ontoplano.isolated.** { *; }
+-keepattributes *Annotation*, InnerClasses, Signature, EnclosingMethod, SourceFile, LineNumberTable
 
-# Stack traces in Play's crash reports keep their line numbers.
--keepattributes SourceFile,LineNumberTable
+-keep class com.getcapacitor.** { *; }
+-keep @com.getcapacitor.annotation.CapacitorPlugin public class * {
+    @com.getcapacitor.annotation.PermissionCallback <methods>;
+    @com.getcapacitor.annotation.ActivityCallback <methods>;
+    @com.getcapacitor.PluginMethod public <methods>;
+}
+-keep public class * extends com.getcapacitor.Plugin { *; }
+-keep class com.capacitorjs.plugins.** { *; }
+-keep class * extends com.getcapacitor.Plugin
