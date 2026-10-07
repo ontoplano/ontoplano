@@ -38,6 +38,16 @@ test('a bill can be added, paid for a real amount, and unpaid', async ({ page })
 		.locator('li', { hasText: 'Rent' })
 		.getByRole('button', { name: /^Mark .* paid$/ })
 		.click();
+	const row = page.locator('li', { hasText: 'Rent' });
+	const tick = (await row.getByRole('button', { name: /^Mark .* paid$/ }).boundingBox())!;
+	const amount = (await row.locator('[name="amount"]').boundingBox())!;
+	expect(Math.abs(amount.x - tick.x)).toBeLessThanOrEqual(8);
+	expect(amount.y).toBeGreaterThanOrEqual(tick.y + tick.height);
+	await page.setViewportSize({ width: 390, height: 844 });
+	const phoneTick = (await row.getByRole('button', { name: /^Mark .* paid$/ }).boundingBox())!;
+	const phoneAmount = (await row.locator('[name="amount"]').boundingBox())!;
+	expect(Math.abs(phoneAmount.x - phoneTick.x)).toBeLessThanOrEqual(8);
+	await page.setViewportSize({ width: 1200, height: 900 });
 	await page.locator('li', { hasText: 'Rent' }).locator('[name="amount"]').fill('1315,00');
 	await page
 		.locator('li', { hasText: 'Rent' })

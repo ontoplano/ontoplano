@@ -184,70 +184,23 @@
 			{/snippet}
 
 			{#snippet controls()}
-				{#if bill.active && !shownPaid && !shownSkipped}
-					{#if paying}
-						<form
-							method="post"
-							action={actions.pay}
-							class="flex items-center gap-1"
-							use:enhance={() => {
-								// Ticked now; the box comes back only if the payment is refused.
-								pressed = { paid: true, skipped: false };
-								paying = false;
-								return async ({ result, update }) => {
-									if (result.type !== 'success') {
-										pressed = null;
-										paying = true;
-									}
-									await update();
-									if (result.type === 'success')
-										say(t('finance.bills.namePaid', { name: bill.name }));
-								};
-							}}
+				{#if bill.active && !shownPaid && !shownSkipped && !paying}
+					<form
+						method="post"
+						action={actions.skip}
+						use:enhance={flips({ paid: false, skipped: true })}
+					>
+						<input type="hidden" name="id" value={bill.id} />
+						<input type="hidden" name="period" value={period} />
+						<button
+							class="icon-btn"
+							title={t('finance.bills.skipThisPeriod')}
+							aria-label={t('finance.bills.skipName', { name: bill.name })}
 						>
-							<input type="hidden" name="id" value={bill.id} />
-							<input type="hidden" name="period" value={period} />
-							<input
-								name="amount"
-								inputmode="decimal"
-								use:autofocus
-								class="input w-24"
-								placeholder={asDecimal(bill.amountExpected)}
-								aria-label={t('finance.bills.amount')}
-								onkeydown={(e) => {
-									if (e.key === 'Escape') paying = false;
-								}}
-							/>
-							<button class="btn btn-primary btn-sm" type="submit"
-								>{t('finance.bills.paid2')}</button
-							>
-							<button
-								class="icon-btn"
-								type="button"
-								title={t('ui.cancel')}
-								aria-label={t('ui.cancel')}
-								onclick={() => (paying = false)}
-							>
-								<Icon name="close" />
-							</button>
-						</form>
-					{:else}
-						<form
-							method="post"
-							action={actions.skip}
-							use:enhance={flips({ paid: false, skipped: true })}
-						>
-							<input type="hidden" name="id" value={bill.id} />
-							<input type="hidden" name="period" value={period} />
-							<button
-								class="icon-btn"
-								title={t('finance.bills.skipThisPeriod')}
-								aria-label={t('finance.bills.skipName', { name: bill.name })}
-							>
-								<Icon name="skip" />
-							</button>
-						</form>
-						<!--
+							<Icon name="skip" />
+						</button>
+					</form>
+					<!--
 							And the other way to pay one: point at the line that did it.
 
 							The tick is somebody saying a bill was paid; this is the bank
@@ -257,17 +210,16 @@
 							replaces the other. Only where the statements are: a notebook is
 							not where somebody goes through a bank export.
 						-->
-						{#if onattach}
-							<button
-								type="button"
-								class="icon-btn"
-								title={t('finance.bills.attachThePayment')}
-								aria-label={t('finance.bills.attachATransactionTo', { name: bill.name })}
-								onclick={() => onattach(bill.id)}
-							>
-								<Icon name="link" />
-							</button>
-						{/if}
+					{#if onattach}
+						<button
+							type="button"
+							class="icon-btn"
+							title={t('finance.bills.attachThePayment')}
+							aria-label={t('finance.bills.attachATransactionTo', { name: bill.name })}
+							onclick={() => onattach(bill.id)}
+						>
+							<Icon name="link" />
+						</button>
 					{/if}
 				{/if}
 
@@ -354,6 +306,52 @@
 
 			<p class="text-sm leading-snug font-medium break-words text-gray-900">{bill.name}</p>
 		</RowCard>
+		{#if paying && bill.active && !shownPaid && !shownSkipped}
+			<div class="basis-full pt-1.5">
+				<form
+					method="post"
+					action={actions.pay}
+					class="flex items-center gap-1"
+					use:enhance={() => {
+						// Ticked now; the box comes back only if the payment is refused.
+						pressed = { paid: true, skipped: false };
+						paying = false;
+						return async ({ result, update }) => {
+							if (result.type !== 'success') {
+								pressed = null;
+								paying = true;
+							}
+							await update();
+							if (result.type === 'success') say(t('finance.bills.namePaid', { name: bill.name }));
+						};
+					}}
+				>
+					<input type="hidden" name="id" value={bill.id} />
+					<input type="hidden" name="period" value={period} />
+					<input
+						name="amount"
+						inputmode="decimal"
+						use:autofocus
+						class="input w-24"
+						placeholder={asDecimal(bill.amountExpected)}
+						aria-label={t('finance.bills.amount')}
+						onkeydown={(e) => {
+							if (e.key === 'Escape') paying = false;
+						}}
+					/>
+					<button class="btn btn-primary btn-sm" type="submit">{t('finance.bills.paid2')}</button>
+					<button
+						class="icon-btn"
+						type="button"
+						title={t('ui.cancel')}
+						aria-label={t('ui.cancel')}
+						onclick={() => (paying = false)}
+					>
+						<Icon name="close" />
+					</button>
+				</form>
+			</div>
+		{/if}
 	</div>
 
 	{#if expanded}
