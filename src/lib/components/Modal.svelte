@@ -157,6 +157,17 @@
 
 	let dialog: HTMLDialogElement | undefined = $state();
 	let peekExpanded = $state(false);
+	// The keyboard can shrink the sheet after the first focus scroll. Keep the
+	// focused field in view once the new panel height has reached the DOM.
+	$effect(() => {
+		if (keyboardHeight === null || !open || !phonePeek || !phonePeekFocus) return;
+		const frame = requestAnimationFrame(() => {
+			const field = dialog?.querySelector<HTMLElement>(phonePeekFocus);
+			if (field && document.activeElement === field) field.scrollIntoView({ block: 'center' });
+		});
+		return () => cancelAnimationFrame(frame);
+	});
+
 	$effect(() => {
 		if (!open) peekExpanded = false;
 	});

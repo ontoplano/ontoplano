@@ -18,6 +18,10 @@ the shape of the data changing. Bumping the minor per batch is what ran this
 file to 0.161 in a few months, which tells a reader nothing about which
 releases mattered.
 
+## 0.185.22 — 2026-10-08
+
+- The focused activity name stays visible when the phone keyboard resizes the plan sheet.
+
 ## 0.185.21 — 2026-10-08
 
 - New activity details now sit next to the block's Activity choice in the plan editor.

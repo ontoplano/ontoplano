@@ -81,6 +81,10 @@ test.describe('with a finger', () => {
 		await expect(dialog).toBeVisible();
 		await expect(dialog.locator('[name="newActivityName"]')).toBeVisible();
 		await expect(dialog.locator('[name="newActivityName"]')).toBeFocused();
+		const fieldBox = (await dialog.locator('[name="newActivityName"]').boundingBox())!;
+		const bodyBox = (await dialog.locator('.overflow-y-auto').boundingBox())!;
+		expect(fieldBox.y).toBeGreaterThanOrEqual(bodyBox.y);
+		expect(fieldBox.y + fieldBox.height).toBeLessThanOrEqual(bodyBox.y + bodyBox.height);
 		await expect(dialog).toHaveClass(/peek/);
 		await expect(dialog.locator('[name="durationMinutes"]')).toHaveValue('60');
 		await expect(dialog.getByRole('button', { name: 'Cancel' })).toBeVisible();
