@@ -109,10 +109,33 @@ test.describe('with a finger', () => {
 		await dialog.locator('[name="newActivityName"]').fill('Garden planning');
 		await expect(dialog).toHaveClass(/peek/);
 		await dialog.locator('[name="durationMinutes"]').focus();
+		await expect(dialog).toHaveClass(/peek/);
+		const content = dialog.locator('.modal-content');
+		await content.evaluate((el) => el.scrollTo({ top: el.scrollHeight }));
+		await expect.poll(() => content.evaluate((el) => el.scrollTop)).toBeGreaterThan(0);
+		await dialog
+			.locator('header')
+			.first()
+			.click({ position: { x: 100, y: 15 } });
 		await expect(dialog).not.toHaveClass(/peek/);
 		await dialog.getByRole('button', { name: 'Add repeating task block' }).click();
 		await expect(dialog).toBeHidden();
 		await expect(page.locator('.ec-event').filter({ hasText: 'Garden planning' })).toBeVisible();
+	});
+
+	test('swiping up on the sheet header expands it', async ({ page }) => {
+		await register(page, testEmail('plan-sheet-expand'));
+		await visit(page, '/tasks/plan');
+		await page.getByRole('button', { name: 'New task block' }).click();
+		const dialog = page.getByRole('dialog', { name: 'New task block' });
+		await expect(dialog).toHaveClass(/peek/);
+		const header = dialog.locator('header').first();
+		const box = (await header.boundingBox())!;
+		const x = box.x + box.width / 2;
+		await header.dispatchEvent('pointerdown', { pointerId: 1, clientX: x, clientY: box.y + 55 });
+		await header.dispatchEvent('pointermove', { pointerId: 1, clientX: x, clientY: box.y });
+		await header.dispatchEvent('pointerup', { pointerId: 1, clientX: x, clientY: box.y });
+		await expect(dialog).not.toHaveClass(/peek/);
 	});
 
 	test('press and hold on the grid opens a new block there', async ({ page }) => {

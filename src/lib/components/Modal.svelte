@@ -185,6 +185,10 @@
 	let draggingSheet = $state(false);
 	let dragStartY = 0;
 	let dragStartAt = 0;
+	let sheetDeltaY = 0;
+	let headerTap = false;
+	const HEADER_TAP_SLOP = 8;
+	const EXPAND_SWIPE = 48;
 
 	function sheetDown(e: PointerEvent) {
 		// Not when the gesture starts on a control. The header doubles as the
@@ -194,6 +198,8 @@
 		draggingSheet = true;
 		dragStartY = e.clientY;
 		dragStartAt = performance.now();
+		sheetDeltaY = 0;
+		headerTap = true;
 		dragY = 0;
 		(e.currentTarget as Element).setPointerCapture(e.pointerId);
 	}
@@ -201,6 +207,8 @@
 	function sheetMove(e: PointerEvent) {
 		if (!draggingSheet) return;
 		const dy = e.clientY - dragStartY;
+		sheetDeltaY = dy;
+		if (Math.abs(dy) > HEADER_TAP_SLOP) headerTap = false;
 		dragY = dy > 0 ? dy : -Math.pow(-dy, 0.6);
 	}
 
@@ -210,6 +218,7 @@
 		// Far enough, or flung: closed. Anything less springs back.
 		const speed = dragY / Math.max(1, performance.now() - dragStartAt);
 		if (dragY > 96 || speed > 0.55) handleClose();
+		else if (phonePeek && sheetDeltaY < -EXPAND_SWIPE) peekExpanded = true;
 		dragY = 0;
 	}
 
@@ -384,16 +393,6 @@
 	onclose={handleNativeClose}
 	onpointerdown={handlePointerDown}
 	onclick={handleClick}
-	onfocusin={(event) => {
-		if (
-			phonePeek &&
-			!(phonePeekFocus && (event.target as Element).matches(phonePeekFocus)) &&
-			(event.target instanceof HTMLInputElement ||
-				event.target instanceof HTMLSelectElement ||
-				event.target instanceof HTMLTextAreaElement)
-		)
-			peekExpanded = true;
-	}}
 	aria-label={title}
 	class:docked={dock === 'side'}
 	data-away={away ? '' : undefined}
@@ -419,6 +418,10 @@
 				onpointermove={sheetMove}
 				onpointerup={sheetUp}
 				onpointercancel={sheetUp}
+				onclick={(event) => {
+					if (phonePeek && headerTap && !(event.target as Element).closest('button'))
+						peekExpanded = true;
+				}}
 			>
 				<button
 					type="button"
@@ -486,7 +489,9 @@
 				{/each}
 			{/if}
 
-			<div class="min-h-0 flex-1 overflow-y-auto overscroll-y-contain px-4 py-4 sm:px-5">
+			<div
+				class="modal-content min-h-0 flex-1 overflow-y-auto overscroll-y-contain px-4 py-4 sm:px-5"
+			>
 				{#if error}
 					<div class="mb-4"><Banner kind="error" message={error} /></div>
 				{/if}
@@ -541,6 +546,11 @@
 		max-height: 100dvh;
 		border: 0;
 		padding-top: var(--safe-top, 0px);
+	}
+
+	.modal-content {
+		touch-action: pan-y;
+		-webkit-overflow-scrolling: touch;
 	}
 
 	/* The edges that widen it: only with a mouse, and only where it floats. */
