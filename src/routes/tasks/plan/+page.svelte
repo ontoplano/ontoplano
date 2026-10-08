@@ -32,6 +32,7 @@
 	import { enhance } from '$lib/enhance';
 	import { deserialize } from '$app/forms';
 	import Modal from '$lib/components/Modal.svelte';
+	import { isPhone } from '$lib/breakpoints';
 	import Field from '$lib/components/Field.svelte';
 	import FormGrid from '$lib/components/FormGrid.svelte';
 	import { preloadData, goto, invalidateAll } from '$app/navigation';
@@ -246,7 +247,7 @@
 	let todosOpen = $state(false);
 
 	let prefillTime = $state('09:00');
-	let prefillDuration = $state(60);
+	const NEW_BLOCK_DURATION_MINUTES = 60;
 	let createFormEl: HTMLElement | undefined = $state();
 	/**
 	 * The calendar itself, for the one thing done imperatively.
@@ -733,7 +734,11 @@
 	 * block to start next week, and a block that starts after the day it is
 	 * drawn on is a block that does not appear where it was just drawn.
 	 */
-	function startNew(mode: 'weekly' | 'once' = 'weekly', anchor: string = selectedDateStr()) {
+	function startNew(
+		mode: 'weekly' | 'once' = 'weekly',
+		anchor: string = selectedDateStr(),
+		durationMinutes = NEW_BLOCK_DURATION_MINUTES
+	) {
 		measureAmounts = [];
 		recurrenceKind = 'weekly';
 		recurrenceDays = [selectedWeekday];
@@ -753,7 +758,7 @@
 		newActivityCategoryId = data.categories[0]?.id ?? null;
 		remindLead = 0;
 		formStartTime = prefillTime;
-		formDuration = prefillDuration;
+		formDuration = durationMinutes;
 		formLabel = '';
 		formCategoryId = data.categories[0]?.id ?? null;
 		formWorkoutId = data.workouts[0]?.id ?? null;
@@ -1066,7 +1071,6 @@
 	 */
 	const HOLD_MS = 450;
 	const HOLD_SLOP = 12;
-	const NEW_ACTIVITY_DURATION_MINUTES = 60;
 	let holdTimer: ReturnType<typeof setTimeout> | null = null;
 	let holdFrom: { x: number; y: number } | null = null;
 	/** Set when a hold created something, so the release is not read again. */
@@ -1094,7 +1098,6 @@
 			holdFired = true;
 			selectOffsetForDate(target.date);
 			prefillTime = target.startTime;
-			prefillDuration = NEW_ACTIVITY_DURATION_MINUTES;
 			startNew(repeat, target.date);
 			tick().then(() => createFormEl?.scrollIntoView({ block: 'center', behavior: 'smooth' }));
 		}, HOLD_MS);
@@ -1140,7 +1143,6 @@
 			e.stopPropagation();
 			selectOffsetForDate(target.date);
 			prefillTime = target.startTime;
-			prefillDuration = NEW_ACTIVITY_DURATION_MINUTES;
 			startNew(repeat, target.date);
 			return;
 		}
@@ -2387,8 +2389,11 @@
 		const placement = placementFromDates(info.start, info.end);
 		selectOffsetForDate(localDay(info.start));
 		prefillTime = placement.startTime;
-		prefillDuration = placement.durationMinutes;
-		startNew(repeat, localDay(info.start));
+		startNew(
+			repeat,
+			localDay(info.start),
+			isPhone() ? NEW_BLOCK_DURATION_MINUTES : placement.durationMinutes
+		);
 		tick().then(() => createFormEl?.scrollIntoView({ block: 'center', behavior: 'smooth' }));
 	}
 
