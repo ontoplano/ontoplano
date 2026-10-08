@@ -1469,7 +1469,7 @@
 	{/if}
 	{#snippet footer()}
 		{#if rerating?.sheet}
-			<span class="mr-auto flex flex-wrap items-center gap-2 text-sm">
+			<span class="flex flex-wrap items-center gap-2 text-sm">
 				{@render underFilters(reratingFilteredPlace)}
 				{@render inQueue(reratingPlace)}
 			</span>
@@ -1482,7 +1482,9 @@
 			>
 				<Icon name="edit" />
 			</button>
-			<button type="button" class="btn" onclick={() => (rerating = null)}>{t('ui.cancel')}</button>
+			<button type="button" class="btn" data-modal-cancel onclick={() => (rerating = null)}
+				>{t('ui.cancel')}</button
+			>
 			<button type="submit" form="rate-form" class="btn btn-primary">{t('ui.confirm')}</button>
 		{/if}
 	{/snippet}
@@ -2481,7 +2483,6 @@
 				<form
 					method="post"
 					action={actions.remove}
-					class="mr-auto"
 					use:enhance={(event) => {
 						/*
 						 * Run the submit first, then close.
@@ -2533,6 +2534,7 @@
 			<button
 				type="button"
 				class="btn"
+				data-modal-cancel
 				onclick={() => {
 					discardForm(editingId ? `edit-todo-${editingId}` : 'new-todo');
 					showForm = false;

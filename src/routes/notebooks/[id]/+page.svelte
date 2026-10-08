@@ -161,14 +161,16 @@
 	{#snippet footer()}
 		<button
 			type="button"
-			class="icon-btn mr-auto"
+			class="icon-btn"
 			title={t('ui.delete')}
 			aria-label={t('ui.delete')}
 			onclick={() => (confirmingDelete = true)}
 		>
 			<Icon name="trash" />
 		</button>
-		<button type="button" class="btn" onclick={() => (editing = false)}>{t('ui.cancel')}</button>
+		<button type="button" class="btn" data-modal-cancel onclick={() => (editing = false)}
+			>{t('ui.cancel')}</button
+		>
 		<button type="submit" form="notebook-form" class="btn btn-primary">{t('ui.save')}</button>
 	{/snippet}
 </Modal>

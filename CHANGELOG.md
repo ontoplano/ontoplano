@@ -18,6 +18,10 @@ the shape of the data changing. Bumping the minor per batch is what ran this
 file to 0.161 in a few months, which tells a reader nothing about which
 releases mattered.
 
+## 0.185.27 — 2026-10-08
+
+- Modal forms place Cancel on the left and Save on the right throughout the app.
+
 ## 0.185.26 — 2026-10-08
 
 - A new task block starts at one hour on a phone, even after tapping a 15-minute grid slot.

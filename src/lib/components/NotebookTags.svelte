@@ -81,7 +81,7 @@
 		<!-- The way to the whole vocabulary, where a label is deleted or merged.
 		     It is the Tags tab of the room as well; this is the door from here,
 		     for somebody who is already looking at one subject's words. -->
-		<a href={resolve('/notebooks/tags')} class="btn btn-sm mr-auto">
+		<a href={resolve('/notebooks/tags')} class="btn btn-sm">
 			{t('tags.allLabels')}
 			<Icon name="arrow-right" />
 		</a>

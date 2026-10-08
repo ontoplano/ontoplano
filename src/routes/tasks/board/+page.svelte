@@ -1632,7 +1632,6 @@
 							editing = null;
 							await update();
 						}}
-					class="mr-auto"
 				>
 					<input type="hidden" name="id" value={card.id} />
 					<input type="hidden" name="kind" value={card.kind} />
@@ -1646,7 +1645,9 @@
 					</button>
 				</form>
 			{/if}
-			<button type="button" class="btn" onclick={() => (editing = null)}>{t('ui.cancel')}</button>
+			<button type="button" class="btn" data-modal-cancel onclick={() => (editing = null)}
+				>{t('ui.cancel')}</button
+			>
 			<button type="submit" form="edit-form" class="btn btn-primary">{t('ui.save')}</button>
 		{/snippet}
 	</Modal>

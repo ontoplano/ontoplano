@@ -553,6 +553,19 @@
 		-webkit-overflow-scrolling: touch;
 	}
 
+	:global([data-modal-footer] > :first-child:not(:last-child)) {
+		margin-inline-end: auto;
+	}
+
+	:global([data-modal-footer] > :last-child:not(:first-child)) {
+		margin-inline-start: auto;
+	}
+
+	:global([data-modal-footer] > [data-modal-cancel]) {
+		order: -1;
+		margin-inline-end: auto;
+	}
+
 	/* The edges that widen it: only with a mouse, and only where it floats. */
 	.widen-edge {
 		display: none;

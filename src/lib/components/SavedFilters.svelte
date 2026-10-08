@@ -340,17 +340,19 @@
 			{@const one = editing}
 			<button
 				type="button"
-				class="btn btn-sm mr-auto {forgetting ? 'btn-danger' : 'btn-quiet'}"
+				class="btn btn-sm {forgetting ? 'btn-danger' : 'btn-quiet'}"
 				onclick={forget}
 			>
 				{forgetting ? t('filters.forgetForGood') : t('filters.forgetIt')}
 			</button>
 			{#if forgetting}
-				<span class="mr-auto text-xs text-gray-500">
+				<span class="text-xs text-gray-500">
 					{t('filters.sureForget', { name: one.name })}
 				</span>
 			{/if}
-			<button type="button" class="btn" onclick={() => (editing = null)}>{t('ui.cancel')}</button>
+			<button type="button" class="btn" data-modal-cancel onclick={() => (editing = null)}
+				>{t('ui.cancel')}</button
+			>
 			<button type="button" class="btn btn-primary" onclick={() => saveEdit(one.query)}>
 				{t('ui.save')}
 			</button>
