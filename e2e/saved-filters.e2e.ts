@@ -63,3 +63,45 @@ test('a filter can be kept by name, and putting it back sets the controls', asyn
 		{ timeout: 20_000 }
 	);
 });
+
+test('a saved task filter keeps the open notebook selected', async ({ page }) => {
+	test.setTimeout(180_000);
+	await page.setViewportSize({ width: 1280, height: 900 });
+	await register(page, testEmail('notebook-saved-filters'));
+	const origin = new URL(page.url()).origin;
+	for (const heading of ['Kitchen', 'Garden']) {
+		await page.request.post('/notebooks?/create', {
+			headers: { Origin: origin, 'x-sveltekit-action': 'true' },
+			form: { heading, modules: 'notes,tasks' }
+		});
+	}
+	await visit(page, '/notebooks');
+	await page
+		.getByRole('link', { name: /Kitchen/ })
+		.first()
+		.click();
+	await page.getByRole('button', { name: /^Tasks \d/ }).click();
+	await openFilters(page);
+	await page.getByRole('button', { name: /^Completed/ }).click();
+	await page.getByRole('button', { name: 'Save these' }).click();
+	await page.getByPlaceholder(/What to call it/).fill('Queue');
+	await page.getByPlaceholder(/What to call it/).press('Enter');
+	await expect(page.getByRole('button', { name: 'Saved', exact: true })).toContainText('Queue');
+
+	const gardenLink = page.getByRole('link', { name: /Garden/ }).first();
+	const garden = new URL((await gardenLink.getAttribute('href'))!, page.url()).searchParams.get(
+		'notebook'
+	);
+	await gardenLink.click();
+	await expect.poll(() => new URL(page.url()).searchParams.get('notebook')).toBe(garden);
+	await page.getByRole('button', { name: /^Tasks \d/ }).click();
+	await openFilters(page);
+	await page.getByRole('button', { name: 'Saved', exact: true }).click();
+	await page.getByRole('option', { name: 'Queue' }).click();
+	await expect.poll(() => new URL(page.url()).searchParams.get('notebook')).toBe(garden);
+	await expect.poll(() => new URL(page.url()).searchParams.get('done')).toBe('show');
+	await expect(page.getByRole('button', { name: /^Completed/ })).toHaveAttribute(
+		'aria-pressed',
+		'true'
+	);
+});

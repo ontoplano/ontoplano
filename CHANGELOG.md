@@ -20,6 +20,7 @@ releases mattered.
 
 ## 0.185.15 — 2026-10-08
 
+- Applying a saved task filter inside a notebook keeps that notebook open.
 - Quick task capture can schedule a task block with a day, time, and duration.
 
 ## 0.185.14 — 2026-10-07

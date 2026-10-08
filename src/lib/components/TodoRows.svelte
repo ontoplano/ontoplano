@@ -70,6 +70,7 @@
 	import { keepInView } from '$lib/actions/keep-in-view';
 	import { invalidateAll } from '$app/navigation';
 	import { page } from '$app/state';
+	import { resolve } from '$app/paths';
 	import { cancelFor, changeNow, isPending } from '$lib/undo.svelte';
 	import type { SubmitFunction } from '@sveltejs/kit';
 	import type { GoalBacklink } from '$lib/services/backlinks';
@@ -1627,6 +1628,9 @@
 								<SavedFilters
 									surface="/tasks/todo"
 									narrowed={narrowed || showCompleted || showArchived}
+									context={notebookId !== null && page.url.pathname === resolve('/notebooks')
+										? { notebook: String(notebookId) }
+										: {}}
 								/>
 							{/snippet}
 							{#snippet lead()}

@@ -30,6 +30,7 @@
 	import Picker from '$lib/components/Picker.svelte';
 	import { page } from '$app/state';
 	import { goto } from '$app/navigation';
+	import { SvelteURLSearchParams } from 'svelte/reactivity';
 	import { notify } from '$lib/notify.svelte';
 	import { useT } from '$lib/i18n';
 
@@ -39,8 +40,10 @@
 		/** Which screen these belong to: the task list's filters are not the diary's. */
 		surface,
 		/** Whether anything is narrowing the list right now — there is nothing to save otherwise. */
-		narrowed = false
-	}: { surface: string; narrowed?: boolean } = $props();
+		narrowed = false,
+		/** Route selection that a filter must leave in place, such as the open notebook. */
+		context = {}
+	}: { surface: string; narrowed?: boolean; context?: Record<string, string> } = $props();
 
 	type Saved = { name: string; query: string };
 
@@ -82,7 +85,12 @@
 	 * narrowed. There is nothing reactive wanted here anyway: this is one read
 	 * on one press.
 	 */
-	const narrowingNow = () => window.location.search.replace(/^\?/, '');
+	const withoutContext = (query: string) => {
+		const params = new SvelteURLSearchParams(query);
+		for (const key of Object.keys(context)) params.delete(key);
+		return params;
+	};
+	const narrowingNow = () => withoutContext(window.location.search).toString();
 
 	/**
 	 * Which saved filter the list is showing, by what it is narrowed to.
@@ -93,7 +101,7 @@
 	 * same narrowing and have to read as the same one.
 	 */
 	const shape = (query: string) =>
-		[...new URLSearchParams(query).entries()]
+		[...withoutContext(query).entries()]
 			.map(([k, v]) => `${k}=${v}`)
 			.sort()
 			.join('&');
@@ -133,9 +141,12 @@
 	}
 
 	function goTo(query: string) {
+		const params = withoutContext(query);
+		for (const [key, value] of Object.entries(context)) params.set(key, value);
+		const search = params.toString();
 		// The screen's own path with a query on it, already resolved.
 		// eslint-disable-next-line svelte/no-navigation-without-resolve
-		goto(`${page.url.pathname}${query ? `?${query}` : ''}`, {
+		goto(`${page.url.pathname}${search ? `?${search}` : ''}`, {
 			state: page.state,
 			noScroll: true
 		});
