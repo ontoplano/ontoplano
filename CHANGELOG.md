@@ -18,6 +18,10 @@ the shape of the data changing. Bumping the minor per batch is what ran this
 file to 0.161 in a few months, which tells a reader nothing about which
 releases mattered.
 
+## 0.185.16 — 2026-10-08
+
+- The current room tab has bold text and an underline without a tinted background.
+
 ## 0.185.15 — 2026-10-08
 
 - On phones, the plan opens with fewer controls; tap a time to start an activity, and drag a block to choose Move or Copy. The calendar uses one page scroll and keeps its day header visible in full screen.
