@@ -89,6 +89,13 @@ test.describe('with a finger', () => {
 		await expect(dialog.locator('[name="durationMinutes"]')).toHaveValue('60');
 		await expect(dialog.getByRole('button', { name: 'Cancel' })).toBeVisible();
 		await expect(dialog.getByRole('button', { name: 'Add repeating task block' })).toBeVisible();
+		const footerBox = (await dialog.locator('[data-modal-footer]').boundingBox())!;
+		const cancelBox = (await dialog.getByRole('button', { name: 'Cancel' }).boundingBox())!;
+		const saveBox = (await dialog
+			.getByRole('button', { name: 'Add repeating task block' })
+			.boundingBox())!;
+		expect(cancelBox.x - footerBox.x).toBeLessThan(30);
+		expect(footerBox.x + footerBox.width - saveBox.x - saveBox.width).toBeLessThan(30);
 		await expect
 			.poll(() =>
 				dialog.locator('[data-modal-footer]').evaluate((el) => el.getBoundingClientRect().bottom)

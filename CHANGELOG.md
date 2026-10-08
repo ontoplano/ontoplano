@@ -18,6 +18,10 @@ the shape of the data changing. Bumping the minor per batch is what ran this
 file to 0.161 in a few months, which tells a reader nothing about which
 releases mattered.
 
+## 0.185.24 — 2026-10-08
+
+- Cancel sits on the left and Save on the right in the plan block editor.
+
 ## 0.185.23 — 2026-10-08
 
 - The quick-add wheel opens task forms reliably after the app reloads code in development.
