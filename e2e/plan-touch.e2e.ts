@@ -62,6 +62,8 @@ test.describe('with a finger', () => {
 		const dialog = page.getByRole('dialog', { name: 'New task block' });
 		await expect(dialog).toBeVisible();
 		await expect(dialog.locator('[name="newActivityName"]')).toBeVisible();
+		await expect(dialog.locator('[name="newActivityName"]')).toBeFocused();
+		await expect(dialog).toHaveClass(/peek/);
 		await expect(dialog.locator('[name="durationMinutes"]')).toHaveValue('60');
 		await expect(dialog.getByRole('button', { name: 'Cancel' })).toBeVisible();
 		await expect(dialog.getByRole('button', { name: 'Add repeating task block' })).toBeVisible();
@@ -76,6 +78,8 @@ test.describe('with a finger', () => {
 			.evaluate((el) => el.getBoundingClientRect().height);
 		expect(height).toBeLessThanOrEqual(844 * 0.55);
 		await dialog.locator('[name="newActivityName"]').fill('Garden planning');
+		await expect(dialog).toHaveClass(/peek/);
+		await dialog.locator('[name="durationMinutes"]').focus();
 		await expect(dialog).not.toHaveClass(/peek/);
 		await dialog.getByRole('button', { name: 'Add repeating task block' }).click();
 		await expect(dialog).toBeHidden();

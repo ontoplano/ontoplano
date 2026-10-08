@@ -3918,6 +3918,9 @@
 	<Modal
 		bind:open={showForm}
 		phonePeek={editingKind === null}
+		phonePeekFocus={slotMode === 'activity' && activityChoice === NEW_ACTIVITY
+			? '[name="newActivityName"]'
+			: undefined}
 		error={form?.message}
 		saved={editingKind === null ? t('tasks.plan.blockAdded') : undefined}
 		onclose={closeForm}
@@ -3987,7 +3990,6 @@
 									placeholder={t('tasks.plan.eGLearnGuitar')}
 									class="input"
 									required
-									autofocus={!narrowScreen}
 								/>
 							</Field>
 							<Field label={t('tasks.plan.itsCategory')} span={4} required>

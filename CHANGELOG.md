@@ -18,6 +18,10 @@ the shape of the data changing. Bumping the minor per batch is what ran this
 file to 0.161 in a few months, which tells a reader nothing about which
 releases mattered.
 
+## 0.185.19 — 2026-10-08
+
+- A new block on a phone starts ready to name its activity and stays compact while you type; changing another field opens the full editor.
+
 ## 0.185.18 — 2026-10-08
 
 - The plan's More button stays in place when its controls open on a phone.

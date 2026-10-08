@@ -76,6 +76,8 @@
 		dock = 'centre',
 		/** Start a new plan block as a short phone sheet, with its save actions visible. */
 		phonePeek = false,
+		/** A field to focus in the short sheet without expanding it. */
+		phonePeekFocus,
 		/** A failed submission's message. Shown here because the page behind is
 		 *  dimmed and inert — an error rendered out there cannot be read. */
 		error = null,
@@ -109,6 +111,7 @@
 		size?: 'sm' | 'md' | 'lg';
 		dock?: 'centre' | 'side';
 		phonePeek?: boolean;
+		phonePeekFocus?: string;
 		error?: string | null;
 		saved?: string;
 		onclose?: () => void;
@@ -205,7 +208,7 @@
 		if (!dialog) return;
 		if (open && !dialog.open && !away) {
 			dialog.showModal();
-			if (!phonePeek || !isPhone()) focusFirstField();
+			if (!phonePeek || !isPhone() || phonePeekFocus) focusFirstField();
 		}
 		if (!open && dialog.open) dialog.close();
 	});
@@ -217,13 +220,16 @@
 	async function focusFirstField() {
 		await tick();
 		const field = dialog?.querySelector<HTMLElement>(
-			// Not a file chooser: focusing one rings a picture somebody has not
-			// pressed, and the field to type into is the one wanted.
-			'input:not([type=hidden]):not([type=file]):not([disabled]), select:not([disabled]), textarea:not([disabled])'
+			phonePeek && isPhone() && phonePeekFocus
+				? phonePeekFocus
+				: // Not a file chooser: focusing one rings a picture somebody has not
+					// pressed, and the field to type into is the one wanted.
+					'input:not([type=hidden]):not([type=file]):not([disabled]), select:not([disabled]), textarea:not([disabled])'
 		);
 		// `preventScroll`, because this element is inside the box the app
 		// scrolls and focusing it otherwise drags that box to the top.
 		field?.focus({ preventScroll: true });
+		if (phonePeek && isPhone() && phonePeekFocus) field?.scrollIntoView({ block: 'center' });
 	}
 
 	/**
@@ -370,6 +376,7 @@
 	onfocusin={(event) => {
 		if (
 			phonePeek &&
+			!(phonePeekFocus && (event.target as Element).matches(phonePeekFocus)) &&
 			(event.target instanceof HTMLInputElement ||
 				event.target instanceof HTMLSelectElement ||
 				event.target instanceof HTMLTextAreaElement)
