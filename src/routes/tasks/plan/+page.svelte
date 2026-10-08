@@ -2945,7 +2945,8 @@
 							type="button"
 							onclick={() => (schemesExpanded = true)}
 							aria-haspopup="dialog"
-							class="btn btn-sm ml-auto shrink-0 {mobileControlsOpen ? '' : 'max-sm:hidden'}"
+							class="btn btn-sm ml-auto shrink-0 {mobileControlsOpen ? '' : 'max-sm:invisible'}"
+							inert={narrowScreen && !mobileControlsOpen}
 							title={t('tasks.plan.savedShapesOfAWeek')}
 							aria-label={t('tasks.plan.schemes')}
 							data-tour="plan-schemes"
@@ -2960,7 +2961,8 @@
 								type="button"
 								onclick={toggleFullscreen}
 								aria-pressed={fullscreen}
-								class="btn btn-sm shrink-0 {mobileControlsOpen ? '' : 'max-sm:hidden'}"
+								class="btn btn-sm shrink-0 {mobileControlsOpen ? '' : 'max-sm:invisible'}"
+								inert={narrowScreen && !mobileControlsOpen}
 								title={fullscreen ? t('tasks.plan.leaveFullScreen') : t('tasks.plan.fullScreen')}
 								aria-label={fullscreen
 									? t('tasks.plan.leaveFullScreen')
@@ -2975,7 +2977,8 @@
 							type="button"
 							onclick={toggleList}
 							aria-pressed={data.asList}
-							class="btn btn-sm shrink-0 {mobileControlsOpen ? '' : 'max-sm:hidden'}"
+							class="btn btn-sm shrink-0 {mobileControlsOpen ? '' : 'max-sm:invisible'}"
+							inert={narrowScreen && !mobileControlsOpen}
 							title={data.asList ? t('tasks.plan.showAsCalendar') : t('tasks.plan.showAsList')}
 							aria-label={data.asList ? t('tasks.plan.showAsCalendar') : t('tasks.plan.showAsList')}
 							data-tour="plan-as-list"

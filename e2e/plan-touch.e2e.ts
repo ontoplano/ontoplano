@@ -25,10 +25,14 @@ test.describe('with a finger', () => {
 			'false'
 		);
 		await expect(page.getByRole('button', { name: 'Schemes' })).toBeHidden();
+		const more = page.getByRole('button', { name: 'More' });
+		const before = (await more.boundingBox())!;
 		await page.screenshot({ path: 'test-results/plan-phone-collapsed.png' });
-		await page.getByRole('button', { name: 'More' }).click();
+		await more.click();
 		await expect(page.getByRole('button', { name: 'Schemes' })).toBeVisible();
-		await page.getByRole('button', { name: 'More' }).click();
+		const after = (await more.boundingBox())!;
+		expect(Math.abs(after.x - before.x)).toBeLessThan(1);
+		await more.click();
 
 		const main = page.locator('.ec-main');
 		await expect(main).toBeVisible();

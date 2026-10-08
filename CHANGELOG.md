@@ -18,6 +18,10 @@ the shape of the data changing. Bumping the minor per batch is what ran this
 file to 0.161 in a few months, which tells a reader nothing about which
 releases mattered.
 
+## 0.185.18 — 2026-10-08
+
+- The plan's More button stays in place when its controls open on a phone.
+
 ## 0.185.17 — 2026-10-08
 
 - On phones, tapping a notebook's picture opens it full screen. Change the picture from Edit.
