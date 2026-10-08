@@ -18,6 +18,10 @@ the shape of the data changing. Bumping the minor per batch is what ran this
 file to 0.161 in a few months, which tells a reader nothing about which
 releases mattered.
 
+## 0.185.23 — 2026-10-08
+
+- The quick-add wheel opens task forms reliably after the app reloads code in development.
+
 ## 0.185.22 — 2026-10-08
 
 - The focused activity name stays visible when the phone keyboard resizes the plan sheet.
