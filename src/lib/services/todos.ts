@@ -55,7 +55,13 @@ import { NotFoundError, ValidationError } from './errors.js';
 import { defaultCategoryOf, ownedNotebookId } from './notebooks.js';
 import { fileUnderNotebook } from './notebook-linking.js';
 import { nextNotebookSeq, notebookSeqFor } from './notebook-seq.js';
-import { cleanupOrphanTags, optionalTagInput, parseTags, replaceTodoTags } from './tags.js';
+import {
+	cleanupOrphanTags,
+	optionalTagInput,
+	parseTags,
+	replaceBlockTags,
+	replaceTodoTags
+} from './tags.js';
 import { created, stamp, stamps } from './time.js';
 import { host } from './host.js';
 import { TIME_PATTERN, num, oneOf, optionalStr, str, chosenIds } from './validate.js';
@@ -702,6 +708,7 @@ export function promoteTodo(
 			.get()?.id;
 
 	if (!categoryId) return { ok: false, message: 'Create a category before scheduling todos' };
+	const tagNames = (tagsForTodos(ctx, [todo.id]).get(todo.id) ?? []).map((tag) => tag.name);
 
 	const id = db.transaction((tx) => {
 		const slot = tx
@@ -738,6 +745,7 @@ export function promoteTodo(
 				notes: todo.notes ?? ''
 			})
 			.run();
+		if (tagNames.length > 0) replaceBlockTags('exceptional', slot.id, tagNames, ctx.userId);
 
 		tx.delete(todoTasks)
 			.where(and(eq(todoTasks.id, input.todoId), eq(todoTasks.userId, ctx.userId)))

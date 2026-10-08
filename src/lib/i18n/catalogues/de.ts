@@ -340,6 +340,7 @@ export const messages: Catalogue = {
 	'capture.addedToWithContent': 'Zu {into} hinzugefügt: {content}',
 	'capture.diaryNote': 'Tagebucheintrag',
 	'capture.newThing': 'Neu: {thing}',
+	'capture.planDestination': 'deinem Plan',
 	'captureDialog.notWrittenDown': 'Das wurde nicht aufgeschrieben.',
 	'captureSettings.atLeastOne': 'mindestens eins',
 	'captureSettings.intro': 'Was das +-Rad enthält und wohin geht, was Sie darüber schreiben.',

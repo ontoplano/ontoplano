@@ -312,6 +312,7 @@ export type MessageKey =
 	| 'capture.addedToWithContent'
 	| 'capture.diaryNote'
 	| 'capture.newThing'
+	| 'capture.planDestination'
 	| 'captureDialog.notWrittenDown'
 	| 'captureSettings.atLeastOne'
 	| 'captureSettings.intro'

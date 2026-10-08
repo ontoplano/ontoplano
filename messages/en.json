@@ -318,6 +318,7 @@
 	"capture.addedToWithContent": "Added to {into}: {content}",
 	"capture.diaryNote": "Diary note",
 	"capture.newThing": "New {thing}",
+	"capture.planDestination": "your plan",
 	"captureDialog.notWrittenDown": "That was not written down.",
 	"captureSettings.atLeastOne": "at least one",
 	"captureSettings.intro": "What the + wheel holds, and where what you write from it goes.",

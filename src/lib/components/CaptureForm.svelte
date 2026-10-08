@@ -157,6 +157,7 @@
 	{:else if capture.key === 'todo'}
 		<TodoFields
 			compact
+			allowBlock
 			categories={options.categories}
 			notebooks={options.notebooks}
 			notebookId={start}

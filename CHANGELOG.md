@@ -18,6 +18,10 @@ the shape of the data changing. Bumping the minor per batch is what ran this
 file to 0.161 in a few months, which tells a reader nothing about which
 releases mattered.
 
+## 0.185.15 — 2026-10-08
+
+- Quick task capture can schedule a task block with a day, time, and duration.
+
 ## 0.185.14 — 2026-10-07
 
 - A bill's amount and Paid button now appear below its payment checkbox.

@@ -164,4 +164,18 @@ describe('todo, one-off and repeating, in a chain', () => {
 		expect(named('call the bank').map((e) => e.id)).toEqual([once.id]);
 		expect(slots.listWeeklySlots(ctx).some((s) => s.label === 'call the bank')).toBe(false);
 	});
+
+	test('promoting a todo keeps its labels on the block', () => {
+		const todoId = todos.createTodo(ctx, {
+			title: 'plan the garden',
+			categoryId: work,
+			tags: 'garden outside'
+		});
+		const promoted = todos.promoteTodo(ctx, { todoId, date: WEDNESDAY, startTime: '11:00' });
+		if (!promoted.ok) throw new Error(promoted.message);
+		expect(tags.tagsForBlock('exceptional', promoted.id, OWNER).map((tag) => tag.name)).toEqual([
+			'garden',
+			'outside'
+		]);
+	});
 });
