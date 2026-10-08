@@ -3988,34 +3988,6 @@
 					<input type="hidden" name="id" value={editingBlockId} />
 				{/if}
 
-				{#if slotMode === 'activity' && activityChoice === NEW_ACTIVITY}
-					<div class="border-2 border-[var(--section-accent)] bg-gray-50 p-3">
-						<FormGrid>
-							<Field label={t('tasks.plan.newActivity')} span={8} required>
-								<OneLine
-									name="newActivityName"
-									bind:value={newActivityName}
-									placeholder={t('tasks.plan.eGLearnGuitar')}
-									class="input"
-									required
-								/>
-							</Field>
-							<Field label={t('tasks.plan.itsCategory')} span={4} required>
-								<select
-									name="newActivityCategoryId"
-									required
-									class="select"
-									bind:value={newActivityCategoryId}
-								>
-									{#each data.categories as cat (cat.id)}
-										<option value={cat.id}>{cat.name}</option>
-									{/each}
-								</select>
-							</Field>
-						</FormGrid>
-					</div>
-				{/if}
-
 				<div class="flex items-center gap-3">
 					<span class="shrink-0 text-sm font-medium text-gray-700">{t('tasks.plan.repeats')}</span>
 					{#if editingKind}
@@ -4330,6 +4302,34 @@
 						</Field>
 					{/if}
 				</FormGrid>
+
+				{#if slotMode === 'activity' && activityChoice === NEW_ACTIVITY}
+					<div class="border-2 border-[var(--section-accent)] bg-gray-50 p-3">
+						<FormGrid>
+							<Field label={t('tasks.plan.newActivity')} span={8} required>
+								<OneLine
+									name="newActivityName"
+									bind:value={newActivityName}
+									placeholder={t('tasks.plan.eGLearnGuitar')}
+									class="input"
+									required
+								/>
+							</Field>
+							<Field label={t('tasks.plan.itsCategory')} span={4} required>
+								<select
+									name="newActivityCategoryId"
+									required
+									class="select"
+									bind:value={newActivityCategoryId}
+								>
+									{#each data.categories as cat (cat.id)}
+										<option value={cat.id}>{cat.name}</option>
+									{/each}
+								</select>
+							</Field>
+						</FormGrid>
+					</div>
+				{/if}
 
 				<!-- The task brings its own notes, ratings and notebook. -->
 				{#if slotMode !== 'task'}

@@ -18,6 +18,10 @@ the shape of the data changing. Bumping the minor per batch is what ran this
 file to 0.161 in a few months, which tells a reader nothing about which
 releases mattered.
 
+## 0.185.21 — 2026-10-08
+
+- New activity details now sit next to the block's Activity choice in the plan editor.
+
 ## 0.185.20 — 2026-10-08
 
 - Full screen stays visible at the end of the plan toolbar on a phone, whether More is open or closed.
