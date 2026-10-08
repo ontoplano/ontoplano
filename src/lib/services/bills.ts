@@ -26,7 +26,7 @@ import { billPayments, bills, categories, financeTransactions, goals } from '$li
 import { localDateOf, type Ctx } from './ctx.js';
 import { NotFoundError, ValidationError } from './errors.js';
 import { notebookPatch } from './notebooks.js';
-import { created, instantOfLocal, stamp, stamps } from './time.js';
+import { created, instantOfLocal, localOfInstant, stamp, stamps } from './time.js';
 import { num, oneOf, optionalStr, str } from './validate.js';
 import { ownedCategory } from './activities.js';
 
@@ -63,6 +63,9 @@ const AUTOMATIC_PAID_AT_TIME = '12:00';
 
 /** The due day an automatic bill with none is recorded on: the 1st, or Monday. */
 const AUTOMATIC_DEFAULT_DUE_DAY = 1;
+
+/** A date-only correction is stored at midday in the account's timezone. */
+const CORRECTED_PAYMENT_TIME = '12:00';
 
 const DAY_MS = 86400_000;
 
@@ -488,6 +491,44 @@ export function markPaid(
 		.get();
 	if (!p) throw new NotFoundError('bill payment');
 	return payment(p);
+}
+
+/** Correct the date and amount of an existing paid period without changing its period. */
+export function updatePayment(
+	ctx: Ctx,
+	billId: number,
+	paymentId: number,
+	input: { paidDate: unknown; amountPaid: unknown }
+): BillPayment {
+	const paidDate = str(input.paidDate, 'paid date', { max: 10 });
+	if (!/^\d{4}-\d{2}-\d{2}$/.test(paidDate)) throw new ValidationError('Invalid paid date');
+	const paidAt = instantOfLocal(`${paidDate}T${CORRECTED_PAYMENT_TIME}`, ctx.tz);
+	if (Number.isNaN(paidAt.getTime()) || localOfInstant(paidAt, ctx.tz).slice(0, 10) !== paidDate)
+		throw new ValidationError('Invalid paid date');
+	const amountPaid = num(input.amountPaid, 'amount paid', { int: true, min: 0 });
+
+	const owned = and(
+		eq(billPayments.id, paymentId),
+		eq(billPayments.billId, billId),
+		eq(billPayments.userId, ctx.userId),
+		eq(billPayments.status, 'paid')
+	);
+	const before = db.select().from(billPayments).where(owned).get();
+	if (!before) throw new NotFoundError('bill payment');
+	const after = db
+		.update(billPayments)
+		.set({
+			amountPaid,
+			paidAt: paidAt.toISOString(),
+			automatic: false,
+			// A hand-corrected amount can no longer claim to be the bank line's amount.
+			...(amountPaid !== before.amountPaid ? { movementId: null } : {})
+		})
+		.where(owned)
+		.returning()
+		.get();
+	if (!after) throw new NotFoundError('bill payment');
+	return payment(after);
 }
 
 /**
