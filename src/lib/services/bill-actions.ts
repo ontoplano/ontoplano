@@ -1,5 +1,6 @@
 import type { Actions } from '@sveltejs/kit';
 import { parseMoney } from '$lib/money';
+import { ValidationError } from '$lib/services/errors';
 import { getCurrency } from '$lib/services/settings';
 import { formAction } from '$lib/services/scoped-actions';
 import {
@@ -7,6 +8,7 @@ import {
 	deleteBill,
 	markPaid,
 	markPaidFromMovement,
+	updatePayment,
 	setArchived,
 	skipPeriod,
 	unmarkPaid,
@@ -60,6 +62,15 @@ export const billHandlers = {
 		markPaid(ctx, Number(form.get('id')), {
 			amountPaid: paid ? (parseMoney(paid, getCurrency(ctx.userId)) ?? undefined) : undefined,
 			period: form.get('period') || undefined
+		});
+	}),
+
+	editPayment: formAction((ctx, form) => {
+		const amountPaid = parseMoney(form.get('amount'), getCurrency(ctx.userId));
+		if (amountPaid === null) throw new ValidationError('Invalid amount');
+		updatePayment(ctx, Number(form.get('id')), Number(form.get('paymentId')), {
+			paidDate: form.get('paidDate'),
+			amountPaid
 		});
 	}),
 
