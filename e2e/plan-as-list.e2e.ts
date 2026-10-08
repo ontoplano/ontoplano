@@ -21,6 +21,7 @@ for (const [name, width] of [
 		await visit(page, '/tasks/plan?view=week');
 		await expect(page.locator('.plan-agenda')).toHaveCount(0);
 		await expect(page.locator('.ec')).toBeVisible();
+		if (name === 'phone') await page.getByRole('button', { name: 'More' }).click();
 
 		await page.getByRole('button', { name: /show as a list/i }).click();
 		await expect(page).toHaveURL(/view=week&as=list/);

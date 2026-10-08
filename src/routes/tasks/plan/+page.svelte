@@ -2939,30 +2939,52 @@
 							<Icon name="sliders" size={14} />
 						</button>
 
-						<!-- A saved shape of a week, loaded over this one: it opens a dialog,
-					     so it is a button beside the view, not a fourth position in it. -->
-						<button
-							type="button"
-							onclick={() => (schemesExpanded = true)}
-							aria-haspopup="dialog"
-							class="btn btn-sm ml-auto shrink-0 {mobileControlsOpen ? '' : 'max-sm:invisible'}"
+						<!-- On a narrow phone these open on their own row, so Full screen
+						     stays at the end of the first row at both states. -->
+						<div
+							class="ml-auto flex shrink-0 items-center gap-2 max-[420px]:order-2 max-[420px]:w-full max-[420px]:justify-end {mobileControlsOpen
+								? ''
+								: 'max-[420px]:hidden max-sm:invisible'}"
 							inert={narrowScreen && !mobileControlsOpen}
-							title={t('tasks.plan.savedShapesOfAWeek')}
-							aria-label={t('tasks.plan.schemes')}
-							data-tour="plan-schemes"
 						>
-							<Icon name="scheme" size={14} />
-							<span class="hidden sm:inline">{t('tasks.plan.schemes')}</span>
-						</button>
+							<!-- A saved shape of a week, loaded over this one: it opens a dialog,
+					     so it is a button beside the view, not a fourth position in it. -->
+							<button
+								type="button"
+								onclick={() => (schemesExpanded = true)}
+								aria-haspopup="dialog"
+								class="btn btn-sm shrink-0"
+								title={t('tasks.plan.savedShapesOfAWeek')}
+								aria-label={t('tasks.plan.schemes')}
+								data-tour="plan-schemes"
+							>
+								<Icon name="scheme" size={14} />
+								<span class="hidden sm:inline">{t('tasks.plan.schemes')}</span>
+							</button>
 
-						<!-- The whole screen, where the browser has one to give (not iOS). -->
+							<!-- The same views as a list of their days; the calendar is the default. -->
+							<button
+								type="button"
+								onclick={toggleList}
+								aria-pressed={data.asList}
+								class="btn btn-sm shrink-0"
+								title={data.asList ? t('tasks.plan.showAsCalendar') : t('tasks.plan.showAsList')}
+								aria-label={data.asList
+									? t('tasks.plan.showAsCalendar')
+									: t('tasks.plan.showAsList')}
+								data-tour="plan-as-list"
+							>
+								<Icon name={data.asList ? 'calendar' : 'list'} size={14} />
+							</button>
+						</div>
+
+						<!-- Full screen stays in the same place while More opens beside it. -->
 						{#if canFullscreen}
 							<button
 								type="button"
 								onclick={toggleFullscreen}
 								aria-pressed={fullscreen}
-								class="btn btn-sm shrink-0 {mobileControlsOpen ? '' : 'max-sm:invisible'}"
-								inert={narrowScreen && !mobileControlsOpen}
+								class="btn btn-sm shrink-0 max-[420px]:order-1 max-[420px]:ml-auto"
 								title={fullscreen ? t('tasks.plan.leaveFullScreen') : t('tasks.plan.fullScreen')}
 								aria-label={fullscreen
 									? t('tasks.plan.leaveFullScreen')
@@ -2971,20 +2993,6 @@
 								<Icon name="maximize" size={14} />
 							</button>
 						{/if}
-
-						<!-- The same views as a list of their days; the calendar is the default. -->
-						<button
-							type="button"
-							onclick={toggleList}
-							aria-pressed={data.asList}
-							class="btn btn-sm shrink-0 {mobileControlsOpen ? '' : 'max-sm:invisible'}"
-							inert={narrowScreen && !mobileControlsOpen}
-							title={data.asList ? t('tasks.plan.showAsCalendar') : t('tasks.plan.showAsList')}
-							aria-label={data.asList ? t('tasks.plan.showAsCalendar') : t('tasks.plan.showAsList')}
-							data-tour="plan-as-list"
-						>
-							<Icon name={data.asList ? 'calendar' : 'list'} size={14} />
-						</button>
 
 						<div
 							use:sliding

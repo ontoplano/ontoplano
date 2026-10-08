@@ -18,6 +18,10 @@ the shape of the data changing. Bumping the minor per batch is what ran this
 file to 0.161 in a few months, which tells a reader nothing about which
 releases mattered.
 
+## 0.185.20 — 2026-10-08
+
+- Full screen stays visible at the end of the plan toolbar on a phone, whether More is open or closed.
+
 ## 0.185.19 — 2026-10-08
 
 - A new block on a phone starts ready to name its activity and stays compact while you type; changing another field opens the full editor.

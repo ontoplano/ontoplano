@@ -25,14 +25,32 @@ test.describe('with a finger', () => {
 			'false'
 		);
 		await expect(page.getByRole('button', { name: 'Schemes' })).toBeHidden();
+		const fullscreen = page.getByRole('button', { name: 'Full screen' });
+		await expect(fullscreen).toBeVisible();
+		const fullscreenBefore = (await fullscreen.boundingBox())!;
 		const more = page.getByRole('button', { name: 'More' });
 		const before = (await more.boundingBox())!;
 		await page.screenshot({ path: 'test-results/plan-phone-collapsed.png' });
 		await more.click();
 		await expect(page.getByRole('button', { name: 'Schemes' })).toBeVisible();
+		const list = page.getByRole('button', { name: 'Show as a list' });
+		await expect(list).toBeVisible();
+		const listBox = (await list.boundingBox())!;
+		const fullscreenAfter = (await fullscreen.boundingBox())!;
+		expect(listBox.y).toBeGreaterThan(fullscreenAfter.y);
+		expect(Math.abs(fullscreenAfter.x - fullscreenBefore.x)).toBeLessThan(1);
 		const after = (await more.boundingBox())!;
 		expect(Math.abs(after.x - before.x)).toBeLessThan(1);
 		await more.click();
+		await page.setViewportSize({ width: 630, height: 844 });
+		const wideBefore = (await fullscreen.boundingBox())!;
+		await more.click();
+		const wideAfter = (await fullscreen.boundingBox())!;
+		const wideList = (await list.boundingBox())!;
+		expect(wideList.x).toBeLessThan(wideAfter.x);
+		expect(Math.abs(wideAfter.x - wideBefore.x)).toBeLessThan(1);
+		await more.click();
+		await page.setViewportSize({ width: 390, height: 844 });
 
 		const main = page.locator('.ec-main');
 		await expect(main).toBeVisible();
