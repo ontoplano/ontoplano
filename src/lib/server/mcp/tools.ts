@@ -180,6 +180,7 @@ import {
 	updateBill,
 	setArchived as setBillArchived,
 	markPaid,
+	updatePayment,
 	unmarkPaid,
 	skipPeriod,
 	unskipPeriod,
@@ -6474,6 +6475,34 @@ export const TOOLS: Tool[] = [
 				amountPaid: args.amount_paid,
 				period: args.period,
 				notes: args.notes
+			})
+		})
+	},
+	{
+		name: 'change_bill_payment',
+		title: 'Correct a bill payment',
+		description:
+			'Correct the paid date and actual amount of an existing payment. Find payment_id with bill_payments. The period and expected amount stay as recorded. Amounts are in minor units (cents).',
+		scope: 'bills:write',
+		writes: true,
+		refs: [{ arg: 'id', kind: 'bill' }],
+		input: object(
+			{
+				id: { type: 'integer', description: 'The bill\u2019s id.' },
+				payment_id: { type: 'integer', description: 'The payment\u2019s id.' },
+				paid_date: text('The local payment date, YYYY-MM-DD.'),
+				amount_paid: {
+					type: 'integer',
+					description: 'The actual amount paid, in minor units (cents).'
+				}
+			},
+			['id', 'payment_id', 'paid_date', 'amount_paid']
+		),
+		subject: billWithPayments,
+		run: (ctx, args) => ({
+			payment: updatePayment(ctx, Number(args.id), Number(args.payment_id), {
+				paidDate: args.paid_date,
+				amountPaid: args.amount_paid
 			})
 		})
 	},

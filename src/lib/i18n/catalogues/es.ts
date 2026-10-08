@@ -472,6 +472,8 @@ export const messages: Catalogue = {
 	'errors.billing.storeDoesNotKnowThatPurchase': 'La tienda no reconoce esa compra.',
 	'errors.billing.youHaveAlreadySwitchedTwice':
 		'Ya cambiaste dos veces hoy. Puedes cambiar otra vez mañana.',
+	'errors.bills.invalidPaidDate': 'Introduce una fecha de pago válida.',
+	'errors.bills.invalidPaymentAmount': 'Introduce un importe de pago válido.',
 	'errors.bills.thatCategoryIsNotYours': 'Esa categoría no es tuya.',
 	'errors.bills.thatGoalIsNotYours': 'Esa meta no es tuya.',
 	'errors.bills.thatPeriodIsAlreadyPaid': 'Ese periodo está pagado. Deshaz el pago primero.',
@@ -758,6 +760,8 @@ export const messages: Catalogue = {
 	'finance.bills.averagePerPayment': 'Media por pago',
 	'finance.bills.averagePerWeek': 'Media por semana',
 	'finance.bills.averagePerYear': 'Media por año',
+	'finance.bills.changingAmountDetachesMovement':
+		'Cambiar el importe desvincula el movimiento del extracto.',
 	'finance.bills.date': 'Fecha',
 	'finance.bills.delete': 'Eliminar {name}',
 	'finance.bills.deleteThisBill': '¿Eliminar esta factura?',
@@ -771,6 +775,8 @@ export const messages: Catalogue = {
 	'finance.bills.dueTheNth': ', vence el {nth}',
 	'finance.bills.edit': 'Editar {name}',
 	'finance.bills.editBill': 'Editar factura',
+	'finance.bills.editPayment': 'Editar pago',
+	'finance.bills.editPaymentFor': 'Editar pago de {period}',
 	'finance.bills.expectedAmount': 'Monto esperado',
 	'finance.bills.expectedAmountShort': 'previsto {amount}',
 	'finance.bills.expectedThisMonth': 'Esperado este mes',

@@ -67,7 +67,8 @@ export const billHandlers = {
 
 	editPayment: formAction((ctx, form) => {
 		const amountPaid = parseMoney(form.get('amount'), getCurrency(ctx.userId));
-		if (amountPaid === null) throw new ValidationError('Invalid amount');
+		if (amountPaid === null)
+			throw new ValidationError({ key: 'errors.bills.invalidPaymentAmount' });
 		updatePayment(ctx, Number(form.get('id')), Number(form.get('paymentId')), {
 			paidDate: form.get('paidDate'),
 			amountPaid

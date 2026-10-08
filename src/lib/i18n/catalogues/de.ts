@@ -479,6 +479,8 @@ export const messages: Catalogue = {
 	'errors.billing.storeDoesNotKnowThatPurchase': 'Der Store kennt diesen Kauf nicht.',
 	'errors.billing.youHaveAlreadySwitchedTwice':
 		'Du hast heute schon zweimal gewechselt. Morgen geht es wieder.',
+	'errors.bills.invalidPaidDate': 'Gib ein gültiges Zahlungsdatum ein.',
+	'errors.bills.invalidPaymentAmount': 'Gib einen gültigen Zahlungsbetrag ein.',
 	'errors.bills.thatCategoryIsNotYours': 'Diese Kategorie gehört dir nicht.',
 	'errors.bills.thatGoalIsNotYours': 'Dieses Ziel gehört dir nicht.',
 	'errors.bills.thatPeriodIsAlreadyPaid':
@@ -769,6 +771,8 @@ export const messages: Catalogue = {
 	'finance.bills.averagePerPayment': 'Durchschnitt pro Zahlung',
 	'finance.bills.averagePerWeek': 'Durchschnitt pro Woche',
 	'finance.bills.averagePerYear': 'Durchschnitt pro Jahr',
+	'finance.bills.changingAmountDetachesMovement':
+		'Wenn der Betrag geändert wird, wird die Verknüpfung zum Kontoauszug entfernt.',
 	'finance.bills.date': 'Datum',
 	'finance.bills.delete': '{name} löschen',
 	'finance.bills.deleteThisBill': 'Diese Rechnung löschen?',
@@ -782,6 +786,8 @@ export const messages: Catalogue = {
 	'finance.bills.dueTheNth': ', fällig am {nth}',
 	'finance.bills.edit': '{name} bearbeiten',
 	'finance.bills.editBill': 'Rechnung bearbeiten',
+	'finance.bills.editPayment': 'Zahlung bearbeiten',
+	'finance.bills.editPaymentFor': 'Zahlung für {period} bearbeiten',
 	'finance.bills.expectedAmount': 'Erwarteter Betrag',
 	'finance.bills.expectedAmountShort': 'erwartet {amount}',
 	'finance.bills.expectedThisMonth': 'Diesen Monat erwartet',

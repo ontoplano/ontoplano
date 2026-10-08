@@ -425,6 +425,8 @@ export type MessageKey =
 	| 'errors.billing.purchaseIsForAnotherPlan'
 	| 'errors.billing.storeDoesNotKnowThatPurchase'
 	| 'errors.billing.youHaveAlreadySwitchedTwice'
+	| 'errors.bills.invalidPaidDate'
+	| 'errors.bills.invalidPaymentAmount'
 	| 'errors.bills.thatCategoryIsNotYours'
 	| 'errors.bills.thatGoalIsNotYours'
 	| 'errors.bills.thatPeriodIsAlreadyPaid'
@@ -677,6 +679,7 @@ export type MessageKey =
 	| 'finance.bills.averagePerPayment'
 	| 'finance.bills.averagePerWeek'
 	| 'finance.bills.averagePerYear'
+	| 'finance.bills.changingAmountDetachesMovement'
 	| 'finance.bills.date'
 	| 'finance.bills.delete'
 	| 'finance.bills.deleteThisBill'
@@ -690,6 +693,8 @@ export type MessageKey =
 	| 'finance.bills.dueTheNth'
 	| 'finance.bills.edit'
 	| 'finance.bills.editBill'
+	| 'finance.bills.editPayment'
+	| 'finance.bills.editPaymentFor'
 	| 'finance.bills.expectedAmount'
 	| 'finance.bills.expectedAmountShort'
 	| 'finance.bills.expectedThisMonth'
@@ -4214,6 +4219,7 @@ export interface MessageValuesFor {
 	'finance.bills.dueOnDay': { day: string | number };
 	'finance.bills.dueTheNth': { nth: string | number };
 	'finance.bills.edit': { name: string | number };
+	'finance.bills.editPaymentFor': { period: string | number };
 	'finance.bills.expectedAmountShort': { amount: string | number };
 	'finance.bills.historyOf': { name: string | number };
 	'finance.bills.markPaid2': { name: string | number };

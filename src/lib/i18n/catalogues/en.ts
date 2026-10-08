@@ -461,6 +461,8 @@ export const messages: Catalogue = {
 	'errors.billing.storeDoesNotKnowThatPurchase': 'The store does not recognise that purchase.',
 	'errors.billing.youHaveAlreadySwitchedTwice':
 		'You have already switched twice today. You can switch again tomorrow.',
+	'errors.bills.invalidPaidDate': 'Enter a valid payment date.',
+	'errors.bills.invalidPaymentAmount': 'Enter a valid payment amount.',
 	'errors.bills.thatCategoryIsNotYours': 'That category is not yours.',
 	'errors.bills.thatGoalIsNotYours': 'That goal is not yours.',
 	'errors.bills.thatPeriodIsAlreadyPaid': 'That period is paid. Undo the payment first.',
@@ -735,6 +737,8 @@ export const messages: Catalogue = {
 	'finance.bills.averagePerPayment': 'Average per payment',
 	'finance.bills.averagePerWeek': 'Average per week',
 	'finance.bills.averagePerYear': 'Average per year',
+	'finance.bills.changingAmountDetachesMovement':
+		'Changing the amount detaches its statement line.',
 	'finance.bills.date': 'Date',
 	'finance.bills.delete': 'Delete {name}',
 	'finance.bills.deleteThisBill': 'Delete this bill?',
@@ -748,6 +752,8 @@ export const messages: Catalogue = {
 	'finance.bills.dueTheNth': ', due the {nth}',
 	'finance.bills.edit': 'Edit {name}',
 	'finance.bills.editBill': 'Edit bill',
+	'finance.bills.editPayment': 'Edit payment',
+	'finance.bills.editPaymentFor': 'Edit payment for {period}',
 	'finance.bills.expectedAmount': 'Expected amount',
 	'finance.bills.expectedAmountShort': 'expected {amount}',
 	'finance.bills.expectedThisMonth': 'Expected this month',

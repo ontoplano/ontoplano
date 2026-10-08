@@ -500,11 +500,12 @@ export function updatePayment(
 	paymentId: number,
 	input: { paidDate: unknown; amountPaid: unknown }
 ): BillPayment {
-	const paidDate = str(input.paidDate, 'paid date', { max: 10 });
-	if (!/^\d{4}-\d{2}-\d{2}$/.test(paidDate)) throw new ValidationError('Invalid paid date');
+	if (typeof input.paidDate !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(input.paidDate))
+		throw new ValidationError({ key: 'errors.bills.invalidPaidDate' });
+	const paidDate = input.paidDate;
 	const paidAt = instantOfLocal(`${paidDate}T${CORRECTED_PAYMENT_TIME}`, ctx.tz);
 	if (Number.isNaN(paidAt.getTime()) || localOfInstant(paidAt, ctx.tz).slice(0, 10) !== paidDate)
-		throw new ValidationError('Invalid paid date');
+		throw new ValidationError({ key: 'errors.bills.invalidPaidDate' });
 	const amountPaid = num(input.amountPaid, 'amount paid', { int: true, min: 0 });
 
 	const owned = and(

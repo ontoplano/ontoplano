@@ -1502,10 +1502,25 @@ describe('bills over MCP', () => {
 		]);
 		expect(paid.result.structuredContent.payment.amountExpected).toBe(120000);
 		expect(paid.result.structuredContent.payment.amountPaid).toBe(121500);
+		const paymentId = paid.result.structuredContent.payment.id as number;
+		const corrected = rpc(
+			6,
+			'change_bill_payment',
+			{ id, payment_id: paymentId, paid_date: '2026-09-08', amount_paid: 119000 },
+			['bills:write']
+		);
+		expect(corrected.result.isError, corrected.result.content?.[0]?.text).toBe(false);
+		expect(corrected.result.structuredContent.payment).toMatchObject({
+			id: paymentId,
+			period: '2026-09',
+			amountExpected: 120000,
+			amountPaid: 119000,
+			paidAt: '2026-09-08T12:00:00.000Z'
+		});
 
 		// The month summary sees the gap.
 		const month = rpc(3, 'month_bills', { month: '2026-09' }, ['bills:read']);
-		expect(month.result.structuredContent.paid).toBe(121500);
+		expect(month.result.structuredContent.paid).toBe(119000);
 
 		// Undo it — the inverse.
 		rpc(4, 'unpay_bill', { id, period: '2026-09' }, ['bills:write']);

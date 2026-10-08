@@ -39,6 +39,7 @@
 		status: 'paid' | 'skipped';
 		automatic: boolean;
 		paidAt: string;
+		movementId: number | null;
 	};
 
 	/** What a row needs off a bill — `listBillsThisPeriod` gives exactly this. */
@@ -75,6 +76,7 @@
 		ondelete,
 		/** Point at the statement line that paid it. Finance only. */
 		onattach,
+		oneditpayment,
 		/** Whether the keyboard's cursor is on this row. */
 		here = false
 	}: {
@@ -87,6 +89,7 @@
 		onedit?: (id: number) => void;
 		ondelete?: (id: number) => void;
 		onattach?: (id: number) => void;
+		oneditpayment?: (billId: number, entry: Entry) => void;
 		here?: boolean;
 	} = $props();
 
@@ -388,20 +391,21 @@
 				<table class="mt-2 w-full text-sm">
 					<thead>
 						<tr class="text-left text-xs text-gray-500">
-							<th class="py-1 pr-3 font-normal">{t('finance.bills.period')}</th>
-							<th class="py-1 pr-3 font-normal">{t('finance.bills.date')}</th>
+							<th class="py-1 pr-3 font-normal whitespace-nowrap">{t('finance.bills.period')}</th>
+							<th class="py-1 pr-3 font-normal whitespace-nowrap">{t('finance.bills.date')}</th>
 							<th class="py-1 pr-3 text-right font-normal">{t('finance.bills.amount')}</th>
-							<th class="py-1 font-normal"
-								><span class="sr-only">{t('finance.bills.paidCount')}</span></th
-							>
 						</tr>
 					</thead>
 					<tbody class="divide-y divide-gray-100">
 						{#each bill.history.entries as entry (entry.id)}
 							<tr>
-								<td class="py-1 pr-3 text-gray-700 tabular-nums">{entry.period}</td>
-								<td class="py-1 pr-3 text-gray-600 tabular-nums">{dateOf(entry.paidAt, now())}</td>
-								<td class="py-1 pr-3 text-right text-gray-900 tabular-nums">
+								<td class="py-1 pr-3 whitespace-nowrap text-gray-700 tabular-nums"
+									>{entry.period}</td
+								>
+								<td class="py-1 pr-3 whitespace-nowrap text-gray-600 tabular-nums"
+									>{dateOf(entry.paidAt, now())}</td
+								>
+								<td class="py-1 text-right text-gray-900 tabular-nums">
 									{#if entry.status === 'paid'}
 										{money(entry.amountPaid)}
 										{#if entry.amountPaid !== entry.amountExpected}
@@ -414,12 +418,26 @@
 									{:else}
 										—
 									{/if}
-								</td>
-								<td class="py-1 text-xs text-gray-600">
-									{entry.status === 'paid' ? t('finance.bills.paid') : t('finance.bills.skipped')}
-									{#if entry.automatic}
-										· {t('finance.bills.automatic').toLowerCase()}
-									{/if}
+									<span class="mt-0.5 inline-flex items-center gap-2 text-xs text-gray-600">
+										<span>
+											{entry.status === 'paid'
+												? t('finance.bills.paid')
+												: t('finance.bills.skipped')}
+											{#if entry.automatic}
+												· {t('finance.bills.automatic').toLowerCase()}
+											{/if}
+										</span>
+										{#if entry.status === 'paid' && oneditpayment}
+											<button
+												type="button"
+												class="icon-btn"
+												title={t('finance.bills.editPayment')}
+												aria-label={t('finance.bills.editPaymentFor', { period: entry.period })}
+												onclick={() => oneditpayment(bill.id, entry)}
+												><Icon name="edit" size={14} /></button
+											>
+										{/if}
+									</span>
 								</td>
 							</tr>
 						{/each}
