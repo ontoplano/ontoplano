@@ -17,6 +17,67 @@ import { visit } from './helpers/visit';
 test.describe('with a finger', () => {
 	test.use({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
 
+	test('a tap opens a short new-activity sheet with save visible', async ({ page }) => {
+		await register(page, testEmail('plan-tap'));
+		await visit(page, '/tasks/plan');
+		await expect(page.getByRole('button', { name: 'More' })).toHaveAttribute(
+			'aria-expanded',
+			'false'
+		);
+		await expect(page.getByRole('button', { name: 'Schemes' })).toBeHidden();
+		await page.screenshot({ path: 'test-results/plan-phone-collapsed.png' });
+		await page.getByRole('button', { name: 'More' }).click();
+		await expect(page.getByRole('button', { name: 'Schemes' })).toBeVisible();
+		await page.getByRole('button', { name: 'More' }).click();
+
+		const main = page.locator('.ec-main');
+		await expect(main).toBeVisible();
+		expect(await main.evaluate((el) => getComputedStyle(el).overflowY)).toBe('visible');
+		const pageScroll = page.locator('.page-gutter');
+		await pageScroll.evaluate((el) => el.scrollTo({ top: el.scrollHeight }));
+		await expect.poll(() => pageScroll.evaluate((el) => el.scrollTop)).toBeGreaterThan(0);
+		expect(await main.evaluate((el) => el.scrollTop)).toBe(0);
+		await pageScroll.evaluate((el) => el.scrollTo({ top: 0 }));
+		const body = page.locator('.ec-body').first();
+		const box = (await body.boundingBox())!;
+		const x = box.x + box.width / 2;
+		const y = box.y + 60;
+		await page.dispatchEvent('.ec-body', 'pointerdown', {
+			pointerType: 'touch',
+			isPrimary: true,
+			clientX: x,
+			clientY: y
+		});
+		await page.dispatchEvent('.ec-body', 'pointerup', {
+			pointerType: 'touch',
+			isPrimary: true,
+			clientX: x,
+			clientY: y
+		});
+
+		const dialog = page.getByRole('dialog', { name: 'New task block' });
+		await expect(dialog).toBeVisible();
+		await expect(dialog.locator('[name="newActivityName"]')).toBeVisible();
+		await expect(dialog.locator('[name="durationMinutes"]')).toHaveValue('60');
+		await expect(dialog.getByRole('button', { name: 'Cancel' })).toBeVisible();
+		await expect(dialog.getByRole('button', { name: 'Add repeating task block' })).toBeVisible();
+		await expect
+			.poll(() =>
+				dialog.locator('[data-modal-footer]').evaluate((el) => el.getBoundingClientRect().bottom)
+			)
+			.toBeLessThanOrEqual(844);
+		await page.screenshot({ path: 'test-results/plan-phone-sheet.png' });
+		const height = await dialog
+			.locator('.panel')
+			.evaluate((el) => el.getBoundingClientRect().height);
+		expect(height).toBeLessThanOrEqual(844 * 0.55);
+		await dialog.locator('[name="newActivityName"]').fill('Garden planning');
+		await expect(dialog).not.toHaveClass(/peek/);
+		await dialog.getByRole('button', { name: 'Add repeating task block' }).click();
+		await expect(dialog).toBeHidden();
+		await expect(page.locator('.ec-event').filter({ hasText: 'Garden planning' })).toBeVisible();
+	});
+
 	test('press and hold on the grid opens a new block there', async ({ page }) => {
 		await register(page, testEmail('plan-hold'));
 		await visit(page, '/tasks/plan');
@@ -75,6 +136,68 @@ test.describe('with a finger', () => {
 
 		await expect(page.getByRole('heading', { name: 'New task block' })).toHaveCount(0);
 	});
+});
+
+test('dragging a block asks whether to move or copy it', async ({ page }) => {
+	test.setTimeout(180_000);
+	await page.setViewportSize({ width: 1280, height: 900 });
+	await register(page, testEmail('plan-drag-choice'));
+	await visit(page, '/tasks/plan?view=week');
+	await page.getByRole('button', { name: 'New task block' }).click();
+	const editor = page.getByRole('dialog', { name: 'New task block' });
+	await editor.locator('[name="newActivityName"]').fill('Move or copy me');
+	await editor.getByRole('button', { name: 'Add repeating task block' }).click();
+	await expect(editor).toBeHidden();
+	const block = page
+		.locator('.ec-event.ec-draggable')
+		.filter({ hasText: 'Move or copy me' })
+		.first();
+	await expect(block).toBeVisible();
+	const box = (await block.boundingBox())!;
+	const x = box.x + box.width / 2;
+	const y = box.y + Math.min(20, box.height / 2);
+	await page.mouse.move(x, y);
+	await page.mouse.down();
+	await page.mouse.move(x, y + 80, { steps: 12 });
+	await page.mouse.up();
+	const choice = page.getByRole('dialog', { name: 'Place task block' });
+	await expect(choice).toBeVisible();
+	await expect(choice.getByRole('button', { name: 'Copy' })).toBeVisible();
+	await expect(choice.getByRole('button', { name: 'Move here' })).toBeVisible();
+	await choice.getByRole('button', { name: 'Cancel' }).click();
+	await expect(choice).toBeHidden();
+	await expect(block).toBeVisible();
+	const original = (await block.boundingBox())!;
+	await page.mouse.move(original.x + original.width / 2, original.y + 20);
+	await page.mouse.down();
+	await page.mouse.move(original.x + original.width / 2, original.y + 100, { steps: 12 });
+	await page.mouse.up();
+	await expect(choice).toBeVisible();
+	await choice.getByRole('button', { name: 'Copy' }).click();
+	await expect(choice).toBeHidden();
+	await expect
+		.poll(() =>
+			page.locator('.ec-event.ec-draggable').filter({ hasText: 'Move or copy me' }).count()
+		)
+		.toBe(2);
+	const moving = page
+		.locator('.ec-event.ec-draggable')
+		.filter({ hasText: 'Move or copy me' })
+		.first();
+	const beforeMove = (await moving.boundingBox())!;
+	await page.mouse.move(beforeMove.x + beforeMove.width / 2, beforeMove.y + 20);
+	await page.mouse.down();
+	await page.mouse.move(beforeMove.x + beforeMove.width / 2, beforeMove.y + 100, { steps: 12 });
+	await page.mouse.up();
+	await expect(choice).toBeVisible();
+	await choice.getByRole('button', { name: 'Move here' }).click();
+	await expect(choice).toBeHidden();
+	await expect
+		.poll(() =>
+			page.locator('.ec-event.ec-draggable').filter({ hasText: 'Move or copy me' }).count()
+		)
+		.toBe(2);
+	await expect.poll(async () => (await moving.boundingBox())?.y ?? 0).not.toBe(beforeMove.y);
 });
 
 /** What a tap on a block must not leave behind. */

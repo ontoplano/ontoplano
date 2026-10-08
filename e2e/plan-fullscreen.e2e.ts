@@ -14,6 +14,14 @@ test('the plan goes full screen and comes back', async ({ page }) => {
 		.poll(() => page.evaluate(() => document.fullscreenElement?.className ?? ''))
 		.toContain('plan-surface');
 	await expect(page.locator('.plan-surface .plan-grid')).toBeVisible();
+	const main = page.locator('.plan-surface .ec-main');
+	const header = main.locator('.ec-header');
+	const before = await header.boundingBox();
+	await main.evaluate((el) => el.scrollTo({ top: el.scrollHeight }));
+	await expect.poll(() => main.evaluate((el) => el.scrollTop)).toBeGreaterThan(0);
+	const after = await header.boundingBox();
+	expect(Math.abs(after!.y - before!.y)).toBeLessThanOrEqual(2);
+	expect(await page.locator('.plan-surface').evaluate((el) => el.scrollTop)).toBe(0);
 	await page.screenshot({ path: 'test-results/plan-fullscreen.png' });
 
 	await page.getByRole('button', { name: 'Leave full screen' }).click();

@@ -74,6 +74,8 @@
 		 * is no room for both and it is the ordinary sheet.
 		 */
 		dock = 'centre',
+		/** Start a new plan block as a short phone sheet, with its save actions visible. */
+		phonePeek = false,
 		/** A failed submission's message. Shown here because the page behind is
 		 *  dimmed and inert — an error rendered out there cannot be read. */
 		error = null,
@@ -106,6 +108,7 @@
 		description?: string;
 		size?: 'sm' | 'md' | 'lg';
 		dock?: 'centre' | 'side';
+		phonePeek?: boolean;
 		error?: string | null;
 		saved?: string;
 		onclose?: () => void;
@@ -150,6 +153,10 @@
 	}
 
 	let dialog: HTMLDialogElement | undefined = $state();
+	let peekExpanded = $state(false);
+	$effect(() => {
+		if (!open) peekExpanded = false;
+	});
 
 	/**
 	 * The sheet gesture, below `sm`.
@@ -198,7 +205,7 @@
 		if (!dialog) return;
 		if (open && !dialog.open && !away) {
 			dialog.showModal();
-			focusFirstField();
+			if (!phonePeek || !isPhone()) focusFirstField();
 		}
 		if (!open && dialog.open) dialog.close();
 	});
@@ -356,9 +363,19 @@
 
 <dialog
 	bind:this={dialog}
+	class:peek={phonePeek && !peekExpanded}
 	onclose={handleNativeClose}
 	onpointerdown={handlePointerDown}
 	onclick={handleClick}
+	onfocusin={(event) => {
+		if (
+			phonePeek &&
+			(event.target instanceof HTMLInputElement ||
+				event.target instanceof HTMLSelectElement ||
+				event.target instanceof HTMLTextAreaElement)
+		)
+			peekExpanded = true;
+	}}
 	aria-label={title}
 	class:docked={dock === 'side'}
 	data-away={away ? '' : undefined}
@@ -551,6 +568,18 @@
 	}
 
 	@media (max-width: 639px) {
+		dialog.peek[open] {
+			display: flex;
+			flex-direction: column;
+			justify-content: flex-end;
+		}
+
+		dialog.peek .panel {
+			height: 50dvh;
+			max-height: 50dvh;
+			padding-top: 0;
+		}
+
 		/* Arrive the way a sheet does — from below, not fading in place. */
 		.panel {
 			animation: sheet-in 240ms cubic-bezier(0.2, 0.9, 0.3, 1);

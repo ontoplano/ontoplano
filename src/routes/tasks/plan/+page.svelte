@@ -467,6 +467,8 @@
 	let slotMode: 'category' | 'activity' | 'workout' | 'task' = $state('activity');
 	let formTodoId = $state<number | null>(null);
 	let activityChoice = $state(NEW_ACTIVITY);
+	let newActivityName = $state('');
+	let newActivityCategoryId = $state<number | null>(null);
 	/*
 	 * The rest of the form, held rather than read off the inputs.
 	 *
@@ -541,7 +543,12 @@
 			activityChoice === NEW_ACTIVITY
 				? undefined
 				: data.activities.find((a) => String(a.id) === activityChoice);
-		return { name: activity?.name ?? DASH, ...pill(category(activity?.categoryId)) };
+		return {
+			name: activityChoice === NEW_ACTIVITY ? newActivityName || DASH : (activity?.name ?? DASH),
+			...pill(
+				category(activityChoice === NEW_ACTIVITY ? newActivityCategoryId : activity?.categoryId)
+			)
+		};
 	});
 	// Offset into the visible window (0 = the day it starts on, i.e. today by
 	// default), not a Monday-indexed weekday. The weekday is derived from it.
@@ -558,6 +565,8 @@
 	let confirmingDelete: string | null = $state(null);
 	let confirmingBulkDelete = $state(false);
 	let schemesExpanded = $state(false);
+	/** The phone opens with the calendar in view; secondary plan controls unfold on demand. */
+	let mobileControlsOpen = $state(false);
 	let newSchemeName = $state('');
 	let confirmingLoadSchemeId: number | null = $state(null);
 	let confirmingDeleteSchemeId: number | null = $state(null);
@@ -635,7 +644,7 @@
 		 * does and more, so there is nothing to keep either way.
 		 */
 		hovered = null;
-		tick().then(() => timeInput?.focus());
+		if (editingKind !== null) tick().then(() => timeInput?.focus());
 	}
 
 	function closeForm() {
@@ -739,7 +748,9 @@
 		formDate = selectedDateStr();
 		slotMode = 'activity';
 		formTodoId = null;
-		activityChoice = defaultActivityChoice(null);
+		activityChoice = NEW_ACTIVITY;
+		newActivityName = '';
+		newActivityCategoryId = data.categories[0]?.id ?? null;
 		remindLead = 0;
 		formStartTime = prefillTime;
 		formDuration = prefillDuration;
@@ -1039,7 +1050,7 @@
 	let placeStart: { x: number; y: number } | null = null;
 	const PLACE_SLOP = 10;
 
-	/* ── Press and hold, on a finger ────────────────────────────────────────────
+	/* ── Tap or hold, on a finger ────────────────────────────────────────────────
 	 *
 	 * The grid's way of making a block is to drag out a shape on empty space,
 	 * and on a touch screen that gesture belongs to the page: a finger dragging
@@ -1047,15 +1058,15 @@
 	 * touching the calendar. The hint under it said "drag to create" to a phone
 	 * that could not.
 	 *
-	 * A press that stays still is the one gesture a scroll cannot be mistaken
-	 * for. Hold for `HOLD_MS` on empty grid and the new-block form opens on the
-	 * day and hour under the finger, exactly as a drag does with a mouse.
+	 * A tap opens the form at that day and hour. Holding still for `HOLD_MS`
+	 * does the same before release; moving cancels both, leaving the gesture
+	 * to scroll the page.
 	 *
-	 * Cancelled by movement, by lifting early, and by the pointer being taken
-	 * away — and it never arms on an existing block, which has its own gestures.
+	 * Neither gesture arms on an existing block, which has its own gestures.
 	 */
 	const HOLD_MS = 450;
 	const HOLD_SLOP = 12;
+	const NEW_ACTIVITY_DURATION_MINUTES = 60;
 	let holdTimer: ReturnType<typeof setTimeout> | null = null;
 	let holdFrom: { x: number; y: number } | null = null;
 	/** Set when a hold created something, so the release is not read again. */
@@ -1083,7 +1094,7 @@
 			holdFired = true;
 			selectOffsetForDate(target.date);
 			prefillTime = target.startTime;
-			prefillDuration = timeToMinutes(GRID_SNAP_DURATION) * 2;
+			prefillDuration = NEW_ACTIVITY_DURATION_MINUTES;
 			startNew(repeat, target.date);
 			tick().then(() => createFormEl?.scrollIntoView({ block: 'center', behavior: 'smooth' }));
 		}, HOLD_MS);
@@ -1109,6 +1120,10 @@
 	}
 
 	async function onGridPointerUp(e: PointerEvent) {
+		const tappedEmptyGrid = e.pointerType === 'touch' && holdFrom !== null;
+		const tapMoved = holdFrom
+			? Math.abs(e.clientX - holdFrom.x) > HOLD_SLOP || Math.abs(e.clientY - holdFrom.y) > HOLD_SLOP
+			: true;
 		cancelHold();
 		if (holdFired) {
 			// The form is already open on this spot; the release must not also
@@ -1116,6 +1131,17 @@
 			holdFired = false;
 			e.preventDefault();
 			e.stopPropagation();
+			return;
+		}
+		if (placingTodoId === null && tappedEmptyGrid && !tapMoved) {
+			const target = dropTarget(e);
+			if (!target) return;
+			e.preventDefault();
+			e.stopPropagation();
+			selectOffsetForDate(target.date);
+			prefillTime = target.startTime;
+			prefillDuration = NEW_ACTIVITY_DURATION_MINUTES;
+			startNew(repeat, target.date);
 			return;
 		}
 		const start = placeStart;
@@ -1180,6 +1206,7 @@
 	const gridKey = $derived(`${effectiveView}:${data.range.from}`);
 
 	function scroller(): HTMLElement | null {
+		if (narrowScreen && !fullscreen) return gridEl?.closest('.page-gutter') ?? null;
 		return gridEl?.querySelector('.ec-main') ?? null;
 	}
 
@@ -1188,13 +1215,13 @@
 	 * the calendar's own tree and scroll does not bubble.
 	 */
 	$effect(() => {
-		const root = gridEl;
+		const root = scroller();
 		if (!root) return;
 
 		const onScroll = (event: Event) => {
 			const target = event.target;
-			if (target instanceof HTMLElement && target.classList.contains('ec-main')) {
-				keptScroll = target.scrollTop;
+			if (target === root) {
+				keptScroll = root.scrollTop;
 			}
 		};
 
@@ -2272,6 +2299,7 @@
 			allDay: gridEvents.some((e) => e.allDay),
 			allDayLabel: t('tasks.plan.allDay')
 		}),
+		height: narrowScreen && effectiveView !== 'month' && !fullscreen ? 'auto' : '100%',
 		events: gridEvents,
 		editable: true,
 		selectable: true,
@@ -2440,6 +2468,23 @@
 		oldEvent?: { start: Date };
 		jsEvent?: Calendar.DomEvent | Modifiers;
 	};
+	let pendingDrop: DragInfo | null = null;
+	let showDropChoice = $state(false);
+
+	function cancelDrop() {
+		pendingDrop?.revert();
+		pendingDrop = null;
+		showDropChoice = false;
+	}
+
+	async function chooseDrop(copy: boolean) {
+		const info = pendingDrop;
+		pendingDrop = null;
+		showDropChoice = false;
+		if (!info) return;
+		if (copy) await duplicateBlock(info);
+		else await handleEventPersist(info);
+	}
 
 	async function handleEventDrop(info: DragInfo) {
 		const keys = modifiers(info.jsEvent);
@@ -2460,7 +2505,8 @@
 			return;
 		}
 
-		await handleEventPersist(info);
+		pendingDrop = info;
+		showDropChoice = true;
 	}
 
 	/**
@@ -2883,6 +2929,15 @@
 								label={t('tasks.plan.weekStartsOn')}
 							/>
 						</div>
+						<button
+							type="button"
+							class="btn btn-sm ml-auto sm:hidden"
+							aria-expanded={mobileControlsOpen}
+							aria-label={t('ui.more')}
+							onclick={() => (mobileControlsOpen = !mobileControlsOpen)}
+						>
+							<Icon name="sliders" size={14} />
+						</button>
 
 						<!-- A saved shape of a week, loaded over this one: it opens a dialog,
 					     so it is a button beside the view, not a fourth position in it. -->
@@ -2890,12 +2945,12 @@
 							type="button"
 							onclick={() => (schemesExpanded = true)}
 							aria-haspopup="dialog"
-							class="btn btn-sm ml-auto shrink-0"
+							class="btn btn-sm ml-auto shrink-0 {mobileControlsOpen ? '' : 'max-sm:hidden'}"
 							title={t('tasks.plan.savedShapesOfAWeek')}
 							aria-label={t('tasks.plan.schemes')}
 							data-tour="plan-schemes"
 						>
-							<Icon name="copy" size={14} />
+							<Icon name="scheme" size={14} />
 							<span class="hidden sm:inline">{t('tasks.plan.schemes')}</span>
 						</button>
 
@@ -2905,7 +2960,7 @@
 								type="button"
 								onclick={toggleFullscreen}
 								aria-pressed={fullscreen}
-								class="btn btn-sm shrink-0"
+								class="btn btn-sm shrink-0 {mobileControlsOpen ? '' : 'max-sm:hidden'}"
 								title={fullscreen ? t('tasks.plan.leaveFullScreen') : t('tasks.plan.fullScreen')}
 								aria-label={fullscreen
 									? t('tasks.plan.leaveFullScreen')
@@ -2920,7 +2975,7 @@
 							type="button"
 							onclick={toggleList}
 							aria-pressed={data.asList}
-							class="btn btn-sm shrink-0"
+							class="btn btn-sm shrink-0 {mobileControlsOpen ? '' : 'max-sm:hidden'}"
 							title={data.asList ? t('tasks.plan.showAsCalendar') : t('tasks.plan.showAsList')}
 							aria-label={data.asList ? t('tasks.plan.showAsCalendar') : t('tasks.plan.showAsList')}
 							data-tour="plan-as-list"
@@ -2947,7 +3002,7 @@
 			{/snippet}
 
 			{#snippet filters()}
-				{#if data.todos.length > 0}
+				{#if data.todos.length > 0 && (!narrowScreen || mobileControlsOpen)}
 					<!--
 					What is waiting for a time, narrowed the way the task list narrows
 					it, with the switch that shows it as the strip's one verb. It
@@ -3207,6 +3262,8 @@
 					bind:this={gridWrap}
 					data-tour="plan-grid"
 					class="plan-grid relative {effectiveView === 'month'
+						? 'plan-month'
+						: ''} {effectiveView === 'month'
 						? 'h-[calc(100dvh-12rem)] min-h-[54rem]'
 						: gridDays === 1
 							? 'h-[62vh]'
@@ -3737,6 +3794,22 @@
 		</div>
 	</Modal>
 
+	<Modal
+		bind:open={showDropChoice}
+		title={t('tasks.plan.placeBlock')}
+		size="sm"
+		onclose={cancelDrop}
+	>
+		<p class="text-sm text-gray-700">{t('tasks.plan.moveOrCopyBlock')}</p>
+		{#snippet footer()}
+			<button type="button" class="btn" onclick={cancelDrop}>{t('ui.cancel')}</button>
+			<button type="button" class="btn" onclick={() => chooseDrop(true)}>{t('ui.copy')}</button>
+			<button type="button" class="btn btn-primary" onclick={() => chooseDrop(false)}
+				>{t('tasks.plan.moveHere')}</button
+			>
+		{/snippet}
+	</Modal>
+
 	<Modal bind:open={showCopyPanel} title={t('tasks.plan.copyToDays')} size="sm">
 		<form
 			method="post"
@@ -3841,6 +3914,7 @@
 
 	<Modal
 		bind:open={showForm}
+		phonePeek={editingKind === null}
 		error={form?.message}
 		saved={editingKind === null ? t('tasks.plan.blockAdded') : undefined}
 		onclose={closeForm}
@@ -3898,6 +3972,35 @@
 			>
 				{#if editingBlockId !== null}
 					<input type="hidden" name="id" value={editingBlockId} />
+				{/if}
+
+				{#if slotMode === 'activity' && activityChoice === NEW_ACTIVITY}
+					<div class="border-2 border-[var(--section-accent)] bg-gray-50 p-3">
+						<FormGrid>
+							<Field label={t('tasks.plan.newActivity')} span={8} required>
+								<OneLine
+									name="newActivityName"
+									bind:value={newActivityName}
+									placeholder={t('tasks.plan.eGLearnGuitar')}
+									class="input"
+									required
+									autofocus={!narrowScreen}
+								/>
+							</Field>
+							<Field label={t('tasks.plan.itsCategory')} span={4} required>
+								<select
+									name="newActivityCategoryId"
+									required
+									class="select"
+									bind:value={newActivityCategoryId}
+								>
+									{#each data.categories as cat (cat.id)}
+										<option value={cat.id}>{cat.name}</option>
+									{/each}
+								</select>
+							</Field>
+						</FormGrid>
+					</div>
 				{/if}
 
 				<div class="flex items-center gap-3">
@@ -4214,29 +4317,6 @@
 						</Field>
 					{/if}
 				</FormGrid>
-
-				{#if slotMode === 'activity' && activityChoice === NEW_ACTIVITY}
-					<div class="border border-gray-200 bg-gray-50 p-3">
-						<FormGrid>
-							<Field label={t('tasks.plan.newActivity')} span={8} required>
-								<OneLine
-									name="newActivityName"
-									placeholder={t('tasks.plan.eGLearnGuitar')}
-									class="input"
-									required
-									autofocus
-								/>
-							</Field>
-							<Field label={t('tasks.plan.itsCategory')} span={4} required>
-								<select name="newActivityCategoryId" required class="select">
-									{#each data.categories as cat (cat.id)}
-										<option value={cat.id}>{cat.name}</option>
-									{/each}
-								</select>
-							</Field>
-						</FormGrid>
-					</div>
-				{/if}
 
 				<!-- The task brings its own notes, ratings and notebook. -->
 				{#if slotMode !== 'task'}
@@ -4623,6 +4703,17 @@
 	.plan-grid :global(.ec-toolbar) {
 		display: none;
 	}
+	/* On a phone the page carries the hours, so one vertical gesture has one
+	   scroller and the calendar header stays with the grid as it passes. */
+	@media (max-width: 639px) {
+		.plan-grid:not(.plan-month) {
+			height: auto;
+			min-height: 0;
+		}
+		.plan-grid:not(.plan-month) :global(.ec-main) {
+			overflow: visible;
+		}
+	}
 	/* The phone's week: a day's heading over its rows, in the list's gutters. */
 	.plan-agenda-day {
 		display: flex;
@@ -4652,12 +4743,34 @@
 	/* On the whole screen: the page's own ground behind it, the grid taking
 	   every row the controls leave. */
 	.plan-surface:fullscreen {
-		overflow-y: auto;
-		padding: 1rem;
+		display: flex;
+		flex-direction: column;
+		height: 100dvh;
+		overflow: hidden;
+		padding: 0;
 		background: var(--color-gray-100);
 	}
 
+	.plan-surface:fullscreen :global(.room-surface) {
+		display: flex;
+		min-height: 0;
+		flex: 1;
+		flex-direction: column;
+	}
+
 	.plan-surface:fullscreen :global(.plan-grid) {
-		height: calc(100dvh - 11rem);
+		min-height: 0;
+		flex: 1;
+		height: auto;
+	}
+
+	.plan-surface:fullscreen :global(.plan-grid .ec) {
+		height: 100%;
+	}
+
+	.plan-surface:fullscreen :global(.plan-grid .ec-main) {
+		min-height: 0;
+		flex: 1;
+		overflow: auto;
 	}
 </style>

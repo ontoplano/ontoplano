@@ -20,6 +20,7 @@ releases mattered.
 
 ## 0.185.15 — 2026-10-08
 
+- On phones, the plan opens with fewer controls; tap a time to start an activity, and drag a block to choose Move or Copy. The calendar uses one page scroll and keeps its day header visible in full screen.
 - Applying a saved task filter inside a notebook keeps that notebook open.
 - Quick task capture can schedule a task block with a day, time, and duration.
 

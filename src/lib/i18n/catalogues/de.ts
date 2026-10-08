@@ -4166,6 +4166,9 @@ export const messages: Catalogue = {
 		'Minuten vor Beginn. Jedes Mal, wenn es wiederkehrt. Leer oder 0 bedeutet nie.',
 	'tasks.plan.mode': 'Modus',
 	'tasks.plan.month': 'Monat',
+	'tasks.plan.moveHere': 'Hierher verschieben',
+	'tasks.plan.moveOrCopyBlock':
+		'Diesen Block verschieben oder das Original behalten und hier eine Kopie erstellen?',
 	'tasks.plan.newActivity': 'Neue Aktivität',
 	'tasks.plan.newActivity2': '+ Neue Aktivität …',
 	'tasks.plan.newBlock': 'Neuer Aufgabenblock',
@@ -4180,9 +4183,10 @@ export const messages: Catalogue = {
 	'tasks.plan.on': '{skip} am {selectedDateStr}',
 	'tasks.plan.openTheDay': 'Den Tag öffnen',
 	'tasks.plan.owed': 'fällig',
+	'tasks.plan.placeBlock': 'Aufgabenblock platzieren',
 	'tasks.plan.press': 'Drücken',
 	'tasks.plan.pressAndHoldOnThe':
-		'Auf dem Raster gedrückt halten, um dort einen Aufgabenblock hinzuzufügen.',
+		'Auf eine freie Uhrzeit tippen, um dort einen Aufgabenblock hinzuzufügen.',
 	'tasks.plan.putBlockBackToPending': '{title} zurück auf ausstehend setzen',
 	'tasks.plan.putItBackToPending': 'Zurück auf ausstehend setzen',
 	'tasks.plan.putThisOccurrenceBack': 'Dieses Vorkommen zurücklegen',
