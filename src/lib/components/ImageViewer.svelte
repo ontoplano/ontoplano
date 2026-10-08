@@ -18,8 +18,8 @@
 	 * `data-view` opens itself — a thing's thumbnail, a face, a notebook's
 	 * cover on somebody else's shelf — and any control wearing `data-view-src`
 	 * opens that address, which is how a picture that is itself a control (the
-	 * notebook's, where pressing it changes it) still gets looked at: a small
-	 * badge beside it says "view".
+	 * notebook's, where pressing it changes it on a desktop) still gets looked
+	 * at: a small badge on the desktop and the whole picture on a phone.
 	 *
 	 * Pinch, drag, wheel and double-tap zoom are `@panzoom/panzoom`'s. Back —
 	 * the phone's gesture or the browser's button — closes it, like any other
