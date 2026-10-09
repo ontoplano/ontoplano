@@ -172,7 +172,7 @@ test('a bill with a lead lands on the week, and ticking it there pays it', async
 	await expect(page.locator('li', { hasText: 'Rent' }).getByText(/3 days before/)).toBeVisible();
 
 	// It is on the month's plan, on the 12th rather than the 15th.
-	await visit(page, '/tasks/plan?view=month');
+	await visit(page, '/tasks/calendar?view=month');
 	const onGrid = page.getByText('Pay Rent').first();
 	await expect(onGrid).toBeVisible();
 
@@ -277,7 +277,7 @@ for (const size of SIZES) {
 		await edit.getByRole('button', { name: 'Cancel' }).click();
 
 		// Not on the week: it pays itself.
-		await visit(page, '/tasks/plan?view=month');
+		await visit(page, '/tasks/calendar?view=month');
 		await expect(page.getByText('Pay Film streaming')).toHaveCount(0);
 	});
 

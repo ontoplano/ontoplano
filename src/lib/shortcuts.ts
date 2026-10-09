@@ -102,7 +102,7 @@ export const PAGE_SHORTCUTS: Record<string, PageShortcuts> = {
 		]
 	},
 
-	'/tasks/plan': {
+	'/tasks/calendar': {
 		label: 'app.plan',
 		shortcuts: [
 			{ key: 'j', action: 'navigate-down', description: 'shortcut.navigateSlots' },

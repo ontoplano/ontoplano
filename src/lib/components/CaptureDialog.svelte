@@ -127,7 +127,7 @@
 								label: t('app.plan'),
 								// The query picks the block's day after resolving the route.
 								// eslint-disable-next-line svelte/no-navigation-without-resolve
-								run: () => goto(`${resolve('/tasks/plan')}?from=${blockDate}`)
+								run: () => goto(`${resolve('/tasks/calendar')}?from=${blockDate}`)
 							});
 						else if (made > 0)
 							say(receipt, {

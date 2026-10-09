@@ -192,7 +192,7 @@ export const messages: Catalogue = {
 		'Optional — an assistant can set your week up by asking you about it.',
 	'app.people': 'People',
 	'app.picture': 'Picture',
-	'app.plan': 'Plan',
+	'app.plan': 'Calendar',
 	'app.preferences': 'Preferences',
 	'app.privacy': 'Privacy',
 	'app.quote': 'Quote',
@@ -330,7 +330,7 @@ export const messages: Catalogue = {
 	'capture.addedToWithContent': 'Added to {into}: {content}',
 	'capture.diaryNote': 'Diary note',
 	'capture.newThing': 'New {thing}',
-	'capture.planDestination': 'your plan',
+	'capture.planDestination': 'your calendar',
 	'captureDialog.notWrittenDown': 'That was not written down.',
 	'captureSettings.atLeastOne': 'at least one',
 	'captureSettings.intro': 'What the + wheel holds, and where what you write from it goes.',
@@ -1208,7 +1208,7 @@ export const messages: Catalogue = {
 	'health.recipes.id.ingredient': 'Ingredient',
 	'health.recipes.id.ingredients': 'Ingredients',
 	'health.recipes.id.itBecomesABlockOn':
-		'It becomes a task block on the plan, like anything else you give time to.',
+		'It becomes a task block on the calendar, like anything else you give time to.',
 	'health.recipes.id.itsIngredientsStayOnThe':
 		'Its ingredients stay on the shopping list — they are things you buy, not parts of the recipe.',
 	'health.recipes.id.keepIt': 'Keep it',
@@ -1233,7 +1233,7 @@ export const messages: Catalogue = {
 	'health.recipes.id.pictureTooBig': 'Pictures here are at most {most}KB, and {name} is {size}KB.',
 	'health.recipes.id.pictures': 'Pictures',
 	'health.recipes.id.putItOnADay': 'Put it on a day',
-	'health.recipes.id.putItOnThePlan': 'Put it on the plan',
+	'health.recipes.id.putItOnThePlan': 'Put it on the calendar',
 	'health.recipes.id.ranOutOf': 'Ran out of {name}',
 	'health.recipes.id.removeIt': 'Remove it',
 	'health.recipes.id.removeThisPicture': 'Remove this picture',
@@ -1250,7 +1250,7 @@ export const messages: Catalogue = {
 	'health.recipes.id.writeIt': 'Write it',
 	'health.recipes.ingredients': '{ingredients} ingredients',
 	'health.recipes.itBecomesABlockOn':
-		'It becomes a task block on the plan, like anything else you give time to.',
+		'It becomes a task block on the calendar, like anything else you give time to.',
 	'health.recipes.markdownHeadingsListsNumbersIngredients':
 		'Markdown: headings, lists, numbers. Ingredients come after.',
 	'health.recipes.method': 'Method',
@@ -1275,7 +1275,7 @@ export const messages: Catalogue = {
 	'health.recipes.orderTitle': 'Name',
 	'health.recipes.pasteThePageHere': 'Paste the page here',
 	'health.recipes.putItOnADay': 'Put it on a day',
-	'health.recipes.putItOnThePlan': 'Put it on the plan',
+	'health.recipes.putItOnThePlan': 'Put it on the calendar',
 	'health.recipes.putOnADay': 'Put {title} on a day',
 	'health.recipes.readIt': 'Read it',
 	'health.recipes.reading': 'Reading…',
@@ -1326,7 +1326,7 @@ export const messages: Catalogue = {
 		'is deleted for good, and comes off any day it was planned\n\t\t\ton. To keep it, leave it archived instead.',
 	'health.workouts.isRemovedForGoodThe': 'is removed for good. The workout\n\t\t\titself stays.',
 	'health.workouts.itGainsATimeOn':
-		'It gains a time on the plan. Finishing it there finishes the workout.',
+		'It gains a time on the calendar. Finishing it there finishes the workout.',
 	'health.workouts.keepIt': 'Keep it',
 	'health.workouts.km': 'km',
 	'health.workouts.lastDone': ' · last done {date}',
@@ -1500,7 +1500,7 @@ export const messages: Catalogue = {
 	'home.oneOff': 'one-off',
 	'home.onlyWhatBrokeIsSent': 'Only what broke is sent, never what you wrote.',
 	'home.open': 'Open →',
-	'home.openThePlan': 'Open the plan',
+	'home.openThePlan': 'Open the calendar',
 	'home.paidOfExpected': '{currency} paid of {currency2} expected',
 	'home.preferences': 'Preferences',
 	'home.primary': 'Primary',
@@ -2410,7 +2410,7 @@ export const messages: Catalogue = {
 	'notifications.title': 'Notifications',
 	'notifications.unread': '{count} unread',
 	'notify.everyBlockOnThePlan':
-		'Every task block on the plan says so when its time comes. Without this only the task blocks you gave a lead time to say anything.',
+		'Every task block on the calendar says so when its time comes. Without this only the task blocks you gave a lead time to say anything.',
 	'notify.labelsAs': 'as {labels}',
 	'notify.labelsOff': '{labels} taken off',
 	'notify.mondayMorningWhatLastWeek':
@@ -2816,7 +2816,7 @@ export const messages: Catalogue = {
 	'rooms.tasks.sections': 'Tasks sections',
 	'rooms.tasks.tabs.activities': 'Activities',
 	'rooms.tasks.tabs.board': 'Board',
-	'rooms.tasks.tabs.plan': 'Plan',
+	'rooms.tasks.tabs.plan': 'Calendar',
 	'rooms.tasks.tabs.review': 'Review',
 	'rooms.tasks.tabs.todo': 'Tasks',
 	'rooms.tasks.title': 'Tasks',
@@ -4241,7 +4241,7 @@ export const messages: Catalogue = {
 	'todoRows.confirm': 'Confirm?',
 	'todoRows.createTodo': 'Create task',
 	'todoRows.delegateToADay': 'Delegate to a day',
-	'todoRows.delegatedToThisDay': 'On the plan this day',
+	'todoRows.delegatedToThisDay': 'On the calendar this day',
 	'todoRows.deleteSelectedWarning': 'Delete the selected tasks? This cannot be undone.',
 	'todoRows.doing': 'On it',
 	'todoRows.done': 'Done',
@@ -4251,7 +4251,7 @@ export const messages: Catalogue = {
 	'todoRows.hiddenByTheFilters': '{count} hidden by the filters.',
 	'todoRows.hideArchived': 'Hide archived',
 	'todoRows.hideCompleted': 'Hide completed',
-	'todoRows.itKeepsItsPlaceIn': 'It keeps its place in the list and gains a time on the plan.',
+	'todoRows.itKeepsItsPlaceIn': 'It keeps its place in the list and gains a time on the calendar.',
 	'todoRows.lastChanged': 'Last changed {when}',
 	'todoRows.lastDoneFirst': 'Last done first',
 	'todoRows.markComplete': 'Mark complete',
@@ -4417,7 +4417,7 @@ export const messages: Catalogue = {
 	'tour.giveItANumberIf': 'Give it a number if it has one',
 	'tour.goals': 'Goals',
 	'tour.gymGuitarReadABlock':
-		'“Gym”, “Guitar”, “Read”. A task block on the plan points at one of these, so a year of gym is one thing.',
+		'“Gym”, “Guitar”, “Read”. A task block on the calendar points at one of these, so a year of gym is one thing.',
 	'tour.hJKLMove':
 		'h j k l move between cards and columns, H and L carry the selected card with you, and c marks it done.',
 	'tour.habits': 'Habits',
@@ -4437,7 +4437,7 @@ export const messages: Catalogue = {
 	'tour.inventoryTheTripBody':
 		'Everything that has run low, with what it should cost. Tick each line in the shop and the count goes back up to what you keep; it works without a signal too.',
 	'tour.itBecomesABlockOn':
-		'It becomes a task block on the plan, beside everything else you are doing that day.',
+		'It becomes a task block on the calendar, beside everything else you are doing that day.',
 	'tour.itFansOutYourAccount':
 		'It fans out your account and settings, the tour for whatever screen you are on, the documentation, and the way to tell the operator something is wrong.',
 	'tour.itOpensTheTourFor':
@@ -4477,9 +4477,9 @@ export const messages: Catalogue = {
 	'tour.people': 'People',
 	'tour.picturesLiveInAlbumsPutting':
 		'Pictures live in albums. Putting one in a second album never copies it — one picture, two places.',
-	'tour.plan': 'Plan',
+	'tour.plan': 'Calendar',
 	'tour.planIsTheShapeOf':
-		'Plan is the shape of it, Board is today, To-do is everything with no date yet, History is what actually happened.',
+		'Calendar is the shape of it, Board is today, To-do is everything with no date yet, History is what actually happened.',
 	'tour.playItBackAndScrub':
 		'Play it back and drag along the bar. Discard costs nothing — nothing is sent until you save.',
 	'tour.preferences': 'Preferences',
@@ -4553,7 +4553,7 @@ export const messages: Catalogue = {
 	'tour.theRoomsOpenAroundYour':
 		'The rooms open around your finger and you release on the one you want. Faster than reading a list of ten words, once your hand knows where they are.',
 	'tour.theSameBlocksAsThe':
-		'The same task blocks as the plan, in the one form where you can pick one up and move it.',
+		'The same task blocks as the calendar, in the one form where you can pick one up and move it.',
 	'tour.theSameDaysAsAList': 'The same days, as a list',
 	'tour.theSameGestureForA':
 		'The same gesture, for a todo, an idea, a note or something to buy — without deciding where it belongs first.',

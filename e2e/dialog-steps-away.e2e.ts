@@ -162,7 +162,7 @@ test('the opener pressed again while the save is out opens a fresh dialog', asyn
 test('a block saved on the plan says so', async ({ page }) => {
 	test.setTimeout(180_000);
 	await register(page, testEmail('dialog-plan-toast'));
-	await visit(page, '/tasks/plan');
+	await visit(page, '/tasks/calendar');
 	await page.getByRole('button', { name: 'New task block' }).click();
 	await page.getByRole('button', { name: 'Once only' }).click();
 	// A category block needs nothing typed: the account's first category is chosen.

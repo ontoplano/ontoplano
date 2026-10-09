@@ -291,7 +291,7 @@ test.describe('between rooms', () => {
 	test('the screen leaving goes one way and the one arriving comes the other', async ({ page }) => {
 		test.setTimeout(180_000);
 		await register(page, testEmail('rooms'));
-		await visit(page, '/tasks/plan');
+		await visit(page, '/tasks/calendar');
 
 		/*
 		 * Everything the two screens do, recorded as they do it.

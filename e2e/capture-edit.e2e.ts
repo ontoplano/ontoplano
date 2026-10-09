@@ -100,8 +100,8 @@ test('quick capture can put a task block on the plan', async ({ page }) => {
 	await dialog.getByRole('button', { name: 'Save' }).click();
 	await expect(dialog).toBeHidden();
 
-	await page.getByRole('button', { name: 'Plan', exact: true }).click();
-	await expect(page).toHaveURL(new RegExp(`/tasks/plan\\?from=${date}`));
+	await page.getByRole('button', { name: 'Calendar', exact: true }).click();
+	await expect(page).toHaveURL(new RegExp(`/tasks/calendar\\?from=${date}`));
 	await expect(page.getByText('Plan the garden').first()).toBeVisible();
 	await page.getByText('Plan the garden', { exact: true }).first().click();
 	const block = page.getByRole('dialog');

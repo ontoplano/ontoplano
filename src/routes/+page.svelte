@@ -669,7 +669,7 @@
 				{#if data.taskSummary.total === 0}
 					{@render nothingYet(
 						t('home.nothingIsPlannedForToday'),
-						'/tasks/plan',
+						'/tasks/calendar',
 						t('home.openThePlan')
 					)}
 				{:else}
@@ -840,7 +840,7 @@
 		{#snippet card_nextDays()}
 			<Card title={t('home.nextThreeDays')} accent={SECTION_COLORS.planner}>
 				{#snippet actions()}
-					{@render openLink(resolve('/tasks/plan'))}
+					{@render openLink(resolve('/tasks/calendar'))}
 				{/snippet}
 				<div class="grid gap-3 sm:grid-cols-3">
 					{#each data.nextDays as day, ahead (day.date)}

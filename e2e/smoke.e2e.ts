@@ -17,9 +17,9 @@ import { visit } from './helpers/visit';
  */
 const ROUTES = [
 	'/',
-	'/tasks/plan',
-	'/tasks/plan?view=day',
-	'/tasks/plan?view=month',
+	'/tasks/calendar',
+	'/tasks/calendar?view=day',
+	'/tasks/calendar?view=month',
 	'/tasks/board',
 	'/tasks/todo',
 	'/tasks/activities',

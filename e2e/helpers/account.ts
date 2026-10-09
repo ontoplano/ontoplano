@@ -128,7 +128,7 @@ export async function register(
 		const remote = page.getByText('Remote worker', { exact: true });
 		if ((await remote.count()) > 0) await remote.click();
 		await page.getByRole('button', { name: 'Start planning' }).click();
-		await page.waitForURL((url) => url.pathname === '/tasks/plan');
+		await page.waitForURL((url) => url.pathname === '/tasks/calendar');
 	}
 
 	// And then the dashboard, which is where a person goes next and which is

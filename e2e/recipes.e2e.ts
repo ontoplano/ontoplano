@@ -307,11 +307,11 @@ test('the calendar button on a recipe puts it on a day', async ({ page }) => {
 
 	const plan = page.getByRole('dialog');
 	await plan.locator('[name="startTime"]').fill('19:30');
-	await plan.getByRole('button', { name: 'Put it on the plan' }).click();
+	await plan.getByRole('button', { name: 'Put it on the calendar' }).click();
 	await expect(plan).toBeHidden();
 
 	// It is a block on the plan like anything else, which is the whole claim.
-	await visit(page, '/tasks/plan');
+	await visit(page, '/tasks/calendar');
 	await expect(page.getByText('Leek soup').first()).toBeVisible();
 });
 

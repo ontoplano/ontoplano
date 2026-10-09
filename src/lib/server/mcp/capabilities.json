@@ -41,19 +41,19 @@
 			},
 			"app": {
 				"create": [
-					"src/routes/tasks/plan/+page.server.ts#create",
-					"src/routes/tasks/plan/+page.server.ts#createExceptional"
+					"src/routes/tasks/calendar/+page.server.ts#create",
+					"src/routes/tasks/calendar/+page.server.ts#createExceptional"
 				],
-				"read": ["src/routes/tasks/plan/+page.server.ts#load"],
+				"read": ["src/routes/tasks/calendar/+page.server.ts#load"],
 				"change": [
-					"src/routes/tasks/plan/+page.server.ts#update",
-					"src/routes/tasks/plan/+page.server.ts#updateExceptional"
+					"src/routes/tasks/calendar/+page.server.ts#update",
+					"src/routes/tasks/calendar/+page.server.ts#updateExceptional"
 				],
-				"archive": ["src/routes/tasks/plan/+page.server.ts#toggleActive"],
-				"unarchive": ["src/routes/tasks/plan/+page.server.ts#toggleActive"],
+				"archive": ["src/routes/tasks/calendar/+page.server.ts#toggleActive"],
+				"unarchive": ["src/routes/tasks/calendar/+page.server.ts#toggleActive"],
 				"delete": [
-					"src/routes/tasks/plan/+page.server.ts#delete",
-					"src/routes/tasks/plan/+page.server.ts#deleteExceptional"
+					"src/routes/tasks/calendar/+page.server.ts#delete",
+					"src/routes/tasks/calendar/+page.server.ts#deleteExceptional"
 				]
 			}
 		},

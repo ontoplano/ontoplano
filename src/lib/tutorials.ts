@@ -145,7 +145,7 @@ export const TUTORIALS: Record<string, Tutorial> = {
 		]
 	},
 
-	'/tasks/plan': {
+	'/tasks/calendar': {
 		label: 'tour.plan',
 		steps: [
 			{

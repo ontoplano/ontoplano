@@ -243,20 +243,20 @@ test.describe('one account cannot reach another account by id', () => {
 		},
 		{
 			name: 'weekly slot',
-			page: '/tasks/plan',
+			page: '/tasks/calendar',
 			payloadKey: 'slots',
 			create: {
-				path: '/tasks/plan?/create',
+				path: '/tasks/calendar?/create',
 				form: { weekday: '1', startTime: '09:00', mode: 'category', categoryId: '' }
 			},
-			attack: (id) => ({ path: '/tasks/plan?/delete', form: { id } })
+			attack: (id) => ({ path: '/tasks/calendar?/delete', form: { id } })
 		},
 		{
 			name: 'planning scheme',
-			page: '/tasks/plan',
+			page: '/tasks/calendar',
 			payloadKey: 'schemes',
-			create: { path: '/tasks/plan?/saveScheme', form: { label: "alice's scheme" } },
-			attack: (id) => ({ path: '/tasks/plan?/loadScheme', form: { schemeId: id } })
+			create: { path: '/tasks/calendar?/saveScheme', form: { label: "alice's scheme" } },
+			attack: (id) => ({ path: '/tasks/calendar?/loadScheme', form: { schemeId: id } })
 		},
 		{
 			name: 'quote',

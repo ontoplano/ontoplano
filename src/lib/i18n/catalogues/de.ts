@@ -199,7 +199,7 @@ export const messages: Catalogue = {
 		'Optional — ein Assistent kann Ihre Woche einrichten, indem er Sie dazu befragt.',
 	'app.people': 'Personen',
 	'app.picture': 'Bild',
-	'app.plan': 'Plan',
+	'app.plan': 'Kalender',
 	'app.preferences': 'Einstellungen',
 	'app.privacy': 'Datenschutz',
 	'app.quote': 'Zitat',
@@ -340,7 +340,7 @@ export const messages: Catalogue = {
 	'capture.addedToWithContent': 'Zu {into} hinzugefügt: {content}',
 	'capture.diaryNote': 'Tagebucheintrag',
 	'capture.newThing': 'Neu: {thing}',
-	'capture.planDestination': 'deinem Plan',
+	'capture.planDestination': 'deinem Kalender',
 	'captureDialog.notWrittenDown': 'Das wurde nicht aufgeschrieben.',
 	'captureSettings.atLeastOne': 'mindestens eins',
 	'captureSettings.intro': 'Was das +-Rad enthält und wohin geht, was Sie darüber schreiben.',
@@ -1266,7 +1266,7 @@ export const messages: Catalogue = {
 	'health.recipes.id.ingredient': 'Zutat',
 	'health.recipes.id.ingredients': 'Zutaten',
 	'health.recipes.id.itBecomesABlockOn':
-		'Es wird ein Aufgabenblock im Plan, wie alles andere, dem Sie Zeit geben.',
+		'Es wird ein Aufgabenblock im Kalender, wie alles andere, dem Sie Zeit geben.',
 	'health.recipes.id.itsIngredientsStayOnThe':
 		'Seine Zutaten bleiben auf der Einkaufsliste — es sind Dinge, die Sie kaufen, nicht Teile des Rezepts.',
 	'health.recipes.id.keepIt': 'Behalten',
@@ -1293,7 +1293,7 @@ export const messages: Catalogue = {
 		'Bilder hier haben höchstens {most} KB, und {name} hat {size} KB.',
 	'health.recipes.id.pictures': 'Bilder',
 	'health.recipes.id.putItOnADay': 'Auf einen Tag legen',
-	'health.recipes.id.putItOnThePlan': 'Auf den Plan setzen',
+	'health.recipes.id.putItOnThePlan': 'In den Kalender eintragen',
 	'health.recipes.id.ranOutOf': '{name} ist ausgegangen',
 	'health.recipes.id.removeIt': 'Entfernen',
 	'health.recipes.id.removeThisPicture': 'Dieses Bild entfernen',
@@ -1310,7 +1310,7 @@ export const messages: Catalogue = {
 	'health.recipes.id.writeIt': 'Schreiben',
 	'health.recipes.ingredients': '{ingredients} Zutaten',
 	'health.recipes.itBecomesABlockOn':
-		'Es wird zu einem Aufgabenblock im Plan, wie alles andere, dem Sie Zeit widmen.',
+		'Es wird zu einem Aufgabenblock im Kalender, wie alles andere, dem Sie Zeit widmen.',
 	'health.recipes.markdownHeadingsListsNumbersIngredients':
 		'Markdown: Überschriften, Listen, Nummerierungen. Die Zutaten kommen danach.',
 	'health.recipes.method': 'Zubereitung',
@@ -1332,7 +1332,7 @@ export const messages: Catalogue = {
 	'health.recipes.orderTitle': 'Name',
 	'health.recipes.pasteThePageHere': 'Seite hier einfügen',
 	'health.recipes.putItOnADay': 'Auf einen Tag legen',
-	'health.recipes.putItOnThePlan': 'Auf den Plan setzen',
+	'health.recipes.putItOnThePlan': 'In den Kalender eintragen',
 	'health.recipes.putOnADay': '{title} auf einen Tag legen',
 	'health.recipes.readIt': 'Lesen',
 	'health.recipes.reading': 'Wird gelesen…',
@@ -1384,7 +1384,7 @@ export const messages: Catalogue = {
 	'health.workouts.isRemovedForGoodThe':
 		'wird endgültig entfernt. Das Training\n\t\t\tselbst bleibt bestehen.',
 	'health.workouts.itGainsATimeOn':
-		'Es bekommt eine Zeit im Plan. Wird es dort abgeschlossen, ist das Training abgeschlossen.',
+		'Es bekommt eine Zeit im Kalender. Wird es dort abgeschlossen, ist das Training abgeschlossen.',
 	'health.workouts.keepIt': 'Behalten',
 	'health.workouts.km': 'km',
 	'health.workouts.lastDone': ' · zuletzt gemacht am {date}',
@@ -1559,7 +1559,7 @@ export const messages: Catalogue = {
 	'home.oneOff': 'einmalig',
 	'home.onlyWhatBrokeIsSent': 'Nur was kaputt ist, wird gesendet, nie was Sie geschrieben haben.',
 	'home.open': 'Öffnen →',
-	'home.openThePlan': 'Den Plan öffnen',
+	'home.openThePlan': 'Den Kalender öffnen',
 	'home.paidOfExpected': '{currency} bezahlt, {currency2} erwartet',
 	'home.preferences': 'Einstellungen',
 	'home.primary': 'Primär',
@@ -2507,7 +2507,7 @@ export const messages: Catalogue = {
 	'notifications.title': 'Benachrichtigungen',
 	'notifications.unread': '{count} ungelesen',
 	'notify.everyBlockOnThePlan':
-		'Jeder Aufgabenblock im Plan meldet sich, wenn es so weit ist. Ohne das melden sich nur die Aufgabenblöcke, denen Sie einen Vorlauf gegeben haben.',
+		'Jeder Aufgabenblock im Kalender meldet sich, wenn es so weit ist. Ohne das melden sich nur die Aufgabenblöcke, denen Sie einen Vorlauf gegeben haben.',
 	'notify.labelsAs': 'als {labels}',
 	'notify.labelsOff': '{labels} entfernt',
 	'notify.mondayMorningWhatLastWeek':
@@ -2914,7 +2914,7 @@ export const messages: Catalogue = {
 	'rooms.tasks.sections': 'Aufgaben-Bereiche',
 	'rooms.tasks.tabs.activities': 'Aktivitäten',
 	'rooms.tasks.tabs.board': 'Board',
-	'rooms.tasks.tabs.plan': 'Plan',
+	'rooms.tasks.tabs.plan': 'Kalender',
 	'rooms.tasks.tabs.review': 'Rückblick',
 	'rooms.tasks.tabs.todo': 'Aufgaben',
 	'rooms.tasks.title': 'Aufgaben',
@@ -4395,7 +4395,7 @@ export const messages: Catalogue = {
 	'todoRows.confirm': 'Bestätigen?',
 	'todoRows.createTodo': 'Aufgabe erstellen',
 	'todoRows.delegateToADay': 'Einem Tag zuweisen',
-	'todoRows.delegatedToThisDay': 'An diesem Tag im Plan',
+	'todoRows.delegatedToThisDay': 'An diesem Tag im Kalender',
 	'todoRows.deleteSelectedWarning':
 		'Ausgewählte Aufgaben löschen? Dies kann nicht rückgängig gemacht werden.',
 	'todoRows.doing': 'Dran',
@@ -4406,7 +4406,8 @@ export const messages: Catalogue = {
 	'todoRows.hiddenByTheFilters': '{count} von den Filtern ausgeblendet.',
 	'todoRows.hideArchived': 'Archivierte ausblenden',
 	'todoRows.hideCompleted': 'Abgeschlossene ausblenden',
-	'todoRows.itKeepsItsPlaceIn': 'Es behält seinen Platz in der Liste und erhält eine Zeit im Plan.',
+	'todoRows.itKeepsItsPlaceIn':
+		'Es behält seinen Platz in der Liste und erhält eine Zeit im Kalender.',
 	'todoRows.lastChanged': 'Zuletzt geändert {when}',
 	'todoRows.lastDoneFirst': 'Zuletzt erledigt zuerst',
 	'todoRows.markComplete': 'Als erledigt markieren',
@@ -4574,7 +4575,7 @@ export const messages: Catalogue = {
 	'tour.giveItANumberIf': 'Geben Sie ihm eine Zahl, wenn es eine hat',
 	'tour.goals': 'Ziele',
 	'tour.gymGuitarReadABlock':
-		'„Fitnessstudio“, „Gitarre“, „Lesen“. Ein Aufgabenblock im Plan verweist auf eines davon, sodass ein Jahr Fitnessstudio ein einziges Ding ist.',
+		'„Fitnessstudio“, „Gitarre“, „Lesen“. Ein Aufgabenblock im Kalender verweist auf eines davon, sodass ein Jahr Fitnessstudio ein einziges Ding ist.',
 	'tour.hJKLMove':
 		'h j k l bewegen zwischen Karten und Spalten, H und L nehmen die ausgewählte Karte mit, und c markiert sie als erledigt.',
 	'tour.habits': 'Gewohnheiten',
@@ -4594,7 +4595,7 @@ export const messages: Catalogue = {
 	'tour.inventoryTheTripBody':
 		'Alles, was knapp geworden ist, mit dem, was es kosten sollte. Haken Sie jede Zeile im Laden ab, und der Bestand geht wieder auf das, was Sie vorrätig halten; das klappt auch ohne Empfang.',
 	'tour.itBecomesABlockOn':
-		'Es wird zu einem Aufgabenblock im Plan, neben allem anderen, was Sie an diesem Tag tun.',
+		'Es wird zu einem Aufgabenblock im Kalender, neben allem anderen, was Sie an diesem Tag tun.',
 	'tour.itFansOutYourAccount':
 		'Es fächert Ihr Konto und die Einstellungen auf, die Tour für den aktuellen Bildschirm, die Dokumentation, und den Weg, dem Betreiber ein Problem zu melden.',
 	'tour.itOpensTheTourFor':
@@ -4636,9 +4637,9 @@ export const messages: Catalogue = {
 	'tour.people': 'Personen',
 	'tour.picturesLiveInAlbumsPutting':
 		'Bilder leben in Alben. Ein Bild in ein zweites Album zu legen kopiert es nie — ein Bild, zwei Orte.',
-	'tour.plan': 'Plan',
+	'tour.plan': 'Kalender',
 	'tour.planIsTheShapeOf':
-		'Plan ist die Form davon, Board ist heute, Aufgaben ist alles ohne Datum, Verlauf ist, was tatsächlich passiert ist.',
+		'Kalender ist die Form davon, Board ist heute, Aufgaben ist alles ohne Datum, Verlauf ist, was tatsächlich passiert ist.',
 	'tour.playItBackAndScrub':
 		'Hören Sie sie sich an und ziehen Sie an der Leiste entlang. Verwerfen kostet nichts — nichts wird gesendet, bevor Sie speichern.',
 	'tour.preferences': 'Einstellungen',
@@ -4713,7 +4714,7 @@ export const messages: Catalogue = {
 	'tour.theRoomsOpenAroundYour':
 		'Die Bereiche öffnen sich um Ihren Finger, und Sie lassen bei dem los, den Sie wollen. Schneller als eine Liste von zehn Wörtern zu lesen, sobald Ihre Hand weiß, wo sie sind.',
 	'tour.theSameBlocksAsThe':
-		'Dieselben Aufgabenblöcke wie im Plan, in der einen Form, in der Sie einen aufnehmen und verschieben können.',
+		'Dieselben Aufgabenblöcke wie im Kalender, in der einen Form, in der Sie einen aufnehmen und verschieben können.',
 	'tour.theSameDaysAsAList': 'Dieselben Tage als Liste',
 	'tour.theSameGestureForA':
 		'Dieselbe Geste, für eine Aufgabe, eine Idee, eine Notiz oder etwas zum Kaufen — ohne vorher zu entscheiden, wohin es gehört.',

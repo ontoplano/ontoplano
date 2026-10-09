@@ -25,7 +25,7 @@ function weekLater(date: string): string {
 	return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 
-const dayView = (date: string) => `/tasks/plan?view=day&from=${date}`;
+const dayView = (date: string) => `/tasks/calendar?view=day&from=${date}`;
 
 /** The block on the grid, by what it says. */
 const block = (page: Page, label: string) =>

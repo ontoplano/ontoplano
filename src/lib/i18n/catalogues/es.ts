@@ -198,7 +198,7 @@ export const messages: Catalogue = {
 		'Opcional — un asistente puede armar tu semana haciéndote preguntas sobre ella.',
 	'app.people': 'Personas',
 	'app.picture': 'Foto',
-	'app.plan': 'Plan',
+	'app.plan': 'Calendario',
 	'app.preferences': 'Preferencias',
 	'app.privacy': 'Privacidad',
 	'app.quote': 'Cita',
@@ -337,7 +337,7 @@ export const messages: Catalogue = {
 	'capture.addedToWithContent': 'Agregado a {into}: {content}',
 	'capture.diaryNote': 'Nota de diario',
 	'capture.newThing': 'Nuevo {thing}',
-	'capture.planDestination': 'tu plan',
+	'capture.planDestination': 'tu calendario',
 	'captureDialog.notWrittenDown': 'Eso no quedó escrito.',
 	'captureSettings.atLeastOne': 'al menos una',
 	'captureSettings.intro': 'Qué tiene la rueda del +, y adónde va lo que escribes desde ella.',
@@ -1251,7 +1251,7 @@ export const messages: Catalogue = {
 	'health.recipes.id.ingredient': 'Ingrediente',
 	'health.recipes.id.ingredients': 'Ingredientes',
 	'health.recipes.id.itBecomesABlockOn':
-		'Se convierte en un bloque de tarea en el plan, como cualquier otra cosa a la que le dediques tiempo.',
+		'Se convierte en un bloque de tarea en el calendario, como cualquier otra cosa a la que le dediques tiempo.',
 	'health.recipes.id.itsIngredientsStayOnThe':
 		'Sus ingredientes se quedan en la lista de compras — son cosas que compras, no partes de la receta.',
 	'health.recipes.id.keepIt': 'Conservarla',
@@ -1277,7 +1277,7 @@ export const messages: Catalogue = {
 		'Las imágenes aquí tienen como máximo {most} KB, y {name} tiene {size} KB.',
 	'health.recipes.id.pictures': 'Fotos',
 	'health.recipes.id.putItOnADay': 'Ponlo en un día',
-	'health.recipes.id.putItOnThePlan': 'Ponlo en el plan',
+	'health.recipes.id.putItOnThePlan': 'Ponlo en el calendario',
 	'health.recipes.id.ranOutOf': 'Se acabó {name}',
 	'health.recipes.id.removeIt': 'Quitarlo',
 	'health.recipes.id.removeThisPicture': 'Quitar esta foto',
@@ -1294,7 +1294,7 @@ export const messages: Catalogue = {
 	'health.recipes.id.writeIt': 'Escribirlo',
 	'health.recipes.ingredients': '{ingredients} ingredientes',
 	'health.recipes.itBecomesABlockOn':
-		'Se convierte en un bloque de tarea del plan, como cualquier otra cosa a la que le dedicas tiempo.',
+		'Se convierte en un bloque de tarea del calendario, como cualquier otra cosa a la que le dedicas tiempo.',
 	'health.recipes.markdownHeadingsListsNumbersIngredients':
 		'Markdown: encabezados, listas, números. Los ingredientes van después.',
 	'health.recipes.method': 'Preparación',
@@ -1319,7 +1319,7 @@ export const messages: Catalogue = {
 	'health.recipes.orderTitle': 'Nombre',
 	'health.recipes.pasteThePageHere': 'Pega la página aquí',
 	'health.recipes.putItOnADay': 'Ponlo en un día',
-	'health.recipes.putItOnThePlan': 'Ponlo en el plan',
+	'health.recipes.putItOnThePlan': 'Ponlo en el calendario',
 	'health.recipes.putOnADay': 'Poner {title} en un día',
 	'health.recipes.readIt': 'Leerlo',
 	'health.recipes.reading': 'Leyendo…',
@@ -1371,7 +1371,7 @@ export const messages: Catalogue = {
 	'health.workouts.isRemovedForGoodThe':
 		'se quita para siempre. El entrenamiento\n\t\t\ten sí se mantiene.',
 	'health.workouts.itGainsATimeOn':
-		'Gana un horario en el plan. Terminarlo ahí termina el entrenamiento.',
+		'Gana un horario en el calendario. Terminarlo ahí termina el entrenamiento.',
 	'health.workouts.keepIt': 'Conservarlo',
 	'health.workouts.km': 'km',
 	'health.workouts.lastDone': ' · hecho por última vez {date}',
@@ -1546,7 +1546,7 @@ export const messages: Catalogue = {
 	'home.oneOff': 'puntual',
 	'home.onlyWhatBrokeIsSent': 'Solo se envía lo que falló, nunca lo que escribiste.',
 	'home.open': 'Abrir →',
-	'home.openThePlan': 'Abrir el plan',
+	'home.openThePlan': 'Abrir el calendario',
 	'home.paidOfExpected': '{currency} pagado de {currency2} esperado',
 	'home.preferences': 'Preferencias',
 	'home.primary': 'Principal',
@@ -2482,7 +2482,7 @@ export const messages: Catalogue = {
 	'notifications.title': 'Notificaciones',
 	'notifications.unread': '{count} sin leer',
 	'notify.everyBlockOnThePlan':
-		'Cada bloque de tarea del plan avisa cuando llega su hora. Sin esto, solo avisan los bloques de tarea a los que diste un tiempo de anticipación.',
+		'Cada bloque de tarea del calendario avisa cuando llega su hora. Sin esto, solo avisan los bloques de tarea a los que diste un tiempo de anticipación.',
 	'notify.labelsAs': 'como {labels}',
 	'notify.labelsOff': '{labels} quitado',
 	'notify.mondayMorningWhatLastWeek':
@@ -2905,7 +2905,7 @@ export const messages: Catalogue = {
 	'rooms.tasks.sections': 'Secciones de tareas',
 	'rooms.tasks.tabs.activities': 'Actividades',
 	'rooms.tasks.tabs.board': 'Tablero',
-	'rooms.tasks.tabs.plan': 'Plan',
+	'rooms.tasks.tabs.plan': 'Calendario',
 	'rooms.tasks.tabs.review': 'Revisión',
 	'rooms.tasks.tabs.todo': 'Tareas',
 	'rooms.tasks.title': 'Tareas',
@@ -4363,7 +4363,7 @@ export const messages: Catalogue = {
 	'todoRows.confirm': '¿Confirmar?',
 	'todoRows.createTodo': 'Crear tarea',
 	'todoRows.delegateToADay': 'Delegar a un día',
-	'todoRows.delegatedToThisDay': 'En el plan este día',
+	'todoRows.delegatedToThisDay': 'En el calendario este día',
 	'todoRows.deleteSelectedWarning':
 		'¿Eliminar las tareas seleccionadas? Esta acción no se puede deshacer.',
 	'todoRows.doing': 'En ello',
@@ -4374,7 +4374,7 @@ export const messages: Catalogue = {
 	'todoRows.hiddenByTheFilters': '{count} ocultas por los filtros.',
 	'todoRows.hideArchived': 'Ocultar archivado',
 	'todoRows.hideCompleted': 'Ocultar completado',
-	'todoRows.itKeepsItsPlaceIn': 'Mantiene su lugar en la lista y gana una hora en el plan.',
+	'todoRows.itKeepsItsPlaceIn': 'Mantiene su lugar en la lista y gana una hora en el calendario.',
 	'todoRows.lastChanged': 'Modificada {when}',
 	'todoRows.lastDoneFirst': 'Último hecho primero',
 	'todoRows.markComplete': 'Marcar como completado',
@@ -4542,7 +4542,7 @@ export const messages: Catalogue = {
 	'tour.giveItANumberIf': 'Dale un número si tiene uno',
 	'tour.goals': 'Metas',
 	'tour.gymGuitarReadABlock':
-		'“Gimnasio”, “Guitarra”, “Leer”. Un bloque de tarea en el plan apunta a uno de estos, así que un año de gimnasio es una sola cosa.',
+		'“Gimnasio”, “Guitarra”, “Leer”. Un bloque de tarea en el calendario apunta a uno de estos, así que un año de gimnasio es una sola cosa.',
 	'tour.hJKLMove':
 		'h j k l se mueven entre tarjetas y columnas, H y L llevan la tarjeta seleccionada contigo, y c la marca como hecha.',
 	'tour.habits': 'Hábitos',
@@ -4562,7 +4562,7 @@ export const messages: Catalogue = {
 	'tour.inventoryTheTripBody':
 		'Todo lo que se está acabando, con lo que debería costar. Marca cada línea en la tienda y la cantidad vuelve a lo que tienes siempre; también funciona sin cobertura.',
 	'tour.itBecomesABlockOn':
-		'Se convierte en un bloque de tarea en el plan, junto a todo lo demás que haces ese día.',
+		'Se convierte en un bloque de tarea en el calendario, junto a todo lo demás que haces ese día.',
 	'tour.itFansOutYourAccount':
 		'Despliega tu cuenta y configuración, el tour de la pantalla en la que estás, la documentación, y la forma de avisarle al operador que algo anda mal.',
 	'tour.itOpensTheTourFor':
@@ -4604,9 +4604,9 @@ export const messages: Catalogue = {
 	'tour.people': 'Personas',
 	'tour.picturesLiveInAlbumsPutting':
 		'Las fotos viven en álbumes. Ponerla en un segundo álbum nunca la copia — una foto, dos lugares.',
-	'tour.plan': 'Plan',
+	'tour.plan': 'Calendario',
 	'tour.planIsTheShapeOf':
-		'Plan es la forma de todo eso, Tablero es hoy, Por hacer es todo lo que aún no tiene fecha, Historial es lo que realmente pasó.',
+		'Calendario es la forma de todo eso, Tablero es hoy, Por hacer es todo lo que aún no tiene fecha, Historial es lo que realmente pasó.',
 	'tour.playItBackAndScrub':
 		'Reprodúcela y arrastra en la barra. Descartar no cuesta nada — no se envía nada hasta que guardas.',
 	'tour.preferences': 'Preferencias',
@@ -4680,7 +4680,7 @@ export const messages: Catalogue = {
 	'tour.theRoomsOpenAroundYour':
 		'Las secciones se abren alrededor de tu dedo y sueltas en la que quieres. Más rápido que leer una lista de diez palabras, una vez que tu mano sabe dónde están.',
 	'tour.theSameBlocksAsThe':
-		'Los mismos bloques de tarea que el plan, en la única forma en la que puedes tomar uno y moverlo.',
+		'Los mismos bloques de tarea que el calendario, en la única forma en la que puedes tomar uno y moverlo.',
 	'tour.theSameDaysAsAList': 'Los mismos días, en lista',
 	'tour.theSameGestureForA':
 		'El mismo gesto, para una tarea, una idea, una nota o algo que comprar — sin decidir antes dónde va.',

@@ -7,7 +7,7 @@ test('the plan goes full screen and comes back', async ({ page }) => {
 	test.setTimeout(120_000);
 	await page.setViewportSize({ width: 1400, height: 900 });
 	await register(page, testEmail('plan-full'));
-	await visit(page, '/tasks/plan');
+	await visit(page, '/tasks/calendar');
 
 	await page.getByRole('button', { name: 'Full screen' }).click();
 	await expect

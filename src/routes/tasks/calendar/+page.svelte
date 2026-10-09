@@ -227,7 +227,7 @@
 		if (!data.range.isCurrent)
 			parts.push(`from=${viewMode === 'month' ? data.range.month : data.range.from}`);
 		if (!data.asList) parts.push(`${LIST_PARAM}=${LIST_VALUE}`);
-		goto(resolve(`/tasks/plan?${parts.join('&')}`), {
+		goto(resolve(`/tasks/calendar?${parts.join('&')}`), {
 			replaceState: true,
 			keepFocus: true,
 			noScroll: true
@@ -1549,7 +1549,7 @@
 		const parts: string[] = [`view=${viewMode}`];
 		if (from) parts.push(`from=${from}`);
 		parts.push(...listPart);
-		return resolve(`/tasks/plan?${parts.join('&')}`);
+		return resolve(`/tasks/calendar?${parts.join('&')}`);
 	}
 
 	/*
@@ -1676,7 +1676,7 @@
 		)
 			return;
 
-		const action = getAction('/tasks/plan', e);
+		const action = getAction('/tasks/calendar', e);
 		if (!action) {
 			if (showCopyPanel) {
 				return;
@@ -1887,7 +1887,7 @@
 		const parts: string[] = [`view=${mode}`];
 		if (!data.range.isCurrent) parts.push(`from=${data.range.from}`);
 		parts.push(...listPart);
-		goto(resolve(`/tasks/plan?${parts.join('&')}`), {
+		goto(resolve(`/tasks/calendar?${parts.join('&')}`), {
 			replaceState: true,
 			keepFocus: true,
 			noScroll: true
@@ -2212,7 +2212,7 @@
 	/** A day's own time grid, where a block is drawn out or a todo placed. */
 	function openDay(date: string) {
 		pendingView = 'day';
-		goto(resolve(`/tasks/plan?view=day&from=${date}`), { keepFocus: true, noScroll: true });
+		goto(resolve(`/tasks/calendar?view=day&from=${date}`), { keepFocus: true, noScroll: true });
 	}
 
 	/** Marks changed here and not yet reloaded — drawn at once. */

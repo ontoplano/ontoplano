@@ -18,7 +18,7 @@ for (const [name, width] of [
 		await page.setViewportSize({ width, height: 844 });
 		await register(page, testEmail(`plan-list-${name}`));
 
-		await visit(page, '/tasks/plan?view=week');
+		await visit(page, '/tasks/calendar?view=week');
 		await expect(page.locator('.plan-agenda')).toHaveCount(0);
 		await expect(page.locator('.ec')).toBeVisible();
 		if (name === 'phone') await page.getByRole('button', { name: 'More' }).click();

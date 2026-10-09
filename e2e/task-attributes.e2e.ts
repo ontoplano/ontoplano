@@ -95,7 +95,7 @@ for (const { name, viewport } of WIDTHS) {
 				const d = new Date();
 				return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 			});
-			await visit(page, `/tasks/plan?view=day&from=${today}`);
+			await visit(page, `/tasks/calendar?view=day&from=${today}`);
 
 			await page.getByRole('button', { name: 'New task block' }).click();
 			const form = page.getByRole('dialog').first();
