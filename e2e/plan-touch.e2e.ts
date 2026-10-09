@@ -123,7 +123,7 @@ test.describe('with a finger', () => {
 		await expect(page.locator('.ec-event').filter({ hasText: 'Garden planning' })).toBeVisible();
 	});
 
-	test('the short sheet stays short and scrolls with a keyboard open', async ({ page }) => {
+	test('the short sheet fills what the keyboard leaves and scrolls', async ({ page }) => {
 		await register(page, testEmail('plan-sheet-scroll'));
 		await visit(page, '/tasks/calendar');
 		await page.getByRole('button', { name: 'New task block' }).click();
@@ -139,12 +139,50 @@ test.describe('with a finger', () => {
 			viewport.dispatchEvent(new Event('resize'));
 		});
 		await expect(dialog).toHaveClass(/peek/);
+		// Half of what the keyboard leaves is a header and one field; the sheet
+		// takes all of it instead.
 		await expect
 			.poll(() => dialog.locator('.panel').evaluate((el) => el.getBoundingClientRect().height))
-			.toBeLessThanOrEqual((844 - 320) * 0.55);
+			.toBeGreaterThan((844 - 320) * 0.9);
 		await expect
 			.poll(() => content.evaluate((el) => el.getBoundingClientRect().bottom))
 			.toBeLessThanOrEqual(844 - 320);
+		// The picker, the name and its category are all above the keyboard.
+		for (const field of ['[data-picker="activityId"]', '[name="newActivityCategoryId"]']) {
+			const bottom = await dialog
+				.locator(field)
+				.evaluate((el) => el.getBoundingClientRect().bottom);
+			expect(bottom).toBeLessThanOrEqual(844 - 320);
+		}
+
+		/*
+		 * The Android app pans instead of resizing: the visible part moves down
+		 * and the sheet has to move with it, or it ends that far above the
+		 * keyboard with the calendar showing in the gap.
+		 */
+		await page.evaluate(() => {
+			const viewport = window.visualViewport!;
+			Object.defineProperty(viewport, 'height', {
+				configurable: true,
+				value: window.innerHeight - 320 - 150
+			});
+			Object.defineProperty(viewport, 'offsetTop', { configurable: true, value: 150 });
+			viewport.dispatchEvent(new Event('scroll'));
+		});
+		await expect.poll(() => dialog.evaluate((el) => el.getBoundingClientRect().top)).toBe(150);
+		await expect
+			.poll(() => content.evaluate((el) => el.getBoundingClientRect().bottom))
+			.toBeLessThanOrEqual(844 - 320);
+		await page.evaluate(() => {
+			const viewport = window.visualViewport!;
+			Object.defineProperty(viewport, 'height', {
+				configurable: true,
+				value: window.innerHeight - 320
+			});
+			Object.defineProperty(viewport, 'offsetTop', { configurable: true, value: 0 });
+			viewport.dispatchEvent(new Event('resize'));
+		});
+		await expect.poll(() => dialog.evaluate((el) => el.getBoundingClientRect().top)).toBe(0);
 		await expect(
 			dialog.locator('header').first().getByRole('button', { name: 'Add', exact: true })
 		).toBeVisible();
@@ -190,6 +228,38 @@ test.describe('with a finger', () => {
 		await expect(dialog).not.toHaveClass(/peek/);
 		await page.setViewportSize({ width: 1200, height: 900 });
 		await page.screenshot({ path: 'test-results/plan-desktop-dialog.png', animations: 'disabled' });
+	});
+
+	/*
+	 * A real tap, not two dispatched pointer events: a finger also sends the
+	 * tap again as mouse events once it lifts, and those landed on the sheet
+	 * and took focus out of the name field — no keyboard, a second tap needed.
+	 */
+	test('a real tap opens the sheet on the activity, focused', async ({ page }) => {
+		await register(page, testEmail('plan-real-tap'));
+		await visit(page, '/tasks/calendar');
+		const body = page.locator('.ec-body').first();
+		const box = (await body.boundingBox())!;
+		await page.touchscreen.tap(box.x + box.width / 2, box.y + 60);
+
+		const dialog = page.getByRole('dialog', { name: 'New task block' });
+		await expect(dialog).toBeVisible();
+		const name = dialog.locator('[name="newActivityName"]');
+		await expect(name).toBeFocused();
+		await page.waitForTimeout(400);
+		await expect(name).toBeFocused();
+
+		// The activity is the first thing in the sheet, with nothing above it.
+		const first = await dialog
+			.locator('.modal-content form')
+			.evaluate((form) =>
+				form
+					.querySelector('[data-picker], input:not([type=hidden]), select')
+					?.closest('[data-picker]')
+					?.getAttribute('data-picker')
+			);
+		expect(first).toBe('activityId');
+		expect(await dialog.locator('.modal-content').evaluate((el) => el.scrollTop)).toBe(0);
 	});
 
 	test('swiping up on the sheet header expands it', async ({ page }) => {
@@ -275,7 +345,7 @@ test('dragging a block asks whether to move or copy it', async ({ page }) => {
 	await page.getByRole('button', { name: 'New task block' }).click();
 	const editor = page.getByRole('dialog', { name: 'New task block' });
 	await editor.locator('[name="newActivityName"]').fill('Move or copy me');
-	await editor.getByRole('button', { name: 'Add repeating task block' }).click();
+	await editor.getByRole('button', { name: 'Add', exact: true }).click();
 	await expect(editor).toBeHidden();
 	const block = page
 		.locator('.ec-event.ec-draggable')
@@ -435,7 +505,10 @@ test.describe('an existing task', () => {
 			'aria-pressed',
 			'true'
 		);
-		await page.getByRole('button', { name: 'Add one-off' }).click();
+		await page
+			.getByRole('dialog', { name: 'New task block' })
+			.getByRole('button', { name: 'Add', exact: true })
+			.click();
 
 		await expect(page.locator('.ec-event').filter({ hasText: 'call the glazier' })).toBeVisible();
 	});

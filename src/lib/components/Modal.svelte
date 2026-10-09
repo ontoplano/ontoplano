@@ -3,7 +3,7 @@
 	import { BackCloses } from '$lib/back-closes';
 	import Banner from '$lib/components/Banner.svelte';
 	import { isPhone } from '$lib/breakpoints';
-	import { panelHeight, readViewport } from '$lib/keyboard';
+	import { panelHeight, panelTop, readViewport } from '$lib/keyboard';
 	import { useT } from '$lib/i18n';
 	import { say, spokenCount } from '$lib/said.svelte';
 
@@ -33,6 +33,8 @@
 	 * Null the rest of the time, so the CSS variable follows `100dvh` on rotation.
 	 */
 	let keyboardHeight = $state<number | null>(null);
+	/** Where the visible part starts while the keyboard is up — see `panelTop`. */
+	let keyboardTop = $state(0);
 
 	$effect(() => {
 		if (!open || typeof window === 'undefined' || !window.visualViewport) return;
@@ -41,6 +43,7 @@
 		const update = () => {
 			const reading = readViewport();
 			keyboardHeight = reading ? panelHeight(reading) : null;
+			keyboardTop = reading ? panelTop(reading) : 0;
 		};
 
 		update();
@@ -53,6 +56,7 @@
 			viewport.removeEventListener('resize', update);
 			viewport.removeEventListener('scroll', update);
 			keyboardHeight = null;
+			keyboardTop = 0;
 		};
 	});
 
@@ -171,7 +175,7 @@
 		if (keyboardHeight === null || !open || !phonePeek || !phonePeekFocus) return;
 		const frame = requestAnimationFrame(() => {
 			const field = dialog?.querySelector<HTMLElement>(phonePeekFocus);
-			if (field && document.activeElement === field) field.scrollIntoView({ block: 'center' });
+			if (field && document.activeElement === field) field.scrollIntoView({ block: 'nearest' });
 		});
 		return () => cancelAnimationFrame(frame);
 	});
@@ -261,7 +265,7 @@
 		// `preventScroll`, because this element is inside the box the app
 		// scrolls and focusing it otherwise drags that box to the top.
 		field?.focus({ preventScroll: true });
-		if (phonePeek && isPhone() && phonePeekFocus) field?.scrollIntoView({ block: 'center' });
+		if (phonePeek && isPhone() && phonePeekFocus) field?.scrollIntoView({ block: 'nearest' });
 	}
 
 	/**
@@ -402,6 +406,7 @@
 <dialog
 	bind:this={dialog}
 	class:peek={phonePeek && !peekExpanded}
+	class:keyboard={keyboardHeight !== null}
 	onclose={handleNativeClose}
 	onpointerdown={handlePointerDown}
 	onclick={handleClick}
@@ -410,7 +415,7 @@
 	data-away={away ? '' : undefined}
 	style="--modal-width: calc({WIDTHS[size]} + {widened}px); --modal-viewport-height: {keyboardHeight
 		? `${keyboardHeight}px`
-		: '100dvh'}"
+		: '100dvh'}; --modal-viewport-top: {keyboardTop}px"
 >
 	{#if open || away}
 		<div
@@ -538,6 +543,7 @@
 	dialog {
 		position: fixed;
 		inset: 0;
+		top: var(--modal-viewport-top, 0px);
 		width: 100%;
 		max-width: 100%;
 		height: var(--modal-viewport-height);
@@ -637,6 +643,16 @@
 			height: 50%;
 			max-height: 50%;
 			padding-top: 0;
+		}
+
+		/*
+		 * With the keyboard up, half of what is left is a header and one field.
+		 * The keyboard already hides the page the half sheet was leaving room
+		 * for, so the sheet takes everything above it.
+		 */
+		dialog.peek.keyboard .panel {
+			height: 100%;
+			max-height: 100%;
 		}
 
 		/* Arrive the way a sheet does — from below, not fading in place. */

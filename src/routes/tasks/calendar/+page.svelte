@@ -72,6 +72,7 @@
 	import { WEEKDAYS } from '$lib/bill-summary';
 	import { say } from '$lib/said.svelte';
 	import { notify } from '$lib/notify.svelte';
+	import { swallowGhostClick } from '$lib/ghost-click';
 	import type { PlainKey } from '$lib/i18n/keys';
 
 	const t = useT();
@@ -1134,6 +1135,7 @@
 			holdFired = false;
 			e.preventDefault();
 			e.stopPropagation();
+			swallowGhostClick();
 			return;
 		}
 		if (placingTodoId === null && tappedEmptyGrid && !tapMoved) {
@@ -1143,6 +1145,9 @@
 			e.stopPropagation();
 			selectOffsetForDate(target.date);
 			prefillTime = target.startTime;
+			// The tap's mouse events follow, and would land on the sheet this
+			// opens and take focus out of its first field — see $lib/ghost-click.
+			swallowGhostClick();
 			startNew(repeat, target.date);
 			return;
 		}
@@ -3996,6 +4001,140 @@
 					<input type="hidden" name="id" value={editingBlockId} />
 				{/if}
 
+				<!--
+					What the block is, first.
+
+					On a phone the new block opens as a half sheet, and what showed in that
+					half was how often it repeats and at what time — answers the tap on the
+					grid had mostly given already — with the one thing nobody had said yet
+					below the fold. The name goes on top, then the kind of thing it is.
+				-->
+				<FormGrid>
+					{#if slotMode === 'category'}
+						<Field label={t('ui.category')} span={12} required>
+							<Picker
+								name="categoryId"
+								required
+								value={String(formCategoryId ?? '')}
+								options={data.categories.map((cat) => ({
+									value: String(cat.id),
+									label: cat.name
+								}))}
+								onpick={(next) => (formCategoryId = Number(next))}
+								label={t('ui.category')}
+							/>
+						</Field>
+					{:else if slotMode === 'task'}
+						<Field label={t('tasks.plan.existingTask')} span={12} required>
+							<Picker
+								name="todoId"
+								required
+								search
+								value={String(formTodoId ?? '')}
+								options={data.todos.map((todo) => ({
+									value: String(todo.id),
+									label: todo.title
+								}))}
+								onpick={(next) => (formTodoId = Number(next))}
+								label={t('tasks.plan.existingTask')}
+							/>
+						</Field>
+					{:else if slotMode === 'workout'}
+						<Field label={t('tasks.plan.workout')} span={12} required>
+							<Picker
+								name="workoutId"
+								required
+								value={String(formWorkoutId ?? '')}
+								options={data.workouts.map((workout) => ({
+									value: String(workout.id),
+									label: workout.title
+								}))}
+								onpick={(next) => (formWorkoutId = Number(next))}
+								label={t('tasks.plan.workout')}
+							/>
+						</Field>
+					{:else}
+						<Field label={t('tasks.plan.activity')} span={12} required>
+							<!-- Typed at rather than scrolled: an account with forty
+							     activities was a list you hunted through, and "lr" is how
+							     anybody actually finds "learn guitar". -->
+							<Picker
+								name="activityId"
+								required
+								search
+								value={activityChoice}
+								onpick={(next) => (activityChoice = next)}
+								label={t('tasks.plan.activity')}
+								options={[
+									...data.activities.map((act: { id: number; name: string }) => ({
+										value: String(act.id),
+										label: act.name
+									})),
+									{ value: NEW_ACTIVITY, label: t('tasks.plan.newActivity2') }
+								]}
+							/>
+						</Field>
+					{/if}
+				</FormGrid>
+
+				{#if slotMode === 'activity' && activityChoice === NEW_ACTIVITY}
+					<div class="border-2 border-[var(--section-accent)] bg-gray-50 p-3">
+						<FormGrid>
+							<Field label={t('tasks.plan.newActivity')} span={8} required>
+								<OneLine
+									name="newActivityName"
+									bind:value={newActivityName}
+									placeholder={t('tasks.plan.eGLearnGuitar')}
+									class="input"
+									required
+								/>
+							</Field>
+							<Field label={t('tasks.plan.itsCategory')} span={4} required>
+								<select
+									name="newActivityCategoryId"
+									required
+									class="select"
+									bind:value={newActivityCategoryId}
+								>
+									{#each data.categories as cat (cat.id)}
+										<option value={cat.id}>{cat.name}</option>
+									{/each}
+								</select>
+							</Field>
+						</FormGrid>
+					</div>
+				{/if}
+
+				<FormGrid>
+					<Field label={t('tasks.plan.mode')} span={12} required>
+						<!-- Only where there is a workout to pick: a mode that lands on an
+						     empty list is a dead end. -->
+						<Picker
+							name="mode"
+							required
+							value={slotMode}
+							options={[
+								{ value: 'activity', label: t('tasks.plan.activity') },
+								{ value: 'category', label: t('ui.category') },
+								...(data.workouts.length > 0
+									? [{ value: 'workout', label: t('tasks.plan.workout') }]
+									: []),
+								...(editingKind === null && data.todos.length > 0
+									? [{ value: 'task', label: t('tasks.plan.existingTask') }]
+									: [])
+							]}
+							onpick={(next) => {
+								slotMode = next as typeof slotMode;
+								if (slotMode === 'task') {
+									repeat = 'once';
+									formTodoId ??= data.todos[0]?.id ?? null;
+								}
+							}}
+							label={t('tasks.plan.mode')}
+						/>
+					</Field>
+				</FormGrid>
+
 				<div class="flex items-center gap-3">
 					<span class="shrink-0 text-sm font-medium text-gray-700">{t('tasks.plan.repeats')}</span>
 					{#if editingKind}
@@ -4215,129 +4354,6 @@
 						/>
 					</Field>
 				</FormGrid>
-
-				<FormGrid>
-					<Field label={t('tasks.plan.mode')} span={6} required>
-						<!-- Only where there is a workout to pick: a mode that lands on an
-						     empty list is a dead end. -->
-						<Picker
-							name="mode"
-							required
-							value={slotMode}
-							options={[
-								{ value: 'activity', label: t('tasks.plan.activity') },
-								{ value: 'category', label: t('ui.category') },
-								...(data.workouts.length > 0
-									? [{ value: 'workout', label: t('tasks.plan.workout') }]
-									: []),
-								...(editingKind === null && data.todos.length > 0
-									? [{ value: 'task', label: t('tasks.plan.existingTask') }]
-									: [])
-							]}
-							onpick={(next) => {
-								slotMode = next as typeof slotMode;
-								if (slotMode === 'task') {
-									repeat = 'once';
-									formTodoId ??= data.todos[0]?.id ?? null;
-								}
-							}}
-							label={t('tasks.plan.mode')}
-						/>
-					</Field>
-					{#if slotMode === 'category'}
-						<Field label={t('ui.category')} span={6} required>
-							<Picker
-								name="categoryId"
-								required
-								value={String(formCategoryId ?? '')}
-								options={data.categories.map((cat) => ({
-									value: String(cat.id),
-									label: cat.name
-								}))}
-								onpick={(next) => (formCategoryId = Number(next))}
-								label={t('ui.category')}
-							/>
-						</Field>
-					{:else if slotMode === 'task'}
-						<Field label={t('tasks.plan.existingTask')} span={6} required>
-							<Picker
-								name="todoId"
-								required
-								search
-								value={String(formTodoId ?? '')}
-								options={data.todos.map((todo) => ({
-									value: String(todo.id),
-									label: todo.title
-								}))}
-								onpick={(next) => (formTodoId = Number(next))}
-								label={t('tasks.plan.existingTask')}
-							/>
-						</Field>
-					{:else if slotMode === 'workout'}
-						<Field label={t('tasks.plan.workout')} span={6} required>
-							<Picker
-								name="workoutId"
-								required
-								value={String(formWorkoutId ?? '')}
-								options={data.workouts.map((workout) => ({
-									value: String(workout.id),
-									label: workout.title
-								}))}
-								onpick={(next) => (formWorkoutId = Number(next))}
-								label={t('tasks.plan.workout')}
-							/>
-						</Field>
-					{:else}
-						<Field label={t('tasks.plan.activity')} span={6} required>
-							<!-- Typed at rather than scrolled: an account with forty
-							     activities was a list you hunted through, and "lr" is how
-							     anybody actually finds "learn guitar". -->
-							<Picker
-								name="activityId"
-								required
-								search
-								value={activityChoice}
-								onpick={(next) => (activityChoice = next)}
-								label={t('tasks.plan.activity')}
-								options={[
-									...data.activities.map((act: { id: number; name: string }) => ({
-										value: String(act.id),
-										label: act.name
-									})),
-									{ value: NEW_ACTIVITY, label: t('tasks.plan.newActivity2') }
-								]}
-							/>
-						</Field>
-					{/if}
-				</FormGrid>
-
-				{#if slotMode === 'activity' && activityChoice === NEW_ACTIVITY}
-					<div class="border-2 border-[var(--section-accent)] bg-gray-50 p-3">
-						<FormGrid>
-							<Field label={t('tasks.plan.newActivity')} span={8} required>
-								<OneLine
-									name="newActivityName"
-									bind:value={newActivityName}
-									placeholder={t('tasks.plan.eGLearnGuitar')}
-									class="input"
-									required
-								/>
-							</Field>
-							<Field label={t('tasks.plan.itsCategory')} span={4} required>
-								<select
-									name="newActivityCategoryId"
-									required
-									class="select"
-									bind:value={newActivityCategoryId}
-								>
-									{#each data.categories as cat (cat.id)}
-										<option value={cat.id}>{cat.name}</option>
-									{/each}
-								</select>
-							</Field>
-						</FormGrid>
-					</div>
-				{/if}
 
 				<!-- The task brings its own notes, ratings and notebook. -->
 				{#if slotMode !== 'task'}
