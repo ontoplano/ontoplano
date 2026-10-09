@@ -34,3 +34,17 @@ export function plainMarkdown(text: string): string {
 			.replace(/`([^`]*)`/g, '$1')
 	);
 }
+
+/**
+ * The first line of some markdown that has words in it, as words — what a
+ * block's notes are called where there is room for one line: the grid, a
+ * card, the "Next" widget. Empty when there are no words at all.
+ */
+export function firstPlainLine(text: string): string {
+	return (
+		plainMarkdown(text)
+			.split('\n')
+			.map((line) => line.trim())
+			.find(Boolean) ?? ''
+	);
+}

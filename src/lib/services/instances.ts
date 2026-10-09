@@ -41,6 +41,7 @@ import type { Status } from '../task-status.js';
 import type { RatingValues } from '../ratings.js';
 import { occursOn, parseRecurrence } from '../recurrence.js';
 import { ownedActivity } from './activities.js';
+import { firstPlainLine } from '../markdown-plain.js';
 
 /** A single occurrence, whichever kind of block produced it. */
 export type Occurrence = {
@@ -478,14 +479,16 @@ export function listInstances(ctx: Ctx, from: Date, to: Date): Occurrence[] {
 			mode,
 			label,
 			labelOverride: r.labelOverride,
-			// A per-occurrence rename wins, then the block's own label; after that
-			// the block is named by what it is — an activity, a workout, or the
-			// category it spends time on.
+			// A per-occurrence rename wins, then what the block is — an activity
+			// or a workout — then the first line of its notes, then the category
+			// it spends time on. The notes are markdown and can run to pages, so
+			// a card or the "Next" widget gets one line of their words, not all
+			// of them.
 			title:
-				r.labelOverride?.trim() ||
-				label.trim() ||
+				firstPlainLine(r.labelOverride ?? '') ||
 				activityName ||
 				workoutName ||
+				firstPlainLine(label) ||
 				categoryName ||
 				'Untitled',
 			categoryId: categoryId ?? null,
