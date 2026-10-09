@@ -168,7 +168,10 @@ test('a block saved on the plan says so', async ({ page }) => {
 	// A category block needs nothing typed: the account's first category is chosen.
 	await page.getByRole('button', { name: 'Mode' }).click();
 	await page.getByRole('option', { name: 'Category' }).click();
-	await page.getByRole('button', { name: 'Add one-off' }).click();
+	await page
+		.getByRole('dialog', { name: 'New task block' })
+		.getByRole('button', { name: 'Add', exact: true })
+		.click();
 	await expect(page.getByText('Task block added')).toBeVisible({ timeout: 10_000 });
 });
 

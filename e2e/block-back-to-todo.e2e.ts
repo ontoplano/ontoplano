@@ -18,7 +18,10 @@ test('a repeating block goes back to the to-do list, after one confirmation', as
 	await page.getByRole('option', { name: 'Category' }).click();
 	const label = page.locator('dialog[open] [name="label"]');
 	if (await label.count()) await label.fill('water the plants');
-	await page.getByRole('button', { name: 'Add repeating task block' }).click();
+	await page
+		.getByRole('dialog', { name: 'New task block' })
+		.getByRole('button', { name: 'Add', exact: true })
+		.click();
 	const block = page.locator('.ec-event').filter({ hasText: 'water the plants' }).first();
 	await expect(block).toBeVisible({ timeout: 30_000 });
 

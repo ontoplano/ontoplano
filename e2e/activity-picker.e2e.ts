@@ -68,7 +68,11 @@ test('a press on the field shuts it as well as opens it', async ({ page }) => {
 	await expect(optionsIn(page).first()).toBeVisible();
 	await face(page).click();
 	await expect(optionsIn(page)).toHaveCount(0);
-	await expect(page.getByRole('button', { name: /Add repeating task block/ })).toBeVisible();
+	await expect(
+		page
+			.getByRole('dialog', { name: 'New task block' })
+			.getByRole('button', { name: 'Add', exact: true })
+	).toBeVisible();
 });
 
 test('it works from the keyboard alone, and Escape lets go', async ({ page }) => {
@@ -95,7 +99,11 @@ test('it works from the keyboard alone, and Escape lets go', async ({ page }) =>
 	await expect(face(page)).toHaveText(taken);
 
 	// And Escape on the picker did not also close the form under it.
-	await expect(page.getByRole('button', { name: /Add repeating task block/ })).toBeVisible();
+	await expect(
+		page
+			.getByRole('dialog', { name: 'New task block' })
+			.getByRole('button', { name: 'Add', exact: true })
+	).toBeVisible();
 });
 
 test('a query that matches nothing says so rather than showing an empty box', async ({ page }) => {

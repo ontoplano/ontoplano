@@ -34,8 +34,5 @@ test('shared modal actions span the footer in task, notebook, diary, and plan fo
 
 	await visit(page, '/tasks/calendar');
 	await page.getByRole('button', { name: 'New task block' }).click();
-	await expectSplitActions(
-		page.getByRole('dialog', { name: 'New task block' }),
-		'Add repeating task block'
-	);
+	await expectSplitActions(page.getByRole('dialog', { name: 'New task block' }), 'Add');
 });

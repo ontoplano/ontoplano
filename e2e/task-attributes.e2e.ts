@@ -109,7 +109,10 @@ for (const { name, viewport } of WIDTHS) {
 			await form.locator('summary', { hasText: 'Attributes' }).click();
 			await form.locator('[name="attributeKey"]').first().fill('tape');
 			await form.locator('[name="attributeValue"]').first().fill('5m');
-			await page.getByRole('button', { name: 'Add one-off' }).click();
+			await page
+				.getByRole('dialog', { name: 'New task block' })
+				.getByRole('button', { name: 'Add', exact: true })
+				.click();
 
 			const block = page.locator('.ec-event', { hasText: 'measure the worktop' });
 			await expect(block).toBeVisible();

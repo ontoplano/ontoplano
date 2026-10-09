@@ -45,7 +45,7 @@ async function newRepeatingBlock(page: Page, label: string) {
 	await form.locator('[name="startTime"]').fill('09:00');
 	await form.locator('[name="label"]').fill(label);
 	await choose(form, 'mode', 'Category');
-	await form.getByRole('button', { name: /Add repeating task block/ }).click();
+	await form.getByRole('button', { name: 'Add', exact: true }).click();
 	await expect(form).toBeHidden({ timeout: 20_000 });
 }
 
