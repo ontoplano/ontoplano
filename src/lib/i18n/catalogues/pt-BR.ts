@@ -2476,6 +2476,10 @@ export const messages: Catalogue = {
 		other: '{count} lembretes de bloco de tarefa'
 	},
 	'notify.noun.bill': { one: '{count} conta', other: '{count} contas' },
+	'notify.noun.billPayment': {
+		one: '{count} pagamento de conta',
+		other: '{count} pagamentos de conta'
+	},
 	'notify.noun.block': { one: '{count} bloco de tarefa', other: '{count} blocos de tarefa' },
 	'notify.noun.bought': { one: '{count} compra', other: '{count} compras' },
 	'notify.noun.dataPoint': { one: '{count} ponto de dados', other: '{count} pontos de dados' },

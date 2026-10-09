@@ -70,6 +70,7 @@ beforeAll(async () => {
 	const { createGoal } = await import('../src/lib/services/goals');
 	const { createEntry } = await import('../src/lib/services/diary');
 	const { createItem } = await import('../src/lib/services/inventory');
+	const { createBill, markPaid } = await import('../src/lib/services/bills');
 	const idOf = (made: unknown) => (typeof made === 'number' ? made : (made as { id: number }).id);
 
 	mine = idOf(createNotebook(ctx(), { title: 'The flat', modules: EVERY_TAB }));
@@ -83,10 +84,14 @@ beforeAll(async () => {
 	// A notebook holds its subject's shopping now, so a key given the flat can
 	// tick the flat's tiles off — and nothing else's.
 	inside.item = idOf(createItem(ctx(), { name: 'wall tiles', type: 'someday', notebookId: mine }));
+	inside.bill = createBill(ctx(), { name: 'flat rent', dueDay: 5, notebookId: mine }).id;
+	inside.billPayment = markPaid(ctx(), inside.bill, { period: '2026-03' }).id;
 
 	outside.todo = idOf(createTodo(ctx(), { title: 'a private errand' }));
 	outside.goal = idOf(createGoal(ctx(), { title: 'a private goal', horizon: 'year' }));
 	outside.note = idOf(createEntry(ctx(), { content: 'a private thought' }));
+	outside.bill = createBill(ctx(), { name: 'private rent', dueDay: 5, notebookId: other }).id;
+	outside.billPayment = markPaid(ctx(), outside.bill, { period: '2026-03' }).id;
 	outside.notebookTodo = idOf(
 		createTodo(ctx(), { title: 'somebody else’s project', notebookId: other })
 	);
@@ -277,6 +282,16 @@ describe('what it cannot do', () => {
 		expect(failed(call('tick_bought', { id: inside.item }))).toBe(false);
 		// The milk: an ordinary shopping item, filed under nothing.
 		expect(failed(call('tick_bought', { id: outside.item }))).toBe(true);
+	});
+
+	it('corrects only bill payments in its notebook', () => {
+		const args = { id: inside.bill, paid_date: '2026-03-14', amount_paid: 1400 };
+		expect(failed(call('change_bill_payment', { ...args, payment_id: inside.billPayment }))).toBe(
+			false
+		);
+		expect(failed(call('change_bill_payment', { ...args, payment_id: outside.billPayment }))).toBe(
+			true
+		);
 	});
 
 	it('cannot reach a kind that does not live in a notebook at all', () => {

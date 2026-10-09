@@ -2494,6 +2494,7 @@ export const messages: Catalogue = {
 		other: '{count} recordatorios de bloque de tarea'
 	},
 	'notify.noun.bill': { one: '{count} factura', other: '{count} facturas' },
+	'notify.noun.billPayment': { one: '{count} pago de factura', other: '{count} pagos de factura' },
 	'notify.noun.block': { one: '{count} bloque de tarea', other: '{count} bloques de tarea' },
 	'notify.noun.bought': { one: '{count} compra', other: '{count} compras' },
 	'notify.noun.dataPoint': { one: '{count} dato', other: '{count} datos' },

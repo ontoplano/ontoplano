@@ -2350,6 +2350,10 @@
 		"one": "{count} factura",
 		"other": "{count} facturas"
 	},
+	"notify.noun.billPayment": {
+		"one": "{count} pago de factura",
+		"other": "{count} pagos de factura"
+	},
 	"notify.noun.block": {
 		"one": "{count} bloque de tarea",
 		"other": "{count} bloques de tarea"

@@ -193,6 +193,7 @@ export const NOUN_KEYS = new Set([
 	'alarm',
 	'beforeBlock',
 	'bill',
+	'billPayment',
 	'block',
 	'bought',
 	'dataPoint',

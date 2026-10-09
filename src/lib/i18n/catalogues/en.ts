@@ -2422,6 +2422,7 @@ export const messages: Catalogue = {
 		other: '{count} task block reminders'
 	},
 	'notify.noun.bill': { one: '{count} bill', other: '{count} bills' },
+	'notify.noun.billPayment': { one: '{count} bill payment', other: '{count} bill payments' },
 	'notify.noun.block': { one: '{count} task block', other: '{count} task blocks' },
 	'notify.noun.bought': { one: '{count} purchase', other: '{count} purchases' },
 	'notify.noun.dataPoint': { one: '{count} data point', other: '{count} data points' },

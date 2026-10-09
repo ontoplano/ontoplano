@@ -22,6 +22,7 @@ releases mattered.
 
 - The short plan sheet stays scrollable above the keyboard, expands when its header is tapped or swiped up, and uses “Add” to save a new block.
 - New task blocks no longer show a dash where no name has been entered.
+- Assistant notifications now name corrected bill payments clearly.
 
 ## 0.185.28 — 2026-10-08
 

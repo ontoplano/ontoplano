@@ -2170,6 +2170,7 @@ export type MessageKey =
 	| 'notify.noun.alarm'
 	| 'notify.noun.beforeBlock'
 	| 'notify.noun.bill'
+	| 'notify.noun.billPayment'
 	| 'notify.noun.block'
 	| 'notify.noun.bought'
 	| 'notify.noun.dataPoint'
@@ -4545,6 +4546,7 @@ export interface MessageValuesFor {
 	'notify.noun.alarm': { count: number };
 	'notify.noun.beforeBlock': { count: number };
 	'notify.noun.bill': { count: number };
+	'notify.noun.billPayment': { count: number };
 	'notify.noun.block': { count: number };
 	'notify.noun.bought': { count: number };
 	'notify.noun.dataPoint': { count: number };

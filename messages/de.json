@@ -2350,6 +2350,10 @@
 		"one": "{count} Rechnung",
 		"other": "{count} Rechnungen"
 	},
+	"notify.noun.billPayment": {
+		"one": "{count} Rechnungszahlung",
+		"other": "{count} Rechnungszahlungen"
+	},
 	"notify.noun.block": {
 		"one": "{count} Aufgabenblock",
 		"other": "{count} Aufgabenblöcke"

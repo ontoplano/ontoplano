@@ -2350,6 +2350,10 @@
 		"one": "{count} conta",
 		"other": "{count} contas"
 	},
+	"notify.noun.billPayment": {
+		"one": "{count} pagamento de conta",
+		"other": "{count} pagamentos de conta"
+	},
 	"notify.noun.block": {
 		"one": "{count} bloco de tarefa",
 		"other": "{count} blocos de tarefa"

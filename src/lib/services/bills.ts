@@ -702,6 +702,16 @@ export function listPayments(ctx: Ctx, billId: number): BillPayment[] {
 		.map(payment);
 }
 
+/** The payments this account can name through the assistant. */
+export function listAllPayments(ctx: Ctx): BillPayment[] {
+	return db
+		.select()
+		.from(billPayments)
+		.where(eq(billPayments.userId, ctx.userId))
+		.all()
+		.map(payment);
+}
+
 /**
  * Every payment of every bill this account holds, by bill, in one statement.
  *

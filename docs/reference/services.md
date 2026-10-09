@@ -1250,6 +1250,10 @@ Take a skip back — the period is open again. The inverse of `skipPeriod`.
 
 #### `listPayments(ctx, billId)`
 
+#### `listAllPayments(ctx)`
+
+The payments this account can name through the assistant.
+
 #### `billsSettledIn(ctx, period)`
 
 The bills answered for in one period — paid or skipped — in one statement.

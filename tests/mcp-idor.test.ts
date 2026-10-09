@@ -129,7 +129,7 @@ beforeAll(async () => {
 	const { createWorkout, createWorkoutCategory, logWorkout } =
 		await import('../src/lib/services/workouts');
 	const { createRule, recordMovement } = await import('../src/lib/services/statements');
-	const { createBill } = await import('../src/lib/services/bills');
+	const { createBill, markPaid } = await import('../src/lib/services/bills');
 	const { ensureTagIds } = await import('../src/lib/services/tags');
 
 	/** One row of every kind a tool can name, under this account. */
@@ -162,6 +162,7 @@ beforeAll(async () => {
 		o.recipe = idOf(createRecipe(c, { title: `recipe ${m}` }));
 		o.sortRule = idOf(createRule(c, { kind: 'tag', name: `rule ${m}`, pattern: m }));
 		o.bill = idOf(createBill(c, { name: `bill ${m}`, dueDay: 5 }));
+		o.billPayment = markPaid(c, Number(o.bill), { period: '2026-03' }).id;
 
 		const activityCategory = idOf(createActivityCategory(c, { name: `cat ${m}` }));
 		o.activity = idOf(createActivity(c, { name: `activity ${m}`, categoryId: activityCategory }));

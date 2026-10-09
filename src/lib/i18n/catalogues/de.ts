@@ -2516,6 +2516,10 @@ export const messages: Catalogue = {
 	'notify.noun.alarm': { one: '{count} Wecker', other: '{count} Wecker' },
 	'notify.noun.beforeBlock': { one: '{count} Blockhinweis', other: '{count} Blockhinweise' },
 	'notify.noun.bill': { one: '{count} Rechnung', other: '{count} Rechnungen' },
+	'notify.noun.billPayment': {
+		one: '{count} Rechnungszahlung',
+		other: '{count} Rechnungszahlungen'
+	},
 	'notify.noun.block': { one: '{count} Aufgabenblock', other: '{count} Aufgabenblöcke' },
 	'notify.noun.bought': { one: '{count} Einkauf', other: '{count} Einkäufe' },
 	'notify.noun.dataPoint': { one: '{count} Datenpunkt', other: '{count} Datenpunkte' },

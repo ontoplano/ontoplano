@@ -6485,7 +6485,10 @@ export const TOOLS: Tool[] = [
 			'Correct the paid date and actual amount of an existing payment. Find payment_id with bill_payments. The period and expected amount stay as recorded. Amounts are in minor units (cents).',
 		scope: 'bills:write',
 		writes: true,
-		refs: [{ arg: 'id', kind: 'bill' }],
+		refs: [
+			{ arg: 'id', kind: 'bill' },
+			{ arg: 'payment_id', kind: 'billPayment', subject: true }
+		],
 		input: object(
 			{
 				id: { type: 'integer', description: 'The bill\u2019s id.' },

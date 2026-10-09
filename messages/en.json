@@ -2350,6 +2350,10 @@
 		"one": "{count} bill",
 		"other": "{count} bills"
 	},
+	"notify.noun.billPayment": {
+		"one": "{count} bill payment",
+		"other": "{count} bill payments"
+	},
 	"notify.noun.block": {
 		"one": "{count} task block",
 		"other": "{count} task blocks"
