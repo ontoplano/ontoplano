@@ -383,9 +383,6 @@
 	// server creates the activity as part of the same submission.
 	const NEW_ACTIVITY = '__new__';
 
-	/** What the block form's header shows where there is no name to show. */
-	const DASH = '\u2014';
-
 	/**
 	 * The workout this block is, when it is one, and what was typed against it.
 	 *
@@ -493,8 +490,7 @@
 	 * Three modes choose the thing three different ways, and the header says the
 	 * same two facts however it was chosen: the thing's own name, and the
 	 * category it belongs to, in that category's colour. A category block has no
-	 * name of its own — the category *is* what it is — so the first line is a
-	 * dash rather than a repetition of the second.
+	 * name of its own — the category *is* what it is — so that line is hidden.
 	 */
 	const tickedWorkout = $derived.by(() => {
 		// Through a widened local, because reading `slotMode` narrows it for
@@ -529,15 +525,15 @@
 		if (mode === 'workout') {
 			const workout = data.workouts.find((w) => w.id === formWorkoutId);
 			return {
-				name: workout?.title ?? DASH,
+				name: workout?.title ?? '',
 				...pill(undefined),
 				categoryName: workout?.categoryName ?? ''
 			};
 		}
-		if (mode === 'category') return { name: DASH, ...pill(category(formCategoryId)) };
+		if (mode === 'category') return { name: '', ...pill(category(formCategoryId)) };
 		if (mode === 'task') {
 			const todo = data.todos.find((one) => one.id === formTodoId);
-			return { name: todo?.title ?? DASH, ...pill(category(todo?.categoryId)) };
+			return { name: todo?.title ?? '', ...pill(category(todo?.categoryId)) };
 		}
 
 		const activity =
@@ -545,7 +541,7 @@
 				? undefined
 				: data.activities.find((a) => String(a.id) === activityChoice);
 		return {
-			name: activityChoice === NEW_ACTIVITY ? newActivityName || DASH : (activity?.name ?? DASH),
+			name: activityChoice === NEW_ACTIVITY ? newActivityName : (activity?.name ?? ''),
 			...pill(
 				category(activityChoice === NEW_ACTIVITY ? newActivityCategoryId : activity?.categoryId)
 			)
@@ -3949,23 +3945,25 @@
 				What the block is, and what it is filed under.
 
 				The title can only say "Edit block"; this is the corner that says
-				which block. Both lines are always drawn — a dash where there is no
-				name of its own, which is every category block — so choosing
+				which block. Empty lines keep their space while hidden, so choosing
 				something rewrites two lines and moves nothing.
 			-->
-			<p class="truncate text-sm font-medium text-gray-900">{blockHeading.name}</p>
-			{#if blockHeading.categoryName}
-				<span
-					class="chip mt-0.5 max-w-full truncate"
-					style={blockHeading.face && blockHeading.ink
-						? `background-color:${blockHeading.face};color:${blockHeading.ink};border-color:transparent`
-						: ''}
-				>
-					{blockHeading.categoryName}
-				</span>
-			{:else}
-				<p class="truncate text-xs text-gray-500">{DASH}</p>
-			{/if}
+			<p
+				data-block-heading
+				class="truncate text-sm font-medium text-gray-900"
+				class:invisible={!blockHeading.name}
+			>
+				{blockHeading.name || '\u00a0'}
+			</p>
+			<span
+				class="chip mt-0.5 max-w-full truncate"
+				class:invisible={!blockHeading.categoryName}
+				style={blockHeading.face && blockHeading.ink
+					? `background-color:${blockHeading.face};color:${blockHeading.ink};border-color:transparent`
+					: ''}
+			>
+				{blockHeading.categoryName || '\u00a0'}
+			</span>
 		{/snippet}
 		<div bind:this={createFormEl} class="space-y-3">
 			<!--

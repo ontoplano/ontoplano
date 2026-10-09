@@ -78,7 +78,9 @@ test.describe('with a finger', () => {
 		});
 
 		const dialog = page.getByRole('dialog', { name: 'New task block' });
+		const blockHeading = dialog.locator('header').first().locator('[data-block-heading]');
 		await expect(dialog).toBeVisible();
+		await expect(blockHeading).toBeHidden();
 		await expect(dialog.locator('[name="newActivityName"]')).toBeVisible();
 		await expect(dialog.locator('[name="newActivityName"]')).toBeFocused();
 		const fieldBox = (await dialog.locator('[name="newActivityName"]').boundingBox())!;
@@ -105,6 +107,7 @@ test.describe('with a finger', () => {
 			.evaluate((el) => el.getBoundingClientRect().height);
 		expect(height).toBeLessThanOrEqual(844 * 0.55);
 		await dialog.locator('[name="newActivityName"]').fill('Garden planning');
+		await expect(blockHeading).toHaveText('Garden planning');
 		await expect(dialog).toHaveClass(/peek/);
 		await dialog.locator('[name="durationMinutes"]').focus();
 		await expect(dialog).toHaveClass(/peek/);
@@ -179,6 +182,7 @@ test.describe('with a finger', () => {
 		await dialog.locator('[data-picker="mode"] button').click();
 		await dialog.getByRole('option', { name: 'Category' }).click();
 		await expect(dialog).toHaveClass(/peek/);
+		await expect(dialog.locator('header').first().locator('[data-block-heading]')).toBeHidden();
 		await dialog
 			.locator('header')
 			.first()
