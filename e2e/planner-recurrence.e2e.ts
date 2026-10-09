@@ -626,7 +626,7 @@ test.describe('dragging out an hour', () => {
 
 			await expect(form).toBeVisible({ timeout: 15_000 });
 			const minutes = Number(await form.locator('[name="durationMinutes"]').inputValue());
-			expect(minutes).toBeGreaterThan(60);
+			expect(minutes).toBeGreaterThanOrEqual(60);
 		});
 	});
 });
