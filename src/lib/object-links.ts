@@ -51,7 +51,8 @@ export const OBJECT_ROOMS = {
 	tag: { room: '/notebooks/tags' },
 	ledger: { room: '/finance/ledgers' },
 	movement: { room: '/finance/ledgers' },
-	bill: { room: '/finance/bills', by: 'edit' }
+	bill: { room: '/finance/bills', by: 'edit' },
+	billPayment: { room: '/finance/bills' }
 } as const satisfies Record<string, Opens>;
 
 export type ObjectKind = keyof typeof OBJECT_ROOMS;
