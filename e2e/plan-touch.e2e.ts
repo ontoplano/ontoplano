@@ -88,12 +88,10 @@ test.describe('with a finger', () => {
 		await expect(dialog).toHaveClass(/peek/);
 		await expect(dialog.locator('[name="durationMinutes"]')).toHaveValue('60');
 		await expect(dialog.getByRole('button', { name: 'Cancel' })).toBeVisible();
-		await expect(dialog.getByRole('button', { name: 'Add repeating task block' })).toBeVisible();
+		await expect(dialog.getByRole('button', { name: 'Add', exact: true })).toBeVisible();
 		const footerBox = (await dialog.locator('[data-modal-footer]').boundingBox())!;
 		const cancelBox = (await dialog.getByRole('button', { name: 'Cancel' }).boundingBox())!;
-		const saveBox = (await dialog
-			.getByRole('button', { name: 'Add repeating task block' })
-			.boundingBox())!;
+		const saveBox = (await dialog.getByRole('button', { name: 'Add', exact: true }).boundingBox())!;
 		expect(cancelBox.x - footerBox.x).toBeLessThan(30);
 		expect(footerBox.x + footerBox.width - saveBox.x - saveBox.width).toBeLessThan(30);
 		await expect
@@ -118,9 +116,76 @@ test.describe('with a finger', () => {
 			.first()
 			.click({ position: { x: 100, y: 15 } });
 		await expect(dialog).not.toHaveClass(/peek/);
-		await dialog.getByRole('button', { name: 'Add repeating task block' }).click();
+		await dialog.getByRole('button', { name: 'Add', exact: true }).click();
 		await expect(dialog).toBeHidden();
 		await expect(page.locator('.ec-event').filter({ hasText: 'Garden planning' })).toBeVisible();
+	});
+
+	test('the short sheet stays short and scrolls with a keyboard open', async ({ page }) => {
+		await register(page, testEmail('plan-sheet-scroll'));
+		await visit(page, '/tasks/plan');
+		await page.getByRole('button', { name: 'New task block' }).click();
+		const dialog = page.getByRole('dialog', { name: 'New task block' });
+		const content = dialog.locator('.modal-content');
+
+		await page.evaluate(() => {
+			const viewport = window.visualViewport!;
+			Object.defineProperty(viewport, 'height', {
+				configurable: true,
+				value: window.innerHeight - 320
+			});
+			viewport.dispatchEvent(new Event('resize'));
+		});
+		await expect(dialog).toHaveClass(/peek/);
+		await expect
+			.poll(() => dialog.locator('.panel').evaluate((el) => el.getBoundingClientRect().height))
+			.toBeLessThanOrEqual((844 - 320) * 0.55);
+		await expect
+			.poll(() =>
+				dialog.locator('[data-modal-footer]').evaluate((el) => el.getBoundingClientRect().bottom)
+			)
+			.toBeLessThanOrEqual(844 - 320);
+
+		await content.evaluate((el) => el.scrollTo({ top: 0 }));
+		const box = (await content.boundingBox())!;
+		const x = box.x + box.width - 8;
+		const from = box.y + box.height - 12;
+		const to = box.y + 12;
+		const cdp = await page.context().newCDPSession(page);
+		await cdp.send('Input.dispatchTouchEvent', {
+			type: 'touchStart',
+			touchPoints: [{ x, y: from }]
+		});
+		for (let step = 1; step <= 8; step += 1) {
+			await cdp.send('Input.dispatchTouchEvent', {
+				type: 'touchMove',
+				touchPoints: [{ x, y: from + ((to - from) * step) / 8 }]
+			});
+		}
+		await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+		await expect.poll(() => content.evaluate((el) => el.scrollTop)).toBeGreaterThan(0);
+		await expect(dialog).toHaveClass(/peek/);
+		await page.screenshot({
+			path: 'test-results/plan-phone-keyboard-light.png',
+			animations: 'disabled'
+		});
+		await page.evaluate(() => (document.documentElement.dataset.theme = 'dark'));
+		await page.screenshot({
+			path: 'test-results/plan-phone-keyboard-dark.png',
+			animations: 'disabled'
+		});
+		await page.evaluate(() => (document.documentElement.dataset.theme = 'light'));
+
+		await dialog.locator('[data-picker="mode"] button').click();
+		await dialog.getByRole('option', { name: 'Category' }).click();
+		await expect(dialog).toHaveClass(/peek/);
+		await dialog
+			.locator('header')
+			.first()
+			.click({ position: { x: 100, y: 15 } });
+		await expect(dialog).not.toHaveClass(/peek/);
+		await page.setViewportSize({ width: 1200, height: 900 });
+		await page.screenshot({ path: 'test-results/plan-desktop-dialog.png', animations: 'disabled' });
 	});
 
 	test('swiping up on the sheet header expands it', async ({ page }) => {

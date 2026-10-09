@@ -4633,11 +4633,7 @@
 		{#snippet footer()}
 			<button type="button" class="btn" onclick={closeForm}>{t('ui.cancel')}</button>
 			<button type="submit" form="block-form" class="btn btn-primary">
-				{editingKind
-					? t('tasks.plan.saveBlock')
-					: repeat === 'once'
-						? t('tasks.plan.addOneOff')
-						: t('tasks.plan.addRepeatingBlock')}
+				{editingKind ? t('tasks.plan.saveBlock') : t('ui.add')}
 			</button>
 		{/snippet}
 	</Modal>

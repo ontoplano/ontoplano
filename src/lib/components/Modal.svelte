@@ -26,13 +26,11 @@
 	 * How tall the sheet should be while the software keyboard is up.
 	 *
 	 * `height: 100dvh` is the layout viewport, and the keyboard covers that
-	 * rather than shrinking it — so the footer of a full-height form, Save
-	 * included, sat underneath the keyboard. `window.visualViewport` is the part
-	 * actually on screen; `$lib/keyboard.ts` has the arithmetic and the reasons
-	 * for its thresholds.
+	 * rather than shrinking it. The dialog follows the visible viewport so its
+	 * footer stays above the keyboard and a short sheet stays short.
+	 * `$lib/keyboard.ts` has the arithmetic and the reasons for its thresholds.
 	 *
-	 * Null the rest of the time, so nothing is written into the style attribute
-	 * at all: a height pinned in pixels stops following a rotation.
+	 * Null the rest of the time, so the CSS variable follows `100dvh` on rotation.
 	 */
 	let keyboardHeight = $state<number | null>(null);
 
@@ -212,13 +210,17 @@
 		dragY = dy > 0 ? dy : -Math.pow(-dy, 0.6);
 	}
 
-	function sheetUp() {
+	function sheetUp(cancelled = false) {
 		if (!draggingSheet) return;
 		draggingSheet = false;
+		if (cancelled) {
+			dragY = 0;
+			return;
+		}
 		// Far enough, or flung: closed. Anything less springs back.
 		const speed = dragY / Math.max(1, performance.now() - dragStartAt);
 		if (dragY > 96 || speed > 0.55) handleClose();
-		else if (phonePeek && sheetDeltaY < -EXPAND_SWIPE) peekExpanded = true;
+		else if (phonePeek && (sheetDeltaY < -EXPAND_SWIPE || headerTap)) peekExpanded = true;
 		dragY = 0;
 	}
 
@@ -396,32 +398,29 @@
 	aria-label={title}
 	class:docked={dock === 'side'}
 	data-away={away ? '' : undefined}
-	style="--modal-width: calc({WIDTHS[size]} + {widened}px)"
+	style="--modal-width: calc({WIDTHS[size]} + {widened}px); --modal-viewport-height: {keyboardHeight
+		? `${keyboardHeight}px`
+		: '100dvh'}"
 >
 	{#if open || away}
 		<div
 			class="rise panel border border-gray-200 bg-white shadow-overlay"
 			class:snapping={!draggingSheet}
-			style="transform: translateY({Math.round(dragY)}px); {keyboardHeight
-				? `height:${keyboardHeight}px; max-height:${keyboardHeight}px`
-				: ''}"
+			style="transform: translateY({Math.round(dragY)}px)"
 		>
 			<!--
 				The phone header: a back arrow and the title, the way a screen in an
 				app is headed. It doubles as the drag handle, so the sheet gesture
 				still dismisses the short ones.
 			-->
+			<!-- svelte-ignore a11y_no_static_element_interactions -->
 			<header
 				class="flex items-center gap-2 border-b border-gray-200 px-3 py-3 sm:hidden"
 				style="touch-action: none"
 				onpointerdown={sheetDown}
 				onpointermove={sheetMove}
-				onpointerup={sheetUp}
-				onpointercancel={sheetUp}
-				onclick={(event) => {
-					if (phonePeek && headerTap && !(event.target as Element).closest('button'))
-						peekExpanded = true;
-				}}
+				onpointerup={() => sheetUp()}
+				onpointercancel={() => sheetUp(true)}
 			>
 				<button
 					type="button"
@@ -522,8 +521,8 @@
 		inset: 0;
 		width: 100%;
 		max-width: 100%;
-		height: 100dvh;
-		max-height: 100dvh;
+		height: var(--modal-viewport-height);
+		max-height: var(--modal-viewport-height);
 		margin: 0;
 		border: 0;
 		padding: 0;
@@ -542,8 +541,8 @@
 	.panel {
 		display: flex;
 		flex-direction: column;
-		height: 100dvh;
-		max-height: 100dvh;
+		height: var(--modal-viewport-height);
+		max-height: var(--modal-viewport-height);
 		border: 0;
 		padding-top: var(--safe-top, 0px);
 	}
@@ -616,8 +615,8 @@
 		}
 
 		dialog.peek .panel {
-			height: 50dvh;
-			max-height: 50dvh;
+			height: 50%;
+			max-height: 50%;
 			padding-top: 0;
 		}
 

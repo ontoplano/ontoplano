@@ -18,6 +18,10 @@ the shape of the data changing. Bumping the minor per batch is what ran this
 file to 0.161 in a few months, which tells a reader nothing about which
 releases mattered.
 
+## 0.186.0 — 2026-10-09
+
+- The short plan sheet stays scrollable above the keyboard, expands when its header is tapped or swiped up, and uses “Add” to save a new block.
+
 ## 0.185.28 — 2026-10-08
 
 - Paid bills now let you correct a payment's date and amount from its history.
