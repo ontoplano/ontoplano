@@ -100,6 +100,14 @@
 		 * Its own corner, so choosing something moves nothing in the form.
 		 */
 		badge,
+		/**
+		 * The phone's save, as a button at the end of its header instead of a
+		 * bar along the bottom. A short sheet has half a screen, and the bar
+		 * spent a row of it on Cancel — which the back arrow already is — and
+		 * on a save the keyboard could cover. Given this, the phone header puts
+		 * the badge beside the title and the footer is left to wider screens.
+		 */
+		phoneAction,
 		children,
 		footer
 	}: {
@@ -114,7 +122,9 @@
 		saved?: string;
 		onclose?: () => void;
 		onclosed?: () => void;
-		badge?: Snippet;
+		/** Drawn inline beside the title on a phone with `phoneAction`, stacked otherwise. */
+		badge?: Snippet<[inline: boolean]>;
+		phoneAction?: Snippet;
 		children: Snippet;
 		footer?: Snippet;
 	} = $props();
@@ -441,13 +451,20 @@
 					</svg>
 				</button>
 				<div class="min-w-0 flex-1">
-					<h2 class="truncate text-base font-semibold text-gray-900">{title}</h2>
+					<div class="flex min-w-0 items-center gap-2">
+						<h2 class="truncate text-base font-semibold text-gray-900">{title}</h2>
+						{#if badge && phoneAction}
+							<div class="flex min-w-0 shrink items-center">{@render badge(true)}</div>
+						{/if}
+					</div>
 					{#if description}
 						<p class="truncate text-xs text-gray-500">{description}</p>
 					{/if}
 				</div>
-				{#if badge}
-					<div class="min-w-0 shrink-0 text-right">{@render badge()}</div>
+				{#if phoneAction}
+					<div class="shrink-0">{@render phoneAction()}</div>
+				{:else if badge}
+					<div class="min-w-0 shrink-0 text-right">{@render badge(false)}</div>
 				{/if}
 			</header>
 
@@ -461,7 +478,7 @@
 					{/if}
 				</div>
 				{#if badge}
-					<div class="ml-auto min-w-0 text-right">{@render badge()}</div>
+					<div class="ml-auto min-w-0 text-right">{@render badge(false)}</div>
 				{/if}
 				<button
 					type="button"
@@ -500,7 +517,9 @@
 			{#if footer}
 				<footer
 					data-modal-footer
-					class="flex flex-wrap items-center justify-end gap-2 border-t border-gray-200 bg-gray-50 px-5 py-3"
+					class="flex flex-wrap items-center justify-end gap-2 border-t border-gray-200 bg-gray-50 px-5 py-3 {phoneAction
+						? 'max-sm:hidden'
+						: ''}"
 					style="padding-bottom: calc(0.75rem + var(--safe-bottom, 0px))"
 				>
 					{@render footer()}

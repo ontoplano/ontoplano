@@ -78,36 +78,35 @@ test.describe('with a finger', () => {
 		});
 
 		const dialog = page.getByRole('dialog', { name: 'New task block' });
-		const blockHeading = dialog.locator('header').first().locator('[data-block-heading]');
+		const phoneHeader = dialog.locator('header').first();
 		await expect(dialog).toBeVisible();
-		await expect(blockHeading).toBeHidden();
+		// Beside the title on a phone it is the category alone, and the name is
+		// in the field below it.
+		await expect(phoneHeader.locator('[data-block-heading]')).toHaveCount(0);
 		await expect(dialog.locator('[name="newActivityName"]')).toBeVisible();
 		await expect(dialog.locator('[name="newActivityName"]')).toBeFocused();
 		const fieldBox = (await dialog.locator('[name="newActivityName"]').boundingBox())!;
-		const bodyBox = (await dialog.locator('.overflow-y-auto').boundingBox())!;
+		const bodyBox = (await dialog.locator('.modal-content').boundingBox())!;
 		expect(fieldBox.y).toBeGreaterThanOrEqual(bodyBox.y);
 		expect(fieldBox.y + fieldBox.height).toBeLessThanOrEqual(bodyBox.y + bodyBox.height);
 		await expect(dialog).toHaveClass(/peek/);
 		await expect(dialog.locator('[name="durationMinutes"]')).toHaveValue('60');
-		await expect(dialog.getByRole('button', { name: 'Cancel' })).toBeVisible();
-		await expect(dialog.getByRole('button', { name: 'Add', exact: true })).toBeVisible();
-		const footerBox = (await dialog.locator('[data-modal-footer]').boundingBox())!;
-		const cancelBox = (await dialog.getByRole('button', { name: 'Cancel' }).boundingBox())!;
-		const saveBox = (await dialog.getByRole('button', { name: 'Add', exact: true }).boundingBox())!;
-		expect(cancelBox.x - footerBox.x).toBeLessThan(30);
-		expect(footerBox.x + footerBox.width - saveBox.x - saveBox.width).toBeLessThan(30);
-		await expect
-			.poll(() =>
-				dialog.locator('[data-modal-footer]').evaluate((el) => el.getBoundingClientRect().bottom)
-			)
-			.toBeLessThanOrEqual(844);
+		// No bar along the bottom: back is the arrow, and Add is a + at the end
+		// of the header, where the keyboard cannot cover it.
+		await expect(dialog.locator('[data-modal-footer]')).toBeHidden();
+		await expect(dialog.getByRole('button', { name: 'Cancel' })).toBeHidden();
+		const add = phoneHeader.getByRole('button', { name: 'Add', exact: true });
+		await expect(add).toBeVisible();
+		const headerBox = (await phoneHeader.boundingBox())!;
+		const addBox = (await add.boundingBox())!;
+		expect(headerBox.x + headerBox.width - addBox.x - addBox.width).toBeLessThan(30);
 		await page.screenshot({ path: 'test-results/plan-phone-sheet.png' });
 		const height = await dialog
 			.locator('.panel')
 			.evaluate((el) => el.getBoundingClientRect().height);
 		expect(height).toBeLessThanOrEqual(844 * 0.55);
 		await dialog.locator('[name="newActivityName"]').fill('Garden planning');
-		await expect(blockHeading).toHaveText('Garden planning');
+		await expect(phoneHeader.locator('.category-mark')).toBeVisible();
 		await expect(dialog).toHaveClass(/peek/);
 		await dialog.locator('[name="durationMinutes"]').focus();
 		await expect(dialog).toHaveClass(/peek/);
@@ -144,10 +143,11 @@ test.describe('with a finger', () => {
 			.poll(() => dialog.locator('.panel').evaluate((el) => el.getBoundingClientRect().height))
 			.toBeLessThanOrEqual((844 - 320) * 0.55);
 		await expect
-			.poll(() =>
-				dialog.locator('[data-modal-footer]').evaluate((el) => el.getBoundingClientRect().bottom)
-			)
+			.poll(() => content.evaluate((el) => el.getBoundingClientRect().bottom))
 			.toBeLessThanOrEqual(844 - 320);
+		await expect(
+			dialog.locator('header').first().getByRole('button', { name: 'Add', exact: true })
+		).toBeVisible();
 
 		await content.evaluate((el) => el.scrollTo({ top: 0 }));
 		const box = (await content.boundingBox())!;

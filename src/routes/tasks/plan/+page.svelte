@@ -3927,6 +3927,7 @@
 	<Modal
 		bind:open={showForm}
 		phonePeek={editingKind === null}
+		phoneAction={editingKind === null ? phoneAdd : undefined}
 		phonePeekFocus={slotMode === 'activity' && activityChoice === NEW_ACTIVITY
 			? '[name="newActivityName"]'
 			: undefined}
@@ -3940,30 +3941,34 @@
 			? t('tasks.plan.happensOnceOnOneDay')
 			: t('tasks.plan.comesBackAsOften')}
 	>
-		{#snippet badge()}
+		{#snippet badge(inline: boolean)}
 			<!--
 				What the block is, and what it is filed under.
 
 				The title can only say "Edit block"; this is the corner that says
 				which block. Empty lines keep their space while hidden, so choosing
-				something rewrites two lines and moves nothing.
+				something rewrites two lines and moves nothing. Beside the title on
+				a phone it is the category alone: the name is in the field right
+				under it, and the header has room for one thing.
 			-->
-			<p
-				data-block-heading
-				class="truncate text-sm font-medium text-gray-900"
-				class:invisible={!blockHeading.name}
-			>
-				{blockHeading.name || '\u00a0'}
-			</p>
-			<span
-				class="chip mt-0.5 max-w-full truncate"
-				class:invisible={!blockHeading.categoryName}
-				style={blockHeading.face && blockHeading.ink
-					? `background-color:${blockHeading.face};color:${blockHeading.ink};border-color:transparent`
-					: ''}
-			>
-				{blockHeading.categoryName || '\u00a0'}
-			</span>
+			{#if !inline}
+				<p
+					data-block-heading
+					class="truncate text-sm font-medium text-gray-900"
+					class:invisible={!blockHeading.name}
+				>
+					{blockHeading.name || '\u00a0'}
+				</p>
+			{/if}
+			{#if blockHeading.categoryName}
+				<CategoryMark
+					name={blockHeading.categoryName}
+					color={blockHeading.ink}
+					class={inline ? '' : 'mt-0.5'}
+				/>
+			{:else if !inline}
+				<span class="pill invisible mt-0.5">{'\u00a0'}</span>
+			{/if}
 		{/snippet}
 		<div bind:this={createFormEl} class="space-y-3">
 			<!--
@@ -4640,6 +4645,19 @@
 			</button>
 		{/snippet}
 	</Modal>
+
+	<!-- The short sheet's save, at the end of its header: see `phoneAction`. -->
+	{#snippet phoneAdd()}
+		<button
+			type="submit"
+			form="block-form"
+			class="btn btn-primary btn-sm"
+			aria-label={t('ui.add')}
+			title={t('ui.add')}
+		>
+			<Icon name="plus" size={16} />
+		</button>
+	{/snippet}
 
 	{#snippet trayToggle()}
 		<!-- Shows and hides the strip; pressed while it is out. The word does
