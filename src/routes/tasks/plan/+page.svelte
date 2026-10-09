@@ -2880,8 +2880,8 @@
 			{#snippet tools()}
 				<!--
 				Where you are and how much of it is on screen, on one line at every
-				width that has one: ← the date → and where the week begins together
-				on the left, the saved weeks and Day / Week / Month on the right.
+				width that has one: ← the date → on the left, then Day / Week / Month
+				with where the week begins, the saved weeks and Full screen on the right.
 				The week's start is drawn in every view and only visible in the
 				week, so changing view never moves what is beside it.
 			-->
@@ -2913,11 +2913,22 @@
 					</PeriodNav>
 
 					<div
-						class="plan-view-controls controls-sm flex min-w-0 flex-wrap items-center gap-2 max-sm:w-full"
+						class="plan-view-controls controls-sm flex min-w-0 flex-wrap items-center gap-2 max-sm:w-full sm:flex-[1_0_auto]"
 					>
-						<!-- On a phone the view comes first and the week's start is left to
-					     Preferences, so the view, the saved weeks and the list share the
-					     one line under the date rather than taking two or three. -->
+						<!-- The phone's order at every width: the view first, Full screen
+						     last, the saved weeks and the list just before it. On a phone
+						     the week's start is left to Preferences and the saved weeks and
+						     the list fold behind More, so it all shares the one line under
+						     the date rather than taking two or three. -->
+						<div use:sliding class="seg" role="group" aria-label={t('tasks.plan.howMuchToShow')}>
+							{#each [['day', t('tasks.plan.day')], ['week', t('tasks.plan.week')], ['month', t('tasks.plan.month')]] as [mode, label] (mode)}
+								<button
+									onclick={() => setView(mode as PlanView)}
+									aria-pressed={(pendingView ?? effectiveView) === mode}
+									title={t('tasks.plan.viewGCycles', { label: label })}>{label}</button
+								>
+							{/each}
+						</div>
 						<div
 							class="shrink-0 max-sm:hidden {effectiveView === 'week' ? '' : 'invisible'}"
 							inert={effectiveView !== 'week'}
@@ -2994,21 +3005,6 @@
 								<Icon name="maximize" size={14} />
 							</button>
 						{/if}
-
-						<div
-							use:sliding
-							class="seg max-sm:order-first"
-							role="group"
-							aria-label={t('tasks.plan.howMuchToShow')}
-						>
-							{#each [['day', t('tasks.plan.day')], ['week', t('tasks.plan.week')], ['month', t('tasks.plan.month')]] as [mode, label] (mode)}
-								<button
-									onclick={() => setView(mode as PlanView)}
-									aria-pressed={(pendingView ?? effectiveView) === mode}
-									title={t('tasks.plan.viewGCycles', { label: label })}>{label}</button
-								>
-							{/each}
-						</div>
 					</div>
 				</div>
 			{/snippet}
