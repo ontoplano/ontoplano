@@ -186,7 +186,7 @@
 		)
 			return;
 		if (open || deleting) return;
-		const action = getAction(PAGE, e.key);
+		const action = getAction(PAGE, e);
 		if (action === 'navigate-down' || action === 'navigate-up') {
 			e.preventDefault();
 			if (widgets.length === 0) return;

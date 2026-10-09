@@ -124,7 +124,7 @@
 							</label>
 						{:else}
 							<EmptyState
-								icon={routeGlyph('/tasks/plan')!}
+								icon={routeGlyph('/tasks/calendar')!}
 								title={t('goals.noWeeklyBlocksYet')}
 								compact
 							/>

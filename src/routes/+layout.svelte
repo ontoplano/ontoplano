@@ -394,7 +394,7 @@
 				path === '/notebooks' ||
 				(path.startsWith('/notebooks/') && !path.startsWith('/notebooks/people'))
 			);
-		if (href === '/tasks/plan') return path.startsWith('/tasks');
+		if (href === '/tasks/calendar') return path.startsWith('/tasks');
 		if (href === '/goals') return path.startsWith('/goals');
 		if (href === '/health/habits') return path.startsWith('/health') || path.startsWith('/data/');
 		return path === href;
@@ -411,6 +411,7 @@
 			palette.open = true;
 			return;
 		}
+		if (e.ctrlKey || e.metaKey || e.altKey) return;
 
 		if (
 			e.target instanceof HTMLInputElement ||
@@ -930,6 +931,16 @@
 	 */
 	$effect(() => {
 		document.documentElement.dataset.ready = 'true';
+	});
+
+	/*
+	 * `<html lang>` follows the language the page is in. A server writes it
+	 * into the HTML; the phone's build is static, so its HTML says whatever it
+	 * was built with, and a screen reader or the WebView's hyphenation then
+	 * read Portuguese text as English.
+	 */
+	$effect(() => {
+		document.documentElement.lang = data.locale;
 	});
 
 	/*

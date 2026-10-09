@@ -183,7 +183,7 @@ test('a card takes the whole width of the phone', async ({ page }) => {
 
 test('the phone carries the room at the top and the app at the bottom', async ({ page }) => {
 	await register(page, testEmail('topbar'));
-	await visit(page, '/tasks/plan');
+	await visit(page, '/tasks/calendar');
 
 	// The wordmark header is desktop-only: on a phone it spent a strip of a
 	// small screen saying the app's own name.

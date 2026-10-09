@@ -115,7 +115,7 @@ test('it asks one thing at a time, and the rooms you keep are the rooms you get'
 	await expect(page.getByRole('button', { name: 'Next' })).toHaveCount(0);
 
 	await page.getByRole('button', { name: 'Start planning' }).click();
-	await page.waitForURL(/\/tasks\/plan/, { timeout: 20000 });
+	await page.waitForURL(/\/tasks\/calendar/, { timeout: 20000 });
 
 	// And every answer arrived: what was turned off is gone from the navigation
 	// and what was kept is not.
@@ -130,7 +130,7 @@ test('skipping asks nothing and keeps every room', async ({ page }) => {
 	await fresh(page);
 
 	await page.getByRole('button', { name: /skip/i }).click();
-	await page.waitForURL(/\/tasks\/plan/, { timeout: 20000 });
+	await page.waitForURL(/\/tasks\/calendar/, { timeout: 20000 });
 
 	// Skipping is not a choice about rooms: an account that never answered gets
 	// the whole app rather than an empty navigation.

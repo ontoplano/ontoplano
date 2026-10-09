@@ -32,7 +32,11 @@
 	import { enhance } from '$lib/enhance';
 	import { deserialize } from '$app/forms';
 	import Modal from '$lib/components/Modal.svelte';
+	import { isPhone } from '$lib/breakpoints';
 	import Field from '$lib/components/Field.svelte';
+	import MarkdownBox from '$lib/components/MarkdownBox.svelte';
+	import PictureAttach from '$lib/components/PictureAttach.svelte';
+	import RecordingAttach from '$lib/components/RecordingAttach.svelte';
 	import FormGrid from '$lib/components/FormGrid.svelte';
 	import { preloadData, goto, invalidateAll } from '$app/navigation';
 	import { SECTION_COLORS } from '$lib/colors';
@@ -68,6 +72,7 @@
 	import { WEEKDAYS } from '$lib/bill-summary';
 	import { say } from '$lib/said.svelte';
 	import { notify } from '$lib/notify.svelte';
+	import { swallowGhostClick } from '$lib/ghost-click';
 	import type { PlainKey } from '$lib/i18n/keys';
 
 	const t = useT();
@@ -223,7 +228,7 @@
 		if (!data.range.isCurrent)
 			parts.push(`from=${viewMode === 'month' ? data.range.month : data.range.from}`);
 		if (!data.asList) parts.push(`${LIST_PARAM}=${LIST_VALUE}`);
-		goto(resolve(`/tasks/plan?${parts.join('&')}`), {
+		goto(resolve(`/tasks/calendar?${parts.join('&')}`), {
 			replaceState: true,
 			keepFocus: true,
 			noScroll: true
@@ -246,7 +251,7 @@
 	let todosOpen = $state(false);
 
 	let prefillTime = $state('09:00');
-	let prefillDuration = $state(60);
+	const NEW_BLOCK_DURATION_MINUTES = 60;
 	let createFormEl: HTMLElement | undefined = $state();
 	/**
 	 * The calendar itself, for the one thing done imperatively.
@@ -382,9 +387,6 @@
 	// server creates the activity as part of the same submission.
 	const NEW_ACTIVITY = '__new__';
 
-	/** What the block form's header shows where there is no name to show. */
-	const DASH = '\u2014';
-
 	/**
 	 * The workout this block is, when it is one, and what was typed against it.
 	 *
@@ -467,6 +469,8 @@
 	let slotMode: 'category' | 'activity' | 'workout' | 'task' = $state('activity');
 	let formTodoId = $state<number | null>(null);
 	let activityChoice = $state(NEW_ACTIVITY);
+	let newActivityName = $state('');
+	let newActivityCategoryId = $state<number | null>(null);
 	/*
 	 * The rest of the form, held rather than read off the inputs.
 	 *
@@ -477,6 +481,7 @@
 	let formStartTime = $state('09:00');
 	let formDuration = $state(60);
 	let formLabel = $state('');
+	let labelBox = $state<HTMLTextAreaElement>();
 	let formCategoryId = $state<number | null>(null);
 	let formWorkoutId = $state<number | null>(null);
 	let formNotebookId = $state<number | null>(null);
@@ -490,8 +495,7 @@
 	 * Three modes choose the thing three different ways, and the header says the
 	 * same two facts however it was chosen: the thing's own name, and the
 	 * category it belongs to, in that category's colour. A category block has no
-	 * name of its own — the category *is* what it is — so the first line is a
-	 * dash rather than a repetition of the second.
+	 * name of its own — the category *is* what it is — so that line is hidden.
 	 */
 	const tickedWorkout = $derived.by(() => {
 		// Through a widened local, because reading `slotMode` narrows it for
@@ -526,22 +530,27 @@
 		if (mode === 'workout') {
 			const workout = data.workouts.find((w) => w.id === formWorkoutId);
 			return {
-				name: workout?.title ?? DASH,
+				name: workout?.title ?? '',
 				...pill(undefined),
 				categoryName: workout?.categoryName ?? ''
 			};
 		}
-		if (mode === 'category') return { name: DASH, ...pill(category(formCategoryId)) };
+		if (mode === 'category') return { name: '', ...pill(category(formCategoryId)) };
 		if (mode === 'task') {
 			const todo = data.todos.find((one) => one.id === formTodoId);
-			return { name: todo?.title ?? DASH, ...pill(category(todo?.categoryId)) };
+			return { name: todo?.title ?? '', ...pill(category(todo?.categoryId)) };
 		}
 
 		const activity =
 			activityChoice === NEW_ACTIVITY
 				? undefined
 				: data.activities.find((a) => String(a.id) === activityChoice);
-		return { name: activity?.name ?? DASH, ...pill(category(activity?.categoryId)) };
+		return {
+			name: activityChoice === NEW_ACTIVITY ? newActivityName : (activity?.name ?? ''),
+			...pill(
+				category(activityChoice === NEW_ACTIVITY ? newActivityCategoryId : activity?.categoryId)
+			)
+		};
 	});
 	// Offset into the visible window (0 = the day it starts on, i.e. today by
 	// default), not a Monday-indexed weekday. The weekday is derived from it.
@@ -558,6 +567,8 @@
 	let confirmingDelete: string | null = $state(null);
 	let confirmingBulkDelete = $state(false);
 	let schemesExpanded = $state(false);
+	/** The phone opens with the calendar in view; secondary plan controls unfold on demand. */
+	let mobileControlsOpen = $state(false);
 	let newSchemeName = $state('');
 	let confirmingLoadSchemeId: number | null = $state(null);
 	let confirmingDeleteSchemeId: number | null = $state(null);
@@ -635,7 +646,7 @@
 		 * does and more, so there is nothing to keep either way.
 		 */
 		hovered = null;
-		tick().then(() => timeInput?.focus());
+		if (editingKind !== null) tick().then(() => timeInput?.focus());
 	}
 
 	function closeForm() {
@@ -724,7 +735,11 @@
 	 * block to start next week, and a block that starts after the day it is
 	 * drawn on is a block that does not appear where it was just drawn.
 	 */
-	function startNew(mode: 'weekly' | 'once' = 'weekly', anchor: string = selectedDateStr()) {
+	function startNew(
+		mode: 'weekly' | 'once' = 'weekly',
+		anchor: string = selectedDateStr(),
+		durationMinutes = NEW_BLOCK_DURATION_MINUTES
+	) {
 		measureAmounts = [];
 		recurrenceKind = 'weekly';
 		recurrenceDays = [selectedWeekday];
@@ -739,10 +754,12 @@
 		formDate = selectedDateStr();
 		slotMode = 'activity';
 		formTodoId = null;
-		activityChoice = defaultActivityChoice(null);
+		activityChoice = NEW_ACTIVITY;
+		newActivityName = '';
+		newActivityCategoryId = data.categories[0]?.id ?? null;
 		remindLead = 0;
 		formStartTime = prefillTime;
-		formDuration = prefillDuration;
+		formDuration = durationMinutes;
 		formLabel = '';
 		formCategoryId = data.categories[0]?.id ?? null;
 		formWorkoutId = data.workouts[0]?.id ?? null;
@@ -1039,7 +1056,7 @@
 	let placeStart: { x: number; y: number } | null = null;
 	const PLACE_SLOP = 10;
 
-	/* ── Press and hold, on a finger ────────────────────────────────────────────
+	/* ── Tap or hold, on a finger ────────────────────────────────────────────────
 	 *
 	 * The grid's way of making a block is to drag out a shape on empty space,
 	 * and on a touch screen that gesture belongs to the page: a finger dragging
@@ -1047,12 +1064,11 @@
 	 * touching the calendar. The hint under it said "drag to create" to a phone
 	 * that could not.
 	 *
-	 * A press that stays still is the one gesture a scroll cannot be mistaken
-	 * for. Hold for `HOLD_MS` on empty grid and the new-block form opens on the
-	 * day and hour under the finger, exactly as a drag does with a mouse.
+	 * A tap opens the form at that day and hour. Holding still for `HOLD_MS`
+	 * does the same before release; moving cancels both, leaving the gesture
+	 * to scroll the page.
 	 *
-	 * Cancelled by movement, by lifting early, and by the pointer being taken
-	 * away — and it never arms on an existing block, which has its own gestures.
+	 * Neither gesture arms on an existing block, which has its own gestures.
 	 */
 	const HOLD_MS = 450;
 	const HOLD_SLOP = 12;
@@ -1083,7 +1099,6 @@
 			holdFired = true;
 			selectOffsetForDate(target.date);
 			prefillTime = target.startTime;
-			prefillDuration = timeToMinutes(GRID_SNAP_DURATION) * 2;
 			startNew(repeat, target.date);
 			tick().then(() => createFormEl?.scrollIntoView({ block: 'center', behavior: 'smooth' }));
 		}, HOLD_MS);
@@ -1109,6 +1124,10 @@
 	}
 
 	async function onGridPointerUp(e: PointerEvent) {
+		const tappedEmptyGrid = e.pointerType === 'touch' && holdFrom !== null;
+		const tapMoved = holdFrom
+			? Math.abs(e.clientX - holdFrom.x) > HOLD_SLOP || Math.abs(e.clientY - holdFrom.y) > HOLD_SLOP
+			: true;
 		cancelHold();
 		if (holdFired) {
 			// The form is already open on this spot; the release must not also
@@ -1116,6 +1135,20 @@
 			holdFired = false;
 			e.preventDefault();
 			e.stopPropagation();
+			swallowGhostClick();
+			return;
+		}
+		if (placingTodoId === null && tappedEmptyGrid && !tapMoved) {
+			const target = dropTarget(e);
+			if (!target) return;
+			e.preventDefault();
+			e.stopPropagation();
+			selectOffsetForDate(target.date);
+			prefillTime = target.startTime;
+			// The tap's mouse events follow, and would land on the sheet this
+			// opens and take focus out of its first field — see $lib/ghost-click.
+			swallowGhostClick();
+			startNew(repeat, target.date);
 			return;
 		}
 		const start = placeStart;
@@ -1180,6 +1213,7 @@
 	const gridKey = $derived(`${effectiveView}:${data.range.from}`);
 
 	function scroller(): HTMLElement | null {
+		if (narrowScreen && !fullscreen) return gridEl?.closest('.page-gutter') ?? null;
 		return gridEl?.querySelector('.ec-main') ?? null;
 	}
 
@@ -1188,13 +1222,13 @@
 	 * the calendar's own tree and scroll does not bubble.
 	 */
 	$effect(() => {
-		const root = gridEl;
+		const root = scroller();
 		if (!root) return;
 
 		const onScroll = (event: Event) => {
 			const target = event.target;
-			if (target instanceof HTMLElement && target.classList.contains('ec-main')) {
-				keptScroll = target.scrollTop;
+			if (target === root) {
+				keptScroll = root.scrollTop;
 			}
 		};
 
@@ -1520,7 +1554,7 @@
 		const parts: string[] = [`view=${viewMode}`];
 		if (from) parts.push(`from=${from}`);
 		parts.push(...listPart);
-		return resolve(`/tasks/plan?${parts.join('&')}`);
+		return resolve(`/tasks/calendar?${parts.join('&')}`);
 	}
 
 	/*
@@ -1647,7 +1681,7 @@
 		)
 			return;
 
-		const action = getAction('/tasks/plan', e.key);
+		const action = getAction('/tasks/calendar', e);
 		if (!action) {
 			if (showCopyPanel) {
 				return;
@@ -1858,7 +1892,7 @@
 		const parts: string[] = [`view=${mode}`];
 		if (!data.range.isCurrent) parts.push(`from=${data.range.from}`);
 		parts.push(...listPart);
-		goto(resolve(`/tasks/plan?${parts.join('&')}`), {
+		goto(resolve(`/tasks/calendar?${parts.join('&')}`), {
 			replaceState: true,
 			keepFocus: true,
 			noScroll: true
@@ -2183,7 +2217,7 @@
 	/** A day's own time grid, where a block is drawn out or a todo placed. */
 	function openDay(date: string) {
 		pendingView = 'day';
-		goto(resolve(`/tasks/plan?view=day&from=${date}`), { keepFocus: true, noScroll: true });
+		goto(resolve(`/tasks/calendar?view=day&from=${date}`), { keepFocus: true, noScroll: true });
 	}
 
 	/** Marks changed here and not yet reloaded — drawn at once. */
@@ -2272,6 +2306,7 @@
 			allDay: gridEvents.some((e) => e.allDay),
 			allDayLabel: t('tasks.plan.allDay')
 		}),
+		height: narrowScreen && effectiveView !== 'month' && !fullscreen ? 'auto' : '100%',
 		events: gridEvents,
 		editable: true,
 		selectable: true,
@@ -2359,8 +2394,11 @@
 		const placement = placementFromDates(info.start, info.end);
 		selectOffsetForDate(localDay(info.start));
 		prefillTime = placement.startTime;
-		prefillDuration = placement.durationMinutes;
-		startNew(repeat, localDay(info.start));
+		startNew(
+			repeat,
+			localDay(info.start),
+			isPhone() ? NEW_BLOCK_DURATION_MINUTES : placement.durationMinutes
+		);
 		tick().then(() => createFormEl?.scrollIntoView({ block: 'center', behavior: 'smooth' }));
 	}
 
@@ -2440,6 +2478,23 @@
 		oldEvent?: { start: Date };
 		jsEvent?: Calendar.DomEvent | Modifiers;
 	};
+	let pendingDrop: DragInfo | null = null;
+	let showDropChoice = $state(false);
+
+	function cancelDrop() {
+		pendingDrop?.revert();
+		pendingDrop = null;
+		showDropChoice = false;
+	}
+
+	async function chooseDrop(copy: boolean) {
+		const info = pendingDrop;
+		pendingDrop = null;
+		showDropChoice = false;
+		if (!info) return;
+		if (copy) await duplicateBlock(info);
+		else await handleEventPersist(info);
+	}
 
 	async function handleEventDrop(info: DragInfo) {
 		const keys = modifiers(info.jsEvent);
@@ -2460,7 +2515,8 @@
 			return;
 		}
 
-		await handleEventPersist(info);
+		pendingDrop = info;
+		showDropChoice = true;
 	}
 
 	/**
@@ -2833,8 +2889,8 @@
 			{#snippet tools()}
 				<!--
 				Where you are and how much of it is on screen, on one line at every
-				width that has one: ← the date → and where the week begins together
-				on the left, the saved weeks and Day / Week / Month on the right.
+				width that has one: ← the date → on the left, then Day / Week / Month
+				with where the week begins, the saved weeks and Full screen on the right.
 				The week's start is drawn in every view and only visible in the
 				week, so changing view never moves what is beside it.
 			-->
@@ -2866,11 +2922,22 @@
 					</PeriodNav>
 
 					<div
-						class="plan-view-controls controls-sm flex min-w-0 flex-wrap items-center gap-2 max-sm:w-full"
+						class="plan-view-controls controls-sm flex min-w-0 flex-wrap items-center gap-2 max-sm:w-full sm:flex-[1_0_auto]"
 					>
-						<!-- On a phone the view comes first and the week's start is left to
-					     Preferences, so the view, the saved weeks and the list share the
-					     one line under the date rather than taking two or three. -->
+						<!-- The phone's order at every width: the view first, Full screen
+						     last, the saved weeks and the list just before it. On a phone
+						     the week's start is left to Preferences and the saved weeks and
+						     the list fold behind More, so it all shares the one line under
+						     the date rather than taking two or three. -->
+						<div use:sliding class="seg" role="group" aria-label={t('tasks.plan.howMuchToShow')}>
+							{#each [['day', t('tasks.plan.day')], ['week', t('tasks.plan.week')], ['month', t('tasks.plan.month')]] as [mode, label] (mode)}
+								<button
+									onclick={() => setView(mode as PlanView)}
+									aria-pressed={(pendingView ?? effectiveView) === mode}
+									title={t('tasks.plan.viewGCycles', { label: label })}>{label}</button
+								>
+							{/each}
+						</div>
 						<div
 							class="shrink-0 max-sm:hidden {effectiveView === 'week' ? '' : 'invisible'}"
 							inert={effectiveView !== 'week'}
@@ -2883,29 +2950,62 @@
 								label={t('tasks.plan.weekStartsOn')}
 							/>
 						</div>
-
-						<!-- A saved shape of a week, loaded over this one: it opens a dialog,
-					     so it is a button beside the view, not a fourth position in it. -->
 						<button
 							type="button"
-							onclick={() => (schemesExpanded = true)}
-							aria-haspopup="dialog"
-							class="btn btn-sm ml-auto shrink-0"
-							title={t('tasks.plan.savedShapesOfAWeek')}
-							aria-label={t('tasks.plan.schemes')}
-							data-tour="plan-schemes"
+							class="btn btn-sm ml-auto sm:hidden"
+							aria-expanded={mobileControlsOpen}
+							aria-label={t('ui.more')}
+							onclick={() => (mobileControlsOpen = !mobileControlsOpen)}
 						>
-							<Icon name="copy" size={14} />
-							<span class="hidden sm:inline">{t('tasks.plan.schemes')}</span>
+							<Icon name="sliders" size={14} />
 						</button>
 
-						<!-- The whole screen, where the browser has one to give (not iOS). -->
+						<!-- On a narrow phone these open on their own row, so Full screen
+						     stays at the end of the first row at both states. -->
+						<div
+							class="ml-auto flex shrink-0 items-center gap-2 max-[420px]:order-2 max-[420px]:w-full max-[420px]:justify-end {mobileControlsOpen
+								? ''
+								: 'max-[420px]:hidden max-sm:invisible'}"
+							inert={narrowScreen && !mobileControlsOpen}
+						>
+							<!-- A saved shape of a week, loaded over this one: it opens a dialog,
+					     so it is a button beside the view, not a fourth position in it. -->
+							<button
+								type="button"
+								onclick={() => (schemesExpanded = true)}
+								aria-haspopup="dialog"
+								class="btn btn-sm shrink-0"
+								title={t('tasks.plan.savedShapesOfAWeek')}
+								aria-label={t('tasks.plan.schemes')}
+								data-tour="plan-schemes"
+							>
+								<Icon name="scheme" size={14} />
+								<span class="hidden sm:inline">{t('tasks.plan.schemes')}</span>
+							</button>
+
+							<!-- The same views as a list of their days; the calendar is the default. -->
+							<button
+								type="button"
+								onclick={toggleList}
+								aria-pressed={data.asList}
+								class="btn btn-sm shrink-0"
+								title={data.asList ? t('tasks.plan.showAsCalendar') : t('tasks.plan.showAsList')}
+								aria-label={data.asList
+									? t('tasks.plan.showAsCalendar')
+									: t('tasks.plan.showAsList')}
+								data-tour="plan-as-list"
+							>
+								<Icon name={data.asList ? 'calendar' : 'list'} size={14} />
+							</button>
+						</div>
+
+						<!-- Full screen stays in the same place while More opens beside it. -->
 						{#if canFullscreen}
 							<button
 								type="button"
 								onclick={toggleFullscreen}
 								aria-pressed={fullscreen}
-								class="btn btn-sm shrink-0"
+								class="btn btn-sm shrink-0 max-[420px]:order-1 max-[420px]:ml-auto"
 								title={fullscreen ? t('tasks.plan.leaveFullScreen') : t('tasks.plan.fullScreen')}
 								aria-label={fullscreen
 									? t('tasks.plan.leaveFullScreen')
@@ -2914,40 +3014,12 @@
 								<Icon name="maximize" size={14} />
 							</button>
 						{/if}
-
-						<!-- The same views as a list of their days; the calendar is the default. -->
-						<button
-							type="button"
-							onclick={toggleList}
-							aria-pressed={data.asList}
-							class="btn btn-sm shrink-0"
-							title={data.asList ? t('tasks.plan.showAsCalendar') : t('tasks.plan.showAsList')}
-							aria-label={data.asList ? t('tasks.plan.showAsCalendar') : t('tasks.plan.showAsList')}
-							data-tour="plan-as-list"
-						>
-							<Icon name={data.asList ? 'calendar' : 'list'} size={14} />
-						</button>
-
-						<div
-							use:sliding
-							class="seg max-sm:order-first"
-							role="group"
-							aria-label={t('tasks.plan.howMuchToShow')}
-						>
-							{#each [['day', t('tasks.plan.day')], ['week', t('tasks.plan.week')], ['month', t('tasks.plan.month')]] as [mode, label] (mode)}
-								<button
-									onclick={() => setView(mode as PlanView)}
-									aria-pressed={(pendingView ?? effectiveView) === mode}
-									title={t('tasks.plan.viewGCycles', { label: label })}>{label}</button
-								>
-							{/each}
-						</div>
 					</div>
 				</div>
 			{/snippet}
 
 			{#snippet filters()}
-				{#if data.todos.length > 0}
+				{#if data.todos.length > 0 && (!narrowScreen || mobileControlsOpen)}
 					<!--
 					What is waiting for a time, narrowed the way the task list narrows
 					it, with the switch that shows it as the strip's one verb. It
@@ -3207,6 +3279,8 @@
 					bind:this={gridWrap}
 					data-tour="plan-grid"
 					class="plan-grid relative {effectiveView === 'month'
+						? 'plan-month'
+						: ''} {effectiveView === 'month'
 						? 'h-[calc(100dvh-12rem)] min-h-[54rem]'
 						: gridDays === 1
 							? 'h-[62vh]'
@@ -3737,6 +3811,22 @@
 		</div>
 	</Modal>
 
+	<Modal
+		bind:open={showDropChoice}
+		title={t('tasks.plan.placeBlock')}
+		size="sm"
+		onclose={cancelDrop}
+	>
+		<p class="text-sm text-gray-700">{t('tasks.plan.moveOrCopyBlock')}</p>
+		{#snippet footer()}
+			<button type="button" class="btn" onclick={cancelDrop}>{t('ui.cancel')}</button>
+			<button type="button" class="btn" onclick={() => chooseDrop(true)}>{t('ui.copy')}</button>
+			<button type="button" class="btn btn-primary" onclick={() => chooseDrop(false)}
+				>{t('tasks.plan.moveHere')}</button
+			>
+		{/snippet}
+	</Modal>
+
 	<Modal bind:open={showCopyPanel} title={t('tasks.plan.copyToDays')} size="sm">
 		<form
 			method="post"
@@ -3841,6 +3931,11 @@
 
 	<Modal
 		bind:open={showForm}
+		phonePeek={editingKind === null}
+		phoneAction={editingKind === null ? phoneAdd : undefined}
+		phonePeekFocus={slotMode === 'activity' && activityChoice === NEW_ACTIVITY
+			? '[name="newActivityName"]'
+			: undefined}
 		error={form?.message}
 		saved={editingKind === null ? t('tasks.plan.blockAdded') : undefined}
 		onclose={closeForm}
@@ -3851,27 +3946,33 @@
 			? t('tasks.plan.happensOnceOnOneDay')
 			: t('tasks.plan.comesBackAsOften')}
 	>
-		{#snippet badge()}
+		{#snippet badge(inline: boolean)}
 			<!--
 				What the block is, and what it is filed under.
 
 				The title can only say "Edit block"; this is the corner that says
-				which block. Both lines are always drawn — a dash where there is no
-				name of its own, which is every category block — so choosing
-				something rewrites two lines and moves nothing.
+				which block. Empty lines keep their space while hidden, so choosing
+				something rewrites two lines and moves nothing. Beside the title on
+				a phone it is the category alone: the name is in the field right
+				under it, and the header has room for one thing.
 			-->
-			<p class="truncate text-sm font-medium text-gray-900">{blockHeading.name}</p>
-			{#if blockHeading.categoryName}
-				<span
-					class="chip mt-0.5 max-w-full truncate"
-					style={blockHeading.face && blockHeading.ink
-						? `background-color:${blockHeading.face};color:${blockHeading.ink};border-color:transparent`
-						: ''}
+			{#if !inline}
+				<p
+					data-block-heading
+					class="truncate text-sm font-medium text-gray-900"
+					class:invisible={!blockHeading.name}
 				>
-					{blockHeading.categoryName}
-				</span>
-			{:else}
-				<p class="truncate text-xs text-gray-500">{DASH}</p>
+					{blockHeading.name || '\u00a0'}
+				</p>
+			{/if}
+			{#if blockHeading.categoryName}
+				<CategoryMark
+					name={blockHeading.categoryName}
+					color={blockHeading.ink}
+					class={inline ? '' : 'mt-0.5'}
+				/>
+			{:else if !inline}
+				<span class="pill invisible mt-0.5">{'\u00a0'}</span>
 			{/if}
 		{/snippet}
 		<div bind:this={createFormEl} class="space-y-3">
@@ -3899,6 +4000,140 @@
 				{#if editingBlockId !== null}
 					<input type="hidden" name="id" value={editingBlockId} />
 				{/if}
+
+				<!--
+					What the block is, first.
+
+					On a phone the new block opens as a half sheet, and what showed in that
+					half was how often it repeats and at what time — answers the tap on the
+					grid had mostly given already — with the one thing nobody had said yet
+					below the fold. The name goes on top, then the kind of thing it is.
+				-->
+				<FormGrid>
+					{#if slotMode === 'category'}
+						<Field label={t('ui.category')} span={12} required>
+							<Picker
+								name="categoryId"
+								required
+								value={String(formCategoryId ?? '')}
+								options={data.categories.map((cat) => ({
+									value: String(cat.id),
+									label: cat.name
+								}))}
+								onpick={(next) => (formCategoryId = Number(next))}
+								label={t('ui.category')}
+							/>
+						</Field>
+					{:else if slotMode === 'task'}
+						<Field label={t('tasks.plan.existingTask')} span={12} required>
+							<Picker
+								name="todoId"
+								required
+								search
+								value={String(formTodoId ?? '')}
+								options={data.todos.map((todo) => ({
+									value: String(todo.id),
+									label: todo.title
+								}))}
+								onpick={(next) => (formTodoId = Number(next))}
+								label={t('tasks.plan.existingTask')}
+							/>
+						</Field>
+					{:else if slotMode === 'workout'}
+						<Field label={t('tasks.plan.workout')} span={12} required>
+							<Picker
+								name="workoutId"
+								required
+								value={String(formWorkoutId ?? '')}
+								options={data.workouts.map((workout) => ({
+									value: String(workout.id),
+									label: workout.title
+								}))}
+								onpick={(next) => (formWorkoutId = Number(next))}
+								label={t('tasks.plan.workout')}
+							/>
+						</Field>
+					{:else}
+						<Field label={t('tasks.plan.activity')} span={12} required>
+							<!-- Typed at rather than scrolled: an account with forty
+							     activities was a list you hunted through, and "lr" is how
+							     anybody actually finds "learn guitar". -->
+							<Picker
+								name="activityId"
+								required
+								search
+								value={activityChoice}
+								onpick={(next) => (activityChoice = next)}
+								label={t('tasks.plan.activity')}
+								options={[
+									...data.activities.map((act: { id: number; name: string }) => ({
+										value: String(act.id),
+										label: act.name
+									})),
+									{ value: NEW_ACTIVITY, label: t('tasks.plan.newActivity2') }
+								]}
+							/>
+						</Field>
+					{/if}
+				</FormGrid>
+
+				{#if slotMode === 'activity' && activityChoice === NEW_ACTIVITY}
+					<div class="border-2 border-[var(--section-accent)] bg-gray-50 p-3">
+						<FormGrid>
+							<Field label={t('tasks.plan.newActivity')} span={8} required>
+								<OneLine
+									name="newActivityName"
+									bind:value={newActivityName}
+									placeholder={t('tasks.plan.eGLearnGuitar')}
+									class="input"
+									required
+								/>
+							</Field>
+							<Field label={t('tasks.plan.itsCategory')} span={4} required>
+								<select
+									name="newActivityCategoryId"
+									required
+									class="select"
+									bind:value={newActivityCategoryId}
+								>
+									{#each data.categories as cat (cat.id)}
+										<option value={cat.id}>{cat.name}</option>
+									{/each}
+								</select>
+							</Field>
+						</FormGrid>
+					</div>
+				{/if}
+
+				<FormGrid>
+					<Field label={t('tasks.plan.mode')} span={12} required>
+						<!-- Only where there is a workout to pick: a mode that lands on an
+						     empty list is a dead end. -->
+						<Picker
+							name="mode"
+							required
+							value={slotMode}
+							options={[
+								{ value: 'activity', label: t('tasks.plan.activity') },
+								{ value: 'category', label: t('ui.category') },
+								...(data.workouts.length > 0
+									? [{ value: 'workout', label: t('tasks.plan.workout') }]
+									: []),
+								...(editingKind === null && data.todos.length > 0
+									? [{ value: 'task', label: t('tasks.plan.existingTask') }]
+									: [])
+							]}
+							onpick={(next) => {
+								slotMode = next as typeof slotMode;
+								if (slotMode === 'task') {
+									repeat = 'once';
+									formTodoId ??= data.todos[0]?.id ?? null;
+								}
+							}}
+							label={t('tasks.plan.mode')}
+						/>
+					</Field>
+				</FormGrid>
 
 				<div class="flex items-center gap-3">
 					<span class="shrink-0 text-sm font-medium text-gray-700">{t('tasks.plan.repeats')}</span>
@@ -4120,124 +4355,6 @@
 					</Field>
 				</FormGrid>
 
-				<FormGrid>
-					<Field label={t('tasks.plan.mode')} span={6} required>
-						<!-- Only where there is a workout to pick: a mode that lands on an
-						     empty list is a dead end. -->
-						<Picker
-							name="mode"
-							required
-							value={slotMode}
-							options={[
-								{ value: 'activity', label: t('tasks.plan.activity') },
-								{ value: 'category', label: t('ui.category') },
-								...(data.workouts.length > 0
-									? [{ value: 'workout', label: t('tasks.plan.workout') }]
-									: []),
-								...(editingKind === null && data.todos.length > 0
-									? [{ value: 'task', label: t('tasks.plan.existingTask') }]
-									: [])
-							]}
-							onpick={(next) => {
-								slotMode = next as typeof slotMode;
-								if (slotMode === 'task') {
-									repeat = 'once';
-									formTodoId ??= data.todos[0]?.id ?? null;
-								}
-							}}
-							label={t('tasks.plan.mode')}
-						/>
-					</Field>
-					{#if slotMode === 'category'}
-						<Field label={t('ui.category')} span={6} required>
-							<Picker
-								name="categoryId"
-								required
-								value={String(formCategoryId ?? '')}
-								options={data.categories.map((cat) => ({
-									value: String(cat.id),
-									label: cat.name
-								}))}
-								onpick={(next) => (formCategoryId = Number(next))}
-								label={t('ui.category')}
-							/>
-						</Field>
-					{:else if slotMode === 'task'}
-						<Field label={t('tasks.plan.existingTask')} span={6} required>
-							<Picker
-								name="todoId"
-								required
-								search
-								value={String(formTodoId ?? '')}
-								options={data.todos.map((todo) => ({
-									value: String(todo.id),
-									label: todo.title
-								}))}
-								onpick={(next) => (formTodoId = Number(next))}
-								label={t('tasks.plan.existingTask')}
-							/>
-						</Field>
-					{:else if slotMode === 'workout'}
-						<Field label={t('tasks.plan.workout')} span={6} required>
-							<Picker
-								name="workoutId"
-								required
-								value={String(formWorkoutId ?? '')}
-								options={data.workouts.map((workout) => ({
-									value: String(workout.id),
-									label: workout.title
-								}))}
-								onpick={(next) => (formWorkoutId = Number(next))}
-								label={t('tasks.plan.workout')}
-							/>
-						</Field>
-					{:else}
-						<Field label={t('tasks.plan.activity')} span={6} required>
-							<!-- Typed at rather than scrolled: an account with forty
-							     activities was a list you hunted through, and "lr" is how
-							     anybody actually finds "learn guitar". -->
-							<Picker
-								name="activityId"
-								required
-								search
-								value={activityChoice}
-								onpick={(next) => (activityChoice = next)}
-								label={t('tasks.plan.activity')}
-								options={[
-									...data.activities.map((act: { id: number; name: string }) => ({
-										value: String(act.id),
-										label: act.name
-									})),
-									{ value: NEW_ACTIVITY, label: t('tasks.plan.newActivity2') }
-								]}
-							/>
-						</Field>
-					{/if}
-				</FormGrid>
-
-				{#if slotMode === 'activity' && activityChoice === NEW_ACTIVITY}
-					<div class="border border-gray-200 bg-gray-50 p-3">
-						<FormGrid>
-							<Field label={t('tasks.plan.newActivity')} span={8} required>
-								<OneLine
-									name="newActivityName"
-									placeholder={t('tasks.plan.eGLearnGuitar')}
-									class="input"
-									required
-									autofocus
-								/>
-							</Field>
-							<Field label={t('tasks.plan.itsCategory')} span={4} required>
-								<select name="newActivityCategoryId" required class="select">
-									{#each data.categories as cat (cat.id)}
-										<option value={cat.id}>{cat.name}</option>
-									{/each}
-								</select>
-							</Field>
-						</FormGrid>
-					</div>
-				{/if}
-
 				<!-- The task brings its own notes, ratings and notebook. -->
 				{#if slotMode !== 'task'}
 					<FormGrid>
@@ -4263,15 +4380,20 @@
 								grid shows the first line, because a block is a rectangle an
 								hour tall and a paragraph does not fit in one.
 							-->
-							<textarea
+							<MarkdownBox
+								bind:element={labelBox}
+								bind:value={formLabel}
 								name="label"
 								rows={3}
 								autocomplete="off"
 								placeholder={t('tasks.plan.eGDentist')}
-								bind:value={formLabel}
-								class="input resize-y"
 								maxlength={MAX_BLOCK_NOTES}
-							></textarea>
+								preview="written"
+							/>
+							<!-- The same attachments a task's notes take: a block is as often
+							     a screenshot or a thing said out loud. -->
+							<PictureAttach target={labelBox} />
+							<RecordingAttach target={labelBox} />
 						</Field>
 					</FormGrid>
 
@@ -4535,14 +4657,23 @@
 		{#snippet footer()}
 			<button type="button" class="btn" onclick={closeForm}>{t('ui.cancel')}</button>
 			<button type="submit" form="block-form" class="btn btn-primary">
-				{editingKind
-					? t('tasks.plan.saveBlock')
-					: repeat === 'once'
-						? t('tasks.plan.addOneOff')
-						: t('tasks.plan.addRepeatingBlock')}
+				{editingKind ? t('tasks.plan.saveBlock') : t('ui.add')}
 			</button>
 		{/snippet}
 	</Modal>
+
+	<!-- The short sheet's save, at the end of its header: see `phoneAction`. -->
+	{#snippet phoneAdd()}
+		<button
+			type="submit"
+			form="block-form"
+			class="btn btn-primary btn-sm"
+			aria-label={t('ui.add')}
+			title={t('ui.add')}
+		>
+			<Icon name="plus" size={16} />
+		</button>
+	{/snippet}
 
 	{#snippet trayToggle()}
 		<!-- Shows and hides the strip; pressed while it is out. The word does
@@ -4623,6 +4754,17 @@
 	.plan-grid :global(.ec-toolbar) {
 		display: none;
 	}
+	/* On a phone the page carries the hours, so one vertical gesture has one
+	   scroller and the calendar header stays with the grid as it passes. */
+	@media (max-width: 639px) {
+		.plan-grid:not(.plan-month) {
+			height: auto;
+			min-height: 0;
+		}
+		.plan-grid:not(.plan-month) :global(.ec-main) {
+			overflow: visible;
+		}
+	}
 	/* The phone's week: a day's heading over its rows, in the list's gutters. */
 	.plan-agenda-day {
 		display: flex;
@@ -4652,12 +4794,34 @@
 	/* On the whole screen: the page's own ground behind it, the grid taking
 	   every row the controls leave. */
 	.plan-surface:fullscreen {
-		overflow-y: auto;
-		padding: 1rem;
+		display: flex;
+		flex-direction: column;
+		height: 100dvh;
+		overflow: hidden;
+		padding: 0;
 		background: var(--color-gray-100);
 	}
 
+	.plan-surface:fullscreen :global(.room-surface) {
+		display: flex;
+		min-height: 0;
+		flex: 1;
+		flex-direction: column;
+	}
+
 	.plan-surface:fullscreen :global(.plan-grid) {
-		height: calc(100dvh - 11rem);
+		min-height: 0;
+		flex: 1;
+		height: auto;
+	}
+
+	.plan-surface:fullscreen :global(.plan-grid .ec) {
+		height: 100%;
+	}
+
+	.plan-surface:fullscreen :global(.plan-grid .ec-main) {
+		min-height: 0;
+		flex: 1;
+		overflow: auto;
 	}
 </style>

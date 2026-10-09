@@ -312,6 +312,7 @@ export type MessageKey =
 	| 'capture.addedToWithContent'
 	| 'capture.diaryNote'
 	| 'capture.newThing'
+	| 'capture.planDestination'
 	| 'captureDialog.notWrittenDown'
 	| 'captureSettings.atLeastOne'
 	| 'captureSettings.intro'
@@ -424,6 +425,8 @@ export type MessageKey =
 	| 'errors.billing.purchaseIsForAnotherPlan'
 	| 'errors.billing.storeDoesNotKnowThatPurchase'
 	| 'errors.billing.youHaveAlreadySwitchedTwice'
+	| 'errors.bills.invalidPaidDate'
+	| 'errors.bills.invalidPaymentAmount'
 	| 'errors.bills.thatCategoryIsNotYours'
 	| 'errors.bills.thatGoalIsNotYours'
 	| 'errors.bills.thatPeriodIsAlreadyPaid'
@@ -676,6 +679,7 @@ export type MessageKey =
 	| 'finance.bills.averagePerPayment'
 	| 'finance.bills.averagePerWeek'
 	| 'finance.bills.averagePerYear'
+	| 'finance.bills.changingAmountDetachesMovement'
 	| 'finance.bills.date'
 	| 'finance.bills.delete'
 	| 'finance.bills.deleteThisBill'
@@ -689,6 +693,8 @@ export type MessageKey =
 	| 'finance.bills.dueTheNth'
 	| 'finance.bills.edit'
 	| 'finance.bills.editBill'
+	| 'finance.bills.editPayment'
+	| 'finance.bills.editPaymentFor'
 	| 'finance.bills.expectedAmount'
 	| 'finance.bills.expectedAmountShort'
 	| 'finance.bills.expectedThisMonth'
@@ -2164,6 +2170,7 @@ export type MessageKey =
 	| 'notify.noun.alarm'
 	| 'notify.noun.beforeBlock'
 	| 'notify.noun.bill'
+	| 'notify.noun.billPayment'
 	| 'notify.noun.block'
 	| 'notify.noun.bought'
 	| 'notify.noun.dataPoint'
@@ -3516,6 +3523,8 @@ export type MessageKey =
 	| 'tasks.plan.minutesBeforeItStartsEvery'
 	| 'tasks.plan.mode'
 	| 'tasks.plan.month'
+	| 'tasks.plan.moveHere'
+	| 'tasks.plan.moveOrCopyBlock'
 	| 'tasks.plan.newActivity'
 	| 'tasks.plan.newActivity2'
 	| 'tasks.plan.newBlock'
@@ -3530,6 +3539,7 @@ export type MessageKey =
 	| 'tasks.plan.on'
 	| 'tasks.plan.openTheDay'
 	| 'tasks.plan.owed'
+	| 'tasks.plan.placeBlock'
 	| 'tasks.plan.press'
 	| 'tasks.plan.pressAndHoldOnThe'
 	| 'tasks.plan.putBlockBackToPending'
@@ -4210,6 +4220,7 @@ export interface MessageValuesFor {
 	'finance.bills.dueOnDay': { day: string | number };
 	'finance.bills.dueTheNth': { nth: string | number };
 	'finance.bills.edit': { name: string | number };
+	'finance.bills.editPaymentFor': { period: string | number };
 	'finance.bills.expectedAmountShort': { amount: string | number };
 	'finance.bills.historyOf': { name: string | number };
 	'finance.bills.markPaid2': { name: string | number };
@@ -4535,6 +4546,7 @@ export interface MessageValuesFor {
 	'notify.noun.alarm': { count: number };
 	'notify.noun.beforeBlock': { count: number };
 	'notify.noun.bill': { count: number };
+	'notify.noun.billPayment': { count: number };
 	'notify.noun.block': { count: number };
 	'notify.noun.bought': { count: number };
 	'notify.noun.dataPoint': { count: number };

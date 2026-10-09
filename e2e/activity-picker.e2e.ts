@@ -30,7 +30,7 @@ const initials = (name: string) =>
 test('the picker shows everything first, then narrows as you type', async ({ page }) => {
 	test.setTimeout(150_000);
 	await register(page, testEmail('picker'));
-	await visit(page, '/tasks/plan?view=week');
+	await visit(page, '/tasks/calendar?view=week');
 	await page.getByRole('button', { name: 'New task block' }).click();
 
 	// Nothing typed, and the whole list is already there. This is the half a
@@ -61,20 +61,24 @@ test('the picker shows everything first, then narrows as you type', async ({ pag
 test('a press on the field shuts it as well as opens it', async ({ page }) => {
 	test.setTimeout(150_000);
 	await register(page, testEmail('picker-toggle'));
-	await visit(page, '/tasks/plan?view=week');
+	await visit(page, '/tasks/calendar?view=week');
 	await page.getByRole('button', { name: 'New task block' }).click();
 
 	await face(page).click();
 	await expect(optionsIn(page).first()).toBeVisible();
 	await face(page).click();
 	await expect(optionsIn(page)).toHaveCount(0);
-	await expect(page.getByRole('button', { name: /Add repeating task block/ })).toBeVisible();
+	await expect(
+		page
+			.getByRole('dialog', { name: 'New task block' })
+			.getByRole('button', { name: 'Add', exact: true })
+	).toBeVisible();
 });
 
 test('it works from the keyboard alone, and Escape lets go', async ({ page }) => {
 	test.setTimeout(150_000);
 	await register(page, testEmail('picker-keys'));
-	await visit(page, '/tasks/plan?view=week');
+	await visit(page, '/tasks/calendar?view=week');
 	await page.getByRole('button', { name: 'New task block' }).click();
 
 	await face(page).focus();
@@ -95,13 +99,17 @@ test('it works from the keyboard alone, and Escape lets go', async ({ page }) =>
 	await expect(face(page)).toHaveText(taken);
 
 	// And Escape on the picker did not also close the form under it.
-	await expect(page.getByRole('button', { name: /Add repeating task block/ })).toBeVisible();
+	await expect(
+		page
+			.getByRole('dialog', { name: 'New task block' })
+			.getByRole('button', { name: 'Add', exact: true })
+	).toBeVisible();
 });
 
 test('a query that matches nothing says so rather than showing an empty box', async ({ page }) => {
 	test.setTimeout(150_000);
 	await register(page, testEmail('picker-empty'));
-	await visit(page, '/tasks/plan?view=week');
+	await visit(page, '/tasks/calendar?view=week');
 	await page.getByRole('button', { name: 'New task block' }).click();
 
 	await face(page).click();

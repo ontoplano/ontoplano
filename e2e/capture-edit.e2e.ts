@@ -72,3 +72,55 @@ test('the quick sheet says where the task would land, once the rest is unfolded'
 		.click();
 	await expect(place).toBeVisible({ timeout: 10_000 });
 });
+
+test('quick capture can put a task block on the plan', async ({ page }) => {
+	test.setTimeout(180_000);
+	const tomorrow = new Date();
+	tomorrow.setDate(tomorrow.getDate() + 1);
+	const date = `${tomorrow.getFullYear()}-${String(tomorrow.getMonth() + 1).padStart(2, '0')}-${String(tomorrow.getDate()).padStart(2, '0')}`;
+	await page.setViewportSize({ width: 390, height: 844 });
+	await register(page, testEmail('capture-block'));
+	await visit(page, '/');
+	await page.keyboard.press('t');
+
+	const dialog = page.getByRole('dialog', { name: 'New task' });
+	await dialog.locator('[name="heading"]').fill('Plan the garden');
+	await dialog
+		.getByText(/Category, notebook/)
+		.first()
+		.click();
+	await dialog.getByRole('checkbox', { name: 'New task block' }).check();
+	await dialog.locator('[name="scheduledDate"]').fill(date);
+	await dialog.locator('[name="startTime"]').fill('10:30');
+	await dialog.locator('[name="durationMinutes"]').fill('45');
+	const category = dialog.locator('[name="categoryId"]');
+	await expect.poll(() => category.locator('option').count()).toBeGreaterThan(1);
+	await category.selectOption({ index: 1 });
+	const categoryId = await category.inputValue();
+	await dialog.getByRole('button', { name: 'Save' }).click();
+	await expect(dialog).toBeHidden();
+
+	await page.getByRole('button', { name: 'Calendar', exact: true }).click();
+	await expect(page).toHaveURL(new RegExp(`/tasks/calendar\\?from=${date}`));
+	await expect(page.getByText('Plan the garden').first()).toBeVisible();
+	await page.getByText('Plan the garden', { exact: true }).first().click();
+	const block = page.getByRole('dialog');
+	await expect(block.locator('[name="startTime"]')).toHaveValue('10:30');
+	await expect(block.locator('[name="durationMinutes"]')).toHaveValue('45');
+	await page.keyboard.press('Escape');
+
+	const origin = new URL(page.url()).origin;
+	const rejected = await page.request.post('/tasks/todo?/create', {
+		headers: { Origin: origin, 'x-sveltekit-action': 'true' },
+		form: {
+			heading: 'Rejected block',
+			asBlock: 'true',
+			scheduledDate: date,
+			startTime: 'invalid',
+			categoryId
+		}
+	});
+	expect(await rejected.text()).toContain('failure');
+	await visit(page, '/tasks/todo');
+	await expect(page.getByText('Rejected block')).toHaveCount(0);
+});

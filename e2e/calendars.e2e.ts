@@ -12,7 +12,7 @@ import { visit } from './helpers/visit';
  */
 test('an address pointing at this machine is refused, and says so', async ({ page }) => {
 	await register(page, testEmail('ical'));
-	await visit(page, '/tasks/plan');
+	await visit(page, '/tasks/calendar');
 
 	await page.getByRole('button', { name: /schemes/i }).click();
 	// The panel is folded now — it is set up once and read never, and the drawer

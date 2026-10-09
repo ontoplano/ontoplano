@@ -145,7 +145,7 @@
 	function onkeydown(event: KeyboardEvent) {
 		if (event.metaKey || event.ctrlKey || event.altKey) return;
 		if (typing(event)) return;
-		if (getAction(ROOM, event.key) === 'new') {
+		if (getAction(ROOM, event) === 'new') {
 			event.preventDefault();
 			openNew();
 		}

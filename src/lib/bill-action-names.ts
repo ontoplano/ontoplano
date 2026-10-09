@@ -10,6 +10,7 @@ export type BillActionNames = {
 	create: string;
 	update: string;
 	pay: string;
+	editPayment: string;
 	unpay: string;
 	skip: string;
 	unskip: string;
@@ -22,6 +23,7 @@ export const BILL_ROOM_ACTIONS: BillActionNames = {
 	create: '?/create',
 	update: '?/update',
 	pay: '?/pay',
+	editPayment: '?/editPayment',
 	unpay: '?/unpay',
 	skip: '?/skip',
 	unskip: '?/unskip',
@@ -34,6 +36,7 @@ export const NOTEBOOK_BILL_ACTIONS: BillActionNames = {
 	create: '?/billCreate',
 	update: '?/billUpdate',
 	pay: '?/billPay',
+	editPayment: '?/billEditPayment',
 	unpay: '?/billUnpay',
 	skip: '?/billSkip',
 	unskip: '?/billUnskip',

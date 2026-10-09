@@ -38,6 +38,16 @@ test('a bill can be added, paid for a real amount, and unpaid', async ({ page })
 		.locator('li', { hasText: 'Rent' })
 		.getByRole('button', { name: /^Mark .* paid$/ })
 		.click();
+	const row = page.locator('li', { hasText: 'Rent' });
+	const tick = (await row.getByRole('button', { name: /^Mark .* paid$/ }).boundingBox())!;
+	const amount = (await row.locator('[name="amount"]').boundingBox())!;
+	expect(Math.abs(amount.x - tick.x)).toBeLessThanOrEqual(8);
+	expect(amount.y).toBeGreaterThanOrEqual(tick.y + tick.height);
+	await page.setViewportSize({ width: 390, height: 844 });
+	const phoneTick = (await row.getByRole('button', { name: /^Mark .* paid$/ }).boundingBox())!;
+	const phoneAmount = (await row.locator('[name="amount"]').boundingBox())!;
+	expect(Math.abs(phoneAmount.x - phoneTick.x)).toBeLessThanOrEqual(8);
+	await page.setViewportSize({ width: 1200, height: 900 });
 	await page.locator('li', { hasText: 'Rent' }).locator('[name="amount"]').fill('1315,00');
 	await page
 		.locator('li', { hasText: 'Rent' })
@@ -47,6 +57,20 @@ test('a bill can be added, paid for a real amount, and unpaid', async ({ page })
 	// The row says paid, and the month is over plan by the difference.
 	await expect(page.locator('li', { hasText: 'Rent' }).getByText('paid')).toBeVisible();
 	await expect(page.getByText(/over/)).toBeVisible();
+	await row.getByRole('button', { name: 'History of Rent' }).click();
+	await row.getByRole('button', { name: /Edit payment for/ }).click();
+	const payment = page.getByRole('dialog', { name: 'Edit payment' });
+	await expect(payment.locator('[name="amount"]')).toHaveValue('1315.00');
+	await page.setViewportSize({ width: 390, height: 844 });
+	await page.screenshot({ path: 'test-results/bill-payment-edit-phone.png' });
+	await page.setViewportSize({ width: 1200, height: 900 });
+	await payment.locator('[name="paidDate"]').fill('2026-09-05');
+	await payment.locator('[name="amount"]').fill('1185,00');
+	await payment.getByRole('button', { name: 'Save' }).click();
+	await expect(payment).toBeHidden();
+	await expect(row.getByText('Sep 5, 2026')).toBeVisible();
+	await expect(row.getByRole('cell', { name: /1,185/ })).toBeVisible();
+	await expect(page.getByText(/under/)).toBeVisible();
 
 	// Phone size, because this ships on the phone too.
 	await page.setViewportSize({ width: 390, height: 844 });
@@ -148,7 +172,7 @@ test('a bill with a lead lands on the week, and ticking it there pays it', async
 	await expect(page.locator('li', { hasText: 'Rent' }).getByText(/3 days before/)).toBeVisible();
 
 	// It is on the month's plan, on the 12th rather than the 15th.
-	await visit(page, '/tasks/plan?view=month');
+	await visit(page, '/tasks/calendar?view=month');
 	const onGrid = page.getByText('Pay Rent').first();
 	await expect(onGrid).toBeVisible();
 
@@ -253,7 +277,7 @@ for (const size of SIZES) {
 		await edit.getByRole('button', { name: 'Cancel' }).click();
 
 		// Not on the week: it pays itself.
-		await visit(page, '/tasks/plan?view=month');
+		await visit(page, '/tasks/calendar?view=month');
 		await expect(page.getByText('Pay Film streaming')).toHaveCount(0);
 	});
 

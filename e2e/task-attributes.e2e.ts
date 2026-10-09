@@ -95,7 +95,7 @@ for (const { name, viewport } of WIDTHS) {
 				const d = new Date();
 				return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 			});
-			await visit(page, `/tasks/plan?view=day&from=${today}`);
+			await visit(page, `/tasks/calendar?view=day&from=${today}`);
 
 			await page.getByRole('button', { name: 'New task block' }).click();
 			const form = page.getByRole('dialog').first();
@@ -109,7 +109,10 @@ for (const { name, viewport } of WIDTHS) {
 			await form.locator('summary', { hasText: 'Attributes' }).click();
 			await form.locator('[name="attributeKey"]').first().fill('tape');
 			await form.locator('[name="attributeValue"]').first().fill('5m');
-			await page.getByRole('button', { name: 'Add one-off' }).click();
+			await page
+				.getByRole('dialog', { name: 'New task block' })
+				.getByRole('button', { name: 'Add', exact: true })
+				.click();
 
 			const block = page.locator('.ec-event', { hasText: 'measure the worktop' });
 			await expect(block).toBeVisible();

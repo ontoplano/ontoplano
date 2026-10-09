@@ -90,7 +90,7 @@ function dayDifference(from: number, to: number): number {
 test('the week can be started a day earlier or a day later', async ({ page }) => {
 	test.setTimeout(150_000);
 	await register(page, testEmail('plan-week-start'));
-	await visit(page, '/tasks/plan?view=week');
+	await visit(page, '/tasks/calendar?view=week');
 
 	const started = await span(page);
 	expect(started).toMatch(/— /);
@@ -112,21 +112,21 @@ test('the week can be started a day earlier or a day later', async ({ page }) =>
 test('the picker is not offered where there is no week to start', async ({ page }) => {
 	test.setTimeout(150_000);
 	await register(page, testEmail('plan-week-start-views'));
-	await visit(page, '/tasks/plan?view=week');
+	await visit(page, '/tasks/calendar?view=week');
 	await expect(page.getByRole('button', { name: 'Week starts on' })).toBeVisible();
 
 	// A single day is the arrow beside it, and a month has no first day to slide.
 	// The control keeps its place, invisible, so changing view moves nothing.
-	await visit(page, '/tasks/plan?view=day');
+	await visit(page, '/tasks/calendar?view=day');
 	await expect(page.getByRole('button', { name: 'Week starts on' })).toBeHidden();
-	await visit(page, '/tasks/plan?view=month');
+	await visit(page, '/tasks/calendar?view=month');
 	await expect(page.getByRole('button', { name: 'Week starts on' })).toBeHidden();
 });
 
 test('a deleted block does not leave its hover card standing in the grid', async ({ page }) => {
 	test.setTimeout(150_000);
 	await register(page, testEmail('plan-hover-card'));
-	await visit(page, '/tasks/plan?view=week');
+	await visit(page, '/tasks/calendar?view=week');
 
 	const block = page.locator('.ec-event').first();
 	await expect(block).toBeVisible();

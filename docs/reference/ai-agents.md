@@ -554,7 +554,7 @@ which a test holds to the tools the server serves and the actions the app has.
 | Shopping list           | `add_inventory_item`                                 | `shopping_list`                                                                               | `tick_bought`, `untick_bought`, `record_price`, `change_inventory_item`                                                                                                     | `archive_item`           | `unarchive_item`         | `remove_inventory_item`                                                            |                    |
 | Recipes                 | `add_recipe`                                         | `recipes`                                                                                     | `change_recipe`, `cooked_recipe`                                                                                                                                            | `archive_recipe`         | `archive_recipe`         | _app only, on purpose_                                                             |                    |
 | Workouts                | `add_workout`, `add_workout_category`, `log_workout` | `workouts`, `workout_sessions`, `workout_history`, `workout_activities`, `workout_categories` | `change_workout`, `set_workout_measures`, `change_workout_session`, `workout_done`, `change_workout_category`                                                               | `archive_workout`        | `archive_workout`        | `remove_workout_session`, `remove_workout_category`                                |                    |
-| Bills                   | `add_bill`                                           | `bills`, `bill_payments`, `bill_history`, `month_bills`, `bills_due`                          | `change_bill`, `pay_bill`, `unpay_bill`, `skip_bill`, `unskip_bill`                                                                                                         | `archive_bill`           | `archive_bill`           | _app only, on purpose_                                                             |                    |
+| Bills                   | `add_bill`                                           | `bills`, `bill_payments`, `bill_history`, `month_bills`, `bills_due`                          | `change_bill`, `pay_bill`, `change_bill_payment`, `unpay_bill`, `skip_bill`, `unskip_bill`                                                                                  | `archive_bill`           | `archive_bill`           | _app only, on purpose_                                                             |                    |
 | Accounts and movements  | `add_ledger`, `record_movement`                      | `ledgers`, `movements`, `statement_months`, `spending_by_category`                            | `change_ledger`, `change_movement`                                                                                                                                          | `change_ledger`          | `change_ledger`          | `remove_movement`                                                                  | `change_ledger`    |
 | Sorting rules           | `add_sort_rule`                                      | `sort_rules`                                                                                  | `change_sort_rule`                                                                                                                                                          |                          |                          | `delete_sort_rule`                                                                 | `change_sort_rule` |
 | People                  | `add_person`                                         | `people`, `upcoming_birthdays`                                                                | `change_person`                                                                                                                                                             |                          |                          | _app only, on purpose_                                                             |                    |
@@ -2731,6 +2731,19 @@ _Needs `bills:write`; writes; answers with `before` and `after`._
 | `amount_paid` | integer | —        | What was actually paid, in minor units (cents).                                                 |
 | `period`      | string  | —        | The period: YYYY-Www for weekly, YYYY-MM for monthly, YYYY for yearly. This period if left out. |
 | `notes`       | string  | —        | Anything about this payment.                                                                    |
+
+### `change_bill_payment` — Correct a bill payment
+
+Correct the paid date and actual amount of an existing payment. Find payment_id with bill_payments. The period and expected amount stay as recorded. Amounts are in minor units (cents).
+
+_Needs `bills:write`; writes; answers with `before` and `after`._
+
+| Parameter     | Type    | Required | What it is                                      |
+| ------------- | ------- | -------- | ----------------------------------------------- |
+| `id`          | integer | yes      | The bill’s id.                                  |
+| `payment_id`  | integer | yes      | The payment’s id.                               |
+| `paid_date`   | string  | yes      | The local payment date, YYYY-MM-DD.             |
+| `amount_paid` | integer | yes      | The actual amount paid, in minor units (cents). |
 
 ### `unpay_bill` — Undo a bill payment
 

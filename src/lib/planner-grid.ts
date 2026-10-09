@@ -4,6 +4,7 @@ import type { Calendar } from '@event-calendar/core';
 import { CATEGORY_FALLBACK_COLOR } from './colors.js';
 import { describeRecurrence, occursOn, parseRecurrence } from './recurrence.js';
 import { localDay } from './services/time.js';
+import { firstPlainLine } from './markdown-plain.js';
 
 /**
  * The default stretch of the day, when the account has not said otherwise.
@@ -312,8 +313,7 @@ export function blockName(
 }
 
 function firstLine(text: string): string {
-	const line = text.split('\n', 1)[0].trim();
-	return line || text.trim();
+	return firstPlainLine(text) || text.trim();
 }
 
 function slotToEvent(

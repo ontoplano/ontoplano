@@ -10,10 +10,10 @@ import { launchAddress } from './instance-choice';
  */
 describe('launchAddress', () => {
 	test('wears the mark and the version, keeping the address itself', () => {
-		const out = new URL(launchAddress('https://app.ontoplano.com/tasks/plan?view=day'));
+		const out = new URL(launchAddress('https://app.ontoplano.com/tasks/calendar?view=day'));
 		expect(out.searchParams.get('app')).toBe('android');
 		expect(out.searchParams.get('app_version')).toMatch(/^\d+\.\d+\.\d+$/);
-		expect(out.pathname).toBe('/tasks/plan');
+		expect(out.pathname).toBe('/tasks/calendar');
 		expect(out.searchParams.get('view')).toBe('day');
 	});
 

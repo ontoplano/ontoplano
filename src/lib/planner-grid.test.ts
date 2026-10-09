@@ -19,6 +19,13 @@ describe('naming a block', () => {
 		).toBe('deep work');
 	});
 
+	test('a markdown label is its first line of words', () => {
+		const label = '\n**Dentist** at [the clinic](https://example.com)\n![image.png](/media/12)';
+		expect(blockName({ mode: 'category', activityName: null, label, categoryName: 'work' })).toBe(
+			'Dentist at the clinic'
+		);
+	});
+
 	test('with no label it is the category', () => {
 		expect(
 			blockName({ mode: 'category', activityName: null, label: '', categoryName: 'work' })

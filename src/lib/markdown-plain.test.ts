@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { plainMarkdown } from './markdown-plain';
+import { firstPlainLine, plainMarkdown } from './markdown-plain';
 
 describe('plainMarkdown', () => {
 	it('keeps the words and drops the marks', () => {
@@ -9,7 +9,7 @@ describe('plainMarkdown', () => {
 	});
 
 	it('keeps a link’s text and a picture’s description', () => {
-		expect(plainMarkdown('see [the plan](/tasks/plan) ![a heron](/media/12)')).toBe(
+		expect(plainMarkdown('see [the plan](/tasks/calendar) ![a heron](/media/12)')).toBe(
 			'see the plan a heron'
 		);
 	});
@@ -22,5 +22,12 @@ describe('plainMarkdown', () => {
 		expect(plainMarkdown('| a | b |\n|---|---|\n| 1 | 2 |').replace(/\s+/g, ' ').trim()).toBe(
 			'a b 1 2'
 		);
+	});
+});
+
+describe('firstPlainLine', () => {
+	it('is the first line with words, as words', () => {
+		expect(firstPlainLine('\n\n## **Dentist**\nbring the card')).toBe('Dentist');
+		expect(firstPlainLine('  \n')).toBe('');
 	});
 });

@@ -18,6 +18,96 @@ the shape of the data changing. Bumping the minor per batch is what ran this
 file to 0.161 in a few months, which tells a reader nothing about which
 releases mattered.
 
+## 0.186.0 — 2026-10-09
+
+- The short plan sheet stays scrollable above the keyboard, expands when its header is tapped or swiped up, and uses “Add” to save a new block.
+- New task blocks no longer show a dash where no name has been entered.
+- Assistant notifications now name corrected bill payments clearly.
+
+## 0.185.28 — 2026-10-08
+
+- Paid bills now let you correct a payment's date and amount from its history.
+
+## 0.185.27 — 2026-10-08
+
+- Modal forms place Cancel on the left and Save on the right throughout the app.
+
+## 0.185.26 — 2026-10-08
+
+- A new task block starts at one hour on a phone, even after tapping a 15-minute grid slot.
+
+## 0.185.25 — 2026-10-08
+
+- The short plan sheet scrolls through its fields and expands when its header is tapped or swiped up.
+
+## 0.185.24 — 2026-10-08
+
+- Cancel sits on the left and Save on the right in the plan block editor.
+
+## 0.185.23 — 2026-10-08
+
+- The quick-add wheel opens task forms reliably after the app reloads code in development.
+
+## 0.185.22 — 2026-10-08
+
+- The focused activity name stays visible when the phone keyboard resizes the plan sheet.
+
+## 0.185.21 — 2026-10-08
+
+- New activity details now sit next to the block's Activity choice in the plan editor.
+
+## 0.185.20 — 2026-10-08
+
+- Full screen stays visible at the end of the plan toolbar on a phone, whether More is open or closed.
+
+## 0.185.19 — 2026-10-08
+
+- A new block on a phone starts ready to name its activity and stays compact while you type; changing another field opens the full editor.
+
+## 0.185.18 — 2026-10-08
+
+- The plan's More button stays in place when its controls open on a phone.
+
+## 0.185.17 — 2026-10-08
+
+- On phones, tapping a notebook's picture opens it full screen. Change the picture from Edit.
+
+## 0.185.16 — 2026-10-08
+
+- The current room tab has bold text and an underline without a tinted background.
+
+## 0.185.15 — 2026-10-08
+
+- On phones, the plan opens with fewer controls; tap a time to start an activity, and drag a block to choose Move or Copy. The calendar uses one page scroll and keeps its day header visible in full screen.
+- Applying a saved task filter inside a notebook keeps that notebook open.
+- Quick task capture can schedule a task block with a day, time, and duration.
+
+## 0.185.14 — 2026-10-07
+
+- A bill's amount and Paid button now appear below its payment checkbox.
+- Saving three wins from the dashboard's Diary dialog now keeps all three entries.
+- Room tabs meet the content below and fill the outer corner in the playful style.
+- Keyboard shortcuts leave Ctrl, Command, and Alt combinations to the browser and other apps.
+
+## 0.185.13 — 2026-10-07
+
+- MCP clients can tell whether their token reaches the account or one notebook, so an assistant can use the right notebook without asking you to choose it.
+
+## 0.185.12 — 2026-10-07
+
+- Fix crashing on start.
+
+## 0.185.11 — 2026-10-06
+
+- The Android app opens in the language the phone is set to, from the first
+  screen, until another one is chosen in Preferences. It used to open in
+  English everywhere.
+
+## 0.185.10 — 2026-10-06
+
+- The Android app now needs Android 7.0 or newer; Android 6 is no longer
+  supported.
+
 ## 0.185.9 — 2026-10-05
 
 - The app from Google Play sells Pro through Google Play: choosing a plan opens

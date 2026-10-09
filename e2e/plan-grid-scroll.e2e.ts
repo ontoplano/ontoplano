@@ -29,7 +29,7 @@ test('a day ending at midnight can be scrolled to midnight', async ({ page }) =>
 	await page.locator('select[name="end"]').selectOption('24');
 	await expect(page.getByText('Planner hours saved.').last()).toBeVisible();
 
-	await visit(page, '/tasks/plan');
+	await visit(page, '/tasks/calendar');
 	const main = page.locator('.ec-main');
 	await expect(main).toBeVisible();
 
@@ -78,7 +78,7 @@ test('a day ending at midnight can be scrolled to midnight', async ({ page }) =>
 test('zooming keeps the part of the day you were looking at', async ({ page }) => {
 	await register(page, testEmail('grid-zoom'));
 
-	await visit(page, '/tasks/plan');
+	await visit(page, '/tasks/calendar');
 	const main = page.locator('.ec-main');
 	await expect(main).toBeVisible();
 
@@ -131,11 +131,11 @@ test('a half-scrolled block does not fold its time into its title', async ({ pag
 	// Something long enough to still be on screen once its top is not. Posted
 	// to the action rather than driven through the form: this test is about
 	// what a block looks like when scrolled, not about creating one.
-	await visit(page, '/tasks/plan');
+	await visit(page, '/tasks/calendar');
 	const options = await page.request.get('/api/capture-options');
 	const categoryId = ((await options.json()) as { categories: { id: number }[] }).categories[0]?.id;
 	const today = new Date().toISOString().slice(0, 10);
-	const created = await page.request.post('/tasks/plan?/createExceptional', {
+	const created = await page.request.post('/tasks/calendar?/createExceptional', {
 		headers: { origin: new URL(page.url()).origin },
 		form: {
 			date: today,
@@ -148,7 +148,7 @@ test('a half-scrolled block does not fold its time into its title', async ({ pag
 	});
 	expect(created.ok(), `the block was created: ${created.status()}`).toBe(true);
 
-	await visit(page, '/tasks/plan?view=day');
+	await visit(page, '/tasks/calendar?view=day');
 	await expect(page.locator('.ec-event').filter({ hasText: 'a long block' })).toBeVisible();
 
 	const main = page.locator('.ec-main');
@@ -186,7 +186,7 @@ test('a half-scrolled block does not fold its time into its title', async ({ pag
  */
 test('the plan can be walked into last week', async ({ page }) => {
 	await register(page, testEmail('grid-back'));
-	await visit(page, '/tasks/plan?view=week');
+	await visit(page, '/tasks/calendar?view=week');
 
 	const back = page.getByRole('button', { name: 'Back one week' });
 	await expect(back).toBeEnabled();
@@ -215,12 +215,12 @@ test('the plan can be walked into last week', async ({ page }) => {
  */
 test('a block can be marked done from the plan, and undone', async ({ page }) => {
 	await register(page, testEmail('grid-tick'));
-	await visit(page, '/tasks/plan?view=day');
+	await visit(page, '/tasks/calendar?view=day');
 
 	const options = await page.request.get('/api/capture-options');
 	const categoryId = ((await options.json()) as { categories: { id: number }[] }).categories[0]?.id;
 	const today = new Date().toISOString().slice(0, 10);
-	const created = await page.request.post('/tasks/plan?/createExceptional', {
+	const created = await page.request.post('/tasks/calendar?/createExceptional', {
 		headers: { origin: new URL(page.url()).origin },
 		form: {
 			date: today,
@@ -233,7 +233,7 @@ test('a block can be marked done from the plan, and undone', async ({ page }) =>
 	});
 	expect(created.ok(), `the block was created: ${created.status()}`).toBe(true);
 
-	await visit(page, '/tasks/plan?view=day');
+	await visit(page, '/tasks/calendar?view=day');
 	await page.locator('.ec-event').filter({ hasText: 'tick me' }).click();
 
 	// The block's own form; the grid's corner marks are named after their block.
@@ -264,7 +264,18 @@ test('an old history link lands on the plan, a week back', async ({ page }) => {
 	await register(page, testEmail('grid-hist'));
 
 	await page.goto('/tasks/history?week=2026-08-24');
-	await expect(page).toHaveURL(/tasks\/plan\?view=week&from=2026-08-24/);
+	await expect(page).toHaveURL(/tasks\/calendar\?view=week&from=2026-08-24/);
 	// And the tab row does not offer what no longer exists.
 	await expect(page.getByRole('link', { name: 'History' })).toHaveCount(0);
+});
+
+/**
+ * Plan became Calendar; installed apps still remember the old address.
+ */
+test('an old plan link lands on the calendar', async ({ page }) => {
+	await register(page, testEmail('grid-oldplan'));
+
+	await page.goto('/tasks/plan?from=2026-08-24');
+	await expect(page).toHaveURL(/tasks\/calendar\?from=2026-08-24/);
+	await expect(page.getByRole('link', { name: 'Calendar' }).first()).toBeVisible();
 });

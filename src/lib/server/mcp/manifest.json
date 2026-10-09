@@ -1088,6 +1088,29 @@
 			}
 		}
 	},
+	"change_bill_payment": {
+		"scope": "bills:write",
+		"writes": true,
+		"destroys": false,
+		"params": {
+			"amount_paid": {
+				"type": "integer",
+				"required": true
+			},
+			"id": {
+				"type": "integer",
+				"required": true
+			},
+			"paid_date": {
+				"type": "string",
+				"required": true
+			},
+			"payment_id": {
+				"type": "integer",
+				"required": true
+			}
+		}
+	},
 	"change_block": {
 		"scope": "schedule:write",
 		"writes": true,

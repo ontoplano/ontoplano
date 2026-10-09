@@ -52,7 +52,7 @@ describe('where things open', () => {
 		expect(linkTo({ kind: 'notebook', id: 3 })).toBe('/notebooks/3');
 		expect(linkTo({ kind: 'person', id: 5 })).toBe('/notebooks/people?person=5');
 		expect(linkTo({ kind: 'tag', id: 9 })).toBe('/notebooks/tags');
-		expect(linkTo({ kind: 'block', id: 'slot:4' })).toBe('/tasks/plan');
+		expect(linkTo({ kind: 'block', id: 'slot:4' })).toBe('/tasks/calendar');
 		expect(linkTo({ kind: 'nothing-like-this', id: 1 })).toBeNull();
 	});
 });

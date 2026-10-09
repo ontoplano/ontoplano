@@ -22,7 +22,8 @@
 		/** Where pressing it opens the notebook rather than the file chooser. */
 		onpress,
 		/** A corner handle: the picture dragged bigger, and the size kept on this device. */
-		resizable = false
+		resizable = false,
+		viewOnTouch = false
 	}: {
 		notebook: { id: number; title: string; pictureId: number | null; mine?: boolean };
 		kilobytes: number;
@@ -30,6 +31,7 @@
 		removable?: boolean;
 		onpress?: () => void;
 		resizable?: boolean;
+		viewOnTouch?: boolean;
 	} = $props();
 </script>
 
@@ -49,5 +51,6 @@
 	{onpress}
 	pressLabel={t('notebooks.id.editNotebook')}
 	{resizable}
+	{viewOnTouch}
 	sizeKey="notebook"
 />

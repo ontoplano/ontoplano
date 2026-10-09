@@ -163,7 +163,7 @@
 			confirmDelete = null;
 			return;
 		}
-		const action = getAction('/notebooks/people', e.key);
+		const action = getAction('/notebooks/people', e);
 		const here = shownPeople[cursor];
 		if (action === 'new') {
 			e.preventDefault();

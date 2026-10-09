@@ -284,7 +284,7 @@
 		const items = shownEntries;
 		if (document.querySelector('dialog[open]')) return;
 		if (selection.handleKey(e, () => items[selectedIndex]?.id)) return;
-		const action = getAction('/notebooks/diary', e.key);
+		const action = getAction('/notebooks/diary', e);
 		if (!action) return;
 		e.preventDefault();
 

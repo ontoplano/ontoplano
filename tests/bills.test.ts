@@ -73,6 +73,32 @@ describe('paying a bill', () => {
 		expect(rows[0].amountPaid).toBe(4800);
 	});
 
+	test('corrects a paid date and amount in the account timezone', () => {
+		const bill = bills.createBill(ctx, { name: 'Cleaner', amountExpected: 5000 });
+		const paid = bills.markPaid(ctx, bill.id, { amountPaid: 5000, period: '2026-09' });
+		const corrected = bills.updatePayment({ ...ctx, tz: 'America/Sao_Paulo' }, bill.id, paid.id, {
+			paidDate: '2026-09-05',
+			amountPaid: 4500
+		});
+		expect(corrected.paidAt).toBe('2026-09-05T15:00:00.000Z');
+		expect(corrected.amountPaid).toBe(4500);
+		expect(corrected.period).toBe('2026-09');
+		expect(bills.listPayments(ctx, bill.id)).toHaveLength(1);
+	});
+
+	test('a payment correction cannot reach another bill or account', () => {
+		const bill = bills.createBill(ctx, { name: 'Internet', amountExpected: 7000 });
+		const other = bills.createBill(ctx, { name: 'Water', amountExpected: 3000 });
+		const paid = bills.markPaid(ctx, bill.id, { period: '2026-09' });
+		const change = { paidDate: '2026-09-05', amountPaid: 4000 };
+		expect(() => bills.updatePayment(ctx, other.id, paid.id, change)).toThrow();
+		expect(() => bills.updatePayment(theirs, bill.id, paid.id, change)).toThrow();
+		expect(() =>
+			bills.updatePayment(ctx, bill.id, paid.id, { ...change, paidDate: '2026-02-30' })
+		).toThrow();
+		expect(bills.listPayments(ctx, bill.id)[0].amountPaid).toBe(7000);
+	});
+
 	test('the snapshot survives a later edit to the bill', () => {
 		const bill = bills.createBill(ctx, { name: 'Gas', amountExpected: 4000 });
 		bills.markPaid(ctx, bill.id, { amountPaid: 4000, period: '2026-09' });

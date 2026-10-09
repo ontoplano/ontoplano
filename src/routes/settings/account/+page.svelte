@@ -220,7 +220,7 @@
 
 		if (editing || confirming) return;
 
-		const action = getAction('/settings/account', e.key);
+		const action = getAction('/settings/account', e);
 		if (action === 'navigate-down') {
 			e.preventDefault();
 			selected = Math.min(selected + 1, shownSessions.length - 1);

@@ -198,7 +198,7 @@ export const messages: Catalogue = {
 		'Opcional — um assistente pode montar sua semana perguntando sobre ela.',
 	'app.people': 'Pessoas',
 	'app.picture': 'Foto',
-	'app.plan': 'Plano',
+	'app.plan': 'Calendário',
 	'app.preferences': 'Preferências',
 	'app.privacy': 'Privacidade',
 	'app.quote': 'Citação',
@@ -336,6 +336,7 @@ export const messages: Catalogue = {
 	'capture.addedToWithContent': 'Adicionado a {into}: {content}',
 	'capture.diaryNote': 'Nota do diário',
 	'capture.newThing': 'Novo: {thing}',
+	'capture.planDestination': 'seu calendário',
 	'captureDialog.notWrittenDown': 'Isso não foi anotado.',
 	'captureSettings.atLeastOne': 'ao menos uma',
 	'captureSettings.intro': 'O que a roda do + tem, e para onde vai o que você escreve nela.',
@@ -471,6 +472,8 @@ export const messages: Catalogue = {
 	'errors.billing.storeDoesNotKnowThatPurchase': 'A loja não reconhece essa compra.',
 	'errors.billing.youHaveAlreadySwitchedTwice':
 		'Você já trocou duas vezes hoje. Pode trocar de novo amanhã.',
+	'errors.bills.invalidPaidDate': 'Informe uma data de pagamento válida.',
+	'errors.bills.invalidPaymentAmount': 'Informe um valor de pagamento válido.',
 	'errors.bills.thatCategoryIsNotYours': 'Essa categoria não é sua.',
 	'errors.bills.thatGoalIsNotYours': 'Essa meta não é sua.',
 	'errors.bills.thatPeriodIsAlreadyPaid': 'Esse período está pago. Desfaça o pagamento primeiro.',
@@ -756,6 +759,8 @@ export const messages: Catalogue = {
 	'finance.bills.averagePerPayment': 'Média por pagamento',
 	'finance.bills.averagePerWeek': 'Média por semana',
 	'finance.bills.averagePerYear': 'Média por ano',
+	'finance.bills.changingAmountDetachesMovement':
+		'Alterar o valor desvincula o lançamento do extrato.',
 	'finance.bills.date': 'Data',
 	'finance.bills.delete': 'Apagar {name}',
 	'finance.bills.deleteThisBill': 'Apagar esta conta?',
@@ -769,6 +774,8 @@ export const messages: Catalogue = {
 	'finance.bills.dueTheNth': ', vence dia {nth}',
 	'finance.bills.edit': 'Editar {name}',
 	'finance.bills.editBill': 'Editar conta',
+	'finance.bills.editPayment': 'Editar pagamento',
+	'finance.bills.editPaymentFor': 'Editar pagamento de {period}',
 	'finance.bills.expectedAmount': 'Valor esperado',
 	'finance.bills.expectedAmountShort': 'previsto {amount}',
 	'finance.bills.expectedThisMonth': 'Esperado este mês',
@@ -1236,7 +1243,7 @@ export const messages: Catalogue = {
 	'health.recipes.id.ingredient': 'Ingrediente',
 	'health.recipes.id.ingredients': 'Ingredientes',
 	'health.recipes.id.itBecomesABlockOn':
-		'Vira um bloco de tarefa no plano, como qualquer outra coisa a que você dá tempo.',
+		'Vira um bloco de tarefa no calendário, como qualquer outra coisa a que você dá tempo.',
 	'health.recipes.id.itsIngredientsStayOnThe':
 		'Os ingredientes dela ficam na lista de compras — são coisas que você compra, não partes da receita.',
 	'health.recipes.id.keepIt': 'Mantê-la',
@@ -1262,7 +1269,7 @@ export const messages: Catalogue = {
 		'As imagens aqui têm no máximo {most} KB, e {name} tem {size} KB.',
 	'health.recipes.id.pictures': 'Fotos',
 	'health.recipes.id.putItOnADay': 'Colocar em um dia',
-	'health.recipes.id.putItOnThePlan': 'Colocar no plano',
+	'health.recipes.id.putItOnThePlan': 'Colocar no calendário',
 	'health.recipes.id.ranOutOf': 'Acabou {name}',
 	'health.recipes.id.removeIt': 'Removê-la',
 	'health.recipes.id.removeThisPicture': 'Remover esta foto',
@@ -1279,7 +1286,7 @@ export const messages: Catalogue = {
 	'health.recipes.id.writeIt': 'Escrevê-la',
 	'health.recipes.ingredients': '{ingredients} ingredientes',
 	'health.recipes.itBecomesABlockOn':
-		'Vira um bloco de tarefa no plano, como qualquer outra coisa a que você dá tempo.',
+		'Vira um bloco de tarefa no calendário, como qualquer outra coisa a que você dá tempo.',
 	'health.recipes.markdownHeadingsListsNumbersIngredients':
 		'Markdown: títulos, listas, números. Os ingredientes vêm depois.',
 	'health.recipes.method': 'Modo de preparo',
@@ -1304,7 +1311,7 @@ export const messages: Catalogue = {
 	'health.recipes.orderTitle': 'Nome',
 	'health.recipes.pasteThePageHere': 'Cole a página aqui',
 	'health.recipes.putItOnADay': 'Colocar em um dia',
-	'health.recipes.putItOnThePlan': 'Colocar no plano',
+	'health.recipes.putItOnThePlan': 'Colocar no calendário',
 	'health.recipes.putOnADay': 'Colocar {title} em um dia',
 	'health.recipes.readIt': 'Lê-la',
 	'health.recipes.reading': 'Lendo…',
@@ -1354,7 +1361,8 @@ export const messages: Catalogue = {
 	'health.workouts.isDeletedForGoodAnd':
 		'é apagado para sempre, e sai de qualquer dia em que estava planejado.\n\t\t\tPara mantê-lo, deixe-o arquivado em vez disso.',
 	'health.workouts.isRemovedForGoodThe': 'é removida para sempre. O treino\n\t\t\tem si permanece.',
-	'health.workouts.itGainsATimeOn': 'Ganha um horário no plano. Terminá-lo lá termina o treino.',
+	'health.workouts.itGainsATimeOn':
+		'Ganha um horário no calendário. Terminá-lo lá termina o treino.',
 	'health.workouts.keepIt': 'Mantê-lo',
 	'health.workouts.km': 'km',
 	'health.workouts.lastDone': ' · feito pela última vez em {date}',
@@ -1528,7 +1536,7 @@ export const messages: Catalogue = {
 	'home.oneOff': 'avulso',
 	'home.onlyWhatBrokeIsSent': 'Só o que quebrou é enviado, nunca o que você escreveu.',
 	'home.open': 'Abrir →',
-	'home.openThePlan': 'Abrir o plano',
+	'home.openThePlan': 'Abrir o calendário',
 	'home.paidOfExpected': '{currency} pago de {currency2} esperado',
 	'home.preferences': 'Preferências',
 	'home.primary': 'Principal',
@@ -2457,7 +2465,7 @@ export const messages: Catalogue = {
 	'notifications.title': 'Notificações',
 	'notifications.unread': '{count} não lidas',
 	'notify.everyBlockOnThePlan':
-		'Todo bloco de tarefa do plano avisa quando chega a hora. Sem isso, só avisam os blocos de tarefa aos quais você deu uma antecedência.',
+		'Todo bloco de tarefa do calendário avisa quando chega a hora. Sem isso, só avisam os blocos de tarefa aos quais você deu uma antecedência.',
 	'notify.labelsAs': 'como {labels}',
 	'notify.labelsOff': '{labels} removido',
 	'notify.mondayMorningWhatLastWeek':
@@ -2469,6 +2477,10 @@ export const messages: Catalogue = {
 		other: '{count} lembretes de bloco de tarefa'
 	},
 	'notify.noun.bill': { one: '{count} conta', other: '{count} contas' },
+	'notify.noun.billPayment': {
+		one: '{count} pagamento de conta',
+		other: '{count} pagamentos de conta'
+	},
 	'notify.noun.block': { one: '{count} bloco de tarefa', other: '{count} blocos de tarefa' },
 	'notify.noun.bought': { one: '{count} compra', other: '{count} compras' },
 	'notify.noun.dataPoint': { one: '{count} ponto de dados', other: '{count} pontos de dados' },
@@ -2874,7 +2886,7 @@ export const messages: Catalogue = {
 	'rooms.tasks.sections': 'Seções de tarefas',
 	'rooms.tasks.tabs.activities': 'Atividades',
 	'rooms.tasks.tabs.board': 'Quadro',
-	'rooms.tasks.tabs.plan': 'Plano',
+	'rooms.tasks.tabs.plan': 'Calendário',
 	'rooms.tasks.tabs.review': 'Revisão',
 	'rooms.tasks.tabs.todo': 'Tarefas',
 	'rooms.tasks.title': 'Tarefas',
@@ -4109,6 +4121,8 @@ export const messages: Catalogue = {
 		'Minutos antes de começar. Toda vez que ele voltar. Vazio ou 0 é nunca.',
 	'tasks.plan.mode': 'Modo',
 	'tasks.plan.month': 'Mês',
+	'tasks.plan.moveHere': 'Mover para cá',
+	'tasks.plan.moveOrCopyBlock': 'Mover este bloco ou manter o original e criar uma cópia aqui?',
 	'tasks.plan.newActivity': 'Nova atividade',
 	'tasks.plan.newActivity2': '+ Nova atividade...',
 	'tasks.plan.newBlock': 'Novo bloco de tarefa',
@@ -4123,9 +4137,10 @@ export const messages: Catalogue = {
 	'tasks.plan.on': '{skip} em {selectedDateStr}',
 	'tasks.plan.openTheDay': 'Abrir o dia',
 	'tasks.plan.owed': 'devido',
+	'tasks.plan.placeBlock': 'Posicionar bloco de tarefa',
 	'tasks.plan.press': 'Pressione',
 	'tasks.plan.pressAndHoldOnThe':
-		'Pressione e segure na grade para adicionar um bloco de tarefa ali.',
+		'Toque em um horário vazio para adicionar um bloco de tarefa ali.',
 	'tasks.plan.putBlockBackToPending': 'Devolver {title} para pendente',
 	'tasks.plan.putItBackToPending': 'Devolver para pendente',
 	'tasks.plan.putThisOccurrenceBack': 'Devolver esta ocorrência',
@@ -4324,7 +4339,7 @@ export const messages: Catalogue = {
 	'todoRows.confirm': 'Confirmar?',
 	'todoRows.createTodo': 'Criar tarefa',
 	'todoRows.delegateToADay': 'Delegar para um dia',
-	'todoRows.delegatedToThisDay': 'No plano neste dia',
+	'todoRows.delegatedToThisDay': 'No calendário neste dia',
 	'todoRows.deleteSelectedWarning':
 		'Excluir as tarefas selecionadas? Esta ação não pode ser desfeita.',
 	'todoRows.doing': 'Fazendo',
@@ -4335,7 +4350,7 @@ export const messages: Catalogue = {
 	'todoRows.hiddenByTheFilters': '{count} ocultas pelos filtros.',
 	'todoRows.hideArchived': 'Esconder arquivadas',
 	'todoRows.hideCompleted': 'Esconder concluídas',
-	'todoRows.itKeepsItsPlaceIn': 'Ele mantém o lugar na lista e ganha um horário no plano.',
+	'todoRows.itKeepsItsPlaceIn': 'Ele mantém o lugar na lista e ganha um horário no calendário.',
 	'todoRows.lastChanged': 'Alterada {when}',
 	'todoRows.lastDoneFirst': 'Últimos feitos primeiro',
 	'todoRows.markComplete': 'Marcar como concluída',
@@ -4505,7 +4520,7 @@ export const messages: Catalogue = {
 	'tour.giveItANumberIf': 'Dê um número a ela, se tiver um',
 	'tour.goals': 'Metas',
 	'tour.gymGuitarReadABlock':
-		'“Academia”, “Violão”, “Ler”. Um bloco de tarefa no plano aponta para um destes, então um ano de academia é uma coisa só.',
+		'“Academia”, “Violão”, “Ler”. Um bloco de tarefa no calendário aponta para um destes, então um ano de academia é uma coisa só.',
 	'tour.hJKLMove':
 		'h j k l movem entre cartões e colunas, H e L levam o cartão selecionado com você, e c marca como feito.',
 	'tour.habits': 'Hábitos',
@@ -4525,7 +4540,7 @@ export const messages: Catalogue = {
 	'tour.inventoryTheTripBody':
 		'Tudo o que está acabando, com quanto deve custar. Marque cada linha na loja e a quantidade volta ao que você mantém; funciona sem sinal também.',
 	'tour.itBecomesABlockOn':
-		'Vira um bloco de tarefa no plano, ao lado de tudo o mais que você está fazendo naquele dia.',
+		'Vira um bloco de tarefa no calendário, ao lado de tudo o mais que você está fazendo naquele dia.',
 	'tour.itFansOutYourAccount':
 		'Ele abre sua conta e configurações, o tour da tela em que você está, a documentação, e a forma de avisar o operador que algo está errado.',
 	'tour.itOpensTheTourFor':
@@ -4567,9 +4582,9 @@ export const messages: Catalogue = {
 	'tour.people': 'Pessoas',
 	'tour.picturesLiveInAlbumsPutting':
 		'Fotos vivem em álbuns. Colocar uma em um segundo álbum nunca a copia — uma foto, dois lugares.',
-	'tour.plan': 'Plano',
+	'tour.plan': 'Calendário',
 	'tour.planIsTheShapeOf':
-		'Plano é a forma dela, Quadro é hoje, A fazer é tudo o que ainda não tem data, Histórico é o que realmente aconteceu.',
+		'Calendário é a forma dela, Quadro é hoje, A fazer é tudo o que ainda não tem data, Histórico é o que realmente aconteceu.',
 	'tour.playItBackAndScrub':
 		'Ouça de novo e arraste na barra. Descartar não custa nada — nada é enviado até você salvar.',
 	'tour.preferences': 'Preferências',
@@ -4643,7 +4658,7 @@ export const messages: Catalogue = {
 	'tour.theRoomsOpenAroundYour':
 		'As seções se abrem ao redor do seu dedo e você solta na que quiser. Mais rápido que ler uma lista de dez palavras, assim que sua mão já sabe onde elas estão.',
 	'tour.theSameBlocksAsThe':
-		'Os mesmos blocos de tarefa do plano, na única forma em que você pode pegar um e movê-lo.',
+		'Os mesmos blocos de tarefa do calendário, na única forma em que você pode pegar um e movê-lo.',
 	'tour.theSameDaysAsAList': 'Os mesmos dias, em lista',
 	'tour.theSameGestureForA':
 		'O mesmo gesto, para uma tarefa, uma ideia, uma nota ou algo para comprar — sem precisar decidir antes onde isso pertence.',
