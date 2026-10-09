@@ -34,6 +34,9 @@
 	import Modal from '$lib/components/Modal.svelte';
 	import { isPhone } from '$lib/breakpoints';
 	import Field from '$lib/components/Field.svelte';
+	import MarkdownBox from '$lib/components/MarkdownBox.svelte';
+	import PictureAttach from '$lib/components/PictureAttach.svelte';
+	import RecordingAttach from '$lib/components/RecordingAttach.svelte';
 	import FormGrid from '$lib/components/FormGrid.svelte';
 	import { preloadData, goto, invalidateAll } from '$app/navigation';
 	import { SECTION_COLORS } from '$lib/colors';
@@ -477,6 +480,7 @@
 	let formStartTime = $state('09:00');
 	let formDuration = $state(60);
 	let formLabel = $state('');
+	let labelBox = $state<HTMLTextAreaElement>();
 	let formCategoryId = $state<number | null>(null);
 	let formWorkoutId = $state<number | null>(null);
 	let formNotebookId = $state<number | null>(null);
@@ -4355,15 +4359,20 @@
 								grid shows the first line, because a block is a rectangle an
 								hour tall and a paragraph does not fit in one.
 							-->
-							<textarea
+							<MarkdownBox
+								bind:element={labelBox}
+								bind:value={formLabel}
 								name="label"
 								rows={3}
 								autocomplete="off"
 								placeholder={t('tasks.plan.eGDentist')}
-								bind:value={formLabel}
-								class="input resize-y"
 								maxlength={MAX_BLOCK_NOTES}
-							></textarea>
+								preview="written"
+							/>
+							<!-- The same attachments a task's notes take: a block is as often
+							     a screenshot or a thing said out loud. -->
+							<PictureAttach target={labelBox} />
+							<RecordingAttach target={labelBox} />
 						</Field>
 					</FormGrid>
 

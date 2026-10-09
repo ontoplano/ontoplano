@@ -4,6 +4,7 @@ import type { Calendar } from '@event-calendar/core';
 import { CATEGORY_FALLBACK_COLOR } from './colors.js';
 import { describeRecurrence, occursOn, parseRecurrence } from './recurrence.js';
 import { localDay } from './services/time.js';
+import { plainMarkdown } from './markdown-plain.js';
 
 /**
  * The default stretch of the day, when the account has not said otherwise.
@@ -311,8 +312,16 @@ export function blockName(
 	return 'Untitled';
 }
 
+/**
+ * The first line of the notes that has words in it, as words: the notes are
+ * markdown, and a block's title is not the place for `**` or a pasted
+ * picture's `![image.png](/media/12)`.
+ */
 function firstLine(text: string): string {
-	const line = text.split('\n', 1)[0].trim();
+	const line = plainMarkdown(text)
+		.split('\n')
+		.map((one) => one.trim())
+		.find(Boolean);
 	return line || text.trim();
 }
 
