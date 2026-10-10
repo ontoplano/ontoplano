@@ -3610,7 +3610,7 @@ export const messages: Catalogue = {
 	'settings.preferences.plannerHours': 'Planner hours',
 	'settings.preferences.plannerHoursSaved': 'Planner hours saved.',
 	'settings.preferences.plansAreWorthlessButPlanning':
-		'Plans are worthless, but planning is everything. — EisenhowernWhat gets measured gets managed — Drucker',
+		'Plans are worthless, but planning is everything. — Eisenhower\nWhat gets measured gets managed — Drucker',
 	'settings.preferences.pricesWillRead': 'Prices will read',
 	'settings.preferences.quote': 'Quote',
 	'settings.preferences.quotes': 'Quotes',

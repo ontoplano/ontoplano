@@ -3720,7 +3720,7 @@ export const messages: Catalogue = {
 	'settings.preferences.plannerHours': 'Horario del planificador',
 	'settings.preferences.plannerHoursSaved': 'Horario del planificador guardado.',
 	'settings.preferences.plansAreWorthlessButPlanning':
-		'Los planes no valen nada, pero planificar lo es todo. — EisenhowernLo que se mide, se gestiona — Drucker',
+		'Los planes no valen nada, pero planificar lo es todo. — Eisenhower\nLo que se mide, se gestiona — Drucker',
 	'settings.preferences.pricesWillRead': 'Los precios se mostrarán como',
 	'settings.preferences.quote': 'Cita',
 	'settings.preferences.quotes': 'Citas',
