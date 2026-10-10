@@ -20,6 +20,7 @@ releases mattered.
 
 ## 0.186.1 — 2026-10-10
 
+- Typing with an input method — Japanese, Chinese, Korean, or a phone keyboard that composes words — no longer triggers shortcuts or Enter-to-submit before the word is finished.
 - The sign-up form asks for a “Display name”, the same word the account settings use.
 - In the Android app, links to the website, the docs, the demo and the legal pages open in the phone’s browser instead of replacing the app.
 - The signed-out front page in the Android app has “Use a different ontoplano”, so choosing the wrong instance can be undone before signing in.
