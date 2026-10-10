@@ -84,3 +84,24 @@ export async function toJsonError(e: unknown): Promise<Response> {
 		{ status: err.status }
 	);
 }
+
+/**
+ * A sentence from the catalogue, in the language of whoever is being answered.
+ *
+ * For what an action says that no service threw: a success line, or a
+ * refusal the route makes on its own before any service is asked.
+ */
+export async function saying(key: MessageKey, values?: MessageValues): Promise<string> {
+	const locale = askLocale();
+	const t = (await translatorFor(locale)) as (key: MessageKey, values?: MessageValues) => string;
+	return t(key, values);
+}
+
+/** A form-action refusal the route makes itself, in the reader's language. */
+export async function refuse(
+	status: number,
+	key: MessageKey,
+	values?: MessageValues
+): Promise<ActionFailure<{ message: string }>> {
+	return fail(status, { message: await saying(key, values) });
+}

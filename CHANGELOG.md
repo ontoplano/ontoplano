@@ -20,6 +20,7 @@ releases mattered.
 
 ## 0.186.1 — 2026-10-10
 
+- Sign-in, sign-up, password reset and the account page answer in your language, including “wrong email or password”.
 - French and Russian, in the app and in the Android app’s widget and reminder notifications.
 - The password rule under the sign-up and first-password fields is translated.
 - Typing with an input method — Japanese, Chinese, Korean, or a phone keyboard that composes words — no longer triggers shortcuts or Enter-to-submit before the word is finished.

@@ -14,22 +14,26 @@
  */
 export const MIN_PASSWORD_LENGTH = 8;
 
+/** What a refused password is told: a message key and its values. */
+export type PasswordProblem =
+	| { key: 'passwords.tooShort'; values: { count: number } }
+	| { key: 'passwords.needsMix' };
+
 /**
- * Null when it passes; otherwise the sentence to show.
+ * Null when it passes; otherwise what to say, as a key the route translates.
  *
  * One message rather than a list that grows as you type: a form that reports
  * three failures at once about a field you are halfway through is a form that
  * is arguing with you.
  */
-export function checkPassword(password: string): string | null {
+export function checkPassword(password: string): PasswordProblem | null {
 	if (password.length < MIN_PASSWORD_LENGTH)
-		return `A password needs at least ${MIN_PASSWORD_LENGTH} characters.`;
+		return { key: 'passwords.tooShort', values: { count: MIN_PASSWORD_LENGTH } };
 
 	const hasLetter = /\p{L}/u.test(password);
 	const hasNumberOrSymbol = /[\p{N}\p{P}\p{S}]/u.test(password);
 
-	if (!hasLetter || !hasNumberOrSymbol)
-		return 'A password needs a letter and either a number or a symbol.';
+	if (!hasLetter || !hasNumberOrSymbol) return { key: 'passwords.needsMix' };
 
 	return null;
 }
