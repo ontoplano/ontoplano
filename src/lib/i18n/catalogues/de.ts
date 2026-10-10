@@ -3743,7 +3743,7 @@ export const messages: Catalogue = {
 	'settings.preferences.plannerHours': 'Planerstunden',
 	'settings.preferences.plannerHoursSaved': 'Planerstunden gespeichert.',
 	'settings.preferences.plansAreWorthlessButPlanning':
-		'Pläne sind wertlos, aber planen ist alles. — EisenhowernWas gemessen wird, wird gesteuert — Drucker',
+		'Pläne sind wertlos, aber planen ist alles. — Eisenhower\nWas gemessen wird, wird gesteuert — Drucker',
 	'settings.preferences.pricesWillRead': 'Preise werden angezeigt als',
 	'settings.preferences.quote': 'Zitat',
 	'settings.preferences.quotes': 'Zitate',
