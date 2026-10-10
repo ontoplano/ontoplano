@@ -14,10 +14,6 @@
  */
 export const MIN_PASSWORD_LENGTH = 8;
 
-/** Said in the form, before anybody meets it as a refusal. */
-export const PASSWORD_RULE =
-	'At least 8 characters, with a letter and either a number or a symbol.';
-
 /**
  * Null when it passes; otherwise the sentence to show.
  *

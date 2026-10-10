@@ -2288,6 +2288,7 @@ export type MessageKey =
 	| 'ordinal.two'
 	| 'out.couldNotOpen'
 	| 'out.opening'
+	| 'passwords.rule'
 	| 'people.friend'
 	| 'people.other'
 	| 'people.partner'
@@ -4595,6 +4596,7 @@ export interface MessageValuesFor {
 	'notify.titleOne': { verb: string | number; what: string | number; who: string | number };
 	'oauth.handingYouBackTo': { client: string | number };
 	'oauth.wantsToConnectTo': { client: string | number };
+	'passwords.rule': { count: number };
 	'picker.nChosen': { count: number };
 	'pictures.hint': { kilobytes: string | number };
 	'pictures.tooBig': { limit: string | number; name: string | number; size: string | number };

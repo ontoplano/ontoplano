@@ -2566,6 +2566,7 @@ export const messages: Catalogue = {
 	'ordinal.two': 'nd',
 	'out.couldNotOpen': 'The browser did not open. Going back…',
 	'out.opening': 'Opening the browser…',
+	'passwords.rule': 'At least {count} characters, with a letter and either a number or a symbol.',
 	'people.friend': 'Friend',
 	'people.other': 'Other',
 	'people.partner': 'Partner',

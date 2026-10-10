@@ -20,6 +20,8 @@ releases mattered.
 
 ## 0.186.1 — 2026-10-10
 
+- French and Russian, in the app and in the Android app’s widget and reminder notifications.
+- The password rule under the sign-up and first-password fields is translated.
 - Typing with an input method — Japanese, Chinese, Korean, or a phone keyboard that composes words — no longer triggers shortcuts or Enter-to-submit before the word is finished.
 - The sign-up form asks for a “Display name”, the same word the account settings use.
 - In the Android app, links to the website, the docs, the demo and the legal pages open in the phone’s browser instead of replacing the app.

@@ -311,6 +311,7 @@
 	"goals.youDidItBody": "{title}, done. Say how it went while it is fresh — it stays with the goal.",
 	"out.couldNotOpen": "The browser did not open. Going back…",
 	"out.opening": "Opening the browser…",
+	"passwords.rule": "At least {count} characters, with a letter and either a number or a symbol.",
 	"play.opening": "Opening Google Play…",
 	"play.nothingToBuy": "Nothing to buy here. Opening ontoplano…",
 	"buy.playCouldNotStart": "Google Play could not take the purchase ({code}). Nothing was charged.",
