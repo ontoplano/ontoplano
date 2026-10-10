@@ -425,11 +425,13 @@ friends, plain Java), reminders booked with Android's own alarms
 (\`@capacitor/local-notifications\`), links that leave ontoplano opening
 outside the app, and the back gesture walking the app's own history.
 
-**Nothing proprietary.** Dependencies are androidx, Capacitor and three of
-its plugins (app, browser, local-notifications). No Play services and no
-billing library anywhere in this project: there is a paid plan on the
-instance I host, paid on the web — the app contains no purchase code, and
-pages drawn inside it do not offer a checkout.
+**Nothing proprietary in what you build.** Dependencies are androidx,
+Capacitor and three of its plugins (app, browser, local-notifications). The
+one proprietary library is Play Billing, and only the \`play\` flavour links
+it (\`playImplementation\`, code in \`src/play\`); \`prebuild:\` deletes both
+before the scanner runs, and the \`official\` flavour built here has no
+purchase code. The instance I host has a paid plan, paid on the web; pages
+drawn inside this build do not offer a checkout.
 
 **Permissions**: \`INTERNET\`, plus what the notifications plugin declares
 for reminders (\`POST_NOTIFICATIONS\`, exact alarms).
