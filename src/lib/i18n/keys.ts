@@ -302,6 +302,41 @@ export type MessageKey =
 	| 'audio.sizeKB'
 	| 'audio.stop'
 	| 'audio.tooLong'
+	| 'auth.refused.addressTooLong'
+	| 'auth.refused.cannotTakeACard'
+	| 'auth.refused.couldNotChangeAddress'
+	| 'auth.refused.couldNotChangePassword'
+	| 'auth.refused.couldNotSignDeviceOut'
+	| 'auth.refused.couldNotSignOthersOut'
+	| 'auth.refused.emailNotVerified'
+	| 'auth.refused.emailTaken'
+	| 'auth.refused.enterEmail'
+	| 'auth.refused.enterNewAddress'
+	| 'auth.refused.fillBothPasswords'
+	| 'auth.refused.invalidEmail'
+	| 'auth.refused.linkExpired'
+	| 'auth.refused.newPasswordsDiffer'
+	| 'auth.refused.noAddressChange'
+	| 'auth.refused.notYourPassword'
+	| 'auth.refused.onlyDemoReset'
+	| 'auth.refused.passwordTooLong'
+	| 'auth.refused.passwordsDiffer'
+	| 'auth.refused.registrationFailed'
+	| 'auth.refused.resetMissingToken'
+	| 'auth.refused.samePassword'
+	| 'auth.refused.signInFailed'
+	| 'auth.refused.signInFirst'
+	| 'auth.refused.tooManyAccounts'
+	| 'auth.refused.typeEmailToConfirm'
+	| 'auth.refused.typeWordToConfirm'
+	| 'auth.refused.unexpected'
+	| 'auth.refused.wrongCurrentPassword'
+	| 'auth.refused.wrongEmailOrPassword'
+	| 'auth.said.accountEmptied'
+	| 'auth.said.deviceSignedOut'
+	| 'auth.said.passwordChanged'
+	| 'auth.said.resetInLog'
+	| 'auth.said.resetOnItsWay'
 	| 'buy.backToBilling'
 	| 'buy.openingTheSecurePaymentWindow'
 	| 'buy.playCouldNotStart'
@@ -2288,7 +2323,9 @@ export type MessageKey =
 	| 'ordinal.two'
 	| 'out.couldNotOpen'
 	| 'out.opening'
+	| 'passwords.needsMix'
 	| 'passwords.rule'
+	| 'passwords.tooShort'
 	| 'people.friend'
 	| 'people.other'
 	| 'people.partner'
@@ -4190,6 +4227,7 @@ export interface MessageValuesFor {
 	'audio.justRecorded': { name: string | number };
 	'audio.sizeKB': { size: string | number };
 	'audio.tooLong': { kilobytes: string | number };
+	'auth.refused.typeWordToConfirm': { word: string | number };
 	'buy.playCouldNotStart': { code: string | number };
 	'capture.addedTo': { into: string | number };
 	'capture.addedToWithContent': { content: string | number; into: string | number };
@@ -4597,6 +4635,7 @@ export interface MessageValuesFor {
 	'oauth.handingYouBackTo': { client: string | number };
 	'oauth.wantsToConnectTo': { client: string | number };
 	'passwords.rule': { count: number };
+	'passwords.tooShort': { count: number };
 	'picker.nChosen': { count: number };
 	'pictures.hint': { kilobytes: string | number };
 	'pictures.tooBig': { limit: string | number; name: string | number; size: string | number };
