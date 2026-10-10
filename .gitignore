@@ -88,7 +88,7 @@ coverage/
 dist/
 .package-work/
 
-# What `make fdroid` writes: the recipe and listing to paste into a fork of
+# What `make fdroid` writes: the recipe to paste into a fork of
 # fdroiddata, and the two things a person has to post. Regenerated per release,
 # never committed — the copy that matters lives in F-Droid's repository.
 fdroid-out/

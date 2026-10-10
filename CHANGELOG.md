@@ -18,6 +18,11 @@ the shape of the data changing. Bumping the minor per batch is what ran this
 file to 0.161 in a few months, which tells a reader nothing about which
 releases mattered.
 
+## 0.186.1 — 2026-10-10
+
+- The Android app's store listing — words, screenshots and release notes — is published with the source, so F-Droid shows the same listing as Google Play.
+- The Android build checks the Gradle it downloads against Gradle's published checksum.
+
 ## 0.186.0 — 2026-10-09
 
 - The short plan sheet stays scrollable above the keyboard, expands when its header is tapped or swiped up, and uses “Add” to save a new block.

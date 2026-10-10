@@ -1,0 +1,7 @@
+• Jedes Bild öffnet sich im Vollbild, mit Zoom per Fingern und Doppeltipp
+• Eine Benachrichtigung öffnet die Aufgabe, Rechnung oder das To-do, um das es geht
+• Schnellere Seiten und ein leichterer erster Start
+• Jede Änderung zeigt eine kurze Bestätigung, eine Ablehnung nennt den Grund
+• Portugiesisch, Spanisch und Deutsch sind wieder vollständig
+
+Sagen Sie mir, was kaputtgeht: github.com/ontoplano/ontoplano/issues

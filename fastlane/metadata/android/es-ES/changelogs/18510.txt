@@ -1,0 +1,7 @@
+• Cualquier imagen se abre a pantalla completa, con zoom de pellizco y doble toque
+• Una notificación abre la tarea, factura o pendiente de la que habla
+• Páginas más rápidas y una primera carga más ligera
+• Cada cambio muestra un aviso breve, y un rechazo dice por qué
+• Portugués, español y alemán vuelven a estar completos
+
+Cuéntame qué se rompe: github.com/ontoplano/ontoplano/issues

@@ -1,0 +1,10 @@
+The first open test of Ontoplano on Android.
+
+The whole app: your week as blocks of time, goals with measured progress,
+notebooks, habits and workouts, finances, inventory, recipes and the shopping
+list — and reminders that arrive on the phone.
+
+Sign in to an instance you host, to app.ontoplano.com, or keep everything on
+the phone with no account and no network at all.
+
+Tell me what breaks: github.com/ontoplano/ontoplano/issues

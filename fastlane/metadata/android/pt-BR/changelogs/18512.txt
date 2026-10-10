@@ -1,0 +1,3 @@
+• Fix crashing on start
+
+Me conte o que quebrar: github.com/ontoplano/ontoplano/issues

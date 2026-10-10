@@ -1,0 +1,29 @@
+Ontoplano is a life management app. It started as a weekly planner and grew into the place the rest of it lives: what you have to do, what you are working towards, what you keep meaning to write down, and the ordinary machinery of recurrent events in life that nobody enjoys holding in their head — bills, shopping lists, workout routines, appointments, etc.
+
+WHAT IS IN IT
+
+• Tasks — a week that repeats, one-off things on a date, and a to-do list for someday. Seen as blocks of time or as a kanban board.
+• Goals — by the week, month, quarter and year, with measured progress rather than a tick: a number that moves, from a habit, a workout or your own hand.
+• Notebooks — one per subject, holding notes, tasks and goals together, and the people the notes are about.
+• Health — habits as a grid you can read at a glance, and workouts recorded as the weights, distances and reps you actually did.
+• Finance — ledgers, the bills that are due, and where the money went, month by month.
+• Inventory — what you own, where it lives, and what is running out.
+• Recipes and the shopping list, which know about each other.
+• Reminders that arrive on your phone rather than in an inbox.
+• A gallery, with the pictures kept in your own instance.
+
+AN ASSISTANT CAN ACTUALLY USE IT
+
+An MCP server is built in. Any assistant that speaks Model Context Protocol can read your day and change it — add the tasks, tick the habits, write the note, move the week around — through the same rules the app itself obeys.
+
+You issue the token, you choose what it is allowed to touch, and you revoke it whenever you like. Every write it makes is written down with the state it replaced, so you can see exactly what was done and put a deleted thing back in one press. And when an assistant has finished, your phone tells you what it did.
+
+Nothing in the app calls a model, and no key of yours is stored here. You bring your own assistant.
+
+IT IS YOURS
+
+Open source under the AGPL-3.0. Nothing is sold on, nothing is measured, there are no adverts, and no third party is handed your data.
+
+Point it at an instance you host yourself; point it at the official one at app.ontoplano.com; or keep everything on the phone itself. Your data can go where you go: an export is one file with everything in it, and it imports into any instance.
+
+Source, issues and documentation: https://github.com/ontoplano/ontoplano

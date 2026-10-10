@@ -1,0 +1,10 @@
+Un mes de trabajo desde la última versión:
+• Los cuadernos guardan un tema entero: tareas, notas, metas, ideas, recetas, entrenos, facturas
+• Un solo conjunto de etiquetas, con filtros guardados
+• Urgencia, facilidad e interés en cada tarea
+• Todas las salas rediseñadas igual
+• Grabaciones de voz, widget, historial de notificaciones
+• Ahora en portugués, español y alemán
+• Los asistentes hacen mucho más por MCP
+
+Cuéntame qué se rompe: github.com/ontoplano/ontoplano/issues

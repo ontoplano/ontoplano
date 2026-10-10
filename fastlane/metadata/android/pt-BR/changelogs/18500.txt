@@ -1,0 +1,10 @@
+Um mês de trabalho desde a última versão:
+• Cadernos guardam um assunto inteiro: tarefas, notas, metas, ideias, receitas, treinos, contas
+• Um só conjunto de tags, com filtros salvos
+• Urgência, facilidade e interesse em cada tarefa
+• Todas as salas redesenhadas do mesmo jeito
+• Gravações de voz, widget na tela inicial, histórico de notificações
+• Agora em português, espanhol e alemão
+• Assistentes fazem muito mais via MCP
+
+Me conte o que quebrar: github.com/ontoplano/ontoplano/issues
