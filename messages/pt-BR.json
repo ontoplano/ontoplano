@@ -311,6 +311,7 @@
 	"goals.youDidItBody": "{title}, feito. Conte como foi enquanto está fresco — fica guardado com a meta.",
 	"out.couldNotOpen": "O navegador não abriu. Voltando…",
 	"out.opening": "Abrindo o navegador…",
+	"passwords.rule": "Pelo menos {count} caracteres, com uma letra e um número ou símbolo.",
 	"play.opening": "Abrindo o Google Play…",
 	"play.nothingToBuy": "Nada para comprar aqui. Abrindo o ontoplano…",
 	"buy.playCouldNotStart": "O Google Play não conseguiu fazer a compra ({code}). Nada foi cobrado.",

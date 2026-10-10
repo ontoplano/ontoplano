@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { enhance } from '$lib/enhance';
 	import { resolve } from '$app/paths';
-	import { MIN_PASSWORD_LENGTH, PASSWORD_RULE } from '$lib/passwords';
+	import { MIN_PASSWORD_LENGTH } from '$lib/passwords';
 	import AnotherInstance from '$lib/components/AnotherInstance.svelte';
 	import Banner from '$lib/components/Banner.svelte';
 	import StagingBand from '$lib/components/StagingBand.svelte';
@@ -148,7 +148,9 @@
 					<!-- The rule before it is broken, not only as a refusal after. The
 					     old `minlength=3` on a NEW password was also just wrong. -->
 					{#if mode === 'register'}
-						<span class="mt-1 block text-xs text-gray-500">{PASSWORD_RULE}</span>
+						<span class="mt-1 block text-xs text-gray-500"
+							>{t('passwords.rule', { count: MIN_PASSWORD_LENGTH })}</span
+						>
 					{/if}
 				</label>
 			{/if}

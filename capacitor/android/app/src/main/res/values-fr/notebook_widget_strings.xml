@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="notebook_widget_name">Ontoplano — Carnet</string>
+    <string name="notebook_widget_description">Un onglet d’un carnet : ses tâches, notes, objectifs, idées ou courses.</string>
+    <string name="notebook_widget_refresh">Actualiser</string>
+    <string name="notebook_widget_set_up">Touchez pour choisir un carnet</string>
+    <string name="notebook_widget_nothing">Rien ici</string>
+    <string name="notebook_widget_refused">Ce widget a été supprimé ou sa clé révoquée. Touchez pour le reconfigurer.</string>
+    <string name="notebook_widget_unreachable">Votre instance était injoignable. Touchez Actualiser pour réessayer.</string>
+    <string name="notebook_widget_section_notes">Notes</string>
+    <string name="notebook_widget_section_tasks">Tâches</string>
+    <string name="notebook_widget_section_goals">Objectifs</string>
+    <string name="notebook_widget_section_ideas">Idées</string>
+    <string name="notebook_widget_section_inventory">Inventaire</string>
+</resources>

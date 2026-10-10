@@ -37,8 +37,13 @@ describe('which language a browser asked for', () => {
 		expect(matchLocale('en-AU')).toBe('en');
 	});
 
+	test('French and Russian, by their base tags too', () => {
+		expect(matchLocale('fr-CA,en;q=0.5')).toBe('fr');
+		expect(matchLocale('ru')).toBe('ru');
+	});
+
 	test('says nothing when it has nothing to say', () => {
-		expect(matchLocale('ja,fr;q=0.9')).toBeNull();
+		expect(matchLocale('ja,ko;q=0.9')).toBeNull();
 		expect(matchLocale('')).toBeNull();
 		expect(matchLocale(null)).toBeNull();
 	});

@@ -11,7 +11,7 @@
  * against — so they are never invented. `pt-BR` rather than `pt` because the
  * translation is Brazilian and the differences are not cosmetic.
  */
-export const LOCALES = ['en', 'pt-BR', 'de', 'es'] as const;
+export const LOCALES = ['en', 'pt-BR', 'de', 'es', 'fr', 'ru'] as const;
 
 export type Locale = (typeof LOCALES)[number];
 
@@ -37,7 +37,9 @@ export const LOCALE_NAMES: Record<Locale, string> = {
 	en: 'English',
 	'pt-BR': 'Português (Brasil)',
 	de: 'Deutsch',
-	es: 'Español'
+	es: 'Español',
+	fr: 'Français',
+	ru: 'Русский'
 };
 
 export function isLocale(value: string | null | undefined): value is Locale {

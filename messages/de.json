@@ -311,6 +311,7 @@
 	"goals.youDidItBody": "{title}, erledigt. Schreib auf, wie es lief, solange es frisch ist — es bleibt beim Ziel.",
 	"out.couldNotOpen": "Der Browser hat sich nicht geöffnet. Zurück…",
 	"out.opening": "Browser wird geöffnet…",
+	"passwords.rule": "Mindestens {count} Zeichen, mit einem Buchstaben und einer Zahl oder einem Symbol.",
 	"play.opening": "Google Play wird geöffnet…",
 	"play.nothingToBuy": "Hier gibt es nichts zu kaufen. ontoplano wird geöffnet…",
 	"buy.playCouldNotStart": "Google Play konnte den Kauf nicht ausführen ({code}). Es wurde nichts berechnet.",
