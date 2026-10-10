@@ -3,6 +3,8 @@ import { error, redirect } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 import {
 	checkoutTrialDays,
+	checkoutChannel,
+	checkoutRefused,
 	createCheckout,
 	playConfigured,
 	displayPricing,
@@ -37,6 +39,8 @@ export const load: PageServerLoad = async ({ locals, cookies }) => {
 		// provider's checkout must not open, and the server is the one that
 		// knows the app is asking.
 		inApp: Boolean(locals.nativeApp),
+		// Whether the store copy can actually buy here; without it, it cannot.
+		playReady: playConfigured(),
 		// 'billing' is the card step of registration; 'expired' is the wall a
 		// lapsed account meets — data kept, renew or take it with you.
 		mode: hold,
@@ -68,11 +72,15 @@ export const actions: Actions = {
 		const interval = formData.get('interval') === 'monthly' ? 'monthly' : 'yearly';
 		const tier = formData.get('tier') === 'family' ? 'family' : 'solo';
 
-		// The store copy pays through Play, not Paddle — the page said so (it
-		// is the copy Google Play distributes, the only one with Play's sheet),
-		// and no Paddle transaction is minted for a purchase Paddle will never
-		// see. Everyone else falls through to the provider as before.
-		if (formData.get('channel') === 'play' && playConfigured()) {
+		// The store copy pays through Play, never Paddle; any other copy of
+		// the app pays through nothing. `checkoutChannel` is the one rule.
+		const channel = checkoutChannel({
+			channel: formData.get('channel'),
+			userAgent: request.headers.get('user-agent'),
+			nativeApp: Boolean(locals.nativeApp)
+		});
+		if (channel === 'none') return toActionFailure(checkoutRefused());
+		if (channel === 'play') {
 			forgetWantedPlan(cookies);
 			redirect(303, `/buy?play=1&interval=${interval}&tier=${tier}`);
 		}

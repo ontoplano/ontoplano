@@ -29,7 +29,11 @@
 	});
 	/** The billing page's rule, on the other page that charges: inside the
 	 * installed app with no Play sheet, nothing here may open a checkout. */
-	const moneyStays = $derived(data.inApp && payChannel !== 'play');
+	// The store copy counts as the app even before the server's cookie says so,
+	// and its Play sheet is only an answer where this instance can verify it.
+	const moneyStays = $derived(
+		(data.inApp || payChannel === 'play') && !(payChannel === 'play' && data.playReady)
+	);
 
 	/*
 	 * Which plan is being bought, here on the page where it is bought.

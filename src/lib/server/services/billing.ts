@@ -4,7 +4,9 @@ import type { PlanTier } from '../billing/contract.js';
 import { loadConfig } from '../config.js';
 import { isSelfHosted, pricing } from '../settings.js';
 import { applySubscription, startTrial, trialCarryover } from './subscriptions.js';
-import { ServiceError } from '$lib/services/errors.js';
+import { ServiceError, ValidationError } from '$lib/services/errors.js';
+import { APP_USER_AGENT, fromPlayStore } from '$lib/platform.js';
+import { BILLING_REFUSALS } from '../billing/contract.js';
 
 /**
  * Billing, as the rest of the app sees it.
@@ -315,4 +317,34 @@ export function playRtdn(rawBody: string) {
 	if (!channel || !channel.configured())
 		return Promise.resolve({ applied: false as const, reason: 'not_configured' });
 	return channel.handleRtdn(rawBody);
+}
+
+/**
+ * Which way a checkout goes, decided once for both pages that start one.
+ *
+ * `play` when the copy Google Play distributes is asking — the page says so
+ * in the form, and its agent says so too when the request carries it — and
+ * this instance can verify Play purchases. `provider` for a browser. `none`
+ * for everything else inside the app: the store copy on an instance without
+ * Play configured, and any other copy of the app. Never the provider there —
+ * Google pulls an app that opens an outside checkout, and falling back to it
+ * silently is how the store copy came to show a card form.
+ */
+export type CheckoutChannel = 'play' | 'provider' | 'none';
+
+export function checkoutChannel(asking: {
+	channel: FormDataEntryValue | null;
+	userAgent: string | null;
+	nativeApp: boolean;
+}): CheckoutChannel {
+	const agent = asking.userAgent ?? '';
+	const store = asking.channel === 'play' || fromPlayStore(agent);
+	if (store) return playConfigured() ? 'play' : 'none';
+	if (asking.nativeApp || agent.includes(APP_USER_AGENT)) return 'none';
+	return 'provider';
+}
+
+/** The refusal for `none`, so both pages say the same thing. */
+export function checkoutRefused(): ValidationError {
+	return new ValidationError({ key: BILLING_REFUSALS.notFromThisApp });
 }

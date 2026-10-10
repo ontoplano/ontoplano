@@ -450,6 +450,7 @@ export const messages: Catalogue = {
 	'errors.billing.noPurchaseToken': 'That purchase came with nothing to check.',
 	'errors.billing.noSubscriptionToChange': 'There is no subscription to change.',
 	'errors.billing.notConfiguredHere': 'This instance takes no payments.',
+	'errors.billing.notFromThisApp': 'A subscription cannot be started from this app.',
 	'errors.billing.planNotSoldHere': 'That is not a plan this instance sells.',
 	'errors.billing.providerAnsweredStrangely': 'The payment provider answered strangely. Try again.',
 	'errors.billing.providerDidNotAnswer':
