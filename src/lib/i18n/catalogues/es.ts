@@ -460,6 +460,7 @@ export const messages: Catalogue = {
 	'errors.billing.noPurchaseToken': 'Esa compra vino sin nada que comprobar.',
 	'errors.billing.noSubscriptionToChange': 'No hay ninguna suscripción que cambiar.',
 	'errors.billing.notConfiguredHere': 'Esta instancia no acepta pagos.',
+	'errors.billing.notFromThisApp': 'No se puede iniciar una suscripción desde esta app.',
 	'errors.billing.planNotSoldHere': 'Ese no es un plan que esta instancia venda.',
 	'errors.billing.providerAnsweredStrangely':
 		'El proveedor de pago respondió de forma extraña. Inténtalo de nuevo.',

@@ -417,6 +417,7 @@ export type MessageKey =
 	| 'errors.billing.noPurchaseToken'
 	| 'errors.billing.noSubscriptionToChange'
 	| 'errors.billing.notConfiguredHere'
+	| 'errors.billing.notFromThisApp'
 	| 'errors.billing.planNotSoldHere'
 	| 'errors.billing.providerAnsweredStrangely'
 	| 'errors.billing.providerDidNotAnswer'

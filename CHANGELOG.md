@@ -20,6 +20,7 @@ releases mattered.
 
 ## 0.186.1 — 2026-10-10
 
+- Subscribing from the Google Play app never opens the card checkout: it uses Google Play's own purchase sheet, or says plainly that a subscription cannot be started from the app.
 - The Android app's store listing — words, screenshots and release notes — is published with the source, so F-Droid shows the same listing as Google Play.
 - The Android build checks the Gradle it downloads against Gradle's published checksum.
 

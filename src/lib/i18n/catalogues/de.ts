@@ -467,6 +467,7 @@ export const messages: Catalogue = {
 	'errors.billing.noPurchaseToken': 'Dieser Kauf kam ohne etwas zum Prüfen.',
 	'errors.billing.noSubscriptionToChange': 'Es gibt kein Abo zum Ändern.',
 	'errors.billing.notConfiguredHere': 'Diese Instanz nimmt keine Zahlungen an.',
+	'errors.billing.notFromThisApp': 'Ein Abonnement kann nicht in dieser App abgeschlossen werden.',
 	'errors.billing.planNotSoldHere': 'Diesen Tarif verkauft diese Instanz nicht.',
 	'errors.billing.providerAnsweredStrangely':
 		'Der Zahlungsanbieter hat seltsam geantwortet. Versuche es erneut.',

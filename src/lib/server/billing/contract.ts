@@ -94,6 +94,8 @@ export const BILLING_REFUSALS = {
 	storeDoesNotKnowThatPurchase: 'errors.billing.storeDoesNotKnowThatPurchase',
 	purchaseBelongsElsewhere: 'errors.billing.purchaseBelongsElsewhere',
 	purchaseIsForAnotherPlan: 'errors.billing.purchaseIsForAnotherPlan',
+	/** Inside the app, where only Play may sell, and Play cannot here. */
+	notFromThisApp: 'errors.billing.notFromThisApp',
 	/** A notification that did not arrive as JSON. */
 	bodyIsNotJson: 'errors.billing.bodyIsNotJson'
 } as const satisfies Record<string, MessageKey>;
