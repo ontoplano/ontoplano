@@ -1,0 +1,4 @@
+• Ontoplano is getting ready for F-Droid: the store listing now ships with the source code
+• Safer Android builds: the build tools are checked against their published checksum
+
+Tell me what breaks: github.com/ontoplano/ontoplano/issues
