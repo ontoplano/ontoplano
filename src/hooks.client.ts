@@ -13,6 +13,7 @@ import { OUT_PATH, sendOutsideLinksToTheBrowser } from '$lib/outside-links';
 import { PLAY_PATH } from '$lib/play-billing';
 import { WIDGET_HANDOFF_PATH } from '$lib/notebook-widget';
 import { backGestureGoesBack } from '$lib/phone-back';
+import { holdKeysWhileComposing } from '$lib/composition';
 import { ringingFor } from '$lib/phone-notifications';
 import { startMarkSpin } from '$lib/mark-spin';
 import { notify } from '$lib/notify.svelte';
@@ -242,6 +243,7 @@ function optional(what: string, start: () => unknown): void {
 
 optional('opening outside links in the browser', sendOutsideLinksToTheBrowser);
 optional('the back gesture', backGestureGoesBack);
+optional('keys held while a word is composed', holdKeysWhileComposing);
 
 /*
  * A load cut off because the page is being left is not an error.
