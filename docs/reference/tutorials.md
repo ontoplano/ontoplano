@@ -37,7 +37,7 @@ under the pointer.
 | `/settings/integrations/widget`      | tour.widgets                | 2     |
 | `/tasks/activities`                  | tour.activities             | 3     |
 | `/tasks/board`                       | tour.board                  | 4     |
-| `/tasks/plan`                        | tour.plan                   | 9     |
+| `/tasks/calendar`                    | tour.plan                   | 9     |
 | `/tasks/review`                      | tour.review                 | 3     |
 | `/tasks/todo`                        | tour.toDo                   | 5     |
 
@@ -218,7 +218,7 @@ at the button that reopens it, so it is not listed here.
 3. tour.dragACardOrCarry
 4. tour.urgencyEaseInterest
 
-### `/tasks/plan` — tour.plan
+### `/tasks/calendar` — tour.plan
 
 1. tour.theShapeOfANormal
 2. tour.sixViewsOfTheSame

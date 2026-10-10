@@ -150,7 +150,7 @@
 		}
 
 		const items = shown;
-		const action = getAction(ROOM, e.key);
+		const action = getAction(ROOM, e);
 		if (!action) return;
 		e.preventDefault();
 

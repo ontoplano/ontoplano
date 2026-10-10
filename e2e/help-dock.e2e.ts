@@ -51,7 +51,7 @@ test('on a wide screen the dock is one question mark until it is asked', async (
 test('a reported problem reaches the admin page', async ({ page }) => {
 	const mark = `the plan draws nothing ${Date.now()}`;
 	await register(page, testEmail('dock-report'));
-	await visit(page, '/tasks/plan');
+	await visit(page, '/tasks/calendar');
 
 	// The dock starts folded; the report button is behind the question mark.
 	await page.getByRole('button', { name: 'Help', exact: true }).click();
@@ -73,7 +73,7 @@ test('a reported problem reaches the admin page', async ({ page }) => {
 		const res = await fetch('/api/report', {
 			method: 'POST',
 			headers: { 'content-type': 'application/json' },
-			body: JSON.stringify({ message: 'a second one', url: '/tasks/plan' })
+			body: JSON.stringify({ message: 'a second one', url: '/tasks/calendar' })
 		});
 		return res.status;
 	});

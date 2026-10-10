@@ -389,7 +389,7 @@
 			return;
 		}
 
-		const action = getAction('/', e.key);
+		const action = getAction('/', e);
 		if (!action) return;
 		e.preventDefault();
 
@@ -669,7 +669,7 @@
 				{#if data.taskSummary.total === 0}
 					{@render nothingYet(
 						t('home.nothingIsPlannedForToday'),
-						'/tasks/plan',
+						'/tasks/calendar',
 						t('home.openThePlan')
 					)}
 				{:else}
@@ -840,7 +840,7 @@
 		{#snippet card_nextDays()}
 			<Card title={t('home.nextThreeDays')} accent={SECTION_COLORS.planner}>
 				{#snippet actions()}
-					{@render openLink(resolve('/tasks/plan'))}
+					{@render openLink(resolve('/tasks/calendar'))}
 				{/snippet}
 				<div class="grid gap-3 sm:grid-cols-3">
 					{#each data.nextDays as day, ahead (day.date)}
@@ -1027,7 +1027,7 @@
 						<form
 							id="dash-wins-form"
 							method="post"
-							action="?/createWins"
+							action="?/saveWins"
 							use:enhance={() => {
 								return async ({ update, result }) => {
 									await update({ reset: result.type === 'success' });
@@ -1037,13 +1037,13 @@
 						>
 							<FormGrid>
 								<Field label={t('home.win1')} span={12}>
-									<OneLine name="win_0" class="input" autofocus />
+									<OneLine name="win_1" class="input" autofocus />
 								</Field>
 								<Field label={t('home.win2')} span={12}>
-									<OneLine name="win_1" class="input" />
+									<OneLine name="win_2" class="input" />
 								</Field>
 								<Field label={t('home.win3')} span={12}>
-									<OneLine name="win_2" class="input" />
+									<OneLine name="win_3" class="input" />
 								</Field>
 								<Field label={t('home.forTheDay')} span={12}>
 									<input

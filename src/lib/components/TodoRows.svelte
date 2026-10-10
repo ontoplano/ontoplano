@@ -70,6 +70,7 @@
 	import { keepInView } from '$lib/actions/keep-in-view';
 	import { invalidateAll } from '$app/navigation';
 	import { page } from '$app/state';
+	import { resolve } from '$app/paths';
 	import { cancelFor, changeNow, isPending } from '$lib/undo.svelte';
 	import type { SubmitFunction } from '@sveltejs/kit';
 	import type { GoalBacklink } from '$lib/services/backlinks';
@@ -1288,7 +1289,7 @@
 
 		if (selection.verb || showForm || delegatingId !== null || attributesId !== null) return;
 		if (selection.handleKey(e, () => visibleTodos[selectedIndex]?.id)) return;
-		const action = getAction(shortcutRoom, e.key);
+		const action = getAction(shortcutRoom, e);
 		if (!action) return;
 		e.preventDefault();
 
@@ -1468,7 +1469,7 @@
 	{/if}
 	{#snippet footer()}
 		{#if rerating?.sheet}
-			<span class="mr-auto flex flex-wrap items-center gap-2 text-sm">
+			<span class="flex flex-wrap items-center gap-2 text-sm">
 				{@render underFilters(reratingFilteredPlace)}
 				{@render inQueue(reratingPlace)}
 			</span>
@@ -1481,7 +1482,9 @@
 			>
 				<Icon name="edit" />
 			</button>
-			<button type="button" class="btn" onclick={() => (rerating = null)}>{t('ui.cancel')}</button>
+			<button type="button" class="btn" data-modal-cancel onclick={() => (rerating = null)}
+				>{t('ui.cancel')}</button
+			>
 			<button type="submit" form="rate-form" class="btn btn-primary">{t('ui.confirm')}</button>
 		{/if}
 	{/snippet}
@@ -1627,6 +1630,9 @@
 								<SavedFilters
 									surface="/tasks/todo"
 									narrowed={narrowed || showCompleted || showArchived}
+									context={notebookId !== null && page.url.pathname === resolve('/notebooks')
+										? { notebook: String(notebookId) }
+										: {}}
 								/>
 							{/snippet}
 							{#snippet lead()}
@@ -2477,7 +2483,6 @@
 				<form
 					method="post"
 					action={actions.remove}
-					class="mr-auto"
 					use:enhance={(event) => {
 						/*
 						 * Run the submit first, then close.
@@ -2529,6 +2534,7 @@
 			<button
 				type="button"
 				class="btn"
+				data-modal-cancel
 				onclick={() => {
 					discardForm(editingId ? `edit-todo-${editingId}` : 'new-todo');
 					showForm = false;

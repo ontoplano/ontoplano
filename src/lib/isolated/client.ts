@@ -28,6 +28,13 @@ function start(): Worker {
 		for (const [id, resolve] of pending) resolve({ id, ok: false, error });
 		pending.clear();
 	};
+	// First, so every route after it is answered in the page's language: the
+	// header a browser would have sent a server, sent once. Nobody waits on
+	// the reply — the worker answers messages in the order they came.
+	const languages = navigator.languages?.length
+		? navigator.languages.join(',')
+		: navigator.language;
+	worker.postMessage({ id: nextId++, op: 'page.languages', args: { languages } });
 	return worker;
 }
 

@@ -2,7 +2,7 @@ import type { Ctx } from '$lib/services/ctx.js';
 import { NotFoundError } from '$lib/services/errors.js';
 
 import { listActivities } from '$lib/services/activities.js';
-import { FLOWS, listBills } from '$lib/services/bills.js';
+import { FLOWS, listAllPayments, listBills } from '$lib/services/bills.js';
 import { listEveryEntry } from '$lib/services/diary.js';
 import { listAreas, listGoals } from '$lib/services/goals.js';
 import { listHabits } from '$lib/services/habits.js';
@@ -136,7 +136,8 @@ export const KINDS = kinds({
 	bill: {
 		label: 'bill',
 		rows: (ctx) => FLOWS.flatMap((flow) => listBills(ctx, { includeArchived: true, flow }))
-	}
+	},
+	billPayment: { label: 'bill payment', rows: (ctx) => listAllPayments(ctx) }
 });
 
 export type RefKind = keyof typeof KINDS;

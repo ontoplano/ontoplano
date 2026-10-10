@@ -48,6 +48,21 @@ export function panelHeight(view: Viewport): number | null {
 	return Math.round(view.viewportHeight);
 }
 
+/**
+ * How far down the sheet starts while the keyboard is up, in layout pixels.
+ *
+ * Android's app web view is not resized for the keyboard: it pans the visible
+ * area down to keep the focused field in sight, and reports that as the visual
+ * viewport's `offsetTop`. A dialog fixed at the layout's top then ends that far
+ * above the keyboard, floating over the page behind with a gap underneath. It
+ * starts where the visible part starts instead. Zero whenever `panelHeight`
+ * leaves the sheet alone, so the two always agree.
+ */
+export function panelTop(view: Viewport): number {
+	if (panelHeight(view) === null) return 0;
+	return Math.max(0, Math.round(view.offsetTop));
+}
+
 /** What the browser is reporting right now, or null where it cannot say. */
 export function readViewport(): Viewport | null {
 	if (typeof window === 'undefined' || !window.visualViewport) return null;

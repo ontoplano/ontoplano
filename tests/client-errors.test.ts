@@ -61,14 +61,14 @@ describe('an error report', () => {
 		service.setClientErrorConsent(ctx, 'yes');
 		service.recordClientError(ctx, {
 			message: 'Cannot read properties of undefined',
-			url: '/tasks/plan',
+			url: '/tasks/calendar',
 			stack: 'at thing (app.js:1:1)',
 			userAgent: 'Mozilla/5.0 (Linux; Android 14)'
 		});
 
 		const [report] = service.recentClientErrors();
 		expect(report.message).toBe('Cannot read properties of undefined');
-		expect(report.url).toBe('/tasks/plan');
+		expect(report.url).toBe('/tasks/calendar');
 		expect(report.stack).toContain('app.js');
 		expect(report.userAgent).toContain('Android');
 		// Joined rather than stored, so a deleted account takes its name out of

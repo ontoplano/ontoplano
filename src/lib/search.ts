@@ -52,7 +52,7 @@ export const KIND_PLACES: Record<SearchKind, string> = {
 	note: 'notebook/notes',
 	notebook: '/notebooks',
 	todo: '/tasks/todo',
-	block: '/tasks/plan',
+	block: '/tasks/calendar',
 	goal: 'goals',
 	idea: '/notebooks/ideas',
 	person: '/notebooks/people',

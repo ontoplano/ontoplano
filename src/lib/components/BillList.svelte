@@ -15,6 +15,8 @@
 	import type { Snippet } from 'svelte';
 	import BillRow from '$lib/components/BillRow.svelte';
 	import BillFields from '$lib/components/fields/BillFields.svelte';
+	import Field from '$lib/components/Field.svelte';
+	import FormGrid from '$lib/components/FormGrid.svelte';
 	import Icon from '$lib/components/Icon.svelte';
 	import Modal from '$lib/components/Modal.svelte';
 	import { armed } from '$lib/actions/armed';
@@ -23,8 +25,12 @@
 	import type { Currency } from '$lib/money';
 	import type { ComponentProps } from 'svelte';
 	import { useT } from '$lib/i18n';
+	import { useWhen } from '$lib/when-context.svelte';
+	import { dayStamp } from '$lib/when';
+	import { asDecimal } from '$lib/bill-summary';
 
 	const t = useT();
+	const now = useWhen();
 
 	type Listed = ComponentProps<typeof BillRow>['bill'] & {
 		currency?: string | null;
@@ -85,6 +91,15 @@
 
 	let confirmingDeleteId = $state<number | null>(null);
 	const confirmingDelete = $derived(bills.find((b) => b.id === confirmingDeleteId) ?? null);
+	let editingPayment = $state<{
+		billId: number;
+		id: number;
+		period: string;
+		amountPaid: number;
+		paidAt: string;
+		movementId: number | null;
+	} | null>(null);
+	let paymentError = $state<string | null>(null);
 
 	export function openNew() {
 		editingId = null;
@@ -109,6 +124,7 @@
 
 	const uid = $props.id();
 	const formId = `bill-form-${uid}`;
+	const paymentFormId = `bill-payment-form-${uid}`;
 </script>
 
 {#snippet row(bill: Listed, at: number)}
@@ -122,6 +138,10 @@
 		skipped={bill.skippedThisPeriod}
 		onedit={openEdit}
 		ondelete={(id) => (confirmingDeleteId = id)}
+		oneditpayment={(billId, entry) => {
+			editingPayment = { billId, ...entry };
+			paymentError = null;
+		}}
 		{onattach}
 	/>
 {/snippet}
@@ -196,6 +216,70 @@
 		<button class="btn btn-primary" type="submit" form={formId}>
 			{editing ? t('ui.save') : t('ui.add')}
 		</button>
+	{/snippet}
+</Modal>
+
+<Modal
+	open={editingPayment !== null}
+	title={t('finance.bills.editPayment')}
+	description={bills.find((bill) => bill.id === editingPayment?.billId)?.name ?? ''}
+	error={paymentError}
+	onclose={() => (editingPayment = null)}
+	size="sm"
+>
+	{#if editingPayment}
+		{#key editingPayment.id}
+			<form
+				id={paymentFormId}
+				method="post"
+				action={actions.editPayment}
+				use:enhance={() =>
+					async ({ result, update }) => {
+						await update({ reset: false });
+						if (result.type === 'failure')
+							paymentError = String(
+								(result.data as { message?: unknown } | undefined)?.message ?? ''
+							);
+						if (result.type === 'success') editingPayment = null;
+					}}
+			>
+				<input type="hidden" name="id" value={editingPayment.billId} />
+				<input type="hidden" name="paymentId" value={editingPayment.id} />
+				<FormGrid>
+					<Field label={t('finance.bills.date')} span={6} required>
+						<input
+							type="date"
+							name="paidDate"
+							value={dayStamp(editingPayment.paidAt, now())}
+							required
+							class="input"
+						/>
+					</Field>
+					<Field
+						label={t('finance.bills.amount')}
+						span={6}
+						required
+						hint={editingPayment.movementId !== null
+							? t('finance.bills.changingAmountDetachesMovement')
+							: undefined}
+					>
+						<input
+							name="amount"
+							inputmode="decimal"
+							value={asDecimal(editingPayment.amountPaid)}
+							required
+							class="input"
+						/>
+					</Field>
+				</FormGrid>
+			</form>
+		{/key}
+	{/if}
+	{#snippet footer()}
+		<button type="button" class="btn" onclick={() => (editingPayment = null)}
+			>{t('ui.cancel')}</button
+		>
+		<button type="submit" form={paymentFormId} class="btn btn-primary">{t('ui.save')}</button>
 	{/snippet}
 </Modal>
 

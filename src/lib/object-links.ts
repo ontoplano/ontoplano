@@ -36,8 +36,8 @@ export const OBJECT_ROOMS = {
 	person: { room: '/notebooks/people', by: { param: 'person' } },
 	activity: { room: '/tasks/activities', by: 'edit' },
 	reminder: { room: '/reminders' },
-	repeatingBlock: { room: '/tasks/plan' },
-	block: { room: '/tasks/plan' },
+	repeatingBlock: { room: '/tasks/calendar' },
+	block: { room: '/tasks/calendar' },
 	item: { room: '/inventory/stock', by: 'edit' },
 	inventoryCategory: { room: '/inventory/stock' },
 	recipe: { room: '/health/recipes', by: 'edit' },
@@ -51,7 +51,8 @@ export const OBJECT_ROOMS = {
 	tag: { room: '/notebooks/tags' },
 	ledger: { room: '/finance/ledgers' },
 	movement: { room: '/finance/ledgers' },
-	bill: { room: '/finance/bills', by: 'edit' }
+	bill: { room: '/finance/bills', by: 'edit' },
+	billPayment: { room: '/finance/bills' }
 } as const satisfies Record<string, Opens>;
 
 export type ObjectKind = keyof typeof OBJECT_ROOMS;

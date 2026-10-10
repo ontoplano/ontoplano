@@ -245,7 +245,7 @@ works is a key listed here and the reverse.
 | <kbd>y</kbd>     | Number keys set ease          |
 | <kbd>x</kbd>     | Ask to delete card            |
 
-## Plan — `/tasks/plan`
+## Calendar — `/tasks/calendar`
 
 | Key          | Does                          |
 | ------------ | ----------------------------- |

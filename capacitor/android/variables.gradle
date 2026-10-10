@@ -1,5 +1,5 @@
 ext {
-    minSdkVersion = 23
+    minSdkVersion = 24
     // Play refuses a bundle that targets less than 36: "esse nível precisa ser
     // de pelo menos 36 para que o app use as APIs mais recentes". Compiling
     // against the same level is Gradle's own rule — targetSdk may not exceed

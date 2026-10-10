@@ -1219,6 +1219,10 @@ enforces one payment per period, so this upserts). The expected amount is
 snapshotted from the bill as it stands, so a later edit to the bill does not
 rewrite what was actually asked at the time.
 
+#### `updatePayment(ctx, billId, paymentId, input)`
+
+Correct the date and amount of an existing paid period without changing its period.
+
 #### `markPaidFromMovement(ctx, billId, movementId, period)`
 
 Mark a bill paid by pointing at the line that paid it.
@@ -1245,6 +1249,10 @@ what was paid, and undoing the payment first is one press.
 Take a skip back — the period is open again. The inverse of `skipPeriod`.
 
 #### `listPayments(ctx, billId)`
+
+#### `listAllPayments(ctx)`
+
+The payments this account can name through the assistant.
 
 #### `billsSettledIn(ctx, period)`
 

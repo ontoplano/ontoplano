@@ -138,7 +138,7 @@ test('a workout can be planned onto a day, and finishing it there finishes the w
 	await plan.getByRole('button', { name: 'Put on the day' }).click();
 
 	// It is on the week, and finishing it there stamps the workout.
-	await visit(page, '/tasks/plan');
+	await visit(page, '/tasks/calendar');
 	await expect(page.getByText('Leg day').first()).toBeVisible();
 
 	await visit(page, '/health/workouts');
@@ -167,7 +167,7 @@ test('a workout planned from the week is named after the workout', async ({ page
 	await add.getByRole('button', { name: 'Add', exact: true }).click();
 	await expect(page.getByText('Pull day')).toBeVisible();
 
-	await visit(page, '/tasks/plan');
+	await visit(page, '/tasks/calendar');
 	await page.getByRole('button', { name: 'New task block' }).click();
 	const block = page.getByRole('dialog');
 	await choose(block, 'mode', 'Workout');

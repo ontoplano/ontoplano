@@ -70,6 +70,7 @@ beforeAll(async () => {
 	const { createGoal } = await import('../src/lib/services/goals');
 	const { createEntry } = await import('../src/lib/services/diary');
 	const { createItem } = await import('../src/lib/services/inventory');
+	const { createBill, markPaid } = await import('../src/lib/services/bills');
 	const idOf = (made: unknown) => (typeof made === 'number' ? made : (made as { id: number }).id);
 
 	mine = idOf(createNotebook(ctx(), { title: 'The flat', modules: EVERY_TAB }));
@@ -83,10 +84,14 @@ beforeAll(async () => {
 	// A notebook holds its subject's shopping now, so a key given the flat can
 	// tick the flat's tiles off — and nothing else's.
 	inside.item = idOf(createItem(ctx(), { name: 'wall tiles', type: 'someday', notebookId: mine }));
+	inside.bill = createBill(ctx(), { name: 'flat rent', dueDay: 5, notebookId: mine }).id;
+	inside.billPayment = markPaid(ctx(), inside.bill, { period: '2026-03' }).id;
 
 	outside.todo = idOf(createTodo(ctx(), { title: 'a private errand' }));
 	outside.goal = idOf(createGoal(ctx(), { title: 'a private goal', horizon: 'year' }));
 	outside.note = idOf(createEntry(ctx(), { content: 'a private thought' }));
+	outside.bill = createBill(ctx(), { name: 'private rent', dueDay: 5, notebookId: other }).id;
+	outside.billPayment = markPaid(ctx(), outside.bill, { period: '2026-03' }).id;
 	outside.notebookTodo = idOf(
 		createTodo(ctx(), { title: 'somebody else’s project', notebookId: other })
 	);
@@ -154,6 +159,28 @@ beforeAll(async () => {
 	});
 	createEntry(ctx(), { content: `![private](/media/${outside.picture})` });
 	outside.item = idOf(createItem(ctx(), { name: 'milk', type: 'replenish' }));
+});
+
+it('reports the token boundary during initialize without exposing other notebooks', () => {
+	const answer = handleBody(
+		{
+			ctx: ctx(),
+			scopes: Object.keys(SCOPES),
+			confinement: { kind: 'notebook', id: mine }
+		} as never,
+		{ jsonrpc: '2.0', id: 1, method: 'initialize' }
+	) as { result: { _access: { kind: string; id: number; label: string } } };
+	expect(answer.result._access).toEqual({
+		kind: 'notebook',
+		id: mine,
+		label: 'notebook: The flat'
+	});
+	expect(JSON.stringify(answer.result._access)).not.toContain('Private');
+	const writeOnly = handleBody(
+		{ ctx: ctx(), scopes: ['notes:write'], confinement: { kind: 'notebook', id: mine } } as never,
+		{ jsonrpc: '2.0', id: 2, method: 'initialize' }
+	) as { result: { _access: unknown } };
+	expect(writeOnly.result._access).toEqual({ kind: 'notebook', id: mine });
 });
 
 describe('what a key tied to one notebook can do', () => {
@@ -255,6 +282,16 @@ describe('what it cannot do', () => {
 		expect(failed(call('tick_bought', { id: inside.item }))).toBe(false);
 		// The milk: an ordinary shopping item, filed under nothing.
 		expect(failed(call('tick_bought', { id: outside.item }))).toBe(true);
+	});
+
+	it('corrects only bill payments in its notebook', () => {
+		const args = { id: inside.bill, paid_date: '2026-03-14', amount_paid: 1400 };
+		expect(failed(call('change_bill_payment', { ...args, payment_id: inside.billPayment }))).toBe(
+			false
+		);
+		expect(failed(call('change_bill_payment', { ...args, payment_id: outside.billPayment }))).toBe(
+			true
+		);
 	});
 
 	it('cannot reach a kind that does not live in a notebook at all', () => {

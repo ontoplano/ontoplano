@@ -72,14 +72,14 @@
 
 {#snippet picture()}
 	{#if notebook.mine}
-		<!-- Beside the shelf the picture opens the editor; on the page it is the
-		     picture's own control. See `NotebookPicture`. -->
+		<!-- On a phone the picture opens the viewer; Edit still changes it. -->
 		<NotebookPicture
 			{notebook}
 			kilobytes={pictureKilobytes}
 			onpress={open ? onedit : undefined}
 			size={COVER}
 			resizable
+			viewOnTouch
 		/>
 	{:else if notebook.pictureId}
 		<!-- Not yours to change, but yours to look at: the viewer answers `data-view`. -->

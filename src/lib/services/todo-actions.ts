@@ -3,6 +3,7 @@ import {
 	archiveTodo,
 	createTodo,
 	delegateTodo,
+	promoteTodo,
 	deleteTodo,
 	batchTodos,
 	isBatchVerb,
@@ -17,6 +18,8 @@ import {
 import { ValidationError } from '$lib/services/errors';
 import { attributesPatchFromFormData } from '$lib/services/task-attributes';
 import { formAction } from '$lib/services/scoped-actions';
+import { db } from '$lib/db/index';
+import { TIME_PATTERN, num, str } from '$lib/services/validate';
 
 /**
  * Everything that can be done to a todo, wherever the row is on screen.
@@ -49,7 +52,22 @@ function attributesFrom(formData: FormData) {
 
 export const todoHandlers = {
 	create: formAction((ctx, formData) => {
-		const made = createTodo(ctx, {
+		const asBlock = formData.get('asBlock') === 'true';
+		const block = asBlock
+			? {
+					date: str(formData.get('scheduledDate'), 'date', {
+						max: 10,
+						pattern: /^\d{4}-\d{2}-\d{2}$/
+					}),
+					startTime: str(formData.get('startTime'), 'time', { max: 5, pattern: TIME_PATTERN }),
+					durationMinutes: num(formData.get('durationMinutes') || '60', 'duration', {
+						int: true,
+						min: 1,
+						max: 24 * 60
+					})
+				}
+			: null;
+		const fields = {
 			title: formData.get('heading'),
 			notes: formData.get('notes'),
 			categoryId: formData.get('categoryId'),
@@ -57,16 +75,28 @@ export const todoHandlers = {
 			// `has` rather than `get`: a form with no tags box must leave the
 			// labels alone, and one with an empty box must clear them.
 			...(formData.has('tags') ? { tags: formData.get('tags') } : {}),
-			scheduledDate: formData.get('scheduledDate'),
+			scheduledDate: asBlock ? null : formData.get('scheduledDate'),
 			ratings: ratingsFromForm(formData),
 			...attributesFrom(formData)
-		});
+		};
+		const made = block
+			? db.transaction(() => {
+					const id = createTodo(ctx, fields);
+					const result = promoteTodo(ctx, { todoId: id, ...block });
+					if (!result.ok) throw new ValidationError(result.message);
+					return result.id;
+				})
+			: createTodo(ctx, fields);
 		/*
 		 * The id comes back, so the toast can offer a way straight into the
 		 * thing just made. Without it the only route to "say more about
 		 * this" is finding the row again in a list that has just reordered.
 		 */
-		return { success: true, id: made };
+		return {
+			success: true,
+			id: made,
+			...(block ? { blockDate: block.date } : {})
+		};
 	}),
 
 	update: formAction((ctx, formData) => {

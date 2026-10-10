@@ -109,7 +109,7 @@ const PLACES: (Omit<NavPlace, 'icon'> & { glyph?: IconName })[] = [
 		glyph: 'planner',
 		name: 'sections.tasks.label',
 		section: 'planner',
-		href: '/tasks/plan'
+		href: '/tasks/calendar'
 	},
 	/*
 	 * No `hide`: the writing room is always on, like the planner.

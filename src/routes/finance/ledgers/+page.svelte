@@ -229,7 +229,7 @@
 		if (event.metaKey || event.ctrlKey || event.altKey) return;
 		if (typing(event)) return;
 		if (!data.current) return;
-		const action = getAction(ROOM, event.key);
+		const action = getAction(ROOM, event);
 		if (action === 'new') {
 			event.preventDefault();
 			showNewMovement = true;

@@ -422,7 +422,7 @@ test('a quick add says where the thing went, and quotes it', async ({ page }) =>
  */
 test('the pie says it too, from a page that is not the dashboard', async ({ page }) => {
 	await register(page, testEmail('capture-toast-pie'));
-	await visit(page, '/tasks/plan');
+	await visit(page, '/tasks/calendar');
 
 	await (await trigger(page)).click();
 	// The way a person finds a wedge: point at each until the HUD says its name.

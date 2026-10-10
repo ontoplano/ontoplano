@@ -264,7 +264,7 @@
 			renameOpen = false;
 			return;
 		}
-		const action = getAction('/notebooks', e.key);
+		const action = getAction('/notebooks', e);
 		if (action === 'new') {
 			e.preventDefault();
 			openCreate();
@@ -816,7 +816,7 @@
 		{#if editing}
 			<button
 				type="button"
-				class="icon-btn mr-auto"
+				class="icon-btn"
 				title={t('ui.delete')}
 				aria-label={t('ui.delete')}
 				onclick={() => {
@@ -827,7 +827,9 @@
 				<Icon name="trash" />
 			</button>
 		{/if}
-		<button type="button" class="btn" onclick={() => (showForm = false)}>{t('ui.cancel')}</button>
+		<button type="button" class="btn" data-modal-cancel onclick={() => (showForm = false)}
+			>{t('ui.cancel')}</button
+		>
 		<button type="submit" form="notebook-form" class="btn btn-primary">
 			{editingId ? t('ui.save') : t('notebooks.createNotebook')}
 		</button>
@@ -909,12 +911,14 @@
 		<button
 			type="submit"
 			form="folder-remove-form"
-			class="btn mr-auto"
+			class="btn"
 			title={t('notebooks.removeFolderMovesUp')}
 		>
 			{t('notebooks.removeFolder')}
 		</button>
-		<button type="button" class="btn" onclick={() => (renameOpen = false)}>{t('ui.cancel')}</button>
+		<button type="button" class="btn" data-modal-cancel onclick={() => (renameOpen = false)}
+			>{t('ui.cancel')}</button
+		>
 		<button type="submit" form="folder-form" class="btn btn-primary">{t('ui.save')}</button>
 	{/snippet}
 </Modal>

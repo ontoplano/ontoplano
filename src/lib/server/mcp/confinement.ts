@@ -8,7 +8,7 @@ import { listItems } from '$lib/services/inventory.js';
 import { listHabits } from '$lib/services/habits.js';
 import { listLedgers } from '$lib/services/ledgers.js';
 import { listMovementRows } from '$lib/services/statements.js';
-import { FLOWS, listBills } from '$lib/services/bills.js';
+import { FLOWS, listAllPayments, listBills } from '$lib/services/bills.js';
 import { listWorkouts } from '$lib/services/workouts.js';
 import { listIngredientItems, listRecipes } from '$lib/services/recipes.js';
 import { ForbiddenError } from '$lib/services/errors.js';
@@ -108,6 +108,14 @@ export const CONFINEMENTS: Record<string, Confinable> = Object.freeze({
 				}),
 			bill: (ctx, id) =>
 				FLOWS.flatMap((flow) => listBills(ctx, { notebookId: id, includeArchived: true, flow })),
+			billPayment: (ctx, id) => {
+				const bills = new Set(
+					FLOWS.flatMap((flow) =>
+						listBills(ctx, { notebookId: id, includeArchived: true, flow })
+					).map((bill) => bill.id)
+				);
+				return listAllPayments(ctx).filter((payment) => bills.has(payment.billId));
+			},
 			workout: (ctx, id) => listWorkouts(ctx, { notebookId: id, includeArchived: true }),
 			recipe: (ctx, id) => listRecipes(ctx, { notebookId: id, includeArchived: true }),
 			// The ingredients of its own recipes — what cooking one of them can

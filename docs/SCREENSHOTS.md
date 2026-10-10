@@ -10,9 +10,9 @@ Every room on a desktop and on a phone. [Back to the README](../README.md).
 
 ## Tasks
 
-### Plan
+### Calendar
 
-![Tasks: Plan](screenshots/tasks/plan.webp)
+![Tasks: Calendar](screenshots/tasks/calendar.webp)
 
 ### Tasks
 

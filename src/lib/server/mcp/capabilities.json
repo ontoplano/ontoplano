@@ -41,19 +41,19 @@
 			},
 			"app": {
 				"create": [
-					"src/routes/tasks/plan/+page.server.ts#create",
-					"src/routes/tasks/plan/+page.server.ts#createExceptional"
+					"src/routes/tasks/calendar/+page.server.ts#create",
+					"src/routes/tasks/calendar/+page.server.ts#createExceptional"
 				],
-				"read": ["src/routes/tasks/plan/+page.server.ts#load"],
+				"read": ["src/routes/tasks/calendar/+page.server.ts#load"],
 				"change": [
-					"src/routes/tasks/plan/+page.server.ts#update",
-					"src/routes/tasks/plan/+page.server.ts#updateExceptional"
+					"src/routes/tasks/calendar/+page.server.ts#update",
+					"src/routes/tasks/calendar/+page.server.ts#updateExceptional"
 				],
-				"archive": ["src/routes/tasks/plan/+page.server.ts#toggleActive"],
-				"unarchive": ["src/routes/tasks/plan/+page.server.ts#toggleActive"],
+				"archive": ["src/routes/tasks/calendar/+page.server.ts#toggleActive"],
+				"unarchive": ["src/routes/tasks/calendar/+page.server.ts#toggleActive"],
 				"delete": [
-					"src/routes/tasks/plan/+page.server.ts#delete",
-					"src/routes/tasks/plan/+page.server.ts#deleteExceptional"
+					"src/routes/tasks/calendar/+page.server.ts#delete",
+					"src/routes/tasks/calendar/+page.server.ts#deleteExceptional"
 				]
 			}
 		},
@@ -278,14 +278,24 @@
 			"mcp": {
 				"create": ["add_bill"],
 				"read": ["bills", "bill_payments", "bill_history", "month_bills", "bills_due"],
-				"change": ["change_bill", "pay_bill", "unpay_bill", "skip_bill", "unskip_bill"],
+				"change": [
+					"change_bill",
+					"pay_bill",
+					"change_bill_payment",
+					"unpay_bill",
+					"skip_bill",
+					"unskip_bill"
+				],
 				"archive": ["archive_bill"],
 				"unarchive": ["archive_bill"]
 			},
 			"app": {
 				"create": ["src/lib/services/bill-actions.ts#create"],
 				"read": ["src/routes/finance/bills/+page.server.ts#load"],
-				"change": ["src/lib/services/bill-actions.ts#update"],
+				"change": [
+					"src/lib/services/bill-actions.ts#update",
+					"src/lib/services/bill-actions.ts#editPayment"
+				],
 				"archive": ["src/lib/services/bill-actions.ts#archive"],
 				"unarchive": ["src/lib/services/bill-actions.ts#archive"],
 				"delete": ["src/lib/services/bill-actions.ts#delete"]

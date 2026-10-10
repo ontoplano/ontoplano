@@ -117,7 +117,7 @@
 			planning = null;
 			return;
 		}
-		const action = getAction('/health/recipes', e.key);
+		const action = getAction('/health/recipes', e);
 		if (!action) return;
 		e.preventDefault();
 		const here = visible[selected];

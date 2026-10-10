@@ -10,6 +10,8 @@ import type { Locale } from '$lib/i18n/locales.js';
  * there.
  */
 import { isActionFailure, isRedirect, isHttpError } from '@sveltejs/kit';
+import { matchLocale } from '$lib/i18n/locales.js';
+import { getLocale } from '$lib/services/settings.js';
 import { ISOLATED_USER_ID } from './config.js';
 
 /**
@@ -35,8 +37,8 @@ export interface IsolatedEvent {
 		 * `hooks.server.ts` sets it on every request the server handles — the
 		 * account's choice, then the browser's, then the instance's — so a route
 		 * that has to render a sentence uses the same answer the page around it
-		 * is rendered with. Optional because the isolated bridge does not run
-		 * those hooks; there, fall back to the one account's own setting.
+		 * is rendered with. The isolated bridge answers it the same way from the
+		 * device (see `eventFor`); optional only for when nothing matched.
 		 */
 		locale?: Locale;
 	};
@@ -312,6 +314,20 @@ function matchIsolatedRoute(
 	return null;
 }
 
+/**
+ * The page's `navigator.languages`, as an `Accept-Language` would carry them.
+ *
+ * Told by the page when it starts the worker (`$lib/isolated/client.ts`)
+ * rather than read off the worker's own `navigator`: the page is what the
+ * person is looking at, and a worker's idea of the language is not guaranteed
+ * to follow it — a browser emulating a locale does not hand it to workers.
+ */
+let pageLanguages = '';
+
+export function setPageLanguages(languages: string): void {
+	pageLanguages = languages;
+}
+
 function eventFor(
 	url: URL,
 	params: Record<string, string>,
@@ -329,7 +345,13 @@ function eventFor(
 		request: request ?? new Request(url),
 		url,
 		params,
-		locals: { user: { id: ISOLATED_USER_ID } },
+		locals: {
+			user: { id: ISOLATED_USER_ID },
+			// What `hooks.server.ts` works out on a server, answered from the
+			// device: the account's choice, then the language the phone is set
+			// to. There is no instance default to fall to — this is the instance.
+			locale: getLocale(ISOLATED_USER_ID) ?? matchLocale(pageLanguages) ?? undefined
+		},
 		cookies: { get: (name) => jar.get(name) }
 	};
 }

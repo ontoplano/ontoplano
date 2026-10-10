@@ -174,6 +174,10 @@ test('f stars the notebook open beside the shelf, and f again takes it off', asy
 	await page.waitForURL(/notebook=\d+/);
 
 	await page.locator('body').click({ position: { x: 1, y: 1 } });
+	for (const modifier of ['Control', 'Alt', 'Meta']) {
+		await page.keyboard.press(`${modifier}+f`);
+		await expect(page.locator('[data-favourites]')).toHaveCount(0);
+	}
 	await page.keyboard.press('f');
 	await expect(page.locator('[data-favourites]')).toHaveCount(1);
 	await page.keyboard.press('f');

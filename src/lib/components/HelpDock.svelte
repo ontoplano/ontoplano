@@ -61,6 +61,7 @@
 	let toured = $derived(hasTutorial(currentPath));
 
 	function handleKeydown(e: KeyboardEvent) {
+		if (e.ctrlKey || e.metaKey || e.altKey) return;
 		if (
 			e.target instanceof HTMLInputElement ||
 			e.target instanceof HTMLTextAreaElement ||

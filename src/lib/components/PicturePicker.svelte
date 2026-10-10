@@ -12,9 +12,10 @@
 	 * fields. That is why a caller puts this beside its form rather than inside
 	 * one — a form cannot nest in a form.
 	 *
-	 * Pressing the picture is spoken for, so looking at it is a badge beside
-	 * it: `data-view-src`, which the shell's `ImageViewer` answers with the
-	 * picture over the whole screen. And where the caller says `resizable`,
+	 * Looking at it is a `data-view-src` control, which the shell's `ImageViewer`
+	 * answers with the picture over the whole screen. Notebook headers make
+	 * that control fill the picture on touch screens, with editing in the form.
+	 * And where the caller says `resizable`,
 	 * the square has a handle in its corner — a desktop thing — and the size
 	 * it is dragged to is remembered on this device, under `sizeKey`.
 	 *
@@ -57,6 +58,8 @@
 		pressLabel = '',
 		/** A corner handle, and the size it is dragged to kept under `sizeKey`. */
 		resizable = false,
+		/** The picture itself opens the viewer on touch screens. */
+		viewOnTouch = false,
 		sizeKey = ''
 	}: {
 		id: number;
@@ -74,6 +77,7 @@
 		onpress?: () => void;
 		pressLabel?: string;
 		resizable?: boolean;
+		viewOnTouch?: boolean;
 		sizeKey?: string;
 	} = $props();
 
@@ -206,6 +210,7 @@
 		class="picture-square relative w-fit rounded-lg"
 		class:ring-2={dropping}
 		class:ring-gray-900={dropping}
+		class:view-on-touch={viewOnTouch}
 		role="group"
 		aria-label={pictureId ? changeLabel : chooseLabel}
 		ondragover={onDragOver}
@@ -340,6 +345,19 @@
 	@media (hover: none) {
 		.picture-view {
 			opacity: 1;
+		}
+
+		.picture-square.view-on-touch .picture-view {
+			inset: 0;
+			width: 100%;
+			height: 100%;
+			border: 0;
+			border-radius: inherit;
+			background: transparent;
+		}
+
+		.picture-square.view-on-touch .picture-view :global(svg) {
+			display: none;
 		}
 	}
 </style>

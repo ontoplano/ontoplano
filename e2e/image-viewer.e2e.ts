@@ -160,3 +160,46 @@ test('a notebook’s picture has a view badge, and a corner to drag', async ({ p
 	await page.keyboard.press('Escape');
 	await expect(viewer).toHaveCount(0);
 });
+
+test.describe('notebook picture on a phone', () => {
+	test.use({ viewport: { width: 390, height: 844 }, hasTouch: true });
+
+	test('tapping the picture opens the viewer and Edit can change it', async ({ page }) => {
+		test.setTimeout(120_000);
+		await register(page, testEmail('image-viewer-notebook-phone'));
+		await visit(page, '/notebooks');
+
+		await page
+			.getByRole('button', { name: /new notebook/i })
+			.first()
+			.click();
+		await page.locator('[name="heading"]').first().fill('Kitchen');
+		await page.getByRole('button', { name: 'Create notebook' }).click();
+		await page.locator('.notebook-cover .cover-name', { hasText: 'Kitchen' }).click();
+		await expect(page).toHaveURL(/\/notebooks\/\d+/);
+		await expect(page.getByRole('button', { name: 'New note', exact: true }).first()).toBeVisible();
+
+		const { pngOfSize } = await import('./helpers/png');
+		await page
+			.locator('input[type="file"][name="file"]:not([multiple])')
+			.first()
+			.setInputFiles({ ...pngOfSize(24, 8), name: 'cover.png' });
+
+		const square = page.locator('.picture-square.view-on-touch').first();
+		const picture = square.locator('img');
+		await expect(picture).toBeVisible();
+		await expect(square.locator('.picture-view svg')).toBeHidden();
+		const box = (await picture.boundingBox())!;
+		await page.touchscreen.tap(box.x + box.width / 2, box.y + box.height / 2);
+
+		const viewer = page.getByRole('dialog', { name: /View the picture|Picture/ });
+		await expect(viewer).toBeVisible();
+		await page.keyboard.press('Escape');
+		await expect(viewer).toHaveCount(0);
+
+		await page.getByRole('button', { name: 'Rename' }).first().click();
+		await expect(page.getByRole('dialog').locator('input[type="file"][name="file"]')).toHaveCount(
+			1
+		);
+	});
+});

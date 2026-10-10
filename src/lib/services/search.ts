@@ -249,7 +249,7 @@ export function search(ctx: Ctx, raw: unknown): Hit[] {
 			id: row.id,
 			title: row.label || 'Untitled',
 			snippet: `every week at ${row.startTime}`,
-			href: '/tasks/plan'
+			href: '/tasks/calendar'
 		});
 
 	for (const row of db
@@ -275,7 +275,7 @@ export function search(ctx: Ctx, raw: unknown): Hit[] {
 			id: row.id,
 			title: row.label || 'Untitled',
 			snippet: `${row.date} at ${row.startTime}`,
-			href: `/tasks/plan?from=${row.date}`
+			href: `/tasks/calendar?from=${row.date}`
 		});
 
 	// --- what you are aiming at -------------------------------------------------

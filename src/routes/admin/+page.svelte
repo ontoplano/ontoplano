@@ -92,7 +92,7 @@
 			e.target instanceof HTMLSelectElement
 		)
 			return;
-		const action = getAction('/admin', e.key);
+		const action = getAction('/admin', e);
 		if (action === 'navigate-down' || action === 'navigate-up') {
 			e.preventDefault();
 			if (accounts.length === 0) return;

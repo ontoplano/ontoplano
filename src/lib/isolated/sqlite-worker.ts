@@ -20,7 +20,12 @@ import { read as readPicture } from '$lib/services/media.js';
 import { wasmClient, type Oo1Db } from './wasm-client.js';
 import { migrateDevice } from './device-migrations.js';
 import { DB_FILE, ISOLATED_USER_ID, POOL_NAME } from './config.js';
-import { runIsolatedAction, runIsolatedEndpoint, runIsolatedLoad } from './routes.js';
+import {
+	runIsolatedAction,
+	runIsolatedEndpoint,
+	runIsolatedLoad,
+	setPageLanguages
+} from './routes.js';
 
 /*
  * Before any row is read.
@@ -145,6 +150,7 @@ const ops: Record<string, (args: never) => unknown> = {
 		await pool?.wipeFiles();
 		return { gone: true };
 	},
+	'page.languages': (args: { languages: string }) => setPageLanguages(args.languages),
 	'todos.list': () => listTodos(ctx()),
 	'todos.create': (args: { title: unknown }) => createTodo(ctx(), { title: args.title }),
 	// The dispatcher: the fetch bridge hands over the app's own data and

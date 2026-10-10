@@ -8,6 +8,7 @@
 	import { say } from '$lib/said.svelte';
 	import { editUrl } from '$lib/open-from-url.svelte';
 	import { goto } from '$app/navigation';
+	import { resolve } from '$app/paths';
 	import type { Capture } from '$lib/capture';
 	import { useT } from '$lib/i18n';
 
@@ -109,12 +110,26 @@
 						 * A failure still goes to `notify`: an error has to wait to be
 						 * dismissed rather than leave on a timer.
 						 */
-						const made = Number((result.data as { id?: unknown } | undefined)?.id ?? 0);
+						const saved = result.data as { id?: unknown; blockDate?: unknown } | undefined;
+						const made = Number(saved?.id ?? 0);
+						const blockDate = typeof saved?.blockDate === 'string' ? saved.blockDate : null;
 						const receipt = said
-							? t('capture.addedToWithContent', { into: which.into, content: said })
-							: t('capture.addedTo', { into: which.into });
+							? t('capture.addedToWithContent', {
+									into: blockDate ? t('capture.planDestination') : which.into,
+									content: said
+								})
+							: t('capture.addedTo', {
+									into: blockDate ? t('capture.planDestination') : which.into
+								});
 
-						if (made > 0)
+						if (blockDate)
+							say(receipt, {
+								label: t('app.plan'),
+								// The query picks the block's day after resolving the route.
+								// eslint-disable-next-line svelte/no-navigation-without-resolve
+								run: () => goto(`${resolve('/tasks/calendar')}?from=${blockDate}`)
+							});
+						else if (made > 0)
 							say(receipt, {
 								label: t('ui.edit'),
 								// Already a room this app owns; `editUrl` only puts the id on

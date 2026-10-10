@@ -11,7 +11,7 @@
  * bar collapses, too shy and the button stays hidden.
  */
 import { describe, expect, test } from 'vitest';
-import { KEYBOARD_THRESHOLD, panelHeight } from '../src/lib/keyboard';
+import { KEYBOARD_THRESHOLD, panelHeight, panelTop } from '../src/lib/keyboard';
 
 /** A phone with nothing covering the screen. */
 const idle = { innerHeight: 844, viewportHeight: 844, offsetTop: 0 };
@@ -41,6 +41,18 @@ describe('when the keyboard is up', () => {
 	test('and an offset viewport counts as covered too', () => {
 		// iOS pushes the visible area down rather than only shrinking it.
 		expect(panelHeight({ innerHeight: 844, viewportHeight: 500, offsetTop: 200 })).toBe(500);
+	});
+
+	test('and the sheet starts where the visible part starts', () => {
+		// The Android app pans rather than resizes: pinned at the layout's top,
+		// the sheet ended 200px above the keyboard with the page showing below.
+		expect(panelTop({ innerHeight: 844, viewportHeight: 500, offsetTop: 200 })).toBe(200);
+		expect(panelTop({ innerHeight: 844, viewportHeight: 524, offsetTop: 0 })).toBe(0);
+	});
+
+	test('no keyboard, no offset', () => {
+		// A collapsing URL bar moves the viewport too; that is not a keyboard.
+		expect(panelTop({ innerHeight: 844, viewportHeight: 800, offsetTop: 44 })).toBe(0);
 	});
 });
 

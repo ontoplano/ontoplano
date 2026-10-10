@@ -307,7 +307,7 @@
 			linkingId = null;
 			return;
 		}
-		const action = getAction('/goals', e.key);
+		const action = getAction('/goals', e);
 		if (action === 'new') {
 			e.preventDefault();
 			openCreate();
