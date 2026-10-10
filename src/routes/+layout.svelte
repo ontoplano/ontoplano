@@ -59,6 +59,7 @@
 	import { opensPalette, palette } from '$lib/palette.svelte';
 	import { suppressAutofill } from '$lib/autofill';
 	import { APP_UPDATE_HUSH_KEY } from '$lib/platform';
+	import { tellTheShellVersion } from '$lib/outside-links';
 	import { startMarkSpin, stopMarkSpin } from '$lib/mark-spin';
 	import { clearTray } from '$lib/tray';
 	import { busy } from '$lib/busy.svelte';
@@ -90,6 +91,7 @@
 	 * warning standing, which is the safe way round.
 	 */
 	let updateHushed = $state(false);
+	$effect(() => tellTheShellVersion(data.shellVersion));
 	$effect(() => {
 		if (!data.appUpdate) return;
 		try {

@@ -2630,6 +2630,8 @@ export const messages: Catalogue = {
 	'ordinal.one': 'º',
 	'ordinal.other': 'º',
 	'ordinal.two': 'º',
+	'out.couldNotOpen': 'O navegador não abriu. Voltando…',
+	'out.opening': 'Abrindo o navegador…',
 	'people.friend': 'Amigo',
 	'people.other': 'Outro',
 	'people.partner': 'Parceiro(a)',
@@ -3062,7 +3064,7 @@ export const messages: Catalogue = {
 	'settings.account.deletePermanently': 'Apagar em definitivo',
 	'settings.account.deleteThisInstance': 'Apagar esta instância',
 	'settings.account.deleteYourAccount': 'Apagar sua conta',
-	'settings.account.displayName': 'Nome',
+	'settings.account.displayName': 'Nome de exibição',
 	'settings.account.displayNameHint':
 		'Como o app te chama e o que veem as pessoas com quem você compartilha',
 	'settings.account.download': 'Baixar',

@@ -213,6 +213,9 @@ export const load: LayoutServerLoad = async (event) => {
 
 	return {
 		appUpdate,
+		// Which shell is drawing this, so a page knows which trips it can take
+		// to the device's copy (`$lib/outside-links`). Null outside the app.
+		shellVersion: event.locals.nativeAppVersion ?? null,
 		user: event.locals.user ?? null,
 		/*
 		 * Whether the account menu offers Instance and Administration.

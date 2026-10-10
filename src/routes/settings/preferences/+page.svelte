@@ -19,7 +19,7 @@
 	import { page } from '$app/state';
 	import { disablePush, enablePush, pushEnabled, pushSupported } from '$lib/push';
 	import { inPhoneApp } from '$lib/instance-choice';
-	import { DEVICE_ORIGIN } from '$lib/instance-choice';
+	import { DEVICE_ORIGIN, RING_PATH } from '$lib/instance-choice';
 	import {
 		askPhoneToNotify,
 		openPhoneNotificationSettings,
@@ -802,7 +802,9 @@
 									{#if data.ringsOnAPhone}
 										<!-- eslint-disable svelte/no-navigation-without-resolve -- another origin -->
 										<a
-											href="{DEVICE_ORIGIN}/ring?off=1&at={encodeURIComponent(page.url.origin)}"
+											href="{DEVICE_ORIGIN}{RING_PATH}?off=1&at={encodeURIComponent(
+												page.url.origin
+											)}"
 											class="btn btn-sm">{t('settings.preferences.stopRingingOnThisPhone')}</a
 										>
 										<!-- eslint-enable svelte/no-navigation-without-resolve -->
@@ -821,7 +823,7 @@
 													ringing = 'failed';
 													return;
 												}
-												location.href = `${DEVICE_ORIGIN}/ring?at=${encodeURIComponent(
+												location.href = `${DEVICE_ORIGIN}${RING_PATH}?at=${encodeURIComponent(
 													page.url.origin
 												)}&key=${encodeURIComponent(key)}`;
 											};

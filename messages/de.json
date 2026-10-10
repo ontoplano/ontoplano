@@ -309,6 +309,8 @@
 	"goals.reopened": "Wieder geöffnet",
 	"goals.youDidIt": "Geschafft!",
 	"goals.youDidItBody": "{title}, erledigt. Schreib auf, wie es lief, solange es frisch ist — es bleibt beim Ziel.",
+	"out.couldNotOpen": "Der Browser hat sich nicht geöffnet. Zurück…",
+	"out.opening": "Browser wird geöffnet…",
 	"play.opening": "Google Play wird geöffnet…",
 	"play.nothingToBuy": "Hier gibt es nichts zu kaufen. ontoplano wird geöffnet…",
 	"buy.playCouldNotStart": "Google Play konnte den Kauf nicht ausführen ({code}). Es wurde nichts berechnet.",
@@ -4537,7 +4539,7 @@
 	"errors.account.aNameCannotBeEmpty": "Ein Name darf nicht leer sein",
 	"errors.account.thatNameIsTooLong": "Ein Name darf höchstens {max} Zeichen haben",
 	"settings.account.profile": "Profil",
-	"settings.account.displayName": "Name",
+	"settings.account.displayName": "Anzeigename",
 	"settings.account.displayNameHint": "Wie die App dich nennt und was die Leute sehen, mit denen du teilst",
 	"settings.account.changeYourName": "Namen ändern"
 }

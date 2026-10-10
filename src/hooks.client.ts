@@ -9,7 +9,9 @@
  */
 import type { HandleClientError } from '@sveltejs/kit';
 import { isIsolated, isIsolatedBuild } from '$lib/isolated/mode';
-import { sendOutsideLinksToTheBrowser } from '$lib/outside-links';
+import { OUT_PATH, sendOutsideLinksToTheBrowser } from '$lib/outside-links';
+import { PLAY_PATH } from '$lib/play-billing';
+import { WIDGET_HANDOFF_PATH } from '$lib/notebook-widget';
 import { backGestureGoesBack } from '$lib/phone-back';
 import { ringingFor } from '$lib/phone-notifications';
 import { startMarkSpin } from '$lib/mark-spin';
@@ -27,6 +29,7 @@ import {
 	inPhoneApp,
 	launchAddress,
 	openingOn,
+	RING_PATH,
 	rememberInstance,
 	storedInstance,
 	keptInstanceNow
@@ -58,6 +61,9 @@ import {
  */
 const LEAVING_VEIL_MS = 8000;
 
+/** The device's pages an instance sends somebody to and expects back from. */
+const DEVICE_TRIP_PATHS: string[] = [PLAY_PATH, RING_PATH, WIDGET_HANDOFF_PATH, OUT_PATH];
+
 if (inPhoneApp() && isIsolatedBuild()) {
 	const carried = new URLSearchParams(location.search);
 
@@ -88,7 +94,10 @@ if (inPhoneApp() && isIsolatedBuild()) {
 		const kept = storedInstance();
 		// A widget's tap names the page; the instance is still the one chosen —
 		// moved on first if it was a suggestion this build has replaced.
-		if (kept) {
+		// A trip page an instance sent somebody to — Play's sheet, the ringer's
+		// key, a widget, a link out — is the destination, and sending it on to
+		// the instance would pull the page out from under what it is doing.
+		if (kept && !DEVICE_TRIP_PATHS.includes(location.pathname)) {
 			veilWhileLeaving();
 			void keptInstanceNow(kept).then((going) =>
 				openInstance(going, false, openingOn(going, carried.get(OPENING_PARAM)))
