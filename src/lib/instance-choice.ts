@@ -45,6 +45,9 @@ export { APP_USER_AGENT } from '$lib/platform';
  */
 export const DEVICE_ORIGIN = 'https://localhost';
 
+/** Where an instance hands the phone the key it rings with. */
+export const RING_PATH = '/ring';
+
 /** Where the question is asked. Also where leaving an instance lands. */
 export const CHOOSE_PATH = '/instance';
 

@@ -2286,6 +2286,8 @@ export type MessageKey =
 	| 'ordinal.one'
 	| 'ordinal.other'
 	| 'ordinal.two'
+	| 'out.couldNotOpen'
+	| 'out.opening'
 	| 'people.friend'
 	| 'people.other'
 	| 'people.partner'

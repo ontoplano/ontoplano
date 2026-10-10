@@ -2,7 +2,7 @@
 	import { enhance } from '$lib/enhance';
 	import { resolve } from '$app/paths';
 	import { MIN_PASSWORD_LENGTH, PASSWORD_RULE } from '$lib/passwords';
-	import { askAgainOnThisPhone, inPhoneApp } from '$lib/instance-choice';
+	import AnotherInstance from '$lib/components/AnotherInstance.svelte';
 	import Banner from '$lib/components/Banner.svelte';
 	import StagingBand from '$lib/components/StagingBand.svelte';
 	import Logo from '$lib/components/Logo.svelte';
@@ -114,7 +114,7 @@
 			{/if}
 			{#if mode === 'register'}
 				<label class="mb-3 block">
-					<span class="text-sm font-medium text-gray-700">{t('ui.name')}</span>
+					<span class="text-sm font-medium text-gray-700">{t('settings.account.displayName')}</span>
 					<input
 						name="name"
 						type="text"
@@ -210,32 +210,20 @@
 			</p>
 		{/if}
 
-		<!--
-			The way out of the wrong instance.
-			
-			A sign-in screen is where somebody lands when the app sends them to an
-			instance, and until this existed it was a dead end: the account you
-			want is on a different ontoplano and there is no address bar in an app
-			to type one into. Only inside the app, where the copy on the phone is
-			one navigation away; a browser already has a way to leave a page.
-		-->
-		{#if inPhoneApp()}
-			<p class="mt-4 text-center text-sm">
-				<!-- Another origin entirely — the copy of the app on the phone —
-				     which is not a route this app can resolve. -->
-				<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -->
-				<a href={askAgainOnThisPhone()} class="font-medium text-gray-900 underline">
-					{t('login.useADifferentOntoplano')}
-				</a>
-			</p>
-		{/if}
+		<AnotherInstance class="mt-4" />
 
 		<p class="mt-6 border-t border-gray-100 pt-4 text-center text-xs text-gray-500">
-			<a href={resolve('/legal/privacy')} class="hover:text-gray-600">{t('login.privacy')}</a>
+			<a href={resolve('/legal/privacy')} data-outside class="hover:text-gray-600"
+				>{t('login.privacy')}</a
+			>
 			·
-			<a href={resolve('/legal/terms')} class="hover:text-gray-600">{t('login.terms')}</a>
+			<a href={resolve('/legal/terms')} data-outside class="hover:text-gray-600"
+				>{t('login.terms')}</a
+			>
 			·
-			<a href={resolve('/legal/refunds')} class="hover:text-gray-600">{t('login.refunds')}</a>
+			<a href={resolve('/legal/refunds')} data-outside class="hover:text-gray-600"
+				>{t('login.refunds')}</a
+			>
 		</p>
 
 		{#if mode === 'forgot' && !data.emailConfigured}

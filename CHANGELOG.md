@@ -20,6 +20,10 @@ releases mattered.
 
 ## 0.186.1 — 2026-10-10
 
+- The sign-up form asks for a “Display name”, the same word the account settings use.
+- In the Android app, links to the website, the docs, the demo and the legal pages open in the phone’s browser instead of replacing the app.
+- The signed-out front page in the Android app has “Use a different ontoplano”, so choosing the wrong instance can be undone before signing in.
+- Google Play’s purchase sheet, the alarm key and widget setup are no longer interrupted by the app reopening the chosen instance underneath them.
 - Subscribing from the Google Play app never opens the card checkout: it uses Google Play's own purchase sheet, or says plainly that a subscription cannot be started from the app.
 - The Android app's store listing — words, screenshots and release notes — is published with the source, so F-Droid shows the same listing as Google Play.
 - The Android build checks the Gradle it downloads against Gradle's published checksum.

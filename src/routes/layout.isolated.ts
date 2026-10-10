@@ -52,6 +52,8 @@ export async function load(event: IsolatedEvent): Promise<LayoutServerData> {
 		// The device's shell and its pages are one build — there is no version
 		// for either to fall behind.
 		appUpdate: null,
+		// On the device's own copy the bridge is right here; no trip is taken.
+		shellVersion: null,
 		// As in `settings/layout.isolated.ts`: Instance is the build and the
 		// database here, and there is no deployment to administer.
 		canEditInstance: true,
