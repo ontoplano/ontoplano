@@ -1,0 +1,10 @@
+• Every label you use is a tab of the writing room again
+• An assistant can say a task has been started
+• The cursor in the tag box is a cursor again
+• "Any" and "All" are dead until there are two labels
+• A tag is called a tag
+• The line saying where a task would land says what it means
+• Every tab wears its glyph, and every glyph lives in one file
+• A habit's day can be counted again
+
+Cuéntame qué se rompe: github.com/ontoplano/ontoplano/issues

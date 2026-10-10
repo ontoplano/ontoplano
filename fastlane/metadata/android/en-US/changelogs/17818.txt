@@ -1,0 +1,11 @@
+Reminders, and everything the app says without being asked.
+
+One screen for every notification it can send: the blocks on your plan as they
+start, the end of the day at an hour you choose, bills, birthdays, the weekly
+review. Each with a switch of its own.
+
+Fixed: on a phone that is the instance, the reminders about to go off were
+never booked with Android. A reminder can be changed now, too, rather than
+deleted and typed out again.
+
+Tell me what breaks: github.com/ontoplano/ontoplano/issues

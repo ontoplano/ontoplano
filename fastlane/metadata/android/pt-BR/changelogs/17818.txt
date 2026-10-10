@@ -1,0 +1,11 @@
+Lembretes, e tudo que o app diz sem ser perguntado.
+
+Uma tela para cada aviso que ele pode dar: os blocos do plano quando começam,
+o fim do dia na hora que você escolher, contas, aniversários, a revisão
+semanal. Cada um com seu próprio botão.
+
+Corrigido: num celular que é a própria instância, os lembretes prestes a tocar
+nunca eram agendados no Android. E agora dá para alterar um lembrete, em vez de
+apagar e digitar de novo.
+
+Me conte o que quebrar: github.com/ontoplano/ontoplano/issues

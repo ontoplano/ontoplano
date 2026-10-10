@@ -1,0 +1,7 @@
+• Qualquer imagem abre em tela cheia, com zoom de pinça e toque duplo
+• Uma notificação abre a tarefa, conta ou pendência de que trata
+• Páginas mais rápidas e primeiro carregamento mais leve
+• Toda alteração mostra um aviso curto, e uma recusa diz o porquê
+• Português, espanhol e alemão completos de novo
+
+Me conte o que quebrar: github.com/ontoplano/ontoplano/issues
