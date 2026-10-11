@@ -3,10 +3,32 @@
 	import { resolve } from '$app/paths';
 	import type { Snippet } from 'svelte';
 	import { useT } from '$lib/i18n';
+	import Icon from '$lib/components/Icon.svelte';
+	import Modal from '$lib/components/Modal.svelte';
+	import RoomSurface from '$lib/components/RoomSurface.svelte';
+	import { askAgainOnThisPhone, inPhoneApp } from '$lib/instance-choice';
+	import type { LayoutData } from './$types';
 
 	const t = useT();
 
-	let { children }: { children: Snippet } = $props();
+	let { children, data }: { children: Snippet; data: LayoutData } = $props();
+
+	/*
+	 * Nothing can reach a device's own instance, so there is nothing here to
+	 * set up — but the room still comes, because somebody who installed the
+	 * app and went looking for their assistant deserves the reason and the way
+	 * to an instance that has one, not a refusal.
+	 */
+	const onDevice = $derived(data.reachable === false);
+	let explaining = $state(false);
+
+	/** What an instance with a server adds, in the order people ask for it. */
+	const HOSTED_GIVES = [
+		'settings.integrations.device.hostedAssistants',
+		'settings.integrations.device.hostedComputer',
+		'settings.integrations.device.hostedBackups',
+		'settings.integrations.device.hostedFeeds'
+	] as const;
 
 	const tabs = [
 		{ href: resolve('/settings/integrations'), label: t('rooms.integrations.tabs.ai') },
@@ -28,16 +50,64 @@
 	Settings put there — it used to draw the whole of a room again, which gave
 	the page two bars, two titles and two bands of page ground between them.
 -->
-<div class="integrations">
-	<TabbedRoom
-		nested
-		title={t('rooms.integrations.title')}
-		{tabs}
-		label={t('rooms.integrations.sections')}
-	>
-		<div class="integrations-body">{@render children()}</div>
-	</TabbedRoom>
-</div>
+{#if onDevice}
+	<RoomSurface>
+		<div class="flex flex-col items-start gap-2 px-4 py-6" data-tour="integrations-device">
+			<p class="flex items-center gap-2 text-sm text-gray-900">
+				<Icon name="robot" />
+				{t('settings.integrations.device.cannotConnect')}
+			</p>
+			<button
+				type="button"
+				class="text-sm font-medium text-gray-700 underline hover:text-gray-900"
+				onclick={() => (explaining = true)}
+			>
+				{t('settings.integrations.device.why')}
+			</button>
+		</div>
+	</RoomSurface>
+
+	<Modal bind:open={explaining} title={t('settings.integrations.device.whyTitle')} size="sm">
+		<div class="space-y-4 text-sm text-gray-700">
+			<p>{t('settings.integrations.device.whyBody')}</p>
+			<div>
+				<h3 class="eyebrow text-gray-600">{t('settings.integrations.device.hostedTitle')}</h3>
+				<ul class="mt-2 space-y-2">
+					{#each HOSTED_GIVES as key (key)}
+						<li class="flex gap-2">
+							<Icon name="check" />
+							<span>{t(key)}</span>
+						</li>
+					{/each}
+				</ul>
+			</div>
+			<p class="text-gray-500">{t('settings.integrations.device.hostedNow')}</p>
+		</div>
+		{#snippet footer()}
+			{#if inPhoneApp()}
+				<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- the question, on the phone's own copy -->
+				<a href={askAgainOnThisPhone()} class="btn btn-primary"
+					><Icon name="server" />{t('settings.integrations.device.switch')}</a
+				>
+			{:else}
+				<a href={resolve('/instance')} class="btn btn-primary"
+					><Icon name="server" />{t('settings.integrations.device.switch')}</a
+				>
+			{/if}
+		{/snippet}
+	</Modal>
+{:else}
+	<div class="integrations">
+		<TabbedRoom
+			nested
+			title={t('rooms.integrations.title')}
+			{tabs}
+			label={t('rooms.integrations.sections')}
+		>
+			<div class="integrations-body">{@render children()}</div>
+		</TabbedRoom>
+	</div>
+{/if}
 
 <style>
 	/*

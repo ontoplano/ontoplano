@@ -4553,6 +4553,17 @@
 	"settings.integrations.connections.unreachable": "inaccesible",
 	"settings.integrations.connections.display": "Cómo se dibuja",
 	"settings.integrations.widget.connect": "Conectar",
+	"settings.integrations.device.cannotConnect": "No puedes conectar asistentes ni otras apps a la instancia de este teléfono.",
+	"settings.integrations.device.why": "¿Por qué?",
+	"settings.integrations.device.whyTitle": "Por qué aquí no se conecta nada",
+	"settings.integrations.device.whyBody": "Un asistente como Claude o ChatGPT funciona en los servidores de su empresa, igual que un calendario o una automatización. Para leer tu plan y cambiarlo, tienen que llegar a tu ontoplano por internet. La instancia de este teléfono no está en internet: nada fuera del teléfono puede llegar a ella. Eso es lo que la mantiene privada, y también por qué nada puede conectarse a ella.",
+	"settings.integrations.device.hostedTitle": "Una instancia con servidor te da",
+	"settings.integrations.device.hostedAssistants": "Asistentes que trabajan tu plan — Claude, ChatGPT o cualquier cliente MCP, con claves que limitas y revocas.",
+	"settings.integrations.device.hostedComputer": "La misma cuenta en tu ordenador, en cualquier navegador, y en cada teléfono donde inicies sesión.",
+	"settings.integrations.device.hostedBackups": "Tus datos respaldados fuera de la máquina, así que perder este teléfono no pierde tu semana.",
+	"settings.integrations.device.hostedFeeds": "Tu plan en cualquier app de calendario, webhooks, flujos de datos y widgets en la pantalla de inicio.",
+	"settings.integrations.device.hostedNow": "Aquí, todo vive solo en este teléfono. Mudarse es exportar e importar desde Cuenta.",
+	"settings.integrations.device.switch": "Usar una instancia con servidor",
 	"admin.accountsShowing": {
 		"one": "{count} cuenta mostrada",
 		"other": "{count} cuentas mostradas"

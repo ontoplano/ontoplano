@@ -3621,6 +3621,24 @@ export const messages: Catalogue = {
 	'settings.integrations.copyThis': 'Dies kopieren',
 	'settings.integrations.createAKey': 'Einen Schlüssel erstellen',
 	'settings.integrations.createIt': 'Erstellen',
+	'settings.integrations.device.cannotConnect':
+		'Mit der Instanz auf diesem Handy lassen sich keine Assistenten oder anderen Apps verbinden.',
+	'settings.integrations.device.hostedAssistants':
+		'Assistenten, die an deinem Plan arbeiten — Claude, ChatGPT oder jeder MCP-Client, mit Schlüsseln, die du beschränkst und widerrufst.',
+	'settings.integrations.device.hostedBackups':
+		'Deine Daten außerhalb des Geräts gesichert – wer dieses Handy verliert, verliert nicht seine Woche.',
+	'settings.integrations.device.hostedComputer':
+		'Dasselbe Konto auf deinem Computer, in jedem Browser, und auf jedem Handy, auf dem du dich anmeldest.',
+	'settings.integrations.device.hostedFeeds':
+		'Dein Plan in jeder Kalender-App, Webhooks, Datenströme und Startbildschirm-Widgets.',
+	'settings.integrations.device.hostedNow':
+		'Hier liegt alles nur auf diesem Handy. Umziehen heißt exportieren und importieren unter Konto.',
+	'settings.integrations.device.hostedTitle': 'Eine Instanz mit Server bietet dir',
+	'settings.integrations.device.switch': 'Eine Instanz mit Server verwenden',
+	'settings.integrations.device.why': 'Warum?',
+	'settings.integrations.device.whyBody':
+		'Ein Assistent wie Claude oder ChatGPT läuft auf den Servern seines Anbieters, genau wie ein Kalender oder eine Automatisierung. Um deinen Plan zu lesen und zu ändern, müssen sie dein ontoplano über das Internet erreichen. Die Instanz auf diesem Handy ist nicht im Internet: Nichts außerhalb des Handys kann sie erreichen. Das hält sie privat – und deshalb kann sich auch nichts mit ihr verbinden.',
+	'settings.integrations.device.whyTitle': 'Warum sich hier nichts verbinden kann',
 	'settings.integrations.diaryAndNotebooks': 'Tagebuch und Notizbücher',
 	'settings.integrations.doNotShareItWith': 'Teilen Sie ihn mit niemandem.',
 	'settings.integrations.everyRead': 'Jedes Lesen',

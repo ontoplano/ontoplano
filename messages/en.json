@@ -4547,6 +4547,17 @@
 	"settings.integrations.connections.unreachable": "unreachable",
 	"settings.integrations.connections.display": "How it is drawn",
 	"settings.integrations.widget.connect": "Connect",
+	"settings.integrations.device.cannotConnect": "You can’t connect assistants or other apps to the instance on this phone.",
+	"settings.integrations.device.why": "Why?",
+	"settings.integrations.device.whyTitle": "Why nothing can connect here",
+	"settings.integrations.device.whyBody": "An assistant like Claude or ChatGPT runs on its company’s servers, and so does a calendar or an automation. To read your plan and change it, they have to reach your ontoplano over the internet. The instance on this phone is not on the internet: nothing outside the phone can reach it. That is what keeps it private, and it is also why nothing can connect to it.",
+	"settings.integrations.device.hostedTitle": "An instance with a server gives you",
+	"settings.integrations.device.hostedAssistants": "Assistants that work your plan — Claude, ChatGPT or any MCP client, with keys you scope and revoke.",
+	"settings.integrations.device.hostedComputer": "The same account on your computer, in any browser, and on every phone you sign in on.",
+	"settings.integrations.device.hostedBackups": "Your data backed up off the machine, so losing this phone does not lose your week.",
+	"settings.integrations.device.hostedFeeds": "Your plan in any calendar app, webhooks, data streams and home-screen widgets.",
+	"settings.integrations.device.hostedNow": "Here, everything lives on this phone alone. Moving is an export and an import from Account.",
+	"settings.integrations.device.switch": "Use an instance with a server",
 	"admin.accountsShowing": {
 		"one": "{count} account showing",
 		"other": "{count} accounts showing"

@@ -1138,6 +1138,10 @@ by hand for anybody who needs one.
 
 #### `playRtdn(rawBody)`
 
+#### `playSheetFailed(userId, sku, code)`
+
+The store's own sheet said no, as the device reported it on the way back.
+
 #### `checkoutChannel(asking)`
 
 #### `checkoutRefused()`
@@ -7059,6 +7063,13 @@ narrow enough that a schema library would be more dependency than value.
 Every validator enforces a bound — no unbounded strings reach the database.
 
 ### Functions
+
+#### `tooLong(field, length, max)`
+
+Too long, said with how long it is.
+
+"Has to be 4000 characters or fewer" leaves somebody guessing how much to
+cut; the count and the excess are the instructions.
 
 #### `str(value, field, opts)`
 
