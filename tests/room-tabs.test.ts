@@ -31,12 +31,16 @@ import { messages as english } from '../src/lib/i18n/catalogues/en';
 import { messages as portuguese } from '../src/lib/i18n/catalogues/pt-BR';
 import { messages as spanish } from '../src/lib/i18n/catalogues/es';
 import { messages as german } from '../src/lib/i18n/catalogues/de';
+import { messages as french } from '../src/lib/i18n/catalogues/fr';
+import { messages as russian } from '../src/lib/i18n/catalogues/ru';
 
 const CATALOGUES: Record<string, Record<string, unknown>> = {
 	en: english,
 	'pt-BR': portuguese,
 	es: spanish,
-	de: german
+	de: german,
+	fr: french,
+	ru: russian
 };
 
 /** The one tab that cannot be put away: it is what the room is. */
