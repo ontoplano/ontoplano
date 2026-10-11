@@ -46,14 +46,20 @@ function systemBrowser(): SystemBrowser | null {
 	return found ? (found as SystemBrowser) : null;
 }
 
-/** Whether following this address would take somebody out of the app. */
-function leavesTheApp(link: HTMLAnchorElement): boolean {
-	if (link.hasAttribute(OUTSIDE_ATTRIBUTE)) return true;
-	const href = link.getAttribute('href') ?? '';
+/**
+ * Whether following `href` from a page at `here` would take somebody out of the app.
+ *
+ * The device's own copy is the app, whichever origin is asking: "Use a
+ * different ontoplano" from an instance is an address on it, and handing that
+ * to the browser opened a tab on a localhost nothing serves instead of going
+ * back to the question.
+ */
+export function leavesTheApp(href: string, here: string): boolean {
 	// A fragment, a path, a mailto, a tel: none of them are another website.
 	if (!/^https?:\/\//i.test(href)) return false;
 	try {
-		return new URL(href, location.href).origin !== location.origin;
+		const origin = new URL(href, here).origin;
+		return origin !== new URL(here).origin && origin !== DEVICE_ORIGIN;
 	} catch {
 		return false;
 	}
@@ -118,7 +124,11 @@ export function sendOutsideLinksToTheBrowser(): () => void {
 		if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
 
 		const link = (event.target as Element | null)?.closest?.('a');
-		if (!(link instanceof HTMLAnchorElement) || !leavesTheApp(link)) return;
+		if (!(link instanceof HTMLAnchorElement)) return;
+		const outside =
+			link.hasAttribute(OUTSIDE_ATTRIBUTE) ||
+			leavesTheApp(link.getAttribute('href') ?? '', location.href);
+		if (!outside) return;
 
 		const browser = systemBrowser();
 		if (!browser) {
