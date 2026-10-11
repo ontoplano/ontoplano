@@ -20,6 +20,8 @@ releases mattered.
 
 ## 0.186.1 — 2026-10-10
 
+- A new note in a notebook starts empty, instead of holding the last note you wrote.
+- While writing a note, Save sits beside Cancel at the top, so a long note is not scrolled past to save it, and Cancel shows a cross instead of a plus.
 - AI & Integrations is one press away on the phone: a robot in the account fan opens it.
 - On the instance that lives on the phone, AI & Integrations is there too, saying why nothing can connect to it and what an instance with a server gives instead.
 - A field that is too long says how long it is and by how much — “Content is 5873/4000 characters, 1873 over the limit” — instead of only the limit.

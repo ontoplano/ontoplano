@@ -17,6 +17,7 @@
 	import DetailHeader from '$lib/components/DetailHeader.svelte';
 	import FoldedText from '$lib/components/FoldedText.svelte';
 	import Icon from '$lib/components/Icon.svelte';
+	import type { TabVerb } from '$lib/room-action.svelte';
 	import NotebookPicture from '$lib/components/NotebookPicture.svelte';
 	import NotebookStar from '$lib/components/NotebookStar.svelte';
 	import { enhance } from '$lib/enhance';
@@ -64,7 +65,7 @@
 		 * `labels` is every word it can say, so it is as wide as the longest and
 		 * changing tab does not move the verbs beside it.
 		 */
-		fill?: { label: string; labels: string[]; run?: () => void; href?: string };
+		fill?: TabVerb;
 		onedit: () => void;
 		ontags: () => void;
 	} = $props();
@@ -232,8 +233,17 @@
 					{@render words()}
 				</a>
 			{:else}
-				<button type="button" onclick={fill.run} class="btn btn-sm btn-primary">
-					<Icon name="plus" />
+				{#if fill.open && fill.form}
+					<!-- Outside the form and still its submit, through `form=`: a long
+					     note is not scrolled past to reach its own button. -->
+					<button type="submit" form={fill.form} class="btn btn-sm btn-primary">
+						<Icon name="check" />
+						{t('ui.save')}
+					</button>
+				{/if}
+				<!-- Open, it is the composer's Cancel, and quiet beside its Save. -->
+				<button type="button" onclick={fill.run} class="btn btn-sm" class:btn-primary={!fill.open}>
+					<Icon name={fill.open ? 'close' : 'plus'} />
 					{@render words()}
 				</button>
 			{/if}

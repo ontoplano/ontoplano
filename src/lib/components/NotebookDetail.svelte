@@ -24,6 +24,7 @@
 	import Field from '$lib/components/Field.svelte';
 	import FormGrid from '$lib/components/FormGrid.svelte';
 	import Icon from '$lib/components/Icon.svelte';
+	import type { TabVerb } from '$lib/room-action.svelte';
 	import TagChip from '$lib/components/TagChip.svelte';
 	import FilterBar from '$lib/components/FilterBar.svelte';
 	import Modal from '$lib/components/Modal.svelte';
@@ -257,7 +258,7 @@
 		/** Whether the composer is open, so a page can put the button elsewhere. */
 		composing?: boolean;
 		error?: string | null;
-		newAction?: { label: string; labels: string[]; run?: () => void; href?: string } | undefined;
+		newAction?: TabVerb | undefined;
 		linkAction?: { label: string; run: () => void } | undefined;
 	} = $props();
 
@@ -682,7 +683,17 @@
 	/* Whether the goal form is open on this notebook. */
 	let composingGoal = $state(false);
 	/* What is in the composer, so the checklist offer can watch it. */
+	/** The composer's id, for the Save drawn beside its Cancel up in the bar. */
+	const NOTE_COMPOSER_FORM = 'note-composer';
 	let composing_content = $state('');
+	/*
+	 * Closed is emptied, whether by Add or by Cancel. The body outlived the
+	 * form it was typed into, so the next New note opened holding the last
+	 * note written — the title beside it blank, since that one is not bound.
+	 */
+	$effect(() => {
+		if (!composing) composing_content = '';
+	});
 	const composingTodoCount = $derived(checklistItems(composing_content).length);
 	let goalHorizon = $state<Horizon>('week');
 	let goalStart = $state('');
@@ -937,6 +948,8 @@
 			tab === 'notes'
 				? {
 						label: composing ? t('ui.cancel') : t('notebookDetail.newNote'),
+						open: composing,
+						form: composing ? NOTE_COMPOSER_FORM : undefined,
 						run: () => (composing = !composing)
 					}
 				: tab === 'tasks'
@@ -1710,6 +1723,7 @@
 	-->
 			{#if composing}
 				<form
+					id={NOTE_COMPOSER_FORM}
 					method="post"
 					action="?/addEntry"
 					use:enhance={() =>
