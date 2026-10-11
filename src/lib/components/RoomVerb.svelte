@@ -35,13 +35,20 @@
 				{room.label}
 			</a>
 		{:else}
+			{#if room.open && room.form}
+				<!-- Outside the form and still its submit, through `form=`. -->
+				<button type="submit" form={room.form} class="btn btn-sm btn-primary">
+					<Icon name="check" />
+					{t('ui.save')}
+				</button>
+			{/if}
 			<button
 				type="button"
 				class="btn btn-sm"
 				onclick={room.run}
 				data-tour={room.tour || undefined}
 			>
-				{#if !room.open}<Icon name="plus" />{/if}
+				<Icon name={room.open ? 'close' : 'plus'} />
 				{room.open ? t('ui.cancel') : room.label}
 				{#if room.kbd && !room.open}
 					<!-- The chip reads against the button it sits on: the quiet `.btn`,

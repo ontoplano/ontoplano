@@ -10,7 +10,7 @@
 	import NotebookDetail from '$lib/components/NotebookDetail.svelte';
 	import NotebookDelete from '$lib/components/NotebookDelete.svelte';
 	import NotebookHeader from '$lib/components/NotebookHeader.svelte';
-	import { setRoomAction } from '$lib/room-action.svelte';
+	import { setRoomAction, type TabVerb } from '$lib/room-action.svelte';
 	import { getAction, keyFor } from '$lib/shortcuts';
 	import type { PageServerData, ActionData } from './$types';
 	import { useT } from '$lib/i18n';
@@ -24,9 +24,7 @@
 	let managingTags = $state(false);
 
 	/** The New button for whichever tab is showing — see NotebookDetail. */
-	let newAction = $state<
-		{ label: string; labels: string[]; run?: () => void; href?: string } | undefined
-	>(undefined);
+	let newAction = $state<TabVerb | undefined>(undefined);
 	/** The Link button beside it — see NotebookDetail. */
 	let linkAction = $state<{ label: string; run: () => void } | undefined>(undefined);
 	let confirmingDelete = $state(false);
@@ -41,6 +39,8 @@
 					label: newAction.label,
 					run: newAction.run,
 					href: newAction.href,
+					open: newAction.open,
+					form: newAction.form,
 					kbd: keyFor('/notebooks', 'new')
 				}
 			: null
