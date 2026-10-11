@@ -20,6 +20,8 @@ releases mattered.
 
 ## 0.186.1 — 2026-10-10
 
+- AI & Integrations is one press away on the phone: a robot in the account fan opens it.
+- On the instance that lives on the phone, AI & Integrations is there too, saying why nothing can connect to it and what an instance with a server gives instead.
 - A field that is too long says how long it is and by how much — “Content is 5873/4000 characters, 1873 over the limit” — instead of only the limit.
 - In the Android app, “Use a different ontoplano” goes back to the instance question again, instead of trying to open a page in the browser.
 - A Google Play subscription that does not go through, at any step, is now recorded and reported to whoever runs the instance, instead of failing silently.

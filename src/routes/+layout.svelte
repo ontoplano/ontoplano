@@ -247,6 +247,9 @@
 		if (!onDevice) items.push({ key: 'report', label: 'app.tellTheOperator', icon: 'bug' });
 		items.push({ key: 'docs', label: 'app.documentation', icon: 'book' });
 		items.push({ key: 'support', label: 'app.supportOntoplano', icon: 'heart' });
+		// On a device too: there it says what an assistant would need, and
+		// where to get it.
+		items.push({ key: 'integrations', label: 'rooms.settings.tabs.integrations', icon: 'robot' });
 		return items;
 	});
 
@@ -280,6 +283,10 @@
 		}
 		if (key === 'report') {
 			reporting = true;
+			return;
+		}
+		if (key === 'integrations') {
+			goto(resolve('/settings/integrations'));
 			return;
 		}
 		// The two that leave the app, in a tab of their own.

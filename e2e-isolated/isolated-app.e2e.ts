@@ -507,6 +507,26 @@ test('the Instance tab says this one is isolated', async ({ page }) => {
 });
 
 /**
+ * AI & Integrations comes to a device, to say why nothing can connect.
+ *
+ * Somebody who installed the app and went looking for their assistant gets
+ * the reason and the way to an instance with a server, not a refusal.
+ */
+test('AI & Integrations says why nothing connects, and where it would', async ({ page }) => {
+	await page.goto('/settings/integrations');
+
+	await expect(page.getByText(/can’t connect assistants or other apps/)).toBeVisible({
+		timeout: 20_000
+	});
+	await expect(page.getByRole('link', { name: 'AI & Integrations' })).toBeVisible();
+	await page.getByRole('button', { name: 'Why?' }).click();
+
+	const why = page.getByRole('dialog', { name: 'Why nothing can connect here' });
+	await expect(why.getByText(/backed up off the machine/)).toBeVisible();
+	await expect(why.getByRole('link', { name: 'Use an instance with a server' })).toBeVisible();
+});
+
+/**
  * A block starting later today reaches Android's alarm clock.
  *
  * This is the whole of how a reminder arrives on an instance that runs on the

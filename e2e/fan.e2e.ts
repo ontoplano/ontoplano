@@ -6,7 +6,7 @@ import { visit } from './helpers/visit';
  * The small things, fanned above the thumb.
  *
  * Account, what the app has told you, the tour of this screen, telling the
- * operator something is wrong, the documentation and supporting the thing. They were a square `?` docked in
+ * operator something is wrong, the documentation, supporting the thing and AI & Integrations. They were a square `?` docked in
  * the corner of every phone screen; they are one press on the bar's last
  * button now, chosen the way the wheel is — drag onto one and let go, or lift
  * and tap.
@@ -32,9 +32,9 @@ test('the press that opens it chooses nothing, and the petals are above the hand
 	await page.mouse.up();
 
 	const petals = page.getByRole('menuitem');
-	// The list is `fanItems` in the layout: six on an instance with an operator
-	// to tell, five on one that is its own device and has nobody to tell.
-	await expect(petals).toHaveCount(6);
+	// The list is `fanItems` in the layout: seven on an instance with an operator
+	// to tell, six on one that is its own device and has nobody to tell.
+	await expect(petals).toHaveCount(7);
 	// Still where it was: a tap opens the menu and does nothing else, which is
 	// the whole reason it flies up clear of the finger.
 	expect(new URL(page.url()).pathname).toBe('/');
@@ -67,6 +67,19 @@ test('dragging onto one and letting go goes there', async ({ page }) => {
 	await page.mouse.up();
 
 	await page.waitForURL('**/settings/account');
+});
+
+test('the robot opens AI & Integrations', async ({ page }) => {
+	await register(page, testEmail('fan-robot'));
+	await visit(page, '/');
+
+	const at = await handle(page);
+	await page.mouse.move(at.x, at.y);
+	await page.mouse.down();
+	await page.mouse.up();
+	await page.getByRole('menuitem', { name: 'AI & Integrations' }).click();
+
+	await page.waitForURL('**/settings/integrations');
 });
 
 test('escape closes it and nothing is chosen', async ({ page }) => {

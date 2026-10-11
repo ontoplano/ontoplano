@@ -3908,6 +3908,24 @@ export const messages: Catalogue = {
 	'settings.integrations.copyThis': 'Copier ceci',
 	'settings.integrations.createAKey': 'Créer une clé',
 	'settings.integrations.createIt': 'La créer',
+	'settings.integrations.device.cannotConnect':
+		'Impossible de connecter des assistants ou d’autres apps à l’instance de ce téléphone.',
+	'settings.integrations.device.hostedAssistants':
+		'Des assistants qui travaillent votre plan — Claude, ChatGPT ou tout client MCP, avec des clés que vous limitez et révoquez.',
+	'settings.integrations.device.hostedBackups':
+		'Vos données sauvegardées hors de la machine : perdre ce téléphone ne fait pas perdre votre semaine.',
+	'settings.integrations.device.hostedComputer':
+		'Le même compte sur votre ordinateur, dans n’importe quel navigateur, et sur chaque téléphone où vous vous connectez.',
+	'settings.integrations.device.hostedFeeds':
+		'Votre plan dans n’importe quelle app de calendrier, webhooks, flux de données et widgets d’écran d’accueil.',
+	'settings.integrations.device.hostedNow':
+		'Ici, tout vit sur ce seul téléphone. Déménager, c’est exporter puis importer depuis Compte.',
+	'settings.integrations.device.hostedTitle': 'Une instance avec serveur vous offre',
+	'settings.integrations.device.switch': 'Utiliser une instance avec serveur',
+	'settings.integrations.device.why': 'Pourquoi ?',
+	'settings.integrations.device.whyBody':
+		'Un assistant comme Claude ou ChatGPT tourne sur les serveurs de son entreprise, tout comme un calendrier ou une automatisation. Pour lire votre plan et le modifier, ils doivent atteindre votre ontoplano par internet. L’instance de ce téléphone n’est pas sur internet : rien en dehors du téléphone ne peut l’atteindre. C’est ce qui la garde privée, et c’est aussi pourquoi rien ne peut s’y connecter.',
+	'settings.integrations.device.whyTitle': 'Pourquoi rien ne peut se connecter ici',
 	'settings.integrations.diaryAndNotebooks': 'Journal et cahiers',
 	'settings.integrations.doNotShareItWith': 'Ne la partagez avec personne.',
 	'settings.integrations.everyRead': 'Chaque lecture',

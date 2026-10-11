@@ -3577,6 +3577,24 @@ export const messages: Catalogue = {
 	'settings.integrations.copyThis': 'Copiar isto',
 	'settings.integrations.createAKey': 'Criar uma chave',
 	'settings.integrations.createIt': 'Criar',
+	'settings.integrations.device.cannotConnect':
+		'Não é possível conectar assistentes ou outros apps à instância deste celular.',
+	'settings.integrations.device.hostedAssistants':
+		'Assistentes que trabalham no seu plano — Claude, ChatGPT ou qualquer cliente MCP, com chaves que você limita e revoga.',
+	'settings.integrations.device.hostedBackups':
+		'Seus dados com backup fora da máquina, então perder este celular não faz perder a sua semana.',
+	'settings.integrations.device.hostedComputer':
+		'A mesma conta no computador, em qualquer navegador, e em todo celular em que você entrar.',
+	'settings.integrations.device.hostedFeeds':
+		'Seu plano em qualquer app de calendário, webhooks, fluxos de dados e widgets na tela inicial.',
+	'settings.integrations.device.hostedNow':
+		'Aqui, tudo vive só neste celular. Mudar é exportar e importar em Conta.',
+	'settings.integrations.device.hostedTitle': 'Uma instância com servidor oferece',
+	'settings.integrations.device.switch': 'Usar uma instância com servidor',
+	'settings.integrations.device.why': 'Por quê?',
+	'settings.integrations.device.whyBody':
+		'Um assistente como o Claude ou o ChatGPT roda nos servidores da empresa dele, assim como um calendário ou uma automação. Para ler e mudar o seu plano, eles precisam alcançar o seu ontoplano pela internet. A instância deste celular não está na internet: nada fora do celular consegue alcançá-la. É isso que a mantém privada, e é também por isso que nada se conecta a ela.',
+	'settings.integrations.device.whyTitle': 'Por que nada se conecta aqui',
 	'settings.integrations.diaryAndNotebooks': 'Diário e cadernos',
 	'settings.integrations.doNotShareItWith': 'Não compartilhe com ninguém.',
 	'settings.integrations.everyRead': 'Toda leitura',

@@ -4024,6 +4024,24 @@ export const messages: Catalogue = {
 	'settings.integrations.copyThis': 'Скопировать это',
 	'settings.integrations.createAKey': 'Создать ключ',
 	'settings.integrations.createIt': 'Создать',
+	'settings.integrations.device.cannotConnect':
+		'К экземпляру на этом телефоне нельзя подключить ассистентов или другие приложения.',
+	'settings.integrations.device.hostedAssistants':
+		'Ассистентов, которые работают с вашим планом — Claude, ChatGPT или любой MCP-клиент, с ключами, которые вы ограничиваете и отзываете.',
+	'settings.integrations.device.hostedBackups':
+		'Резервные копии данных вне устройства — потеря этого телефона не означает потерю недели.',
+	'settings.integrations.device.hostedComputer':
+		'Тот же аккаунт на компьютере, в любом браузере, и на каждом телефоне, где вы войдёте.',
+	'settings.integrations.device.hostedFeeds':
+		'Ваш план в любом календаре, вебхуки, потоки данных и виджеты на главном экране.',
+	'settings.integrations.device.hostedNow':
+		'Здесь всё хранится только на этом телефоне. Переезд — это экспорт и импорт в разделе «Аккаунт».',
+	'settings.integrations.device.hostedTitle': 'Экземпляр с сервером даёт',
+	'settings.integrations.device.switch': 'Использовать экземпляр с сервером',
+	'settings.integrations.device.why': 'Почему?',
+	'settings.integrations.device.whyBody':
+		'Ассистент вроде Claude или ChatGPT работает на серверах своей компании — как и календарь или автоматизация. Чтобы читать и менять ваш план, им нужно достучаться до вашего ontoplano через интернет. Экземпляр на этом телефоне не в интернете: ничто вне телефона до него не дотянется. Именно это делает его приватным — и поэтому к нему ничего не подключить.',
+	'settings.integrations.device.whyTitle': 'Почему здесь ничего не подключить',
 	'settings.integrations.diaryAndNotebooks': 'Дневник и блокноты',
 	'settings.integrations.doNotShareItWith': 'Не делитесь им ни с кем.',
 	'settings.integrations.everyRead': 'Любое чтение',
