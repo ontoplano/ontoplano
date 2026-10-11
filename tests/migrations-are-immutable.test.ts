@@ -51,7 +51,16 @@ function everModified(): string[] {
 	}
 }
 
-describe('a migration, once written', () => {
+/**
+ * How long a walk over git may take.
+ *
+ * A fraction of a second on its own, but this runs in a worker beside three
+ * hundred other files, and on a busy machine the history walk went past the
+ * suite's default ten seconds — a failure that said nothing about migrations.
+ */
+const GIT_WALK_TIMEOUT_MS = 60_000;
+
+describe('a migration, once written', { timeout: GIT_WALK_TIMEOUT_MS }, () => {
 	test('is not edited in the working tree', () => {
 		expect(
 			changedSinceHead(),
