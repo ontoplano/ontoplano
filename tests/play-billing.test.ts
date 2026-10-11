@@ -269,3 +269,95 @@ describe.skipIf(!hasPlayChannel())('the notification door', () => {
 		expect((await call('rtdn-secret')).status).toBe(200);
 	});
 });
+
+describe.skipIf(!hasPlayChannel())('a payment that goes nowhere is written down', () => {
+	const failures = () =>
+		database.all(
+			"select user_id as userId, detail from audit_events where event = 'payment_failed' order by id"
+		) as { userId: string | null; detail: string }[];
+	const latest = (): Record<string, string | null> => {
+		const row = failures().at(-1)!;
+		const detail = JSON.parse(row.detail) as Record<string, string>;
+		return { ...detail, userId: row.userId };
+	};
+	const push = (payload: Record<string, unknown>) =>
+		JSON.stringify({
+			message: { data: Buffer.from(JSON.stringify(payload)).toString('base64') }
+		});
+
+	beforeAll(() => {
+		// Each of these is meant to shout in the server log; the test reads the
+		// audit row instead, and the shouting would bury the suite's own output.
+		vi.spyOn(console, 'error').mockImplementation(() => {});
+	});
+	afterAll(() => vi.restoreAllMocks());
+
+	test('a claim the server refuses names the account, the step and the reason', async () => {
+		vi.stubGlobal('fetch', googleAnswers(activePurchase('ontoplano.solo.monthly')));
+		await refusalOf(() =>
+			billing.playClaim(OWNER, { sku: 'ontoplano.solo.monthly', purchaseToken: 'unknown-token' })
+		);
+		expect(latest()).toMatchObject({
+			userId: OWNER,
+			via: 'play',
+			stage: 'claim',
+			sku: 'ontoplano.solo.monthly'
+		});
+		expect(latest().code).toMatch(/\S/);
+	});
+
+	test('Google refusing to answer at all is written down too', async () => {
+		// The service account without access to the app — the failure nobody
+		// sees from the phone, because every purchase dies the same quiet way.
+		vi.stubGlobal(
+			'fetch',
+			vi.fn(async (input: string | URL | Request) =>
+				String(input).startsWith('https://oauth.test/token')
+					? new Response(JSON.stringify({ access_token: 'at-1', expires_in: 3600 }))
+					: new Response('{}', { status: 403 })
+			)
+		);
+		await expect(
+			billing.playClaim(OWNER, { sku: 'ontoplano.solo.monthly', purchaseToken: 'tok-403' })
+		).rejects.toThrow();
+		expect(latest()).toMatchObject({ userId: OWNER, stage: 'claim' });
+		expect(latest().message).toMatch(/403/);
+
+		await expect(
+			billing.playRtdn(
+				push({
+					packageName: 'app.ontoplano',
+					subscriptionNotification: { purchaseToken: 'tok-403', notificationType: 4 }
+				})
+			)
+		).rejects.toThrow();
+		expect(latest()).toMatchObject({ userId: null, stage: 'rtdn' });
+	});
+
+	test('a notification nobody can place is written down', async () => {
+		vi.stubGlobal('fetch', googleAnswers(activePurchase('ontoplano.solo.monthly')));
+		await billing.playRtdn(
+			push({
+				packageName: 'app.ontoplano',
+				subscriptionNotification: { purchaseToken: 'tok-nobody-2', notificationType: 4 }
+			})
+		);
+		expect(latest()).toMatchObject({ userId: null, stage: 'rtdn', code: 'unknown_account' });
+	});
+
+	test("Google's test ping is not a failure", async () => {
+		const before = failures().length;
+		await billing.playRtdn(push({ testNotification: {} }));
+		expect(failures()).toHaveLength(before);
+	});
+
+	test('the sheet refusing on the phone is written down', async () => {
+		billing.playSheetFailed(OWNER, 'ontoplano.solo.yearly', 'PLAY_7');
+		expect(latest()).toMatchObject({
+			userId: OWNER,
+			stage: 'sheet',
+			sku: 'ontoplano.solo.yearly',
+			code: 'PLAY_7'
+		});
+	});
+});

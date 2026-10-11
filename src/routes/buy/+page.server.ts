@@ -1,6 +1,12 @@
 import { error, redirect } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
-import { checkoutClientConfig, playConfigured, playSkus } from '$lib/server/services/billing';
+import {
+	checkoutClientConfig,
+	playConfigured,
+	playSheetFailed,
+	playSkus
+} from '$lib/server/services/billing';
+import { PLAY_PARAMS } from '$lib/play-billing';
 
 /**
  * The one page that loads the payment provider's script.
@@ -25,6 +31,10 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 		const skus = playSkus();
 		if (!playConfigured() || !skus) error(404, 'Not found');
 		const returned = url.searchParams.get('sku');
+		// The device came back with Play's refusal rather than a purchase: the
+		// page says so to the person, and this says so to whoever runs the place.
+		const refused = url.searchParams.get(PLAY_PARAMS.failed);
+		if (refused) playSheetFailed(locals.user.id, returned ?? '', refused);
 		if (returned && Object.values(skus).includes(returned)) {
 			return { play: { sku: returned, account: locals.user.id }, paddle: null, successUrl };
 		}
