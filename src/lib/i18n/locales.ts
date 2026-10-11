@@ -6,6 +6,10 @@
  * which catalogues have to be complete, and by the Android resource folders.
  * Adding a language is adding a line here and a file in `messages/`.
  *
+ * The store listing and the website read this file too, as text rather than
+ * as TypeScript, to build a page per language — so `LOCALES` stays one array
+ * literal of quoted tags, and `LOCALE_NAMES` one object literal of them.
+ *
  * The tags are BCP 47 and they are what goes in `<html lang>`, what
  * `Intl.PluralRules` is given, and what an `Accept-Language` header is matched
  * against — so they are never invented. `pt-BR` rather than `pt` because the
