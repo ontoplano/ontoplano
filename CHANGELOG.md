@@ -20,6 +20,7 @@ releases mattered.
 
 ## 0.186.1 — 2026-10-10
 
+- A field that is too long says how long it is and by how much — “Content is 5873/4000 characters, 1873 over the limit” — instead of only the limit.
 - In the Android app, “Use a different ontoplano” goes back to the instance question again, instead of trying to open a page in the browser.
 - A Google Play subscription that does not go through, at any step, is now recorded and reported to whoever runs the instance, instead of failing silently.
 - Sign-in, sign-up, password reset and the account page answer in your language, including “wrong email or password”.

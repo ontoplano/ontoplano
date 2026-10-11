@@ -101,7 +101,7 @@ test('an absurd string is refused everywhere it can be typed', async ({ playwrig
 		// The message says the limit rather than "invalid": a person who pasted
 		// too much should be told how much is too much.
 		expect(body, `${testCase.name}: refused without saying the limit`).toMatch(
-			/characters or fewer|at most|longer than|more tags than|Unknown timezone/
+			/over the limit|at most|longer than|more tags than|Unknown timezone/
 		);
 	}
 

@@ -19,6 +19,18 @@ function Field(field: string): string {
 	return field.charAt(0).toUpperCase() + field.slice(1);
 }
 
+/**
+ * Too long, said with how long it is.
+ *
+ * "Has to be 4000 characters or fewer" leaves somebody guessing how much to
+ * cut; the count and the excess are the instructions.
+ */
+export function tooLong(field: string, length: number, max: number): ValidationError {
+	return new ValidationError(
+		`${Field(field)} is ${length}/${max} characters, ${length - max} over the limit`
+	);
+}
+
 export function str(
 	value: unknown,
 	field: string,
@@ -30,8 +42,7 @@ export function str(
 	const s = opts.trim === false ? value : value.trim();
 	const min = opts.min ?? 1;
 	if (s.length < min) throw new ValidationError(`${Field(field)} is required`);
-	if (s.length > opts.max)
-		throw new ValidationError(`${Field(field)} has to be ${opts.max} characters or fewer`);
+	if (s.length > opts.max) throw tooLong(field, s.length, opts.max);
 	if (opts.pattern && !opts.pattern.test(s)) throw new ValidationError(`Invalid ${field}`);
 	return s;
 }
