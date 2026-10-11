@@ -1138,6 +1138,16 @@ by hand for anybody who needs one.
 
 #### `playRtdn(rawBody)`
 
+#### `checkoutChannel(asking)`
+
+#### `checkoutRefused()`
+
+The refusal for `none`, so both pages say the same thing.
+
+### Types
+
+- `CheckoutChannel` — Which way a checkout goes, decided once for both pages that start one.
+
 ## bills
 
 Bills: money expected to go out, on a rhythm.
