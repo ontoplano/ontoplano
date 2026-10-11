@@ -5,9 +5,11 @@
  */
 import { describe, expect, test } from 'vitest';
 import { PLAY_PARAMS, playReturnAddress, playTripAddress } from '../src/lib/play-billing';
+import { askAgainOnThisPhone } from '../src/lib/instance-choice';
 import { fromPlayStore, PLAY_STORE_USER_AGENT, APP_USER_AGENT } from '../src/lib/platform';
 import {
 	atLeast,
+	leavesTheApp,
 	OUT_PARAM,
 	OUT_PATH,
 	OUT_SINCE,
@@ -85,5 +87,17 @@ describe('a link out, from an instance', () => {
 		expect(atLeast('0.186.0', OUT_SINCE)).toBe(false);
 		expect(atLeast('0.187.0', OUT_SINCE)).toBe(true);
 		expect(atLeast('garbled', OUT_SINCE)).toBe(false);
+	});
+
+	test('another website leaves the app; this instance and the phone’s own copy do not', () => {
+		const here = `${INSTANCE}/login`;
+		expect(leavesTheApp('https://docs.ontoplano.com/', here)).toBe(true);
+		expect(leavesTheApp(`${INSTANCE}/settings`, here)).toBe(false);
+		expect(leavesTheApp('/settings', here)).toBe(false);
+		expect(leavesTheApp('mailto:a@b.test', here)).toBe(false);
+	});
+
+	test('“Use a different ontoplano” goes back to the question, not to the browser', () => {
+		expect(leavesTheApp(askAgainOnThisPhone(), `${INSTANCE}/login`)).toBe(false);
 	});
 });
