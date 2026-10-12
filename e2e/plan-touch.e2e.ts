@@ -285,12 +285,13 @@ test.describe('with a finger', () => {
 		await expect(body).toBeVisible();
 		const box = (await body.boundingBox())!;
 
-		await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+		const y = box.y + box.height * 0.53;
+		await page.mouse.move(box.x + box.width / 2, y);
 		await page.dispatchEvent('.ec-body', 'pointerdown', {
 			pointerType: 'touch',
 			isPrimary: true,
 			clientX: box.x + box.width / 2,
-			clientY: box.y + box.height / 2
+			clientY: y
 		});
 		// Longer than the hold, and then the release the finger would make.
 		await page.waitForTimeout(700);
@@ -298,10 +299,13 @@ test.describe('with a finger', () => {
 			pointerType: 'touch',
 			isPrimary: true,
 			clientX: box.x + box.width / 2,
-			clientY: box.y + box.height / 2
+			clientY: y
 		});
 
 		await expect(page.getByRole('heading', { name: 'New task block' })).toBeVisible();
+		// On the hour the finger landed in, not on the quarter: the grid's middle
+		// is not on an hour, and the form says the hour.
+		await expect(page.locator('[name="startTime"]').first()).toHaveValue(/^\d\d:00$/);
 	});
 
 	test('a swipe over the grid is a scroll, not a new block', async ({ page }) => {
