@@ -2505,6 +2505,39 @@ label:has(> input[type='radio']:not(:disabled)) {
 		font-size: 0.8125rem;
 	}
 
+	/*
+	 * A filter strip is read, not filled in.
+	 *
+	 * Its search box was a form field — a white box with an edge and a
+	 * shadow — and its order and filters were grey bordered slabs, so the
+	 * strip above a list looked heavier than the list. The box is a line with
+	 * its placeholder on it, and the buttons are their words until the
+	 * pointer reaches them. A toggle that is on keeps its fill and its edge:
+	 * that is how it says it is on.
+	 */
+	.filter-strip .input {
+		border-width: 0 0 1px;
+		border-radius: 0;
+		background-color: transparent;
+		box-shadow: none;
+		padding-inline: 0.125rem;
+	}
+
+	.filter-strip .input:focus {
+		outline: none;
+		border-bottom-color: var(--color-gray-900);
+		box-shadow: inset 0 -1px 0 var(--color-gray-900);
+	}
+
+	.filter-strip .btn:not([aria-pressed='true']) {
+		border-color: transparent;
+		box-shadow: none;
+	}
+
+	.filter-strip .btn:not([aria-pressed='true']):not(:hover) {
+		background-color: transparent;
+	}
+
 	:is(.room-toolbar-row, .filter-strip, .controls-sm) .seg > :is(button, a, label),
 	.seg.seg-sm > :is(button, a, label) {
 		min-height: calc(var(--control-sm) - 2 * var(--seg-pad));

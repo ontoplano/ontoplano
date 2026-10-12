@@ -161,11 +161,14 @@
 	<!--
 		Two columns of cards, each one foldable: the page is read two cards at a
 		time, and the rest can be folded out of the way — remembered per card.
+		The accounts take both columns: a list of addresses and dates is the
+		one thing here that is read across, and half a page squeezed its search
+		and order onto two lines.
 		Inside the room's gutter on every side, the top included: the grid is
 		not one card meeting the track, so it floats like the rest of the page.
 	-->
 	<CardGrid class="items-start">
-		<Card id="admin-accounts" title={t('admin.accounts')} flush collapsible>
+		<Card id="admin-accounts" title={t('admin.accounts')} flush collapsible class="lg:col-span-2">
 			<RoomToolbar inset>
 				{#snippet tools()}
 					<FilterBar
