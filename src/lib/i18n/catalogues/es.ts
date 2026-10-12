@@ -379,11 +379,15 @@ export const messages: Catalogue = {
 	'capture.planDestination': 'tu calendario',
 	'captureDialog.notWrittenDown': 'Eso no quedó escrito.',
 	'captureSettings.atLeastOne': 'al menos una',
+	'captureSettings.eachKind': 'Un cuaderno para cada tipo',
+	'captureSettings.eachKindHint':
+		'Adónde va un tipo en lugar del cuaderno principal. Un recordatorio es sobre una hora y no va en ninguno.',
 	'captureSettings.intro': 'Qué tiene la rueda del +, y adónde va lo que escribes desde ella.',
 	'captureSettings.mainNotebook': 'Cuaderno principal',
 	'captureSettings.mainNotebookHint':
 		'Tareas, notas, ideas y compras empiezan en él. Dentro de un cuaderno, manda ese cuaderno.',
 	'captureSettings.noNotebooksYet': 'Todavía no hay cuadernos.',
+	'captureSettings.sameAsMain': 'El cuaderno principal',
 	'captureSettings.save': 'Guardar captura rápida',
 	'captureSettings.saved': 'Captura rápida guardada.',
 	'captureSettings.title': 'Ajustes de captura rápida',

@@ -4854,5 +4854,8 @@
 	"settings.account.profile": "Профиль",
 	"settings.account.displayName": "Отображаемое имя",
 	"settings.account.displayNameHint": "То, как приложение называет вас, и то, что видят люди, с которыми вы делитесь доступом",
-	"settings.account.changeYourName": "Изменить своё имя"
+	"settings.account.changeYourName": "Изменить своё имя",
+	"captureSettings.eachKind": "Свой блокнот для каждого вида",
+	"captureSettings.eachKindHint": "Куда попадает вид вместо основного блокнота. Напоминание — о времени и не попадает ни в какой.",
+	"captureSettings.sameAsMain": "Основной блокнот"
 }

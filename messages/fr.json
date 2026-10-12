@@ -4722,5 +4722,8 @@
 	"settings.account.profile": "Profil",
 	"settings.account.displayName": "Nom affiché",
 	"settings.account.displayNameHint": "Ce que l'application vous appelle, et ce que voient les personnes avec qui vous partagez",
-	"settings.account.changeYourName": "Changer votre nom"
+	"settings.account.changeYourName": "Changer votre nom",
+	"captureSettings.eachKind": "Un carnet pour chaque type",
+	"captureSettings.eachKindHint": "Où va un type au lieu du carnet principal. Un rappel porte sur une heure et ne va dans aucun.",
+	"captureSettings.sameAsMain": "Le carnet principal"
 }

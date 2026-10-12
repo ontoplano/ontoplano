@@ -4590,5 +4590,8 @@
 	"settings.account.profile": "Perfil",
 	"settings.account.displayName": "Nome de exibição",
 	"settings.account.displayNameHint": "Como o app te chama e o que veem as pessoas com quem você compartilha",
-	"settings.account.changeYourName": "Mudar seu nome"
+	"settings.account.changeYourName": "Mudar seu nome",
+	"captureSettings.eachKind": "Um caderno para cada tipo",
+	"captureSettings.eachKindHint": "Para onde um tipo vai em vez do caderno principal. Um lembrete é sobre uma hora e não vai em nenhum.",
+	"captureSettings.sameAsMain": "O caderno principal"
 }

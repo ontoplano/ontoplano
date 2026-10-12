@@ -4590,5 +4590,8 @@
 	"settings.account.profile": "Perfil",
 	"settings.account.displayName": "Nombre visible",
 	"settings.account.displayNameHint": "Cómo te llama la app y lo que ven las personas con quienes compartes",
-	"settings.account.changeYourName": "Cambiar tu nombre"
+	"settings.account.changeYourName": "Cambiar tu nombre",
+	"captureSettings.eachKind": "Un cuaderno para cada tipo",
+	"captureSettings.eachKindHint": "Adónde va un tipo en lugar del cuaderno principal. Un recordatorio es sobre una hora y no va en ninguno.",
+	"captureSettings.sameAsMain": "El cuaderno principal"
 }

@@ -391,12 +391,16 @@ export const messages: Catalogue = {
 	'capture.planDestination': 'ваш календарь',
 	'captureDialog.notWrittenDown': 'Это не было записано.',
 	'captureSettings.atLeastOne': 'хотя бы один',
+	'captureSettings.eachKind': 'Свой блокнот для каждого вида',
+	'captureSettings.eachKindHint':
+		'Куда попадает вид вместо основного блокнота. Напоминание — о времени и не попадает ни в какой.',
 	'captureSettings.intro':
 		'Что держит колесо захвата «+» и куда попадает то, что вы через него записываете.',
 	'captureSettings.mainNotebook': 'Основной блокнот',
 	'captureSettings.mainNotebookHint':
 		'Задачи, заметки, идеи и покупки начинаются в нём. Внутри блокнота приоритет у этого блокнота.',
 	'captureSettings.noNotebooksYet': 'Блокнотов пока нет.',
+	'captureSettings.sameAsMain': 'Основной блокнот',
 	'captureSettings.save': 'Сохранить быстрый захват',
 	'captureSettings.saved': 'Быстрый захват сохранён.',
 	'captureSettings.title': 'Настройки быстрого захвата',

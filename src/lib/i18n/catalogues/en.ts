@@ -370,11 +370,15 @@ export const messages: Catalogue = {
 	'capture.planDestination': 'your calendar',
 	'captureDialog.notWrittenDown': 'That was not written down.',
 	'captureSettings.atLeastOne': 'at least one',
+	'captureSettings.eachKind': "Each kind's own notebook",
+	'captureSettings.eachKindHint':
+		'Where one kind goes instead of the main notebook. A reminder is about a time, and goes in none.',
 	'captureSettings.intro': 'What the + wheel holds, and where what you write from it goes.',
 	'captureSettings.mainNotebook': 'Main notebook',
 	'captureSettings.mainNotebookHint':
 		'Tasks, notes, ideas and things to buy start in it. Inside a notebook, that notebook wins.',
 	'captureSettings.noNotebooksYet': 'No notebooks yet.',
+	'captureSettings.sameAsMain': 'The main notebook',
 	'captureSettings.save': 'Save quick capture',
 	'captureSettings.saved': 'Quick capture saved.',
 	'captureSettings.title': 'Quick capture settings',

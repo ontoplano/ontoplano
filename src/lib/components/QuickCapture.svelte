@@ -35,11 +35,15 @@
 
 	/** The same starting notebook the wheel's forms get. */
 	const notebookId = $derived(
-		startingNotebook(page.data.captureSettings ?? DEFAULT_CAPTURE_SETTINGS, {
-			id: page.route.id,
-			params: page.params,
-			search: page.url.searchParams
-		})
+		startingNotebook(
+			page.data.captureSettings ?? DEFAULT_CAPTURE_SETTINGS,
+			{
+				id: page.route.id,
+				params: page.params,
+				search: page.url.searchParams
+			},
+			open?.key
+		)
 	);
 
 	function show(capture: Capture) {
