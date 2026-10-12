@@ -25,6 +25,7 @@ releases mattered.
 - Quick capture's settings are one list: each wedge has its switch, its place and the notebook it writes into, and a picker above them sets every wedge at once, saying “Mixed” when they differ. The same list opens from the gear beside the wheel and from Preferences.
 - The search box above a list is a line with its placeholder on it, and the order and filter buttons beside it are their words, without the grey boxes; a filter that is on still shows as pressed.
 - Above a list in a half-width card, the search, the count and the order share one line instead of two, and the administration page's accounts take the full width.
+- In the playful style, the search box above a list is a straight line again, not one curling up at both ends.
 - In the Android app on Android 15 and later, a form scrolls while the keyboard is up, and nothing in it is left hidden behind the keys. In the browser, a new block's short sheet grows to fill what the keyboard leaves, as it already did on iPhone.
 
 ## 0.186.1 — 2026-10-10

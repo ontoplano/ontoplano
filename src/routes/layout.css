@@ -424,13 +424,16 @@ html[data-style='playful'] .card-pane {
  *   square, so the cards in it are the only curves.
  * - A box inside a square surface (the danger zone, the rows of the menu
  *   editor) is square like the surface round it.
+ * - A filter strip's search box is a line, not a box: rounded, its one rule
+ *   curled up at both ends.
  */
 html[data-style='playful'] .room-surface > *,
 html[data-style='playful'] .room-toolbar-inset,
 html[data-style='playful'] .lane,
 html[data-style='playful'] .danger-zone,
 html[data-style='playful'] .danger-zone > *,
-html[data-style='playful'] .toggle-row {
+html[data-style='playful'] .toggle-row,
+html[data-style='playful'] .filter-strip .input {
 	border-radius: 0;
 }
 
