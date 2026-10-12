@@ -4384,7 +4384,7 @@ missing field — which is why this takes the posted value and not a boolean.
 
 #### `saveCaptureSettings(ctx, raw)`
 
-The capture wheel: its wedges, their order, and the notebook it writes into.
+The capture wheel: its wedges, their order, and the notebooks it writes into.
 
 At least one wedge, because a wheel with none is a button that does nothing.
 The notebook has to be one this account can file things in — its own, or
