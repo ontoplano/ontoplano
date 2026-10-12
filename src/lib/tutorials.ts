@@ -145,7 +145,7 @@ export const TUTORIALS: Record<string, Tutorial> = {
 		]
 	},
 
-	'/tasks/calendar': {
+	'/calendar/calendar': {
 		label: 'tour.plan',
 		steps: [
 			{
@@ -195,7 +195,7 @@ export const TUTORIALS: Record<string, Tutorial> = {
 		]
 	},
 
-	'/tasks/board': {
+	'/calendar/board': {
 		label: 'tour.board',
 		steps: [
 			{
@@ -220,7 +220,7 @@ export const TUTORIALS: Record<string, Tutorial> = {
 		]
 	},
 
-	'/tasks/todo': {
+	'/calendar/todo': {
 		label: 'tour.toDo',
 		steps: [
 			{
@@ -250,7 +250,7 @@ export const TUTORIALS: Record<string, Tutorial> = {
 		]
 	},
 
-	'/tasks/activities': {
+	'/calendar/activities': {
 		label: 'tour.activities',
 		steps: [
 			{
@@ -270,7 +270,7 @@ export const TUTORIALS: Record<string, Tutorial> = {
 		]
 	},
 
-	'/tasks/review': {
+	'/calendar/review': {
 		label: 'tour.review',
 		steps: [
 			{

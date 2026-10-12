@@ -19,7 +19,7 @@ test.describe('with a finger', () => {
 
 	test('a tap opens a short new-activity sheet with save visible', async ({ page }) => {
 		await register(page, testEmail('plan-tap'));
-		await visit(page, '/tasks/calendar');
+		await visit(page, '/calendar/calendar');
 		await expect(page.getByRole('button', { name: 'More' })).toHaveAttribute(
 			'aria-expanded',
 			'false'
@@ -125,7 +125,7 @@ test.describe('with a finger', () => {
 
 	test('the short sheet fills what the keyboard leaves and scrolls', async ({ page }) => {
 		await register(page, testEmail('plan-sheet-scroll'));
-		await visit(page, '/tasks/calendar');
+		await visit(page, '/calendar/calendar');
 		await page.getByRole('button', { name: 'New task block' }).click();
 		const dialog = page.getByRole('dialog', { name: 'New task block' });
 		const content = dialog.locator('.modal-content');
@@ -237,7 +237,7 @@ test.describe('with a finger', () => {
 	 */
 	test('a real tap opens the sheet on the activity, focused', async ({ page }) => {
 		await register(page, testEmail('plan-real-tap'));
-		await visit(page, '/tasks/calendar');
+		await visit(page, '/calendar/calendar');
 		const body = page.locator('.ec-body').first();
 		const box = (await body.boundingBox())!;
 		await page.touchscreen.tap(box.x + box.width / 2, box.y + 60);
@@ -264,7 +264,7 @@ test.describe('with a finger', () => {
 
 	test('swiping up on the sheet header expands it', async ({ page }) => {
 		await register(page, testEmail('plan-sheet-expand'));
-		await visit(page, '/tasks/calendar');
+		await visit(page, '/calendar/calendar');
 		await page.getByRole('button', { name: 'New task block' }).click();
 		const dialog = page.getByRole('dialog', { name: 'New task block' });
 		await expect(dialog).toHaveClass(/peek/);
@@ -279,7 +279,7 @@ test.describe('with a finger', () => {
 
 	test('press and hold on the grid opens a new block there', async ({ page }) => {
 		await register(page, testEmail('plan-hold'));
-		await visit(page, '/tasks/calendar');
+		await visit(page, '/calendar/calendar');
 
 		const body = page.locator('.ec-body').first();
 		await expect(body).toBeVisible();
@@ -306,7 +306,7 @@ test.describe('with a finger', () => {
 
 	test('a swipe over the grid is a scroll, not a new block', async ({ page }) => {
 		await register(page, testEmail('plan-swipe'));
-		await visit(page, '/tasks/calendar');
+		await visit(page, '/calendar/calendar');
 
 		const body = page.locator('.ec-body').first();
 		const box = (await body.boundingBox())!;
@@ -341,7 +341,7 @@ test('dragging a block asks whether to move or copy it', async ({ page }) => {
 	test.setTimeout(180_000);
 	await page.setViewportSize({ width: 1280, height: 900 });
 	await register(page, testEmail('plan-drag-choice'));
-	await visit(page, '/tasks/calendar?view=week');
+	await visit(page, '/calendar/calendar?view=week');
 	await page.getByRole('button', { name: 'New task block' }).click();
 	const editor = page.getByRole('dialog', { name: 'New task block' });
 	await editor.locator('[name="newActivityName"]').fill('Move or copy me');
@@ -411,7 +411,7 @@ test.describe('tapping a block', () => {
 	 */
 	test('tapping a block leaves no hover card behind', async ({ page }) => {
 		await register(page, testEmail('plan-hover'));
-		await visit(page, '/tasks/calendar');
+		await visit(page, '/calendar/calendar');
 
 		const block = page.locator('.ec-event.ec-draggable').first();
 		await expect(block).toBeVisible();
@@ -436,7 +436,7 @@ test.describe('saving a block', () => {
 
 	test('the fields keep their values until the form is gone', async ({ page }) => {
 		await register(page, testEmail('plan-save'));
-		await visit(page, '/tasks/calendar');
+		await visit(page, '/calendar/calendar');
 
 		const block = page.locator('.ec-event').first();
 		await expect(block).toBeVisible();
@@ -485,7 +485,7 @@ test.describe('an existing task', () => {
 	test('is put on the day from the new block form', async ({ page }) => {
 		test.setTimeout(180_000);
 		await register(page, testEmail('plan-existing-task'));
-		await visit(page, '/tasks/todo');
+		await visit(page, '/calendar/todo');
 		await page
 			.getByRole('button', { name: /New task/ })
 			.first()
@@ -494,7 +494,7 @@ test.describe('an existing task', () => {
 		await page.getByRole('button', { name: 'Create task' }).click();
 		await expect(page.getByText('call the glazier').first()).toBeVisible({ timeout: 30_000 });
 
-		await visit(page, '/tasks/calendar');
+		await visit(page, '/calendar/calendar');
 		await page.getByRole('button', { name: 'New task block' }).click();
 		await page.getByRole('button', { name: 'Mode' }).click();
 		await page.getByRole('option', { name: 'Existing task' }).click();

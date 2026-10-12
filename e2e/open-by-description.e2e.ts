@@ -32,7 +32,7 @@ test('the first line of a task’s writing folds it, and the rest of it does not
 }) => {
 	test.setTimeout(180_000);
 	await register(page, testEmail('open-by-description'));
-	await visit(page, '/tasks/todo');
+	await visit(page, '/calendar/todo');
 
 	await page
 		.getByRole('button', { name: /New task/ })
@@ -97,7 +97,7 @@ test('the first line of a task’s writing folds it, and the rest of it does not
 test('a note that fits on one line has no chevron at all', async ({ page }) => {
 	test.setTimeout(180_000);
 	await register(page, testEmail('no-fold'));
-	await visit(page, '/tasks/todo');
+	await visit(page, '/calendar/todo');
 
 	await page
 		.getByRole('button', { name: /New task/ })

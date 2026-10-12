@@ -13,7 +13,7 @@ import { visit } from './helpers/visit';
 test('a key pressed while a word is composed opens nothing', async ({ page }) => {
 	test.setTimeout(180_000);
 	await register(page, testEmail('composition'));
-	await visit(page, '/tasks/board');
+	await visit(page, '/calendar/board');
 	const form = page.locator('#card-form [name=heading]');
 
 	for (const composing of [{ isComposing: true }, { keyCode: 229 }]) {

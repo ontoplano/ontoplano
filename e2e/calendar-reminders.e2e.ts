@@ -29,7 +29,7 @@ test('a reminder is on the week, with its words on hover', async ({ page }) => {
 	await visit(page, '/');
 	const day = await remindTwoDaysOut(page);
 
-	await visit(page, `/tasks/calendar?view=week&from=${day}`);
+	await visit(page, `/calendar/calendar?view=week&from=${day}`);
 	const event = page.locator('.og-event--reminder');
 	await expect(event).toHaveCount(1);
 	await expect(event).toContainText('Call the plumber');
@@ -52,7 +52,7 @@ test('a reminder is on the phone’s day too', async ({ page }) => {
 	await visit(page, '/');
 	const day = await remindTwoDaysOut(page);
 
-	await visit(page, `/tasks/calendar?view=day&from=${day}`);
+	await visit(page, `/calendar/calendar?view=day&from=${day}`);
 	await expect(page.getByText('Call the plumber').first()).toBeVisible();
 	await page.screenshot({ path: 'test-results/calendar-reminder-phone.png' });
 });

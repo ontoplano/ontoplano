@@ -231,7 +231,7 @@ export function search(ctx: Ctx, raw: unknown): Hit[] {
 			id: row.id,
 			title: row.title,
 			snippet: firstLine(row.notes ?? ''),
-			href: '/tasks/todo'
+			href: '/calendar/todo'
 		});
 
 	for (const row of db
@@ -249,7 +249,7 @@ export function search(ctx: Ctx, raw: unknown): Hit[] {
 			id: row.id,
 			title: row.label || 'Untitled',
 			snippet: `every week at ${row.startTime}`,
-			href: '/tasks/calendar'
+			href: '/calendar/calendar'
 		});
 
 	for (const row of db
@@ -275,7 +275,7 @@ export function search(ctx: Ctx, raw: unknown): Hit[] {
 			id: row.id,
 			title: row.label || 'Untitled',
 			snippet: `${row.date} at ${row.startTime}`,
-			href: `/tasks/calendar?from=${row.date}`
+			href: `/calendar/calendar?from=${row.date}`
 		});
 
 	// --- what you are aiming at -------------------------------------------------
@@ -351,7 +351,7 @@ export function search(ctx: Ctx, raw: unknown): Hit[] {
 			id: row.id,
 			title: row.name,
 			snippet: firstLine(row.description ?? ''),
-			href: '/tasks/activities'
+			href: '/calendar/activities'
 		});
 
 	return hits;

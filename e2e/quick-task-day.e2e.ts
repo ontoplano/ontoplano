@@ -13,7 +13,7 @@ test('a task can be given a day as it is written', async ({ page }) => {
 	test.setTimeout(120_000);
 	await page.setViewportSize({ width: 1280, height: 1000 });
 	await register(page, testEmail('task-day'));
-	await visit(page, '/tasks/todo');
+	await visit(page, '/calendar/todo');
 
 	await page.getByRole('button', { name: 'New task' }).click();
 	await page.locator('[name="heading"]').first().fill('Ring the plumber');

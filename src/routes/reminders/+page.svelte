@@ -81,10 +81,10 @@
 	 * from `$lib/glyphs`; a cake is a birthday everywhere.
 	 */
 	const KINDS: Record<string, { label: PlainKey; icon: IconName }> = {
-		instance: { label: 'app.blocks', icon: routeGlyph('/tasks/calendar')! },
-		todo: { label: 'app.todos', icon: routeGlyph('/tasks/todo')! },
+		instance: { label: 'app.blocks', icon: routeGlyph('/calendar/calendar')! },
+		todo: { label: 'app.todos', icon: routeGlyph('/calendar/todo')! },
 		free: { label: 'app.alarms', icon: 'alarm' },
-		review: { label: 'app.theWeeklyReview', icon: routeGlyph('/tasks/review')! },
+		review: { label: 'app.theWeeklyReview', icon: routeGlyph('/calendar/review')! },
 		bill: { label: 'app.bills', icon: routeGlyph('/finance/bills')! },
 		person: { label: 'app.birthdays', icon: 'cake' },
 		day: { label: 'app.theEndOfTheDay', icon: 'moon' }

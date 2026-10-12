@@ -30,7 +30,7 @@ const initials = (name: string) =>
 test('the picker shows everything first, then narrows as you type', async ({ page }) => {
 	test.setTimeout(150_000);
 	await register(page, testEmail('picker'));
-	await visit(page, '/tasks/calendar?view=week');
+	await visit(page, '/calendar/calendar?view=week');
 	await page.getByRole('button', { name: 'New task block' }).click();
 
 	// Nothing typed, and the whole list is already there. This is the half a
@@ -61,7 +61,7 @@ test('the picker shows everything first, then narrows as you type', async ({ pag
 test('a press on the field shuts it as well as opens it', async ({ page }) => {
 	test.setTimeout(150_000);
 	await register(page, testEmail('picker-toggle'));
-	await visit(page, '/tasks/calendar?view=week');
+	await visit(page, '/calendar/calendar?view=week');
 	await page.getByRole('button', { name: 'New task block' }).click();
 
 	await face(page).click();
@@ -78,7 +78,7 @@ test('a press on the field shuts it as well as opens it', async ({ page }) => {
 test('it works from the keyboard alone, and Escape lets go', async ({ page }) => {
 	test.setTimeout(150_000);
 	await register(page, testEmail('picker-keys'));
-	await visit(page, '/tasks/calendar?view=week');
+	await visit(page, '/calendar/calendar?view=week');
 	await page.getByRole('button', { name: 'New task block' }).click();
 
 	await face(page).focus();
@@ -109,7 +109,7 @@ test('it works from the keyboard alone, and Escape lets go', async ({ page }) =>
 test('a query that matches nothing says so rather than showing an empty box', async ({ page }) => {
 	test.setTimeout(150_000);
 	await register(page, testEmail('picker-empty'));
-	await visit(page, '/tasks/calendar?view=week');
+	await visit(page, '/calendar/calendar?view=week');
 	await page.getByRole('button', { name: 'New task block' }).click();
 
 	await face(page).click();

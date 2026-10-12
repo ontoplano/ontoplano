@@ -22,7 +22,7 @@ async function addTodo(page: import('@playwright/test').Page, title: string) {
 test('a todo can be put away and taken back out', async ({ page }) => {
 	test.setTimeout(120_000);
 	await register(page, testEmail('arch'));
-	await visit(page, '/tasks/todo');
+	await visit(page, '/calendar/todo');
 	await addTodo(page, 'the tax thing');
 
 	// One todo on the page, so one such button.
@@ -50,7 +50,7 @@ test('the notebook filter has an answer for the unfiled', async ({ page }) => {
 	const origin = new URL(page.url()).origin;
 	const action = { Origin: origin, 'x-sveltekit-action': 'true' };
 	await page.request.post('/notebooks?/create', { headers: action, form: { heading: 'Kitchen' } });
-	await visit(page, '/tasks/todo');
+	await visit(page, '/calendar/todo');
 	await addTodo(page, 'a task nobody filed');
 
 	await openFilters(page);

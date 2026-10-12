@@ -26,7 +26,7 @@
 	import { useT } from '$lib/i18n';
 
 	const t = useT();
-	const ROOM = '/tasks/activities';
+	const ROOM = '/calendar/activities';
 
 	let { data, form }: { data: PageServerData; form: ActionData } = $props();
 

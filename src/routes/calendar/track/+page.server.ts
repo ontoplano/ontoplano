@@ -17,5 +17,5 @@ export const load = async ({ locals, url }: IsolatedEvent) => {
 	const target = offset === null ? ctx.now : addDays(monday, offset);
 	const date = `${target.getFullYear()}-${pad2(target.getMonth() + 1)}-${pad2(target.getDate())}`;
 
-	redirect(308, `/tasks/board?date=${date}`);
+	redirect(308, `/calendar/board?date=${date}`);
 };

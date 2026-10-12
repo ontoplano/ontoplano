@@ -10,7 +10,7 @@ import { visit } from './helpers/visit';
  * and the gesture is what differs — this drives a real mouse.
  */
 async function openTagBox(page: import('@playwright/test').Page, tags: string) {
-	await visit(page, '/tasks/todo');
+	await visit(page, '/calendar/todo');
 	await page
 		.getByRole('button', { name: /New task/ })
 		.first()

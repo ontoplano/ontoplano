@@ -87,7 +87,7 @@ test('the app opens onto a working instance and keeps what it is told', async ({
 	// A write through the app's own form, into OPFS. Straight to the todo
 	// list — the planner tab is not ported yet, and the point here is the
 	// write path, not coverage.
-	await page.goto('/tasks/todo');
+	await page.goto('/calendar/todo');
 	const title = `installed and working ${Date.now()}`;
 	const field = page.locator('[name="heading"]');
 	await expect(async () => {
@@ -131,8 +131,8 @@ test('the app opens onto a working instance and keeps what it is told', async ({
  */
 test('every room that runs on the device opens on it', async ({ page }) => {
 	const rooms = [
-		'/tasks/todo',
-		'/tasks/board',
+		'/calendar/todo',
+		'/calendar/board',
 		'/goals',
 		'/notebooks',
 		'/notebooks/diary',
@@ -434,7 +434,7 @@ test('an endpoint that answers with no content is answered, not thrown', async (
  * replaced.
  */
 test('the main menu’s mark wears the device’s own field', async ({ page }) => {
-	await page.goto('/tasks/todo');
+	await page.goto('/calendar/todo');
 
 	const handle = page.locator('.pie-handle').first();
 	await expect(handle).toBeVisible({ timeout: 20_000 });
@@ -734,12 +734,12 @@ test.describe('leaving for a chosen instance', () => {
 			await route.fulfill({ contentType: 'text/html', body: '<p>hosted</p>' });
 		});
 
-		void page.goto('/?open=/tasks/todo').catch(() => {});
+		void page.goto('/?open=/calendar/todo').catch(() => {});
 		// Long enough for the copy to have drawn itself, had it been allowed to.
 		await page.waitForTimeout(3000);
 		release();
 		await page.waitForURL((url) => url.origin === hosted);
 		expect(shown, 'the device copy was drawn on the way').toBe(0);
-		expect(new URL(page.url()).pathname).toBe('/tasks/todo');
+		expect(new URL(page.url()).pathname).toBe('/calendar/todo');
 	});
 });

@@ -403,7 +403,7 @@
 				path === '/notebooks' ||
 				(path.startsWith('/notebooks/') && !path.startsWith('/notebooks/people'))
 			);
-		if (href === '/tasks/calendar') return path.startsWith('/tasks');
+		if (href === '/calendar/calendar') return path.startsWith('/calendar');
 		if (href === '/goals') return path.startsWith('/goals');
 		if (href === '/health/habits') return path.startsWith('/health') || path.startsWith('/data/');
 		return path === href;

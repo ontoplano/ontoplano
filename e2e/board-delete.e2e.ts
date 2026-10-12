@@ -6,7 +6,7 @@ test('the delete in the board editor deletes', async ({ page }) => {
 	test.setTimeout(180_000);
 	await register(page, testEmail('board-delete'));
 
-	await visit(page, '/tasks/todo');
+	await visit(page, '/calendar/todo');
 	await page
 		.getByRole('button', { name: /New task/ })
 		.first()
@@ -27,7 +27,7 @@ test('the delete in the board editor deletes', async ({ page }) => {
 		.click();
 	await expect(page.getByText('bin this one').first()).toBeVisible({ timeout: 30_000 });
 
-	await visit(page, '/tasks/board');
+	await visit(page, '/calendar/board');
 	await expect(page.getByText('bin this one').first()).toBeVisible({ timeout: 30_000 });
 
 	/*
@@ -61,7 +61,7 @@ test('the delete in the board editor removes a block from the day', async ({ pag
 	test.setTimeout(180_000);
 	await register(page, testEmail('board-delete-block'));
 
-	await visit(page, '/tasks/board');
+	await visit(page, '/calendar/board');
 	await page.waitForTimeout(1500);
 
 	// The seeded day has blocks on it; take the first one that is a block

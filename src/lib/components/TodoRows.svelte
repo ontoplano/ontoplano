@@ -160,7 +160,7 @@
 		error?: string | undefined;
 		notebookId?: number | null;
 		/**
-		 * Which screen's bindings these rows answer to — `/tasks/todo` and the
+		 * Which screen's bindings these rows answer to — `/calendar/todo` and the
 		 * like. Null leaves the keyboard alone entirely.
 		 */
 		shortcutRoom?: string | null;
@@ -1628,7 +1628,7 @@
 						     question from "which rows" and were crowding the answer to
 						     it off the strip. See `SavedFilters`. -->
 								<SavedFilters
-									surface="/tasks/todo"
+									surface="/calendar/todo"
 									narrowed={narrowed || showCompleted || showArchived}
 									context={notebookId !== null && page.url.pathname === resolve('/notebooks')
 										? { notebook: String(notebookId) }

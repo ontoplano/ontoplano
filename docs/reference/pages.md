@@ -20,6 +20,11 @@ write surface for everything else; both end up calling the same
 | `/admin/[id]`                        | —                                                                                                                                                                                                                                                                                                                                                                                                    |
 | `/assistant`                         | —                                                                                                                                                                                                                                                                                                                                                                                                    |
 | `/buy`                               | —                                                                                                                                                                                                                                                                                                                                                                                                    |
+| `/calendar/activities`               | `create`, `update`, `toggleActive`, `delete`, `createCategory`, `updateCategory`, `deleteCategory`                                                                                                                                                                                                                                                                                                   |
+| `/calendar/board`                    | `setStatus`, `reorder`, `schedule`, `promote`, `demote`, `createTodo`, `setRatings`, `remind`, `unremind`, `editInstance`, `resolveActivity`, `deleteInstance`, `deleteTodo`                                                                                                                                                                                                                         |
+| `/calendar/calendar`                 | `create`, `update`, `toggleActive`, `delete`, `bulkDelete`, `copyToWeekdays`, `addCalendar`, `removeCalendar`, `applyTemplate`, `saveScheme`, `loadScheme`, `deleteScheme`, `renameScheme`, `scheduleTodo`, `unscheduleBlock`, `convertRepeat`, `moveOccurrence`, `setTodoStatus`, `setStatus`, `suppress`, `unsuppress`, `createExceptional`, `updateExceptional`, `deleteExceptional`, `importCsv` |
+| `/calendar/review`                   | `saveNote`, `keepStale`, `completeStale`, `dropStale`, `resolve`, `reopen`, `settle`, `carry`                                                                                                                                                                                                                                                                                                        |
+| `/calendar/todo`                     | `create`, `update`, `archive`, `setStatus`, `schedule`, `tag`, `nudge`, `rate`, `attribute`, `batch`, `delete`, `delegate`                                                                                                                                                                                                                                                                           |
 | `/data/[slug]`                       | —                                                                                                                                                                                                                                                                                                                                                                                                    |
 | `/demo`                              | `default`                                                                                                                                                                                                                                                                                                                                                                                            |
 | `/demo/isolated-db`                  | —                                                                                                                                                                                                                                                                                                                                                                                                    |
@@ -75,11 +80,6 @@ write surface for everything else; both end up calling the same
 | `/settings/integrations/widget`      | `connect`, `createWidget`, `updateWidget`, `deleteWidget`                                                                                                                                                                                                                                                                                                                                            |
 | `/settings/preferences`              | `setNotification`, `setErrorReports`, `saveCurrency`, `saveCapture`, `saveGridHours`, `saveMenu`, `resetMenu`, `setLayout`, `resetLayout`, `addQuote`, `importQuotes`, `deleteQuote`, `setStyle`, `setLanguage`, `setClock`, `setTheme`, `saveWeek`                                                                                                                                                  |
 | `/start`                             | `checkout`                                                                                                                                                                                                                                                                                                                                                                                           |
-| `/tasks/activities`                  | `create`, `update`, `toggleActive`, `delete`, `createCategory`, `updateCategory`, `deleteCategory`                                                                                                                                                                                                                                                                                                   |
-| `/tasks/board`                       | `setStatus`, `reorder`, `schedule`, `promote`, `demote`, `createTodo`, `setRatings`, `remind`, `unremind`, `editInstance`, `resolveActivity`, `deleteInstance`, `deleteTodo`                                                                                                                                                                                                                         |
-| `/tasks/calendar`                    | `create`, `update`, `toggleActive`, `delete`, `bulkDelete`, `copyToWeekdays`, `addCalendar`, `removeCalendar`, `applyTemplate`, `saveScheme`, `loadScheme`, `deleteScheme`, `renameScheme`, `scheduleTodo`, `unscheduleBlock`, `convertRepeat`, `moveOccurrence`, `setTodoStatus`, `setStatus`, `suppress`, `unsuppress`, `createExceptional`, `updateExceptional`, `deleteExceptional`, `importCsv` |
-| `/tasks/review`                      | `saveNote`, `keepStale`, `completeStale`, `dropStale`, `resolve`, `reopen`, `settle`, `carry`                                                                                                                                                                                                                                                                                                        |
-| `/tasks/todo`                        | `create`, `update`, `archive`, `setStatus`, `schedule`, `tag`, `nudge`, `rate`, `attribute`, `batch`, `delete`, `delegate`                                                                                                                                                                                                                                                                           |
 | `/welcome`                           | `assistantToken`, `setLanguage`, `finish`                                                                                                                                                                                                                                                                                                                                                            |
 | `/welcome/password`                  | `default`                                                                                                                                                                                                                                                                                                                                                                                            |
 | `/widget`                            | —                                                                                                                                                                                                                                                                                                                                                                                                    |
@@ -120,6 +120,102 @@ A checkout action mints a transaction and lands here with `?_ptxn=…`;
 Paddle.js reads that itself and opens its overlay. The page is only the
 overlay's backdrop — the terms were already read on /start or the
 billing page, so nothing here competes with the payment window.
+
+### `/calendar/board`
+
+Next sensible start time on a day.
+
+Today gets the next half hour from now so a promoted todo lands ahead of you
+rather than in the past; another day starts at nine.
+
+**`reorder`**
+
+Where a card sits within its column.
+
+Only todos have a position to remember — an occurrence's place is its time
+of day, and letting a drag override that would put the board and the
+calendar into disagreement over the same task.
+
+**`schedule`**
+
+Dragging between the two tabs: a todo gains a day, or gives one up.
+
+**`promote`**
+
+Turn a todo into a real scheduled task.
+
+A todo pulled onto a day stops being a todo: it becomes a one-off block
+with a time, which is what makes it show up on the grid, in the tracker,
+and against a goal. The row moves rather than being copied, so there is
+never a todo and a task that are secretly the same thing.
+
+**`demote`**
+
+The reverse: a one-off goes back to being an undated todo.
+
+**`remind`**
+
+"Remind me before this one." A lead time, not a clock reading.
+
+**`resolveActivity`**
+
+Which activity a category-shaped block turned out to be.
+
+### `/calendar/calendar`
+
+What the browser last knew about its own width.
+
+Not a preference and not a setting — a fact about the screen, written by the
+page that can see one, read by the render that cannot.
+
+**`scheduleTodo`**
+
+Drop an undated todo onto the grid: it becomes a block at that hour.
+
+**`unscheduleBlock`**
+
+A block dragged off the grid and back onto the todo strip.
+
+The reverse of `scheduleTodo`, and the reason the strip is a drop target:
+scheduling used to be one-way, so changing your mind meant deleting the
+block and typing it in again.
+
+**`setTodoStatus`**
+
+A todo in the tray ticked off where it stands — the list's own handler.
+
+### `/calendar/review`
+
+This week, by default.
+
+It used to open on last week, on the reasoning that a week is reviewed once
+it is over. But the page you land on is the page you think you are looking
+at, and landing a week behind means reading Monday's numbers as though they
+were today's — every arrival started with working out which week this is.
+Last week is one press of the arrow, and the dashboard links straight to it
+when it is still open.
+
+**`resolve`**
+
+Done, or skipped — the two answers that are not "carry it forward".
+
+**`reopen`**
+
+"I did not actually do that."
+
+A block answered for is not a block answered _correctly_, and the review
+is where somebody notices. Back to open rather than straight to skipped:
+it rejoins the list of open questions, where the four ordinary answers
+are — including the ones that make a todo out of it.
+
+**`settle`**
+
+Everything marked up on the page, applied at once.
+
+The verdicts arrive as one field per answered block —
+`verdict=<id>:<verb>[:<date>]` — because a form posts repeated names as a
+list and this is one list rather than four parallel ones that could get
+out of step with each other.
 
 ### `/data/[slug]`
 
@@ -584,102 +680,6 @@ The billing-hold gate in hooks.server.ts routes a verified account with no
 plan yet to this page, so the terms are read BEFORE any payment window
 opens — /buy is just the overlay's backdrop. Yearly leads; it is the one
 worth taking.
-
-### `/tasks/board`
-
-Next sensible start time on a day.
-
-Today gets the next half hour from now so a promoted todo lands ahead of you
-rather than in the past; another day starts at nine.
-
-**`reorder`**
-
-Where a card sits within its column.
-
-Only todos have a position to remember — an occurrence's place is its time
-of day, and letting a drag override that would put the board and the
-calendar into disagreement over the same task.
-
-**`schedule`**
-
-Dragging between the two tabs: a todo gains a day, or gives one up.
-
-**`promote`**
-
-Turn a todo into a real scheduled task.
-
-A todo pulled onto a day stops being a todo: it becomes a one-off block
-with a time, which is what makes it show up on the grid, in the tracker,
-and against a goal. The row moves rather than being copied, so there is
-never a todo and a task that are secretly the same thing.
-
-**`demote`**
-
-The reverse: a one-off goes back to being an undated todo.
-
-**`remind`**
-
-"Remind me before this one." A lead time, not a clock reading.
-
-**`resolveActivity`**
-
-Which activity a category-shaped block turned out to be.
-
-### `/tasks/calendar`
-
-What the browser last knew about its own width.
-
-Not a preference and not a setting — a fact about the screen, written by the
-page that can see one, read by the render that cannot.
-
-**`scheduleTodo`**
-
-Drop an undated todo onto the grid: it becomes a block at that hour.
-
-**`unscheduleBlock`**
-
-A block dragged off the grid and back onto the todo strip.
-
-The reverse of `scheduleTodo`, and the reason the strip is a drop target:
-scheduling used to be one-way, so changing your mind meant deleting the
-block and typing it in again.
-
-**`setTodoStatus`**
-
-A todo in the tray ticked off where it stands — the list's own handler.
-
-### `/tasks/review`
-
-This week, by default.
-
-It used to open on last week, on the reasoning that a week is reviewed once
-it is over. But the page you land on is the page you think you are looking
-at, and landing a week behind means reading Monday's numbers as though they
-were today's — every arrival started with working out which week this is.
-Last week is one press of the arrow, and the dashboard links straight to it
-when it is still open.
-
-**`resolve`**
-
-Done, or skipped — the two answers that are not "carry it forward".
-
-**`reopen`**
-
-"I did not actually do that."
-
-A block answered for is not a block answered _correctly_, and the review
-is where somebody notices. Back to open rather than straight to skipped:
-it rejoins the list of open questions, where the four ordinary answers
-are — including the ones that make a todo out of it.
-
-**`settle`**
-
-Everything marked up on the page, applied at once.
-
-The verdicts arrive as one field per answered block —
-`verdict=<id>:<verb>[:<date>]` — because a form posts repeated names as a
-list and this is one list rather than four parallel ones that could get
-out of step with each other.
 
 ### `/welcome/password`
 

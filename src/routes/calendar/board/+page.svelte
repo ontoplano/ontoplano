@@ -529,7 +529,7 @@
 	}
 
 	function refresh() {
-		return goto(resolve(`/tasks/board?date=${data.date}`), {
+		return goto(resolve(`/calendar/board?date=${data.date}`), {
 			invalidateAll: true,
 			noScroll: true,
 			keepFocus: true
@@ -621,7 +621,7 @@
 
 		// Every other key answers to the registry in $lib/shortcuts.ts — the
 		// binding lives there, only the behaviour lives here.
-		const action = getAction('/tasks/board', e);
+		const action = getAction('/calendar/board', e);
 		if (!action) return;
 
 		switch (action) {
@@ -729,14 +729,14 @@
 		// eslint-disable-next-line svelte/prefer-svelte-reactivity -- built, read once and thrown away inside this function; nothing tracks it.
 		const d = new Date(data.date + 'T00:00:00');
 		d.setDate(d.getDate() + days);
-		goto(resolve(`/tasks/board?date=${localDay(d)}`));
+		goto(resolve(`/calendar/board?date=${localDay(d)}`));
 	}
 
 	/* This screen's one verb, drawn by the room's bar — see $lib/room-action. */
 	setRoomAction(() => ({
 		label: t('home.newCard'),
 		run: openForm,
-		kbd: keyFor('/tasks/board', 'new')
+		kbd: keyFor('/calendar/board', 'new')
 	}));
 </script>
 
@@ -940,7 +940,7 @@
 					atNow={data.date === data.today}
 					onprev={() => shiftDay(-1)}
 					onnext={() => shiftDay(1)}
-					onnow={() => goto(resolve('/tasks/board'))}
+					onnow={() => goto(resolve('/calendar/board'))}
 				>
 					<span class="tabular truncate text-sm text-gray-600">
 						{dayOf(data.date, now(), { weekday: 'short' })}
@@ -1653,26 +1653,26 @@
 	</Modal>
 
 	<p class="kbd-hint text-xs text-gray-500">
-		<Kbd keys={keyFor('/tasks/board', 'prev-column')} />
-		<Kbd keys={keyFor('/tasks/board', 'next-card')} />
-		<Kbd keys={keyFor('/tasks/board', 'prev-card')} />
-		<Kbd keys={keyFor('/tasks/board', 'next-column')} />
+		<Kbd keys={keyFor('/calendar/board', 'prev-column')} />
+		<Kbd keys={keyFor('/calendar/board', 'next-card')} />
+		<Kbd keys={keyFor('/calendar/board', 'prev-card')} />
+		<Kbd keys={keyFor('/calendar/board', 'next-column')} />
 		{t('tasks.board.move')}
-		<Kbd keys={keyFor('/tasks/board', 'carry-left')} />
-		<Kbd keys={keyFor('/tasks/board', 'carry-right')} />
+		<Kbd keys={keyFor('/calendar/board', 'carry-left')} />
+		<Kbd keys={keyFor('/calendar/board', 'carry-right')} />
 		{t('tasks.board.carryCard')}
-		<Kbd keys={keyFor('/tasks/board', 'toggle-done')} />
+		<Kbd keys={keyFor('/calendar/board', 'toggle-done')} />
 		{t('tasks.board.done')}
-		<Kbd keys={keyFor('/tasks/board', 'toggle-today')} />
+		<Kbd keys={keyFor('/calendar/board', 'toggle-today')} />
 		{t('tasks.board.today')}
-		<Kbd keys={keyFor('/tasks/board', 'switch-tab')} />
+		<Kbd keys={keyFor('/calendar/board', 'switch-tab')} />
 		{t('tasks.board.switchTab')}
 		<Kbd keys="1-5" />
 		<!-- The rating being set is its icon; the sentence is split around it. -->
 		{#each t('tasks.board.rateWhich', { rating: RATING_SLOT }).split(RATING_SLOT) as part, at (at)}
 			{#if at > 0}<RatingIcon rating={ratingKey} size={12} />{/if}{part}
 		{/each}
-		<Kbd keys={keyFor('/tasks/board', 'delete')} />
+		<Kbd keys={keyFor('/calendar/board', 'delete')} />
 		{t('tasks.board.delete')}
 	</p>
 </div>

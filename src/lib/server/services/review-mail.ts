@@ -227,7 +227,7 @@ export function weeklyReviewMail(
 
 	lines.push(t('mail.review.threeLines'));
 
-	const link = origin() ? `${origin()}/tasks/review?week=${weekStart}` : '';
+	const link = origin() ? `${origin()}/calendar/review?week=${weekStart}` : '';
 	const off = origin()
 		? `${origin()}/mail/weekly-review/off?u=${encodeURIComponent(ctx.userId)}` +
 			`&t=${unsubscribeToken(ctx.userId)}`

@@ -55,7 +55,7 @@ test('an unsigned unsubscribe link is a 404, not a way in', async ({ page }) => 
  */
 test('a week note is written once, then read', async ({ page }) => {
 	await register(page, testEmail('note'));
-	await visit(page, '/tasks/review');
+	await visit(page, '/calendar/review');
 
 	const note = page.locator('[name="note"]');
 	await note.fill('**went well** and the rest');

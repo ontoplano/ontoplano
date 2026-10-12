@@ -47,7 +47,7 @@ test('choosing a notebook narrows the tag suggestions to its own', async ({ page
 	await register(page, testEmail('notebook-tag-suggestions'));
 	await makeNotebook(page, 'Kitchen');
 
-	await visit(page, '/tasks/todo');
+	await visit(page, '/calendar/todo');
 	await newTask(page, 'order tiles', 'tiles', 'Kitchen');
 	await newTask(page, 'post the letter', 'errand');
 

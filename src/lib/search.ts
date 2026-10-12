@@ -51,13 +51,13 @@ export const KIND_PLACES: Record<SearchKind, string> = {
 	entry: '/notebooks/diary',
 	note: 'notebook/notes',
 	notebook: '/notebooks',
-	todo: '/tasks/todo',
-	block: '/tasks/calendar',
+	todo: '/calendar/todo',
+	block: '/calendar/calendar',
 	goal: 'goals',
 	idea: '/notebooks/ideas',
 	person: '/notebooks/people',
 	inventory: 'inventory',
-	activity: '/tasks/activities'
+	activity: '/calendar/activities'
 };
 
 /** Enough to be worth a query; a single letter matches everything. */

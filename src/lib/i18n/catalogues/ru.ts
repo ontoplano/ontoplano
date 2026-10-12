@@ -3382,13 +3382,13 @@ export const messages: Catalogue = {
 	'rooms.settings.tabs.integrations': 'ИИ и интеграции',
 	'rooms.settings.tabs.preferences': 'Предпочтения',
 	'rooms.settings.title': 'Настройки',
-	'rooms.tasks.sections': 'Разделы задач',
+	'rooms.tasks.sections': 'Разделы календаря',
 	'rooms.tasks.tabs.activities': 'Занятия',
 	'rooms.tasks.tabs.board': 'Доска',
 	'rooms.tasks.tabs.plan': 'Календарь',
 	'rooms.tasks.tabs.review': 'Обзор',
 	'rooms.tasks.tabs.todo': 'Задачи',
-	'rooms.tasks.title': 'Задачи',
+	'rooms.tasks.title': 'Календарь',
 	'scopeGroups.acrossEverything': 'Везде',
 	'scopeGroups.describeItself': 'Собственное описание',
 	'scopeGroups.habitsAndWorkouts': 'Привычки и тренировки',
@@ -3528,7 +3528,7 @@ export const messages: Catalogue = {
 	'sections.reminders.label': 'Напоминания',
 	'sections.tags.blurb': 'Теги, которые вы используете, и экран для их наведения в порядок.',
 	'sections.tags.label': 'Теги',
-	'sections.tasks.label': 'Задачи',
+	'sections.tasks.label': 'Календарь',
 	'sections.weekly.blurb':
 		'То, что пишет еженедельный обзор, хранится там же, где и остальные ваши записи.',
 	'sections.weekly.label': 'Недельные заметки',
@@ -5135,7 +5135,7 @@ export const messages: Catalogue = {
 		'Поиск ищет по самим словам, так что фрагмент фразы, которую вы написали, находит запись, из которой он взят.',
 	'tour.movingAndSharing': 'Перемещение и доступ',
 	'tour.notACalendarOfAppointments':
-		'Блоки задач, которые вы хотите повторять. Всё остальное в разделе «Задачи» построено на этом.',
+		'Блоки задач, которые вы хотите повторять. Всё остальное в разделе «Календарь» построено на этом.',
 	'tour.notJustNotesAndTasks': 'Не только заметки и задачи',
 	'tour.noteSelection':
 		'Выберите несколько записей, чтобы переместить их в блокнот, добавить или убрать теги, или удалить их все сразу.',
@@ -5225,7 +5225,7 @@ export const messages: Catalogue = {
 	'tour.taskSelection':
 		'Выберите несколько, чтобы квадраты превратились в кружки. Выберите видимые задачи, затем смените их статус, добавьте или убрите теги, переместите в блокнот или подтвердите удаление. Фильтры сбрасывают скрытые выборы.',
 	'tour.tasksHoldYourWeekNotebooks':
-		'«Задачи» хранят вашу неделю, «Блокноты» хранят то, что вы пишете — включая дневник — а «Идеи» хранят то, что пришло в голову в автобусе. «Настройки» переставляют разделы и убирают те, что вам не нужны.',
+		'«Календарь» хранит вашу неделю, «Блокноты» хранят то, что вы пишете — включая дневник — а «Идеи» хранят то, что пришло в голову в автобусе. «Настройки» переставляют разделы и убирают те, что вам не нужны.',
 	'tour.theAppArrangedYourWay': 'Приложение, устроенное так, как нужно вам',
 	'tour.theArrowsStepAWholeWeek':
 		'Стрелки шагают на целую неделю, так что всегда попадают на тот же день недели. Это выбирает, с какого дня недели начинается неделя.',

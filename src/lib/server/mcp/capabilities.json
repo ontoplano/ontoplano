@@ -20,13 +20,13 @@
 				"reorder": ["reorder_tasks"]
 			},
 			"app": {
-				"create": ["src/routes/tasks/todo/+page.server.ts#create"],
-				"read": ["src/routes/tasks/todo/+page.server.ts#load"],
-				"change": ["src/routes/tasks/todo/+page.server.ts#update"],
-				"archive": ["src/routes/tasks/todo/+page.server.ts#archive"],
-				"unarchive": ["src/routes/tasks/todo/+page.server.ts#archive"],
-				"delete": ["src/routes/tasks/todo/+page.server.ts#delete"],
-				"reorder": ["src/routes/tasks/board/+page.server.ts#reorder"]
+				"create": ["src/routes/calendar/todo/+page.server.ts#create"],
+				"read": ["src/routes/calendar/todo/+page.server.ts#load"],
+				"change": ["src/routes/calendar/todo/+page.server.ts#update"],
+				"archive": ["src/routes/calendar/todo/+page.server.ts#archive"],
+				"unarchive": ["src/routes/calendar/todo/+page.server.ts#archive"],
+				"delete": ["src/routes/calendar/todo/+page.server.ts#delete"],
+				"reorder": ["src/routes/calendar/board/+page.server.ts#reorder"]
 			}
 		},
 		{
@@ -41,19 +41,19 @@
 			},
 			"app": {
 				"create": [
-					"src/routes/tasks/calendar/+page.server.ts#create",
-					"src/routes/tasks/calendar/+page.server.ts#createExceptional"
+					"src/routes/calendar/calendar/+page.server.ts#create",
+					"src/routes/calendar/calendar/+page.server.ts#createExceptional"
 				],
-				"read": ["src/routes/tasks/calendar/+page.server.ts#load"],
+				"read": ["src/routes/calendar/calendar/+page.server.ts#load"],
 				"change": [
-					"src/routes/tasks/calendar/+page.server.ts#update",
-					"src/routes/tasks/calendar/+page.server.ts#updateExceptional"
+					"src/routes/calendar/calendar/+page.server.ts#update",
+					"src/routes/calendar/calendar/+page.server.ts#updateExceptional"
 				],
-				"archive": ["src/routes/tasks/calendar/+page.server.ts#toggleActive"],
-				"unarchive": ["src/routes/tasks/calendar/+page.server.ts#toggleActive"],
+				"archive": ["src/routes/calendar/calendar/+page.server.ts#toggleActive"],
+				"unarchive": ["src/routes/calendar/calendar/+page.server.ts#toggleActive"],
 				"delete": [
-					"src/routes/tasks/calendar/+page.server.ts#delete",
-					"src/routes/tasks/calendar/+page.server.ts#deleteExceptional"
+					"src/routes/calendar/calendar/+page.server.ts#delete",
+					"src/routes/calendar/calendar/+page.server.ts#deleteExceptional"
 				]
 			}
 		},
@@ -397,12 +397,12 @@
 				"delete": ["remove_activity"]
 			},
 			"app": {
-				"create": ["src/routes/tasks/activities/+page.server.ts#create"],
-				"read": ["src/routes/tasks/activities/+page.server.ts#load"],
-				"change": ["src/routes/tasks/activities/+page.server.ts#update"],
-				"archive": ["src/routes/tasks/activities/+page.server.ts#toggleActive"],
-				"unarchive": ["src/routes/tasks/activities/+page.server.ts#toggleActive"],
-				"delete": ["src/routes/tasks/activities/+page.server.ts#delete"]
+				"create": ["src/routes/calendar/activities/+page.server.ts#create"],
+				"read": ["src/routes/calendar/activities/+page.server.ts#load"],
+				"change": ["src/routes/calendar/activities/+page.server.ts#update"],
+				"archive": ["src/routes/calendar/activities/+page.server.ts#toggleActive"],
+				"unarchive": ["src/routes/calendar/activities/+page.server.ts#toggleActive"],
+				"delete": ["src/routes/calendar/activities/+page.server.ts#delete"]
 			}
 		},
 		{

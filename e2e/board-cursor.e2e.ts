@@ -12,7 +12,7 @@ test('moving with j and k shows where you are', async ({ page }) => {
 	test.setTimeout(180_000);
 	await register(page, testEmail('board-cursor'));
 
-	await visit(page, '/tasks/board');
+	await visit(page, '/calendar/board');
 	await page.waitForTimeout(1500);
 	const cards = page.locator('article.pill-soft');
 	const many = await cards.count();

@@ -15,7 +15,7 @@ import { visit } from './helpers/visit';
 test('the filters are out on a wide screen, and clear in one press', async ({ page }) => {
 	test.setTimeout(240_000);
 	await register(page, testEmail('filter-bar'));
-	await visit(page, '/tasks/todo');
+	await visit(page, '/calendar/todo');
 
 	for (const [title, tags] of [
 		['ring the plumber', 'home'],
@@ -62,7 +62,7 @@ test('on a phone they are a sheet, and the button says one is on', async ({ page
 	test.setTimeout(240_000);
 	await page.setViewportSize({ width: 390, height: 844 });
 	await register(page, testEmail('filter-sheet'));
-	await visit(page, '/tasks/todo');
+	await visit(page, '/calendar/todo');
 
 	await page
 		.getByRole('button', { name: /New task/ })

@@ -21,7 +21,7 @@
 	goalLinks={data.goalLinks.todos}
 	actions={TODO_ROOM_ACTIONS}
 	error={form?.message}
-	shortcutRoom="/tasks/todo"
+	shortcutRoom="/calendar/todo"
 	listTour="todo-list"
 	newTour="todo-new"
 />

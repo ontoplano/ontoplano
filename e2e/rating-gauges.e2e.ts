@@ -18,7 +18,7 @@ async function cardWithRatings(
 	title: string,
 	values: { urgency: string; ease: string; interest: string }
 ) {
-	await visit(page, '/tasks/board');
+	await visit(page, '/calendar/board');
 	await page.keyboard.press('n');
 
 	const heading = page.locator('#card-form [name=heading]');

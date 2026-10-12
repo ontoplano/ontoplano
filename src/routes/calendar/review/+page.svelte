@@ -106,7 +106,7 @@
 
 	const rate = $derived(data.reading.planned === 0 ? 0 : data.reading.done / data.reading.planned);
 
-	const ROOM = '/tasks/review';
+	const ROOM = '/calendar/review';
 
 	function toWeek(week: string) {
 		// The route is resolved; the rule cannot see through the query string.

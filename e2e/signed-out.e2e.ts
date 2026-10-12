@@ -33,7 +33,7 @@ test('a plain form submit without a session redirects to the login page', async 
 }) => {
 	const request = await playwright.request.newContext({ baseURL: ORIGIN });
 
-	const res = await request.post('/tasks/todo?/create', {
+	const res = await request.post('/calendar/todo?/create', {
 		headers: { Origin: ORIGIN, Accept: 'text/html' },
 		form: { heading: 'written by nobody' },
 		maxRedirects: 0

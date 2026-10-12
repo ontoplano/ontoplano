@@ -12,7 +12,7 @@ test('dragging a side edge widens the dialog from both sides', async ({ page }) 
 	test.setTimeout(120_000);
 	await page.setViewportSize({ width: 1400, height: 900 });
 	await register(page, testEmail('modal-widen'));
-	await visit(page, '/tasks/todo');
+	await visit(page, '/calendar/todo');
 
 	await page
 		.getByRole('button', { name: /New task/ })

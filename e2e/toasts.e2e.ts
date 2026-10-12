@@ -14,7 +14,7 @@ test('making a task says so, and offers a way into it', async ({ page }) => {
 	test.setTimeout(120_000);
 	await page.setViewportSize({ width: 1280, height: 900 });
 	await register(page, testEmail('toast-made'));
-	await visit(page, '/tasks/todo');
+	await visit(page, '/calendar/todo');
 
 	await page.getByRole('button', { name: 'New task' }).click();
 	await page.locator('[name="heading"]').first().fill('Ring the plumber');
@@ -39,7 +39,7 @@ test('saving a change says so, with nothing to press', async ({ page }) => {
 	test.setTimeout(120_000);
 	await page.setViewportSize({ width: 1280, height: 900 });
 	await register(page, testEmail('toast-saved'));
-	await visit(page, '/tasks/todo');
+	await visit(page, '/calendar/todo');
 
 	await page.getByRole('button', { name: 'New task' }).click();
 	await page.locator('[name="heading"]').first().fill('Book the MOT');
@@ -61,7 +61,7 @@ test('deleting a task holds the request open, and the way back works', async ({ 
 	test.setTimeout(120_000);
 	await page.setViewportSize({ width: 1280, height: 900 });
 	await register(page, testEmail('toast-deleted'));
-	await visit(page, '/tasks/todo');
+	await visit(page, '/calendar/todo');
 
 	await page.getByRole('button', { name: 'New task' }).click();
 	await page.locator('[name="heading"]').first().fill('Cancel the gym');
@@ -101,7 +101,7 @@ test('the edit form can delete the task it is editing', async ({ page }) => {
 	test.setTimeout(120_000);
 	await page.setViewportSize({ width: 1280, height: 900 });
 	await register(page, testEmail('edit-delete'));
-	await visit(page, '/tasks/todo');
+	await visit(page, '/calendar/todo');
 
 	await page.getByRole('button', { name: 'New task' }).click();
 	await page.locator('[name="heading"]').first().fill('Renew the domain');

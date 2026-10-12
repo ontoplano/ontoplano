@@ -33,7 +33,7 @@ test('the receipt offers Edit, and it opens the thing just written', async ({ pa
 	await edit.click();
 
 	// The room, with that task's own editor open on it.
-	await page.waitForURL(/\/tasks\/todo/);
+	await page.waitForURL(/\/calendar\/todo/);
 	await expect(page.locator('#todo-form [name="heading"]')).toHaveValue('ring the plumber', {
 		timeout: 30_000
 	});
@@ -101,7 +101,7 @@ test('quick capture can put a task block on the plan', async ({ page }) => {
 	await expect(dialog).toBeHidden();
 
 	await page.getByRole('button', { name: 'Calendar', exact: true }).click();
-	await expect(page).toHaveURL(new RegExp(`/tasks/calendar\\?from=${date}`));
+	await expect(page).toHaveURL(new RegExp(`/calendar/calendar\\?from=${date}`));
 	await expect(page.getByText('Plan the garden').first()).toBeVisible();
 	await page.getByText('Plan the garden', { exact: true }).first().click();
 	const block = page.getByRole('dialog');
@@ -110,7 +110,7 @@ test('quick capture can put a task block on the plan', async ({ page }) => {
 	await page.keyboard.press('Escape');
 
 	const origin = new URL(page.url()).origin;
-	const rejected = await page.request.post('/tasks/todo?/create', {
+	const rejected = await page.request.post('/calendar/todo?/create', {
 		headers: { Origin: origin, 'x-sveltekit-action': 'true' },
 		form: {
 			heading: 'Rejected block',
@@ -121,6 +121,6 @@ test('quick capture can put a task block on the plan', async ({ page }) => {
 		}
 	});
 	expect(await rejected.text()).toContain('failure');
-	await visit(page, '/tasks/todo');
+	await visit(page, '/calendar/todo');
 	await expect(page.getByText('Rejected block')).toHaveCount(0);
 });

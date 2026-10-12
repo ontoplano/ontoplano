@@ -20,6 +20,7 @@ releases mattered.
 
 ## 0.186.2 — 2026-10-12
 
+- The Tasks room is called Calendar, in the menu and in its addresses (`/calendar/…`). It holds the same tabs in the same order, and old `/tasks/…` links still arrive.
 - Reminders are on the calendar, at the time they ring: an alarm and the start of the message on the grid, the whole message on hover, and a press opens the reminders page.
 - Quick capture's settings are one list: each wedge has its switch, its place and the notebook it writes into, and a picker above them sets every wedge at once, saying “Mixed” when they differ. The same list opens from the gear beside the wheel and from Preferences.
 - The search box above a list is a line with its placeholder on it, and the order and filter buttons beside it are their words, without the grey boxes; a filter that is on still shows as pressed.

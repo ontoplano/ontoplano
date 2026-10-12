@@ -38,7 +38,7 @@ for (const [label, viewport] of [
 		test.setTimeout(150_000);
 		await page.setViewportSize(viewport);
 		await register(page, testEmail(`todo-foot-${label}`));
-		await visit(page, '/tasks/todo');
+		await visit(page, '/calendar/todo');
 
 		await newTodo(page, 'ring the plumber', 'home, call');
 		const row = rowOf(page, 'ring the plumber');
@@ -83,7 +83,7 @@ for (const [label, viewport] of [
 		// not put on the day, so there is no card beside the block, and nothing
 		// is carried on to a later board as overdue.
 		const onBoard = (at: string) =>
-			visit(page, `/tasks/board?date=${at}`).then(() =>
+			visit(page, `/calendar/board?date=${at}`).then(() =>
 				page
 					.locator('main')
 					.getByText('ring the plumber', { exact: true })
