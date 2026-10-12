@@ -118,7 +118,7 @@ export function setAssistantMayDelete(ctx: Ctx, value: unknown): void {
 }
 
 /**
- * The capture wheel: its wedges, their order, and the notebook it writes into.
+ * The capture wheel: its wedges, their order, and the notebooks it writes into.
  *
  * At least one wedge, because a wheel with none is a button that does nothing.
  * The notebook has to be one this account can file things in — its own, or
@@ -127,14 +127,18 @@ export function setAssistantMayDelete(ctx: Ctx, value: unknown): void {
  */
 export function saveCaptureSettings(
 	ctx: Ctx,
-	raw: { notebookId: unknown; order: readonly unknown[]; on: readonly unknown[] }
+	raw: {
+		notebookId: unknown;
+		notebooks?: Record<string, unknown>;
+		order: readonly unknown[];
+		on: readonly unknown[];
+	}
 ): void {
 	const settings = readCaptureForm(raw);
 	if (!settings) throw new ValidationError({ key: 'errors.preferences.captureNeedsAWedge' });
-	if (
-		settings.notebookId !== null &&
-		!pickableNotebooks(ctx).some((one) => one.id === settings.notebookId)
-	)
-		throw new NotFoundError('notebook');
+	// The main one and each kind's own, under the same rule.
+	const pickable = new Set(pickableNotebooks(ctx).map((one) => one.id));
+	const chosen = [settings.notebookId, ...Object.values(settings.notebooks)];
+	if (chosen.some((id) => id !== null && !pickable.has(id))) throw new NotFoundError('notebook');
 	setCaptureSettings(ctx.userId, settings);
 }

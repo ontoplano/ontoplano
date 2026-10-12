@@ -134,3 +134,52 @@ test('saving a stranger’s notebook is refused', async ({ page }) => {
 	});
 	expect(await answer.text()).toContain('not_found');
 });
+
+/*
+ * Tasks into Work, everything else into Kitchen: a kind can have a notebook of
+ * its own, and one that has none follows the main one.
+ */
+for (const size of [
+	{ name: 'phone', width: 390, height: 844 },
+	{ name: 'desktop', width: 1400, height: 900 }
+]) {
+	test(`a kind goes to its own notebook, the rest to the main one (${size.name})`, async ({
+		page
+	}) => {
+		test.setTimeout(120_000);
+		await page.setViewportSize({ width: size.width, height: size.height });
+		await register(page, testEmail(`capture-kind-${size.name}`));
+		await visit(page, '/');
+		await makeNotebook(page, 'Kitchen');
+		await makeNotebook(page, 'Work');
+
+		await visit(page, '/settings/preferences');
+		const prefs = page.locator('form[data-tour="prefs-capture"]');
+		await choose(prefs, 'notebookId', 'Kitchen');
+		await prefs.getByText("Each kind's own notebook").click();
+		await choose(prefs, 'notebook.todo', 'Work');
+		await prefs.getByRole('button', { name: 'Save quick capture' }).click();
+		await expect(page.getByText('Quick capture saved.')).toBeVisible();
+		const work = await prefs.locator('[name="notebook.todo"]').inputValue();
+		const kitchen = await prefs.locator('[name="notebookId"]').inputValue();
+
+		await visit(page, '/');
+		await openWheel(page);
+		await page.locator('[data-wedge="todo"]').click();
+		const task = page.getByRole('dialog', { name: 'New task' });
+		await expect(task.locator('[name="notebookId"]')).toHaveValue(work);
+		await page.keyboard.press('Escape');
+		await expect(task).toBeHidden();
+
+		await visit(page, '/');
+		await openWheel(page);
+		await page.locator('[data-wedge="note"]').click();
+		const note = page.getByRole('dialog', { name: 'New note' });
+		await expect(note.locator('[name="notebookId"]')).toHaveValue(kitchen);
+
+		// Preferences opens on the answer, with the fold open since a kind has one.
+		await visit(page, '/settings/preferences');
+		await expect(prefs.locator('[name="notebook.todo"]')).toHaveValue(work);
+		await expect(prefs.locator('[name="notebook.note"]')).toHaveValue('');
+	});
+}

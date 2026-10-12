@@ -4,18 +4,24 @@
 	import Field from '$lib/components/Field.svelte';
 	import FormGrid from '$lib/components/FormGrid.svelte';
 	import Icon from '$lib/components/Icon.svelte';
+	import MoreOptions from '$lib/components/MoreOptions.svelte';
 	import NotebookField from '$lib/components/NotebookField.svelte';
 	import ToggleRow from '$lib/components/ToggleRow.svelte';
 	import { settingsForm } from '$lib/actions/settings-form';
 	import { CAPTURE_OPTIONS_URL, captureLook, visibleCaptures, CAPTURES } from '$lib/capture';
-	import { orderKinds, type CaptureSettings } from '$lib/capture-settings';
+	import {
+		FILED_KINDS,
+		kindNotebookField,
+		orderKinds,
+		type CaptureSettings
+	} from '$lib/capture-settings';
 	import { useT } from '$lib/i18n';
 
 	const t = useT();
 
 	/**
-	 * The capture wheel's settings: the notebook its forms start in, and
-	 * which wedges it holds in what order.
+	 * The capture wheel's settings: the notebook its forms start in, each
+	 * kind's own where it has one, and which wedges it holds in what order.
 	 *
 	 * One form, drawn in two places — Preferences, and the dialog behind the
 	 * gear that sits beside the open wheel — both posting to the same action.
@@ -70,6 +76,15 @@
 	let order = $state(untrack(() => orderKinds(settings.order)));
 	let off = $state(untrack(() => [...settings.off]));
 	let notebookId = $state(untrack(() => settings.notebookId));
+	/** Each filed kind's own notebook, null for "the main one". */
+	let kindNotebooks = $state<Record<string, number | null>>(
+		untrack(() =>
+			Object.fromEntries(FILED_KINDS.map((kind) => [kind, settings.notebooks[kind] ?? null]))
+		)
+	);
+	const ownCount = $derived(Object.values(kindNotebooks).filter((id) => id !== null).length);
+	/** The filed kinds, each with what it is called and what a notebook must hold to take it. */
+	const filed = $derived(CAPTURES.filter((c) => c.holds && FILED_KINDS.includes(c.key)));
 
 	/** Kinds whose room is hidden: shown, not offered. */
 	const unavailable = $derived(
@@ -123,6 +138,27 @@
 				<EmptyState compact icon="notebook" title={t('captureSettings.noNotebooksYet')} />
 			{/if}
 		</div>
+
+		<!--
+			Tasks into Work, ideas into Someday: a kind can go somewhere other than
+			the main notebook. Folded, because most people want one notebook or
+			none, and opened by default when any kind already has its own.
+		-->
+		{#if offered && offered.length > 0}
+			<MoreOptions label={t('captureSettings.eachKind')} count={ownCount} open={ownCount > 0}>
+				<p class="col-span-12 text-xs text-gray-500">{t('captureSettings.eachKindHint')}</p>
+				{#each filed as capture (capture.key)}
+					<NotebookField
+						notebooks={offered}
+						holds={capture.holds!}
+						bind:value={kindNotebooks[capture.key]}
+						name={kindNotebookField(capture.key)}
+						label={t(capture.label)}
+						noneLabel={t('captureSettings.sameAsMain')}
+					/>
+				{/each}
+			</MoreOptions>
+		{/if}
 
 		<Field label={t('captureSettings.wedges')} group hint={t('captureSettings.wedgesHint')}>
 			<div class="space-y-2">

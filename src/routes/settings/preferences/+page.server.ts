@@ -49,6 +49,7 @@ import {
 } from '$lib/services/preferences';
 import { LOCALES, LOCALE_NAMES } from '$lib/i18n/locales';
 import { pickableNotebooks } from '$lib/services/notebooks';
+import { FILED_KINDS, kindNotebookField } from '$lib/capture-settings';
 import { untranslatedCount } from '$lib/i18n/coverage';
 import { formAction } from '$lib/services/scoped-actions';
 
@@ -228,6 +229,9 @@ export const actions = {
 	saveCapture: formAction((ctx, formData) => {
 		saveCaptureSettings(ctx, {
 			notebookId: formData.get('notebookId'),
+			notebooks: Object.fromEntries(
+				FILED_KINDS.map((kind) => [kind, formData.get(kindNotebookField(kind))])
+			),
 			order: formData.getAll('kind'),
 			on: formData.getAll('on')
 		});

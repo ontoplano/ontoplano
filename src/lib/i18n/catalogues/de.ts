@@ -383,11 +383,15 @@ export const messages: Catalogue = {
 	'capture.planDestination': 'deinem Kalender',
 	'captureDialog.notWrittenDown': 'Das wurde nicht aufgeschrieben.',
 	'captureSettings.atLeastOne': 'mindestens eins',
+	'captureSettings.eachKind': 'Ein eigenes Notizbuch je Art',
+	'captureSettings.eachKindHint':
+		'Wohin eine Art statt ins Hauptnotizbuch geht. Eine Erinnerung gilt einer Uhrzeit und kommt in keines.',
 	'captureSettings.intro': 'Was das +-Rad enthält und wohin geht, was Sie darüber schreiben.',
 	'captureSettings.mainNotebook': 'Hauptnotizbuch',
 	'captureSettings.mainNotebookHint':
 		'Aufgaben, Notizen, Ideen und Einkäufe beginnen darin. In einem Notizbuch gilt dieses.',
 	'captureSettings.noNotebooksYet': 'Noch keine Notizbücher.',
+	'captureSettings.sameAsMain': 'Das Hauptnotizbuch',
 	'captureSettings.save': 'Schnellerfassung speichern',
 	'captureSettings.saved': 'Schnellerfassung gespeichert.',
 	'captureSettings.title': 'Schnellerfassung einstellen',

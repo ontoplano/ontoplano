@@ -397,11 +397,15 @@ export const messages: Catalogue = {
 	'capture.planDestination': 'votre calendrier',
 	'captureDialog.notWrittenDown': "Ça n'a pas été noté.",
 	'captureSettings.atLeastOne': 'au moins un',
+	'captureSettings.eachKind': 'Un carnet pour chaque type',
+	'captureSettings.eachKindHint':
+		'Où va un type au lieu du carnet principal. Un rappel porte sur une heure et ne va dans aucun.',
 	'captureSettings.intro': 'Ce que la roue + contient, et où va ce que vous écrivez depuis elle.',
 	'captureSettings.mainNotebook': 'Carnet principal',
 	'captureSettings.mainNotebookHint':
 		"Les tâches, notes, idées et choses à acheter y commencent. Dans un carnet, c'est ce carnet qui prime.",
 	'captureSettings.noNotebooksYet': "Aucun carnet pour l'instant.",
+	'captureSettings.sameAsMain': 'Le carnet principal',
 	'captureSettings.save': 'Enregistrer la capture rapide',
 	'captureSettings.saved': 'Capture rapide enregistrée.',
 	'captureSettings.title': 'Paramètres de capture rapide',
