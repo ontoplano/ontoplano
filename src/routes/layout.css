@@ -3355,6 +3355,34 @@ html[data-style='playful'] :is(.edge-stripe, .page-intro, .is-pinned) {
 	font-weight: 600;
 }
 
+/* A reminder: a moment rather than a stretch, so it is washed like the other
+   facts about a day, with its alarm before its words to say which kind of
+   fact. Pressing it opens the reminders page, so it keeps the pointer. */
+.og-event--reminder {
+	background-color: color-mix(in srgb, currentColor 10%, transparent) !important;
+	border-width: 1.5px !important;
+	border-left-width: 3px !important;
+}
+
+html .ec .ec-event.og-event .ec-event-reminder {
+	display: flex;
+	align-items: center;
+	gap: 0.25rem;
+	min-width: 0;
+	overflow: hidden;
+	white-space: nowrap;
+}
+
+html .ec .ec-event.og-event .ec-event-reminder svg {
+	flex-shrink: 0;
+}
+
+html .ec .ec-event.og-event .ec-event-reminder .ec-event-title {
+	min-width: 0;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
 /* Paid: quiet and struck through, so a week reads as what is left. */
 .og-event--bill-paid {
 	background-color: transparent !important;
