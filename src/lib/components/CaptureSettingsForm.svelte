@@ -144,8 +144,10 @@
 			its row and moves nothing in that column.
 		-->
 		<div class="space-y-2">
-			<div class="flex items-center gap-2">
-				<span class="eyebrow min-w-0 flex-1 truncate px-3 text-gray-500"
+			<!-- The list's head: a band of its own, the picker centred in it and
+			     still in the column the rows' pickers stand in. -->
+			<div class="wedge-head flex items-center gap-2 border border-gray-200 bg-gray-100">
+				<span class="eyebrow min-w-0 flex-1 truncate px-3 text-gray-600"
 					>{t('captureSettings.everyWedge')}</span
 				>
 				<div class="notebook-cell">
@@ -267,6 +269,15 @@
 		display: flex;
 		flex: none;
 		width: 8.5rem;
+	}
+
+	/*
+	 * Stands out past the rows by its own padding, so the picker inside it
+	 * lines up with theirs and sits in the middle of the band.
+	 */
+	.wedge-head {
+		margin-inline: -0.375rem;
+		padding: 0.375rem;
 	}
 
 	/* The picker takes the whole cell, so every row's is one width. */
