@@ -23,6 +23,7 @@ import {
 	notebooks,
 	people,
 	recipeImages,
+	reminders,
 	todoTasks
 } from '$lib/db/schema.js';
 import type { Ctx } from './ctx.js';
@@ -35,6 +36,7 @@ export type ReferrerKind =
 	| 'note'
 	| 'idea'
 	| 'todo'
+	| 'reminder'
 	| 'person'
 	| 'recipe'
 	| 'album'
@@ -67,8 +69,8 @@ function mentions(column: Parameters<typeof like>[0], path: string) {
 }
 
 /**
- * The writing that mentions this path: notes, ideas and todos hold their
- * pictures and recordings alike, as markdown in a text column.
+ * The writing that mentions this path: notes, ideas, todos and reminders hold
+ * their pictures and recordings alike, as markdown in a text column.
  *
  * Both kinds ask the same three tables. The picture side once lacked two of
  * them, so a picture pasted into a task was referred to by nothing and
@@ -95,6 +97,12 @@ function mentionedIn(ctx: Ctx, path: string): Referrer[] {
 		.where(and(eq(todoTasks.userId, ctx.userId), mentions(todoTasks.notes, path)))
 		.all())
 		found.push({ kind: 'todo', id: row.id, notebookId: row.notebookId });
+	for (const row of db
+		.select({ id: reminders.id })
+		.from(reminders)
+		.where(and(eq(reminders.userId, ctx.userId), mentions(reminders.message, path)))
+		.all())
+		found.push({ kind: 'reminder', id: row.id, notebookId: null });
 	return found;
 }
 

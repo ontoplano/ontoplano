@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { firstPlainLine, plainMarkdown } from './markdown-plain';
+import { firstPlainLine, plainLine, plainMarkdown, titleLine } from './markdown-plain';
 
 describe('plainMarkdown', () => {
 	it('keeps the words and drops the marks', () => {
@@ -29,5 +29,18 @@ describe('firstPlainLine', () => {
 	it('is the first line with words, as words', () => {
 		expect(firstPlainLine('\n\n## **Dentist**\nbring the card')).toBe('Dentist');
 		expect(firstPlainLine('  \n')).toBe('');
+	});
+});
+
+describe('plainLine', () => {
+	it('is the words on one line', () => {
+		expect(plainLine('**Bins** out\n\n![the green one](/media/12)')).toBe('Bins out the green one');
+	});
+});
+
+describe('titleLine', () => {
+	it('is the words, or the text as typed when there are none', () => {
+		expect(titleLine('take the *bread* out')).toBe('take the bread out');
+		expect(titleLine(' ![](/media/12) ')).toBe('![](/media/12)');
 	});
 });
