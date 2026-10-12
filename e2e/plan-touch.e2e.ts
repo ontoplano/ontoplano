@@ -144,6 +144,19 @@ test.describe('with a finger', () => {
 		await expect
 			.poll(() => dialog.locator('.panel').evaluate((el) => el.getBoundingClientRect().height))
 			.toBeGreaterThan((844 - 320) * 0.9);
+		// Grown to the top of the screen, it keeps clear of the status bar: the
+		// half sheet needs no safe area, the whole-height one does.
+		await page.evaluate(() => document.documentElement.style.setProperty('--safe-top', '30px'));
+		// Measured once the sheet has slid in: on its way up it is below the bar.
+		await dialog
+			.locator('.panel')
+			.evaluate((el) => Promise.all(el.getAnimations().map((a) => a.finished)));
+		const headerTop = await dialog
+			.locator('header')
+			.first()
+			.evaluate((el) => el.getBoundingClientRect().top);
+		expect(headerTop).toBeGreaterThanOrEqual(30);
+		await page.evaluate(() => document.documentElement.style.removeProperty('--safe-top'));
 		await expect
 			.poll(() => content.evaluate((el) => el.getBoundingClientRect().bottom))
 			.toBeLessThanOrEqual(844 - 320);
