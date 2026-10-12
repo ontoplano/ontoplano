@@ -33,6 +33,7 @@ export const messages: Catalogue = {
 		many: '{count} comptes affichés',
 		other: '{count} comptes affichés'
 	},
+	'admin.activeAgo': 'actif {when}',
 	'admin.admin': 'admin',
 	'admin.allAccounts': '← tous les comptes',
 	'admin.alwaysAnAdmin': 'toujours admin',
@@ -58,7 +59,9 @@ export const messages: Catalogue = {
 	'admin.id.joined': 'Inscrit',
 	'admin.id.keepsTheAccountAndLoses':
 		"conserve le compte et perd tous les pouvoirs d'administration.",
+	'admin.id.lastActive': 'Dernière activité',
 	'admin.id.makeAdmin': 'Nommer admin',
+	'admin.id.neverActive': 'Pas vu depuis que cela est enregistré',
 	'admin.id.no': 'Non',
 	'admin.id.noPlan': 'Aucune',
 	'admin.id.nothingRecordedYet': "Rien d'enregistré pour l'instant",
@@ -93,6 +96,7 @@ export const messages: Catalogue = {
 	'admin.makeAdmin': 'Nommer admin',
 	'admin.member': 'membre',
 	'admin.minutesAgo': 'il y a {count} min',
+	'admin.neverActive': 'pas encore vu',
 	'admin.noAccountsYet': 'Pas encore de comptes',
 	'admin.noIssueYet': "Aucune version n'a encore été envoyée.",
 	'admin.noPage': 'aucune page',
@@ -104,6 +108,7 @@ export const messages: Catalogue = {
 	'admin.nothingRecordedYet': "Rien d'enregistré pour l'instant",
 	'admin.nothingReported': 'Rien de signalé',
 	'admin.orderAccountsBy': 'Trier les comptes par',
+	'admin.orderActive': 'Dernière activité',
 	'admin.orderAddress': 'Adresse',
 	'admin.orderJoined': 'Inscription',
 	'admin.owner': 'propriétaire',
@@ -1934,6 +1939,8 @@ export const messages: Catalogue = {
 	'legal.privacy.thereIsNoAnalyticsNo':
 		"Il n'y a ni analytique, ni publicité, ni script tiers, et rien n'est vendu à personne.",
 	'legal.privacy.whatIsStored': 'Ce qui est stocké',
+	'legal.privacy.whenYouLastUsedThe':
+		"Quand vous avez utilisé l'app pour la dernière fois, à quelques minutes près, pour que la personne qui gère cette instance voie quels comptes sont utilisés.",
 	'legal.privacy.whereItIsStored': "Où c'est stocké",
 	'legal.privacy.whichHappensWithin': ', ce qui se passe dans',
 	'legal.privacy.whichIsWhatKeeps':

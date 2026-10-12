@@ -4593,5 +4593,11 @@
 	"settings.account.changeYourName": "Namen ändern",
 	"captureSettings.eachKind": "Ein eigenes Notizbuch je Art",
 	"captureSettings.eachKindHint": "Wohin eine Art statt ins Hauptnotizbuch geht. Eine Erinnerung gilt einer Uhrzeit und kommt in keines.",
-	"captureSettings.sameAsMain": "Das Hauptnotizbuch"
+	"captureSettings.sameAsMain": "Das Hauptnotizbuch",
+	"admin.activeAgo": "aktiv {when}",
+	"admin.neverActive": "noch nicht gesehen",
+	"admin.orderActive": "Zuletzt aktiv",
+	"admin.id.lastActive": "Zuletzt aktiv",
+	"admin.id.neverActive": "Nicht gesehen, seit das erfasst wird",
+	"legal.privacy.whenYouLastUsedThe": "Wann Sie die App zuletzt benutzt haben, auf wenige Minuten genau, damit wer diese Instanz betreibt sehen kann, welche Konten genutzt werden."
 }

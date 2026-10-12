@@ -32,6 +32,7 @@ export const messages: Catalogue = {
 	'admin.accountDeleted': 'Konto gelöscht',
 	'admin.accounts': 'Konten',
 	'admin.accountsShowing': { one: '{count} Konto angezeigt', other: '{count} Konten angezeigt' },
+	'admin.activeAgo': 'aktiv {when}',
 	'admin.admin': 'Admin',
 	'admin.allAccounts': '← alle Konten',
 	'admin.alwaysAnAdmin': 'immer admin',
@@ -55,7 +56,9 @@ export const messages: Catalogue = {
 	'admin.id.history': 'Verlauf',
 	'admin.id.joined': 'Beigetreten',
 	'admin.id.keepsTheAccountAndLoses': 'behält das Konto und verliert jede Admin-Berechtigung.',
+	'admin.id.lastActive': 'Zuletzt aktiv',
 	'admin.id.makeAdmin': 'Zum Admin machen',
+	'admin.id.neverActive': 'Nicht gesehen, seit das erfasst wird',
 	'admin.id.no': 'Nein',
 	'admin.id.noPlan': 'Keiner',
 	'admin.id.nothingRecordedYet': 'Noch nichts aufgezeichnet',
@@ -89,6 +92,7 @@ export const messages: Catalogue = {
 	'admin.makeAdmin': 'Zum Admin machen',
 	'admin.member': 'Mitglied',
 	'admin.minutesAgo': 'vor {count}m',
+	'admin.neverActive': 'noch nicht gesehen',
 	'admin.noAccountsYet': 'Noch keine Konten',
 	'admin.noIssueYet': 'Noch keine Version verschickt.',
 	'admin.noPage': 'keine Seite',
@@ -100,6 +104,7 @@ export const messages: Catalogue = {
 	'admin.nothingRecordedYet': 'Noch nichts aufgezeichnet',
 	'admin.nothingReported': 'Nichts gemeldet',
 	'admin.orderAccountsBy': 'Konten sortieren nach',
+	'admin.orderActive': 'Zuletzt aktiv',
 	'admin.orderAddress': 'Adresse',
 	'admin.orderJoined': 'Beigetreten',
 	'admin.owner': 'eigentümer',
@@ -1861,6 +1866,8 @@ export const messages: Catalogue = {
 	'legal.privacy.thereIsNoAnalyticsNo':
 		'Es gibt keine Analyse, keine Werbung, kein Skript von Drittanbietern, und nichts wird an irgendjemanden verkauft.',
 	'legal.privacy.whatIsStored': 'Was gespeichert wird',
+	'legal.privacy.whenYouLastUsedThe':
+		'Wann Sie die App zuletzt benutzt haben, auf wenige Minuten genau, damit wer diese Instanz betreibt sehen kann, welche Konten genutzt werden.',
 	'legal.privacy.whereItIsStored': 'Wo es gespeichert wird',
 	'legal.privacy.whichHappensWithin': ', was innerhalb von',
 	'legal.privacy.whichIsWhatKeeps':

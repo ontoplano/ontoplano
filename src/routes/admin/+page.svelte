@@ -62,17 +62,23 @@
 	 * The order of the accounts. The server answers newest first; the other
 	 * orders are this page's own, since the list is one page long.
 	 */
-	const ORDERS = ['joined', 'email'] as const;
+	const ORDERS = ['joined', 'active', 'email'] as const;
 	type Order = (typeof ORDERS)[number];
 	const ORDER_LABELS: Record<Order, PlainKey> = {
 		joined: 'admin.orderJoined',
+		active: 'admin.orderActive',
 		email: 'admin.orderAddress'
 	};
 	let order = $state<Order>('joined');
 	let direction = $state<'asc' | 'desc'>('desc');
 	const accounts = $derived.by(() => {
 		const sorted = [...data.accounts].sort((a, b) =>
-			order === 'email' ? a.email.localeCompare(b.email) : a.createdAt.localeCompare(b.createdAt)
+			order === 'email'
+				? a.email.localeCompare(b.email)
+				: order === 'active'
+					? // Never active sorts as the oldest of all.
+						(a.lastActiveAt ?? '').localeCompare(b.lastActiveAt ?? '')
+					: a.createdAt.localeCompare(b.createdAt)
 		);
 		return direction === 'desc' ? sorted.reverse() : sorted;
 	});
@@ -204,6 +210,9 @@
 									{account.name}
 									{t('admin.joined')}
 									{when(account.createdAt)} ·
+									{account.lastActiveAt
+										? t('admin.activeAgo', { when: ago(account.lastActiveAt) })
+										: t('admin.neverActive')} ·
 									{t('admin.sessionCount', { count: account.sessions })}
 									<!-- Who pays: a family payer and their riders read differently
 									     from a plain subscriber. -->
