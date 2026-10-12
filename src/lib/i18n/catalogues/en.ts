@@ -2865,13 +2865,13 @@ export const messages: Catalogue = {
 	'rooms.settings.tabs.integrations': 'AI & Integrations',
 	'rooms.settings.tabs.preferences': 'Preferences',
 	'rooms.settings.title': 'Settings',
-	'rooms.tasks.sections': 'Tasks sections',
+	'rooms.tasks.sections': 'Calendar sections',
 	'rooms.tasks.tabs.activities': 'Activities',
 	'rooms.tasks.tabs.board': 'Board',
 	'rooms.tasks.tabs.plan': 'Calendar',
 	'rooms.tasks.tabs.review': 'Review',
 	'rooms.tasks.tabs.todo': 'Tasks',
-	'rooms.tasks.title': 'Tasks',
+	'rooms.tasks.title': 'Calendar',
 	'scopeGroups.acrossEverything': 'Across everything',
 	'scopeGroups.describeItself': 'Its own description',
 	'scopeGroups.habitsAndWorkouts': 'Habits and workouts',
@@ -3000,7 +3000,7 @@ export const messages: Catalogue = {
 	'sections.reminders.label': 'Reminders',
 	'sections.tags.blurb': 'The tags you use, and the screen for tidying them.',
 	'sections.tags.label': 'Tags',
-	'sections.tasks.label': 'Tasks',
+	'sections.tasks.label': 'Calendar',
 	'sections.weekly.blurb': 'What the weekly review writes, kept where the rest of your writing is.',
 	'sections.weekly.label': 'Weekly notes',
 	'sections.workouts.blurb': 'What you planned to do and what you actually did, in your own units.',
@@ -4524,7 +4524,7 @@ export const messages: Catalogue = {
 		'Matching is on the words themselves, so a fragment of a sentence you wrote finds the entry it came from.',
 	'tour.movingAndSharing': 'Moving and sharing',
 	'tour.notACalendarOfAppointments':
-		'The task blocks you mean to repeat. Everything else in Tasks is built out of this.',
+		'The task blocks you mean to repeat. Everything else in Calendar is built out of this.',
 	'tour.notJustNotesAndTasks': 'Not just notes and tasks',
 	'tour.noteSelection':
 		'Select several entries to move them into a notebook, add or remove labels, or delete them in one go.',
@@ -4611,7 +4611,7 @@ export const messages: Catalogue = {
 	'tour.taskSelection':
 		'Select many to turn the boxes into circles. Select visible tasks, then change their status, add or remove labels, move them to a notebook, or confirm deletion. Filters clear hidden selections.',
 	'tour.tasksHoldYourWeekNotebooks':
-		'Tasks hold your week, Notebooks hold what you write — the diary included — and ideas hold what you thought of on the bus. Preferences reorders the rooms and puts away the ones you do not want.',
+		'Calendar holds your week, Notebooks hold what you write — the diary included — and ideas hold what you thought of on the bus. Preferences reorders the rooms and puts away the ones you do not want.',
 	'tour.theAppArrangedYourWay': 'The app, arranged your way',
 	'tour.theArrowsStepAWholeWeek':
 		'The arrows step a whole week, so they always land on the same weekday. This picks the weekday the week starts on.',

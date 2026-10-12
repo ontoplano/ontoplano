@@ -152,7 +152,7 @@ test('press, flick and release writes the thing', async ({ page }) => {
 	await expect(page.getByRole('heading', { name: /new task/i })).toBeHidden();
 
 	// And it is really there, in the list that owns it.
-	await visit(page, '/tasks/todo');
+	await visit(page, '/calendar/todo');
 	await expect(page.getByText('buy a bigger pan')).toBeVisible();
 });
 
@@ -422,7 +422,7 @@ test('a quick add says where the thing went, and quotes it', async ({ page }) =>
  */
 test('the pie says it too, from a page that is not the dashboard', async ({ page }) => {
 	await register(page, testEmail('capture-toast-pie'));
-	await visit(page, '/tasks/calendar');
+	await visit(page, '/calendar/calendar');
 
 	await (await trigger(page)).click();
 	// The way a person finds a wedge: point at each until the HUD says its name.

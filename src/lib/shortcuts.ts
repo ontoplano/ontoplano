@@ -67,7 +67,7 @@ export const PAGE_SHORTCUTS: Record<string, PageShortcuts> = {
 		]
 	},
 
-	'/tasks/board': {
+	'/calendar/board': {
 		label: 'app.board',
 		shortcuts: [
 			{ key: 'h', action: 'prev-column', description: 'shortcut.moveBetweenColumns' },
@@ -102,7 +102,7 @@ export const PAGE_SHORTCUTS: Record<string, PageShortcuts> = {
 		]
 	},
 
-	'/tasks/calendar': {
+	'/calendar/calendar': {
 		label: 'app.plan',
 		shortcuts: [
 			{ key: 'j', action: 'navigate-down', description: 'shortcut.navigateSlots' },
@@ -128,7 +128,7 @@ export const PAGE_SHORTCUTS: Record<string, PageShortcuts> = {
 			{ key: 'p', action: 'copy-to-days', description: 'shortcut.copyToDaysMultiselect' }
 		]
 	},
-	'/tasks/activities': {
+	'/calendar/activities': {
 		label: 'app.activities',
 		shortcuts: [
 			{ key: 'j', action: 'navigate-down', description: 'shortcut.navigateList' },
@@ -148,7 +148,7 @@ export const PAGE_SHORTCUTS: Record<string, PageShortcuts> = {
 			{ key: '9', action: 'filter-9', description: 'shortcut.toggleCategoryFilter' }
 		]
 	},
-	'/tasks/review': {
+	'/calendar/review': {
 		label: 'app.review',
 		shortcuts: [
 			...BROWSE_SHORTCUTS.slice(0, 4),
@@ -161,7 +161,7 @@ export const PAGE_SHORTCUTS: Record<string, PageShortcuts> = {
 			{ key: ']', action: 'next-week', description: 'shortcut.switchWeek' }
 		]
 	},
-	'/tasks/todo': {
+	'/calendar/todo': {
 		label: 'app.toDo',
 		shortcuts: [
 			{ key: 'j', action: 'navigate-down', description: 'shortcut.navigateList' },

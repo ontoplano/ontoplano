@@ -140,7 +140,7 @@ test('text stands off its background, on every theme', async ({ page }) => {
 
 	for (const route of [
 		'/',
-		'/tasks/board',
+		'/calendar/board',
 		'/inventory/stock',
 		'/goals',
 		'/notebooks/diary',
@@ -320,7 +320,7 @@ test('a button keeps its label under the pointer', async ({ page }) => {
  */
 test('every button on a page offers a pointer', async ({ page }) => {
 	await register(page, testEmail('cursor'));
-	await visit(page, '/tasks/board');
+	await visit(page, '/calendar/board');
 
 	const wrong = await page.evaluate(() => {
 		const bad: string[] = [];

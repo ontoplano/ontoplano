@@ -16,7 +16,7 @@ test('a space makes a chip and empties the box, and typing suggests', async ({ p
 	test.setTimeout(120_000);
 	await page.setViewportSize({ width: 1280, height: 900 });
 	await register(page, testEmail('tag-typing'));
-	await visit(page, '/tasks/todo');
+	await visit(page, '/calendar/todo');
 
 	// Scoped to the form: the page also has a row of tag-filter chips that
 	// answer to the same class.
@@ -73,7 +73,7 @@ test('a word left in the box when the form is saved still counts', async ({ page
 	test.setTimeout(120_000);
 	await page.setViewportSize({ width: 1280, height: 900 });
 	await register(page, testEmail('tag-unfinished'));
-	await visit(page, '/tasks/todo');
+	await visit(page, '/calendar/todo');
 
 	await page.getByRole('button', { name: 'New task' }).click();
 	await page.locator('[name="heading"]').first().fill('Cancel the gym');
@@ -106,7 +106,7 @@ test("pressing one chip's remove button takes exactly one off", async ({ page })
 	test.setTimeout(120_000);
 	await page.setViewportSize({ width: 1280, height: 900 });
 	await register(page, testEmail('chip-remove'));
-	await visit(page, '/tasks/todo');
+	await visit(page, '/calendar/todo');
 
 	await page.getByRole('button', { name: 'New task' }).click();
 	await page.locator('[name="heading"]').first().fill('Sand the door');

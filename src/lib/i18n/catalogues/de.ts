@@ -2967,13 +2967,13 @@ export const messages: Catalogue = {
 	'rooms.settings.tabs.integrations': 'KI & Integrationen',
 	'rooms.settings.tabs.preferences': 'Präferenzen',
 	'rooms.settings.title': 'Einstellungen',
-	'rooms.tasks.sections': 'Aufgaben-Bereiche',
+	'rooms.tasks.sections': 'Kalender-Bereiche',
 	'rooms.tasks.tabs.activities': 'Aktivitäten',
 	'rooms.tasks.tabs.board': 'Board',
 	'rooms.tasks.tabs.plan': 'Kalender',
 	'rooms.tasks.tabs.review': 'Rückblick',
 	'rooms.tasks.tabs.todo': 'Aufgaben',
-	'rooms.tasks.title': 'Aufgaben',
+	'rooms.tasks.title': 'Kalender',
 	'scopeGroups.acrossEverything': 'Über alles hinweg',
 	'scopeGroups.describeItself': 'Eigene Beschreibung',
 	'scopeGroups.habitsAndWorkouts': 'Gewohnheiten und Workouts',
@@ -3112,7 +3112,7 @@ export const messages: Catalogue = {
 	'sections.reminders.label': 'Erinnerungen',
 	'sections.tags.blurb': 'Die Labels, die Sie verwenden, und der Platz, sie aufzuräumen.',
 	'sections.tags.label': 'Labels',
-	'sections.tasks.label': 'Aufgaben',
+	'sections.tasks.label': 'Kalender',
 	'sections.weekly.blurb':
 		'Was der Wochenrückblick schreibt, dort aufbewahrt, wo Ihr übriges Schreiben liegt.',
 	'sections.weekly.label': 'Wochennotizen',
@@ -4687,7 +4687,7 @@ export const messages: Catalogue = {
 		'Der Abgleich erfolgt auf den Wörtern selbst, sodass ein Satzfragment, das Sie geschrieben haben, den Eintrag findet, aus dem es stammt.',
 	'tour.movingAndSharing': 'Verschieben und Teilen',
 	'tour.notACalendarOfAppointments':
-		'Die Aufgabenblöcke, die sich wiederholen sollen. Alles andere in Aufgaben baut darauf auf.',
+		'Die Aufgabenblöcke, die sich wiederholen sollen. Alles andere im Kalender baut darauf auf.',
 	'tour.notJustNotesAndTasks': 'Nicht nur Notizen und Aufgaben',
 	'tour.noteSelection':
 		'Wähle mehrere Einträge aus, um sie in ein Notizbuch zu verschieben, Schlagwörter hinzuzufügen oder zu entfernen oder sie auf einmal zu löschen.',
@@ -4776,7 +4776,7 @@ export const messages: Catalogue = {
 	'tour.taskSelection':
 		'Mit „Mehrere auswählen“ werden Kästchen zu Kreisen. Wähle sichtbare Aufgaben aus, um ihren Status zu ändern, Schlagwörter hinzuzufügen oder zu entfernen, sie in ein Notizbuch zu verschieben oder ihre Löschung zu bestätigen. Filter heben ausgeblendete Auswahlen auf.',
 	'tour.tasksHoldYourWeekNotebooks':
-		'Aufgaben halten Ihre Woche, Notizbücher halten, was Sie schreiben — das Tagebuch eingeschlossen — und Ideen halten fest, was Ihnen im Bus eingefallen ist. Einstellungen ordnet die Bereiche neu und räumt die weg, die Sie nicht wollen.',
+		'Der Kalender hält Ihre Woche, Notizbücher halten, was Sie schreiben — das Tagebuch eingeschlossen — und Ideen halten fest, was Ihnen im Bus eingefallen ist. Einstellungen ordnet die Bereiche neu und räumt die weg, die Sie nicht wollen.',
 	'tour.theAppArrangedYourWay': 'Die App, nach Ihren Vorstellungen geordnet',
 	'tour.theArrowsStepAWholeWeek':
 		'Die Pfeile springen eine ganze Woche, sie landen also immer auf demselben Wochentag. Hier wählen Sie, an welchem Tag die Woche beginnt.',

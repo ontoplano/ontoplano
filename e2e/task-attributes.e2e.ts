@@ -33,7 +33,7 @@ for (const { name, viewport } of WIDTHS) {
 			test.setTimeout(150_000);
 			await context.grantPermissions(['clipboard-read', 'clipboard-write']);
 			await register(page, testEmail(`attrs-${name}`));
-			await visit(page, '/tasks/todo');
+			await visit(page, '/calendar/todo');
 
 			// Written in the form, in the fold under the tags.
 			await page.getByRole('button', { name: 'New task' }).click();
@@ -95,7 +95,7 @@ for (const { name, viewport } of WIDTHS) {
 				const d = new Date();
 				return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 			});
-			await visit(page, `/tasks/calendar?view=day&from=${today}`);
+			await visit(page, `/calendar/calendar?view=day&from=${today}`);
 
 			await page.getByRole('button', { name: 'New task block' }).click();
 			const form = page.getByRole('dialog').first();

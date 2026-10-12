@@ -16,7 +16,7 @@ import { expectStill } from './helpers/position';
  * under it was to open the form that edits it and press Cancel.
  */
 async function newCard(page: Page, title: string, notes: string) {
-	await visit(page, '/tasks/board');
+	await visit(page, '/calendar/board');
 	await page.keyboard.press('n');
 	const heading = page.locator('#card-form [name=heading]');
 	await expect(heading).toBeVisible({ timeout: 15_000 });

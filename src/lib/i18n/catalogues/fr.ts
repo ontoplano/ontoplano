@@ -3253,13 +3253,13 @@ export const messages: Catalogue = {
 	'rooms.settings.tabs.integrations': 'IA & Intégrations',
 	'rooms.settings.tabs.preferences': 'Préférences',
 	'rooms.settings.title': 'Paramètres',
-	'rooms.tasks.sections': 'Sections Tâches',
+	'rooms.tasks.sections': 'Sections Calendrier',
 	'rooms.tasks.tabs.activities': 'Activités',
 	'rooms.tasks.tabs.board': 'Tableau',
 	'rooms.tasks.tabs.plan': 'Calendrier',
 	'rooms.tasks.tabs.review': 'Revue',
 	'rooms.tasks.tabs.todo': 'Tâches',
-	'rooms.tasks.title': 'Tâches',
+	'rooms.tasks.title': 'Calendrier',
 	'scopeGroups.acrossEverything': 'Sur tout',
 	'scopeGroups.describeItself': 'Sa propre description',
 	'scopeGroups.habitsAndWorkouts': 'Habitudes et entraînements',
@@ -3402,7 +3402,7 @@ export const messages: Catalogue = {
 	'sections.reminders.label': 'Rappels',
 	'sections.tags.blurb': "Les tags que vous utilisez, et l'écran pour les ranger.",
 	'sections.tags.label': 'Tags',
-	'sections.tasks.label': 'Tâches',
+	'sections.tasks.label': 'Calendrier',
 	'sections.weekly.blurb':
 		'Ce que la revue hebdomadaire écrit, conservé là où est le reste de ce que vous écrivez.',
 	'sections.weekly.label': 'Notes hebdomadaires',
@@ -4998,7 +4998,7 @@ export const messages: Catalogue = {
 		"La correspondance porte sur les mots eux-mêmes, donc un fragment de phrase que vous avez écrit retrouve l'entrée dont il vient.",
 	'tour.movingAndSharing': 'Déplacer et partager',
 	'tour.notACalendarOfAppointments':
-		'Les blocs de tâche que vous comptez répéter. Tout le reste dans Tâches est construit à partir de ça.',
+		'Les blocs de tâche que vous comptez répéter. Tout le reste dans Calendrier est construit à partir de ça.',
 	'tour.notJustNotesAndTasks': 'Pas seulement des notes et des tâches',
 	'tour.noteSelection':
 		'Sélectionnez plusieurs entrées pour les déplacer dans un carnet, ajouter ou retirer des étiquettes, ou les supprimer en une fois.',
@@ -5086,7 +5086,7 @@ export const messages: Catalogue = {
 	'tour.taskSelection':
 		'Sélectionnez-en plusieurs pour transformer les cases en cercles. Sélectionnez les tâches visibles, puis changez leur statut, ajoutez ou retirez des étiquettes, déplacez-les vers un carnet, ou confirmez la suppression. Les filtres effacent les sélections masquées.',
 	'tour.tasksHoldYourWeekNotebooks':
-		'Tâches contient votre semaine, Carnets contient ce que vous écrivez — le journal inclus — et Idées contient ce à quoi vous avez pensé dans le bus. Préférences réordonne les sections et range celles que vous ne voulez pas.',
+		'Calendrier contient votre semaine, Carnets contient ce que vous écrivez — le journal inclus — et Idées contient ce à quoi vous avez pensé dans le bus. Préférences réordonne les sections et range celles que vous ne voulez pas.',
 	'tour.theAppArrangedYourWay': "L'application, arrangée à votre façon",
 	'tour.theArrowsStepAWholeWeek':
 		"Les flèches avancent d'une semaine entière, donc elles tombent toujours sur le même jour de la semaine. Ceci choisit le jour sur lequel la semaine commence.",

@@ -48,11 +48,11 @@ describe('where things open', () => {
 	});
 
 	it('builds the editor link, the path link and the plain room', () => {
-		expect(linkTo({ kind: 'todo', id: 12 })).toBe('/tasks/todo?edit=12');
+		expect(linkTo({ kind: 'todo', id: 12 })).toBe('/calendar/todo?edit=12');
 		expect(linkTo({ kind: 'notebook', id: 3 })).toBe('/notebooks/3');
 		expect(linkTo({ kind: 'person', id: 5 })).toBe('/notebooks/people?person=5');
 		expect(linkTo({ kind: 'tag', id: 9 })).toBe('/notebooks/tags');
-		expect(linkTo({ kind: 'block', id: 'slot:4' })).toBe('/tasks/calendar');
+		expect(linkTo({ kind: 'block', id: 'slot:4' })).toBe('/calendar/calendar');
 		expect(linkTo({ kind: 'nothing-like-this', id: 1 })).toBeNull();
 	});
 });
@@ -65,11 +65,13 @@ describe('where an assistant burst opens', () => {
 	});
 
 	it('opens the one thing a burst made', () => {
-		expect(whereBurstOpens([call('todo', '41')])).toBe('/tasks/todo?edit=41');
+		expect(whereBurstOpens([call('todo', '41')])).toBe('/calendar/todo?edit=41');
 	});
 
 	it('and the same thing changed twice', () => {
-		expect(whereBurstOpens([call('todo', '41'), call('todo', '41')])).toBe('/tasks/todo?edit=41');
+		expect(whereBurstOpens([call('todo', '41'), call('todo', '41')])).toBe(
+			'/calendar/todo?edit=41'
+		);
 	});
 
 	it('opens the log for several things, a deletion, or nothing named', () => {

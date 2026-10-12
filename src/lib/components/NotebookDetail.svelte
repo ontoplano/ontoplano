@@ -1842,7 +1842,7 @@
 				actions={NOTEBOOK_TODO_ACTIONS}
 				notebookId={notebook.id}
 				refs={writingRefs}
-				shortcutRoom={k === tab ? '/tasks/todo' : null}
+				shortcutRoom={k === tab ? '/calendar/todo' : null}
 				claimsRoomBar={false}
 				framed={false}
 				bind:openNew={openNewTodo}

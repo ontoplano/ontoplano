@@ -48,7 +48,7 @@ test('a picture in a task’s notes opens in the viewer, zooms, and back closes 
 	test.setTimeout(120_000);
 	await page.setViewportSize({ width: 390, height: 844 });
 	await register(page, testEmail('image-viewer-task'));
-	await visit(page, '/tasks/todo');
+	await visit(page, '/calendar/todo');
 
 	await page
 		.getByRole('button', { name: /New task/ })
@@ -77,13 +77,13 @@ test('a picture in a task’s notes opens in the viewer, zooms, and back closes 
 	// Back — the phone's gesture — takes it away and leaves the page where it was.
 	await page.goBack();
 	await expect(viewer).toHaveCount(0);
-	await expect(page).toHaveURL(/\/tasks\/todo/);
+	await expect(page).toHaveURL(/\/calendar\/todo/);
 });
 
 test('a tall picture opens whole and centred on a phone', async ({ page }) => {
 	await page.setViewportSize({ width: 390, height: 844 });
 	await register(page, testEmail('image-viewer-tall'));
-	await visit(page, '/tasks/todo');
+	await visit(page, '/calendar/todo');
 
 	// A phone screenshot's shape, drawn here so no upload is needed.
 	await page.evaluate(() => {

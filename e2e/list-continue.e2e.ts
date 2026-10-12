@@ -9,7 +9,7 @@ import { visit } from './helpers/visit';
 test('a checklist carries on with Enter, and stops on an empty line', async ({ page }) => {
 	test.setTimeout(120_000);
 	await register(page, testEmail('list-continue'));
-	await visit(page, '/tasks/todo');
+	await visit(page, '/calendar/todo');
 	await page
 		.getByRole('button', { name: /New task/ })
 		.first()

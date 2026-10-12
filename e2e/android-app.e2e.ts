@@ -103,7 +103,7 @@ test.describe('the app announcing itself', () => {
 		await register(page, testEmail('android-behind'));
 
 		// The launch, as hooks.client.ts sends it: mark and version on the address.
-		await visit(page, '/tasks/todo?app=android&app_version=0.1.0');
+		await visit(page, '/calendar/todo?app=android&app_version=0.1.0');
 		// Both parameters come back off the address, like the mark always has.
 		expect(new URL(page.url()).searchParams.has('app_version')).toBe(false);
 
@@ -116,13 +116,13 @@ test.describe('the app announcing itself', () => {
 		await expect(band).toHaveCount(0);
 
 		// And it stays put away on the next page.
-		await visit(page, '/tasks/todo');
+		await visit(page, '/calendar/todo');
 		await expect(page.getByText('Update the app.')).toHaveCount(0);
 	});
 
 	test('a browser is never told to update', async ({ page }) => {
 		await register(page, testEmail('android-fresh'));
-		await visit(page, '/tasks/todo');
+		await visit(page, '/calendar/todo');
 		await expect(page.getByText('Update the app.')).toHaveCount(0);
 	});
 });
@@ -147,7 +147,7 @@ test.describe('a desktop wearing the app cookie', () => {
 	test('is not the app, whatever the address said', async ({ page }) => {
 		await register(page, testEmail('android-desktop'));
 
-		await visit(page, '/tasks/todo?app=android&app_version=0.1.0');
+		await visit(page, '/calendar/todo?app=android&app_version=0.1.0');
 
 		// No band: the instance is far ahead of 0.1.0, so a phone here would be
 		// told to update. This is not a phone.
@@ -588,8 +588,8 @@ test.describe('a launch with the worker installed', () => {
 		// A page first, so the worker is installed and controlling by the time
 		// the launch address is asked for. Without this it is a fresh context
 		// and there is nothing in the way to test.
-		await visit(page, '/tasks/todo');
-		await visit(page, '/tasks/todo?app=android&app_version=0.1.0');
+		await visit(page, '/calendar/todo');
+		await visit(page, '/calendar/todo?app=android&app_version=0.1.0');
 
 		expect(new URL(page.url()).searchParams.has('app')).toBe(false);
 		expect(new URL(page.url()).searchParams.has('app_version')).toBe(false);

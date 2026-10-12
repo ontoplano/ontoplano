@@ -18,7 +18,7 @@ describe('where a reminder leads', () => {
 		// Written on the morning the week turns over, so the week it is about is
 		// the one the day before belongs to.
 		expect(at('review', '2026-09-21T07:00:00')).toEqual({
-			route: '/tasks/review',
+			route: '/calendar/review',
 			query: '?week=2026-09-20'
 		});
 	});
@@ -28,7 +28,7 @@ describe('where a reminder leads', () => {
 	});
 
 	it('sends a todo to the todo list', () => {
-		expect(at('todo', '2026-09-21T09:00:00', 7).route).toBe('/tasks/todo');
+		expect(at('todo', '2026-09-21T09:00:00', 7).route).toBe('/calendar/todo');
 	});
 
 	it('sends a birthday to the person whose it is', () => {
@@ -41,7 +41,7 @@ describe('where a reminder leads', () => {
 	it('sends a block, the end of a day and a bare alarm to that day', () => {
 		for (const kind of ['instance', 'day', 'free']) {
 			expect(at(kind, '2026-09-21T18:00:00')).toEqual({
-				route: '/tasks/board',
+				route: '/calendar/board',
 				query: '?date=2026-09-21'
 			});
 		}
@@ -50,8 +50,8 @@ describe('where a reminder leads', () => {
 	it('sends a kind it has never heard of to the day it was for', () => {
 		// Rows written before a kind existed still fire; the day is the best
 		// guess available and a better one than going nowhere.
-		expect(at('something-new', '2026-09-21T18:00:00').route).toBe('/tasks/board');
-		expect(at(null, '2026-09-21T18:00:00').route).toBe('/tasks/board');
+		expect(at('something-new', '2026-09-21T18:00:00').route).toBe('/calendar/board');
+		expect(at(null, '2026-09-21T18:00:00').route).toBe('/calendar/board');
 	});
 
 	it('crosses a month end without arithmetic going wrong', () => {

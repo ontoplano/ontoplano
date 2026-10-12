@@ -14,15 +14,15 @@ test('a long to-do list draws fifty, and more as it is scrolled', async ({ page 
 	test.setTimeout(180_000);
 	await page.setViewportSize({ width: 1280, height: 900 });
 	await register(page, testEmail('long-list'));
-	await visit(page, '/tasks/todo');
+	await visit(page, '/calendar/todo');
 	const origin = new URL(page.url()).origin;
 	for (let i = 1; i <= 120; i++)
-		await page.request.post('/tasks/todo?/create', {
+		await page.request.post('/calendar/todo?/create', {
 			headers: { Origin: origin, 'x-sveltekit-action': 'true' },
 			form: { heading: `task ${i}` }
 		});
 
-	await visit(page, '/tasks/todo');
+	await visit(page, '/calendar/todo');
 	const rows = page.locator('[data-todo-id]');
 	await expect(rows).toHaveCount(50);
 

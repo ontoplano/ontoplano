@@ -23,7 +23,7 @@ test.use({
 test('a to-do takes a recording, and plays it back on the row', async ({ page }) => {
 	test.setTimeout(120_000);
 	await register(page, testEmail('todo-audio'));
-	await visit(page, '/tasks/todo');
+	await visit(page, '/calendar/todo');
 
 	await page.getByRole('button', { name: 'New task' }).click();
 	await page.locator('#todo-form [name="heading"]').fill('ring the plumber');

@@ -100,7 +100,7 @@
 							</label>
 						{:else}
 							<EmptyState
-								icon={routeGlyph('/tasks/activities')!}
+								icon={routeGlyph('/calendar/activities')!}
 								title={t('goals.noActivitiesYet')}
 								compact
 							/>
@@ -124,7 +124,7 @@
 							</label>
 						{:else}
 							<EmptyState
-								icon={routeGlyph('/tasks/calendar')!}
+								icon={routeGlyph('/calendar/calendar')!}
 								title={t('goals.noWeeklyBlocksYet')}
 								compact
 							/>

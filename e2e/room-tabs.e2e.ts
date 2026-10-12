@@ -291,7 +291,7 @@ test.describe('between rooms', () => {
 	test('the screen leaving goes one way and the one arriving comes the other', async ({ page }) => {
 		test.setTimeout(180_000);
 		await register(page, testEmail('rooms'));
-		await visit(page, '/tasks/calendar');
+		await visit(page, '/calendar/calendar');
 
 		/*
 		 * Everything the two screens do, recorded as they do it.
@@ -702,14 +702,14 @@ test.describe('with a coarse pointer on a wide screen', () => {
 
 	test('a room that arrives after the slide does not slide in again', async ({ page }) => {
 		await register(page, testEmail('late-arrival'));
-		await visit(page, '/tasks/todo');
+		await visit(page, '/calendar/todo');
 
 		// Requests the app's service worker makes cannot be held by interception.
 		await page.evaluate(async () => {
 			const registrations = await navigator.serviceWorker.getRegistrations();
 			await Promise.all(registrations.map((r) => r.unregister()));
 		});
-		await visit(page, '/tasks/todo');
+		await visit(page, '/calendar/todo');
 
 		let release: () => void = () => {};
 		const held = new Promise<void>((resolve) => (release = resolve));
@@ -752,12 +752,12 @@ test.describe('with a coarse pointer on a wide screen', () => {
  */
 test('a mouse gets no movement, however slow the load', async ({ page }) => {
 	await register(page, testEmail('no-slide'));
-	await visit(page, '/tasks/todo');
+	await visit(page, '/calendar/todo');
 	await page.evaluate(async () => {
 		const registrations = await navigator.serviceWorker.getRegistrations();
 		await Promise.all(registrations.map((r) => r.unregister()));
 	});
-	await visit(page, '/tasks/todo');
+	await visit(page, '/calendar/todo');
 
 	let release: () => void = () => {};
 	const held = new Promise<void>((resolve) => (release = resolve));
@@ -780,4 +780,17 @@ test('a mouse gets no movement, however slow the load', async ({ page }) => {
 	await page.waitForTimeout(400);
 	// Landed: still nothing.
 	expect(await pane.evaluate((el) => (el as HTMLElement).style.transform)).toBe('');
+});
+
+test('the room’s old addresses still arrive', async ({ page }) => {
+	await register(page, testEmail('tasks-redirect'));
+	for (const [old, now] of [
+		['/tasks/board', '/calendar/board'],
+		['/tasks/todo?q=milk', '/calendar/todo?q=milk'],
+		['/tasks', '/calendar/calendar'],
+		['/planner/review', '/calendar/review']
+	]) {
+		await page.goto(old);
+		await expect(page).toHaveURL(new RegExp(`${now.replace('?', '\\?')}`));
+	}
 });

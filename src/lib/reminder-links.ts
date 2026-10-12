@@ -30,10 +30,10 @@ export type ReminderRef = {
  */
 export type ReminderRoute =
 	| '/notebooks/people'
-	| '/tasks/review'
+	| '/calendar/review'
 	| '/finance/bills'
-	| '/tasks/todo'
-	| '/tasks/board';
+	| '/calendar/todo'
+	| '/calendar/board';
 
 /** A route as SvelteKit spells it, and what to hang off it. */
 export type ReminderLink = { route: ReminderRoute; query: string };
@@ -69,14 +69,14 @@ export function reminderLink(reminder: ReminderRef): ReminderLink {
 		 * matters because the nag can be about a fortnight ago.
 		 */
 		case 'review':
-			return { route: '/tasks/review', query: `?week=${dayBefore(day)}` };
+			return { route: '/calendar/review', query: `?week=${dayBefore(day)}` };
 
 		// The thing itself, opened in its editor — see `$lib/object-links`.
 		case 'bill':
 			return { route: '/finance/bills', query: editQuery(reminder.subjectId) };
 
 		case 'todo':
-			return { route: '/tasks/todo', query: editQuery(reminder.subjectId) };
+			return { route: '/calendar/todo', query: editQuery(reminder.subjectId) };
 
 		/*
 		 * A block, the end of a day, and an alarm about nothing in particular
@@ -85,6 +85,6 @@ export function reminderLink(reminder: ReminderRef): ReminderLink {
 		 * is the best guess available and a better one than going nowhere.
 		 */
 		default:
-			return { route: '/tasks/board', query: `?date=${day}` };
+			return { route: '/calendar/board', query: `?date=${day}` };
 	}
 }

@@ -18,7 +18,7 @@ test('each room names itself in the tab', async ({ page }) => {
 	 * tab was called "To-do" when this was written and is called "Tasks" now,
 	 * so "Tasks · Tasks · Ontoplano" is what the dedup exists to prevent.
 	 */
-	await visit(page, '/tasks/todo');
+	await visit(page, '/calendar/todo');
 	await expect(page).toHaveTitle(/^Tasks · Ontoplano/);
 
 	await visit(page, '/goals');

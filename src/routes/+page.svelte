@@ -336,7 +336,7 @@
 			body.set('id', String(task.id));
 			body.set('kind', 'instance');
 			body.set('status', to);
-			return fetch('/tasks/board?/setStatus', {
+			return fetch('/calendar/board?/setStatus', {
 				method: 'POST',
 				headers: { 'x-sveltekit-action': 'true' },
 				body
@@ -532,7 +532,7 @@
 	-->
 		{#if data.pendingReview}
 			<a
-				href="{resolve('/tasks/review')}?week={data.pendingReview.weekStart}"
+				href="{resolve('/calendar/review')}?week={data.pendingReview.weekStart}"
 				class="flex items-center gap-3 border border-gray-200 bg-white px-4 py-3 shadow-card transition hover:bg-gray-50"
 			>
 				<span class="text-gray-500"><Icon name="clock" size={16} /></span>
@@ -664,12 +664,12 @@
 		{#snippet card_todayTasks()}
 			<Card title={t('home.todaySTasks')} accent={SECTION_COLORS.planner}>
 				{#snippet actions()}
-					{@render openLink(resolve('/tasks/board'))}
+					{@render openLink(resolve('/calendar/board'))}
 				{/snippet}
 				{#if data.taskSummary.total === 0}
 					{@render nothingYet(
 						t('home.nothingIsPlannedForToday'),
-						'/tasks/calendar',
+						'/calendar/calendar',
 						t('home.openThePlan')
 					)}
 				{:else}
@@ -840,7 +840,7 @@
 		{#snippet card_nextDays()}
 			<Card title={t('home.nextThreeDays')} accent={SECTION_COLORS.planner}>
 				{#snippet actions()}
-					{@render openLink(resolve('/tasks/calendar'))}
+					{@render openLink(resolve('/calendar/calendar'))}
 				{/snippet}
 				<div class="grid gap-3 sm:grid-cols-3">
 					{#each data.nextDays as day, ahead (day.date)}
@@ -903,7 +903,7 @@
 			{@const named = slices.slice(0, PIE_LEGEND)}
 			<Card title={t('home.whereTheWeekWent')} accent={SECTION_COLORS.planner}>
 				{#snippet actions()}
-					{@render openLink(resolve('/tasks/review'))}
+					{@render openLink(resolve('/calendar/review'))}
 				{/snippet}
 				{#if data.weekSoFar.minutesDone === 0}
 					<!--
@@ -1117,13 +1117,13 @@
 						>
 							<Icon name={todosNewestFirst ? 'arrow-down' : 'arrow-up'} />
 						</button>
-						{@render openLink(resolve('/tasks/todo'))}
+						{@render openLink(resolve('/calendar/todo'))}
 					</div>
 				{/snippet}
 				{#if sortedTodos.length === 0}
 					{@render nothingYet(
 						t('home.nothingOnTheListAnything'),
-						'/tasks/todo',
+						'/calendar/todo',
 						t('home.addATodo')
 					)}
 				{:else}

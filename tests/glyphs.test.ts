@@ -117,7 +117,7 @@ describe('the lists that draw them read them', () => {
 		expect(moduleGlyph('habits')).toBe(routeGlyph('/health/habits'));
 		expect(moduleGlyph('bills')).toBe(routeGlyph('/finance/bills'));
 		expect(moduleGlyph('goals')).toBe(glyphFor('goals'));
-		expect(moduleGlyph('tasks')).toBe(routeGlyph('/tasks/todo'));
+		expect(moduleGlyph('tasks')).toBe(routeGlyph('/calendar/todo'));
 	});
 
 	test('a key it has never heard of gets nothing rather than a wrong picture', () => {

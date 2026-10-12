@@ -2938,13 +2938,13 @@ export const messages: Catalogue = {
 	'rooms.settings.tabs.integrations': 'IA e integrações',
 	'rooms.settings.tabs.preferences': 'Preferências',
 	'rooms.settings.title': 'Configurações',
-	'rooms.tasks.sections': 'Seções de tarefas',
+	'rooms.tasks.sections': 'Seções do calendário',
 	'rooms.tasks.tabs.activities': 'Atividades',
 	'rooms.tasks.tabs.board': 'Quadro',
 	'rooms.tasks.tabs.plan': 'Calendário',
 	'rooms.tasks.tabs.review': 'Revisão',
 	'rooms.tasks.tabs.todo': 'Tarefas',
-	'rooms.tasks.title': 'Tarefas',
+	'rooms.tasks.title': 'Calendário',
 	'scopeGroups.acrossEverything': 'Em tudo',
 	'scopeGroups.describeItself': 'A própria descrição',
 	'scopeGroups.habitsAndWorkouts': 'Hábitos e treinos',
@@ -3080,7 +3080,7 @@ export const messages: Catalogue = {
 	'sections.reminders.label': 'Lembretes',
 	'sections.tags.blurb': 'As etiquetas que você usa, e a tela para arrumá-las.',
 	'sections.tags.label': 'Etiquetas',
-	'sections.tasks.label': 'Tarefas',
+	'sections.tasks.label': 'Calendário',
 	'sections.weekly.blurb':
 		'O que a revisão semanal escreve, guardado junto do resto do que você escreve.',
 	'sections.weekly.label': 'Notas semanais',
@@ -4631,7 +4631,7 @@ export const messages: Catalogue = {
 		'A busca é pelas próprias palavras, então um fragmento de uma frase que você escreveu encontra a entrada de onde veio.',
 	'tour.movingAndSharing': 'Movendo e compartilhando',
 	'tour.notACalendarOfAppointments':
-		'Os blocos de tarefa que você pretende repetir. Tudo o mais em Tarefas é construído a partir disso.',
+		'Os blocos de tarefa que você pretende repetir. Tudo o mais em Calendário é construído a partir disso.',
 	'tour.notJustNotesAndTasks': 'Não só notas e tarefas',
 	'tour.noteSelection':
 		'Selecione várias entradas para movê-las para um caderno, adicionar ou remover etiquetas ou excluí-las de uma vez.',
@@ -4719,7 +4719,7 @@ export const messages: Catalogue = {
 	'tour.taskSelection':
 		'Selecione várias para transformar as caixas em círculos. Selecione tarefas visíveis para mudar o estado, adicionar ou remover etiquetas, mover para um caderno ou confirmar a exclusão. Filtros limpam seleções ocultas.',
 	'tour.tasksHoldYourWeekNotebooks':
-		'Tarefas guarda sua semana, Cadernos guarda o que você escreve — o diário incluído — e ideias guarda o que você pensou no ônibus. Preferências reordena as seções e guarda as que você não quer.',
+		'Calendário guarda sua semana, Cadernos guarda o que você escreve — o diário incluído — e ideias guarda o que você pensou no ônibus. Preferências reordena as seções e guarda as que você não quer.',
 	'tour.theAppArrangedYourWay': 'O app, do seu jeito',
 	'tour.theArrowsStepAWholeWeek':
 		'As setas avançam uma semana inteira, então sempre caem no mesmo dia da semana. Aqui você escolhe em que dia a semana começa.',

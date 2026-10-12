@@ -26,7 +26,7 @@ type Opens = {
 
 /** Every kind a link can name, and where it opens. */
 export const OBJECT_ROOMS = {
-	todo: { room: '/tasks/todo', by: 'edit' },
+	todo: { room: '/calendar/todo', by: 'edit' },
 	goal: { room: '/goals', by: 'edit' },
 	goalArea: { room: '/goals' },
 	notebook: { room: '/notebooks', by: 'path' },
@@ -34,10 +34,10 @@ export const OBJECT_ROOMS = {
 	habit: { room: '/health/habits', by: 'edit' },
 	idea: { room: '/notebooks/ideas', by: 'edit' },
 	person: { room: '/notebooks/people', by: { param: 'person' } },
-	activity: { room: '/tasks/activities', by: 'edit' },
+	activity: { room: '/calendar/activities', by: 'edit' },
 	reminder: { room: '/reminders' },
-	repeatingBlock: { room: '/tasks/calendar' },
-	block: { room: '/tasks/calendar' },
+	repeatingBlock: { room: '/calendar/calendar' },
+	block: { room: '/calendar/calendar' },
 	item: { room: '/inventory/stock', by: 'edit' },
 	inventoryCategory: { room: '/inventory/stock' },
 	recipe: { room: '/health/recipes', by: 'edit' },

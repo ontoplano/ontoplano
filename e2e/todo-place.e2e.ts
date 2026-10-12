@@ -39,7 +39,7 @@ async function orderByPriority(page: Page) {
 test('the place in the form is the place in the list', async ({ page }) => {
 	test.setTimeout(180_000);
 	await register(page, testEmail('todo-place'));
-	await visit(page, '/tasks/todo');
+	await visit(page, '/calendar/todo');
 
 	await add(page, 'First thing');
 	await add(page, 'Second thing');
@@ -47,12 +47,12 @@ test('the place in the form is the place in the list', async ({ page }) => {
 
 	// In priority order, the row and the number agree — which is the claim
 	// somebody can check by looking.
-	await visit(page, '/tasks/todo');
+	await visit(page, '/calendar/todo');
 	await orderByPriority(page);
 	await page.getByRole('button', { name: /Edit/ }).first().click();
 	await expect(page.getByText(/in line/).first()).toContainText('1st');
 
-	await visit(page, '/tasks/todo');
+	await visit(page, '/calendar/todo');
 	await orderByPriority(page);
 	await page.getByRole('button', { name: /Edit/ }).nth(2).click();
 	await expect(page.getByText(/in line/).first()).toContainText('3rd');
@@ -61,7 +61,7 @@ test('the place in the form is the place in the list', async ({ page }) => {
 test('a new task goes behind the ones rated the same, whatever is on screen', async ({ page }) => {
 	test.setTimeout(180_000);
 	await register(page, testEmail('todo-place-new'));
-	await visit(page, '/tasks/todo');
+	await visit(page, '/calendar/todo');
 
 	await add(page, 'First thing');
 	await add(page, 'Second thing');

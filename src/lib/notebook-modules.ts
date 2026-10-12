@@ -27,7 +27,7 @@ import type { IconName } from './components/Icon.svelte';
  */
 export const NOTEBOOK_MODULES = [
 	{ id: 'notes', name: 'app.notes', section: 'diary', glyph: 'note', always: true },
-	{ id: 'tasks', name: 'app.tasks', section: 'planner', is: '/tasks/todo' },
+	{ id: 'tasks', name: 'app.tasks', section: 'planner', is: '/calendar/todo' },
 	{ id: 'goals', name: 'app.goals', section: 'goals', is: 'goals', hide: 'goals' },
 	{
 		id: 'ideas',

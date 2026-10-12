@@ -2956,13 +2956,13 @@ export const messages: Catalogue = {
 	'rooms.settings.tabs.integrations': 'IA e integraciones',
 	'rooms.settings.tabs.preferences': 'Preferencias',
 	'rooms.settings.title': 'Configuración',
-	'rooms.tasks.sections': 'Secciones de tareas',
+	'rooms.tasks.sections': 'Secciones del calendario',
 	'rooms.tasks.tabs.activities': 'Actividades',
 	'rooms.tasks.tabs.board': 'Tablero',
 	'rooms.tasks.tabs.plan': 'Calendario',
 	'rooms.tasks.tabs.review': 'Revisión',
 	'rooms.tasks.tabs.todo': 'Tareas',
-	'rooms.tasks.title': 'Tareas',
+	'rooms.tasks.title': 'Calendario',
 	'scopeGroups.acrossEverything': 'En todo',
 	'scopeGroups.describeItself': 'Su propia descripción',
 	'scopeGroups.habitsAndWorkouts': 'Hábitos y entrenamientos',
@@ -3098,7 +3098,7 @@ export const messages: Catalogue = {
 	'sections.reminders.label': 'Recordatorios',
 	'sections.tags.blurb': 'Las etiquetas que usas, y la pantalla para ordenarlas.',
 	'sections.tags.label': 'Etiquetas',
-	'sections.tasks.label': 'Tareas',
+	'sections.tasks.label': 'Calendario',
 	'sections.weekly.blurb': 'Lo que escribe la revisión semanal, junto al resto de lo que escribes.',
 	'sections.weekly.label': 'Notas semanales',
 	'sections.workouts.blurb':
@@ -4652,7 +4652,7 @@ export const messages: Catalogue = {
 		'La coincidencia es por las palabras mismas, así que un fragmento de una frase que escribiste encuentra la entrada de la que vino.',
 	'tour.movingAndSharing': 'Mover y compartir',
 	'tour.notACalendarOfAppointments':
-		'Los bloques de tarea que planeas repetir. Todo lo demás en Tareas se construye a partir de esto.',
+		'Los bloques de tarea que planeas repetir. Todo lo demás en Calendario se construye a partir de esto.',
 	'tour.notJustNotesAndTasks': 'No solo notas y tareas',
 	'tour.noteSelection':
 		'Selecciona varias entradas para moverlas a un cuaderno, añadir o quitar etiquetas o eliminarlas de una vez.',
@@ -4740,7 +4740,7 @@ export const messages: Catalogue = {
 	'tour.taskSelection':
 		'Selecciona varias para convertir las casillas en círculos. Selecciona tareas visibles para cambiar su estado, añadir o quitar etiquetas, moverlas a un cuaderno o confirmar la eliminación. Los filtros quitan las selecciones ocultas.',
 	'tour.tasksHoldYourWeekNotebooks':
-		'Tareas contiene tu semana, Cuadernos contiene lo que escribes — el diario incluido — e Ideas contiene lo que se te ocurrió en el bus. Preferencias reordena las secciones y guarda las que no quieres.',
+		'Calendario contiene tu semana, Cuadernos contiene lo que escribes — el diario incluido — e Ideas contiene lo que se te ocurrió en el bus. Preferencias reordena las secciones y guarda las que no quieres.',
 	'tour.theAppArrangedYourWay': 'La app, organizada a tu manera',
 	'tour.theArrowsStepAWholeWeek':
 		'Las flechas avanzan una semana entera, así que siempre caen en el mismo día de la semana. Aquí eliges en qué día empieza la semana.',

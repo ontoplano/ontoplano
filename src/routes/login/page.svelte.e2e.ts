@@ -78,7 +78,7 @@ test('protects /activities route', async ({ page }) => {
 	await expect(page).toHaveURL('/login');
 });
 
-test('protects /tasks route', async ({ page }) => {
-	await page.goto('/tasks');
+test('protects /calendar route', async ({ page }) => {
+	await page.goto('/calendar');
 	await expect(page).toHaveURL('/login');
 });

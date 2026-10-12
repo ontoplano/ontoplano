@@ -23,7 +23,7 @@ test('selection changes tags, status, notebook and deletes only selected tasks',
 		headers: { Origin: new URL(page.url()).origin, 'x-sveltekit-action': 'true' },
 		form: { heading: 'Destination' }
 	});
-	await visit(page, '/tasks/todo');
+	await visit(page, '/calendar/todo');
 	for (const title of ['First batch task', 'Second batch task', 'Keep this task'])
 		await add(page, title);
 	await select(page, ['First batch task', 'Second batch task']);
@@ -65,7 +65,7 @@ test('selection changes tags, status, notebook and deletes only selected tasks',
 	await page.waitForTimeout(500);
 	await page.getByRole('button', { name: 'Delete', exact: true }).last().click();
 	await expect(page.locator('[data-todo-id]')).toHaveCount(0);
-	await visit(page, '/tasks/todo');
+	await visit(page, '/calendar/todo');
 	await expect(page.locator('[data-todo-id]')).toHaveCount(1);
 	await expect(page.getByText('Keep this task', { exact: true })).toBeVisible();
 });
@@ -75,7 +75,7 @@ test('circles select without completion; filtering drops hidden selections and l
 }, info) => {
 	test.setTimeout(120_000);
 	await register(page, testEmail('batch-layout'));
-	await visit(page, '/tasks/todo');
+	await visit(page, '/calendar/todo');
 	await add(page, 'Visible task');
 	await add(page, 'Hidden task');
 	for (const width of [390, 2000]) {
@@ -113,7 +113,7 @@ test('Space selects the row under j/k even when another row checkbox has focus',
 }) => {
 	test.setTimeout(120_000);
 	await register(page, testEmail('batch-keyboard-cursor'));
-	await visit(page, '/tasks/todo');
+	await visit(page, '/calendar/todo');
 	await add(page, 'Keyboard first task');
 	await add(page, 'Keyboard second task');
 	await page.getByRole('button', { name: 'Select many', exact: true }).click();
