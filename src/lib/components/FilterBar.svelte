@@ -197,8 +197,20 @@
 	 */
 	const said = $derived(on && summary ? summary : t('filters.filters'));
 
-	/** Folded with a verb or an order: the fixed two lines described above. */
-	const twoRows = $derived(folded && Boolean(verb || trailing));
+	/**
+	 * Below this the folded strip is two lines; above it, one.
+	 *
+	 * Folding is about the filters, and a strip can be folded on a desktop —
+	 * a card half the page wide. There the search box, the count and the
+	 * order had room for one line and were still given a phone's two, with
+	 * thumb-sized buttons under a mouse. 35rem at the default type size.
+	 */
+	const TWO_ROWS_BELOW_PX = 560;
+
+	/** Folded with a verb or an order, and phone-narrow: the fixed two lines described above. */
+	const twoRows = $derived(
+		folded && Boolean(verb || trailing) && (width > 0 ? width < TWO_ROWS_BELOW_PX : phone.current)
+	);
 </script>
 
 <!--
@@ -437,12 +449,6 @@
 	 */
 	.filter-two-rows > .filter-tail > .filter-verb {
 		order: 1;
-	}
-
-	/* The direction is a button among buttons here, not a bare glyph. */
-	.filter-two-rows > .filter-tail :global(.icon-btn) {
-		border: 1px solid var(--color-gray-300);
-		background-color: var(--btn-face);
 	}
 
 	.filter-inline-below > :global(*) {
