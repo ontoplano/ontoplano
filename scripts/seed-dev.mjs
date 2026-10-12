@@ -3090,6 +3090,31 @@ for (const row of all(
 	reminder(row.id, 10, 'Coming up in ten minutes');
 }
 
+/*
+ * And one about nothing but itself, written with a picture in it — a reminder
+ * is markdown, and "this one, not the cheap one" is said with a photograph.
+ * Tomorrow evening, so it is on the reminders page and has not gone off.
+ */
+{
+	const oil = picture('item-olive-oil.jpg', 'olive oil', demoPicture('item-olive-oil.jpg'));
+	const message = oil
+		? `Olive oil on the way home — **this one**, not the cheap one\n\n![olive oil](/media/${oil})`
+		: 'Olive oil on the way home — **this one**, not the cheap one';
+	if (
+		!one(
+			"select id from reminders where user_id = ? and subject_kind = 'free' and message = ?",
+			uid,
+			message
+		)
+	)
+		run(
+			"insert into reminders (user_id, subject_kind, subject_id, remind_at, message, audible) values (?, 'free', null, ?, ?, 0)",
+			uid,
+			`${localStamp(24 * 60).slice(0, 10)}T18:00:00`,
+			message
+		);
+}
+
 // --- mail that did not go out (the /admin card and the /healthz warning) --------
 
 const mailFailure = (kind, toEmail, subject, error, bodyText) => {

@@ -1825,7 +1825,7 @@ _Needs `schedule:write`; writes; answers with `before` and `after`._
 | Parameter   | Type    | Required | What it is                                                                                                                                                                                                                                                                                  |
 | ----------- | ------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `at`        | string  | yes      | When, as YYYY-MM-DDTHH:MM in the person’s own timezone. Seconds allowed and honoured. A bare YYYY-MM-DD means the hour their day starts. It has to be ahead of now — check the year, which is the one people leave out.                                                                     |
-| `message`   | string  | yes      | What it should say, in their words.                                                                                                                                                                                                                                                         |
+| `message`   | string  | yes      | What it should say, in their words. Markdown, like a todo’s notes: a picture is `![name](/media/12)`.                                                                                                                                                                                       |
 | `sound`     | boolean | —        | Whether it should make a noise as well as showing. Silent unless asked; do not turn this on unless they said so.                                                                                                                                                                            |
 | `requestId` | string  | —        | An id you choose for this call, such as a UUID, so it can be sent again safely: the same `requestId` with the same arguments within a day answers with the first answer, marked `replayed`, and nothing is made twice. Reused for a different call, it is refused with the code `conflict`. |
 
@@ -1839,7 +1839,7 @@ _Needs `schedule:write`; writes; answers with `before` and `after`._
 | --------- | ------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
 | `id`      | integer | yes      | The reminder’s id.                                                                                                                          |
 | `at`      | string  | —        | A new time, as YYYY-MM-DDTHH:MM in the person’s own timezone. A bare YYYY-MM-DD means the hour their day starts. It has to be ahead of now. |
-| `message` | string  | —        | What it should say instead, in their words.                                                                                                 |
+| `message` | string  | —        | What it should say instead, in their words. Markdown, like a todo’s notes.                                                                  |
 | `sound`   | boolean | —        | Whether it should make a noise. Leave it out to keep what it does now; do not turn this on unless they said so.                             |
 
 ### `cancel_alarm` — Take a reminder back

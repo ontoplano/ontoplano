@@ -42,6 +42,7 @@ const SCOPE_OF: Record<ReferrerKind, string | null> = {
 	notebook: 'notes:read',
 	idea: 'ideas:read',
 	todo: 'tasks:read',
+	reminder: 'reminders:read',
 	person: 'people:read',
 	recipe: 'kitchen:read',
 	item: 'inventory:read',

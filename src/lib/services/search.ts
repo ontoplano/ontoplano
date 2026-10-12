@@ -37,7 +37,7 @@ import {
 } from '../search.js';
 import type { Ctx } from './ctx.js';
 import { str } from './validate.js';
-import { plainMarkdown } from '../markdown-plain.js';
+import { plainLine } from '../markdown-plain.js';
 
 export {
 	KIND_LABELS,
@@ -57,7 +57,7 @@ const PER_KIND = 6;
  * worse than showing nothing: the reader cannot see why it matched.
  */
 function snippetOf(text: string, needle: string, max = 120): string {
-	const flat = plainMarkdown(text).replace(/\s+/g, ' ').trim();
+	const flat = plainLine(text);
 	const at = flat.toLowerCase().indexOf(needle.toLowerCase());
 	if (at === -1) return flat.slice(0, max);
 
@@ -67,7 +67,7 @@ function snippetOf(text: string, needle: string, max = 120): string {
 }
 
 function firstLine(text: string, max = 80): string {
-	const line = plainMarkdown(text).replace(/\s+/g, ' ').trim();
+	const line = plainLine(text);
 	return line.length > max ? line.slice(0, max) + '…' : line;
 }
 

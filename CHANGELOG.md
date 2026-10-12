@@ -20,6 +20,7 @@ releases mattered.
 
 ## 0.186.1 — 2026-10-10
 
+- A reminder is written in markdown and can carry a picture or a recording, like a todo's notes; the list shows the picture, and a notification or an alarm shows the words.
 - A new note in a notebook starts empty, instead of holding the last note you wrote.
 - While writing a note, Save sits beside Cancel at the top, so a long note is not scrolled past to save it, and Cancel shows a cross instead of a plus.
 - AI & Integrations is one press away on the phone: a robot in the account fan opens it.
