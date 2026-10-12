@@ -12,7 +12,13 @@
  * somebody only notices after trusting it.
  */
 import { describe, expect, test } from 'vitest';
-import { UNTITLED_BLOCK, fallsOn } from '../src/lib/planner-grid';
+import {
+	REMINDER_LABEL_CHARS,
+	UNTITLED_BLOCK,
+	buildReminderEvents,
+	fallsOn,
+	reminderLabel
+} from '../src/lib/planner-grid';
 import { messages as english } from '../src/lib/i18n/catalogues/en';
 import { messages as portuguese } from '../src/lib/i18n/catalogues/pt-BR';
 import { translator } from '../src/lib/i18n/core';
@@ -586,5 +592,32 @@ describe('something that lasts all day', () => {
 		expect(baseGridOptions('2026-08-17').allDaySlot).toBe(false);
 		// A month has no such row: every day is a whole day there already.
 		expect(baseGridOptions('2026-08-01', { allDay: true, month: true }).allDaySlot).toBe(false);
+	});
+});
+
+describe('a reminder on the grid', () => {
+	test('is labelled by the start of its message, as words', () => {
+		expect(reminderLabel('**Call** the plumber')).toBe('Call the plumber');
+		const long = reminderLabel('Call the plumber about the leaking kitchen tap');
+		expect(long.length).toBeLessThanOrEqual(REMINDER_LABEL_CHARS);
+		expect(long.endsWith('…')).toBe(true);
+	});
+
+	test('rings at its own time, unmovable, with its whole message kept for the card', () => {
+		const [event] = buildReminderEvents(
+			[{ id: 7, remindAt: '2026-10-14T10:00:00', message: '# Plumber\nthe *tap*' }],
+			'#1d4ed8'
+		);
+		expect(event.id).toBe('reminder:7');
+		expect((event.start as Date).getHours()).toBe(10);
+		expect(event.editable).toBe(false);
+		expect(event.extendedProps).toMatchObject({ kind: 'reminder', refId: 7 });
+		const card = describeGridEvent(
+			{ ...event, start: event.start as Date, end: event.end as Date },
+			translator('en', english)
+		);
+		expect(card.message).toBe('# Plumber\nthe *tap*');
+		expect(card.durationText).toBe('');
+		expect(card.timeText).toBe('10:00');
 	});
 });

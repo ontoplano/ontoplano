@@ -11,6 +11,7 @@ import { attributesFromFormData, attributesPatchFromFormData } from '$lib/servic
 import { listManifests } from '$lib/services/plugins';
 import { pickableNotebooks } from '$lib/services/notebooks';
 import { billsDueBetween } from '$lib/services/bills';
+import { listReminders } from '$lib/services/reminders';
 import { ensureSession, listWorkouts, updateSession } from '$lib/services/workouts';
 import {
 	addFeed,
@@ -63,6 +64,9 @@ import { formAction } from '$lib/services/scoped-actions';
  */
 // Not exported: a `+page.server.ts` may only export what SvelteKit names.
 const NARROW_COOKIE = 'onto_narrow';
+
+/** The reminders the grid draws: those about nothing else on it. */
+const GRID_REMINDER_KINDS: readonly string[] = ['free', 'todo'];
 
 /**
  * How much of the plan is on screen.
@@ -370,6 +374,21 @@ export const load = async ({ locals, url, cookies }: IsolatedEvent) => {
 		 * one marks the bill paid for its period.
 		 */
 		billsDue: billsDueBetween(ctx, localDay(from), localDay(to)),
+		/*
+		 * The reminders that ring in this window, where they ring.
+		 *
+		 * The ones that are only themselves — an alarm, and the older reminder
+		 * on a todo. One on a block is already drawn: it is the block's, and
+		 * its editor shows it. A dismissed one has been answered.
+		 */
+		reminders: listReminders(ctx)
+			.filter(
+				(r) =>
+					GRID_REMINDER_KINDS.includes(r.subjectKind) &&
+					r.remindAt.slice(0, 10) >= localDay(from) &&
+					r.remindAt.slice(0, 10) <= localDay(to)
+			)
+			.map((r) => ({ id: r.id, remindAt: r.remindAt, message: r.message })),
 		// The workouts a block can be about. Empty for an account that keeps
 		// none, which is what hides the mode entirely.
 		// `categoryName` for the block form's header, which says what the block

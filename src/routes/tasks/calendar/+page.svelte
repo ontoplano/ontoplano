@@ -24,6 +24,8 @@
 	import { resolve } from '$app/paths';
 	import OneLine from '$lib/components/OneLine.svelte';
 	import Icon, { ICONS } from '$lib/components/Icon.svelte';
+	import Written from '$lib/components/Written.svelte';
+	import { linkTo } from '$lib/object-links';
 	import Swatch from '$lib/components/Swatch.svelte';
 	import EmptyState from '$lib/components/EmptyState.svelte';
 	import TodoCard from '$lib/components/TodoCard.svelte';
@@ -95,6 +97,7 @@
 		buildExceptionalEvents,
 		buildSubscribedEvents,
 		buildBillEvents,
+		buildReminderEvents,
 		placementFromDates,
 		decodeEventId,
 		weekdayToDate,
@@ -2112,6 +2115,7 @@
 		// because they are not ours to move.
 		...buildSubscribedEvents(data.subscribed),
 		...buildBillEvents(data.billsDue, SECTION_COLORS.finance),
+		...buildReminderEvents(data.reminders, SECTION_COLORS.planner),
 		...previewEvents
 	]);
 
@@ -2185,7 +2189,7 @@
 						notebook: String(props.notebookTitle ?? ''),
 						inactive: (e.classNames ?? []).includes('og-event--inactive'),
 						mark: block ? markOf(kind, refId, day.date) : null,
-						opens: block || kind === 'bill',
+						opens: block || kind === 'bill' || kind === 'reminder',
 						event: { id: e.id as string, start, extendedProps: props }
 					};
 				});
@@ -2298,6 +2302,7 @@
 			locale: t.locale,
 			twelveHour: wantsTwelveHour(now()),
 			notebookGlyph: ICONS.notebook,
+			alarmGlyph: ICONS.alarm,
 			markLabels: {
 				done: (title) => t('tasks.plan.putBlockBackToPending', { title }),
 				undone: (title) => t('tasks.plan.markBlockAsDone', { title })
@@ -2359,6 +2364,13 @@
 		}
 		if (props.kind === 'bill') {
 			void payBillFromGrid(Number(props.billId), String(props.period), Boolean(props.paid));
+			return;
+		}
+		// Changed where its sound is chosen, which this page knows nothing about.
+		if (props.kind === 'reminder') {
+			const where = linkTo({ kind: 'reminder', id: Number(props.refId) });
+			// eslint-disable-next-line svelte/no-navigation-without-resolve
+			if (where) void goto(where);
 			return;
 		}
 		const decoded = decodeEventId(info.event.id);
@@ -4712,10 +4724,18 @@
 				? t('tasks.plan.translatex100Translatex8px')
 				: 'translateX(8px)'}
 		>
-			<p class="text-sm font-medium text-gray-900">{hovered.title}</p>
-			<p class="mt-0.5 text-xs text-gray-600">
-				{hovered.timeText} · {hovered.durationText}
-			</p>
+			{#if hovered.message !== null}
+				<!-- A reminder has no title: the card is its whole message. -->
+				<p class="flex items-center gap-1 text-xs text-gray-600">
+					<Icon name="alarm" size={12} />{hovered.timeText}
+				</p>
+				<div class="mt-1 text-sm text-gray-900"><Written content={hovered.message} compact /></div>
+			{:else}
+				<p class="text-sm font-medium text-gray-900">{hovered.title}</p>
+				<p class="mt-0.5 text-xs text-gray-600">
+					{hovered.timeText} · {hovered.durationText}
+				</p>
+			{/if}
 			{#if hovered.categoryName}
 				<p class="text-xs text-gray-500">{hovered.categoryName}</p>
 			{/if}
