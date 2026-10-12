@@ -72,6 +72,44 @@ function notebooksOf(value: unknown): Record<string, number> {
 	return out;
 }
 
+/** Whether a notebook can take what a kind writes — see `notebooksHolding`. */
+export type CanHold = (kind: string, notebookId: number) => boolean;
+
+/**
+ * The one notebook every filed kind writes into, for the picker over them.
+ *
+ * A kind that cannot take that notebook — an idea, where it has no Ideas tab —
+ * and has none is not disagreeing: putting everything into Kitchen leaves it
+ * with none, and the picker still says Kitchen. `undefined` is "Mixed": two
+ * notebooks, or one kind in a notebook while another that could be is not.
+ */
+export function sharedNotebook(
+	notebooks: Record<string, number | null>,
+	canHold: CanHold
+): number | null | undefined {
+	const kinds = FILED_KINDS.filter((kind) => kind in notebooks);
+	const chosen = new Set(kinds.map((kind) => notebooks[kind]).filter((id) => id !== null));
+	if (chosen.size === 0) return null;
+	if (chosen.size > 1) return undefined;
+	const [only] = chosen as Set<number>;
+	const agrees = kinds.every((kind) => notebooks[kind] === only || !canHold(kind, only));
+	return agrees ? only : undefined;
+}
+
+/** Every filed kind into one notebook: those that can take it, and none for the rest. */
+export function everyInto(
+	notebookId: number | null,
+	kinds: readonly string[],
+	canHold: CanHold
+): Record<string, number | null> {
+	return Object.fromEntries(
+		kinds.map((kind) => [
+			kind,
+			notebookId !== null && canHold(kind, notebookId) ? notebookId : null
+		])
+	);
+}
+
 /**
  * The stored answer, read leniently.
  *

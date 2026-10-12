@@ -202,3 +202,64 @@ describe('saving', () => {
 		expect(settings.getCaptureSettings(OWNER).notebookId).toBe(null);
 	});
 });
+
+describe('the picker over every wedge', () => {
+	// Kitchen (1) has notes and tasks; Shop (2) has everything.
+	const tabs: Record<number, string[]> = {
+		1: ['note', 'todo'],
+		2: ['idea', 'todo', 'note', 'buy']
+	};
+	const canHold = (kind: string, id: number) => tabs[id]?.includes(kind) ?? false;
+
+	test('sets the wedges that can take it, and none for the rest', () => {
+		expect(capture.everyInto(1, capture.FILED_KINDS, canHold)).toEqual({
+			idea: null,
+			todo: 1,
+			note: 1,
+			buy: null
+		});
+		expect(capture.everyInto(null, capture.FILED_KINDS, canHold)).toEqual({
+			idea: null,
+			todo: null,
+			note: null,
+			buy: null
+		});
+	});
+
+	test('says that notebook afterwards, not Mixed', () => {
+		expect(
+			capture.sharedNotebook(capture.everyInto(1, capture.FILED_KINDS, canHold), canHold)
+		).toBe(1);
+		expect(
+			capture.sharedNotebook(capture.everyInto(2, capture.FILED_KINDS, canHold), canHold)
+		).toBe(2);
+		expect(
+			capture.sharedNotebook(capture.everyInto(null, capture.FILED_KINDS, canHold), canHold)
+		).toBe(null);
+	});
+
+	test('is Mixed when two notebooks are in use', () => {
+		expect(capture.sharedNotebook({ idea: null, todo: 2, note: 1, buy: null }, canHold)).toBe(
+			undefined
+		);
+	});
+
+	test('is Mixed when a wedge that could be in it is not', () => {
+		expect(capture.sharedNotebook({ idea: null, todo: 1, note: null, buy: null }, canHold)).toBe(
+			undefined
+		);
+	});
+});
+
+describe('a form whose wedges disagree', () => {
+	test('posts the shared notebook as none', () => {
+		const read = capture.readCaptureForm({
+			notebookId: '',
+			notebooks: { todo: '2', note: '1', idea: '' },
+			order: ['todo'],
+			on: ['todo']
+		});
+		expect(read?.notebookId).toBe(null);
+		expect(read?.notebooks).toEqual({ todo: 2, note: 1 });
+	});
+});
