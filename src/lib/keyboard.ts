@@ -21,7 +21,31 @@ export type Viewport = {
 	viewportHeight: number;
 	/** How far the visible part has been pushed down, if at all. */
 	offsetTop: number;
+	/**
+	 * The tallest the layout viewport has been at this width since the sheet
+	 * opened — see `openedHeight`. Left out, only the two above are compared.
+	 */
+	openedHeight?: number;
 };
+
+/** The layout viewport's size, as `openedHeight` remembers it. */
+export type Layout = { width: number; height: number };
+
+/**
+ * What the layout viewport measured before anything covered it.
+ *
+ * Comparing the visible part with the layout viewport only sees a keyboard
+ * that *covers* the page. Where the keyboard *resizes* it — Chrome honouring
+ * `interactive-widget=resizes-content`, and the Android app, which shrinks its
+ * web view for the keyboard — both shrink together, the difference is zero,
+ * and a short sheet stayed half of what was left: a header and one field. So
+ * the height before the keyboard is kept and compared too. A change of width is
+ * a rotation, not a keyboard, and starts the measure again.
+ */
+export function openedHeight(before: Layout | null, now: Layout): Layout {
+	if (!before || before.width !== now.width) return now;
+	return now.height > before.height ? now : before;
+}
 
 /**
  * Below this, it is not a keyboard.
@@ -40,7 +64,8 @@ export const KEYBOARD_THRESHOLD = 120;
  * pinned in pixels no longer follows a rotation or a resize.
  */
 export function panelHeight(view: Viewport): number | null {
-	const covered = view.innerHeight - view.viewportHeight - view.offsetTop;
+	const layout = Math.max(view.innerHeight, view.openedHeight ?? 0);
+	const covered = layout - view.viewportHeight - view.offsetTop;
 	if (!Number.isFinite(covered) || covered < KEYBOARD_THRESHOLD) return null;
 	// Never taller than the layout viewport, and never absurdly short: a bad
 	// reading is better ignored than obeyed.
