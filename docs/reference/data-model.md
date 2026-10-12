@@ -86,7 +86,7 @@ exist.
 | [`task_records`](#task_records)                             | 15      | yes               |
 | [`todo_tags`](#todo_tags)                                   | 5       | yes               |
 | [`todo_tasks`](#todo_tasks)                                 | 20      | yes               |
-| [`user`](#user)                                             | 11      | —                 |
+| [`user`](#user)                                             | 12      | —                 |
 | [`user_settings`](#user_settings)                           | 4       | yes               |
 | [`verification`](#verification)                             | 6       | —                 |
 | [`webhook_subscriptions`](#webhook_subscriptions)           | 11      | yes               |
@@ -1645,6 +1645,7 @@ Checks — enforced by the database, not only by the service layer:
 | `banned`         | integer | null     | `false`                                            | —           |
 | `ban_reason`     | text    | null     | —                                                  | —           |
 | `ban_expires`    | integer | null     | —                                                  | —           |
+| `last_active_at` | integer | null     | —                                                  | —           |
 | `created_at`     | integer | not null | `(cast(unixepoch('subsecond') * 1000 as integer))` | —           |
 | `updated_at`     | integer | not null | `(cast(unixepoch('subsecond') * 1000 as integer))` | —           |
 
