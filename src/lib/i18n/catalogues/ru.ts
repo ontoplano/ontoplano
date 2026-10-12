@@ -396,21 +396,19 @@ export const messages: Catalogue = {
 	'capture.planDestination': 'ваш календарь',
 	'captureDialog.notWrittenDown': 'Это не было записано.',
 	'captureSettings.atLeastOne': 'хотя бы один',
-	'captureSettings.eachKind': 'Свой блокнот для каждого вида',
-	'captureSettings.eachKindHint':
-		'Куда попадает вид вместо основного блокнота. Напоминание — о времени и не попадает ни в какой.',
+	'captureSettings.everyWedge': 'Все секторы',
+	'captureSettings.filedNowhere': 'Не кладётся в блокнот',
 	'captureSettings.intro':
 		'Что держит колесо захвата «+» и куда попадает то, что вы через него записываете.',
-	'captureSettings.mainNotebook': 'Основной блокнот',
-	'captureSettings.mainNotebookHint':
-		'Задачи, заметки, идеи и покупки начинаются в нём. Внутри блокнота приоритет у этого блокнота.',
+	'captureSettings.mixed': 'Разные',
 	'captureSettings.noNotebooksYet': 'Блокнотов пока нет.',
-	'captureSettings.sameAsMain': 'Основной блокнот',
+	'captureSettings.noneHolds': 'Ни в одном блокноте пока нет этой вкладки',
 	'captureSettings.save': 'Сохранить быстрый захват',
 	'captureSettings.saved': 'Быстрый захват сохранён.',
 	'captureSettings.title': 'Настройки быстрого захвата',
 	'captureSettings.wedges': 'Секторы',
-	'captureSettings.wedgesHint': 'Колесо рисует отмеченные, в этом порядке.',
+	'captureSettings.wedgesHint':
+		'Колесо рисует отмеченные, в этом порядке, и каждый пишет в свой блокнот. Внутри блокнота главнее он.',
 	'card.currentStreaks': 'Текущие серии.',
 	'card.goalsWhosePeriodCoversToday': 'Цели, чей период включает сегодня, с прогрессом.',
 	'card.oneOfYourOwnQuotes': 'Одна из ваших цитат — одна и та же весь день.',

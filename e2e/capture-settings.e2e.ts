@@ -76,7 +76,7 @@ for (const size of [
 		// Two on, the note first.
 		await dialog.locator('input[name="on"][value="todo"]').check();
 		await dialog.getByRole('button', { name: 'Move Note up' }).click();
-		await choose(dialog, 'notebookId', 'Kitchen');
+		await choose(dialog, 'everyNotebook', 'Kitchen');
 		await page.getByRole('button', { name: 'Save', exact: true }).click();
 		await expect(dialog).toBeHidden();
 
@@ -94,7 +94,8 @@ for (const size of [
 		const prefs = page.locator('form[data-tour="prefs-capture"]');
 		await expect(prefs.locator('input[type="checkbox"][value="note"]')).toBeChecked();
 		await expect(prefs.locator('input[type="checkbox"][value="idea"]')).not.toBeChecked();
-		await expect(prefs.locator('[name="notebookId"]')).toHaveValue(kitchen);
+		await expect(prefs.locator('[name="notebook.todo"]')).toHaveValue(kitchen);
+		await expect(prefs.locator('[name="notebook.note"]')).toHaveValue(kitchen);
 	});
 }
 
@@ -108,7 +109,7 @@ test('a notebook on screen wins over the main one', async ({ page }) => {
 
 	await visit(page, '/settings/preferences');
 	const prefs = page.locator('form[data-tour="prefs-capture"]');
-	await choose(prefs, 'notebookId', 'Kitchen');
+	await choose(prefs, 'everyNotebook', 'Kitchen');
 	await prefs.getByRole('button', { name: 'Save quick capture' }).click();
 	await expect(page.getByText('Quick capture saved.')).toBeVisible();
 
@@ -136,14 +137,15 @@ test('saving a stranger’s notebook is refused', async ({ page }) => {
 });
 
 /*
- * Tasks into Work, everything else into Kitchen: a kind can have a notebook of
- * its own, and one that has none follows the main one.
+ * Tasks into Work, notes into Kitchen: every wedge has its own notebook in its
+ * own row, and the picker above them sets them all — saying "Mixed" while
+ * they disagree.
  */
 for (const size of [
 	{ name: 'phone', width: 390, height: 844 },
 	{ name: 'desktop', width: 1400, height: 900 }
 ]) {
-	test(`a kind goes to its own notebook, the rest to the main one (${size.name})`, async ({
+	test(`each wedge has its notebook, and one picker sets them all (${size.name})`, async ({
 		page
 	}) => {
 		test.setTimeout(120_000);
@@ -155,13 +157,28 @@ for (const size of [
 
 		await visit(page, '/settings/preferences');
 		const prefs = page.locator('form[data-tour="prefs-capture"]');
-		await choose(prefs, 'notebookId', 'Kitchen');
-		await prefs.getByText("Each kind's own notebook").click();
+		const every = prefs.locator('[data-picker="everyNotebook"] button').first();
+		await choose(prefs, 'everyNotebook', 'Kitchen');
+		await expect(every).toHaveText(/Kitchen/);
+		const kitchen = await prefs.locator('[name="notebook.todo"]').inputValue();
+		expect(Number(kitchen)).toBeGreaterThan(0);
+		await expect(prefs.locator('[name="notebook.note"]')).toHaveValue(kitchen);
+
+		// One row on its own: the picker over them all says so.
 		await choose(prefs, 'notebook.todo', 'Work');
+		await expect(every).toHaveText(/Mixed/);
+		const work = await prefs.locator('[name="notebook.todo"]').inputValue();
+		expect(work).not.toBe(kitchen);
+
+		// The rows' pickers stand in one column, under the one that sets them.
+		const xs = await prefs
+			.locator('.notebook-cell')
+			.evaluateAll((all) => all.map((one) => Math.round(one.getBoundingClientRect().x)));
+		expect(new Set(xs).size).toBe(1);
+		await page.screenshot({ path: `test-results/capture-settings-${size.name}.png` });
+
 		await prefs.getByRole('button', { name: 'Save quick capture' }).click();
 		await expect(page.getByText('Quick capture saved.')).toBeVisible();
-		const work = await prefs.locator('[name="notebook.todo"]').inputValue();
-		const kitchen = await prefs.locator('[name="notebookId"]').inputValue();
 
 		await visit(page, '/');
 		await openWheel(page);
@@ -176,10 +193,22 @@ for (const size of [
 		await page.locator('[data-wedge="note"]').click();
 		const note = page.getByRole('dialog', { name: 'New note' });
 		await expect(note.locator('[name="notebookId"]')).toHaveValue(kitchen);
+		await page.keyboard.press('Escape');
 
-		// Preferences opens on the answer, with the fold open since a kind has one.
-		await visit(page, '/settings/preferences');
-		await expect(prefs.locator('[name="notebook.todo"]')).toHaveValue(work);
-		await expect(prefs.locator('[name="notebook.note"]')).toHaveValue('');
+		// The gear's dialog is the same list, on the same answer.
+		await visit(page, '/');
+		await openWheel(page);
+		await page.getByRole('button', { name: 'Quick capture settings' }).click();
+		const dialog = page.getByRole('dialog', { name: 'Quick capture settings' });
+		await expect(dialog.locator('[name="notebook.todo"]')).toHaveValue(work);
+		await expect(dialog.locator('[name="notebook.note"]')).toHaveValue(kitchen);
+		await expect(dialog.locator('[data-picker="everyNotebook"] button').first()).toHaveText(
+			/Mixed/
+		);
+
+		// Setting them all again ends the mix.
+		await choose(dialog, 'everyNotebook', 'Work');
+		await expect(dialog.locator('[name="notebook.note"]')).toHaveValue(work);
+		await expect(dialog.locator('[data-picker="everyNotebook"] button').first()).toHaveText(/Work/);
 	});
 }

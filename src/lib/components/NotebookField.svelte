@@ -23,7 +23,10 @@
 		span = 6,
 		name = 'notebookId',
 		label = '',
-		noneLabel = ''
+		noneLabel = '',
+		mixed = undefined,
+		bare = false,
+		onpicked = undefined
 	}: {
 		/** With its folder where the caller has it, so two of one name are told apart. */
 		notebooks: {
@@ -52,6 +55,15 @@
 		 * rather than the absence of one, and "— none —" said the opposite.
 		 */
 		noneLabel?: string;
+		/**
+		 * Said instead of a notebook when there is no one answer — "Mixed",
+		 * over rows that disagree. Posted as `MIXED`, which is no notebook.
+		 */
+		mixed?: string;
+		/** The picker alone, for a row that already says what it is about. */
+		bare?: boolean;
+		/** Told of a pick, for a caller that does more with it than hold it. */
+		onpicked?: (id: number | null) => void;
 	} = $props();
 
 	/*
@@ -67,6 +79,9 @@
 			untrack(() => value)
 		)
 	);
+
+	/** Not a notebook: the posted value of a field whose rows disagree. */
+	const MIXED = 'mixed';
 
 	const segments = (folder: string | null | undefined) => (folder ?? '').split('/').filter(Boolean);
 
@@ -104,14 +119,26 @@
 	]);
 </script>
 
+{#snippet picker()}
+	<Picker
+		{name}
+		value={mixed ? MIXED : String(value ?? '')}
+		onpick={(picked) => {
+			value = picked === '' ? null : Number(picked);
+			onpicked?.(value);
+		}}
+		{options}
+		placeholder={mixed}
+		label={label || t('ui.notebook')}
+	/>
+{/snippet}
+
 {#if notebooks.length > 0}
-	<Field label={label || t('ui.notebook')} {span}>
-		<Picker
-			{name}
-			value={String(value ?? '')}
-			onpick={(picked) => (value = picked === '' ? null : Number(picked))}
-			{options}
-			label={label || t('ui.notebook')}
-		/>
-	</Field>
+	{#if bare}
+		{@render picker()}
+	{:else}
+		<Field label={label || t('ui.notebook')} {span}>
+			{@render picker()}
+		</Field>
+	{/if}
 {/if}
