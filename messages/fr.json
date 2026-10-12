@@ -4725,5 +4725,11 @@
 	"settings.account.changeYourName": "Changer votre nom",
 	"captureSettings.eachKind": "Un carnet pour chaque type",
 	"captureSettings.eachKindHint": "Où va un type au lieu du carnet principal. Un rappel porte sur une heure et ne va dans aucun.",
-	"captureSettings.sameAsMain": "Le carnet principal"
+	"captureSettings.sameAsMain": "Le carnet principal",
+	"admin.activeAgo": "actif {when}",
+	"admin.neverActive": "pas encore vu",
+	"admin.orderActive": "Dernière activité",
+	"admin.id.lastActive": "Dernière activité",
+	"admin.id.neverActive": "Pas vu depuis que cela est enregistré",
+	"legal.privacy.whenYouLastUsedThe": "Quand vous avez utilisé l'app pour la dernière fois, à quelques minutes près, pour que la personne qui gère cette instance voie quels comptes sont utilisés."
 }

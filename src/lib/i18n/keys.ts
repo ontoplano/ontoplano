@@ -23,6 +23,7 @@ export type MessageKey =
 	| 'admin.accountDeleted'
 	| 'admin.accounts'
 	| 'admin.accountsShowing'
+	| 'admin.activeAgo'
 	| 'admin.admin'
 	| 'admin.allAccounts'
 	| 'admin.alwaysAnAdmin'
@@ -43,7 +44,9 @@ export type MessageKey =
 	| 'admin.id.history'
 	| 'admin.id.joined'
 	| 'admin.id.keepsTheAccountAndLoses'
+	| 'admin.id.lastActive'
 	| 'admin.id.makeAdmin'
+	| 'admin.id.neverActive'
 	| 'admin.id.no'
 	| 'admin.id.noPlan'
 	| 'admin.id.nothingRecordedYet'
@@ -72,6 +75,7 @@ export type MessageKey =
 	| 'admin.makeAdmin'
 	| 'admin.member'
 	| 'admin.minutesAgo'
+	| 'admin.neverActive'
 	| 'admin.noAccountsYet'
 	| 'admin.noIssueYet'
 	| 'admin.noPage'
@@ -82,6 +86,7 @@ export type MessageKey =
 	| 'admin.nothingRecordedYet'
 	| 'admin.nothingReported'
 	| 'admin.orderAccountsBy'
+	| 'admin.orderActive'
 	| 'admin.orderAddress'
 	| 'admin.orderJoined'
 	| 'admin.owner'
@@ -1631,6 +1636,7 @@ export type MessageKey =
 	| 'legal.privacy.theServerThatRunsThis'
 	| 'legal.privacy.thereIsNoAnalyticsNo'
 	| 'legal.privacy.whatIsStored'
+	| 'legal.privacy.whenYouLastUsedThe'
 	| 'legal.privacy.whereItIsStored'
 	| 'legal.privacy.whichHappensWithin'
 	| 'legal.privacy.whichIsWhatKeeps'
@@ -4215,6 +4221,7 @@ export interface MessageValuesFor {
 	'accountImport.leftBehind': { what: string | number };
 	'accountImport.typeToConfirm': { word: string | number };
 	'admin.accountsShowing': { count: number };
+	'admin.activeAgo': { when: string | number };
 	'admin.hoursAgo': { count: number };
 	'admin.id.typeEmailToConfirm': { email: string | number };
 	'admin.issueSent': { failed: string | number; sent: string | number; when: string | number };

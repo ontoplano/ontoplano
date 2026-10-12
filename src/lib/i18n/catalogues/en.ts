@@ -27,6 +27,7 @@ export const messages: Catalogue = {
 	'admin.accountDeleted': 'account deleted',
 	'admin.accounts': 'Accounts',
 	'admin.accountsShowing': { one: '{count} account showing', other: '{count} accounts showing' },
+	'admin.activeAgo': 'active {when}',
 	'admin.admin': 'admin',
 	'admin.allAccounts': '← all accounts',
 	'admin.alwaysAnAdmin': 'always an admin',
@@ -50,7 +51,9 @@ export const messages: Catalogue = {
 	'admin.id.history': 'History',
 	'admin.id.joined': 'Joined',
 	'admin.id.keepsTheAccountAndLoses': 'keeps the account and loses every admin power.',
+	'admin.id.lastActive': 'Last active',
 	'admin.id.makeAdmin': 'Make admin',
+	'admin.id.neverActive': 'Not seen since this started being kept',
 	'admin.id.no': 'No',
 	'admin.id.noPlan': 'None',
 	'admin.id.nothingRecordedYet': 'Nothing recorded yet',
@@ -83,6 +86,7 @@ export const messages: Catalogue = {
 	'admin.makeAdmin': 'Make admin',
 	'admin.member': 'member',
 	'admin.minutesAgo': '{count}m ago',
+	'admin.neverActive': 'not seen yet',
 	'admin.noAccountsYet': 'No accounts yet',
 	'admin.noIssueYet': 'No release has been mailed yet.',
 	'admin.noPage': 'no page',
@@ -94,6 +98,7 @@ export const messages: Catalogue = {
 	'admin.nothingRecordedYet': 'Nothing recorded yet',
 	'admin.nothingReported': 'Nothing reported',
 	'admin.orderAccountsBy': 'Order accounts by',
+	'admin.orderActive': 'Last active',
 	'admin.orderAddress': 'Address',
 	'admin.orderJoined': 'Joined',
 	'admin.owner': 'owner',
@@ -1791,6 +1796,8 @@ export const messages: Catalogue = {
 	'legal.privacy.thereIsNoAnalyticsNo':
 		'There is no analytics, no advertising, no third-party script, and nothing is sold to anyone.',
 	'legal.privacy.whatIsStored': 'What is stored',
+	'legal.privacy.whenYouLastUsedThe':
+		'When you last used the app, to within a few minutes, so whoever runs this instance can see which accounts are in use.',
 	'legal.privacy.whereItIsStored': 'Where it is stored',
 	'legal.privacy.whichHappensWithin': ', which happens within',
 	'legal.privacy.whichIsWhatKeeps':

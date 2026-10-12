@@ -29,6 +29,7 @@ export const messages: Catalogue = {
 	'admin.accountDeleted': 'cuenta eliminada',
 	'admin.accounts': 'Cuentas',
 	'admin.accountsShowing': { one: '{count} cuenta mostrada', other: '{count} cuentas mostradas' },
+	'admin.activeAgo': 'activo {when}',
 	'admin.admin': 'admin',
 	'admin.allAccounts': '← todas las cuentas',
 	'admin.alwaysAnAdmin': 'siempre admin',
@@ -53,7 +54,9 @@ export const messages: Catalogue = {
 	'admin.id.history': 'Historial',
 	'admin.id.joined': 'Se unió',
 	'admin.id.keepsTheAccountAndLoses': 'conserva la cuenta y pierde todo poder de admin.',
+	'admin.id.lastActive': 'Última actividad',
 	'admin.id.makeAdmin': 'Hacer admin',
+	'admin.id.neverActive': 'No visto desde que esto se registra',
 	'admin.id.no': 'No',
 	'admin.id.noPlan': 'Ninguno',
 	'admin.id.nothingRecordedYet': 'Nada registrado todavía',
@@ -87,6 +90,7 @@ export const messages: Catalogue = {
 	'admin.makeAdmin': 'Hacer admin',
 	'admin.member': 'miembro',
 	'admin.minutesAgo': 'hace {count}m',
+	'admin.neverActive': 'aún no visto',
 	'admin.noAccountsYet': 'Aún no hay cuentas',
 	'admin.noIssueYet': 'Aún no se ha enviado ninguna versión.',
 	'admin.noPage': 'sin página',
@@ -98,6 +102,7 @@ export const messages: Catalogue = {
 	'admin.nothingRecordedYet': 'Nada registrado todavía',
 	'admin.nothingReported': 'Nada reportado',
 	'admin.orderAccountsBy': 'Ordenar cuentas por',
+	'admin.orderActive': 'Última actividad',
 	'admin.orderAddress': 'Dirección',
 	'admin.orderJoined': 'Alta',
 	'admin.owner': 'propietario',
@@ -1844,6 +1849,8 @@ export const messages: Catalogue = {
 	'legal.privacy.thereIsNoAnalyticsNo':
 		'No hay analítica, ni publicidad, ni scripts de terceros, y no se vende nada a nadie.',
 	'legal.privacy.whatIsStored': 'Qué se guarda',
+	'legal.privacy.whenYouLastUsedThe':
+		'Cuándo usaste la app por última vez, con unos minutos de precisión, para que quien gestiona esta instancia vea qué cuentas están en uso.',
 	'legal.privacy.whereItIsStored': 'Dónde se guarda',
 	'legal.privacy.whichHappensWithin': ', lo cual sucede dentro de',
 	'legal.privacy.whichIsWhatKeeps':

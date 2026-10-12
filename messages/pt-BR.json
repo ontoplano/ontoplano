@@ -4593,5 +4593,11 @@
 	"settings.account.changeYourName": "Mudar seu nome",
 	"captureSettings.eachKind": "Um caderno para cada tipo",
 	"captureSettings.eachKindHint": "Para onde um tipo vai em vez do caderno principal. Um lembrete é sobre uma hora e não vai em nenhum.",
-	"captureSettings.sameAsMain": "O caderno principal"
+	"captureSettings.sameAsMain": "O caderno principal",
+	"admin.activeAgo": "ativo {when}",
+	"admin.neverActive": "ainda não visto",
+	"admin.orderActive": "Última atividade",
+	"admin.id.lastActive": "Última atividade",
+	"admin.id.neverActive": "Não visto desde que isto passou a ser registrado",
+	"legal.privacy.whenYouLastUsedThe": "Quando você usou o app pela última vez, com precisão de alguns minutos, para que quem mantém esta instância veja quais contas estão em uso."
 }

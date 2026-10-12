@@ -4584,5 +4584,11 @@
 	"settings.account.changeYourName": "Change your name",
 	"captureSettings.eachKind": "Each kind's own notebook",
 	"captureSettings.eachKindHint": "Where one kind goes instead of the main notebook. A reminder is about a time, and goes in none.",
-	"captureSettings.sameAsMain": "The main notebook"
+	"captureSettings.sameAsMain": "The main notebook",
+	"admin.activeAgo": "active {when}",
+	"admin.neverActive": "not seen yet",
+	"admin.orderActive": "Last active",
+	"admin.id.lastActive": "Last active",
+	"admin.id.neverActive": "Not seen since this started being kept",
+	"legal.privacy.whenYouLastUsedThe": "When you last used the app, to within a few minutes, so whoever runs this instance can see which accounts are in use."
 }

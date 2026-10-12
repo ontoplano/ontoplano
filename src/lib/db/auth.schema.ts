@@ -18,6 +18,12 @@ export const user = sqliteTable('user', {
 	banned: integer('banned', { mode: 'boolean' }).default(false),
 	banReason: text('ban_reason'),
 	banExpires: integer('ban_expires', { mode: 'timestamp_ms' }),
+	/*
+	 * Also by hand: when this account last used the app, to within
+	 * `ACTIVE_STAMP_EVERY_MS` — what the admin page reads to say who is using
+	 * this instance. Written by `$lib/server/activity`, never by better-auth.
+	 */
+	lastActiveAt: integer('last_active_at', { mode: 'timestamp_ms' }),
 	createdAt: integer('created_at', { mode: 'timestamp_ms' })
 		.default(sql`(cast(unixepoch('subsecond') * 1000 as integer))`)
 		.notNull(),

@@ -4593,5 +4593,11 @@
 	"settings.account.changeYourName": "Cambiar tu nombre",
 	"captureSettings.eachKind": "Un cuaderno para cada tipo",
 	"captureSettings.eachKindHint": "Adónde va un tipo en lugar del cuaderno principal. Un recordatorio es sobre una hora y no va en ninguno.",
-	"captureSettings.sameAsMain": "El cuaderno principal"
+	"captureSettings.sameAsMain": "El cuaderno principal",
+	"admin.activeAgo": "activo {when}",
+	"admin.neverActive": "aún no visto",
+	"admin.orderActive": "Última actividad",
+	"admin.id.lastActive": "Última actividad",
+	"admin.id.neverActive": "No visto desde que esto se registra",
+	"legal.privacy.whenYouLastUsedThe": "Cuándo usaste la app por última vez, con unos minutos de precisión, para que quien gestiona esta instancia vea qué cuentas están en uso."
 }

@@ -20,6 +20,7 @@ releases mattered.
 
 ## 0.186.1 — 2026-10-10
 
+- The administration page says when each account was last active, from any use of the app, and can sort the accounts by it. The privacy page says so too.
 - Quick capture can file each kind in its own notebook — tasks into Work, ideas into Someday — under Preferences, “Each kind's own notebook”; a kind without one still goes to the main notebook.
 - A reminder is written in markdown and can carry a picture or a recording, like a todo's notes; the list shows the picture, and a notification or an alarm shows the words.
 - A new note in a notebook starts empty, instead of holding the last note you wrote.

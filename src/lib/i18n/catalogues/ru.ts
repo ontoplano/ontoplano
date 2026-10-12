@@ -34,6 +34,7 @@ export const messages: Catalogue = {
 		many: 'Показано {count} аккаунтов',
 		other: 'Показано {count} аккаунта'
 	},
+	'admin.activeAgo': 'активен {when}',
 	'admin.admin': 'админ',
 	'admin.allAccounts': '← все аккаунты',
 	'admin.alwaysAnAdmin': 'всегда администратор',
@@ -57,7 +58,9 @@ export const messages: Catalogue = {
 	'admin.id.history': 'История',
 	'admin.id.joined': 'Присоединился',
 	'admin.id.keepsTheAccountAndLoses': 'сохраняет аккаунт, но теряет все права администратора.',
+	'admin.id.lastActive': 'Последняя активность',
 	'admin.id.makeAdmin': 'Сделать администратором',
+	'admin.id.neverActive': 'Не замечен с тех пор, как это записывается',
 	'admin.id.no': 'Нет',
 	'admin.id.noPlan': 'Нет',
 	'admin.id.nothingRecordedYet': 'Пока ничего не записано',
@@ -92,6 +95,7 @@ export const messages: Catalogue = {
 	'admin.makeAdmin': 'Сделать администратором',
 	'admin.member': 'участник',
 	'admin.minutesAgo': '{count} мин назад',
+	'admin.neverActive': 'ещё не замечен',
 	'admin.noAccountsYet': 'Аккаунтов пока нет',
 	'admin.noIssueYet': 'Пока ни один релиз не был разослан.',
 	'admin.noPage': 'нет страницы',
@@ -103,6 +107,7 @@ export const messages: Catalogue = {
 	'admin.nothingRecordedYet': 'Пока ничего не записано',
 	'admin.nothingReported': 'Ничего не сообщено',
 	'admin.orderAccountsBy': 'Порядок аккаунтов',
+	'admin.orderActive': 'Последняя активность',
 	'admin.orderAddress': 'Адрес',
 	'admin.orderJoined': 'Дата регистрации',
 	'admin.owner': 'владелец',
@@ -1929,6 +1934,8 @@ export const messages: Catalogue = {
 	'legal.privacy.thereIsNoAnalyticsNo':
 		'Здесь нет аналитики, нет рекламы, нет скриптов третьих сторон, и ничего никому не продаётся.',
 	'legal.privacy.whatIsStored': 'Что хранится',
+	'legal.privacy.whenYouLastUsedThe':
+		'Когда вы в последний раз пользовались приложением, с точностью до нескольких минут, чтобы тот, кто управляет этим экземпляром, видел, какие аккаунты используются.',
 	'legal.privacy.whereItIsStored': 'Где это хранится',
 	'legal.privacy.whichHappensWithin': ', что происходит в течение',
 	'legal.privacy.whichIsWhatKeeps':

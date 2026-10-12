@@ -29,6 +29,7 @@ export const messages: Catalogue = {
 	'admin.accountDeleted': 'conta apagada',
 	'admin.accounts': 'Contas',
 	'admin.accountsShowing': { one: '{count} conta exibida', other: '{count} contas exibidas' },
+	'admin.activeAgo': 'ativo {when}',
 	'admin.admin': 'admin',
 	'admin.allAccounts': '← todas as contas',
 	'admin.alwaysAnAdmin': 'sempre admin',
@@ -53,7 +54,9 @@ export const messages: Catalogue = {
 	'admin.id.history': 'Histórico',
 	'admin.id.joined': 'Entrou',
 	'admin.id.keepsTheAccountAndLoses': 'mantém a conta e perde todos os poderes de administrador.',
+	'admin.id.lastActive': 'Última atividade',
 	'admin.id.makeAdmin': 'Tornar admin',
+	'admin.id.neverActive': 'Não visto desde que isto passou a ser registrado',
 	'admin.id.no': 'Não',
 	'admin.id.noPlan': 'Nenhum',
 	'admin.id.nothingRecordedYet': 'Nada registrado ainda',
@@ -87,6 +90,7 @@ export const messages: Catalogue = {
 	'admin.makeAdmin': 'Tornar admin',
 	'admin.member': 'membro',
 	'admin.minutesAgo': 'há {count}m',
+	'admin.neverActive': 'ainda não visto',
 	'admin.noAccountsYet': 'Nenhuma conta ainda',
 	'admin.noIssueYet': 'Nenhuma versão foi enviada ainda.',
 	'admin.noPage': 'sem página',
@@ -98,6 +102,7 @@ export const messages: Catalogue = {
 	'admin.nothingRecordedYet': 'Nada registrado ainda',
 	'admin.nothingReported': 'Nada relatado',
 	'admin.orderAccountsBy': 'Ordenar contas por',
+	'admin.orderActive': 'Última atividade',
 	'admin.orderAddress': 'Endereço',
 	'admin.orderJoined': 'Entrada',
 	'admin.owner': 'dono',
@@ -1832,6 +1837,8 @@ export const messages: Catalogue = {
 	'legal.privacy.thereIsNoAnalyticsNo':
 		'Não há análise de uso, não há publicidade, não há script de terceiros, e nada é vendido a ninguém.',
 	'legal.privacy.whatIsStored': 'O que é guardado',
+	'legal.privacy.whenYouLastUsedThe':
+		'Quando você usou o app pela última vez, com precisão de alguns minutos, para que quem mantém esta instância veja quais contas estão em uso.',
 	'legal.privacy.whereItIsStored': 'Onde é guardado',
 	'legal.privacy.whichHappensWithin': ', o que acontece em até',
 	'legal.privacy.whichIsWhatKeeps':
