@@ -660,6 +660,8 @@
 		dialog.peek.keyboard .panel {
 			height: 100%;
 			max-height: 100%;
+			/* And it now reaches the top of the screen, where the status bar is. */
+			padding-top: var(--safe-top, 0px);
 		}
 
 		/* Arrive the way a sheet does — from below, not fading in place. */

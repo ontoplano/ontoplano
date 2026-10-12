@@ -29,6 +29,7 @@ releases mattered.
 - In quick capture's settings, the row that sets every wedge's notebook is a shaded band at the head of the list, its picker centred in it.
 - On a phone, tapping a time or a date field opens its clock or calendar, everywhere in the app, rather than selecting one part of it and waiting for the small icon at its end.
 - Tapping or holding the calendar on a phone starts the new block on the hour you touched — 16:00 rather than 16:15 — and the form still changes it.
+- On a phone, the short new-block sheet no longer slides its header under the status bar when the keyboard opens and it grows to the top of the screen.
 - In the Android app on Android 15 and later, a form scrolls while the keyboard is up, and nothing in it is left hidden behind the keys. In the browser, a new block's short sheet grows to fill what the keyboard leaves, as it already did on iPhone.
 
 ## 0.186.1 — 2026-10-10
