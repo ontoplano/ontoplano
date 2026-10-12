@@ -11,7 +11,7 @@
  * bar collapses, too shy and the button stays hidden.
  */
 import { describe, expect, test } from 'vitest';
-import { KEYBOARD_THRESHOLD, panelHeight, panelTop } from '../src/lib/keyboard';
+import { KEYBOARD_THRESHOLD, openedHeight, panelHeight, panelTop } from '../src/lib/keyboard';
 
 /** A phone with nothing covering the screen. */
 const idle = { innerHeight: 844, viewportHeight: 844, offsetTop: 0 };
@@ -67,5 +67,37 @@ describe('a reading that cannot be trusted', () => {
 		expect(panelHeight({ innerHeight: NaN, viewportHeight: 500, offsetTop: 0 })).toBe(null);
 		// A visible area larger than the layout viewport is not a keyboard.
 		expect(panelHeight({ innerHeight: 500, viewportHeight: 844, offsetTop: 0 })).toBe(null);
+	});
+});
+
+describe('a keyboard that resizes the page instead of covering it', () => {
+	test('is still a keyboard', () => {
+		// Chrome with `interactive-widget=resizes-content`, and the Android app,
+		// which shrinks its web view: both heights fall together.
+		const resized = { innerHeight: 524, viewportHeight: 524, offsetTop: 0 };
+		expect(panelHeight(resized)).toBe(null);
+		expect(panelHeight({ ...resized, openedHeight: 844 })).toBe(524);
+		expect(panelTop({ ...resized, openedHeight: 844 })).toBe(0);
+	});
+
+	test('the height before it is the tallest seen at this width', () => {
+		let before = openedHeight(null, { width: 390, height: 844 });
+		before = openedHeight(before, { width: 390, height: 524 });
+		expect(before.height).toBe(844);
+		before = openedHeight(before, { width: 390, height: 844 });
+		expect(before.height).toBe(844);
+	});
+
+	test('a rotation starts the measure again', () => {
+		const before = openedHeight({ width: 390, height: 844 }, { width: 844, height: 390 });
+		expect(before).toEqual({ width: 844, height: 390 });
+		expect(
+			panelHeight({
+				innerHeight: 390,
+				viewportHeight: 390,
+				offsetTop: 0,
+				openedHeight: before.height
+			})
+		).toBe(null);
 	});
 });

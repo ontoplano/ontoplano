@@ -3,7 +3,7 @@
 	import { BackCloses } from '$lib/back-closes';
 	import Banner from '$lib/components/Banner.svelte';
 	import { isPhone } from '$lib/breakpoints';
-	import { panelHeight, panelTop, readViewport } from '$lib/keyboard';
+	import { openedHeight, panelHeight, panelTop, readViewport, type Layout } from '$lib/keyboard';
 	import { useT } from '$lib/i18n';
 	import { say, spokenCount } from '$lib/said.svelte';
 
@@ -40,20 +40,27 @@
 		if (!open || typeof window === 'undefined' || !window.visualViewport) return;
 
 		const viewport = window.visualViewport;
+		let before: Layout | null = null;
 		const update = () => {
 			const reading = readViewport();
+			if (reading) {
+				before = openedHeight(before, { width: window.innerWidth, height: reading.innerHeight });
+				reading.openedHeight = before.height;
+			}
 			keyboardHeight = reading ? panelHeight(reading) : null;
 			keyboardTop = reading ? panelTop(reading) : 0;
 		};
 
 		update();
 		viewport.addEventListener('resize', update);
+		window.addEventListener('resize', update);
 		// iOS pushes the visible area down rather than only shrinking it, and
 		// reports that as a scroll of the visual viewport.
 		viewport.addEventListener('scroll', update);
 
 		return () => {
 			viewport.removeEventListener('resize', update);
+			window.removeEventListener('resize', update);
 			viewport.removeEventListener('scroll', update);
 			keyboardHeight = null;
 			keyboardTop = 0;

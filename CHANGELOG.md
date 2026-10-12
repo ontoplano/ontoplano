@@ -18,6 +18,10 @@ the shape of the data changing. Bumping the minor per batch is what ran this
 file to 0.161 in a few months, which tells a reader nothing about which
 releases mattered.
 
+## 0.186.2 — 2026-10-12
+
+- In the Android app on Android 15 and later, a form scrolls while the keyboard is up, and nothing in it is left hidden behind the keys. In the browser, a new block's short sheet grows to fill what the keyboard leaves, as it already did on iPhone.
+
 ## 0.186.1 — 2026-10-10
 
 - The administration page says when each account was last active, from any use of the app, and can sort the accounts by it. The privacy page says so too.
