@@ -58,6 +58,7 @@
 	import { undo } from '$lib/undo.svelte';
 	import { opensPalette, palette } from '$lib/palette.svelte';
 	import { suppressAutofill } from '$lib/autofill';
+	import { tapOpensPicker } from '$lib/picker-fields';
 	import { APP_UPDATE_HUSH_KEY } from '$lib/platform';
 	import { tellTheShellVersion } from '$lib/outside-links';
 	import { startMarkSpin, stopMarkSpin } from '$lib/mark-spin';
@@ -146,6 +147,8 @@
 	// And once for every number box: clicking one selects what is in it, so
 	// typing 2 into a field showing 0 gives 2 rather than 02.
 	$effect(() => smartNumberFields(document));
+	// And for every time and date field: a tap opens its picker, not one segment.
+	$effect(() => tapOpensPicker(document));
 	/*
 	 * Every word under this point, in the language this page is in.
 	 *
