@@ -111,6 +111,8 @@
 		hourToTime,
 		windowForEvents,
 		GRID_SNAP_DURATION,
+		GRID_TAP_DURATION,
+		snapTimeDown,
 		LIST_PARAM,
 		LIST_VALUE,
 		timeToMinutes,
@@ -1067,7 +1069,8 @@
 	 * touching the calendar. The hint under it said "drag to create" to a phone
 	 * that could not.
 	 *
-	 * A tap opens the form at that day and hour. Holding still for `HOLD_MS`
+	 * A tap opens the form at that day and hour — on the hour, whichever
+	 * quarter the finger landed in (`GRID_TAP_DURATION`). Holding still for `HOLD_MS`
 	 * does the same before release; moving cancels both, leaving the gesture
 	 * to scroll the page.
 	 *
@@ -1101,7 +1104,7 @@
 			holdFrom = null;
 			holdFired = true;
 			selectOffsetForDate(target.date);
-			prefillTime = target.startTime;
+			prefillTime = snapTimeDown(target.startTime, GRID_TAP_DURATION);
 			startNew(repeat, target.date);
 			tick().then(() => createFormEl?.scrollIntoView({ block: 'center', behavior: 'smooth' }));
 		}, HOLD_MS);
@@ -1147,7 +1150,7 @@
 			e.preventDefault();
 			e.stopPropagation();
 			selectOffsetForDate(target.date);
-			prefillTime = target.startTime;
+			prefillTime = snapTimeDown(target.startTime, GRID_TAP_DURATION);
 			// The tap's mouse events follow, and would land on the sheet this
 			// opens and take focus out of its first field — see $lib/ghost-click.
 			swallowGhostClick();

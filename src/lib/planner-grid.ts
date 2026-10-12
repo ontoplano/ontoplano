@@ -79,6 +79,9 @@ export const GRID_SLOT_MINUTES = 30;
 // Drag/resize/select step. Independent from GRID_SLOT_DURATION so the gridlines stay
 // readable at 30min while placement is precise to the quarter hour.
 export const GRID_SNAP_DURATION = '00:15:00';
+// A tap on a phone is a guess at the hour, not at the quarter: the form it opens
+// starts on the hour the finger landed in, and is changed there if need be.
+export const GRID_TAP_DURATION = '01:00:00';
 
 // Slot heights (px per GRID_SLOT_MINUTES) the zoom control steps through.
 export const GRID_ZOOM_LEVELS = [16, 24, 36, 52, 72, 96];
@@ -942,6 +945,12 @@ function weekdayShort(date: Date, locale: string | undefined): string {
 export function timeToMinutes(time: string): number {
 	const [h, m] = time.split(':').map(Number);
 	return h * 60 + (m || 0);
+}
+
+/** A time moved back to the start of the `step` it falls in: 16:45 by an hour is 16:00. */
+export function snapTimeDown(time: string, step: string): string {
+	const size = timeToMinutes(step);
+	return minutesToTime(Math.floor(timeToMinutes(time) / size) * size);
 }
 
 /** Minutes past midnight as 'HH:MM', clamped to a real time of day. */

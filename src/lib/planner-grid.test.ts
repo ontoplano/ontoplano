@@ -1,5 +1,12 @@
 import { describe, expect, test } from 'vitest';
-import { baseGridOptions, blockName, hourToTime, windowForEvents } from './planner-grid';
+import {
+	baseGridOptions,
+	blockName,
+	GRID_TAP_DURATION,
+	hourToTime,
+	snapTimeDown,
+	windowForEvents
+} from './planner-grid';
 
 /**
  * What a block is called. The rule got this wrong once and a goal picker
@@ -186,5 +193,14 @@ describe('a week that has already happened', () => {
 
 	test('a grid that was never told today washes nothing', () => {
 		expect(baseGridOptions('2026-08-28').dayCellContent).toBeUndefined();
+	});
+});
+
+describe('a tap on the grid', () => {
+	test('starts on the hour the finger landed in', () => {
+		expect(snapTimeDown('16:15', GRID_TAP_DURATION)).toBe('16:00');
+		expect(snapTimeDown('18:45', GRID_TAP_DURATION)).toBe('18:00');
+		expect(snapTimeDown('09:00', GRID_TAP_DURATION)).toBe('09:00');
+		expect(snapTimeDown('00:30', GRID_TAP_DURATION)).toBe('00:00');
 	});
 });
