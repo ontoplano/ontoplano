@@ -82,6 +82,11 @@ test.describe('what a notebook holds', () => {
 		// It is an ordinary inventory row, in the room where inventory lives.
 		await visit(page, '/inventory');
 		await expect(page.getByText('Wall tiles').first()).toBeVisible();
+
+		// And the row says whose it is: the room shows every notebook's things
+		// at once, and a name alone leaves which subject it was for to memory.
+		const row = page.locator('.row-card').filter({ hasText: 'Wall tiles' });
+		await expect(row.getByRole('link', { name: 'Kitchen renovation' })).toBeVisible();
 	});
 
 	test('switching a module off takes the tab, not the things', async ({ page }) => {
