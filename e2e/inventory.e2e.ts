@@ -564,3 +564,41 @@ test.describe('what the filters are hiding', () => {
 		await expect(drawer).toBeVisible();
 	});
 });
+
+/**
+ * A thing's notes are written and read like every other note: markdown, and
+ * folded to one line on the row until it is opened. They were a plain line
+ * printed in full beside the name, so a pasted shop link ran three lines long.
+ */
+test("a thing's notes are markdown, folded to their first line", async ({ page }) => {
+	await register(page, testEmail('inv-notes'));
+	await visit(page, '/inventory');
+
+	await page
+		.getByRole('button', { name: /Add item/ })
+		.first()
+		.click();
+	const d = page.getByRole('dialog', { name: 'New item' });
+	await d.locator('[name="label"]').fill('Lamp socket');
+	await d
+		.locator('textarea[name="notes"]')
+		.fill(
+			'Buy [the bulk pack](https://example.com/socket)\n\nE27, with a screw ring. ' +
+				'The cheap ones crack when the bulb is tightened, so the ceramic kind. '.repeat(4)
+		);
+	await d.getByRole('button', { name: 'Add item', exact: true }).click();
+	await expect(page.getByText('Lamp socket').first()).toBeVisible();
+
+	const row = page.locator('.row-card').filter({ hasText: 'Lamp socket' });
+	// The link is a link, not its markup.
+	await expect(row.getByRole('link', { name: 'the bulk pack' })).toBeVisible();
+	await expect(row.getByText('](https://')).toHaveCount(0);
+
+	const fold = row.getByRole('button', { name: 'Lamp socket', exact: true });
+	await expect(fold).toHaveAttribute('aria-expanded', 'false');
+	const notes = row.locator('.folding-notes');
+	const folded = (await notes.boundingBox())!.height;
+	await fold.click();
+	await expect(fold).toHaveAttribute('aria-expanded', 'true');
+	await expect.poll(async () => (await notes.boundingBox())!.height).toBeGreaterThan(folded * 2);
+});
