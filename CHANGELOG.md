@@ -21,6 +21,7 @@ releases mattered.
 ## 0.186.3 — 2026-10-13
 
 - On a phone whose keyboard covers the page without saying so — the Android app on Android 15 and later, until its next update — the new-block sheet takes the whole screen as soon as you type, lifts the field you tapped above the keys and scrolls all the way to its last field, instead of sitting under the keyboard until you put it away.
+- On a phone, quick capture's settings fit the screen: the notebook pickers no longer run off its right edge, and the one that sets every wedge lines up with the rest.
 
 ## 0.186.2 — 2026-10-12
 
