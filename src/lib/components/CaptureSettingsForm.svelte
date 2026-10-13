@@ -143,10 +143,10 @@
 			the one that sets them all. A wedge's note ("at least one") is inside
 			its row and moves nothing in that column.
 		-->
-		<div class="space-y-2">
+		<div class="wedge-list">
 			<!-- The list's head: a band of its own, the picker centred in it and
 			     still in the column the rows' pickers stand in. -->
-			<div class="wedge-head flex items-center gap-2 border border-gray-200 bg-gray-100">
+			<div class="wedge-head items-center border border-gray-200 bg-gray-100">
 				<span class="eyebrow min-w-0 flex-1 truncate px-3 text-gray-600"
 					>{t('captureSettings.everyWedge')}</span
 				>
@@ -172,8 +172,8 @@
 				{@const away = unavailable.includes(kind)}
 				{@const on = !off.includes(kind) && !away}
 				{#if look}
-					<div class="flex items-center gap-2">
-						<div class="min-w-0 flex-1">
+					<div class="contents">
+						<div>
 							<ToggleRow
 								label={t(look.label)}
 								{on}
@@ -222,8 +222,8 @@
 								{/snippet}
 							</ToggleRow>
 						</div>
-						<!-- Held at its width whatever is in it, so the list does not
-						     shift when the notebooks arrive. -->
+						<!-- A grid column, so its width does not change when the
+						     notebooks arrive. -->
 						<div class="notebook-cell">
 							{#if !FILED_KINDS.includes(kind)}
 								<span
@@ -264,19 +264,34 @@
 </form>
 
 <style>
-	/* The notebook column: one width for every row and the row above them. */
+	/*
+	 * Two columns shared by every row and the head: the wedges, as wide as the
+	 * widest of them needs, and the notebooks, which take what is left up to
+	 * a width of their own. Before, the notebook column was a fixed width beside
+	 * rows that would not shrink, and on a phone — where the arrows are finger
+	 * sized — the pickers ran off the edge of the screen.
+	 */
+	.wedge-list {
+		display: grid;
+		grid-template-columns: minmax(auto, 1fr) minmax(4rem, 8.5rem);
+		gap: 0.5rem;
+		align-items: center;
+	}
+
 	.notebook-cell {
 		display: flex;
-		flex: none;
-		width: 8.5rem;
+		min-width: 0;
 	}
 
 	/*
-	 * Stands out past the rows by its own padding, so the picker inside it
-	 * lines up with theirs and sits in the middle of the band.
+	 * Stands out past the rows by its own padding and border, so the picker
+	 * inside it lines up with theirs and sits in the middle of the band.
 	 */
 	.wedge-head {
-		margin-inline: -0.375rem;
+		display: grid;
+		grid-column: 1 / -1;
+		grid-template-columns: subgrid;
+		margin-inline: calc(-0.375rem - 1px);
 		padding: 0.375rem;
 	}
 
@@ -287,8 +302,8 @@
 	}
 
 	@media (min-width: 640px) {
-		.notebook-cell {
-			width: 13rem;
+		.wedge-list {
+			grid-template-columns: minmax(auto, 1fr) minmax(4rem, 13rem);
 		}
 	}
 </style>

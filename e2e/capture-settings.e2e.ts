@@ -66,6 +66,20 @@ for (const size of [
 		await expect(dialog).toBeVisible();
 		await expect(page.locator('.pie-layer')).toHaveCount(0);
 
+		// Every notebook picker inside the dialog, in one column under the head's.
+		const content = (await dialog.locator('.modal-content').boundingBox())!;
+		const cells = await dialog.locator('.notebook-cell').evaluateAll((all) =>
+			all.map((one) => {
+				const box = one.getBoundingClientRect();
+				return { left: Math.round(box.left), right: Math.round(box.right) };
+			})
+		);
+		expect(cells.length).toBeGreaterThan(1);
+		for (const cell of cells) {
+			expect(cell.right).toBeLessThanOrEqual(Math.round(content.x + content.width));
+			expect(cell).toEqual(cells[0]);
+		}
+
 		// Down to one: the last cannot be unticked, and says so.
 		for (const kind of ['idea', 'buy', 'reminder', 'picture', 'recording', 'todo']) {
 			await dialog.locator(`input[name="on"][value="${kind}"]`).uncheck();
