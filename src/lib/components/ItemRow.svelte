@@ -101,7 +101,9 @@
 		 * Keep a picture's room on this row, picture or not — the list passes
 		 * it when any row in it has one, so the names stay in one column.
 		 */
-		thumb = false
+		thumb = false,
+		/** Labels and actions on lines of their own, for a card — see `RowCard`. */
+		stacked = false
 	}: {
 		item: Shown;
 		currency: Currency;
@@ -115,6 +117,7 @@
 		confirming?: boolean | null;
 		onconfirm?: (id: number | null) => void;
 		thumb?: boolean;
+		stacked?: boolean;
 	} = $props();
 
 	let ownConfirming = $state(false);
@@ -157,7 +160,7 @@
 	</span>
 {/snippet}
 
-<RowCard thumb={thumb ? picture : undefined}>
+<RowCard thumb={thumb ? picture : undefined} {stacked}>
 	{#snippet rail()}
 		{#if item.type === 'someday'}
 			<!--

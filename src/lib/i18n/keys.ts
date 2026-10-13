@@ -1914,6 +1914,7 @@ export type MessageKey =
 	| 'notebookDetail.sharePanes'
 	| 'notebookDetail.showArchived'
 	| 'notebookDetail.showNotesAs'
+	| 'notebookDetail.showThingsAs'
 	| 'notebookDetail.showingCount'
 	| 'notebookDetail.smallerType'
 	| 'notebookDetail.stopKeepingThisAtThe'

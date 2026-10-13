@@ -2222,6 +2222,7 @@ export const messages: Catalogue = {
 	'notebookDetail.sharePanes': 'Ziehen, um die Breite zwischen den Bereichen zu teilen',
 	'notebookDetail.showArchived': 'Archivierte zeigen ({count})',
 	'notebookDetail.showNotesAs': 'Notizen anzeigen als',
+	'notebookDetail.showThingsAs': 'Dinge anzeigen als',
 	'notebookDetail.showingCount': {
 		one: '{count} Notiz sichtbar',
 		other: '{count} Notizen sichtbar'

@@ -89,6 +89,51 @@ test.describe('what a notebook holds', () => {
 		await expect(row.getByRole('link', { name: 'Kitchen renovation' })).toBeVisible();
 	});
 
+	test('the Inventory tab says where things are, and shows them as cards when asked', async ({
+		page
+	}) => {
+		await register(page, testEmail('nb-inv-places'));
+
+		// A place to put things, made the way the room makes one.
+		await visit(page, '/inventory');
+		await page.evaluate(async () => {
+			const body = new FormData();
+			body.set('heading', 'Garage shelf');
+			await fetch('/inventory?/createLocation', { method: 'POST', body });
+		});
+
+		await makeNotebook(page, 'Workshop');
+		await page.getByRole('button', { name: 'Rename' }).click();
+		await page.getByRole('checkbox', { name: 'Inventory' }).check();
+		await save(page, page.getByRole('button', { name: 'Save' }));
+		await page.getByRole('button', { name: /^Inventory/ }).click();
+
+		await page.getByRole('button', { name: 'New item' }).click();
+		await page.getByRole('textbox', { name: /^Item\*?$/ }).fill('Drill bits');
+		await page.locator('select[name="locationId"]').selectOption({ label: 'Garage shelf' });
+		await save(page, page.getByRole('button', { name: 'Save' }));
+		await page.getByRole('button', { name: 'New item' }).click();
+		await page.getByRole('textbox', { name: /^Item\*?$/ }).fill('Sandpaper');
+		await save(page, page.getByRole('button', { name: 'Save' }));
+
+		// The room's headings: the place, and the things filed nowhere after it.
+		const headings = page.locator('h3[data-place]');
+		await expect(headings).toHaveText(['Garage shelf', 'Not filed anywhere']);
+
+		// Cards, the notes' own switch, kept across a reload.
+		const list = page.locator('[data-item-view]').first();
+		await expect(list).toHaveAttribute('data-item-view', 'list');
+		await page.getByRole('button', { name: 'Cards', exact: true }).click();
+		await expect(list).toHaveAttribute('data-item-view', 'grid');
+		await page.waitForTimeout(600);
+		await page.reload();
+		await page.getByRole('button', { name: /^Inventory/ }).click();
+		await expect(page.locator('[data-item-view]').first()).toHaveAttribute(
+			'data-item-view',
+			'grid'
+		);
+	});
+
 	test('switching a module off takes the tab, not the things', async ({ page }) => {
 		await register(page, testEmail('nb-modules-off'));
 

@@ -2195,6 +2195,7 @@ export const messages: Catalogue = {
 	'notebookDetail.sharePanes': 'Arrastra para repartir el ancho entre paneles',
 	'notebookDetail.showArchived': 'Mostrar archivadas ({count})',
 	'notebookDetail.showNotesAs': 'Mostrar las notas como',
+	'notebookDetail.showThingsAs': 'Mostrar las cosas como',
 	'notebookDetail.showingCount': {
 		one: '{count} nota a la vista',
 		other: '{count} notas a la vista'

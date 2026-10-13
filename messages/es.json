@@ -1932,6 +1932,7 @@
 	"notebookDetail.noteColour": "Color",
 	"notebookDetail.noteColourHint": "La nota se dibuja en él. Una nota sin color se dibuja neutra.",
 	"notebookDetail.showNotesAs": "Mostrar las notas como",
+	"notebookDetail.showThingsAs": "Mostrar las cosas como",
 	"notebookDetail.asList": "Lista",
 	"notebookDetail.asCards": "Tarjetas",
 	"notebookDetail.addWithTodos": {

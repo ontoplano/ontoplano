@@ -1957,6 +1957,7 @@
 	"notebookDetail.noteColour": "Couleur",
 	"notebookDetail.noteColourHint": "La note est dessinée dans cette couleur. Une note sans couleur reste neutre.",
 	"notebookDetail.showNotesAs": "Afficher les notes en",
+	"notebookDetail.showThingsAs": "Afficher les objets en",
 	"notebookDetail.asList": "Liste",
 	"notebookDetail.asCards": "Cartes",
 	"notebookDetail.addWithTodos": {

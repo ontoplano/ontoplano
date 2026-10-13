@@ -2184,6 +2184,7 @@ export const messages: Catalogue = {
 	'notebookDetail.sharePanes': 'Arraste para dividir a largura entre os painéis',
 	'notebookDetail.showArchived': 'Mostrar arquivadas ({count})',
 	'notebookDetail.showNotesAs': 'Mostrar as notas como',
+	'notebookDetail.showThingsAs': 'Mostrar as coisas como',
 	'notebookDetail.showingCount': { one: '{count} nota à vista', other: '{count} notas à vista' },
 	'notebookDetail.smallerType': 'Letra menor',
 	'notebookDetail.stopKeepingThisAtThe': 'Não manter mais no topo',

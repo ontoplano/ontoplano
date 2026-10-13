@@ -1932,6 +1932,7 @@
 	"notebookDetail.noteColour": "Colour",
 	"notebookDetail.noteColourHint": "The note is drawn in it. A note with none is drawn plain.",
 	"notebookDetail.showNotesAs": "Show the notes as",
+	"notebookDetail.showThingsAs": "Show the things as",
 	"notebookDetail.asList": "List",
 	"notebookDetail.asCards": "Cards",
 	"notebookDetail.addWithTodos": {

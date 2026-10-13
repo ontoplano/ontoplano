@@ -1256,6 +1256,24 @@
 	const shownGoals = $derived(searched(contents?.goals ?? [], 'goals'));
 	const shownIdeas = $derived(searched(contents?.ideas ?? [], 'ideas'));
 	const shownInventory = $derived(searched(contents?.inventory ?? [], 'inventory'));
+	/**
+	 * The things on the Inventory tab, by where they are: each place by its
+	 * path, the way the room's panel reads it, and the unfiled ones last.
+	 */
+	const inventoryByPlace = $derived.by(() => {
+		const paths = new Map(locations.map((one) => [one.id, one.path]));
+		// eslint-disable-next-line svelte/prefer-svelte-reactivity -- built and read within this derivation
+		const groups = new Map<number, typeof shownInventory>();
+		for (const item of shownInventory) {
+			const at = item.locationId !== null && paths.has(item.locationId) ? item.locationId : 0;
+			groups.set(at, [...(groups.get(at) ?? []), item]);
+		}
+		return [...groups]
+			.map(([id, items]) => ({ id, label: paths.get(id) ?? null, items }))
+			.sort((a, b) =>
+				a.id === 0 ? 1 : b.id === 0 ? -1 : (a.label ?? '').localeCompare(b.label ?? '')
+			);
+	});
 	const shownWorkouts = $derived(searched(contents?.workouts ?? [], 'workouts'));
 	/**
 	 * A workout card's buttons open the Health room's own dialogs, here — see
@@ -2017,19 +2035,48 @@
 					compact
 				/>
 			{:else}
-				<div class="divide-y divide-gray-200">
-					{#each shownInventory as item (item.id)}
-						<div class="row-card {itemRowWash(item)}">
-							<ItemRow
-								{item}
-								{currency}
-								actions={NOTEBOOK_ITEM_ACTIONS}
-								thumb={shownInventory.some((one) => one.pictureId)}
-								onedit={() => itemDialog?.edit(item)}
-							/>
-						</div>
-					{/each}
-				</div>
+				<!--
+					Grouped by where the things are, under the same headings the
+					Inventory room draws — a notebook's things are as much on a shelf
+					as anybody else's. One heading saying "not filed anywhere" over
+					every row says nothing, so a list with one place has none.
+				-->
+				{@const cards = view === 'grid'}
+				{#each inventoryByPlace as place (place.id)}
+					{#if inventoryByPlace.length > 1}
+						<h3
+							class="mt-4 mb-2 flex items-center gap-2 px-4 text-sm text-gray-700 first:mt-0"
+							data-place={place.id}
+						>
+							{#if place.id === 0}<Icon
+									name="shopping"
+									class="size-4 shrink-0 text-gray-500"
+								/>{/if}
+							<span class="font-medium">{place.label ?? t('app.notFiledAnywhere')}</span>
+						</h3>
+					{/if}
+					<div
+						class={cards ? 'note-grid' : 'divide-y divide-gray-200'}
+						data-item-view={cards ? 'grid' : 'list'}
+					>
+						{#each place.items as item (item.id)}
+							<div
+								class="row-card {itemRowWash(item)}"
+								class:note-card={cards}
+								class:shadow-card={cards}
+							>
+								<ItemRow
+									{item}
+									{currency}
+									actions={NOTEBOOK_ITEM_ACTIONS}
+									thumb={shownInventory.some((one) => one.pictureId)}
+									stacked={cards}
+									onedit={() => itemDialog?.edit(item)}
+								/>
+							</div>
+						{/each}
+					</div>
+				{/each}
 			{/if}
 		{:else if k === 'workouts'}
 			<!--
@@ -2238,6 +2285,11 @@
 				onflip={() => (moduleDirection = moduleDirection === 'asc' ? 'desc' : 'asc')}
 				label={t('notebookDetail.orderThisTabBy')}
 			/>
+			<!-- The notes' own switch, and the same choice: one way of looking
+			     at this notebook, rather than a second setting to keep. -->
+			{#if key === 'inventory'}
+				{@render viewControl(t('notebookDetail.showThingsAs'))}
+			{/if}
 		{/snippet}
 	</FilterBar>
 {/snippet}
@@ -2299,7 +2351,7 @@
 
 		{#snippet trailing()}
 			{@render orderControl()}
-			{@render viewControl()}
+			{@render viewControl(t('notebookDetail.showNotesAs'))}
 		{/snippet}
 
 		<!-- Nothing is hidden without the strip saying how much. -->
@@ -2334,7 +2386,7 @@
 	flip — a `.seg` is a position, not a pair of switches. Quiet, like the
 	divider's width: the tile moving is the answer, and "Saved" is noise.
 -->
-{#snippet viewControl()}
+{#snippet viewControl(label: string)}
 	{#if notebook}
 		<form
 			bind:this={viewForm}
@@ -2347,7 +2399,7 @@
 		>
 			<input type="hidden" name="notebookId" value={notebook.id} />
 			<input type="hidden" name="view" value={view} />
-			<div use:sliding class="seg" role="group" aria-label={t('notebookDetail.showNotesAs')}>
+			<div use:sliding class="seg" role="group" aria-label={label}>
 				{#each NOTE_VIEWS as one (one)}
 					<button
 						type="button"
