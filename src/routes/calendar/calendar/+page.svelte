@@ -1129,6 +1129,20 @@
 		e.stopPropagation();
 	}
 
+	/**
+	 * Ends the calendar library's own gesture after a release this page kept.
+	 *
+	 * The library starts a gesture on every press of the grid and ends it on the
+	 * window's `pointerup` — the one `onGridPointerUp` stops when it answers a
+	 * press itself. Left running, its long-press timer fires a moment later and
+	 * it cancels every `touchmove` on the page from then on, wherever it lands:
+	 * the sheet the tap opened could not be scrolled until something cancelled
+	 * the gesture for it.
+	 */
+	function endCalendarGesture() {
+		window.dispatchEvent(new PointerEvent('pointercancel', { isPrimary: true }));
+	}
+
 	async function onGridPointerUp(e: PointerEvent) {
 		const tappedEmptyGrid = e.pointerType === 'touch' && holdFrom !== null;
 		const tapMoved = holdFrom
@@ -1141,6 +1155,7 @@
 			holdFired = false;
 			e.preventDefault();
 			e.stopPropagation();
+			endCalendarGesture();
 			swallowGhostClick();
 			return;
 		}
@@ -1149,6 +1164,7 @@
 			if (!target) return;
 			e.preventDefault();
 			e.stopPropagation();
+			endCalendarGesture();
 			selectOffsetForDate(target.date);
 			prefillTime = snapTimeDown(target.startTime, GRID_TAP_DURATION);
 			// The tap's mouse events follow, and would land on the sheet this
@@ -1168,6 +1184,7 @@
 
 		e.preventDefault();
 		e.stopPropagation();
+		endCalendarGesture();
 
 		const todoId = placingTodoId;
 		placingTodoId = null;

@@ -349,6 +349,44 @@ test.describe('with a finger', () => {
 		expect(await dialog.locator('.modal-content').evaluate((el) => el.scrollTop)).toBe(0);
 	});
 
+	test('the sheet a tap opened still scrolls under a finger', async ({ page }) => {
+		await register(page, testEmail('plan-tap-scroll'));
+		await visit(page, '/calendar/calendar');
+		const body = page.locator('.ec-body').first();
+		const box = (await body.boundingBox())!;
+		await page.touchscreen.tap(box.x + box.width / 2, box.y + 60);
+
+		const dialog = page.getByRole('dialog', { name: 'New task block' });
+		await expect(dialog).toBeVisible();
+		// Past the calendar's own long press, which used to go on running
+		// after the tap and cancel every drag on the page from then on.
+		await page.waitForTimeout(1500);
+
+		await page.evaluate(() => {
+			const w = window as unknown as { prevented: number };
+			w.prevented = 0;
+			addEventListener('touchmove', (e) => {
+				if (e.defaultPrevented) w.prevented++;
+			});
+		});
+		const name = (await dialog.locator('[name="newActivityName"]').boundingBox())!;
+		const x = name.x + name.width / 2;
+		const y = name.y + name.height / 2;
+		const cdp = await page.context().newCDPSession(page);
+		await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x, y }] });
+		for (let step = 1; step <= 5; step++) {
+			await cdp.send('Input.dispatchTouchEvent', {
+				type: 'touchMove',
+				touchPoints: [{ x, y: y - step * 20 }]
+			});
+		}
+		await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+
+		expect(await page.evaluate(() => (window as unknown as { prevented: number }).prevented)).toBe(
+			0
+		);
+	});
+
 	test('swiping up on the sheet header expands it', async ({ page }) => {
 		await register(page, testEmail('plan-sheet-expand'));
 		await visit(page, '/calendar/calendar');
