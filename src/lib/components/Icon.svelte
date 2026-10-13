@@ -174,6 +174,8 @@
 		checklist: 'M3 6l2 2 3-3M11 7h10M3 13l2 2 3-3M11 14h10M4 20h3M11 20h10',
 		// Rows with nothing to tick: a thing read as a list rather than laid out.
 		list: 'M4 6h1M4 12h1M4 18h1M9 6h11M9 12h11M9 18h11',
+		// Four tiles: the same things laid out side by side instead of read down.
+		grid: 'M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z',
 		// Three bricks: what a block of the plan is made of.
 		blocks: 'M3 13h8v8H3zM13 13h8v8h-8zM8 3h8v8H8z',
 		// A clipboard with a tick: the week gone through and signed off.

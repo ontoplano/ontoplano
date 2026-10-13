@@ -38,6 +38,12 @@
 		 */
 		corner = undefined,
 		thumb = undefined,
+		/**
+		 * The labels and the actions on lines of their own at every width, as
+		 * on a phone — for a card too narrow to share one line between them,
+		 * where the labels were cut to "#trav" beside the buttons.
+		 */
+		stacked = false,
 		children
 	}: {
 		rail: Snippet;
@@ -52,6 +58,7 @@
 		 * empty where there is nothing, so the names line up down the list.
 		 */
 		thumb?: Snippet;
+		stacked?: boolean;
 		children: Snippet;
 	} = $props();
 </script>
@@ -83,10 +90,16 @@
 		actions drop to the bottom on a line of their own.
 	-->
 	<div
-		class="flex flex-col max-sm:flex-1 sm:mt-auto sm:flex-row sm:items-center sm:gap-3 sm:pt-1.5"
+		class={stacked
+			? 'mt-auto flex flex-col'
+			: 'flex flex-col max-sm:flex-1 sm:mt-auto sm:flex-row sm:items-center sm:gap-3 sm:pt-1.5'}
 	>
 		{#if labels}
-			<div class="task-labels mt-1.5 flex min-w-0 flex-wrap items-center gap-1 sm:mt-0 sm:flex-1">
+			<div
+				class="task-labels mt-1.5 flex min-w-0 flex-wrap items-center gap-1 {stacked
+					? ''
+					: 'sm:mt-0 sm:flex-1'}"
+			>
 				{@render labels()}
 			</div>
 		{/if}
@@ -94,7 +107,9 @@
 			<!-- One line, always: six buttons fit a phone, and a wrapped half-row of
 			     them reads as a second, different set. -->
 			<div
-				class="task-actions max-sm:mt-auto max-sm:pt-1.5 sm:mt-0 sm:ml-auto sm:w-auto sm:shrink-0"
+				class="task-actions {stacked
+					? 'pt-1.5'
+					: 'max-sm:mt-auto max-sm:pt-1.5 sm:mt-0 sm:ml-auto sm:w-auto sm:shrink-0'}"
 				inert={quiet}
 				class:opacity-50={quiet}
 			>

@@ -5785,6 +5785,10 @@ simply does not find it among the notebooks it lists.
 
 #### `setCaptureSettings(userId, settings)`
 
+#### `getNoteView(userId, notebookId)`
+
+#### `setNoteView(userId, notebookId, view)`
+
 ### Types
 
 - `WeekSettings`
@@ -7074,6 +7078,14 @@ cut; the count and the excess are the instructions.
 #### `str(value, field, opts)`
 
 #### `optionalStr(value, field, opts)`
+
+#### `optionalColor(value, field)`
+
+A colour somebody chose, or none.
+
+Empty, null and absent all mean "no colour", because a colour input has no
+empty of its own and the forms say "none" by sending nothing. Lower-cased so
+one colour is stored one way.
 
 #### `num(value, field, opts)`
 

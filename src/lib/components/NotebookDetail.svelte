@@ -85,6 +85,10 @@
 	import { say } from '$lib/said.svelte';
 	import { useT } from '$lib/i18n';
 	import { RememberedOrder } from '$lib/remembered-order.svelte';
+	import { sliding } from '$lib/actions/sliding';
+	import { DEFAULT_NOTE_VIEW, NOTE_VIEWS, type NoteView } from '$lib/note-view';
+	import ColorChoice from '$lib/components/ColorChoice.svelte';
+	import { pillStyle } from '$lib/pill-ink';
 	import { describeRecurrence, parseRecurrence } from '$lib/recurrence';
 	import type { PlainKey } from '$lib/i18n/keys';
 
@@ -118,6 +122,8 @@
 		updatedAt?: string | null;
 		/** When it was put away, or null. Hidden, not deleted. */
 		archivedAt?: string | null;
+		/** The colour it is drawn in, `#rrggbb`, or null for the plain note. */
+		color?: string | null;
 		tags: { id: number; name: string }[];
 		people: { id: number; name: string }[];
 	};
@@ -143,6 +149,8 @@
 		todos = [],
 		allTodos = [],
 		activities = [],
+		/** Whether this reader keeps this notebook's notes as a list or as cards. */
+		noteView = DEFAULT_NOTE_VIEW,
 		composing = $bindable(false),
 		/**
 		 * What the page's last action refused, for whichever dialog here sent
@@ -255,6 +263,7 @@
 		todos?: { id: number; title: string }[];
 		allTodos?: { id: number; title: string; status: string }[];
 		activities?: { id: number; name: string }[];
+		noteView?: NoteView;
 		/** Whether the composer is open, so a page can put the button elsewhere. */
 		composing?: boolean;
 		error?: string | null;
@@ -263,6 +272,59 @@
 	} = $props();
 
 	let editingNoteId = $state<number | null>(null);
+
+	/*
+	 * List or cards, answered on the press.
+	 *
+	 * The choice is kept on the server, per notebook, and the page's data
+	 * brings it back; until it does, the press is what is shown — and only
+	 * for the notebook it was made in, so opening the next one shows that
+	 * one's own choice rather than this one's.
+	 */
+	let pressedView = $state<{ id: number; view: NoteView } | null>(null);
+	const view = $derived(
+		pressedView && pressedView.id === notebook?.id ? pressedView.view : noteView
+	);
+	const VIEW_GLYPH = { list: 'list', grid: 'grid' } as const;
+	const VIEW_LABEL = {
+		list: 'notebookDetail.asList',
+		grid: 'notebookDetail.asCards'
+	} as const satisfies Record<NoteView, PlainKey>;
+
+	/** The colour being chosen in the note editor that is open. */
+	let editingColor = $state<string | null>(null);
+
+	let viewForm = $state<HTMLFormElement>();
+
+	async function chooseView(next: NoteView): Promise<void> {
+		if (!notebook || next === view) return;
+		pressedView = { id: notebook.id, view: next };
+		// The hidden field says the new view once the press has been drawn.
+		await tick();
+		viewForm?.requestSubmit();
+	}
+
+	/**
+	 * What a closed card shows under its name: the note, less the line that
+	 * is already standing in for the name when it has none of its own.
+	 */
+	function excerptOf(entry: Entry): string {
+		if (entry.title) return entry.content;
+		const lines = entry.content.split('\n');
+		const first = lines.findIndex((line) => line.trim() !== '');
+		return lines
+			.slice(first + 1)
+			.join('\n')
+			.trim();
+	}
+
+	function startEditing(entry: Entry): void {
+		editingNoteId = entry.id;
+		editingColor = entry.color ?? null;
+		noteSaved = false;
+	}
+	/** And in the composer. */
+	let composingColor = $state<string | null>(null);
 
 	/*
 	 * Whether what is on screen is what was last saved.
@@ -1403,8 +1465,7 @@
 		},
 		edit: (at: number) => {
 			if (tab !== 'notes') return;
-			editingNoteId = shownNotes[at].id;
-			noteSaved = false;
+			startEditing(shownNotes[at]);
 		}
 	}));
 
@@ -1730,7 +1791,10 @@
 						async ({ update, result }) => {
 							await update({ reset: result.type === 'success' });
 							// Written and gone: the space belongs to the notes again.
-							if (result.type === 'success') composing = false;
+							if (result.type === 'success') {
+								composing = false;
+								composingColor = null;
+							}
 						}}
 					class="border-b border-gray-200 bg-gray-50 px-4 pt-3 pb-4"
 				>
@@ -1778,6 +1842,13 @@
 					<div class="mt-1 pl-2.5">
 						<MoreOptions label={t('notebookDetail.tagsPeople')} count={0} divided={false}>
 							{@render tagsAndPeople('', '')}
+							<Field
+								label={t('notebookDetail.noteColour')}
+								span={12}
+								hint={t('notebookDetail.noteColourHint')}
+							>
+								<ColorChoice bind:color={composingColor} label={t('notebookDetail.noteColour')} />
+							</Field>
 						</MoreOptions>
 					</div>
 					<!--
@@ -2228,6 +2299,7 @@
 
 		{#snippet trailing()}
 			{@render orderControl()}
+			{@render viewControl()}
 		{/snippet}
 
 		<!-- Nothing is hidden without the strip saying how much. -->
@@ -2253,6 +2325,43 @@
 	</FilterBar>
 {/snippet}
 
+<!--
+	List or cards.
+
+	Beside the order, because both are ways of looking at these notes. The
+	buttons post nothing themselves: the press moves the tile at once and the
+	form behind them is sent from code, so `$lib/enhance` has no submitter to
+	flip — a `.seg` is a position, not a pair of switches. Quiet, like the
+	divider's width: the tile moving is the answer, and "Saved" is noise.
+-->
+{#snippet viewControl()}
+	{#if notebook}
+		<form
+			bind:this={viewForm}
+			method="post"
+			action="?/setNoteView"
+			use:enhance
+			class="shrink-0"
+			data-tour="notebook-note-view"
+			data-quiet
+		>
+			<input type="hidden" name="notebookId" value={notebook.id} />
+			<input type="hidden" name="view" value={view} />
+			<div use:sliding class="seg" role="group" aria-label={t('notebookDetail.showNotesAs')}>
+				{#each NOTE_VIEWS as one (one)}
+					<button
+						type="button"
+						aria-pressed={view === one}
+						title={t(VIEW_LABEL[one])}
+						aria-label={t(VIEW_LABEL[one])}
+						onclick={() => chooseView(one)}><Icon name={VIEW_GLYPH[one]} /></button
+					>
+				{/each}
+			</div>
+		</form>
+	{/if}
+{/snippet}
+
 {#snippet orderControl()}
 	<!-- The same control the task list uses, always in the same place. See `SortControl`. -->
 	<SortControl
@@ -2273,8 +2382,19 @@
 	{:else if entries.length === 0}
 		<EmptyState compact icon="note" title={t('notebookDetail.nothingWrittenHereYet')} />
 	{:else}
-		<div class="divide-y divide-gray-200">
+		<!--
+			A list, or cards: the same notes, the same rows and the same keys —
+			only the shelf they stand on changes. The orphaned notes belong to no
+			notebook and so to no choice; they are always the list.
+		-->
+		{@const cards = notebookId !== null && view === 'grid'}
+		<div
+			class={cards ? 'note-grid' : 'divide-y divide-gray-200'}
+			data-note-view={cards ? 'grid' : 'list'}
+		>
 			{#each noteReveal.of(entries) as entry, at (entry.id)}
+				<!-- The colour being chosen shows on the note while it is chosen. -->
+				{@const face = editingNoteId === entry.id ? editingColor : (entry.color ?? null)}
 				<!--
 					A pinned note is marked, not just moved.
 
@@ -2295,6 +2415,12 @@
 						: ''}"
 					class:bg-gray-100={noteSelection.selecting && noteSelection.has(entry.id)}
 					class:is-pinned={'pinnedAt' in entry && entry.pinnedAt}
+					class:note-card={cards}
+					class:shadow-card={cards}
+					class:note-card-wide={cards && editingNoteId === entry.id}
+					class:pill-soft={face !== null}
+					class:note-worn={face !== null}
+					style={face ? pillStyle(face) : undefined}
 				>
 					{#if editingNoteId === entry.id}
 						<form
@@ -2344,6 +2470,13 @@
 										entry.tags.map((t) => t.name).join(', '),
 										entry.people.map((p) => p.name).join(', ')
 									)}
+									<Field
+										label={t('notebookDetail.noteColour')}
+										span={12}
+										hint={t('notebookDetail.noteColourHint')}
+									>
+										<ColorChoice bind:color={editingColor} label={t('notebookDetail.noteColour')} />
+									</Field>
 								</FormGrid>
 							</div>
 							<div class="mt-2 flex justify-end gap-2">
@@ -2385,7 +2518,7 @@
 							a wall: what a list of them is for is finding the one you meant.
 							Pressing the title opens it, and it stays open until pressed again.
 						-->
-						<RowCard quiet={noteSelection.selecting}>
+						<RowCard quiet={noteSelection.selecting} stacked={cards}>
 							{#snippet rail()}
 								{#if noteSelection.selecting && !('mine' in entry && entry.mine === false)}
 									<SelectBox
@@ -2483,10 +2616,7 @@
 										>
 									{/if}
 									<button
-										onclick={() => {
-											editingNoteId = entry.id;
-											noteSaved = false;
-										}}
+										onclick={() => startEditing(entry)}
 										class="icon-btn"
 										title={t('notebookDetail.editThisNote')}
 										aria-label={t('notebookDetail.editThisNote')}><Icon name="edit" /></button
@@ -2568,8 +2698,16 @@
 									· {entry.author}
 								{/if}
 							</span>
-							{#if openNotes.has(entry.id)}
+							{@const shown = openNotes.has(entry.id)
+								? entry.content
+								: cards
+									? excerptOf(entry)
+									: ''}
+							{#if shown}
 								<!--
+									A card shows the start of what it says, as a card on a
+									board does; opening it shows the rest.
+
 									A reference in the writing opens the task it names.
 
 									`TASK:#4` is rendered as a link by the markdown renderer,
@@ -2583,13 +2721,14 @@
 								<!-- svelte-ignore a11y_no_static_element_interactions -->
 								<div
 									class="md mt-2 text-sm text-gray-900"
+									class:note-excerpt={!openNotes.has(entry.id)}
 									onclick={openReference}
 									use:peekRefs={todoRefs}
 								>
 									<!-- `renderMarkdown` escapes every character of the input before it emits a
 									     tag, and emits only attributes it writes itself. See `$lib/markdown.ts`. -->
 									<!-- eslint-disable-next-line svelte/no-at-html-tags -->
-									{@html renderMarkdown(entry.content, writingRefs)}
+									{@html renderMarkdown(shown, writingRefs)}
 								</div>
 							{/if}
 						</RowCard>
@@ -3102,6 +3241,68 @@
 	 * themselves by a rem — so the first tab's word lines up with those, not
 	 * with a gutter that is not there.
 	 */
+	/*
+	 * Notes as cards.
+	 *
+	 * As many columns as fit cards of a readable width, and one on a phone —
+	 * sized by the pane the notes are in rather than by the window, since the
+	 * same notebook stands beside the shelf on the index and alone on its own
+	 * page.
+	 */
+	.note-grid {
+		display: grid;
+		grid-template-columns: repeat(auto-fill, minmax(min(100%, 16rem), 1fr));
+		align-items: start;
+		gap: 0.75rem;
+		padding: 0.75rem;
+	}
+
+	.note-card {
+		border: 1px solid var(--color-gray-200);
+	}
+
+	/* The editor is a form, and a form wants the width. */
+	.note-card-wide {
+		grid-column: 1 / -1;
+	}
+
+	/* What a closed card shows of the note: its start, cut at a few lines. */
+	.note-excerpt {
+		display: -webkit-box;
+		-webkit-box-orient: vertical;
+		-webkit-line-clamp: 6;
+		line-clamp: 6;
+		overflow: hidden;
+	}
+
+	/*
+	 * A note in a colour wears its ink everywhere on it.
+	 *
+	 * `.pill-soft` works the ink out from the face, but the row's own words
+	 * name their greys outright, and a grey written for the page is wrong on
+	 * a colour somebody chose — so inside a coloured note they take the
+	 * face's ink, the quieter ones held back the way `.pill-quiet` holds them.
+	 * Chips and labels keep their own faces.
+	 */
+	.note-worn :global(:is(.text-gray-900, .text-gray-700, .icon-btn, .md blockquote)) {
+		color: inherit;
+	}
+
+	.note-worn :global(.text-gray-500) {
+		color: inherit;
+		opacity: 0.72;
+	}
+
+	/* Pinned keeps its spine on a colour, where the wash would be lost under the face. */
+	:global(html) .note-worn.is-pinned {
+		border-left-width: 3px;
+		border-left-color: color-mix(
+			in srgb,
+			var(--section-accent, var(--color-gray-400)) 70%,
+			transparent
+		);
+	}
+
 	.notebook-tabs :global(.room-tabs-nested > .seg-track) {
 		margin-inline-start: 0;
 		padding-inline: 0.25rem;

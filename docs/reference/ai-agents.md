@@ -1097,6 +1097,7 @@ _Needs `notes:write`; writes; answers with `before` and `after`, `after` being t
 | `title`      | string  | —        | What to call it. Optional: a note without one is listed by its first line, which is right for an ordinary day and wrong for anything somebody will come back looking for.                                                                                                                   |
 | `tags`       | string  | —        | Comma-separated tags.                                                                                                                                                                                                                                                                       |
 | `notebookId` | integer | —        | The notebook it belongs to, if any.                                                                                                                                                                                                                                                         |
+| `color`      | string  | —        | The colour the note is drawn in, as `#rrggbb`; the text on it is worked out to stay readable. Left out, it is the plain note.                                                                                                                                                               |
 | `requestId`  | string  | —        | An id you choose for this call, such as a UUID, so it can be sent again safely: the same `requestId` with the same arguments within a day answers with the first answer, marked `replayed`, and nothing is made twice. Reused for a different call, it is refused with the code `conflict`. |
 
 ### `notebook_notes` — The notes in a notebook
@@ -1142,7 +1143,7 @@ _Needs `notes:write`; writes; answers with `before` and `after`._
 
 ### `edit_entry` — Change what a note says
 
-Rewrite a note or a diary entry — its words, its title, its tags. Only the fields given change; the rest of it, and the notebook it lives in, are left alone. `notebook_notes` gives the id. To put one out of the way instead, `archive_note`.
+Rewrite a note or a diary entry — its words, its title, its tags, its colour. Only the fields given change; the rest of it, and the notebook it lives in, are left alone. `notebook_notes` gives the id. To put one out of the way instead, `archive_note`.
 
 _Needs `notes:write`; writes; answers with `before` and `after`._
 
@@ -1152,6 +1153,7 @@ _Needs `notes:write`; writes; answers with `before` and `after`._
 | `content`     | string  | —        | The new words, as Markdown. Left out, the writing is untouched.                                                                                                                                                                           |
 | `title`       | string  | —        | What to call it. Left out, the name is untouched; an empty string takes the name off, which is what an ordinary day’s diary entry has.                                                                                                    |
 | `tags`        | string  | —        | The tags it should carry from now on, comma or space separated — this replaces the ones it has. Left out, they are untouched.                                                                                                             |
+| `color`       | string  | —        | The colour the note is drawn in, as `#rrggbb`; the text on it is worked out to stay readable. Left out, the colour is untouched; an empty string takes it off.                                                                            |
 | `ifUpdatedAt` | string  | —        | Only change it if nothing has changed it since: the `updatedAt` a read or an earlier change answered with. If something has, nothing is written and the call is refused with the code `conflict`, the current `updatedAt` in its details. |
 
 ### `note_to_tasks` — Make todos out of a checklist note

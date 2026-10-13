@@ -2,7 +2,7 @@ import { listActivities, listCategories } from '$lib/services/activities';
 import { availableParsers } from '$lib/services/statements';
 import { listCategories as listInventoryCategories } from '$lib/services/inventory';
 import { listWorkoutCategories } from '$lib/services/workouts';
-import { getCurrency } from '$lib/services/settings';
+import { getCurrency, getNoteView } from '$lib/services/settings';
 import { linkableSlots, listAreas } from '$lib/services/goals';
 import { pickableNotebooks } from '$lib/services/notebooks';
 import { mediaLimits } from '$lib/services/media';
@@ -47,6 +47,8 @@ export function notebookPanelData(ctx: Ctx, notebookId: number | null) {
 		parsers: availableParsers(),
 		// For the money a ledger holds and a bill expects.
 		currency: getCurrency(ctx.userId),
+		// Whether this reader looks at the notes here as a list or as cards.
+		noteView: getNoteView(ctx.userId, notebookId),
 		pickableNotebooks: pickableNotebooks(ctx),
 		// The browser refuses an over-large picture before it is sent, because a
 		// body over the adapter's limit is rejected with something no form can
