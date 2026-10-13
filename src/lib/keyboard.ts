@@ -97,3 +97,81 @@ export function readViewport(): Viewport | null {
 		offsetTop: window.visualViewport.offsetTop
 	};
 }
+
+/*
+ * When nothing reports the keyboard at all.
+ *
+ * Everything above depends on the page being told. The Android app on 15 and
+ * later is not, until its web view is rebuilt to shrink for the keyboard
+ * (MainActivity): the keys are laid over the page and every reading stays
+ * what it was. The new-block sheet opens short with its name field focused,
+ * the keyboard comes up over the whole of it, and nothing can be scrolled
+ * until the keyboard is dismissed — which is the one moment the sheet works.
+ *
+ * So until a keyboard has been seen being reported, a focused text field on a
+ * touch phone is taken to have one over the bottom of the screen: the sheet
+ * takes the whole height and leaves room below its last field to scroll
+ * above it. The first real report switches this off for the rest of the page.
+ */
+
+/** How much of the screen a keyboard nobody reports is assumed to cover. */
+export const ASSUMED_KEYBOARD_SHARE = 0.5;
+
+/** Space kept between a field and the top of an assumed keyboard, in pixels. */
+export const ASSUMED_KEYBOARD_GAP = 16;
+
+/** Input types that open a picker or nothing, rather than the keyboard. */
+const NO_KEYBOARD_TYPES = new Set([
+	'button',
+	'checkbox',
+	'color',
+	'date',
+	'datetime-local',
+	'file',
+	'hidden',
+	'image',
+	'month',
+	'radio',
+	'range',
+	'reset',
+	'submit',
+	'time',
+	'week'
+]);
+
+/** The parts of an element that say whether focusing it brings up the keyboard. */
+export type Focused = { tagName: string; type?: string; isContentEditable?: boolean };
+
+/** Whether focusing this brings up the software keyboard. */
+export function opensKeyboard(el: Focused | null | undefined): boolean {
+	if (!el) return false;
+	if (el.isContentEditable) return true;
+	const tag = el.tagName.toUpperCase();
+	if (tag === 'TEXTAREA') return true;
+	if (tag !== 'INPUT') return false;
+	return !NO_KEYBOARD_TYPES.has((el.type ?? 'text').toLowerCase());
+}
+
+let reported = false;
+
+/** Note a reading: once a keyboard has been reported, nothing is assumed again. */
+export function noteKeyboard(height: number | null): void {
+	if (height !== null) reported = true;
+}
+
+/** Whether this page has ever been told of a keyboard. */
+export function keyboardReported(): boolean {
+	return reported;
+}
+
+/**
+ * How far to scroll so a field ends above an assumed keyboard, or 0.
+ *
+ * `bottom` is the field's bottom edge and `screen` the window's height, both
+ * in the same pixels. Only ever down the form: a field already clear of the
+ * keyboard stays exactly where the finger left it.
+ */
+export function assumedScroll(bottom: number, screen: number): number {
+	const keyboardTop = screen * (1 - ASSUMED_KEYBOARD_SHARE) - ASSUMED_KEYBOARD_GAP;
+	return Math.max(0, Math.round(bottom - keyboardTop));
+}

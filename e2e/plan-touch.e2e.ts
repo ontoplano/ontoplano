@@ -100,11 +100,29 @@ test.describe('with a finger', () => {
 		const headerBox = (await phoneHeader.boundingBox())!;
 		const addBox = (await add.boundingBox())!;
 		expect(headerBox.x + headerBox.width - addBox.x - addBox.width).toBeLessThan(30);
+		// The name field has focus, so a keyboard is taking the bottom of the
+		// screen and the sheet has all of what is above it.
+		await expect(dialog).toHaveClass(/assumed-keyboard/);
+		await expect
+			.poll(() => dialog.locator('.panel').evaluate((el) => el.getBoundingClientRect().height))
+			.toBeGreaterThan(844 * 0.9);
+		// Where the keyboard is reported, and has been put away, it is the
+		// short sheet.
+		await page.evaluate(() => {
+			const viewport = window.visualViewport!;
+			Object.defineProperty(viewport, 'height', {
+				configurable: true,
+				value: window.innerHeight - 320
+			});
+			viewport.dispatchEvent(new Event('resize'));
+			Object.defineProperty(viewport, 'height', { configurable: true, value: window.innerHeight });
+			viewport.dispatchEvent(new Event('resize'));
+		});
+		await expect(dialog).not.toHaveClass(/assumed-keyboard/);
 		await page.screenshot({ path: 'test-results/plan-phone-sheet.png' });
-		const height = await dialog
-			.locator('.panel')
-			.evaluate((el) => el.getBoundingClientRect().height);
-		expect(height).toBeLessThanOrEqual(844 * 0.55);
+		await expect
+			.poll(() => dialog.locator('.panel').evaluate((el) => el.getBoundingClientRect().height))
+			.toBeLessThanOrEqual(844 * 0.55);
 		await dialog.locator('[name="newActivityName"]').fill('Garden planning');
 		await expect(phoneHeader.locator('.category-mark')).toBeVisible();
 		await expect(dialog).toHaveClass(/peek/);
@@ -121,6 +139,62 @@ test.describe('with a finger', () => {
 		await dialog.getByRole('button', { name: 'Add', exact: true }).click();
 		await expect(dialog).toBeHidden();
 		await expect(page.locator('.ec-event').filter({ hasText: 'Garden planning' })).toBeVisible();
+	});
+
+	/**
+	 * The Android app on 15 and later, before its web view shrinks for the
+	 * keyboard: the keys cover the page and nothing on it is told. The sheet
+	 * opened short with its name focused, the keyboard covered all of it, and
+	 * it would not scroll until the keyboard was put away.
+	 */
+	test('a keyboard nobody reports still leaves the whole form reachable', async ({ page }) => {
+		await register(page, testEmail('plan-sheet-unreported'));
+		await visit(page, '/calendar/calendar');
+		await page.getByRole('button', { name: 'New task block' }).click();
+		const dialog = page.getByRole('dialog', { name: 'New task block' });
+		const content = dialog.locator('.modal-content');
+		await expect(dialog.locator('[name="newActivityName"]')).toBeFocused();
+		await expect(dialog).toHaveClass(/assumed-keyboard/);
+		await expect
+			.poll(() => dialog.locator('.panel').evaluate((el) => el.getBoundingClientRect().height))
+			.toBeGreaterThan(844 * 0.9);
+
+		// Everything in the form scrolls up above where the keys are.
+		const keyboardTop = 844 * 0.5;
+		const last = dialog.locator('.modal-content > *').last();
+		await content.evaluate((el) => el.scrollTo({ top: el.scrollHeight }));
+		await expect
+			.poll(() => last.evaluate((el) => el.getBoundingClientRect().bottom))
+			.toBeLessThanOrEqual(keyboardTop);
+
+		// A field tapped under the keys is lifted above them.
+		await content.evaluate((el) => el.scrollTo({ top: 0 }));
+		const duration = dialog.locator('[name="durationMinutes"]');
+		await duration.focus();
+		await expect
+			.poll(() => duration.evaluate((el) => el.getBoundingClientRect().bottom))
+			.toBeLessThanOrEqual(keyboardTop);
+		await page.screenshot({ path: 'test-results/plan-phone-unreported-keyboard.png' });
+
+		// Once a keyboard is reported, nothing is assumed again.
+		await page.evaluate(() => {
+			const viewport = window.visualViewport!;
+			Object.defineProperty(viewport, 'height', {
+				configurable: true,
+				value: window.innerHeight - 320
+			});
+			viewport.dispatchEvent(new Event('resize'));
+		});
+		await expect(dialog).toHaveClass(/(^|\s)keyboard(\s|$)/);
+		await expect(dialog).not.toHaveClass(/assumed-keyboard/);
+		await page.evaluate(() => {
+			const viewport = window.visualViewport!;
+			Object.defineProperty(viewport, 'height', { configurable: true, value: window.innerHeight });
+			viewport.dispatchEvent(new Event('resize'));
+		});
+		await expect(dialog).not.toHaveClass(/(^|\s)keyboard(\s|$)/);
+		await dialog.locator('[name="newActivityName"]').focus();
+		await expect(dialog).not.toHaveClass(/assumed-keyboard/);
 	});
 
 	test('the short sheet fills what the keyboard leaves and scrolls', async ({ page }) => {

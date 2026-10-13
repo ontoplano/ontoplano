@@ -18,6 +18,10 @@ the shape of the data changing. Bumping the minor per batch is what ran this
 file to 0.161 in a few months, which tells a reader nothing about which
 releases mattered.
 
+## 0.186.3 — 2026-10-13
+
+- On a phone whose keyboard covers the page without saying so — the Android app on Android 15 and later, until its next update — the new-block sheet takes the whole screen as soon as you type, lifts the field you tapped above the keys and scrolls all the way to its last field, instead of sitting under the keyboard until you put it away.
+
 ## 0.186.2 — 2026-10-12
 
 - The Tasks room is called Calendar, in the menu and in its addresses (`/calendar/…`). It holds the same tabs in the same order, and old `/tasks/…` links still arrive.

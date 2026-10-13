@@ -11,7 +11,18 @@
  * bar collapses, too shy and the button stays hidden.
  */
 import { describe, expect, test } from 'vitest';
-import { KEYBOARD_THRESHOLD, openedHeight, panelHeight, panelTop } from '../src/lib/keyboard';
+import {
+	ASSUMED_KEYBOARD_GAP,
+	ASSUMED_KEYBOARD_SHARE,
+	assumedScroll,
+	KEYBOARD_THRESHOLD,
+	keyboardReported,
+	noteKeyboard,
+	openedHeight,
+	opensKeyboard,
+	panelHeight,
+	panelTop
+} from '../src/lib/keyboard';
 
 /** A phone with nothing covering the screen. */
 const idle = { innerHeight: 844, viewportHeight: 844, offsetTop: 0 };
@@ -99,5 +110,39 @@ describe('a keyboard that resizes the page instead of covering it', () => {
 				openedHeight: before.height
 			})
 		).toBe(null);
+	});
+});
+
+describe('a keyboard nobody reports', () => {
+	test('is assumed for what is typed into, not for what opens a picker', () => {
+		expect(opensKeyboard({ tagName: 'INPUT', type: 'text' })).toBe(true);
+		expect(opensKeyboard({ tagName: 'input', type: 'number' })).toBe(true);
+		expect(opensKeyboard({ tagName: 'TEXTAREA' })).toBe(true);
+		expect(opensKeyboard({ tagName: 'DIV', isContentEditable: true })).toBe(true);
+		expect(opensKeyboard({ tagName: 'INPUT', type: 'time' })).toBe(false);
+		expect(opensKeyboard({ tagName: 'INPUT', type: 'checkbox' })).toBe(false);
+		expect(opensKeyboard({ tagName: 'SELECT' })).toBe(false);
+		expect(opensKeyboard({ tagName: 'BUTTON' })).toBe(false);
+		expect(opensKeyboard(null)).toBe(false);
+	});
+
+	test('a field above it stays where it is', () => {
+		const top = 844 * (1 - ASSUMED_KEYBOARD_SHARE) - ASSUMED_KEYBOARD_GAP;
+		expect(assumedScroll(top, 844)).toBe(0);
+		expect(assumedScroll(100, 844)).toBe(0);
+	});
+
+	test('a field under it is lifted just clear of it', () => {
+		const top = 844 * (1 - ASSUMED_KEYBOARD_SHARE) - ASSUMED_KEYBOARD_GAP;
+		expect(assumedScroll(top + 200, 844)).toBe(200);
+	});
+
+	test('is no longer assumed once a real one has been reported', () => {
+		noteKeyboard(null);
+		expect(keyboardReported()).toBe(false);
+		noteKeyboard(524);
+		expect(keyboardReported()).toBe(true);
+		noteKeyboard(null);
+		expect(keyboardReported()).toBe(true);
 	});
 });
