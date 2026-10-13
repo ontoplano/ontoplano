@@ -2086,8 +2086,11 @@
 	action: string;
 	qty: number | null;
 	enhanced: SubmitFunction;
+	archived: boolean;
 })}
-	<li class="list-row">
+	<!-- An archived line stays where it was, dimmed, with its way back: the list
+	     does not close up under the thumb for this any more than for a tick. -->
+	<li class="list-row {row.archived ? 'opacity-50' : ''}">
 		<form method="POST" action={row.action} use:enhance={row.enhanced} class="row-rail">
 			<input type="hidden" name="id" value={row.id} />
 			{#if row.qty !== null}<input type="hidden" name="qty" value={row.qty} />{/if}
@@ -2116,6 +2119,25 @@
 				{formatMoney(row.cents, data.currency)}
 			{/if}
 		</span>
+		<form
+			method="POST"
+			action="?/toggleSnoozed"
+			use:enhance={tick('toggleSnoozed')}
+			class="list-row-actions"
+		>
+			<input type="hidden" name="id" value={row.id} />
+			<button
+				type="submit"
+				class="icon-btn"
+				aria-pressed={row.archived}
+				title={row.archived ? t('inventory.putItBackOnThe') : t('inventory.archive')}
+				aria-label="{row.archived
+					? t('inventory.putItBackOnThe')
+					: t('inventory.archive')}: {row.name}"
+			>
+				<Icon name={row.archived ? 'undo' : 'archive'} />
+			</button>
+		</form>
 	</li>
 {/snippet}
 
@@ -2147,7 +2169,8 @@
 							line.id,
 							ticked ? basket[line.id] : Math.max(item?.idealQty ?? 0, was),
 							was
-						)
+						),
+						archived: item?.snoozed ?? false
 					})}
 				{/each}
 			</ul>
@@ -2181,7 +2204,8 @@
 						ticked: wishInBasket(want.id),
 						action: '?/toggleBought',
 						qty: null,
-						enhanced: tick('toggleBought')
+						enhanced: tick('toggleBought'),
+						archived: items.find((one) => one.id === want.id)?.snoozed ?? false
 					})}
 				{/each}
 			</ul>
