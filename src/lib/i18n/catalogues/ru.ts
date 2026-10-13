@@ -2297,6 +2297,7 @@ export const messages: Catalogue = {
 	'notebookDetail.sharePanes': 'Потяните, чтобы разделить ширину между панелями',
 	'notebookDetail.showArchived': 'Показать архив ({count})',
 	'notebookDetail.showNotesAs': 'Показывать заметки как',
+	'notebookDetail.showThingsAs': 'Показывать вещи как',
 	'notebookDetail.showingCount': {
 		one: 'Показана {count} заметка',
 		few: 'Показано {count} заметки',

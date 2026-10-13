@@ -1932,6 +1932,7 @@
 	"notebookDetail.noteColour": "Farbe",
 	"notebookDetail.noteColourHint": "Die Notiz wird darin gezeichnet. Eine Notiz ohne Farbe bleibt neutral.",
 	"notebookDetail.showNotesAs": "Notizen anzeigen als",
+	"notebookDetail.showThingsAs": "Dinge anzeigen als",
 	"notebookDetail.asList": "Liste",
 	"notebookDetail.asCards": "Karten",
 	"notebookDetail.addWithTodos": {

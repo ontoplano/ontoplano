@@ -1982,6 +1982,7 @@
 	"notebookDetail.noteColour": "Цвет",
 	"notebookDetail.noteColourHint": "Заметка рисуется в этом цвете. Заметка без цвета остаётся нейтральной.",
 	"notebookDetail.showNotesAs": "Показывать заметки как",
+	"notebookDetail.showThingsAs": "Показывать вещи как",
 	"notebookDetail.asList": "Список",
 	"notebookDetail.asCards": "Карточки",
 	"notebookDetail.addWithTodos": {

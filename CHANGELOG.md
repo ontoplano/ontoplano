@@ -20,6 +20,7 @@ releases mattered.
 
 ## 0.186.4 — 2026-10-13
 
+- A notebook's Inventory tab groups its things under the places they live, as the Inventory room does, and shows them as cards with the same list-or-cards switch as the notes.
 - A note can be given a colour, from its editor or when it is written: the whole note wears it, and the text on it stays readable whatever the colour, in either theme.
 - A notebook's notes can be laid out as cards instead of a list, with the switch beside the order. Each notebook remembers which you chose.
 - A thing's notes in Inventory are written in the same box as every other note and read as markdown — a link is a link — folded to their first line on the row, with the chevron to open the rest, the way a task's are.
