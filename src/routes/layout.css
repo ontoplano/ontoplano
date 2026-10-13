@@ -2377,12 +2377,12 @@ label:has(> input[type='radio']:not(:disabled)) {
 	 * has no mark and no margin, and its writing starts under the title like
 	 * everything else does.
 	 */
-	.todo-notes-foldable {
+	.folding-notes-foldable {
 		position: relative;
 		padding-left: 1.125rem;
 	}
 
-	.todo-fold {
+	.folding-notes-mark {
 		position: absolute;
 		top: 0;
 		left: 0;
@@ -2396,13 +2396,13 @@ label:has(> input[type='radio']:not(:disabled)) {
 		color: var(--color-gray-400);
 	}
 
-	.todo-fold:hover,
-	.todo-notes-hot .todo-fold {
+	.folding-notes-mark:hover,
+	.folding-notes-hot .folding-notes-mark {
 		color: var(--color-gray-900);
 	}
 
-	/* Where a press would fold or unfold it — see `foldHover`. */
-	.todo-notes-hot {
+	/* Where a press would fold or unfold it — see `FoldingNotes`. */
+	.folding-notes-hot {
 		cursor: pointer;
 	}
 

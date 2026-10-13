@@ -32,6 +32,7 @@
 	import TickBox from '$lib/components/TickBox.svelte';
 	import Counter from '$lib/components/Counter.svelte';
 	import Backlinks from '$lib/components/Backlinks.svelte';
+	import FoldingNotes from '$lib/components/FoldingNotes.svelte';
 	import { resolve } from '$app/paths';
 	import { enhance } from '$lib/enhance';
 	import { armed } from '$lib/actions/armed';
@@ -326,9 +327,6 @@
 				? 'text-gray-500 line-through'
 				: 'text-gray-900'}">{item.name}</span
 		>
-		{#if item.notes}
-			<span class="ml-2 text-xs text-gray-500">{item.notes}</span>
-		{/if}
 
 		<!--
 			What this usually costs, beside the thing it costs. It was summed into
@@ -341,6 +339,11 @@
 			</span>
 		{/if}
 	</p>
+	<!-- Markdown, folded to its first line: a pasted link of three hundred
+	     characters used to sit beside the name at full length. -->
+	{#if item.notes}
+		<FoldingNotes content={item.notes} label={item.name} />
+	{/if}
 </RowCard>
 
 <style>
