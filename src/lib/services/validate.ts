@@ -56,6 +56,22 @@ export function optionalStr(
 	return str(value, field, { ...opts, min: 0 });
 }
 
+/** What `<input type="color">` produces, and nothing else — it is written into inline styles. */
+export const HEX_COLOR = /^#[0-9a-fA-F]{6}$/;
+
+/**
+ * A colour somebody chose, or none.
+ *
+ * Empty, null and absent all mean "no colour", because a colour input has no
+ * empty of its own and the forms say "none" by sending nothing. Lower-cased so
+ * one colour is stored one way.
+ */
+export function optionalColor(value: unknown, field = 'colour'): string | null {
+	if (value === undefined || value === null) return null;
+	if (typeof value === 'string' && value.trim() === '') return null;
+	return str(value, field, { max: 7, pattern: HEX_COLOR }).toLowerCase();
+}
+
 export function num(
 	value: unknown,
 	field: string,

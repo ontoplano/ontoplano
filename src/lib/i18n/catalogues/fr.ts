@@ -652,7 +652,9 @@ export const messages: Catalogue = {
 	'errors.notebooks.hasNoRecipesTab': "« {notebook} » n'a pas d'onglet Recettes",
 	'errors.notebooks.hasNoTasksTab': "« {notebook} » n'a pas d'onglet Tâches",
 	'errors.notebooks.hasNoWorkoutsTab': "« {notebook} » n'a pas d'onglet Entraînements",
+	'errors.notebooks.listOrCards': 'Les notes s’affichent en liste ou en cartes',
 	'errors.notebooks.nameTheFolderToRename': 'Indiquez quel dossier renommer',
+	'errors.notebooks.noNotebookChosen': 'Aucun carnet choisi',
 	'errors.notebooks.noSuchFolder': "Aucun carnet n'est dans ce dossier",
 	'errors.notebooks.thatFolderPathIsTooLong': 'Ce chemin de dossier est trop long',
 	'errors.notifications.thatIsNotATime': "Ce n'est pas une heure de la journée.",
@@ -2231,6 +2233,8 @@ export const messages: Catalogue = {
 		'Mettre les notes sélectionnées à l’écart ? Vous pourrez les ramener.',
 	'notebookDetail.archived': '· archivée',
 	'notebookDetail.archivedCount': 'Archivées ({count})',
+	'notebookDetail.asCards': 'Cartes',
+	'notebookDetail.asList': 'Liste',
 	'notebookDetail.ascendingPressForDescending': 'Croissant — cliquez pour décroissant',
 	'notebookDetail.backToThePage': 'Retour à la page',
 	'notebookDetail.batchArchive': 'Archiver les notes sélectionnées',
@@ -2264,6 +2268,9 @@ export const messages: Catalogue = {
 	'notebookDetail.newTask': 'Nouvelle tâche',
 	'notebookDetail.noGoalPointsAtThis':
 		'Aucun objectif ne pointe vers ce carnet. Il n’en a pas besoin.',
+	'notebookDetail.noteColour': 'Couleur',
+	'notebookDetail.noteColourHint':
+		'La note est dessinée dans cette couleur. Une note sans couleur reste neutre.',
 	'notebookDetail.nothingChosen': 'Rien n’est choisi',
 	'notebookDetail.nothingWrittenHereYet': 'Rien n’est écrit ici pour l’instant.',
 	'notebookDetail.openBeside': 'Déposez ici pour ouvrir à côté',
@@ -2294,6 +2301,7 @@ export const messages: Catalogue = {
 		'Séparez par des virgules ou des espaces. Un # devant ne pose pas de problème.',
 	'notebookDetail.sharePanes': 'Faites glisser pour partager la largeur entre les panneaux',
 	'notebookDetail.showArchived': 'Afficher les archivées ({count})',
+	'notebookDetail.showNotesAs': 'Afficher les notes en',
 	'notebookDetail.showingCount': {
 		one: '{count} note affichée',
 		many: '{count} notes affichées',
@@ -4992,6 +5000,9 @@ export const messages: Catalogue = {
 	'tour.lettingOtherThingsIn': "Laisser entrer d'autres choses",
 	'tour.lightDarkOrWhateverThe': "Clair, sombre, ou ce que dit l'appareil",
 	'tour.linkTheWorkToThe': "Reliez le travail à l'objectif",
+	'tour.listOrCards': 'Une liste, ou des cartes',
+	'tour.listOrCardsBody':
+		'Lisez les notes en liste, ou étalez-les en cartes. Une note colorée porte sa couleur dans les deux cas, et chaque carnet se souvient de votre choix.',
 	'tour.markASessionDoneTo':
 		"Marquez une séance terminée pour la dater. Archivez-en une que vous avez arrêtée — son historique reste ; la suppression n'est que pour une ajoutée par erreur.",
 	'tour.matchingIsOnTheWords':
@@ -5213,6 +5224,7 @@ export const messages: Catalogue = {
 	'ui.more': 'Plus',
 	'ui.name': 'Nom',
 	'ui.next': 'Suivant',
+	'ui.noColour': 'Sans couleur',
 	'ui.none': '— aucun —',
 	'ui.notNow': 'Pas maintenant',
 	'ui.notebook': 'Carnet',

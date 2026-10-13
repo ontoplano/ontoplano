@@ -877,6 +877,7 @@ type NoteRow = {
 	updatedAt?: string | null;
 	archivedAt?: string | null;
 	pinnedAt?: string | null;
+	color?: string | null;
 	tags: { id?: number; name: string; taggedAt?: string | null }[];
 };
 
@@ -887,6 +888,7 @@ function noteLine(note: NoteRow): Record<string, unknown> {
 	out.opening = openingOf(note.content);
 	out.tags = note.tags.length > 0 ? note.tags.map((one) => one.name) : undefined;
 	out.pinned = note.pinnedAt ? true : undefined;
+	out.color = note.color || undefined;
 	out.archivedAt = note.archivedAt || undefined;
 
 	/*
@@ -2829,6 +2831,9 @@ export const TOOLS: Tool[] = [
 				),
 				tags: text('Comma-separated tags.'),
 				notebookId: { type: 'integer', description: 'The notebook it belongs to, if any.' },
+				color: text(
+					'The colour the note is drawn in, as `#rrggbb`; the text on it is worked out to stay readable. Left out, it is the plain note.'
+				),
 				...RETRY_ARGS
 			},
 			['content']
@@ -2838,7 +2843,8 @@ export const TOOLS: Tool[] = [
 				content: args.content,
 				title: args.title ?? '',
 				tags: args.tags ?? '',
-				notebookId: args.notebookId ?? null
+				notebookId: args.notebookId ?? null,
+				color: args.color ?? null
 			});
 			return { id };
 		}
@@ -2932,7 +2938,7 @@ export const TOOLS: Tool[] = [
 		name: 'edit_entry',
 		title: 'Change what a note says',
 		description:
-			'Rewrite a note or a diary entry — its words, its title, its tags. Only the fields given change; the rest of it, and the notebook it lives in, are left alone. `notebook_notes` gives the id. To put one out of the way instead, `archive_note`.',
+			'Rewrite a note or a diary entry — its words, its title, its tags, its colour. Only the fields given change; the rest of it, and the notebook it lives in, are left alone. `notebook_notes` gives the id. To put one out of the way instead, `archive_note`.',
 		scope: 'notes:write',
 		writes: true,
 		refs: [{ arg: 'id', kind: 'note', subject: true }],
@@ -2946,6 +2952,9 @@ export const TOOLS: Tool[] = [
 				tags: text(
 					'The tags it should carry from now on, comma or space separated \u2014 this replaces the ones it has. Left out, they are untouched.'
 				),
+				color: text(
+					'The colour the note is drawn in, as `#rrggbb`; the text on it is worked out to stay readable. Left out, the colour is untouched; an empty string takes it off.'
+				),
 				...CONCURRENCY_ARGS
 			},
 			['id']
@@ -2956,7 +2965,8 @@ export const TOOLS: Tool[] = [
 			updateEntry(ctx, now.id, {
 				content: args.content ?? now.content,
 				...(args.title === undefined ? {} : { title: args.title }),
-				...(args.tags === undefined ? {} : { tags: args.tags })
+				...(args.tags === undefined ? {} : { tags: args.tags }),
+				...(args.color === undefined ? {} : { color: args.color })
 			});
 			return { ok: true };
 		}

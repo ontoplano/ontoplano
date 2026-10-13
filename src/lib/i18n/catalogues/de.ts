@@ -632,7 +632,9 @@ export const messages: Catalogue = {
 	'errors.notebooks.hasNoRecipesTab': '„{notebook}“ hat keinen Tab Rezepte',
 	'errors.notebooks.hasNoTasksTab': '„{notebook}“ hat keinen Tab Aufgaben',
 	'errors.notebooks.hasNoWorkoutsTab': '„{notebook}“ hat keinen Tab Training',
+	'errors.notebooks.listOrCards': 'Notizen werden als Liste oder als Karten angezeigt',
 	'errors.notebooks.nameTheFolderToRename': 'Gib an, welcher Ordner umbenannt werden soll',
+	'errors.notebooks.noNotebookChosen': 'Kein Notizbuch gewählt',
 	'errors.notebooks.noSuchFolder': 'In diesem Ordner liegt kein Notizbuch',
 	'errors.notebooks.thatFolderPathIsTooLong': 'Dieser Ordnerpfad ist zu lang',
 	'errors.notifications.thatIsNotATime': 'Das ist keine Uhrzeit.',
@@ -2156,6 +2158,8 @@ export const messages: Catalogue = {
 		'Ausgewählte Notizen weglegen? Sie lassen sich zurückholen.',
 	'notebookDetail.archived': '· archiviert',
 	'notebookDetail.archivedCount': 'Archiviert ({count})',
+	'notebookDetail.asCards': 'Karten',
+	'notebookDetail.asList': 'Liste',
 	'notebookDetail.ascendingPressForDescending': 'Aufsteigend — für absteigend drücken',
 	'notebookDetail.backToThePage': 'Zurück zur Seite',
 	'notebookDetail.batchArchive': 'Ausgewählte Notizen archivieren',
@@ -2184,6 +2188,9 @@ export const messages: Catalogue = {
 	'notebookDetail.newNote': 'Neue Notiz',
 	'notebookDetail.newTask': 'Neue Aufgabe',
 	'notebookDetail.noGoalPointsAtThis': 'Kein Ziel zeigt auf dieses Notizbuch. Es braucht keines.',
+	'notebookDetail.noteColour': 'Farbe',
+	'notebookDetail.noteColourHint':
+		'Die Notiz wird darin gezeichnet. Eine Notiz ohne Farbe bleibt neutral.',
 	'notebookDetail.nothingChosen': 'Nichts ausgewählt',
 	'notebookDetail.nothingWrittenHereYet': 'Hier steht noch nichts.',
 	'notebookDetail.openBeside': 'Hier ablegen, um daneben zu öffnen',
@@ -2214,6 +2221,7 @@ export const messages: Catalogue = {
 		'Trennen Sie mit Kommas oder Leerzeichen. Ein vorangestelltes # ist in Ordnung.',
 	'notebookDetail.sharePanes': 'Ziehen, um die Breite zwischen den Bereichen zu teilen',
 	'notebookDetail.showArchived': 'Archivierte zeigen ({count})',
+	'notebookDetail.showNotesAs': 'Notizen anzeigen als',
 	'notebookDetail.showingCount': {
 		one: '{count} Notiz sichtbar',
 		other: '{count} Notizen sichtbar'
@@ -4681,6 +4689,9 @@ export const messages: Catalogue = {
 	'tour.lettingOtherThingsIn': 'Andere Dinge zulassen',
 	'tour.lightDarkOrWhateverThe': 'Hell, dunkel, oder was das Gerät sagt',
 	'tour.linkTheWorkToThe': 'Die Arbeit mit dem Ziel verknüpfen',
+	'tour.listOrCards': 'Eine Liste, oder Karten',
+	'tour.listOrCardsBody':
+		'Lies die Notizen als Liste oder lege sie als Karten aus. Eine Notiz mit Farbe trägt sie in beiden Fällen, und jedes Notizbuch merkt sich deine Wahl.',
 	'tour.markASessionDoneTo':
 		'Markieren Sie eine Einheit als erledigt, um sie zu stempeln. Archivieren Sie eine, die Sie nicht mehr machen — ihr Verlauf bleibt; Löschen ist nur für eine, die aus Versehen hinzugefügt wurde.',
 	'tour.matchingIsOnTheWords':
@@ -4902,6 +4913,7 @@ export const messages: Catalogue = {
 	'ui.more': 'Mehr',
 	'ui.name': 'Name',
 	'ui.next': 'Weiter',
+	'ui.noColour': 'Keine Farbe',
 	'ui.none': '— keine —',
 	'ui.notNow': 'Jetzt nicht',
 	'ui.notebook': 'Notizbuch',

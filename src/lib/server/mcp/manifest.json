@@ -2116,6 +2116,10 @@
 		"writes": true,
 		"destroys": false,
 		"params": {
+			"color": {
+				"type": "string",
+				"required": false
+			},
 			"content": {
 				"type": "string",
 				"required": false
@@ -4000,6 +4004,10 @@
 		"destroys": false,
 		"creates": "note",
 		"params": {
+			"color": {
+				"type": "string",
+				"required": false
+			},
 			"content": {
 				"type": "string",
 				"required": true

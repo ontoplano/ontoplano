@@ -20,6 +20,8 @@ releases mattered.
 
 ## 0.186.4 — 2026-10-13
 
+- A note can be given a colour, from its editor or when it is written: the whole note wears it, and the text on it stays readable whatever the colour, in either theme.
+- A notebook's notes can be laid out as cards instead of a list, with the switch beside the order. Each notebook remembers which you chose.
 - A thing's notes in Inventory are written in the same box as every other note and read as markdown — a link is a link — folded to their first line on the row, with the chevron to open the rest, the way a task's are.
 - In Inventory, a thing filed under a notebook names that notebook under its own name, and pressing the name opens it.
 - The shopping list can archive a line from the list itself: it dims where it is, with a button to put it back.

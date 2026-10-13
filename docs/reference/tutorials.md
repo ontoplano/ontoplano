@@ -31,7 +31,7 @@ under the pointer.
 | `/health/recipes`                    | tour.recipes                | 5     |
 | `/health/workouts`                   | tour.workouts               | 2     |
 | `/inventory/stock`                   | tour.shopping               | 4     |
-| `/notebooks`                         | tour.notebooks              | 6     |
+| `/notebooks`                         | tour.notebooks              | 7     |
 | `/notebooks/diary`                   | tour.diary                  | 5     |
 | `/notebooks/ideas`                   | tour.ideas                  | 3     |
 | `/notebooks/people`                  | tour.people                 | 3     |
@@ -177,6 +177,7 @@ at the button that reopens it, so it is not listed here.
 4. tour.favouritesFirst
 5. tour.notJustNotesAndTasks
 6. selection.selectMany
+7. tour.listOrCards
 
 ### `/notebooks/diary` — tour.diary
 

@@ -621,7 +621,9 @@ export const messages: Catalogue = {
 	'errors.notebooks.hasNoRecipesTab': '«{notebook}» no tiene pestaña de Recetas',
 	'errors.notebooks.hasNoTasksTab': '«{notebook}» no tiene pestaña de Tareas',
 	'errors.notebooks.hasNoWorkoutsTab': '«{notebook}» no tiene pestaña de Entrenamientos',
+	'errors.notebooks.listOrCards': 'Las notas se muestran como lista o como tarjetas',
 	'errors.notebooks.nameTheFolderToRename': 'Indica qué carpeta renombrar',
+	'errors.notebooks.noNotebookChosen': 'Ningún cuaderno elegido',
 	'errors.notebooks.noSuchFolder': 'No hay ningún cuaderno en esa carpeta',
 	'errors.notebooks.thatFolderPathIsTooLong': 'Esa ruta de carpeta es demasiado larga',
 	'errors.notifications.thatIsNotATime': 'Eso no es una hora del día.',
@@ -2131,6 +2133,8 @@ export const messages: Catalogue = {
 	'notebookDetail.archiveSelectedNotes': '¿Guardar las notas seleccionadas? Se pueden recuperar.',
 	'notebookDetail.archived': '· archivada',
 	'notebookDetail.archivedCount': 'Archivadas ({count})',
+	'notebookDetail.asCards': 'Tarjetas',
+	'notebookDetail.asList': 'Lista',
 	'notebookDetail.ascendingPressForDescending': 'Ascendente — pulsa para descendente',
 	'notebookDetail.backToThePage': 'Volver a la página',
 	'notebookDetail.batchArchive': 'Archivar notas seleccionadas',
@@ -2158,6 +2162,8 @@ export const messages: Catalogue = {
 	'notebookDetail.newNote': 'Nueva nota',
 	'notebookDetail.newTask': 'Nueva tarea',
 	'notebookDetail.noGoalPointsAtThis': 'Ninguna meta apunta a este cuaderno. No necesita una.',
+	'notebookDetail.noteColour': 'Color',
+	'notebookDetail.noteColourHint': 'La nota se dibuja en él. Una nota sin color se dibuja neutra.',
 	'notebookDetail.nothingChosen': 'Nada elegido',
 	'notebookDetail.nothingWrittenHereYet': 'Todavía no hay nada escrito aquí.',
 	'notebookDetail.openBeside': 'Suelta aquí para abrir al lado',
@@ -2188,6 +2194,7 @@ export const messages: Catalogue = {
 		'Sepáralos con comas o espacios. Un # al inicio está bien.',
 	'notebookDetail.sharePanes': 'Arrastra para repartir el ancho entre paneles',
 	'notebookDetail.showArchived': 'Mostrar archivadas ({count})',
+	'notebookDetail.showNotesAs': 'Mostrar las notas como',
 	'notebookDetail.showingCount': {
 		one: '{count} nota a la vista',
 		other: '{count} notas a la vista'
@@ -4646,6 +4653,9 @@ export const messages: Catalogue = {
 	'tour.lettingOtherThingsIn': 'Dejando entrar otras cosas',
 	'tour.lightDarkOrWhateverThe': 'Claro, oscuro, o lo que diga el dispositivo',
 	'tour.linkTheWorkToThe': 'Vincula el trabajo a la meta',
+	'tour.listOrCards': 'Una lista, o tarjetas',
+	'tour.listOrCardsBody':
+		'Lee las notas como lista, o extiéndelas como tarjetas. Una nota con color lo lleva en ambos casos, y cada cuaderno recuerda cuál elegiste.',
 	'tour.markASessionDoneTo':
 		'Marca una sesión como hecha para sellarla. Archiva una que dejaste de hacer — su historial se mantiene; eliminar es solo para una agregada por error.',
 	'tour.matchingIsOnTheWords':
@@ -4864,6 +4874,7 @@ export const messages: Catalogue = {
 	'ui.more': 'Más',
 	'ui.name': 'Nombre',
 	'ui.next': 'Siguiente',
+	'ui.noColour': 'Sin color',
 	'ui.none': '— ninguno —',
 	'ui.notNow': 'Ahora no',
 	'ui.notebook': 'Cuaderno',

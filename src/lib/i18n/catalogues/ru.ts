@@ -633,7 +633,9 @@ export const messages: Catalogue = {
 	'errors.notebooks.hasNoRecipesTab': 'У «{notebook}» нет вкладки «Рецепты»',
 	'errors.notebooks.hasNoTasksTab': 'У «{notebook}» нет вкладки «Задачи»',
 	'errors.notebooks.hasNoWorkoutsTab': 'У «{notebook}» нет вкладки «Тренировки»',
+	'errors.notebooks.listOrCards': 'Заметки показываются списком или карточками',
 	'errors.notebooks.nameTheFolderToRename': 'Укажите, какую папку переименовать',
+	'errors.notebooks.noNotebookChosen': 'Блокнот не выбран',
 	'errors.notebooks.noSuchFolder': 'В этой папке нет ни одного блокнота',
 	'errors.notebooks.thatFolderPathIsTooLong': 'Путь к этой папке слишком длинный',
 	'errors.notifications.thatIsNotATime': 'Это не время дня.',
@@ -2226,6 +2228,8 @@ export const messages: Catalogue = {
 		'Убрать выбранные заметки в архив? Их можно будет вернуть.',
 	'notebookDetail.archived': '· в архиве',
 	'notebookDetail.archivedCount': 'В архиве ({count})',
+	'notebookDetail.asCards': 'Карточки',
+	'notebookDetail.asList': 'Список',
 	'notebookDetail.ascendingPressForDescending': 'По возрастанию — нажмите для убывания',
 	'notebookDetail.backToThePage': 'Назад на страницу',
 	'notebookDetail.batchArchive': 'Архивировать выбранные заметки',
@@ -2259,6 +2263,9 @@ export const messages: Catalogue = {
 	'notebookDetail.newTask': 'Новая задача',
 	'notebookDetail.noGoalPointsAtThis':
 		'Ни одна цель не указывает на этот блокнот. Она ему не нужна.',
+	'notebookDetail.noteColour': 'Цвет',
+	'notebookDetail.noteColourHint':
+		'Заметка рисуется в этом цвете. Заметка без цвета остаётся нейтральной.',
 	'notebookDetail.nothingChosen': 'Ничего не выбрано',
 	'notebookDetail.nothingWrittenHereYet': 'Здесь пока ничего не написано.',
 	'notebookDetail.openBeside': 'Перетащите сюда, чтобы открыть рядом',
@@ -2289,6 +2296,7 @@ export const messages: Catalogue = {
 		'Разделяйте запятыми или пробелами. Решётка # в начале допустима.',
 	'notebookDetail.sharePanes': 'Потяните, чтобы разделить ширину между панелями',
 	'notebookDetail.showArchived': 'Показать архив ({count})',
+	'notebookDetail.showNotesAs': 'Показывать заметки как',
 	'notebookDetail.showingCount': {
 		one: 'Показана {count} заметка',
 		few: 'Показано {count} заметки',
@@ -5129,6 +5137,9 @@ export const messages: Catalogue = {
 	'tour.lettingOtherThingsIn': 'Впуская кое-что ещё',
 	'tour.lightDarkOrWhateverThe': 'Светлая, тёмная или как скажет устройство',
 	'tour.linkTheWorkToThe': 'Привяжите работу к цели',
+	'tour.listOrCards': 'Список или карточки',
+	'tour.listOrCardsBody':
+		'Читайте заметки списком или разложите их карточками. Заметка с цветом носит его в обоих видах, и каждый блокнот помнит ваш выбор.',
 	'tour.markASessionDoneTo':
 		'Отметьте тренировку сделанной, чтобы её зафиксировать. Архивируйте ту, которой больше не занимаетесь — её история останется; удаление — только для добавленной по ошибке.',
 	'tour.matchingIsOnTheWords':
@@ -5350,6 +5361,7 @@ export const messages: Catalogue = {
 	'ui.more': 'Больше',
 	'ui.name': 'Название',
 	'ui.next': 'Далее',
+	'ui.noColour': 'Без цвета',
 	'ui.none': '— нет —',
 	'ui.notNow': 'Не сейчас',
 	'ui.notebook': 'Блокнот',

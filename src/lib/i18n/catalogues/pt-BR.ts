@@ -622,7 +622,9 @@ export const messages: Catalogue = {
 	'errors.notebooks.hasNoRecipesTab': '“{notebook}” não tem a aba Receitas',
 	'errors.notebooks.hasNoTasksTab': '“{notebook}” não tem a aba Tarefas',
 	'errors.notebooks.hasNoWorkoutsTab': '“{notebook}” não tem a aba Treinos',
+	'errors.notebooks.listOrCards': 'As notas são mostradas como lista ou como cartões',
 	'errors.notebooks.nameTheFolderToRename': 'Diga qual pasta renomear',
+	'errors.notebooks.noNotebookChosen': 'Nenhum caderno escolhido',
 	'errors.notebooks.noSuchFolder': 'Nenhum caderno está nessa pasta',
 	'errors.notebooks.thatFolderPathIsTooLong': 'Esse caminho de pasta é longo demais',
 	'errors.notifications.thatIsNotATime': 'Isso não é uma hora do dia.',
@@ -2118,6 +2120,8 @@ export const messages: Catalogue = {
 	'notebookDetail.archiveSelectedNotes': 'Guardar as notas selecionadas? Elas podem voltar depois.',
 	'notebookDetail.archived': '· arquivada',
 	'notebookDetail.archivedCount': 'Arquivadas ({count})',
+	'notebookDetail.asCards': 'Cartões',
+	'notebookDetail.asList': 'Lista',
 	'notebookDetail.ascendingPressForDescending': 'Crescente — toque para decrescente',
 	'notebookDetail.backToThePage': 'Voltar para a página',
 	'notebookDetail.batchArchive': 'Arquivar notas selecionadas',
@@ -2147,6 +2151,8 @@ export const messages: Catalogue = {
 	'notebookDetail.newTask': 'Nova tarefa',
 	'notebookDetail.noGoalPointsAtThis':
 		'Nenhuma meta aponta para este caderno. Ele não precisa de uma.',
+	'notebookDetail.noteColour': 'Cor',
+	'notebookDetail.noteColourHint': 'A nota é desenhada nela. Uma nota sem cor fica neutra.',
 	'notebookDetail.nothingChosen': 'Nada escolhido',
 	'notebookDetail.nothingWrittenHereYet': 'Nada escrito aqui ainda.',
 	'notebookDetail.openBeside': 'Solte aqui para abrir ao lado',
@@ -2177,6 +2183,7 @@ export const messages: Catalogue = {
 		'Separe com vírgulas ou espaços. Um # na frente também serve.',
 	'notebookDetail.sharePanes': 'Arraste para dividir a largura entre os painéis',
 	'notebookDetail.showArchived': 'Mostrar arquivadas ({count})',
+	'notebookDetail.showNotesAs': 'Mostrar as notas como',
 	'notebookDetail.showingCount': { one: '{count} nota à vista', other: '{count} notas à vista' },
 	'notebookDetail.smallerType': 'Letra menor',
 	'notebookDetail.stopKeepingThisAtThe': 'Não manter mais no topo',
@@ -4625,6 +4632,9 @@ export const messages: Catalogue = {
 	'tour.lettingOtherThingsIn': 'Deixando outras coisas entrarem',
 	'tour.lightDarkOrWhateverThe': 'Claro, escuro, ou o que o dispositivo disser',
 	'tour.linkTheWorkToThe': 'Vincule o trabalho à meta',
+	'tour.listOrCards': 'Uma lista, ou cartões',
+	'tour.listOrCardsBody':
+		'Leia as notas como lista, ou espalhe-as em cartões. Uma nota com cor a veste nos dois casos, e cada caderno lembra qual você escolheu.',
 	'tour.markASessionDoneTo':
 		'Marque uma sessão como feita para registrá-la. Arquive uma que você parou de fazer — o histórico dela permanece; excluir é só para uma adicionada por engano.',
 	'tour.matchingIsOnTheWords':
@@ -4842,6 +4852,7 @@ export const messages: Catalogue = {
 	'ui.more': 'Mais',
 	'ui.name': 'Nome',
 	'ui.next': 'Próximo',
+	'ui.noColour': 'Sem cor',
 	'ui.none': '— nenhum —',
 	'ui.notNow': 'Agora não',
 	'ui.notebook': 'Caderno',

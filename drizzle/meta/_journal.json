@@ -869,6 +869,13 @@
       "when": 1791834315853,
       "tag": "0123_user_last_active",
       "breakpoints": true
+    },
+    {
+      "idx": 124,
+      "version": "6",
+      "when": 1791929171216,
+      "tag": "0124_note_background_colour",
+      "breakpoints": true
     }
   ]
 }

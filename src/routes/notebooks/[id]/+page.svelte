@@ -116,6 +116,7 @@
 				todos={data.todos}
 				allTodos={data.allTodos}
 				activities={data.activities}
+				noteView={data.noteView}
 				error={form?.message ?? null}
 				bind:newAction
 				bind:linkAction

@@ -435,6 +435,12 @@ export const TUTORIALS: Record<string, Tutorial> = {
 				target: '[data-tour="notebook-note-selection"]',
 				title: 'selection.selectMany',
 				body: 'tour.notebookNoteSelection'
+			},
+			{
+				// On the Notes tab of a notebook — the orphaned notes have no choice.
+				target: '[data-tour="notebook-note-view"]',
+				title: 'tour.listOrCards',
+				body: 'tour.listOrCardsBody'
 			}
 		]
 	},
