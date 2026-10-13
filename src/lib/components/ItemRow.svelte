@@ -31,6 +31,7 @@
 	import RowCard from '$lib/components/RowCard.svelte';
 	import TickBox from '$lib/components/TickBox.svelte';
 	import Counter from '$lib/components/Counter.svelte';
+	import Backlinks from '$lib/components/Backlinks.svelte';
 	import { resolve } from '$app/paths';
 	import { enhance } from '$lib/enhance';
 	import { armed } from '$lib/actions/armed';
@@ -64,6 +65,12 @@
 		usedIn = [],
 		/** The colour an attribute was given, where the screen has the vocabulary. */
 		chipColor,
+		/**
+		 * The notebook it is filed under, where the screen is not that notebook.
+		 * The room shows every thing at once, and a row that does not say whose
+		 * it is leaves "which project was this filament for" to memory.
+		 */
+		notebook = null,
 		onedit,
 		/**
 		 * What a tick does while the browser is offline.
@@ -100,6 +107,7 @@
 		actions: ItemActionNames;
 		usedIn?: { id: number; title: string }[];
 		chipColor?: (key: string, value: string) => string | undefined;
+		notebook?: { id: number; title: string } | null;
 		onedit?: (id: number) => void;
 		onsubmit?: SubmitFunction;
 		ondeletesubmit?: (item: { id: number; name: string }) => SubmitFunction;
@@ -221,6 +229,7 @@
 			down the screen. Nothing appears here on a press.
 		-->
 		<span class="flex min-h-5 flex-wrap items-center gap-x-2 gap-y-1">
+			{#if notebook}<Backlinks {notebook} />{/if}
 			{#if usedIn.length > 0}
 				<span class="inline-flex flex-wrap items-center gap-1 align-middle">
 					<Icon name="utensils" size={12} class="text-gray-500" />

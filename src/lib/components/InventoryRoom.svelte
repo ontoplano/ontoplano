@@ -309,6 +309,13 @@
 		})
 	);
 
+	/** The notebook a row is filed under, for the line under its name. */
+	const notebookTitles = $derived(new Map(data.notebooks.map((one) => [one.id, one.title])));
+	function notebookOf(id: number | null): { id: number; title: string } | null {
+		const title = id === null ? undefined : notebookTitles.get(id);
+		return id === null || title === undefined ? null : { id, title };
+	}
+
 	$effect(() => {
 		const send = async () => {
 			if (ticks.pending.length > 0 && (await flush()) > 0) await invalidateAll();
@@ -1542,6 +1549,7 @@
 																		actions={ITEM_ROOM_ACTIONS}
 																		usedIn={data.usedIn[item.id] ?? []}
 																		{chipColor}
+																		notebook={notebookOf(item.notebookId)}
 																		onedit={() => startEdit(item)}
 																		onsubmit={tick(
 																			item.type === 'someday' ? 'toggleBought' : 'toggleSnoozed'

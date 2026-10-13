@@ -20,6 +20,7 @@ releases mattered.
 
 ## 0.186.4 — 2026-10-13
 
+- In Inventory, a thing filed under a notebook names that notebook under its own name, and pressing the name opens it.
 - The shopping list can archive a line from the list itself: it dims where it is, with a button to put it back.
 
 ## 0.186.3 — 2026-10-13
