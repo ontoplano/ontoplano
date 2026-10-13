@@ -241,7 +241,7 @@ test('the section pie lands you in the room', async ({ page }) => {
 			(await page.locator('[data-pie="rooms"] .pie-hud-name').innerText()).trim().toLowerCase()
 		);
 	}
-	for (const room of ['Tasks', 'Goals', 'Notebooks', 'Health', 'Finance', 'Inventory']) {
+	for (const room of ['Calendar', 'Goals', 'Notebooks', 'Health', 'Finance', 'Inventory']) {
 		expect(announced).toContain(room.toLowerCase());
 	}
 	expect(announced).not.toContain('home');
@@ -321,7 +321,7 @@ test.describe('with a finger', () => {
 			);
 		}
 
-		for (const room of ['Tasks', 'Goals', 'Notebooks', 'Inventory']) {
+		for (const room of ['Calendar', 'Goals', 'Notebooks', 'Inventory']) {
 			expect(named, `${room} was never named while it was aimed at`).toContain(room);
 		}
 
