@@ -412,6 +412,20 @@
 		order: 2;
 		margin-left: 0;
 		flex-wrap: nowrap;
+		/* The whole line, and a switch on it takes what the buttons leave:
+		   a row of small controls at one end of an empty line is the row
+		   spending a phone's width on gaps. */
+		flex: 1 0 100%;
+	}
+
+	.filter-two-rows > .filter-tail :global(.seg),
+	.filter-two-rows > .filter-tail :global(:has(> .seg)) {
+		display: flex;
+		flex: 1 1 auto;
+	}
+
+	.filter-two-rows > .filter-tail :global(.seg > button) {
+		flex: 1 1 0;
 	}
 
 	/*

@@ -114,4 +114,11 @@
 		margin-bottom: 0;
 		border-bottom: 1px solid var(--color-gray-200);
 	}
+
+	/* A phone's screen is the controls' and the content's, not the padding's. */
+	@media (width < 40rem) {
+		.room-toolbar-inset {
+			padding: 0.75rem 0.75rem 0.5rem;
+		}
+	}
 </style>

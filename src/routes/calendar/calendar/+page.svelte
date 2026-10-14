@@ -3005,7 +3005,15 @@
 						     the week's start is left to Preferences and the saved weeks and
 						     the list fold behind More, so it all shares the one line under
 						     the date rather than taking two or three. -->
-						<div use:sliding class="seg" role="group" aria-label={t('tasks.plan.howMuchToShow')}>
+						<!-- On a phone the row is the controls': the view takes what the
+						     two squares beside it leave, rather than sitting at its
+						     own width with the row's slack in the gaps. -->
+						<div
+							use:sliding
+							class="seg max-sm:flex-1 max-sm:[&>button]:flex-1"
+							role="group"
+							aria-label={t('tasks.plan.howMuchToShow')}
+						>
 							{#each [['day', t('tasks.plan.day')], ['week', t('tasks.plan.week')], ['month', t('tasks.plan.month')]] as [mode, label] (mode)}
 								<button
 									onclick={() => setView(mode as PlanView)}
@@ -3026,14 +3034,21 @@
 								label={t('tasks.plan.weekStartsOn')}
 							/>
 						</div>
+						<!-- The rest of the controls fold under here on a phone, and the
+						     chevron says which way: down to open them, up to fold. -->
 						<button
 							type="button"
-							class="btn btn-sm ml-auto sm:hidden"
+							class="btn btn-sm plan-square sm:hidden"
 							aria-expanded={mobileControlsOpen}
 							aria-label={t('ui.more')}
+							title={t('ui.more')}
 							onclick={() => (mobileControlsOpen = !mobileControlsOpen)}
 						>
-							<Icon name="sliders" size={14} />
+							<Icon
+								name="chevron-down"
+								size={18}
+								class="transition-transform {mobileControlsOpen ? 'rotate-180' : ''}"
+							/>
 						</button>
 
 						<!-- On a narrow phone these open on their own row, so Full screen
@@ -3081,7 +3096,7 @@
 								type="button"
 								onclick={toggleFullscreen}
 								aria-pressed={fullscreen}
-								class="btn btn-sm shrink-0 max-[420px]:order-1 max-[420px]:ml-auto"
+								class="btn btn-sm plan-square shrink-0 max-[420px]:order-1"
 								title={fullscreen ? t('tasks.plan.leaveFullScreen') : t('tasks.plan.fullScreen')}
 								aria-label={fullscreen
 									? t('tasks.plan.leaveFullScreen')
@@ -4912,5 +4927,20 @@
 		min-height: 0;
 		flex: 1;
 		overflow: auto;
+	}
+
+	/*
+	 * The two buttons beside the view on a phone: squares as tall as the
+	 * view's row, so the three of them take the line between them rather than
+	 * leaving it to the gaps.
+	 */
+	@media (width < 40rem) {
+		.plan-square {
+			align-self: stretch;
+			aspect-ratio: 1;
+			height: auto;
+			padding: 0;
+			justify-content: center;
+		}
 	}
 </style>
