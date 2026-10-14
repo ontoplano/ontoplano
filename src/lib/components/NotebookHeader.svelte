@@ -73,11 +73,14 @@
 
 {#snippet picture()}
 	{#if notebook.mine}
-		<!-- On a phone the picture opens the viewer; Edit still changes it. -->
+		<!-- Pressing it edits the notebook, on its page as in the panel: a
+		     press that went straight to the file chooser changed the cover
+		     when somebody meant to open the notebook's settings. The picture
+		     is changed in that dialog; the corner badge views it. -->
 		<NotebookPicture
 			{notebook}
 			kilobytes={pictureKilobytes}
-			onpress={open ? onedit : undefined}
+			onpress={onedit}
 			size={COVER}
 			resizable
 			viewOnTouch
