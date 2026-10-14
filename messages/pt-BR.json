@@ -360,6 +360,7 @@
 	"capture.newThing": "Novo: {thing}",
 	"capture.planDestination": "seu calendário",
 	"captureDialog.notWrittenDown": "Isso não foi anotado.",
+	"captureDialog.savedAsDraft": "Salvo como rascunho",
 	"captureSettings.atLeastOne": "ao menos uma",
 	"captureSettings.intro": "O que a roda do + tem, e para onde vai o que você escreve nela.",
 	"captureSettings.noNotebooksYet": "Nenhum caderno ainda.",

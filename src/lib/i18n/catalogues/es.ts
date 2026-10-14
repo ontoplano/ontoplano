@@ -383,6 +383,7 @@ export const messages: Catalogue = {
 	'capture.newThing': 'Nuevo {thing}',
 	'capture.planDestination': 'tu calendario',
 	'captureDialog.notWrittenDown': 'Eso no quedó escrito.',
+	'captureDialog.savedAsDraft': 'Guardado como borrador',
 	'captureSettings.atLeastOne': 'al menos una',
 	'captureSettings.everyWedge': 'Todas las porciones',
 	'captureSettings.filedNowhere': 'No se archiva en un cuaderno',

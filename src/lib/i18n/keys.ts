@@ -354,6 +354,7 @@ export type MessageKey =
 	| 'capture.newThing'
 	| 'capture.planDestination'
 	| 'captureDialog.notWrittenDown'
+	| 'captureDialog.savedAsDraft'
 	| 'captureSettings.atLeastOne'
 	| 'captureSettings.everyWedge'
 	| 'captureSettings.filedNowhere'

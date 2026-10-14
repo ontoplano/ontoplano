@@ -362,6 +362,7 @@
 	"capture.newThing": "Новое: {thing}",
 	"capture.planDestination": "ваш календарь",
 	"captureDialog.notWrittenDown": "Это не было записано.",
+	"captureDialog.savedAsDraft": "Сохранено как черновик",
 	"captureSettings.atLeastOne": "хотя бы один",
 	"captureSettings.intro": "Что держит колесо захвата «+» и куда попадает то, что вы через него записываете.",
 	"captureSettings.noNotebooksYet": "Блокнотов пока нет.",

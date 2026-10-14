@@ -401,6 +401,7 @@ export const messages: Catalogue = {
 	'capture.newThing': 'Nouveau {thing}',
 	'capture.planDestination': 'votre calendrier',
 	'captureDialog.notWrittenDown': "Ça n'a pas été noté.",
+	'captureDialog.savedAsDraft': 'Gardé en brouillon',
 	'captureSettings.atLeastOne': 'au moins un',
 	'captureSettings.everyWedge': 'Tous les secteurs',
 	'captureSettings.filedNowhere': 'Pas classé dans un carnet',
