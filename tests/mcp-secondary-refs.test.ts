@@ -377,9 +377,12 @@ describe('a key tied to a notebook', () => {
 
 		for (const name of ['recipes', 'tick_habit']) {
 			const tool = TOOLS.find((one) => one.name === name)!;
-			const args: Record<string, unknown> = { notebookId: other };
+			const args: Record<string, unknown> = {};
 			confine({ kind: 'notebook', id: mine }, tool.refs, tool.input, args);
 			expect(args.notebookId, name).toBe(mine);
+			expect(() =>
+				confine({ kind: 'notebook', id: mine }, tool.refs, tool.input, { notebookId: other })
+			).toThrow();
 		}
 	});
 });

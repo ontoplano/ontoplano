@@ -15,7 +15,7 @@ const EVERY_TAB = 'notes,tasks,goals,ideas,inventory,ledgers,bills,habits,workou
  *
  * What these are about, in order: that the confined key can do its job inside
  * the notebook, that it cannot see or touch anything outside it, that asking
- * about another notebook is answered about its own rather than refused (a
+ * about another notebook is refused exactly as one that does not exist is (a
  * refusal that depended on the other notebook existing would be a way to ask
  * what exists), and that the tool list it is shown is exactly what it can use.
  */
@@ -378,11 +378,12 @@ describe('recipes and habits, narrowed to the notebook', () => {
 		expect(said(answer)).not.toContain('milk');
 	});
 
-	it('lists only the notebook’s habits and ideas, whatever notebook is asked for', async () => {
+	it('lists only the notebook’s habits and ideas, and refuses another notebook', async () => {
 		const { createIdea } = await import('../src/lib/services/ideas');
 		createIdea(ctx(), { content: 'a skylight over the stairs', notebookId: mine });
 		createIdea(ctx(), { content: 'a private daydream' });
-		for (const args of [{}, { notebookId: other }]) {
+		expect(failed(call('ideas', { notebookId: other }))).toBe(true);
+		for (const args of [{}, { notebookId: mine }]) {
 			const habits = said(call('all_habits', args));
 			expect(habits).toContain('sweep the dust');
 			const ideas = call('ideas', args);
@@ -430,8 +431,9 @@ describe('recipes and habits, narrowed to the notebook', () => {
 		expect(missing).toEqual([]);
 	});
 
-	it('lists only the notebook’s recipes, whatever notebook is asked for', () => {
-		for (const args of [{}, { notebookId: other }]) {
+	it('lists only the notebook’s recipes, and refuses another notebook', () => {
+		expect(failed(call('recipes', { notebookId: other }))).toBe(true);
+		for (const args of [{}, { notebookId: mine }]) {
 			const answer = call('recipes', args);
 			expect(failed(answer), said(answer)).toBe(false);
 			expect(said(answer)).toContain('builders’ tea');
@@ -532,42 +534,43 @@ describe('a tool that also takes ids from outside', () => {
 
 describe('asking about another notebook', () => {
 	/*
-	 * Answered about its own, rather than refused.
+	 * Refused, and refused the same for every id that is not its own.
 	 *
-	 * A refusal here would depend on whether the other notebook exists, which
-	 * makes the refusal itself an answer: try ids until one comes back
-	 * differently and you have learned what the account has. Pinning the
-	 * argument means every id gets the same treatment, including one that is
-	 * nobody's.
+	 * It used to be answered about its own notebook instead, which kept the
+	 * refusal from being an oracle but made `change_task` answer ok to a move
+	 * that never happened. Refusing every foreign id with the answer a
+	 * nobody's id gets keeps the first property without the second.
 	 */
-	it('is answered about its own', () => {
-		const asked = said(call('notebook_notes', { id: other }));
-		const own = said(call('notebook_notes', { id: mine }));
-		expect(asked).toEqual(own);
+	it('is refused', () => {
+		expect(failed(call('notebook_notes', { id: other }))).toBe(true);
+		expect(failed(call('notebook_notes', { id: mine }))).toBe(false);
 	});
 
 	it('cannot file a new task into another notebook', () => {
-		expect(failed(call('add_task', { title: 'sneaky', notebookId: other }))).toBe(false);
-
-		// It landed in the confinement, not where it was asked to go.
-		expect(said(call('tasks', {}))).toContain('sneaky');
-		expect(said(call('tasks', {}, false))).toContain('sneaky');
-		expect(
-			said(call('notebook_notes', { id: other }, false)).includes('sneaky'),
-			'it reached the other notebook'
-		).toBe(false);
+		expect(failed(call('add_task', { title: 'sneaky', notebookId: other }))).toBe(true);
+		expect(said(call('tasks', {}, false))).not.toContain('sneaky');
 	});
 
-	it('cannot move one of its own tasks out', () => {
-		expect(failed(call('change_task', { id: inside.todo, notebookId: other }))).toBe(false);
+	it('cannot move one of its own tasks out, and says so', () => {
+		expect(failed(call('change_task', { id: inside.todo, notebookId: other }))).toBe(true);
+		expect(failed(call('change_task', { id: inside.todo, notebookId: 0 }))).toBe(true);
 		// Still in the notebook it started in: a confined key cannot post
 		// something out through the letterbox.
 		expect(said(call('tasks', {}))).toContain('call the plumber');
 	});
 
+	it('naming its own notebook, or none, still works', () => {
+		expect(failed(call('change_task', { id: inside.todo, notebookId: mine }))).toBe(false);
+		expect(failed(call('add_task', { title: 'filed here' }))).toBe(false);
+		expect(said(call('tasks', {}))).toContain('filed here');
+	});
+
 	it('says nothing different for a notebook that does not exist', () => {
 		const nobodys = said(call('notebook_notes', { id: 987654 }));
 		expect(nobodys).toEqual(said(call('notebook_notes', { id: other })));
+		expect(said(call('change_task', { id: inside.todo, notebookId: 987654 }))).toEqual(
+			said(call('change_task', { id: inside.todo, notebookId: other }))
+		);
 	});
 });
 

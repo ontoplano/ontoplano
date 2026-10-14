@@ -308,7 +308,9 @@ describe('ownership and confinement', () => {
 
 	it('a key tied to one notebook reads only that notebook', () => {
 		const confined = { kind: 'notebook', id: kitchen };
-		expect(titles('tasks', { notebookId: 0 }, confined)).toEqual(['fix the tap']);
+		expect(titles('tasks', {}, confined)).toEqual(['fix the tap']);
+		// Asking for the unfiled ones is asking outside it.
+		expect(call('tasks', { notebookId: 0 }, confined).result?.isError).toBe(true);
 		expect(titles('up_next', { limit: 20 }, confined)).toEqual(['fix the tap']);
 		// Naming a task outside it by id is refused, not answered.
 		expect(call('tasks', { ids: [made.zero] }, confined).result?.isError).toBe(true);
