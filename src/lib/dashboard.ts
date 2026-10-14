@@ -334,6 +334,80 @@ export function serialiseSeen(): string {
 	return JSON.stringify(ALL_IDS);
 }
 
+/**
+ * A card's own settings: how it shows what it shows.
+ *
+ * Declared here, card by card, option by option, with the values each may take
+ * and the one a card starts with — so a card's settings are checked against one
+ * list on the way in and on the way out, and a card that gains an option later
+ * adds a line here rather than a column somewhere. Kept in one setting per
+ * account (`DASHBOARD_CARD_OPTIONS_KEY`), a map of card → option → value.
+ */
+export const CARD_OPTIONS = {
+	/*
+	 * The next three days as lists of blocks, or as timelines: each day from
+	 * the planner's first hour to its last, the blocks where they fall — so an
+	 * empty afternoon looks empty instead of being left out.
+	 */
+	nextDays: { view: { values: ['list', 'timeline'], start: 'list' } }
+} as const satisfies Partial<
+	Record<DashboardCardId, Record<string, { values: readonly string[]; start: string }>>
+>;
+
+export type CardOptions = {
+	[Card in keyof typeof CARD_OPTIONS]: {
+		[Option in keyof (typeof CARD_OPTIONS)[Card]]: (typeof CARD_OPTIONS)[Card][Option] extends {
+			values: readonly (infer V)[];
+		}
+			? V
+			: never;
+	};
+};
+
+export const DASHBOARD_CARD_OPTIONS_KEY = 'dashboard.cardOptions';
+
+/** Every card's options, from what was stored: anything unknown or out of range takes its start. */
+export function parseCardOptions(raw: string | null | undefined): CardOptions {
+	let stored: Record<string, Record<string, unknown>> = {};
+	try {
+		const parsed = JSON.parse(raw ?? '{}');
+		if (parsed && typeof parsed === 'object') stored = parsed;
+	} catch {
+		/* a broken value is no value */
+	}
+	const out: Record<string, Record<string, string>> = {};
+	for (const [card, options] of Object.entries(CARD_OPTIONS)) {
+		out[card] = {};
+		for (const [option, spec] of Object.entries(options)) {
+			const value = stored[card]?.[option];
+			out[card][option] =
+				typeof value === 'string' && (spec.values as readonly string[]).includes(value)
+					? value
+					: spec.start;
+		}
+	}
+	return out as CardOptions;
+}
+
+/**
+ * The stored map with one option changed, or null when the card, the option or
+ * the value is not one `CARD_OPTIONS` declares.
+ */
+export function withCardOption(
+	raw: string | null | undefined,
+	card: string,
+	option: string,
+	value: string
+): string | null {
+	const spec = (CARD_OPTIONS as Record<string, Record<string, { values: readonly string[] }>>)[
+		card
+	]?.[option];
+	if (!spec || !spec.values.includes(value)) return null;
+	const current = parseCardOptions(raw) as Record<string, Record<string, string>>;
+	current[card] = { ...current[card], [option]: value };
+	return JSON.stringify(current);
+}
+
 export function cardById(id: DashboardCardId): DashboardCard | undefined {
 	return DASHBOARD_CARDS.find((c) => c.id === id);
 }

@@ -1578,6 +1578,8 @@ export const messages: Catalogue = {
 		other: '{count} blocs de tâches'
 	},
 	'home.countToGo': '{count} restants',
+	'home.daysAsLists': 'En listes',
+	'home.daysAsTimelines': 'En frises, de la première à la dernière heure de votre agenda',
 	'home.demoVersion': 'Version de démonstration',
 	'home.diary': 'Journal',
 	'home.done': '{done} faits',
@@ -1687,6 +1689,7 @@ export const messages: Catalogue = {
 	'home.sentOnlyWhatBrokeWent':
 		'Envoyé. Seul ce qui a échoué est parti — jamais ce que vous avez écrit.',
 	'home.shopping': 'Courses',
+	'home.showTheDaysAs': 'Afficher les jours en',
 	'home.showingNewestFirst': 'Les plus récents en premier',
 	'home.showingOldestFirst': 'Les plus anciens en premier',
 	'home.signOut': 'Se déconnecter',

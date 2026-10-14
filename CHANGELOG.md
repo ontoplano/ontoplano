@@ -20,6 +20,7 @@ releases mattered.
 
 ## 0.186.5 — 2026-10-14
 
+- The dashboard's Next three days can be shown as timelines: each day from the first hour of your planner to the last, the blocks where they fall, so a free afternoon looks free. The choice is the card's own setting, the first of its kind.
 - The calendar opens on the week on a phone too, as it does on a computer; a block's name in a narrow column is clipped rather than broken mid-word.
 - On a laptop-width screen, Inventory's filters stay on one line: the how-many boxes are narrower and their word is left to the boxes' own “min” and “max” until there is room for it.
 - Choosing a colour for an inventory category or attribute no longer shows black once it saves: the swatch keeps the colour you picked.

@@ -1,8 +1,12 @@
+import { fail } from '@sveltejs/kit';
 import type { IsolatedEvent } from '$lib/isolated/routes';
 import { host } from '$lib/services/host';
 import {
 	DASHBOARD_CARDS,
+	DASHBOARD_CARD_OPTIONS_KEY,
 	DASHBOARD_LAYOUT_KEY,
+	parseCardOptions,
+	withCardOption,
 	DASHBOARD_SEEN_KEY,
 	defaultLayout,
 	foldInNewCards,
@@ -14,7 +18,12 @@ import {
 	serialiseSeen,
 	type DashboardCardId
 } from '$lib/dashboard';
-import { getHiddenSections, getUserSetting, setUserSetting } from '$lib/services/settings';
+import {
+	getGridHours,
+	getHiddenSections,
+	getUserSetting,
+	setUserSetting
+} from '$lib/services/settings';
 import { buildCtx, localDateOf } from '$lib/services/ctx';
 import { createEntry, latestEntry, listTags } from '$lib/services/diary';
 import { listActiveOn } from '$lib/services/goals';
@@ -308,6 +317,10 @@ export const load = async ({ locals }: IsolatedEvent) => {
 		/** Set when last week had blocks in it and nobody has written it up yet. */
 		pendingReview: reviewPending(ctx),
 		nextDays,
+		/** Each card's own settings — see `CARD_OPTIONS`. */
+		cardOptions: parseCardOptions(getUserSetting(ctx.userId, DASHBOARD_CARD_OPTIONS_KEY)),
+		/** The planner's day, which a timeline of the next days is drawn across. */
+		gridHours: getGridHours(ctx.userId),
 		weekSoFar,
 		today
 	};
@@ -332,6 +345,21 @@ export const actions = {
 		const formData = await request.formData();
 		const ids = formData.getAll('card').map((v) => String(v)) as DashboardCardId[];
 		setUserSetting(locals.user!.id, DASHBOARD_LAYOUT_KEY, serialiseLayout(ids));
+		return { success: true };
+	},
+
+	/** One of a card's own settings — how it shows what it shows. See `CARD_OPTIONS`. */
+	setCardOption: async ({ request, locals }: IsolatedEvent) => {
+		const formData = await request.formData();
+		const userId = locals.user!.id;
+		const next = withCardOption(
+			getUserSetting(userId, DASHBOARD_CARD_OPTIONS_KEY),
+			String(formData.get('card') ?? ''),
+			String(formData.get('option') ?? ''),
+			String(formData.get('value') ?? '')
+		);
+		if (next === null) return fail(400, { message: 'That card has no such setting.' });
+		setUserSetting(userId, DASHBOARD_CARD_OPTIONS_KEY, next);
 		return { success: true };
 	},
 

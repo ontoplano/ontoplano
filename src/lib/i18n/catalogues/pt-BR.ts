@@ -1505,6 +1505,8 @@ export const messages: Catalogue = {
 	'home.bills': 'Contas',
 	'home.blocksCount': { one: '{count} bloco de tarefa', other: '{count} blocos de tarefa' },
 	'home.countToGo': 'faltam {count}',
+	'home.daysAsLists': 'Como listas',
+	'home.daysAsTimelines': 'Como linhas do tempo, da primeira à última hora do seu planejador',
 	'home.demoVersion': 'Versão de demonstração',
 	'home.diary': 'Diário',
 	'home.done': '{done} feitas',
@@ -1600,6 +1602,7 @@ export const messages: Catalogue = {
 	'home.sentOnlyWhatBrokeWent':
 		'Enviado. Só o que quebrou foi enviado — nunca o que você escreveu.',
 	'home.shopping': 'Compras',
+	'home.showTheDaysAs': 'Mostrar os dias como',
 	'home.showingNewestFirst': 'Mostrando as mais recentes primeiro',
 	'home.showingOldestFirst': 'Mostrando as mais antigas primeiro',
 	'home.signOut': 'Sair',

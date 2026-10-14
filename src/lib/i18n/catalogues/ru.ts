@@ -1571,6 +1571,8 @@ export const messages: Catalogue = {
 		other: '{count} блока задач'
 	},
 	'home.countToGo': 'Осталось: {count}',
+	'home.daysAsLists': 'Списками',
+	'home.daysAsTimelines': 'Как шкалы времени, от первого до последнего часа вашего планировщика',
 	'home.demoVersion': 'Демо-версия',
 	'home.diary': 'Дневник',
 	'home.done': 'Выполнено: {done}',
@@ -1682,6 +1684,7 @@ export const messages: Catalogue = {
 	'home.sentOnlyWhatBrokeWent':
 		'Отправлено. Ушло только то, что сломалось — никогда то, что вы написали.',
 	'home.shopping': 'Покупки',
+	'home.showTheDaysAs': 'Показывать дни как',
 	'home.showingNewestFirst': 'Сначала новые',
 	'home.showingOldestFirst': 'Сначала старые',
 	'home.signOut': 'Выйти',
