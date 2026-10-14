@@ -1303,9 +1303,12 @@
 					<div
 						role="group"
 						aria-labelledby="inventory-how-many"
-						class="flex shrink-0 items-center gap-1.5"
+						class="flex shrink-0 items-center gap-1"
 					>
-						<span id="inventory-how-many" class="text-sm text-gray-600"
+						<!-- Said aloud always, drawn where there is room for it: the
+						     boxes say min and max, and at a laptop's width the word was
+						     what pushed the pair onto a second line. -->
+						<span id="inventory-how-many" class="text-sm text-gray-600 max-2xl:sr-only"
 							>{t('inventory.howMany')}</span
 						>
 						<input
@@ -1317,7 +1320,7 @@
 							title={t('inventory.atLeastLabel')}
 							value={atLeast}
 							oninput={(e) => (atLeast = e.currentTarget.value)}
-							class="input input-sm w-16"
+							class="input input-sm w-12"
 						/>
 						<span class="text-gray-500" aria-hidden="true">–</span>
 						<input
@@ -1329,7 +1332,7 @@
 							title={t('inventory.atMostLabel')}
 							value={atMost}
 							oninput={(e) => (atMost = e.currentTarget.value)}
-							class="input input-sm w-16"
+							class="input input-sm w-12"
 						/>
 					</div>
 				{/if}
