@@ -20,6 +20,7 @@ releases mattered.
 
 ## 0.186.5 — 2026-10-14
 
+- On a phone, an open notebook takes the top bar: its picture and name where “Notebooks” was, and its buttons — all notebooks, link, tags, favourite, rename, close — behind ⋮ with their names. Only its description is left above the tabs. Going to the Diary or any other shelf gives the bar back.
 - On a phone, controls take the line they stand on: the calendar's Day / Week / Month switch fills the row beside two square buttons, the view switch under a list's search does the same, and a room's toolbar spends less of the screen on padding. The calendar's More button is a chevron that turns as its controls open and fold.
 - The calendar's zoom keeps + and − where they are as the percentage changes, so pressing + again presses + again. On a desktop the week and the day fill the window and the page ends with them: only the grid scrolls.
 - A notebook on the whole screen of a desktop says, along its right edge, that a tab dragged there opens beside the one showing — and pressing that edge opens the next tab beside it. The tabs show a grab cursor.
