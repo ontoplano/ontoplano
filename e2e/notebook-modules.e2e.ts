@@ -47,6 +47,30 @@ async function makeNotebook(page: Page, title: string): Promise<void> {
 	await visit(page, `/notebooks/${id}`);
 }
 
+test('a tab opens in a new browser tab on a middle press, and in place on a plain one', async ({
+	page
+}) => {
+	await register(page, testEmail('nb-tab-middle'));
+	await makeNotebook(page, 'Garden');
+	const notes = page.getByRole('button', { name: /^Notes/ });
+
+	const opened = page.context().waitForEvent('page');
+	await notes.click({ button: 'middle' });
+	const other = await opened;
+	await other.waitForLoadState();
+	expect(new URL(other.url()).searchParams.get('tab')).toBe('notes');
+	await expect(other.getByRole('button', { name: /^Notes/ })).toHaveAttribute(
+		'aria-current',
+		'page'
+	);
+	await other.close();
+
+	const before = page.url();
+	await notes.click();
+	await expect(notes).toHaveAttribute('aria-current', 'page');
+	expect(page.url()).toBe(before);
+});
+
 test.describe('what a notebook holds', () => {
 	test('starts at notes and tasks, and gains a tab when one is switched on', async ({ page }) => {
 		await register(page, testEmail('nb-modules'));
@@ -200,7 +224,7 @@ test.describe('what a notebook holds', () => {
 		 * the order a decoration.
 		 */
 		await page.reload();
-		const strip = page.locator('[data-tour="notebook-tabs"] button');
+		const strip = page.locator('[data-tour="notebook-tabs"]').getByRole('button');
 		await expect(strip.first()).toContainText('Tasks');
 		await expect(strip.first()).toHaveAttribute('aria-current', 'page');
 	});

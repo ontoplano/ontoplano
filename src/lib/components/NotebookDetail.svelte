@@ -500,6 +500,17 @@
 		});
 	});
 
+	/**
+	 * The notebook's own page open on this tab — where a middle press on the
+	 * tab goes. Nothing for the notes outside every notebook, which have no
+	 * page of their own.
+	 */
+	function tabAddress(key: Tab): string | undefined {
+		if (!notebook || showingOrphans) return undefined;
+		const at = resolve('/notebooks/[id]', { id: String(notebook.id) });
+		return `${at}?${new URLSearchParams({ [TAB_PARAM]: key })}`;
+	}
+
 	function showTab(key: Tab) {
 		moduleSearches[key] = '';
 		tab = key;
@@ -1712,7 +1723,8 @@
 		tabs={tabs.map((option) => ({
 			label: t(option.label),
 			icon: moduleGlyph(option.key),
-			count: String(option.count)
+			count: String(option.count),
+			opens: tabAddress(option.key)
 		}))}
 		current={tabs.findIndex((option) => option.key === showing)}
 		onpick={(index) => (pane < 0 ? showTab(tabs[index].key) : pickInPane(pane, tabs[index].key))}
