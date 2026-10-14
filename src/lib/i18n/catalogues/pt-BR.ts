@@ -2959,6 +2959,7 @@ export const messages: Catalogue = {
 	'scopeGroups.habitsAndWorkouts': 'Hábitos e treinos',
 	'scopeGroups.money': 'Dinheiro',
 	'scopeGroups.neededToWrite': 'necessário para escrever',
+	'scopeGroups.otherNotebooks': 'Seus outros cadernos',
 	'scopeGroups.people': 'Pessoas',
 	'scopeGroups.plumbing': 'Integrações',
 	'scopeGroups.removingThings': 'Apagar coisas',
@@ -2990,6 +2991,8 @@ export const messages: Catalogue = {
 	'scopes.kitchenWrite': 'Adicionar e alterar receitas',
 	'scopes.locationsRead': 'Ver onde as suas coisas ficam, e o que há em cada cômodo e gaveta',
 	'scopes.locationsWrite': 'Adicionar e alterar cômodos e gavetas, e dizer onde uma coisa fica',
+	'scopes.notebooksDeliver':
+		'Guardar coisas nos seus outros cadernos e mover as deste caderno para lá — vendo só os nomes deles, nunca o que há dentro',
 	'scopes.notesRead': 'Ler o seu diário e os seus cadernos, e as fotos e gravações neles',
 	'scopes.notesWrite': 'Escrever no seu diário e nos seus cadernos',
 	'scopes.peopleRead':
@@ -3437,6 +3440,8 @@ export const messages: Catalogue = {
 	'settings.integrations.aiAssistantDefaultName': 'Assistente de IA',
 	'settings.integrations.allOfIt': 'Tudo',
 	'settings.integrations.andLetItDeleteThings': '…e deixar que ele exclua coisas',
+	'settings.integrations.andLetItFileIntoOthers':
+		'…e deixar que guarde coisas nos seus outros cadernos',
 	'settings.integrations.bankStatements': 'Extratos bancários',
 	'settings.integrations.chat.answeringAs':
 		'{provider}, chave {prefix}…, respondendo como {model}.',
@@ -3619,6 +3624,8 @@ export const messages: Catalogue = {
 	'settings.integrations.everyWrite': 'Toda escrita',
 	'settings.integrations.everythingAnAssistantHasChanged':
 		'Tudo que um assistente mudou, mais recente primeiro. Qualquer coisa que ele removeu pode ser recolocada.',
+	'settings.integrations.fileIntoOthersSeesOnlyNames':
+		'Vê os nomes e nada do que há dentro — pode pôr ali uma tarefa, uma nota ou uma coisa, ou mover uma deste caderno, mas nunca ler o que já está lá.',
 	'settings.integrations.forAnAssistantWithTerminal':
 		'Para um assistente com terminal. Ele escreve a própria configuração e usa isso na próxima vez que iniciar.',
 	'settings.integrations.hasTheFullFormWith':

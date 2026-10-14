@@ -27,7 +27,7 @@ releases mattered.
 - Cards stand at least two to a row on a phone: a notebook's notes and things shown as cards, and the Inventory room's categories. A half-width card tightens itself, with its buttons across its foot and its picture over its name.
 - On a phone, the filter strip above a list is two lines and never a third: the search box with the count and Filters, then the order and the list's own buttons.
 - A subscription refunded or voided through Google Play ends the plan it paid for, rather than running on until its period does.
-- An assistant key tied to one notebook that asks to move a task into another notebook, or to read one, is now told no — it used to answer “ok” and leave the task where it was.
+- An assistant key tied to one notebook that asks to move a task into another notebook, or to read one, is now told no — it used to answer “ok” and leave the task where it was. A new box on such a key, “…and let it file things into your other notebooks”, lets it put tasks, notes and things into them and move its own there: it sees their names, never what is in them.
 
 ## 0.186.4 — 2026-10-13
 

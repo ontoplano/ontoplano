@@ -490,7 +490,14 @@ bearer_token_env_var = "ONTOPLANO_KEY"
 				<p class="mt-1 mb-3 max-w-2xl text-xs leading-relaxed text-gray-500">
 					{t('settings.integrations.onlyWhatYouTick')}
 				</p>
-				<PermissionGrid scopes={data.permissions} {reachable} {carried} destructive />
+				<PermissionGrid
+					scopes={data.permissions}
+					{reachable}
+					{carried}
+					deliver
+					delivering={tiedTo === 'notebook'}
+					destructive
+				/>
 			</fieldset>
 			<!-- Naming it, last: what a thing is called is the last thing you decide
 			     about it. Named after what it is tied to, when it is tied. -->

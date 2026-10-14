@@ -37,10 +37,18 @@ const outside: Record<string, number> = {};
 
 const ctx = () => buildCtx(OWNER, { tz: 'UTC', now: new Date('2026-03-14T10:00:00Z') });
 
-function call(tool: string, args: Record<string, unknown>, confined = true) {
+/** Every grant there is, except filing into the other notebooks — asked for by name. */
+const everyGrant = () => Object.keys(SCOPES).filter((one) => one !== 'notebooks:deliver');
+
+function call(
+	tool: string,
+	args: Record<string, unknown>,
+	confined = true,
+	scopes: string[] = everyGrant()
+) {
 	const caller = {
 		ctx: ctx(),
-		scopes: Object.keys(SCOPES),
+		scopes,
 		...(confined ? { confinement: { kind: 'notebook', id: mine } } : {})
 	};
 	const answer = handleBody(caller as never, {
@@ -165,7 +173,7 @@ it('reports the token boundary during initialize without exposing other notebook
 	const answer = handleBody(
 		{
 			ctx: ctx(),
-			scopes: Object.keys(SCOPES),
+			scopes: everyGrant(),
 			confinement: { kind: 'notebook', id: mine }
 		} as never,
 		{ jsonrpc: '2.0', id: 1, method: 'initialize' }
@@ -221,7 +229,7 @@ describe('what a key tied to one notebook can do', () => {
 	it('is offered the reads that make it useful, by name', () => {
 		const offered = visibleTools({
 			ctx: ctx(),
-			scopes: Object.keys(SCOPES),
+			scopes: everyGrant(),
 			confinement: { kind: 'notebook', id: mine }
 		} as never).map((t: { name: string }) => t.name);
 		for (const name of ['tasks', 'up_next', 'notebooks', 'notebook_notes', 'media'])
@@ -303,7 +311,7 @@ describe('what it cannot do', () => {
 	it('is not even shown the tools it cannot call', () => {
 		const offered = visibleTools({
 			ctx: ctx(),
-			scopes: Object.keys(SCOPES),
+			scopes: everyGrant(),
 			confinement: { kind: 'notebook', id: mine }
 		} as never).map((t: { name: string }) => t.name);
 
@@ -328,7 +336,7 @@ describe('what it cannot do', () => {
 	it('is offered the tool that fetches a picture', () => {
 		const offered = visibleTools({
 			ctx: ctx(),
-			scopes: Object.keys(SCOPES),
+			scopes: everyGrant(),
 			confinement: { kind: 'notebook', id: mine }
 		} as never).map((t: { name: string }) => t.name);
 
@@ -574,6 +582,56 @@ describe('asking about another notebook', () => {
 	});
 });
 
+describe('with the grant to file into the other notebooks', () => {
+	/*
+	 * `notebooks:deliver`: the key may put things into the account's other
+	 * notebooks and move its own there, seeing their names and nothing else.
+	 */
+	const filing = () => [...everyGrant(), 'notebooks:deliver'];
+	const as = (tool: string, args: Record<string, unknown>) => call(tool, args, true, filing());
+
+	it('files a new task into another notebook', () => {
+		expect(failed(as('add_task', { title: 'delivered', notebookId: other }))).toBe(false);
+		expect(said(call('notebook_notes', { id: other }, false))).not.toContain('delivered');
+		expect(said(call('tasks', { notebookId: other }, false))).toContain('delivered');
+	});
+
+	it('moves one of its own tasks there', () => {
+		const made = as('add_task', { title: 'to be moved' });
+		const id = (made.result?.structuredContent as { id: number }).id;
+		expect(failed(as('change_task', { id, notebookId: other }))).toBe(false);
+		expect(said(call('tasks', { notebookId: other }, false))).toContain('to be moved');
+	});
+
+	it('lists the other notebooks by name, and nothing in them', () => {
+		const listed = as('notebooks', {});
+		expect(failed(listed)).toBe(false);
+		expect(said(listed)).toContain('Private');
+		const rows = listed.result?.structuredContent as unknown;
+		const items = (Array.isArray(rows) ? rows : (rows as { items: unknown[] }).items) as Record<
+			string,
+			unknown
+		>[];
+		const theirs = items.find((one) => one.id === other)!;
+		expect(Object.keys(theirs).sort()).toEqual(['id', 'modules', 'title']);
+	});
+
+	it('still reads nothing in them', () => {
+		expect(failed(as('notebook_notes', { id: other }))).toBe(true);
+		expect(failed(as('tasks', { notebookId: other }))).toBe(true);
+	});
+
+	it('still cannot change, share or file a notebook that is not its own', () => {
+		expect(failed(as('change_notebook', { id: other, title: 'mine now' }))).toBe(true);
+		expect(said(call('notebooks', {}, false))).not.toContain('mine now');
+	});
+
+	it('still files into its own when no notebook is named', () => {
+		expect(failed(as('add_task', { title: 'at home' }))).toBe(false);
+		expect(said(call('tasks', {}))).toContain('at home');
+	});
+});
+
 describe('when the notebook is gone', () => {
 	/*
 	 * A key outlives the thing it was made for, and what it must not do then is
@@ -600,7 +658,7 @@ describe('a key tied to a kind this build no longer knows', () => {
 	it('is refused everything, rather than treated as untied', () => {
 		const caller = {
 			ctx: ctx(),
-			scopes: Object.keys(SCOPES),
+			scopes: everyGrant(),
 			confinement: { kind: 'album', id: 1 }
 		};
 		const answer = handleBody(caller as never, {
@@ -676,7 +734,7 @@ describe('a key tied to a notebook without the tab', () => {
 		const bare = createNotebook(ctx(), { title: 'Just writing', modules: 'notes,tasks' });
 		const caller = {
 			ctx: ctx(),
-			scopes: Object.keys(SCOPES),
+			scopes: everyGrant(),
 			confinement: { kind: 'notebook', id: bare }
 		};
 		const before = listIdeas(ctx()).length;

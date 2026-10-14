@@ -2886,6 +2886,7 @@ export const messages: Catalogue = {
 	'scopeGroups.habitsAndWorkouts': 'Habits and workouts',
 	'scopeGroups.money': 'Money',
 	'scopeGroups.neededToWrite': 'needed to write',
+	'scopeGroups.otherNotebooks': 'Your other notebooks',
 	'scopeGroups.people': 'People',
 	'scopeGroups.plumbing': 'Integrations',
 	'scopeGroups.removingThings': 'Removing things',
@@ -2916,6 +2917,8 @@ export const messages: Catalogue = {
 	'scopes.kitchenWrite': 'Add and change recipes',
 	'scopes.locationsRead': 'See where your things live, and what is in each room and drawer',
 	'scopes.locationsWrite': 'Add and change rooms and drawers, and say where a thing lives',
+	'scopes.notebooksDeliver':
+		'File things into your other notebooks, and move this notebook’s things there — seeing only their names, never what is in them',
 	'scopes.notesRead': 'Read your diary and your notebooks, and the pictures and recordings in them',
 	'scopes.notesWrite': 'Write in your diary and your notebooks',
 	'scopes.peopleRead':
@@ -3353,6 +3356,8 @@ export const messages: Catalogue = {
 	'settings.integrations.aiAssistantDefaultName': 'AI assistant',
 	'settings.integrations.allOfIt': 'All',
 	'settings.integrations.andLetItDeleteThings': '…and let it delete things',
+	'settings.integrations.andLetItFileIntoOthers':
+		'…and let it file things into your other notebooks',
 	'settings.integrations.bankStatements': 'Bank statements',
 	'settings.integrations.chat.answeringAs': '{provider}, key {prefix}…, answering as {model}.',
 	'settings.integrations.chat.asking': 'Asking…',
@@ -3534,6 +3539,8 @@ export const messages: Catalogue = {
 	'settings.integrations.everyWrite': 'Every write',
 	'settings.integrations.everythingAnAssistantHasChanged':
 		'Everything an assistant has changed, newest first. Anything it removed can be put back.',
+	'settings.integrations.fileIntoOthersSeesOnlyNames':
+		"It sees their names and nothing inside them — it can put a task, a note or a thing there, or move one of this notebook's, but never read what is already there.",
 	'settings.integrations.forAnAssistantWithTerminal':
 		'For an assistant with a terminal. It writes its own setting and picks this up when it next starts.',
 	'settings.integrations.hasTheFullFormWith':

@@ -14,6 +14,7 @@ import {
 	ValidationError
 } from '$lib/services/errors.js';
 import { CONFINEMENTS, isConfinementKind, type Confinement } from '$lib/server/mcp/confinement.js';
+import { DELIVER_SCOPE } from '$lib/server/mcp/deliver.js';
 import { KINDS } from '$lib/server/mcp/refs.js';
 import { assertWithinLimit } from './subscriptions.js';
 import { num, str } from '$lib/services/validate.js';
@@ -190,7 +191,19 @@ export const SCOPES = {
 	 * says how far.
 	 */
 	destructive:
-		'Delete things outright — with only the write grants, it can add and change but never remove'
+		'Delete things outright — with only the write grants, it can add and change but never remove',
+	/*
+	 * Filing into the other notebooks, for a key tied to one.
+	 *
+	 * A notebook's key is for working on one subject, and one subject keeps
+	 * turning up things that belong to another — the renovation's assistant
+	 * finds a bill for the car. Without this it could only say so; with it, it
+	 * can put the thing where it goes. It sees the other notebooks' names and
+	 * ids, and nothing that is in them. Only means anything on a key tied to a
+	 * notebook — see `mcp/deliver.ts`.
+	 */
+	'notebooks:deliver':
+		'File things into your other notebooks, and move this notebook’s things there — seeing only their names, never what is in them'
 } as const;
 
 export type Scope = keyof typeof SCOPES;
@@ -342,6 +355,7 @@ export function createToken(
 	}
 
 	const confinement = confinementFrom(ctx, input);
+	keepDeliveryForNotebooks(scopes, confinement);
 
 	const plaintext = TOKEN_PREFIX + randomBytes(32).toString('base64url');
 	const nowIso = ctx.now.toISOString();
@@ -398,6 +412,20 @@ function confinementFrom(
 }
 
 /**
+ * Filing into the other notebooks only on a key tied to one.
+ *
+ * Anywhere else the grant means nothing — a key for the whole account files
+ * wherever it likes already — and a grant that means nothing is a line on the
+ * key's page that tells its owner something untrue. Dropped, not refused: the
+ * form that posts it does not know until the key is tied.
+ */
+function keepDeliveryForNotebooks(scopes: string[], confinement: Confinement | null): void {
+	if (confinement?.kind === 'notebook') return;
+	const at = scopes.indexOf(DELIVER_SCOPE);
+	if (at >= 0) scopes.splice(at, 1);
+}
+
+/**
  * Change what a live key may read and where, keeping the key itself.
  *
  * For a key somebody cannot re-enter: a home-screen widget holds its key and
@@ -418,6 +446,7 @@ export function reshapeToken(
 	if (scopes.includes('calendar:read'))
 		throw new ForbiddenError({ key: 'errors.tokens.aCalendarLinkReads' });
 	const confinement = confinementFrom(ctx, input);
+	keepDeliveryForNotebooks(scopes, confinement);
 
 	const res = db
 		.update(apiTokens)
