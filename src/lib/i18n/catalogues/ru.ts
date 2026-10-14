@@ -2245,6 +2245,7 @@ export const messages: Catalogue = {
 	'notebookDetail.deleteSelectedNotes': 'Удалить выбранные заметки? Это нельзя отменить.',
 	'notebookDetail.deleteThisNote': 'Удалить эту заметку',
 	'notebookDetail.descendingPressForAscending': 'По убыванию — нажмите для возрастания',
+	'notebookDetail.dragATabHereToOpenItBeside': 'Перетащите вкладку сюда, чтобы открыть её рядом',
 	'notebookDetail.editThisNote': 'Редактировать эту заметку',
 	'notebookDetail.goalAdded': 'Цель добавлена',
 	'notebookDetail.hideArchived': 'Скрыть архив',

@@ -2251,6 +2251,7 @@ export const messages: Catalogue = {
 		'Supprimer les notes sélectionnées ? Cette action est irréversible.',
 	'notebookDetail.deleteThisNote': 'Supprimer cette note',
 	'notebookDetail.descendingPressForAscending': 'Décroissant — cliquez pour croissant',
+	'notebookDetail.dragATabHereToOpenItBeside': "Glissez un onglet ici pour l'ouvrir à côté",
 	'notebookDetail.editThisNote': 'Modifier cette note',
 	'notebookDetail.goalAdded': 'Objectif ajouté',
 	'notebookDetail.hideArchived': 'Masquer les archivées',

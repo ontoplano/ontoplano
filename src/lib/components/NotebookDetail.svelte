@@ -475,6 +475,12 @@
 	let panesEl = $state<HTMLElement>();
 	let draggingTab = $state(false);
 	const split = $derived(canSplit && paneTabs.length > 1);
+	/** The tab the edge's button opens beside the one showing: the next one along. */
+	const besideNext = $derived.by(() => {
+		const keys = tabs.map((option) => option.key);
+		if (keys.length < 2) return null;
+		return keys[(keys.indexOf(tab) + 1) % keys.length] ?? null;
+	});
 
 	// The keys can change the tab too (h/l, a link to a task): it lands in
 	// the pane it is already showing in, or replaces the active pane's.
@@ -1527,6 +1533,7 @@
 	aria-label={notebook?.title ?? 'Notes'}
 	class="nb-surface as-surface bg-white"
 	class:nb-split={split}
+	class:nb-splittable={canSplit}
 	data-screen
 	style="--nb-type: {TYPE_STEPS[typeStep]}{canSplit
 		? `; --nb-width: ${columnPx === null ? (split ? '100%' : 'var(--max-width-reading)') : `${columnPx}px`}`
@@ -1690,6 +1697,28 @@
 				onkeydown={(event) => nudgeWidth(event, side)}
 			></div>
 		{/each}
+		{#if !draggingTab && !split && besideNext}
+			<!--
+				Where the panes come from, said before anybody drags.
+
+				Dragging a tab here opens it beside, and nothing on the screen
+				said so: the drop zone only appeared once a drag had started,
+				which is after somebody has already guessed. So the edge says it
+				all the time while there is one pane — and is a button too,
+				opening the next tab beside the one showing.
+			-->
+			<button
+				type="button"
+				class="nb-beside-hint"
+				onclick={() => besideNext && openBeside(besideNext)}
+				ondragenter={noticeDrag}
+				title={t('notebookDetail.dragATabHereToOpenItBeside')}
+				aria-label={t('notebookDetail.dragATabHereToOpenItBeside')}
+			>
+				<Icon name="plus" size={14} />
+				<span>{t('notebookDetail.dragATabHereToOpenItBeside')}</span>
+			</button>
+		{/if}
 		{#if draggingTab}
 			<!-- Where a dragged tab opens beside the ones showing. -->
 			<div
@@ -3247,6 +3276,47 @@
 
 	.nb-grip-right {
 		right: max(0px, calc(50% - var(--nb-width) / 2 - 0.5rem));
+	}
+
+	/*
+	 * The edge that says tabs can stand side by side — see the button. Quiet:
+	 * a dashed rule and a line of small type up the side, where the drop zone
+	 * opens when a tab is dragged. Hover makes it plainly a thing to press.
+	 */
+	.nb-beside-hint {
+		position: fixed;
+		top: 3.5rem;
+		right: 0;
+		bottom: 0;
+		width: 2.5rem;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+		gap: 0.5rem;
+		font-size: 0.75rem;
+		color: var(--color-gray-500);
+		border-left: 1px dashed var(--color-gray-300);
+		transition:
+			background-color 120ms ease,
+			color 120ms ease;
+	}
+
+	.nb-beside-hint span {
+		writing-mode: vertical-rl;
+		white-space: nowrap;
+	}
+
+	.nb-beside-hint:hover,
+	.nb-beside-hint:focus-visible {
+		color: var(--color-gray-900);
+		background: var(--color-gray-100);
+		border-left-color: var(--color-gray-500);
+	}
+
+	/* A tab that can be dragged out says so under the pointer. */
+	:global(.nb-splittable [draggable='true']) {
+		cursor: grab;
 	}
 
 	.nb-drop {

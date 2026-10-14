@@ -2150,6 +2150,7 @@ export const messages: Catalogue = {
 	'notebookDetail.deleteSelectedNotes': '¿Eliminar las notas seleccionadas? No se puede deshacer.',
 	'notebookDetail.deleteThisNote': 'Eliminar esta nota',
 	'notebookDetail.descendingPressForAscending': 'Descendente — pulsa para ascendente',
+	'notebookDetail.dragATabHereToOpenItBeside': 'Arrastra una pestaña aquí para abrirla al lado',
 	'notebookDetail.editThisNote': 'Editar esta nota',
 	'notebookDetail.goalAdded': 'Meta creada',
 	'notebookDetail.hideArchived': 'Ocultar archivadas',

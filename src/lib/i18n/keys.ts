@@ -1870,6 +1870,7 @@ export type MessageKey =
 	| 'notebookDetail.deleteSelectedNotes'
 	| 'notebookDetail.deleteThisNote'
 	| 'notebookDetail.descendingPressForAscending'
+	| 'notebookDetail.dragATabHereToOpenItBeside'
 	| 'notebookDetail.editThisNote'
 	| 'notebookDetail.goalAdded'
 	| 'notebookDetail.hideArchived'

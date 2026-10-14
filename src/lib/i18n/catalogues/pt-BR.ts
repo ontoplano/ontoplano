@@ -2138,6 +2138,7 @@ export const messages: Catalogue = {
 		'Excluir as notas selecionadas? Isso não pode ser desfeito.',
 	'notebookDetail.deleteThisNote': 'Apagar esta nota',
 	'notebookDetail.descendingPressForAscending': 'Decrescente — toque para crescente',
+	'notebookDetail.dragATabHereToOpenItBeside': 'Arraste uma aba para cá para abri-la ao lado',
 	'notebookDetail.editThisNote': 'Editar esta nota',
 	'notebookDetail.goalAdded': 'Meta criada',
 	'notebookDetail.hideArchived': 'Esconder arquivadas',
