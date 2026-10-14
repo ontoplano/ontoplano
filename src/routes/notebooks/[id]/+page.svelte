@@ -84,6 +84,7 @@
 			link={linkAction}
 			onedit={() => (editing = true)}
 			ontags={() => (managingTags = true)}
+			bar
 		/>
 
 		<FormError message={form?.message} />

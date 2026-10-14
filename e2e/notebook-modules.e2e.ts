@@ -88,6 +88,29 @@ test('the whole screen says tabs can stand side by side, and opens one beside on
 	await expect(hint).toHaveCount(0);
 });
 
+test('on a phone an open notebook wears the bar, and its verbs are behind ⋮', async ({ page }) => {
+	await register(page, testEmail('nb-in-bar'));
+	await makeNotebook(page, 'Allotment');
+	await page.setViewportSize({ width: 390, height: 844 });
+
+	const bar = page.locator('.room-bar');
+	await expect(bar.getByRole('heading', { name: 'Allotment' })).toBeVisible();
+	// Not drawn a second time under the tabs.
+	await expect(page.getByRole('heading', { name: 'Allotment' })).toHaveCount(1);
+
+	await bar.getByRole('button', { name: 'More' }).click();
+	await expect(page.getByRole('link', { name: 'All notebooks' })).toBeVisible();
+	await expect(page.getByRole('button', { name: 'Rename' })).toBeVisible();
+	await page.keyboard.press('Escape');
+
+	// Another shelf of the room gives the bar back.
+	await page
+		.getByRole('link', { name: /^Diary/ })
+		.first()
+		.click();
+	await expect(bar.getByRole('heading', { name: 'Notebooks' })).toBeVisible();
+});
+
 test.describe('what a notebook holds', () => {
 	test('starts at notes and tasks, and gains a tab when one is switched on', async ({ page }) => {
 		await register(page, testEmail('nb-modules'));

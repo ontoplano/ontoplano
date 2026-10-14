@@ -8,6 +8,7 @@
 	import type { IconName } from '$lib/components/Icon.svelte';
 	import { useT } from '$lib/i18n';
 	import { setRoomTitle } from '$lib/page-title.svelte';
+	import { roomSubject } from '$lib/room-subject.svelte';
 
 	const t = useT();
 
@@ -107,6 +108,16 @@
 
 	const phone = phoneWidth();
 
+	/*
+	 * A subject the page named — an open notebook — wears the bar on a phone:
+	 * its picture and name for the room's, its verbs behind ⋮. See
+	 * `$lib/room-subject`. Not on a still bar, which belongs to the screen
+	 * being left.
+	 */
+	const subject = $derived(!still && phone.current ? roomSubject() : null);
+	const shownTitle = $derived(subject?.title ?? title);
+	const shownActions = $derived(subject?.menu ?? actions);
+
 	/* The browser tab says the room's name the way the bar does. */
 	// Decided once: a bar is drawn still or not for the whole of its life.
 	// svelte-ignore state_referenced_locally
@@ -114,6 +125,7 @@
 
 	/** The folded actions' menu, and where it opens: under its button. */
 	let more = $state<HTMLElement>();
+	let moreOpen = $state(false);
 	let moreAt = $state({ top: 0, right: 0 });
 
 	function placeMore(event: Event) {
@@ -139,7 +151,13 @@
 				The glyph, or the way back in its place — the same column either
 				way, so the name starts at one x on every screen.
 			-->
-			{#if back}
+			{#if subject?.pictureId}
+				<img
+					src="/media/{subject.pictureId}"
+					alt=""
+					class="room-bar-picture border border-gray-200 object-cover"
+				/>
+			{:else if back}
 				<!-- Already resolved: `back` is whatever the page passed, and the page
 				     built it with resolve(). -->
 				<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -->
@@ -151,7 +169,7 @@
 					{#if glyph}<Icon name={glyph} size={20} />{/if}
 				</span>
 			{/if}
-			<span class="truncate">{title}</span>
+			<span class="min-w-0 truncate">{shownTitle}</span>
 		</h1>
 		<!--
 			The screen's one verb, in the corner every screen keeps it in.
@@ -163,8 +181,8 @@
 		-->
 		<div class="ml-auto flex shrink-0 items-center gap-2">
 			{#if !verbInTabs && !still}<RoomVerb />{/if}
-			{#if actions}
-				{#if phone.current && fold}
+			{#if shownActions}
+				{#if phone.current && (fold || subject)}
 					<button
 						type="button"
 						class="icon-btn"
@@ -177,6 +195,8 @@
 					</button>
 					<!-- svelte-ignore a11y_click_events_have_key_events -->
 					<!-- svelte-ignore a11y_no_static_element_interactions -->
+					<!-- Its rows exist while it is open, and only then: shut, a menu
+					     is not a second copy of every verb for the page to hold. -->
 					<div
 						bind:this={more}
 						id="room-bar-more"
@@ -184,11 +204,18 @@
 						class="room-bar-more overlay-face shadow-overlay"
 						style="top: {moreAt.top}px; right: {moreAt.right}px"
 						onclick={foldAway}
+						onbeforetoggle={(event) => {
+							if ((event as ToggleEvent).newState === 'open') moreOpen = true;
+							// After the press that shut it has done its work: a row that is
+							// a form's button is shut by its own click, and taking the form
+							// away in the same moment dropped the submit.
+							else setTimeout(() => (moreOpen = false));
+						}}
 					>
-						{@render actions()}
+						{#if moreOpen}{@render shownActions()}{/if}
 					</div>
 				{:else}
-					<div class="flex flex-nowrap items-center gap-2">{@render actions()}</div>
+					<div class="flex flex-nowrap items-center gap-2">{@render shownActions()}</div>
 				{/if}
 			{/if}
 		</div>
@@ -214,6 +241,13 @@
 		display: inline-flex;
 		flex: none;
 		width: 1.25rem;
+	}
+
+	/* A subject's picture in the glyph's place: a cover, a little taller than wide. */
+	.room-bar-picture {
+		flex: none;
+		width: 1.5rem;
+		aspect-ratio: 3 / 4;
 	}
 
 	.room-bar-back {
