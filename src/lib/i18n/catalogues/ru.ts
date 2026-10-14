@@ -3404,6 +3404,7 @@ export const messages: Catalogue = {
 	'scopeGroups.habitsAndWorkouts': 'Привычки и тренировки',
 	'scopeGroups.money': 'Деньги',
 	'scopeGroups.neededToWrite': 'нужно для записи',
+	'scopeGroups.otherNotebooks': 'Другие ваши блокноты',
 	'scopeGroups.people': 'Люди',
 	'scopeGroups.plumbing': 'Интеграции',
 	'scopeGroups.removingThings': 'Удаление',
@@ -3435,6 +3436,8 @@ export const messages: Catalogue = {
 	'scopes.kitchenWrite': 'Добавлять и изменять рецепты',
 	'scopes.locationsRead': 'Видеть, где лежат ваши вещи, и что в каждой комнате и ящике',
 	'scopes.locationsWrite': 'Добавлять и изменять комнаты и ящики, указывать, где лежит вещь',
+	'scopes.notebooksDeliver':
+		'Складывать записи в другие ваши блокноты и переносить туда записи этого — видя только их названия, но не содержимое',
 	'scopes.notesRead': 'Читать ваш дневник и блокноты, а также фото и записи в них',
 	'scopes.notesWrite': 'Писать в вашем дневнике и блокнотах',
 	'scopes.peopleRead': 'Видеть людей в вашей жизни, у кого скоро день рождения, и их фото',
@@ -3886,6 +3889,8 @@ export const messages: Catalogue = {
 	'settings.integrations.aiAssistantDefaultName': 'ИИ-ассистент',
 	'settings.integrations.allOfIt': 'Всё',
 	'settings.integrations.andLetItDeleteThings': '…и разрешить ему удалять',
+	'settings.integrations.andLetItFileIntoOthers':
+		'…и разрешить ему складывать записи в другие ваши блокноты',
 	'settings.integrations.bankStatements': 'Банковские выписки',
 	'settings.integrations.chat.answeringAs': '{provider}, ключ {prefix}…, отвечает как {model}.',
 	'settings.integrations.chat.asking': 'Запрос…',
@@ -4067,6 +4072,8 @@ export const messages: Catalogue = {
 	'settings.integrations.everyWrite': 'Любая запись',
 	'settings.integrations.everythingAnAssistantHasChanged':
 		'Всё, что изменил ассистент, сначала новое. Всё удалённое можно вернуть.',
+	'settings.integrations.fileIntoOthersSeesOnlyNames':
+		'Он видит их названия и ничего из содержимого — может положить туда задачу, заметку или вещь или перенести их из этого блокнота, но никогда не читает то, что там уже есть.',
 	'settings.integrations.forAnAssistantWithTerminal':
 		'Для ассистента с доступом к терминалу. Он сам запишет настройку и подхватит её при следующем запуске.',
 	'settings.integrations.hasTheFullFormWith':

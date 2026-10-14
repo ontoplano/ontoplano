@@ -12,8 +12,9 @@ import { FLOWS, listAllPayments, listBills } from '$lib/services/bills.js';
 import { listWorkouts } from '$lib/services/workouts.js';
 import { listIngredientItems, listRecipes } from '$lib/services/recipes.js';
 import { ForbiddenError, NotFoundError } from '$lib/services/errors.js';
-import { KINDS, setAt, valuesAt, type Ref, type RefKind } from './refs.js';
+import { KINDS, setAt, valuesAt, type Reach, type Ref, type RefKind } from './refs.js';
 import { TOOLS } from './tools.js';
+export { DELIVER_SCOPE, delivers } from './deliver.js';
 
 /**
  * A key that can only reach one thing.
@@ -210,7 +211,8 @@ export function confine(
 	confinement: Confinement,
 	refs: readonly Ref[] | undefined,
 	input: { required?: readonly string[] } | undefined,
-	args: Record<string, unknown>
+	args: Record<string, unknown>,
+	{ delivers = false }: { delivers?: boolean } = {}
 ): void {
 	const table = CONFINEMENTS[confinement.kind];
 	if (!table) throw new ForbiddenError('This key is confined to something that no longer exists.');
@@ -222,13 +224,30 @@ export function confine(
 
 	for (const ref of refs ?? []) {
 		if (ref.kind !== table.kind) continue;
+		// The list of notebooks, for a key that may file into them: not pinned,
+		// and the tool answers with names and ids alone.
+		if (delivers && ref.deliverable === 'listing') continue;
+		// Filing into another notebook, for a key that may: left as asked, and
+		// resolved against the account's notebooks by `deliveryReach`.
+		if (delivers && ref.deliverable === 'into' && valuesAt(args, ref.arg).some(given)) continue;
 		// `0` is "take it out of its notebook", which is leaving too.
 		const elsewhere = valuesAt(args, ref.arg).some(
-			(one) => one !== undefined && one !== null && one !== '' && Number(one) !== confinement.id
+			(one) => given(one) && Number(one) !== confinement.id
 		);
 		if (elsewhere) throw new NotFoundError(KINDS[table.kind].label);
 		setAt(args, ref.arg, confinement.id);
 	}
+}
+
+const given = (one: unknown) => one !== undefined && one !== null && one !== '';
+
+/**
+ * The reach a delivering call resolves against: the confinement's, except
+ * that a notebook is any of the account's — the ones `confine` let through
+ * are destinations, and every other kind still answers inside the key's own.
+ */
+export function deliveryReach(reach: Reach): Reach {
+	return (kind, ctx) => (kind === 'notebook' ? KINDS.notebook.rows(ctx) : reach(kind, ctx));
 }
 
 /**

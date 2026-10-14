@@ -3275,6 +3275,7 @@ export const messages: Catalogue = {
 	'scopeGroups.habitsAndWorkouts': 'Habitudes et entraînements',
 	'scopeGroups.money': 'Argent',
 	'scopeGroups.neededToWrite': 'nécessaire pour écrire',
+	'scopeGroups.otherNotebooks': 'Vos autres carnets',
 	'scopeGroups.people': 'Personnes',
 	'scopeGroups.plumbing': 'Intégrations',
 	'scopeGroups.removingThings': 'Supprimer des choses',
@@ -3307,6 +3308,8 @@ export const messages: Catalogue = {
 	'scopes.kitchenWrite': 'Ajouter et modifier des recettes',
 	'scopes.locationsRead': "Voir où vivent vos objets, et ce qu'il y a dans chaque pièce et tiroir",
 	'scopes.locationsWrite': 'Ajouter et modifier des pièces et des tiroirs, et dire où vit un objet',
+	'scopes.notebooksDeliver':
+		'Ranger des choses dans vos autres carnets et y déplacer celles de ce carnet — en ne voyant que leurs noms, jamais leur contenu',
 	'scopes.notesRead':
 		"Lire votre journal et vos cahiers, et les photos et enregistrements qu'ils contiennent",
 	'scopes.notesWrite': 'Écrire dans votre journal et vos cahiers',
@@ -3768,6 +3771,8 @@ export const messages: Catalogue = {
 	'settings.integrations.aiAssistantDefaultName': 'Assistant IA',
 	'settings.integrations.allOfIt': 'Tout',
 	'settings.integrations.andLetItDeleteThings': '…et le laisser supprimer des choses',
+	'settings.integrations.andLetItFileIntoOthers':
+		'…et le laisser ranger des choses dans vos autres carnets',
 	'settings.integrations.bankStatements': 'Relevés bancaires',
 	'settings.integrations.chat.answeringAs':
 		'{provider}, clé {prefix}…, répond en tant que {model}.',
@@ -3951,6 +3956,8 @@ export const messages: Catalogue = {
 	'settings.integrations.everyWrite': 'Chaque écriture',
 	'settings.integrations.everythingAnAssistantHasChanged':
 		"Tout ce qu'un assistant a changé, le plus récent en premier. Tout ce qu'il a retiré peut être remis.",
+	'settings.integrations.fileIntoOthersSeesOnlyNames':
+		"Il voit leurs noms et rien de ce qu'ils contiennent : il peut y mettre une tâche, une note ou une chose, ou y déplacer celles de ce carnet, mais jamais lire ce qui s'y trouve déjà.",
 	'settings.integrations.forAnAssistantWithTerminal':
 		'Pour un assistant avec un terminal. Il écrit son propre réglage et le reprend à son prochain démarrage.',
 	'settings.integrations.hasTheFullFormWith':

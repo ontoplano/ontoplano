@@ -2989,6 +2989,7 @@ export const messages: Catalogue = {
 	'scopeGroups.habitsAndWorkouts': 'Gewohnheiten und Workouts',
 	'scopeGroups.money': 'Geld',
 	'scopeGroups.neededToWrite': 'nötig zum Schreiben',
+	'scopeGroups.otherNotebooks': 'Deine anderen Notizbücher',
 	'scopeGroups.people': 'Menschen',
 	'scopeGroups.plumbing': 'Integrationen',
 	'scopeGroups.removingThings': 'Dinge löschen',
@@ -3023,6 +3024,8 @@ export const messages: Catalogue = {
 		'Sehen, wo Ihre Dinge sind, und was in jedem Raum und jeder Schublade liegt',
 	'scopes.locationsWrite':
 		'Räume und Schubladen anlegen und ändern und festlegen, wo ein Ding liegt',
+	'scopes.notebooksDeliver':
+		'Dinge in deine anderen Notizbücher legen und die dieses Notizbuchs dorthin verschieben — nur ihre Namen sehend, nie ihren Inhalt',
 	'scopes.notesRead':
 		'Ihr Tagebuch und Ihre Notizbücher lesen, samt der Bilder und Aufnahmen darin',
 	'scopes.notesWrite': 'In Ihr Tagebuch und Ihre Notizbücher schreiben',
@@ -3480,6 +3483,8 @@ export const messages: Catalogue = {
 	'settings.integrations.aiAssistantDefaultName': 'KI-Assistent',
 	'settings.integrations.allOfIt': 'Alles',
 	'settings.integrations.andLetItDeleteThings': '…und ihm erlauben, Dinge zu löschen',
+	'settings.integrations.andLetItFileIntoOthers':
+		'…und es Dinge in deine anderen Notizbücher legen lassen',
 	'settings.integrations.bankStatements': 'Kontoauszüge',
 	'settings.integrations.chat.answeringAs':
 		'{provider}, Schlüssel {prefix}…, antwortet als {model}.',
@@ -3664,6 +3669,8 @@ export const messages: Catalogue = {
 	'settings.integrations.everyWrite': 'Jedes Schreiben',
 	'settings.integrations.everythingAnAssistantHasChanged':
 		'Alles, was ein Assistent geändert hat, neueste zuerst. Alles, was er entfernt hat, kann wiederhergestellt werden.',
+	'settings.integrations.fileIntoOthersSeesOnlyNames':
+		'Es sieht ihre Namen und nichts darin – es kann eine Aufgabe, eine Notiz oder ein Ding dort ablegen oder eines aus diesem Notizbuch verschieben, aber nie lesen, was schon da ist.',
 	'settings.integrations.forAnAssistantWithTerminal':
 		'Für einen Assistenten mit einem Terminal. Er schreibt seine eigene Einstellung und übernimmt sie beim nächsten Start.',
 	'settings.integrations.hasTheFullFormWith':
