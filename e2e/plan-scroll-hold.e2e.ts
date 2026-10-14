@@ -13,12 +13,14 @@ test('the arrows keep the page where it is', async ({ page }) => {
 	test.setTimeout(180_000);
 	await page.setViewportSize({ width: 1280, height: 800 });
 	await register(page, testEmail('plan-hold'));
-	await visit(page, '/calendar/calendar?view=week');
+	// The month: the one view taller than the window on a desktop, on purpose.
+	// The week and the day end where the window does, so the page has nowhere
+	// to be thrown from.
+	await visit(page, '/calendar/calendar?view=month');
 	await expect(page.locator('[data-tour="plan-grid"]')).toBeVisible({ timeout: 30_000 });
 	await page.waitForTimeout(1500);
 
-	// Down the page, far enough that being thrown to the top is obvious. The
-	// grid is 70vh and there is a rail above it, so there is somewhere to go.
+	// Down the page, far enough that being thrown to the top is obvious.
 	await page.evaluate(() => window.scrollTo(0, 240));
 	await page.waitForTimeout(300);
 	const pageBefore = await page.evaluate(() => window.scrollY);

@@ -279,3 +279,33 @@ test('an old plan link lands on the calendar', async ({ page }) => {
 	await expect(page).toHaveURL(/calendar\/calendar\?from=2026-08-24/);
 	await expect(page.getByRole('link', { name: 'Calendar' }).first()).toBeVisible();
 });
+
+/*
+ * Zooming all the way in moves nothing but the grid.
+ *
+ * The percentage grew a digit at 150% and pushed + along under the pointer,
+ * so pressing it twice pressed something else. And the grid was a fixed share
+ * of the window whatever stood around it, so on a desktop the page ran a
+ * little past the window and scrolled as well as the grid did.
+ */
+test('zooming in keeps + under the pointer, and the page ends with the grid', async ({ page }) => {
+	await page.setViewportSize({ width: 1440, height: 900 });
+	await register(page, testEmail('plan-zoom-steady'));
+	await visit(page, '/calendar/calendar');
+
+	const plus = page.getByRole('button', { name: 'Zoom in' });
+	const at = (await plus.boundingBox())!.x;
+	while (await plus.isEnabled()) {
+		await plus.click();
+		expect((await plus.boundingBox())!.x).toBe(at);
+	}
+
+	await expect
+		.poll(() =>
+			page.evaluate(() => {
+				const root = document.scrollingElement ?? document.documentElement;
+				return root.scrollHeight - root.clientHeight;
+			})
+		)
+		.toBeLessThanOrEqual(1);
+});
