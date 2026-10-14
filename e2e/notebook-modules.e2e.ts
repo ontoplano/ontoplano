@@ -71,6 +71,23 @@ test('a tab opens in a new browser tab on a middle press, and in place on a plai
 	expect(page.url()).toBe(before);
 });
 
+test('the whole screen says tabs can stand side by side, and opens one beside on a press', async ({
+	page
+}) => {
+	await page.setViewportSize({ width: 1600, height: 900 });
+	await register(page, testEmail('nb-beside-hint'));
+	await makeNotebook(page, 'Garden');
+
+	await page.getByRole('button', { name: 'The whole screen' }).first().click();
+	const hint = page.getByRole('button', { name: 'Drag a tab here to open it beside' });
+	await expect(hint).toBeVisible();
+
+	await hint.click();
+	await expect(page.locator('dialog.nb-split')).toBeVisible();
+	// Two panes showing: the edge has said what it had to.
+	await expect(hint).toHaveCount(0);
+});
+
 test.describe('what a notebook holds', () => {
 	test('starts at notes and tasks, and gains a tab when one is switched on', async ({ page }) => {
 		await register(page, testEmail('nb-modules'));

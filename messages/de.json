@@ -344,6 +344,7 @@
 	"goals.reopened": "Wieder geöffnet",
 	"goals.youDidIt": "Geschafft!",
 	"goals.youDidItBody": "{title}, erledigt. Schreib auf, wie es lief, solange es frisch ist — es bleibt beim Ziel.",
+	"notebookDetail.dragATabHereToOpenItBeside": "Zieh einen Tab hierher, um ihn daneben zu öffnen",
 	"out.couldNotOpen": "Der Browser hat sich nicht geöffnet. Zurück…",
 	"out.opening": "Browser wird geöffnet…",
 	"passwords.needsMix": "Ein Passwort braucht einen Buchstaben und eine Zahl oder ein Symbol.",

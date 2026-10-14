@@ -344,6 +344,7 @@
 	"goals.reopened": "Reaberta",
 	"goals.youDidIt": "Você conseguiu!",
 	"goals.youDidItBody": "{title}, feito. Conte como foi enquanto está fresco — fica guardado com a meta.",
+	"notebookDetail.dragATabHereToOpenItBeside": "Arraste uma aba para cá para abri-la ao lado",
 	"out.couldNotOpen": "O navegador não abriu. Voltando…",
 	"out.opening": "Abrindo o navegador…",
 	"passwords.needsMix": "Uma senha precisa de uma letra e de um número ou símbolo.",

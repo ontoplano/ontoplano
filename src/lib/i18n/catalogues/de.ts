@@ -2176,6 +2176,7 @@ export const messages: Catalogue = {
 		'Ausgewählte Notizen löschen? Das lässt sich nicht rückgängig machen.',
 	'notebookDetail.deleteThisNote': 'Diese Notiz löschen',
 	'notebookDetail.descendingPressForAscending': 'Absteigend — für aufsteigend drücken',
+	'notebookDetail.dragATabHereToOpenItBeside': 'Zieh einen Tab hierher, um ihn daneben zu öffnen',
 	'notebookDetail.editThisNote': 'Diese Notiz bearbeiten',
 	'notebookDetail.goalAdded': 'Ziel erstellt',
 	'notebookDetail.hideArchived': 'Archivierte ausblenden',

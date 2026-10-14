@@ -2089,6 +2089,7 @@ export const messages: Catalogue = {
 	'notebookDetail.deleteSelectedNotes': 'Delete the selected notes? This cannot be undone.',
 	'notebookDetail.deleteThisNote': 'Delete this note',
 	'notebookDetail.descendingPressForAscending': 'Descending — press for ascending',
+	'notebookDetail.dragATabHereToOpenItBeside': 'Drag a tab here to open it beside',
 	'notebookDetail.editThisNote': 'Edit this note',
 	'notebookDetail.goalAdded': 'Goal added',
 	'notebookDetail.hideArchived': 'Hide archived',
