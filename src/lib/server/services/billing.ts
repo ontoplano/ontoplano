@@ -6,7 +6,12 @@ import { isSelfHosted, pricing } from '../settings.js';
 import { applySubscription, startTrial, trialCarryover } from './subscriptions.js';
 import { ServiceError, ValidationError } from '$lib/services/errors.js';
 import { APP_USER_AGENT, fromPlayStore } from '$lib/platform.js';
-import { BILLING_REFUSALS } from '../billing/contract.js';
+import {
+	BILLING_REFUSALS,
+	RTDN_REASONS,
+	type RtdnReason,
+	type RtdnTrace
+} from '../billing/contract.js';
 import { record } from '$lib/services/audit.js';
 
 /**
@@ -307,11 +312,14 @@ export function playSkus() {
 }
 
 /*
- * Notifications from Play that are not failures: Google's test ping, and a
- * message about another app in the same Pub/Sub topic. Everything else that
- * does not end in an entitlement is somebody's purchase going nowhere.
+ * The one notification that can mean somebody was charged and got nothing: a
+ * live subscription that nobody here can be found for. That, and Google
+ * refusing the lookup, is an alert. Everything else Play pushes — a refund, a
+ * one-time product, a kind of message this app has no use for — is a line in
+ * the server log, not a payment that failed.
  */
-const RTDN_QUIET = new Set(['test', 'other_package']);
+const RTDN_ALERTS: ReadonlySet<RtdnReason> = new Set([RTDN_REASONS.unknownAccount]);
+const RTDN_QUIET: ReadonlySet<RtdnReason> = new Set([RTDN_REASONS.test, RTDN_REASONS.otherPackage]);
 
 /**
  * A step of a store purchase that did not deliver the plan, written down.
@@ -323,7 +331,7 @@ const RTDN_QUIET = new Set(['test', 'other_package']);
 function paymentFailed(
 	userId: string | null,
 	stage: 'sheet' | 'claim' | 'rtdn',
-	detail: { sku?: string; code: string; message?: string }
+	detail: { sku?: string; code: string; message?: string } & RtdnTrace
 ): void {
 	console.error(`billing: play ${stage} failed`, { userId, ...detail });
 	record(userId, 'payment_failed', { detail: { via: 'play', stage, ...detail } });
@@ -354,12 +362,16 @@ export async function playRtdn(rawBody: string) {
 		return { applied: false as const, reason: 'not_configured' };
 	try {
 		const outcome = await channel.handleRtdn(rawBody);
-		if (!outcome.applied && !RTDN_QUIET.has(outcome.reason))
-			paymentFailed(null, 'rtdn', { code: outcome.reason });
+		if (outcome.applied || RTDN_QUIET.has(outcome.reason)) return outcome;
+		const { reason, sku, orderId, tokenTail, account } = outcome;
+		const trace: RtdnTrace = { sku, orderId, tokenTail, account };
+		if (RTDN_ALERTS.has(reason)) paymentFailed(null, 'rtdn', { code: reason, ...trace });
+		else console.warn(`billing: play notification not applied: ${reason}`, trace);
 		return outcome;
 	} catch (e) {
 		// Thrown on: Google refused the lookup, so Pub/Sub will retry it.
-		paymentFailed(null, 'rtdn', failureOf(e));
+		const trace = (e as { rtdn?: RtdnTrace } | null)?.rtdn ?? {};
+		paymentFailed(null, 'rtdn', { ...failureOf(e), ...trace });
 		throw e;
 	}
 }
