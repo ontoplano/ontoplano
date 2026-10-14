@@ -18,6 +18,10 @@ the shape of the data changing. Bumping the minor per batch is what ran this
 file to 0.161 in a few months, which tells a reader nothing about which
 releases mattered.
 
+## 0.186.5 — 2026-10-14
+
+- An assistant key tied to one notebook that asks to move a task into another notebook, or to read one, is now told no — it used to answer “ok” and leave the task where it was.
+
 ## 0.186.4 — 2026-10-13
 
 - A notebook's Inventory tab groups its things under the places they live, as the Inventory room does, and shows them as cards with the same list-or-cards switch as the notes.

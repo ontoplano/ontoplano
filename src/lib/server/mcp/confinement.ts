@@ -11,8 +11,8 @@ import { listMovementRows } from '$lib/services/statements.js';
 import { FLOWS, listAllPayments, listBills } from '$lib/services/bills.js';
 import { listWorkouts } from '$lib/services/workouts.js';
 import { listIngredientItems, listRecipes } from '$lib/services/recipes.js';
-import { ForbiddenError } from '$lib/services/errors.js';
-import { setAt, type Ref, type RefKind } from './refs.js';
+import { ForbiddenError, NotFoundError } from '$lib/services/errors.js';
+import { KINDS, setAt, valuesAt, type Ref, type RefKind } from './refs.js';
 import { TOOLS } from './tools.js';
 
 /**
@@ -38,10 +38,12 @@ import { TOOLS } from './tools.js';
  *   2. A tool that names a kind this confinement does not contain is refused
  *      — a person is not inside a notebook.
  *   3. Where a tool names the confining kind itself, the argument is *set*
- *      rather than checked. Asking for another notebook does not fail; it is
- *      simply not what the call ends up being about. Nothing here is ever read
- *      from a request: the kind comes from this table and the id from the
- *      token's own row.
+ *      when it is left out, and refused when it names any other one — with
+ *      the answer a notebook that does not exist gets, whether or not it
+ *      does, so the refusal tells nobody what the account holds. Pinning a
+ *      different id over it instead answered "ok" to a move that never
+ *      happened. Nothing here is ever read from a request: the kind comes
+ *      from this table and the id from the token's own row.
  */
 
 type Contains = Partial<Record<RefKind, (ctx: Ctx, id: number) => { id: number }[]>>;
@@ -218,7 +220,15 @@ export function confine(
 			`This key can only work on ${table.label}, and that is not something it can reach.`
 		);
 
-	for (const ref of refs ?? []) if (ref.kind === table.kind) setAt(args, ref.arg, confinement.id);
+	for (const ref of refs ?? []) {
+		if (ref.kind !== table.kind) continue;
+		// `0` is "take it out of its notebook", which is leaving too.
+		const elsewhere = valuesAt(args, ref.arg).some(
+			(one) => one !== undefined && one !== null && one !== '' && Number(one) !== confinement.id
+		);
+		if (elsewhere) throw new NotFoundError(KINDS[table.kind].label);
+		setAt(args, ref.arg, confinement.id);
+	}
 }
 
 /**
