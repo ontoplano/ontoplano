@@ -152,10 +152,13 @@
 				way, so the name starts at one x on every screen.
 			-->
 			{#if subject?.pictureId}
+				<!-- Tapped, it opens in the viewer — `data-view` is what the shell's
+				     viewer answers — as the picture did when it stood on the page. -->
 				<img
 					src="/media/{subject.pictureId}"
-					alt=""
-					class="room-bar-picture border border-gray-200 object-cover"
+					alt={subject.title}
+					data-view
+					class="room-bar-picture cursor-zoom-in border border-gray-200 object-cover"
 				/>
 			{:else if back}
 				<!-- Already resolved: `back` is whatever the page passed, and the page
