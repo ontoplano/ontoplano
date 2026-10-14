@@ -1720,6 +1720,7 @@ export const messages: Catalogue = {
 	'inventory.restock2': 'Restock ({replenish})',
 	'inventory.saveTheName': 'Save the name',
 	'inventory.searchTheseThings': 'Search these things',
+	'inventory.setUp': 'Settings',
 	'inventory.sharedWithFamily': '{name} is shared with the family',
 	'inventory.shoppingList': 'Shopping list',
 	'inventory.shoppingListCount': 'Shopping list ({count})',

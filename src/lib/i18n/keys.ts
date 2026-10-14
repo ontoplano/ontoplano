@@ -1575,6 +1575,7 @@ export type MessageKey =
 	| 'inventory.restock2'
 	| 'inventory.saveTheName'
 	| 'inventory.searchTheseThings'
+	| 'inventory.setUp'
 	| 'inventory.sharedWithFamily'
 	| 'inventory.shoppingList'
 	| 'inventory.shoppingListCount'

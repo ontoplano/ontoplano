@@ -346,6 +346,7 @@
 	"goals.reopened": "Открыта снова",
 	"goals.youDidIt": "Получилось!",
 	"goals.youDidItBody": "«{title}» — готово. Расскажите, как всё прошло, пока не забылось — это останется с целью.",
+	"inventory.setUp": "Настройки",
 	"notebookDetail.dragATabHereToOpenItBeside": "Перетащите вкладку сюда, чтобы открыть её рядом",
 	"out.couldNotOpen": "Браузер не открылся. Возвращаемся…",
 	"out.opening": "Открывается браузер…",

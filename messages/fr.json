@@ -345,6 +345,7 @@
 	"goals.reopened": "Réouvert",
 	"goals.youDidIt": "Vous l'avez fait !",
 	"goals.youDidItBody": "{title}, terminé. Dites comment ça s'est passé tant que c'est frais — ça reste avec l'objectif.",
+	"inventory.setUp": "Réglages",
 	"notebookDetail.dragATabHereToOpenItBeside": "Glissez un onglet ici pour l'ouvrir à côté",
 	"out.couldNotOpen": "Le navigateur ne s'est pas ouvert. Retour en arrière…",
 	"out.opening": "Ouverture du navigateur…",

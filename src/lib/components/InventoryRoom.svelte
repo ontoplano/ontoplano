@@ -1334,14 +1334,19 @@
 					</div>
 				{/if}
 				{#snippet verb()}
-					<!-- Named for the half most visits want; the dialog's second tab is
-					     the attributes. A phone's strip has room for one verb beside
-					     the order, and that is the shopping list: there this one
-					     stands on the house's line instead. -->
+					<!-- The room's own settings: the categories and the attributes
+					     both, which "Categories" undersold — said whole in the
+					     tooltip, and short on the strip, where the full name pushed
+					     the filters onto a second line. The gear rather than the
+					     sliders, which elsewhere mean filters and in its own dialog
+					     mean the attributes. A phone's strip has room
+					     for one verb beside the order, and that is the shopping list:
+					     there this one stands on the house's line instead. -->
 					<StripVerb
-						icon="sliders"
-						label={t('inventory.categories')}
+						icon="settings"
+						label={t('inventory.setUp')}
 						title={t('inventory.categoriesAndAttributes')}
+						aria-label={t('inventory.categoriesAndAttributes')}
 						class="btn btn-sm shrink-0 max-sm:hidden"
 						onclick={() => (organising = true)}
 					/>
@@ -1411,7 +1416,7 @@
 								onclick={() => (organising = true)}
 								class="icon-btn shrink-0 sm:hidden"
 								title={t('inventory.categoriesAndAttributes')}
-								aria-label={t('inventory.categories')}><Icon name="sliders" /></button
+								aria-label={t('inventory.categoriesAndAttributes')}><Icon name="settings" /></button
 							>
 							<button
 								onclick={() => (addingLocation = true)}
