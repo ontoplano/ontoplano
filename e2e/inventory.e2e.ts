@@ -672,3 +672,18 @@ test('a category colour shows what was chosen after it saves', async ({ page }) 
 	await page.waitForTimeout(500);
 	await expect(well).toHaveValue('#1d4ed8');
 });
+
+/*
+ * The cupboard's filters on one line at a laptop's width.
+ *
+ * At 1280px "How many" and its two boxes did not fit beside the room's
+ * verbs and dropped onto a line of their own, under nothing.
+ */
+test('the filters stay on one line at 1280px', async ({ page }) => {
+	await page.setViewportSize({ width: 1280, height: 800 });
+	await register(page, testEmail('inv-one-line'));
+	await visit(page, '/inventory');
+	const search = (await page.getByRole('searchbox').first().boundingBox())!;
+	const most = (await page.getByRole('spinbutton', { name: /most/i }).boundingBox())!;
+	expect(Math.abs(most.y + most.height / 2 - (search.y + search.height / 2))).toBeLessThan(6);
+});
