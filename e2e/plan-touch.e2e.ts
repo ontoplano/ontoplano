@@ -17,6 +17,26 @@ import { visit } from './helpers/visit';
 test.describe('with a finger', () => {
 	test.use({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
 
+	/*
+	 * The view switch and its two buttons take the line between them.
+	 *
+	 * They sat at their own widths with the row's slack in the gaps, a third
+	 * of the line empty under the thumb that was reaching for them.
+	 */
+	test('the view, More and Full screen fill their line', async ({ page }) => {
+		await register(page, testEmail('plan-fill'));
+		await visit(page, '/calendar/calendar');
+		const view = (await page.getByRole('group', { name: 'How much to show' }).boundingBox())!;
+		const more = (await page.getByRole('button', { name: 'More' }).boundingBox())!;
+		const full = (await page.getByRole('button', { name: 'Full screen' }).boundingBox())!;
+		// Squares, as tall as the switch.
+		expect(Math.abs(more.width - more.height)).toBeLessThan(2);
+		expect(Math.abs(more.height - view.height)).toBeLessThan(2);
+		// Nothing but the row's own gap between them.
+		expect(more.x - (view.x + view.width)).toBeLessThanOrEqual(12);
+		expect(full.x - (more.x + more.width)).toBeLessThanOrEqual(12);
+	});
+
 	test('a tap opens a short new-activity sheet with save visible', async ({ page }) => {
 		await register(page, testEmail('plan-tap'));
 		await visit(page, '/calendar/calendar');
