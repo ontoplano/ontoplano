@@ -14,6 +14,7 @@ How the pieces fit, and why.
 - [Using it with AI agents](ai-agents.md) — pointing Claude, Codex or anything else that speaks MCP at your own instance
 - [Architecture](architecture.md) — how a request travels, and where each kind of rule is allowed to live
 - [Deleting your data](deleting-your-data.md) — the two ways to erase what is here, what each one leaves behind, and why neither can be taken back
+- [Ethos](ethos.md) — what Ontoplano is for, and the rules it keeps while getting there
 - [The family plan](family-plan.md) — one subscription, up to five accounts, and the one form that sets it up
 - [On your phone](on-your-phone.md) — the Android app, the isolated instance, and the ways in for iPhone and desktop
 - [Permissions](permissions.md) — the one scope system every way in shares — what each grant hands over, and which tools sit behind it
