@@ -7,7 +7,7 @@
  * the exact moment somebody commits to an answer.
  *
  * So the chooser positions its mark from `--bar-mark-bottom`, which is
- * derived from the four numbers that put the bar's mark where it is. This
+ * derived from the numbers that put the bar's mark where it is. This
  * fails if either side stops using them — the arithmetic is the contract, and
  * an e2e can only catch it after somebody has already seen it.
  */
@@ -24,7 +24,9 @@ describe('the mark on the chooser', () => {
 		expect(rule, '--bar-mark-bottom is defined').toBeTruthy();
 		// Every number that decides where the bar's mark sits, and nothing
 		// typed in beside them.
-		for (const part of ['--safe-bottom', '--mobile-nav-height', '--bar-mark-rise', '--bar-mark']) {
+		// The mark sits inside the pill now, centred in it: the pill's height
+		// and its margin from the bottom place it, not a rise out of a strip.
+		for (const part of ['--safe-bottom', '--bar-inset', '--bar-pill-height', '--bar-mark']) {
 			expect(rule, `${part} is part of it`).toContain(part);
 		}
 	});
