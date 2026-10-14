@@ -20,6 +20,7 @@ releases mattered.
 
 ## 0.186.5 — 2026-10-14
 
+- The calendar's zoom keeps + and − where they are as the percentage changes, so pressing + again presses + again. On a desktop the week and the day fill the window and the page ends with them: only the grid scrolls.
 - A notebook on the whole screen of a desktop says, along its right edge, that a tab dragged there opens beside the one showing — and pressing that edge opens the next tab beside it. The tabs show a grab cursor.
 - On a phone, the bottom bar is a floating pill of dark glass, clear of the screen's edges, with the puffin inside it rather than rising out of it.
 - Closing quick capture with something written in it keeps it as a draft and says “Saved as draft”: opening the same kind again brings it back. Cancel still throws it away.

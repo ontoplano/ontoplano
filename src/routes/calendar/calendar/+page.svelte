@@ -120,6 +120,7 @@
 		type GridEventDetail,
 		type GridEventKind
 	} from '$lib/planner-grid.js';
+	import { SPLIT_MEDIA } from '$lib/breakpoints';
 
 	let { data, form }: { data: PageServerData; form: ActionData } = $props();
 
@@ -288,6 +289,11 @@
 		$state(null);
 
 	const slotHeight = $derived(GRID_ZOOM_LEVELS[zoomIndex]);
+	/** A zoom as the stepper says it: against the default, in whole percent. */
+	const zoomPercent = (height: number) =>
+		Math.round((height / GRID_ZOOM_LEVELS[GRID_DEFAULT_ZOOM_INDEX]) * 100);
+	/** The level whose percentage is widest written down — the most digits. */
+	const widestZoom = Math.max(...GRID_ZOOM_LEVELS);
 
 	function setZoom(index: number) {
 		const next = Math.min(Math.max(index, 0), GRID_ZOOM_LEVELS.length - 1);
@@ -914,6 +920,44 @@
 	const NEW_TODO_MINUTES = 30;
 
 	let gridWrap: HTMLElement | undefined = $state();
+
+	/*
+	 * The week and the day end where the window does, on a desktop.
+	 *
+	 * They were 70vh (62 for a day) whatever stood above and below them, so
+	 * the page came out a little taller than the window: the grid scrolled
+	 * inside itself and the page scrolled as well, the last few lines of it
+	 * reachable only by wheeling somewhere that was not the grid. Now the grid
+	 * takes what is left — measured as how far the page overshoots the window,
+	 * taken off the grid — and the page ends with it. Not the month, which is
+	 * taller than the window on purpose, and not a phone, where the page is
+	 * the scroller and the grid is drawn whole.
+	 */
+	const FILL_MIN_PX = 384;
+	let fillPx = $state<number | null>(null);
+	$effect(() => {
+		const wrap = gridWrap;
+		if (!wrap || effectiveView === 'month') {
+			fillPx = null;
+			return;
+		}
+		const desktop = window.matchMedia(SPLIT_MEDIA);
+		const fit = () => {
+			if (!desktop.matches) return void (fillPx = null);
+			const page = document.scrollingElement ?? document.documentElement;
+			const over = page.scrollHeight - page.clientHeight;
+			const next = Math.max(FILL_MIN_PX, Math.round(wrap.offsetHeight - over));
+			if (Math.abs(next - (fillPx ?? 0)) > 1) fillPx = next;
+		};
+		const watching = new ResizeObserver(() => requestAnimationFrame(fit));
+		watching.observe(document.body);
+		desktop.addEventListener('change', fit);
+		fit();
+		return () => {
+			watching.disconnect();
+			desktop.removeEventListener('change', fit);
+		};
+	});
 
 	/**
 	 * Where the week begins, as one choice rather than two nudges.
@@ -3317,6 +3361,7 @@
 						: gridDays === 1
 							? 'h-[62vh]'
 							: 'h-[70vh]'}"
+					style={fillPx === null ? undefined : `height: ${fillPx}px`}
 					use:gridZoomWheel
 					use:selectionSurface
 					onpointerdowncapture={onGridPointerDown}
@@ -3409,13 +3454,17 @@
 							aria-label={t('tasks.plan.zoomOut')}
 							class="icon-btn disabled:cursor-not-allowed disabled:opacity-30">&minus;</button
 						>
+						<!-- As wide as the widest it can say, so pressing + or − does not
+						     move the + along with the number. See `.count-slot`. -->
 						<button
 							type="button"
 							onclick={() => setZoom(GRID_DEFAULT_ZOOM_INDEX)}
 							title={t('tasks.plan.resetZoom0')}
-							class="btn btn-sm tabular"
-							>{Math.round((slotHeight / GRID_ZOOM_LEVELS[GRID_DEFAULT_ZOOM_INDEX]) * 100)}%</button
+							class="btn btn-sm tabular count-slot justify-items-center"
 						>
+							<span class="count-widest" aria-hidden="true">{zoomPercent(widestZoom)}%</span>
+							<span>{zoomPercent(slotHeight)}%</span>
+						</button>
 						<button
 							type="button"
 							onclick={() => setZoom(zoomIndex + 1)}
