@@ -20,6 +20,7 @@ releases mattered.
 
 ## 0.186.5 — 2026-10-14
 
+- A subscription refunded or voided through Google Play ends the plan it paid for, rather than running on until its period does.
 - An assistant key tied to one notebook that asks to move a task into another notebook, or to read one, is now told no — it used to answer “ok” and leave the task where it was.
 
 ## 0.186.4 — 2026-10-13
