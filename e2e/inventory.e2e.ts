@@ -158,6 +158,46 @@ test.describe('on a phone', () => {
 		);
 		expect(overflow).toBeLessThanOrEqual(1);
 	});
+
+	/*
+	 * Two categories in one place stand side by side, as on a desktop.
+	 *
+	 * One card per row on a phone was the list again with borders round it.
+	 */
+	test('the cards stand two to a row, inside the screen', async ({ page }) => {
+		await register(page, testEmail('inv-phone-cards'));
+		await visit(page, '/inventory');
+		await foodCategory(page);
+		await page.evaluate(async () => {
+			const body = new FormData();
+			body.set('label', 'Cleaning');
+			await fetch('/inventory?/createCategory', { method: 'POST', body });
+		});
+		await visit(page, '/inventory');
+		for (const [name, category] of [
+			['Olive oil', 'Food'],
+			['Dish soap', 'Cleaning']
+		] as const) {
+			await page
+				.getByRole('button', { name: /Add item/ })
+				.first()
+				.click();
+			const d = page.getByRole('dialog', { name: 'New item' });
+			await d.locator('[name="label"]').fill(name);
+			const field = d.locator('[name="inventoryCategoryId"]');
+			if (!(await field.isVisible())) await d.getByText(/more/i).first().click();
+			await field.selectOption({ label: category });
+			await d.getByRole('button', { name: 'Add item', exact: true }).click();
+			await expect(d).toBeHidden({ timeout: DIALOG_CLOSES });
+		}
+		// The dialog steps away before the server answers; the cards come after.
+		await expect(page.locator('.item-card')).toHaveCount(2);
+		const cards = await page
+			.locator('.item-card')
+			.evaluateAll((all) => all.map((one) => one.getBoundingClientRect().toJSON()));
+		expect(Math.abs(cards[0].y - cards[1].y)).toBeLessThan(2);
+		for (const card of cards) expect(card.right).toBeLessThanOrEqual(390);
+	});
 });
 
 /**

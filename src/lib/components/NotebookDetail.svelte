@@ -2063,6 +2063,7 @@
 							<div
 								class="row-card {itemRowWash(item)}"
 								class:note-card={cards}
+								class:card-cell={cards}
 								class:shadow-card={cards}
 							>
 								<ItemRow
@@ -2468,6 +2469,7 @@
 					class:bg-gray-100={noteSelection.selecting && noteSelection.has(entry.id)}
 					class:is-pinned={'pinnedAt' in entry && entry.pinnedAt}
 					class:note-card={cards}
+					class:card-cell={cards}
 					class:shadow-card={cards}
 					class:note-card-wide={cards && editingNoteId === entry.id}
 					class:pill-soft={face !== null}
@@ -3294,19 +3296,39 @@
 	 * with a gutter that is not there.
 	 */
 	/*
-	 * Notes as cards.
+	 * Notes and things as cards.
 	 *
-	 * As many columns as fit cards of a readable width, and one on a phone —
-	 * sized by the pane the notes are in rather than by the window, since the
-	 * same notebook stands beside the shelf on the index and alone on its own
-	 * page.
+	 * As many columns as fit cards of a readable width, and never fewer than
+	 * two: a column's floor is 16rem or half the pane, whichever is smaller.
+	 * One card per row on a phone was the list again with borders round it,
+	 * which is not what anybody switches to cards for. Sized by the pane the
+	 * cards are in rather than by the window, since the same notebook stands
+	 * beside the shelf on the index and alone on its own page.
 	 */
 	.note-grid {
+		--note-grid-gap: 0.75rem;
 		display: grid;
-		grid-template-columns: repeat(auto-fill, minmax(min(100%, 16rem), 1fr));
+		grid-template-columns: repeat(
+			auto-fill,
+			minmax(min(16rem, calc((100% - var(--note-grid-gap)) / 2)), 1fr)
+		);
 		align-items: start;
-		gap: 0.75rem;
-		padding: 0.75rem;
+		gap: var(--note-grid-gap);
+		padding: var(--note-grid-gap);
+		container: note-grid / inline-size;
+	}
+
+	/*
+	 * A half-width card, where two columns are narrower than 16rem each: the
+	 * card's own padding and gap tighten here, and everything inside it by
+	 * `.card-cell` (layout.css), which cannot reach the card itself.
+	 */
+	@container note-grid (width < 33rem) {
+		.note-card {
+			--row-pad-x: var(--card-tight-pad);
+			--row-pad-y: var(--card-tight-pad);
+			--row-gap: var(--card-tight-gap);
+		}
 	}
 
 	.note-card {

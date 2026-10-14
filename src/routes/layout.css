@@ -6504,3 +6504,65 @@ input[type='search']::-webkit-search-cancel-button:hover {
 		opacity: 0.5;
 	}
 }
+
+/*
+ * A card half a phone wide.
+ *
+ * Cards stand at least two to a row — a notebook's notes and things, the
+ * Inventory room's categories — and at about 170px the row's measures,
+ * made for a whole line, left the words a column of six characters. So
+ * inside a `.card-cell` narrower than 16rem the padding and the gap
+ * tighten, the buttons take the card's whole foot rather than the width
+ * beside the rail, a picture goes across the top, and a label too long for
+ * the card is cut rather than pushed past its edge.
+ *
+ * Unlayered, and prefixed by the cell, because the rules it overrides are
+ * a component's own — a thing's picture size — and those are unlayered too.
+ */
+:root {
+	--card-tight-pad: 0.625rem;
+	--card-tight-gap: 0.5rem;
+}
+
+.card-cell {
+	container: card / inline-size;
+}
+
+@container card (width < 16rem) {
+	.card-cell .row-card {
+		--row-pad-x: var(--card-tight-pad);
+		--row-pad-y: var(--card-tight-pad);
+		--row-gap: var(--card-tight-gap);
+	}
+
+	.card-cell .task-actions {
+		width: calc(100% + var(--row-rail) + var(--row-gap));
+		margin-left: calc(-1 * (var(--row-rail) + var(--row-gap)));
+		justify-content: space-between;
+	}
+
+	.card-cell .task-actions .icon-btn {
+		width: 2rem;
+		height: 2rem;
+	}
+
+	.card-cell .row-card-thumb {
+		order: -1;
+		flex-basis: 100%;
+		margin-bottom: 0.5rem;
+	}
+
+	.card-cell .row-card-thumb > :is(.item-thumb, *) {
+		width: 100%;
+		height: auto;
+		aspect-ratio: 4 / 3;
+	}
+
+	.card-cell :is(.chip, .pill, .tag-chip) {
+		display: inline-block;
+		max-width: 100%;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+}

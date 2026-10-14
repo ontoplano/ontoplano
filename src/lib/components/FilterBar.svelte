@@ -28,12 +28,13 @@
 	 *
 	 *     search   count   [ the filters ]   clear   ——   verb   sort
 	 *
-	 * Folded, on a phone, it is two lines that are always the same two: the
-	 * search box across the top, then the list's verb and its order on the
-	 * left and the count with the Filters button on the right. Letting the
-	 * one line wrap put the verb and the order on a second line of their own,
-	 * right-aligned under the Filters button, which lined up with nothing —
-	 * and it squeezed the order into a square whose direction nobody found.
+	 * Folded, on a phone, it is two lines that are always the same two, and
+	 * neither ever wraps: the search box with the count, the way back and the
+	 * Filters button after it; then the list's order and its verbs, from the
+	 * left. The count and the Filters button used to close the second line, and
+	 * on a tab with a view switch beside the order that line overflowed and
+	 * dropped "Filters" onto a third line of its own — a third of a phone's
+	 * screen spent on the strip, for one button.
 	 *
 	 * A filter that should stay out on a phone — the only one a list has, say
 	 * — goes in `inline` rather than in the children: a sheet holding one
@@ -266,7 +267,7 @@
 	{#if count}
 		<!-- As tall as a control, so its words sit level with the buttons on
 		     the first line whichever way the strip aligns. -->
-		<div class="filter-count flex min-h-(--control-sm) shrink-0 items-center">
+		<div class="filter-count flex min-h-(--control-sm) shrink-0 items-center whitespace-nowrap">
 			{@render count()}
 		</div>
 	{/if}
@@ -397,9 +398,9 @@
 	}
 
 	/*
-	 * The two folded lines: the search box (and any inline filter) on the
-	 * first; the verb and the order at the start of the second, the way back,
-	 * the count and the Filters button at its end.
+	 * The two folded lines: the search box, the count, the way back and the
+	 * Filters button on the first, in the order they are written; the order
+	 * and the verb alone on the second, from the left, never wrapping.
 	 */
 	.filter-break {
 		order: 1;
@@ -410,24 +411,7 @@
 	.filter-two-rows > .filter-tail {
 		order: 2;
 		margin-left: 0;
-	}
-
-	.filter-two-rows > .filter-clear {
-		order: 3;
-		margin-left: auto;
-	}
-
-	.filter-two-rows > .filter-count {
-		order: 4;
-	}
-
-	/* With no way back to hold the slack, the count takes it. */
-	.filter-two-rows:not(:has(> .filter-clear)) > .filter-count {
-		margin-left: auto;
-	}
-
-	.filter-two-rows > .filter-toggle {
-		order: 5;
+		flex-wrap: nowrap;
 	}
 
 	/*

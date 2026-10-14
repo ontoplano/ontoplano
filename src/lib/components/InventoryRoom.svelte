@@ -1496,13 +1496,17 @@
 										hundreds of pixels of empty body beside a long one. A place with
 										one category takes the whole width, rather than half of it beside
 										nothing. See `inColumns` for where each column is cut.
+
+										Two columns on a phone as well: one card per row there was a
+										list with borders round it. A half-width card tightens itself —
+										see `.card-cell`.
 									-->
-									<div class="item-cards md:flex md:items-start md:gap-4">
+									<div class="item-cards flex items-start gap-2 max-md:px-2 md:gap-4">
 										{#each inColumns(place.categories) as column, c (c)}
-											<div class="md:min-w-0 md:flex-1">
+											<div class="min-w-0 flex-1">
 												{#each column as category (category.name)}
 													<section
-														class="item-card mb-4 border border-gray-300 bg-white max-sm:border-x-0 sm:shadow-card"
+														class="item-card card-cell mb-2 border border-gray-300 bg-white shadow-card md:mb-4"
 													>
 														<h4 class="border-b border-gray-200 px-4 py-2">
 															{#if category.color}
