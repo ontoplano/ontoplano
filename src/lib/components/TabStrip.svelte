@@ -5,6 +5,12 @@
 	export type StripTab = {
 		/** Where it goes. Without it, the tab is a button that calls `onpick`. */
 		href?: string;
+		/**
+		 * For a tab picked in the page: the address that opens on it, so a
+		 * middle press or a ctrl-press takes it to a new browser tab the way a
+		 * link would. A plain press still calls `onpick` and stays put.
+		 */
+		opens?: string;
 		label: string;
 		icon?: IconName;
 		/** A number beside the word — "3", "2/5" — already formatted. */
@@ -69,6 +75,10 @@
 
 	let strip = $state<HTMLElement>();
 
+	/** A press the browser means for a new tab or window, not for this page. */
+	const opensElsewhere = (event: MouseEvent) =>
+		event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey;
+
 	/** Most of a strip's width, so a press moves on by about a screenful. */
 	const PAGE_SHARE = 0.8;
 
@@ -106,6 +116,31 @@
 				{#each tabs as tab, index (tab.href ?? tab.label)}
 					{#if tab.href}
 						<a href={tab.href} aria-current={index === current ? 'page' : undefined}>
+							{#if tab.icon}<Icon name={tab.icon} size={14} />{/if}
+							{tab.label}
+							{#if tab.count !== undefined}<span class="tab-count tabular">{tab.count}</span>{/if}
+						</a>
+					{:else if tab.opens}
+						<!-- A link, so the browser's own middle press and ctrl-press
+						     work; a plain press is the page's, which is why it is
+						     still announced as the button it acts as. -->
+						<a
+							href={tab.opens}
+							role="button"
+							aria-current={index === current ? 'page' : undefined}
+							onclick={(event) => {
+								if (opensElsewhere(event)) return;
+								event.preventDefault();
+								onpick?.(index);
+							}}
+							draggable={dragType ? 'true' : undefined}
+							ondragstart={dragType
+								? (event) => {
+										event.dataTransfer?.setData(dragType, String(index));
+										if (event.dataTransfer) event.dataTransfer.effectAllowed = 'move';
+									}
+								: undefined}
+						>
 							{#if tab.icon}<Icon name={tab.icon} size={14} />{/if}
 							{tab.label}
 							{#if tab.count !== undefined}<span class="tab-count tabular">{tab.count}</span>{/if}
