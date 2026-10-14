@@ -29,7 +29,11 @@ test('a key made on the AI tab arrives inside the words you paste', async ({ pag
 	 * they are drawn — so every one starts unticked, and the All box ticks
 	 * them in one press.
 	 */
-	const boxes = page.locator('input[name="scopes"]:not([value="destructive"])');
+	// The two grants apart from the grid — deleting, and filing into the other
+	// notebooks, which only a key tied to one is offered — are not in "All".
+	const boxes = page.locator(
+		'input[name="scopes"]:not([value="destructive"]):not([value="notebooks:deliver"])'
+	);
 	const count = await boxes.count();
 	expect(count).toBeGreaterThan(1);
 	for (let i = 0; i < count; i++) await expect(boxes.nth(i)).not.toBeChecked();
