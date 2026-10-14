@@ -593,11 +593,8 @@
 		 * press rather than a wait, and `stopMarkSpin` in `afterNavigate`
 		 * carries it round to the next upright however early it is asked —
 		 * which from a standing start is one whole turn.
-		 *
-		 * `-changedRoom`, so the octagon turns the way the rooms are sweeping;
-		 * zero where nothing slid, which spins it the one way it always did.
 		 */
-		if (navigation.to && !navigation.willUnload) startMarkSpin([deskMark, barMark], -changedRoom);
+		if (navigation.to && !navigation.willUnload) startMarkSpin([deskMark, barMark]);
 
 		// Named again rather than left to `slides`: the same test, in the shape
 		// that tells the compiler these three are really here.
@@ -916,7 +913,7 @@
 	 */
 	$effect(() => {
 		if (!busy()) return;
-		startMarkSpin([deskMark, barMark], 0);
+		startMarkSpin([deskMark, barMark]);
 		return () => void stopMarkSpin();
 	});
 

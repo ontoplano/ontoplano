@@ -21,7 +21,7 @@
  * landed. Now the whole motion — wind-up, running, landing — is worked out
  * here as keyframes and handed to the Web Animations API, which plays a
  * `rotate` on the compositor whether or not the page is busy. This file only
- * speaks when something changes: a start, a stop, a new direction, a mark
+ * speaks when something changes: a start, a stop, a mark
  * that hydration put in the old one's place.
  */
 
@@ -96,8 +96,7 @@ export type TurnPoint = { at: number; angle: number };
  */
 export function runningTurn(
 	from: number,
-	elapsed: number,
-	spin: 1 | -1
+	elapsed: number
 ): { windUp: TurnPoint[]; loop: TurnPoint[] } {
 	const windUp: TurnPoint[] = [];
 	const left = SPIN_UP_MS - elapsed;
@@ -105,7 +104,7 @@ export function runningTurn(
 		const steps = Math.max(1, Math.ceil(left / KEYFRAME_MS));
 		for (let i = 0; i <= steps; i += 1) {
 			const at = (left * i) / steps;
-			const angle = from + spin * (runDistance(elapsed + at) - runDistance(elapsed));
+			const angle = from + runDistance(elapsed + at) - runDistance(elapsed);
 			windUp.push({ at, angle });
 		}
 	}
@@ -114,21 +113,21 @@ export function runningTurn(
 		windUp,
 		loop: [
 			{ at: 0, angle: start },
-			{ at: TURN_MS, angle: start + spin * 360 }
+			{ at: TURN_MS, angle: start + 360 }
 		]
 	};
 }
 
 /**
- * Where a stop asked for at `from` comes to rest: the next full turn in the
- * turn's own direction — unless that is too close to slow down into, which
+ * Where a stop asked for at `from` comes to rest: the next full turn —
+ * unless that is too close to slow down into, which
  * would be a halt rather than a landing, and then the one after.
  */
-export function restingPlace(from: number, spin: 1 | -1): number {
-	const next = (spin > 0 ? Math.ceil(from / 360) : Math.floor(from / 360)) * 360;
+export function restingPlace(from: number): number {
+	const next = Math.ceil(from / 360) * 360;
 	// The whole run-down has to fit, or the braking would start mid-way —
 	// a sudden drop in speed where the landing begins.
-	return Math.abs(next - from) < DECEL_DEGREES ? next + spin * 360 : next;
+	return next - from < DECEL_DEGREES ? next + 360 : next;
 }
 
 /**
@@ -140,26 +139,21 @@ export function restingPlace(from: number, spin: 1 | -1): number {
  * which is the jolt a landing is meant to avoid. The last point is `restAt`
  * exactly.
  */
-export function landingTurn(
-	from: number,
-	elapsed: number,
-	spin: 1 | -1,
-	restAt: number
-): TurnPoint[] {
+export function landingTurn(from: number, elapsed: number, restAt: number): TurnPoint[] {
 	const points: TurnPoint[] = [{ at: 0, angle: from }];
 	let angle = from;
 	let t = 0;
 	let sinceKept = 0;
-	while (spin > 0 ? angle < restAt : angle > restAt) {
-		const landing = Math.sqrt(Math.min(1, Math.abs(restAt - angle) / DECEL_DEGREES));
+	while (angle < restAt) {
+		const landing = Math.sqrt(Math.min(1, (restAt - angle) / DECEL_DEGREES));
 		const winding = SLOWEST + (1 - SLOWEST) * wound(elapsed + t);
 		const rate = Math.max(STOP_FLOOR, Math.min(winding, landing));
-		angle += spin * rate * LANDING_STEP_MS * DEGREES_PER_MS;
+		angle += rate * LANDING_STEP_MS * DEGREES_PER_MS;
 		t += LANDING_STEP_MS;
 		sinceKept += LANDING_STEP_MS;
 		if (sinceKept >= KEYFRAME_MS) {
 			sinceKept = 0;
-			points.push({ at: t, angle: spin > 0 ? Math.min(angle, restAt) : Math.max(angle, restAt) });
+			points.push({ at: t, angle: Math.min(angle, restAt) });
 		}
 	}
 	if (points[points.length - 1].angle !== restAt) points.push({ at: t, angle: restAt });
@@ -192,8 +186,6 @@ type Stretch =
 let stretch: Stretch | null = null;
 /** When the turn was set going — the wind-up is counted from here. */
 let startedAt = 0;
-/** Which way it turns: the way the screens are moving, +1 or -1. */
-let spin: 1 | -1 = 1;
 /** What turns: the mark's own octagon, and anything shaped like it behind it. */
 let els: HTMLElement[] = [];
 /** Everything playing, so a change of plan can take it all off at once. */
@@ -204,17 +196,6 @@ let watcher: MutationObserver | null = null;
 let landingTimer: ReturnType<typeof setTimeout> | undefined;
 /** Everybody waiting for the turn to land. See `stopMarkSpin`. */
 let landed: (() => void)[] = [];
-/**
- * A direction whispered by a slide the layout cannot see — a tab's. The
- * layout starts the spin, but a tab change is the room's own movement; the
- * room says which way it went and the next start takes it, once.
- */
-let hint = 0;
-
-export function hintMarkSpin(direction: number): void {
-	hint = direction;
-}
-
 /** The app's own marks carry this, so a turn can find them before anything hydrates. */
 const MARK_SELECTOR = '[data-mark]';
 /**
@@ -335,7 +316,6 @@ function rest(): void {
 	stretch = null;
 	for (const el of els) el.removeAttribute(TURNING_ATTRIBUTE);
 	els = [];
-	hint = 0;
 	// Whoever was waiting for it to come to rest — the chooser leaves when it
 	// has, so that the turn is finished rather than cut off by a navigation.
 	const waiting = landed;
@@ -344,16 +324,14 @@ function rest(): void {
 }
 
 /**
- * The wait is on: turn these, the way the screens are moving.
+ * The wait is on: turn these, clockwise.
  *
- * `direction` is the navigation's own — the octagon turns with the rooms
- * rather than always the one way. Calling again mid-turn or mid-landing keeps
- * the angle and the wind-up, taking the new direction with it.
+ * Always clockwise. It used to turn the way the rooms or the tabs were
+ * sweeping, which made a wheel that ran backwards half the time for a reason
+ * nobody could see. Calling again mid-turn or mid-landing keeps the angle and
+ * the wind-up.
  */
-export function startMarkSpin(
-	marks: (HTMLElement | null | undefined)[],
-	direction: number = 0
-): void {
+export function startMarkSpin(marks: (HTMLElement | null | undefined)[]): void {
 	if (typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches)
 		return;
 	if (typeof Element === 'undefined' || typeof Element.prototype.animate !== 'function') return;
@@ -362,16 +340,9 @@ export function startMarkSpin(
 	for (const el of roots) if (!els.includes(el)) els.push(el);
 	els = els.filter((el) => el.isConnected || roots.includes(el));
 
-	// The rooms' direction wins; a tab's hint speaks when the rooms did not
-	// move; with neither, the turn keeps its old clockwise.
-	const asked = direction || hint || 1;
-	hint = 0;
-	const was = spin;
-	spin = asked < 0 ? -1 : 1;
-
 	const at = now();
-	if (stretch?.kind === 'running' && spin === was) {
-		// Already turning this way: the same motion, put on the marks as they
+	if (stretch?.kind === 'running') {
+		// Already turning: the same motion, put on the marks as they
 		// now are — on one clock, so the ones already turning do not move.
 		playEverywhere();
 		return;
@@ -381,7 +352,7 @@ export function startMarkSpin(
 	if (!stretch) startedAt = at;
 	clearTimeout(landingTimer);
 	landingTimer = undefined;
-	stretch = { kind: 'running', begun: at, ...runningTurn(from, at - startedAt, spin) };
+	stretch = { kind: 'running', begun: at, ...runningTurn(from, at - startedAt) };
 	playEverywhere();
 	watch();
 }
@@ -407,7 +378,7 @@ export function stopMarkSpin(): Promise<void> {
 
 	const at = now();
 	const from = angleAt(at);
-	const points = landingTurn(from, at - startedAt, spin, restingPlace(from, spin));
+	const points = landingTurn(from, at - startedAt, restingPlace(from));
 	stretch = { kind: 'landing', begun: at, points };
 	playEverywhere();
 	/*

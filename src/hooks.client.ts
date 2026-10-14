@@ -205,7 +205,7 @@ const RINGER_ASK_MS = 400;
 	// Every load turns it, not only one the chooser handed over: the layout's
 	// first `afterNavigate` lands it, so even the quickest load goes round once.
 	const marks = [...document.querySelectorAll<HTMLElement>('[data-mark]')];
-	if (marks.length > 0) startMarkSpin(marks, 0);
+	if (marks.length > 0) startMarkSpin(marks);
 }
 
 if (isIsolated()) {

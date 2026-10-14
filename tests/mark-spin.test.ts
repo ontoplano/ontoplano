@@ -58,7 +58,7 @@ describe('a turn nobody has stopped', () => {
 	});
 
 	test('hands the wind-up to the loop without a seam', () => {
-		const { windUp, loop } = runningTurn(40, 200, 1);
+		const { windUp, loop } = runningTurn(40, 200);
 		expect(windUp[0]).toEqual({ at: 0, angle: 40 });
 		expect(loop[0].angle).toBe(windUp[windUp.length - 1].angle);
 		expect(loop[1].angle - loop[0].angle).toBe(360);
@@ -66,37 +66,30 @@ describe('a turn nobody has stopped', () => {
 		expect(fastest(windUp)).toBeLessThanOrEqual(FULL_SPEED + 1e-9);
 	});
 
-	test('turns the other way when the rooms went the other way', () => {
-		const { windUp, loop } = runningTurn(0, 0, -1);
-		expect(windUp[windUp.length - 1].angle).toBeLessThan(0);
-		expect(loop[1].angle).toBeLessThan(loop[0].angle);
-	});
-
 	test('is a plain loop once it is already at full speed', () => {
-		expect(runningTurn(90, SPIN_UP_MS + 5, 1).windUp).toEqual([]);
+		expect(runningTurn(90, SPIN_UP_MS + 5).windUp).toEqual([]);
 	});
 });
 
 describe('a turn that has been asked to stop', () => {
-	test('rests on a whole turn, in the direction it was going', () => {
-		expect(restingPlace(100, 1) % 360).toBe(0);
-		expect(restingPlace(100, 1)).toBeGreaterThan(100);
-		expect(restingPlace(-100, -1)).toBeLessThan(-100);
+	test('rests on a whole turn, further round', () => {
+		expect(restingPlace(100) % 360).toBe(0);
+		expect(restingPlace(100)).toBeGreaterThan(100);
 	});
 
 	test('goes round once more rather than halting a few degrees on', () => {
 		// 350 is ten degrees from upright: too close to slow into.
-		expect(restingPlace(350, 1)).toBe(720);
-		expect(restingPlace(360 - DECEL_DEGREES, 1)).toBe(360);
+		expect(restingPlace(350)).toBe(720);
+		expect(restingPlace(360 - DECEL_DEGREES)).toBe(360);
 	});
 
 	test('goes round once even when it is stopped before it moved', () => {
 		// The navigation that is over before it began.
-		expect(restingPlace(0, 1)).toBe(360);
+		expect(restingPlace(0)).toBe(360);
 	});
 
 	test('lands exactly on its resting place, without a leap to get there', () => {
-		const points = landingTurn(200, 400, 1, 360);
+		const points = landingTurn(200, 400, 360);
 		expect(points[0].angle).toBe(200);
 		expect(points[points.length - 1].angle).toBe(360);
 		for (let i = 1; i < points.length; i += 1)
@@ -105,26 +98,21 @@ describe('a turn that has been asked to stop', () => {
 	});
 
 	test('slows as it arrives rather than stopping at full speed', () => {
-		const points = landingTurn(0, SPIN_UP_MS, 1, 360);
+		const points = landingTurn(0, SPIN_UP_MS, 360);
 		const last = points.slice(-3);
 		expect(fastest(last)).toBeLessThan(FULL_SPEED * 0.75);
 	});
 
 	test('comes to rest from almost nothing, not from half speed', () => {
 		// It used to brake only to half speed and stop dead from there.
-		const points = landingTurn(0, SPIN_UP_MS, 1, 360);
+		const points = landingTurn(0, SPIN_UP_MS, 360);
 		expect(fastest(points.slice(-2))).toBeLessThan(FULL_SPEED * 0.2);
 	});
 
 	test('begins braking at the speed it was going, without a drop', () => {
 		const from = 360 - DECEL_DEGREES;
-		const points = landingTurn(from, SPIN_UP_MS, 1, restingPlace(from, 1));
+		const points = landingTurn(from, SPIN_UP_MS, restingPlace(from));
 		expect(fastest(points.slice(0, 2))).toBeGreaterThan(FULL_SPEED * 0.9);
-	});
-
-	test('lands the other way for a turn going the other way', () => {
-		const points = landingTurn(-50, 300, -1, -360);
-		expect(points[points.length - 1].angle).toBe(-360);
 	});
 });
 
