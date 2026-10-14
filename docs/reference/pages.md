@@ -11,11 +11,11 @@ own write surface, the way the endpoints in [the API](api.md) are the
 write surface for everything else; both end up calling the same
 [services](services.md).
 
-**68 pages, 218 actions.**
+**68 pages, 219 actions.**
 
 | Page                                 | Actions                                                                                                                                                                                                                                                                                                                                                                                              |
 | ------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `/`                                  | `createDiaryEntry`, `saveWins`, `setLayout`, `resetLayout`                                                                                                                                                                                                                                                                                                                                           |
+| `/`                                  | `createDiaryEntry`, `saveWins`, `setLayout`, `setCardOption`, `resetLayout`                                                                                                                                                                                                                                                                                                                          |
 | `/admin`                             | —                                                                                                                                                                                                                                                                                                                                                                                                    |
 | `/admin/[id]`                        | —                                                                                                                                                                                                                                                                                                                                                                                                    |
 | `/assistant`                         | —                                                                                                                                                                                                                                                                                                                                                                                                    |
@@ -97,6 +97,10 @@ How far ahead the planner card looks.
 Today and two more. Three columns is what fits side by side on a phone with
 the block's own name still legible in them, and past the day after tomorrow
 a plan is a guess anyway.
+
+**`setCardOption`**
+
+One of a card's own settings — how it shows what it shows. See `CARD_OPTIONS`.
 
 ### `/admin`
 

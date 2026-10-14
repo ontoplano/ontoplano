@@ -2,7 +2,16 @@
 	import { page } from '$app/state';
 	import Written from '$lib/components/Written.svelte';
 	import TagInput from '$lib/components/TagInput.svelte';
-	import { civilOf, dayOf, momentOf, today, wantsTwelveHour, weekdayOf } from '$lib/when';
+	import {
+		civilOf,
+		dayOf,
+		dayStamp,
+		minutesIntoDay,
+		momentOf,
+		today,
+		wantsTwelveHour,
+		weekdayOf
+	} from '$lib/when';
 	import { sliding } from '$lib/actions/sliding';
 	import { tick, untrack } from 'svelte';
 	import { ordinal } from '$lib/ordinal';
@@ -56,6 +65,8 @@
 	/** The week's ring, in pixels — and the room its empty state keeps for it. */
 	const PIE_SIZE = 116;
 	const MINUTES_IN_HOUR = 60;
+	/** How often the next days look at the clock again, to move "now" and grey what it passed. */
+	const CLOCK_TICK_MS = 30_000;
 
 	let { data, form }: { data: PageServerData; form: ActionData } = $props();
 
@@ -95,6 +106,25 @@
 
 	/** Faint rules across a timeline, at its quarters, so a time can be read off it. */
 	const TIMELINE_MARKS = [0.25, 0.5, 0.75];
+
+	/**
+	 * The clock the next days are read against, moved on while the page is
+	 * open: what has gone by today is greyed, and the timeline draws a line
+	 * where the day is now.
+	 */
+	let clock = $state(Date.now());
+	$effect(() => {
+		const timer = setInterval(() => (clock = Date.now()), CLOCK_TICK_MS);
+		return () => clearInterval(timer);
+	});
+	const todayStamp = $derived(dayStamp(clock, now()));
+	const minutesNow = $derived(minutesIntoDay(clock, now()));
+
+	/** A block that has already ended: today's, finished before now. */
+	function hasPassed(date: string, block: { startTime: string; durationMinutes: number }) {
+		if (date < todayStamp) return true;
+		return date === todayStamp && minutesOf(block.startTime) + block.durationMinutes <= minutesNow;
+	}
 
 	/** "07:30" as minutes into the day. */
 	function minutesOf(time: string): number {
@@ -934,7 +964,9 @@
 									<ul class="mt-2 flex flex-col gap-1">
 										{#each shown as block (block.id)}
 											<li
-												class="day-block pill-soft {block.status === 'done' ? 'is-done' : ''}"
+												class="day-block pill-soft {block.status === 'done'
+													? 'is-done'
+													: ''} {hasPassed(day.date, block) ? 'is-past' : ''}"
 												style="--pill: {block.categoryColor || CATEGORY_FALLBACK_COLOR}"
 												title={block.categoryName
 													? `${block.name} · ${block.categoryName}`
@@ -987,7 +1019,9 @@
 								{@const bottom = Math.min(span, from + block.durationMinutes)}
 								{#if bottom > top}
 									<div
-										class="day-timeline-block pill-soft {block.status === 'done' ? 'is-done' : ''}"
+										class="day-timeline-block pill-soft {block.status === 'done'
+											? 'is-done'
+											: ''} {hasPassed(day.date, block) ? 'is-past' : ''}"
 										style:top="{(top / span) * 100}%"
 										style:height="{((bottom - top) / span) * 100}%"
 										style="--pill: {block.categoryColor || CATEGORY_FALLBACK_COLOR}"
@@ -997,6 +1031,17 @@
 									</div>
 								{/if}
 							{/each}
+							{#if day.date === todayStamp}
+								{@const into = minutesNow - data.gridHours.start * 60}
+								{#if into >= 0 && into <= span}
+									<span
+										class="day-timeline-now"
+										style:top="{(into / span) * 100}%"
+										data-now
+										aria-hidden="true"
+									></span>
+								{/if}
+							{/if}
 						</div>
 						<div class="tabular mt-1 flex justify-between text-[0.625rem] text-gray-500">
 							<span>{hourLabel(data.gridHours.start)}</span>
@@ -1817,5 +1862,36 @@
 	.day-timeline-block.is-done {
 		text-decoration: line-through;
 		opacity: 0.7;
+	}
+
+	/*
+	 * What today has already gone past, greyed rather than hidden: still
+	 * readable as what the day held, no longer competing with what is left.
+	 */
+	.day-block.is-past,
+	.day-timeline-block.is-past {
+		filter: grayscale(1);
+		opacity: 0.45;
+	}
+
+	/* Where today is now: a rule across the column, with a dot at its start. */
+	.day-timeline-now {
+		position: absolute;
+		left: -0.25rem;
+		right: 0;
+		z-index: 1;
+		border-top: 2px solid var(--color-gray-900);
+		pointer-events: none;
+	}
+
+	.day-timeline-now::before {
+		content: '';
+		position: absolute;
+		left: 0;
+		top: -0.3125rem;
+		width: 0.5rem;
+		height: 0.5rem;
+		border-radius: 9999px;
+		background: var(--color-gray-900);
 	}
 </style>

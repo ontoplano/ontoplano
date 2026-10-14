@@ -49,3 +49,21 @@ for (const [width, height] of [
 		await expect(timelines).toHaveCount(0);
 	});
 }
+
+/*
+ * Today's timeline draws where the day is now, and only today's does. The
+ * browser's clock is pinned to noon of the server's own day (UTC, see
+ * playwright.config.ts), which every planner's default hours contain.
+ */
+test('today’s timeline marks now', async ({ page }) => {
+	const noon = new Date(`${new Date().toISOString().slice(0, 10)}T12:00:00Z`);
+	await page.clock.setFixedTime(noon);
+	await register(page, testEmail('next-days-now'));
+	await visit(page, '/');
+	await page.getByRole('button', { name: /As timelines/ }).click();
+
+	const timelines = page.locator('[data-timeline]');
+	await expect(timelines).toHaveCount(3);
+	await expect(page.locator('[data-now]')).toHaveCount(1);
+	await expect(timelines.first().locator('[data-now]')).toHaveCount(1);
+});
