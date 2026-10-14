@@ -20,6 +20,7 @@ releases mattered.
 
 ## 0.186.5 — 2026-10-14
 
+- The calendar opens on the week on a phone too, as it does on a computer; a block's name in a narrow column is clipped rather than broken mid-word.
 - On a laptop-width screen, Inventory's filters stay on one line: the how-many boxes are narrower and their word is left to the boxes' own “min” and “max” until there is room for it.
 - Choosing a colour for an inventory category or attribute no longer shows black once it saves: the swatch keeps the colour you picked.
 - Inventory's button for its categories and attributes is called Settings and wears a gear, rather than “Categories” with the icon filters use; its tooltip names both halves.

@@ -203,18 +203,6 @@
 	/** What the screen shows: the view asked for, whatever the width. */
 	const effectiveView = $derived<PlanView>(viewMode);
 
-	/*
-	 * A phone opens on the day, unless the address asked for something else.
-	 *
-	 * The server answers from a cookie the page writes, so this only acts on the
-	 * first visit from a screen it has not seen yet — which it answers with the
-	 * week, and which is corrected here to the day in place.
-	 */
-	$effect(() => {
-		if (widthChecked && narrowScreen && !data.viewExplicit && data.view === 'week')
-			untrack(() => setView('day'));
-	});
-
 	/**
 	 * Any view read as a list of its days rather than as the calendar.
 	 *

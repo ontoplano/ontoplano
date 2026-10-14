@@ -215,25 +215,19 @@ export const load = async ({ locals, url, cookies }: IsolatedEvent) => {
 	const ctx = buildCtx(locals.user!.id);
 
 	/*
-	 * Whether the URL named a view matters: without one the client shows a day on
-	 * a phone, where a week of columns is seven strips of truncated text.
+	 * The week, at every width, unless the URL names another view.
 	 *
-	 * And the server has to know which it will be, or the phone is served a week,
-	 * paints it, and swaps to a day the moment the script runs — the Week button
-	 * lighting up and going out again on every visit. The browser writes what it
-	 * is on first sight; from then on the first paint is already right. A cookie
-	 * because it has to arrive with the request, and nothing else does.
+	 * A phone used to open on a day — a week of columns is narrow there — and
+	 * that made the phone a different calendar from the desktop one: the same
+	 * person opening the same page saw two different things. Day is one press
+	 * away on both. The browser still says on first sight whether it is narrow
+	 * (a cookie, because it has to arrive with the request), for the layout
+	 * choices that do depend on the width.
 	 */
 	const narrow = cookies.get(NARROW_COOKIE) === '1';
 	const requestedView = url.searchParams.get('view');
 	const view: PlanView =
-		requestedView === 'day' || requestedView === 'month'
-			? requestedView
-			: requestedView === 'week'
-				? 'week'
-				: narrow
-					? 'day'
-					: 'week';
+		requestedView === 'day' || requestedView === 'month' ? requestedView : 'week';
 	const viewExplicit =
 		requestedView === 'day' || requestedView === 'week' || requestedView === 'month';
 	const span = SPAN_DAYS[view];

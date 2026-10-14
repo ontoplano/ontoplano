@@ -5884,6 +5884,19 @@ html .ec .ec-event.og-event .ec-event-title {
 	font-weight: 600;
 }
 
+/*
+ * A block's words break between words, never inside one.
+ *
+ * The app lets any span break anywhere so a long name cannot push a phone's
+ * row off the screen — right for a row, wrong for a block a seventh of a phone
+ * wide, where "deep work" came out as "dee / p / wor / k". The block clips
+ * instead: the start of a word reads, a fragment of it does not.
+ */
+html .ec .ec-event.og-event :is(.ec-event-title, .ec-event-time) {
+	overflow-wrap: normal;
+	overflow: hidden;
+}
+
 html .ec .ec-event.og-event .ec-event-time {
 	display: block;
 	font-size: 0.6875rem;
