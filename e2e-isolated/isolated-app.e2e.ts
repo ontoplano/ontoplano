@@ -392,7 +392,10 @@ test('settings offers nothing that needs somebody else to connect', async ({ pag
 	const tabs = await page.locator('nav[aria-label="Settings sections"] a').allInnerTexts();
 	expect(tabs).toContain('Account');
 	expect(tabs).toContain('Preferences');
-	expect(tabs.join(' ')).not.toMatch(/Integrations|Billing|Family|Administration/);
+	// AI & Integrations is there on purpose since 11 Oct 2026: it says why nothing
+	// in it applies to a device, rather than leaving somebody to wonder where
+	// it went. What a device must not offer is the rest.
+	expect(tabs.join(' ')).not.toMatch(/Billing|Family|Administration/);
 });
 
 /**

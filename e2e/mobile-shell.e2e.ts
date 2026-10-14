@@ -77,7 +77,7 @@ test('the phone bar carries home and the raised pie; nothing pulls to refresh', 
 			((await page.locator('[data-pie="rooms"] .pie-hud-name').textContent()) ?? '').trim()
 		);
 	}
-	expect(named).toContain('Tasks');
+	expect(named).toContain('Calendar');
 	expect(named, 'Home is a button in the bar, not a wedge').not.toContain('Home');
 
 	// The glyph, the name and the plate's edge are one colour, not three shades of it.
@@ -195,7 +195,7 @@ test('the phone carries the room at the top and the app at the bottom', async ({
 	// what makes this feel like an app rather than a page.
 	const bar = page.locator('.room-bar');
 	await expect(bar).toBeVisible();
-	await expect(bar.getByRole('heading', { name: 'Tasks' })).toBeVisible();
+	await expect(bar.getByRole('heading', { name: 'Calendar' })).toBeVisible();
 
 	/*
 	 * The page has to actually move for "the bar did not" to mean anything —
