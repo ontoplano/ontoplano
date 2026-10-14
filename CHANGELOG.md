@@ -20,6 +20,7 @@ releases mattered.
 
 ## 0.186.5 — 2026-10-14
 
+- On a phone, the bottom bar is a floating pill of dark glass, clear of the screen's edges, with the puffin inside it rather than rising out of it.
 - Closing quick capture with something written in it keeps it as a draft and says “Saved as draft”: opening the same kind again brings it back. Cancel still throws it away.
 - Clicking a notebook's picture on its own page opens the notebook to edit, as it does in the list, instead of the file chooser; the picture is changed from there, or by dropping one on it.
 - A notebook's tabs open in a new browser tab with a middle click or a ctrl-click, landing on that tab; a plain click still switches in place.

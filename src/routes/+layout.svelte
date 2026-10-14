@@ -33,8 +33,7 @@
 		slidesHere,
 		stopHiding
 	} from '$lib/slide';
-	import { MARK_CLIP_PATH, MARK_FIELD } from '$lib/logo/mark-shape';
-	import { MARK_FIELD_ISOLATED } from '$lib/logo/brand';
+	import { MARK_CLIP_PATH } from '$lib/logo/mark-shape';
 	import { CHOOSE_PATH, inPhoneApp, storedChoice } from '$lib/instance-choice';
 	import { handOverRingerKey } from '$lib/ringer-handshake';
 	import { THEMES, THEME_LABELS } from '$lib/theme.js';
@@ -179,14 +178,6 @@
 
 	/** This app is its own instance: no account, and leaving means choosing another. */
 	const onDevice = $derived(isIsolatedBuild());
-	/**
-	 * The bar's own colour: the field the mark in the middle of it is drawn on.
-	 *
-	 * The mark's dark behind a server, and the device's blue on the device —
-	 * so the bar and the mark it carries are one surface on both, and the copy
-	 * that lives on the phone says so from the bar as well as from the icon.
-	 */
-	const barField = $derived(onDevice ? MARK_FIELD_ISOLATED : MARK_FIELD);
 	let menuOpen = $state(false);
 	let pie = $state<CapturePie | undefined>();
 	let rooms = $state<NavPie | undefined>();
@@ -1650,23 +1641,17 @@
 			be pushed by any of that; the main area pads its bottom to match.
 		-->
 		<!--
-			The bar wears the mark's own field — the dark ground between the
-			medallion and the ring, measured off the artwork — so the mark's
-			inside flows into the bar instead of ending at an edge. No hairline
-			on top: the edge IS the change of colour.
-
-			On the device it wears the device's blue, because that is the field
-			the mark above it is drawn on there: the two are a single surface, and
-			one of them changing colour without the other would draw exactly the
-			disc the flowing-in is there to avoid.
+			A pill of black glass floating over the page, clear of every edge,
+			with everything in it — the mark too, sized to the pill rather than
+			rising out of it. Its look is `.mobile-nav` in `layout.css` and its
+			numbers are the `--bar-*` properties there.
 		-->
 		<nav
-			class="mobile-nav fixed inset-x-0 bottom-0 z-40 lg:hidden"
-			style="padding-bottom: var(--safe-bottom); background: {barField}"
+			class="mobile-nav fixed z-40 lg:hidden"
 			aria-label={t('home.primary')}
 			data-tour="mobile-bar"
 		>
-			<div class="flex" style="height: var(--mobile-nav-height)">
+			<div class="flex h-full">
 				<!--
 					The account, so it wears a person. It used to wear the settings
 					glyph, which was a sun with rays: on a phone bar, next to search
@@ -1731,8 +1716,8 @@
 						bind:this={barMark}
 						data-mark
 						onpointerdown={(e) => rooms?.summon(e)}
-						style="clip-path: {MARK_CLIP_PATH}; top: calc(-1 * var(--bar-mark-rise)); height: var(--bar-mark); width: var(--bar-mark)"
-						class="tap tap-shape pie-handle absolute left-1/2 flex -translate-x-1/2 items-center justify-center {roomsOpen
+						style="clip-path: {MARK_CLIP_PATH}; height: var(--bar-mark); width: var(--bar-mark)"
+						class="tap tap-shape pie-handle absolute top-1/2 left-1/2 flex -translate-1/2 items-center justify-center {roomsOpen
 							? 'pie-handle-held text-chrome-ink'
 							: 'text-chrome-muted'}"
 						aria-label={t('home.goToASection')}

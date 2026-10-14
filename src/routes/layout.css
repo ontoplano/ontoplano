@@ -4201,18 +4201,28 @@ option {
 	--gauge-ground: var(--color-gray-200);
 
 	/*
-	 * The mark on the phone's bottom bar, and everything that follows from it.
+	 * The phone's bar: a pill floating over the page, and everything that
+	 * follows from it. **Tweak it here** — every other number about the bar is
+	 * derived from these.
 	 *
-	 * One number. The button is clipped to the mark's outline and lifted so the
-	 * mark rises out of the bar, which stays a plain straight edge — no ground
-	 * shaped like the mark behind it. The measurements have to agree, and did
-	 * not once: they were four
-	 * literals in the markup and the mark quietly lost a quarter of its size
-	 * when the button stopped being a circle.
+	 * It used to be a full-width strip with the mark rising out of its middle;
+	 * now it stands clear of every edge, everything inside it, the mark too,
+	 * sized to the pill rather than proud of it. Black glass, the menu's own
+	 * material: see `.mobile-nav` below.
 	 */
-	--bar-mark: 4.5rem;
-	/* How far it stands proud of the bar. */
-	--bar-mark-rise: calc(var(--bar-mark) * 0.27);
+	/* The pill's own height. */
+	--bar-pill-height: 3.75rem;
+	/* The margin round it: from the sides and from the bottom (above the safe area). */
+	--bar-inset: 0.75rem;
+	/* Its glass: how dark, and how much of what is behind it is blurred. */
+	--bar-glass: rgb(0 0 0 / 0.62);
+	--bar-blur: 14px;
+	/* The faint rim that keeps the glass an object on a dark page. */
+	--bar-rim: rgb(255 255 255 / 0.1);
+	/* The mark, inside the pill and as tall as it with a little air. */
+	--bar-mark: calc(var(--bar-pill-height) - 0.5rem);
+	/* How far it stands proud of the pill: not at all, it is inside. */
+	--bar-mark-rise: 0rem;
 	/*
 	 * Where that mark's own box sits, measured from the bottom of the screen.
 	 *
@@ -4220,11 +4230,11 @@ option {
 	 * instance chooser draws the mark too, and choosing an instance should put
 	 * the app's bar mark in the place the chooser's already was — one object
 	 * that stays put while everything around it changes, rather than two that
-	 * happen to look alike. Derived from the four numbers above, so moving the
-	 * bar moves both.
+	 * happen to look alike. Derived from the numbers above, so moving the bar
+	 * moves both.
 	 */
 	--bar-mark-bottom: calc(
-		var(--safe-bottom) + var(--mobile-nav-height) + var(--bar-mark-rise) - var(--bar-mark)
+		var(--safe-bottom) + var(--bar-inset) + (var(--bar-pill-height) - var(--bar-mark)) / 2
 	);
 }
 
@@ -4375,6 +4385,28 @@ html .ec {
  *
  * `$lib/keyboard-inset` sets the attribute and the measurement.
  */
+/*
+ * The pill itself. Its numbers are the `--bar-*` ones further up.
+ *
+ * Fixed, clear of the edges by `--bar-inset`, rounded fully, and glass: the
+ * page shows through it dark and blurred, as it does through the wheel's
+ * plate. The ink on it is the chrome's light ink whatever the theme, since
+ * the glass is dark in both.
+ */
+.mobile-nav {
+	left: var(--bar-inset);
+	right: var(--bar-inset);
+	bottom: calc(var(--safe-bottom) + var(--bar-inset));
+	height: var(--bar-pill-height);
+	border-radius: 999px;
+	border: 1px solid var(--bar-rim);
+	background: var(--bar-glass);
+	-webkit-backdrop-filter: blur(var(--bar-blur)) saturate(1.4);
+	backdrop-filter: blur(var(--bar-blur)) saturate(1.4);
+	box-shadow: 0 8px 24px rgb(0 0 0 / 0.28);
+	overflow: hidden;
+}
+
 html[data-keyboard='open'] :is(nav.mobile-nav, .notice-band) {
 	transform: translateY(150%);
 	pointer-events: none;
@@ -4386,7 +4418,11 @@ html[data-keyboard='open'] {
 }
 
 :root {
-	--mobile-nav-height: 3.5rem;
+	/*
+	 * The room the bar takes from the bottom of the screen: the pill and the
+	 * margin under it. What everything that keeps clear of the bar reserves.
+	 */
+	--mobile-nav-height: calc(var(--bar-pill-height) + var(--bar-inset));
 	--safe-bottom: env(safe-area-inset-bottom, 0px);
 	--safe-top: env(safe-area-inset-top, 0px);
 	/*
