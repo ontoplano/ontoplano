@@ -128,10 +128,14 @@ for (const width of [1440, 390]) {
 		await expect(shelf).toHaveAttribute('data-note-view', 'grid');
 		await expect(asCards).toHaveAttribute('aria-pressed', 'true');
 
-		// One column on a phone; side by side where there is room.
-		const left = async (title: string) => (await note(page, title).boundingBox())!.x;
-		if (width < 640) expect(await left('The tram')).toBe(await left('The flat'));
-		else expect(await left('The tram')).toBeGreaterThan(await left('The flat'));
+		// Side by side at every width: one card per row on a phone was the
+		// list again with borders round it. And still inside the shelf.
+		const cards = await shelf
+			.locator('article')
+			.evaluateAll((all) => all.map((one) => one.getBoundingClientRect().toJSON()));
+		expect(new Set(cards.map((card) => Math.round(card.x))).size).toBeGreaterThan(1);
+		const edge = (await shelf.boundingBox())!;
+		for (const card of cards) expect(card.right).toBeLessThanOrEqual(edge.x + edge.width + 1);
 
 		// The keys walk the cards as they walked the rows.
 		await page.locator('body').click({ position: { x: 2, y: 2 } });
