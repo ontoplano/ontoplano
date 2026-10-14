@@ -344,6 +344,7 @@
 	"goals.reopened": "Reabierta",
 	"goals.youDidIt": "¡Lo lograste!",
 	"goals.youDidItBody": "{title}, hecho. Cuenta cómo fue mientras está fresco: queda guardado con la meta.",
+	"inventory.setUp": "Ajustes",
 	"notebookDetail.dragATabHereToOpenItBeside": "Arrastra una pestaña aquí para abrirla al lado",
 	"out.couldNotOpen": "El navegador no se abrió. Volviendo…",
 	"out.opening": "Abriendo el navegador…",

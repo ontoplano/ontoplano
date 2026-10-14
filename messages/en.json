@@ -344,6 +344,7 @@
 	"goals.reopened": "Reopened",
 	"goals.youDidIt": "You did it!",
 	"goals.youDidItBody": "{title}, done. Say how it went while it is fresh — it stays with the goal.",
+	"inventory.setUp": "Settings",
 	"notebookDetail.dragATabHereToOpenItBeside": "Drag a tab here to open it beside",
 	"out.couldNotOpen": "The browser did not open. Going back…",
 	"out.opening": "Opening the browser…",

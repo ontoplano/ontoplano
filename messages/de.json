@@ -344,6 +344,7 @@
 	"goals.reopened": "Wieder geöffnet",
 	"goals.youDidIt": "Geschafft!",
 	"goals.youDidItBody": "{title}, erledigt. Schreib auf, wie es lief, solange es frisch ist — es bleibt beim Ziel.",
+	"inventory.setUp": "Einstellungen",
 	"notebookDetail.dragATabHereToOpenItBeside": "Zieh einen Tab hierher, um ihn daneben zu öffnen",
 	"out.couldNotOpen": "Der Browser hat sich nicht geöffnet. Zurück…",
 	"out.opening": "Browser wird geöffnet…",
