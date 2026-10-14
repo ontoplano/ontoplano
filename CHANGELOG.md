@@ -20,6 +20,7 @@ releases mattered.
 
 ## 0.186.5 — 2026-10-14
 
+- Closing quick capture with something written in it keeps it as a draft and says “Saved as draft”: opening the same kind again brings it back. Cancel still throws it away.
 - Clicking a notebook's picture on its own page opens the notebook to edit, as it does in the list, instead of the file chooser; the picture is changed from there, or by dropping one on it.
 - A notebook's tabs open in a new browser tab with a middle click or a ctrl-click, landing on that tab; a plain click still switches in place.
 - The puffin's octagon always turns clockwise while a page loads; it no longer runs backwards when you move to a room or a tab on the left.

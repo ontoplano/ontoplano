@@ -395,6 +395,7 @@ export const messages: Catalogue = {
 	'capture.newThing': 'Новое: {thing}',
 	'capture.planDestination': 'ваш календарь',
 	'captureDialog.notWrittenDown': 'Это не было записано.',
+	'captureDialog.savedAsDraft': 'Сохранено как черновик',
 	'captureSettings.atLeastOne': 'хотя бы один',
 	'captureSettings.everyWedge': 'Все секторы',
 	'captureSettings.filedNowhere': 'Не кладётся в блокнот',

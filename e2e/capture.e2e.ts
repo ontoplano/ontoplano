@@ -440,3 +440,36 @@ test('the pie says it too, from a page that is not the dashboard', async ({ page
 		timeout: 15_000
 	});
 });
+
+/*
+ * Closing it to look at something is not throwing it away.
+ *
+ * Closing it keeps what was typed and says so; the same kind opened again has it
+ * back. Cancel is saying it is finished with, and lets it go.
+ */
+test('a half-written capture closed is kept as a draft, and Cancel lets it go', async ({
+	page
+}) => {
+	await register(page, testEmail('capture-draft'));
+	await visit(page, '/calendar/calendar');
+
+	const openTask = async () => {
+		await (await trigger(page)).click();
+		expect(await pickWedge(page, 'Task'), 'no wedge announced itself as Task').toBe(true);
+		await expect(page.getByRole('heading', { name: /new task/i })).toBeVisible({
+			timeout: 30_000
+		});
+	};
+
+	await openTask();
+	await page.locator('[name=heading]').fill('call the plumber about');
+	await page.getByRole('dialog').getByRole('button', { name: 'Close' }).click();
+	await expect(page.getByText('Saved as draft')).toBeVisible();
+
+	await openTask();
+	await expect(page.locator('[name=heading]')).toHaveValue('call the plumber about');
+
+	await page.getByRole('button', { name: 'Cancel' }).click();
+	await openTask();
+	await expect(page.locator('[name=heading]')).toHaveValue('');
+});

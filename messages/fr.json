@@ -361,6 +361,7 @@
 	"capture.newThing": "Nouveau {thing}",
 	"capture.planDestination": "votre calendrier",
 	"captureDialog.notWrittenDown": "Ça n'a pas été noté.",
+	"captureDialog.savedAsDraft": "Gardé en brouillon",
 	"captureSettings.atLeastOne": "au moins un",
 	"captureSettings.intro": "Ce que la roue + contient, et où va ce que vous écrivez depuis elle.",
 	"captureSettings.noNotebooksYet": "Aucun carnet pour l'instant.",

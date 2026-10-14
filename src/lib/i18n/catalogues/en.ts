@@ -374,6 +374,7 @@ export const messages: Catalogue = {
 	'capture.newThing': 'New {thing}',
 	'capture.planDestination': 'your calendar',
 	'captureDialog.notWrittenDown': 'That was not written down.',
+	'captureDialog.savedAsDraft': 'Saved as draft',
 	'captureSettings.atLeastOne': 'at least one',
 	'captureSettings.everyWedge': 'Every wedge',
 	'captureSettings.filedNowhere': 'Not filed in a notebook',
