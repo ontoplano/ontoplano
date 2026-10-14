@@ -642,3 +642,33 @@ test("a thing's notes are markdown, folded to their first line", async ({ page }
 	await expect(fold).toHaveAttribute('aria-expanded', 'true');
 	await expect.poll(async () => (await notes.boundingBox())!.height).toBeGreaterThan(folded * 2);
 });
+
+/*
+ * A colour picked stays picked.
+ *
+ * The form saves as the colour is let go of and then resets itself, and a
+ * colour input had no default of its own — so the well went black over the
+ * blue that had just been saved, though the blue was what was stored.
+ */
+test('a category colour shows what was chosen after it saves', async ({ page }) => {
+	await register(page, testEmail('inv-colour-stays'));
+	await visit(page, '/inventory');
+	await foodCategory(page);
+	await visit(page, '/inventory');
+
+	await page
+		.getByRole('button', { name: /Categories & attributes/ })
+		.first()
+		.click();
+	const dialog = page.getByRole('dialog');
+	await dialog
+		.getByRole('button', { name: /Rename|Edit/ })
+		.first()
+		.click();
+	const well = dialog.getByLabel('A colour for this category');
+	const saved = page.waitForResponse((r) => r.url().includes('setCategoryColor'));
+	await well.fill('#1d4ed8');
+	await saved;
+	await page.waitForTimeout(500);
+	await expect(well).toHaveValue('#1d4ed8');
+});

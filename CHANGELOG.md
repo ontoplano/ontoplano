@@ -20,6 +20,7 @@ releases mattered.
 
 ## 0.186.5 — 2026-10-14
 
+- Choosing a colour for an inventory category or attribute no longer shows black once it saves: the swatch keeps the colour you picked.
 - Inventory's button for its categories and attributes is called Settings and wears a gear, rather than “Categories” with the icon filters use; its tooltip names both halves.
 - On a phone, an open notebook takes the top bar: its picture and name where “Notebooks” was, and its buttons — all notebooks, link, tags, favourite, rename, close — behind ⋮ with their names. Only its description is left above the tabs. Going to the Diary or any other shelf gives the bar back.
 - On a phone, controls take the line they stand on: the calendar's Day / Week / Month switch fills the row beside two square buttons, the view switch under a list's search does the same, and a room's toolbar spends less of the screen on padding. The calendar's More button is a chevron that turns as its controls open and fold.
