@@ -6671,6 +6671,14 @@ For **wall-clock** values only — `task_records.scheduled_at` and the day
 bounds compared against it. Instants are UTC and come from `stamp()`;
 writing one of those with this is finding S7 all over again.
 
+#### `startOfToday(ctx)`
+
+The start of today where the person is, as a `Date` the civil-day helpers
+here read by its local parts.
+
+`startOfDay(ctx.now)` is the server's today, and the server is UTC: for an
+account three hours west, tomorrow began at nine in the evening.
+
 #### `startOfDay(d)`
 
 Local midnight of the day the instant falls on.
