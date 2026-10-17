@@ -1,0 +1,9 @@
+• Notas podem ter cor, legível em qualquer tema
+• Notas de um caderno podem virar cartões
+• Fechar a captura rápida guarda um rascunho
+• Um assistente restrito a um caderno pode arquivar nos outros, vendo só os nomes
+• O inventário de um caderno agrupa as coisas por lugar
+• Arquive itens da lista de compras na própria lista
+• No Android 15+, a folha de bloco novo fica acima do teclado
+
+Me conte o que quebrar: github.com/ontoplano/ontoplano/issues

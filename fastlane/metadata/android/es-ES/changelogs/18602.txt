@@ -1,0 +1,9 @@
+• Tareas ahora se llama Calendario
+• Los recordatorios aparecen en el calendario a la hora en que suenan
+• Los ajustes de captura rápida son una sola lista, con un cuaderno por sector
+• En el móvil, tocar un campo de hora o fecha abre su selector
+• Un bloque nuevo empieza en la hora en punto que tocaste
+• En Android 15+, los formularios se desplazan sobre el teclado
+• Búsqueda y filtros más limpios sobre las listas
+
+Cuéntame qué se rompe: github.com/ontoplano/ontoplano/issues

@@ -1,0 +1,9 @@
+• Tâches s'appelle désormais Calendrier
+• Les rappels apparaissent dans le calendrier, à l'heure où ils sonnent
+• Les réglages de la saisie rapide tiennent en une liste, avec un carnet par secteur
+• Sur téléphone, toucher une heure ou une date ouvre son sélecteur
+• Un nouveau bloc commence à l'heure pile touchée
+• Sous Android 15+, les formulaires défilent au-dessus du clavier
+• Recherche et filtres épurés au-dessus des listes
+
+Dites-moi ce qui casse : github.com/ontoplano/ontoplano/issues
