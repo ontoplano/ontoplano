@@ -70,7 +70,6 @@ To understand the values guiding it, read [the ethos](https://docs.ontoplano.com
 
 </div>
 
-
 ## Running it
 
 A local instance keeps its settings in
