@@ -34,9 +34,6 @@ scope all your tasks, recipes, inventory, notes, bills etc. in specific notebook
 
 </div>
 
-I am creating [tutorials for Ontoplano in YouTube](https://www.youtube.com/@eChedieck). Check them out or request one in the comments.
-
----
 
 ## Running it
 
