@@ -40,7 +40,7 @@ import { getCurrency } from '$lib/services/settings';
 import { listTodos } from '$lib/services/todos';
 import { listWins, saveWins } from '$lib/services/wins';
 import { addDays, getMonday } from '$lib/services/week-generator';
-import { localDay, minutesOfDay } from '$lib/services/time';
+import { localDay, minutesOfDay, startOfToday } from '$lib/services/time';
 import { formAction } from '$lib/services/scoped-actions';
 
 /**
@@ -91,12 +91,13 @@ export const load = async ({ locals }: IsolatedEvent) => {
 	 * The week was generated, then today again, then each of the next days in
 	 * turn — six passes of the generator over overlapping days, every load.
 	 */
-	const startOfToday = new Date(ctx.now.getFullYear(), ctx.now.getMonth(), ctx.now.getDate());
-	const horizon = addDays(startOfToday, NEXT_DAYS);
-	const weekEnd = addDays(getMonday(ctx.now), 7);
-	generateInstances(ctx, getMonday(ctx.now), horizon > weekEnd ? horizon : weekEnd);
+	const dayStart = startOfToday(ctx);
+	const horizon = addDays(dayStart, NEXT_DAYS);
+	const monday = getMonday(dayStart);
+	const weekEnd = addDays(monday, 7);
+	generateInstances(ctx, monday, horizon > weekEnd ? horizon : weekEnd);
 	const blocksByDay = new Map<string, Occurrence[]>();
-	for (const one of listInstances(ctx, startOfToday, horizon)) {
+	for (const one of listInstances(ctx, dayStart, horizon)) {
 		const held = blocksByDay.get(one.date);
 		if (held) held.push(one);
 		else blocksByDay.set(one.date, [one]);
@@ -105,7 +106,7 @@ export const load = async ({ locals }: IsolatedEvent) => {
 
 	// One call, both kinds of block. The union that used to live here is why
 	// one-offs were missing from this card in the first place.
-	const todayTasks = blocksOn(ctx.now).map((o) => ({
+	const todayTasks = blocksOn(dayStart).map((o) => ({
 		id: o.id,
 		kind: o.kind,
 		startTime: o.startTime,
@@ -175,7 +176,7 @@ export const load = async ({ locals }: IsolatedEvent) => {
 	 * the days already looked at shows tomorrow as empty.
 	 */
 	const nextDays = Array.from({ length: NEXT_DAYS }, (_, ahead) => {
-		const day = addDays(ctx.now, ahead);
+		const day = addDays(dayStart, ahead);
 		return {
 			date: localDay(day),
 			blocks: blocksOn(day).map((o) => ({

@@ -106,6 +106,40 @@
 
 	/** Faint rules across a timeline, at its quarters, so a time can be read off it. */
 	const TIMELINE_MARKS = [0.25, 0.5, 0.75];
+	/** How tall an hour of the timeline is, and the bounds on the whole of it, in rem. */
+	const TIMELINE_REM_PER_HOUR = 1.5;
+	const TIMELINE_MIN_REM = 6;
+	const TIMELINE_MAX_REM = 18;
+	const HOURS_IN_DAY = 24;
+
+	/**
+	 * The hours the timelines cover: from the first block of the three days to
+	 * the end of the last, in whole hours, the same for all three, and wide
+	 * enough to hold now so today's line is never off the end.
+	 *
+	 * The planner's whole day drawn at a fixed height was a column of nothing
+	 * with two blocks in it. With nothing planned, the planner's own hours.
+	 */
+	const timelineHours = $derived.by(() => {
+		// Both are absent only on the signed-out door, which draws no timeline.
+		const whole = data.gridHours ?? { start: 0, end: HOURS_IN_DAY };
+		const blocks = (data.nextDays ?? []).flatMap((day) => day.blocks);
+		if (blocks.length === 0) return whole;
+		const from = Math.min(minutesNow, ...blocks.map((b) => minutesOf(b.startTime)));
+		const to = Math.max(
+			minutesNow,
+			...blocks.map((b) => minutesOf(b.startTime) + b.durationMinutes)
+		);
+		const start = Math.floor(from / MINUTES_IN_HOUR);
+		const end = Math.min(HOURS_IN_DAY, Math.max(start + 1, Math.ceil(to / MINUTES_IN_HOUR)));
+		return { start, end };
+	});
+	const timelineHeight = $derived(
+		Math.min(
+			TIMELINE_MAX_REM,
+			Math.max(TIMELINE_MIN_REM, (timelineHours.end - timelineHours.start) * TIMELINE_REM_PER_HOUR)
+		)
+	);
 
 	/**
 	 * The clock the next days are read against, moved on while the page is
@@ -999,7 +1033,7 @@
 			an empty stretch beside a full one rather than a shorter list.
 		-->
 		{#snippet nextDaysTimeline()}
-			{@const span = (data.gridHours.end - data.gridHours.start) * 60}
+			{@const span = (timelineHours.end - timelineHours.start) * 60}
 			<div class="grid grid-cols-3 gap-2">
 				{#each data.nextDays as day, ahead (day.date)}
 					<div class="day-column min-w-0 {ahead === 0 ? 'is-today' : ''}">
@@ -1009,12 +1043,12 @@
 							<span class="eyebrow truncate text-gray-700">{dayHeading(day.date, ahead)}</span>
 							<span class="tabular text-xs text-gray-500">{dayNumber(day.date)}</span>
 						</div>
-						<div class="day-timeline mt-2" data-timeline>
+						<div class="day-timeline mt-2" style:height="{timelineHeight}rem" data-timeline>
 							{#each TIMELINE_MARKS as mark (mark)}
 								<span class="day-timeline-mark" style:top="{mark * 100}%" aria-hidden="true"></span>
 							{/each}
 							{#each day.blocks as block (block.id)}
-								{@const from = minutesOf(block.startTime) - data.gridHours.start * 60}
+								{@const from = minutesOf(block.startTime) - timelineHours.start * 60}
 								{@const top = Math.max(0, from)}
 								{@const bottom = Math.min(span, from + block.durationMinutes)}
 								{#if bottom > top}
@@ -1032,7 +1066,7 @@
 								{/if}
 							{/each}
 							{#if day.date === todayStamp}
-								{@const into = minutesNow - data.gridHours.start * 60}
+								{@const into = minutesNow - timelineHours.start * 60}
 								{#if into >= 0 && into <= span}
 									<span
 										class="day-timeline-now"
@@ -1044,8 +1078,8 @@
 							{/if}
 						</div>
 						<div class="tabular mt-1 flex justify-between text-[0.625rem] text-gray-500">
-							<span>{hourLabel(data.gridHours.start)}</span>
-							<span>{hourLabel(data.gridHours.end)}</span>
+							<span>{hourLabel(timelineHours.start)}</span>
+							<span>{hourLabel(timelineHours.end)}</span>
 						</div>
 					</div>
 				{/each}
@@ -1829,15 +1863,16 @@
 	 * be read off it; an empty stretch is simply empty.
 	 */
 	/*
-	 * Tall enough that half an hour is a band rather than a hairline, and
-	 * exactly as tall as the time it covers: a short block is short, its name
+	 * Its height is set where it is drawn, by the hours it covers
+	 * (`timelineHours`), and a block is exactly as tall as the time it covers: a short block is short, its name
 	 * clipped to what fits, and the whole of it in its tooltip. A floor under
 	 * every block's height made the short ones lie on top of each other.
 	 */
 	.day-timeline {
 		position: relative;
-		height: 26rem;
 		border-left: 1px solid var(--color-gray-200);
+		/* A rule, not a box: the playful style's corners hooked it at both ends. */
+		border-radius: 0;
 	}
 
 	.day-timeline-mark {

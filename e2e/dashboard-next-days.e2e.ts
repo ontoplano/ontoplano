@@ -5,10 +5,13 @@ import { visit } from './helpers/visit';
 /**
  * The next three days, as lists or as timelines — a card's own setting.
  *
- * As timelines each day runs from the planner's first hour to its last at one
- * height for all three, so an empty afternoon looks empty. The choice is the
+ * As timelines the three days share one span — the hours their blocks hold —
+ * at one height, so an empty afternoon looks empty. The choice is the
  * account's and survives a reload.
  */
+/** The timeline's cap in `+page.svelte` (18rem), at the 16px root. */
+const TIMELINE_MAX_PX = 288;
+
 for (const [width, height] of [
 	[1440, 900],
 	[390, 844]
@@ -31,6 +34,19 @@ for (const [width, height] of [
 			all.map((one) => Math.round(one.getBoundingClientRect().height))
 		);
 		expect(new Set(heights).size).toBe(1);
+		// Sized by the hours it covers and capped, not the whole day at 26rem.
+		expect(heights[0]).toBeLessThanOrEqual(TIMELINE_MAX_PX);
+
+		// A rule down the side, not a box: no corners in either style.
+		const radius = await timelines.first().evaluate((el) => {
+			const html = document.documentElement;
+			const was = html.dataset.style;
+			html.dataset.style = 'playful';
+			const r = getComputedStyle(el).borderRadius;
+			html.dataset.style = was;
+			return r;
+		});
+		expect(radius).toBe('0px');
 
 		// Nothing runs off a phone.
 		const overflow = await page.evaluate(

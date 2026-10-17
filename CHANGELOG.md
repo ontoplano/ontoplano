@@ -18,6 +18,11 @@ the shape of the data changing. Bumping the minor per batch is what ran this
 file to 0.161 in a few months, which tells a reader nothing about which
 releases mattered.
 
+## 0.186.6 — 2026-10-17
+
+- The dashboard's Next three days turns over at midnight where you are, not at the server's midnight — three hours west of UTC it was showing tomorrow as today from nine in the evening.
+- Next three days as timelines covers the hours your blocks are in rather than the whole planner day, so it is no longer a tall column of empty space, and its edge is a straight rule in the playful style rather than a box with rounded ends.
+
 ## 0.186.5 — 2026-10-14
 
 - The dashboard's Next three days can be shown as timelines: each day from the first hour of your planner to the last, the blocks where they fall, so a free afternoon looks free. The choice is the card's own setting, the first of its kind.
