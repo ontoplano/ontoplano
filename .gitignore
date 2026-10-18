@@ -1,4 +1,6 @@
 node_modules
+# Yarn is this project's package manager; a locally generated pnpm lockfile stays local.
+pnpm-lock.yaml
 __pycache__/
 *.pyc
 .venv/
