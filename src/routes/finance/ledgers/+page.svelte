@@ -24,6 +24,7 @@
 	import EmptyState from '$lib/components/EmptyState.svelte';
 	import Icon from '$lib/components/Icon.svelte';
 	import LedgerFields from '$lib/components/fields/LedgerFields.svelte';
+	import MovementSplit from '$lib/components/MovementSplit.svelte';
 	import { LEDGER_KIND_LABELS } from '$lib/services/ledgers';
 	import Modal from '$lib/components/Modal.svelte';
 	import OneLine from '$lib/components/OneLine.svelte';
@@ -677,6 +678,8 @@
 									{#if m.category}
 										<CategoryMark name={m.category} color={m.categoryColor} />
 									{/if}
+									{#if m.allocations.length}<span class="chip">{t('finance.splits.title')}</span
+										>{/if}
 									{#if m.kind}
 										<span class="chip text-gray-700">{t(KIND_LABELS[m.kind as Kind])}</span>
 									{/if}
@@ -748,6 +751,8 @@
 									{#if m.category}
 										<CategoryMark name={m.category} color={m.categoryColor} />
 									{/if}
+									{#if m.allocations.length}<span class="chip">{t('finance.splits.title')}</span
+										>{/if}
 									{#if m.kind}
 										<span class="chip ml-1 text-gray-700">{t(KIND_LABELS[m.kind as Kind])}</span>
 									{/if}
@@ -1326,6 +1331,13 @@
 				</label>
 			</div>
 		</form>
+		{#key editing.id}
+			<MovementSplit
+				movement={editing}
+				currency={data.current?.currency ?? null}
+				commitments={data.commitments}
+			/>
+		{/key}
 
 		<!--
 			The links a meaning can carry, each its own small form: a transfer

@@ -151,6 +151,48 @@
 			}
 		}
 	},
+	"add_commitment": {
+		"scope": "statements:write",
+		"writes": true,
+		"destroys": false,
+		"creates": "commitment",
+		"params": {
+			"currency": {
+				"type": "string",
+				"required": true
+			},
+			"kind": {
+				"type": "string",
+				"required": true,
+				"enum": [
+					"custody",
+					"payable",
+					"receivable",
+					"reserve"
+				]
+			},
+			"name": {
+				"type": "string",
+				"required": true
+			},
+			"notes": {
+				"type": "string",
+				"required": false
+			},
+			"opening_minor": {
+				"type": "integer",
+				"required": false
+			},
+			"person_id": {
+				"type": "integer",
+				"required": false
+			},
+			"requestId": {
+				"type": "string",
+				"required": false
+			}
+		}
+	},
 	"add_goal": {
 		"scope": "tasks:write",
 		"writes": true,
@@ -847,6 +889,21 @@
 			}
 		}
 	},
+	"archive_commitment": {
+		"scope": "statements:write",
+		"writes": true,
+		"destroys": false,
+		"params": {
+			"archived": {
+				"type": "boolean",
+				"required": true
+			},
+			"id": {
+				"type": "integer",
+				"required": true
+			}
+		}
+	},
 	"archive_habit": {
 		"scope": "habits:write",
 		"writes": true,
@@ -1181,6 +1238,51 @@
 			},
 			"title": {
 				"type": "string",
+				"required": false
+			}
+		}
+	},
+	"change_commitment": {
+		"scope": "statements:write",
+		"writes": true,
+		"destroys": false,
+		"params": {
+			"currency": {
+				"type": "string",
+				"required": false
+			},
+			"id": {
+				"type": "integer",
+				"required": true
+			},
+			"ifUpdatedAt": {
+				"type": "string",
+				"required": false
+			},
+			"kind": {
+				"type": "string",
+				"required": false,
+				"enum": [
+					"custody",
+					"payable",
+					"receivable",
+					"reserve"
+				]
+			},
+			"name": {
+				"type": "string",
+				"required": false
+			},
+			"notes": {
+				"type": "string",
+				"required": false
+			},
+			"opening_minor": {
+				"type": "integer",
+				"required": false
+			},
+			"person_id": {
+				"type": "integer",
 				"required": false
 			}
 		}
@@ -2015,6 +2117,25 @@
 			}
 		}
 	},
+	"close_commitment": {
+		"scope": "statements:write",
+		"writes": true,
+		"destroys": false,
+		"params": {
+			"id": {
+				"type": "integer",
+				"required": true
+			},
+			"requestId": {
+				"type": "string",
+				"required": false
+			},
+			"write_off_note": {
+				"type": "string",
+				"required": false
+			}
+		}
+	},
 	"close_goal": {
 		"scope": "tasks:write",
 		"writes": true,
@@ -2036,6 +2157,73 @@
 					"achieved",
 					"missed"
 				]
+			}
+		}
+	},
+	"commitment_entries": {
+		"scope": "statements:read",
+		"writes": false,
+		"destroys": false,
+		"pages": true,
+		"params": {
+			"commitment_id": {
+				"type": "integer",
+				"required": true
+			},
+			"limit": {
+				"type": "integer",
+				"required": false,
+				"default": 100
+			},
+			"offset": {
+				"type": "integer",
+				"required": false,
+				"default": 0
+			}
+		}
+	},
+	"commitments": {
+		"scope": "statements:read",
+		"writes": false,
+		"destroys": false,
+		"pages": true,
+		"params": {
+			"include_archived": {
+				"type": "boolean",
+				"required": false
+			},
+			"limit": {
+				"type": "integer",
+				"required": false,
+				"default": 100
+			},
+			"offset": {
+				"type": "integer",
+				"required": false,
+				"default": 0
+			}
+		}
+	},
+	"consume_reserve": {
+		"scope": "statements:write",
+		"writes": true,
+		"destroys": false,
+		"params": {
+			"commitment_id": {
+				"type": "integer",
+				"required": true
+			},
+			"note": {
+				"type": "string",
+				"required": false
+			},
+			"requestId": {
+				"type": "string",
+				"required": false
+			},
+			"transaction_id": {
+				"type": "integer",
+				"required": true
 			}
 		}
 	},
@@ -2075,6 +2263,17 @@
 		"params": {}
 	},
 	"delete_balance_check": {
+		"scope": "statements:write",
+		"writes": true,
+		"destroys": true,
+		"params": {
+			"id": {
+				"type": "integer",
+				"required": true
+			}
+		}
+	},
+	"delete_commitment_entry": {
 		"scope": "statements:write",
 		"writes": true,
 		"destroys": true,
@@ -2884,6 +3083,38 @@
 			}
 		}
 	},
+	"record_commitment_entry": {
+		"scope": "statements:write",
+		"writes": true,
+		"destroys": false,
+		"creates": "commitmentEntry",
+		"params": {
+			"amount_minor": {
+				"type": "integer",
+				"required": true
+			},
+			"commitment_id": {
+				"type": "integer",
+				"required": true
+			},
+			"note": {
+				"type": "string",
+				"required": false
+			},
+			"occurred_on": {
+				"type": "string",
+				"required": true
+			},
+			"requestId": {
+				"type": "string",
+				"required": false
+			},
+			"transaction_id": {
+				"type": "integer",
+				"required": false
+			}
+		}
+	},
 	"record_movement": {
 		"scope": "statements:write",
 		"writes": true,
@@ -3389,6 +3620,29 @@
 			}
 		}
 	},
+	"settle_commitment": {
+		"scope": "statements:write",
+		"writes": true,
+		"destroys": false,
+		"params": {
+			"commitment_id": {
+				"type": "integer",
+				"required": true
+			},
+			"note": {
+				"type": "string",
+				"required": false
+			},
+			"requestId": {
+				"type": "string",
+				"required": false
+			},
+			"transaction_id": {
+				"type": "integer",
+				"required": true
+			}
+		}
+	},
 	"share_notebook": {
 		"scope": "notes:write",
 		"writes": true,
@@ -3454,6 +3708,56 @@
 				"required": false
 			},
 			"month": {
+				"type": "string",
+				"required": false
+			}
+		}
+	},
+	"split_movement": {
+		"scope": "statements:write",
+		"writes": true,
+		"destroys": false,
+		"params": {
+			"allocations": {
+				"type": "array",
+				"required": true,
+				"maxItems": 100,
+				"items": {
+					"type": "object",
+					"properties": {
+						"amount_minor": {
+							"type": "integer",
+							"required": true
+						},
+						"category": {
+							"type": "string",
+							"required": false
+						},
+						"commitment_id": {
+							"type": "integer",
+							"required": false
+						},
+						"kind": {
+							"type": "string",
+							"required": true,
+							"enum": [
+								"custody",
+								"personal"
+							]
+						},
+						"note": {
+							"type": "string",
+							"required": false
+						}
+					},
+					"additionalProperties": false
+				}
+			},
+			"id": {
+				"type": "integer",
+				"required": true
+			},
+			"requestId": {
 				"type": "string",
 				"required": false
 			}
@@ -3862,6 +4166,17 @@
 			},
 			"period": {
 				"type": "string",
+				"required": true
+			}
+		}
+	},
+	"unsplit_movement": {
+		"scope": "statements:write",
+		"writes": true,
+		"destroys": false,
+		"params": {
+			"id": {
+				"type": "integer",
 				"required": true
 			}
 		}

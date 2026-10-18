@@ -25,8 +25,13 @@ const bodyOf = (tool: (typeof TOOLS)[number]) => tool.run.toString();
 
 /** The names a tool's schema offers. */
 function declared(tool: (typeof TOOLS)[number]): string[] {
-	const input = tool.input as { properties?: Record<string, unknown> };
-	return Object.keys(input.properties ?? {});
+	type Node = { properties?: Record<string, Node>; items?: Node };
+	const walk = (node: Node, prefix = ''): string[] =>
+		Object.entries(node.properties ?? {}).flatMap(([name, child]) => {
+			const path = prefix ? `${prefix}.${name}` : name;
+			return [path, ...walk(child.items ?? child, child.items ? `${path}[]` : path)];
+		});
+	return walk(tool.input as Node);
 }
 
 describe('every tool', () => {

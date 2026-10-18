@@ -91,18 +91,25 @@ export interface WasmClient {
 
 export function wasmClient(db: Oo1Db): WasmClient {
 	const rowid = db.prepare('select last_insert_rowid()');
+	let depth = 0;
 
 	const wrap =
 		(mode: string, fn: (...args: unknown[]) => unknown) =>
 		(...args: unknown[]) => {
-			db.exec(`begin ${mode}`);
+			// Nested service calls share the outer commit, like better-sqlite3.
+			const savepoint = depth ? `ontoplano_nested_${depth}` : null;
+			db.exec(savepoint ? `savepoint ${savepoint}` : `begin ${mode}`);
+			depth++;
 			try {
 				const result = fn(...args);
-				db.exec('commit');
+				db.exec(savepoint ? `release ${savepoint}` : 'commit');
 				return result;
 			} catch (e) {
-				db.exec('rollback');
+				db.exec(savepoint ? `rollback to ${savepoint}` : 'rollback');
+				if (savepoint) db.exec(`release ${savepoint}`);
 				throw e;
+			} finally {
+				depth--;
 			}
 		};
 

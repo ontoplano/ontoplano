@@ -204,6 +204,8 @@ import {
 	monthlyTotals,
 	placeRule,
 	recordMovement,
+	splitMovement,
+	unsplitMovement,
 	unlinkTransfer,
 	updateMovement,
 	updateRule
@@ -220,6 +222,21 @@ import {
 	setLedgerArchived,
 	updateLedger
 } from '$lib/services/ledgers.js';
+import {
+	COMMITMENT_KINDS,
+	addCommitmentEntry,
+	archiveCommitment,
+	closeCommitment,
+	commitmentTotals,
+	consumeReserve,
+	createCommitment,
+	deleteCommitmentEntry,
+	getCommitment,
+	listCommitmentEntries,
+	listCommitments,
+	settleCommitment,
+	updateCommitment
+} from '$lib/services/commitments.js';
 import { grouped, search } from '$lib/services/search.js';
 import {
 	changeItem,
@@ -5873,6 +5890,340 @@ export const TOOLS: Tool[] = [
 		}
 	},
 	{
+		name: 'commitments',
+		title: 'What you owe, hold and set aside',
+		description:
+			'Custody, payables, receivables and reserves are stocks, not bank movements or budgets. Each balance is its opening plus entries, in its own currency. Totals stay separate by kind and currency; never subtract payables or add receivables to available bank funds.',
+		scope: 'statements:read',
+		writes: false,
+		input: object({
+			include_archived: { type: 'boolean', description: 'Include settled and archived records.' },
+			limit: count('Maximum records per page.', 100),
+			offset: from('commitments')
+		}),
+		run: (ctx, args) => ({
+			...paged(
+				listCommitments(ctx, { includeArchived: args.include_archived === true }),
+				args,
+				100
+			),
+			totals: commitmentTotals(ctx)
+		})
+	},
+	{
+		name: 'commitment_entries',
+		title: 'A commitment’s history',
+		description:
+			'Entries and running balances for one commitment. Positive increases the obligation or earmark; negative reduces it. Linked movements remain in their original ledgers.',
+		scope: 'statements:read',
+		writes: false,
+		refs: [{ arg: 'commitment_id', kind: 'commitment' }],
+		input: object(
+			{
+				commitment_id: { type: 'integer', description: 'Commitment id from commitments.' },
+				limit: count('Maximum entries per page.', 100),
+				offset: from('commitment entries')
+			},
+			['commitment_id']
+		),
+		run: (ctx, args) => paged(listCommitmentEntries(ctx, Number(args.commitment_id)), args, 100)
+	},
+	{
+		name: 'add_commitment',
+		title: 'Record money owed, held or set aside',
+		description:
+			'Create a stock without moving money: custody is held for someone, payable is owed, receivable is owed to you, reserve is your earmark. Currency is explicit ISO 4217; opening_minor is nonnegative original-currency minor units. No bank line or expense is created.',
+		scope: 'statements:write',
+		writes: true,
+		creates: 'commitment',
+		refs: [{ arg: 'person_id', kind: 'person' }],
+		input: object(
+			{
+				name: text('What this stock is called.'),
+				kind: { type: 'string', enum: [...COMMITMENT_KINDS], description: 'The stock’s meaning.' },
+				currency: text('Original ISO 4217 currency; never inferred.'),
+				opening_minor: {
+					type: 'integer',
+					description: 'Nonnegative opening in original minor units.'
+				},
+				person_id: { type: 'integer', description: 'Optional owner-scoped person id.' },
+				notes: text('Optional notes, at most 2000 characters.'),
+				...RETRY_ARGS
+			},
+			['name', 'kind', 'currency']
+		),
+		run: (ctx, args) => ({
+			id: createCommitment(ctx, {
+				name: args.name,
+				kind: args.kind,
+				currency: args.currency,
+				openingMinor: args.opening_minor,
+				personId: args.person_id,
+				notes: args.notes
+			}).id
+		})
+	},
+	{
+		name: 'change_commitment',
+		title: 'Correct a commitment',
+		description:
+			'Edit the fields originally recorded. Omitted fields stay untouched; person_id 0 clears the person. Currency, kind and opening changes cannot invalidate retained history. Settlements and adjustments belong in entries, not in an invented bank movement.',
+		scope: 'statements:write',
+		writes: true,
+		refs: [
+			{ arg: 'id', kind: 'commitment' },
+			{ arg: 'person_id', kind: 'person', zeroIsNone: true }
+		],
+		input: object(
+			{
+				id: { type: 'integer', description: 'Commitment id.' },
+				name: text('A new name.'),
+				kind: {
+					type: 'string',
+					enum: [...COMMITMENT_KINDS],
+					description: 'A new kind, when history permits.'
+				},
+				currency: text('Original ISO currency; no conversion is performed.'),
+				opening_minor: { type: 'integer', description: 'Corrected opening in minor units.' },
+				person_id: { type: 'integer', description: 'Person id; 0 clears it.' },
+				notes: text('Replacement notes; an empty string clears them.'),
+				...CONCURRENCY_ARGS
+			},
+			['id']
+		),
+		run: (ctx, args) => {
+			updateCommitment(ctx, Number(args.id), {
+				name: args.name,
+				kind: args.kind,
+				currency: args.currency,
+				openingMinor: args.opening_minor,
+				personId: args.person_id,
+				notes: args.notes
+			});
+			return { commitment: getCommitment(ctx, Number(args.id)) };
+		}
+	},
+	{
+		name: 'archive_commitment',
+		title: 'Put a commitment away or reopen it',
+		description:
+			'Archive without losing history. archived false reopens it. No balance or bank line changes.',
+		scope: 'statements:write',
+		writes: true,
+		refs: [{ arg: 'id', kind: 'commitment' }],
+		input: object(
+			{
+				id: { type: 'integer', description: 'Commitment id.' },
+				archived: { type: 'boolean', description: 'True archives; false reopens.' }
+			},
+			['id', 'archived']
+		),
+		run: (ctx, args) => {
+			archiveCommitment(ctx, Number(args.id), args.archived === true);
+			return { commitment: getCommitment(ctx, Number(args.id)) };
+		}
+	},
+	{
+		name: 'close_commitment',
+		title: 'Close a settled commitment',
+		description:
+			'Close a zero balance. A nonzero balance is refused unless write_off_note explicitly authorizes and explains an entry removing the residual. No ledger adjustment is made. archive_commitment with archived false reopens the record; undo any write-off separately through its entry.',
+		scope: 'statements:write',
+		writes: true,
+		refs: [{ arg: 'id', kind: 'commitment' }],
+		input: object(
+			{
+				id: { type: 'integer', description: 'Commitment id.' },
+				write_off_note: text('Explicit authorization and reason to write off the residual.'),
+				...RETRY_ARGS
+			},
+			['id']
+		),
+		run: (ctx, args) => {
+			closeCommitment(ctx, Number(args.id), { writeOffNote: args.write_off_note });
+			return { commitment: getCommitment(ctx, Number(args.id)) };
+		}
+	},
+	{
+		name: 'record_commitment_entry',
+		title: 'Record a stock adjustment',
+		description:
+			'One dated adjustment in signed minor units: positive increases, negative reduces. An optional transaction_id links real evidence and must obey its currency, sign and allocation guards; use settle_commitment or consume_reserve for a payment. Nothing moves in the ledger. delete_commitment_entry reverses a mistake.',
+		scope: 'statements:write',
+		writes: true,
+		creates: 'commitmentEntry',
+		refs: [
+			{ arg: 'commitment_id', kind: 'commitment' },
+			{ arg: 'transaction_id', kind: 'movement' }
+		],
+		input: object(
+			{
+				commitment_id: { type: 'integer', description: 'Commitment id.' },
+				occurred_on: text('Civil date YYYY-MM-DD.'),
+				amount_minor: { type: 'integer', description: 'Signed original-currency minor units.' },
+				transaction_id: { type: 'integer', description: 'Optional bank movement evidence.' },
+				note: text('Why the stock changed, at most 2000 characters.'),
+				...RETRY_ARGS
+			},
+			['commitment_id', 'occurred_on', 'amount_minor']
+		),
+		run: (ctx, args) => ({
+			id: addCommitmentEntry(ctx, {
+				commitmentId: args.commitment_id,
+				occurredOn: args.occurred_on,
+				amountMinor: args.amount_minor,
+				transactionId: args.transaction_id,
+				note: args.note
+			}).id
+		})
+	},
+	{
+		name: 'delete_commitment_entry',
+		title: 'Reverse a mistaken commitment entry',
+		description:
+			'Remove one mistaken stock entry, restoring its effect on the commitment. Refuses an invalid resulting balance. Movement and allocations stay intact; explicitly unsplit afterward if needed. The owner can Put it back from the assistant log through the same validated entry service.',
+		scope: 'statements:write',
+		writes: true,
+		destroys: true,
+		refs: [{ arg: 'id', kind: 'commitmentEntry' }],
+		input: object({ id: { type: 'integer', description: 'Entry id from commitment_entries.' } }, [
+			'id'
+		]),
+		run: (ctx, args) => {
+			deleteCommitmentEntry(ctx, Number(args.id));
+			return { deleted: true };
+		}
+	},
+	{
+		name: 'settle_commitment',
+		title: 'Offset or settle with an existing payment',
+		description:
+			'Apply one owned, same-currency bank movement to custody, payable or receivable once. Refuses overpayment and duplicate evidence. An owner’s expense becomes custody allocation, not personal spending. This never creates or changes a bank amount. Reverse its entry explicitly, then unsplit the movement.',
+		scope: 'statements:write',
+		writes: true,
+		refs: [
+			{ arg: 'commitment_id', kind: 'commitment', subject: true },
+			{ arg: 'transaction_id', kind: 'movement' }
+		],
+		input: object(
+			{
+				commitment_id: { type: 'integer', description: 'Commitment to reduce.' },
+				transaction_id: { type: 'integer', description: 'Existing payment movement.' },
+				note: text('Optional settlement evidence.'),
+				...RETRY_ARGS
+			},
+			['commitment_id', 'transaction_id']
+		),
+		run: (ctx, args) => {
+			settleCommitment(ctx, {
+				commitmentId: args.commitment_id,
+				transactionId: args.transaction_id,
+				note: args.note
+			});
+			return { commitment: getCommitment(ctx, Number(args.commitment_id)) };
+		}
+	},
+	{
+		name: 'consume_reserve',
+		title: 'Use a reserve for an existing expense',
+		description:
+			'Reduce a reserve once using a same-currency expense or fee already recorded. The payment stays personal spending exactly once. Refuses overconsumption, duplicate evidence or a custody split. Reverse the entry to undo; ledger truth stays unchanged.',
+		scope: 'statements:write',
+		writes: true,
+		refs: [
+			{ arg: 'commitment_id', kind: 'commitment', subject: true },
+			{ arg: 'transaction_id', kind: 'movement' }
+		],
+		input: object(
+			{
+				commitment_id: { type: 'integer', description: 'Reserve to reduce.' },
+				transaction_id: { type: 'integer', description: 'Existing personal expense.' },
+				note: text('Optional consumption evidence.'),
+				...RETRY_ARGS
+			},
+			['commitment_id', 'transaction_id']
+		),
+		run: (ctx, args) => {
+			consumeReserve(ctx, {
+				commitmentId: args.commitment_id,
+				transactionId: args.transaction_id,
+				note: args.note
+			});
+			return { commitment: getCommitment(ctx, Number(args.commitment_id)) };
+		}
+	},
+	{
+		name: 'split_movement',
+		title: 'Split personal and third-party money',
+		description:
+			'Partition a movement without altering its amount. Signed allocation amounts must have its sign and add exactly to it. Personal parts may override category. Each custody part requires an owned same-currency custody/payable commitment and atomically records one matching entry. Refuses replacement while linked entries remain.',
+		scope: 'statements:write',
+		writes: true,
+		refs: [
+			{ arg: 'id', kind: 'movement' },
+			{ arg: 'allocations[].commitment_id', kind: 'commitment' }
+		],
+		input: object(
+			{
+				id: { type: 'integer', description: 'Movement id.' },
+				allocations: {
+					type: 'array',
+					maxItems: 100,
+					description: 'Signed parts which conserve the bank movement exactly.',
+					items: {
+						type: 'object',
+						properties: {
+							kind: {
+								type: 'string',
+								enum: ['personal', 'custody'],
+								description: 'Who the money belongs to.'
+							},
+							amount_minor: {
+								type: 'integer',
+								description: 'Signed part in original minor units.'
+							},
+							category: text('Optional personal category override.'),
+							commitment_id: {
+								type: 'integer',
+								description: 'Required for custody; custody/payable only.'
+							},
+							note: text('Optional note for this part.')
+						},
+						required: ['kind', 'amount_minor'],
+						additionalProperties: false
+					}
+				},
+				...RETRY_ARGS
+			},
+			['id', 'allocations']
+		),
+		run: (ctx, args) => {
+			const allocations = (args.allocations as Record<string, unknown>[]).map((part) => ({
+				kind: part.kind,
+				amountMinor: part.amount_minor,
+				category: part.category,
+				commitmentId: part.commitment_id,
+				note: part.note
+			}));
+			splitMovement(ctx, { id: args.id, allocations });
+			return { ok: true };
+		}
+	},
+	{
+		name: 'unsplit_movement',
+		title: 'Make a movement whole again',
+		description:
+			'Remove allocations only after every linked entry is explicitly reversed. The original movement and ledger amount never change.',
+		scope: 'statements:write',
+		writes: true,
+		refs: [{ arg: 'id', kind: 'movement' }],
+		input: object({ id: { type: 'integer', description: 'Movement id.' } }, ['id']),
+		run: (ctx, args) => {
+			unsplitMovement(ctx, Number(args.id));
+			return { ok: true };
+		}
+	},
+	{
 		name: 'ledgers',
 		title: 'Your ledgers',
 		description:
@@ -6280,7 +6631,7 @@ export const TOOLS: Tool[] = [
 		name: 'spending_by_category',
 		title: 'Where the money went',
 		description:
-			'Spending split by category over a window. Every outgoing line is in exactly one slice — uncategorized included — so the slices are the whole of what was spent.',
+			'Personal spending by category over a window: expenses and fees, net of refunds, with only the personal part of a split line, uncategorized included. Transfers, cash withdrawals and custody shares are left out, so the slices are the whole of personal spending rather than of every outgoing line. For cash flow by month use statement_months.',
 		scope: 'statements:read',
 		writes: false,
 		refs: [{ arg: 'ledger_id', kind: 'ledger' }],

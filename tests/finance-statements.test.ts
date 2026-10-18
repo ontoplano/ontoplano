@@ -334,7 +334,7 @@ describe('the ledgers', () => {
 });
 
 describe('the month series', () => {
-	test('statements aggregate by month, and the categories add up', () => {
+	test('statements aggregate by month, and for a month of personal lines the categories add up', () => {
 		const march = statements.monthlyTotals(ctx, 12).find((m) => m.month === '2026-03')!;
 		// In: 1200.00 received + 5.00 flipped refund. Out: the account's 50.00
 		// and the card's 10.00 + 23.90 + 23.90. The lines the editing tests
@@ -343,6 +343,10 @@ describe('the month series', () => {
 		expect(march.outCents).toBe(10780);
 		expect(march.netCents).toBe(march.inCents - march.outCents);
 
+		// Every line in this month is personal spending, so the two figures
+		// agree here. They are not the same measure in general: categorySlices
+		// leaves out transfers, cash and custody shares and nets refunds — see
+		// `finance-allocations.test.ts` for the cases where they differ.
 		const slices = statements.categorySlices(ctx, { month: '2026-03' });
 		expect(slices.reduce((sum, c) => sum + c.outCents, 0)).toBe(march.outCents);
 		expect(Math.round(slices.reduce((sum, c) => sum + c.share, 0))).toBe(1);
@@ -367,10 +371,11 @@ describe('the month series', () => {
 		expect(statements.tagMonths(ctx, 'pix', 12).totalCents).toBe(5000);
 	});
 
-	test('the categories-by-month table matches the months it is drawn from', () => {
+	test('the categories-by-month table adds up to the personal spending it is drawn from', () => {
 		const table = statements.categoryMonths(ctx, 12);
 		const index = table.months.indexOf('2026-03');
 		const stacked = table.categories.reduce((sum, c) => sum + c.byMonth[index], 0);
+		// March holds only personal lines; see the note above about the two measures.
 		expect(stacked).toBe(
 			statements.monthlyTotals(ctx, 12).find((m) => m.month === '2026-03')!.outCents
 		);

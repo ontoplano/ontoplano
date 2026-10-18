@@ -163,6 +163,12 @@ export const PHRASE_OVERRIDES: Record<string, Phrase> = {
 	link_transfer: { verb: 'link', noun: 'transfer' },
 	record_balance_check: { verb: 'record', noun: 'balanceCheck' },
 	delete_balance_check: { verb: 'delete', noun: 'balanceCheck' },
+	record_commitment_entry: { verb: 'record', noun: 'commitmentEntry' },
+	delete_commitment_entry: { verb: 'delete', noun: 'commitmentEntry' },
+	settle_commitment: { verb: 'pay', noun: 'commitment' },
+	consume_reserve: { verb: 'pay', noun: 'commitment' },
+	split_movement: { verb: 'change', noun: 'movement' },
+	unsplit_movement: { verb: 'change', noun: 'movement' },
 	unlink_transfer: { verb: 'unlink', noun: 'transfer' }
 };
 
@@ -198,6 +204,8 @@ export function phraseFor(tool: string): Phrase | null {
  * identifier instead of rendering as a raw message key on somebody's phone.
  */
 export const NOUN_KEYS = new Set([
+	'commitment',
+	'commitmentEntry',
 	'balanceCheck',
 	'activity',
 	'alarm',

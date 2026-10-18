@@ -3060,6 +3060,123 @@ export const financeBalanceChecks = sqliteTable(
 	]
 );
 
+/** A stock, not a bank movement: custody, debt or an earmark in one currency. */
+export const financeCommitments = sqliteTable(
+	'finance_commitments',
+	{
+		id: integer('id').primaryKey({ autoIncrement: true }),
+		userId: text('user_id')
+			.notNull()
+			.references(() => user.id),
+		kind: text('kind', { enum: ['custody', 'payable', 'receivable', 'reserve'] }).notNull(),
+		name: text('name').notNull(),
+		personId: integer('person_id').references(() => people.id, { onDelete: 'set null' }),
+		currency: text('currency').notNull(),
+		openingMinor: integer('opening_minor').notNull().default(0),
+		notes: text('notes').notNull().default(''),
+		status: text('status', { enum: ['open', 'settled', 'archived'] })
+			.notNull()
+			.default('open'),
+		createdAt: text('created_at')
+			.notNull()
+			.default(sql`(CURRENT_TIMESTAMP)`),
+		updatedAt: text('updated_at')
+			.notNull()
+			.default(sql`(CURRENT_TIMESTAMP)`)
+	},
+	(table) => [
+		index('finance_commitments_user_idx').on(table.userId, table.status),
+		check(
+			'finance_commitments_kind_check',
+			sql`${table.kind} in ('custody','payable','receivable','reserve')`
+		),
+		check(
+			'finance_commitments_status_check',
+			sql`${table.status} in ('open','settled','archived')`
+		),
+		check(
+			'finance_commitments_opening_check',
+			sql`typeof(${table.openingMinor}) = 'integer' and ${table.openingMinor} between 0 and 9007199254740991`
+		)
+	]
+);
+
+/** Signed changes to a stock, with optional retained bank evidence. */
+export const financeCommitmentEntries = sqliteTable(
+	'finance_commitment_entries',
+	{
+		id: integer('id').primaryKey({ autoIncrement: true }),
+		userId: text('user_id')
+			.notNull()
+			.references(() => user.id),
+		commitmentId: integer('commitment_id')
+			.notNull()
+			.references(() => financeCommitments.id, { onDelete: 'cascade' }),
+		occurredOn: text('occurred_on').notNull(),
+		amountMinor: integer('amount_minor').notNull(),
+		transactionId: integer('transaction_id').references(() => financeTransactions.id, {
+			onDelete: 'set null'
+		}),
+		note: text('note'),
+		createdAt: text('created_at')
+			.notNull()
+			.default(sql`(CURRENT_TIMESTAMP)`)
+	},
+	(table) => [
+		index('finance_commitment_entries_user_stock_idx').on(
+			table.userId,
+			table.commitmentId,
+			table.occurredOn
+		),
+		index('finance_commitment_entries_transaction_idx').on(table.userId, table.transactionId),
+		uniqueIndex('finance_commitment_entries_stock_transaction_unique').on(
+			table.userId,
+			table.commitmentId,
+			table.transactionId
+		),
+		check(
+			'finance_commitment_entries_amount_check',
+			sql`typeof(${table.amountMinor}) = 'integer' and ${table.amountMinor} between -9007199254740991 and 9007199254740991 and ${table.amountMinor} != 0`
+		)
+	]
+);
+
+/** Parts conserve their bank movement; custody never enters personal spending. */
+export const financeTransactionAllocations = sqliteTable(
+	'finance_transaction_allocations',
+	{
+		id: integer('id').primaryKey({ autoIncrement: true }),
+		userId: text('user_id')
+			.notNull()
+			.references(() => user.id),
+		transactionId: integer('transaction_id')
+			.notNull()
+			.references(() => financeTransactions.id, { onDelete: 'cascade' }),
+		kind: text('kind', { enum: ['personal', 'custody'] }).notNull(),
+		amountMinor: integer('amount_minor').notNull(),
+		category: text('category'),
+		commitmentId: integer('commitment_id').references(() => financeCommitments.id, {
+			onDelete: 'restrict'
+		}),
+		note: text('note'),
+		createdAt: text('created_at')
+			.notNull()
+			.default(sql`(CURRENT_TIMESTAMP)`)
+	},
+	(table) => [
+		index('finance_allocations_user_transaction_idx').on(table.userId, table.transactionId),
+		index('finance_allocations_commitment_idx').on(table.userId, table.commitmentId),
+		check(
+			'finance_allocations_kind_check',
+			sql`(${table.kind} = 'personal' and ${table.commitmentId} is null) or (${table.kind} = 'custody' and ${table.commitmentId} is not null)`
+		),
+		check(
+			'finance_allocations_amount_check',
+			sql`typeof(${table.amountMinor}) = 'integer' and ${table.amountMinor} between -9007199254740991 and 9007199254740991 and ${table.amountMinor} != 0`
+		)
+	]
+);
+
 // --- Finance: statements ---
 
 /**

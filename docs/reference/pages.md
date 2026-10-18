@@ -11,7 +11,7 @@ own write surface, the way the endpoints in [the API](api.md) are the
 write surface for everything else; both end up calling the same
 [services](services.md).
 
-**67 pages, 225 actions.**
+**68 pages, 236 actions.**
 
 | Page                                 | Actions                                                                                                                                                                                                                                                                                                                                                                                              |
 | ------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -24,8 +24,9 @@ write surface for everything else; both end up calling the same
 | `/demo`                              | `default`                                                                                                                                                                                                                                                                                                                                                                                            |
 | `/demo/isolated-db`                  | —                                                                                                                                                                                                                                                                                                                                                                                                    |
 | `/finance/bills`                     | —                                                                                                                                                                                                                                                                                                                                                                                                    |
+| `/finance/commitments`               | `create`, `update`, `archive`, `close`, `delete`, `addEntry`, `deleteEntry`, `settle`, `consume`                                                                                                                                                                                                                                                                                                     |
 | `/finance/insights`                  | —                                                                                                                                                                                                                                                                                                                                                                                                    |
-| `/finance/ledgers`                   | `createLedger`, `updateLedger`, `moveLedger`, `archiveLedger`, `deleteLedger`, `recordBalanceCheck`, `deleteBalanceCheck`, `import`, `addMovement`, `updateMovement`, `classify`, `linkTransfer`, `unlinkTransfer`, `detachMovement`, `linkMovement`, `deleteMovement`                                                                                                                               |
+| `/finance/ledgers`                   | `splitMovement`, `unsplitMovement`, `createLedger`, `updateLedger`, `moveLedger`, `archiveLedger`, `deleteLedger`, `recordBalanceCheck`, `deleteBalanceCheck`, `import`, `addMovement`, `updateMovement`, `classify`, `linkTransfer`, `unlinkTransfer`, `detachMovement`, `linkMovement`, `deleteMovement`                                                                                           |
 | `/finance/rules`                     | `create`, `update`, `move`, `delete`                                                                                                                                                                                                                                                                                                                                                                 |
 | `/goals`                             | `createArea`, `updateArea`, `moveArea`, `deleteArea`, `create`, `update`, `setProgress`, `close`, `note`, `setLinks`, `setTodoStatus`, `remove`                                                                                                                                                                                                                                                      |
 | `/goals/history`                     | `setProgress`, `close`, `note`, `setTodoStatus`, `remove`                                                                                                                                                                                                                                                                                                                                            |
@@ -144,6 +145,10 @@ come from the bank rather than from a form. What a bill still is: a thing
 that wants paying on a day, which is why it rides the week and the
 reminders. So the page stays, reachable from Ledgers, and the money it
 describes is the money the statements will show arriving and leaving.
+
+### `/finance/commitments`
+
+Stocks and their evidence, kept separate from bank balances and monthly budgets.
 
 ### `/finance/insights`
 

@@ -280,6 +280,10 @@ export const PAGE_SHORTCUTS: Record<string, PageShortcuts> = {
 			{ key: 'n', action: 'new', description: 'finance.bills.newBill' }
 		]
 	},
+	'/finance/commitments': {
+		label: 'rooms.finance.tabs.commitments',
+		shortcuts: [{ key: 'n', action: 'new', description: 'finance.commitments.new' }]
+	},
 	'/finance/rules': {
 		label: 'rooms.finance.tabs.rules',
 		shortcuts: [

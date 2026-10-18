@@ -35,6 +35,7 @@
 	import { cancelFor, changeNow, isPending } from '$lib/undo.svelte';
 	import { getAction } from '$lib/shortcuts';
 	import { useT } from '$lib/i18n';
+	import type { PlainKey } from '$lib/i18n/keys';
 
 	const t = useT();
 	const phone = phoneWidth();
@@ -1204,6 +1205,19 @@
 				{#snippet actions()}
 					{@render openLink(resolve('/finance/bills'))}
 				{/snippet}
+				<section class="mb-3 space-y-2" aria-label={t('rooms.finance.tabs.commitments')}>
+					<a class="text-sm font-medium underline" href={resolve('/finance/commitments')}
+						>{t('rooms.finance.tabs.commitments')}</a
+					>
+					{#each data.billsCard.commitments as stock (`${stock.kind}-${stock.currency}`)}
+						<p class="text-sm">
+							{t(`finance.commitments.${stock.kind}` as PlainKey)} · {stock.currency} · {formatMoney(
+								stock.balanceMinor,
+								stock.currency
+							)}
+						</p>
+					{/each}
+				</section>
 				{#if data.billsCard.funds.length}
 					<section class="mb-3 space-y-2" aria-label={t('finance.ledgers.supportedFunds')}>
 						<a class="text-sm font-medium underline" href={resolve('/finance/ledgers')}

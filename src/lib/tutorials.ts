@@ -503,6 +503,7 @@ export const TUTORIALS: Record<string, Tutorial> = {
 				title: 'finance.ledgers.supportedFunds',
 				body: 'finance.ledgers.coverageTour'
 			},
+			{ title: 'finance.splits.title', body: 'finance.splits.hint' },
 			{
 				title: 'tour.theStatementIsTheRecord',
 				body: 'tour.importTheBankU2019sOwnExport'
@@ -511,6 +512,19 @@ export const TUTORIALS: Record<string, Tutorial> = {
 				title: 'tour.rulesDoTheSorting',
 				body: 'tour.categoriesWashTheRowIn'
 			}
+		]
+	},
+	'/finance/commitments': {
+		label: 'rooms.finance.tabs.commitments',
+		steps: [
+			{ title: 'rooms.finance.tabs.commitments', body: 'finance.commitments.hint' },
+			{
+				target: '[data-tour="commitment-kinds"]',
+				title: 'finance.commitments.new',
+				body: 'finance.commitments.adjustmentHint'
+			},
+			{ title: 'finance.commitments.settle', body: 'finance.commitments.settleHint' },
+			{ title: 'finance.commitments.consume', body: 'finance.commitments.consumeHint' }
 		]
 	},
 	'/finance/bills': {

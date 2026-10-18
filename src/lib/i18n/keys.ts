@@ -759,6 +759,46 @@ export type MessageKey =
 	| 'finance.bills.whatPaidName'
 	| 'finance.bills.whenItTurnsUpOn'
 	| 'finance.bills.youWontBeReminded'
+	| 'finance.commitments.addEntry'
+	| 'finance.commitments.adjustment'
+	| 'finance.commitments.adjustmentHint'
+	| 'finance.commitments.after'
+	| 'finance.commitments.archive'
+	| 'finance.commitments.archived'
+	| 'finance.commitments.close'
+	| 'finance.commitments.closeHint'
+	| 'finance.commitments.consume'
+	| 'finance.commitments.consumeHint'
+	| 'finance.commitments.currency'
+	| 'finance.commitments.current'
+	| 'finance.commitments.custody'
+	| 'finance.commitments.custodyHint'
+	| 'finance.commitments.deleteHint'
+	| 'finance.commitments.deletePermanently'
+	| 'finance.commitments.edit'
+	| 'finance.commitments.hint'
+	| 'finance.commitments.history'
+	| 'finance.commitments.lastEntry'
+	| 'finance.commitments.movement'
+	| 'finance.commitments.new'
+	| 'finance.commitments.opening'
+	| 'finance.commitments.payable'
+	| 'finance.commitments.payableHint'
+	| 'finance.commitments.person'
+	| 'finance.commitments.receivable'
+	| 'finance.commitments.receivableHint'
+	| 'finance.commitments.reopen'
+	| 'finance.commitments.reserve'
+	| 'finance.commitments.reserveHint'
+	| 'finance.commitments.reverseEntry'
+	| 'finance.commitments.reverseHint'
+	| 'finance.commitments.running'
+	| 'finance.commitments.settle'
+	| 'finance.commitments.settleHint'
+	| 'finance.commitments.status.archived'
+	| 'finance.commitments.status.open'
+	| 'finance.commitments.status.settled'
+	| 'finance.commitments.writeOffNote'
 	| 'finance.donut.empty'
 	| 'finance.donut.heading'
 	| 'finance.donut.out'
@@ -941,6 +981,20 @@ export type MessageKey =
 	| 'finance.rules.tags'
 	| 'finance.rules.theFullSyntax'
 	| 'finance.rules.whichLinesThisClaims'
+	| 'finance.splits.addPart'
+	| 'finance.splits.category'
+	| 'finance.splits.commitment'
+	| 'finance.splits.confirmUnsplit'
+	| 'finance.splits.custody'
+	| 'finance.splits.difference'
+	| 'finance.splits.hint'
+	| 'finance.splits.history'
+	| 'finance.splits.linkedHint'
+	| 'finance.splits.personal'
+	| 'finance.splits.removePart'
+	| 'finance.splits.save'
+	| 'finance.splits.title'
+	| 'finance.splits.unsplit'
 	| 'finance.stackedMonths.caption'
 	| 'frontDoor.createAnAccount'
 	| 'frontDoor.howItWorks'
@@ -2244,6 +2298,8 @@ export type MessageKey =
 	| 'notify.noun.billPayment'
 	| 'notify.noun.block'
 	| 'notify.noun.bought'
+	| 'notify.noun.commitment'
+	| 'notify.noun.commitmentEntry'
 	| 'notify.noun.dataPoint'
 	| 'notify.noun.entry'
 	| 'notify.noun.fromGoal'
@@ -2537,6 +2593,7 @@ export type MessageKey =
 	| 'reportDialog.yourIdea'
 	| 'rooms.finance.sections'
 	| 'rooms.finance.tabs.bills'
+	| 'rooms.finance.tabs.commitments'
 	| 'rooms.finance.tabs.insights'
 	| 'rooms.finance.tabs.ledgers'
 	| 'rooms.finance.tabs.rules'
@@ -4356,6 +4413,7 @@ export interface MessageValuesFor {
 	'finance.rules.moveUp': { name: string | number };
 	'finance.rules.showingCount': { count: number };
 	'finance.rules.stopsClaimingTheLineIt': { matches: string | number; s: string | number };
+	'finance.splits.difference': { amount: string | number };
 	'gallery.albumsCount': { count: number };
 	'gallery.albumsInside': { count: number };
 	'gallery.allOf': { name: string | number };
@@ -4646,6 +4704,8 @@ export interface MessageValuesFor {
 	'notify.noun.billPayment': { count: number };
 	'notify.noun.block': { count: number };
 	'notify.noun.bought': { count: number };
+	'notify.noun.commitment': { count: number };
+	'notify.noun.commitmentEntry': { count: number };
 	'notify.noun.dataPoint': { count: number };
 	'notify.noun.entry': { count: number };
 	'notify.noun.fromGoal': { count: number };

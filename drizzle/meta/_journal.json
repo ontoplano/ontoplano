@@ -876,6 +876,13 @@
       "when": 1792324110206,
       "tag": "0124_milky_goliath",
       "breakpoints": true
+    },
+    {
+      "idx": 125,
+      "version": "6",
+      "when": 1792333965201,
+      "tag": "0125_green_cobalt_man",
+      "breakpoints": true
     }
   ]
 }

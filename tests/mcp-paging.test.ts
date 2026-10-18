@@ -103,9 +103,19 @@ describe('every tool that takes an offset answers a page', () => {
 	it('answers with count and total, whichever tool it is', async () => {
 		const { createNotebook } = await import('../src/lib/services/notebooks');
 		const notebook = createNotebook(ctx(), { title: 'paging' });
+		const { createCommitment } = await import('../src/lib/services/commitments');
+		const commitment = createCommitment(ctx(), {
+			name: 'Paging stock',
+			kind: 'reserve',
+			currency: 'KES'
+		});
 		for (const tool of TOOLS.filter((t) => 'offset' in t.input.properties)) {
 			// The one argument any of them requires is the thing they list.
-			const args = (tool.input.required ?? []).includes('id') ? { id: notebook } : {};
+			const args = (tool.input.required ?? []).includes('id')
+				? { id: notebook }
+				: (tool.input.required ?? []).includes('commitment_id')
+					? { commitment_id: commitment.id }
+					: {};
 			const page = run(tool.name, args);
 			expect(page, tool.name).toHaveProperty('total');
 			expect(page, tool.name).toHaveProperty('count');

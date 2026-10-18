@@ -555,7 +555,8 @@ which a test holds to the tools the server serves and the actions the app has.
 | Recipes                 | `add_recipe`                                            | `recipes`                                                                                     | `change_recipe`, `cooked_recipe`                                                                                                                                            | `archive_recipe`         | `archive_recipe`         | _app only, on purpose_                                                             |                    |
 | Workouts                | `add_workout`, `add_workout_category`, `log_workout`    | `workouts`, `workout_sessions`, `workout_history`, `workout_activities`, `workout_categories` | `change_workout`, `set_workout_measures`, `change_workout_session`, `workout_done`, `change_workout_category`                                                               | `archive_workout`        | `archive_workout`        | `remove_workout_session`, `remove_workout_category`                                |                    |
 | Bills                   | `add_bill`                                              | `bills`, `bill_payments`, `bill_history`, `month_bills`, `bills_due`                          | `change_bill`, `pay_bill`, `change_bill_payment`, `unpay_bill`, `skip_bill`, `unskip_bill`                                                                                  | `archive_bill`           | `archive_bill`           | _app only, on purpose_                                                             |                    |
-| Accounts and movements  | `add_ledger`, `record_movement`, `record_balance_check` | `ledgers`, `movements`, `statement_months`, `spending_by_category`, `balance_checks`          | `change_ledger`, `change_movement`, `classify_movements`, `link_movement`, `link_transfer`, `unlink_transfer`                                                               | `change_ledger`          | `change_ledger`          | `remove_movement`, `delete_balance_check`                                          | `change_ledger`    |
+| Accounts and movements  | `add_ledger`, `record_movement`, `record_balance_check` | `ledgers`, `movements`, `statement_months`, `spending_by_category`, `balance_checks`          | `change_ledger`, `change_movement`, `classify_movements`, `link_movement`, `link_transfer`, `unlink_transfer`, `split_movement`, `unsplit_movement`                         | `change_ledger`          | `change_ledger`          | `remove_movement`, `delete_balance_check`                                          | `change_ledger`    |
+| Commitments             | `add_commitment`, `record_commitment_entry`             | `commitments`, `commitment_entries`                                                           | `change_commitment`, `close_commitment`, `settle_commitment`, `consume_reserve`                                                                                             | `archive_commitment`     | `archive_commitment`     | `delete_commitment_entry`                                                          |                    |
 | Sorting rules           | `add_sort_rule`                                         | `sort_rules`                                                                                  | `change_sort_rule`                                                                                                                                                          |                          |                          | `delete_sort_rule`                                                                 | `change_sort_rule` |
 | People                  | `add_person`                                            | `people`, `upcoming_birthdays`                                                                | `change_person`                                                                                                                                                             |                          |                          | _app only, on purpose_                                                             |                    |
 | Reminders               | `set_alarm`, `remind_before_block`, `remind_task`       | `reminders`                                                                                   | `change_reminder`, `dismiss_reminder`                                                                                                                                       |                          |                          | `cancel_alarm`                                                                     |                    |
@@ -575,6 +576,7 @@ which a test holds to the tools the server serves and the actions the app has.
 - **Workouts, delete.** An exercise carries its sessions: archived by a tool, deleted in the app. Sessions and categories can be removed.
 - **Bills, delete.** A bill carries its payment history: archived by a tool, deleted in the app where that history is in front of the person.
 - **Accounts and movements, delete.** A ledger takes every line in it when deleted: archived by a tool, deleted in the app. A single line can be removed.
+- **Commitments, delete.** A commitment carries financial history: assistants archive it; permanent deletion is only in the archived app view. Mistaken entries can be reversed and restored through the assistant log.
 - **People, delete.** A person's page stands for somebody: deleted only in the app.
 - **Labels, create.** A label comes into being by being used — `tags` on a task, a note or an idea — so there is nothing to make first.
 - **Recordings, create.** A recording is made by a microphone in the app; there is nothing for a tool to say into.
@@ -2455,6 +2457,164 @@ _Needs `workouts:write`; writes; answers with `before` and `after`._
 | --------- | ------- | -------- | ----------------- |
 | `id`      | integer | yes      | The workout’s id. |
 
+### `commitments` — What you owe, hold and set aside
+
+Custody, payables, receivables and reserves are stocks, not bank movements or budgets. Each balance is its opening plus entries, in its own currency. Totals stay separate by kind and currency; never subtract payables or add receivables to available bank funds.
+
+_Needs `statements:read`; read-only; answers a page._
+
+| Parameter          | Type    | Required | What it is                                                                                                                                                  |
+| ------------------ | ------- | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `include_archived` | boolean | —        | Include settled and archived records.                                                                                                                       |
+| `limit`            | integer | —        | Maximum records per page. Default `100`.                                                                                                                    |
+| `offset`           | integer | —        | Skip this many before counting, so the rest of commitments can be read a page at a time. `nextOffset` on the answer is what to pass here next. Default `0`. |
+
+### `commitment_entries` — A commitment’s history
+
+Entries and running balances for one commitment. Positive increases the obligation or earmark; negative reduces it. Linked movements remain in their original ledgers.
+
+_Needs `statements:read`; read-only; answers a page._
+
+| Parameter       | Type    | Required | What it is                                                                                                                                                         |
+| --------------- | ------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `commitment_id` | integer | yes      | Commitment id from commitments.                                                                                                                                    |
+| `limit`         | integer | —        | Maximum entries per page. Default `100`.                                                                                                                           |
+| `offset`        | integer | —        | Skip this many before counting, so the rest of commitment entries can be read a page at a time. `nextOffset` on the answer is what to pass here next. Default `0`. |
+
+### `add_commitment` — Record money owed, held or set aside
+
+Create a stock without moving money: custody is held for someone, payable is owed, receivable is owed to you, reserve is your earmark. Currency is explicit ISO 4217; opening_minor is nonnegative original-currency minor units. No bank line or expense is created.
+
+_Needs `statements:write`; writes; answers with `before` and `after`, `after` being the new commitment._
+
+| Parameter       | Type    | Required | What it is                                                                                                                                                                                                                                                                                  |
+| --------------- | ------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `name`          | string  | yes      | What this stock is called.                                                                                                                                                                                                                                                                  |
+| `kind`          | string  | yes      | The stock’s meaning. One of: `custody`, `payable`, `receivable`, `reserve`.                                                                                                                                                                                                                 |
+| `currency`      | string  | yes      | Original ISO 4217 currency; never inferred.                                                                                                                                                                                                                                                 |
+| `opening_minor` | integer | —        | Nonnegative opening in original minor units.                                                                                                                                                                                                                                                |
+| `person_id`     | integer | —        | Optional owner-scoped person id.                                                                                                                                                                                                                                                            |
+| `notes`         | string  | —        | Optional notes, at most 2000 characters.                                                                                                                                                                                                                                                    |
+| `requestId`     | string  | —        | An id you choose for this call, such as a UUID, so it can be sent again safely: the same `requestId` with the same arguments within a day answers with the first answer, marked `replayed`, and nothing is made twice. Reused for a different call, it is refused with the code `conflict`. |
+
+### `change_commitment` — Correct a commitment
+
+Edit the fields originally recorded. Omitted fields stay untouched; person_id 0 clears the person. Currency, kind and opening changes cannot invalidate retained history. Settlements and adjustments belong in entries, not in an invented bank movement.
+
+_Needs `statements:write`; writes; answers with `before` and `after`._
+
+| Parameter       | Type    | Required | What it is                                                                                                                                                                                                                                |
+| --------------- | ------- | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `id`            | integer | yes      | Commitment id.                                                                                                                                                                                                                            |
+| `name`          | string  | —        | A new name.                                                                                                                                                                                                                               |
+| `kind`          | string  | —        | A new kind, when history permits. One of: `custody`, `payable`, `receivable`, `reserve`.                                                                                                                                                  |
+| `currency`      | string  | —        | Original ISO currency; no conversion is performed.                                                                                                                                                                                        |
+| `opening_minor` | integer | —        | Corrected opening in minor units.                                                                                                                                                                                                         |
+| `person_id`     | integer | —        | Person id; 0 clears it.                                                                                                                                                                                                                   |
+| `notes`         | string  | —        | Replacement notes; an empty string clears them.                                                                                                                                                                                           |
+| `ifUpdatedAt`   | string  | —        | Only change it if nothing has changed it since: the `updatedAt` a read or an earlier change answered with. If something has, nothing is written and the call is refused with the code `conflict`, the current `updatedAt` in its details. |
+
+### `archive_commitment` — Put a commitment away or reopen it
+
+Archive without losing history. archived false reopens it. No balance or bank line changes.
+
+_Needs `statements:write`; writes; answers with `before` and `after`._
+
+| Parameter  | Type    | Required | What it is                    |
+| ---------- | ------- | -------- | ----------------------------- |
+| `id`       | integer | yes      | Commitment id.                |
+| `archived` | boolean | yes      | True archives; false reopens. |
+
+### `close_commitment` — Close a settled commitment
+
+Close a zero balance. A nonzero balance is refused unless write_off_note explicitly authorizes and explains an entry removing the residual. No ledger adjustment is made. archive_commitment with archived false reopens the record; undo any write-off separately through its entry.
+
+_Needs `statements:write`; writes; answers with `before` and `after`._
+
+| Parameter        | Type    | Required | What it is                                                                                                                                                                                                                                                                                  |
+| ---------------- | ------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `id`             | integer | yes      | Commitment id.                                                                                                                                                                                                                                                                              |
+| `write_off_note` | string  | —        | Explicit authorization and reason to write off the residual.                                                                                                                                                                                                                                |
+| `requestId`      | string  | —        | An id you choose for this call, such as a UUID, so it can be sent again safely: the same `requestId` with the same arguments within a day answers with the first answer, marked `replayed`, and nothing is made twice. Reused for a different call, it is refused with the code `conflict`. |
+
+### `record_commitment_entry` — Record a stock adjustment
+
+One dated adjustment in signed minor units: positive increases, negative reduces. An optional transaction_id links real evidence and must obey its currency, sign and allocation guards; use settle_commitment or consume_reserve for a payment. Nothing moves in the ledger. delete_commitment_entry reverses a mistake.
+
+_Needs `statements:write`; writes; answers with `before` and `after`, `after` being the new commitmentEntry._
+
+| Parameter        | Type    | Required | What it is                                                                                                                                                                                                                                                                                  |
+| ---------------- | ------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `commitment_id`  | integer | yes      | Commitment id.                                                                                                                                                                                                                                                                              |
+| `occurred_on`    | string  | yes      | Civil date YYYY-MM-DD.                                                                                                                                                                                                                                                                      |
+| `amount_minor`   | integer | yes      | Signed original-currency minor units.                                                                                                                                                                                                                                                       |
+| `transaction_id` | integer | —        | Optional bank movement evidence.                                                                                                                                                                                                                                                            |
+| `note`           | string  | —        | Why the stock changed, at most 2000 characters.                                                                                                                                                                                                                                             |
+| `requestId`      | string  | —        | An id you choose for this call, such as a UUID, so it can be sent again safely: the same `requestId` with the same arguments within a day answers with the first answer, marked `replayed`, and nothing is made twice. Reused for a different call, it is refused with the code `conflict`. |
+
+### `delete_commitment_entry` — Reverse a mistaken commitment entry
+
+Remove one mistaken stock entry, restoring its effect on the commitment. Refuses an invalid resulting balance. Movement and allocations stay intact; explicitly unsplit afterward if needed. The owner can Put it back from the assistant log through the same validated entry service.
+
+_Needs `statements:write` and `destructive`; deletes; answers with `before` and `after`._
+
+| Parameter | Type    | Required | What it is                        |
+| --------- | ------- | -------- | --------------------------------- |
+| `id`      | integer | yes      | Entry id from commitment_entries. |
+
+### `settle_commitment` — Offset or settle with an existing payment
+
+Apply one owned, same-currency bank movement to custody, payable or receivable once. Refuses overpayment and duplicate evidence. An owner’s expense becomes custody allocation, not personal spending. This never creates or changes a bank amount. Reverse its entry explicitly, then unsplit the movement.
+
+_Needs `statements:write`; writes; answers with `before` and `after`._
+
+| Parameter        | Type    | Required | What it is                                                                                                                                                                                                                                                                                  |
+| ---------------- | ------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `commitment_id`  | integer | yes      | Commitment to reduce.                                                                                                                                                                                                                                                                       |
+| `transaction_id` | integer | yes      | Existing payment movement.                                                                                                                                                                                                                                                                  |
+| `note`           | string  | —        | Optional settlement evidence.                                                                                                                                                                                                                                                               |
+| `requestId`      | string  | —        | An id you choose for this call, such as a UUID, so it can be sent again safely: the same `requestId` with the same arguments within a day answers with the first answer, marked `replayed`, and nothing is made twice. Reused for a different call, it is refused with the code `conflict`. |
+
+### `consume_reserve` — Use a reserve for an existing expense
+
+Reduce a reserve once using a same-currency expense or fee already recorded. The payment stays personal spending exactly once. Refuses overconsumption, duplicate evidence or a custody split. Reverse the entry to undo; ledger truth stays unchanged.
+
+_Needs `statements:write`; writes; answers with `before` and `after`._
+
+| Parameter        | Type    | Required | What it is                                                                                                                                                                                                                                                                                  |
+| ---------------- | ------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `commitment_id`  | integer | yes      | Reserve to reduce.                                                                                                                                                                                                                                                                          |
+| `transaction_id` | integer | yes      | Existing personal expense.                                                                                                                                                                                                                                                                  |
+| `note`           | string  | —        | Optional consumption evidence.                                                                                                                                                                                                                                                              |
+| `requestId`      | string  | —        | An id you choose for this call, such as a UUID, so it can be sent again safely: the same `requestId` with the same arguments within a day answers with the first answer, marked `replayed`, and nothing is made twice. Reused for a different call, it is refused with the code `conflict`. |
+
+### `split_movement` — Split personal and third-party money
+
+Partition a movement without altering its amount. Signed allocation amounts must have its sign and add exactly to it. Personal parts may override category. Each custody part requires an owned same-currency custody/payable commitment and atomically records one matching entry. Refuses replacement while linked entries remain.
+
+_Needs `statements:write`; writes; answers with `before` and `after`._
+
+| Parameter                     | Type     | Required | What it is                                                                                                                                                                                                                                                                                  |
+| ----------------------------- | -------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `id`                          | integer  | yes      | Movement id.                                                                                                                                                                                                                                                                                |
+| `allocations`                 | object[] | yes      | Signed parts which conserve the bank movement exactly. At most 100 items.                                                                                                                                                                                                                   |
+| `allocations[].kind`          | string   | yes      | Who the money belongs to. One of: `personal`, `custody`.                                                                                                                                                                                                                                    |
+| `allocations[].amount_minor`  | integer  | yes      | Signed part in original minor units.                                                                                                                                                                                                                                                        |
+| `allocations[].category`      | string   | —        | Optional personal category override.                                                                                                                                                                                                                                                        |
+| `allocations[].commitment_id` | integer  | —        | Required for custody; custody/payable only.                                                                                                                                                                                                                                                 |
+| `allocations[].note`          | string   | —        | Optional note for this part.                                                                                                                                                                                                                                                                |
+| `requestId`                   | string   | —        | An id you choose for this call, such as a UUID, so it can be sent again safely: the same `requestId` with the same arguments within a day answers with the first answer, marked `replayed`, and nothing is made twice. Reused for a different call, it is refused with the code `conflict`. |
+
+### `unsplit_movement` — Make a movement whole again
+
+Remove allocations only after every linked entry is explicitly reversed. The original movement and ledger amount never change.
+
+_Needs `statements:write`; writes; answers with `before` and `after`._
+
+| Parameter | Type    | Required | What it is   |
+| --------- | ------- | -------- | ------------ |
+| `id`      | integer | yes      | Movement id. |
+
 ### `ledgers` — Your ledgers
 
 Accounts with original currency, declared opening, as-of supported amount, outside-coverage count and recorded/supported/verified evidence status. No opening means supportedMinor is null. balanceCents is retained only as a legacy recorded subtotal, never a bank balance; use recordedMinor. Unknown currency stays unspecified and is never converted.
@@ -2634,7 +2794,7 @@ _Needs `statements:read`; read-only._
 
 ### `spending_by_category` — Where the money went
 
-Spending split by category over a window. Every outgoing line is in exactly one slice — uncategorized included — so the slices are the whole of what was spent.
+Personal spending by category over a window: expenses and fees, net of refunds, with only the personal part of a split line, uncategorized included. Transfers, cash withdrawals and custody shares are left out, so the slices are the whole of personal spending rather than of every outgoing line. For cash flow by month use statement_months.
 
 _Needs `statements:read`; read-only._
 

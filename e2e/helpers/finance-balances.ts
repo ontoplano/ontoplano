@@ -1,7 +1,7 @@
 import { expect, type Page } from '@playwright/test';
 import { visit } from './visit';
 
-async function addLedger(page: Page, name: string, opening?: string, currency = 'KES') {
+export async function addLedger(page: Page, name: string, opening?: string, currency = 'KES') {
 	if (await page.getByTestId('ledger-balance').count()) {
 		await page.getByRole('button', { name: 'Ledgers', exact: true }).click();
 		await page

@@ -72,7 +72,10 @@ const WATCHED = [
 	'workout_sessions',
 	'workout_categories',
 	'finance_transactions',
-	'finance_balance_checks'
+	'finance_balance_checks',
+	'finance_commitments',
+	'finance_commitment_entries',
+	'finance_transaction_allocations'
 ];
 
 function snapshot(user: string): string {

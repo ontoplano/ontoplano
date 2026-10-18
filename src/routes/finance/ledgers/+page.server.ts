@@ -15,6 +15,7 @@ import {
 import { parseSignedMoney } from '$lib/money';
 import { NotFoundError, ValidationError } from '$lib/services/errors';
 import { formAction } from '$lib/services/scoped-actions';
+import { listCommitments } from '$lib/services/commitments';
 import {
 	availableParsers,
 	classifyMovements,
@@ -23,8 +24,11 @@ import {
 	importStatement,
 	linkMovement,
 	linkTransfer,
+	getMovementRow,
 	listMovements,
 	recordMovement,
+	splitMovement,
+	unsplitMovement,
 	recentForLinking,
 	monthsWithLines,
 	uncategorizedCount,
@@ -63,6 +67,7 @@ export const load = async ({ locals, url }: IsolatedEvent) => {
 		parsers: availableParsers(),
 		ledgers,
 		funds: supported(ctx),
+		commitments: listCommitments(ctx),
 		checks: current ? listBalanceChecks(ctx, current.id) : [],
 		current,
 		query,
@@ -88,6 +93,39 @@ export const load = async ({ locals, url }: IsolatedEvent) => {
 };
 
 export const actions = {
+	splitMovement: formAction((ctx, form) => {
+		const id = Number(form.get('id'));
+		const movement = getMovementRow(ctx, id);
+		if (!movement || movement.ledgerId === null) throw new NotFoundError('movement');
+		const ledger = getLedger(ctx, movement.ledgerId);
+		const parts = form.getAll('partData');
+		if (!parts.length || parts.length > 100)
+			throw new ValidationError('A split needs between 1 and 100 parts.');
+		const allocations = parts.map((raw) => {
+			let part;
+			try {
+				part = JSON.parse(String(raw));
+			} catch {
+				throw new ValidationError('Unreadable split part.');
+			}
+			if (!part || typeof part !== 'object' || Array.isArray(part))
+				throw new ValidationError('Unreadable split part.');
+			const amountMinor = parseSignedMoney(part.amount, ledger.currency);
+			if (amountMinor === null)
+				throw new ValidationError('Enter an exact signed part in the ledger currency.');
+			return {
+				kind: part.kind,
+				amountMinor,
+				category: part.category,
+				commitmentId: part.commitmentId,
+				note: part.note
+			};
+		});
+		splitMovement(ctx, { id, allocations });
+	}),
+	unsplitMovement: formAction((ctx, form) => {
+		unsplitMovement(ctx, Number(form.get('id')));
+	}),
 	/*
 	 * The ledger itself, under the names this room has always used.
 	 *

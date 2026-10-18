@@ -16,6 +16,7 @@ import { createLocation } from '$lib/services/locations.js';
 import { createWorkoutCategory } from '$lib/services/workouts.js';
 import { addGoalTarget, listGoals, setTargetProgress } from '$lib/services/goals.js';
 import { recordBalanceCheck } from '$lib/services/ledgers.js';
+import { addCommitmentEntry } from '$lib/services/commitments.js';
 
 /**
  * What an assistant did to an account, and the way back.
@@ -198,6 +199,16 @@ function storedAttributes(value: unknown): string | undefined {
 /** One case per deleting tool. A tool this does not know is a bug, not a shrug. */
 function recreate(ctx: Ctx, tool: string, before: Record<string, unknown>): string {
 	switch (tool) {
+		case 'delete_commitment_entry': {
+			addCommitmentEntry(ctx, {
+				commitmentId: before.commitmentId,
+				occurredOn: before.occurredOn,
+				amountMinor: before.amountMinor,
+				transactionId: before.transactionId,
+				note: before.note
+			});
+			return 'the commitment entry';
+		}
 		case 'delete_balance_check': {
 			recordBalanceCheck(ctx, {
 				ledgerId: before.ledgerId,

@@ -43,6 +43,12 @@ works is a key listed here and the reverse.
 | <kbd>e</kbd> | Edit the one under the cursor |
 | <kbd>n</kbd> | New bill                      |
 
+## Commitments — `/finance/commitments`
+
+| Key          | Does           |
+| ------------ | -------------- |
+| <kbd>n</kbd> | New commitment |
+
 ## Ledgers — `/finance/ledgers`
 
 | Key              | Does                          |

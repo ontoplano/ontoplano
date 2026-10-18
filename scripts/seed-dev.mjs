@@ -1824,6 +1824,83 @@ const movement = (ledgerId, occurredOn, amountCents, description, n = 1) => {
 	);
 };
 
+// Stocks and a mixed payment are synthetic; replay never rewrites their history.
+db.transaction(() => {
+	const stock = (kind, name, opening, currency = 'KES') => {
+		const existing = one(
+			'select id from finance_commitments where user_id = ? and name = ?',
+			uid,
+			name
+		);
+		if (existing) return { id: existing.id, added: false };
+		return {
+			id: run(
+				'insert into finance_commitments (user_id, kind, name, person_id, currency, opening_minor, notes) values (?, ?, ?, ?, ?, ?, ?)',
+				uid,
+				kind,
+				name,
+				kind === 'reserve' ? null : ana,
+				currency,
+				opening,
+				'Synthetic development example'
+			),
+			added: true
+		};
+	};
+	stock('custody', 'Travel money held for Ana', 150000);
+	stock('receivable', 'Shared purchase repayment', 7500, 'USD');
+	stock('reserve', 'Family support earmark', 500000);
+	const payable = stock('payable', 'Owner-approved household payment', 10000);
+	if (!payable.added) return;
+	let account = one(
+		'select id from ledgers where user_id = ? and name = ?',
+		uid,
+		'Mixed money example'
+	);
+	if (!account) {
+		const id = ledger('Mixed money example', 'bank', 'csv:columns');
+		run(
+			'update ledgers set currency = ?, opening_minor = ?, opening_on = ? where user_id = ? and id = ?',
+			'KES',
+			100000,
+			'2026-09-01',
+			uid,
+			id
+		);
+		account = { id };
+	}
+	movement(account.id, '2026-09-02', -10000, 'Synthetic mixed household payment');
+	const line = one(
+		'select id from finance_transactions where user_id = ? and ledger_id = ? and description = ?',
+		uid,
+		account.id,
+		'Synthetic mixed household payment'
+	);
+	for (const [kind, amount, category, commitment] of [
+		['personal', -7500, 'Household', null],
+		['custody', -2500, null, payable.id]
+	])
+		run(
+			'insert into finance_transaction_allocations (user_id, transaction_id, kind, amount_minor, category, commitment_id, note) values (?, ?, ?, ?, ?, ?, ?)',
+			uid,
+			line.id,
+			kind,
+			amount,
+			category,
+			commitment,
+			'Synthetic split'
+		);
+	run(
+		'insert into finance_commitment_entries (user_id, commitment_id, occurred_on, amount_minor, transaction_id, note) values (?, ?, ?, ?, ?, ?)',
+		uid,
+		payable.id,
+		'2026-09-02',
+		-2500,
+		line.id,
+		'Owner-approved synthetic offset'
+	);
+})();
+
 // The account, as a `date,amount,id,description` export reads it.
 //
 // Three months of a life rather than three lines repeated: the salary and the

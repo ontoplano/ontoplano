@@ -321,7 +321,9 @@
 					"classify_movements",
 					"link_movement",
 					"link_transfer",
-					"unlink_transfer"
+					"unlink_transfer",
+					"split_movement",
+					"unsplit_movement"
 				],
 				"archive": ["change_ledger"],
 				"unarchive": ["change_ledger"],
@@ -342,7 +344,9 @@
 					"src/routes/finance/ledgers/+page.server.ts#linkTransfer",
 					"src/routes/finance/ledgers/+page.server.ts#unlinkTransfer",
 					"src/routes/finance/ledgers/+page.server.ts#updateLedger",
-					"src/routes/finance/ledgers/+page.server.ts#updateMovement"
+					"src/routes/finance/ledgers/+page.server.ts#updateMovement",
+					"src/routes/finance/ledgers/+page.server.ts#splitMovement",
+					"src/routes/finance/ledgers/+page.server.ts#unsplitMovement"
 				],
 				"archive": ["src/routes/finance/ledgers/+page.server.ts#archiveLedger"],
 				"unarchive": ["src/routes/finance/ledgers/+page.server.ts#archiveLedger"],
@@ -355,6 +359,39 @@
 			},
 			"withheld": {
 				"delete": "A ledger takes every line in it when deleted: archived by a tool, deleted in the app. A single line can be removed."
+			}
+		},
+		{
+			"name": "Commitments",
+			"mcp": {
+				"create": ["add_commitment", "record_commitment_entry"],
+				"read": ["commitments", "commitment_entries"],
+				"change": ["change_commitment", "close_commitment", "settle_commitment", "consume_reserve"],
+				"archive": ["archive_commitment"],
+				"unarchive": ["archive_commitment"],
+				"delete": ["delete_commitment_entry"]
+			},
+			"app": {
+				"create": [
+					"src/routes/finance/commitments/+page.server.ts#create",
+					"src/routes/finance/commitments/+page.server.ts#addEntry"
+				],
+				"read": ["src/routes/finance/commitments/+page.server.ts#load"],
+				"change": [
+					"src/routes/finance/commitments/+page.server.ts#update",
+					"src/routes/finance/commitments/+page.server.ts#close",
+					"src/routes/finance/commitments/+page.server.ts#settle",
+					"src/routes/finance/commitments/+page.server.ts#consume"
+				],
+				"archive": ["src/routes/finance/commitments/+page.server.ts#archive"],
+				"unarchive": ["src/routes/finance/commitments/+page.server.ts#archive"],
+				"delete": [
+					"src/routes/finance/commitments/+page.server.ts#delete",
+					"src/routes/finance/commitments/+page.server.ts#deleteEntry"
+				]
+			},
+			"withheld": {
+				"delete": "A commitment carries financial history: assistants archive it; permanent deletion is only in the archived app view. Mistaken entries can be reversed and restored through the assistant log."
 			}
 		},
 		{

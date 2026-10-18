@@ -71,6 +71,7 @@
 		'arrow-up': 'M12 19V5M6 11l6-6 6 6',
 
 		// the sections
+		commitments: 'M4 5h16v14H4zM8 9h8M8 13h3M15 16l2 2 4-4',
 		home: 'M3 10.5 12 3l9 7.5V21H3z',
 		planner: 'M4 5h16v16H4zM4 9h16M9 9v12M15 9v12',
 		goals: 'M12 3v18M4 6h14l-3 4 3 4H4z',

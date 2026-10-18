@@ -85,6 +85,9 @@ const WATCHED = [
 	'finance_rules',
 	'finance_transactions',
 	'finance_balance_checks',
+	'finance_commitments',
+	'finance_commitment_entries',
+	'finance_transaction_allocations',
 	'exceptional_tasks',
 	'recurring_tasks',
 	'task_records',
@@ -131,6 +134,7 @@ beforeAll(async () => {
 		await import('../src/lib/services/workouts');
 	const { createRule, recordMovement } = await import('../src/lib/services/statements');
 	const { createBill, markPaid } = await import('../src/lib/services/bills');
+	const { createCommitment, addCommitmentEntry } = await import('../src/lib/services/commitments');
 	const { ensureTagIds } = await import('../src/lib/services/tags');
 
 	/** One row of every kind a tool can name, under this account. */
@@ -164,6 +168,19 @@ beforeAll(async () => {
 		}).id;
 		o.idea = idOf(createIdea(c, { content: `idea ${m}` }));
 		o.person = idOf(createPerson(c, { name: `person ${m}` }));
+		o.commitment = createCommitment(c, {
+			name: `commitment ${m}`,
+			kind: 'payable',
+			currency: 'KES',
+			openingMinor: 10000,
+			personId: o.person
+		}).id;
+		o.commitmentEntry = addCommitmentEntry(c, {
+			commitmentId: o.commitment,
+			occurredOn: '2026-03-13',
+			amountMinor: -100,
+			note: `entry ${m}`
+		}).id;
 		o.reminder = idOf(createFreeReminder(c, { at: '2026-03-20T09:00', message: `reminder ${m}` }));
 		o.location = idOf(createLocation(c, { name: `place ${m}` }));
 		o.recipe = idOf(createRecipe(c, { title: `recipe ${m}` }));
@@ -401,5 +418,7 @@ describe('one reference at a time, from a valid baseline', () => {
 		expect(leaked, 'these reached a stranger’s row, or changed something').toEqual([]);
 		expect(byShape, 'these were refused by the schema, not by the reference').toEqual([]);
 		expect(differed, 'these refused a stranger’s row differently from no row').toEqual([]);
-	}, 60_000);
+		// The sweep grows with the tool table and runs beside every other test
+		// file: a budget that fits it alone goes red on a loaded machine.
+	}, 120_000);
 });

@@ -127,6 +127,14 @@ export function parseSignedMoney(raw: unknown, currency: Currency | null): numbe
 	return Number.isSafeInteger(amount) ? amount : null;
 }
 
+/** Exact editable signed amount, without rounding a safe integer during division. */
+export function moneyInput(amount: number, currency: Currency | null): string {
+	const units = BigInt(currency === null ? 1 : minorUnits(currency));
+	const value = BigInt(amount < 0 ? -amount : amount);
+	const digits = String(units).length - 1;
+	return `${amount < 0 ? '-' : ''}${value / units}${digits ? `.${String(value % units).padStart(digits, '0')}` : ''}`;
+}
+
 /** "12,50" or "12.50" → 1250. Returns null for anything that is not a price. */
 export function parseMoney(raw: unknown, currency: Currency): number | null {
 	const text = String(raw ?? '')

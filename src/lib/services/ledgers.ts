@@ -430,6 +430,16 @@ export function setLedgerArchived(ctx: Ctx, id: number, archived: boolean): void
 export function deleteLedger(ctx: Ctx, id: number): void {
 	getLedger(ctx, id);
 	db.transaction((tx) => {
+		const linked = tx.all<{ id: number }>(sql`
+			select t.id from finance_transactions t
+			where t.user_id = ${ctx.userId} and t.ledger_id = ${id} and (
+				exists (select 1 from finance_transaction_allocations a where a.user_id = ${ctx.userId} and a.transaction_id = t.id)
+				or exists (select 1 from finance_commitment_entries e where e.user_id = ${ctx.userId} and e.transaction_id = t.id)
+			)`);
+		if (linked.length)
+			throw new ValidationError(
+				`Reverse linked entries and unsplit movements ${linked.map((row) => row.id).join(', ')} before deleting this ledger.`
+			);
 		tx.delete(financeTransactions)
 			.where(and(eq(financeTransactions.ledgerId, id), eq(financeTransactions.userId, ctx.userId)))
 			.run();

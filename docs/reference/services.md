@@ -38,6 +38,7 @@ shows up here on the next build.
 | [`calendar-feed`](#calendar-feed)                | The plan, published as a calendar anybody's software can read.                                                                                                                                                                                                       |
 | [`calendars`](#calendars)                        | Calendars somebody else controls.                                                                                                                                                                                                                                    |
 | [`client-errors`](#client-errors)                | Client-side errors, sent in with permission.                                                                                                                                                                                                                         |
+| [`commitments`](#commitments)                    | Custody, simple debts and reserves are stocks, not bank movements or budgets. A balance is the declared opening plus dated entries in its original currency. Splits and settlements retain their source evidence; nothing here invents money.                        |
 | [`companions`](#companions)                      | The processes an instance needs BESIDE the app, and whether they exist.                                                                                                                                                                                              |
 | [`ctx`](#ctx)                                    | The single argument every service function takes.                                                                                                                                                                                                                    |
 | [`demo`](#demo)                                  | A demo where everybody gets their own copy.                                                                                                                                                                                                                          |
@@ -189,7 +190,7 @@ Everything the account owns, as plain JSON.
 Deliberately the raw rows rather than a prettied-up shape: an export is for
 being complete and re-importable, not for reading nicely.
 
-/\*\* "in about 7 hours", for a message a person reads once and acts on.
+/** "in about 7 hours", for a message a person reads once and acts on.
 
 #### `accountRow(userId)`
 
@@ -1485,6 +1486,52 @@ Forget one, once it has been dealt with.
 
 - `ClientErrorState`
 - `ReportedError`
+
+## commitments
+
+Custody, simple debts and reserves are stocks, not bank movements or budgets.
+A balance is the declared opening plus dated entries in its original currency.
+Splits and settlements retain their source evidence; nothing here invents money.
+
+### Functions
+
+#### `listCommitments(ctx, options)`
+
+One aggregate per stock; closed records only appear when explicitly requested.
+
+#### `getCommitment(ctx, id)`
+
+#### `createCommitment(ctx, input)`
+
+#### `updateCommitment(ctx, id, input)`
+
+#### `archiveCommitment(ctx, id, archived)`
+
+#### `listCommitmentEntries(ctx, id)`
+
+#### `getCommitmentEntry(ctx, id)`
+
+#### `addCommitmentEntry(ctx, input)`
+
+#### `deleteCommitmentEntry(ctx, id)`
+
+#### `closeCommitment(ctx, id, input)`
+
+#### `deleteCommitment(ctx, id, options)`
+
+#### `commitmentTotals(ctx)`
+
+Each kind/currency stays a stock of its own; debts are never netted into funds.
+
+#### `settleCommitment(ctx, input)`
+
+#### `consumeReserve(ctx, input)`
+
+### Types
+
+- `CommitmentKind`
+- `Commitment`
+- `CommitmentEntry`
 
 ## companions
 
@@ -5978,6 +6025,14 @@ no resweep and nothing stored to drift.
 
 ### Functions
 
+#### `splitMovement(ctx, input)`
+
+A split never rewrites the bank line; custody entries and all parts land together.
+
+#### `unsplitMovement(ctx, id)`
+
+Remove parts only after the owner explicitly reverses their stock entries.
+
 #### `availableParsers()`
 
 The parsers an import can offer, by key and friendly name.
@@ -6102,13 +6157,19 @@ How many lines no category rule claims — the number that says "more rules".
 
 #### `categorySlices(ctx, filter)`
 
-Spending by category over a window — the pie, and the table beside it.
-Every outgoing line is in exactly one slice, uncategorized included, so
-the slices are the whole of what was spent.
+Personal spending by category over a window — the pie, and the table beside it.
+Expenses and fees count, net of refunds, and only the personal part of a split
+line. Transfers, cash withdrawals and custody shares stay out; a month whose
+refunds outweigh its spending has no slice rather than a negative one.
 
 #### `monthlyTotals(ctx, months, filter)`
 
 In, out and net, month by month.
+
+This is cash flow as the bank shows it: a linked refund arrived, so it is
+money in. Personal spending — `categorySlices`, `categoryMonths` — nets that
+refund against the expense it reverses and leaves transfers, cash and custody
+shares out, so the two totals are not meant to match.
 
 #### `categoryMonths(ctx, months, filter)`
 
@@ -6144,6 +6205,8 @@ The ledgers a set of transaction ids belongs to — for bulk moves later.
 ### Types
 
 - `Movement`
+- `MovementAllocation`
+- `AllocationInput`
 - `MovementKind`
 - `Rule`
 - `MovementFilter`
