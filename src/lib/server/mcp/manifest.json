@@ -386,6 +386,10 @@
 		"destroys": false,
 		"creates": "ledger",
 		"params": {
+			"currency": {
+				"type": "string",
+				"required": false
+			},
 			"default_parser": {
 				"type": "string",
 				"required": false
@@ -400,6 +404,14 @@
 			},
 			"notebookId": {
 				"type": "integer",
+				"required": false
+			},
+			"opening_minor": {
+				"type": "integer",
+				"required": false
+			},
+			"opening_on": {
+				"type": "string",
 				"required": false
 			},
 			"requestId": {
@@ -910,6 +922,17 @@
 			}
 		}
 	},
+	"balance_checks": {
+		"scope": "statements:read",
+		"writes": false,
+		"destroys": false,
+		"params": {
+			"ledger_id": {
+				"type": "integer",
+				"required": true
+			}
+		}
+	},
 	"bill_history": {
 		"scope": "bills:read",
 		"writes": false,
@@ -1386,6 +1409,10 @@
 				"type": "boolean",
 				"required": false
 			},
+			"currency": {
+				"type": "string",
+				"required": false
+			},
 			"default_parser": {
 				"type": "string",
 				"required": false
@@ -1414,6 +1441,14 @@
 			},
 			"notebookId": {
 				"type": "integer",
+				"required": false
+			},
+			"opening_minor": {
+				"type": "integer",
+				"required": false
+			},
+			"opening_on": {
+				"type": "string",
 				"required": false
 			},
 			"position": {
@@ -2039,6 +2074,17 @@
 		"destroys": false,
 		"params": {}
 	},
+	"delete_balance_check": {
+		"scope": "statements:write",
+		"writes": true,
+		"destroys": true,
+		"params": {
+			"id": {
+				"type": "integer",
+				"required": true
+			}
+		}
+	},
 	"delete_sort_rule": {
 		"scope": "statements:write",
 		"writes": true,
@@ -2313,6 +2359,10 @@
 		"writes": false,
 		"destroys": false,
 		"params": {
+			"as_of": {
+				"type": "string",
+				"required": false
+			},
 			"notebookId": {
 				"type": "integer",
 				"required": false
@@ -2803,6 +2853,34 @@
 			"id": {
 				"type": "integer",
 				"required": true
+			}
+		}
+	},
+	"record_balance_check": {
+		"scope": "statements:write",
+		"writes": true,
+		"destroys": false,
+		"creates": "balanceCheck",
+		"params": {
+			"as_of": {
+				"type": "string",
+				"required": true
+			},
+			"ledger_id": {
+				"type": "integer",
+				"required": true
+			},
+			"note": {
+				"type": "string",
+				"required": false
+			},
+			"observed_minor": {
+				"type": "integer",
+				"required": true
+			},
+			"requestId": {
+				"type": "string",
+				"required": false
 			}
 		}
 	},

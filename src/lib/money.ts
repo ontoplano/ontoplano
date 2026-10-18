@@ -112,6 +112,21 @@ export function formatMoney(cents: number, currency: Currency, locale?: string):
 	}
 }
 
+/** Exact signed form amount. Unknown currency accepts only explicitly labelled minor units. */
+export function parseSignedMoney(raw: unknown, currency: Currency | null): number | null {
+	if (typeof raw !== 'string') return null;
+	const match = raw.trim().match(/^([+-]?)(\d+)(?:[.,](\d+))?$/);
+	if (!match) return null;
+	const units = currency === null ? 1 : minorUnits(currency);
+	const digits = Math.log10(units);
+	if ((match[3]?.length ?? 0) > digits) return null;
+	const value =
+		(BigInt(match[2]) * BigInt(units) + BigInt((match[3] ?? '').padEnd(digits, '0') || '0')) *
+		(match[1] === '-' ? -1n : 1n);
+	const amount = Number(value);
+	return Number.isSafeInteger(amount) ? amount : null;
+}
+
 /** "12,50" or "12.50" → 1250. Returns null for anything that is not a price. */
 export function parseMoney(raw: unknown, currency: Currency): number | null {
 	const text = String(raw ?? '')

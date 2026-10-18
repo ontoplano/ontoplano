@@ -27,6 +27,9 @@ import { getLedger } from './ledgers.js';
 import { stamp } from './time.js';
 import { NotFoundError, ValidationError } from './errors.js';
 import { num, oneOf, str } from './validate.js';
+import { civilDay, minorAmount } from './validate.js';
+import { minorUnits } from '../money.js';
+import { StatementParseError, type ParsedMovement } from '../bank-parsers/shape.js';
 import { unsafePattern } from './regex-safety.js';
 
 export const MAX_PATTERN_LENGTH = 300;
@@ -150,17 +153,33 @@ export function importStatement(
 		flip?: boolean;
 		mapping?: CsvMapping | null;
 	}
-): { added: number; skipped: number } {
+): { added: number; skipped: number; recordedOnly: boolean } {
 	const ledgerId = num(input.ledgerId, 'ledger', { int: true });
-	getLedger(ctx, ledgerId); // ownership
+	const ledger = getLedger(ctx, ledgerId); // ownership
 	const source = str(input.source, 'bank export', { max: 100 });
 	const parser = parserFor(source);
 	if (!parser) throw new ValidationError({ key: 'errors.statements.noParserKnowsThatExport' });
-	const text = str(input.text, 'statement', { max: MAX_STATEMENT_LENGTH });
+	const text = str(input.text, 'statement', { max: MAX_STATEMENT_LENGTH, trim: false });
 
-	const read =
-		source === CSV_PARSER_KEY && input.mapping ? parseCsv(text, input.mapping) : parser.parse(text);
-	const parsed = read.slice(0, MAX_STATEMENT_LINES);
+	const options = { strict: true, units: ledger.currency ? minorUnits(ledger.currency) : 100 };
+	if (source !== CSV_PARSER_KEY && options.units !== 100)
+		throw new ValidationError(
+			'This bank export uses two decimal places. Use the original-currency generic CSV format for this ledger.'
+		);
+	let parsed: ParsedMovement[];
+	try {
+		parsed =
+			source === CSV_PARSER_KEY && input.mapping
+				? parseCsv(text, input.mapping, options)
+				: parser.parse(text, options);
+	} catch (error) {
+		if (error instanceof StatementParseError) throw new ValidationError(error.message);
+		throw error;
+	}
+	if (parsed.length > MAX_STATEMENT_LINES)
+		throw new ValidationError(
+			`That file exceeds ${MAX_STATEMENT_LINES} movements. Nothing was imported.`
+		);
 	if (parsed.length === 0)
 		throw new ValidationError(
 			source === CSV_PARSER_KEY
@@ -172,40 +191,87 @@ export function importStatement(
 	// same price, same day): each gets its occurrence number, so they keep
 	// distinct fingerprints while a re-import of the same file lands on the
 	// same ones and is ignored.
-	const seen = new Map<string, number>();
-	let added = 0;
-	for (const line of parsed) {
-		const amountCents = input.flip ? -line.amountCents : line.amountCents;
-		// A parser reads whatever the file said; the description it returns is
-		// still text from outside and is bounded here, where everything else
-		// that reaches this column is.
-		const description = line.description.slice(0, MAX_DESCRIPTION_LENGTH);
-		const base = line.externalId
-			? `${source}:${line.externalId}`
-			: (() => {
-					const content = `${source}|${line.occurredOn}|${amountCents}|${description}`;
-					const n = (seen.get(content) ?? 0) + 1;
-					seen.set(content, n);
-					return `h:${lineHash(`${content}|${n}`)}`;
-				})();
-		const inserted = db
-			.insert(financeTransactions)
-			.values({
-				userId: ctx.userId,
-				ledgerId,
-				occurredOn: line.occurredOn,
-				amountCents,
-				description,
-				source,
-				externalId: line.externalId ?? null,
-				fingerprint: `${ledgerId}|${base}`,
-				createdAt: stamp(ctx)
-			})
-			.onConflictDoNothing()
-			.run();
-		if (inserted.changes > 0) added += 1;
+	for (const [index, line] of parsed.entries()) {
+		try {
+			civilDay(line.occurredOn);
+			minorAmount(line.amountCents);
+			str(line.description, 'description', { max: Number.MAX_SAFE_INTEGER });
+		} catch {
+			throw new ValidationError(
+				`Line ${line.line ?? index + 1} was rejected: invalid date, amount or description. Nothing was imported.`
+			);
+		}
 	}
-	return { added, skipped: parsed.length - added };
+	const earliest = parsed.reduce(
+		(date, line) => (line.occurredOn < date ? line.occurredOn : date),
+		parsed[0].occurredOn
+	);
+
+	// Fingerprints retain the parser's historical two-decimal identity even when
+	// original-currency precision differs. Replays must not duplicate old history.
+	const identities =
+		source === CSV_PARSER_KEY && options.units !== 100
+			? input.mapping
+				? parseCsv(text, input.mapping)
+				: parser.parse(text)
+			: parsed;
+	return db.transaction((tx) => {
+		const current = getLedger(ctx, ledgerId);
+		if (current.currency !== ledger.currency)
+			throw new ValidationError(
+				'Ledger currency changed while reading the file. Nothing was imported; retry with the current currency.'
+			);
+		if (current.openingOn && earliest < current.openingOn)
+			throw new ValidationError(
+				`The earliest movement, ${earliest}, is before the opening date ${current.openingOn}. Nothing was imported.`
+			);
+		const seen = new Map<string, number>();
+		let added = 0;
+		for (const [index, line] of parsed.entries()) {
+			const amountCents = input.flip ? -line.amountCents : line.amountCents;
+			// A parser reads whatever the file said; the description it returns is
+			// still text from outside and is bounded here, where everything else
+			// that reaches this column is.
+			const description = line.description.slice(0, MAX_DESCRIPTION_LENGTH);
+			const base = line.externalId
+				? `${source}:${line.externalId}`
+				: (() => {
+						const identityAmount = input.flip
+							? -identities[index].amountCents
+							: identities[index].amountCents;
+						const content = `${source}|${line.occurredOn}|${identityAmount}|${description}`;
+						const n = (seen.get(content) ?? 0) + 1;
+						seen.set(content, n);
+						return `h:${lineHash(`${content}|${n}`)}`;
+					})();
+			let inserted;
+			try {
+				inserted = tx
+					.insert(financeTransactions)
+					.values({
+						userId: ctx.userId,
+						ledgerId,
+						occurredOn: line.occurredOn,
+						amountCents,
+						description,
+						source,
+						externalId: line.externalId ?? null,
+						fingerprint: `${ledgerId}|${base}`,
+						createdAt: stamp(ctx)
+					})
+					.onConflictDoNothing({
+						target: [financeTransactions.userId, financeTransactions.fingerprint]
+					})
+					.run();
+			} catch {
+				throw new ValidationError(
+					`Line ${line.line ?? index + 1} was rejected while saving. Nothing was imported.`
+				);
+			}
+			if (inserted.changes > 0) added += 1;
+		}
+		return { added, skipped: parsed.length - added, recordedOnly: current.openingOn === null };
+	});
 }
 
 /**
@@ -227,8 +293,8 @@ export function recordMovement(
 ): { id: number; added: boolean } {
 	const ledgerId = num(input.ledgerId, 'ledger', { int: true });
 	getLedger(ctx, ledgerId);
-	const occurredOn = str(input.occurredOn, 'date', { max: 10, pattern: /^\d{4}-\d{2}-\d{2}$/ });
-	const amountCents = num(input.amountCents, 'amount', { int: true });
+	const occurredOn = civilDay(input.occurredOn);
+	const amountCents = minorAmount(input.amountCents);
 	const description = str(input.description, 'description', { max: MAX_DESCRIPTION_LENGTH });
 	const source = input.source ? str(input.source, 'source', { max: 100 }) : 'manual';
 	const externalId = input.externalId ? str(input.externalId, 'external id', { max: 200 }) : null;
@@ -316,11 +382,11 @@ export function updateMovement(
 			occurredOn:
 				input.occurredOn === undefined || input.occurredOn === ''
 					? current.occurredOn
-					: str(input.occurredOn, 'date', { max: 10, pattern: /^\d{4}-\d{2}-\d{2}$/ }),
+					: civilDay(input.occurredOn),
 			amountCents:
 				input.amountCents === undefined || input.amountCents === ''
 					? current.amountCents
-					: num(input.amountCents, 'amount', { int: true })
+					: minorAmount(input.amountCents)
 		})
 		.where(and(eq(financeTransactions.id, id), eq(financeTransactions.userId, ctx.userId)))
 		.run();

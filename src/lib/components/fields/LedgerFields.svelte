@@ -14,6 +14,7 @@
 	import OneLine from '$lib/components/OneLine.svelte';
 	import { LEDGER_KINDS, LEDGER_KIND_LABELS } from '$lib/services/ledgers';
 	import { useT } from '$lib/i18n';
+	import { minorUnits } from '$lib/money';
 
 	const t = useT();
 
@@ -21,6 +22,9 @@
 		name: string;
 		kind: string;
 		defaultParser: string | null;
+		currency?: string | null;
+		openingMinor?: number;
+		openingOn?: string | null;
 		notebookId?: number | null;
 	} | null;
 
@@ -65,6 +69,35 @@
 		value={editing?.notebookId ?? startingNotebook}
 		span={6}
 	/>
+
+	<Field label={t('finance.ledgers.currency')} span={12} hint={t('finance.ledgers.currencyHint')}>
+		<OneLine
+			name="currency"
+			class="input"
+			value={editing?.currency ?? ''}
+			maxlength={3}
+			placeholder="KES"
+		/>
+	</Field>
+	<Field
+		label={t('finance.ledgers.openingAmount')}
+		span={6}
+		hint={t('finance.ledgers.openingHint')}
+	>
+		<input
+			name="openingAmount"
+			class="input"
+			inputmode="decimal"
+			value={editing
+				? (
+						(editing.openingMinor ?? 0) / (editing.currency ? minorUnits(editing.currency) : 1)
+					).toFixed(editing.currency ? Math.log10(minorUnits(editing.currency)) : 0)
+				: '0'}
+		/>
+	</Field>
+	<Field label={t('finance.ledgers.openingOn')} span={6}>
+		<input name="openingOn" type="date" class="input" value={editing?.openingOn ?? ''} />
+	</Field>
 
 	<Field
 		label={t('finance.ledgers.usualExport')}

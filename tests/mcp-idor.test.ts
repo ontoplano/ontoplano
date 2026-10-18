@@ -84,6 +84,7 @@ const WATCHED = [
 	'workout_categories',
 	'finance_rules',
 	'finance_transactions',
+	'finance_balance_checks',
 	'exceptional_tasks',
 	'recurring_tasks',
 	'task_records',
@@ -110,7 +111,7 @@ beforeAll(async () => {
 	const { createArea, createGoal } = await import('../src/lib/services/goals');
 	const { createHabit } = await import('../src/lib/services/habits');
 	const { createNotebook } = await import('../src/lib/services/notebooks');
-	const { createLedger } = await import('../src/lib/services/ledgers');
+	const { createLedger, recordBalanceCheck } = await import('../src/lib/services/ledgers');
 	const { createEntry } = await import('../src/lib/services/diary');
 	const { createIdea } = await import('../src/lib/services/ideas');
 	const { createPerson } = await import('../src/lib/services/people');
@@ -149,6 +150,12 @@ beforeAll(async () => {
 		o.notebook = idOf(createNotebook(c, { title: `notebook ${m}` }));
 		o.note = idOf(createEntry(c, { content: `note ${m}` }));
 		o.ledger = idOf(createLedger(c, { name: `ledger ${m}` }));
+		o.balanceCheck = recordBalanceCheck(c, {
+			ledgerId: o.ledger,
+			asOf: '2026-03-13',
+			observedMinor: 1234,
+			note: `statement ${m}`
+		}).id;
 		o.movement = recordMovement(c, {
 			ledgerId: o.ledger,
 			occurredOn: '2026-03-10',

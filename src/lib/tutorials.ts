@@ -500,6 +500,10 @@ export const TUTORIALS: Record<string, Tutorial> = {
 				body: 'tour.aCurrentAccountIsOne'
 			},
 			{
+				title: 'finance.ledgers.supportedFunds',
+				body: 'finance.ledgers.coverageTour'
+			},
+			{
 				title: 'tour.theStatementIsTheRecord',
 				body: 'tour.importTheBankU2019sOwnExport'
 			},

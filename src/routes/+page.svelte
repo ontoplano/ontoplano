@@ -1204,6 +1204,26 @@
 				{#snippet actions()}
 					{@render openLink(resolve('/finance/bills'))}
 				{/snippet}
+				{#if data.billsCard.funds.length}
+					<section class="mb-3 space-y-2" aria-label={t('finance.ledgers.supportedFunds')}>
+						<a class="text-sm font-medium underline" href={resolve('/finance/ledgers')}
+							>{t('finance.ledgers.supportedFunds')}</a
+						>
+						{#each data.billsCard.funds as group (group.currency)}
+							<p class="text-sm">
+								{group.currency ?? t('finance.ledgers.unspecified')} · {group.supportedMinor ===
+									null || !group.currency
+									? t('finance.ledgers.noSupportedFunds')
+									: formatMoney(group.supportedMinor, group.currency)}
+							</p>
+							{#if group.excluded.length}<p class="text-xs text-gray-600">
+									{t('finance.ledgers.excludedAccounts', {
+										names: group.excluded.map((l) => l.name).join(', ')
+									})}
+								</p>{/if}
+						{/each}
+					</section>
+				{/if}
 				{#if data.billsCard.summary.billCount === 0}
 					{@render nothingYet(t('home.noBillsYetWriteDown'), '/finance/bills', t('home.addABill'))}
 				{:else}

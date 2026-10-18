@@ -137,6 +137,7 @@ export const USER_TABLES: OwnedTable[] = [
 	owned('bills', schema.bills as never),
 	// The statements point at their ledger, so they go first; the rules that
 	// sort them point at nothing but the account itself.
+	owned('financeBalanceChecks', schema.financeBalanceChecks as never),
 	owned('financeTransactions', schema.financeTransactions as never),
 	owned('ledgers', schema.ledgers as never),
 	owned('financeRules', schema.financeRules as never),

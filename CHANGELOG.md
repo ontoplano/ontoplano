@@ -18,6 +18,10 @@ the shape of the data changing. Bumping the minor per batch is what ran this
 file to 0.161 in a few months, which tells a reader nothing about which
 releases mattered.
 
+## 0.186.1 — 2026-10-18
+
+- Finance accounts now show declared openings, original-currency supported totals, statement balance checks and clear recorded-only limits. Statement imports reject unreadable or pre-opening rows without writing part of a file.
+
 ## 0.186.0 — 2026-10-09
 
 - The short plan sheet stays scrollable above the keyboard, expands when its header is tapped or swiped up, and uses “Add” to save a new block.

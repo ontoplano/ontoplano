@@ -307,8 +307,14 @@
 		{
 			"name": "Accounts and movements",
 			"mcp": {
-				"create": ["add_ledger", "record_movement"],
-				"read": ["ledgers", "movements", "statement_months", "spending_by_category"],
+				"create": ["add_ledger", "record_movement", "record_balance_check"],
+				"read": [
+					"ledgers",
+					"movements",
+					"statement_months",
+					"spending_by_category",
+					"balance_checks"
+				],
 				"change": [
 					"change_ledger",
 					"change_movement",
@@ -319,13 +325,14 @@
 				],
 				"archive": ["change_ledger"],
 				"unarchive": ["change_ledger"],
-				"delete": ["remove_movement"],
+				"delete": ["remove_movement", "delete_balance_check"],
 				"reorder": ["change_ledger"]
 			},
 			"app": {
 				"create": [
 					"src/routes/finance/ledgers/+page.server.ts#createLedger",
-					"src/routes/finance/ledgers/+page.server.ts#addMovement"
+					"src/routes/finance/ledgers/+page.server.ts#addMovement",
+					"src/routes/finance/ledgers/+page.server.ts#recordBalanceCheck"
 				],
 				"read": ["src/routes/finance/ledgers/+page.server.ts#load"],
 				"change": [
@@ -341,7 +348,8 @@
 				"unarchive": ["src/routes/finance/ledgers/+page.server.ts#archiveLedger"],
 				"delete": [
 					"src/routes/finance/ledgers/+page.server.ts#deleteLedger",
-					"src/routes/finance/ledgers/+page.server.ts#deleteMovement"
+					"src/routes/finance/ledgers/+page.server.ts#deleteMovement",
+					"src/routes/finance/ledgers/+page.server.ts#deleteBalanceCheck"
 				],
 				"reorder": ["src/routes/finance/ledgers/+page.server.ts#moveLedger"]
 			},

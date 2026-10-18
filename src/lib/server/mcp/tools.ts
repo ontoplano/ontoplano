@@ -210,10 +210,13 @@ import {
 } from '$lib/services/statements.js';
 import {
 	createLedger,
+	deleteBalanceCheck,
 	getLedger,
 	LEDGER_KINDS,
+	listBalanceChecks,
 	listLedgers,
 	placeLedger,
+	recordBalanceCheck,
 	setLedgerArchived,
 	updateLedger
 } from '$lib/services/ledgers.js';
@@ -5873,13 +5876,20 @@ export const TOOLS: Tool[] = [
 		name: 'ledgers',
 		title: 'Your ledgers',
 		description:
-			'The places money moves through — a current account, a credit card — with how many lines each holds and what they add up to. Amounts are in minor units (cents).',
+			'Accounts with original currency, declared opening, as-of supported amount, outside-coverage count and recorded/supported/verified evidence status. No opening means supportedMinor is null. balanceCents is retained only as a legacy recorded subtotal, never a bank balance; use recordedMinor. Unknown currency stays unspecified and is never converted.',
 		scope: 'statements:read',
 		writes: false,
 		refs: [IN_NOTEBOOK_REF],
-		input: object({ ...IN_NOTEBOOK_ARG }),
+		input: object({
+			...IN_NOTEBOOK_ARG,
+			as_of: text('Inclusive balance date YYYY-MM-DD; defaults to today in the account timezone.')
+		}),
 		run: (ctx, args) => ({
-			ledgers: listLedgers(ctx, { includeArchived: true, ...inNotebook(args) })
+			ledgers: listLedgers(ctx, {
+				includeArchived: true,
+				...inNotebook(args),
+				...(args.as_of === undefined ? {} : { asOf: String(args.as_of) })
+			})
 		})
 	},
 	{
@@ -5887,7 +5897,7 @@ export const TOOLS: Tool[] = [
 		title: 'Add a ledger',
 		creates: 'ledger' as const,
 		description:
-			'A new place money moves through. `kind` is bank, card, cash or other; `default_parser` preselects an export format when importing into it.',
+			'A new place money moves through. Declare currency explicitly; omitted currency stays unspecified. opening_minor is signed minor units immediately before the first movement on opening_on. Without opening_on only a recorded subtotal is known.',
 		scope: 'statements:write',
 		writes: true,
 		refs: [{ arg: 'notebookId', kind: 'notebook' }],
@@ -5896,6 +5906,12 @@ export const TOOLS: Tool[] = [
 				name: text('What it is called — "Nubank", "Visa".'),
 				kind: text('bank, card, cash or other.'),
 				default_parser: text("An export key like 'nubank:conta_corrente'."),
+				currency: text('Original ISO 4217 currency, never inferred from user preferences.'),
+				opening_minor: {
+					type: 'integer',
+					description: 'Signed opening in the currency’s minor units.'
+				},
+				opening_on: text('First covered day YYYY-MM-DD; empty means no declared opening.'),
 				notebookId: {
 					type: 'integer',
 					description:
@@ -5910,6 +5926,9 @@ export const TOOLS: Tool[] = [
 				name: args.name,
 				kind: args.kind ?? 'bank',
 				defaultParser: args.default_parser,
+				currency: args.currency,
+				openingMinor: args.opening_minor,
+				openingOn: args.opening_on,
 				...(args.notebookId === undefined ? {} : { notebookId: args.notebookId })
 			}).id
 		})
@@ -5929,6 +5948,16 @@ export const TOOLS: Tool[] = [
 			{
 				id: { type: 'integer', description: 'The ledger\u2019s id, as `ledgers` gives it.' },
 				name: text('A new name.'),
+				currency: text(
+					'Original ISO 4217 currency. Changes require no movements, declared opening or statement checks. No conversion is performed.'
+				),
+				opening_minor: {
+					type: 'integer',
+					description: 'Signed opening in original minor units; does not alter movements.'
+				},
+				opening_on: text(
+					'First covered day YYYY-MM-DD. Empty clears the opening coverage, preserving history.'
+				),
 				kind: {
 					type: 'string',
 					enum: [...LEDGER_KINDS],
@@ -5962,11 +5991,77 @@ export const TOOLS: Tool[] = [
 				...(args.name === undefined ? {} : { name: args.name }),
 				...(args.kind === undefined ? {} : { kind: args.kind }),
 				...(args.default_parser === undefined ? {} : { defaultParser: args.default_parser }),
+				...(args.currency === undefined ? {} : { currency: args.currency }),
+				...(args.opening_minor === undefined ? {} : { openingMinor: args.opening_minor }),
+				...(args.opening_on === undefined ? {} : { openingOn: args.opening_on }),
 				...(notebookId === undefined ? {} : { notebookId })
 			});
 			if (args.archived !== undefined) setLedgerArchived(ctx, id, Boolean(args.archived));
 			if (args.position !== undefined) placeLedger(ctx, id, Number(args.position));
 			return { ledger: getLedger(ctx, id) };
+		}
+	},
+	{
+		name: 'balance_checks',
+		writes: false,
+		title: 'Statement balance observations',
+		description:
+			'Statement closing balances, newest first, with computed amounts, observed-minus-computed differences and matched, different or unverified status. No opening means unverified, not discarded evidence.',
+		scope: 'statements:read',
+		refs: [{ arg: 'ledger_id', kind: 'ledger' }],
+		input: object({ ledger_id: { type: 'integer', description: 'Ledger id.' } }, ['ledger_id']),
+		run: (ctx, args) => ({ checks: listBalanceChecks(ctx, Number(args.ledger_id)) })
+	},
+	{
+		name: 'record_balance_check',
+		title: 'Record a statement closing balance',
+		description:
+			'Store observed signed minor units at an explicit date, once per ledger and date. Stores evidence even without an opening and never writes an adjustment. Delete an incorrect observation explicitly before replacing it.',
+		scope: 'statements:write',
+		writes: true,
+		creates: 'balanceCheck',
+		refs: [{ arg: 'ledger_id', kind: 'ledger' }],
+		input: object(
+			{
+				ledger_id: { type: 'integer', description: 'Ledger id.' },
+				as_of: text('Statement closing date YYYY-MM-DD, inclusive of all movements that day.'),
+				observed_minor: {
+					type: 'integer',
+					description: 'Statement closing amount in original minor units.'
+				},
+				note: text('Optional evidence note, at most 1000 characters.'),
+				...RETRY_ARGS
+			},
+			['ledger_id', 'as_of', 'observed_minor']
+		),
+		run: (ctx, args) => {
+			const check = recordBalanceCheck(ctx, {
+				ledgerId: args.ledger_id,
+				asOf: args.as_of,
+				observedMinor: args.observed_minor,
+				note: args.note
+			});
+			return { id: check.id, check };
+		}
+	},
+	{
+		name: 'delete_balance_check',
+		title: 'Delete an incorrect balance observation',
+		description:
+			'Remove one statement observation explicitly. The opening and every movement remain untouched; ledger status is re-evaluated from remaining evidence.',
+		scope: 'statements:write',
+		writes: true,
+		destroys: true,
+		refs: [{ arg: 'id', kind: 'balanceCheck' }],
+		input: object(
+			{
+				id: { type: 'integer', description: 'Observation id from balance_checks.' }
+			},
+			['id']
+		),
+		run: (ctx, args) => {
+			deleteBalanceCheck(ctx, Number(args.id));
+			return { deleted: true };
 		}
 	},
 	{

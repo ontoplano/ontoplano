@@ -26,6 +26,7 @@ import { listQuotes } from '$lib/services/quotes';
 import { readWeek, reviewPending, weekStartOf } from '$lib/services/review';
 import { shoppingRun } from '$lib/services/inventory';
 import { billsSettledIn, listBills, monthSummary } from '$lib/services/bills';
+import { supported } from '$lib/services/ledgers';
 import { listWorkouts } from '$lib/services/workouts';
 import { getCurrency } from '$lib/services/settings';
 import { listTodos } from '$lib/services/todos';
@@ -269,6 +270,7 @@ export const load = async ({ locals }: IsolatedEvent) => {
 			const monthly = listBills(ctx).filter((b) => b.rhythm === 'monthly' && !b.automatic);
 			const paid = billsSettledIn(ctx, month);
 			return {
+				funds: supported(ctx),
 				currency: getCurrency(ctx.userId),
 				summary: monthSummary(ctx, month),
 				open: monthly

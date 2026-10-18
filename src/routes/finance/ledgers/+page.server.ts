@@ -3,8 +3,17 @@ import { buildCtx } from '$lib/services/ctx';
 import { pickableNotebooks } from '$lib/services/notebooks';
 import { ledgerHandlers } from '$lib/services/ledger-actions';
 import { getCurrency } from '$lib/services/settings';
-import { parseMoney } from '$lib/money';
-import { listLedgers } from '$lib/services/ledgers';
+import {
+	deleteBalanceCheck,
+	getBalanceCheck,
+	getLedger,
+	listBalanceChecks,
+	listLedgers,
+	recordBalanceCheck,
+	supported
+} from '$lib/services/ledgers';
+import { parseSignedMoney } from '$lib/money';
+import { NotFoundError, ValidationError } from '$lib/services/errors';
 import { formAction } from '$lib/services/scoped-actions';
 import {
 	availableParsers,
@@ -53,6 +62,8 @@ export const load = async ({ locals, url }: IsolatedEvent) => {
 		currency: getCurrency(ctx.userId),
 		parsers: availableParsers(),
 		ledgers,
+		funds: supported(ctx),
+		checks: current ? listBalanceChecks(ctx, current.id) : [],
 		current,
 		query,
 		month,
@@ -91,6 +102,26 @@ export const actions = {
 	archiveLedger: ledgerHandlers.archive,
 	deleteLedger: ledgerHandlers.delete,
 
+	recordBalanceCheck: formAction((ctx, form) => {
+		const ledger = getLedger(ctx, Number(form.get('ledgerId')));
+		const amount = parseSignedMoney(form.get('observedAmount'), ledger.currency);
+		if (amount === null)
+			throw new ValidationError(
+				'Enter an exact statement closing amount in the ledger currency, or whole minor units when unspecified.'
+			);
+		recordBalanceCheck(ctx, {
+			ledgerId: ledger.id,
+			asOf: form.get('asOf'),
+			observedMinor: amount,
+			note: form.get('note')
+		});
+	}),
+	deleteBalanceCheck: formAction((ctx, form) => {
+		const check = getBalanceCheck(ctx, Number(form.get('id')));
+		if (!check || check.ledgerId !== Number(form.get('ledgerId')))
+			throw new NotFoundError('balance check');
+		deleteBalanceCheck(ctx, check.id);
+	}),
 	import: formAction((ctx, form) => {
 		/*
 		 * The column mapping, when the screen sent one.
@@ -120,7 +151,12 @@ export const actions = {
 	}),
 
 	addMovement: formAction((ctx, form) => {
-		const amount = parseMoney(form.get('amount'), getCurrency(ctx.userId)) ?? 0;
+		const ledger = getLedger(ctx, Number(form.get('ledgerId')));
+		const amount = parseSignedMoney(form.get('amount'), ledger.currency);
+		if (amount === null)
+			throw new ValidationError(
+				'Enter an exact amount in the ledger currency, or whole minor units when unspecified.'
+			);
 		recordMovement(ctx, {
 			ledgerId: form.get('ledgerId'),
 			occurredOn: form.get('occurredOn'),
@@ -142,7 +178,12 @@ export const actions = {
 				amount === null || amount === ''
 					? undefined
 					: (() => {
-							const cents = parseMoney(amount, getCurrency(ctx.userId)) ?? 0;
+							const ledger = getLedger(ctx, Number(form.get('ledgerId')));
+							const cents = parseSignedMoney(amount, ledger.currency);
+							if (cents === null)
+								throw new ValidationError(
+									'Enter an exact amount in the ledger currency, or whole minor units when unspecified.'
+								);
 							return form.get('direction') === 'in' ? Math.abs(cents) : -Math.abs(cents);
 						})()
 		});

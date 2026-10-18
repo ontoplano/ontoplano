@@ -896,18 +896,35 @@ export const messages: Catalogue = {
 	'finance.ledgers.andItsLinesGoFor':
 		'y sus {count} líneas desaparecen para siempre. Para conservar el historial, archívalo en su lugar.',
 	'finance.ledgers.archive': 'Archivar {name}',
+	'finance.ledgers.asOf': 'As of {day}',
 	'finance.ledgers.askEveryTime': 'Preguntar cada vez',
 	'finance.ledgers.assumed': 'assumed from the sign',
+	'finance.ledgers.checkAmount': 'Observed closing amount',
+	'finance.ledgers.checkComputed': 'Computed: {amount}',
+	'finance.ledgers.checkDate': 'Statement closing date',
+	'finance.ledgers.checkDifference': 'Observed minus computed: {amount}',
+	'finance.ledgers.checkDifferent': 'Different',
+	'finance.ledgers.checkHistory': 'Statement balance checks',
+	'finance.ledgers.checkMatched': 'Matched',
+	'finance.ledgers.checkUnverified': 'Unverified — no opening covers this date',
+	'finance.ledgers.chooseCurrency':
+		'Set this ledger’s currency; amounts currently have unspecified units.',
 	'finance.ledgers.chooseTheFile': 'Elegir el archivo',
 	'finance.ledgers.classifySelected': 'Classify selected',
 	'finance.ledgers.coffee': 'Café',
 	'finance.ledgers.counterpart': 'The other side',
 	'finance.ledgers.counterpartPending': 'counterpart pending',
+	'finance.ledgers.coverageTour':
+		'Declare the original currency and an opening date to support a balance. Statement closing checks show matches or differences without changing movements.',
+	'finance.ledgers.currency': 'Currency',
+	'finance.ledgers.currencyHint':
+		'Original ISO currency code. Leave blank only when unknown; no default or conversion is assumed.',
 	'finance.ledgers.currentAccount': 'Cuenta corriente',
 	'finance.ledgers.datesAreDayFirst':
 		'Las fechas van con el día primero — 02/03 es el dos de marzo',
 	'finance.ledgers.day': 'Día',
 	'finance.ledgers.delete': 'Eliminar {name}',
+	'finance.ledgers.deleteCheck': 'Delete this balance check',
 	'finance.ledgers.deleteThisLedger': '¿Eliminar este movimiento?',
 	'finance.ledgers.deleteThisLine': 'Eliminar esta línea',
 	'finance.ledgers.deleteThisLine2': '¿Eliminar esta línea?',
@@ -917,6 +934,7 @@ export const messages: Catalogue = {
 	'finance.ledgers.editLine': 'Editar línea',
 	'finance.ledgers.editThisLine': 'Editar esta línea',
 	'finance.ledgers.everyMonth': 'Cada mes',
+	'finance.ledgers.excludedAccounts': 'Excluded: {names}',
 	'finance.ledgers.export': 'Exportar',
 	'finance.ledgers.flipAmountsForAn':
 		'Invertir montos — para una exportación cuyos signos significan lo contrario',
@@ -924,6 +942,8 @@ export const messages: Catalogue = {
 		'desaparece. Importar el mismo extracto de nuevo la\n\t\t\ttrae de vuelta, porque es la línea del banco y no la tuya.',
 	'finance.ledgers.import': 'Importar',
 	'finance.ledgers.importAStatement': 'Importar un extracto',
+	'finance.ledgers.importRecordedOnly':
+		'No opening is declared. Imported amounts are a recorded subtotal, not a supported balance.',
 	'finance.ledgers.importThisLedgerSExportOr':
 		'Importa la exportación de este movimiento, o escribe una línea a mano. Las líneas ya importadas nunca se agregan dos veces.',
 	'finance.ledgers.keepIt': 'Conservarlo',
@@ -945,6 +965,7 @@ export const messages: Catalogue = {
 	'finance.ledgers.linkedTransfer': 'This line is one leg of a transfer.',
 	'finance.ledgers.meaning': 'Meaning',
 	'finance.ledgers.meaningHint': 'What it was. Left as assumed, the sign decides.',
+	'finance.ledgers.minorUnitsAmount': '{amount} minor units (unspecified)',
 	'finance.ledgers.moneyIn': 'Entradas',
 	'finance.ledgers.moneyOut': 'Salidas',
 	'finance.ledgers.month': 'Mes',
@@ -952,20 +973,31 @@ export const messages: Catalogue = {
 	'finance.ledgers.moveLater': 'Mover {name} después',
 	'finance.ledgers.newLedger': 'Nuevo movimiento',
 	'finance.ledgers.newLine': 'Nueva línea',
+	'finance.ledgers.noChecks':
+		'No statement observations yet. Recording a check never creates an adjustment.',
 	'finance.ledgers.noHeaderRowSoThe':
 		'Sin fila de encabezado, así que las columnas están numeradas. Señala las correctas:',
 	'finance.ledgers.noLedgersYet': 'Todavía no hay movimientos',
 	'finance.ledgers.noLinesMatch': 'Ninguna línea de este libro coincide con la búsqueda y el mes.',
+	'finance.ledgers.noSupportedFunds': 'No supported subtotal',
 	'finance.ledgers.none': '— ninguno —',
 	'finance.ledgers.nothingHereYet': 'Todavía no hay nada aquí',
+	'finance.ledgers.openingAmount': 'Opening amount',
+	'finance.ledgers.openingAt': 'Opening {amount} on {day}',
+	'finance.ledgers.openingHint':
+		'Immediately before movements on the opening date. If currency is unspecified, enter whole minor units.',
+	'finance.ledgers.openingOn': 'Opening date',
 	'finance.ledgers.orPasteItBelow': 'o pégalo abajo',
 	'finance.ledgers.orderLinesBy': 'Ordenar líneas por',
+	'finance.ledgers.outsideCoverage': 'Outside covered period: {count}',
 	'finance.ledgers.pasteExample':
 		'Fecha,Importe,Descripción\n02/03/2026,-12.30,Panadería de la Esquina',
 	'finance.ledgers.preselectedWhenImportingIntoThis':
 		'Preseleccionado al importar a este movimiento. Se puede cambiar al importar.',
 	'finance.ledgers.putItAway': 'Archivarlo',
 	'finance.ledgers.readFromTheHeaderChange': 'Leído del encabezado. Cambia lo que esté mal:',
+	'finance.ledgers.recordCheck': 'Record balance check',
+	'finance.ledgers.recordedSubtotal': 'Recorded subtotal: {amount}',
 	'finance.ledgers.relatedLine': 'The line it belongs to',
 	'finance.ledgers.restore': 'Restaurar',
 	'finance.ledgers.searchDescriptions': 'Buscar descripciones',
@@ -975,6 +1007,10 @@ export const messages: Catalogue = {
 		one: '{count} línea mostrada',
 		other: '{count} líneas mostradas'
 	},
+	'finance.ledgers.statusRecorded': 'Recorded movements only',
+	'finance.ledgers.statusSupported': 'Supported by opening',
+	'finance.ledgers.statusVerified': 'Verified at latest check',
+	'finance.ledgers.supportedFunds': 'Supported funds',
 	'finance.ledgers.theBankSOwnId': 'El id propio del banco',
 	'finance.ledgers.theRulesReadThisSo':
 		'Las reglas leen esto, así que reescribirlo reordena la línea.',
@@ -982,6 +1018,7 @@ export const messages: Catalogue = {
 	'finance.ledgers.uncategorizedCount': 'Sin categoría ({count})',
 	'finance.ledgers.unlinkRelated': 'Unlink it',
 	'finance.ledgers.unlinkTransfer': 'Unlink the transfer',
+	'finance.ledgers.unspecified': 'Unspecified',
 	'finance.ledgers.usualExport': 'Exportación habitual',
 	'finance.ledgers.whatItIs': 'Qué es',
 	'finance.monthBars.newest': 'Los {shown} meses más recientes de {total}',
@@ -2539,6 +2576,7 @@ export const messages: Catalogue = {
 		'Lunes por la mañana: lo que realmente fue la semana pasada, con la página que la cierra a un toque de distancia.',
 	'notify.noun.activity': { one: '{count} actividad', other: '{count} actividades' },
 	'notify.noun.alarm': { one: '{count} alarma', other: '{count} alarmas' },
+	'notify.noun.balanceCheck': { one: '{count} balance check', other: '{count} balance checks' },
 	'notify.noun.beforeBlock': {
 		one: '{count} recordatorio de bloque de tarea',
 		other: '{count} recordatorios de bloque de tarea'

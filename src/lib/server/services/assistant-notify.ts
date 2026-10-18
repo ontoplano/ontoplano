@@ -161,6 +161,8 @@ export const PHRASE_OVERRIDES: Record<string, Phrase> = {
 	// The name says where the line starts and ends; the nouns are what moved.
 	link_movement: { verb: 'link', noun: 'movement' },
 	link_transfer: { verb: 'link', noun: 'transfer' },
+	record_balance_check: { verb: 'record', noun: 'balanceCheck' },
+	delete_balance_check: { verb: 'delete', noun: 'balanceCheck' },
 	unlink_transfer: { verb: 'unlink', noun: 'transfer' }
 };
 
@@ -196,6 +198,7 @@ export function phraseFor(tool: string): Phrase | null {
  * identifier instead of rendering as a raw message key on somebody's phone.
  */
 export const NOUN_KEYS = new Set([
+	'balanceCheck',
 	'activity',
 	'alarm',
 	'beforeBlock',

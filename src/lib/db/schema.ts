@@ -3012,6 +3012,9 @@ export const ledgers = sqliteTable(
 		/** A parser key like 'nubank:conta_corrente'. Null means "ask every time". */
 		defaultParser: text('default_parser'),
 		currency: text('currency'),
+		/** Balance immediately before the first movement on openingOn; no date means no coverage. */
+		openingMinor: integer('opening_minor').notNull().default(0),
+		openingOn: text('opening_on'),
 		sortOrder: integer('sort_order').notNull().default(0),
 		archived: integer('archived', { mode: 'boolean' }).notNull().default(false),
 		/** The subject this belongs to, if any — see `habits.notebookId`. */
@@ -3027,6 +3030,33 @@ export const ledgers = sqliteTable(
 		index('ledgers_user_idx').on(table.userId),
 		index('ledgers_notebook_idx').on(table.notebookId),
 		uniqueIndex('ledgers_user_name_unique').on(table.userId, table.name)
+	]
+);
+
+/** A statement observation, not a balancing movement. Corrections never rewrite history. */
+export const financeBalanceChecks = sqliteTable(
+	'finance_balance_checks',
+	{
+		id: integer('id').primaryKey({ autoIncrement: true }),
+		userId: text('user_id')
+			.notNull()
+			.references(() => user.id),
+		ledgerId: integer('ledger_id')
+			.notNull()
+			.references(() => ledgers.id, { onDelete: 'cascade' }),
+		asOf: text('as_of').notNull(),
+		observedMinor: integer('observed_minor').notNull(),
+		note: text('note'),
+		createdAt: text('created_at')
+			.notNull()
+			.default(sql`(CURRENT_TIMESTAMP)`)
+	},
+	(table) => [
+		uniqueIndex('finance_balance_checks_user_ledger_date_unique').on(
+			table.userId,
+			table.ledgerId,
+			table.asOf
+		)
 	]
 );
 

@@ -1761,6 +1761,33 @@ const ledger = (name, kind, defaultParser) => {
 const account = ledger('Current account', 'bank', 'csv:columns');
 const creditCard = ledger('Credit card', 'card', 'csv:columns');
 
+// Three synthetic coverage states; existing ledgers and their history are never backfilled.
+for (const [name, opening, observed] of [
+	['Statement checked example', 13262, 13262],
+	['Opening declared example', 25000, null],
+	['Recorded only example', null, null]
+]) {
+	if (one('select id from ledgers where user_id = ? and name = ?', uid, name)) continue;
+	const id = ledger(name, 'bank', 'csv:columns');
+	run(
+		'update ledgers set currency = ?, opening_minor = ?, opening_on = ? where user_id = ? and id = ?',
+		'KES',
+		opening ?? 0,
+		opening === null ? null : '2026-09-01',
+		uid,
+		id
+	);
+	if (observed !== null)
+		run(
+			'insert into finance_balance_checks (user_id, ledger_id, as_of, observed_minor, note) values (?, ?, ?, ?, ?)',
+			uid,
+			id,
+			'2026-09-01',
+			observed,
+			'Synthetic statement closing'
+		);
+}
+
 /*
  * The movements.
  *

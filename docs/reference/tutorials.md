@@ -19,7 +19,7 @@ under the pointer.
 | `/`                                  | tour.ontoplano              | 8     |
 | `/admin`                             | **none**                    | —     |
 | `/finance/bills`                     | tour.bills                  | 3     |
-| `/finance/ledgers`                   | tour.ledgers                | 3     |
+| `/finance/ledgers`                   | tour.ledgers                | 4     |
 | `/finance/rules`                     | tour.rulesRoom              | 4     |
 | `/goals`                             | tour.goals                  | 4     |
 | `/health/habits`                     | tour.habits                 | 3     |
@@ -75,8 +75,9 @@ at the button that reopens it, so it is not listed here.
 ### `/finance/ledgers` — tour.ledgers
 
 1. tour.oneLedgerPerPlaceMoney
-2. tour.theStatementIsTheRecord
-3. tour.rulesDoTheSorting
+2. finance.ledgers.supportedFunds
+3. tour.theStatementIsTheRecord
+4. tour.rulesDoTheSorting
 
 ### `/finance/rules` — tour.rulesRoom
 

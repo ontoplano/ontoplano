@@ -907,17 +907,34 @@ export const messages: Catalogue = {
 	'finance.ledgers.andItsLinesGoFor':
 		'und ihre {count} Zeilen sind endgültig weg. Um die Historie zu behalten, archivieren Sie sie stattdessen.',
 	'finance.ledgers.archive': '{name} archivieren',
+	'finance.ledgers.asOf': 'As of {day}',
 	'finance.ledgers.askEveryTime': 'Jedes Mal fragen',
 	'finance.ledgers.assumed': 'assumed from the sign',
+	'finance.ledgers.checkAmount': 'Observed closing amount',
+	'finance.ledgers.checkComputed': 'Computed: {amount}',
+	'finance.ledgers.checkDate': 'Statement closing date',
+	'finance.ledgers.checkDifference': 'Observed minus computed: {amount}',
+	'finance.ledgers.checkDifferent': 'Different',
+	'finance.ledgers.checkHistory': 'Statement balance checks',
+	'finance.ledgers.checkMatched': 'Matched',
+	'finance.ledgers.checkUnverified': 'Unverified — no opening covers this date',
+	'finance.ledgers.chooseCurrency':
+		'Set this ledger’s currency; amounts currently have unspecified units.',
 	'finance.ledgers.chooseTheFile': 'Datei auswählen',
 	'finance.ledgers.classifySelected': 'Classify selected',
 	'finance.ledgers.coffee': 'Kaffee',
 	'finance.ledgers.counterpart': 'The other side',
 	'finance.ledgers.counterpartPending': 'counterpart pending',
+	'finance.ledgers.coverageTour':
+		'Declare the original currency and an opening date to support a balance. Statement closing checks show matches or differences without changing movements.',
+	'finance.ledgers.currency': 'Currency',
+	'finance.ledgers.currencyHint':
+		'Original ISO currency code. Leave blank only when unknown; no default or conversion is assumed.',
 	'finance.ledgers.currentAccount': 'Girokonto',
 	'finance.ledgers.datesAreDayFirst': 'Daten beginnen mit dem Tag — 02/03 ist der zweite März',
 	'finance.ledgers.day': 'Tag',
 	'finance.ledgers.delete': '{name} löschen',
+	'finance.ledgers.deleteCheck': 'Delete this balance check',
 	'finance.ledgers.deleteThisLedger': 'Diese Buchung löschen?',
 	'finance.ledgers.deleteThisLine': 'Diese Zeile löschen',
 	'finance.ledgers.deleteThisLine2': 'Diese Zeile löschen?',
@@ -927,6 +944,7 @@ export const messages: Catalogue = {
 	'finance.ledgers.editLine': 'Zeile bearbeiten',
 	'finance.ledgers.editThisLine': 'Diese Zeile bearbeiten',
 	'finance.ledgers.everyMonth': 'Jeden Monat',
+	'finance.ledgers.excludedAccounts': 'Excluded: {names}',
 	'finance.ledgers.export': 'Exportieren',
 	'finance.ledgers.flipAmountsForAn':
 		'Beträge umkehren — für einen Export, dessen Vorzeichen das Gegenteil bedeuten',
@@ -934,6 +952,8 @@ export const messages: Catalogue = {
 		'verschwindet sie. Denselben Kontoauszug erneut zu importieren bringt\n\t\t\tsie zurück, da es die Zeile der Bank ist, nicht Ihre.',
 	'finance.ledgers.import': 'Importieren',
 	'finance.ledgers.importAStatement': 'Kontoauszug importieren',
+	'finance.ledgers.importRecordedOnly':
+		'No opening is declared. Imported amounts are a recorded subtotal, not a supported balance.',
 	'finance.ledgers.importThisLedgerSExportOr':
 		'Importieren Sie den Export dieser Buchung, oder schreiben Sie eine Zeile von Hand. Bereits importierte Zeilen werden nie doppelt hinzugefügt.',
 	'finance.ledgers.keepIt': 'Behalten',
@@ -955,6 +975,7 @@ export const messages: Catalogue = {
 	'finance.ledgers.linkedTransfer': 'This line is one leg of a transfer.',
 	'finance.ledgers.meaning': 'Meaning',
 	'finance.ledgers.meaningHint': 'What it was. Left as assumed, the sign decides.',
+	'finance.ledgers.minorUnitsAmount': '{amount} minor units (unspecified)',
 	'finance.ledgers.moneyIn': 'Eingänge',
 	'finance.ledgers.moneyOut': 'Ausgänge',
 	'finance.ledgers.month': 'Monat',
@@ -962,14 +983,23 @@ export const messages: Catalogue = {
 	'finance.ledgers.moveLater': '{name} nach hinten verschieben',
 	'finance.ledgers.newLedger': 'Neue Buchung',
 	'finance.ledgers.newLine': 'Neue Zeile',
+	'finance.ledgers.noChecks':
+		'No statement observations yet. Recording a check never creates an adjustment.',
 	'finance.ledgers.noHeaderRowSoThe':
 		'Keine Kopfzeile, daher sind die Spalten nummeriert. Wählen Sie die richtigen aus:',
 	'finance.ledgers.noLedgersYet': 'Noch keine Buchungen',
 	'finance.ledgers.noLinesMatch': 'Keine Zeile in diesem Konto passt zu Suche und Monat.',
+	'finance.ledgers.noSupportedFunds': 'No supported subtotal',
 	'finance.ledgers.none': '— keine —',
 	'finance.ledgers.nothingHereYet': 'Noch nichts hier',
+	'finance.ledgers.openingAmount': 'Opening amount',
+	'finance.ledgers.openingAt': 'Opening {amount} on {day}',
+	'finance.ledgers.openingHint':
+		'Immediately before movements on the opening date. If currency is unspecified, enter whole minor units.',
+	'finance.ledgers.openingOn': 'Opening date',
 	'finance.ledgers.orPasteItBelow': 'oder unten einfügen',
 	'finance.ledgers.orderLinesBy': 'Zeilen sortieren nach',
+	'finance.ledgers.outsideCoverage': 'Outside covered period: {count}',
 	'finance.ledgers.pasteExample':
 		'Datum,Betrag,Beschreibung\n02.03.2026,-12.30,Bäckerei an der Ecke',
 	'finance.ledgers.preselectedWhenImportingIntoThis':
@@ -977,6 +1007,8 @@ export const messages: Catalogue = {
 	'finance.ledgers.putItAway': 'Ablegen',
 	'finance.ledgers.readFromTheHeaderChange':
 		'Aus der Kopfzeile gelesen. Ändern Sie, was falsch erkannt wurde:',
+	'finance.ledgers.recordCheck': 'Record balance check',
+	'finance.ledgers.recordedSubtotal': 'Recorded subtotal: {amount}',
 	'finance.ledgers.relatedLine': 'The line it belongs to',
 	'finance.ledgers.restore': 'Wiederherstellen',
 	'finance.ledgers.searchDescriptions': 'Beschreibungen durchsuchen',
@@ -986,6 +1018,10 @@ export const messages: Catalogue = {
 		one: '{count} Zeile angezeigt',
 		other: '{count} Zeilen angezeigt'
 	},
+	'finance.ledgers.statusRecorded': 'Recorded movements only',
+	'finance.ledgers.statusSupported': 'Supported by opening',
+	'finance.ledgers.statusVerified': 'Verified at latest check',
+	'finance.ledgers.supportedFunds': 'Supported funds',
 	'finance.ledgers.theBankSOwnId': 'Die eigene ID der Bank',
 	'finance.ledgers.theRulesReadThisSo':
 		'Die Regeln lesen dies, daher sortiert eine Änderung die Zeile neu ein.',
@@ -993,6 +1029,7 @@ export const messages: Catalogue = {
 	'finance.ledgers.uncategorizedCount': 'Ohne Kategorie ({count})',
 	'finance.ledgers.unlinkRelated': 'Unlink it',
 	'finance.ledgers.unlinkTransfer': 'Unlink the transfer',
+	'finance.ledgers.unspecified': 'Unspecified',
 	'finance.ledgers.usualExport': 'Üblicher Export',
 	'finance.ledgers.whatItIs': 'Was es ist',
 	'finance.monthBars.newest': 'Die neuesten {shown} von {total} Monaten',
@@ -2564,6 +2601,7 @@ export const messages: Catalogue = {
 		'Montagmorgen: wie die letzte Woche wirklich war, mit der Seite, die sie abschließt, einen Klick entfernt.',
 	'notify.noun.activity': { one: '{count} Aktivität', other: '{count} Aktivitäten' },
 	'notify.noun.alarm': { one: '{count} Wecker', other: '{count} Wecker' },
+	'notify.noun.balanceCheck': { one: '{count} balance check', other: '{count} balance checks' },
 	'notify.noun.beforeBlock': { one: '{count} Blockhinweis', other: '{count} Blockhinweise' },
 	'notify.noun.bill': { one: '{count} Rechnung', other: '{count} Rechnungen' },
 	'notify.noun.billPayment': {

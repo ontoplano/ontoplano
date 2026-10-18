@@ -7,7 +7,7 @@ out of the schema — so this page cannot disagree with the schema, and a
 column added without a migration does not appear here because it does not
 exist.
 
-**85 tables.**
+**86 tables.**
 
 | Table                                                       | Columns | Belongs to a user |
 | ----------------------------------------------------------- | ------- | ----------------- |
@@ -33,6 +33,7 @@ exist.
 | [`entry_people`](#entry_people)                             | 4       | yes               |
 | [`exceptional_task_tags`](#exceptional_task_tags)           | 5       | yes               |
 | [`exceptional_tasks`](#exceptional_tasks)                   | 19      | yes               |
+| [`finance_balance_checks`](#finance_balance_checks)         | 7       | yes               |
 | [`finance_rules`](#finance_rules)                           | 8       | yes               |
 | [`finance_transactions`](#finance_transactions)             | 13      | yes               |
 | [`goal_areas`](#goal_areas)                                 | 6       | yes               |
@@ -48,7 +49,7 @@ exist.
 | [`inventory_categories`](#inventory_categories)             | 8       | yes               |
 | [`inventory_items`](#inventory_items)                       | 18      | yes               |
 | [`invites`](#invites)                                       | 9       | —                 |
-| [`ledgers`](#ledgers)                                       | 11      | yes               |
+| [`ledgers`](#ledgers)                                       | 13      | yes               |
 | [`locations`](#locations)                                   | 8       | yes               |
 | [`mail_failures`](#mail_failures)                           | 11      | —                 |
 | [`media`](#media)                                           | 11      | yes               |
@@ -554,6 +555,22 @@ Checks — enforced by the database, not only by the service layer:
 - `exceptional_mode_activity`: `"exceptional_tasks"."mode" != 'activity' OR "exceptional_tasks"."activity_id" IS NOT NULL`
 - `exceptional_mode_workout`: `"exceptional_tasks"."mode" != 'workout' OR "exceptional_tasks"."workout_id" IS NOT NULL`
 
+## finance_balance_checks
+
+| Column           | Type    | Null     | Default               | Notes             |
+| ---------------- | ------- | -------- | --------------------- | ----------------- |
+| `id`             | integer | not null | —                     | primary key, auto |
+| `user_id`        | text    | not null | —                     | → `user.id`       |
+| `ledger_id`      | integer | not null | —                     | → `ledgers.id`    |
+| `as_of`          | text    | not null | —                     | —                 |
+| `observed_minor` | integer | not null | —                     | —                 |
+| `note`           | text    | null     | —                     | —                 |
+| `created_at`     | text    | not null | `(CURRENT_TIMESTAMP)` | —                 |
+
+Indexes:
+
+- `finance_balance_checks_user_ledger_date_unique` on `user_id`, `ledger_id`, `as_of` — unique
+
 ## finance_rules
 
 | Column       | Type    | Null     | Default               | Notes             |
@@ -875,6 +892,8 @@ Indexes:
 | `kind`           | text    | not null | `'bank'`              | —                 |
 | `default_parser` | text    | null     | —                     | —                 |
 | `currency`       | text    | null     | —                     | —                 |
+| `opening_minor`  | integer | not null | `0`                   | —                 |
+| `opening_on`     | text    | null     | —                     | —                 |
 | `sort_order`     | integer | not null | `0`                   | —                 |
 | `archived`       | integer | not null | `false`               | —                 |
 | `notebook_id`    | integer | null     | —                     | → `notebooks.id`  |

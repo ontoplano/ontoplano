@@ -869,6 +869,13 @@
       "when": 1792316422914,
       "tag": "0123_finance_meaning",
       "breakpoints": true
+    },
+    {
+      "idx": 124,
+      "version": "6",
+      "when": 1792324110206,
+      "tag": "0124_milky_goliath",
+      "breakpoints": true
     }
   ]
 }

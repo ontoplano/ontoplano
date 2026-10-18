@@ -2962,6 +2962,20 @@ The ledgers, all of them or one subject's.
 tab is this room looking at one subject and draws the rows with the same
 component, so it needs exactly what the room needs.
 
+#### `supported(ctx, asOf)`
+
+Active covered ledgers only. Unknown currency is an exclusion, not an FX guess.
+
+#### `listBalanceChecks(ctx, ledgerId)`
+
+Observations remain evidence even when there is not yet an opening to check them against.
+
+#### `recordBalanceCheck(ctx, input)`
+
+#### `getBalanceCheck(ctx, id)`
+
+#### `deleteBalanceCheck(ctx, id)`
+
 #### `getLedger(ctx, id)`
 
 #### `createLedger(ctx, input)`
@@ -2994,6 +3008,8 @@ A place past either end is the end.
 
 - `LedgerKind`
 - `Ledger`
+- `CurrencyFunds`
+- `BalanceCheck`
 
 ## legal
 
@@ -7107,6 +7123,14 @@ Every validator enforces a bound — no unbounded strings reach the database.
 #### `optionalStr(value, field, opts)`
 
 #### `num(value, field, opts)`
+
+#### `civilDay(value, field)`
+
+A real civil day, preserved exactly rather than normalised into another date.
+
+#### `minorAmount(value, field)`
+
+Money must remain exact at both the write boundary and the aggregate result.
 
 #### `oneOf(value, field, allowed)`
 

@@ -8,7 +8,7 @@ import { listAreas, listGoals } from '$lib/services/goals.js';
 import { listHabits } from '$lib/services/habits.js';
 import { listIdeas } from '$lib/services/ideas.js';
 import { occurrenceRow } from '$lib/services/instances.js';
-import { listLedgers } from '$lib/services/ledgers.js';
+import { getBalanceCheck, listLedgers } from '$lib/services/ledgers.js';
 import { listLocations } from '$lib/services/locations.js';
 import { listNotebooks } from '$lib/services/notebooks.js';
 import { listPeople } from '$lib/services/people.js';
@@ -124,6 +124,11 @@ export const KINDS = kinds({
 	tag: { label: 'label', rows: (ctx) => listTagsWithUses(ctx.userId) },
 
 	ledger: { label: 'account', rows: (ctx) => listLedgers(ctx, { includeArchived: true }) },
+	balanceCheck: {
+		label: 'balance check',
+		rows: () => [],
+		find: (ctx, id) => getBalanceCheck(ctx, id)
+	},
 
 	/** A line in a ledger. Many, so a call asks for the one it names. */
 	movement: {

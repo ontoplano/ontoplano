@@ -87,14 +87,14 @@ describe('importing', () => {
 			text: CREDIT_CARD
 		});
 		// Two identical Dm *Company charges are two purchases, not one.
-		expect(first).toEqual({ added: 3, skipped: 0 });
+		expect(first).toEqual({ added: 3, skipped: 0, recordedOnly: true });
 
 		const again = statements.importStatement(ctx, {
 			ledgerId: card,
 			source: 'nubank:credit_card_month',
 			text: CREDIT_CARD
 		});
-		expect(again).toEqual({ added: 0, skipped: 3 });
+		expect(again).toEqual({ added: 0, skipped: 3, recordedOnly: true });
 	});
 
 	test('an export with a bank id dedups on the id', () => {
@@ -104,14 +104,14 @@ describe('importing', () => {
 				source: 'nubank:conta_corrente',
 				text: CONTA_CORRENTE
 			})
-		).toEqual({ added: 2, skipped: 0 });
+		).toEqual({ added: 2, skipped: 0, recordedOnly: true });
 		expect(
 			statements.importStatement(ctx, {
 				ledgerId: account,
 				source: 'nubank:conta_corrente',
 				text: CONTA_CORRENTE
 			})
-		).toEqual({ added: 0, skipped: 2 });
+		).toEqual({ added: 0, skipped: 2, recordedOnly: true });
 	});
 
 	test('flip negates every amount', () => {
@@ -136,7 +136,7 @@ describe('importing', () => {
 					text: 'hello,world'
 				})
 			)
-		).toMatch(/no lines matched/);
+		).toMatch(/Could not read line 1/);
 		expect(
 			refusal(() =>
 				statements.importStatement(ctx, {
@@ -269,7 +269,7 @@ describe('the ledgers', () => {
 				source: 'nubank:credit_card_month',
 				text: CREDIT_CARD
 			})
-		).toEqual({ added: 3, skipped: 0 });
+		).toEqual({ added: 3, skipped: 0, recordedOnly: true });
 		expect(statements.listMovements(ctx, { ledgerId: second })).toHaveLength(3);
 		ledgers.deleteLedger(ctx, second);
 		// Deleting the ledger took its lines with it, and nobody else's.

@@ -30,7 +30,7 @@
 	import FormError from '$lib/components/FormError.svelte';
 	import { armed } from '$lib/actions/armed';
 	import { SvelteSet } from 'svelte/reactivity';
-	import { formatMoney, type Currency } from '$lib/money';
+	import { formatMoney, minorUnits } from '$lib/money';
 	import type { PlainKey } from '$lib/i18n/keys';
 	import type { PageServerData, ActionData } from './$types';
 	import { useT } from '$lib/i18n';
@@ -43,11 +43,21 @@
 
 	let { data, form }: { data: PageServerData; form: ActionData } = $props();
 
-	const currency = $derived(data.currency as Currency);
-
 	/** `2026-02` as somebody would say it. */
 	const monthName = (key: string) => monthOf(key, now(), { month: 'long', year: 'numeric' });
-	const money = (cents: number) => formatMoney(cents, currency);
+	const ledgerMoney = (cents: number, ledger: { currency: string | null } | null = data.current) =>
+		ledger?.currency
+			? formatMoney(cents, ledger.currency)
+			: t('finance.ledgers.minorUnitsAmount', { amount: cents });
+	const money = (cents: number) => ledgerMoney(cents);
+	const statusLabel = (status: 'verified' | 'supported' | 'recorded') =>
+		t(
+			status === 'verified'
+				? 'finance.ledgers.statusVerified'
+				: status === 'supported'
+					? 'finance.ledgers.statusSupported'
+					: 'finance.ledgers.statusRecorded'
+		);
 
 	type Ledger = PageServerData['ledgers'][number];
 	type Movement = PageServerData['movements'][number];
@@ -58,6 +68,7 @@
 	let showNewLedger = $state(false);
 	let editingLedger: Ledger | null = $state(null);
 	let deletingLedger: Ledger | null = $state(null);
+	let deletingCheck: number | null = $state(null);
 	/** The dialog that holds everything done to a ledger rather than to a line. */
 	let managing = $state(false);
 
@@ -228,7 +239,10 @@
 						.filter((entry): entry is [number, string] => entry[1] !== null)
 				)
 	);
-	const asDecimal = (cents: number) => (Math.abs(cents) / 100).toFixed(2);
+	const asDecimal = (cents: number) =>
+		(Math.abs(cents) / (data.current?.currency ? minorUnits(data.current.currency) : 1)).toFixed(
+			data.current?.currency ? Math.log10(minorUnits(data.current.currency)) : 0
+		);
 	// The reader's own day: `toISOString` is UTC, which is tomorrow for the
 	// last hours of every evening in São Paulo.
 	const today = $derived(dayStamp(new Date(), now()));
@@ -286,7 +300,7 @@
 	const ledgerTabs = $derived(
 		active.map((l) => ({
 			label: l.name,
-			count: money(l.balanceCents)
+			count: `${ledgerMoney(l.supportedMinor ?? l.recordedMinor, l)} · ${statusLabel(l.balanceStatus)}`
 		}))
 	);
 </script>
@@ -333,6 +347,62 @@
 <svelte:window {onkeydown} />
 
 <FormError message={form?.message} />
+
+{#if active.length}
+	<section class="mb-4 space-y-3" aria-label={t('finance.ledgers.supportedFunds')}>
+		<h2 class="text-sm font-semibold">{t('finance.ledgers.supportedFunds')}</h2>
+		<ul class="grid gap-2 sm:grid-cols-2">
+			{#each data.funds as group (group.currency)}
+				<li class="border border-gray-200 p-3 text-sm" data-testid="currency-funds">
+					<strong>{group.currency ?? t('finance.ledgers.unspecified')}</strong>
+					<span class="block"
+						>{group.supportedMinor === null
+							? t('finance.ledgers.noSupportedFunds')
+							: ledgerMoney(group.supportedMinor, { currency: group.currency })}</span
+					>
+					{#if group.excluded.length}<p class="text-xs text-gray-600">
+							{t('finance.ledgers.excludedAccounts', {
+								names: group.excluded.map((l) => l.name).join(', ')
+							})}
+						</p>{/if}
+				</li>
+			{/each}
+		</ul>
+		<ul class="divide-y divide-gray-200 border border-gray-200">
+			{#each active as ledger (ledger.id)}
+				<li class="p-3 text-sm" data-testid="ledger-balance">
+					<button
+						type="button"
+						class="text-left font-medium underline"
+						onclick={() => filter({ ledger: ledger.id, q: '', month: '', loose: false })}
+						>{ledger.name}</button
+					>
+					<p>
+						{statusLabel(ledger.balanceStatus)} · {ledgerMoney(
+							ledger.supportedMinor ?? ledger.recordedMinor,
+							ledger
+						)}
+					</p>
+					<p class="text-xs text-gray-600">
+						{t('finance.ledgers.asOf', { day: civilOf(ledger.asOf, now()) })}
+					</p>
+					{#if ledger.openingOn}<p class="text-xs text-gray-600">
+							{t('finance.ledgers.openingAt', {
+								amount: ledgerMoney(ledger.openingMinor, ledger),
+								day: civilOf(ledger.openingOn, now())
+							})}
+						</p>{/if}
+					{#if !ledger.currency}<p class="text-xs text-gray-600">
+							{t('finance.ledgers.chooseCurrency')}
+						</p>{/if}
+					{#if ledger.outsideCoveredPeriod}<p class="text-xs text-gray-600">
+							{t('finance.ledgers.outsideCoverage', { count: ledger.outsideCoveredPeriod })}
+						</p>{/if}
+				</li>
+			{/each}
+		</ul>
+	</section>
+{/if}
 
 {#if active.length === 0 && archived.length === 0}
 	<RoomSurface>
@@ -382,6 +452,91 @@
 			/>
 		{:else}
 			{@const current = data.current}
+			<details class="border-b border-gray-200 p-4" data-testid="balance-checks">
+				<summary class="cursor-pointer text-sm font-medium"
+					>{t('finance.ledgers.checkHistory')}</summary
+				>
+				<form
+					method="post"
+					action="?/recordBalanceCheck"
+					use:enhance
+					class="mt-3 grid gap-3 sm:grid-cols-2"
+				>
+					<input type="hidden" name="ledgerId" value={current.id} />
+					<label class="block text-sm"
+						>{t('finance.ledgers.checkDate')}<input
+							class="input mt-1 w-full"
+							name="asOf"
+							type="date"
+							value={today}
+							required
+						/></label
+					>
+					<label class="block text-sm"
+						>{t('finance.ledgers.checkAmount')} ({current.currency ??
+							t('finance.ledgers.minorUnitsAmount', { amount: '' })})<input
+							class="input mt-1 w-full"
+							name="observedAmount"
+							inputmode="decimal"
+							required
+						/></label
+					>
+					<label class="block text-sm sm:col-span-2"
+						>{t('ui.notes')}<OneLine
+							class="input mt-1 w-full"
+							name="note"
+							maxlength={1000}
+						/></label
+					>
+					<button class="btn btn-primary w-fit" type="submit"
+						>{t('finance.ledgers.recordCheck')}</button
+					>
+				</form>
+				{#if !data.checks.length}<p class="mt-3 text-xs text-gray-600">
+						{t('finance.ledgers.noChecks')}
+					</p>{/if}
+				<ul class="mt-3 divide-y divide-gray-200">
+					{#each data.checks as check (check.id)}
+						<li class="space-y-1 py-3 text-sm" data-testid="balance-check">
+							<p>
+								{civilOf(check.asOf, now())} · {money(check.observedMinor)} · {t(
+									check.status === 'matched'
+										? 'finance.ledgers.checkMatched'
+										: check.status === 'different'
+											? 'finance.ledgers.checkDifferent'
+											: 'finance.ledgers.checkUnverified'
+								)}
+							</p>
+							{#if check.computedMinor !== null}<p>
+									{t('finance.ledgers.checkComputed', { amount: money(check.computedMinor) })}
+								</p>{/if}
+							{#if check.differenceMinor !== null}<p>
+									{t('finance.ledgers.checkDifference', { amount: money(check.differenceMinor) })}
+								</p>{/if}
+							{#if check.note}<p class="text-xs text-gray-600">{check.note}</p>{/if}
+							{#if deletingCheck === check.id}
+								<form method="post" action="?/deleteBalanceCheck" use:enhance>
+									<input type="hidden" name="ledgerId" value={current.id} /><input
+										type="hidden"
+										name="id"
+										value={check.id}
+									/>
+									<button class="btn btn-sm btn-danger" type="submit" use:armed
+										>{t('ui.delete')}</button
+									>
+									<button class="btn btn-sm" type="button" onclick={() => (deletingCheck = null)}
+										>{t('ui.cancel')}</button
+									>
+								</form>
+							{:else}
+								<button class="btn btn-sm" type="button" onclick={() => (deletingCheck = check.id)}
+									>{t('finance.ledgers.deleteCheck')}</button
+								>
+							{/if}
+						</li>
+					{/each}
+				</ul>
+			</details>
 			<!-- Finding one line among a year of them. -->
 			<RoomToolbar inset>
 				{#snippet tools()}
@@ -667,7 +822,8 @@
 						{[
 							t(LEDGER_KIND_LABELS[ledger.kind]),
 							t('finance.ledgers.lines', { count: ledger.count }),
-							money(ledger.balanceCents),
+							ledgerMoney(ledger.supportedMinor ?? ledger.recordedMinor, ledger),
+							statusLabel(ledger.balanceStatus),
 							ledger.lastOn
 								? t('finance.ledgers.lastOn', { day: civilOf(ledger.lastOn, now()) })
 								: ''
@@ -915,7 +1071,10 @@
 								</select>
 							</label>
 							<label class="block text-sm">
-								<span class="text-gray-600">{t('ui.amount')}</span>
+								<span class="text-gray-600"
+									>{t('ui.amount')} ({data.current?.currency ??
+										t('finance.ledgers.minorUnitsAmount', { amount: '' })})</span
+								>
 								<select
 									class="select mt-1 w-full"
 									value={mapping.amount ?? ''}
@@ -1008,6 +1167,9 @@
 				<div>
 					<button class="btn btn-primary btn-sm" type="submit">{t('finance.ledgers.import')}</button
 					>
+					{#if form && 'recordedOnly' in form && form.recordedOnly}
+						<p class="mt-2 text-sm text-gray-600">{t('finance.ledgers.importRecordedOnly')}</p>
+					{/if}
 					{#if form && 'added' in form && form.success}
 						<span class="ml-2 text-sm text-gray-600"
 							>{t('finance.ledgers.addedAlreadyHere', {
@@ -1060,7 +1222,10 @@
 					<input type="date" name="occurredOn" value={today} class="input mt-1 w-full" required />
 				</label>
 				<label class="block text-sm">
-					<span class="text-gray-600">{t('ui.amount')}</span>
+					<span class="text-gray-600"
+						>{t('ui.amount')} ({data.current?.currency ??
+							t('finance.ledgers.minorUnitsAmount', { amount: '' })})</span
+					>
 					<input name="amount" inputmode="decimal" placeholder="0,00" class="input mt-1 w-full" />
 				</label>
 				<label class="block text-sm sm:col-span-2">
@@ -1119,7 +1284,10 @@
 					/>
 				</label>
 				<label class="block text-sm">
-					<span class="text-gray-600">{t('ui.amount')}</span>
+					<span class="text-gray-600"
+						>{t('ui.amount')} ({data.current?.currency ??
+							t('finance.ledgers.minorUnitsAmount', { amount: '' })})</span
+					>
 					<input
 						name="amount"
 						inputmode="decimal"
@@ -1201,7 +1369,10 @@
 							<option value="">—</option>
 							{#each transferCandidates as m (m.id)}
 								<option value={m.id}>
-									{dayOf(m.occurredOn)} · {money(m.amountCents)} · {m.description}
+									{dayOf(m.occurredOn)} · {ledgerMoney(
+										m.amountCents,
+										data.ledgers.find((l) => l.id === m.ledgerId) ?? null
+									)} · {m.description}
 								</option>
 							{/each}
 						</select>
@@ -1256,7 +1427,10 @@
 								<option value="">—</option>
 								{#each candidates as m (m.id)}
 									<option value={m.id}>
-										{dayOf(m.occurredOn)} · {money(m.amountCents)} · {m.description}
+										{dayOf(m.occurredOn)} · {ledgerMoney(
+											m.amountCents,
+											data.ledgers.find((l) => l.id === m.ledgerId) ?? null
+										)} · {m.description}
 									</option>
 								{/each}
 							</select>
