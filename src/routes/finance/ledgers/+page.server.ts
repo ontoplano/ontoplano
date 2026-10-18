@@ -8,12 +8,18 @@ import { listLedgers } from '$lib/services/ledgers';
 import { formAction } from '$lib/services/scoped-actions';
 import {
 	availableParsers,
+	classifyMovements,
 	deleteMovement,
+	detachMovement,
 	importStatement,
+	linkMovement,
+	linkTransfer,
 	listMovements,
 	recordMovement,
+	recentForLinking,
 	monthsWithLines,
 	uncategorizedCount,
+	unlinkTransfer,
 	UNCATEGORIZED,
 	updateMovement
 } from '$lib/services/statements';
@@ -58,6 +64,13 @@ export const load = async ({ locals, url }: IsolatedEvent) => {
 					...(loose ? { category: UNCATEGORIZED, direction: 'out' as const } : {})
 				})
 			: [],
+		/*
+		 * The lines a meaning can point at: a transfer's counterpart, the
+		 * expense a refund reverses, the payment a fee was charged on. Recent
+		 * ones across every ledger — a counterpart is by definition in
+		 * another account, so the visible list cannot supply it.
+		 */
+		counterparts: recentForLinking(ctx),
 		months: current ? monthsWithLines(ctx, current.id) : [],
 		unsorted: filter ? uncategorizedCount(ctx, filter) : 0
 	};
@@ -124,6 +137,7 @@ export const actions = {
 			description: form.get('heading') ?? undefined,
 			occurredOn: form.get('occurredOn') ?? undefined,
 			ledgerId: form.get('ledgerId') ?? undefined,
+			kind: form.get('kind') ?? undefined,
 			amountCents:
 				amount === null || amount === ''
 					? undefined
@@ -131,6 +145,40 @@ export const actions = {
 							const cents = parseMoney(amount, getCurrency(ctx.userId)) ?? 0;
 							return form.get('direction') === 'in' ? Math.abs(cents) : -Math.abs(cents);
 						})()
+		});
+	}),
+
+	/** What several lines were, in one write — the checkbox column's verb. */
+	classify: formAction((ctx, form) => {
+		const ids = form
+			.getAll('ids')
+			.map((id) => Number(id))
+			.filter((id) => Number.isInteger(id));
+		const result = classifyMovements(ctx, { ids, kind: form.get('kind') });
+		return { success: true, updated: result.updated };
+	}),
+
+	linkTransfer: formAction((ctx, form) => {
+		linkTransfer(ctx, {
+			id: form.get('id'),
+			counterpartId: form.get('counterpartId')
+		});
+	}),
+
+	unlinkTransfer: formAction((ctx, form) => {
+		unlinkTransfer(ctx, Number(form.get('id')));
+	}),
+
+	/** A refund reverses an expense; a fee belongs to the payment it was charged on. */
+	detachMovement: formAction((ctx, form) => {
+		detachMovement(ctx, Number(form.get('id')));
+	}),
+
+	linkMovement: formAction((ctx, form) => {
+		linkMovement(ctx, {
+			id: form.get('id'),
+			parentId: form.get('parentId'),
+			relation: form.get('relation') === 'fee' ? 'fee' : 'refund'
 		});
 	}),
 

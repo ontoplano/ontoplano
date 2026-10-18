@@ -11,7 +11,7 @@ own write surface, the way the endpoints in [the API](api.md) are the
 write surface for everything else; both end up calling the same
 [services](services.md).
 
-**67 pages, 218 actions.**
+**67 pages, 223 actions.**
 
 | Page                                 | Actions                                                                                                                                                                                                                                                                                                                                                                                              |
 | ------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -25,7 +25,7 @@ write surface for everything else; both end up calling the same
 | `/demo/isolated-db`                  | —                                                                                                                                                                                                                                                                                                                                                                                                    |
 | `/finance/bills`                     | —                                                                                                                                                                                                                                                                                                                                                                                                    |
 | `/finance/insights`                  | —                                                                                                                                                                                                                                                                                                                                                                                                    |
-| `/finance/ledgers`                   | `createLedger`, `updateLedger`, `moveLedger`, `archiveLedger`, `deleteLedger`, `import`, `addMovement`, `updateMovement`, `deleteMovement`                                                                                                                                                                                                                                                           |
+| `/finance/ledgers`                   | `createLedger`, `updateLedger`, `moveLedger`, `archiveLedger`, `deleteLedger`, `import`, `addMovement`, `updateMovement`, `classify`, `linkTransfer`, `unlinkTransfer`, `detachMovement`, `linkMovement`, `deleteMovement`                                                                                                                                                                           |
 | `/finance/rules`                     | `create`, `update`, `move`, `delete`                                                                                                                                                                                                                                                                                                                                                                 |
 | `/goals`                             | `createArea`, `updateArea`, `moveArea`, `deleteArea`, `create`, `update`, `setProgress`, `close`, `note`, `setLinks`, `setTodoStatus`, `remove`                                                                                                                                                                                                                                                      |
 | `/goals/history`                     | `setProgress`, `close`, `note`, `setTodoStatus`, `remove`                                                                                                                                                                                                                                                                                                                                            |
@@ -161,6 +161,14 @@ The ledger in the URL is the one on screen; with none named it is the
 first. Everything the page can do to a line — file it elsewhere, correct
 it, drop it — is here, because a statement that can only be imported and
 never corrected is a statement somebody stops trusting.
+
+**`classify`**
+
+What several lines were, in one write — the checkbox column's verb.
+
+**`detachMovement`**
+
+A refund reverses an expense; a fee belongs to the payment it was charged on.
 
 ### `/finance/rules`
 

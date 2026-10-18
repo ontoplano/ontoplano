@@ -555,7 +555,7 @@ which a test holds to the tools the server serves and the actions the app has.
 | Recipes                 | `add_recipe`                                         | `recipes`                                                                                     | `change_recipe`, `cooked_recipe`                                                                                                                                            | `archive_recipe`         | `archive_recipe`         | _app only, on purpose_                                                             |                    |
 | Workouts                | `add_workout`, `add_workout_category`, `log_workout` | `workouts`, `workout_sessions`, `workout_history`, `workout_activities`, `workout_categories` | `change_workout`, `set_workout_measures`, `change_workout_session`, `workout_done`, `change_workout_category`                                                               | `archive_workout`        | `archive_workout`        | `remove_workout_session`, `remove_workout_category`                                |                    |
 | Bills                   | `add_bill`                                           | `bills`, `bill_payments`, `bill_history`, `month_bills`, `bills_due`                          | `change_bill`, `pay_bill`, `change_bill_payment`, `unpay_bill`, `skip_bill`, `unskip_bill`                                                                                  | `archive_bill`           | `archive_bill`           | _app only, on purpose_                                                             |                    |
-| Accounts and movements  | `add_ledger`, `record_movement`                      | `ledgers`, `movements`, `statement_months`, `spending_by_category`                            | `change_ledger`, `change_movement`                                                                                                                                          | `change_ledger`          | `change_ledger`          | `remove_movement`                                                                  | `change_ledger`    |
+| Accounts and movements  | `add_ledger`, `record_movement`                      | `ledgers`, `movements`, `statement_months`, `spending_by_category`                            | `change_ledger`, `change_movement`, `classify_movements`, `link_movement`, `link_transfer`, `unlink_transfer`                                                               | `change_ledger`          | `change_ledger`          | `remove_movement`                                                                  | `change_ledger`    |
 | Sorting rules           | `add_sort_rule`                                      | `sort_rules`                                                                                  | `change_sort_rule`                                                                                                                                                          |                          |                          | `delete_sort_rule`                                                                 | `change_sort_rule` |
 | People                  | `add_person`                                         | `people`, `upcoming_birthdays`                                                                | `change_person`                                                                                                                                                             |                          |                          | _app only, on purpose_                                                             |                    |
 | Reminders               | `set_alarm`, `remind_before_block`, `remind_task`    | `reminders`                                                                                   | `change_reminder`, `dismiss_reminder`                                                                                                                                       |                          |                          | `cancel_alarm`                                                                     |                    |
@@ -2513,17 +2513,62 @@ _Needs `statements:write`; writes; answers with `before` and `after`._
 
 ### `change_movement` — Correct a statement line
 
-Correct a line in a ledger: what it says, the day, the amount, or which ledger it is in. Takes the id `movements` gives. Only `id` is needed: a field left out is untouched. Amounts are signed minor units — negative when money left.
+Correct a line in a ledger: what it says, the day, the amount, which ledger it is in, or what it meant. Takes the id `movements` gives. Only `id` is needed: a field left out is untouched. Amounts are signed minor units — negative when money left. `kind` says what the line was — expense, income, transfer, refund, fee or cash — and an empty string takes it back to the sign’s guess. A leg of a transfer cannot be re-kinded: unlink the transfer first.
 
 _Needs `statements:write`; writes; answers with `before` and `after`._
 
-| Parameter      | Type    | Required | What it is                                     |
-| -------------- | ------- | -------- | ---------------------------------------------- |
-| `id`           | integer | yes      | The line’s id, as `movements` gives it.        |
-| `description`  | string  | —        | What it says. The sorting rules read this.     |
-| `occurred_on`  | string  | —        | The day it moved, YYYY-MM-DD.                  |
-| `amount_cents` | integer | —        | Signed minor units — negative when money left. |
-| `ledger_id`    | integer | —        | Move it to this ledger, as `ledgers` gives it. |
+| Parameter      | Type    | Required | What it is                                                                                                                                   |
+| -------------- | ------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| `id`           | integer | yes      | The line’s id, as `movements` gives it.                                                                                                      |
+| `description`  | string  | —        | What it says. The sorting rules read this.                                                                                                   |
+| `occurred_on`  | string  | —        | The day it moved, YYYY-MM-DD.                                                                                                                |
+| `amount_cents` | integer | —        | Signed minor units — negative when money left.                                                                                               |
+| `ledger_id`    | integer | —        | Move it to this ledger, as `ledgers` gives it.                                                                                               |
+| `kind`         | string  | —        | What the line was. An empty string clears it back to the sign’s guess. One of: ``, `cash`, `expense`, `fee`, `income`, `refund`, `transfer`. |
+
+### `classify_movements` — Say what several lines were
+
+Give several statement lines the same meaning in one write — a hundred imported purchases marked as spending, a month of withdrawals marked as cash. `kind` is expense, income, transfer, refund, fee or cash; an empty string returns them to the sign’s guess. A leg of a transfer in the selection refuses the whole batch — unlink it first.
+
+_Needs `statements:write`; writes; answers with `before` and `after`._
+
+| Parameter | Type      | Required | What it is                                                                                                       |
+| --------- | --------- | -------- | ---------------------------------------------------------------------------------------------------------------- |
+| `ids`     | integer[] | yes      | The lines’ ids, as `movements` gives them.                                                                       |
+| `kind`    | string    | yes      | What they were. An empty string clears it. One of: ``, `cash`, `expense`, `fee`, `income`, `refund`, `transfer`. |
+
+### `link_transfer` — Link two lines as one transfer
+
+Two lines in different ledgers are one move of my own money: both become `transfer` legs sharing a group. In one currency they must add up to nothing; in different currencies each keeps its own amount and no total is produced. Two lines in the same ledger are refused. Give one line and its counterpart — the answer names the group, and `unlink_transfer` undoes it.
+
+_Needs `statements:write`; writes; answers with `before` and `after`._
+
+| Parameter        | Type    | Required | What it is                         |
+| ---------------- | ------- | -------- | ---------------------------------- |
+| `id`             | integer | yes      | One line, as `movements` gives it. |
+| `counterpart_id` | integer | yes      | The other line, in another ledger. |
+
+### `unlink_transfer` — Unlink a transfer
+
+Undo a transfer pairing: both legs go back to the sign’s guess and the group is cleared. A refund attached to a leg refuses the unlink until the refund is unlinked.
+
+_Needs `statements:write`; writes; answers with `before` and `after`._
+
+| Parameter | Type    | Required | What it is                           |
+| --------- | ------- | -------- | ------------------------------------ |
+| `id`      | integer | yes      | Either leg, as `movements` gives it. |
+
+### `link_movement` — Attach a refund or a fee
+
+A refund reverses one expense: it counts against that expense in the month it landed, under the expense’s category. A fee belongs to the payment it was charged on and leaves that payment untouched. `relation` is refund or fee; `parent_id` is the line it belongs to. Both must be in the same currency — the ledgers may differ. A line has one parent.
+
+_Needs `statements:write`; writes; answers with `before` and `after`._
+
+| Parameter   | Type    | Required | What it is                                                      |
+| ----------- | ------- | -------- | --------------------------------------------------------------- |
+| `id`        | integer | yes      | The refund or fee line, as `movements` gives it.                |
+| `parent_id` | integer | yes      | The expense a refund reverses, or the payment a fee belongs to. |
+| `relation`  | string  | yes      | What the line is to its parent. One of: `refund`, `fee`.        |
 
 ### `remove_movement` — Delete a statement line
 

@@ -4476,8 +4476,14 @@
 	"settings.account.exportTakingTooLong": "The export is taking too long. Try again, or leave the pictures out.",
 	"settings.account.exportCheckConnection": "The export did not come back. Check your connection and try again.",
 	"settings.account.allSessions": "All {count} sign-ins",
-	"search.resultsFor": { "one": "{count} result for “{q}”", "other": "{count} results for “{q}”" },
-	"search.resultsCount": { "one": "{count} result", "other": "{count} results" },
+	"search.resultsFor": {
+		"one": "{count} result for “{q}”",
+		"other": "{count} results for “{q}”"
+	},
+	"search.resultsCount": {
+		"one": "{count} result",
+		"other": "{count} results"
+	},
 	"settings.instance.stagingDetail": "ONTOPLANO_STAGING=true in the server's environment. Unset it and restart to close the doors.",
 	"settings.instance.running": "Running",
 	"settings.instance.notRunning": "Not running",
@@ -4510,7 +4516,10 @@
 		"one": "{count} account showing",
 		"other": "{count} accounts showing"
 	},
-	"admin.sessionCount": { "one": "{count} session", "other": "{count} sessions" },
+	"admin.sessionCount": {
+		"one": "{count} session",
+		"other": "{count} sessions"
+	},
 	"admin.lastAttempts": {
 		"one": "{count} attempt · last {lastAttemptAt}",
 		"other": "{count} attempts · last {lastAttemptAt}"
@@ -4529,5 +4538,50 @@
 	"settings.account.profile": "Profile",
 	"settings.account.displayName": "Name",
 	"settings.account.displayNameHint": "What the app calls you, and what the people you share with see",
-	"settings.account.changeYourName": "Change your name"
+	"settings.account.changeYourName": "Change your name",
+	"finance.ledgers.assumed": "assumed from the sign",
+	"finance.ledgers.classifySelected": "Classify selected",
+	"finance.ledgers.counterpart": "The other side",
+	"finance.ledgers.counterpartPending": "counterpart pending",
+	"finance.ledgers.kindCash": "Cash withdrawal",
+	"finance.ledgers.kindExpense": "Spending",
+	"finance.ledgers.kindFee": "Fee",
+	"finance.ledgers.kindIncome": "Income",
+	"finance.ledgers.kindRefund": "Refund",
+	"finance.ledgers.kindTransfer": "Transfer",
+	"finance.ledgers.linkParent": "The line it belongs to",
+	"finance.ledgers.meaning": "Meaning",
+	"finance.ledgers.selectedCount": "{count} selected",
+	"finance.ledgers.unlinkTransfer": "Unlink the transfer",
+	"finance.ledgers.linkedTransfer": "This line is one leg of a transfer.",
+	"finance.ledgers.linkedToLine": "This line belongs to line {id}.",
+	"finance.ledgers.linkAsTransfer": "Link as transfer",
+	"finance.ledgers.linkRelated": "Link to this line",
+	"finance.ledgers.meaningHint": "What it was. Left as assumed, the sign decides.",
+	"finance.ledgers.selectLine": "Select {name}",
+	"finance.ledgers.unlinkRelated": "Unlink it",
+	"ui.select": "Select",
+	"finance.ledgers.relatedLine": "The line it belongs to",
+	"errors.statements.alreadyChild": "That line already belongs to line {id}.",
+	"errors.statements.alreadyRefund": "That line is already the refund of line {id}. A refund reverses one expense.",
+	"errors.statements.alreadyTransfer": "One of those lines is already part of a transfer. Unlink it first.",
+	"errors.statements.legCannotBeChild": "A leg of a transfer cannot be a refund or a fee.",
+	"errors.statements.legOfTransferChange": "This line is one leg of a transfer. Unlink the transfer first, then change what it means.",
+	"errors.statements.legOfTransferClassify": "One line in that selection is a leg of a transfer. Unlink the transfer first, then classify it.",
+	"errors.statements.legOfTransferDelete": "This line is one leg of a transfer with line {id}. Unlink the transfer first.",
+	"errors.statements.legsDoNotBalance": "Those two do not add up to nothing: {a} {first} and {b} {second}. A move between accounts leaves one and arrives in the other.",
+	"errors.statements.linkNeedsCurrency": "One of those ledgers has no currency. Set the currency before linking money across them.",
+	"errors.statements.linkNeedsLedger": "Both lines must be in a ledger before they can be linked.",
+	"errors.statements.notATransfer": "That line is not part of a transfer.",
+	"errors.statements.ownCounterpart": "A line cannot be its own counterpart.",
+	"errors.statements.ownParent": "A line cannot belong to itself.",
+	"errors.statements.refundOnLeg": "A refund is attached to one of these legs (line {id}). Unlink the refund first.",
+	"errors.statements.sameLedgerTransfer": "Both lines are in the same ledger. A pair that balances inside one account hides two real expenses.",
+	"errors.statements.unlikeCurrencies": "Those are in different currencies: {a} and {b}. A refund or a fee must be in the money it belongs to.",
+	"notify.verb.classify": "classified",
+	"notify.noun.transfer": {
+		"one": "{count} transfer",
+		"other": "{count} transfers"
+	},
+	"errors.statements.alreadyChildLink": "That line already belongs to another line as a refund or a fee. Unlink it first."
 }

@@ -192,14 +192,19 @@ import {
 } from '$lib/services/bills.js';
 import {
 	categorySlices,
+	classifyMovements,
 	createRule,
 	deleteMovement,
 	deleteRule,
+	linkMovement,
+	linkTransfer,
 	listMovements,
 	listRules,
+	MOVEMENT_KINDS,
 	monthlyTotals,
 	placeRule,
 	recordMovement,
+	unlinkTransfer,
 	updateMovement,
 	updateRule
 } from '$lib/services/statements.js';
@@ -6001,7 +6006,7 @@ export const TOOLS: Tool[] = [
 		name: 'change_movement',
 		title: 'Correct a statement line',
 		description:
-			'Correct a line in a ledger: what it says, the day, the amount, or which ledger it is in. Takes the id `movements` gives. Only `id` is needed: a field left out is untouched. Amounts are signed minor units — negative when money left.',
+			'Correct a line in a ledger: what it says, the day, the amount, which ledger it is in, or what it meant. Takes the id `movements` gives. Only `id` is needed: a field left out is untouched. Amounts are signed minor units — negative when money left. `kind` says what the line was — expense, income, transfer, refund, fee or cash — and an empty string takes it back to the sign’s guess. A leg of a transfer cannot be re-kinded: unlink the transfer first.',
 		scope: 'statements:write',
 		writes: true,
 		refs: [
@@ -6020,6 +6025,11 @@ export const TOOLS: Tool[] = [
 				ledger_id: {
 					type: 'integer',
 					description: 'Move it to this ledger, as `ledgers` gives it.'
+				},
+				kind: {
+					type: 'string',
+					enum: [...MOVEMENT_KINDS, ''],
+					description: 'What the line was. An empty string clears it back to the sign’s guess.'
 				}
 			},
 			['id']
@@ -6029,7 +6039,108 @@ export const TOOLS: Tool[] = [
 				description: args.description,
 				occurredOn: args.occurred_on,
 				amountCents: args.amount_cents,
-				ledgerId: args.ledger_id
+				ledgerId: args.ledger_id,
+				...(args.kind === undefined ? {} : { kind: args.kind })
+			});
+			return { ok: true };
+		}
+	},
+	{
+		name: 'classify_movements',
+		title: 'Say what several lines were',
+		description:
+			'Give several statement lines the same meaning in one write — a hundred imported purchases marked as spending, a month of withdrawals marked as cash. `kind` is expense, income, transfer, refund, fee or cash; an empty string returns them to the sign’s guess. A leg of a transfer in the selection refuses the whole batch — unlink it first.',
+		scope: 'statements:write',
+		writes: true,
+		refs: [{ arg: 'ids', kind: 'movement' }],
+		input: object(
+			{
+				ids: {
+					type: 'array',
+					items: { type: 'integer' },
+					description: 'The lines’ ids, as `movements` gives them.'
+				},
+				kind: {
+					type: 'string',
+					enum: [...MOVEMENT_KINDS, ''],
+					description: 'What they were. An empty string clears it.'
+				}
+			},
+			['ids', 'kind']
+		),
+		run: (ctx, args) => classifyMovements(ctx, { ids: args.ids, kind: args.kind })
+	},
+	{
+		name: 'link_transfer',
+		title: 'Link two lines as one transfer',
+		description:
+			'Two lines in different ledgers are one move of my own money: both become `transfer` legs sharing a group. In one currency they must add up to nothing; in different currencies each keeps its own amount and no total is produced. Two lines in the same ledger are refused. Give one line and its counterpart — the answer names the group, and `unlink_transfer` undoes it.',
+		scope: 'statements:write',
+		writes: true,
+		refs: [
+			{ arg: 'id', kind: 'movement' },
+			{ arg: 'counterpart_id', kind: 'movement' }
+		],
+		input: object(
+			{
+				id: { type: 'integer', description: 'One line, as `movements` gives it.' },
+				counterpart_id: {
+					type: 'integer',
+					description: 'The other line, in another ledger.'
+				}
+			},
+			['id', 'counterpart_id']
+		),
+		run: (ctx, args) => linkTransfer(ctx, { id: args.id, counterpartId: args.counterpart_id })
+	},
+	{
+		name: 'unlink_transfer',
+		title: 'Unlink a transfer',
+		description:
+			'Undo a transfer pairing: both legs go back to the sign’s guess and the group is cleared. A refund attached to a leg refuses the unlink until the refund is unlinked.',
+		scope: 'statements:write',
+		writes: true,
+		refs: [{ arg: 'id', kind: 'movement' }],
+		input: object(
+			{ id: { type: 'integer', description: 'Either leg, as `movements` gives it.' } },
+			['id']
+		),
+		run: (ctx, args) => {
+			unlinkTransfer(ctx, Number(args.id));
+			return { ok: true };
+		}
+	},
+	{
+		name: 'link_movement',
+		title: 'Attach a refund or a fee',
+		description:
+			'A refund reverses one expense: it counts against that expense in the month it landed, under the expense’s category. A fee belongs to the payment it was charged on and leaves that payment untouched. `relation` is refund or fee; `parent_id` is the line it belongs to. Both must be in the same currency — the ledgers may differ. A line has one parent.',
+		scope: 'statements:write',
+		writes: true,
+		refs: [
+			{ arg: 'id', kind: 'movement' },
+			{ arg: 'parent_id', kind: 'movement' }
+		],
+		input: object(
+			{
+				id: { type: 'integer', description: 'The refund or fee line, as `movements` gives it.' },
+				parent_id: {
+					type: 'integer',
+					description: 'The expense a refund reverses, or the payment a fee belongs to.'
+				},
+				relation: {
+					type: 'string',
+					enum: ['refund', 'fee'],
+					description: 'What the line is to its parent.'
+				}
+			},
+			['id', 'parent_id', 'relation']
+		),
+		run: (ctx, args) => {
+			linkMovement(ctx, {
+				id: args.id,
+				parentId: args.parent_id,
+				relation: args.relation === 'fee' ? 'fee' : 'refund'
 			});
 			return { ok: true };
 		}

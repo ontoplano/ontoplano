@@ -642,7 +642,35 @@ export const messages: Catalogue = {
 	'errors.slots.noValidSlotsFound': 'Nenhum bloco válido no CSV',
 	'errors.slots.thatWorkoutIsNotYours': 'Esse treino não é seu.',
 	'errors.slots.workoutRequired': 'Escolha um treino',
+	'errors.statements.alreadyChild': 'That line already belongs to line {id}.',
+	'errors.statements.alreadyChildLink':
+		'That line already belongs to another line as a refund or a fee. Unlink it first.',
+	'errors.statements.alreadyRefund':
+		'That line is already the refund of line {id}. A refund reverses one expense.',
+	'errors.statements.alreadyTransfer':
+		'One of those lines is already part of a transfer. Unlink it first.',
+	'errors.statements.legCannotBeChild': 'A leg of a transfer cannot be a refund or a fee.',
+	'errors.statements.legOfTransferChange':
+		'This line is one leg of a transfer. Unlink the transfer first, then change what it means.',
+	'errors.statements.legOfTransferClassify':
+		'One line in that selection is a leg of a transfer. Unlink the transfer first, then classify it.',
+	'errors.statements.legOfTransferDelete':
+		'This line is one leg of a transfer with line {id}. Unlink the transfer first.',
+	'errors.statements.legsDoNotBalance':
+		'Those two do not add up to nothing: {a} {first} and {b} {second}. A move between accounts leaves one and arrives in the other.',
+	'errors.statements.linkNeedsCurrency':
+		'One of those ledgers has no currency. Set the currency before linking money across them.',
+	'errors.statements.linkNeedsLedger': 'Both lines must be in a ledger before they can be linked.',
 	'errors.statements.noParserKnowsThatExport': 'Nenhum leitor reconhece esse arquivo.',
+	'errors.statements.notATransfer': 'That line is not part of a transfer.',
+	'errors.statements.ownCounterpart': 'A line cannot be its own counterpart.',
+	'errors.statements.ownParent': 'A line cannot belong to itself.',
+	'errors.statements.refundOnLeg':
+		'A refund is attached to one of these legs (line {id}). Unlink the refund first.',
+	'errors.statements.sameLedgerTransfer':
+		'Both lines are in the same ledger. A pair that balances inside one account hides two real expenses.',
+	'errors.statements.unlikeCurrencies':
+		'Those are in different currencies: {a} and {b}. A refund or a fee must be in the money it belongs to.',
 	'errors.streams.pointMustBeAnObject': 'point precisa ser um objeto',
 	'errors.streams.pointsMustBeAnArray': 'points precisa ser uma lista',
 	'errors.subscriptions.anEmailAddressIsNeeded': 'É preciso um endereço de e-mail',
@@ -865,8 +893,12 @@ export const messages: Catalogue = {
 		'e suas {count} linhas somem para sempre. Para manter o histórico, arquive em vez de apagar.',
 	'finance.ledgers.archive': 'Arquivar {name}',
 	'finance.ledgers.askEveryTime': 'Perguntar sempre',
+	'finance.ledgers.assumed': 'assumed from the sign',
 	'finance.ledgers.chooseTheFile': 'Escolher o arquivo',
+	'finance.ledgers.classifySelected': 'Classify selected',
 	'finance.ledgers.coffee': 'Café',
+	'finance.ledgers.counterpart': 'The other side',
+	'finance.ledgers.counterpartPending': 'counterpart pending',
 	'finance.ledgers.currentAccount': 'Conta corrente',
 	'finance.ledgers.datesAreDayFirst': 'As datas são dia primeiro — 02/03 é dois de março',
 	'finance.ledgers.day': 'Dia',
@@ -890,11 +922,24 @@ export const messages: Catalogue = {
 	'finance.ledgers.importThisLedgerSExportOr':
 		'Importe a exportação deste registro, ou escreva uma linha manualmente. Linhas já importadas nunca são adicionadas duas vezes.',
 	'finance.ledgers.keepIt': 'Manter',
+	'finance.ledgers.kindCash': 'Cash withdrawal',
+	'finance.ledgers.kindExpense': 'Spending',
+	'finance.ledgers.kindFee': 'Fee',
+	'finance.ledgers.kindIncome': 'Income',
+	'finance.ledgers.kindRefund': 'Refund',
+	'finance.ledgers.kindTransfer': 'Transfer',
 	'finance.ledgers.lastOn': 'último em {day}',
 	'finance.ledgers.leaveTheIdAsNone':
 		'Deixe o id como nenhum a menos que o arquivo realmente traga a referência própria do banco por linha.\n\t\t\t\t\t\t\tSem um, uma linha é identificada pela data, valor e descrição.',
 	'finance.ledgers.ledger': 'Registro',
 	'finance.ledgers.lines': '{count} linhas',
+	'finance.ledgers.linkAsTransfer': 'Link as transfer',
+	'finance.ledgers.linkParent': 'The line it belongs to',
+	'finance.ledgers.linkRelated': 'Link to this line',
+	'finance.ledgers.linkedToLine': 'This line belongs to line {id}.',
+	'finance.ledgers.linkedTransfer': 'This line is one leg of a transfer.',
+	'finance.ledgers.meaning': 'Meaning',
+	'finance.ledgers.meaningHint': 'What it was. Left as assumed, the sign decides.',
 	'finance.ledgers.moneyIn': 'Entradas',
 	'finance.ledgers.moneyOut': 'Saídas',
 	'finance.ledgers.month': 'Mês',
@@ -915,8 +960,11 @@ export const messages: Catalogue = {
 		'Pré-selecionado ao importar para este registro. Pode ser mudado na importação.',
 	'finance.ledgers.putItAway': 'Guardar',
 	'finance.ledgers.readFromTheHeaderChange': 'Lido do cabeçalho. Corrija o que estiver errado:',
+	'finance.ledgers.relatedLine': 'The line it belongs to',
 	'finance.ledgers.restore': 'Restaurar',
 	'finance.ledgers.searchDescriptions': 'Buscar nas descrições',
+	'finance.ledgers.selectLine': 'Select {name}',
+	'finance.ledgers.selectedCount': '{count} selected',
 	'finance.ledgers.showingCount': {
 		one: '{count} linha exibida',
 		other: '{count} linhas exibidas'
@@ -926,6 +974,8 @@ export const messages: Catalogue = {
 		'As regras leem isto, então reescrever reclassifica a linha.',
 	'finance.ledgers.twoColumnsInstead': '— duas colunas em vez disso —',
 	'finance.ledgers.uncategorizedCount': 'Sem categoria ({count})',
+	'finance.ledgers.unlinkRelated': 'Unlink it',
+	'finance.ledgers.unlinkTransfer': 'Unlink the transfer',
 	'finance.ledgers.usualExport': 'Exportação usual',
 	'finance.ledgers.whatItIs': 'O que é',
 	'finance.monthBars.newest': '{shown} meses mais recentes de {total}',
@@ -2535,6 +2585,7 @@ export const messages: Catalogue = {
 	'notify.noun.tag': { one: '{count} etiqueta', other: '{count} etiquetas' },
 	'notify.noun.task': { one: '{count} tarefa', other: '{count} tarefas' },
 	'notify.noun.toGoal': { one: '{count} vínculo de meta', other: '{count} vínculos de meta' },
+	'notify.noun.transfer': { one: '{count} transfer', other: '{count} transfers' },
 	'notify.noun.win': { one: '{count} vitória', other: '{count} vitórias' },
 	'notify.noun.workout': { one: '{count} treino', other: '{count} treinos' },
 	'notify.noun.workoutCategory': {
@@ -2562,6 +2613,7 @@ export const messages: Catalogue = {
 	'notify.verb.archive': 'arquivou',
 	'notify.verb.cancel': 'cancelou',
 	'notify.verb.change': 'alterou',
+	'notify.verb.classify': 'classified',
 	'notify.verb.close': 'fechou',
 	'notify.verb.cooked': 'cozinhou',
 	'notify.verb.delete': 'excluiu',
@@ -4781,6 +4833,7 @@ export const messages: Catalogue = {
 	'ui.restore': 'Restaurar',
 	'ui.save': 'Salvar',
 	'ui.search': 'Buscar',
+	'ui.select': 'Select',
 	'ui.show': 'Mostrar',
 	'ui.showLess': 'Mostrar menos',
 	'ui.showMore': 'Mostrar mais',

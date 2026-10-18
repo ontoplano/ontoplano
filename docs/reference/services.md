@@ -5990,6 +5990,41 @@ already sent adds nothing, provided it names the same `externalId`.
 
 #### `updateMovement(ctx, id, input)`
 
+#### `classifyMovements(ctx, input)`
+
+Say what several movements were at once, in one write.
+
+The point is a hundred lines in one gesture, not a hundred round trips, so
+the whole selection is checked first: a single leg of a transfer or an id
+from another account refuses the batch rather than half-applying it.
+
+#### `linkTransfer(ctx, input)`
+
+Two lines are one move between my own accounts (D2).
+
+A group of one is a _pending counterpart_ and is allowed to stand: the
+destination statement often arrives later. Two legs in the same ledger are
+refused — they would balance to zero and hide two real expenses — and legs
+in one currency must add up to nothing, because money that left one place
+arrived in the other.
+
+#### `unlinkTransfer(ctx, id)`
+
+Undo a pairing: both legs return to the sign's guess, and the group is gone.
+
+#### `linkMovement(ctx, input)`
+
+Attach a line to the one it belongs to (D8).
+
+A refund reverses one expense and a fee belongs to the payment it was
+charged on. One parent only: a credit returned against two expenses is two
+credits. The currencies must match — the ledgers may differ, the money may
+not — because netting unlike money is arithmetic, not reconciliation.
+
+#### `detachMovement(ctx, id)`
+
+Undo a refund or fee link: the line stands alone again, back to the sign's guess.
+
 #### `getMovementRow(ctx, id)`
 
 One movement as stored, or null — how an id somebody named is resolved.
@@ -5999,6 +6034,13 @@ One movement as stored, or null — how an id somebody named is resolved.
 Every movement as stored, or only those in some ledgers — what a key tied to a notebook reaches.
 
 #### `deleteMovement(ctx, id)`
+
+Gone.
+
+A leg of a transfer is refused while the group stands: deleting one leg is
+how a pair becomes a single line that still calls itself a transfer (D2).
+Anything that pointed at the line is unlinked first, so a refund survives
+its parent as an unmatched credit rather than disappearing with it.
 
 #### `listRules(ctx)`
 
@@ -6025,6 +6067,14 @@ A place past either end is the end.
 What a description would be filed as, for anything that needs to ask.
 
 #### `listMovements(ctx, filter)`
+
+#### `recentForLinking(ctx, limit)`
+
+The few recent lines one meaning can be linked to.
+
+Deliberately not `listMovements`: that loads the whole history and runs
+every sorting rule over each row, which a picker of the last hundred lines
+has no use for and would pay for on every page load.
 
 #### `uncategorizedCount(ctx, filter)`
 
@@ -6078,8 +6128,10 @@ The ledgers a set of transaction ids belongs to — for bulk moves later.
 ### Types
 
 - `Movement`
+- `MovementKind`
 - `Rule`
 - `MovementFilter`
+- `LinkCandidate` — A line a meaning can point at: a transfer's other side, a refund's expense.
 - `CategorySlice`
 - `StatementMonth`
 - `CategoryMonths`

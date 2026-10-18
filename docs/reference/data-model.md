@@ -34,7 +34,7 @@ exist.
 | [`exceptional_task_tags`](#exceptional_task_tags)           | 5       | yes               |
 | [`exceptional_tasks`](#exceptional_tasks)                   | 19      | yes               |
 | [`finance_rules`](#finance_rules)                           | 8       | yes               |
-| [`finance_transactions`](#finance_transactions)             | 10      | yes               |
+| [`finance_transactions`](#finance_transactions)             | 13      | yes               |
 | [`goal_areas`](#goal_areas)                                 | 6       | yes               |
 | [`goal_events`](#goal_events)                               | 9       | yes               |
 | [`goal_links`](#goal_links)                                 | 6       | yes               |
@@ -585,12 +585,17 @@ Indexes:
 | `source`       | text    | not null | —                     | —                 |
 | `external_id`  | text    | null     | —                     | —                 |
 | `fingerprint`  | text    | not null | —                     | —                 |
+| `kind`         | text    | null     | —                     | —                 |
+| `group_id`     | text    | null     | —                     | —                 |
+| `parent_id`    | integer | null     | —                     | —                 |
 | `created_at`   | text    | not null | `(CURRENT_TIMESTAMP)` | —                 |
 
 Indexes:
 
 - `finance_transactions_user_idx` on `user_id`
 - `finance_transactions_user_date_idx` on `user_id`, `occurred_on`
+- `finance_transactions_group_idx` on `group_id`
+- `finance_transactions_parent_idx` on `parent_id`
 - `finance_transactions_fingerprint_unique` on `user_id`, `fingerprint` — unique
 
 ## goal_areas

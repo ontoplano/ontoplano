@@ -9,7 +9,7 @@
  * than a sum. A rule written today therefore sorts last year's lines, with
  * no resweep and nothing stored to drift.
  */
-import { and, desc, eq, gte, inArray } from 'drizzle-orm';
+import { and, desc, eq, gte, inArray, isNotNull, ne } from 'drizzle-orm';
 
 import { COLOUR_PALETTE } from '../colors.js';
 import { db } from '$lib/db/index.js';
@@ -61,10 +61,27 @@ export type Movement = {
 	amountCents: number;
 	description: string;
 	source: string;
+	/** What somebody said it was, or null when the sign is all there is. */
+	kind: MovementKind | null;
+	/** Legs of one move between two owned accounts share this. */
+	groupId: string | null;
+	/** A transfer leg whose counterpart has not been named yet. */
+	counterpartPending: boolean;
+	/** The expense a refund reverses, or the payment a fee belongs to. */
+	parentId: number | null;
 	category: string | null;
 	categoryColor: string | null;
 	tags: { name: string; color: string }[];
 };
+
+/**
+ * What a movement can be.
+ *
+ * `expense` and `income` are also what the sign means when nothing was said,
+ * which is why a stored null keeps its own name — *assumed* — in the UI.
+ */
+export const MOVEMENT_KINDS = ['expense', 'income', 'transfer', 'refund', 'fee', 'cash'] as const;
+export type MovementKind = (typeof MOVEMENT_KINDS)[number];
 
 export type Rule = {
 	id: number;
@@ -253,7 +270,13 @@ export function recordMovement(
 export function updateMovement(
 	ctx: Ctx,
 	id: number,
-	input: { description?: unknown; occurredOn?: unknown; amountCents?: unknown; ledgerId?: unknown }
+	input: {
+		description?: unknown;
+		occurredOn?: unknown;
+		amountCents?: unknown;
+		ledgerId?: unknown;
+		kind?: unknown;
+	}
 ): void {
 	const current = db
 		.select()
@@ -268,9 +291,24 @@ export function updateMovement(
 			: num(input.ledgerId, 'ledger', { int: true });
 	if (ledgerId !== current.ledgerId && ledgerId !== null) getLedger(ctx, ledgerId);
 
+	const kind = input.kind === undefined ? current.kind : movementKind(input.kind);
+	// A leg edited out of its pair is how a transfer becomes spending again:
+	// the group is undone first, deliberately, and never by an edit.
+	if (current.groupId && kind !== 'transfer')
+		throw new ValidationError({ key: 'errors.statements.legOfTransferChange' });
+	// The amount and the ledger are what the pairing conserved: editing one
+	// leg's amount silently breaks the sum the link proved.
+	if (
+		current.groupId &&
+		((input.amountCents !== undefined && input.amountCents !== '') ||
+			(input.ledgerId !== undefined && input.ledgerId !== null && input.ledgerId !== ''))
+	)
+		throw new ValidationError({ key: 'errors.statements.legOfTransferChange' });
+
 	db.update(financeTransactions)
 		.set({
 			ledgerId,
+			kind,
 			description:
 				input.description === undefined
 					? current.description
@@ -284,6 +322,207 @@ export function updateMovement(
 					? current.amountCents
 					: num(input.amountCents, 'amount', { int: true })
 		})
+		.where(and(eq(financeTransactions.id, id), eq(financeTransactions.userId, ctx.userId)))
+		.run();
+}
+
+/** A kind, or an empty string to clear it. */
+function movementKind(value: unknown): MovementKind | null {
+	if (value === null || value === '') return null;
+	return oneOf(value, 'kind', MOVEMENT_KINDS);
+}
+
+/** One movement of this account's, or the same refusal a missing id gets. */
+function ownMovement(ctx: Ctx, id: number) {
+	const row = db
+		.select()
+		.from(financeTransactions)
+		.where(and(eq(financeTransactions.id, id), eq(financeTransactions.userId, ctx.userId)))
+		.get();
+	if (!row) throw new NotFoundError('movement');
+	return row;
+}
+
+/**
+ * Say what several movements were at once, in one write.
+ *
+ * The point is a hundred lines in one gesture, not a hundred round trips, so
+ * the whole selection is checked first: a single leg of a transfer or an id
+ * from another account refuses the batch rather than half-applying it.
+ */
+export function classifyMovements(
+	ctx: Ctx,
+	input: { ids: unknown; kind?: unknown }
+): { updated: number } {
+	const ids = Array.isArray(input.ids)
+		? input.ids.map((id) => num(id, 'movement', { int: true }))
+		: [num(input.ids, 'movement', { int: true })];
+	const kind = movementKind(input.kind);
+	if (ids.length === 0) return { updated: 0 };
+
+	const rows = db
+		.select({ id: financeTransactions.id, groupId: financeTransactions.groupId })
+		.from(financeTransactions)
+		.where(and(eq(financeTransactions.userId, ctx.userId), inArray(financeTransactions.id, ids)))
+		.all();
+	if (rows.length !== new Set(ids).size) throw new NotFoundError('movement');
+	if (kind !== 'transfer' && rows.some((r) => r.groupId))
+		throw new ValidationError({ key: 'errors.statements.legOfTransferClassify' });
+
+	db.update(financeTransactions)
+		.set({ kind })
+		.where(and(eq(financeTransactions.userId, ctx.userId), inArray(financeTransactions.id, ids)))
+		.run();
+	return { updated: ids.length };
+}
+
+/**
+ * Two lines are one move between my own accounts (D2).
+ *
+ * A group of one is a *pending counterpart* and is allowed to stand: the
+ * destination statement often arrives later. Two legs in the same ledger are
+ * refused — they would balance to zero and hide two real expenses — and legs
+ * in one currency must add up to nothing, because money that left one place
+ * arrived in the other.
+ */
+export function linkTransfer(
+	ctx: Ctx,
+	input: { id: unknown; counterpartId: unknown }
+): {
+	groupId: string;
+} {
+	const id = num(input.id, 'movement', { int: true });
+	const counterpartId = num(input.counterpartId, 'counterpart', { int: true });
+	if (id === counterpartId) throw new ValidationError({ key: 'errors.statements.ownCounterpart' });
+	const a = ownMovement(ctx, id);
+	const b = ownMovement(ctx, counterpartId);
+	if (a.groupId || b.groupId)
+		throw new ValidationError({ key: 'errors.statements.alreadyTransfer' });
+	if (a.parentId !== null || b.parentId !== null)
+		throw new ValidationError({ key: 'errors.statements.alreadyChildLink' });
+	if (a.ledgerId === null || b.ledgerId === null)
+		throw new ValidationError({ key: 'errors.statements.linkNeedsLedger' });
+	if (a.ledgerId === b.ledgerId)
+		throw new ValidationError({ key: 'errors.statements.sameLedgerTransfer' });
+
+	const ca = ledgerCurrency(ctx, a.ledgerId);
+	const cb = ledgerCurrency(ctx, b.ledgerId);
+	// An unlabelled ledger is not a different currency: without knowing both,
+	// neither the sum check nor the "no combined total" rule can be honoured.
+	if (!ca || !cb) throw new ValidationError({ key: 'errors.statements.linkNeedsCurrency' });
+	if (ca === cb && a.amountCents + b.amountCents !== 0)
+		throw new ValidationError({
+			key: 'errors.statements.legsDoNotBalance',
+			values: { a: ca, first: a.amountCents, b: cb, second: b.amountCents }
+		});
+	// Different currencies are allowed and never summed: the two legs stay
+	// two amounts, because no rate is known or invented (D6).
+
+	const groupId = `t:${crypto.randomUUID()}`;
+	db.transaction((tx) => {
+		for (const row of [a, b])
+			tx.update(financeTransactions)
+				.set({ groupId, kind: 'transfer' })
+				.where(and(eq(financeTransactions.id, row.id), eq(financeTransactions.userId, ctx.userId)))
+				.run();
+	});
+	return { groupId };
+}
+
+/** Undo a pairing: both legs return to the sign's guess, and the group is gone. */
+export function unlinkTransfer(ctx: Ctx, id: number): void {
+	const leg = ownMovement(ctx, id);
+	if (!leg.groupId) throw new ValidationError({ key: 'errors.statements.notATransfer' });
+	const legs = db
+		.select({ id: financeTransactions.id })
+		.from(financeTransactions)
+		.where(
+			and(eq(financeTransactions.userId, ctx.userId), eq(financeTransactions.groupId, leg.groupId))
+		)
+		.all();
+	const ids = legs.map((l) => l.id);
+	if (ids.length) {
+		const refund = db
+			.select({ id: financeTransactions.id })
+			.from(financeTransactions)
+			.where(
+				and(eq(financeTransactions.userId, ctx.userId), inArray(financeTransactions.parentId, ids))
+			)
+			.get();
+		if (refund)
+			throw new ValidationError({
+				key: 'errors.statements.refundOnLeg',
+				values: { id: refund.id }
+			});
+	}
+	db.update(financeTransactions)
+		.set({ groupId: null, kind: null })
+		.where(
+			and(eq(financeTransactions.userId, ctx.userId), eq(financeTransactions.groupId, leg.groupId))
+		)
+		.run();
+}
+
+/**
+ * Attach a line to the one it belongs to (D8).
+ *
+ * A refund reverses one expense and a fee belongs to the payment it was
+ * charged on. One parent only: a credit returned against two expenses is two
+ * credits. The currencies must match — the ledgers may differ, the money may
+ * not — because netting unlike money is arithmetic, not reconciliation.
+ */
+export function linkMovement(
+	ctx: Ctx,
+	input: { id: unknown; parentId: unknown; relation: 'refund' | 'fee' }
+): void {
+	const kind = input.relation;
+	linkChild(ctx, { id: input.id, parentId: input.parentId }, kind);
+}
+
+function linkChild(ctx: Ctx, input: { id: unknown; parentId: unknown }, kind: 'refund' | 'fee') {
+	const id = num(input.id, 'movement', { int: true });
+	const parentId = num(input.parentId, 'parent', { int: true });
+	if (id === parentId) throw new ValidationError({ key: 'errors.statements.ownParent' });
+	const child = ownMovement(ctx, id);
+	const parent = ownMovement(ctx, parentId);
+	if (child.groupId) throw new ValidationError({ key: 'errors.statements.legCannotBeChild' });
+	if (child.parentId !== null && child.parentId !== parentId)
+		throw new ValidationError({
+			key: kind === 'refund' ? 'errors.statements.alreadyRefund' : 'errors.statements.alreadyChild',
+			values: { id: child.parentId }
+		});
+	if (child.ledgerId === null || parent.ledgerId === null)
+		throw new ValidationError({ key: 'errors.statements.linkNeedsLedger' });
+	const cc = ledgerCurrency(ctx, child.ledgerId);
+	const pc = ledgerCurrency(ctx, parent.ledgerId);
+	if (!cc || !pc) throw new ValidationError({ key: 'errors.statements.linkNeedsCurrency' });
+	if (cc !== pc)
+		throw new ValidationError({
+			key: 'errors.statements.unlikeCurrencies',
+			values: { a: cc, b: pc }
+		});
+
+	db.update(financeTransactions)
+		.set({ kind, parentId })
+		.where(and(eq(financeTransactions.id, id), eq(financeTransactions.userId, ctx.userId)))
+		.run();
+}
+
+/** The ledger's currency, or null while it has none. */
+function ledgerCurrency(ctx: Ctx, ledgerId: number): string | null {
+	const row = db
+		.select({ currency: ledgers.currency })
+		.from(ledgers)
+		.where(and(eq(ledgers.id, ledgerId), eq(ledgers.userId, ctx.userId)))
+		.get();
+	return row?.currency ?? null;
+}
+
+/** Undo a refund or fee link: the line stands alone again, back to the sign's guess. */
+export function detachMovement(ctx: Ctx, id: number): void {
+	ownMovement(ctx, id);
+	db.update(financeTransactions)
+		.set({ parentId: null, kind: null })
 		.where(and(eq(financeTransactions.id, id), eq(financeTransactions.userId, ctx.userId)))
 		.run();
 }
@@ -314,12 +553,45 @@ export function listMovementRows(ctx: Ctx, opts: { ledgerIds?: number[] } = {}) 
 		.all();
 }
 
+/**
+ * Gone.
+ *
+ * A leg of a transfer is refused while the group stands: deleting one leg is
+ * how a pair becomes a single line that still calls itself a transfer (D2).
+ * Anything that pointed at the line is unlinked first, so a refund survives
+ * its parent as an unmatched credit rather than disappearing with it.
+ */
 export function deleteMovement(ctx: Ctx, id: number): void {
-	const gone = db
-		.delete(financeTransactions)
-		.where(and(eq(financeTransactions.id, id), eq(financeTransactions.userId, ctx.userId)))
-		.run();
-	if (gone.changes === 0) throw new NotFoundError('movement');
+	const row = ownMovement(ctx, id);
+	if (row.groupId) {
+		const group = db
+			.select({ id: financeTransactions.id })
+			.from(financeTransactions)
+			.where(
+				and(
+					eq(financeTransactions.userId, ctx.userId),
+					eq(financeTransactions.groupId, row.groupId),
+					ne(financeTransactions.id, id)
+				)
+			)
+			.get();
+		if (group)
+			throw new ValidationError({
+				key: 'errors.statements.legOfTransferDelete',
+				values: { id: group.id }
+			});
+	}
+	db.transaction((tx) => {
+		tx.update(financeTransactions)
+			.set({ parentId: null })
+			.where(and(eq(financeTransactions.userId, ctx.userId), eq(financeTransactions.parentId, id)))
+			.run();
+		const gone = tx
+			.delete(financeTransactions)
+			.where(and(eq(financeTransactions.id, id), eq(financeTransactions.userId, ctx.userId)))
+			.run();
+		if (gone.changes === 0) throw new NotFoundError('movement');
+	});
 }
 
 // ── Rules ────────────────────────────────────────────────────────────────────
@@ -573,6 +845,19 @@ export function listMovements(ctx: Ctx, filter: MovementFilter = {}): Movement[]
 		.all();
 
 	const text = filter.query?.trim().toLowerCase();
+	// How many legs each group has — counted over the account, not the page,
+	// so a filtered list still knows a counterpart exists. Accounts with no
+	// transfers pay nothing for this.
+	const groupSize = new Map<string, number>();
+	if (rows.some((r) => r.groupId))
+		for (const r of db
+			.select({ groupId: financeTransactions.groupId, id: financeTransactions.id })
+			.from(financeTransactions)
+			.where(
+				and(eq(financeTransactions.userId, ctx.userId), isNotNull(financeTransactions.groupId))
+			)
+			.all())
+			groupSize.set(r.groupId!, (groupSize.get(r.groupId!) ?? 0) + 1);
 	return rows
 		.filter((r) => !filter.month || r.occurredOn.startsWith(filter.month))
 		.filter((r) => !filter.to || r.occurredOn <= filter.to)
@@ -594,12 +879,53 @@ export function listMovements(ctx: Ctx, filter: MovementFilter = {}): Movement[]
 				amountCents: r.amountCents,
 				description: r.description,
 				source: r.source,
+				kind: (r.kind as MovementKind | null) ?? null,
+				groupId: r.groupId,
+				// A line marked as a transfer has no group until it is paired, and
+				// that is exactly the state the screen must name.
+				counterpartPending:
+					r.kind === 'transfer' && (r.groupId === null || (groupSize.get(r.groupId) ?? 0) < 2),
+				parentId: r.parentId,
 				...sorted
 			};
 		})
 		.filter((m) => !filter.category || (m.category ?? UNCATEGORIZED) === filter.category)
 		.filter((m) => !filter.tag || m.tags.some((t) => t.name === filter.tag))
 		.slice(0, filter.limit ?? 1000);
+}
+
+/** A line a meaning can point at: a transfer's other side, a refund's expense. */
+export type LinkCandidate = {
+	id: number;
+	ledgerId: number | null;
+	occurredOn: string;
+	amountCents: number;
+	description: string;
+	groupId: string | null;
+};
+
+/**
+ * The few recent lines one meaning can be linked to.
+ *
+ * Deliberately not `listMovements`: that loads the whole history and runs
+ * every sorting rule over each row, which a picker of the last hundred lines
+ * has no use for and would pay for on every page load.
+ */
+export function recentForLinking(ctx: Ctx, limit = 100): LinkCandidate[] {
+	return db
+		.select({
+			id: financeTransactions.id,
+			ledgerId: financeTransactions.ledgerId,
+			occurredOn: financeTransactions.occurredOn,
+			amountCents: financeTransactions.amountCents,
+			description: financeTransactions.description,
+			groupId: financeTransactions.groupId
+		})
+		.from(financeTransactions)
+		.where(and(eq(financeTransactions.userId, ctx.userId), isNotNull(financeTransactions.ledgerId)))
+		.orderBy(desc(financeTransactions.occurredOn), desc(financeTransactions.id))
+		.limit(Math.min(Math.max(Math.trunc(limit) || 100, 1), 500))
+		.all();
 }
 
 /** How many lines no category rule claims — the number that says "more rules". */

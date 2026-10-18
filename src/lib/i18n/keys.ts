@@ -574,7 +574,24 @@ export type MessageKey =
 	| 'errors.slots.noValidSlotsFound'
 	| 'errors.slots.thatWorkoutIsNotYours'
 	| 'errors.slots.workoutRequired'
+	| 'errors.statements.alreadyChild'
+	| 'errors.statements.alreadyChildLink'
+	| 'errors.statements.alreadyRefund'
+	| 'errors.statements.alreadyTransfer'
+	| 'errors.statements.legCannotBeChild'
+	| 'errors.statements.legOfTransferChange'
+	| 'errors.statements.legOfTransferClassify'
+	| 'errors.statements.legOfTransferDelete'
+	| 'errors.statements.legsDoNotBalance'
+	| 'errors.statements.linkNeedsCurrency'
+	| 'errors.statements.linkNeedsLedger'
 	| 'errors.statements.noParserKnowsThatExport'
+	| 'errors.statements.notATransfer'
+	| 'errors.statements.ownCounterpart'
+	| 'errors.statements.ownParent'
+	| 'errors.statements.refundOnLeg'
+	| 'errors.statements.sameLedgerTransfer'
+	| 'errors.statements.unlikeCurrencies'
 	| 'errors.streams.pointMustBeAnObject'
 	| 'errors.streams.pointsMustBeAnArray'
 	| 'errors.subscriptions.anEmailAddressIsNeeded'
@@ -772,8 +789,12 @@ export type MessageKey =
 	| 'finance.ledgers.andItsLinesGoFor'
 	| 'finance.ledgers.archive'
 	| 'finance.ledgers.askEveryTime'
+	| 'finance.ledgers.assumed'
 	| 'finance.ledgers.chooseTheFile'
+	| 'finance.ledgers.classifySelected'
 	| 'finance.ledgers.coffee'
+	| 'finance.ledgers.counterpart'
+	| 'finance.ledgers.counterpartPending'
 	| 'finance.ledgers.currentAccount'
 	| 'finance.ledgers.datesAreDayFirst'
 	| 'finance.ledgers.day'
@@ -794,10 +815,23 @@ export type MessageKey =
 	| 'finance.ledgers.importAStatement'
 	| 'finance.ledgers.importThisLedgerSExportOr'
 	| 'finance.ledgers.keepIt'
+	| 'finance.ledgers.kindCash'
+	| 'finance.ledgers.kindExpense'
+	| 'finance.ledgers.kindFee'
+	| 'finance.ledgers.kindIncome'
+	| 'finance.ledgers.kindRefund'
+	| 'finance.ledgers.kindTransfer'
 	| 'finance.ledgers.lastOn'
 	| 'finance.ledgers.leaveTheIdAsNone'
 	| 'finance.ledgers.ledger'
 	| 'finance.ledgers.lines'
+	| 'finance.ledgers.linkAsTransfer'
+	| 'finance.ledgers.linkParent'
+	| 'finance.ledgers.linkRelated'
+	| 'finance.ledgers.linkedToLine'
+	| 'finance.ledgers.linkedTransfer'
+	| 'finance.ledgers.meaning'
+	| 'finance.ledgers.meaningHint'
 	| 'finance.ledgers.moneyIn'
 	| 'finance.ledgers.moneyOut'
 	| 'finance.ledgers.month'
@@ -816,13 +850,18 @@ export type MessageKey =
 	| 'finance.ledgers.preselectedWhenImportingIntoThis'
 	| 'finance.ledgers.putItAway'
 	| 'finance.ledgers.readFromTheHeaderChange'
+	| 'finance.ledgers.relatedLine'
 	| 'finance.ledgers.restore'
 	| 'finance.ledgers.searchDescriptions'
+	| 'finance.ledgers.selectLine'
+	| 'finance.ledgers.selectedCount'
 	| 'finance.ledgers.showingCount'
 	| 'finance.ledgers.theBankSOwnId'
 	| 'finance.ledgers.theRulesReadThisSo'
 	| 'finance.ledgers.twoColumnsInstead'
 	| 'finance.ledgers.uncategorizedCount'
+	| 'finance.ledgers.unlinkRelated'
+	| 'finance.ledgers.unlinkTransfer'
 	| 'finance.ledgers.usualExport'
 	| 'finance.ledgers.whatItIs'
 	| 'finance.monthBars.newest'
@@ -2204,6 +2243,7 @@ export type MessageKey =
 	| 'notify.noun.tag'
 	| 'notify.noun.task'
 	| 'notify.noun.toGoal'
+	| 'notify.noun.transfer'
 	| 'notify.noun.win'
 	| 'notify.noun.workout'
 	| 'notify.noun.workoutCategory'
@@ -2222,6 +2262,7 @@ export type MessageKey =
 	| 'notify.verb.archive'
 	| 'notify.verb.cancel'
 	| 'notify.verb.change'
+	| 'notify.verb.classify'
 	| 'notify.verb.close'
 	| 'notify.verb.cooked'
 	| 'notify.verb.delete'
@@ -4063,6 +4104,7 @@ export type MessageKey =
 	| 'ui.restore'
 	| 'ui.save'
 	| 'ui.search'
+	| 'ui.select'
 	| 'ui.show'
 	| 'ui.showLess'
 	| 'ui.showMore'
@@ -4207,6 +4249,17 @@ export interface MessageValuesFor {
 	'errors.notebooks.hasNoRecipesTab': { notebook: string | number };
 	'errors.notebooks.hasNoTasksTab': { notebook: string | number };
 	'errors.notebooks.hasNoWorkoutsTab': { notebook: string | number };
+	'errors.statements.alreadyChild': { id: string | number };
+	'errors.statements.alreadyRefund': { id: string | number };
+	'errors.statements.legOfTransferDelete': { id: string | number };
+	'errors.statements.legsDoNotBalance': {
+		a: string | number;
+		b: string | number;
+		first: string | number;
+		second: string | number;
+	};
+	'errors.statements.refundOnLeg': { id: string | number };
+	'errors.statements.unlikeCurrencies': { a: string | number; b: string | number };
 	'filters.applyFilter': { name: string | number };
 	'filters.forgetFilter': { name: string | number };
 	'filters.sureForget': { name: string | number };
@@ -4248,8 +4301,11 @@ export interface MessageValuesFor {
 	'finance.ledgers.edit': { name: string | number };
 	'finance.ledgers.lastOn': { day: string | number };
 	'finance.ledgers.lines': { count: number };
+	'finance.ledgers.linkedToLine': { id: string | number };
 	'finance.ledgers.moveEarlier': { name: string | number };
 	'finance.ledgers.moveLater': { name: string | number };
+	'finance.ledgers.selectLine': { name: string | number };
+	'finance.ledgers.selectedCount': { count: number };
 	'finance.ledgers.showingCount': { count: number };
 	'finance.ledgers.uncategorizedCount': { count: number };
 	'finance.monthBars.newest': { shown: string | number; total: string | number };
@@ -4580,6 +4636,7 @@ export interface MessageValuesFor {
 	'notify.noun.tag': { count: number };
 	'notify.noun.task': { count: number };
 	'notify.noun.toGoal': { count: number };
+	'notify.noun.transfer': { count: number };
 	'notify.noun.win': { count: number };
 	'notify.noun.workout': { count: number };
 	'notify.noun.workoutCategory': { count: number };

@@ -1462,6 +1462,19 @@
 				"type": "integer",
 				"required": true
 			},
+			"kind": {
+				"type": "string",
+				"required": false,
+				"enum": [
+					"",
+					"cash",
+					"expense",
+					"fee",
+					"income",
+					"refund",
+					"transfer"
+				]
+			},
 			"ledger_id": {
 				"type": "integer",
 				"required": false
@@ -1940,6 +1953,33 @@
 			}
 		}
 	},
+	"classify_movements": {
+		"scope": "statements:write",
+		"writes": true,
+		"destroys": false,
+		"params": {
+			"ids": {
+				"type": "array",
+				"required": true,
+				"items": {
+					"type": "integer"
+				}
+			},
+			"kind": {
+				"type": "string",
+				"required": true,
+				"enum": [
+					"",
+					"cash",
+					"expense",
+					"fee",
+					"income",
+					"refund",
+					"transfer"
+				]
+			}
+		}
+	},
 	"close_goal": {
 		"scope": "tasks:write",
 		"writes": true,
@@ -2279,6 +2319,29 @@
 			}
 		}
 	},
+	"link_movement": {
+		"scope": "statements:write",
+		"writes": true,
+		"destroys": false,
+		"params": {
+			"id": {
+				"type": "integer",
+				"required": true
+			},
+			"parent_id": {
+				"type": "integer",
+				"required": true
+			},
+			"relation": {
+				"type": "string",
+				"required": true,
+				"enum": [
+					"fee",
+					"refund"
+				]
+			}
+		}
+	},
 	"link_to_goal": {
 		"scope": "tasks:write",
 		"writes": true,
@@ -2301,6 +2364,21 @@
 				"items": {
 					"type": "integer"
 				}
+			}
+		}
+	},
+	"link_transfer": {
+		"scope": "statements:write",
+		"writes": true,
+		"destroys": false,
+		"params": {
+			"counterpart_id": {
+				"type": "integer",
+				"required": true
+			},
+			"id": {
+				"type": "integer",
+				"required": true
 			}
 		}
 	},
@@ -3644,6 +3722,17 @@
 				"items": {
 					"type": "integer"
 				}
+			}
+		}
+	},
+	"unlink_transfer": {
+		"scope": "statements:write",
+		"writes": true,
+		"destroys": false,
+		"params": {
+			"id": {
+				"type": "integer",
+				"required": true
 			}
 		}
 	},

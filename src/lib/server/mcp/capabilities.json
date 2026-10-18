@@ -309,7 +309,14 @@
 			"mcp": {
 				"create": ["add_ledger", "record_movement"],
 				"read": ["ledgers", "movements", "statement_months", "spending_by_category"],
-				"change": ["change_ledger", "change_movement"],
+				"change": [
+					"change_ledger",
+					"change_movement",
+					"classify_movements",
+					"link_movement",
+					"link_transfer",
+					"unlink_transfer"
+				],
 				"archive": ["change_ledger"],
 				"unarchive": ["change_ledger"],
 				"delete": ["remove_movement"],
@@ -322,6 +329,11 @@
 				],
 				"read": ["src/routes/finance/ledgers/+page.server.ts#load"],
 				"change": [
+					"src/routes/finance/ledgers/+page.server.ts#classify",
+					"src/routes/finance/ledgers/+page.server.ts#detachMovement",
+					"src/routes/finance/ledgers/+page.server.ts#linkMovement",
+					"src/routes/finance/ledgers/+page.server.ts#linkTransfer",
+					"src/routes/finance/ledgers/+page.server.ts#unlinkTransfer",
 					"src/routes/finance/ledgers/+page.server.ts#updateLedger",
 					"src/routes/finance/ledgers/+page.server.ts#updateMovement"
 				],

@@ -94,6 +94,7 @@ export const VERB_KEYS = new Set([
 	'archive',
 	'cancel',
 	'change',
+	'classify',
 	'close',
 	'delete',
 	'describe',
@@ -154,7 +155,13 @@ export const PHRASE_OVERRIDES: Record<string, Phrase> = {
 	move_notes: { verb: 'move', noun: 'note' },
 	reorder_tasks: { verb: 'reorder', noun: 'task' },
 	// It sets a day's count, which to the person reads as logging the habit.
-	set_habit_count: { verb: 'log', noun: 'habit' }
+	set_habit_count: { verb: 'log', noun: 'habit' },
+	// Plural in the name because it takes a list; the noun is counted anyway.
+	classify_movements: { verb: 'classify', noun: 'movement' },
+	// The name says where the line starts and ends; the nouns are what moved.
+	link_movement: { verb: 'link', noun: 'movement' },
+	link_transfer: { verb: 'link', noun: 'transfer' },
+	unlink_transfer: { verb: 'unlink', noun: 'transfer' }
 };
 
 /** A verb's catalogue key, and the noun it acts on, as the identifier spells it. */
@@ -213,6 +220,7 @@ export const NOUN_KEYS = new Set([
 	'ledger',
 	'location',
 	'movement',
+	'transfer',
 	'note',
 	'notebook',
 	'notebookFolder',

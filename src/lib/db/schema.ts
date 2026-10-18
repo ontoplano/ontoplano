@@ -3068,6 +3068,32 @@ export const financeTransactions = sqliteTable(
 		/** The bank's own id for the movement, when the export carries one. */
 		externalId: text('external_id'),
 		fingerprint: text('fingerprint').notNull(),
+		/**
+		 * What the movement was, when somebody said so.
+		 *
+		 * Null is not "unknown to be filled later": it means *derived from the
+		 * sign* — negative is an expense, positive is income — and every
+		 * figure that uses it says the meaning was assumed. A re-import, a
+		 * rule change or a migration must never write this column, or history
+		 * would be redefined by whatever ran last.
+		 */
+		kind: text('kind', {
+			enum: ['expense', 'income', 'transfer', 'refund', 'fee', 'cash']
+		}),
+		/** Legs of one move between two owned accounts share this. */
+		groupId: text('group_id'),
+		/**
+		 * The movement this one belongs to: the expense a refund reverses, or
+		 * the payment a fee was charged on.
+		 *
+		 * No `REFERENCES` here on purpose. SQLite's `ALTER TABLE … ADD COLUMN`
+		 * cannot carry an `ON DELETE` action, so a self-reference declared in
+		 * this file would make the generated migration disagree with the
+		 * schema for ever after (the parity test says so). Deleting a parent
+		 * unlinks its children in `services/statements.ts`, where the sentence
+		 * about what survives also lives.
+		 */
+		parentId: integer('parent_id'),
 		createdAt: text('created_at')
 			.notNull()
 			.default(sql`(CURRENT_TIMESTAMP)`)
@@ -3075,6 +3101,8 @@ export const financeTransactions = sqliteTable(
 	(table) => [
 		index('finance_transactions_user_idx').on(table.userId),
 		index('finance_transactions_user_date_idx').on(table.userId, table.occurredOn),
+		index('finance_transactions_group_idx').on(table.groupId),
+		index('finance_transactions_parent_idx').on(table.parentId),
 		uniqueIndex('finance_transactions_fingerprint_unique').on(table.userId, table.fingerprint)
 	]
 );

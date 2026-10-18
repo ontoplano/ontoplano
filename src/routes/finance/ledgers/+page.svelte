@@ -29,6 +29,7 @@
 	import OneLine from '$lib/components/OneLine.svelte';
 	import FormError from '$lib/components/FormError.svelte';
 	import { armed } from '$lib/actions/armed';
+	import { SvelteSet } from 'svelte/reactivity';
 	import { formatMoney, type Currency } from '$lib/money';
 	import type { PlainKey } from '$lib/i18n/keys';
 	import type { PageServerData, ActionData } from './$types';
@@ -94,6 +95,41 @@
 		editingId === null ? null : (data.movements.find((m) => m.id === editingId) ?? null)
 	);
 	let deletingMovement: Movement | null = $state(null);
+
+	/*
+	 * What a line was, when somebody says so.
+	 *
+	 * List and labels are kept here rather than imported from the service:
+	 * `statements.ts` reaches the database, and the browser bundle must not.
+	 * The order is the order the menu offers them.
+	 */
+	type Kind = 'expense' | 'income' | 'transfer' | 'refund' | 'fee' | 'cash';
+	const KINDS: Kind[] = ['expense', 'income', 'transfer', 'refund', 'fee', 'cash'];
+	const KIND_LABELS: Record<Kind, PlainKey> = {
+		expense: 'finance.ledgers.kindExpense',
+		income: 'finance.ledgers.kindIncome',
+		transfer: 'finance.ledgers.kindTransfer',
+		refund: 'finance.ledgers.kindRefund',
+		fee: 'finance.ledgers.kindFee',
+		cash: 'finance.ledgers.kindCash'
+	};
+
+	/** The lines ticked for one bulk classification. */
+	let selected = $state(new SvelteSet<number>());
+	let bulkKind = $state('');
+
+	function toggleLine(id: number, on: boolean) {
+		if (on) selected.add(id);
+		else selected.delete(id);
+	}
+
+	/** The lines a meaning can point at, minus the one being edited. */
+	const candidates = $derived(data.counterparts.filter((m) => m.id !== editing?.id));
+
+	/** A transfer's other side: another ledger, and not already paired. */
+	const transferCandidates = $derived(
+		candidates.filter((m) => m.ledgerId !== editing?.ledgerId && !m.groupId)
+	);
 
 	/** Choosing the file is the submit; it is read here and posted as text. */
 	async function fileChosen(event: Event) {
@@ -161,6 +197,9 @@
 		};
 		return [...data.movements].sort((a, b) => sign * by[order](a, b));
 	});
+
+	/** How many of the visible lines are ticked. */
+	const ticked = $derived(lines.filter((m) => selected.has(m.id)).length);
 
 	/* A row's day the app's one way: `Sep 12`. The band above says the year. */
 	const dayOf = (iso: string) => dayOfWhen(iso, now());
@@ -420,6 +459,35 @@
 					the first line and the day and everything that sorts it on the
 					second. Neither scrolls inside itself — the page does.
 				-->
+				<!--
+					One gesture for a selection: tick a run of lines and say
+					what they were. The boxes live in the rows and point at
+					this form, so nothing has to be mirrored in state.
+				-->
+				<form
+					id="classify"
+					method="post"
+					action="?/classify"
+					class="flex flex-wrap items-center gap-2 border-b border-gray-200 px-4 py-2 {ticked
+						? ''
+						: 'hidden'}"
+					use:enhance={() =>
+						({ result, update }) => {
+							if (result.type === 'success') selected.clear();
+							return update();
+						}}
+				>
+					<span class="text-xs text-gray-500">
+						{t('finance.ledgers.selectedCount', { count: ticked })}
+					</span>
+					<select name="kind" class="select" bind:value={bulkKind}>
+						<option value="">{t('finance.ledgers.assumed')}</option>
+						{#each KINDS as kind (kind)}
+							<option value={kind}>{t(KIND_LABELS[kind])}</option>
+						{/each}
+					</select>
+					<button class="btn" type="submit">{t('finance.ledgers.classifySelected')}</button>
+				</form>
 				<ul class="divide-y divide-gray-200 sm:hidden">
 					{#each lines as m, i (m.id)}
 						{#if yearBands.has(m.id)}
@@ -427,6 +495,16 @@
 						{/if}
 						<li class="px-4 py-2.5" data-row use:listCursor={i === cursor}>
 							<div class="flex items-start gap-3">
+								<input
+									type="checkbox"
+									class="mt-1"
+									form="classify"
+									name="ids"
+									value={m.id}
+									checked={selected.has(m.id)}
+									onchange={(e) => toggleLine(m.id, e.currentTarget.checked)}
+									aria-label={t('finance.ledgers.selectLine', { name: m.description })}
+								/>
 								<span class="line-clamp-2 min-w-0 flex-1 text-sm text-gray-900">
 									{m.description}
 								</span>
@@ -443,6 +521,13 @@
 								<span class="flex min-w-0 flex-1 flex-wrap items-center gap-1">
 									{#if m.category}
 										<CategoryMark name={m.category} color={m.categoryColor} />
+									{/if}
+									{#if m.kind}
+										<span class="chip text-gray-700">{t(KIND_LABELS[m.kind as Kind])}</span>
+									{/if}
+									{#if m.counterpartPending}
+										<span class="chip text-gray-500">{t('finance.ledgers.counterpartPending')}</span
+										>
 									{/if}
 									{#each m.tags as tag (tag.name)}
 										<TagChip name={tag.name} color={tag.color} />
@@ -474,6 +559,7 @@
 				<table class="statement hidden w-full text-sm sm:table">
 					<thead>
 						<tr class="border-b border-gray-200 text-left text-xs text-gray-500">
+							<th class="w-8 py-2"><span class="sr-only">{t('ui.select')}</span></th>
 							<th class="py-2 font-medium">{t('finance.ledgers.day')}</th>
 							<th class="py-2 font-medium">{t('ui.description')}</th>
 							<th class="py-2 font-medium">{t('ui.category')}</th>
@@ -485,9 +571,20 @@
 					<tbody class="divide-y divide-gray-200">
 						{#each lines as m, i (m.id)}
 							{#if yearBands.has(m.id)}
-								<tr><td colspan="6" class="year-band">{yearBands.get(m.id)}</td></tr>
+								<tr><td colspan="7" class="year-band">{yearBands.get(m.id)}</td></tr>
 							{/if}
 							<tr data-row use:listCursor={i === cursor}>
+								<td class="py-2">
+									<input
+										type="checkbox"
+										form="classify"
+										name="ids"
+										value={m.id}
+										checked={selected.has(m.id)}
+										onchange={(e) => toggleLine(m.id, e.currentTarget.checked)}
+										aria-label={t('finance.ledgers.selectLine', { name: m.description })}
+									/>
+								</td>
 								<td class="tabular py-2 whitespace-nowrap text-gray-500">
 									{dayOf(m.occurredOn)}
 								</td>
@@ -495,7 +592,16 @@
 								<td class="py-2 whitespace-nowrap">
 									{#if m.category}
 										<CategoryMark name={m.category} color={m.categoryColor} />
-									{:else}
+									{/if}
+									{#if m.kind}
+										<span class="chip ml-1 text-gray-700">{t(KIND_LABELS[m.kind as Kind])}</span>
+									{/if}
+									{#if m.counterpartPending}
+										<span class="chip ml-1 text-gray-500"
+											>{t('finance.ledgers.counterpartPending')}</span
+										>
+									{/if}
+									{#if !m.category && !m.kind}
 										<span class="text-xs text-gray-500">—</span>
 									{/if}
 								</td>
@@ -1038,8 +1144,128 @@
 						{#each data.ledgers as l (l.id)}<option value={l.id}>{l.name}</option>{/each}
 					</select>
 				</label>
+				<label class="block text-sm sm:col-span-2">
+					<span class="text-gray-600">{t('finance.ledgers.meaning')}</span>
+					<select name="kind" class="select mt-1 w-full" value={editing.kind ?? ''}>
+						<option value="">{t('finance.ledgers.assumed')}</option>
+						{#each KINDS as kind (kind)}
+							<option value={kind}>{t(KIND_LABELS[kind])}</option>
+						{/each}
+					</select>
+					<span class="mt-1 block text-xs text-gray-500">
+						{t('finance.ledgers.meaningHint')}
+					</span>
+				</label>
 			</div>
 		</form>
+
+		<!--
+			The links a meaning can carry, each its own small form: a transfer
+			needs a counterpart in another ledger, a refund the expense it
+			reverses, a fee the payment it was charged on. They sit outside the
+			edit form because a form posts to one action.
+		-->
+		{#if editing.groupId}
+			<div class="mt-4 border-t border-gray-200 pt-3">
+				<p class="text-sm text-gray-600">{t('finance.ledgers.linkedTransfer')}</p>
+				<form
+					method="post"
+					action="?/unlinkTransfer"
+					use:enhance={() =>
+						({ result, update }) => {
+							if (result.type === 'success') editingId = null;
+							return update();
+						}}
+				>
+					<input type="hidden" name="id" value={editing.id} />
+					<button class="btn mt-2" type="submit">{t('finance.ledgers.unlinkTransfer')}</button>
+				</form>
+			</div>
+		{:else if editing.kind === 'transfer'}
+			<div class="mt-4 border-t border-gray-200 pt-3">
+				<p class="text-sm text-gray-600">{t('finance.ledgers.counterpartPending')}</p>
+				<form
+					method="post"
+					action="?/linkTransfer"
+					class="mt-2 flex flex-wrap items-end gap-2"
+					use:enhance={() =>
+						({ result, update }) => {
+							if (result.type === 'success') editingId = null;
+							return update();
+						}}
+				>
+					<input type="hidden" name="id" value={editing.id} />
+					<label class="block min-w-0 flex-1 text-sm">
+						<span class="text-gray-600">{t('finance.ledgers.counterpart')}</span>
+						<select name="counterpartId" class="select mt-1 w-full" required>
+							<option value="">—</option>
+							{#each transferCandidates as m (m.id)}
+								<option value={m.id}>
+									{dayOf(m.occurredOn)} · {money(m.amountCents)} · {m.description}
+								</option>
+							{/each}
+						</select>
+					</label>
+					<button class="btn" type="submit">{t('finance.ledgers.linkAsTransfer')}</button>
+				</form>
+			</div>
+		{:else if !editing.groupId}
+			<div class="mt-4 border-t border-gray-200 pt-3">
+				{#if editing.parentId}
+					<p class="text-sm text-gray-600">
+						{t('finance.ledgers.linkedToLine', { id: editing.parentId })}
+					</p>
+					<form
+						method="post"
+						action="?/detachMovement"
+						use:enhance={() =>
+							({ result, update }) => {
+								if (result.type === 'success') editingId = null;
+								return update();
+							}}
+					>
+						<input type="hidden" name="id" value={editing.id} />
+						<button class="btn mt-2" type="submit">{t('finance.ledgers.unlinkRelated')}</button>
+					</form>
+				{:else}
+					<form
+						method="post"
+						action="?/linkMovement"
+						class="flex flex-wrap items-end gap-2"
+						use:enhance={() =>
+							({ result, update }) => {
+								if (result.type === 'success') editingId = null;
+								return update();
+							}}
+					>
+						<input type="hidden" name="id" value={editing.id} />
+						<label class="block text-sm">
+							<span class="text-gray-600">{t('finance.ledgers.meaning')}</span>
+							<select name="relation" class="select mt-1 w-full">
+								<option value="refund" selected={editing.kind !== 'fee'}>
+									{t('finance.ledgers.kindRefund')}
+								</option>
+								<option value="fee" selected={editing.kind === 'fee'}>
+									{t('finance.ledgers.kindFee')}
+								</option>
+							</select>
+						</label>
+						<label class="block min-w-0 flex-1 text-sm">
+							<span class="text-gray-600">{t('finance.ledgers.relatedLine')}</span>
+							<select name="parentId" class="select mt-1 w-full" required>
+								<option value="">—</option>
+								{#each candidates as m (m.id)}
+									<option value={m.id}>
+										{dayOf(m.occurredOn)} · {money(m.amountCents)} · {m.description}
+									</option>
+								{/each}
+							</select>
+						</label>
+						<button class="btn" type="submit">{t('finance.ledgers.linkRelated')}</button>
+					</form>
+				{/if}
+			</div>
+		{/if}
 	{/if}
 	{#snippet footer()}
 		<button class="btn" type="button" onclick={() => (editingId = null)}>{t('ui.cancel')}</button>
