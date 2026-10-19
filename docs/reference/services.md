@@ -35,6 +35,7 @@ shows up here on the next build.
 | [`billing`](#billing)                            | Billing, as the rest of the app sees it.                                                                                                                                                                                                                             |
 | [`bills`](#bills)                                | Bills: money expected to go out, on a rhythm.                                                                                                                                                                                                                        |
 | [`birthdays`](#birthdays)                        | Being told it is somebody's birthday, on the morning of it.                                                                                                                                                                                                          |
+| [`budgets`](#budgets)                            | Monthly ceilings share statement spending; they never write a bank or stock entry.                                                                                                                                                                                   |
 | [`calendar-feed`](#calendar-feed)                | The plan, published as a calendar anybody's software can read.                                                                                                                                                                                                       |
 | [`calendars`](#calendars)                        | Calendars somebody else controls.                                                                                                                                                                                                                                    |
 | [`client-errors`](#client-errors)                | Client-side errors, sent in with permission.                                                                                                                                                                                                                         |
@@ -1336,6 +1337,33 @@ Make sure today's birthdays exist as reminders for one account.
 Answers with how many rows it wrote, which is zero on all but a handful of
 days a year. Cheap enough to call on every delivery pass and from any page
 that is about to read reminders: one indexed query over an address book.
+
+## budgets
+
+Monthly ceilings share statement spending; they never write a bank or stock entry.
+
+### Functions
+
+#### `budgetMonth(value)`
+
+#### `listBudgets(ctx, filter)`
+
+#### `getBudget(ctx, id)`
+
+#### `createBudget(ctx, input)`
+
+#### `updateBudget(ctx, id, input)`
+
+#### `deleteBudget(ctx, id)`
+
+#### `copyBudgets(ctx, input)`
+
+Copy existing ceilings as ceilings, preserving orphan labels and never overwriting a bucket.
+
+### Types
+
+- `Budget`
+- `BudgetInput`
 
 ## calendar-feed
 
@@ -6155,12 +6183,20 @@ How many lines no category rule claims — the number that says "more rules".
 
 'YYYY-MM' keys ending at the month `now` is in.
 
+#### `statementWindow(ctx, months, filter)`
+
+One inclusive window for every finance series, in the account's civil month.
+
 #### `categorySlices(ctx, filter)`
 
 Personal spending by category over a window — the pie, and the table beside it.
 Expenses and fees count, net of refunds, and only the personal part of a split
 line. Transfers, cash withdrawals and custody shares stay out; a month whose
 refunds outweigh its spending has no slice rather than a negative one.
+
+#### `spending(ctx, filter)`
+
+Personal consumption and its exclusions, grouped by original currency without a row cap.
 
 #### `monthlyTotals(ctx, months, filter)`
 
@@ -6212,6 +6248,8 @@ The ledgers a set of transaction ids belongs to — for bulk moves later.
 - `MovementFilter`
 - `LinkCandidate` — A line a meaning can point at: a transfer's other side, a refund's expense.
 - `CategorySlice`
+- `SpendingCategory`
+- `Spending`
 - `StatementMonth`
 - `CategoryMonths`
 - `TagMonths`

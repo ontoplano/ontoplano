@@ -3060,6 +3060,43 @@ export const financeBalanceChecks = sqliteTable(
 	]
 );
 
+/** A monthly category ceiling is a plan, never a bank movement or funded reserve. */
+export const financeBudgets = sqliteTable(
+	'finance_budgets',
+	{
+		id: integer('id').primaryKey({ autoIncrement: true }),
+		userId: text('user_id')
+			.notNull()
+			.references(() => user.id),
+		month: text('month').notNull(),
+		category: text('category').notNull(),
+		currency: text('currency').notNull(),
+		amountMinor: integer('amount_minor').notNull(),
+		createdAt: text('created_at')
+			.notNull()
+			.default(sql`(CURRENT_TIMESTAMP)`),
+		updatedAt: text('updated_at')
+			.notNull()
+			.default(sql`(CURRENT_TIMESTAMP)`)
+	},
+	(table) => [
+		uniqueIndex('finance_budgets_bucket_unique').on(
+			table.userId,
+			table.month,
+			table.category,
+			table.currency
+		),
+		check(
+			'finance_budgets_amount_check',
+			sql`typeof(${table.amountMinor}) = 'integer' and ${table.amountMinor} between 0 and 9007199254740991`
+		),
+		check(
+			'finance_budgets_month_check',
+			sql`${table.month} glob '[0-9][0-9][0-9][0-9]-[0-9][0-9]' and substr(${table.month}, 6, 2) between '01' and '12'`
+		)
+	]
+);
+
 /** A stock, not a bank movement: custody, debt or an earmark in one currency. */
 export const financeCommitments = sqliteTable(
 	'finance_commitments',

@@ -51,6 +51,7 @@
 		union: 'M6 5v7a6 6 0 0 0 12 0V5',
 		download: 'M12 4v10M8 10l4 4 4-4M5 19h14',
 		copy: 'M9 4h9v13M5 8h9v12H5z',
+		budgets: 'M3 6h18v14H3zM3 6l9 8 9-8M7 3h10M8 17h8',
 		// A saved week's shape, as a plan page with cells rather than two copied pages.
 		scheme: 'M5 3h10l4 4v14H5zM15 3v5h4M8 12h3v3H8zM14 12h3v3h-3zM8 18h9',
 		// Four outlined cells: choosing the whole visible set, not completing it.

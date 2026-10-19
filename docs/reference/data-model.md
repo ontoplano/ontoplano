@@ -7,7 +7,7 @@ out of the schema — so this page cannot disagree with the schema, and a
 column added without a migration does not appear here because it does not
 exist.
 
-**89 tables.**
+**90 tables.**
 
 | Table                                                                 | Columns | Belongs to a user |
 | --------------------------------------------------------------------- | ------- | ----------------- |
@@ -34,6 +34,7 @@ exist.
 | [`exceptional_task_tags`](#exceptional_task_tags)                     | 5       | yes               |
 | [`exceptional_tasks`](#exceptional_tasks)                             | 19      | yes               |
 | [`finance_balance_checks`](#finance_balance_checks)                   | 7       | yes               |
+| [`finance_budgets`](#finance_budgets)                                 | 8       | yes               |
 | [`finance_commitment_entries`](#finance_commitment_entries)           | 8       | yes               |
 | [`finance_commitments`](#finance_commitments)                         | 11      | yes               |
 | [`finance_rules`](#finance_rules)                                     | 8       | yes               |
@@ -573,6 +574,28 @@ Checks — enforced by the database, not only by the service layer:
 Indexes:
 
 - `finance_balance_checks_user_ledger_date_unique` on `user_id`, `ledger_id`, `as_of` — unique
+
+## finance_budgets
+
+| Column         | Type    | Null     | Default               | Notes             |
+| -------------- | ------- | -------- | --------------------- | ----------------- |
+| `id`           | integer | not null | —                     | primary key, auto |
+| `user_id`      | text    | not null | —                     | → `user.id`       |
+| `month`        | text    | not null | —                     | —                 |
+| `category`     | text    | not null | —                     | —                 |
+| `currency`     | text    | not null | —                     | —                 |
+| `amount_minor` | integer | not null | —                     | —                 |
+| `created_at`   | text    | not null | `(CURRENT_TIMESTAMP)` | —                 |
+| `updated_at`   | text    | not null | `(CURRENT_TIMESTAMP)` | —                 |
+
+Indexes:
+
+- `finance_budgets_bucket_unique` on `user_id`, `month`, `category`, `currency` — unique
+
+Checks — enforced by the database, not only by the service layer:
+
+- `finance_budgets_amount_check`: `typeof("finance_budgets"."amount_minor") = 'integer' and "finance_budgets"."amount_minor" between 0 and 9007199254740991`
+- `finance_budgets_month_check`: `"finance_budgets"."month" glob '[0-9][0-9][0-9][0-9]-[0-9][0-9]' and substr("finance_budgets"."month", 6, 2) between '01' and '12'`
 
 ## finance_commitment_entries
 

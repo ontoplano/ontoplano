@@ -2058,6 +2058,52 @@ sortRule('category', 'Savings', 'savings deposit|fixed income', 14, '#0f766e');
 sortRule('tag', 'healthy', 'farm|greengrocer|climbing|five-a-side', 0, '#0f766e');
 sortRule('tag', 'transfers', 'transfer', 1, '#9d174d');
 
+// Synthetic ceilings and a later-month refund; replay never overwrites a person's ceiling or meaning.
+db.transaction(() => {
+	const existing = one(
+		"select id from ledgers where user_id=? and name='Monthly budget example'",
+		uid
+	);
+	const id = existing?.id ?? ledger('Monthly budget example', 'bank', 'csv:columns');
+	if (!existing) run('update ledgers set currency=? where id=? and user_id=?', 'KES', id, uid);
+	if (one('select currency from ledgers where id=? and user_id=?', id, uid)?.currency !== 'KES')
+		return;
+	const parentDescription = 'Ride *Budget example September';
+	const refundDescription = 'Budget example October refund';
+	movement(id, '2026-09-15', -450000, parentDescription);
+	const parent = one(
+		'select id from finance_transactions where user_id=? and ledger_id=? and description=?',
+		uid,
+		id,
+		parentDescription
+	);
+	const oldRefund = one(
+		'select id from finance_transactions where user_id=? and ledger_id=? and description=?',
+		uid,
+		id,
+		refundDescription
+	);
+	if (!oldRefund) {
+		movement(id, '2026-10-03', 40000, refundDescription);
+		run(
+			"update finance_transactions set kind='refund',parent_id=? where user_id=? and ledger_id=? and description=?",
+			parent.id,
+			uid,
+			id,
+			refundDescription
+		);
+	}
+	for (const month of ['2026-09', '2026-10'])
+		run(
+			'insert into finance_budgets(user_id,month,category,currency,amount_minor) values (?,?,?,?,?) on conflict(user_id,month,category,currency) do nothing',
+			uid,
+			month,
+			'Transport',
+			'KES',
+			600000
+		);
+})();
+
 // --- locations (inventory) -----------------------------------------------------------
 //
 // A small flat, so the tree has depth and the counts beside each location are

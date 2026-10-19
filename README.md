@@ -28,12 +28,13 @@ simple enough to be able to add a task or a note in your phone with one finger m
 You can [Connect with an AI agent](https://docs.ontoplano.com/ai-agents) (or not), and
 scope all your tasks, recipes, inventory, notes, bills etc. in specific notebooks.
 
+This fork's [finance guide](docs/finance.md) covers statement movements, balance checks, commitments and monthly budgets.
+
 <div align="center">
 
 [![Try the demo](.github/badges/try-the-demo.svg)](https://demo.ontoplano.com)
 
 </div>
-
 
 ## Running it
 

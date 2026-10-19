@@ -395,6 +395,24 @@
 			}
 		},
 		{
+			"name": "Budgets",
+			"mcp": {
+				"create": ["add_budget", "copy_budgets"],
+				"read": ["budgets", "personal_spending"],
+				"change": ["change_budget"],
+				"delete": ["delete_budget"]
+			},
+			"app": {
+				"create": [
+					"src/routes/finance/budgets/+page.server.ts#create",
+					"src/routes/finance/budgets/+page.server.ts#copy"
+				],
+				"read": ["src/routes/finance/budgets/+page.server.ts#load"],
+				"change": ["src/routes/finance/budgets/+page.server.ts#update"],
+				"delete": ["src/routes/finance/budgets/+page.server.ts#delete"]
+			}
+		},
+		{
 			"name": "Sorting rules",
 			"mcp": {
 				"create": ["add_sort_rule"],

@@ -28,14 +28,14 @@ import {
 	parserKey,
 	type CsvMapping
 } from '../bank-parsers/index.js';
-import type { Ctx } from './ctx.js';
+import { localDateOf, type Ctx } from './ctx.js';
 import { getLedger } from './ledgers.js';
 import { MAX_NOTE, addCommitmentEntry, getCommitment } from './commitments.js';
 import { stamp } from './time.js';
 import { NotFoundError, ValidationError } from './errors.js';
 import { num, oneOf, optionalStr, str } from './validate.js';
 import { civilDay, minorAmount } from './validate.js';
-import { minorUnits } from '../money.js';
+import { minorUnits, normaliseCurrency } from '../money.js';
 import { StatementParseError, type ParsedMovement } from '../bank-parsers/shape.js';
 import { unsafePattern } from './regex-safety.js';
 
@@ -1079,7 +1079,10 @@ export function sortByRules(ctx: Ctx, description: string) {
 
 export type MovementFilter = {
 	ledgerId?: number | null;
-	/** 'YYYY-MM', or a half-open range through `from`/`to` dates. */
+	/** Omitted means separate original currencies; null selects unspecified. */
+	currency?: string | null;
+	unclassified?: boolean;
+	/** 'YYYY-MM', or an inclusive civil-date range through `from`/`to`. */
 	month?: string;
 	from?: string;
 	to?: string;
@@ -1104,7 +1107,18 @@ export function listMovements(ctx: Ctx, filter: MovementFilter = {}): Movement[]
 
 	const where = [eq(financeTransactions.userId, ctx.userId)];
 	if (filter.ledgerId) where.push(eq(financeTransactions.ledgerId, filter.ledgerId));
-	if (filter.from) where.push(gte(financeTransactions.occurredOn, filter.from));
+	if (filter.from) where.push(gte(financeTransactions.occurredOn, civilDay(filter.from)));
+	if (filter.to) where.push(sql`${financeTransactions.occurredOn} <= ${civilDay(filter.to)}`);
+	if (filter.month) civilDay(`${filter.month}-01`, 'month');
+	if (filter.unclassified) where.push(sql`${financeTransactions.kind} is null`);
+	if (filter.currency !== undefined) {
+		const currency = filter.currency === null ? null : normaliseCurrency(filter.currency);
+		if (filter.currency !== null && !currency)
+			throw new ValidationError('Choose a valid original currency.');
+		where.push(
+			sql`(select l.currency from ledgers l where l.id = ${financeTransactions.ledgerId} and l.user_id = ${ctx.userId}) is ${currency}`
+		);
+	}
 
 	const rows = db
 		.select({
@@ -1250,6 +1264,37 @@ export function monthKeys(now: Date, months: number): string[] {
 	return keys;
 }
 
+/** One inclusive window for every finance series, in the account's civil month. */
+export function statementWindow(ctx: Ctx, months = DEFAULT_MONTHS, filter: MovementFilter = {}) {
+	num(months, 'months', { int: true, min: 1, max: 120 });
+	const endOfMonth = (month: string) => {
+		const date = new Date(`${civilDay(`${month}-01`)}T12:00:00Z`);
+		date.setUTCMonth(date.getUTCMonth() + 1);
+		date.setUTCDate(0);
+		return date.toISOString().slice(0, 10);
+	};
+	const last = filter.month
+		? endOfMonth(filter.month)
+		: filter.to
+			? civilDay(filter.to, 'last day')
+			: endOfMonth(localDateOf(ctx.now, ctx.tz).slice(0, 7));
+	const from = filter.month
+		? civilDay(`${filter.month}-01`)
+		: filter.from
+			? civilDay(filter.from, 'first day')
+			: `${monthKeys(new Date(`${last}T12:00:00Z`), months)[0]}-01`;
+	const to = filter.to ? civilDay(filter.to, 'last day') : last;
+	if (from > to) throw new ValidationError('The first day must not be after the last day.');
+	const keys: string[] = [];
+	const cursor = new Date(`${from.slice(0, 7)}-01T12:00:00Z`);
+	while (cursor.toISOString().slice(0, 7) <= to.slice(0, 7)) {
+		keys.push(cursor.toISOString().slice(0, 7));
+		if (keys.length > 120) throw new ValidationError('Choose at most 120 months.');
+		cursor.setUTCMonth(cursor.getUTCMonth() + 1);
+	}
+	return { from, to, months: keys };
+}
+
 export type CategorySlice = { name: string; color: string; outCents: number; share: number };
 
 /**
@@ -1259,7 +1304,10 @@ export type CategorySlice = { name: string; color: string; outCents: number; sha
  * refunds outweigh its spending has no slice rather than a negative one.
  */
 export function categorySlices(ctx: Ctx, filter: MovementFilter = {}): CategorySlice[] {
-	const out = personalSpending(ctx, filter);
+	const window = statementWindow(ctx, DEFAULT_MONTHS, filter);
+	const bounded = { ...filter, from: window.from, to: window.to };
+	assertSingleCurrency(ctx, bounded);
+	const out = personalSpending(ctx, bounded);
 	const totals = new Map<string, { cents: number; color: string }>();
 	for (const m of out) {
 		const name = m.category ?? UNCATEGORIZED;
@@ -1283,25 +1331,27 @@ export function categorySlices(ctx: Ctx, filter: MovementFilter = {}): CategoryS
  * rather than counted backwards.
  */
 function personalSpending(ctx: Ctx, filter: MovementFilter = {}) {
-	const where = [sql`t.user_id = ${ctx.userId}`];
-	if (filter.ledgerId) where.push(sql`t.ledger_id = ${filter.ledgerId}`);
-	if (filter.from) where.push(sql`t.occurred_on >= ${filter.from}`);
-	if (filter.to) where.push(sql`t.occurred_on <= ${filter.to}`);
-	if (filter.month) where.push(sql`substr(t.occurred_on, 1, 7) = ${filter.month}`);
-	if (filter.direction === 'in') where.push(sql`t.amount_cents > 0`);
-	if (filter.direction === 'out') where.push(sql`t.amount_cents < 0`);
+	const where = movementWhere(ctx, filter);
 	const rows = db.all<{
 		month: string;
+		currency: string | null;
 		description: string;
 		categoryDescription: string;
 		categoryOverride: string | null;
-		spentMinor: number;
+		grossMinor: number;
+		refundMinor: number;
 	}>(sql`
-		select substr(t.occurred_on, 1, 7) as month, t.description,
+		select substr(t.occurred_on, 1, 7) as month, l.currency, t.description,
 			case when t.kind = 'refund' then coalesce(p.description, t.description) else t.description end as categoryDescription,
-			a.category as categoryOverride,
-			sum(-case when a.id is null then t.amount_cents else a.amount_minor end) as spentMinor
+			case when t.kind = 'refund' then coalesce(
+				(select pa.category from finance_transaction_allocations pa
+				 where pa.transaction_id = p.id and pa.user_id = ${ctx.userId}
+				 and pa.kind = 'personal' and pa.category is not null order by pa.id limit 1), a.category)
+			else a.category end as categoryOverride,
+			sum(case when t.amount_cents < 0 then -case when a.id is null then t.amount_cents else a.amount_minor end else 0 end) as grossMinor,
+			sum(case when t.kind = 'refund' then case when a.id is null then t.amount_cents else a.amount_minor end else 0 end) as refundMinor
 		from finance_transactions t
+		left join ledgers l on l.id = t.ledger_id and l.user_id = ${ctx.userId}
 		left join finance_transaction_allocations a on a.transaction_id = t.id and a.user_id = ${ctx.userId}
 		left join finance_transactions p on p.id = t.parent_id and p.user_id = ${ctx.userId}
 		where ${sql.join(where, sql` and `)}
@@ -1310,7 +1360,7 @@ function personalSpending(ctx: Ctx, filter: MovementFilter = {}) {
 				or (t.kind = 'refund' and t.amount_cents > 0)
 			)
 			and (a.id is null or a.kind = 'personal')
-		group by substr(t.occurred_on, 1, 7), t.description, categoryDescription, a.category
+		group by substr(t.occurred_on, 1, 7), l.currency, t.description, categoryDescription, categoryOverride
 	`);
 	const rules = rawRules(ctx);
 	const query = filter.query?.trim().toLowerCase();
@@ -1321,14 +1371,154 @@ function personalSpending(ctx: Ctx, filter: MovementFilter = {}) {
 			const tags = sortDescription(rules, row.description).tags;
 			return {
 				month: row.month,
+				currency: row.currency,
 				category: row.categoryOverride ?? sorted.category,
-				categoryColor: sorted.categoryColor,
+				categoryColor: row.categoryOverride
+					? (rules.find((rule) => rule.kind === 'category' && rule.name === row.categoryOverride)
+							?.color ?? null)
+					: sorted.categoryColor,
 				tags,
-				spentMinor: minorAmount(row.spentMinor, 'spending total')
+				grossMinor: minorAmount(row.grossMinor, 'gross expenses'),
+				refundMinor: minorAmount(row.refundMinor, 'refunds'),
+				spentMinor: minorAmount(row.grossMinor - row.refundMinor, 'spending total')
 			};
 		})
 		.filter((row) => !filter.category || (row.category ?? UNCATEGORIZED) === filter.category)
 		.filter((row) => !filter.tag || row.tags.some((tag) => tag.name === filter.tag));
+}
+
+/** Shared SQL boundary: original currencies and inclusive dates, never preference currency. */
+function movementWhere(ctx: Ctx, filter: MovementFilter) {
+	const where = [sql`t.user_id = ${ctx.userId}`];
+	if (filter.ledgerId)
+		where.push(sql`t.ledger_id = ${num(filter.ledgerId, 'ledger', { int: true, min: 1 })}`);
+	if (filter.from) where.push(sql`t.occurred_on >= ${civilDay(filter.from, 'first day')}`);
+	if (filter.to) where.push(sql`t.occurred_on <= ${civilDay(filter.to, 'last day')}`);
+	if (filter.from && filter.to && filter.from > filter.to)
+		throw new ValidationError('The first day must not be after the last day.');
+	if (filter.month) {
+		civilDay(`${filter.month}-01`, 'month');
+		where.push(sql`substr(t.occurred_on, 1, 7) = ${filter.month}`);
+	}
+	if (filter.currency === null) where.push(sql`l.currency is null`);
+	else if (filter.currency !== undefined) {
+		const currency = normaliseCurrency(filter.currency);
+		if (!currency) throw new ValidationError('Choose a valid original currency.');
+		where.push(sql`l.currency = ${currency}`);
+	}
+	if (filter.unclassified) where.push(sql`t.kind is null`);
+	if (filter.direction === 'in') where.push(sql`t.amount_cents > 0`);
+	if (filter.direction === 'out') where.push(sql`t.amount_cents < 0`);
+	if (filter.query?.trim())
+		where.push(sql`instr(lower(t.description), ${filter.query.trim().toLowerCase()}) > 0`);
+	return where;
+}
+
+/** A split replaces, never adds to, the movement's personal share. */
+function personalAmount(ctx: Ctx) {
+	return sql`case when exists (select 1 from finance_transaction_allocations a
+		where a.transaction_id = t.id and a.user_id = ${ctx.userId})
+		then coalesce((select sum(a.amount_minor) from finance_transaction_allocations a
+		where a.transaction_id = t.id and a.user_id = ${ctx.userId} and a.kind = 'personal'), 0)
+		else t.amount_cents end`;
+}
+
+function assertSingleCurrency(ctx: Ctx, filter: MovementFilter) {
+	const currencies = db.all<{ currency: string | null }>(sql`
+		select distinct l.currency from finance_transactions t
+		left join ledgers l on l.id = t.ledger_id and l.user_id = ${ctx.userId}
+		where ${sql.join(movementWhere(ctx, filter), sql` and `)} limit 2
+	`);
+	if (currencies.length > 1)
+		throw new ValidationError('Choose one original currency; unlike money cannot be combined.');
+}
+
+export type SpendingCategory = {
+	name: string;
+	color: string;
+	grossMinor: number;
+	refundMinor: number;
+	netMinor: number;
+};
+export type Spending = {
+	currency: string | null;
+	grossMinor: number;
+	refundMinor: number;
+	netMinor: number;
+	incomeMinor: number;
+	movementCount: number;
+	unclassifiedCount: number;
+	transferCount: number;
+	transferInMinor: number;
+	transferOutMinor: number;
+	cashCount: number;
+	cashMinor: number;
+	custodyCount: number;
+	custodyMinor: number;
+	unmatchedRefundCount: number;
+	byCategory: SpendingCategory[];
+};
+
+/** Personal consumption and its exclusions, grouped by original currency without a row cap. */
+export function spending(ctx: Ctx, filter: MovementFilter = {}): Spending[] {
+	const personal = personalAmount(ctx);
+	const totals = db.all<
+		Omit<Spending, 'grossMinor' | 'refundMinor' | 'netMinor' | 'byCategory'>
+	>(sql`
+		select l.currency, count(*) as movementCount,
+			sum(case when t.kind is null then 1 else 0 end) as unclassifiedCount,
+			sum(case when t.amount_cents > 0 and coalesce(t.kind, 'income') = 'income' then ${personal} else 0 end) as incomeMinor,
+			sum(case when t.kind = 'transfer' then 1 else 0 end) as transferCount,
+			sum(case when t.kind = 'transfer' and t.amount_cents > 0 then t.amount_cents else 0 end) as transferInMinor,
+			sum(case when t.kind = 'transfer' and t.amount_cents < 0 then -t.amount_cents else 0 end) as transferOutMinor,
+			sum(case when t.kind = 'cash' then 1 else 0 end) as cashCount,
+			sum(case when t.kind = 'cash' then abs(t.amount_cents) else 0 end) as cashMinor,
+			sum(case when t.amount_cents != ${personal} then 1 else 0 end) as custodyCount,
+			sum(abs(t.amount_cents - ${personal})) as custodyMinor,
+			sum(case when t.kind = 'refund' and t.amount_cents > 0 and p.id is null then 1 else 0 end) as unmatchedRefundCount
+		from finance_transactions t
+		left join ledgers l on l.id = t.ledger_id and l.user_id = ${ctx.userId}
+		left join finance_transactions p on p.id = t.parent_id and p.user_id = ${ctx.userId}
+		where ${sql.join(movementWhere(ctx, filter), sql` and `)}
+		group by l.currency order by l.currency
+	`);
+	const parts = personalSpending(ctx, filter);
+	return totals.map((row) => {
+		for (const [key, value] of Object.entries(row)) if (key !== 'currency') minorAmount(value, key);
+		const categories = new Map<string, SpendingCategory>();
+		for (const part of parts.filter((part) => part.currency === row.currency)) {
+			const name = part.category ?? UNCATEGORIZED;
+			const category = categories.get(name) ?? {
+				name,
+				color: part.categoryColor ?? '#94a3b8',
+				grossMinor: 0,
+				refundMinor: 0,
+				netMinor: 0
+			};
+			category.grossMinor = minorAmount(category.grossMinor + part.grossMinor);
+			category.refundMinor = minorAmount(category.refundMinor + part.refundMinor);
+			category.netMinor = minorAmount(category.grossMinor - category.refundMinor);
+			categories.set(name, category);
+		}
+		const byCategory = [...categories.values()].sort(
+			(a, b) => b.netMinor - a.netMinor || a.name.localeCompare(b.name)
+		);
+		const grossMinor = byCategory.reduce(
+			(sum, category) => minorAmount(sum + category.grossMinor),
+			0
+		);
+		const refundMinor = byCategory.reduce(
+			(sum, category) => minorAmount(sum + category.refundMinor),
+			0
+		);
+		return {
+			...row,
+			byCategory,
+			grossMinor,
+			refundMinor,
+			netMinor: minorAmount(grossMinor - refundMinor)
+		};
+	});
 }
 
 export type StatementMonth = {
@@ -1351,13 +1541,36 @@ export function monthlyTotals(
 	months = DEFAULT_MONTHS,
 	filter: MovementFilter = {}
 ): StatementMonth[] {
-	const keys = monthKeys(ctx.now, months);
-	const rows = listMovements(ctx, { ...filter, from: `${keys[0]}-01`, limit: 100_000 });
+	const window = statementWindow(ctx, months, filter);
+	const keys = window.months;
+	const bounded = { ...filter, from: window.from, to: window.to };
+	assertSingleCurrency(ctx, bounded);
+	const description = filter.category || filter.tag ? sql`t.description` : sql`''`;
+	const rules = filter.category || filter.tag ? rawRules(ctx) : [];
+	const rows = db
+		.all<{ month: string; description: string; inCents: number; outCents: number }>(
+			sql`
+		select substr(t.occurred_on, 1, 7) as month, ${description} as description,
+			sum(case when t.amount_cents > 0 then t.amount_cents else 0 end) as inCents,
+			sum(case when t.amount_cents < 0 then -t.amount_cents else 0 end) as outCents
+		from finance_transactions t
+		left join ledgers l on l.id = t.ledger_id and l.user_id = ${ctx.userId}
+		where ${sql.join(movementWhere(ctx, bounded), sql` and `)}
+		group by substr(t.occurred_on, 1, 7), ${description}
+	`
+		)
+		.filter((row) => {
+			const sorted = sortDescription(rules, row.description);
+			return (
+				(!filter.category || (sorted.category ?? UNCATEGORIZED) === filter.category) &&
+				(!filter.tag || sorted.tags.some((tag) => tag.name === filter.tag))
+			);
+		});
 	return keys.map((month) => {
-		const mine = rows.filter((r) => r.occurredOn.startsWith(month));
-		const inCents = mine.filter((r) => r.amountCents > 0).reduce((n, r) => n + r.amountCents, 0);
-		const outCents = mine.filter((r) => r.amountCents < 0).reduce((n, r) => n - r.amountCents, 0);
-		return { month, inCents, outCents, netCents: inCents - outCents };
+		const mine = rows.filter((r) => r.month === month);
+		const inCents = mine.reduce((n, r) => minorAmount(n + r.inCents, 'cash in'), 0);
+		const outCents = mine.reduce((n, r) => minorAmount(n + r.outCents, 'cash out'), 0);
+		return { month, inCents, outCents, netCents: minorAmount(inCents - outCents, 'cash flow') };
 	});
 }
 
@@ -1372,10 +1585,13 @@ export function categoryMonths(
 	months = DEFAULT_MONTHS,
 	filter: MovementFilter = {}
 ): CategoryMonths {
-	const keys = monthKeys(ctx.now, months);
+	const window = statementWindow(ctx, months, filter);
+	const keys = window.months;
+	assertSingleCurrency(ctx, { ...filter, from: window.from, to: window.to });
 	const personalRows = personalSpending(ctx, {
 		...filter,
-		from: filter.from && filter.from > `${keys[0]}-01` ? filter.from : `${keys[0]}-01`
+		from: window.from,
+		to: window.to
 	});
 	const names = new Map<string, string>();
 	for (const r of personalRows)
@@ -1421,13 +1637,16 @@ export function tagMonths(
 	months = DEFAULT_MONTHS,
 	filter: MovementFilter = {}
 ): TagMonths {
-	const keys = monthKeys(ctx.now, months);
+	const window = statementWindow(ctx, months, filter);
+	const keys = window.months;
+	assertSingleCurrency(ctx, { ...filter, from: window.from, to: window.to });
 	const rules = rawRules(ctx);
 	const colour = rules.find((r) => r.kind === 'tag' && r.name === tag)?.color ?? '#475569';
 	const rows = personalSpending(ctx, {
 		...filter,
 		tag,
-		from: filter.from && filter.from > `${keys[0]}-01` ? filter.from : `${keys[0]}-01`
+		from: window.from,
+		to: window.to
 	});
 	const byMonth = keys.map((month) =>
 		rows

@@ -144,6 +144,7 @@ export const USER_TABLES: OwnedTable[] = [
 	owned('financeTransactions', schema.financeTransactions as never),
 	owned('ledgers', schema.ledgers as never),
 	owned('financeRules', schema.financeRules as never),
+	owned('financeBudgets', schema.financeBudgets as never),
 	// A goal's history names its measures and the goal, so it goes before both.
 	owned('goalEvents', schema.goalEvents as never),
 	owned('goalLinks', schema.goalLinks as never),

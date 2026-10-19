@@ -557,6 +557,7 @@ which a test holds to the tools the server serves and the actions the app has.
 | Bills                   | `add_bill`                                              | `bills`, `bill_payments`, `bill_history`, `month_bills`, `bills_due`                          | `change_bill`, `pay_bill`, `change_bill_payment`, `unpay_bill`, `skip_bill`, `unskip_bill`                                                                                  | `archive_bill`           | `archive_bill`           | _app only, on purpose_                                                             |                    |
 | Accounts and movements  | `add_ledger`, `record_movement`, `record_balance_check` | `ledgers`, `movements`, `statement_months`, `spending_by_category`, `balance_checks`          | `change_ledger`, `change_movement`, `classify_movements`, `link_movement`, `link_transfer`, `unlink_transfer`, `split_movement`, `unsplit_movement`                         | `change_ledger`          | `change_ledger`          | `remove_movement`, `delete_balance_check`                                          | `change_ledger`    |
 | Commitments             | `add_commitment`, `record_commitment_entry`             | `commitments`, `commitment_entries`                                                           | `change_commitment`, `close_commitment`, `settle_commitment`, `consume_reserve`                                                                                             | `archive_commitment`     | `archive_commitment`     | `delete_commitment_entry`                                                          |                    |
+| Budgets                 | `add_budget`, `copy_budgets`                            | `budgets`, `personal_spending`                                                                | `change_budget`                                                                                                                                                             |                          |                          | `delete_budget`                                                                    |                    |
 | Sorting rules           | `add_sort_rule`                                         | `sort_rules`                                                                                  | `change_sort_rule`                                                                                                                                                          |                          |                          | `delete_sort_rule`                                                                 | `change_sort_rule` |
 | People                  | `add_person`                                            | `people`, `upcoming_birthdays`                                                                | `change_person`                                                                                                                                                             |                          |                          | _app only, on purpose_                                                             |                    |
 | Reminders               | `set_alarm`, `remind_before_block`, `remind_task`       | `reminders`                                                                                   | `change_reminder`, `dismiss_reminder`                                                                                                                                       |                          |                          | `cancel_alarm`                                                                     |                    |
@@ -2457,6 +2458,84 @@ _Needs `workouts:write`; writes; answers with `before` and `after`._
 | --------- | ------- | -------- | ----------------- |
 | `id`      | integer | yes      | The workout’s id. |
 
+### `budgets` — Monthly category budgets
+
+Allocated, spent, remaining and separate refund credits for one month in original currencies. Budgets do not move money. Orphaned categories remain visible. Defaults to the account’s current month.
+
+_Needs `statements:read`; read-only; answers a page._
+
+| Parameter  | Type    | Required | What it is                                                                                                                                              |
+| ---------- | ------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `month`    | string  | —        | YYYY-MM.                                                                                                                                                |
+| `currency` | string  | —        | One original ISO currency.                                                                                                                              |
+| `limit`    | integer | —        | Maximum budgets per page. Default `100`.                                                                                                                |
+| `offset`   | integer | —        | Skip this many before counting, so the rest of budgets can be read a page at a time. `nextOffset` on the answer is what to pass here next. Default `0`. |
+
+### `add_budget` — Set a monthly category ceiling
+
+Create a ceiling for one category, month and original currency with an owned ledger. Exact nonnegative minor units. No bank movement, stock entry or reserve is created.
+
+_Needs `statements:write`; writes; answers with `before` and `after`, `after` being the new budget._
+
+| Parameter      | Type    | Required | What it is                                                                                                                                                                                                                                                                                  |
+| -------------- | ------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `month`        | string  | yes      | YYYY-MM.                                                                                                                                                                                                                                                                                    |
+| `category`     | string  | yes      | Existing category rule name.                                                                                                                                                                                                                                                                |
+| `currency`     | string  | yes      | Original ISO currency.                                                                                                                                                                                                                                                                      |
+| `amount_minor` | integer | yes      | Nonnegative ceiling in original minor units.                                                                                                                                                                                                                                                |
+| `requestId`    | string  | —        | An id you choose for this call, such as a UUID, so it can be sent again safely: the same `requestId` with the same arguments within a day answers with the first answer, marked `replayed`, and nothing is made twice. Reused for a different call, it is refused with the code `conflict`. |
+
+### `change_budget` — Change a budget ceiling
+
+Change only named budget fields. Omitted values stay unchanged. ifUpdatedAt refuses stale edits; no bank or stock record changes.
+
+_Needs `statements:write`; writes; answers with `before` and `after`._
+
+| Parameter      | Type    | Required | What it is                                                                                                                                                                                                                                |
+| -------------- | ------- | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `id`           | integer | yes      | Budget id.                                                                                                                                                                                                                                |
+| `month`        | string  | —        | YYYY-MM.                                                                                                                                                                                                                                  |
+| `category`     | string  | —        | Category name.                                                                                                                                                                                                                            |
+| `currency`     | string  | —        | Original ISO currency.                                                                                                                                                                                                                    |
+| `amount_minor` | integer | —        | Nonnegative ceiling in original minor units.                                                                                                                                                                                              |
+| `ifUpdatedAt`  | string  | —        | Only change it if nothing has changed it since: the `updatedAt` a read or an earlier change answered with. If something has, nothing is written and the call is refused with the code `conflict`, the current `updatedAt` in its details. |
+
+### `delete_budget` — Remove a budget ceiling
+
+Remove only a monthly ceiling. The before state is retained for recovery; bank history and spending remain unchanged.
+
+_Needs `statements:write` and `destructive`; deletes; answers with `before` and `after`._
+
+| Parameter | Type    | Required | What it is |
+| --------- | ------- | -------- | ---------- |
+| `id`      | integer | yes      | Budget id. |
+
+### `copy_budgets` — Copy missing monthly budgets
+
+Copy ceilings between civil months in one transaction. Existing category/currency buckets are never overwritten. Returns added and skipped counts; no money moves.
+
+_Needs `statements:write`; writes; answers with `before` and `after`._
+
+| Parameter    | Type   | Required | What it is                                                                                                                                                                                                                                                                                  |
+| ------------ | ------ | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `from_month` | string | yes      | Source YYYY-MM.                                                                                                                                                                                                                                                                             |
+| `to_month`   | string | yes      | Target YYYY-MM.                                                                                                                                                                                                                                                                             |
+| `requestId`  | string | —        | An id you choose for this call, such as a UUID, so it can be sent again safely: the same `requestId` with the same arguments within a day answers with the first answer, marked `replayed`, and nothing is made twice. Reused for a different call, it is refused with the code `conflict`. |
+
+### `personal_spending` — Personal spending and exclusions
+
+Original-currency groups of gross expenses, refunds, signed net spending, personal income, transfer and cash exclusions, custody shares and unclassified counts. Refunds follow their actual date and parent category, never income. No balance or available-funds claim. Without a window reports the last 12 calendar months.
+
+_Needs `statements:read`; read-only._
+
+| Parameter   | Type    | Required | What it is                                                                         |
+| ----------- | ------- | -------- | ---------------------------------------------------------------------------------- |
+| `month`     | string  | —        | One civil month, YYYY-MM.                                                          |
+| `from`      | string  | —        | Inclusive first civil day, YYYY-MM-DD.                                             |
+| `to`        | string  | —        | Inclusive last civil day, YYYY-MM-DD.                                              |
+| `currency`  | string  | —        | One original ISO currency, or unspecified. Omit only for separate currency groups. |
+| `ledger_id` | integer | —        | Only this owned ledger.                                                            |
+
 ### `commitments` — What you owe, hold and set aside
 
 Custody, payables, receivables and reserves are stocks, not bank movements or budgets. Each balance is its opening plus entries, in its own currency. Totals stay separate by kind and currency; never subtract payables or add receivables to available bank funds.
@@ -2787,10 +2866,14 @@ What arrived and what left, month by month, across every ledger or one of them. 
 
 _Needs `statements:read`; read-only._
 
-| Parameter   | Type    | Required | What it is                           |
-| ----------- | ------- | -------- | ------------------------------------ |
-| `months`    | integer | —        | How many months back. 12 by default. |
-| `ledger_id` | integer | —        | Only this ledger.                    |
+| Parameter   | Type    | Required | What it is                                                                         |
+| ----------- | ------- | -------- | ---------------------------------------------------------------------------------- |
+| `months`    | integer | —        | How many months back. 12 by default.                                               |
+| `month`     | string  | —        | One civil month, YYYY-MM.                                                          |
+| `from`      | string  | —        | Inclusive first civil day, YYYY-MM-DD.                                             |
+| `to`        | string  | —        | Inclusive last civil day, YYYY-MM-DD.                                              |
+| `currency`  | string  | —        | One original ISO currency, or unspecified. Omit only for separate currency groups. |
+| `ledger_id` | integer | —        | Only this owned ledger.                                                            |
 
 ### `spending_by_category` — Where the money went
 
@@ -2798,10 +2881,13 @@ Personal spending by category over a window: expenses and fees, net of refunds, 
 
 _Needs `statements:read`; read-only._
 
-| Parameter   | Type    | Required | What it is                     |
-| ----------- | ------- | -------- | ------------------------------ |
-| `month`     | string  | —        | Only this month, as 'YYYY-MM'. |
-| `ledger_id` | integer | —        | Only this ledger.              |
+| Parameter   | Type    | Required | What it is                                                                         |
+| ----------- | ------- | -------- | ---------------------------------------------------------------------------------- |
+| `month`     | string  | —        | One civil month, YYYY-MM.                                                          |
+| `from`      | string  | —        | Inclusive first civil day, YYYY-MM-DD.                                             |
+| `to`        | string  | —        | Inclusive last civil day, YYYY-MM-DD.                                              |
+| `currency`  | string  | —        | One original ISO currency, or unspecified. Omit only for separate currency groups. |
+| `ledger_id` | integer | —        | Only this owned ledger.                                                            |
 
 ### `change_sort_rule` — Change a sorting rule
 

@@ -22,6 +22,7 @@ import {
 	activities,
 	bills,
 	financeCommitments,
+	financeBudgets,
 	diaryEntries,
 	goals,
 	ideas,
@@ -58,6 +59,7 @@ export const STAMPED_KINDS: Partial<Record<RefKind, Stamped>> = {
 	workoutSession: workoutSessions,
 	ledger: ledgers,
 	commitment: financeCommitments,
+	budget: financeBudgets,
 	bill: bills
 };
 

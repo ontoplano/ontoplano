@@ -4,6 +4,7 @@ import { NotFoundError } from '$lib/services/errors.js';
 import { listActivities } from '$lib/services/activities.js';
 import { FLOWS, listAllPayments, listBills } from '$lib/services/bills.js';
 import { getCommitment, getCommitmentEntry, listCommitments } from '$lib/services/commitments.js';
+import { getBudget } from '$lib/services/budgets.js';
 import { listEveryEntry } from '$lib/services/diary.js';
 import { listAreas, listGoals } from '$lib/services/goals.js';
 import { listHabits } from '$lib/services/habits.js';
@@ -125,6 +126,7 @@ export const KINDS = kinds({
 	tag: { label: 'label', rows: (ctx) => listTagsWithUses(ctx.userId) },
 
 	ledger: { label: 'account', rows: (ctx) => listLedgers(ctx, { includeArchived: true }) },
+	budget: { label: 'budget', rows: () => [], find: (ctx, id) => getBudget(ctx, id) },
 	commitment: {
 		label: 'commitment',
 		rows: (ctx) => listCommitments(ctx, { includeArchived: true }),

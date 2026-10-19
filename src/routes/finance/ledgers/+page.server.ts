@@ -12,7 +12,8 @@ import {
 	recordBalanceCheck,
 	supported
 } from '$lib/services/ledgers';
-import { parseSignedMoney } from '$lib/money';
+import { normaliseCurrency, parseSignedMoney } from '$lib/money';
+import { civilDay } from '$lib/services/validate';
 import { NotFoundError, ValidationError } from '$lib/services/errors';
 import { formAction } from '$lib/services/scoped-actions';
 import { listCommitments } from '$lib/services/commitments';
@@ -27,6 +28,7 @@ import {
 	getMovementRow,
 	listMovements,
 	recordMovement,
+	spending,
 	splitMovement,
 	unsplitMovement,
 	recentForLinking,
@@ -53,6 +55,24 @@ export const load = async ({ locals, url }: IsolatedEvent) => {
 
 	const query = url.searchParams.get('q') ?? '';
 	const month = url.searchParams.get('month') ?? '';
+	const reviewUnclassified = url.searchParams.get('unclassified') === '1';
+	const requestedCurrency = url.searchParams.get('currency');
+	const reviewCurrency =
+		requestedCurrency === 'unspecified'
+			? null
+			: requestedCurrency
+				? normaliseCurrency(requestedCurrency)
+				: undefined;
+	if (requestedCurrency && requestedCurrency !== 'unspecified' && !reviewCurrency)
+		throw new ValidationError('Choose a valid original currency.');
+	const reviewFilter = {
+		unclassified: true,
+		currency: reviewCurrency,
+		ledgerId: asked || undefined,
+		from: url.searchParams.get('from') ? civilDay(url.searchParams.get('from')) : undefined,
+		to: url.searchParams.get('to') ? civilDay(url.searchParams.get('to')) : undefined,
+		month: month || undefined
+	};
 	// Only the lines no category claims — the ones the Rules tab is for.
 	const loose = url.searchParams.get('uncategorized') === '1';
 	const filter = current
@@ -73,13 +93,21 @@ export const load = async ({ locals, url }: IsolatedEvent) => {
 		query,
 		month,
 		loose,
-		movements: filter
-			? listMovements(ctx, {
-					...filter,
-					limit: 500,
-					...(loose ? { category: UNCATEGORIZED, direction: 'out' as const } : {})
-				})
-			: [],
+		reviewUnclassified,
+		reviewFrom: reviewFilter.from ?? '',
+		reviewTo: reviewFilter.to ?? '',
+		reviewCount: reviewUnclassified
+			? spending(ctx, reviewFilter).reduce((sum, group) => sum + group.movementCount, 0)
+			: 0,
+		movements: reviewUnclassified
+			? listMovements(ctx, { ...reviewFilter, limit: 500 })
+			: filter
+				? listMovements(ctx, {
+						...filter,
+						limit: 500,
+						...(loose ? { category: UNCATEGORIZED, direction: 'out' as const } : {})
+					})
+				: [],
 		/*
 		 * The lines a meaning can point at: a transfer's counterpart, the
 		 * expense a refund reverses, the payment a fee was charged on. Recent

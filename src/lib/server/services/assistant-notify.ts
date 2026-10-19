@@ -158,6 +158,7 @@ export const PHRASE_OVERRIDES: Record<string, Phrase> = {
 	set_habit_count: { verb: 'log', noun: 'habit' },
 	// Plural in the name because it takes a list; the noun is counted anyway.
 	classify_movements: { verb: 'classify', noun: 'movement' },
+	copy_budgets: { verb: 'add', noun: 'budget' },
 	// The name says where the line starts and ends; the nouns are what moved.
 	link_movement: { verb: 'link', noun: 'movement' },
 	link_transfer: { verb: 'link', noun: 'transfer' },
@@ -204,6 +205,7 @@ export function phraseFor(tool: string): Phrase | null {
  * identifier instead of rendering as a raw message key on somebody's phone.
  */
 export const NOUN_KEYS = new Set([
+	'budget',
 	'commitment',
 	'commitmentEntry',
 	'balanceCheck',

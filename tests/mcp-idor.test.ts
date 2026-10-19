@@ -86,6 +86,7 @@ const WATCHED = [
 	'finance_transactions',
 	'finance_balance_checks',
 	'finance_commitments',
+	'finance_budgets',
 	'finance_commitment_entries',
 	'finance_transaction_allocations',
 	'exceptional_tasks',
@@ -135,6 +136,7 @@ beforeAll(async () => {
 	const { createRule, recordMovement } = await import('../src/lib/services/statements');
 	const { createBill, markPaid } = await import('../src/lib/services/bills');
 	const { createCommitment, addCommitmentEntry } = await import('../src/lib/services/commitments');
+	const { createBudget } = await import('../src/lib/services/budgets');
 	const { ensureTagIds } = await import('../src/lib/services/tags');
 
 	/** One row of every kind a tool can name, under this account. */
@@ -154,6 +156,14 @@ beforeAll(async () => {
 		o.notebook = idOf(createNotebook(c, { title: `notebook ${m}` }));
 		o.note = idOf(createEntry(c, { content: `note ${m}` }));
 		o.ledger = idOf(createLedger(c, { name: `ledger ${m}` }));
+		createLedger(c, { name: `budget ledger ${m}`, currency: 'KES' });
+		createRule(c, { kind: 'category', name: `category ${m}`, pattern: m });
+		o.budget = createBudget(c, {
+			month: '2026-03',
+			category: `category ${m}`,
+			currency: 'KES',
+			amountMinor: 10000
+		}).id;
 		o.balanceCheck = recordBalanceCheck(c, {
 			ledgerId: o.ledger,
 			asOf: '2026-03-13',

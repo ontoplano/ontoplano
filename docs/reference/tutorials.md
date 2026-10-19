@@ -45,6 +45,7 @@ under the pointer.
 Toured as well, though nothing obliges them to be — a screen reached from
 a link rather than from the navigation:
 
+- `/finance/budgets` — rooms.finance.tabs.budgets
 - `/media/audios` — tour.recordings
 - `/media/gallery` — tour.gallery
 - `/reminders` — tour.reminders
@@ -72,6 +73,10 @@ at the button that reopens it, so it is not listed here.
 1. tour.billsWhatWantsPaying
 2. tour.billsPaidSkippedOrAutomatic
 3. tour.billsTheHistory
+
+### `/finance/budgets` — rooms.finance.tabs.budgets
+
+1. tour.budgetsTitle
 
 ### `/finance/commitments` — rooms.finance.tabs.commitments
 

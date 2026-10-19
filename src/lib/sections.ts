@@ -162,6 +162,7 @@ const FINANCE_TABS = [
 	// finds. Beside Ledgers, because a bill is money leaving on a date and
 	// that is the same subject as the lines it will turn into.
 	{ href: '/finance/bills', label: 'rooms.finance.tabs.bills', glyph: 'receipt' },
+	{ href: '/finance/budgets', label: 'rooms.finance.tabs.budgets', glyph: 'budgets' },
 	{ href: '/finance/commitments', label: 'rooms.finance.tabs.commitments', glyph: 'commitments' },
 	{ href: '/finance/rules', label: 'rooms.finance.tabs.rules', glyph: 'sort' },
 	{ href: '/finance/insights', label: 'rooms.finance.tabs.insights', glyph: 'chart' }

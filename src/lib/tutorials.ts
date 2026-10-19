@@ -546,6 +546,15 @@ export const TUTORIALS: Record<string, Tutorial> = {
 			}
 		]
 	},
+	'/finance/budgets': {
+		label: 'rooms.finance.tabs.budgets',
+		steps: [
+			{
+				title: 'tour.budgetsTitle',
+				body: 'tour.budgetsBody'
+			}
+		]
+	},
 	'/finance/rules': {
 		label: 'tour.rulesRoom',
 		steps: [

@@ -255,13 +255,15 @@
 	 * ledger happens a handful of times ever, and lives with the ledgers.
 	 */
 	setRoomAction(() =>
-		data.current
-			? {
-					label: t('finance.ledgers.newLine'),
-					run: () => (showNewMovement = true),
-					kbd: keyFor(ROOM, 'new')
-				}
-			: { label: t('finance.ledgers.newLedger'), run: () => (showNewLedger = true) }
+		data.reviewUnclassified
+			? null
+			: data.current
+				? {
+						label: t('finance.ledgers.newLine'),
+						run: () => (showNewMovement = true),
+						kbd: keyFor(ROOM, 'new')
+					}
+				: { label: t('finance.ledgers.newLedger'), run: () => (showNewLedger = true) }
 	);
 
 	/* j/k down the lines, h/l across the ledgers, e to correct one. */
@@ -280,6 +282,7 @@
 	}));
 
 	function onkeydown(event: KeyboardEvent) {
+		if (data.reviewUnclassified) return;
 		if (event.metaKey || event.ctrlKey || event.altKey) return;
 		if (typing(event)) return;
 		if (!data.current) return;
@@ -349,7 +352,7 @@
 
 <FormError message={form?.message} />
 
-{#if active.length}
+{#if active.length && !data.reviewUnclassified}
 	<section class="mb-4 space-y-3" aria-label={t('finance.ledgers.supportedFunds')}>
 		<h2 class="text-sm font-semibold">{t('finance.ledgers.supportedFunds')}</h2>
 		<ul class="grid gap-2 sm:grid-cols-2">
@@ -405,7 +408,36 @@
 	</section>
 {/if}
 
-{#if active.length === 0 && archived.length === 0}
+{#if data.reviewUnclassified}
+	<RoomSurface>
+		<section class="space-y-3 p-4" data-testid="unclassified-review">
+			<h2 class="font-semibold">
+				{t('finance.insights.unclassified', { count: data.reviewCount })}
+			</h2>
+			<p class="text-sm">{data.reviewFrom} — {data.reviewTo}</p>
+			<ShowingCount
+				total={data.reviewCount}
+				shown={data.movements.length}
+				said={(count) => t('finance.ledgers.showingCount', { count })}
+			/>
+			<ul class="divide-y divide-gray-200">
+				{#each data.movements as movement (movement.id)}
+					{@const ledger = data.ledgers.find((row) => row.id === movement.ledgerId)}
+					<li class="space-y-1 py-3 text-sm" data-testid="unclassified-movement">
+						<p class="break-words">{movement.occurredOn} · {movement.description}</p>
+						<p>{ledgerMoney(movement.amountCents, ledger ?? null)}</p>
+						{#if ledger}<a
+								class="underline"
+								href={resolve(
+									`/finance/ledgers?ledger=${ledger.id}&month=${movement.occurredOn.slice(0, 7)}`
+								)}>{ledger.name} · {t('ui.edit')}</a
+							>{/if}
+					</li>
+				{/each}
+			</ul>
+		</section>
+	</RoomSurface>
+{:else if active.length === 0 && archived.length === 0}
 	<RoomSurface>
 		<EmptyState
 			icon={routeGlyph('/finance/ledgers')!}

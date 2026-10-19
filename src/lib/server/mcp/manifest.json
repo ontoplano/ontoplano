@@ -151,6 +151,34 @@
 			}
 		}
 	},
+	"add_budget": {
+		"scope": "statements:write",
+		"writes": true,
+		"destroys": false,
+		"creates": "budget",
+		"params": {
+			"amount_minor": {
+				"type": "integer",
+				"required": true
+			},
+			"category": {
+				"type": "string",
+				"required": true
+			},
+			"currency": {
+				"type": "string",
+				"required": true
+			},
+			"month": {
+				"type": "string",
+				"required": true
+			},
+			"requestId": {
+				"type": "string",
+				"required": false
+			}
+		}
+	},
 	"add_commitment": {
 		"scope": "statements:write",
 		"writes": true,
@@ -1046,6 +1074,32 @@
 			}
 		}
 	},
+	"budgets": {
+		"scope": "statements:read",
+		"writes": false,
+		"destroys": false,
+		"pages": true,
+		"params": {
+			"currency": {
+				"type": "string",
+				"required": false
+			},
+			"limit": {
+				"type": "integer",
+				"required": false,
+				"default": 100
+			},
+			"month": {
+				"type": "string",
+				"required": false
+			},
+			"offset": {
+				"type": "integer",
+				"required": false,
+				"default": 0
+			}
+		}
+	},
 	"cancel_alarm": {
 		"scope": "schedule:write",
 		"writes": true,
@@ -1237,6 +1291,37 @@
 				"required": false
 			},
 			"title": {
+				"type": "string",
+				"required": false
+			}
+		}
+	},
+	"change_budget": {
+		"scope": "statements:write",
+		"writes": true,
+		"destroys": false,
+		"params": {
+			"amount_minor": {
+				"type": "integer",
+				"required": false
+			},
+			"category": {
+				"type": "string",
+				"required": false
+			},
+			"currency": {
+				"type": "string",
+				"required": false
+			},
+			"id": {
+				"type": "integer",
+				"required": true
+			},
+			"ifUpdatedAt": {
+				"type": "string",
+				"required": false
+			},
+			"month": {
 				"type": "string",
 				"required": false
 			}
@@ -2245,6 +2330,25 @@
 			}
 		}
 	},
+	"copy_budgets": {
+		"scope": "statements:write",
+		"writes": true,
+		"destroys": false,
+		"params": {
+			"from_month": {
+				"type": "string",
+				"required": true
+			},
+			"requestId": {
+				"type": "string",
+				"required": false
+			},
+			"to_month": {
+				"type": "string",
+				"required": true
+			}
+		}
+	},
 	"daily_wins": {
 		"scope": "notes:read",
 		"writes": false,
@@ -2263,6 +2367,17 @@
 		"params": {}
 	},
 	"delete_balance_check": {
+		"scope": "statements:write",
+		"writes": true,
+		"destroys": true,
+		"params": {
+			"id": {
+				"type": "integer",
+				"required": true
+			}
+		}
+	},
+	"delete_budget": {
 		"scope": "statements:write",
 		"writes": true,
 		"destroys": true,
@@ -2999,6 +3114,33 @@
 		"destroys": false,
 		"params": {}
 	},
+	"personal_spending": {
+		"scope": "statements:read",
+		"writes": false,
+		"destroys": false,
+		"params": {
+			"currency": {
+				"type": "string",
+				"required": false
+			},
+			"from": {
+				"type": "string",
+				"required": false
+			},
+			"ledger_id": {
+				"type": "integer",
+				"required": false
+			},
+			"month": {
+				"type": "string",
+				"required": false
+			},
+			"to": {
+				"type": "string",
+				"required": false
+			}
+		}
+	},
 	"pin_note": {
 		"scope": "notes:write",
 		"writes": true,
@@ -3703,11 +3845,23 @@
 		"writes": false,
 		"destroys": false,
 		"params": {
+			"currency": {
+				"type": "string",
+				"required": false
+			},
+			"from": {
+				"type": "string",
+				"required": false
+			},
 			"ledger_id": {
 				"type": "integer",
 				"required": false
 			},
 			"month": {
+				"type": "string",
+				"required": false
+			},
+			"to": {
 				"type": "string",
 				"required": false
 			}
@@ -3768,12 +3922,28 @@
 		"writes": false,
 		"destroys": false,
 		"params": {
+			"currency": {
+				"type": "string",
+				"required": false
+			},
+			"from": {
+				"type": "string",
+				"required": false
+			},
 			"ledger_id": {
 				"type": "integer",
 				"required": false
 			},
+			"month": {
+				"type": "string",
+				"required": false
+			},
 			"months": {
 				"type": "integer",
+				"required": false
+			},
+			"to": {
+				"type": "string",
 				"required": false
 			}
 		}

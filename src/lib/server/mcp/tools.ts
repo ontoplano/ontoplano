@@ -202,6 +202,7 @@ import {
 	listRules,
 	MOVEMENT_KINDS,
 	monthlyTotals,
+	spending,
 	placeRule,
 	recordMovement,
 	splitMovement,
@@ -237,6 +238,14 @@ import {
 	settleCommitment,
 	updateCommitment
 } from '$lib/services/commitments.js';
+import {
+	listBudgets,
+	getBudget,
+	createBudget,
+	updateBudget,
+	deleteBudget,
+	copyBudgets
+} from '$lib/services/budgets.js';
 import { grouped, search } from '$lib/services/search.js';
 import {
 	changeItem,
@@ -475,6 +484,29 @@ const object = (properties: Record<string, unknown>, required: string[] = []): S
 });
 
 const text = (description: string) => ({ type: 'string', description });
+const STATEMENT_WINDOW_ARGS = {
+	month: text('One civil month, YYYY-MM.'),
+	from: text('Inclusive first civil day, YYYY-MM-DD.'),
+	to: text('Inclusive last civil day, YYYY-MM-DD.'),
+	currency: text(
+		'One original ISO currency, or unspecified. Omit only for separate currency groups.'
+	),
+	ledger_id: { type: 'integer', description: 'Only this owned ledger.' }
+};
+function statementFilter(args: Record<string, unknown>) {
+	return {
+		month: typeof args.month === 'string' ? args.month : undefined,
+		from: typeof args.from === 'string' ? args.from : undefined,
+		to: typeof args.to === 'string' ? args.to : undefined,
+		currency:
+			args.currency === 'unspecified'
+				? null
+				: typeof args.currency === 'string'
+					? args.currency
+					: undefined,
+		ledgerId: args.ledger_id === undefined ? undefined : Number(args.ledger_id)
+	};
+}
 const count = (description: string, fallback: number) => ({
 	type: 'integer',
 	description,
@@ -5890,6 +5922,131 @@ export const TOOLS: Tool[] = [
 		}
 	},
 	{
+		name: 'budgets',
+		title: 'Monthly category budgets',
+		description:
+			'Allocated, spent, remaining and separate refund credits for one month in original currencies. Budgets do not move money. Orphaned categories remain visible. Defaults to the account’s current month.',
+		scope: 'statements:read',
+		writes: false,
+		input: object({
+			month: text('YYYY-MM.'),
+			currency: text('One original ISO currency.'),
+			limit: count('Maximum budgets per page.', 100),
+			offset: from('budgets')
+		}),
+		run: (ctx, args) =>
+			paged(
+				listBudgets(ctx, {
+					month: args.month === undefined ? undefined : String(args.month),
+					currency: args.currency === undefined ? undefined : String(args.currency)
+				}),
+				args,
+				100
+			)
+	},
+	{
+		name: 'add_budget',
+		title: 'Set a monthly category ceiling',
+		description:
+			'Create a ceiling for one category, month and original currency with an owned ledger. Exact nonnegative minor units. No bank movement, stock entry or reserve is created.',
+		scope: 'statements:write',
+		writes: true,
+		creates: 'budget',
+		input: object(
+			{
+				month: text('YYYY-MM.'),
+				category: text('Existing category rule name.'),
+				currency: text('Original ISO currency.'),
+				amount_minor: {
+					type: 'integer',
+					description: 'Nonnegative ceiling in original minor units.'
+				},
+				...RETRY_ARGS
+			},
+			['month', 'category', 'currency', 'amount_minor']
+		),
+		run: (ctx, args) => ({
+			id: createBudget(ctx, {
+				month: args.month,
+				category: args.category,
+				currency: args.currency,
+				amountMinor: args.amount_minor
+			}).id
+		})
+	},
+	{
+		name: 'change_budget',
+		title: 'Change a budget ceiling',
+		description:
+			'Change only named budget fields. Omitted values stay unchanged. ifUpdatedAt refuses stale edits; no bank or stock record changes.',
+		scope: 'statements:write',
+		writes: true,
+		refs: [{ arg: 'id', kind: 'budget' }],
+		input: object(
+			{
+				id: { type: 'integer', description: 'Budget id.' },
+				month: text('YYYY-MM.'),
+				category: text('Category name.'),
+				currency: text('Original ISO currency.'),
+				amount_minor: {
+					type: 'integer',
+					description: 'Nonnegative ceiling in original minor units.'
+				},
+				...CONCURRENCY_ARGS
+			},
+			['id']
+		),
+		run: (ctx, args) => {
+			updateBudget(ctx, Number(args.id), {
+				month: args.month,
+				category: args.category,
+				currency: args.currency,
+				amountMinor: args.amount_minor,
+				updatedAt: args.ifUpdatedAt
+			});
+			return { budget: getBudget(ctx, Number(args.id)) };
+		}
+	},
+	{
+		name: 'delete_budget',
+		title: 'Remove a budget ceiling',
+		description:
+			'Remove only a monthly ceiling. The before state is retained for recovery; bank history and spending remain unchanged.',
+		scope: 'statements:write',
+		writes: true,
+		destroys: true,
+		refs: [{ arg: 'id', kind: 'budget' }],
+		input: object({ id: { type: 'integer', description: 'Budget id.' } }, ['id']),
+		run: (ctx, args) => {
+			deleteBudget(ctx, Number(args.id));
+			return { ok: true };
+		}
+	},
+	{
+		name: 'copy_budgets',
+		title: 'Copy missing monthly budgets',
+		description:
+			'Copy ceilings between civil months in one transaction. Existing category/currency buckets are never overwritten. Returns added and skipped counts; no money moves.',
+		scope: 'statements:write',
+		writes: true,
+		input: object(
+			{ from_month: text('Source YYYY-MM.'), to_month: text('Target YYYY-MM.'), ...RETRY_ARGS },
+			['from_month', 'to_month']
+		),
+		run: (ctx, args) => copyBudgets(ctx, { fromMonth: args.from_month, toMonth: args.to_month })
+	},
+	{
+		name: 'personal_spending',
+		title: 'Personal spending and exclusions',
+		description:
+			'Original-currency groups of gross expenses, refunds, signed net spending, personal income, transfer and cash exclusions, custody shares and unclassified counts. Refunds follow their actual date and parent category, never income. No balance or available-funds claim. Without a window reports the last 12 calendar months.',
+		scope: 'statements:read',
+		writes: false,
+		refs: [{ arg: 'ledger_id', kind: 'ledger' }],
+		input: object({ ...STATEMENT_WINDOW_ARGS }),
+		run: (ctx, args) => ({ currencies: spending(ctx, statementFilter(args)) })
+	},
+	{
 		name: 'commitments',
 		title: 'What you owe, hold and set aside',
 		description:
@@ -6619,12 +6776,10 @@ export const TOOLS: Tool[] = [
 		refs: [{ arg: 'ledger_id', kind: 'ledger' }],
 		input: object({
 			months: { type: 'integer', description: 'How many months back. 12 by default.' },
-			ledger_id: { type: 'integer', description: 'Only this ledger.' }
+			...STATEMENT_WINDOW_ARGS
 		}),
 		run: (ctx, args) => ({
-			months: monthlyTotals(ctx, Number(args.months ?? 12), {
-				ledgerId: args.ledger_id ? Number(args.ledger_id) : undefined
-			})
+			months: monthlyTotals(ctx, Number(args.months ?? 12), statementFilter(args))
 		})
 	},
 	{
@@ -6635,15 +6790,9 @@ export const TOOLS: Tool[] = [
 		scope: 'statements:read',
 		writes: false,
 		refs: [{ arg: 'ledger_id', kind: 'ledger' }],
-		input: object({
-			month: text("Only this month, as 'YYYY-MM'."),
-			ledger_id: { type: 'integer', description: 'Only this ledger.' }
-		}),
+		input: object({ ...STATEMENT_WINDOW_ARGS }),
 		run: (ctx, args) => ({
-			categories: categorySlices(ctx, {
-				month: typeof args.month === 'string' && args.month ? args.month : undefined,
-				ledgerId: args.ledger_id ? Number(args.ledger_id) : undefined
-			})
+			categories: categorySlices(ctx, statementFilter(args))
 		})
 	},
 	{

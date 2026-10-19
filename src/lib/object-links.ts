@@ -53,6 +53,7 @@ export const OBJECT_ROOMS = {
 	balanceCheck: { room: '/finance/ledgers' },
 	commitment: { room: '/finance/commitments', by: { param: 'commitment' } },
 	commitmentEntry: { room: '/finance/commitments' },
+	budget: { room: '/finance/budgets', by: { param: 'budget' } },
 	movement: { room: '/finance/ledgers' },
 	bill: { room: '/finance/bills', by: 'edit' },
 	billPayment: { room: '/finance/bills' }

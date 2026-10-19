@@ -883,6 +883,13 @@
       "when": 1792333965201,
       "tag": "0125_green_cobalt_man",
       "breakpoints": true
+    },
+    {
+      "idx": 126,
+      "version": "6",
+      "when": 1792381294774,
+      "tag": "0126_zippy_blue_blade",
+      "breakpoints": true
     }
   ]
 }

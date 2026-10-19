@@ -49,8 +49,10 @@ import type { PlainKey } from '../i18n/keys.js';
  */
 import { forgetUserSettings } from './settings.js';
 import { getTableConfig } from 'drizzle-orm/sqlite-core';
+import { and, eq } from 'drizzle-orm';
 
 import { db } from '$lib/db/index.js';
+import { financeTransactions } from '$lib/db/schema.js';
 import { record as audit } from '$lib/services/audit.js';
 import { ValidationError } from '$lib/services/errors.js';
 import { sha256Hex } from '$lib/services/digest.js';
@@ -581,6 +583,18 @@ export async function importAccount(
 					unattachedHere++;
 					continue;
 				}
+				if (table.name === 'financeTransactions') {
+					// The self-link has no schema FK; resolve it after every movement has an id.
+					row.parentId = null;
+					const oldLedger = (raw as Record<string, unknown>).ledgerId;
+					const prefix = `${oldLedger}|`;
+					if (
+						typeof row.fingerprint === 'string' &&
+						row.ledgerId != null &&
+						row.fingerprint.startsWith(prefix)
+					)
+						row.fingerprint = `${row.ledgerId}|${row.fingerprint.slice(prefix.length)}`;
+				}
 
 				let inserted: { id: number } | undefined;
 				try {
@@ -596,6 +610,19 @@ export async function importAccount(
 				}
 
 				if (inserted && typeof wasId === 'number') mine.set(wasId, inserted.id);
+			}
+			if (table.name === 'financeTransactions') {
+				for (const raw of rows) {
+					if (!raw || typeof raw !== 'object' || Array.isArray(raw)) continue;
+					const source = raw as Record<string, unknown>;
+					const id = mine.get(Number(source.id));
+					const parentId = mine.get(Number(source.parentId));
+					if (id !== undefined && parentId !== undefined && id !== parentId)
+						tx.update(financeTransactions)
+							.set({ parentId })
+							.where(and(eq(financeTransactions.userId, userId), eq(financeTransactions.id, id)))
+							.run();
+				}
 			}
 
 			counts.push({

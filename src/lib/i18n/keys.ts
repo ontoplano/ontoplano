@@ -759,6 +759,27 @@ export type MessageKey =
 	| 'finance.bills.whatPaidName'
 	| 'finance.bills.whenItTurnsUpOn'
 	| 'finance.bills.youWontBeReminded'
+	| 'finance.budgets.allCurrencies'
+	| 'finance.budgets.allocated'
+	| 'finance.budgets.allocatedAmount'
+	| 'finance.budgets.cancel'
+	| 'finance.budgets.category'
+	| 'finance.budgets.confirmDelete'
+	| 'finance.budgets.copy'
+	| 'finance.budgets.create'
+	| 'finance.budgets.credit'
+	| 'finance.budgets.currency'
+	| 'finance.budgets.delete'
+	| 'finance.budgets.deleteConfirm'
+	| 'finance.budgets.edit'
+	| 'finance.budgets.month'
+	| 'finance.budgets.new'
+	| 'finance.budgets.noBudgets'
+	| 'finance.budgets.orphaned'
+	| 'finance.budgets.remaining'
+	| 'finance.budgets.save'
+	| 'finance.budgets.spent'
+	| 'finance.budgets.title'
 	| 'finance.commitments.addEntry'
 	| 'finance.commitments.adjustment'
 	| 'finance.commitments.adjustmentHint'
@@ -804,25 +825,51 @@ export type MessageKey =
 	| 'finance.donut.out'
 	| 'finance.insights.average'
 	| 'finance.insights.biggestCategory'
+	| 'finance.insights.budgetsWindow'
+	| 'finance.insights.cash'
+	| 'finance.insights.categories'
+	| 'finance.insights.category'
+	| 'finance.insights.chooseMonth'
+	| 'finance.insights.credit'
+	| 'finance.insights.currency'
+	| 'finance.insights.custody'
 	| 'finance.insights.dearestMonth'
+	| 'finance.insights.defaultWindow'
+	| 'finance.insights.definitions'
 	| 'finance.insights.everyLedger'
+	| 'finance.insights.exclusions'
+	| 'finance.insights.gross'
 	| 'finance.insights.importAStatementIntoA'
 	| 'finance.insights.in'
 	| 'finance.insights.inAndOut'
 	| 'finance.insights.inTotalAMonth'
+	| 'finance.insights.income'
 	| 'finance.insights.lastMonths'
+	| 'finance.insights.minorUnits'
+	| 'finance.insights.month'
+	| 'finance.insights.monthBudgets'
 	| 'finance.insights.monthlyCostOf'
+	| 'finance.insights.net'
+	| 'finance.insights.noActivity'
 	| 'finance.insights.noTagsYet'
 	| 'finance.insights.nothingToReadYet'
 	| 'finance.insights.out'
 	| 'finance.insights.overMonthWithAny'
+	| 'finance.insights.partialBalance'
+	| 'finance.insights.refunds'
 	| 'finance.insights.spendingStackedByCategory'
 	| 'finance.insights.spentPerMonthOnAverage'
 	| 'finance.insights.theSameMoneyWithoutThe'
 	| 'finance.insights.theWholeWindowByCategory'
+	| 'finance.insights.transfers'
+	| 'finance.insights.unclassified'
+	| 'finance.insights.unknownBalance'
+	| 'finance.insights.unmatchedRefunds'
+	| 'finance.insights.unspecified'
 	| 'finance.insights.whatArrivedAgainstWhatLeft'
 	| 'finance.insights.whatEachMonthWasMade'
 	| 'finance.insights.whatOneTagCosts'
+	| 'finance.insights.window'
 	| 'finance.insights.writeOne'
 	| 'finance.ledgers.aLedgerIsOnePlace'
 	| 'finance.ledgers.addedAlreadyHere'
@@ -2298,6 +2345,7 @@ export type MessageKey =
 	| 'notify.noun.billPayment'
 	| 'notify.noun.block'
 	| 'notify.noun.bought'
+	| 'notify.noun.budget'
 	| 'notify.noun.commitment'
 	| 'notify.noun.commitmentEntry'
 	| 'notify.noun.dataPoint'
@@ -2593,6 +2641,7 @@ export type MessageKey =
 	| 'reportDialog.yourIdea'
 	| 'rooms.finance.sections'
 	| 'rooms.finance.tabs.bills'
+	| 'rooms.finance.tabs.budgets'
 	| 'rooms.finance.tabs.commitments'
 	| 'rooms.finance.tabs.insights'
 	| 'rooms.finance.tabs.ledgers'
@@ -3955,6 +4004,10 @@ export type MessageKey =
 	| 'tour.board'
 	| 'tour.booksKilosEurosAnything'
 	| 'tour.boughtAndBackAgain'
+	| 'tour.budgets'
+	| 'tour.budgetsBody'
+	| 'tour.budgetsRoom'
+	| 'tour.budgetsTitle'
 	| 'tour.catchItNowJudgeIt'
 	| 'tour.categoriesAreTheColours'
 	| 'tour.categoriesWashTheRowIn'
@@ -4374,6 +4427,8 @@ export interface MessageValuesFor {
 	'finance.bills.undoTheSkipFor': { name: string | number };
 	'finance.bills.whatPaidName': { name: string | number };
 	'finance.insights.average': { averageCents: string | number };
+	'finance.insights.cash': { amount: string | number; count: number };
+	'finance.insights.custody': { amount: string | number; count: number };
 	'finance.insights.inTotalAMonth': {
 		activeMonths: string | number;
 		averageCents: string | number;
@@ -4381,8 +4436,18 @@ export interface MessageValuesFor {
 		totalCents: string | number;
 	};
 	'finance.insights.lastMonths': { w: string | number };
+	'finance.insights.minorUnits': { amount: string | number };
 	'finance.insights.monthlyCostOf': { name: string | number };
 	'finance.insights.overMonthWithAny': { monthsWithSpending: string | number; s: string | number };
+	'finance.insights.partialBalance': { total: string | number; verified: string | number };
+	'finance.insights.transfers': {
+		count: number;
+		incoming: string | number;
+		outgoing: string | number;
+	};
+	'finance.insights.unclassified': { count: number };
+	'finance.insights.unmatchedRefunds': { count: number };
+	'finance.insights.window': { from: string | number; to: string | number };
 	'finance.ledgers.addedAlreadyHere': { added: string | number; skipped: string | number };
 	'finance.ledgers.andItsLinesGoFor': { count: number };
 	'finance.ledgers.archive': { name: string | number };
@@ -4704,6 +4769,7 @@ export interface MessageValuesFor {
 	'notify.noun.billPayment': { count: number };
 	'notify.noun.block': { count: number };
 	'notify.noun.bought': { count: number };
+	'notify.noun.budget': { count: number };
 	'notify.noun.commitment': { count: number };
 	'notify.noun.commitmentEntry': { count: number };
 	'notify.noun.dataPoint': { count: number };
