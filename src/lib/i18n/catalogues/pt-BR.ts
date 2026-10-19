@@ -942,6 +942,8 @@ export const messages: Catalogue = {
 	'finance.insights.credit':
 		'Refund credits are shown separately; charts draw positive spending only.',
 	'finance.insights.currency': 'Original currency',
+	'finance.insights.currencyNotDeclared':
+		'No ledger declares a currency — amounts are shown in {currency}.',
 	'finance.insights.custody': 'Custody excluded: {count} · {amount}',
 	'finance.insights.dearestMonth': 'Mês mais caro',
 	'finance.insights.defaultWindow': 'Last 12 months (default)',
@@ -1015,6 +1017,8 @@ export const messages: Catalogue = {
 	'finance.ledgers.currency': 'Currency',
 	'finance.ledgers.currencyHint':
 		'Original ISO currency code. Leave blank only when unknown; no default or conversion is assumed.',
+	'finance.ledgers.currencyNotDeclared':
+		'Ledger currency not declared — amounts are shown in {currency}.',
 	'finance.ledgers.currentAccount': 'Conta corrente',
 	'finance.ledgers.datesAreDayFirst': 'As datas são dia primeiro — 02/03 é dois de março',
 	'finance.ledgers.day': 'Dia',
@@ -1140,11 +1144,12 @@ export const messages: Catalogue = {
 	'finance.overview.noAccountsInCurrencyBody':
 		'No active account holds a declared opening here; its movements are not a balance.',
 	'finance.overview.noCurrencyBody':
-		'These accounts have no original currency, so no total is shown.',
+		'These accounts have no original currency, so no total is shown. Recorded amounts are in {currency}.',
 	'finance.overview.noCurrencyTotal': 'No currency total',
 	'finance.overview.noPlans': 'No plans for {month}.',
 	'finance.overview.notABalance': 'No declared opening, so this is not a balance.',
 	'finance.overview.nothingSpent': 'Nothing personal was spent in {month}.',
+	'finance.overview.otherCurrencies': 'Committed in other currencies',
 	'finance.overview.outsideCoverageTotal':
 		'Accounts holding movements before their opening: {count}.',
 	'finance.overview.overviewHint':

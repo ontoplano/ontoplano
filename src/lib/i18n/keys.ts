@@ -834,6 +834,7 @@ export type MessageKey =
 	| 'finance.insights.chooseMonth'
 	| 'finance.insights.credit'
 	| 'finance.insights.currency'
+	| 'finance.insights.currencyNotDeclared'
 	| 'finance.insights.custody'
 	| 'finance.insights.dearestMonth'
 	| 'finance.insights.defaultWindow'
@@ -897,6 +898,7 @@ export type MessageKey =
 	| 'finance.ledgers.coverageTour'
 	| 'finance.ledgers.currency'
 	| 'finance.ledgers.currencyHint'
+	| 'finance.ledgers.currencyNotDeclared'
 	| 'finance.ledgers.currentAccount'
 	| 'finance.ledgers.datesAreDayFirst'
 	| 'finance.ledgers.day'
@@ -1009,6 +1011,7 @@ export type MessageKey =
 	| 'finance.overview.noPlans'
 	| 'finance.overview.notABalance'
 	| 'finance.overview.nothingSpent'
+	| 'finance.overview.otherCurrencies'
 	| 'finance.overview.outsideCoverageTotal'
 	| 'finance.overview.overviewHint'
 	| 'finance.overview.payables'
@@ -4461,6 +4464,7 @@ export interface MessageValuesFor {
 	'finance.bills.whatPaidName': { name: string | number };
 	'finance.insights.average': { averageCents: string | number };
 	'finance.insights.cash': { amount: string | number; count: number };
+	'finance.insights.currencyNotDeclared': { currency: string | number };
 	'finance.insights.custody': { amount: string | number; count: number };
 	'finance.insights.inTotalAMonth': {
 		activeMonths: string | number;
@@ -4487,6 +4491,7 @@ export interface MessageValuesFor {
 	'finance.ledgers.asOf': { day: string | number };
 	'finance.ledgers.checkComputed': { amount: string | number };
 	'finance.ledgers.checkDifference': { amount: string | number };
+	'finance.ledgers.currencyNotDeclared': { currency: string | number };
 	'finance.ledgers.delete': { name: string | number };
 	'finance.ledgers.edit': { name: string | number };
 	'finance.ledgers.excludedAccounts': { names: string | number };
@@ -4513,6 +4518,7 @@ export interface MessageValuesFor {
 	'finance.overview.coverage': { accounts: string | number; supported: string | number };
 	'finance.overview.forTheMonth': { month: string | number };
 	'finance.overview.missingOpening': { count: number };
+	'finance.overview.noCurrencyBody': { currency: string | number };
 	'finance.overview.noPlans': { month: string | number };
 	'finance.overview.nothingSpent': { month: string | number };
 	'finance.overview.outsideCoverageTotal': { count: number };

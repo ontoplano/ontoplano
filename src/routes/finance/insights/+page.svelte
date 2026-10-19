@@ -4,8 +4,8 @@
 
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
-	import CategoryMark from '$lib/components/CategoryMark.svelte';
 	import CategoryDonut from '$lib/components/CategoryDonut.svelte';
+	import CategoryMark from '$lib/components/CategoryMark.svelte';
 	import EmptyState from '$lib/components/EmptyState.svelte';
 	import RoomSurface from '$lib/components/RoomSurface.svelte';
 	import Card from '$lib/components/Card.svelte';
@@ -21,10 +21,17 @@
 	let { data }: { data: PageServerData } = $props();
 
 	const currency = $derived(data.currency);
-	const money = (cents: number) =>
-		currency
-			? formatMoney(cents, currency as Currency)
-			: t('finance.insights.minorUnits', { amount: cents });
+	/*
+	 * Display currency, not data currency.
+	 *
+	 * A ledger that predates the currency column has none, and its bucket stays
+	 * unspecified in every figure (D6). But a screen full of "minor units
+	 * (unspecified)" is not an answer — the account's own currency is what the
+	 * old finance screens showed, so amounts are formatted in it and the page
+	 * says once that the ledgers have not declared one.
+	 */
+	const displayCurrency = $derived((data.currency ?? data.defaultCurrency) as Currency);
+	const money = (cents: number) => formatMoney(cents, displayCurrency);
 
 	const anything = $derived(!!data.report?.movementCount);
 	const WINDOWS = [3, 6, 12, 24];
@@ -66,11 +73,6 @@
 		})
 	);
 </script>
-
-{#snippet biggestPill()}
-	<!-- The category wears its colour as a pill, never as tinted text. -->
-	{#if biggest}<CategoryMark name={biggest.name} color={biggest.color} />{/if}
-{/snippet}
 
 <!--
 	One surface: what is being looked at along its top, the three numbers worth
@@ -126,6 +128,9 @@
 			{t('finance.insights.window', { from: data.window.from, to: data.window.to })} · {currency ??
 				t('finance.insights.unspecified')}
 		</p>
+		{#if !currency}
+			<p>{t('finance.insights.currencyNotDeclared', { currency: displayCurrency })}</p>
+		{/if}
 		{#if data.defaultWindow}<p>{t('finance.insights.defaultWindow')}</p>{/if}
 		<p>{t('finance.insights.definitions')}</p>
 		<p>
@@ -143,6 +148,12 @@
 		/>
 	{:else}
 		<!-- The three numbers worth knowing before any chart. -->
+		{#if biggest}
+			<p class="flex flex-wrap items-center gap-2 border-b border-gray-200 px-4 py-2 text-sm">
+				{t('finance.insights.biggestCategory')}:
+				<CategoryMark name={biggest.name} color={biggest.color} />
+			</p>
+		{/if}
 		<div data-testid="spending-totals">
 			<StatTiles
 				tiles={[
@@ -162,6 +173,119 @@
 			/>
 		</div>
 
+		<!--
+			Two charts of the months side by side where there is the width, then
+			the window as one ring, then one tag. Each chart is as tall as what it
+			draws — none is stretched to match a taller neighbour.
+		-->
+		<div class="grid grid-cols-1 border-b border-gray-200 lg:grid-cols-2">
+			<Card
+				title={t('finance.insights.inAndOut')}
+				description={t('finance.insights.whatArrivedAgainstWhatLeft')}
+				pane
+			>
+				<MonthBars
+					months={data.totals.map((m) => m.month)}
+					series={[
+						{
+							label: t('finance.insights.in'),
+							values: data.totals.map((m) => m.inCents),
+							fill: 'fill-blue-600'
+						},
+						{
+							label: t('finance.insights.out'),
+							values: data.totals.map((m) => m.outCents),
+							fill: 'fill-red-500'
+						}
+					]}
+					net={data.totals.map((m) => m.netCents)}
+					legend
+					label={t('streamChart.inAgainstOutByMonth', {
+						inLabel: t('finance.insights.in'),
+						outLabel: t('finance.insights.out')
+					})}
+					currency={displayCurrency}
+				/>
+			</Card>
+
+			<Card
+				title={t('finance.insights.whatEachMonthWasMade')}
+				description={t('finance.insights.spendingStackedByCategory')}
+				pane
+				class="border-t border-gray-200 lg:border-t-0 lg:border-l"
+			>
+				<!-- The bands wear the categories' colours; the ring below is their legend. -->
+				<MonthBars
+					months={data.byCategory.months}
+					series={data.byCategory.categories.map((c) => ({
+						label: c.name,
+						values: c.byMonth.map((value) => Math.max(0, value)),
+						color: c.color
+					}))}
+					stacked
+					label={t('finance.stackedMonths.caption')}
+					currency={displayCurrency}
+				/>
+			</Card>
+		</div>
+
+		<div data-testid="spending-category">
+			<Card
+				title={t('finance.insights.theWholeWindowByCategory')}
+				description={t('finance.insights.theSameMoneyWithoutThe')}
+				pane
+				class="border-b border-gray-200"
+			>
+				<CategoryDonut slices={data.slices} currency={displayCurrency} />
+			</Card>
+		</div>
+
+		<!-- One tag at a time, on purpose: tags overlap, so a second one on the
+		     same chart would count a line that carries both of them twice. -->
+		<Card
+			title={t('finance.insights.whatOneTagCosts')}
+			description={data.tagSeries
+				? t('finance.insights.inTotalAMonth', {
+						totalCents: money(data.tagSeries.totalCents),
+						averageCents: money(data.tagSeries.averageCents),
+						activeMonths: data.tagSeries.activeMonths,
+						s: data.tagSeries.activeMonths === 1 ? '' : 's'
+					})
+				: ''}
+			pane
+		>
+			{#if !data.tagSeries}
+				<p class="text-sm text-gray-500">
+					{t('finance.insights.noTagsYet')}
+					<a href={resolve('/finance/rules')} class="underline">{t('finance.insights.writeOne')}</a>
+				</p>
+			{:else}
+				{@const series = data.tagSeries}
+				<!-- Which tag, above what it draws: it narrows this chart and nothing else. -->
+				<div class="controls-sm mb-3 flex items-center gap-2">
+					<Picker
+						value={data.tag ?? ''}
+						options={data.tags.map((tag) => ({ value: tag.name, label: `#${tag.name}` }))}
+						onpick={(next) => filter({ tag: next })}
+						label={t('finance.insights.whatOneTagCosts')}
+					/>
+				</div>
+				<MonthBars
+					months={series.months}
+					series={[
+						{
+							label: `#${series.name}`,
+							values: series.byMonth.map((value) => Math.max(0, value)),
+							color: series.color
+						}
+					]}
+					average={series.averageCents}
+					averageColor={series.color}
+					label={t('finance.insights.monthlyCostOf', { name: series.name })}
+					currency={displayCurrency}
+				/>
+			{/if}
+		</Card>
 		<section
 			class="space-y-2 border-b border-gray-200 p-4 text-sm"
 			aria-label={t('finance.insights.exclusions')}
@@ -199,144 +323,6 @@
 					</p>{/if}
 			{/if}
 		</section>
-		<section
-			class="space-y-3 border-b border-gray-200 p-4"
-			aria-label={t('finance.insights.categories')}
-		>
-			<h2 class="text-sm font-semibold">{t('finance.insights.categories')}</h2>
-			<p class="text-xs text-gray-600">{t('finance.insights.credit')}</p>
-			{#if biggest}<p class="flex flex-wrap items-center gap-2 text-sm">
-					{t('finance.insights.biggestCategory')}: {@render biggestPill()}
-				</p>{/if}
-			<ul class="divide-y divide-gray-200 text-sm">
-				{#each data.report?.byCategory ?? [] as category (category.name)}
-					<li class="flex flex-wrap justify-between gap-2 py-2" data-testid="spending-category">
-						<span>{category.name}</span><span
-							>{t('finance.insights.gross')}: {money(category.grossMinor)} · {t(
-								'finance.insights.refunds'
-							)}: {money(category.refundMinor)} · {t('finance.insights.net')}: {money(
-								category.netMinor
-							)}</span
-						>
-					</li>
-				{/each}
-			</ul>
-		</section>
-		{#if currency}
-			<!--
-			Two charts of the months side by side where there is the width, then
-			the window as one ring, then one tag. Each chart is as tall as what it
-			draws — none is stretched to match a taller neighbour.
-		-->
-			<div class="grid grid-cols-1 border-b border-gray-200 lg:grid-cols-2">
-				<Card
-					title={t('finance.insights.inAndOut')}
-					description={t('finance.insights.whatArrivedAgainstWhatLeft')}
-					pane
-				>
-					<MonthBars
-						months={data.totals.map((m) => m.month)}
-						series={[
-							{
-								label: t('finance.insights.in'),
-								values: data.totals.map((m) => m.inCents),
-								fill: 'fill-blue-600'
-							},
-							{
-								label: t('finance.insights.out'),
-								values: data.totals.map((m) => m.outCents),
-								fill: 'fill-red-500'
-							}
-						]}
-						net={data.totals.map((m) => m.netCents)}
-						legend
-						label={t('streamChart.inAgainstOutByMonth', {
-							inLabel: t('finance.insights.in'),
-							outLabel: t('finance.insights.out')
-						})}
-						{currency}
-					/>
-				</Card>
-
-				<Card
-					title={t('finance.insights.whatEachMonthWasMade')}
-					description={t('finance.insights.spendingStackedByCategory')}
-					pane
-					class="border-t border-gray-200 lg:border-t-0 lg:border-l"
-				>
-					<!-- The bands wear the categories' colours; the ring below is their legend. -->
-					<MonthBars
-						months={data.byCategory.months}
-						series={data.byCategory.categories.map((c) => ({
-							label: c.name,
-							values: c.byMonth.map((value) => Math.max(0, value)),
-							color: c.color
-						}))}
-						stacked
-						label={t('finance.stackedMonths.caption')}
-						{currency}
-					/>
-				</Card>
-			</div>
-
-			<Card
-				title={t('finance.insights.theWholeWindowByCategory')}
-				description={t('finance.insights.theSameMoneyWithoutThe')}
-				pane
-				class="border-b border-gray-200"
-			>
-				<CategoryDonut slices={data.slices} {currency} />
-			</Card>
-
-			<!-- One tag at a time, on purpose: tags overlap, so a second one on the
-		     same chart would count a line that carries both of them twice. -->
-			<Card
-				title={t('finance.insights.whatOneTagCosts')}
-				description={data.tagSeries
-					? t('finance.insights.inTotalAMonth', {
-							totalCents: money(data.tagSeries.totalCents),
-							averageCents: money(data.tagSeries.averageCents),
-							activeMonths: data.tagSeries.activeMonths,
-							s: data.tagSeries.activeMonths === 1 ? '' : 's'
-						})
-					: ''}
-				pane
-			>
-				{#if !data.tagSeries}
-					<p class="text-sm text-gray-500">
-						{t('finance.insights.noTagsYet')}
-						<a href={resolve('/finance/rules')} class="underline"
-							>{t('finance.insights.writeOne')}</a
-						>
-					</p>
-				{:else}
-					{@const series = data.tagSeries}
-					<!-- Which tag, above what it draws: it narrows this chart and nothing else. -->
-					<div class="controls-sm mb-3 flex items-center gap-2">
-						<Picker
-							value={data.tag ?? ''}
-							options={data.tags.map((tag) => ({ value: tag.name, label: `#${tag.name}` }))}
-							onpick={(next) => filter({ tag: next })}
-							label={t('finance.insights.whatOneTagCosts')}
-						/>
-					</div>
-					<MonthBars
-						months={series.months}
-						series={[
-							{
-								label: `#${series.name}`,
-								values: series.byMonth.map((value) => Math.max(0, value)),
-								color: series.color
-							}
-						]}
-						average={series.averageCents}
-						averageColor={series.color}
-						label={t('finance.insights.monthlyCostOf', { name: series.name })}
-						{currency}
-					/>
-				{/if}
-			</Card>
-		{/if}
 	{/if}
 	<section
 		class="space-y-3 border-t border-gray-200 p-4"

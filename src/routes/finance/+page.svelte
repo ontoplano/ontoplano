@@ -2,6 +2,7 @@
 	import { resolve } from '$app/paths';
 	import EmptyState from '$lib/components/EmptyState.svelte';
 	import RoomSurface from '$lib/components/RoomSurface.svelte';
+	import StatTiles from '$lib/components/StatTiles.svelte';
 	import BudgetProgress from '$lib/components/BudgetProgress.svelte';
 	import { formatMoney } from '$lib/money';
 	import { minorAmount } from '$lib/services/validate';
@@ -17,12 +18,35 @@
 	const hasAccounts = $derived(overview.currencies.some((picture) => picture.coverage.accounts));
 
 	const money = (minor: number, currency: string | null) =>
-		currency
-			? formatMoney(minorAmount(minor, 'money'), currency)
-			: t('finance.ledgers.minorUnitsAmount', { amount: minorAmount(minor, 'money') });
+		formatMoney(minorAmount(minor, 'money'), currency ?? data.defaultCurrency);
 
 	const label = (picture: CurrencyPicture) => picture.currency ?? t('finance.insights.unspecified');
 	const key = (picture: CurrencyPicture) => picture.currency ?? 'unspecified';
+
+	/*
+	 * A currency is on the page when it has an account, activity or a plan. A
+	 * stock in a currency with no account here is still somebody's money, so it
+	 * is named in one line at the end rather than given a section that reads as
+	 * an empty account.
+	 */
+	const shown = $derived(
+		overview.currencies.filter(
+			(picture) =>
+				picture.coverage.accounts > 0 ||
+				picture.spending.movementCount > 0 ||
+				picture.budgets.length > 0
+		)
+	);
+	const elsewhere = $derived(
+		overview.currencies.filter(
+			(picture) =>
+				!shown.includes(picture) &&
+				(picture.custodyMinor ||
+					picture.reservesMinor ||
+					picture.payablesMinor ||
+					picture.receivablesMinor)
+		)
+	);
 
 	function noOpening(picture: CurrencyPicture) {
 		const gap = picture.gaps.find((one) => one.kind === 'no-opening');
@@ -36,12 +60,18 @@
 		const gap = picture.gaps.find((one) => one.kind === 'balance-differs');
 		return gap?.kind === 'balance-differs' ? gap : null;
 	}
-	function budgetsLeft(picture: CurrencyPicture) {
-		return picture.budgets.reduce(
-			(total, budget) => minorAmount(total + budget.remainingMinor, 'budget left'),
-			0
-		);
+	function unclassifiedHref(picture: CurrencyPicture) {
+		const params = new URLSearchParams({
+			unclassified: '1',
+			month: overview.month,
+			currency: picture.currency ?? 'unspecified'
+		});
+		return `${resolve('/finance/ledgers')}?${params}`;
 	}
+	const budgetsHref = (picture: CurrencyPicture) =>
+		`${resolve('/finance/budgets')}?month=${overview.month}${
+			picture.currency ? `&currency=${picture.currency}` : ''
+		}`;
 </script>
 
 <svelte:head><title>{t('rooms.finance.tabs.overview')}</title></svelte:head>
@@ -62,12 +92,12 @@
 		</form>
 	{/snippet}
 
-	<!-- Every path here is resolve()d; the rule cannot see through an appended
-	     query string, as in the ledgers and insights pages. -->
+	<h1 class="px-4 pt-4 text-xl font-semibold">{t('rooms.finance.tabs.overview')}</h1>
+
+	<!-- Every path below is resolve()d; the rule cannot see through a query string. -->
 	<!-- eslint-disable svelte/no-navigation-without-resolve -->
 
 	{#if !hasAccounts}
-		<h1 class="px-4 pt-4 text-xl font-semibold">{t('rooms.finance.tabs.overview')}</h1>
 		{#if overview.currencies.length === 0}
 			<EmptyState
 				icon="book"
@@ -84,100 +114,71 @@
 			<p class="p-4 text-sm text-gray-600">{t('finance.overview.noAccountsBody')}</p>
 		{/if}
 	{:else}
-		<h1 class="px-4 pt-4 text-xl font-semibold">{t('rooms.finance.tabs.overview')}</h1>
-		<div class="space-y-8 p-4">
-			{#each overview.currencies as picture (key(picture))}
-				<section class="space-y-4" aria-label={label(picture)} data-tour="finance-overview-money">
+		<div class="space-y-6 p-4">
+			{#each shown as picture (key(picture))}
+				<section
+					class="space-y-4 border-b border-gray-200 pb-6 last:border-b-0 last:pb-0"
+					aria-label={label(picture)}
+					data-tour="finance-overview-money"
+				>
 					<div class="flex flex-wrap items-baseline justify-between gap-2">
 						<h2 class="text-lg font-semibold">{label(picture)}</h2>
-						<p class="text-xs text-gray-600">
-							{t('finance.overview.coverage', {
-								supported: picture.coverage.supported,
-								accounts: picture.coverage.accounts
-							})}
-							{#if picture.coverage.verified}
-								· {t('finance.overview.verified', { count: picture.coverage.verified })}
-							{/if}
-						</p>
+						{#if picture.coverage.accounts}
+							<p class="text-xs text-gray-600">
+								{t('finance.overview.coverage', {
+									supported: picture.coverage.supported,
+									accounts: picture.coverage.accounts
+								})}
+								{#if picture.coverage.verified}
+									· {t('finance.overview.verified', { count: picture.coverage.verified })}
+								{/if}
+							</p>
+						{/if}
 					</div>
 
-					<!-- Four answers: mine, committed, spent, left. -->
-					<div class="grid grid-cols-2 gap-3 sm:grid-cols-4">
-						<div class="bg-surface-1 dark:bg-surface-2 rounded p-3">
-							<p class="text-xs text-gray-500">
-								{#if picture.fundsMinor !== null}
-									{t('finance.overview.available')}
-								{:else if picture.currency === null}
-									{t('finance.overview.noCurrencyTotal')}
-								{:else if picture.coverage.accounts === 0}
-									{t('finance.overview.noAccountsInCurrency')}
-								{:else}
-									{t('finance.ledgers.statusRecorded')}
-								{/if}
-							</p>
-							<p class="tabular text-lg font-semibold break-words">
-								{#if picture.fundsMinor !== null}
-									{money(picture.availableMinor ?? 0, picture.currency)}
-								{:else if picture.currency !== null && picture.coverage.accounts > 0}
-									{money(picture.recordedOnlyMinor, picture.currency)}
-								{:else}
-									—
-								{/if}
-							</p>
-							<p class="text-xs text-gray-600">
-								{#if picture.fundsMinor !== null}
-									{t('finance.overview.availableFormula')}
-								{:else if picture.currency === null}
-									{t('finance.overview.noCurrencyBody')}
-								{:else if picture.coverage.accounts === 0}
-									{t('finance.overview.noAccountsInCurrencyBody')}
-								{:else}
-									{t('finance.overview.notABalance')}
-								{/if}
-							</p>
-						</div>
-						<div class="bg-surface-1 dark:bg-surface-2 rounded p-3">
-							<p class="text-xs text-gray-500">{t('finance.overview.committed')}</p>
-							<p class="tabular text-lg font-semibold break-words">
-								{money(picture.custodyMinor + picture.reservesMinor, picture.currency)}
-							</p>
-							<p class="text-xs text-gray-600">
-								{t('finance.commitments.custody')}: {money(picture.custodyMinor, picture.currency)} ·
-								{t('finance.commitments.reserve')}: {money(picture.reservesMinor, picture.currency)}
-							</p>
-						</div>
-						<div class="bg-surface-1 dark:bg-surface-2 rounded p-3">
-							<p class="text-xs text-gray-500">{t('finance.overview.spent')}</p>
-							<p class="tabular text-lg font-semibold break-words">
-								{money(picture.spending.netMinor, picture.currency)}
-							</p>
-							<p class="text-xs text-gray-600">
-								{t('finance.insights.gross')}: {money(
+					<!-- The four answers, in the same tiles the rest of Finance uses. -->
+					<StatTiles
+						tiles={[
+							{
+								label:
+									picture.fundsMinor === null
+										? t('finance.ledgers.statusRecorded')
+										: t('finance.overview.available'),
+								value: money(
+									picture.fundsMinor === null
+										? picture.recordedOnlyMinor
+										: (picture.availableMinor ?? 0),
+									picture.currency
+								),
+								note:
+									picture.fundsMinor === null
+										? t('finance.overview.notABalance')
+										: t('finance.overview.availableFormula')
+							},
+							{
+								label: t('finance.overview.committed'),
+								value: money(picture.custodyMinor + picture.reservesMinor, picture.currency),
+								note: `${t('finance.commitments.custody')}: ${money(
+									picture.custodyMinor,
+									picture.currency
+								)} · ${t('finance.commitments.reserve')}: ${money(
+									picture.reservesMinor,
+									picture.currency
+								)}`
+							},
+							{
+								label: t('finance.overview.spent'),
+								value: money(picture.spending.netMinor, picture.currency),
+								note: `${t('finance.insights.gross')}: ${money(
 									picture.spending.grossMinor,
 									picture.currency
-								)}
-								· {t('finance.insights.refunds')}: {money(
+								)} · ${t('finance.insights.refunds')}: ${money(
 									picture.spending.refundMinor,
 									picture.currency
-								)}
-							</p>
-						</div>
-						<div class="bg-surface-1 dark:bg-surface-2 rounded p-3">
-							<p class="text-xs text-gray-500">{t('finance.overview.left')}</p>
-							<p class="tabular text-lg font-semibold break-words">
-								{#if picture.budgets.length}
-									{money(budgetsLeft(picture), picture.currency)}
-								{:else}
-									—
-								{/if}
-							</p>
-							{#if picture.budgets.length}
-								<p class="text-xs text-gray-600">
-									{t('finance.overview.forTheMonth', { month: overview.month })}
-								</p>
-							{/if}
-						</div>
-					</div>
+								)}`
+							}
+						]}
+					/>
 
 					<!-- The subtractions beside available, and the claims that are not. -->
 					{#if picture.fundsMinor !== null}
@@ -193,11 +194,9 @@
 						<div class="text-sm" data-testid="claims">
 							<p>{t('finance.overview.claimsBody')}</p>
 							<p>
-								{t('finance.overview.payables')}: {money(picture.payablesMinor, picture.currency)} ·
-								{t('finance.overview.receivables')}: {money(
-									picture.receivablesMinor,
-									picture.currency
-								)}
+								{t('finance.overview.payables')}: {money(picture.payablesMinor, picture.currency)} · {t(
+									'finance.overview.receivables'
+								)}: {money(picture.receivablesMinor, picture.currency)}
 							</p>
 						</div>
 					{/if}
@@ -205,52 +204,38 @@
 					<!-- Every gap named at the total, with the way to fix it. -->
 					{#if noOpening(picture)}
 						{@const gap = noOpening(picture)!}
-						<div class="text-sm" data-testid="gap-no-opening">
-							<p>
-								{t('finance.overview.missingOpening', { count: gap.count })}
-								<a
-									class="underline"
-									href={`${resolve('/finance/ledgers')}?ledger=${gap.ledgers[0].id}`}
-									>{t('finance.overview.fixOpening')}</a
-								>
-							</p>
-						</div>
+						<p class="text-sm" data-testid="gap-no-opening">
+							{t('finance.overview.missingOpening', { count: gap.count })}
+							<a class="underline" href={resolve('/finance/ledgers')}>
+								{t('finance.overview.fixOpening')}
+							</a>
+						</p>
 					{/if}
 					{#if outsideCoverage(picture)}
 						{@const gap = outsideCoverage(picture)!}
-						<div class="text-sm" data-testid="gap-outside-coverage">
-							<p>
-								{t('finance.overview.outsideCoverageTotal', { count: gap.count })}
-								<a
-									class="underline"
-									href={`${resolve('/finance/ledgers')}?ledger=${gap.ledgers[0].id}`}
-									>{t('finance.overview.checkOpeningDate')}</a
-								>
-							</p>
-						</div>
+						<p class="text-sm" data-testid="gap-outside-coverage">
+							{t('finance.overview.outsideCoverageTotal', { count: gap.count })}
+							<a class="underline" href={resolve('/finance/ledgers')}>
+								{t('finance.overview.checkOpeningDate')}
+							</a>
+						</p>
 					{/if}
 					{#if balanceDiffers(picture)}
 						{@const gap = balanceDiffers(picture)!}
-						<div class="text-sm" data-testid="gap-balance-differs">
-							<p>
-								{t('finance.overview.balanceDiffers', { count: gap.count })}
-								{#each gap.ledgers as ledger (ledger.id)}
-									<a class="underline" href={`${resolve('/finance/ledgers')}?ledger=${ledger.id}`}>
-										{ledger.name}: {t('finance.ledgers.checkDifference', {
-											amount: money(ledger.differenceMinor, picture.currency)
-										})}
-									</a>
-								{/each}
-							</p>
-						</div>
+						<p class="text-sm" data-testid="gap-balance-differs">
+							{t('finance.overview.balanceDiffers', { count: gap.count })}
+							{#each gap.ledgers as ledger (ledger.id)}
+								<a class="underline" href={`${resolve('/finance/ledgers')}?ledger=${ledger.id}`}>
+									{ledger.name}: {t('finance.ledgers.checkDifference', {
+										amount: money(ledger.differenceMinor, picture.currency)
+									})}
+								</a>
+							{/each}
+						</p>
 					{/if}
 
 					<!-- What the month spent, and what it deliberately left out. -->
-					<div
-						class="space-y-2 border-t border-gray-200 pt-3"
-						data-tour="finance-overview-spending"
-					>
-						<h3 class="text-sm font-semibold">{t('finance.overview.spent')}</h3>
+					<div class="space-y-1" data-tour="finance-overview-spending">
 						{#if picture.spending.movementCount === 0}
 							<p class="text-sm text-gray-600">
 								{t('finance.overview.nothingSpent', { month: overview.month })}
@@ -281,14 +266,7 @@
 							</p>
 							{#if picture.spending.unclassifiedCount}
 								<p class="text-sm" data-testid="spending-unclassified">
-									<a
-										class="underline"
-										href={`${resolve('/finance/ledgers')}?${new URLSearchParams({
-											unclassified: '1',
-											month: overview.month,
-											currency: picture.currency ?? 'unspecified'
-										})}`}
-									>
+									<a class="underline" href={unclassifiedHref(picture)}>
 										{t('finance.insights.unclassified', {
 											count: picture.spending.unclassifiedCount
 										})}
@@ -306,13 +284,10 @@
 					</div>
 
 					<!-- What is left against the plans, with the shared budget arithmetic. -->
-					<div class="space-y-2 border-t border-gray-200 pt-3">
+					<div class="space-y-2">
 						<div class="flex flex-wrap items-baseline justify-between gap-2">
 							<h3 class="text-sm font-semibold">{t('finance.overview.left')}</h3>
-							<a
-								class="text-sm underline"
-								href={`${resolve('/finance/budgets')}?month=${overview.month}`}
-							>
+							<a class="text-sm underline" href={budgetsHref(picture)}>
 								{t('rooms.finance.tabs.budgets')}
 							</a>
 						</div>
@@ -321,14 +296,31 @@
 						{:else}
 							<p class="text-sm text-gray-600">
 								{t('finance.overview.noPlans', { month: overview.month })}
-								<a class="underline" href={`${resolve('/finance/budgets')}?month=${overview.month}`}
-									>{t('finance.overview.setBudget')}</a
-								>
+								<a class="underline" href={budgetsHref(picture)}>
+									{t('finance.overview.setBudget')}
+								</a>
 							</p>
 						{/if}
 					</div>
 				</section>
 			{/each}
+
+			{#if elsewhere.length}
+				<section class="text-sm" aria-label={t('finance.overview.otherCurrencies')}>
+					<h2 class="text-sm font-semibold">{t('finance.overview.otherCurrencies')}</h2>
+					{#each elsewhere as picture (key(picture))}
+						<p class="text-gray-600">
+							{label(picture)} · {t('finance.overview.committed')}:
+							{money(picture.custodyMinor + picture.reservesMinor, picture.currency)}
+							· {t('finance.overview.payables')}: {money(picture.payablesMinor, picture.currency)}
+							· {t('finance.overview.receivables')}: {money(
+								picture.receivablesMinor,
+								picture.currency
+							)}
+						</p>
+					{/each}
+				</section>
+			{/if}
 		</div>
 	{/if}
 

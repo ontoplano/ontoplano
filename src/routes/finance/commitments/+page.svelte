@@ -4,7 +4,6 @@
 	import { armed } from '$lib/actions/armed';
 	import { typing } from '$lib/browse.svelte';
 	import { getAction } from '$lib/shortcuts';
-	import { setRoomAction } from '$lib/room-action.svelte';
 	import RoomSurface from '$lib/components/RoomSurface.svelte';
 	import Modal from '$lib/components/Modal.svelte';
 	import OneLine from '$lib/components/OneLine.svelte';
@@ -56,7 +55,6 @@
 		editing = true;
 		creating = false;
 	}
-	setRoomAction(() => ({ label: t('finance.commitments.new'), run: openNew, kbd: 'n' }));
 	function onkeydown(event: KeyboardEvent) {
 		if (typing(event) || event.ctrlKey || event.metaKey || event.altKey) return;
 		if (getAction('/finance/commitments', event) === 'new') {
@@ -69,10 +67,10 @@
 <svelte:window {onkeydown} />
 <svelte:head><title>{t('rooms.finance.tabs.commitments')}</title></svelte:head>
 <RoomSurface>
-	<div class="space-y-5" data-tour="commitments">
+	<div class="space-y-5 p-4" data-tour="commitments">
 		<div class="flex flex-wrap items-center justify-between gap-2">
 			<h1 class="text-xl font-semibold">{t('rooms.finance.tabs.commitments')}</h1>
-			<div class="flex gap-2">
+			<div class="flex flex-wrap gap-2">
 				<a
 					class="btn"
 					href={resolve(data.archived ? '/finance/commitments' : '/finance/commitments?archived=1')}

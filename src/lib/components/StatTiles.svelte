@@ -41,3 +41,23 @@
 		</div>
 	{/each}
 </dl>
+
+<style>
+	/*
+	 * A phone gets two columns, not three.
+	 *
+	 * Three equal columns on a 390px screen are ~110px each, which a KES
+	 * figure with two decimals does not fit: the number runs under the next
+	 * tile's label and the row reads as broken. Two columns keep every amount
+	 * whole; the tiles wrap to a second row when there are three of them.
+	 */
+	@media (max-width: 639px) {
+		dl {
+			grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+		}
+		dl > div {
+			grid-row: auto;
+			grid-template-rows: none;
+		}
+	}
+</style>

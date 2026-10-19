@@ -47,9 +47,7 @@
 	/** `2026-02` as somebody would say it. */
 	const monthName = (key: string) => monthOf(key, now(), { month: 'long', year: 'numeric' });
 	const ledgerMoney = (cents: number, ledger: { currency: string | null } | null = data.current) =>
-		ledger?.currency
-			? formatMoney(cents, ledger.currency)
-			: t('finance.ledgers.minorUnitsAmount', { amount: cents });
+		formatMoney(cents, ledger?.currency ?? data.currency);
 	const money = (cents: number) => ledgerMoney(cents);
 	const statusLabel = (status: 'verified' | 'supported' | 'recorded') =>
 		t(
@@ -65,6 +63,9 @@
 
 	const active = $derived(data.ledgers.filter((l) => !l.archived));
 	const archived = $derived(data.ledgers.filter((l) => l.archived));
+	/* Legacy ledgers predate the currency column: amounts stay readable in the
+	   account's own currency, and the coverage block says the currency is undeclared. */
+	const undeclared = $derived(active.some((ledger) => !ledger.currency));
 
 	let showNewLedger = $state(false);
 	let editingLedger: Ledger | null = $state(null);
@@ -240,9 +241,10 @@
 						.filter((entry): entry is [number, string] => entry[1] !== null)
 				)
 	);
+	const displayCurrency = $derived(data.current?.currency ?? data.currency);
 	const asDecimal = (cents: number) =>
-		(Math.abs(cents) / (data.current?.currency ? minorUnits(data.current.currency) : 1)).toFixed(
-			data.current?.currency ? Math.log10(minorUnits(data.current.currency)) : 0
+		(Math.abs(cents) / minorUnits(displayCurrency)).toFixed(
+			Math.log10(minorUnits(displayCurrency))
 		);
 	// The reader's own day: `toISOString` is UTC, which is tomorrow for the
 	// last hours of every evening in São Paulo.
@@ -304,7 +306,7 @@
 	const ledgerTabs = $derived(
 		active.map((l) => ({
 			label: l.name,
-			count: `${ledgerMoney(l.supportedMinor ?? l.recordedMinor, l)} · ${statusLabel(l.balanceStatus)}`
+			count: ledgerMoney(l.supportedMinor ?? l.recordedMinor, l)
 		}))
 	);
 </script>
@@ -351,62 +353,6 @@
 <svelte:window {onkeydown} />
 
 <FormError message={form?.message} />
-
-{#if active.length && !data.reviewUnclassified}
-	<section class="mb-4 space-y-3" aria-label={t('finance.ledgers.supportedFunds')}>
-		<h2 class="text-sm font-semibold">{t('finance.ledgers.supportedFunds')}</h2>
-		<ul class="grid gap-2 sm:grid-cols-2">
-			{#each data.funds as group (group.currency)}
-				<li class="border border-gray-200 p-3 text-sm" data-testid="currency-funds">
-					<strong>{group.currency ?? t('finance.ledgers.unspecified')}</strong>
-					<span class="block"
-						>{group.supportedMinor === null
-							? t('finance.ledgers.noSupportedFunds')
-							: ledgerMoney(group.supportedMinor, { currency: group.currency })}</span
-					>
-					{#if group.excluded.length}<p class="text-xs text-gray-600">
-							{t('finance.ledgers.excludedAccounts', {
-								names: group.excluded.map((l) => l.name).join(', ')
-							})}
-						</p>{/if}
-				</li>
-			{/each}
-		</ul>
-		<ul class="divide-y divide-gray-200 border border-gray-200">
-			{#each active as ledger (ledger.id)}
-				<li class="p-3 text-sm" data-testid="ledger-balance">
-					<button
-						type="button"
-						class="text-left font-medium underline"
-						onclick={() => filter({ ledger: ledger.id, q: '', month: '', loose: false })}
-						>{ledger.name}</button
-					>
-					<p>
-						{statusLabel(ledger.balanceStatus)} · {ledgerMoney(
-							ledger.supportedMinor ?? ledger.recordedMinor,
-							ledger
-						)}
-					</p>
-					<p class="text-xs text-gray-600">
-						{t('finance.ledgers.asOf', { day: civilOf(ledger.asOf, now()) })}
-					</p>
-					{#if ledger.openingOn}<p class="text-xs text-gray-600">
-							{t('finance.ledgers.openingAt', {
-								amount: ledgerMoney(ledger.openingMinor, ledger),
-								day: civilOf(ledger.openingOn, now())
-							})}
-						</p>{/if}
-					{#if !ledger.currency}<p class="text-xs text-gray-600">
-							{t('finance.ledgers.chooseCurrency')}
-						</p>{/if}
-					{#if ledger.outsideCoveredPeriod}<p class="text-xs text-gray-600">
-							{t('finance.ledgers.outsideCoverage', { count: ledger.outsideCoveredPeriod })}
-						</p>{/if}
-				</li>
-			{/each}
-		</ul>
-	</section>
-{/if}
 
 {#if data.reviewUnclassified}
 	<RoomSurface>
@@ -506,8 +452,7 @@
 						/></label
 					>
 					<label class="block text-sm"
-						>{t('finance.ledgers.checkAmount')} ({current.currency ??
-							t('finance.ledgers.minorUnitsAmount', { amount: '' })})<input
+						>{t('finance.ledgers.checkAmount')} ({current.currency ?? data.currency})<input
 							class="input mt-1 w-full"
 							name="observedAmount"
 							inputmode="decimal"
@@ -837,6 +782,76 @@
 				</table>
 			{/if}
 		{/if}
+		{#if active.length && !data.reviewUnclassified}
+			<!-- Coverage lives under the statement, where it reads as the fine print it
+	     is; the top of the room stays the ledger strip and its lines, as before. -->
+			<section
+				class="space-y-3 border-t border-gray-200 p-4"
+				aria-label={t('finance.ledgers.supportedFunds')}
+			>
+				<div class="flex flex-wrap items-baseline justify-between gap-2">
+					<h2 class="text-sm font-semibold">{t('finance.ledgers.supportedFunds')}</h2>
+					{#if undeclared}<p class="text-xs text-gray-600">
+							{t('finance.ledgers.currencyNotDeclared', { currency: data.currency })}
+						</p>{/if}
+				</div>
+				<ul class="divide-y divide-gray-200 text-sm">
+					{#each data.funds as group (group.currency)}
+						<li
+							class="flex flex-wrap items-baseline justify-between gap-2 py-2"
+							data-testid="currency-funds"
+						>
+							<span class="font-medium">{group.currency ?? t('finance.ledgers.unspecified')}</span>
+							<span
+								>{group.supportedMinor === null
+									? t('finance.ledgers.noSupportedFunds')
+									: ledgerMoney(group.supportedMinor, { currency: group.currency })}</span
+							>
+							{#if group.excluded.length}<span class="w-full text-xs text-gray-600">
+									{t('finance.ledgers.excludedAccounts', {
+										names: group.excluded.map((l) => l.name).join(', ')
+									})}
+								</span>{/if}
+						</li>
+					{/each}
+				</ul>
+				<ul class="divide-y divide-gray-200 text-sm">
+					{#each active as ledger (ledger.id)}
+						<li class="space-y-1 py-2" data-testid="ledger-balance">
+							<div class="flex flex-wrap items-baseline justify-between gap-2">
+								<button
+									type="button"
+									class="text-left font-medium underline"
+									onclick={() => filter({ ledger: ledger.id, q: '', month: '', loose: false })}
+									>{ledger.name}</button
+								>
+								<span>
+									{statusLabel(ledger.balanceStatus)} · {ledgerMoney(
+										ledger.supportedMinor ?? ledger.recordedMinor,
+										ledger
+									)}
+								</span>
+							</div>
+							<p class="text-xs text-gray-600">
+								{t('finance.ledgers.asOf', { day: civilOf(ledger.asOf, now()) })}
+							</p>
+							{#if ledger.openingOn}<p class="text-xs text-gray-600">
+									{t('finance.ledgers.openingAt', {
+										amount: ledgerMoney(ledger.openingMinor, ledger),
+										day: civilOf(ledger.openingOn, now())
+									})}
+								</p>{/if}
+							{#if !ledger.currency}<p class="text-xs text-gray-600">
+									{t('finance.ledgers.chooseCurrency')}
+								</p>{/if}
+							{#if ledger.outsideCoveredPeriod}<p class="text-xs text-gray-600">
+									{t('finance.ledgers.outsideCoverage', { count: ledger.outsideCoveredPeriod })}
+								</p>{/if}
+						</li>
+					{/each}
+				</ul>
+			</section>
+		{/if}
 	</RoomSurface>
 {/if}
 
@@ -1109,8 +1124,7 @@
 							</label>
 							<label class="block text-sm">
 								<span class="text-gray-600"
-									>{t('ui.amount')} ({data.current?.currency ??
-										t('finance.ledgers.minorUnitsAmount', { amount: '' })})</span
+									>{t('ui.amount')} ({data.current?.currency ?? data.currency})</span
 								>
 								<select
 									class="select mt-1 w-full"
@@ -1260,8 +1274,7 @@
 				</label>
 				<label class="block text-sm">
 					<span class="text-gray-600"
-						>{t('ui.amount')} ({data.current?.currency ??
-							t('finance.ledgers.minorUnitsAmount', { amount: '' })})</span
+						>{t('ui.amount')} ({data.current?.currency ?? data.currency})</span
 					>
 					<input name="amount" inputmode="decimal" placeholder="0,00" class="input mt-1 w-full" />
 				</label>
@@ -1322,8 +1335,7 @@
 				</label>
 				<label class="block text-sm">
 					<span class="text-gray-600"
-						>{t('ui.amount')} ({data.current?.currency ??
-							t('finance.ledgers.minorUnitsAmount', { amount: '' })})</span
+						>{t('ui.amount')} ({data.current?.currency ?? data.currency})</span
 					>
 					<input
 						name="amount"

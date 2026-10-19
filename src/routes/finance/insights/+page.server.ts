@@ -5,6 +5,7 @@ import { normaliseCurrency } from '$lib/money';
 import { NotFoundError, ValidationError } from '$lib/services/errors';
 import { num } from '$lib/services/validate';
 import { listBudgets } from '$lib/services/budgets';
+import { getCurrency } from '$lib/services/settings';
 import {
 	categoryMonths,
 	categorySlices,
@@ -66,6 +67,10 @@ export const load = async ({ locals, url }: IsolatedEvent) => {
 
 	return {
 		currency,
+		// Legacy ledgers may declare no currency at all. The page still has to be
+		// readable: amounts fall back to the account's own currency for display,
+		// while the data stays the unspecified bucket (D6).
+		defaultCurrency: getCurrency(ctx.userId),
 		currencies,
 		ledgers,
 		ledgerId: ledgerId ?? 0,

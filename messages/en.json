@@ -4768,7 +4768,10 @@
 	"card.theFourAnswersAboutYourMoney": "What is mine, what is committed, what I spent this month, and what is left.",
 	"finance.overview.checkOpeningDate": "Check the opening date",
 	"finance.overview.noCurrencyTotal": "No currency total",
-	"finance.overview.noCurrencyBody": "These accounts have no original currency, so no total is shown.",
+	"finance.overview.noCurrencyBody": "These accounts have no original currency, so no total is shown. Recorded amounts are in {currency}.",
 	"finance.overview.noAccountsInCurrency": "No active account in this currency",
-	"finance.overview.noAccountsInCurrencyBody": "No active account holds a declared opening here; its movements are not a balance."
+	"finance.overview.noAccountsInCurrencyBody": "No active account holds a declared opening here; its movements are not a balance.",
+	"finance.ledgers.currencyNotDeclared": "Ledger currency not declared — amounts are shown in {currency}.",
+	"finance.insights.currencyNotDeclared": "No ledger declares a currency — amounts are shown in {currency}.",
+	"finance.overview.otherCurrencies": "Committed in other currencies"
 }

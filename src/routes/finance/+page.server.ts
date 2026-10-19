@@ -1,6 +1,7 @@
 import type { IsolatedEvent } from '$lib/isolated/routes';
 import { buildCtx } from '$lib/services/ctx';
 import { moneyOverview } from '$lib/services/finance-summary';
+import { getCurrency } from '$lib/services/settings';
 
 /**
  * The money picture.
@@ -11,6 +12,9 @@ import { moneyOverview } from '$lib/services/finance-summary';
 export const load = ({ locals, url }: IsolatedEvent) => {
 	const ctx = buildCtx(locals.user!.id);
 	return {
-		overview: moneyOverview(ctx, { month: url.searchParams.get('month') ?? undefined })
+		overview: moneyOverview(ctx, { month: url.searchParams.get('month') ?? undefined }),
+		// Legacy ledgers without a declared currency are still readable: amounts
+		// are formatted in the account's own currency, labelled as not a total.
+		defaultCurrency: getCurrency(ctx.userId)
 	};
 };

@@ -9,7 +9,7 @@ Money is shown per currency and never added across currencies. No exchange rate 
 - **What is yours:** supported funds per currency, with the number of that currency's accounts that are supported. Custody and reserves are subtracted to give available money, and both subtractions are listed beside it. Payables and receivables stay separate claims rather than being netted into funds.
 - **What you spent this month:** personal spending only. Transfers, cash withdrawals and custody shares are excluded and counted beside the figure, refunds reduce the month they land in, and the unclassified outgoing count is visible so assumed spending is not presented as fact.
 - **What is left against your plans:** each budget for the chosen month shows allocated, spent and remaining.
-- **What the figures cannot say:** an account with no declared opening or an incomplete period is named at the total with the way to fix it. A currency held only in recorded-only accounts shows a recorded subtotal marked as not a balance; nothing on it is labelled available. Accounts with no declared original currency show no total at all.
+- **What the figures cannot say:** an account with no declared opening or an incomplete period is named at the total with the way to fix it. A currency held only in recorded-only accounts shows a recorded subtotal marked as not a balance; nothing on it is labelled available. Ledgers that predate the original-currency column stay readable: their amounts are shown in the account's own currency and marked as an undeclared currency until one is set. Accounts with no declared original currency show no total at all.
 
 The overview reads aggregate queries per currency and dimension. It does not load the movement list.
 

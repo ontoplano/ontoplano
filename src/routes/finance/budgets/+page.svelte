@@ -3,7 +3,6 @@
 	import { armed } from '$lib/actions/armed';
 	import { typing } from '$lib/browse.svelte';
 	import { getAction } from '$lib/shortcuts';
-	import { setRoomAction } from '$lib/room-action.svelte';
 	import RoomSurface from '$lib/components/RoomSurface.svelte';
 	import Modal from '$lib/components/Modal.svelte';
 	import FormError from '$lib/components/FormError.svelte';
@@ -46,8 +45,6 @@
 		creating = false;
 	}
 
-	setRoomAction(() => ({ label: t('finance.budgets.new'), run: openNew, kbd: 'n' }));
-
 	function onkeydown(event: KeyboardEvent) {
 		if (typing(event) || event.ctrlKey || event.metaKey || event.altKey) return;
 		if (getAction('/finance/budgets', event) === 'new') {
@@ -62,46 +59,22 @@
 <svelte:head><title>{t('rooms.finance.tabs.budgets')}</title></svelte:head>
 
 <RoomSurface>
-	<div class="space-y-6" data-tour="budgets">
-		<div class="flex flex-wrap items-center justify-between gap-3">
-			<h1 class="text-xl font-semibold">{t('rooms.finance.tabs.budgets')}</h1>
-			<div class="flex flex-wrap items-center gap-2">
-				<form method="post" action="?/copy" use:enhance>
-					<input type="hidden" name="fromMonth" value={previousMonth} />
-					<input type="hidden" name="toMonth" value={data.month} />
-					<button type="submit" class="btn btn-sm">
-						{t('finance.budgets.copy')}
-					</button>
-				</form>
-				<button class="btn btn-sm btn-primary" onclick={openNew}>
-					{t('finance.budgets.new')}
-				</button>
-			</div>
-		</div>
-
-		<!-- Month & Currency GET selector -->
-		<form
-			method="get"
-			class="bg-surface-1 dark:bg-surface-2 flex flex-wrap items-center gap-3 rounded p-3"
-		>
-			<div class="flex items-center gap-2">
-				<label for="budget-month" class="text-sm font-medium">{t('finance.budgets.month')}</label>
+	{#snippet tools()}
+		<form method="get" class="flex flex-wrap items-center gap-2">
+			<label class="flex items-center gap-2 text-sm whitespace-nowrap">
+				{t('finance.budgets.month')}
 				<input
-					id="budget-month"
 					name="month"
 					type="month"
 					class="input input-sm"
 					value={data.month}
 					onchange={(e) => e.currentTarget.form?.requestSubmit()}
 				/>
-			</div>
+			</label>
 			{#if data.currencies.length > 0}
-				<div class="flex items-center gap-2">
-					<label for="budget-currency" class="text-sm font-medium"
-						>{t('finance.budgets.currency')}</label
-					>
+				<label class="flex items-center gap-2 text-sm whitespace-nowrap">
+					{t('finance.budgets.currency')}
 					<select
-						id="budget-currency"
 						name="currency"
 						class="input input-sm"
 						value={data.currency}
@@ -112,11 +85,26 @@
 							<option value={cur}>{cur}</option>
 						{/each}
 					</select>
-				</div>
+				</label>
 			{/if}
 		</form>
+	{/snippet}
 
-		<!-- Shared Progress Component -->
+	<div class="space-y-6 p-4" data-tour="budgets">
+		<div class="flex flex-wrap items-center justify-between gap-3">
+			<h1 class="text-xl font-semibold">{t('rooms.finance.tabs.budgets')}</h1>
+			<div class="flex flex-wrap items-center gap-2">
+				<form method="post" action="?/copy" use:enhance>
+					<input type="hidden" name="fromMonth" value={previousMonth} />
+					<input type="hidden" name="toMonth" value={data.month} />
+					<button type="submit" class="btn btn-sm">{t('finance.budgets.copy')}</button>
+				</form>
+				<button class="btn btn-sm btn-primary" onclick={openNew}>
+					{t('finance.budgets.new')}
+				</button>
+			</div>
+		</div>
+
 		<BudgetProgress budgets={data.budgets} />
 
 		<!-- Controls for each budget (edit, armed delete) -->
