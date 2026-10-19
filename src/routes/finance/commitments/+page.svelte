@@ -21,7 +21,8 @@
 	const label = (kind: (typeof KINDS)[number]) => t(`finance.commitments.${kind}` as PlainKey);
 	let creating = $state(false);
 	let editing = $state(false);
-	let formCurrency = $state('KES');
+	/* The account's own currency, never a guessed one: Preferences takes any ISO code. */
+	let formCurrency = $state(data.currency);
 	let confirming = $state<{
 		action: 'delete' | 'close' | 'deleteEntry';
 		id: number;

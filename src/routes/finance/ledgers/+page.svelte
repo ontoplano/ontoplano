@@ -996,7 +996,11 @@
 				return update({ reset: result.type === 'success' });
 			}}
 	>
-		<LedgerFields parsers={data.parsers} notebooks={data.notebooks} />
+		<LedgerFields
+			parsers={data.parsers}
+			notebooks={data.notebooks}
+			defaultCurrency={data.currency}
+		/>
 	</form>
 	{#snippet footer()}
 		<button class="btn" type="button" onclick={() => (showNewLedger = false)}
@@ -1026,7 +1030,12 @@
 				}}
 		>
 			<input type="hidden" name="id" value={editingLedger.id} />
-			<LedgerFields editing={editingLedger} parsers={data.parsers} notebooks={data.notebooks} />
+			<LedgerFields
+				editing={editingLedger}
+				parsers={data.parsers}
+				notebooks={data.notebooks}
+				defaultCurrency={data.currency}
+			/>
 		</form>
 	{/if}
 	{#snippet footer()}

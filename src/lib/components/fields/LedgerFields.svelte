@@ -34,12 +34,15 @@
 		parsers = [],
 		notebooks = [],
 		/** The notebook a ledger made from inside one belongs to. */
-		startingNotebook = null
+		startingNotebook = null,
+		/** The account's own currency, shown as an example rather than a claim. */
+		defaultCurrency = undefined
 	}: {
 		editing?: Editing;
 		parsers?: { key: string; name: string }[];
 		notebooks?: { id: number; title: string; modules: readonly string[] }[];
 		startingNotebook?: number | null;
+		defaultCurrency?: string;
 	} = $props();
 </script>
 
@@ -76,7 +79,7 @@
 			class="input"
 			value={editing?.currency ?? ''}
 			maxlength={3}
-			placeholder="KES"
+			placeholder={defaultCurrency || undefined}
 		/>
 	</Field>
 	<Field

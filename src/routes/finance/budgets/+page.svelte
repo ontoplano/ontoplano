@@ -271,7 +271,7 @@
 					required
 					value={editing && selectedBudget
 						? selectedBudget.currency
-						: data.currency || data.defaultCurrency || 'USD'}
+						: data.currency || data.defaultCurrency}
 				/>
 			</div>
 
