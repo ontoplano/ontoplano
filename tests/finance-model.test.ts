@@ -729,7 +729,7 @@ test('C11 — a repeated settlement request loses to a conflict; one movement, o
 	);
 	expect(() =>
 		commitments.settleCommitment(ctx, { commitmentId: payable.id, transactionId: competing })
-	).toThrow(/outstanding balance is 0/i);
+	).toThrow(/outstanding balance is .*0[.,]00/i);
 	expect(statements.getMovementRow(ctx, competing)!.allocations).toEqual([]);
 	expect(commitments.listCommitmentEntries(ctx, payable.id)).toHaveLength(
 		C.C11.expected.successfulSettlements

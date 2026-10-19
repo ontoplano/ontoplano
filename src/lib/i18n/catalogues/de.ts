@@ -935,7 +935,7 @@ export const messages: Catalogue = {
 	'finance.commitments.custody': 'Custody',
 	'finance.commitments.custodyHint': 'Money you hold for somebody else.',
 	'finance.commitments.deleteHint':
-		'Records with history archive first. Permanent deletion is only available from the archived view and refuses linked bank evidence.',
+		'Delete puts the record away first. Permanent deletion is only available from the archived view and refuses linked bank evidence.',
 	'finance.commitments.deletePermanently': 'Delete permanently',
 	'finance.commitments.edit': 'Edit commitment',
 	'finance.commitments.hint':

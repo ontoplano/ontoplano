@@ -39,7 +39,7 @@
 	"finance.commitments.person": "Person (optional)",
 	"finance.commitments.closeHint": "A nonzero stock needs an explicit write-off note. Closing never adjusts bank money.",
 	"finance.commitments.reverseHint": "This reverses the stock entry. The bank movement and any split stay intact; remove the split separately if needed.",
-	"finance.commitments.deleteHint": "Records with history archive first. Permanent deletion is only available from the archived view and refuses linked bank evidence.",
+	"finance.commitments.deleteHint": "Delete puts the record away first. Permanent deletion is only available from the archived view and refuses linked bank evidence.",
 	"finance.commitments.writeOffNote": "Authorize residual write-off with a note",
 	"finance.commitments.after": "Stock after payment",
 	"finance.commitments.consumeHint": "The reserve decreases once. The existing payment remains personal spending; no bank movement is created.",

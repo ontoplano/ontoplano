@@ -13,7 +13,7 @@ import {
 	ledgers,
 	people
 } from '$lib/db/schema.js';
-import { normaliseCurrency } from '../money.js';
+import { formatMoney, normaliseCurrency } from '../money.js';
 import { localDateOf, type Ctx } from './ctx.js';
 import { ConflictError, NotFoundError, ValidationError } from './errors.js';
 import { civilDay, minorAmount, num, oneOf, optionalStr, str } from './validate.js';
@@ -416,7 +416,7 @@ export function closeCommitment(
 			const note = optionalStr(input.writeOffNote, 'write-off note', { max: MAX_NOTE });
 			if (!note)
 				throw new ValidationError(
-					`The outstanding balance is ${stock.balanceMinor} minor units. An explicit write-off note is required.`
+					`The outstanding balance is ${formatMoney(stock.balanceMinor, stock.currency)}. An explicit write-off note is required.`
 				);
 			addCommitmentEntry(ctx, {
 				commitmentId: id,
@@ -452,11 +452,15 @@ export function deleteCommitment(
 				)
 			)
 			.get();
-		if (!options.permanent && (stock.entryCount || linked)) {
+		// Ordinary delete always puts the record away first, with or without
+		// history; permanent deletion is the explicit archived-view action the
+		// dialog describes. A no-history stock used to vanish from this button
+		// while the copy promised the archived view.
+		if (!options.permanent) {
 			archiveCommitment(ctx, id, true);
 			return;
 		}
-		if (options.permanent && stock.status !== 'archived')
+		if (stock.status !== 'archived')
 			throw new ValidationError('Archive this commitment before permanently deleting it.');
 		if (
 			linked ||
@@ -523,7 +527,7 @@ export function settleCommitment(
 			throw new ConflictError('This movement already settles a stock.');
 		if (Math.abs(movement.amountCents) > stock.balanceMinor)
 			throw new ValidationError(
-				`The outstanding balance is ${stock.balanceMinor} ${stock.currency} minor units. Record an explicit increase before overpaying.`
+				`The outstanding balance is ${formatMoney(stock.balanceMinor, stock.currency)}. Record an explicit increase before overpaying.`
 			);
 		if (stock.kind === 'receivable') {
 			return addCommitmentEntry(ctx, {

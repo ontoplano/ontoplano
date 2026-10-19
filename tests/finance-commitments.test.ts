@@ -289,7 +289,7 @@ test('a repeated settlement is a conflict and overpayment names the outstanding 
 	});
 	expect(() =>
 		stocks.settleCommitment(ctx, { commitmentId: stock.id, transactionId: overpay.id })
-	).toThrow(/900.*KES/);
+	).toThrow(/KES.*9[.,]00/);
 });
 
 test('account export/import remaps stock, person, movement and allocation links; deletion leaves the other owner intact', async () => {
@@ -326,4 +326,17 @@ test('account export/import remaps stock, person, movement and allocation links;
 		database.get('select count(*) as n from finance_commitment_entries where user_id = ?', STRANGER)
 	).toEqual({ n: 0 });
 	expect(stocks.getCommitment(ctx, stock.id).balanceMinor).toBe(900);
+});
+
+test('ordinary delete archives an untouched commitment; permanent delete is the archived step', () => {
+	const stock = stocks.createCommitment(ctx, {
+		name: 'Empty delete',
+		kind: 'custody',
+		currency: 'KES',
+		openingMinor: 0
+	});
+	stocks.deleteCommitment(ctx, stock.id);
+	expect(stocks.getCommitment(ctx, stock.id).status).toBe('archived');
+	expect(() => stocks.deleteCommitment(ctx, stock.id, { permanent: true })).not.toThrow();
+	expect(() => stocks.getCommitment(ctx, stock.id)).toThrow();
 });

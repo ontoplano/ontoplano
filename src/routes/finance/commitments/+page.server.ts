@@ -29,10 +29,13 @@ export const load = ({ locals, url }: IsolatedEvent) => {
 	const ctx = buildCtx(locals.user!.id);
 	const archived = url.searchParams.get('archived') === '1';
 	const asked = Number(url.searchParams.get('commitment') || 0);
-	const selected = asked ? getCommitment(ctx, asked) : null;
+	// A hand-edited id that is not this account's commitment is ignored, not a
+	// 500; the page then shows the list with nothing selected.
+	const all = listCommitments(ctx, { includeArchived: true });
+	const selected = asked ? (all.find((row) => row.id === asked) ?? null) : null;
 	const ledgers = listLedgers(ctx, { includeArchived: true });
 	return {
-		commitments: listCommitments(ctx, { includeArchived: archived }),
+		commitments: archived ? all : all.filter((row) => row.status === 'open'),
 		archived,
 		selected,
 		entries: selected ? listCommitmentEntries(ctx, selected.id) : [],
