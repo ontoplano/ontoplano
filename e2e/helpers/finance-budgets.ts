@@ -6,8 +6,8 @@ async function createBudget(page: Page, month: string, amount: string) {
 	await page.getByRole('button', { name: 'New budget', exact: true }).last().click();
 	const form = page.getByRole('dialog', { name: 'New budget', exact: true });
 	await form.getByLabel('Month', { exact: true }).fill(month);
-	await form.getByLabel('Category', { exact: true }).fill('Transport');
-	await form.getByLabel('Currency', { exact: true }).fill('KES');
+	await form.getByLabel('Category', { exact: true }).selectOption('Transport');
+	await form.getByLabel('Currency', { exact: true }).selectOption('KES');
 	await form.getByLabel('Allocated amount', { exact: true }).fill(amount);
 	await form.getByRole('button', { name: 'Create', exact: true }).click();
 	await expect(form).toBeHidden();
@@ -63,6 +63,7 @@ export async function budgetJourney(page: Page) {
 	await expect(page.getByTestId('budget-progress')).toContainText('2,000.00');
 	await expect(page.getByTestId('budget-progress')).toContainText('400.00');
 	await page.getByRole('button', { name: 'Copy from last month', exact: true }).click();
+	await expect(page.getByRole('status')).toContainText('Added');
 	await expect(page.getByTestId('budget-progress')).toContainText('2,000.00');
 	await expect(page.getByTestId('budget-progress')).not.toContainText('7,000.00');
 	await page.reload();
@@ -73,8 +74,25 @@ export async function budgetJourney(page: Page) {
 	await rename.locator('[name="heading"]').fill('Travel');
 	await rename.getByRole('button', { name: 'Save', exact: true }).click();
 	await expect(rename).toBeHidden();
+	// A deleted category is repairable in the dialog: it keeps the gone name
+	// as an option, says so, and offers the existing rules as the new value.
+	await visit(page, '/finance/rules');
+	await page.getByRole('button', { name: 'New category', exact: true }).click();
+	const travel = page.getByRole('dialog', { name: 'New rule', exact: true });
+	await travel.locator('[name="heading"]').fill('Food');
+	await travel.locator('[name="pattern"]').fill('Food');
+	await travel.getByRole('button', { name: 'Add', exact: true }).click();
+	await expect(travel).toBeHidden();
 	await visit(page, '/finance/budgets?month=2026-10');
 	await expect(page.getByTestId('budget-progress')).toContainText('Category no longer exists');
+	await page.getByRole('button', { name: 'Edit budget', exact: true }).click();
+	const repair = page.getByRole('dialog', { name: 'Edit budget', exact: true });
+	await expect(repair).toContainText('no longer exists');
+	await repair.getByLabel('Category', { exact: true }).selectOption('Food');
+	await repair.getByRole('button', { name: 'Save', exact: true }).click();
+	await expect(repair).toBeHidden();
+	await expect(page.getByTestId('budget-progress')).toContainText('Food');
+	await expect(page.getByTestId('budget-progress')).not.toContainText('Category no longer exists');
 	await page.getByRole('button', { name: 'Delete budget', exact: true }).click();
 	await expect(page.getByTestId('budget-progress')).toHaveCount(1);
 	await page.getByRole('button', { name: 'Delete', exact: true }).click();

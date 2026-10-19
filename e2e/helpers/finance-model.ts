@@ -278,8 +278,8 @@ async function createBudget(page: Page, month: string, amount: string) {
 		.click();
 	const form = page.getByRole('dialog', { name: 'New budget', exact: true });
 	await form.getByLabel('Month', { exact: true }).fill(month);
-	await form.getByLabel('Category', { exact: true }).fill('Support');
-	await form.getByLabel('Currency', { exact: true }).fill('KES');
+	await form.getByLabel('Category', { exact: true }).selectOption('Support');
+	await form.getByLabel('Currency', { exact: true }).selectOption('KES');
 	await form.getByLabel('Allocated amount', { exact: true }).fill(amount);
 	await form.getByRole('button', { name: 'Create', exact: true }).click();
 	await expect(form).toBeHidden();

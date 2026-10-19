@@ -12,13 +12,14 @@ until somebody writes one in `src/lib/tutorials.ts`. The same gap is visible
 in the app: the `?` button goes red on a screen with no tour and says so
 under the pointer.
 
-**24 of 25 screens have one.**
+**25 of 26 screens have one.**
 
 | Screen                               | Tour                           | Steps |
 | ------------------------------------ | ------------------------------ | ----- |
 | `/`                                  | tour.ontoplano                 | 8     |
 | `/admin`                             | **none**                       | —     |
 | `/finance/bills`                     | tour.bills                     | 3     |
+| `/finance/budgets`                   | rooms.finance.tabs.budgets     | 1     |
 | `/finance/commitments`               | rooms.finance.tabs.commitments | 4     |
 | `/finance/ledgers`                   | tour.ledgers                   | 5     |
 | `/finance/rules`                     | tour.rulesRoom                 | 4     |
@@ -46,7 +47,6 @@ Toured as well, though nothing obliges them to be — a screen reached from
 a link rather than from the navigation:
 
 - `/finance` — rooms.finance.tabs.overview
-- `/finance/budgets` — rooms.finance.tabs.budgets
 - `/media/audios` — tour.recordings
 - `/media/gallery` — tour.gallery
 - `/reminders` — tour.reminders

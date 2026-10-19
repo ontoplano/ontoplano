@@ -35,3 +35,25 @@ test('a partial budget form update retains currency precision and detects stale 
 	expect(stale).toMatchObject({ status: 409 });
 	expect(budgets.getBudget(ctx, row.id).amountMinor).toBe(2000);
 });
+
+test('creating from another month moves the list to the budget that was made', async () => {
+	let thrown: unknown;
+	try {
+		await actions.create(
+			event({
+				month: '2026-11',
+				category: 'Transport',
+				currency: 'KES',
+				amount: '30.00',
+				viewMonth: '2026-10',
+				viewCurrency: 'EUR'
+			})
+		);
+	} catch (error) {
+		thrown = error;
+	}
+	expect(thrown).toMatchObject({
+		status: 303,
+		location: '/finance/budgets?month=2026-11&currency=KES'
+	});
+});

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { resolve } from '$app/paths';
 	import { enhance } from '$lib/enhance';
 	import { armed } from '$lib/actions/armed';
 	import { typing } from '$lib/browse.svelte';
@@ -6,7 +7,6 @@
 	import RoomSurface from '$lib/components/RoomSurface.svelte';
 	import Modal from '$lib/components/Modal.svelte';
 	import FormError from '$lib/components/FormError.svelte';
-	import OneLine from '$lib/components/OneLine.svelte';
 	import BudgetProgress, { type BudgetRow } from '$lib/components/BudgetProgress.svelte';
 	import StatTiles from '$lib/components/StatTiles.svelte';
 	import EmptyState from '$lib/components/EmptyState.svelte';
@@ -38,18 +38,30 @@
 	let selectedBudget = $state<BudgetRow | null>(null);
 	let deletingId = $state<number | null>(null);
 
-	function getPreviousMonth(monthStr: string): string {
-		const parts = monthStr.split('-');
-		if (parts.length !== 2) return monthStr;
-		const y = Number(parts[0]);
-		const m = Number(parts[1]);
-		if (m === 1) {
-			return `${y - 1}-12`;
-		}
-		return `${y}-${String(m - 1).padStart(2, '0')}`;
-	}
-
-	const previousMonth = $derived(getPreviousMonth(data.month));
+	const categoryIsGone = $derived(
+		editing && selectedBudget ? !data.categories.includes(selectedBudget.category) : false
+	);
+	/** Ledgers decide which currencies a budget can use; an old budget in a
+	   currency whose ledger went away can still be repaired unchanged. */
+	const currencyChoices = $derived([
+		...data.currencies,
+		...(editing && selectedBudget && !data.currencies.includes(selectedBudget.currency)
+			? [selectedBudget.currency]
+			: [])
+	]);
+	const dialogCurrency = $derived(
+		editing && selectedBudget
+			? selectedBudget.currency
+			: data.currencies.includes(data.currency)
+				? data.currency
+				: data.currencies.includes(data.defaultCurrency)
+					? data.defaultCurrency
+					: (data.currencies[0] ?? '')
+	);
+	const canSave = $derived(
+		(data.categories.length > 0 || categoryIsGone) && currencyChoices.length > 0
+	);
+	const canCreate = $derived(data.categories.length > 0 && data.currencies.length > 0);
 
 	function openNew() {
 		selectedBudget = null;
@@ -113,15 +125,59 @@
 			<h1 class="text-xl font-semibold">{t('rooms.finance.tabs.budgets')}</h1>
 			<div class="flex flex-wrap items-center gap-2">
 				<form method="post" action="?/copy" use:enhance>
-					<input type="hidden" name="fromMonth" value={previousMonth} />
+					<input type="hidden" name="fromMonth" value={data.previousMonth} />
 					<input type="hidden" name="toMonth" value={data.month} />
-					<button type="submit" class="btn btn-sm">{t('finance.budgets.copy')}</button>
+					<button
+						type="submit"
+						class="btn btn-sm"
+						disabled={data.previousCount === 0}
+						title={data.previousCount === 0 ? t('finance.budgets.nothingToCopy') : ''}
+					>
+						{t('finance.budgets.copy')}
+					</button>
 				</form>
-				<button class="btn btn-sm btn-primary" onclick={openNew}>
+				<button
+					class="btn btn-sm btn-primary"
+					onclick={openNew}
+					disabled={!canCreate}
+					title={!canCreate
+						? data.categories.length === 0
+							? t('finance.budgets.noCategories')
+							: t('finance.budgets.noLedgerCurrency')
+						: ''}
+				>
 					{t('finance.budgets.new')}
 				</button>
 			</div>
 		</div>
+
+		{#if form && 'added' in form && 'skipped' in form}
+			<p class="text-sm text-gray-600" role="status">
+				{t('finance.budgets.copied', {
+					added: form.added ?? 0,
+					skipped: form.skipped ?? 0
+				})}
+			</p>
+		{/if}
+		{#if data.previousCount === 0}
+			<p class="text-xs text-gray-600">{t('finance.budgets.nothingToCopy')}</p>
+		{/if}
+		{#if data.categories.length === 0}
+			<p class="text-sm text-amber-700" role="status">
+				{t('finance.budgets.noCategories')}
+				<a class="underline" href={resolve('/finance/rules')}>
+					{t('finance.budgets.newCategory')}
+				</a>
+			</p>
+		{/if}
+		{#if data.currencies.length === 0}
+			<p class="text-sm text-amber-700" role="status">
+				{t('finance.budgets.noLedgerCurrency')}
+				<a class="underline" href={resolve('/finance/ledgers')}>
+					{t('finance.overview.declareCurrency')}
+				</a>
+			</p>
+		{/if}
 
 		{#if summary}
 			<StatTiles
@@ -152,7 +208,7 @@
 				description={t('finance.budgets.noBudgetsHint')}
 			>
 				{#snippet action()}
-					<button class="btn btn-sm btn-primary" onclick={openNew}>
+					<button class="btn btn-sm btn-primary" onclick={openNew} disabled={!canCreate}>
 						{t('finance.budgets.new')}
 					</button>
 				{/snippet}
@@ -217,7 +273,9 @@
 			action={editing ? '?/update' : '?/create'}
 			use:enhance={() =>
 				({ result, update }) => {
-					if (result.type === 'success') {
+					// A redirect is a successful create that also moves the list to
+					// the month/currency it landed in; close the dialog either way.
+					if (result.type === 'success' || result.type === 'redirect') {
 						creating = false;
 						editing = false;
 						selectedBudget = null;
@@ -230,6 +288,8 @@
 				<input type="hidden" name="id" value={selectedBudget.id} />
 				<input type="hidden" name="updatedAt" value={selectedBudget.updatedAt} />
 			{/if}
+			<input type="hidden" name="viewMonth" value={data.month} />
+			<input type="hidden" name="viewCurrency" value={data.currency} />
 
 			<div>
 				<label for="budget-form-month" class="label">{t('finance.budgets.month')}</label>
@@ -245,34 +305,62 @@
 
 			<div>
 				<label for="budget-form-category" class="label">{t('finance.budgets.category')}</label>
-				<input
+				<select
 					id="budget-form-category"
 					name="category"
-					type="text"
-					list="budget-categories"
 					class="input"
 					required
+					disabled={data.categories.length === 0 && !categoryIsGone}
 					value={editing && selectedBudget ? selectedBudget.category : ''}
-				/>
-				<datalist id="budget-categories">
+				>
+					<option value="" disabled>{t('finance.budgets.chooseCategory')}</option>
 					{#each data.categories as cat (cat)}
 						<option value={cat}>{cat}</option>
 					{/each}
-				</datalist>
+					{#if editing && selectedBudget && categoryIsGone}
+						<option value={selectedBudget.category}>
+							{selectedBudget.category} — {t('finance.budgets.orphaned')}
+						</option>
+					{/if}
+				</select>
+				<p class="mt-1 text-xs text-gray-600">
+					{t('finance.budgets.categoryHint')}
+					<a class="underline" href={resolve('/finance/rules')}>
+						{t('finance.budgets.newCategory')}
+					</a>
+				</p>
+				{#if categoryIsGone}
+					<p class="mt-1 text-sm text-amber-700">
+						{t('finance.budgets.categoryGone', { category: selectedBudget?.category ?? '' })}
+					</p>
+				{:else if data.categories.length === 0}
+					<p class="mt-1 text-sm text-amber-700">
+						{t('finance.budgets.noCategories')}
+					</p>
+				{/if}
 			</div>
 
 			<div>
 				<label for="budget-form-currency" class="label">{t('finance.budgets.currency')}</label>
-				<OneLine
+				<select
 					id="budget-form-currency"
 					name="currency"
 					class="input uppercase"
-					maxlength={3}
 					required
-					value={editing && selectedBudget
-						? selectedBudget.currency
-						: data.currency || data.defaultCurrency}
-				/>
+					disabled={currencyChoices.length === 0}
+					value={dialogCurrency}
+				>
+					<option value="" disabled>{t('finance.budgets.chooseCurrency')}</option>
+					{#each currencyChoices as cur (cur)}
+						<option value={cur}>
+							{cur}
+							{#if editing && selectedBudget && cur === selectedBudget.currency && !data.currencies.includes(cur)}
+								— {t('finance.budgets.noLedger')}
+							{/if}
+						</option>
+					{/each}
+				</select>
+				<p class="mt-1 text-xs text-gray-600">{t('finance.budgets.currencyNeedsLedger')}</p>
 			</div>
 
 			<div>
@@ -303,7 +391,7 @@
 				>
 					{t('finance.budgets.cancel')}
 				</button>
-				<button type="submit" class="btn btn-primary">
+				<button type="submit" class="btn btn-primary" disabled={!canSave}>
 					{editing ? t('finance.budgets.save') : t('finance.budgets.create')}
 				</button>
 			</div>

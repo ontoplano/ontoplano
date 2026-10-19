@@ -155,6 +155,10 @@ that wants paying on a day, which is why it rides the week and the
 reminders. So the page stays, reachable from Ledgers, and the money it
 describes is the money the statements will show arriving and leaving.
 
+### `/finance/budgets`
+
+The month before a `YYYY-MM` key, without going through a Date.
+
 ### `/finance/commitments`
 
 Stocks and their evidence, kept separate from bank balances and monthly budgets.

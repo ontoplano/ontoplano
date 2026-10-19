@@ -139,6 +139,7 @@ function fields(ctx: Ctx, input: BudgetInput, before?: StoredBudget) {
 	);
 	if (!currency) throw new ValidationError('Choose a valid original currency.');
 	if (
+		(before === undefined || currency !== before.currency) &&
 		!db
 			.select({ id: ledgers.id })
 			.from(ledgers)

@@ -4768,5 +4768,16 @@
 	"finance.overview.outsideCoverageOne": null,
 	"finance.overview.balanceDiffersOne": null,
 	"finance.overview.plansNeedCurrency": null,
-	"finance.overview.declareCurrency": null
+	"finance.overview.declareCurrency": null,
+	"finance.budgets.chooseCategory": null,
+	"finance.budgets.newCategory": null,
+	"finance.budgets.categoryHint": null,
+	"finance.budgets.categoryGone": null,
+	"finance.budgets.noCategories": null,
+	"finance.budgets.chooseCurrency": null,
+	"finance.budgets.currencyNeedsLedger": null,
+	"finance.budgets.noLedgerCurrency": null,
+	"finance.budgets.copied": null,
+	"finance.budgets.nothingToCopy": null,
+	"finance.budgets.noLedger": null
 }

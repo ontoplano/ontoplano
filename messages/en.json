@@ -4783,5 +4783,16 @@
 	"finance.overview.outsideCoverageOne": "Movements before the opening date on {count} account.",
 	"finance.overview.balanceDiffersOne": "Statement check that differs: {count}.",
 	"finance.overview.plansNeedCurrency": "Budgets are per currency; declare one on a ledger first.",
-	"finance.overview.declareCurrency": "Declare a currency"
+	"finance.overview.declareCurrency": "Declare a currency",
+	"finance.budgets.chooseCategory": "Choose a category…",
+	"finance.budgets.newCategory": "New category",
+	"finance.budgets.categoryHint": "Budgets use the category rules from the Rules tab.",
+	"finance.budgets.categoryGone": "{category} no longer exists. Choose an existing category or delete this budget.",
+	"finance.budgets.noCategories": "No category rules yet. Create one on the Rules tab first.",
+	"finance.budgets.chooseCurrency": "Choose a currency…",
+	"finance.budgets.currencyNeedsLedger": "Only currencies with a ledger can have a budget.",
+	"finance.budgets.noLedgerCurrency": "Budgets need a currency declared on a ledger.",
+	"finance.budgets.copied": "Added {added}, skipped {skipped} already there.",
+	"finance.budgets.nothingToCopy": "Nothing to copy from last month.",
+	"finance.budgets.noLedger": "no ledger"
 }
