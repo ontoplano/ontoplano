@@ -313,7 +313,8 @@
 					"movements",
 					"statement_months",
 					"spending_by_category",
-					"balance_checks"
+					"balance_checks",
+					"summary"
 				],
 				"change": [
 					"change_ledger",

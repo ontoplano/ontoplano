@@ -9,6 +9,7 @@
 	import OneLine from '$lib/components/OneLine.svelte';
 	import Card from '$lib/components/Card.svelte';
 	import { formatMoney } from '$lib/money';
+	import { minorAmount } from '$lib/services/validate';
 	import Icon from '$lib/components/Icon.svelte';
 	import FrontDoor from '$lib/components/FrontDoor.svelte';
 	import QuickCapture from '$lib/components/QuickCapture.svelte';
@@ -1273,6 +1274,72 @@
 			</Card>
 		{/snippet}
 
+		{#snippet card_moneyPicture()}
+			<Card title={t('app.moneyPicture')} accent={SECTION_COLORS.finance}>
+				{#snippet actions()}
+					{@render openLink(resolve('/finance'))}
+				{/snippet}
+				{#if !data.moneyPictureCard || data.moneyPictureCard.currencies.length === 0}
+					{@render nothingYet(
+						t('finance.overview.noAccounts'),
+						'/finance/ledgers',
+						t('finance.overview.addLedger')
+					)}
+				{:else}
+					<!-- The glance: the four answers, for each original currency
+					     separately. A recorded subtotal is never called a balance. -->
+					<ul class="dash-rows">
+						{#each data.moneyPictureCard.currencies as picture (`${picture.currency}`)}
+							<li class="dash-row">
+								<span class="min-w-0 flex-1 truncate">
+									{picture.currency ?? t('finance.insights.unspecified')}
+								</span>
+								<span class="dash-value">
+									{#if picture.currency === null}
+										{t('finance.overview.noCurrencyTotal')}
+									{:else if picture.fundsMinor !== null}
+										{formatMoney(picture.availableMinor ?? 0, picture.currency)}
+									{:else if picture.coverage.accounts > 0}
+										{formatMoney(picture.recordedOnlyMinor, picture.currency)} ·
+										{t('finance.ledgers.statusRecorded')}
+									{:else}
+										{t('finance.overview.noAccountsInCurrency')}
+									{/if}
+								</span>
+							</li>
+							<li class="dash-row text-xs text-gray-600">
+								<span class="min-w-0 flex-1 truncate">
+									{t('finance.overview.committed')}:
+									{picture.currency
+										? formatMoney(
+												minorAmount(picture.custodyMinor + picture.reservesMinor, 'committed'),
+												picture.currency
+											)
+										: '—'}
+									· {t('finance.overview.spent')}:
+									{picture.currency
+										? formatMoney(picture.spending.netMinor, picture.currency)
+										: '—'}
+									· {t('finance.overview.left')}:
+									{#if picture.currency && picture.budgets.length}
+										{formatMoney(
+											minorAmount(
+												picture.budgets.reduce((total, budget) => total + budget.remainingMinor, 0),
+												'budget left'
+											),
+											picture.currency
+										)}
+									{:else}
+										—
+									{/if}
+								</span>
+							</li>
+						{/each}
+					</ul>
+				{/if}
+			</Card>
+		{/snippet}
+
 		{#snippet card_workouts()}
 			<Card title={t('home.workouts')} accent={SECTION_COLORS.health}>
 				{#snippet actions()}
@@ -1505,6 +1572,7 @@
 						{:else if id === 'weekPie'}{@render card_weekPie()}
 						{:else if id === 'diary'}{@render card_diary()}
 						{:else if id === 'bills'}{@render card_bills()}
+						{:else if id === 'moneyPicture'}{@render card_moneyPicture()}
 						{:else if id === 'workouts'}{@render card_workouts()}
 						{:else if id === 'shoppingList'}{@render card_shopping()}
 						{:else if id === 'wishlist'}{@render card_wishlist()}

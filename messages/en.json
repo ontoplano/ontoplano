@@ -1,5 +1,8 @@
 {
-	"notify.noun.budget": { "one": "{count} budget", "other": "{count} budgets" },
+	"notify.noun.budget": {
+		"one": "{count} budget",
+		"other": "{count} budgets"
+	},
 	"rooms.finance.tabs.commitments": "Commitments",
 	"finance.commitments.new": "New commitment",
 	"finance.commitments.edit": "Edit commitment",
@@ -80,7 +83,10 @@
 	"tour.budgetsRoom": "Budgets",
 	"tour.budgetsTitle": "Monthly budgets",
 	"tour.budgetsBody": "Set category spending limits for each month and track remaining amounts.",
-	"notify.noun.commitment": { "one": "{count} commitment", "other": "{count} commitments" },
+	"notify.noun.commitment": {
+		"one": "{count} commitment",
+		"other": "{count} commitments"
+	},
 	"notify.noun.commitmentEntry": {
 		"one": "{count} commitment entry",
 		"other": "{count} commitment entries"
@@ -4683,7 +4689,10 @@
 	"finance.ledgers.noChecks": "No statement observations yet. Recording a check never creates an adjustment.",
 	"finance.ledgers.importRecordedOnly": "No opening is declared. Imported amounts are a recorded subtotal, not a supported balance.",
 	"finance.ledgers.coverageTour": "Declare the original currency and an opening date to support a balance. Statement closing checks show matches or differences without changing movements.",
-	"notify.noun.balanceCheck": { "one": "{count} balance check", "other": "{count} balance checks" },
+	"notify.noun.balanceCheck": {
+		"one": "{count} balance check",
+		"other": "{count} balance checks"
+	},
 	"finance.ledgers.assumed": "assumed from the sign",
 	"finance.ledgers.classifySelected": "Classify selected",
 	"finance.ledgers.counterpart": "The other side",
@@ -4728,5 +4737,38 @@
 		"one": "{count} transfer",
 		"other": "{count} transfers"
 	},
-	"errors.statements.alreadyChildLink": "That line already belongs to another line as a refund or a fee. Unlink it first."
+	"errors.statements.alreadyChildLink": "That line already belongs to another line as a refund or a fee. Unlink it first.",
+	"rooms.finance.tabs.overview": "Overview",
+	"finance.overview.available": "Available",
+	"finance.overview.committed": "Committed",
+	"finance.overview.spent": "Spent this month",
+	"finance.overview.left": "Left in plans",
+	"finance.overview.availableFormula": "Supported funds − held for others − set aside.",
+	"finance.overview.availableFormulaLong": "Supported funds {funds} − held for others {custody} − set aside {reserves}.",
+	"finance.overview.coverage": "{supported} of {accounts} accounts have a declared opening.",
+	"finance.overview.verified": "{count} checked against a statement",
+	"finance.overview.fixOpening": "Declare an opening",
+	"finance.overview.noAccounts": "No accounts yet",
+	"finance.overview.noAccountsBody": "Add a ledger in its original currency and import or write a statement. This screen answers the four money questions from those records.",
+	"finance.overview.addLedger": "Add a ledger",
+	"finance.overview.claimsBody": "Money owed to others and money owed to me are claims, not funds: neither is subtracted from available money.",
+	"finance.overview.payables": "Owed to others",
+	"finance.overview.receivables": "Owed to me",
+	"finance.overview.excluded": "Kept out of spending",
+	"finance.overview.nothingSpent": "Nothing personal was spent in {month}.",
+	"finance.overview.noPlans": "No plans for {month}.",
+	"finance.overview.setBudget": "Set a budget",
+	"finance.overview.forTheMonth": "For {month}",
+	"finance.overview.notABalance": "No declared opening, so this is not a balance.",
+	"finance.overview.missingOpening": "Accounts without a declared opening: {count}.",
+	"finance.overview.outsideCoverageTotal": "Accounts holding movements before their opening: {count}.",
+	"finance.overview.balanceDiffers": "Statement checks that differ: {count}.",
+	"finance.overview.overviewHint": "Four answers in one place: what is mine, what is committed, what I spent this month, and what is left against my plans. Every original currency stays separate.",
+	"app.moneyPicture": "Money picture",
+	"card.theFourAnswersAboutYourMoney": "What is mine, what is committed, what I spent this month, and what is left.",
+	"finance.overview.checkOpeningDate": "Check the opening date",
+	"finance.overview.noCurrencyTotal": "No currency total",
+	"finance.overview.noCurrencyBody": "These accounts have no original currency, so no total is shown.",
+	"finance.overview.noAccountsInCurrency": "No active account in this currency",
+	"finance.overview.noAccountsInCurrencyBody": "No active account holds a declared opening here; its movements are not a balance."
 }

@@ -196,6 +196,7 @@ import {
 	createRule,
 	deleteMovement,
 	deleteRule,
+	getMovementRow,
 	linkMovement,
 	linkTransfer,
 	listMovements,
@@ -246,6 +247,7 @@ import {
 	deleteBudget,
 	copyBudgets
 } from '$lib/services/budgets.js';
+import { moneyOverview } from '$lib/services/finance-summary.js';
 import { grouped, search } from '$lib/services/search.js';
 import {
 	changeItem,
@@ -6047,6 +6049,23 @@ export const TOOLS: Tool[] = [
 		run: (ctx, args) => ({ currencies: spending(ctx, statementFilter(args)) })
 	},
 	{
+		name: 'summary',
+		title: 'The money picture',
+		description:
+			'One answer to the four money questions — what is mine, what is committed, what I spent this month and what is left against my plans — for every original currency separately, never a combined total. Funds, stocks (custody, reserves, payables, receivables), personal spending with its exclusions, and the month’s budgets. Available is funds minus custody minus reserves, never payables or receivables. Gaps such as an account without a declared opening or unclassified lines are named, not hidden in a confident number.',
+		scope: 'statements:read',
+		writes: false,
+		input: object({
+			month: text('The civil month, YYYY-MM. Defaults to this month in the account timezone.'),
+			as_of: text('Inclusive balance date YYYY-MM-DD; defaults to today in the account timezone.')
+		}),
+		run: (ctx, args) =>
+			moneyOverview(ctx, {
+				month: args.month === undefined ? undefined : String(args.month),
+				asOf: args.as_of === undefined ? undefined : String(args.as_of)
+			})
+	},
+	{
 		name: 'commitments',
 		title: 'What you owe, hold and set aside',
 		description:
@@ -6656,6 +6675,17 @@ export const TOOLS: Tool[] = [
 		scope: 'statements:write',
 		writes: true,
 		refs: [{ arg: 'ids', kind: 'movement' }],
+		/*
+		 * A batch is still one answer about lines: `before` names the ones it
+		 * was told to change, `after` the same lines as they now stand. Without
+		 * this the protocol layer had no subject to read and answered both with
+		 * null — a wrong classification could be seen in the transcript but not
+		 * undone from it.
+		 */
+		subject: (ctx, args) =>
+			(Array.isArray(args.ids) ? args.ids : [])
+				.map((id) => getMovementRow(ctx, Number(id)))
+				.filter((row) => row !== null),
 		input: object(
 			{
 				ids: {

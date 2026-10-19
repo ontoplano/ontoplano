@@ -3948,6 +3948,21 @@
 			}
 		}
 	},
+	"summary": {
+		"scope": "statements:read",
+		"writes": false,
+		"destroys": false,
+		"params": {
+			"as_of": {
+				"type": "string",
+				"required": false
+			},
+			"month": {
+				"type": "string",
+				"required": false
+			}
+		}
+	},
 	"tag_task": {
 		"scope": "tasks:write",
 		"writes": true,

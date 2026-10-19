@@ -1802,25 +1802,25 @@ for (const [name, opening, observed] of [
  * Both signs as the app stores them: negative left the account, and a card
  * charge is money leaving whichever sign the export wrote it with.
  */
-const movement = (ledgerId, occurredOn, amountCents, description, n = 1) => {
+const movement = (ledgerId, occurredOn, amountCents, description, n = 1, extra = {}) => {
 	const fingerprint = `${ledgerId}|seed:${occurredOn}:${amountCents}:${description}:${n}`;
-	if (
-		one(
-			'select id from finance_transactions where user_id = ? and fingerprint = ?',
-			uid,
-			fingerprint
-		)
-	)
-		return;
-	run(
-		'insert into finance_transactions (user_id, ledger_id, occurred_on, amount_cents, description, source, fingerprint) values (?, ?, ?, ?, ?, ?, ?)',
+	const existing = one(
+		'select id from finance_transactions where user_id = ? and fingerprint = ?',
+		uid,
+		fingerprint
+	);
+	if (existing) return existing.id;
+	return run(
+		'insert into finance_transactions (user_id, ledger_id, occurred_on, amount_cents, description, source, fingerprint, kind, group_id) values (?, ?, ?, ?, ?, ?, ?, ?, ?)',
 		uid,
 		ledgerId,
 		occurredOn,
 		amountCents,
 		description,
 		'csv:columns',
-		fingerprint
+		fingerprint,
+		extra.kind ?? null,
+		extra.groupId ?? null
 	);
 };
 
@@ -1899,6 +1899,42 @@ db.transaction(() => {
 		line.id,
 		'Owner-approved synthetic offset'
 	);
+})();
+
+/*
+ * A move between two of the account's own ledgers (D2).
+ *
+ * Two legs share one `group_id` and both say `transfer`, so the overview can
+ * tell money that moved from money that was spent. Two ledgers of their own:
+ * the covered examples above are pinned to the statements they demonstrate,
+ * and moving money through one would change the balance it exists to show.
+ * Both legs are KES and add up to nothing, which is the invariant the app
+ * enforces when it pairs a transfer. Replay-safe like everything here: the
+ * fingerprints are fixed, so the second run finds both legs and writes nothing.
+ */
+db.transaction(() => {
+	const transferLedger = (name, opening) => {
+		const existing = one('select id from ledgers where user_id = ? and name = ?', uid, name);
+		if (existing) return existing.id;
+		const id = ledger(name, 'bank', 'csv:columns');
+		run(
+			'update ledgers set currency = ?, opening_minor = ?, opening_on = ? where user_id = ? and id = ?',
+			'KES',
+			opening,
+			'2026-09-01',
+			uid,
+			id
+		);
+		return id;
+	};
+	const from = transferLedger('Transfer source example', 200000);
+	const to = transferLedger('Transfer savings example', 0);
+	const groupId = 't:seed:synthetic-transfer-pair';
+	for (const [ledgerId, amount, description] of [
+		[from, -125000, 'Synthetic transfer to savings'],
+		[to, 125000, 'Synthetic transfer from current account']
+	])
+		movement(ledgerId, '2026-09-12', amount, description, 1, { kind: 'transfer', groupId });
 })();
 
 // The account, as a `date,amount,id,description` export reads it.

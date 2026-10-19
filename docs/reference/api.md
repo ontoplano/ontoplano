@@ -90,6 +90,11 @@ sentence somebody agrees to when they grant it.
 | `/api/v1/audio/[id]`                         | GET    | `audio:read`      |
 | `/api/v1/audio/[id]`                         | PATCH  | `audio:write`     |
 | `/api/v1/audio/[id]/file`                    | GET    | `audio:read`      |
+| `/api/v1/finance/budgets`                    | GET    | `statements:read` |
+| `/api/v1/finance/commitments`                | GET    | `statements:read` |
+| `/api/v1/finance/ledgers`                    | GET    | `statements:read` |
+| `/api/v1/finance/movements`                  | GET    | `statements:read` |
+| `/api/v1/finance/summary`                    | GET    | `statements:read` |
 | `/api/v1/inventory`                          | GET    | `inventory:read`  |
 | `/api/v1/inventory/items`                    | POST   | `inventory:write` |
 | `/api/v1/inventory/items/[id]/bought`        | POST   | `inventory:write` |
@@ -537,6 +542,66 @@ by the tab and nowhere else.
 ### `/api/v1/audio/[id]/file`
 
 **GET** — requires `audio:read`
+
+### `/api/v1/finance/budgets`
+
+Monthly ceilings with what is spent and left against them, for a script.
+
+One month, original currencies, never an exchange-rate total. The same
+numbers the Budgets screen shows: refund credits stay separate from income
+and an orphaned category stays visible.
+
+**GET** — requires `statements:read`
+
+### `/api/v1/finance/commitments`
+
+What the account owes, holds and has set aside, for a script.
+
+Stocks, not bank movements or budgets: custody, payables, receivables and
+reserves stay separate by kind and original currency, and the totals are the
+same ones the Commitments screen shows. Payables and receivables are never
+folded into available money.
+
+**GET** — requires `statements:read`
+
+### `/api/v1/finance/ledgers`
+
+Ledgers and their evidence status, for a script.
+
+The same rows the Ledgers screen draws, including archived ones — with
+`supportedMinor` null when no opening was declared, so a caller reads a gap
+rather than a number it can add up. `balanceCents` is left out: it is a
+recorded subtotal kept for old UI consumers, and a script reading a field
+with "balance" in its name is exactly the misreading this release removes.
+Read-only: writing stays with the app and the assistant in this release.
+
+**GET** — requires `statements:read`
+
+### `/api/v1/finance/movements`
+
+A page of statement lines, newest first, for a script.
+
+Bounded on purpose: `limit` defaults to 100 and cannot exceed it, and
+`cursor` is the id the previous page answered with. No call returns the
+whole history — a plugin polling a statement should not be able to pull a
+decade of lines, nor pay for sorting them.
+
+`ledger` narrows to one owned account. An id belonging to another account is
+answered exactly like one that does not exist, so the refusal says nothing
+about whose id it was.
+
+**GET** — requires `statements:read`
+
+### `/api/v1/finance/summary`
+
+The four money questions, for a script.
+
+The page's own figures through the page's own function: supported funds,
+committed stocks, this month's personal spending and its exclusions, and the
+month's budgets, each original currency separately. Gaps are named rather
+than hidden in a total. Read-only, like the rest of this family.
+
+**GET** — requires `statements:read`
 
 ### `/api/v1/inventory`
 

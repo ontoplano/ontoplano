@@ -169,6 +169,7 @@ export const messages: Catalogue = {
 	'app.manageYourPlan': 'Manage your plan',
 	'app.matchMyDevice': 'Match my device',
 	'app.monday': 'Monday',
+	'app.moneyPicture': 'Money picture',
 	'app.monthly': 'Monthly',
 	'app.move': 'move',
 	'app.neutral': 'Neutral',
@@ -348,6 +349,8 @@ export const messages: Catalogue = {
 	'card.oneOfYourOwnQuotes': 'One of your own quotes, the same one all day.',
 	'card.theBlockYouAreIn':
 		'The task block you are in, or the next one, and the two answers it wants.',
+	'card.theFourAnswersAboutYourMoney':
+		'What is mine, what is committed, what I spent this month, and what is left.',
 	'card.theHoursYouHaveTicked': 'The hours you have ticked off this week, by category.',
 	'card.theLastFewIdeasYou': 'The last few ideas you had.',
 	'card.theMostRecentThingsYou': 'The most recent things you wrote down, newest first.',
@@ -1086,6 +1089,43 @@ export const messages: Catalogue = {
 	'finance.ledgers.whatItIs': 'What it is',
 	'finance.monthBars.newest': 'Newest {shown} of {total} months',
 	'finance.monthlyBars.caption': 'net under each month',
+	'finance.overview.addLedger': 'Add a ledger',
+	'finance.overview.available': 'Available',
+	'finance.overview.availableFormula': 'Supported funds − held for others − set aside.',
+	'finance.overview.availableFormulaLong':
+		'Supported funds {funds} − held for others {custody} − set aside {reserves}.',
+	'finance.overview.balanceDiffers': 'Statement checks that differ: {count}.',
+	'finance.overview.checkOpeningDate': 'Check the opening date',
+	'finance.overview.claimsBody':
+		'Money owed to others and money owed to me are claims, not funds: neither is subtracted from available money.',
+	'finance.overview.committed': 'Committed',
+	'finance.overview.coverage': '{supported} of {accounts} accounts have a declared opening.',
+	'finance.overview.excluded': 'Kept out of spending',
+	'finance.overview.fixOpening': 'Declare an opening',
+	'finance.overview.forTheMonth': 'For {month}',
+	'finance.overview.left': 'Left in plans',
+	'finance.overview.missingOpening': 'Accounts without a declared opening: {count}.',
+	'finance.overview.noAccounts': 'No accounts yet',
+	'finance.overview.noAccountsBody':
+		'Add a ledger in its original currency and import or write a statement. This screen answers the four money questions from those records.',
+	'finance.overview.noAccountsInCurrency': 'No active account in this currency',
+	'finance.overview.noAccountsInCurrencyBody':
+		'No active account holds a declared opening here; its movements are not a balance.',
+	'finance.overview.noCurrencyBody':
+		'These accounts have no original currency, so no total is shown.',
+	'finance.overview.noCurrencyTotal': 'No currency total',
+	'finance.overview.noPlans': 'No plans for {month}.',
+	'finance.overview.notABalance': 'No declared opening, so this is not a balance.',
+	'finance.overview.nothingSpent': 'Nothing personal was spent in {month}.',
+	'finance.overview.outsideCoverageTotal':
+		'Accounts holding movements before their opening: {count}.',
+	'finance.overview.overviewHint':
+		'Four answers in one place: what is mine, what is committed, what I spent this month, and what is left against my plans. Every original currency stays separate.',
+	'finance.overview.payables': 'Owed to others',
+	'finance.overview.receivables': 'Owed to me',
+	'finance.overview.setBudget': 'Set a budget',
+	'finance.overview.spent': 'Spent this month',
+	'finance.overview.verified': '{count} checked against a statement',
 	'finance.rules.aCategory': 'Category: a line gets the first that matches',
 	'finance.rules.aLineBelongsToThe':
 		'A line belongs to the first category that matches, so the order below decides ties and the totals always add up.',
@@ -2987,6 +3027,7 @@ export const messages: Catalogue = {
 	'rooms.finance.tabs.commitments': 'Commitments',
 	'rooms.finance.tabs.insights': 'Insights',
 	'rooms.finance.tabs.ledgers': 'Ledgers',
+	'rooms.finance.tabs.overview': 'Overview',
 	'rooms.finance.tabs.rules': 'Rules',
 	'rooms.finance.title': 'Finance',
 	'rooms.goals.sections': 'Goals sections',

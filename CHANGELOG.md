@@ -18,6 +18,12 @@ the shape of the data changing. Bumping the minor per batch is what ran this
 file to 0.161 in a few months, which tells a reader nothing about which
 releases mattered.
 
+## 0.186.3 — 2026-10-19
+
+- Finance now opens with one money picture: what is yours, what is committed, what you spent this month and what is left against your plans. Each currency stands on its own, and a missing opening or incomplete period is named at the total instead of guessed.
+- Scripts and assistants can read that picture, and the ledgers, movements, budgets and commitments behind it, with a `statements:read` token. Finance reads have no write endpoints in this release.
+- Account export, import and deletion now carry budgets, commitments, commitment history, balance checks and splits. The development seed shows each of them, including a transfer between two owned accounts, and the finance guide covers the overview and the read-only API.
+
 ## 0.186.2 — 2026-10-18
 
 - Finance commitments track money you hold for someone, money you owe, money owed to you and money set aside, with dated history. A mixed bank line can be split into personal and custody parts without changing the bank amount; only the personal part counts as spending.

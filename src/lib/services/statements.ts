@@ -9,7 +9,18 @@
  * than a sum. A rule written today therefore sorts last year's lines, with
  * no resweep and nothing stored to drift.
  */
-import { and, desc, eq, getTableColumns, gte, inArray, isNotNull, ne, sql } from 'drizzle-orm';
+import {
+	and,
+	desc,
+	eq,
+	getTableColumns,
+	gte,
+	inArray,
+	isNotNull,
+	ne,
+	sql,
+	type SQL
+} from 'drizzle-orm';
 
 import { COLOUR_PALETTE } from '../colors.js';
 import { db } from '$lib/db/index.js';
@@ -1094,7 +1105,34 @@ export type MovementFilter = {
 	limit?: number;
 };
 
-export function listMovements(ctx: Ctx, filter: MovementFilter = {}): Movement[] {
+/** One statement line as both the whole list and a bounded page read it. */
+type MovementRow = typeof financeTransactions.$inferSelect & { commitmentEntryId: number | null };
+
+function movementRows(ctx: Ctx, where: SQL[], limit?: number): MovementRow[] {
+	const query = db
+		.select({
+			...getTableColumns(financeTransactions),
+			/** One entry per line at most: a split or a settlement writes it. */
+			commitmentEntryId: sql<number | null>`(
+				select e.id from finance_commitment_entries e
+				where e.user_id = ${ctx.userId} and e.transaction_id = ${financeTransactions.id}
+				limit 1
+			)`
+		})
+		.from(financeTransactions)
+		.where(and(...where))
+		.orderBy(desc(financeTransactions.occurredOn), desc(financeTransactions.id));
+	return limit === undefined ? query.all() : query.limit(limit).all();
+}
+
+/**
+ * Rows as the screen draws them: category, tags, allocations, counterpart state.
+ *
+ * Split out so a bounded page and the whole list cannot drift apart — a second
+ * shaping would be a second answer to "what is this line", which is how the
+ * same movement ends up described differently on two surfaces.
+ */
+function shapedMovements(ctx: Ctx, rows: MovementRow[], boundedPage = false): Movement[] {
 	const rules = rawRules(ctx);
 	const names = new Map(
 		db
@@ -1105,6 +1143,88 @@ export function listMovements(ctx: Ctx, filter: MovementFilter = {}): Movement[]
 			.map((l) => [l.id, l.name])
 	);
 
+	/*
+	 * A bounded page names its own rows in the `inArray`; the whole list reads
+	 * them account-wide. The split matters: SQLite binds one parameter per id,
+	 * and the whole history of a busy ledger passes its parameter ceiling.
+	 * (Epic 4's proof creates 100,001 lines in one ledger.)
+	 */
+	const allocations = new Map<number, MovementAllocation[]>();
+	if (rows.length) {
+		const parts = boundedPage
+			? db
+					.select()
+					.from(financeTransactionAllocations)
+					.where(
+						and(
+							eq(financeTransactionAllocations.userId, ctx.userId),
+							inArray(
+								financeTransactionAllocations.transactionId,
+								rows.map((r) => r.id)
+							)
+						)
+					)
+					.orderBy(financeTransactionAllocations.id)
+			: db
+					.select()
+					.from(financeTransactionAllocations)
+					.where(eq(financeTransactionAllocations.userId, ctx.userId))
+					.orderBy(financeTransactionAllocations.id);
+		for (const part of parts.all()) {
+			const held = allocations.get(part.transactionId) ?? [];
+			held.push(part);
+			allocations.set(part.transactionId, held);
+		}
+	}
+	// How many legs each group has — counted over the account, not the page,
+	// so a filtered list still knows a counterpart exists. Accounts with no
+	// transfers pay nothing for this.
+	const groupSize = new Map<string, number>();
+	if (rows.some((r) => r.groupId))
+		for (const r of db
+			.select({ groupId: financeTransactions.groupId, id: financeTransactions.id })
+			.from(financeTransactions)
+			.where(
+				and(eq(financeTransactions.userId, ctx.userId), isNotNull(financeTransactions.groupId))
+			)
+			.all())
+			groupSize.set(r.groupId!, (groupSize.get(r.groupId!) ?? 0) + 1);
+	return rows.map((r) => {
+		const sorted = sortDescription(rules, r.description);
+		const parts = allocations.get(r.id) ?? [];
+		// A splinter's own category is what Insights counts, so the list and
+		// the "uncategorized" count use it too rather than showing the line
+		// as unsorted on two screens and sorted on a third.
+		const override =
+			parts.find((part) => part.kind === 'personal' && part.category)?.category ?? null;
+		const categoryColor = override
+			? (rules.find((rule) => rule.kind === 'category' && rule.name === override)?.color ?? null)
+			: sorted.categoryColor;
+		return {
+			id: r.id,
+			ledgerId: r.ledgerId,
+			ledgerName: r.ledgerId === null ? null : (names.get(r.ledgerId) ?? null),
+			occurredOn: r.occurredOn,
+			amountCents: r.amountCents,
+			description: r.description,
+			source: r.source,
+			kind: (r.kind as MovementKind | null) ?? null,
+			groupId: r.groupId,
+			// A line marked as a transfer has no group until it is paired, and
+			// that is exactly the state the screen must name.
+			counterpartPending:
+				r.kind === 'transfer' && (r.groupId === null || (groupSize.get(r.groupId) ?? 0) < 2),
+			parentId: r.parentId,
+			category: override ?? sorted.category,
+			categoryColor,
+			tags: sorted.tags,
+			allocations: parts,
+			commitmentEntryId: r.commitmentEntryId
+		};
+	});
+}
+
+export function listMovements(ctx: Ctx, filter: MovementFilter = {}): Movement[] {
 	const where = [eq(financeTransactions.userId, ctx.userId)];
 	if (filter.ledgerId) where.push(eq(financeTransactions.ledgerId, filter.ledgerId));
 	if (filter.from) where.push(gte(financeTransactions.occurredOn, civilDay(filter.from)));
@@ -1120,48 +1240,10 @@ export function listMovements(ctx: Ctx, filter: MovementFilter = {}): Movement[]
 		);
 	}
 
-	const rows = db
-		.select({
-			...getTableColumns(financeTransactions),
-			/** One entry per line at most: a split or a settlement writes it. */
-			commitmentEntryId: sql<number | null>`(
-				select e.id from finance_commitment_entries e
-				where e.user_id = ${ctx.userId} and e.transaction_id = ${financeTransactions.id}
-				limit 1
-			)`
-		})
-		.from(financeTransactions)
-		.where(and(...where))
-		.orderBy(desc(financeTransactions.occurredOn), desc(financeTransactions.id))
-		.all();
-
 	const text = filter.query?.trim().toLowerCase();
-	const allocations = new Map<number, MovementAllocation[]>();
-	if (rows.length)
-		for (const part of db
-			.select()
-			.from(financeTransactionAllocations)
-			.where(eq(financeTransactionAllocations.userId, ctx.userId))
-			.orderBy(financeTransactionAllocations.id)
-			.all()) {
-			const parts = allocations.get(part.transactionId) ?? [];
-			parts.push(part);
-			allocations.set(part.transactionId, parts);
-		}
-	// How many legs each group has — counted over the account, not the page,
-	// so a filtered list still knows a counterpart exists. Accounts with no
-	// transfers pay nothing for this.
-	const groupSize = new Map<string, number>();
-	if (rows.some((r) => r.groupId))
-		for (const r of db
-			.select({ groupId: financeTransactions.groupId, id: financeTransactions.id })
-			.from(financeTransactions)
-			.where(
-				and(eq(financeTransactions.userId, ctx.userId), isNotNull(financeTransactions.groupId))
-			)
-			.all())
-			groupSize.set(r.groupId!, (groupSize.get(r.groupId!) ?? 0) + 1);
-	const movements = rows
+	// Rows narrow before the rules describe them: a one-month drill-down must
+	// not run every category and tag pattern over the whole history.
+	const rows = movementRows(ctx, where)
 		.filter((r) => !filter.month || r.occurredOn.startsWith(filter.month))
 		.filter((r) => !filter.to || r.occurredOn <= filter.to)
 		.filter((r) => !text || r.description.toLowerCase().includes(text))
@@ -1171,45 +1253,69 @@ export function listMovements(ctx: Ctx, filter: MovementFilter = {}): Movement[]
 				: filter.direction === 'out'
 					? r.amountCents < 0
 					: true
-		)
-		.map((r) => {
-			const sorted = sortDescription(rules, r.description);
-			const parts = allocations.get(r.id) ?? [];
-			// A splinter's own category is what Insights counts, so the list and
-			// the "uncategorized" count use it too rather than showing the line
-			// as unsorted on two screens and sorted on a third.
-			const override =
-				parts.find((part) => part.kind === 'personal' && part.category)?.category ?? null;
-			const categoryColor = override
-				? (rules.find((rule) => rule.kind === 'category' && rule.name === override)?.color ?? null)
-				: sorted.categoryColor;
-			return {
-				id: r.id,
-				ledgerId: r.ledgerId,
-				ledgerName: r.ledgerId === null ? null : (names.get(r.ledgerId) ?? null),
-				occurredOn: r.occurredOn,
-				amountCents: r.amountCents,
-				description: r.description,
-				source: r.source,
-				kind: (r.kind as MovementKind | null) ?? null,
-				groupId: r.groupId,
-				// A line marked as a transfer has no group until it is paired, and
-				// that is exactly the state the screen must name.
-				counterpartPending:
-					r.kind === 'transfer' && (r.groupId === null || (groupSize.get(r.groupId) ?? 0) < 2),
-				parentId: r.parentId,
-				category: override ?? sorted.category,
-				categoryColor,
-				tags: sorted.tags,
-				allocations: parts,
-				commitmentEntryId: r.commitmentEntryId
-			};
-		})
+		);
+	return shapedMovements(ctx, rows)
 		.filter((m) => !filter.category || (m.category ?? UNCATEGORIZED) === filter.category)
 		.filter((m) => !filter.tag || m.tags.some((t) => t.name === filter.tag))
 		.slice(0, filter.limit ?? 1000);
+}
 
-	return movements;
+/** The most lines one page may hold. A caller cannot ask for the whole history. */
+export const MOVEMENT_PAGE_MAX = 100;
+
+export type MovementPage = { movements: Movement[]; nextCursor: number | null };
+
+/**
+ * One bounded page of statement lines, newest first.
+ *
+ * A page, not a figure: `limit` is clamped and `beforeId` is the cursor the
+ * previous page answered with, so walking the history never loads all of it.
+ * The values are `listMovements`' own — same category, tags, allocations and
+ * counterpart state — because the API and the screen must tell one story.
+ *
+ * `beforeId` is the id of the last line already read; the keyset is that line's
+ * place in the order, not the id alone, so an import backdating a line cannot
+ * make a page skip or repeat a row.
+ */
+export function listMovementPage(
+	ctx: Ctx,
+	opts: { limit?: number; beforeId?: number; ledgerId?: number | null; month?: string } = {}
+): MovementPage {
+	const limit = Math.min(
+		Math.max(Math.trunc(opts.limit ?? MOVEMENT_PAGE_MAX) || MOVEMENT_PAGE_MAX, 1),
+		MOVEMENT_PAGE_MAX
+	);
+	const where: SQL[] = [eq(financeTransactions.userId, ctx.userId)];
+	if (opts.ledgerId !== undefined && opts.ledgerId !== null)
+		where.push(eq(financeTransactions.ledgerId, opts.ledgerId));
+	if (opts.month !== undefined && opts.month !== '') {
+		civilDay(`${opts.month}-01`, 'month');
+		where.push(gte(financeTransactions.occurredOn, `${opts.month}-01`));
+		where.push(sql`${financeTransactions.occurredOn} <= ${`${opts.month}-31`}`);
+	}
+	if (opts.beforeId !== undefined) {
+		const beforeId = num(opts.beforeId, 'cursor', { int: true, min: 1 });
+		const anchor = db
+			.select({
+				occurredOn: financeTransactions.occurredOn,
+				id: financeTransactions.id
+			})
+			.from(financeTransactions)
+			.where(and(eq(financeTransactions.id, beforeId), eq(financeTransactions.userId, ctx.userId)))
+			.get();
+		if (!anchor) throw new NotFoundError('movement');
+		where.push(
+			sql`(${financeTransactions.occurredOn} < ${anchor.occurredOn}
+				or (${financeTransactions.occurredOn} = ${anchor.occurredOn}
+				and ${financeTransactions.id} < ${anchor.id}))`
+		);
+	}
+	const rows = movementRows(ctx, where, limit + 1);
+	const page = rows.slice(0, limit);
+	return {
+		movements: shapedMovements(ctx, page, true),
+		nextCursor: rows.length > limit ? page[page.length - 1].id : null
+	};
 }
 
 /** A line a meaning can point at: a transfer's other side, a refund's expense. */

@@ -11,7 +11,7 @@ own write surface, the way the endpoints in [the API](api.md) are the
 write surface for everything else; both end up calling the same
 [services](services.md).
 
-**69 pages, 240 actions.**
+**70 pages, 240 actions.**
 
 | Page                                 | Actions                                                                                                                                                                                                                                                                                                                                                                                              |
 | ------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -23,6 +23,7 @@ write surface for everything else; both end up calling the same
 | `/data/[slug]`                       | —                                                                                                                                                                                                                                                                                                                                                                                                    |
 | `/demo`                              | `default`                                                                                                                                                                                                                                                                                                                                                                                            |
 | `/demo/isolated-db`                  | —                                                                                                                                                                                                                                                                                                                                                                                                    |
+| `/finance`                           | —                                                                                                                                                                                                                                                                                                                                                                                                    |
 | `/finance/bills`                     | —                                                                                                                                                                                                                                                                                                                                                                                                    |
 | `/finance/budgets`                   | `create`, `update`, `delete`, `copy`                                                                                                                                                                                                                                                                                                                                                                 |
 | `/finance/commitments`               | `create`, `update`, `archive`, `close`, `delete`, `addEntry`, `deleteEntry`, `settle`, `consume`                                                                                                                                                                                                                                                                                                     |
@@ -138,6 +139,13 @@ slow site rather than as something being built for you.
 So the wait has a screen. It also has somewhere to go: with the work behind
 a page the visitor is already looking at, the seed can be made slower under
 load without anybody experiencing a hang.
+
+### `/finance`
+
+The money picture.
+
+One month at a time, every original currency separately. The month is the
+one asked for; with none, the account's own current month, not the box's.
 
 ### `/finance/bills`
 

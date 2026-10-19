@@ -61,7 +61,7 @@ test('the todo page runs against the device, and the server never hears of it', 
 		['Calendar', '/tasks/calendar'],
 		['Notebooks', '/notebooks'],
 		['Inventory', '/inventory/stock'],
-		['Finance', '/finance/ledgers'],
+		['Finance', '/finance'],
 		['Health', '/health/habits'],
 		// The wordmark is the desktop way home; the Home tab lives in the
 		// phone's bottom bar.

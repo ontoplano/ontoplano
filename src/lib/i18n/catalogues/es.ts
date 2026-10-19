@@ -175,6 +175,7 @@ export const messages: Catalogue = {
 	'app.manageYourPlan': 'Gestionar tu plan',
 	'app.matchMyDevice': 'Igual que mi dispositivo',
 	'app.monday': 'Lunes',
+	'app.moneyPicture': 'Money picture',
 	'app.monthly': 'Mensual',
 	'app.move': 'mover',
 	'app.neutral': 'Neutro',
@@ -355,6 +356,8 @@ export const messages: Catalogue = {
 	'card.oneOfYourOwnQuotes': 'Una de tus propias citas, la misma durante todo el día.',
 	'card.theBlockYouAreIn':
 		'El bloque de tarea en el que estás, o el siguiente, y las dos respuestas que pide.',
+	'card.theFourAnswersAboutYourMoney':
+		'What is mine, what is committed, what I spent this month, and what is left.',
 	'card.theHoursYouHaveTicked': 'Las horas que has completado esta semana, por categoría.',
 	'card.theLastFewIdeasYou': 'Las últimas ideas que tuviste.',
 	'card.theMostRecentThingsYou': 'Lo último que escribiste, lo más reciente primero.',
@@ -1120,6 +1123,43 @@ export const messages: Catalogue = {
 	'finance.ledgers.whatItIs': 'Qué es',
 	'finance.monthBars.newest': 'Los {shown} meses más recientes de {total}',
 	'finance.monthlyBars.caption': 'neto debajo de cada mes',
+	'finance.overview.addLedger': 'Add a ledger',
+	'finance.overview.available': 'Available',
+	'finance.overview.availableFormula': 'Supported funds − held for others − set aside.',
+	'finance.overview.availableFormulaLong':
+		'Supported funds {funds} − held for others {custody} − set aside {reserves}.',
+	'finance.overview.balanceDiffers': 'Statement checks that differ: {count}.',
+	'finance.overview.checkOpeningDate': 'Check the opening date',
+	'finance.overview.claimsBody':
+		'Money owed to others and money owed to me are claims, not funds: neither is subtracted from available money.',
+	'finance.overview.committed': 'Committed',
+	'finance.overview.coverage': '{supported} of {accounts} accounts have a declared opening.',
+	'finance.overview.excluded': 'Kept out of spending',
+	'finance.overview.fixOpening': 'Declare an opening',
+	'finance.overview.forTheMonth': 'For {month}',
+	'finance.overview.left': 'Left in plans',
+	'finance.overview.missingOpening': 'Accounts without a declared opening: {count}.',
+	'finance.overview.noAccounts': 'No accounts yet',
+	'finance.overview.noAccountsBody':
+		'Add a ledger in its original currency and import or write a statement. This screen answers the four money questions from those records.',
+	'finance.overview.noAccountsInCurrency': 'No active account in this currency',
+	'finance.overview.noAccountsInCurrencyBody':
+		'No active account holds a declared opening here; its movements are not a balance.',
+	'finance.overview.noCurrencyBody':
+		'These accounts have no original currency, so no total is shown.',
+	'finance.overview.noCurrencyTotal': 'No currency total',
+	'finance.overview.noPlans': 'No plans for {month}.',
+	'finance.overview.notABalance': 'No declared opening, so this is not a balance.',
+	'finance.overview.nothingSpent': 'Nothing personal was spent in {month}.',
+	'finance.overview.outsideCoverageTotal':
+		'Accounts holding movements before their opening: {count}.',
+	'finance.overview.overviewHint':
+		'Four answers in one place: what is mine, what is committed, what I spent this month, and what is left against my plans. Every original currency stays separate.',
+	'finance.overview.payables': 'Owed to others',
+	'finance.overview.receivables': 'Owed to me',
+	'finance.overview.setBudget': 'Set a budget',
+	'finance.overview.spent': 'Spent this month',
+	'finance.overview.verified': '{count} checked against a statement',
 	'finance.rules.aCategory': 'Categoría: una línea recibe la primera que coincida',
 	'finance.rules.aLineBelongsToThe':
 		'Una línea pertenece a la primera categoría que coincide, así que el orden de abajo decide los empates y los totales siempre cuadran.',
@@ -3076,6 +3116,7 @@ export const messages: Catalogue = {
 	'rooms.finance.tabs.commitments': 'Commitments',
 	'rooms.finance.tabs.insights': 'Análisis',
 	'rooms.finance.tabs.ledgers': 'Movimientos',
+	'rooms.finance.tabs.overview': 'Overview',
 	'rooms.finance.tabs.rules': 'Reglas',
 	'rooms.finance.title': 'Finanzas',
 	'rooms.goals.sections': 'Secciones de metas',

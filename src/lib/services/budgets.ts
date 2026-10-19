@@ -6,7 +6,7 @@ import { normaliseCurrency } from '../money.js';
 import { localDateOf, type Ctx } from './ctx.js';
 import { ConflictError, NotFoundError, ValidationError } from './errors.js';
 import { civilDay, minorAmount, num, str } from './validate.js';
-import { spending, MAX_RULE_NAME_LENGTH } from './statements.js';
+import { spending, MAX_RULE_NAME_LENGTH, type Spending } from './statements.js';
 import { stamps } from './time.js';
 
 type StoredBudget = typeof financeBudgets.$inferSelect;
@@ -45,7 +45,9 @@ function owned(ctx: Ctx, id: number): StoredBudget {
 	return found;
 }
 
-function progress(ctx: Ctx, rows: StoredBudget[]): Budget[] {
+/** `spent` is the same month's personal spending already read by a caller that
+ * needs both figures — one grouped read, not two (D11). */
+function progress(ctx: Ctx, rows: StoredBudget[], spent?: Spending[]): Budget[] {
 	const categories = new Set(
 		db
 			.select({ name: financeRules.name })
@@ -55,7 +57,10 @@ function progress(ctx: Ctx, rows: StoredBudget[]): Budget[] {
 			.map((row) => row.name)
 	);
 	const months = new Map(
-		[...new Set(rows.map((row) => row.month))].map((month) => [month, spending(ctx, { month })])
+		[...new Set(rows.map((row) => row.month))].map((month) => [
+			month,
+			spent ?? spending(ctx, { month })
+		])
 	);
 	return rows.map((row) => {
 		const net =
@@ -77,7 +82,8 @@ function progress(ctx: Ctx, rows: StoredBudget[]): Budget[] {
 
 export function listBudgets(
 	ctx: Ctx,
-	filter: { month?: string; currency?: string } = {}
+	filter: { month?: string; currency?: string } = {},
+	spent?: Spending[]
 ): Budget[] {
 	const where = [
 		eq(financeBudgets.userId, ctx.userId),
@@ -95,7 +101,8 @@ export function listBudgets(
 			.from(financeBudgets)
 			.where(and(...where))
 			.orderBy(financeBudgets.currency, financeBudgets.category, financeBudgets.id)
-			.all()
+			.all(),
+		spent
 	);
 }
 

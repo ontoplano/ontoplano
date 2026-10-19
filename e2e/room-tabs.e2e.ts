@@ -72,9 +72,10 @@ test.describe('on a phone', () => {
 		await swipe(page, 100, 320);
 		await expect(page).toHaveURL(/\/finance\/ledgers/);
 
-		// And it stops at the end rather than wrapping round.
+		// And it stops at the end rather than wrapping round: Ledgers' own
+		// previous tab is the room's money picture.
 		await swipe(page, 100, 320);
-		await expect(page).toHaveURL(/\/finance\/ledgers/);
+		await expect(page).toHaveURL(/\/finance(\?|$)/);
 	});
 
 	/**

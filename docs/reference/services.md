@@ -48,6 +48,7 @@ shows up here on the next build.
 | [`entry-actions`](#entry-actions)                | Several notes at once, from wherever they are listed.                                                                                                                                                                                                                |
 | [`errors`](#errors)                              | Typed errors thrown by service functions.                                                                                                                                                                                                                            |
 | [`family-invite`](#family-invite)                | Inviting somebody to the plan, and the account that makes for them.                                                                                                                                                                                                  |
+| [`finance-summary`](#finance-summary)            | The four questions, answered once.                                                                                                                                                                                                                                   |
 | [`gallery`](#gallery)                            | Albums: lists of references over the one media table.                                                                                                                                                                                                                |
 | [`goal-actions`](#goal-actions)                  | Everything done to a goal, from wherever a goal is shown.                                                                                                                                                                                                            |
 | [`goals`](#goals)                                | Goals, and the progress that makes them more than a wish list.                                                                                                                                                                                                       |
@@ -191,7 +192,7 @@ Everything the account owns, as plain JSON.
 Deliberately the raw rows rather than a prettied-up shape: an export is for
 being complete and re-importable, not for reading nicely.
 
-/** "in about 7 hours", for a message a person reads once and acts on.
+/\*\* "in about 7 hours", for a message a person reads once and acts on.
 
 #### `accountRow(userId)`
 
@@ -1346,7 +1347,7 @@ Monthly ceilings share statement spending; they never write a bank or stock entr
 
 #### `budgetMonth(value)`
 
-#### `listBudgets(ctx, filter)`
+#### `listBudgets(ctx, filter, spent)`
 
 #### `getBudget(ctx, id)`
 
@@ -1957,6 +1958,40 @@ one the funnel already has.
 Creation is only offered where registration is open. On an invite-only or
 closed instance a payer typing addresses must not be a way to mint
 accounts, so those fall back to the old rule: the account has to exist.
+
+## finance-summary
+
+The four questions, answered once.
+
+What is mine, what is committed, what I spent this month, and what is left
+against my plans — for every original currency separately, because §4 says
+currencies never add (D6) and because a total that mixes them is a total
+nobody can act on.
+
+This module does no arithmetic of its own beyond the cross-room formulas in
+`architecture.md` §4: supported funds come from `ledgers.ts` (D5), spending
+from `statements.ts` (D4), budgets from `budgets.ts` (D7), stocks from
+`commitments.ts` (D7). It only puts them beside each other and names the
+gaps. Every figure is one aggregate query — the inputs are grouped reads;
+nothing here loads statement rows and re-sums them in JavaScript (D11).
+
+### Functions
+
+#### `moneyOverview(ctx, filter)`
+
+The money picture for one account at one civil month.
+
+Currencies are the union of the accounts, the open stocks, the month's
+budgets and the month's spending — a currency is on the screen if it has
+something to say, and an account in it is the only thing that can make a
+supported total.
+
+### Types
+
+- `MoneyGap` — A thing the screen must name instead of hiding in a confident total.
+- `CurrencyCoverage` — How much of one currency's money rests on a declared opening.
+- `CurrencyPicture`
+- `MoneyOverview`
 
 ## gallery
 
@@ -6167,6 +6202,19 @@ What a description would be filed as, for anything that needs to ask.
 
 #### `listMovements(ctx, filter)`
 
+#### `listMovementPage(ctx, opts)`
+
+One bounded page of statement lines, newest first.
+
+A page, not a figure: `limit` is clamped and `beforeId` is the cursor the
+previous page answered with, so walking the history never loads all of it.
+The values are `listMovements`' own — same category, tags, allocations and
+counterpart state — because the API and the screen must tell one story.
+
+`beforeId` is the id of the last line already read; the keyset is that line's
+place in the order, not the id alone, so an import backdating a line cannot
+make a page skip or repeat a row.
+
 #### `recentForLinking(ctx, limit)`
 
 The few recent lines one meaning can be linked to.
@@ -6246,6 +6294,7 @@ The ledgers a set of transaction ids belongs to — for bulk moves later.
 - `MovementKind`
 - `Rule`
 - `MovementFilter`
+- `MovementPage`
 - `LinkCandidate` — A line a meaning can point at: a transfer's other side, a refund's expense.
 - `CategorySlice`
 - `SpendingCategory`

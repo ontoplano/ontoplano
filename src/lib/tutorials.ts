@@ -492,6 +492,23 @@ export const TUTORIALS: Record<string, Tutorial> = {
 		]
 	},
 
+	'/finance': {
+		label: 'rooms.finance.tabs.overview',
+		steps: [
+			{ title: 'rooms.finance.tabs.overview', body: 'finance.overview.overviewHint' },
+			{
+				target: '[data-tour="finance-overview-money"]',
+				title: 'finance.overview.available',
+				body: 'finance.overview.availableFormula'
+			},
+			{
+				target: '[data-tour="finance-overview-spending"]',
+				title: 'finance.overview.spent',
+				body: 'finance.insights.definitions'
+			}
+		]
+	},
+
 	'/finance/ledgers': {
 		label: 'tour.ledgers',
 		steps: [

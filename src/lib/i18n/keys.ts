@@ -156,6 +156,7 @@ export type MessageKey =
 	| 'app.manageYourPlan'
 	| 'app.matchMyDevice'
 	| 'app.monday'
+	| 'app.moneyPicture'
 	| 'app.monthly'
 	| 'app.move'
 	| 'app.neutral'
@@ -328,6 +329,7 @@ export type MessageKey =
 	| 'card.goalsWhosePeriodCoversToday'
 	| 'card.oneOfYourOwnQuotes'
 	| 'card.theBlockYouAreIn'
+	| 'card.theFourAnswersAboutYourMoney'
 	| 'card.theHoursYouHaveTicked'
 	| 'card.theLastFewIdeasYou'
 	| 'card.theMostRecentThingsYou'
@@ -984,6 +986,36 @@ export type MessageKey =
 	| 'finance.ledgers.whatItIs'
 	| 'finance.monthBars.newest'
 	| 'finance.monthlyBars.caption'
+	| 'finance.overview.addLedger'
+	| 'finance.overview.available'
+	| 'finance.overview.availableFormula'
+	| 'finance.overview.availableFormulaLong'
+	| 'finance.overview.balanceDiffers'
+	| 'finance.overview.checkOpeningDate'
+	| 'finance.overview.claimsBody'
+	| 'finance.overview.committed'
+	| 'finance.overview.coverage'
+	| 'finance.overview.excluded'
+	| 'finance.overview.fixOpening'
+	| 'finance.overview.forTheMonth'
+	| 'finance.overview.left'
+	| 'finance.overview.missingOpening'
+	| 'finance.overview.noAccounts'
+	| 'finance.overview.noAccountsBody'
+	| 'finance.overview.noAccountsInCurrency'
+	| 'finance.overview.noAccountsInCurrencyBody'
+	| 'finance.overview.noCurrencyBody'
+	| 'finance.overview.noCurrencyTotal'
+	| 'finance.overview.noPlans'
+	| 'finance.overview.notABalance'
+	| 'finance.overview.nothingSpent'
+	| 'finance.overview.outsideCoverageTotal'
+	| 'finance.overview.overviewHint'
+	| 'finance.overview.payables'
+	| 'finance.overview.receivables'
+	| 'finance.overview.setBudget'
+	| 'finance.overview.spent'
+	| 'finance.overview.verified'
 	| 'finance.rules.aCategory'
 	| 'finance.rules.aLineBelongsToThe'
 	| 'finance.rules.aTag'
@@ -2645,6 +2677,7 @@ export type MessageKey =
 	| 'rooms.finance.tabs.commitments'
 	| 'rooms.finance.tabs.insights'
 	| 'rooms.finance.tabs.ledgers'
+	| 'rooms.finance.tabs.overview'
 	| 'rooms.finance.tabs.rules'
 	| 'rooms.finance.title'
 	| 'rooms.goals.sections'
@@ -4471,6 +4504,19 @@ export interface MessageValuesFor {
 	'finance.ledgers.showingCount': { count: number };
 	'finance.ledgers.uncategorizedCount': { count: number };
 	'finance.monthBars.newest': { shown: string | number; total: string | number };
+	'finance.overview.availableFormulaLong': {
+		custody: string | number;
+		funds: string | number;
+		reserves: string | number;
+	};
+	'finance.overview.balanceDiffers': { count: number };
+	'finance.overview.coverage': { accounts: string | number; supported: string | number };
+	'finance.overview.forTheMonth': { month: string | number };
+	'finance.overview.missingOpening': { count: number };
+	'finance.overview.noPlans': { month: string | number };
+	'finance.overview.nothingSpent': { month: string | number };
+	'finance.overview.outsideCoverageTotal': { count: number };
+	'finance.overview.verified': { count: number };
 	'finance.rules.colourFor': { name: string | number };
 	'finance.rules.delete': { name: string | number };
 	'finance.rules.edit': { name: string | number };
