@@ -2,8 +2,7 @@ import type { IsolatedEvent } from '$lib/isolated/routes';
 import { buildCtx } from '$lib/services/ctx';
 import { listLedgers } from '$lib/services/ledgers';
 import { normaliseCurrency } from '$lib/money';
-import { NotFoundError, ValidationError } from '$lib/services/errors';
-import { num } from '$lib/services/validate';
+import { civilDay, num } from '$lib/services/validate';
 import { listBudgets } from '$lib/services/budgets';
 import { getCurrency } from '$lib/services/settings';
 import { monthParam } from '$lib/when';
@@ -26,25 +25,48 @@ import {
  */
 export const load = async ({ locals, url }: IsolatedEvent) => {
 	const ctx = buildCtx(locals.user!.id);
-	const ledgerId = url.searchParams.get('ledger')
-		? num(url.searchParams.get('ledger'), 'ledger', { int: true, min: 1 })
-		: undefined;
-	const months = url.searchParams.has('months')
-		? num(url.searchParams.get('months'), 'months', { int: true, min: 1, max: 120 })
-		: 12;
+	// Every one of these is somebody editing the address bar. A bad value is
+	// ignored and the screen falls back, never a 500.
+	const day = (raw: string | null) => {
+		if (!raw) return undefined;
+		try {
+			return civilDay(raw);
+		} catch {
+			return undefined;
+		}
+	};
+	let ledgerId: number | undefined;
+	try {
+		ledgerId = url.searchParams.get('ledger')
+			? num(url.searchParams.get('ledger'), 'ledger', { int: true, min: 1 })
+			: undefined;
+	} catch {
+		ledgerId = undefined;
+	}
+	let months = 12;
+	const monthsParam = url.searchParams.get('months');
+	if (monthsParam) {
+		try {
+			months = num(monthsParam, 'months', { int: true, min: 1, max: 120 });
+		} catch {
+			/* keep the default window */
+		}
+	}
 	const month = monthParam(url.searchParams.get('month')) ?? '';
 	const window = statementWindow(ctx, months, {
 		month: month || undefined,
-		from: url.searchParams.get('from') || undefined,
-		to: url.searchParams.get('to') || undefined
+		from: day(url.searchParams.get('from')),
+		to: day(url.searchParams.get('to'))
 	});
 	const ledgers = listLedgers(ctx, { includeArchived: true, asOf: window.to });
 	const ledger = ledgerId ? ledgers.find((row) => row.id === ledgerId) : undefined;
-	if (ledgerId && !ledger) throw new NotFoundError('ledger');
+	if (ledgerId && !ledger) ledgerId = undefined;
 	const currencies = [...new Set(ledgers.map((row) => row.currency))];
-	const requested = url.searchParams.get('currency');
-	if (requested && requested !== 'unspecified' && !normaliseCurrency(requested))
-		throw new ValidationError('Choose a valid original currency.');
+	const rawCurrency = url.searchParams.get('currency');
+	const requested =
+		rawCurrency && (rawCurrency === 'unspecified' || normaliseCurrency(rawCurrency))
+			? rawCurrency
+			: null;
 	const currency = ledger
 		? ledger.currency
 		: requested === 'unspecified'

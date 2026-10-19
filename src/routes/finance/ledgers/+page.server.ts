@@ -58,20 +58,27 @@ export const load = async ({ locals, url }: IsolatedEvent) => {
 	const month = monthParam(url.searchParams.get('month')) ?? '';
 	const reviewUnclassified = url.searchParams.get('unclassified') === '1';
 	const requestedCurrency = url.searchParams.get('currency');
+	// A hand-edited review URL falls back; it never answers with a 500.
 	const reviewCurrency =
 		requestedCurrency === 'unspecified'
 			? null
 			: requestedCurrency
-				? normaliseCurrency(requestedCurrency)
+				? (normaliseCurrency(requestedCurrency) ?? undefined)
 				: undefined;
-	if (requestedCurrency && requestedCurrency !== 'unspecified' && !reviewCurrency)
-		throw new ValidationError('Choose a valid original currency.');
+	const day = (raw: string | null) => {
+		if (!raw) return undefined;
+		try {
+			return civilDay(raw);
+		} catch {
+			return undefined;
+		}
+	};
 	const reviewFilter = {
 		unclassified: true,
 		currency: reviewCurrency,
 		ledgerId: asked || undefined,
-		from: url.searchParams.get('from') ? civilDay(url.searchParams.get('from')) : undefined,
-		to: url.searchParams.get('to') ? civilDay(url.searchParams.get('to')) : undefined,
+		from: day(url.searchParams.get('from')),
+		to: day(url.searchParams.get('to')),
 		month: month || undefined
 	};
 	// Only the lines no category claims — the ones the Rules tab is for.
