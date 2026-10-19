@@ -73,6 +73,20 @@
 	let deletingCheck: number | null = $state(null);
 	/** The dialog that holds everything done to a ledger rather than to a line. */
 	let managing = $state(false);
+	/** A gap on the overview asks for one ledger's edit dialog directly. */
+	let openedEdit = $state(false);
+	/** A differing check on the overview asks for the checks form directly. */
+	let checksOpen = $state(false);
+	$effect(() => {
+		if (data.openChecks) checksOpen = true;
+	});
+	$effect(() => {
+		if (openedEdit || !data.editId) return;
+		const ledger = data.ledgers.find((one) => one.id === data.editId);
+		if (!ledger) return;
+		openedEdit = true;
+		editingLedger = ledger;
+	});
 
 	let showImport = $state(false);
 	let statementText = $state('');
@@ -431,7 +445,12 @@
 			/>
 		{:else}
 			{@const current = data.current}
-			<details class="border-b border-gray-200 p-4" data-testid="balance-checks">
+			<details
+				id="balance-checks"
+				class="border-b border-gray-200 p-4"
+				data-testid="balance-checks"
+				bind:open={checksOpen}
+			>
 				<summary class="cursor-pointer text-sm font-medium"
 					>{t('finance.ledgers.checkHistory')}</summary
 				>

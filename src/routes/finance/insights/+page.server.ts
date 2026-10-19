@@ -6,6 +6,7 @@ import { NotFoundError, ValidationError } from '$lib/services/errors';
 import { num } from '$lib/services/validate';
 import { listBudgets } from '$lib/services/budgets';
 import { getCurrency } from '$lib/services/settings';
+import { monthParam } from '$lib/when';
 import {
 	categoryMonths,
 	categorySlices,
@@ -31,7 +32,7 @@ export const load = async ({ locals, url }: IsolatedEvent) => {
 	const months = url.searchParams.has('months')
 		? num(url.searchParams.get('months'), 'months', { int: true, min: 1, max: 120 })
 		: 12;
-	const month = url.searchParams.get('month') || '';
+	const month = monthParam(url.searchParams.get('month')) ?? '';
 	const window = statementWindow(ctx, months, {
 		month: month || undefined,
 		from: url.searchParams.get('from') || undefined,

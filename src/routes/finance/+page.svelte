@@ -17,7 +17,6 @@
 	let { data }: { data: PageServerData } = $props();
 
 	const overview = $derived(data.overview);
-	const hasAccounts = $derived(overview.currencies.some((picture) => picture.coverage.accounts));
 
 	const money = (minor: number, currency: string | null) =>
 		formatMoney(minorAmount(minor, 'money'), currency ?? data.defaultCurrency);
@@ -80,6 +79,22 @@
 			}))
 			.sort((a, b) => b.share - a.share);
 	}
+	/**
+	 * The first ledger a gap points at, so "Declare an opening" opens that
+	 * ledger's edit dialog rather than dropping the reader on the statement.
+	 */
+	function firstLedger(picture: CurrencyPicture): number | null {
+		for (const gap of picture.gaps) {
+			if ('ledgers' in gap && gap.ledgers.length) return gap.ledgers[0]!.id;
+		}
+		return null;
+	}
+	function editHref(picture: CurrencyPicture): string {
+		const id = firstLedger(picture);
+		return id
+			? `${resolve('/finance/ledgers')}?ledger=${id}&edit=${id}`
+			: resolve('/finance/ledgers');
+	}
 	function unclassifiedHref(picture: CurrencyPicture) {
 		const params = new URLSearchParams({
 			unclassified: '1',
@@ -117,22 +132,18 @@
 	<!-- Every path below is resolve()d; the rule cannot see through a query string. -->
 	<!-- eslint-disable svelte/no-navigation-without-resolve -->
 
-	{#if !hasAccounts}
-		{#if overview.currencies.length === 0}
-			<EmptyState
-				icon="book"
-				title={t('finance.overview.noAccounts')}
-				description={t('finance.overview.noAccountsBody')}
-			>
-				{#snippet action()}
-					<a class="btn btn-sm" href={resolve('/finance/ledgers')}>
-						{t('finance.overview.addLedger')}
-					</a>
-				{/snippet}
-			</EmptyState>
-		{:else}
-			<p class="p-4 text-sm text-gray-600">{t('finance.overview.noAccountsBody')}</p>
-		{/if}
+	{#if overview.currencies.length === 0}
+		<EmptyState
+			icon="book"
+			title={t('finance.overview.noAccounts')}
+			description={t('finance.overview.noAccountsBody')}
+		>
+			{#snippet action()}
+				<a class="btn btn-sm" href={resolve('/finance/ledgers')}>
+					{t('finance.overview.addLedger')}
+				</a>
+			{/snippet}
+		</EmptyState>
 	{:else}
 		<div class="space-y-6 p-4">
 			{#each shown as picture (key(picture))}
@@ -145,10 +156,15 @@
 						<h2 class="text-lg font-semibold">{label(picture)}</h2>
 						{#if picture.coverage.accounts}
 							<p class="text-xs text-gray-600">
-								{t('finance.overview.coverage', {
-									supported: picture.coverage.supported,
-									accounts: picture.coverage.accounts
-								})}
+								{picture.coverage.accounts === 1
+									? t('finance.overview.coverageOne', {
+											supported: picture.coverage.supported,
+											accounts: picture.coverage.accounts
+										})
+									: t('finance.overview.coverage', {
+											supported: picture.coverage.supported,
+											accounts: picture.coverage.accounts
+										})}
 								{#if picture.coverage.verified}
 									· {t('finance.overview.verified', { count: picture.coverage.verified })}
 								{/if}
@@ -240,8 +256,12 @@
 									class="flex flex-wrap items-baseline justify-between gap-2 py-2"
 									data-testid="gap-no-opening"
 								>
-									<span>{t('finance.overview.missingOpening', { count: gap.count })}</span>
-									<a class="underline" href={resolve('/finance/ledgers')}>
+									<span>
+										{gap.count === 1
+											? t('finance.overview.missingOpeningOne', { count: gap.count })
+											: t('finance.overview.missingOpening', { count: gap.count })}
+									</span>
+									<a class="underline" href={editHref(picture)}>
 										{t('finance.overview.fixOpening')}
 									</a>
 								</li>
@@ -252,8 +272,12 @@
 									class="flex flex-wrap items-baseline justify-between gap-2 py-2"
 									data-testid="gap-outside-coverage"
 								>
-									<span>{t('finance.overview.outsideCoverageTotal', { count: gap.count })}</span>
-									<a class="underline" href={resolve('/finance/ledgers')}>
+									<span>
+										{gap.count === 1
+											? t('finance.overview.outsideCoverageOne', { count: gap.count })
+											: t('finance.overview.outsideCoverageTotal', { count: gap.count })}
+									</span>
+									<a class="underline" href={editHref(picture)}>
 										{t('finance.overview.checkOpeningDate')}
 									</a>
 								</li>
@@ -261,11 +285,15 @@
 							{#if balanceDiffers(picture)}
 								{@const gap = balanceDiffers(picture)!}
 								<li class="space-y-1 py-2" data-testid="gap-balance-differs">
-									<p>{t('finance.overview.balanceDiffers', { count: gap.count })}</p>
+									<p>
+										{gap.count === 1
+											? t('finance.overview.balanceDiffersOne', { count: gap.count })
+											: t('finance.overview.balanceDiffers', { count: gap.count })}
+									</p>
 									{#each gap.ledgers as ledger (ledger.id)}
 										<a
 											class="underline"
-											href={`${resolve('/finance/ledgers')}?ledger=${ledger.id}`}
+											href={`${resolve('/finance/ledgers')}?ledger=${ledger.id}&checks=1`}
 										>
 											{ledger.name}: {t('finance.ledgers.checkDifference', {
 												amount: money(ledger.differenceMinor, picture.currency)
@@ -356,6 +384,19 @@
 									<a class="text-sm underline" href={budgetsHref(picture)}>
 										{t('rooms.finance.tabs.budgets')}
 									</a>
+								{:else if picture.currency === null}
+									<EmptyState
+										compact
+										icon="budgets"
+										title={t('finance.overview.noPlans', { month: overview.month })}
+										description={t('finance.overview.plansNeedCurrency')}
+									>
+										{#snippet action()}
+											<a class="btn btn-sm" href={editHref(picture)}>
+												{t('finance.overview.declareCurrency')}
+											</a>
+										{/snippet}
+									</EmptyState>
 								{:else}
 									<EmptyState
 										compact

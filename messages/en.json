@@ -4777,5 +4777,11 @@
 	"finance.overview.spentPane": "Personal spending by category for {month}, with what is left out named below.",
 	"finance.overview.leftPane": "The plans set for {month}, and what is still theirs.",
 	"finance.commitments.none": "Nothing here yet.",
-	"finance.budgets.noBudgetsHint": "A budget is a month's plan for one category; the overview shows what is left of it."
+	"finance.budgets.noBudgetsHint": "A budget is a month's plan for one category; the overview shows what is left of it.",
+	"finance.overview.coverageOne": "{supported} of {accounts} account has a declared opening.",
+	"finance.overview.missingOpeningOne": "Account without a declared opening: {count}.",
+	"finance.overview.outsideCoverageOne": "Movements before the opening date on {count} account.",
+	"finance.overview.balanceDiffersOne": "Statement check that differs: {count}.",
+	"finance.overview.plansNeedCurrency": "Budgets are per currency; declare one on a ledger first.",
+	"finance.overview.declareCurrency": "Declare a currency"
 }

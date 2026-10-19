@@ -1,4 +1,5 @@
 import type { IsolatedEvent } from '$lib/isolated/routes';
+import { monthParam } from '$lib/when';
 import { buildCtx } from '$lib/services/ctx';
 import { pickableNotebooks } from '$lib/services/notebooks';
 import { ledgerHandlers } from '$lib/services/ledger-actions';
@@ -54,7 +55,7 @@ export const load = async ({ locals, url }: IsolatedEvent) => {
 	const current = ledgers.find((l) => l.id === asked) ?? ledgers.find((l) => !l.archived) ?? null;
 
 	const query = url.searchParams.get('q') ?? '';
-	const month = url.searchParams.get('month') ?? '';
+	const month = monthParam(url.searchParams.get('month')) ?? '';
 	const reviewUnclassified = url.searchParams.get('unclassified') === '1';
 	const requestedCurrency = url.searchParams.get('currency');
 	const reviewCurrency =
@@ -84,6 +85,9 @@ export const load = async ({ locals, url }: IsolatedEvent) => {
 		// notebook's tab opens this same form with its own notebook chosen.
 		notebooks: pickableNotebooks(ctx),
 		currency: getCurrency(ctx.userId),
+		// A money-picture gap links straight at the ledger it is about.
+		editId: Number(url.searchParams.get('edit')) || 0,
+		openChecks: url.searchParams.get('checks') === '1',
 		parsers: availableParsers(),
 		ledgers,
 		funds: supported(ctx),

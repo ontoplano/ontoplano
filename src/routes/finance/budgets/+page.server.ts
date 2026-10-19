@@ -15,6 +15,7 @@ import {
 	copyBudgets
 } from '$lib/services/budgets.js';
 import { budgetMonth } from '$lib/services/budgets.js';
+import { monthParam } from '$lib/when';
 
 export const load = ({ locals, url }: IsolatedEvent) => {
 	const ctx = buildCtx(locals.user!.id);
@@ -23,7 +24,7 @@ export const load = ({ locals, url }: IsolatedEvent) => {
 		? getBudget(ctx, Number(url.searchParams.get('budget')))
 		: null;
 	const requestedMonth = url.searchParams.get('month');
-	const month = budgetMonth(requestedMonth ?? selected?.month ?? currentMonth);
+	const month = budgetMonth(monthParam(requestedMonth) ?? selected?.month ?? currentMonth);
 	const requestedCurrency = url.searchParams.get('currency') || '';
 
 	const budgets = listBudgets(ctx, {

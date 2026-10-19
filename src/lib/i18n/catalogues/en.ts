@@ -1102,17 +1102,21 @@ export const messages: Catalogue = {
 	'finance.overview.availableFormulaLong':
 		'Supported funds {funds} − held for others {custody} − set aside {reserves}.',
 	'finance.overview.balanceDiffers': 'Statement checks that differ: {count}.',
+	'finance.overview.balanceDiffersOne': 'Statement check that differs: {count}.',
 	'finance.overview.checkOpeningDate': 'Check the opening date',
 	'finance.overview.claimsBody':
 		'Money owed to others and money owed to me are claims, not funds: neither is subtracted from available money.',
 	'finance.overview.committed': 'Committed',
 	'finance.overview.coverage': '{supported} of {accounts} accounts have a declared opening.',
+	'finance.overview.coverageOne': '{supported} of {accounts} account has a declared opening.',
+	'finance.overview.declareCurrency': 'Declare a currency',
 	'finance.overview.excluded': 'Kept out of spending',
 	'finance.overview.fixOpening': 'Declare an opening',
 	'finance.overview.forTheMonth': 'For {month}',
 	'finance.overview.left': 'Left in plans',
 	'finance.overview.leftPane': 'The plans set for {month}, and what is still theirs.',
 	'finance.overview.missingOpening': 'Accounts without a declared opening: {count}.',
+	'finance.overview.missingOpeningOne': 'Account without a declared opening: {count}.',
 	'finance.overview.noAccounts': 'No accounts yet',
 	'finance.overview.noAccountsBody':
 		'Add a ledger in its original currency and import or write a statement. This screen answers the four money questions from those records.',
@@ -1126,11 +1130,13 @@ export const messages: Catalogue = {
 	'finance.overview.notABalance': 'No declared opening, so this is not a balance.',
 	'finance.overview.nothingSpent': 'Nothing personal was spent in {month}.',
 	'finance.overview.otherCurrencies': 'Committed in other currencies',
+	'finance.overview.outsideCoverageOne': 'Movements before the opening date on {count} account.',
 	'finance.overview.outsideCoverageTotal':
 		'Accounts holding movements before their opening: {count}.',
 	'finance.overview.overviewHint':
 		'Four answers in one place: what is mine, what is committed, what I spent this month, and what is left against my plans. Every original currency stays separate.',
 	'finance.overview.payables': 'Owed to others',
+	'finance.overview.plansNeedCurrency': 'Budgets are per currency; declare one on a ledger first.',
 	'finance.overview.receivables': 'Owed to me',
 	'finance.overview.setBudget': 'Set a budget',
 	'finance.overview.spent': 'Spent this month',

@@ -4762,5 +4762,11 @@
 	"finance.overview.spentPane": null,
 	"finance.overview.leftPane": null,
 	"finance.commitments.none": null,
-	"finance.budgets.noBudgetsHint": null
+	"finance.budgets.noBudgetsHint": null,
+	"finance.overview.coverageOne": null,
+	"finance.overview.missingOpeningOne": null,
+	"finance.overview.outsideCoverageOne": null,
+	"finance.overview.balanceDiffersOne": null,
+	"finance.overview.plansNeedCurrency": null,
+	"finance.overview.declareCurrency": null
 }

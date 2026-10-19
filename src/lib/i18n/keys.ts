@@ -995,16 +995,20 @@ export type MessageKey =
 	| 'finance.overview.availableFormula'
 	| 'finance.overview.availableFormulaLong'
 	| 'finance.overview.balanceDiffers'
+	| 'finance.overview.balanceDiffersOne'
 	| 'finance.overview.checkOpeningDate'
 	| 'finance.overview.claimsBody'
 	| 'finance.overview.committed'
 	| 'finance.overview.coverage'
+	| 'finance.overview.coverageOne'
+	| 'finance.overview.declareCurrency'
 	| 'finance.overview.excluded'
 	| 'finance.overview.fixOpening'
 	| 'finance.overview.forTheMonth'
 	| 'finance.overview.left'
 	| 'finance.overview.leftPane'
 	| 'finance.overview.missingOpening'
+	| 'finance.overview.missingOpeningOne'
 	| 'finance.overview.noAccounts'
 	| 'finance.overview.noAccountsBody'
 	| 'finance.overview.noAccountsInCurrency'
@@ -1015,9 +1019,11 @@ export type MessageKey =
 	| 'finance.overview.notABalance'
 	| 'finance.overview.nothingSpent'
 	| 'finance.overview.otherCurrencies'
+	| 'finance.overview.outsideCoverageOne'
 	| 'finance.overview.outsideCoverageTotal'
 	| 'finance.overview.overviewHint'
 	| 'finance.overview.payables'
+	| 'finance.overview.plansNeedCurrency'
 	| 'finance.overview.receivables'
 	| 'finance.overview.setBudget'
 	| 'finance.overview.spent'
@@ -4519,13 +4525,17 @@ export interface MessageValuesFor {
 		reserves: string | number;
 	};
 	'finance.overview.balanceDiffers': { count: number };
+	'finance.overview.balanceDiffersOne': { count: number };
 	'finance.overview.coverage': { accounts: string | number; supported: string | number };
+	'finance.overview.coverageOne': { accounts: string | number; supported: string | number };
 	'finance.overview.forTheMonth': { month: string | number };
 	'finance.overview.leftPane': { month: string | number };
 	'finance.overview.missingOpening': { count: number };
+	'finance.overview.missingOpeningOne': { count: number };
 	'finance.overview.noCurrencyBody': { currency: string | number };
 	'finance.overview.noPlans': { month: string | number };
 	'finance.overview.nothingSpent': { month: string | number };
+	'finance.overview.outsideCoverageOne': { count: number };
 	'finance.overview.outsideCoverageTotal': { count: number };
 	'finance.overview.spentPane': { month: string | number };
 	'finance.overview.verified': { count: number };
