@@ -7,6 +7,7 @@
 	import RoomSurface from '$lib/components/RoomSurface.svelte';
 	import Modal from '$lib/components/Modal.svelte';
 	import FormError from '$lib/components/FormError.svelte';
+	import OneLine from '$lib/components/OneLine.svelte';
 	import BudgetProgress, { type BudgetRow } from '$lib/components/BudgetProgress.svelte';
 	import StatTiles from '$lib/components/StatTiles.svelte';
 	import EmptyState from '$lib/components/EmptyState.svelte';
@@ -37,6 +38,17 @@
 	let editing = $state(false);
 	let selectedBudget = $state<BudgetRow | null>(null);
 	let deletingId = $state<number | null>(null);
+	/** The category the select is on; kept as state so an inline new rule can
+	   be selected the moment it is saved. */
+	let categoryValue = $state('');
+	let creatingCategory = $state(false);
+	let categoryName = $state('');
+	let categoryCreated = $state<string | null>(null);
+	/** The budget draft, held in state so an inline category creation (which
+	   reloads the page data) does not wipe the month, currency or amount. */
+	let formMonth = $state('');
+	let formCurrency = $state('');
+	let formAmount = $state('');
 
 	const categoryIsGone = $derived(
 		editing && selectedBudget ? !data.categories.includes(selectedBudget.category) : false
@@ -49,30 +61,43 @@
 			? [selectedBudget.currency]
 			: [])
 	]);
-	const dialogCurrency = $derived(
-		editing && selectedBudget
-			? selectedBudget.currency
-			: data.currencies.includes(data.currency)
-				? data.currency
-				: data.currencies.includes(data.defaultCurrency)
-					? data.defaultCurrency
-					: (data.currencies[0] ?? '')
-	);
 	const canSave = $derived(
 		(data.categories.length > 0 || categoryIsGone) && currencyChoices.length > 0
 	);
-	const canCreate = $derived(data.categories.length > 0 && data.currencies.length > 0);
+	// The dialog can make a category itself, so having none is not a reason to
+	// lock the form; only the absence of a ledger currency is.
+	const canCreate = $derived(data.currencies.length > 0);
+
+	function defaultCurrency(): string {
+		if (data.currencies.includes(data.currency)) return data.currency;
+		if (data.currencies.includes(data.defaultCurrency)) return data.defaultCurrency;
+		return data.currencies[0] ?? '';
+	}
 
 	function openNew() {
 		selectedBudget = null;
 		creating = true;
 		editing = false;
+		categoryValue = '';
+		creatingCategory = false;
+		categoryName = '';
+		categoryCreated = null;
+		formMonth = data.month;
+		formCurrency = defaultCurrency();
+		formAmount = '';
 	}
 
 	function openEdit(b: BudgetRow) {
 		selectedBudget = b;
 		editing = true;
 		creating = false;
+		categoryValue = b.category;
+		creatingCategory = false;
+		categoryName = '';
+		categoryCreated = null;
+		formMonth = b.month;
+		formCurrency = b.currency;
+		formAmount = moneyInput(b.amountMinor, b.currency);
 	}
 
 	function onkeydown(event: KeyboardEvent) {
@@ -140,11 +165,7 @@
 					class="btn btn-sm btn-primary"
 					onclick={openNew}
 					disabled={!canCreate}
-					title={!canCreate
-						? data.categories.length === 0
-							? t('finance.budgets.noCategories')
-							: t('finance.budgets.noLedgerCurrency')
-						: ''}
+					title={!canCreate ? t('finance.budgets.noLedgerCurrency') : ''}
 				>
 					{t('finance.budgets.new')}
 				</button>
@@ -273,9 +294,27 @@
 			action={editing ? '?/update' : '?/create'}
 			use:enhance={() =>
 				({ result, update }) => {
+					if (result.type === 'success') {
+						if (result.data && typeof result.data === 'object' && 'category' in result.data) {
+							// The inline form made a category; keep the budget dialog
+							// open and put the new rule in the select. The select is
+							// rebuilt by the reload, so choose the new option after it
+							// arrives rather than before it exists.
+							const made = String(result.data.category);
+							creatingCategory = false;
+							categoryName = '';
+							categoryCreated = made;
+							// Keep the budget draft: this submit was the category
+							// mini-form, not the budget itself.
+							return update({ reset: false });
+						}
+						creating = false;
+						editing = false;
+						selectedBudget = null;
+					}
 					// A redirect is a successful create that also moves the list to
 					// the month/currency it landed in; close the dialog either way.
-					if (result.type === 'success' || result.type === 'redirect') {
+					if (result.type === 'redirect') {
 						creating = false;
 						editing = false;
 						selectedBudget = null;
@@ -299,7 +338,7 @@
 					type="month"
 					class="input"
 					required
-					value={editing && selectedBudget ? selectedBudget.month : data.month}
+					bind:value={formMonth}
 				/>
 			</div>
 
@@ -311,7 +350,8 @@
 					class="input"
 					required
 					disabled={data.categories.length === 0 && !categoryIsGone}
-					value={editing && selectedBudget ? selectedBudget.category : ''}
+					bind:value={categoryValue}
+					onchange={() => (categoryCreated = null)}
 				>
 					<option value="" disabled>{t('finance.budgets.chooseCategory')}</option>
 					{#each data.categories as cat (cat)}
@@ -326,10 +366,65 @@
 				<p class="mt-1 text-xs text-gray-600">
 					{t('finance.budgets.categoryHint')}
 					<a class="underline" href={resolve('/finance/rules')}>
-						{t('finance.budgets.newCategory')}
+						{t('finance.budgets.manageRules')}
 					</a>
 				</p>
-				{#if categoryIsGone}
+				<div class="mt-2">
+					<button
+						type="button"
+						class="text-sm underline"
+						onclick={() => {
+							creatingCategory = !creatingCategory;
+							categoryName = '';
+							categoryCreated = null;
+						}}
+					>
+						{t('finance.budgets.newCategory')}
+					</button>
+					{#if creatingCategory}
+						<div class="mt-2 space-y-2 rounded border border-gray-200 p-3 dark:border-gray-800">
+							<label class="label" for="budget-new-category">
+								{t('finance.budgets.categoryName')}
+							</label>
+							<OneLine
+								id="budget-new-category"
+								name="categoryName"
+								class="input"
+								maxlength={120}
+								bind:value={categoryName}
+							/>
+							<p class="text-xs text-gray-600">
+								{t('finance.budgets.categoryNameHint')}
+							</p>
+							<div class="flex justify-end gap-2">
+								<button
+									type="button"
+									class="btn btn-sm"
+									onclick={() => {
+										creatingCategory = false;
+										categoryName = '';
+									}}
+								>
+									{t('finance.budgets.cancel')}
+								</button>
+								<button
+									type="submit"
+									formaction="?/createCategory"
+									formnovalidate
+									class="btn btn-sm btn-primary"
+									disabled={!categoryName.trim()}
+								>
+									{t('finance.budgets.createCategory')}
+								</button>
+							</div>
+						</div>
+					{/if}
+				</div>
+				{#if categoryCreated}
+					<p class="mt-1 text-sm text-gray-600" role="status">
+						{t('finance.budgets.categoryCreated', { category: categoryCreated })}
+					</p>
+				{:else if categoryIsGone}
 					<p class="mt-1 text-sm text-amber-700">
 						{t('finance.budgets.categoryGone', { category: selectedBudget?.category ?? '' })}
 					</p>
@@ -348,7 +443,7 @@
 					class="input uppercase"
 					required
 					disabled={currencyChoices.length === 0}
-					value={dialogCurrency}
+					bind:value={formCurrency}
 				>
 					<option value="" disabled>{t('finance.budgets.chooseCurrency')}</option>
 					{#each currencyChoices as cur (cur)}
@@ -373,9 +468,7 @@
 					class="input"
 					placeholder="0.00"
 					required
-					value={editing && selectedBudget
-						? moneyInput(selectedBudget.amountMinor, selectedBudget.currency)
-						: ''}
+					bind:value={formAmount}
 				/>
 			</div>
 

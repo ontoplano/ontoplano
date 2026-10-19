@@ -4779,5 +4779,10 @@
 	"finance.budgets.noLedgerCurrency": null,
 	"finance.budgets.copied": null,
 	"finance.budgets.nothingToCopy": null,
-	"finance.budgets.noLedger": null
+	"finance.budgets.noLedger": null,
+	"finance.budgets.categoryName": null,
+	"finance.budgets.createCategory": null,
+	"finance.budgets.categoryNameHint": null,
+	"finance.budgets.manageRules": null,
+	"finance.budgets.categoryCreated": null
 }

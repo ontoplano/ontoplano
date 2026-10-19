@@ -57,3 +57,15 @@ test('creating from another month moves the list to the budget that was made', a
 		location: '/finance/budgets?month=2026-11&currency=KES'
 	});
 });
+
+test('a category made from the budget dialog is saved as a normal rule', async () => {
+	const { listRules } = await import('../src/lib/services/statements');
+	expect(await actions.createCategory(event({ categoryName: 'Inline category' }))).toMatchObject({
+		category: 'Inline category'
+	});
+	expect(
+		listRules(ctx)
+			.filter((rule) => rule.kind === 'category')
+			.map((rule) => rule.name)
+	).toContain('Inline category');
+});

@@ -11,7 +11,7 @@ own write surface, the way the endpoints in [the API](api.md) are the
 write surface for everything else; both end up calling the same
 [services](services.md).
 
-**70 pages, 240 actions.**
+**70 pages, 241 actions.**
 
 | Page                                 | Actions                                                                                                                                                                                                                                                                                                                                                                                              |
 | ------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -25,7 +25,7 @@ write surface for everything else; both end up calling the same
 | `/demo/isolated-db`                  | —                                                                                                                                                                                                                                                                                                                                                                                                    |
 | `/finance`                           | —                                                                                                                                                                                                                                                                                                                                                                                                    |
 | `/finance/bills`                     | —                                                                                                                                                                                                                                                                                                                                                                                                    |
-| `/finance/budgets`                   | `create`, `update`, `delete`, `copy`                                                                                                                                                                                                                                                                                                                                                                 |
+| `/finance/budgets`                   | `create`, `update`, `delete`, `copy`, `createCategory`                                                                                                                                                                                                                                                                                                                                               |
 | `/finance/commitments`               | `create`, `update`, `archive`, `close`, `delete`, `addEntry`, `deleteEntry`, `settle`, `consume`                                                                                                                                                                                                                                                                                                     |
 | `/finance/insights`                  | —                                                                                                                                                                                                                                                                                                                                                                                                    |
 | `/finance/ledgers`                   | `splitMovement`, `unsplitMovement`, `createLedger`, `updateLedger`, `moveLedger`, `archiveLedger`, `deleteLedger`, `recordBalanceCheck`, `deleteBalanceCheck`, `import`, `addMovement`, `updateMovement`, `classify`, `linkTransfer`, `unlinkTransfer`, `detachMovement`, `linkMovement`, `deleteMovement`                                                                                           |
@@ -158,6 +158,11 @@ describes is the money the statements will show arriving and leaving.
 ### `/finance/budgets`
 
 The month before a `YYYY-MM` key, without going through a Date.
+
+**`createCategory`**
+
+A category made without leaving the budget form. It is a normal rule:
+the Rules tab lists it, imports can match it, and it survives reloads.
 
 ### `/finance/commitments`
 

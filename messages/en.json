@@ -4794,5 +4794,10 @@
 	"finance.budgets.noLedgerCurrency": "Budgets need a currency declared on a ledger.",
 	"finance.budgets.copied": "Added {added}, skipped {skipped} already there.",
 	"finance.budgets.nothingToCopy": "Nothing to copy from last month.",
-	"finance.budgets.noLedger": "no ledger"
+	"finance.budgets.noLedger": "no ledger",
+	"finance.budgets.categoryName": "Category name",
+	"finance.budgets.createCategory": "Create category",
+	"finance.budgets.categoryNameHint": "Saved on the Rules tab; you can refine the matching pattern there.",
+	"finance.budgets.manageRules": "Manage in Rules",
+	"finance.budgets.categoryCreated": "Category “{category}” created. Choose it from the list."
 }

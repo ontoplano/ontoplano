@@ -97,6 +97,15 @@ export async function budgetJourney(page: Page) {
 	await expect(page.getByTestId('budget-progress')).toHaveCount(1);
 	await page.getByRole('button', { name: 'Delete', exact: true }).click();
 	await expect(page.getByTestId('budget-progress').getByTestId('row')).toHaveCount(0);
+	// A category can be made from inside the dialog and is saved as a rule.
+	await page.getByRole('button', { name: 'New budget', exact: true }).first().click();
+	const inline = page.getByRole('dialog', { name: 'New budget', exact: true });
+	await inline.getByRole('button', { name: 'New category', exact: true }).click();
+	await inline.locator('#budget-new-category').fill('Inline rule');
+	await inline.getByRole('button', { name: 'Create category', exact: true }).click();
+	await expect(inline.getByRole('status').filter({ hasText: 'created' })).toBeVisible();
+	await inline.getByLabel('Category', { exact: true }).selectOption('Inline rule');
+	await inline.getByRole('button', { name: 'Cancel', exact: true }).click();
 	await page.getByLabel('Month', { exact: true }).focus();
 	await expect(page.getByLabel('Month', { exact: true })).toBeFocused();
 	expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);

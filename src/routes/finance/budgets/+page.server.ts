@@ -6,7 +6,7 @@ import { normaliseCurrency, parseSignedMoney } from '$lib/money';
 import { ValidationError } from '$lib/services/errors';
 import { getCurrency } from '$lib/services/settings';
 import { listLedgers } from '$lib/services/ledgers';
-import { filterOptions } from '$lib/services/statements';
+import { createRule, filterOptions } from '$lib/services/statements';
 import {
 	listBudgets,
 	getBudget,
@@ -119,5 +119,14 @@ export const actions = {
 	}),
 	copy: formAction((ctx, form) =>
 		copyBudgets(ctx, { fromMonth: form.get('fromMonth'), toMonth: form.get('toMonth') })
-	)
+	),
+	/** A category made without leaving the budget form. It is a normal rule:
+	 * the Rules tab lists it, imports can match it, and it survives reloads. */
+	createCategory: formAction((ctx, form) => {
+		const name = String(form.get('categoryName') ?? '').trim();
+		// Match the name literally; the Rules tab is where a pattern is refined.
+		const pattern = name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+		const rule = createRule(ctx, { kind: 'category', name, pattern });
+		return { category: rule.name };
+	})
 };

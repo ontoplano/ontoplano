@@ -766,20 +766,25 @@ export type MessageKey =
 	| 'finance.budgets.allocatedAmount'
 	| 'finance.budgets.cancel'
 	| 'finance.budgets.category'
+	| 'finance.budgets.categoryCreated'
 	| 'finance.budgets.categoryGone'
 	| 'finance.budgets.categoryHint'
+	| 'finance.budgets.categoryName'
+	| 'finance.budgets.categoryNameHint'
 	| 'finance.budgets.chooseCategory'
 	| 'finance.budgets.chooseCurrency'
 	| 'finance.budgets.confirmDelete'
 	| 'finance.budgets.copied'
 	| 'finance.budgets.copy'
 	| 'finance.budgets.create'
+	| 'finance.budgets.createCategory'
 	| 'finance.budgets.credit'
 	| 'finance.budgets.currency'
 	| 'finance.budgets.currencyNeedsLedger'
 	| 'finance.budgets.delete'
 	| 'finance.budgets.deleteConfirm'
 	| 'finance.budgets.edit'
+	| 'finance.budgets.manageRules'
 	| 'finance.budgets.month'
 	| 'finance.budgets.new'
 	| 'finance.budgets.newCategory'
@@ -4483,6 +4488,7 @@ export interface MessageValuesFor {
 	'finance.bills.undoThePaymentFor': { name: string | number };
 	'finance.bills.undoTheSkipFor': { name: string | number };
 	'finance.bills.whatPaidName': { name: string | number };
+	'finance.budgets.categoryCreated': { category: string | number };
 	'finance.budgets.categoryGone': { category: string | number };
 	'finance.budgets.copied': { added: string | number; skipped: string | number };
 	'finance.insights.average': { averageCents: string | number };
