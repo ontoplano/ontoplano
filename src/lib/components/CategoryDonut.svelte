@@ -93,7 +93,9 @@
 					<span class="w-9 shrink-0 text-right text-xs text-gray-500 tabular-nums">
 						{Math.round(slice.share * 100)}%
 					</span>
-					<span class="w-20 shrink-0 text-right text-gray-900 tabular-nums">
+					<span
+						class="w-24 shrink-0 text-right text-xs whitespace-nowrap text-gray-900 tabular-nums"
+					>
 						{formatMoney(slice.outCents, currency)}
 					</span>
 				</li>

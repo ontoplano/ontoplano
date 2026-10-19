@@ -8,12 +8,30 @@
 	import FormError from '$lib/components/FormError.svelte';
 	import OneLine from '$lib/components/OneLine.svelte';
 	import BudgetProgress, { type BudgetRow } from '$lib/components/BudgetProgress.svelte';
+	import StatTiles from '$lib/components/StatTiles.svelte';
+	import EmptyState from '$lib/components/EmptyState.svelte';
 	import { useT } from '$lib/i18n';
 	import type { PageServerData, ActionData } from './$types';
-	import { moneyInput } from '$lib/money';
+	import { formatMoney, moneyInput } from '$lib/money';
 
 	let { data, form }: { data: PageServerData; form: ActionData } = $props();
 	const t = useT();
+
+	/* The three numbers of the visible plans, when they are one currency's —
+	   unlike money is never added to unlike money. */
+	const summary = $derived.by(() => {
+		const rows = data.budgets;
+		if (!rows.length) return null;
+		const currencies = new Set(rows.map((row) => row.currency));
+		if (currencies.size !== 1) return null;
+		const currency = [...currencies][0]!;
+		return {
+			currency,
+			allocated: rows.reduce((sum, row) => sum + row.amountMinor, 0),
+			spent: rows.reduce((sum, row) => sum + row.spentMinor, 0),
+			remaining: rows.reduce((sum, row) => sum + row.remainingMinor, 0)
+		};
+	});
 
 	let creating = $state(false);
 	let editing = $state(false);
@@ -105,7 +123,43 @@
 			</div>
 		</div>
 
-		<BudgetProgress budgets={data.budgets} />
+		{#if summary}
+			<StatTiles
+				tiles={[
+					{
+						label: t('finance.budgets.allocated'),
+						value: formatMoney(summary.allocated, summary.currency),
+						note: summary.currency
+					},
+					{
+						label: t('finance.budgets.spent'),
+						value: formatMoney(summary.spent, summary.currency),
+						note: t('finance.budgets.month')
+					},
+					{
+						label: t('finance.budgets.remaining'),
+						value: formatMoney(summary.remaining, summary.currency),
+						note: summary.currency
+					}
+				]}
+			/>
+		{/if}
+
+		{#if data.budgets.length === 0}
+			<EmptyState
+				icon="budgets"
+				title={t('finance.budgets.noBudgets')}
+				description={t('finance.budgets.noBudgetsHint')}
+			>
+				{#snippet action()}
+					<button class="btn btn-sm btn-primary" onclick={openNew}>
+						{t('finance.budgets.new')}
+					</button>
+				{/snippet}
+			</EmptyState>
+		{:else}
+			<BudgetProgress budgets={data.budgets} />
+		{/if}
 
 		<!-- Controls for each budget (edit, armed delete) -->
 		{#if data.budgets.length > 0}

@@ -4,6 +4,8 @@
 	import RoomSurface from '$lib/components/RoomSurface.svelte';
 	import StatTiles from '$lib/components/StatTiles.svelte';
 	import BudgetProgress from '$lib/components/BudgetProgress.svelte';
+	import Card from '$lib/components/Card.svelte';
+	import CategoryDonut from '$lib/components/CategoryDonut.svelte';
 	import { formatMoney } from '$lib/money';
 	import { minorAmount } from '$lib/services/validate';
 	import { useT } from '$lib/i18n';
@@ -59,6 +61,24 @@
 	function balanceDiffers(picture: CurrencyPicture) {
 		const gap = picture.gaps.find((one) => one.kind === 'balance-differs');
 		return gap?.kind === 'balance-differs' ? gap : null;
+	}
+	/* The month's personal spending as the donut's slices; refunds reduce a
+	   category rather than getting a slice of their own. */
+	function categorySlices(picture: CurrencyPicture) {
+		const total = picture.spending.byCategory.reduce(
+			(sum, category) => sum + Math.max(0, category.netMinor),
+			0
+		);
+		if (!total) return [];
+		return picture.spending.byCategory
+			.filter((category) => category.netMinor > 0)
+			.map((category) => ({
+				name: category.name,
+				color: category.color,
+				outCents: category.netMinor,
+				share: category.netMinor / total
+			}))
+			.sort((a, b) => b.share - a.share);
 	}
 	function unclassifiedHref(picture: CurrencyPicture) {
 		const params = new URLSearchParams({
@@ -180,9 +200,9 @@
 						]}
 					/>
 
-					<!-- The subtractions beside available, and the claims that are not. -->
+					<!-- The subtractions, the claims and the gaps: rules, not a wall of text. -->
 					{#if picture.fundsMinor !== null}
-						<p class="text-sm" data-testid="available-formula">
+						<p class="text-sm text-gray-600" data-testid="available-formula">
 							{t('finance.overview.availableFormulaLong', {
 								funds: money(picture.fundsMinor, picture.currency),
 								custody: money(picture.custodyMinor, picture.currency),
@@ -191,134 +211,191 @@
 						</p>
 					{/if}
 					{#if picture.payablesMinor || picture.receivablesMinor}
-						<div class="text-sm" data-testid="claims">
-							<p>{t('finance.overview.claimsBody')}</p>
-							<p>
-								{t('finance.overview.payables')}: {money(picture.payablesMinor, picture.currency)} · {t(
-									'finance.overview.receivables'
-								)}: {money(picture.receivablesMinor, picture.currency)}
-							</p>
+						<div
+							class="divide-y divide-gray-200 border-y border-gray-200 text-sm"
+							data-testid="claims"
+						>
+							<p class="py-2 text-gray-600">{t('finance.overview.claimsBody')}</p>
+							<dl class="flex flex-wrap gap-x-8 gap-y-1 py-2">
+								<div class="flex items-baseline gap-2">
+									<dt class="text-gray-500">{t('finance.overview.payables')}</dt>
+									<dd class="font-semibold tabular-nums">
+										{money(picture.payablesMinor, picture.currency)}
+									</dd>
+								</div>
+								<div class="flex items-baseline gap-2">
+									<dt class="text-gray-500">{t('finance.overview.receivables')}</dt>
+									<dd class="font-semibold tabular-nums">
+										{money(picture.receivablesMinor, picture.currency)}
+									</dd>
+								</div>
+							</dl>
 						</div>
 					{/if}
-
-					<!-- Every gap named at the total, with the way to fix it. -->
-					{#if noOpening(picture)}
-						{@const gap = noOpening(picture)!}
-						<p class="text-sm" data-testid="gap-no-opening">
-							{t('finance.overview.missingOpening', { count: gap.count })}
-							<a class="underline" href={resolve('/finance/ledgers')}>
-								{t('finance.overview.fixOpening')}
-							</a>
-						</p>
-					{/if}
-					{#if outsideCoverage(picture)}
-						{@const gap = outsideCoverage(picture)!}
-						<p class="text-sm" data-testid="gap-outside-coverage">
-							{t('finance.overview.outsideCoverageTotal', { count: gap.count })}
-							<a class="underline" href={resolve('/finance/ledgers')}>
-								{t('finance.overview.checkOpeningDate')}
-							</a>
-						</p>
-					{/if}
-					{#if balanceDiffers(picture)}
-						{@const gap = balanceDiffers(picture)!}
-						<p class="text-sm" data-testid="gap-balance-differs">
-							{t('finance.overview.balanceDiffers', { count: gap.count })}
-							{#each gap.ledgers as ledger (ledger.id)}
-								<a class="underline" href={`${resolve('/finance/ledgers')}?ledger=${ledger.id}`}>
-									{ledger.name}: {t('finance.ledgers.checkDifference', {
-										amount: money(ledger.differenceMinor, picture.currency)
-									})}
-								</a>
-							{/each}
-						</p>
-					{/if}
-
-					<!-- What the month spent, and what it deliberately left out. -->
-					<div class="space-y-1" data-tour="finance-overview-spending">
-						{#if picture.spending.movementCount === 0}
-							<p class="text-sm text-gray-600">
-								{t('finance.overview.nothingSpent', { month: overview.month })}
-							</p>
-						{:else}
-							<p class="text-sm" data-testid="spending-net">
-								{t('finance.insights.net')}: {money(picture.spending.netMinor, picture.currency)} ·
-								{t('finance.insights.income')}: {money(
-									picture.spending.incomeMinor,
-									picture.currency
-								)}
-							</p>
-							<p class="text-sm text-gray-600" data-testid="spending-excluded">
-								{t('finance.overview.excluded')}:
-								{t('finance.insights.transfers', {
-									count: picture.spending.transferCount,
-									incoming: money(picture.spending.transferInMinor, picture.currency),
-									outgoing: money(picture.spending.transferOutMinor, picture.currency)
-								})}
-								· {t('finance.insights.cash', {
-									count: picture.spending.cashCount,
-									amount: money(picture.spending.cashMinor, picture.currency)
-								})}
-								· {t('finance.insights.custody', {
-									count: picture.spending.custodyCount,
-									amount: money(picture.spending.custodyMinor, picture.currency)
-								})}
-							</p>
-							{#if picture.spending.unclassifiedCount}
-								<p class="text-sm" data-testid="spending-unclassified">
-									<a class="underline" href={unclassifiedHref(picture)}>
-										{t('finance.insights.unclassified', {
-											count: picture.spending.unclassifiedCount
-										})}
+					{#if noOpening(picture) || outsideCoverage(picture) || balanceDiffers(picture)}
+						<ul class="divide-y divide-gray-200 border-b border-gray-200 text-sm">
+							{#if noOpening(picture)}
+								{@const gap = noOpening(picture)!}
+								<li
+									class="flex flex-wrap items-baseline justify-between gap-2 py-2"
+									data-testid="gap-no-opening"
+								>
+									<span>{t('finance.overview.missingOpening', { count: gap.count })}</span>
+									<a class="underline" href={resolve('/finance/ledgers')}>
+										{t('finance.overview.fixOpening')}
 									</a>
-								</p>
+								</li>
 							{/if}
-							{#if picture.spending.unmatchedRefundCount}
-								<p class="text-sm text-gray-600">
-									{t('finance.insights.unmatchedRefunds', {
-										count: picture.spending.unmatchedRefundCount
-									})}
-								</p>
+							{#if outsideCoverage(picture)}
+								{@const gap = outsideCoverage(picture)!}
+								<li
+									class="flex flex-wrap items-baseline justify-between gap-2 py-2"
+									data-testid="gap-outside-coverage"
+								>
+									<span>{t('finance.overview.outsideCoverageTotal', { count: gap.count })}</span>
+									<a class="underline" href={resolve('/finance/ledgers')}>
+										{t('finance.overview.checkOpeningDate')}
+									</a>
+								</li>
 							{/if}
-						{/if}
-					</div>
+							{#if balanceDiffers(picture)}
+								{@const gap = balanceDiffers(picture)!}
+								<li class="space-y-1 py-2" data-testid="gap-balance-differs">
+									<p>{t('finance.overview.balanceDiffers', { count: gap.count })}</p>
+									{#each gap.ledgers as ledger (ledger.id)}
+										<a
+											class="underline"
+											href={`${resolve('/finance/ledgers')}?ledger=${ledger.id}`}
+										>
+											{ledger.name}: {t('finance.ledgers.checkDifference', {
+												amount: money(ledger.differenceMinor, picture.currency)
+											})}
+										</a>
+									{/each}
+								</li>
+							{/if}
+						</ul>
+					{/if}
 
-					<!-- What is left against the plans, with the shared budget arithmetic. -->
-					<div class="space-y-2">
-						<div class="flex flex-wrap items-baseline justify-between gap-2">
-							<h3 class="text-sm font-semibold">{t('finance.overview.left')}</h3>
-							<a class="text-sm underline" href={budgetsHref(picture)}>
-								{t('rooms.finance.tabs.budgets')}
-							</a>
-						</div>
-						{#if picture.budgets.length}
-							<BudgetProgress budgets={picture.budgets} />
-						{:else}
-							<p class="text-sm text-gray-600">
-								{t('finance.overview.noPlans', { month: overview.month })}
-								<a class="underline" href={budgetsHref(picture)}>
-									{t('finance.overview.setBudget')}
-								</a>
-							</p>
-						{/if}
+					<!-- What the month spent, and what is left of its plans: two panes,
+					     one with the category ring the rest of Finance draws. -->
+					<div
+						class="grid grid-cols-1 border-b border-gray-200 lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]"
+					>
+						<Card
+							title={t('finance.overview.spent')}
+							description={t('finance.overview.spentPane', { month: overview.month })}
+							pane
+						>
+							<div class="space-y-3" data-tour="finance-overview-spending">
+								{#if picture.spending.movementCount === 0}
+									<EmptyState
+										compact
+										icon="wallet"
+										title={t('finance.overview.nothingSpent', { month: overview.month })}
+									/>
+								{:else}
+									<p class="text-sm" data-testid="spending-net">
+										{t('finance.insights.net')}: {money(
+											picture.spending.netMinor,
+											picture.currency
+										)} · {t('finance.insights.income')}: {money(
+											picture.spending.incomeMinor,
+											picture.currency
+										)}
+									</p>
+									<CategoryDonut
+										slices={categorySlices(picture)}
+										currency={picture.currency ?? data.defaultCurrency}
+									/>
+									<p class="text-xs leading-relaxed text-gray-600" data-testid="spending-excluded">
+										{t('finance.overview.excluded')}:
+										{t('finance.insights.transfers', {
+											count: picture.spending.transferCount,
+											incoming: money(picture.spending.transferInMinor, picture.currency),
+											outgoing: money(picture.spending.transferOutMinor, picture.currency)
+										})}
+										· {t('finance.insights.cash', {
+											count: picture.spending.cashCount,
+											amount: money(picture.spending.cashMinor, picture.currency)
+										})}
+										· {t('finance.insights.custody', {
+											count: picture.spending.custodyCount,
+											amount: money(picture.spending.custodyMinor, picture.currency)
+										})}
+									</p>
+									{#if picture.spending.unclassifiedCount}
+										<p class="text-sm" data-testid="spending-unclassified">
+											<a class="underline" href={unclassifiedHref(picture)}>
+												{t('finance.insights.unclassified', {
+													count: picture.spending.unclassifiedCount
+												})}
+											</a>
+										</p>
+									{/if}
+									{#if picture.spending.unmatchedRefundCount}
+										<p class="text-sm text-gray-600">
+											{t('finance.insights.unmatchedRefunds', {
+												count: picture.spending.unmatchedRefundCount
+											})}
+										</p>
+									{/if}
+								{/if}
+							</div>
+						</Card>
+
+						<Card
+							title={t('finance.overview.left')}
+							description={t('finance.overview.leftPane', { month: overview.month })}
+							pane
+							class="border-t border-gray-200 lg:border-t-0 lg:border-l"
+						>
+							<div class="space-y-3">
+								{#if picture.budgets.length}
+									<BudgetProgress budgets={picture.budgets} />
+									<a class="text-sm underline" href={budgetsHref(picture)}>
+										{t('rooms.finance.tabs.budgets')}
+									</a>
+								{:else}
+									<EmptyState
+										compact
+										icon="budgets"
+										title={t('finance.overview.noPlans', { month: overview.month })}
+									>
+										{#snippet action()}
+											<a class="btn btn-sm" href={budgetsHref(picture)}>
+												{t('finance.overview.setBudget')}
+											</a>
+										{/snippet}
+									</EmptyState>
+								{/if}
+							</div>
+						</Card>
 					</div>
 				</section>
 			{/each}
 
 			{#if elsewhere.length}
-				<section class="text-sm" aria-label={t('finance.overview.otherCurrencies')}>
-					<h2 class="text-sm font-semibold">{t('finance.overview.otherCurrencies')}</h2>
-					{#each elsewhere as picture (key(picture))}
-						<p class="text-gray-600">
-							{label(picture)} · {t('finance.overview.committed')}:
-							{money(picture.custodyMinor + picture.reservesMinor, picture.currency)}
-							· {t('finance.overview.payables')}: {money(picture.payablesMinor, picture.currency)}
-							· {t('finance.overview.receivables')}: {money(
-								picture.receivablesMinor,
-								picture.currency
-							)}
-						</p>
-					{/each}
+				<section aria-label={t('finance.overview.otherCurrencies')}>
+					<Card title={t('finance.overview.otherCurrencies')}>
+						<ul class="divide-y divide-gray-200 text-sm">
+							{#each elsewhere as picture (key(picture))}
+								<li class="flex flex-wrap items-baseline justify-between gap-2 py-2">
+									<span class="font-medium">{label(picture)}</span>
+									<span class="text-right text-gray-600">
+										{t('finance.overview.committed')}:
+										<span class="font-semibold text-gray-900 tabular-nums">
+											{money(picture.custodyMinor + picture.reservesMinor, picture.currency)}
+										</span>
+										· {t('finance.overview.payables')}:
+										{money(picture.payablesMinor, picture.currency)}
+										· {t('finance.overview.receivables')}:
+										{money(picture.receivablesMinor, picture.currency)}
+									</span>
+								</li>
+							{/each}
+						</ul>
+					</Card>
 				</section>
 			{/if}
 		</div>

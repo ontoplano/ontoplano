@@ -4773,5 +4773,9 @@
 	"finance.overview.noAccountsInCurrencyBody": "No active account holds a declared opening here; its movements are not a balance.",
 	"finance.ledgers.currencyNotDeclared": "Ledger currency not declared — amounts are shown in {currency}.",
 	"finance.insights.currencyNotDeclared": "No ledger declares a currency — amounts are shown in {currency}.",
-	"finance.overview.otherCurrencies": "Committed in other currencies"
+	"finance.overview.otherCurrencies": "Committed in other currencies",
+	"finance.overview.spentPane": "Personal spending by category for {month}, with what is left out named below.",
+	"finance.overview.leftPane": "The plans set for {month}, and what is still theirs.",
+	"finance.commitments.none": "Nothing here yet.",
+	"finance.budgets.noBudgetsHint": "A budget is a month's plan for one category; the overview shows what is left of it."
 }

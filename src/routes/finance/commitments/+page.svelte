@@ -5,6 +5,8 @@
 	import { typing } from '$lib/browse.svelte';
 	import { getAction } from '$lib/shortcuts';
 	import RoomSurface from '$lib/components/RoomSurface.svelte';
+	import Card from '$lib/components/Card.svelte';
+	import EmptyState from '$lib/components/EmptyState.svelte';
 	import Modal from '$lib/components/Modal.svelte';
 	import OneLine from '$lib/components/OneLine.svelte';
 	import FormError from '$lib/components/FormError.svelte';
@@ -85,34 +87,64 @@
 		<p class="text-sm text-gray-600">{t('finance.commitments.hint')}</p>
 		<div class="grid gap-4 md:grid-cols-2" data-tour="commitment-kinds">
 			{#each KINDS as kind (kind)}
-				<section class="space-y-2 rounded border border-gray-200 p-4" aria-label={label(kind)}>
-					<h2 class="font-semibold">{label(kind)}</h2>
-					<p class="text-sm text-gray-600">{t(`finance.commitments.${kind}Hint` as PlainKey)}</p>
-					{#each [...new Set(visible
-								.filter((stock) => stock.kind === kind)
-								.map((stock) => stock.currency))] as currency (currency)}
-						<h3 class="text-sm font-semibold">{currency}</h3>
-						{#each visible.filter((stock) => stock.kind === kind && stock.currency === currency) as stock (stock.id)}
-							<article class="rounded border border-gray-200 p-3 text-sm" data-testid="commitment">
-								<a
-									class="link font-semibold"
-									href={resolve(
-										`/finance/commitments?commitment=${stock.id}${data.archived ? '&archived=1' : ''}`
-									)}>{stock.name}</a
-								>
-								<p>
-									{stock.currency} · <strong>{money(stock.balanceMinor, stock.currency)}</strong> · {t(
-										`finance.commitments.status.${stock.status}` as PlainKey
-									)}
-								</p>
-								{#if stock.personName}<p>{stock.personName}</p>{/if}
-								{#if stock.lastEntryOn}<p>
-										{t('finance.commitments.lastEntry')}
-										{stock.lastEntryOn}
-									</p>{/if}
-							</article>
-						{/each}
-					{/each}
+				{@const stocks = visible.filter((stock) => stock.kind === kind)}
+				{@const currencies = [...new Set(stocks.map((stock) => stock.currency))]}
+				<section aria-label={label(kind)} class="min-w-0">
+					<Card
+						title={label(kind)}
+						description={t(`finance.commitments.${kind}Hint` as PlainKey)}
+						class="h-full"
+					>
+						{#if stocks.length === 0}
+							<EmptyState compact icon="commitments" title={t('finance.commitments.none')} />
+						{:else}
+							<div class="space-y-4">
+								{#each currencies as currency (currency)}
+									{@const inCurrency = stocks.filter((stock) => stock.currency === currency)}
+									<div class="space-y-1">
+										<div
+											class="flex flex-wrap items-baseline justify-between gap-2 border-b border-gray-200 pb-1 text-sm"
+										>
+											<span class="font-semibold">{currency}</span>
+											<span class="text-xs text-gray-600">
+												{inCurrency.length} · {money(
+													inCurrency.reduce((sum, stock) => sum + stock.balanceMinor, 0),
+													currency
+												)}
+											</span>
+										</div>
+										<ul class="divide-y divide-gray-200">
+											{#each inCurrency as stock (stock.id)}
+												<li class="space-y-1 py-2 text-sm" data-testid="commitment">
+													<div class="flex flex-wrap items-baseline justify-between gap-2">
+														<a
+															class="link min-w-0 font-semibold"
+															href={resolve(
+																`/finance/commitments?commitment=${stock.id}${data.archived ? '&archived=1' : ''}`
+															)}>{stock.name}</a
+														>
+														<span class="font-semibold tabular-nums"
+															>{money(stock.balanceMinor, stock.currency)}</span
+														>
+													</div>
+													<div class="flex flex-wrap items-center gap-2 text-xs text-gray-600">
+														<span class="pill"
+															>{t(`finance.commitments.status.${stock.status}` as PlainKey)}</span
+														>
+														{#if stock.personName}<span>{stock.personName}</span>{/if}
+														{#if stock.lastEntryOn}<span>
+																{t('finance.commitments.lastEntry')}
+																{stock.lastEntryOn}
+															</span>{/if}
+													</div>
+												</li>
+											{/each}
+										</ul>
+									</div>
+								{/each}
+							</div>
+						{/if}
+					</Card>
 				</section>
 			{/each}
 		</div>
@@ -136,10 +168,10 @@
 				<p class="text-sm">
 					{t('finance.commitments.opening')}: {money(selected.openingMinor, selected.currency)}
 				</p>
-				<ol class="space-y-2">
+				<ol class="divide-y divide-gray-200 border-y border-gray-200">
 					{#each data.entries as entry (entry.id)}
 						<li
-							class="flex flex-wrap items-center justify-between gap-2 rounded border border-gray-200 p-2 text-sm"
+							class="flex flex-wrap items-center justify-between gap-2 py-2 text-sm"
 							data-testid="commitment-entry"
 						>
 							<div>

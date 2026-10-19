@@ -777,6 +777,7 @@ export type MessageKey =
 	| 'finance.budgets.month'
 	| 'finance.budgets.new'
 	| 'finance.budgets.noBudgets'
+	| 'finance.budgets.noBudgetsHint'
 	| 'finance.budgets.orphaned'
 	| 'finance.budgets.remaining'
 	| 'finance.budgets.save'
@@ -804,6 +805,7 @@ export type MessageKey =
 	| 'finance.commitments.lastEntry'
 	| 'finance.commitments.movement'
 	| 'finance.commitments.new'
+	| 'finance.commitments.none'
 	| 'finance.commitments.opening'
 	| 'finance.commitments.payable'
 	| 'finance.commitments.payableHint'
@@ -1001,6 +1003,7 @@ export type MessageKey =
 	| 'finance.overview.fixOpening'
 	| 'finance.overview.forTheMonth'
 	| 'finance.overview.left'
+	| 'finance.overview.leftPane'
 	| 'finance.overview.missingOpening'
 	| 'finance.overview.noAccounts'
 	| 'finance.overview.noAccountsBody'
@@ -1018,6 +1021,7 @@ export type MessageKey =
 	| 'finance.overview.receivables'
 	| 'finance.overview.setBudget'
 	| 'finance.overview.spent'
+	| 'finance.overview.spentPane'
 	| 'finance.overview.verified'
 	| 'finance.rules.aCategory'
 	| 'finance.rules.aLineBelongsToThe'
@@ -4517,11 +4521,13 @@ export interface MessageValuesFor {
 	'finance.overview.balanceDiffers': { count: number };
 	'finance.overview.coverage': { accounts: string | number; supported: string | number };
 	'finance.overview.forTheMonth': { month: string | number };
+	'finance.overview.leftPane': { month: string | number };
 	'finance.overview.missingOpening': { count: number };
 	'finance.overview.noCurrencyBody': { currency: string | number };
 	'finance.overview.noPlans': { month: string | number };
 	'finance.overview.nothingSpent': { month: string | number };
 	'finance.overview.outsideCoverageTotal': { count: number };
+	'finance.overview.spentPane': { month: string | number };
 	'finance.overview.verified': { count: number };
 	'finance.rules.colourFor': { name: string | number };
 	'finance.rules.delete': { name: string | number };

@@ -4758,5 +4758,9 @@
 	"finance.overview.noAccountsInCurrencyBody": null,
 	"finance.ledgers.currencyNotDeclared": null,
 	"finance.insights.currencyNotDeclared": null,
-	"finance.overview.otherCurrencies": null
+	"finance.overview.otherCurrencies": null,
+	"finance.overview.spentPane": null,
+	"finance.overview.leftPane": null,
+	"finance.commitments.none": null,
+	"finance.budgets.noBudgetsHint": null
 }

@@ -892,6 +892,8 @@ export const messages: Catalogue = {
 	'finance.budgets.month': 'Month',
 	'finance.budgets.new': 'New budget',
 	'finance.budgets.noBudgets': 'No budgets set for this month.',
+	'finance.budgets.noBudgetsHint':
+		"A budget is a month's plan for one category; the overview shows what is left of it.",
 	'finance.budgets.orphaned': 'Category no longer exists',
 	'finance.budgets.remaining': 'Remaining',
 	'finance.budgets.save': 'Save',
@@ -924,6 +926,7 @@ export const messages: Catalogue = {
 	'finance.commitments.lastEntry': 'Last entry:',
 	'finance.commitments.movement': 'Bank movement',
 	'finance.commitments.new': 'New commitment',
+	'finance.commitments.none': 'Nothing here yet.',
 	'finance.commitments.opening': 'Opening stock',
 	'finance.commitments.payable': 'Payable',
 	'finance.commitments.payableHint': 'Money you owe somebody.',
@@ -1153,6 +1156,7 @@ export const messages: Catalogue = {
 	'finance.overview.fixOpening': 'Declare an opening',
 	'finance.overview.forTheMonth': 'For {month}',
 	'finance.overview.left': 'Left in plans',
+	'finance.overview.leftPane': 'The plans set for {month}, and what is still theirs.',
 	'finance.overview.missingOpening': 'Accounts without a declared opening: {count}.',
 	'finance.overview.noAccounts': 'No accounts yet',
 	'finance.overview.noAccountsBody':
@@ -1175,6 +1179,8 @@ export const messages: Catalogue = {
 	'finance.overview.receivables': 'Owed to me',
 	'finance.overview.setBudget': 'Set a budget',
 	'finance.overview.spent': 'Spent this month',
+	'finance.overview.spentPane':
+		'Personal spending by category for {month}, with what is left out named below.',
 	'finance.overview.verified': '{count} checked against a statement',
 	'finance.rules.aCategory': 'Kategorie: Eine Zeile erhält die erste, die passt',
 	'finance.rules.aLineBelongsToThe':
