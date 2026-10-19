@@ -381,3 +381,27 @@ describe('the month series', () => {
 		);
 	});
 });
+
+test('a budget category follows a rename and refuses to be orphaned by a delete', async () => {
+	const budgets = await import('../src/lib/services/budgets');
+	ledgers.createLedger(ctx, { name: 'Budget rule test ledger', currency: 'KES' });
+	const rule = statements.createRule(ctx, {
+		kind: 'category',
+		name: 'Budgeted category',
+		pattern: 'budgeted-never-matches'
+	});
+	const budget = budgets.createBudget(ctx, {
+		month: '2026-03',
+		category: rule.name,
+		currency: 'KES',
+		amountMinor: 10000
+	});
+	expect(() => statements.deleteRule(ctx, rule.id)).toThrow(/budget still uses the category/i);
+	expect(statements.listRules(ctx).some((r) => r.id === rule.id)).toBe(true);
+	const renamed = statements.updateRule(ctx, rule.id, { name: 'Renamed budgeted category' });
+	expect(renamed.name).toBe('Renamed budgeted category');
+	expect(budgets.getBudget(ctx, budget.id).category).toBe('Renamed budgeted category');
+	budgets.deleteBudget(ctx, budget.id);
+	statements.deleteRule(ctx, rule.id);
+	expect(() => budgets.getBudget(ctx, budget.id)).toThrow();
+});

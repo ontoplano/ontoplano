@@ -158,9 +158,24 @@ test('copy preserves existing buckets, orphans remain visible, and competing edi
 	});
 	expect(budgets.getBudget(ctx, target.id).amountMinor).toBe(9900);
 	statements.updateRule(ctx, rule.id, { name: 'Renamed rule' });
+	// A rename follows the ceiling rather than orphaning it.
 	expect(
-		budgets.listBudgets(ctx, { month: '2026-12' }).find((row) => row.category === 'Orphan source')
-	).toMatchObject({ orphaned: true, amountMinor: 10000 });
+		budgets.listBudgets(ctx, { month: '2026-12' }).find((row) => row.category === 'Renamed rule')
+	).toMatchObject({ orphaned: false, amountMinor: 10000 });
+	// Legacy rows whose category rule is gone still stay visible as orphans.
+	database.exec(
+		'insert into finance_budgets(user_id,month,category,currency,amount_minor) values (?,?,?,?,?)',
+		OWNER,
+		'2026-12',
+		'Removed category',
+		'KES',
+		5000
+	);
+	expect(
+		budgets
+			.listBudgets(ctx, { month: '2026-12' })
+			.find((row) => row.category === 'Removed category')
+	).toMatchObject({ orphaned: true, amountMinor: 5000 });
 	budgets.updateBudget(ctx, target.id, { amountMinor: 12000, updatedAt: target.updatedAt });
 	expect(() =>
 		budgets.updateBudget(ctx, target.id, { amountMinor: 13000, updatedAt: target.updatedAt })

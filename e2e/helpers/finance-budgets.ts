@@ -74,25 +74,12 @@ export async function budgetJourney(page: Page) {
 	await rename.locator('[name="heading"]').fill('Travel');
 	await rename.getByRole('button', { name: 'Save', exact: true }).click();
 	await expect(rename).toBeHidden();
-	// A deleted category is repairable in the dialog: it keeps the gone name
-	// as an option, says so, and offers the existing rules as the new value.
-	await visit(page, '/finance/rules');
-	await page.getByRole('button', { name: 'New category', exact: true }).click();
-	const travel = page.getByRole('dialog', { name: 'New rule', exact: true });
-	await travel.locator('[name="heading"]').fill('Food');
-	await travel.locator('[name="pattern"]').fill('Food');
-	await travel.getByRole('button', { name: 'Add', exact: true }).click();
-	await expect(travel).toBeHidden();
+	// A rename carries the ceiling with it; the budget keeps its amount and
+	// follows the new category name instead of becoming an orphan.
 	await visit(page, '/finance/budgets?month=2026-10');
-	await expect(page.getByTestId('budget-progress')).toContainText('Category no longer exists');
-	await page.getByRole('button', { name: 'Edit budget', exact: true }).click();
-	const repair = page.getByRole('dialog', { name: 'Edit budget', exact: true });
-	await expect(repair).toContainText('no longer exists');
-	await repair.getByLabel('Category', { exact: true }).selectOption('Food');
-	await repair.getByRole('button', { name: 'Save', exact: true }).click();
-	await expect(repair).toBeHidden();
-	await expect(page.getByTestId('budget-progress')).toContainText('Food');
+	await expect(page.getByTestId('budget-progress')).toContainText('Travel');
 	await expect(page.getByTestId('budget-progress')).not.toContainText('Category no longer exists');
+	await expect(page.getByTestId('budget-progress')).toContainText('2,000.00');
 	await page.getByRole('button', { name: 'Delete budget', exact: true }).click();
 	await expect(page.getByTestId('budget-progress')).toHaveCount(1);
 	await page.getByRole('button', { name: 'Delete', exact: true }).click();

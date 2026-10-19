@@ -29,6 +29,7 @@ import {
 	financeTransactions,
 	financeTransactionAllocations,
 	financeCommitmentEntries,
+	financeBudgets,
 	ledgers
 } from '$lib/db/schema.js';
 import {
@@ -998,6 +999,21 @@ export function updateRule(
 		pattern: input.pattern ?? found.pattern,
 		color: input.color ?? found.color
 	});
+	// A budget stores the category by name. Renaming a category would otherwise
+	// leave every ceiling on it orphaned, so the rename carries them with it.
+	if (found.kind === 'category' && f.kind === 'category' && f.name !== found.name) {
+		db.transaction((tx) => {
+			tx.update(financeRules)
+				.set({ kind: f.kind, name: f.name, pattern: f.pattern, color: f.color ?? found.color })
+				.where(and(eq(financeRules.id, id), eq(financeRules.userId, ctx.userId)))
+				.run();
+			tx.update(financeBudgets)
+				.set({ category: f.name })
+				.where(and(eq(financeBudgets.userId, ctx.userId), eq(financeBudgets.category, found.name)))
+				.run();
+		});
+		return listRules(ctx).find((r) => r.id === id)!;
+	}
 	db.update(financeRules)
 		.set({ kind: f.kind, name: f.name, pattern: f.pattern, color: f.color ?? found.color })
 		.where(and(eq(financeRules.id, id), eq(financeRules.userId, ctx.userId)))
@@ -1042,6 +1058,24 @@ export function placeRule(ctx: Ctx, id: number, position: number): void {
 }
 
 export function deleteRule(ctx: Ctx, id: number): void {
+	const rule = db
+		.select({ kind: financeRules.kind, name: financeRules.name })
+		.from(financeRules)
+		.where(and(eq(financeRules.id, id), eq(financeRules.userId, ctx.userId)))
+		.get();
+	if (!rule) throw new NotFoundError('rule');
+	if (rule.kind === 'category') {
+		const used = db
+			.select({ id: financeBudgets.id })
+			.from(financeBudgets)
+			.where(and(eq(financeBudgets.userId, ctx.userId), eq(financeBudgets.category, rule.name)))
+			.limit(1)
+			.get();
+		if (used)
+			throw new ValidationError(
+				`A budget still uses the category “${rule.name}”. Rename or delete that budget first.`
+			);
+	}
 	const gone = db
 		.delete(financeRules)
 		.where(and(eq(financeRules.id, id), eq(financeRules.userId, ctx.userId)))
