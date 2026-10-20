@@ -23,6 +23,12 @@ export function formAction<T>(run: (ctx: Ctx, form: FormData, event: FormEvent) 
 			const result = await run(buildCtx(event.locals.user!.id), form, event);
 			return result === undefined ? { success: true as const } : result;
 		} catch (e) {
+			// `redirect()` and `error()` are control flow, not refusals: a
+			// handler that redirects after a successful write must be allowed
+			// to finish the request. Shape rather than `instanceof` keeps
+			// SvelteKit off this module's runtime import graph (the scheduled
+			// jobs load the services folder with production dependencies only).
+			if (typeof e === 'object' && e !== null && 'location' in e) throw e;
 			return toActionFailure(e);
 		}
 	};

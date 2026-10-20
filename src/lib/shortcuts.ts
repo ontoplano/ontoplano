@@ -102,7 +102,7 @@ export const PAGE_SHORTCUTS: Record<string, PageShortcuts> = {
 		]
 	},
 
-	'/tasks/plan': {
+	'/tasks/calendar': {
 		label: 'app.plan',
 		shortcuts: [
 			{ key: 'j', action: 'navigate-down', description: 'shortcut.navigateSlots' },
@@ -280,6 +280,15 @@ export const PAGE_SHORTCUTS: Record<string, PageShortcuts> = {
 			{ key: 'n', action: 'new', description: 'finance.bills.newBill' }
 		]
 	},
+	'/finance/budgets': {
+		label: 'rooms.finance.tabs.budgets',
+		shortcuts: [{ key: 'n', action: 'new', description: 'finance.budgets.new' }]
+	},
+
+	'/finance/commitments': {
+		label: 'rooms.finance.tabs.commitments',
+		shortcuts: [{ key: 'n', action: 'new', description: 'finance.commitments.new' }]
+	},
 	'/finance/rules': {
 		label: 'rooms.finance.tabs.rules',
 		shortcuts: [
@@ -351,7 +360,12 @@ export function keyFor(pagePath: string, action: string): string {
  * Look up the action slug for a key press on a given page.
  * Returns null if no binding exists.
  */
-export function getAction(pagePath: string, key: string): string | null {
+export function getAction(
+	pagePath: string,
+	press: string | Pick<KeyboardEvent, 'key' | 'ctrlKey' | 'metaKey' | 'altKey'>
+): string | null {
+	if (typeof press !== 'string' && (press.ctrlKey || press.metaKey || press.altKey)) return null;
+	const key = typeof press === 'string' ? press : press.key;
 	const page = PAGE_SHORTCUTS[pagePath];
 	if (!page) return null;
 	const binding = page.shortcuts.find((s) => s.key === key);

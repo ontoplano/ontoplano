@@ -241,7 +241,7 @@
 		const items = filteredIdeas;
 		if (document.querySelector('dialog[open]')) return;
 		if (selection.handleKey(e, () => items[clampedSelectedIndex]?.id)) return;
-		const action = getAction('/notebooks/ideas', e.key);
+		const action = getAction('/notebooks/ideas', e);
 		if (!action) return;
 		e.preventDefault();
 

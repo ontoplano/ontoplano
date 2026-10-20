@@ -19,7 +19,6 @@ import { buildCtx } from '$lib/services/ctx';
 import {
 	getHiddenSections,
 	getClock,
-	getLocale,
 	getNavOrder,
 	getSectionColors,
 	getCaptureSettings,
@@ -43,13 +42,13 @@ export async function load(event: IsolatedEvent): Promise<LayoutServerData> {
 	return {
 		user,
 		/*
-		 * The language, which on a device is the account's own or nothing.
-		 *
-		 * There is no request to read a header off and no operator to have set
-		 * an instance default — this *is* the instance. When nobody has chosen,
-		 * the shell asks the device itself; see `+layout.ts`.
+		 * The language: the account's own, or the one the phone is set to,
+		 * as the bridge worked it out (`eventFor` in `$lib/isolated/routes`).
+		 * Answering the account's setting alone, with English beneath it,
+		 * showed a phone set to Portuguese English until somebody found the
+		 * picker — which is in English.
 		 */
-		locale: getLocale(user.id) ?? SOURCE_LOCALE,
+		locale: event.locals.locale ?? SOURCE_LOCALE,
 		// The device's shell and its pages are one build — there is no version
 		// for either to fall behind.
 		appUpdate: null,

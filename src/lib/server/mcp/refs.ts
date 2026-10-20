@@ -2,13 +2,15 @@ import type { Ctx } from '$lib/services/ctx.js';
 import { NotFoundError } from '$lib/services/errors.js';
 
 import { listActivities } from '$lib/services/activities.js';
-import { FLOWS, listBills } from '$lib/services/bills.js';
+import { FLOWS, listAllPayments, listBills } from '$lib/services/bills.js';
+import { getCommitment, getCommitmentEntry, listCommitments } from '$lib/services/commitments.js';
+import { getBudget } from '$lib/services/budgets.js';
 import { listEveryEntry } from '$lib/services/diary.js';
 import { listAreas, listGoals } from '$lib/services/goals.js';
 import { listHabits } from '$lib/services/habits.js';
 import { listIdeas } from '$lib/services/ideas.js';
 import { occurrenceRow } from '$lib/services/instances.js';
-import { listLedgers } from '$lib/services/ledgers.js';
+import { getBalanceCheck, listLedgers } from '$lib/services/ledgers.js';
 import { listLocations } from '$lib/services/locations.js';
 import { listNotebooks } from '$lib/services/notebooks.js';
 import { listPeople } from '$lib/services/people.js';
@@ -124,6 +126,22 @@ export const KINDS = kinds({
 	tag: { label: 'label', rows: (ctx) => listTagsWithUses(ctx.userId) },
 
 	ledger: { label: 'account', rows: (ctx) => listLedgers(ctx, { includeArchived: true }) },
+	budget: { label: 'budget', rows: () => [], find: (ctx, id) => getBudget(ctx, id) },
+	commitment: {
+		label: 'commitment',
+		rows: (ctx) => listCommitments(ctx, { includeArchived: true }),
+		find: (ctx, id) => getCommitment(ctx, id)
+	},
+	commitmentEntry: {
+		label: 'commitment entry',
+		rows: () => [],
+		find: (ctx, id) => getCommitmentEntry(ctx, id)
+	},
+	balanceCheck: {
+		label: 'balance check',
+		rows: () => [],
+		find: (ctx, id) => getBalanceCheck(ctx, id)
+	},
 
 	/** A line in a ledger. Many, so a call asks for the one it names. */
 	movement: {
@@ -136,7 +154,8 @@ export const KINDS = kinds({
 	bill: {
 		label: 'bill',
 		rows: (ctx) => FLOWS.flatMap((flow) => listBills(ctx, { includeArchived: true, flow }))
-	}
+	},
+	billPayment: { label: 'bill payment', rows: (ctx) => listAllPayments(ctx) }
 });
 
 export type RefKind = keyof typeof KINDS;

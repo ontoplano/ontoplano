@@ -22,7 +22,13 @@ import { messages as englishMessages } from '$lib/i18n/catalogues/en.js';
 import { TOOLS, TOOLS_BY_NAME, type Tool } from './tools.js';
 import { argumentProblem, describeProblem } from './arguments.js';
 import { assertRefs, madeRow, resolveRef, type Reach, type Ref } from './refs.js';
-import { confine, reachOf, withinConfinement, type Confinement } from './confinement.js';
+import {
+	confine,
+	describeConfinement,
+	reachOf,
+	withinConfinement,
+	type Confinement
+} from './confinement.js';
 import { assertUnchanged, stampOf, stampedRef } from './concurrency.js';
 import {
 	fingerprintOf,
@@ -449,6 +455,17 @@ export function handle(caller: Caller, request: RpcRequest): RpcResponse | null 
 		case 'initialize':
 			return ok(id, {
 				protocolVersion: PROTOCOL_VERSION,
+				// A client cannot infer the token's boundary from the visible tool names.
+				// This extension describes the boundary without disclosing the token.
+				_access: caller.confinement
+					? {
+							kind: caller.confinement.kind,
+							id: caller.confinement.id,
+							...(caller.confinement.kind === 'notebook' && caller.scopes.includes('notes:read')
+								? { label: describeConfinement(caller.ctx, caller.confinement) }
+								: {})
+						}
+					: { kind: 'account' },
 				// Tools and nothing else. No prompts, no resources, no sampling: this
 				// server does one thing, and advertising a capability it does not
 				// implement is how a client ends up calling something that 404s.
@@ -459,8 +476,8 @@ export function handle(caller: Caller, request: RpcRequest): RpcResponse | null 
 					'todos, a diary and notebooks, ideas, goals, habits, reminders, the people in it, ' +
 					'the weekly review, three daily wins, data streams, the shopping list and recipes. ' +
 					'Ask `today` before answering "what should I be doing", and `search` before guessing ' +
-					'which room a thing is in. The tools offered follow the token\u2019s grants: a tool ' +
-					'missing from the list is a permission not held, not a feature that does not exist — ' +
+					'which room a thing is in. The full `tools/list` response follows the token\u2019s grants; ' +
+					'a client may show a model a smaller set per turn, so absence from one turn proves nothing. ' +
 					'`tools/list` says which ones are being held back and the grant each needs, so ask ' +
 					'for the grant rather than working around the gap. An argument a tool accepts is in ' +
 					'its schema; where the answer looks cut short, `verbose` or `fields` is why. ' +

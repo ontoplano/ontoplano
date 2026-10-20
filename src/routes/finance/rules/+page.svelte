@@ -129,7 +129,7 @@
 	function onkeydown(event: KeyboardEvent) {
 		if (event.metaKey || event.ctrlKey || event.altKey) return;
 		if (typing(event)) return;
-		const action = getAction(ROOM, event.key);
+		const action = getAction(ROOM, event);
 		if (action === 'new') {
 			event.preventDefault();
 			openNew('category');

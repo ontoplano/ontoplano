@@ -41,19 +41,19 @@
 			},
 			"app": {
 				"create": [
-					"src/routes/tasks/plan/+page.server.ts#create",
-					"src/routes/tasks/plan/+page.server.ts#createExceptional"
+					"src/routes/tasks/calendar/+page.server.ts#create",
+					"src/routes/tasks/calendar/+page.server.ts#createExceptional"
 				],
-				"read": ["src/routes/tasks/plan/+page.server.ts#load"],
+				"read": ["src/routes/tasks/calendar/+page.server.ts#load"],
 				"change": [
-					"src/routes/tasks/plan/+page.server.ts#update",
-					"src/routes/tasks/plan/+page.server.ts#updateExceptional"
+					"src/routes/tasks/calendar/+page.server.ts#update",
+					"src/routes/tasks/calendar/+page.server.ts#updateExceptional"
 				],
-				"archive": ["src/routes/tasks/plan/+page.server.ts#toggleActive"],
-				"unarchive": ["src/routes/tasks/plan/+page.server.ts#toggleActive"],
+				"archive": ["src/routes/tasks/calendar/+page.server.ts#toggleActive"],
+				"unarchive": ["src/routes/tasks/calendar/+page.server.ts#toggleActive"],
 				"delete": [
-					"src/routes/tasks/plan/+page.server.ts#delete",
-					"src/routes/tasks/plan/+page.server.ts#deleteExceptional"
+					"src/routes/tasks/calendar/+page.server.ts#delete",
+					"src/routes/tasks/calendar/+page.server.ts#deleteExceptional"
 				]
 			}
 		},
@@ -278,14 +278,24 @@
 			"mcp": {
 				"create": ["add_bill"],
 				"read": ["bills", "bill_payments", "bill_history", "month_bills", "bills_due"],
-				"change": ["change_bill", "pay_bill", "unpay_bill", "skip_bill", "unskip_bill"],
+				"change": [
+					"change_bill",
+					"pay_bill",
+					"change_bill_payment",
+					"unpay_bill",
+					"skip_bill",
+					"unskip_bill"
+				],
 				"archive": ["archive_bill"],
 				"unarchive": ["archive_bill"]
 			},
 			"app": {
 				"create": ["src/lib/services/bill-actions.ts#create"],
 				"read": ["src/routes/finance/bills/+page.server.ts#load"],
-				"change": ["src/lib/services/bill-actions.ts#update"],
+				"change": [
+					"src/lib/services/bill-actions.ts#update",
+					"src/lib/services/bill-actions.ts#editPayment"
+				],
 				"archive": ["src/lib/services/bill-actions.ts#archive"],
 				"unarchive": ["src/lib/services/bill-actions.ts#archive"],
 				"delete": ["src/lib/services/bill-actions.ts#delete"]
@@ -297,34 +307,110 @@
 		{
 			"name": "Accounts and movements",
 			"mcp": {
-				"create": ["add_ledger", "record_movement"],
-				"read": ["ledgers", "movements", "statement_months", "spending_by_category"],
-				"change": ["change_ledger", "change_movement"],
+				"create": ["add_ledger", "record_movement", "record_balance_check"],
+				"read": [
+					"ledgers",
+					"movements",
+					"statement_months",
+					"spending_by_category",
+					"balance_checks",
+					"summary"
+				],
+				"change": [
+					"change_ledger",
+					"change_movement",
+					"classify_movements",
+					"link_movement",
+					"link_transfer",
+					"unlink_transfer",
+					"split_movement",
+					"unsplit_movement"
+				],
 				"archive": ["change_ledger"],
 				"unarchive": ["change_ledger"],
-				"delete": ["remove_movement"],
+				"delete": ["remove_movement", "delete_balance_check"],
 				"reorder": ["change_ledger"]
 			},
 			"app": {
 				"create": [
 					"src/routes/finance/ledgers/+page.server.ts#createLedger",
-					"src/routes/finance/ledgers/+page.server.ts#addMovement"
+					"src/routes/finance/ledgers/+page.server.ts#addMovement",
+					"src/routes/finance/ledgers/+page.server.ts#recordBalanceCheck"
 				],
 				"read": ["src/routes/finance/ledgers/+page.server.ts#load"],
 				"change": [
+					"src/routes/finance/ledgers/+page.server.ts#classify",
+					"src/routes/finance/ledgers/+page.server.ts#detachMovement",
+					"src/routes/finance/ledgers/+page.server.ts#linkMovement",
+					"src/routes/finance/ledgers/+page.server.ts#linkTransfer",
+					"src/routes/finance/ledgers/+page.server.ts#unlinkTransfer",
 					"src/routes/finance/ledgers/+page.server.ts#updateLedger",
-					"src/routes/finance/ledgers/+page.server.ts#updateMovement"
+					"src/routes/finance/ledgers/+page.server.ts#updateMovement",
+					"src/routes/finance/ledgers/+page.server.ts#splitMovement",
+					"src/routes/finance/ledgers/+page.server.ts#unsplitMovement"
 				],
 				"archive": ["src/routes/finance/ledgers/+page.server.ts#archiveLedger"],
 				"unarchive": ["src/routes/finance/ledgers/+page.server.ts#archiveLedger"],
 				"delete": [
 					"src/routes/finance/ledgers/+page.server.ts#deleteLedger",
-					"src/routes/finance/ledgers/+page.server.ts#deleteMovement"
+					"src/routes/finance/ledgers/+page.server.ts#deleteMovement",
+					"src/routes/finance/ledgers/+page.server.ts#deleteBalanceCheck"
 				],
 				"reorder": ["src/routes/finance/ledgers/+page.server.ts#moveLedger"]
 			},
 			"withheld": {
 				"delete": "A ledger takes every line in it when deleted: archived by a tool, deleted in the app. A single line can be removed."
+			}
+		},
+		{
+			"name": "Commitments",
+			"mcp": {
+				"create": ["add_commitment", "record_commitment_entry"],
+				"read": ["commitments", "commitment_entries"],
+				"change": ["change_commitment", "close_commitment", "settle_commitment", "consume_reserve"],
+				"archive": ["archive_commitment"],
+				"unarchive": ["archive_commitment"],
+				"delete": ["delete_commitment_entry"]
+			},
+			"app": {
+				"create": [
+					"src/routes/finance/commitments/+page.server.ts#create",
+					"src/routes/finance/commitments/+page.server.ts#addEntry"
+				],
+				"read": ["src/routes/finance/commitments/+page.server.ts#load"],
+				"change": [
+					"src/routes/finance/commitments/+page.server.ts#update",
+					"src/routes/finance/commitments/+page.server.ts#close",
+					"src/routes/finance/commitments/+page.server.ts#settle",
+					"src/routes/finance/commitments/+page.server.ts#consume"
+				],
+				"archive": ["src/routes/finance/commitments/+page.server.ts#archive"],
+				"unarchive": ["src/routes/finance/commitments/+page.server.ts#archive"],
+				"delete": [
+					"src/routes/finance/commitments/+page.server.ts#delete",
+					"src/routes/finance/commitments/+page.server.ts#deleteEntry"
+				]
+			},
+			"withheld": {
+				"delete": "A commitment carries financial history: assistants archive it; permanent deletion is only in the archived app view. Mistaken entries can be reversed and restored through the assistant log."
+			}
+		},
+		{
+			"name": "Budgets",
+			"mcp": {
+				"create": ["add_budget", "copy_budgets"],
+				"read": ["budgets", "personal_spending"],
+				"change": ["change_budget"],
+				"delete": ["delete_budget"]
+			},
+			"app": {
+				"create": [
+					"src/routes/finance/budgets/+page.server.ts#create",
+					"src/routes/finance/budgets/+page.server.ts#copy"
+				],
+				"read": ["src/routes/finance/budgets/+page.server.ts#load"],
+				"change": ["src/routes/finance/budgets/+page.server.ts#update"],
+				"delete": ["src/routes/finance/budgets/+page.server.ts#delete"]
 			}
 		},
 		{

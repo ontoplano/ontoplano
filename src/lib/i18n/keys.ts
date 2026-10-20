@@ -156,6 +156,7 @@ export type MessageKey =
 	| 'app.manageYourPlan'
 	| 'app.matchMyDevice'
 	| 'app.monday'
+	| 'app.moneyPicture'
 	| 'app.monthly'
 	| 'app.move'
 	| 'app.neutral'
@@ -312,6 +313,7 @@ export type MessageKey =
 	| 'capture.addedToWithContent'
 	| 'capture.diaryNote'
 	| 'capture.newThing'
+	| 'capture.planDestination'
 	| 'captureDialog.notWrittenDown'
 	| 'captureSettings.atLeastOne'
 	| 'captureSettings.intro'
@@ -327,6 +329,7 @@ export type MessageKey =
 	| 'card.goalsWhosePeriodCoversToday'
 	| 'card.oneOfYourOwnQuotes'
 	| 'card.theBlockYouAreIn'
+	| 'card.theFourAnswersAboutYourMoney'
 	| 'card.theHoursYouHaveTicked'
 	| 'card.theLastFewIdeasYou'
 	| 'card.theMostRecentThingsYou'
@@ -424,6 +427,8 @@ export type MessageKey =
 	| 'errors.billing.purchaseIsForAnotherPlan'
 	| 'errors.billing.storeDoesNotKnowThatPurchase'
 	| 'errors.billing.youHaveAlreadySwitchedTwice'
+	| 'errors.bills.invalidPaidDate'
+	| 'errors.bills.invalidPaymentAmount'
 	| 'errors.bills.thatCategoryIsNotYours'
 	| 'errors.bills.thatGoalIsNotYours'
 	| 'errors.bills.thatPeriodIsAlreadyPaid'
@@ -571,7 +576,24 @@ export type MessageKey =
 	| 'errors.slots.noValidSlotsFound'
 	| 'errors.slots.thatWorkoutIsNotYours'
 	| 'errors.slots.workoutRequired'
+	| 'errors.statements.alreadyChild'
+	| 'errors.statements.alreadyChildLink'
+	| 'errors.statements.alreadyRefund'
+	| 'errors.statements.alreadyTransfer'
+	| 'errors.statements.legCannotBeChild'
+	| 'errors.statements.legOfTransferChange'
+	| 'errors.statements.legOfTransferClassify'
+	| 'errors.statements.legOfTransferDelete'
+	| 'errors.statements.legsDoNotBalance'
+	| 'errors.statements.linkNeedsCurrency'
+	| 'errors.statements.linkNeedsLedger'
 	| 'errors.statements.noParserKnowsThatExport'
+	| 'errors.statements.notATransfer'
+	| 'errors.statements.ownCounterpart'
+	| 'errors.statements.ownParent'
+	| 'errors.statements.refundOnLeg'
+	| 'errors.statements.sameLedgerTransfer'
+	| 'errors.statements.unlikeCurrencies'
 	| 'errors.streams.pointMustBeAnObject'
 	| 'errors.streams.pointsMustBeAnArray'
 	| 'errors.subscriptions.anEmailAddressIsNeeded'
@@ -676,6 +698,7 @@ export type MessageKey =
 	| 'finance.bills.averagePerPayment'
 	| 'finance.bills.averagePerWeek'
 	| 'finance.bills.averagePerYear'
+	| 'finance.bills.changingAmountDetachesMovement'
 	| 'finance.bills.date'
 	| 'finance.bills.delete'
 	| 'finance.bills.deleteThisBill'
@@ -689,6 +712,8 @@ export type MessageKey =
 	| 'finance.bills.dueTheNth'
 	| 'finance.bills.edit'
 	| 'finance.bills.editBill'
+	| 'finance.bills.editPayment'
+	| 'finance.bills.editPaymentFor'
 	| 'finance.bills.expectedAmount'
 	| 'finance.bills.expectedAmountShort'
 	| 'finance.bills.expectedThisMonth'
@@ -736,42 +761,167 @@ export type MessageKey =
 	| 'finance.bills.whatPaidName'
 	| 'finance.bills.whenItTurnsUpOn'
 	| 'finance.bills.youWontBeReminded'
+	| 'finance.budgets.allCurrencies'
+	| 'finance.budgets.allocated'
+	| 'finance.budgets.allocatedAmount'
+	| 'finance.budgets.cancel'
+	| 'finance.budgets.category'
+	| 'finance.budgets.categoryCreated'
+	| 'finance.budgets.categoryGone'
+	| 'finance.budgets.categoryHint'
+	| 'finance.budgets.categoryName'
+	| 'finance.budgets.categoryNameHint'
+	| 'finance.budgets.chooseCategory'
+	| 'finance.budgets.chooseCurrency'
+	| 'finance.budgets.confirmDelete'
+	| 'finance.budgets.copied'
+	| 'finance.budgets.copy'
+	| 'finance.budgets.create'
+	| 'finance.budgets.createCategory'
+	| 'finance.budgets.credit'
+	| 'finance.budgets.currency'
+	| 'finance.budgets.currencyNeedsLedger'
+	| 'finance.budgets.delete'
+	| 'finance.budgets.deleteConfirm'
+	| 'finance.budgets.edit'
+	| 'finance.budgets.manageRules'
+	| 'finance.budgets.month'
+	| 'finance.budgets.new'
+	| 'finance.budgets.newCategory'
+	| 'finance.budgets.noBudgets'
+	| 'finance.budgets.noBudgetsHint'
+	| 'finance.budgets.noCategories'
+	| 'finance.budgets.noLedger'
+	| 'finance.budgets.noLedgerCurrency'
+	| 'finance.budgets.nothingToCopy'
+	| 'finance.budgets.orphaned'
+	| 'finance.budgets.remaining'
+	| 'finance.budgets.save'
+	| 'finance.budgets.spent'
+	| 'finance.budgets.title'
+	| 'finance.commitments.addEntry'
+	| 'finance.commitments.adjustment'
+	| 'finance.commitments.adjustmentHint'
+	| 'finance.commitments.after'
+	| 'finance.commitments.archive'
+	| 'finance.commitments.archived'
+	| 'finance.commitments.close'
+	| 'finance.commitments.closeHint'
+	| 'finance.commitments.consume'
+	| 'finance.commitments.consumeHint'
+	| 'finance.commitments.currency'
+	| 'finance.commitments.current'
+	| 'finance.commitments.custody'
+	| 'finance.commitments.custodyHint'
+	| 'finance.commitments.deleteHint'
+	| 'finance.commitments.deletePermanently'
+	| 'finance.commitments.edit'
+	| 'finance.commitments.hint'
+	| 'finance.commitments.history'
+	| 'finance.commitments.lastEntry'
+	| 'finance.commitments.movement'
+	| 'finance.commitments.new'
+	| 'finance.commitments.none'
+	| 'finance.commitments.opening'
+	| 'finance.commitments.payable'
+	| 'finance.commitments.payableHint'
+	| 'finance.commitments.person'
+	| 'finance.commitments.receivable'
+	| 'finance.commitments.receivableHint'
+	| 'finance.commitments.reopen'
+	| 'finance.commitments.reserve'
+	| 'finance.commitments.reserveHint'
+	| 'finance.commitments.reverseEntry'
+	| 'finance.commitments.reverseHint'
+	| 'finance.commitments.running'
+	| 'finance.commitments.settle'
+	| 'finance.commitments.settleHint'
+	| 'finance.commitments.status.archived'
+	| 'finance.commitments.status.open'
+	| 'finance.commitments.status.settled'
+	| 'finance.commitments.writeOffNote'
 	| 'finance.donut.empty'
 	| 'finance.donut.heading'
 	| 'finance.donut.out'
 	| 'finance.insights.average'
 	| 'finance.insights.biggestCategory'
+	| 'finance.insights.budgetsWindow'
+	| 'finance.insights.cash'
+	| 'finance.insights.categories'
+	| 'finance.insights.category'
+	| 'finance.insights.chooseMonth'
+	| 'finance.insights.credit'
+	| 'finance.insights.currency'
+	| 'finance.insights.currencyNotDeclared'
+	| 'finance.insights.custody'
 	| 'finance.insights.dearestMonth'
+	| 'finance.insights.defaultWindow'
+	| 'finance.insights.definitions'
 	| 'finance.insights.everyLedger'
+	| 'finance.insights.exclusions'
+	| 'finance.insights.gross'
 	| 'finance.insights.importAStatementIntoA'
 	| 'finance.insights.in'
 	| 'finance.insights.inAndOut'
 	| 'finance.insights.inTotalAMonth'
+	| 'finance.insights.income'
 	| 'finance.insights.lastMonths'
+	| 'finance.insights.minorUnits'
+	| 'finance.insights.month'
+	| 'finance.insights.monthBudgets'
 	| 'finance.insights.monthlyCostOf'
+	| 'finance.insights.net'
+	| 'finance.insights.noActivity'
 	| 'finance.insights.noTagsYet'
 	| 'finance.insights.nothingToReadYet'
 	| 'finance.insights.out'
 	| 'finance.insights.overMonthWithAny'
+	| 'finance.insights.partialBalance'
+	| 'finance.insights.refunds'
 	| 'finance.insights.spendingStackedByCategory'
 	| 'finance.insights.spentPerMonthOnAverage'
 	| 'finance.insights.theSameMoneyWithoutThe'
 	| 'finance.insights.theWholeWindowByCategory'
+	| 'finance.insights.transfers'
+	| 'finance.insights.unclassified'
+	| 'finance.insights.unknownBalance'
+	| 'finance.insights.unmatchedRefunds'
+	| 'finance.insights.unspecified'
 	| 'finance.insights.whatArrivedAgainstWhatLeft'
 	| 'finance.insights.whatEachMonthWasMade'
 	| 'finance.insights.whatOneTagCosts'
+	| 'finance.insights.window'
 	| 'finance.insights.writeOne'
 	| 'finance.ledgers.aLedgerIsOnePlace'
 	| 'finance.ledgers.addedAlreadyHere'
 	| 'finance.ledgers.andItsLinesGoFor'
 	| 'finance.ledgers.archive'
+	| 'finance.ledgers.asOf'
 	| 'finance.ledgers.askEveryTime'
+	| 'finance.ledgers.assumed'
+	| 'finance.ledgers.checkAmount'
+	| 'finance.ledgers.checkComputed'
+	| 'finance.ledgers.checkDate'
+	| 'finance.ledgers.checkDifference'
+	| 'finance.ledgers.checkDifferent'
+	| 'finance.ledgers.checkHistory'
+	| 'finance.ledgers.checkMatched'
+	| 'finance.ledgers.checkUnverified'
+	| 'finance.ledgers.chooseCurrency'
 	| 'finance.ledgers.chooseTheFile'
+	| 'finance.ledgers.classifySelected'
 	| 'finance.ledgers.coffee'
+	| 'finance.ledgers.counterpart'
+	| 'finance.ledgers.counterpartPending'
+	| 'finance.ledgers.coverageTour'
+	| 'finance.ledgers.currency'
+	| 'finance.ledgers.currencyHint'
+	| 'finance.ledgers.currencyNotDeclared'
 	| 'finance.ledgers.currentAccount'
 	| 'finance.ledgers.datesAreDayFirst'
 	| 'finance.ledgers.day'
 	| 'finance.ledgers.delete'
+	| 'finance.ledgers.deleteCheck'
 	| 'finance.ledgers.deleteThisLedger'
 	| 'finance.ledgers.deleteThisLine'
 	| 'finance.ledgers.deleteThisLine2'
@@ -781,17 +931,33 @@ export type MessageKey =
 	| 'finance.ledgers.editLine'
 	| 'finance.ledgers.editThisLine'
 	| 'finance.ledgers.everyMonth'
+	| 'finance.ledgers.excludedAccounts'
 	| 'finance.ledgers.export'
 	| 'finance.ledgers.flipAmountsForAn'
 	| 'finance.ledgers.goesImportingTheSameStatement'
 	| 'finance.ledgers.import'
 	| 'finance.ledgers.importAStatement'
+	| 'finance.ledgers.importRecordedOnly'
 	| 'finance.ledgers.importThisLedgerSExportOr'
 	| 'finance.ledgers.keepIt'
+	| 'finance.ledgers.kindCash'
+	| 'finance.ledgers.kindExpense'
+	| 'finance.ledgers.kindFee'
+	| 'finance.ledgers.kindIncome'
+	| 'finance.ledgers.kindRefund'
+	| 'finance.ledgers.kindTransfer'
 	| 'finance.ledgers.lastOn'
 	| 'finance.ledgers.leaveTheIdAsNone'
 	| 'finance.ledgers.ledger'
 	| 'finance.ledgers.lines'
+	| 'finance.ledgers.linkAsTransfer'
+	| 'finance.ledgers.linkParent'
+	| 'finance.ledgers.linkRelated'
+	| 'finance.ledgers.linkedToLine'
+	| 'finance.ledgers.linkedTransfer'
+	| 'finance.ledgers.meaning'
+	| 'finance.ledgers.meaningHint'
+	| 'finance.ledgers.minorUnitsAmount'
 	| 'finance.ledgers.moneyIn'
 	| 'finance.ledgers.moneyOut'
 	| 'finance.ledgers.month'
@@ -799,28 +965,96 @@ export type MessageKey =
 	| 'finance.ledgers.moveLater'
 	| 'finance.ledgers.newLedger'
 	| 'finance.ledgers.newLine'
+	| 'finance.ledgers.noChecks'
 	| 'finance.ledgers.noHeaderRowSoThe'
 	| 'finance.ledgers.noLedgersYet'
 	| 'finance.ledgers.noLinesMatch'
+	| 'finance.ledgers.noSupportedFunds'
 	| 'finance.ledgers.none'
 	| 'finance.ledgers.nothingHereYet'
+	| 'finance.ledgers.openingAmount'
+	| 'finance.ledgers.openingAt'
+	| 'finance.ledgers.openingHint'
+	| 'finance.ledgers.openingOn'
 	| 'finance.ledgers.orPasteItBelow'
 	| 'finance.ledgers.orderLinesBy'
+	| 'finance.ledgers.outsideCoverage'
 	| 'finance.ledgers.pasteExample'
 	| 'finance.ledgers.preselectedWhenImportingIntoThis'
 	| 'finance.ledgers.putItAway'
 	| 'finance.ledgers.readFromTheHeaderChange'
+	| 'finance.ledgers.recordCheck'
+	| 'finance.ledgers.recordedSubtotal'
+	| 'finance.ledgers.relatedLine'
 	| 'finance.ledgers.restore'
 	| 'finance.ledgers.searchDescriptions'
+	| 'finance.ledgers.selectLine'
+	| 'finance.ledgers.selectedCount'
 	| 'finance.ledgers.showingCount'
+	| 'finance.ledgers.statusRecorded'
+	| 'finance.ledgers.statusSupported'
+	| 'finance.ledgers.statusVerified'
+	| 'finance.ledgers.supportedFunds'
 	| 'finance.ledgers.theBankSOwnId'
 	| 'finance.ledgers.theRulesReadThisSo'
 	| 'finance.ledgers.twoColumnsInstead'
 	| 'finance.ledgers.uncategorizedCount'
+	| 'finance.ledgers.unlinkRelated'
+	| 'finance.ledgers.unlinkTransfer'
+	| 'finance.ledgers.unspecified'
 	| 'finance.ledgers.usualExport'
 	| 'finance.ledgers.whatItIs'
 	| 'finance.monthBars.newest'
 	| 'finance.monthlyBars.caption'
+	| 'finance.overview.addLedger'
+	| 'finance.overview.available'
+	| 'finance.overview.availableFormula'
+	| 'finance.overview.availableFormulaLong'
+	| 'finance.overview.balanceDiffers'
+	| 'finance.overview.balanceDiffersOne'
+	| 'finance.overview.checkOpeningDate'
+	| 'finance.overview.claimsBody'
+	| 'finance.overview.committed'
+	| 'finance.overview.coverage'
+	| 'finance.overview.coverageOne'
+	| 'finance.overview.declareCurrency'
+	| 'finance.overview.excluded'
+	| 'finance.overview.fixOpening'
+	| 'finance.overview.forTheMonth'
+	| 'finance.overview.left'
+	| 'finance.overview.leftPane'
+	| 'finance.overview.missingOpening'
+	| 'finance.overview.missingOpeningOne'
+	| 'finance.overview.moneyView'
+	| 'finance.overview.myMoney'
+	| 'finance.overview.myMoneyAvailableNote'
+	| 'finance.overview.myMoneyFormula'
+	| 'finance.overview.noAccounts'
+	| 'finance.overview.noAccountsBody'
+	| 'finance.overview.noAccountsInCurrency'
+	| 'finance.overview.noAccountsInCurrencyBody'
+	| 'finance.overview.noCurrencyBody'
+	| 'finance.overview.noCurrencyTotal'
+	| 'finance.overview.noPlans'
+	| 'finance.overview.notABalance'
+	| 'finance.overview.nothingSpent'
+	| 'finance.overview.otherCurrencies'
+	| 'finance.overview.otherCurrenciesMine'
+	| 'finance.overview.outsideCoverageOne'
+	| 'finance.overview.outsideCoverageTotal'
+	| 'finance.overview.overviewHint'
+	| 'finance.overview.payables'
+	| 'finance.overview.plansNeedCurrency'
+	| 'finance.overview.receivables'
+	| 'finance.overview.setAside'
+	| 'finance.overview.setAsideBody'
+	| 'finance.overview.setBudget'
+	| 'finance.overview.spent'
+	| 'finance.overview.spentPane'
+	| 'finance.overview.verified'
+	| 'finance.overview.viewAll'
+	| 'finance.overview.viewHint'
+	| 'finance.overview.viewMine'
 	| 'finance.rules.aCategory'
 	| 'finance.rules.aLineBelongsToThe'
 	| 'finance.rules.aTag'
@@ -865,6 +1099,20 @@ export type MessageKey =
 	| 'finance.rules.tags'
 	| 'finance.rules.theFullSyntax'
 	| 'finance.rules.whichLinesThisClaims'
+	| 'finance.splits.addPart'
+	| 'finance.splits.category'
+	| 'finance.splits.commitment'
+	| 'finance.splits.confirmUnsplit'
+	| 'finance.splits.custody'
+	| 'finance.splits.difference'
+	| 'finance.splits.hint'
+	| 'finance.splits.history'
+	| 'finance.splits.linkedHint'
+	| 'finance.splits.personal'
+	| 'finance.splits.removePart'
+	| 'finance.splits.save'
+	| 'finance.splits.title'
+	| 'finance.splits.unsplit'
 	| 'finance.stackedMonths.caption'
 	| 'frontDoor.createAnAccount'
 	| 'frontDoor.howItWorks'
@@ -2162,10 +2410,15 @@ export type MessageKey =
 	| 'notify.mondayMorningWhatLastWeek'
 	| 'notify.noun.activity'
 	| 'notify.noun.alarm'
+	| 'notify.noun.balanceCheck'
 	| 'notify.noun.beforeBlock'
 	| 'notify.noun.bill'
+	| 'notify.noun.billPayment'
 	| 'notify.noun.block'
 	| 'notify.noun.bought'
+	| 'notify.noun.budget'
+	| 'notify.noun.commitment'
+	| 'notify.noun.commitmentEntry'
 	| 'notify.noun.dataPoint'
 	| 'notify.noun.entry'
 	| 'notify.noun.fromGoal'
@@ -2197,6 +2450,7 @@ export type MessageKey =
 	| 'notify.noun.tag'
 	| 'notify.noun.task'
 	| 'notify.noun.toGoal'
+	| 'notify.noun.transfer'
 	| 'notify.noun.win'
 	| 'notify.noun.workout'
 	| 'notify.noun.workoutCategory'
@@ -2215,6 +2469,7 @@ export type MessageKey =
 	| 'notify.verb.archive'
 	| 'notify.verb.cancel'
 	| 'notify.verb.change'
+	| 'notify.verb.classify'
 	| 'notify.verb.close'
 	| 'notify.verb.cooked'
 	| 'notify.verb.delete'
@@ -2457,8 +2712,11 @@ export type MessageKey =
 	| 'reportDialog.yourIdea'
 	| 'rooms.finance.sections'
 	| 'rooms.finance.tabs.bills'
+	| 'rooms.finance.tabs.budgets'
+	| 'rooms.finance.tabs.commitments'
 	| 'rooms.finance.tabs.insights'
 	| 'rooms.finance.tabs.ledgers'
+	| 'rooms.finance.tabs.overview'
 	| 'rooms.finance.tabs.rules'
 	| 'rooms.finance.title'
 	| 'rooms.goals.sections'
@@ -3516,6 +3774,8 @@ export type MessageKey =
 	| 'tasks.plan.minutesBeforeItStartsEvery'
 	| 'tasks.plan.mode'
 	| 'tasks.plan.month'
+	| 'tasks.plan.moveHere'
+	| 'tasks.plan.moveOrCopyBlock'
 	| 'tasks.plan.newActivity'
 	| 'tasks.plan.newActivity2'
 	| 'tasks.plan.newBlock'
@@ -3530,6 +3790,7 @@ export type MessageKey =
 	| 'tasks.plan.on'
 	| 'tasks.plan.openTheDay'
 	| 'tasks.plan.owed'
+	| 'tasks.plan.placeBlock'
 	| 'tasks.plan.press'
 	| 'tasks.plan.pressAndHoldOnThe'
 	| 'tasks.plan.putBlockBackToPending'
@@ -3815,6 +4076,10 @@ export type MessageKey =
 	| 'tour.board'
 	| 'tour.booksKilosEurosAnything'
 	| 'tour.boughtAndBackAgain'
+	| 'tour.budgets'
+	| 'tour.budgetsBody'
+	| 'tour.budgetsRoom'
+	| 'tour.budgetsTitle'
 	| 'tour.catchItNowJudgeIt'
 	| 'tour.categoriesAreTheColours'
 	| 'tour.categoriesWashTheRowIn'
@@ -4053,6 +4318,7 @@ export type MessageKey =
 	| 'ui.restore'
 	| 'ui.save'
 	| 'ui.search'
+	| 'ui.select'
 	| 'ui.show'
 	| 'ui.showLess'
 	| 'ui.showMore'
@@ -4197,6 +4463,17 @@ export interface MessageValuesFor {
 	'errors.notebooks.hasNoRecipesTab': { notebook: string | number };
 	'errors.notebooks.hasNoTasksTab': { notebook: string | number };
 	'errors.notebooks.hasNoWorkoutsTab': { notebook: string | number };
+	'errors.statements.alreadyChild': { id: string | number };
+	'errors.statements.alreadyRefund': { id: string | number };
+	'errors.statements.legOfTransferDelete': { id: string | number };
+	'errors.statements.legsDoNotBalance': {
+		a: string | number;
+		b: string | number;
+		first: string | number;
+		second: string | number;
+	};
+	'errors.statements.refundOnLeg': { id: string | number };
+	'errors.statements.unlikeCurrencies': { a: string | number; b: string | number };
 	'filters.applyFilter': { name: string | number };
 	'filters.forgetFilter': { name: string | number };
 	'filters.sureForget': { name: string | number };
@@ -4210,6 +4487,7 @@ export interface MessageValuesFor {
 	'finance.bills.dueOnDay': { day: string | number };
 	'finance.bills.dueTheNth': { nth: string | number };
 	'finance.bills.edit': { name: string | number };
+	'finance.bills.editPaymentFor': { period: string | number };
 	'finance.bills.expectedAmountShort': { amount: string | number };
 	'finance.bills.historyOf': { name: string | number };
 	'finance.bills.markPaid2': { name: string | number };
@@ -4220,7 +4498,13 @@ export interface MessageValuesFor {
 	'finance.bills.undoThePaymentFor': { name: string | number };
 	'finance.bills.undoTheSkipFor': { name: string | number };
 	'finance.bills.whatPaidName': { name: string | number };
+	'finance.budgets.categoryCreated': { category: string | number };
+	'finance.budgets.categoryGone': { category: string | number };
+	'finance.budgets.copied': { added: string | number; skipped: string | number };
 	'finance.insights.average': { averageCents: string | number };
+	'finance.insights.cash': { amount: string | number; count: number };
+	'finance.insights.currencyNotDeclared': { currency: string | number };
+	'finance.insights.custody': { amount: string | number; count: number };
 	'finance.insights.inTotalAMonth': {
 		activeMonths: string | number;
 		averageCents: string | number;
@@ -4228,20 +4512,68 @@ export interface MessageValuesFor {
 		totalCents: string | number;
 	};
 	'finance.insights.lastMonths': { w: string | number };
+	'finance.insights.minorUnits': { amount: string | number };
 	'finance.insights.monthlyCostOf': { name: string | number };
 	'finance.insights.overMonthWithAny': { monthsWithSpending: string | number; s: string | number };
+	'finance.insights.partialBalance': { total: string | number; verified: string | number };
+	'finance.insights.transfers': {
+		count: number;
+		incoming: string | number;
+		outgoing: string | number;
+	};
+	'finance.insights.unclassified': { count: number };
+	'finance.insights.unmatchedRefunds': { count: number };
+	'finance.insights.window': { from: string | number; to: string | number };
 	'finance.ledgers.addedAlreadyHere': { added: string | number; skipped: string | number };
 	'finance.ledgers.andItsLinesGoFor': { count: number };
 	'finance.ledgers.archive': { name: string | number };
+	'finance.ledgers.asOf': { day: string | number };
+	'finance.ledgers.checkComputed': { amount: string | number };
+	'finance.ledgers.checkDifference': { amount: string | number };
+	'finance.ledgers.currencyNotDeclared': { currency: string | number };
 	'finance.ledgers.delete': { name: string | number };
 	'finance.ledgers.edit': { name: string | number };
+	'finance.ledgers.excludedAccounts': { names: string | number };
 	'finance.ledgers.lastOn': { day: string | number };
 	'finance.ledgers.lines': { count: number };
+	'finance.ledgers.linkedToLine': { id: string | number };
+	'finance.ledgers.minorUnitsAmount': { amount: string | number };
 	'finance.ledgers.moveEarlier': { name: string | number };
 	'finance.ledgers.moveLater': { name: string | number };
+	'finance.ledgers.openingAt': { amount: string | number; day: string | number };
+	'finance.ledgers.outsideCoverage': { count: number };
+	'finance.ledgers.recordedSubtotal': { amount: string | number };
+	'finance.ledgers.selectLine': { name: string | number };
+	'finance.ledgers.selectedCount': { count: number };
 	'finance.ledgers.showingCount': { count: number };
 	'finance.ledgers.uncategorizedCount': { count: number };
 	'finance.monthBars.newest': { shown: string | number; total: string | number };
+	'finance.overview.availableFormulaLong': {
+		custody: string | number;
+		funds: string | number;
+		reserves: string | number;
+	};
+	'finance.overview.balanceDiffers': { count: number };
+	'finance.overview.balanceDiffersOne': { count: number };
+	'finance.overview.coverage': { accounts: string | number; supported: string | number };
+	'finance.overview.coverageOne': { accounts: string | number; supported: string | number };
+	'finance.overview.forTheMonth': { month: string | number };
+	'finance.overview.leftPane': { month: string | number };
+	'finance.overview.missingOpening': { count: number };
+	'finance.overview.missingOpeningOne': { count: number };
+	'finance.overview.myMoneyAvailableNote': { available: string | number };
+	'finance.overview.myMoneyFormula': {
+		available: string | number;
+		funds: string | number;
+		reserves: string | number;
+	};
+	'finance.overview.noCurrencyBody': { currency: string | number };
+	'finance.overview.noPlans': { month: string | number };
+	'finance.overview.nothingSpent': { month: string | number };
+	'finance.overview.outsideCoverageOne': { count: number };
+	'finance.overview.outsideCoverageTotal': { count: number };
+	'finance.overview.spentPane': { month: string | number };
+	'finance.overview.verified': { count: number };
 	'finance.rules.colourFor': { name: string | number };
 	'finance.rules.delete': { name: string | number };
 	'finance.rules.edit': { name: string | number };
@@ -4249,6 +4581,7 @@ export interface MessageValuesFor {
 	'finance.rules.moveUp': { name: string | number };
 	'finance.rules.showingCount': { count: number };
 	'finance.rules.stopsClaimingTheLineIt': { matches: string | number; s: string | number };
+	'finance.splits.difference': { amount: string | number };
 	'gallery.albumsCount': { count: number };
 	'gallery.albumsInside': { count: number };
 	'gallery.allOf': { name: string | number };
@@ -4533,10 +4866,15 @@ export interface MessageValuesFor {
 	'notify.labelsOff': { labels: string | number };
 	'notify.noun.activity': { count: number };
 	'notify.noun.alarm': { count: number };
+	'notify.noun.balanceCheck': { count: number };
 	'notify.noun.beforeBlock': { count: number };
 	'notify.noun.bill': { count: number };
+	'notify.noun.billPayment': { count: number };
 	'notify.noun.block': { count: number };
 	'notify.noun.bought': { count: number };
+	'notify.noun.budget': { count: number };
+	'notify.noun.commitment': { count: number };
+	'notify.noun.commitmentEntry': { count: number };
 	'notify.noun.dataPoint': { count: number };
 	'notify.noun.entry': { count: number };
 	'notify.noun.fromGoal': { count: number };
@@ -4568,6 +4906,7 @@ export interface MessageValuesFor {
 	'notify.noun.tag': { count: number };
 	'notify.noun.task': { count: number };
 	'notify.noun.toGoal': { count: number };
+	'notify.noun.transfer': { count: number };
 	'notify.noun.win': { count: number };
 	'notify.noun.workout': { count: number };
 	'notify.noun.workoutCategory': { count: number };

@@ -7,12 +7,12 @@
 	const t = useT();
 
 	/**
-	 * Where the money went, as one ring.
+	 * Where the personal spending went, as one ring.
 	 *
-	 * Every outgoing line is in exactly one slice — uncategorized included —
-	 * so the ring is the whole of what was spent rather than a sample of it.
-	 * Each slice carries its category's own colour, the same one its rows
-	 * wear in the list.
+	 * Expenses and fees, net of refunds, and only the personal part of a split
+	 * line — uncategorized included — so the ring is the whole of personal
+	 * spending rather than a sample of it. Each slice carries its category's
+	 * own colour, the same one its rows wear in the list.
 	 */
 	let {
 		slices,
@@ -93,7 +93,9 @@
 					<span class="w-9 shrink-0 text-right text-xs text-gray-500 tabular-nums">
 						{Math.round(slice.share * 100)}%
 					</span>
-					<span class="w-20 shrink-0 text-right text-gray-900 tabular-nums">
+					<span
+						class="w-24 shrink-0 text-right text-xs whitespace-nowrap text-gray-900 tabular-nums"
+					>
 						{formatMoney(slice.outCents, currency)}
 					</span>
 				</li>

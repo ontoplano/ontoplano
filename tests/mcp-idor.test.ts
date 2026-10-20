@@ -84,6 +84,11 @@ const WATCHED = [
 	'workout_categories',
 	'finance_rules',
 	'finance_transactions',
+	'finance_balance_checks',
+	'finance_commitments',
+	'finance_budgets',
+	'finance_commitment_entries',
+	'finance_transaction_allocations',
 	'exceptional_tasks',
 	'recurring_tasks',
 	'task_records',
@@ -110,7 +115,7 @@ beforeAll(async () => {
 	const { createArea, createGoal } = await import('../src/lib/services/goals');
 	const { createHabit } = await import('../src/lib/services/habits');
 	const { createNotebook } = await import('../src/lib/services/notebooks');
-	const { createLedger } = await import('../src/lib/services/ledgers');
+	const { createLedger, recordBalanceCheck } = await import('../src/lib/services/ledgers');
 	const { createEntry } = await import('../src/lib/services/diary');
 	const { createIdea } = await import('../src/lib/services/ideas');
 	const { createPerson } = await import('../src/lib/services/people');
@@ -129,7 +134,9 @@ beforeAll(async () => {
 	const { createWorkout, createWorkoutCategory, logWorkout } =
 		await import('../src/lib/services/workouts');
 	const { createRule, recordMovement } = await import('../src/lib/services/statements');
-	const { createBill } = await import('../src/lib/services/bills');
+	const { createBill, markPaid } = await import('../src/lib/services/bills');
+	const { createCommitment, addCommitmentEntry } = await import('../src/lib/services/commitments');
+	const { createBudget } = await import('../src/lib/services/budgets');
 	const { ensureTagIds } = await import('../src/lib/services/tags');
 
 	/** One row of every kind a tool can name, under this account. */
@@ -149,6 +156,20 @@ beforeAll(async () => {
 		o.notebook = idOf(createNotebook(c, { title: `notebook ${m}` }));
 		o.note = idOf(createEntry(c, { content: `note ${m}` }));
 		o.ledger = idOf(createLedger(c, { name: `ledger ${m}` }));
+		createLedger(c, { name: `budget ledger ${m}`, currency: 'KES' });
+		createRule(c, { kind: 'category', name: `category ${m}`, pattern: m });
+		o.budget = createBudget(c, {
+			month: '2026-03',
+			category: `category ${m}`,
+			currency: 'KES',
+			amountMinor: 10000
+		}).id;
+		o.balanceCheck = recordBalanceCheck(c, {
+			ledgerId: o.ledger,
+			asOf: '2026-03-13',
+			observedMinor: 1234,
+			note: `statement ${m}`
+		}).id;
 		o.movement = recordMovement(c, {
 			ledgerId: o.ledger,
 			occurredOn: '2026-03-10',
@@ -157,11 +178,25 @@ beforeAll(async () => {
 		}).id;
 		o.idea = idOf(createIdea(c, { content: `idea ${m}` }));
 		o.person = idOf(createPerson(c, { name: `person ${m}` }));
+		o.commitment = createCommitment(c, {
+			name: `commitment ${m}`,
+			kind: 'payable',
+			currency: 'KES',
+			openingMinor: 10000,
+			personId: o.person
+		}).id;
+		o.commitmentEntry = addCommitmentEntry(c, {
+			commitmentId: o.commitment,
+			occurredOn: '2026-03-13',
+			amountMinor: -100,
+			note: `entry ${m}`
+		}).id;
 		o.reminder = idOf(createFreeReminder(c, { at: '2026-03-20T09:00', message: `reminder ${m}` }));
 		o.location = idOf(createLocation(c, { name: `place ${m}` }));
 		o.recipe = idOf(createRecipe(c, { title: `recipe ${m}` }));
 		o.sortRule = idOf(createRule(c, { kind: 'tag', name: `rule ${m}`, pattern: m }));
 		o.bill = idOf(createBill(c, { name: `bill ${m}`, dueDay: 5 }));
+		o.billPayment = markPaid(c, Number(o.bill), { period: '2026-03' }).id;
 
 		const activityCategory = idOf(createActivityCategory(c, { name: `cat ${m}` }));
 		o.activity = idOf(createActivity(c, { name: `activity ${m}`, categoryId: activityCategory }));
@@ -393,5 +428,7 @@ describe('one reference at a time, from a valid baseline', () => {
 		expect(leaked, 'these reached a stranger’s row, or changed something').toEqual([]);
 		expect(byShape, 'these were refused by the schema, not by the reference').toEqual([]);
 		expect(differed, 'these refused a stranger’s row differently from no row').toEqual([]);
-	}, 60_000);
+		// The sweep grows with the tool table and runs beside every other test
+		// file: a budget that fits it alone goes red on a loaded machine.
+	}, 120_000);
 });

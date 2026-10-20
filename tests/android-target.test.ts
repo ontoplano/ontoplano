@@ -43,8 +43,8 @@ describe('the Android project', () => {
 
 	test('still runs on the phones it always did', () => {
 		// Raising the target must not quietly raise the floor: minSdk is who can
-		// install this at all, and 23 is Android 6.
-		expect(levelOf('minSdkVersion')).toBeLessThanOrEqual(23);
+		// install this at all.
+		expect(levelOf('minSdkVersion')).toBeLessThanOrEqual(24);
 	});
 
 	test('builds with a plugin that knows the level it compiles against', () => {

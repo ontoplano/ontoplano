@@ -7,6 +7,7 @@
 	import MoreOptions from '$lib/components/MoreOptions.svelte';
 	import NotebookField from '$lib/components/NotebookField.svelte';
 	import RatingPicker from '$lib/components/RatingPicker.svelte';
+	import NumberBox from '$lib/components/NumberBox.svelte';
 	import MarkdownBox from '$lib/components/MarkdownBox.svelte';
 	import type { Refs } from '$lib/markdown';
 	import PictureAttach from '$lib/components/PictureAttach.svelte';
@@ -51,6 +52,7 @@
 		notebooks = [],
 		ratings = $bindable({ urgency: null, interest: null, ease: null }),
 		compact = false,
+		allowBlock = false,
 		/**
 		 * Where this would land in the queue, drawn under the scales.
 		 *
@@ -80,6 +82,7 @@
 		}[];
 		ratings?: Record<Rating, number | null>;
 		compact?: boolean;
+		allowBlock?: boolean;
 		place?: Snippet;
 		/** The day it sits on, or '' for a task with no day yet. */
 		scheduledDate?: string;
@@ -89,6 +92,8 @@
 
 	// Seeded once: the dialog is rebuilt on every opening, as the category is.
 	let attributeRows = $state(untrack(() => attributePairs(attributes)));
+	let asBlock = $state(false);
+	let chosenDate = $state(untrack(() => scheduledDate));
 	// What plugins say they read, where the page has loaded their manifests.
 	const attributeKeys = $derived(mergeSuggestions(t, page.data.plugins ?? []));
 
@@ -120,7 +125,8 @@
 	const ratingsSet = $derived(RATINGS.filter((r) => ratings[r] !== null).length);
 	const filled = $derived(
 		ratingsSet +
-			(scheduledDate ? 1 : 0) +
+			(chosenDate ? 1 : 0) +
+			(asBlock ? 1 : 0) +
 			(chosenCategory ? 1 : 0) +
 			(notebookId ? 1 : 0) +
 			(notes ? 1 : 0) +
@@ -209,18 +215,40 @@
 		task and not say when, so "ring the plumber tomorrow" became a task
 		with the word tomorrow in its title and a day that still looked empty.
 	-->
-	<Field label={t('fields.todo.day')} span={6} hint={t('fields.todo.leaveItForNoDay')}>
+	{#if allowBlock}
+		<label class="col-span-12 flex items-center gap-2 text-sm text-gray-700">
+			<input type="checkbox" name="asBlock" value="true" bind:checked={asBlock} class="size-4" />
+			{t('tasks.plan.newBlock')}
+		</label>
+	{/if}
+
+	<Field
+		label={t('fields.todo.day')}
+		span={6}
+		hint={asBlock ? '' : t('fields.todo.leaveItForNoDay')}
+		required={asBlock}
+	>
 		<input
 			autocomplete="off"
 			name="scheduledDate"
 			type="date"
-			value={scheduledDate}
+			required={asBlock}
+			bind:value={chosenDate}
 			class="input"
 		/>
 	</Field>
 
-	<Field label={t('ui.category')} span={6}>
-		<select name="categoryId" class="select" bind:value={chosenCategory}>
+	{#if asBlock}
+		<Field label={t('tasks.plan.time')} span={3} required>
+			<input autocomplete="off" name="startTime" type="time" required class="input" />
+		</Field>
+		<Field label={t('tasks.plan.duration')} span={3} hint={t('tasks.plan.minutes')}>
+			<NumberBox name="durationMinutes" min="15" step="15" value="60" />
+		</Field>
+	{/if}
+
+	<Field label={t('ui.category')} span={6} required={asBlock}>
+		<select name="categoryId" class="select" bind:value={chosenCategory} required={asBlock}>
 			<option value="">{t('fields.todo.none')}</option>
 			{#each categories as cat (cat.id)}
 				<option value={String(cat.id)}>{cat.name}</option>

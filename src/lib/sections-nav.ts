@@ -109,7 +109,7 @@ const PLACES: (Omit<NavPlace, 'icon'> & { glyph?: IconName })[] = [
 		glyph: 'planner',
 		name: 'sections.tasks.label',
 		section: 'planner',
-		href: '/tasks/plan'
+		href: '/tasks/calendar'
 	},
 	/*
 	 * No `hide`: the writing room is always on, like the planner.
@@ -147,7 +147,8 @@ const PLACES: (Omit<NavPlace, 'icon'> & { glyph?: IconName })[] = [
 		glyph: 'wallet',
 		name: 'sections.finance.label',
 		section: 'finance',
-		href: '/finance/ledgers',
+		// The room opens on its money picture; Ledgers is a tab of it.
+		href: '/finance',
 		hide: 'finance'
 	},
 	{

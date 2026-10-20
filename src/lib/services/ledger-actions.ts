@@ -1,5 +1,7 @@
 import type { Actions } from '@sveltejs/kit';
 import { formAction } from '$lib/services/scoped-actions';
+import { parseSignedMoney } from '$lib/money';
+import { ValidationError } from './errors';
 import {
 	createLedger,
 	deleteLedger,
@@ -7,6 +9,25 @@ import {
 	setLedgerArchived,
 	updateLedger
 } from '$lib/services/ledgers';
+
+function openingFields(form: FormData) {
+	const currency =
+		String(form.get('currency') ?? '')
+			.trim()
+			.toUpperCase() || null;
+	const amount = form.get('openingAmount');
+	const openingMinor =
+		amount === null || amount === '' ? undefined : parseSignedMoney(amount, currency);
+	if (openingMinor === null)
+		throw new ValidationError(
+			'Enter an exact opening amount in the ledger currency, or whole minor units when unspecified.'
+		);
+	return {
+		...(form.has('currency') ? { currency } : {}),
+		...(form.has('openingOn') ? { openingOn: form.get('openingOn') } : {}),
+		...(openingMinor === undefined ? {} : { openingMinor })
+	};
+}
 
 /**
  * Everything that can be done to a ledger, wherever the row is on screen.
@@ -26,6 +47,7 @@ export const ledgerHandlers = {
 			name: form.get('heading'),
 			kind: form.get('kind') || 'bank',
 			defaultParser: form.get('defaultParser'),
+			...openingFields(form),
 			// `has` rather than `get`: the room's form says nothing about a
 			// notebook and must not be read as taking the ledger out of one.
 			...(form.has('notebookId') ? { notebookId: form.get('notebookId') } : {})
@@ -38,6 +60,7 @@ export const ledgerHandlers = {
 			name: form.get('heading'),
 			kind: form.get('kind'),
 			defaultParser: form.get('defaultParser'),
+			...openingFields(form),
 			...(form.has('notebookId') ? { notebookId: form.get('notebookId') } : {})
 		});
 	}),

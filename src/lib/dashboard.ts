@@ -31,6 +31,7 @@ export type DashboardCardId =
 	| 'ideas'
 	| 'notebooks'
 	| 'bills'
+	| 'moneyPicture'
 	| 'workouts';
 
 export type DashboardCard = {
@@ -147,6 +148,18 @@ export const DASHBOARD_CARDS: DashboardCard[] = [
 		width: 'half',
 		section: 'ideas',
 		hide: 'ideas'
+	},
+	{
+		id: 'moneyPicture',
+		label: 'app.moneyPicture',
+		description: 'card.theFourAnswersAboutYourMoney',
+		// Off by default: the bills card already speaks for money, and a new
+		// card folded into every existing dashboard is somebody else's layout
+		// changed without a press. Offered in the widget picker instead.
+		defaultOn: false,
+		width: 'full',
+		section: 'finance',
+		hide: 'finance'
 	},
 	{
 		id: 'bills',

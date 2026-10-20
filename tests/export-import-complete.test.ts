@@ -77,6 +77,20 @@ describe('every table is accounted for', () => {
 		expect(filled.length).toBeGreaterThan(25);
 		expect(filled.reduce((sum, [, n]) => sum + n, 0)).toBeGreaterThan(300);
 	});
+
+	test('and the finance records the lifecycle grew are in it with rows', async () => {
+		// Named rather than counted with the rest: the Epic 5 records are the
+		// ones a full export must carry, and a table whose seed goes quiet would
+		// otherwise pass the round trip by having nothing to compare.
+		for (const name of [
+			'financeBudgets',
+			'financeCommitments',
+			'financeCommitmentEntries',
+			'financeBalanceChecks',
+			'financeTransactionAllocations'
+		])
+			expect(before[name] ?? 0, `${name} is in the export with rows`).toBeGreaterThan(0);
+	});
 });
 
 describe('a round trip loses nothing', () => {

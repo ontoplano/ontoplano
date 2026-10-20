@@ -17,9 +17,269 @@ import { visit } from './helpers/visit';
 test.describe('with a finger', () => {
 	test.use({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
 
+	test('a tap opens a short new-activity sheet with save visible', async ({ page }) => {
+		await register(page, testEmail('plan-tap'));
+		await visit(page, '/tasks/calendar');
+		await expect(page.getByRole('button', { name: 'More' })).toHaveAttribute(
+			'aria-expanded',
+			'false'
+		);
+		await expect(page.getByRole('button', { name: 'Schemes' })).toBeHidden();
+		const fullscreen = page.getByRole('button', { name: 'Full screen' });
+		await expect(fullscreen).toBeVisible();
+		const fullscreenBefore = (await fullscreen.boundingBox())!;
+		const more = page.getByRole('button', { name: 'More' });
+		const before = (await more.boundingBox())!;
+		await page.screenshot({ path: 'test-results/plan-phone-collapsed.png' });
+		await more.click();
+		await expect(page.getByRole('button', { name: 'Schemes' })).toBeVisible();
+		const list = page.getByRole('button', { name: 'Show as a list' });
+		await expect(list).toBeVisible();
+		const listBox = (await list.boundingBox())!;
+		const fullscreenAfter = (await fullscreen.boundingBox())!;
+		expect(listBox.y).toBeGreaterThan(fullscreenAfter.y);
+		expect(Math.abs(fullscreenAfter.x - fullscreenBefore.x)).toBeLessThan(1);
+		const after = (await more.boundingBox())!;
+		expect(Math.abs(after.x - before.x)).toBeLessThan(1);
+		await more.click();
+		await page.setViewportSize({ width: 630, height: 844 });
+		const wideBefore = (await fullscreen.boundingBox())!;
+		await more.click();
+		const wideAfter = (await fullscreen.boundingBox())!;
+		const wideList = (await list.boundingBox())!;
+		expect(wideList.x).toBeLessThan(wideAfter.x);
+		expect(Math.abs(wideAfter.x - wideBefore.x)).toBeLessThan(1);
+		await more.click();
+		await page.setViewportSize({ width: 390, height: 844 });
+
+		const main = page.locator('.ec-main');
+		await expect(main).toBeVisible();
+		expect(await main.evaluate((el) => getComputedStyle(el).overflowY)).toBe('visible');
+		const pageScroll = page.locator('.page-gutter');
+		await pageScroll.evaluate((el) => el.scrollTo({ top: el.scrollHeight }));
+		await expect.poll(() => pageScroll.evaluate((el) => el.scrollTop)).toBeGreaterThan(0);
+		expect(await main.evaluate((el) => el.scrollTop)).toBe(0);
+		await pageScroll.evaluate((el) => el.scrollTo({ top: 0 }));
+		const body = page.locator('.ec-body').first();
+		const box = (await body.boundingBox())!;
+		const x = box.x + box.width / 2;
+		const y = box.y + 60;
+		await page.dispatchEvent('.ec-body', 'pointerdown', {
+			pointerType: 'touch',
+			isPrimary: true,
+			clientX: x,
+			clientY: y
+		});
+		await page.dispatchEvent('.ec-body', 'pointerup', {
+			pointerType: 'touch',
+			isPrimary: true,
+			clientX: x,
+			clientY: y
+		});
+
+		const dialog = page.getByRole('dialog', { name: 'New task block' });
+		const phoneHeader = dialog.locator('header').first();
+		await expect(dialog).toBeVisible();
+		// Beside the title on a phone it is the category alone, and the name is
+		// in the field below it.
+		await expect(phoneHeader.locator('[data-block-heading]')).toHaveCount(0);
+		await expect(dialog.locator('[name="newActivityName"]')).toBeVisible();
+		await expect(dialog.locator('[name="newActivityName"]')).toBeFocused();
+		const fieldBox = (await dialog.locator('[name="newActivityName"]').boundingBox())!;
+		const bodyBox = (await dialog.locator('.modal-content').boundingBox())!;
+		expect(fieldBox.y).toBeGreaterThanOrEqual(bodyBox.y);
+		expect(fieldBox.y + fieldBox.height).toBeLessThanOrEqual(bodyBox.y + bodyBox.height);
+		await expect(dialog).toHaveClass(/peek/);
+		await expect(dialog.locator('[name="durationMinutes"]')).toHaveValue('60');
+		// No bar along the bottom: back is the arrow, and Add is a + at the end
+		// of the header, where the keyboard cannot cover it.
+		await expect(dialog.locator('[data-modal-footer]')).toBeHidden();
+		await expect(dialog.getByRole('button', { name: 'Cancel' })).toBeHidden();
+		const add = phoneHeader.getByRole('button', { name: 'Add', exact: true });
+		await expect(add).toBeVisible();
+		const headerBox = (await phoneHeader.boundingBox())!;
+		const addBox = (await add.boundingBox())!;
+		expect(headerBox.x + headerBox.width - addBox.x - addBox.width).toBeLessThan(30);
+		await page.screenshot({ path: 'test-results/plan-phone-sheet.png' });
+		const height = await dialog
+			.locator('.panel')
+			.evaluate((el) => el.getBoundingClientRect().height);
+		expect(height).toBeLessThanOrEqual(844 * 0.55);
+		await dialog.locator('[name="newActivityName"]').fill('Garden planning');
+		await expect(phoneHeader.locator('.category-mark')).toBeVisible();
+		await expect(dialog).toHaveClass(/peek/);
+		await dialog.locator('[name="durationMinutes"]').focus();
+		await expect(dialog).toHaveClass(/peek/);
+		const content = dialog.locator('.modal-content');
+		await content.evaluate((el) => el.scrollTo({ top: el.scrollHeight }));
+		await expect.poll(() => content.evaluate((el) => el.scrollTop)).toBeGreaterThan(0);
+		await dialog
+			.locator('header')
+			.first()
+			.click({ position: { x: 100, y: 15 } });
+		await expect(dialog).not.toHaveClass(/peek/);
+		await dialog.getByRole('button', { name: 'Add', exact: true }).click();
+		await expect(dialog).toBeHidden();
+		await expect(page.locator('.ec-event').filter({ hasText: 'Garden planning' })).toBeVisible();
+	});
+
+	test('the short sheet fills what the keyboard leaves and scrolls', async ({ page }) => {
+		await register(page, testEmail('plan-sheet-scroll'));
+		await visit(page, '/tasks/calendar');
+		await page.getByRole('button', { name: 'New task block' }).click();
+		const dialog = page.getByRole('dialog', { name: 'New task block' });
+		const content = dialog.locator('.modal-content');
+
+		await page.evaluate(() => {
+			const viewport = window.visualViewport!;
+			Object.defineProperty(viewport, 'height', {
+				configurable: true,
+				value: window.innerHeight - 320
+			});
+			viewport.dispatchEvent(new Event('resize'));
+		});
+		await expect(dialog).toHaveClass(/peek/);
+		// Half of what the keyboard leaves is a header and one field; the sheet
+		// takes all of it instead.
+		await expect
+			.poll(() => dialog.locator('.panel').evaluate((el) => el.getBoundingClientRect().height))
+			.toBeGreaterThan((844 - 320) * 0.9);
+		await expect
+			.poll(() => content.evaluate((el) => el.getBoundingClientRect().bottom))
+			.toBeLessThanOrEqual(844 - 320);
+		// The picker, the name and its category are all above the keyboard.
+		for (const field of ['[data-picker="activityId"]', '[name="newActivityCategoryId"]']) {
+			const bottom = await dialog
+				.locator(field)
+				.evaluate((el) => el.getBoundingClientRect().bottom);
+			expect(bottom).toBeLessThanOrEqual(844 - 320);
+		}
+
+		/*
+		 * The Android app pans instead of resizing: the visible part moves down
+		 * and the sheet has to move with it, or it ends that far above the
+		 * keyboard with the calendar showing in the gap.
+		 */
+		await page.evaluate(() => {
+			const viewport = window.visualViewport!;
+			Object.defineProperty(viewport, 'height', {
+				configurable: true,
+				value: window.innerHeight - 320 - 150
+			});
+			Object.defineProperty(viewport, 'offsetTop', { configurable: true, value: 150 });
+			viewport.dispatchEvent(new Event('scroll'));
+		});
+		await expect.poll(() => dialog.evaluate((el) => el.getBoundingClientRect().top)).toBe(150);
+		await expect
+			.poll(() => content.evaluate((el) => el.getBoundingClientRect().bottom))
+			.toBeLessThanOrEqual(844 - 320);
+		await page.evaluate(() => {
+			const viewport = window.visualViewport!;
+			Object.defineProperty(viewport, 'height', {
+				configurable: true,
+				value: window.innerHeight - 320
+			});
+			Object.defineProperty(viewport, 'offsetTop', { configurable: true, value: 0 });
+			viewport.dispatchEvent(new Event('resize'));
+		});
+		await expect.poll(() => dialog.evaluate((el) => el.getBoundingClientRect().top)).toBe(0);
+		await expect(
+			dialog.locator('header').first().getByRole('button', { name: 'Add', exact: true })
+		).toBeVisible();
+
+		await content.evaluate((el) => el.scrollTo({ top: 0 }));
+		const box = (await content.boundingBox())!;
+		const x = box.x + box.width - 8;
+		const from = box.y + box.height - 12;
+		const to = box.y + 12;
+		const cdp = await page.context().newCDPSession(page);
+		await cdp.send('Input.dispatchTouchEvent', {
+			type: 'touchStart',
+			touchPoints: [{ x, y: from }]
+		});
+		for (let step = 1; step <= 8; step += 1) {
+			await cdp.send('Input.dispatchTouchEvent', {
+				type: 'touchMove',
+				touchPoints: [{ x, y: from + ((to - from) * step) / 8 }]
+			});
+		}
+		await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+		await expect.poll(() => content.evaluate((el) => el.scrollTop)).toBeGreaterThan(0);
+		await expect(dialog).toHaveClass(/peek/);
+		await page.screenshot({
+			path: 'test-results/plan-phone-keyboard-light.png',
+			animations: 'disabled'
+		});
+		await page.evaluate(() => (document.documentElement.dataset.theme = 'dark'));
+		await page.screenshot({
+			path: 'test-results/plan-phone-keyboard-dark.png',
+			animations: 'disabled'
+		});
+		await page.evaluate(() => (document.documentElement.dataset.theme = 'light'));
+
+		await dialog.locator('[data-picker="mode"] button').click();
+		await dialog.getByRole('option', { name: 'Category' }).click();
+		await expect(dialog).toHaveClass(/peek/);
+		await expect(dialog.locator('header').first().locator('[data-block-heading]')).toBeHidden();
+		await dialog
+			.locator('header')
+			.first()
+			.click({ position: { x: 100, y: 15 } });
+		await expect(dialog).not.toHaveClass(/peek/);
+		await page.setViewportSize({ width: 1200, height: 900 });
+		await page.screenshot({ path: 'test-results/plan-desktop-dialog.png', animations: 'disabled' });
+	});
+
+	/*
+	 * A real tap, not two dispatched pointer events: a finger also sends the
+	 * tap again as mouse events once it lifts, and those landed on the sheet
+	 * and took focus out of the name field — no keyboard, a second tap needed.
+	 */
+	test('a real tap opens the sheet on the activity, focused', async ({ page }) => {
+		await register(page, testEmail('plan-real-tap'));
+		await visit(page, '/tasks/calendar');
+		const body = page.locator('.ec-body').first();
+		const box = (await body.boundingBox())!;
+		await page.touchscreen.tap(box.x + box.width / 2, box.y + 60);
+
+		const dialog = page.getByRole('dialog', { name: 'New task block' });
+		await expect(dialog).toBeVisible();
+		const name = dialog.locator('[name="newActivityName"]');
+		await expect(name).toBeFocused();
+		await page.waitForTimeout(400);
+		await expect(name).toBeFocused();
+
+		// The activity is the first thing in the sheet, with nothing above it.
+		const first = await dialog
+			.locator('.modal-content form')
+			.evaluate((form) =>
+				form
+					.querySelector('[data-picker], input:not([type=hidden]), select')
+					?.closest('[data-picker]')
+					?.getAttribute('data-picker')
+			);
+		expect(first).toBe('activityId');
+		expect(await dialog.locator('.modal-content').evaluate((el) => el.scrollTop)).toBe(0);
+	});
+
+	test('swiping up on the sheet header expands it', async ({ page }) => {
+		await register(page, testEmail('plan-sheet-expand'));
+		await visit(page, '/tasks/calendar');
+		await page.getByRole('button', { name: 'New task block' }).click();
+		const dialog = page.getByRole('dialog', { name: 'New task block' });
+		await expect(dialog).toHaveClass(/peek/);
+		const header = dialog.locator('header').first();
+		const box = (await header.boundingBox())!;
+		const x = box.x + box.width / 2;
+		await header.dispatchEvent('pointerdown', { pointerId: 1, clientX: x, clientY: box.y + 55 });
+		await header.dispatchEvent('pointermove', { pointerId: 1, clientX: x, clientY: box.y });
+		await header.dispatchEvent('pointerup', { pointerId: 1, clientX: x, clientY: box.y });
+		await expect(dialog).not.toHaveClass(/peek/);
+	});
+
 	test('press and hold on the grid opens a new block there', async ({ page }) => {
 		await register(page, testEmail('plan-hold'));
-		await visit(page, '/tasks/plan');
+		await visit(page, '/tasks/calendar');
 
 		const body = page.locator('.ec-body').first();
 		await expect(body).toBeVisible();
@@ -46,7 +306,7 @@ test.describe('with a finger', () => {
 
 	test('a swipe over the grid is a scroll, not a new block', async ({ page }) => {
 		await register(page, testEmail('plan-swipe'));
-		await visit(page, '/tasks/plan');
+		await visit(page, '/tasks/calendar');
 
 		const body = page.locator('.ec-body').first();
 		const box = (await body.boundingBox())!;
@@ -77,6 +337,68 @@ test.describe('with a finger', () => {
 	});
 });
 
+test('dragging a block asks whether to move or copy it', async ({ page }) => {
+	test.setTimeout(180_000);
+	await page.setViewportSize({ width: 1280, height: 900 });
+	await register(page, testEmail('plan-drag-choice'));
+	await visit(page, '/tasks/calendar?view=week');
+	await page.getByRole('button', { name: 'New task block' }).click();
+	const editor = page.getByRole('dialog', { name: 'New task block' });
+	await editor.locator('[name="newActivityName"]').fill('Move or copy me');
+	await editor.getByRole('button', { name: 'Add', exact: true }).click();
+	await expect(editor).toBeHidden();
+	const block = page
+		.locator('.ec-event.ec-draggable')
+		.filter({ hasText: 'Move or copy me' })
+		.first();
+	await expect(block).toBeVisible();
+	const box = (await block.boundingBox())!;
+	const x = box.x + box.width / 2;
+	const y = box.y + Math.min(20, box.height / 2);
+	await page.mouse.move(x, y);
+	await page.mouse.down();
+	await page.mouse.move(x, y + 80, { steps: 12 });
+	await page.mouse.up();
+	const choice = page.getByRole('dialog', { name: 'Place task block' });
+	await expect(choice).toBeVisible();
+	await expect(choice.getByRole('button', { name: 'Copy' })).toBeVisible();
+	await expect(choice.getByRole('button', { name: 'Move here' })).toBeVisible();
+	await choice.getByRole('button', { name: 'Cancel' }).click();
+	await expect(choice).toBeHidden();
+	await expect(block).toBeVisible();
+	const original = (await block.boundingBox())!;
+	await page.mouse.move(original.x + original.width / 2, original.y + 20);
+	await page.mouse.down();
+	await page.mouse.move(original.x + original.width / 2, original.y + 100, { steps: 12 });
+	await page.mouse.up();
+	await expect(choice).toBeVisible();
+	await choice.getByRole('button', { name: 'Copy' }).click();
+	await expect(choice).toBeHidden();
+	await expect
+		.poll(() =>
+			page.locator('.ec-event.ec-draggable').filter({ hasText: 'Move or copy me' }).count()
+		)
+		.toBe(2);
+	const moving = page
+		.locator('.ec-event.ec-draggable')
+		.filter({ hasText: 'Move or copy me' })
+		.first();
+	const beforeMove = (await moving.boundingBox())!;
+	await page.mouse.move(beforeMove.x + beforeMove.width / 2, beforeMove.y + 20);
+	await page.mouse.down();
+	await page.mouse.move(beforeMove.x + beforeMove.width / 2, beforeMove.y + 100, { steps: 12 });
+	await page.mouse.up();
+	await expect(choice).toBeVisible();
+	await choice.getByRole('button', { name: 'Move here' }).click();
+	await expect(choice).toBeHidden();
+	await expect
+		.poll(() =>
+			page.locator('.ec-event.ec-draggable').filter({ hasText: 'Move or copy me' }).count()
+		)
+		.toBe(2);
+	await expect.poll(async () => (await moving.boundingBox())?.y ?? 0).not.toBe(beforeMove.y);
+});
+
 /** What a tap on a block must not leave behind. */
 test.describe('tapping a block', () => {
 	test.use({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
@@ -89,7 +411,7 @@ test.describe('tapping a block', () => {
 	 */
 	test('tapping a block leaves no hover card behind', async ({ page }) => {
 		await register(page, testEmail('plan-hover'));
-		await visit(page, '/tasks/plan');
+		await visit(page, '/tasks/calendar');
 
 		const block = page.locator('.ec-event.ec-draggable').first();
 		await expect(block).toBeVisible();
@@ -114,7 +436,7 @@ test.describe('saving a block', () => {
 
 	test('the fields keep their values until the form is gone', async ({ page }) => {
 		await register(page, testEmail('plan-save'));
-		await visit(page, '/tasks/plan');
+		await visit(page, '/tasks/calendar');
 
 		const block = page.locator('.ec-event').first();
 		await expect(block).toBeVisible();
@@ -172,7 +494,7 @@ test.describe('an existing task', () => {
 		await page.getByRole('button', { name: 'Create task' }).click();
 		await expect(page.getByText('call the glazier').first()).toBeVisible({ timeout: 30_000 });
 
-		await visit(page, '/tasks/plan');
+		await visit(page, '/tasks/calendar');
 		await page.getByRole('button', { name: 'New task block' }).click();
 		await page.getByRole('button', { name: 'Mode' }).click();
 		await page.getByRole('option', { name: 'Existing task' }).click();
@@ -183,7 +505,10 @@ test.describe('an existing task', () => {
 			'aria-pressed',
 			'true'
 		);
-		await page.getByRole('button', { name: 'Add one-off' }).click();
+		await page
+			.getByRole('dialog', { name: 'New task block' })
+			.getByRole('button', { name: 'Add', exact: true })
+			.click();
 
 		await expect(page.locator('.ec-event').filter({ hasText: 'call the glazier' })).toBeVisible();
 	});

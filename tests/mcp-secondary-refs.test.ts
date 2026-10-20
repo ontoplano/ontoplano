@@ -71,7 +71,11 @@ const WATCHED = [
 	'workouts',
 	'workout_sessions',
 	'workout_categories',
-	'finance_transactions'
+	'finance_transactions',
+	'finance_balance_checks',
+	'finance_commitments',
+	'finance_commitment_entries',
+	'finance_transaction_allocations'
 ];
 
 function snapshot(user: string): string {
@@ -116,8 +120,8 @@ beforeAll(async () => {
 	const { createIdea } = await import('../src/lib/services/ideas');
 	const { createItem, listItems } = await import('../src/lib/services/inventory');
 	const { createHabit } = await import('../src/lib/services/habits');
-	const { createLedger } = await import('../src/lib/services/ledgers');
-	const { createBill } = await import('../src/lib/services/bills');
+	const { createLedger, recordBalanceCheck } = await import('../src/lib/services/ledgers');
+	const { createBill, markPaid } = await import('../src/lib/services/bills');
 	const { recordMovement } = await import('../src/lib/services/statements');
 	const line = (ledgerId: number, description: string) =>
 		recordMovement(ctx(), { ledgerId, occurredOn: '2026-03-10', amountCents: -500, description })
@@ -153,8 +157,14 @@ beforeAll(async () => {
 	inside.item = itemNamed(me, 'flour');
 	inside.habit = idOf(createHabit(me, { name: 'wipe the hob', ...inMine }));
 	inside.ledger = idOf(createLedger(me, { name: 'groceries', ...inMine }));
+	inside.balanceCheck = recordBalanceCheck(me, {
+		ledgerId: inside.ledger,
+		asOf: '2026-03-13',
+		observedMinor: 1234
+	}).id;
 	inside.movement = line(inside.ledger, 'the market');
 	inside.bill = idOf(createBill(me, { name: 'gas', dueDay: 9, ...inMine }));
+	inside.billPayment = markPaid(me, inside.bill, { period: '2026-03' }).id;
 	inside.workout = idOf(createWorkout(me, { title: 'carry shopping', ...inMine }));
 
 	// Everything below lives in the other notebook.
@@ -168,8 +178,14 @@ beforeAll(async () => {
 	elsewhere.item = tiles;
 	elsewhere.habit = idOf(createHabit(me, { name: 'sweep up', ...inOther }));
 	elsewhere.ledger = idOf(createLedger(me, { name: 'renovation fund', ...inOther }));
+	elsewhere.balanceCheck = recordBalanceCheck(me, {
+		ledgerId: elsewhere.ledger,
+		asOf: '2026-03-13',
+		observedMinor: 1234
+	}).id;
 	elsewhere.movement = line(elsewhere.ledger, 'the builder');
 	elsewhere.bill = idOf(createBill(me, { name: 'builder', dueDay: 5, ...inOther }));
+	elsewhere.billPayment = markPaid(me, elsewhere.bill, { period: '2026-03' }).id;
 	elsewhere.workout = idOf(createWorkout(me, { title: 'carry bricks', ...inOther }));
 	elsewhere.recipe = idOf(createRecipe(me, { title: 'site lunch', ...inOther }));
 	addIngredient(me, elsewhere.recipe, { name: 'bread' });
@@ -181,6 +197,11 @@ beforeAll(async () => {
 	theirs.workout = idOf(createWorkout(them, { title: 'their run' }));
 	theirs.workoutCategory = idOf(createWorkoutCategory(them, 'their group'));
 	theirs.ledger = idOf(createLedger(them, { name: 'their account' }));
+	theirs.balanceCheck = recordBalanceCheck(them, {
+		ledgerId: theirs.ledger,
+		asOf: '2026-03-13',
+		observedMinor: 1234
+	}).id;
 	createItem(them, { name: 'their milk', type: 'replenish' });
 	theirs.item = itemNamed(them, 'their milk');
 	theirs.recipe = idOf(createRecipe(them, { title: 'their porridge' }));

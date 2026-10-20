@@ -28,22 +28,13 @@ simple enough to be able to add a task or a note in your phone with one finger m
 You can [Connect with an AI agent](https://docs.ontoplano.com/ai-agents) (or not), and
 scope all your tasks, recipes, inventory, notes, bills etc. in specific notebooks.
 
+This fork's [finance guide](docs/finance.md) covers statement movements, balance checks, commitments and monthly budgets.
+
 <div align="center">
 
 [![Try the demo](.github/badges/try-the-demo.svg)](https://demo.ontoplano.com)
 
 </div>
-
-I am creating [tutorials for Ontoplano in YouTube](https://www.youtube.com/@eChedieck). Check them out or request one in the comments.
-
-> This software was publicly released on September 5th, 2026.
-> It's still maturing, and it may contain bugs.
-> LLMs are used during development; their
-> output is reviewed and tested before it lands.
->
-> Help improve it by creating issues and pull requests.
-
----
 
 ## Running it
 

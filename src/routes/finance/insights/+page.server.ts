@@ -1,13 +1,19 @@
 import type { IsolatedEvent } from '$lib/isolated/routes';
 import { buildCtx } from '$lib/services/ctx';
-import { getCurrency } from '$lib/services/settings';
 import { listLedgers } from '$lib/services/ledgers';
+import { normaliseCurrency } from '$lib/money';
+import { civilDay, num } from '$lib/services/validate';
+import { listBudgets } from '$lib/services/budgets';
+import { getCurrency } from '$lib/services/settings';
+import { monthParam } from '$lib/when';
 import {
 	categoryMonths,
 	categorySlices,
 	filterOptions,
 	monthlyTotals,
-	tagMonths
+	tagMonths,
+	statementWindow,
+	spending
 } from '$lib/services/statements';
 
 /**
@@ -19,17 +25,89 @@ import {
  */
 export const load = async ({ locals, url }: IsolatedEvent) => {
 	const ctx = buildCtx(locals.user!.id);
-	const ledgerId = Number(url.searchParams.get('ledger') || 0) || undefined;
-	const months = Number(url.searchParams.get('months') || 0) || 12;
+	// Every one of these is somebody editing the address bar. A bad value is
+	// ignored and the screen falls back, never a 500.
+	const day = (raw: string | null) => {
+		if (!raw) return undefined;
+		try {
+			return civilDay(raw);
+		} catch {
+			return undefined;
+		}
+	};
+	let ledgerId: number | undefined;
+	try {
+		ledgerId = url.searchParams.get('ledger')
+			? num(url.searchParams.get('ledger'), 'ledger', { int: true, min: 1 })
+			: undefined;
+	} catch {
+		ledgerId = undefined;
+	}
+	let months = 12;
+	const monthsParam = url.searchParams.get('months');
+	if (monthsParam) {
+		try {
+			months = num(monthsParam, 'months', { int: true, min: 1, max: 120 });
+		} catch {
+			/* keep the default window */
+		}
+	}
+	const month = monthParam(url.searchParams.get('month')) ?? '';
+	const window = statementWindow(ctx, months, {
+		month: month || undefined,
+		from: day(url.searchParams.get('from')),
+		to: day(url.searchParams.get('to'))
+	});
+	const ledgers = listLedgers(ctx, { includeArchived: true, asOf: window.to });
+	const ledger = ledgerId ? ledgers.find((row) => row.id === ledgerId) : undefined;
+	if (ledgerId && !ledger) ledgerId = undefined;
+	const currencies = [...new Set(ledgers.map((row) => row.currency))];
+	const rawCurrency = url.searchParams.get('currency');
+	const requested =
+		rawCurrency && (rawCurrency === 'unspecified' || normaliseCurrency(rawCurrency))
+			? rawCurrency
+			: null;
+	const currency = ledger
+		? ledger.currency
+		: requested === 'unspecified'
+			? null
+			: requested
+				? normaliseCurrency(requested)
+				: (currencies.find((code) => code !== null) ?? null);
+	if (!currencies.includes(currency)) currencies.push(currency);
 	const options = filterOptions(ctx);
 	const tag = url.searchParams.get('tag') || options.tags[0]?.name || '';
-	const filter = { ledgerId };
+	const filter = { ledgerId, currency, from: window.from, to: window.to };
+	const coverage = ledgers.filter(
+		(row) => row.currency === currency && (!ledgerId || row.id === ledgerId)
+	);
+	const selectedMonth =
+		window.months.length === 1 &&
+		window.from === `${window.months[0]}-01` &&
+		window.to === statementWindow(ctx, 1, { month: window.months[0] }).to
+			? window.months[0]
+			: '';
 
 	return {
-		currency: getCurrency(ctx.userId),
-		ledgers: listLedgers(ctx),
+		currency,
+		// Legacy ledgers may declare no currency at all. The page still has to be
+		// readable: amounts fall back to the account's own currency for display,
+		// while the data stays the unspecified bucket (D6).
+		defaultCurrency: getCurrency(ctx.userId),
+		currencies,
+		ledgers,
 		ledgerId: ledgerId ?? 0,
 		months,
+		month: selectedMonth,
+		budgets: selectedMonth && currency ? listBudgets(ctx, { month: selectedMonth, currency }) : [],
+		window,
+		defaultWindow:
+			!month && !url.searchParams.has('from') && !url.searchParams.has('to') && months === 12,
+		report: spending(ctx, filter)[0] ?? null,
+		balanceCoverage: {
+			total: coverage.length,
+			verified: coverage.filter((row) => row.balanceStatus === 'verified').length
+		},
 		tags: options.tags,
 		tag,
 		totals: monthlyTotals(ctx, months, filter),

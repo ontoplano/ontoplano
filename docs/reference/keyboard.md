@@ -43,6 +43,18 @@ works is a key listed here and the reverse.
 | <kbd>e</kbd> | Edit the one under the cursor |
 | <kbd>n</kbd> | New bill                      |
 
+## Budgets — `/finance/budgets`
+
+| Key          | Does       |
+| ------------ | ---------- |
+| <kbd>n</kbd> | New budget |
+
+## Commitments — `/finance/commitments`
+
+| Key          | Does           |
+| ------------ | -------------- |
+| <kbd>n</kbd> | New commitment |
+
 ## Ledgers — `/finance/ledgers`
 
 | Key              | Does                          |
@@ -245,7 +257,7 @@ works is a key listed here and the reverse.
 | <kbd>y</kbd>     | Number keys set ease          |
 | <kbd>x</kbd>     | Ask to delete card            |
 
-## Plan — `/tasks/plan`
+## Calendar — `/tasks/calendar`
 
 | Key          | Does                          |
 | ------------ | ----------------------------- |

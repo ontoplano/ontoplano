@@ -2010,11 +2010,7 @@
 			{:else}
 				<div class="flex flex-wrap gap-2 px-4 py-3">
 					{#each shownLedgers as ledger (ledger.id)}
-						<LedgerTile
-							{ledger}
-							{currency}
-							href={`${resolve('/finance/ledgers')}?ledger=${ledger.id}`}
-						/>
+						<LedgerTile {ledger} href={`${resolve('/finance/ledgers')}?ledger=${ledger.id}`} />
 					{/each}
 				</div>
 			{/if}

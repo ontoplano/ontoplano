@@ -24,12 +24,14 @@
 	import EmptyState from '$lib/components/EmptyState.svelte';
 	import Icon from '$lib/components/Icon.svelte';
 	import LedgerFields from '$lib/components/fields/LedgerFields.svelte';
+	import MovementSplit from '$lib/components/MovementSplit.svelte';
 	import { LEDGER_KIND_LABELS } from '$lib/services/ledgers';
 	import Modal from '$lib/components/Modal.svelte';
 	import OneLine from '$lib/components/OneLine.svelte';
 	import FormError from '$lib/components/FormError.svelte';
 	import { armed } from '$lib/actions/armed';
-	import { formatMoney, type Currency } from '$lib/money';
+	import { SvelteSet } from 'svelte/reactivity';
+	import { formatMoney, minorUnits } from '$lib/money';
 	import type { PlainKey } from '$lib/i18n/keys';
 	import type { PageServerData, ActionData } from './$types';
 	import { useT } from '$lib/i18n';
@@ -42,23 +44,49 @@
 
 	let { data, form }: { data: PageServerData; form: ActionData } = $props();
 
-	const currency = $derived(data.currency as Currency);
-
 	/** `2026-02` as somebody would say it. */
 	const monthName = (key: string) => monthOf(key, now(), { month: 'long', year: 'numeric' });
-	const money = (cents: number) => formatMoney(cents, currency);
+	const ledgerMoney = (cents: number, ledger: { currency: string | null } | null = data.current) =>
+		formatMoney(cents, ledger?.currency ?? data.currency);
+	const money = (cents: number) => ledgerMoney(cents);
+	const statusLabel = (status: 'verified' | 'supported' | 'recorded') =>
+		t(
+			status === 'verified'
+				? 'finance.ledgers.statusVerified'
+				: status === 'supported'
+					? 'finance.ledgers.statusSupported'
+					: 'finance.ledgers.statusRecorded'
+		);
 
 	type Ledger = PageServerData['ledgers'][number];
 	type Movement = PageServerData['movements'][number];
 
 	const active = $derived(data.ledgers.filter((l) => !l.archived));
 	const archived = $derived(data.ledgers.filter((l) => l.archived));
+	/* Legacy ledgers predate the currency column: amounts stay readable in the
+	   account's own currency, and the coverage block says the currency is undeclared. */
+	const undeclared = $derived(active.some((ledger) => !ledger.currency));
 
 	let showNewLedger = $state(false);
 	let editingLedger: Ledger | null = $state(null);
 	let deletingLedger: Ledger | null = $state(null);
+	let deletingCheck: number | null = $state(null);
 	/** The dialog that holds everything done to a ledger rather than to a line. */
 	let managing = $state(false);
+	/** A gap on the overview asks for one ledger's edit dialog directly. */
+	let openedEdit = $state(false);
+	/** A differing check on the overview asks for the checks form directly. */
+	let checksOpen = $state(false);
+	$effect(() => {
+		if (data.openChecks) checksOpen = true;
+	});
+	$effect(() => {
+		if (openedEdit || !data.editId) return;
+		const ledger = data.ledgers.find((one) => one.id === data.editId);
+		if (!ledger) return;
+		openedEdit = true;
+		editingLedger = ledger;
+	});
 
 	let showImport = $state(false);
 	let statementText = $state('');
@@ -94,6 +122,41 @@
 		editingId === null ? null : (data.movements.find((m) => m.id === editingId) ?? null)
 	);
 	let deletingMovement: Movement | null = $state(null);
+
+	/*
+	 * What a line was, when somebody says so.
+	 *
+	 * List and labels are kept here rather than imported from the service:
+	 * `statements.ts` reaches the database, and the browser bundle must not.
+	 * The order is the order the menu offers them.
+	 */
+	type Kind = 'expense' | 'income' | 'transfer' | 'refund' | 'fee' | 'cash';
+	const KINDS: Kind[] = ['expense', 'income', 'transfer', 'refund', 'fee', 'cash'];
+	const KIND_LABELS: Record<Kind, PlainKey> = {
+		expense: 'finance.ledgers.kindExpense',
+		income: 'finance.ledgers.kindIncome',
+		transfer: 'finance.ledgers.kindTransfer',
+		refund: 'finance.ledgers.kindRefund',
+		fee: 'finance.ledgers.kindFee',
+		cash: 'finance.ledgers.kindCash'
+	};
+
+	/** The lines ticked for one bulk classification. */
+	let selected = $state(new SvelteSet<number>());
+	let bulkKind = $state('');
+
+	function toggleLine(id: number, on: boolean) {
+		if (on) selected.add(id);
+		else selected.delete(id);
+	}
+
+	/** The lines a meaning can point at, minus the one being edited. */
+	const candidates = $derived(data.counterparts.filter((m) => m.id !== editing?.id));
+
+	/** A transfer's other side: another ledger, and not already paired. */
+	const transferCandidates = $derived(
+		candidates.filter((m) => m.ledgerId !== editing?.ledgerId && !m.groupId)
+	);
 
 	/** Choosing the file is the submit; it is read here and posted as text. */
 	async function fileChosen(event: Event) {
@@ -162,6 +225,9 @@
 		return [...data.movements].sort((a, b) => sign * by[order](a, b));
 	});
 
+	/** How many of the visible lines are ticked. */
+	const ticked = $derived(lines.filter((m) => selected.has(m.id)).length);
+
 	/* A row's day the app's one way: `Sep 12`. The band above says the year. */
 	const dayOf = (iso: string) => dayOfWhen(iso, now());
 
@@ -189,7 +255,11 @@
 						.filter((entry): entry is [number, string] => entry[1] !== null)
 				)
 	);
-	const asDecimal = (cents: number) => (Math.abs(cents) / 100).toFixed(2);
+	const displayCurrency = $derived(data.current?.currency ?? data.currency);
+	const asDecimal = (cents: number) =>
+		(Math.abs(cents) / minorUnits(displayCurrency)).toFixed(
+			Math.log10(minorUnits(displayCurrency))
+		);
 	// The reader's own day: `toISOString` is UTC, which is tomorrow for the
 	// last hours of every evening in São Paulo.
 	const today = $derived(dayStamp(new Date(), now()));
@@ -201,13 +271,15 @@
 	 * ledger happens a handful of times ever, and lives with the ledgers.
 	 */
 	setRoomAction(() =>
-		data.current
-			? {
-					label: t('finance.ledgers.newLine'),
-					run: () => (showNewMovement = true),
-					kbd: keyFor(ROOM, 'new')
-				}
-			: { label: t('finance.ledgers.newLedger'), run: () => (showNewLedger = true) }
+		data.reviewUnclassified
+			? null
+			: data.current
+				? {
+						label: t('finance.ledgers.newLine'),
+						run: () => (showNewMovement = true),
+						kbd: keyFor(ROOM, 'new')
+					}
+				: { label: t('finance.ledgers.newLedger'), run: () => (showNewLedger = true) }
 	);
 
 	/* j/k down the lines, h/l across the ledgers, e to correct one. */
@@ -226,10 +298,11 @@
 	}));
 
 	function onkeydown(event: KeyboardEvent) {
+		if (data.reviewUnclassified) return;
 		if (event.metaKey || event.ctrlKey || event.altKey) return;
 		if (typing(event)) return;
 		if (!data.current) return;
-		const action = getAction(ROOM, event.key);
+		const action = getAction(ROOM, event);
 		if (action === 'new') {
 			event.preventDefault();
 			showNewMovement = true;
@@ -247,7 +320,7 @@
 	const ledgerTabs = $derived(
 		active.map((l) => ({
 			label: l.name,
-			count: money(l.balanceCents)
+			count: ledgerMoney(l.supportedMinor ?? l.recordedMinor, l)
 		}))
 	);
 </script>
@@ -295,7 +368,36 @@
 
 <FormError message={form?.message} />
 
-{#if active.length === 0 && archived.length === 0}
+{#if data.reviewUnclassified}
+	<RoomSurface>
+		<section class="space-y-3 p-4" data-testid="unclassified-review">
+			<h2 class="font-semibold">
+				{t('finance.insights.unclassified', { count: data.reviewCount })}
+			</h2>
+			<p class="text-sm">{data.reviewFrom} — {data.reviewTo}</p>
+			<ShowingCount
+				total={data.reviewCount}
+				shown={data.movements.length}
+				said={(count) => t('finance.ledgers.showingCount', { count })}
+			/>
+			<ul class="divide-y divide-gray-200">
+				{#each data.movements as movement (movement.id)}
+					{@const ledger = data.ledgers.find((row) => row.id === movement.ledgerId)}
+					<li class="space-y-1 py-3 text-sm" data-testid="unclassified-movement">
+						<p class="break-words">{movement.occurredOn} · {movement.description}</p>
+						<p>{ledgerMoney(movement.amountCents, ledger ?? null)}</p>
+						{#if ledger}<a
+								class="underline"
+								href={resolve(
+									`/finance/ledgers?ledger=${ledger.id}&month=${movement.occurredOn.slice(0, 7)}`
+								)}>{ledger.name} · {t('ui.edit')}</a
+							>{/if}
+					</li>
+				{/each}
+			</ul>
+		</section>
+	</RoomSurface>
+{:else if active.length === 0 && archived.length === 0}
 	<RoomSurface>
 		<EmptyState
 			icon={routeGlyph('/finance/ledgers')!}
@@ -343,6 +445,95 @@
 			/>
 		{:else}
 			{@const current = data.current}
+			<details
+				id="balance-checks"
+				class="border-b border-gray-200 p-4"
+				data-testid="balance-checks"
+				bind:open={checksOpen}
+			>
+				<summary class="cursor-pointer text-sm font-medium"
+					>{t('finance.ledgers.checkHistory')}</summary
+				>
+				<form
+					method="post"
+					action="?/recordBalanceCheck"
+					use:enhance
+					class="mt-3 grid gap-3 sm:grid-cols-2"
+				>
+					<input type="hidden" name="ledgerId" value={current.id} />
+					<label class="block text-sm"
+						>{t('finance.ledgers.checkDate')}<input
+							class="input mt-1 w-full"
+							name="asOf"
+							type="date"
+							value={today}
+							required
+						/></label
+					>
+					<label class="block text-sm"
+						>{t('finance.ledgers.checkAmount')} ({current.currency ?? data.currency})<input
+							class="input mt-1 w-full"
+							name="observedAmount"
+							inputmode="decimal"
+							required
+						/></label
+					>
+					<label class="block text-sm sm:col-span-2"
+						>{t('ui.notes')}<OneLine
+							class="input mt-1 w-full"
+							name="note"
+							maxlength={1000}
+						/></label
+					>
+					<button class="btn btn-primary w-fit" type="submit"
+						>{t('finance.ledgers.recordCheck')}</button
+					>
+				</form>
+				{#if !data.checks.length}<p class="mt-3 text-xs text-gray-600">
+						{t('finance.ledgers.noChecks')}
+					</p>{/if}
+				<ul class="mt-3 divide-y divide-gray-200">
+					{#each data.checks as check (check.id)}
+						<li class="space-y-1 py-3 text-sm" data-testid="balance-check">
+							<p>
+								{civilOf(check.asOf, now())} · {money(check.observedMinor)} · {t(
+									check.status === 'matched'
+										? 'finance.ledgers.checkMatched'
+										: check.status === 'different'
+											? 'finance.ledgers.checkDifferent'
+											: 'finance.ledgers.checkUnverified'
+								)}
+							</p>
+							{#if check.computedMinor !== null}<p>
+									{t('finance.ledgers.checkComputed', { amount: money(check.computedMinor) })}
+								</p>{/if}
+							{#if check.differenceMinor !== null}<p>
+									{t('finance.ledgers.checkDifference', { amount: money(check.differenceMinor) })}
+								</p>{/if}
+							{#if check.note}<p class="text-xs text-gray-600">{check.note}</p>{/if}
+							{#if deletingCheck === check.id}
+								<form method="post" action="?/deleteBalanceCheck" use:enhance>
+									<input type="hidden" name="ledgerId" value={current.id} /><input
+										type="hidden"
+										name="id"
+										value={check.id}
+									/>
+									<button class="btn btn-sm btn-danger" type="submit" use:armed
+										>{t('ui.delete')}</button
+									>
+									<button class="btn btn-sm" type="button" onclick={() => (deletingCheck = null)}
+										>{t('ui.cancel')}</button
+									>
+								</form>
+							{:else}
+								<button class="btn btn-sm" type="button" onclick={() => (deletingCheck = check.id)}
+									>{t('finance.ledgers.deleteCheck')}</button
+								>
+							{/if}
+						</li>
+					{/each}
+				</ul>
+			</details>
 			<!-- Finding one line among a year of them. -->
 			<RoomToolbar inset>
 				{#snippet tools()}
@@ -420,6 +611,35 @@
 					the first line and the day and everything that sorts it on the
 					second. Neither scrolls inside itself — the page does.
 				-->
+				<!--
+					One gesture for a selection: tick a run of lines and say
+					what they were. The boxes live in the rows and point at
+					this form, so nothing has to be mirrored in state.
+				-->
+				<form
+					id="classify"
+					method="post"
+					action="?/classify"
+					class="flex flex-wrap items-center gap-2 border-b border-gray-200 px-4 py-2 {ticked
+						? ''
+						: 'hidden'}"
+					use:enhance={() =>
+						({ result, update }) => {
+							if (result.type === 'success') selected.clear();
+							return update();
+						}}
+				>
+					<span class="text-xs text-gray-500">
+						{t('finance.ledgers.selectedCount', { count: ticked })}
+					</span>
+					<select name="kind" class="select" bind:value={bulkKind}>
+						<option value="">{t('finance.ledgers.assumed')}</option>
+						{#each KINDS as kind (kind)}
+							<option value={kind}>{t(KIND_LABELS[kind])}</option>
+						{/each}
+					</select>
+					<button class="btn" type="submit">{t('finance.ledgers.classifySelected')}</button>
+				</form>
 				<ul class="divide-y divide-gray-200 sm:hidden">
 					{#each lines as m, i (m.id)}
 						{#if yearBands.has(m.id)}
@@ -427,6 +647,16 @@
 						{/if}
 						<li class="px-4 py-2.5" data-row use:listCursor={i === cursor}>
 							<div class="flex items-start gap-3">
+								<input
+									type="checkbox"
+									class="mt-1"
+									form="classify"
+									name="ids"
+									value={m.id}
+									checked={selected.has(m.id)}
+									onchange={(e) => toggleLine(m.id, e.currentTarget.checked)}
+									aria-label={t('finance.ledgers.selectLine', { name: m.description })}
+								/>
 								<span class="line-clamp-2 min-w-0 flex-1 text-sm text-gray-900">
 									{m.description}
 								</span>
@@ -443,6 +673,15 @@
 								<span class="flex min-w-0 flex-1 flex-wrap items-center gap-1">
 									{#if m.category}
 										<CategoryMark name={m.category} color={m.categoryColor} />
+									{/if}
+									{#if m.allocations.length}<span class="chip">{t('finance.splits.title')}</span
+										>{/if}
+									{#if m.kind}
+										<span class="chip text-gray-700">{t(KIND_LABELS[m.kind as Kind])}</span>
+									{/if}
+									{#if m.counterpartPending}
+										<span class="chip text-gray-500">{t('finance.ledgers.counterpartPending')}</span
+										>
 									{/if}
 									{#each m.tags as tag (tag.name)}
 										<TagChip name={tag.name} color={tag.color} />
@@ -474,6 +713,7 @@
 				<table class="statement hidden w-full text-sm sm:table">
 					<thead>
 						<tr class="border-b border-gray-200 text-left text-xs text-gray-500">
+							<th class="w-8 py-2"><span class="sr-only">{t('ui.select')}</span></th>
 							<th class="py-2 font-medium">{t('finance.ledgers.day')}</th>
 							<th class="py-2 font-medium">{t('ui.description')}</th>
 							<th class="py-2 font-medium">{t('ui.category')}</th>
@@ -485,9 +725,20 @@
 					<tbody class="divide-y divide-gray-200">
 						{#each lines as m, i (m.id)}
 							{#if yearBands.has(m.id)}
-								<tr><td colspan="6" class="year-band">{yearBands.get(m.id)}</td></tr>
+								<tr><td colspan="7" class="year-band">{yearBands.get(m.id)}</td></tr>
 							{/if}
 							<tr data-row use:listCursor={i === cursor}>
+								<td class="py-2">
+									<input
+										type="checkbox"
+										form="classify"
+										name="ids"
+										value={m.id}
+										checked={selected.has(m.id)}
+										onchange={(e) => toggleLine(m.id, e.currentTarget.checked)}
+										aria-label={t('finance.ledgers.selectLine', { name: m.description })}
+									/>
+								</td>
 								<td class="tabular py-2 whitespace-nowrap text-gray-500">
 									{dayOf(m.occurredOn)}
 								</td>
@@ -495,7 +746,18 @@
 								<td class="py-2 whitespace-nowrap">
 									{#if m.category}
 										<CategoryMark name={m.category} color={m.categoryColor} />
-									{:else}
+									{/if}
+									{#if m.allocations.length}<span class="chip">{t('finance.splits.title')}</span
+										>{/if}
+									{#if m.kind}
+										<span class="chip ml-1 text-gray-700">{t(KIND_LABELS[m.kind as Kind])}</span>
+									{/if}
+									{#if m.counterpartPending}
+										<span class="chip ml-1 text-gray-500"
+											>{t('finance.ledgers.counterpartPending')}</span
+										>
+									{/if}
+									{#if !m.category && !m.kind}
 										<span class="text-xs text-gray-500">—</span>
 									{/if}
 								</td>
@@ -539,6 +801,76 @@
 				</table>
 			{/if}
 		{/if}
+		{#if active.length && !data.reviewUnclassified}
+			<!-- Coverage lives under the statement, where it reads as the fine print it
+	     is; the top of the room stays the ledger strip and its lines, as before. -->
+			<section
+				class="space-y-3 border-t border-gray-200 p-4"
+				aria-label={t('finance.ledgers.supportedFunds')}
+			>
+				<div class="flex flex-wrap items-baseline justify-between gap-2">
+					<h2 class="text-sm font-semibold">{t('finance.ledgers.supportedFunds')}</h2>
+					{#if undeclared}<p class="text-xs text-gray-600">
+							{t('finance.ledgers.currencyNotDeclared', { currency: data.currency })}
+						</p>{/if}
+				</div>
+				<ul class="divide-y divide-gray-200 text-sm">
+					{#each data.funds as group (group.currency)}
+						<li
+							class="flex flex-wrap items-baseline justify-between gap-2 py-2"
+							data-testid="currency-funds"
+						>
+							<span class="font-medium">{group.currency ?? t('finance.ledgers.unspecified')}</span>
+							<span
+								>{group.supportedMinor === null
+									? t('finance.ledgers.noSupportedFunds')
+									: ledgerMoney(group.supportedMinor, { currency: group.currency })}</span
+							>
+							{#if group.excluded.length}<span class="w-full text-xs text-gray-600">
+									{t('finance.ledgers.excludedAccounts', {
+										names: group.excluded.map((l) => l.name).join(', ')
+									})}
+								</span>{/if}
+						</li>
+					{/each}
+				</ul>
+				<ul class="divide-y divide-gray-200 text-sm">
+					{#each active as ledger (ledger.id)}
+						<li class="space-y-1 py-2" data-testid="ledger-balance">
+							<div class="flex flex-wrap items-baseline justify-between gap-2">
+								<button
+									type="button"
+									class="text-left font-medium underline"
+									onclick={() => filter({ ledger: ledger.id, q: '', month: '', loose: false })}
+									>{ledger.name}</button
+								>
+								<span>
+									{statusLabel(ledger.balanceStatus)} · {ledgerMoney(
+										ledger.supportedMinor ?? ledger.recordedMinor,
+										ledger
+									)}
+								</span>
+							</div>
+							<p class="text-xs text-gray-600">
+								{t('finance.ledgers.asOf', { day: civilOf(ledger.asOf, now()) })}
+							</p>
+							{#if ledger.openingOn}<p class="text-xs text-gray-600">
+									{t('finance.ledgers.openingAt', {
+										amount: ledgerMoney(ledger.openingMinor, ledger),
+										day: civilOf(ledger.openingOn, now())
+									})}
+								</p>{/if}
+							{#if !ledger.currency}<p class="text-xs text-gray-600">
+									{t('finance.ledgers.chooseCurrency')}
+								</p>{/if}
+							{#if ledger.outsideCoveredPeriod}<p class="text-xs text-gray-600">
+									{t('finance.ledgers.outsideCoverage', { count: ledger.outsideCoveredPeriod })}
+								</p>{/if}
+						</li>
+					{/each}
+				</ul>
+			</section>
+		{/if}
 	</RoomSurface>
 {/if}
 
@@ -561,7 +893,8 @@
 						{[
 							t(LEDGER_KIND_LABELS[ledger.kind]),
 							t('finance.ledgers.lines', { count: ledger.count }),
-							money(ledger.balanceCents),
+							ledgerMoney(ledger.supportedMinor ?? ledger.recordedMinor, ledger),
+							statusLabel(ledger.balanceStatus),
 							ledger.lastOn
 								? t('finance.ledgers.lastOn', { day: civilOf(ledger.lastOn, now()) })
 								: ''
@@ -809,7 +1142,9 @@
 								</select>
 							</label>
 							<label class="block text-sm">
-								<span class="text-gray-600">{t('ui.amount')}</span>
+								<span class="text-gray-600"
+									>{t('ui.amount')} ({data.current?.currency ?? data.currency})</span
+								>
 								<select
 									class="select mt-1 w-full"
 									value={mapping.amount ?? ''}
@@ -902,6 +1237,9 @@
 				<div>
 					<button class="btn btn-primary btn-sm" type="submit">{t('finance.ledgers.import')}</button
 					>
+					{#if form && 'recordedOnly' in form && form.recordedOnly}
+						<p class="mt-2 text-sm text-gray-600">{t('finance.ledgers.importRecordedOnly')}</p>
+					{/if}
 					{#if form && 'added' in form && form.success}
 						<span class="ml-2 text-sm text-gray-600"
 							>{t('finance.ledgers.addedAlreadyHere', {
@@ -954,7 +1292,9 @@
 					<input type="date" name="occurredOn" value={today} class="input mt-1 w-full" required />
 				</label>
 				<label class="block text-sm">
-					<span class="text-gray-600">{t('ui.amount')}</span>
+					<span class="text-gray-600"
+						>{t('ui.amount')} ({data.current?.currency ?? data.currency})</span
+					>
 					<input name="amount" inputmode="decimal" placeholder="0,00" class="input mt-1 w-full" />
 				</label>
 				<label class="block text-sm sm:col-span-2">
@@ -1013,7 +1353,9 @@
 					/>
 				</label>
 				<label class="block text-sm">
-					<span class="text-gray-600">{t('ui.amount')}</span>
+					<span class="text-gray-600"
+						>{t('ui.amount')} ({data.current?.currency ?? data.currency})</span
+					>
 					<input
 						name="amount"
 						inputmode="decimal"
@@ -1038,8 +1380,141 @@
 						{#each data.ledgers as l (l.id)}<option value={l.id}>{l.name}</option>{/each}
 					</select>
 				</label>
+				<label class="block text-sm sm:col-span-2">
+					<span class="text-gray-600">{t('finance.ledgers.meaning')}</span>
+					<select name="kind" class="select mt-1 w-full" value={editing.kind ?? ''}>
+						<option value="">{t('finance.ledgers.assumed')}</option>
+						{#each KINDS as kind (kind)}
+							<option value={kind}>{t(KIND_LABELS[kind])}</option>
+						{/each}
+					</select>
+					<span class="mt-1 block text-xs text-gray-500">
+						{t('finance.ledgers.meaningHint')}
+					</span>
+				</label>
 			</div>
 		</form>
+		{#key editing.id}
+			<MovementSplit
+				movement={editing}
+				currency={data.current?.currency ?? null}
+				commitments={data.commitments}
+			/>
+		{/key}
+
+		<!--
+			The links a meaning can carry, each its own small form: a transfer
+			needs a counterpart in another ledger, a refund the expense it
+			reverses, a fee the payment it was charged on. They sit outside the
+			edit form because a form posts to one action.
+		-->
+		{#if editing.groupId}
+			<div class="mt-4 border-t border-gray-200 pt-3">
+				<p class="text-sm text-gray-600">{t('finance.ledgers.linkedTransfer')}</p>
+				<form
+					method="post"
+					action="?/unlinkTransfer"
+					use:enhance={() =>
+						({ result, update }) => {
+							if (result.type === 'success') editingId = null;
+							return update();
+						}}
+				>
+					<input type="hidden" name="id" value={editing.id} />
+					<button class="btn mt-2" type="submit">{t('finance.ledgers.unlinkTransfer')}</button>
+				</form>
+			</div>
+		{:else if editing.kind === 'transfer'}
+			<div class="mt-4 border-t border-gray-200 pt-3">
+				<p class="text-sm text-gray-600">{t('finance.ledgers.counterpartPending')}</p>
+				<form
+					method="post"
+					action="?/linkTransfer"
+					class="mt-2 flex flex-wrap items-end gap-2"
+					use:enhance={() =>
+						({ result, update }) => {
+							if (result.type === 'success') editingId = null;
+							return update();
+						}}
+				>
+					<input type="hidden" name="id" value={editing.id} />
+					<label class="block min-w-0 flex-1 text-sm">
+						<span class="text-gray-600">{t('finance.ledgers.counterpart')}</span>
+						<select name="counterpartId" class="select mt-1 w-full" required>
+							<option value="">—</option>
+							{#each transferCandidates as m (m.id)}
+								<option value={m.id}>
+									{dayOf(m.occurredOn)} · {ledgerMoney(
+										m.amountCents,
+										data.ledgers.find((l) => l.id === m.ledgerId) ?? null
+									)} · {m.description}
+								</option>
+							{/each}
+						</select>
+					</label>
+					<button class="btn" type="submit">{t('finance.ledgers.linkAsTransfer')}</button>
+				</form>
+			</div>
+		{:else if !editing.groupId}
+			<div class="mt-4 border-t border-gray-200 pt-3">
+				{#if editing.parentId}
+					<p class="text-sm text-gray-600">
+						{t('finance.ledgers.linkedToLine', { id: editing.parentId })}
+					</p>
+					<form
+						method="post"
+						action="?/detachMovement"
+						use:enhance={() =>
+							({ result, update }) => {
+								if (result.type === 'success') editingId = null;
+								return update();
+							}}
+					>
+						<input type="hidden" name="id" value={editing.id} />
+						<button class="btn mt-2" type="submit">{t('finance.ledgers.unlinkRelated')}</button>
+					</form>
+				{:else}
+					<form
+						method="post"
+						action="?/linkMovement"
+						class="flex flex-wrap items-end gap-2"
+						use:enhance={() =>
+							({ result, update }) => {
+								if (result.type === 'success') editingId = null;
+								return update();
+							}}
+					>
+						<input type="hidden" name="id" value={editing.id} />
+						<label class="block text-sm">
+							<span class="text-gray-600">{t('finance.ledgers.meaning')}</span>
+							<select name="relation" class="select mt-1 w-full">
+								<option value="refund" selected={editing.kind !== 'fee'}>
+									{t('finance.ledgers.kindRefund')}
+								</option>
+								<option value="fee" selected={editing.kind === 'fee'}>
+									{t('finance.ledgers.kindFee')}
+								</option>
+							</select>
+						</label>
+						<label class="block min-w-0 flex-1 text-sm">
+							<span class="text-gray-600">{t('finance.ledgers.relatedLine')}</span>
+							<select name="parentId" class="select mt-1 w-full" required>
+								<option value="">—</option>
+								{#each candidates as m (m.id)}
+									<option value={m.id}>
+										{dayOf(m.occurredOn)} · {ledgerMoney(
+											m.amountCents,
+											data.ledgers.find((l) => l.id === m.ledgerId) ?? null
+										)} · {m.description}
+									</option>
+								{/each}
+							</select>
+						</label>
+						<button class="btn" type="submit">{t('finance.ledgers.linkRelated')}</button>
+					</form>
+				{/if}
+			</div>
+		{/if}
 	{/if}
 	{#snippet footer()}
 		<button class="btn" type="button" onclick={() => (editingId = null)}>{t('ui.cancel')}</button>

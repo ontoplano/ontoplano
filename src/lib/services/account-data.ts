@@ -137,9 +137,14 @@ export const USER_TABLES: OwnedTable[] = [
 	owned('bills', schema.bills as never),
 	// The statements point at their ledger, so they go first; the rules that
 	// sort them point at nothing but the account itself.
+	owned('financeBalanceChecks', schema.financeBalanceChecks as never),
+	owned('financeTransactionAllocations', schema.financeTransactionAllocations as never),
+	owned('financeCommitmentEntries', schema.financeCommitmentEntries as never),
+	owned('financeCommitments', schema.financeCommitments as never),
 	owned('financeTransactions', schema.financeTransactions as never),
 	owned('ledgers', schema.ledgers as never),
 	owned('financeRules', schema.financeRules as never),
+	owned('financeBudgets', schema.financeBudgets as never),
 	// A goal's history names its measures and the goal, so it goes before both.
 	owned('goalEvents', schema.goalEvents as never),
 	owned('goalLinks', schema.goalLinks as never),

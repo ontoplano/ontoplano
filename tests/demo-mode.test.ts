@@ -187,7 +187,12 @@ describe('the demo refusals', () => {
 	it('leave the rest of the app alone', () => {
 		// The demo is a playground: everything that is not the box or the
 		// account must still be usable, or there is nothing to look at.
-		for (const path of ['/tasks/plan', '/shopping', '/notebooks/diary', '/settings/preferences']) {
+		for (const path of [
+			'/tasks/calendar',
+			'/shopping',
+			'/notebooks/diary',
+			'/settings/preferences'
+		]) {
 			expect(said('POST', path), `${path} is refused on the demo`).toBeNull();
 		}
 	});
@@ -243,10 +248,10 @@ describe("the demo's front door", () => {
 		process.env.ONTOPLANO_DEMO = 'true';
 		const { load } = await door();
 		const data = await load({
-			url: new URL('http://x/demo?next=/tasks/plan'),
+			url: new URL('http://x/demo?next=/tasks/calendar'),
 			locals: {}
 		} as never);
-		expect(data).toEqual({ next: '/tasks/plan' });
+		expect(data).toEqual({ next: '/tasks/calendar' });
 	});
 
 	it('and never off this instance', async () => {

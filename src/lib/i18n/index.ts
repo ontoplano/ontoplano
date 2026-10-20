@@ -14,7 +14,9 @@ import type { MessageKey, MessageValues } from './core.js';
 
 export * from './core.js';
 
-const KEY = Symbol('ontoplano.t');
+// Keep the key across lazy chunks and HMR module replacements. A fresh Symbol
+// leaves a newly loaded child unable to read the context its layout provided.
+const KEY = Symbol.for('ontoplano.t');
 
 /**
  * Put the page's translator where every component under this one finds it.

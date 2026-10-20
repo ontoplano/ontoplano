@@ -51,6 +51,9 @@
 		union: 'M6 5v7a6 6 0 0 0 12 0V5',
 		download: 'M12 4v10M8 10l4 4 4-4M5 19h14',
 		copy: 'M9 4h9v13M5 8h9v12H5z',
+		budgets: 'M3 6h18v14H3zM3 6l9 8 9-8M7 3h10M8 17h8',
+		// A saved week's shape, as a plan page with cells rather than two copied pages.
+		scheme: 'M5 3h10l4 4v14H5zM15 3v5h4M8 12h3v3H8zM14 12h3v3h-3zM8 18h9',
 		// Four outlined cells: choosing the whole visible set, not completing it.
 		'select-all': 'M3 3h7v7H3zM14 3h7v7h-7zM3 14h7v7H3zM14 14h7v7h-7z',
 		drag: 'M9 6h.01M9 12h.01M9 18h.01M15 6h.01M15 12h.01M15 18h.01',
@@ -69,6 +72,7 @@
 		'arrow-up': 'M12 19V5M6 11l6-6 6 6',
 
 		// the sections
+		commitments: 'M4 5h16v14H4zM8 9h8M8 13h3M15 16l2 2 4-4',
 		home: 'M3 10.5 12 3l9 7.5V21H3z',
 		planner: 'M4 5h16v16H4zM4 9h16M9 9v12M15 9v12',
 		goals: 'M12 3v18M4 6h14l-3 4 3 4H4z',

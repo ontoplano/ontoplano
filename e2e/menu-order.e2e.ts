@@ -79,7 +79,7 @@ test.describe('the section colours', () => {
 
 		// The accent is a custom property on the page surface, which is where
 		// every card, rule and tab reads it from.
-		await visit(page, '/tasks/plan');
+		await visit(page, '/tasks/calendar');
 		const accent = await page
 			.locator('.page-surface')
 			.first()
@@ -104,7 +104,7 @@ test.describe('the section colours', () => {
 			});
 		});
 
-		await visit(page, '/tasks/plan');
+		await visit(page, '/tasks/calendar');
 		const accent = await page
 			.locator('.page-surface')
 			.first()

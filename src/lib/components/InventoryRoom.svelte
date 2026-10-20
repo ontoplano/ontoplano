@@ -870,7 +870,7 @@
 			return;
 
 		const items = shownItems;
-		const action = getAction('/inventory/stock', e.key);
+		const action = getAction('/inventory/stock', e);
 		if (!action) return;
 		e.preventDefault();
 

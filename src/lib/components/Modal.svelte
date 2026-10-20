@@ -3,7 +3,7 @@
 	import { BackCloses } from '$lib/back-closes';
 	import Banner from '$lib/components/Banner.svelte';
 	import { isPhone } from '$lib/breakpoints';
-	import { panelHeight, readViewport } from '$lib/keyboard';
+	import { panelHeight, panelTop, readViewport } from '$lib/keyboard';
 	import { useT } from '$lib/i18n';
 	import { say, spokenCount } from '$lib/said.svelte';
 
@@ -26,15 +26,15 @@
 	 * How tall the sheet should be while the software keyboard is up.
 	 *
 	 * `height: 100dvh` is the layout viewport, and the keyboard covers that
-	 * rather than shrinking it — so the footer of a full-height form, Save
-	 * included, sat underneath the keyboard. `window.visualViewport` is the part
-	 * actually on screen; `$lib/keyboard.ts` has the arithmetic and the reasons
-	 * for its thresholds.
+	 * rather than shrinking it. The dialog follows the visible viewport so its
+	 * footer stays above the keyboard and a short sheet stays short.
+	 * `$lib/keyboard.ts` has the arithmetic and the reasons for its thresholds.
 	 *
-	 * Null the rest of the time, so nothing is written into the style attribute
-	 * at all: a height pinned in pixels stops following a rotation.
+	 * Null the rest of the time, so the CSS variable follows `100dvh` on rotation.
 	 */
 	let keyboardHeight = $state<number | null>(null);
+	/** Where the visible part starts while the keyboard is up — see `panelTop`. */
+	let keyboardTop = $state(0);
 
 	$effect(() => {
 		if (!open || typeof window === 'undefined' || !window.visualViewport) return;
@@ -43,6 +43,7 @@
 		const update = () => {
 			const reading = readViewport();
 			keyboardHeight = reading ? panelHeight(reading) : null;
+			keyboardTop = reading ? panelTop(reading) : 0;
 		};
 
 		update();
@@ -55,6 +56,7 @@
 			viewport.removeEventListener('resize', update);
 			viewport.removeEventListener('scroll', update);
 			keyboardHeight = null;
+			keyboardTop = 0;
 		};
 	});
 
@@ -74,6 +76,10 @@
 		 * is no room for both and it is the ordinary sheet.
 		 */
 		dock = 'centre',
+		/** Start a new plan block as a short phone sheet, with its save actions visible. */
+		phonePeek = false,
+		/** A field to focus in the short sheet without expanding it. */
+		phonePeekFocus,
 		/** A failed submission's message. Shown here because the page behind is
 		 *  dimmed and inert — an error rendered out there cannot be read. */
 		error = null,
@@ -98,6 +104,14 @@
 		 * Its own corner, so choosing something moves nothing in the form.
 		 */
 		badge,
+		/**
+		 * The phone's save, as a button at the end of its header instead of a
+		 * bar along the bottom. A short sheet has half a screen, and the bar
+		 * spent a row of it on Cancel — which the back arrow already is — and
+		 * on a save the keyboard could cover. Given this, the phone header puts
+		 * the badge beside the title and the footer is left to wider screens.
+		 */
+		phoneAction,
 		children,
 		footer
 	}: {
@@ -106,11 +120,15 @@
 		description?: string;
 		size?: 'sm' | 'md' | 'lg';
 		dock?: 'centre' | 'side';
+		phonePeek?: boolean;
+		phonePeekFocus?: string;
 		error?: string | null;
 		saved?: string;
 		onclose?: () => void;
 		onclosed?: () => void;
-		badge?: Snippet;
+		/** Drawn inline beside the title on a phone with `phoneAction`, stacked otherwise. */
+		badge?: Snippet<[inline: boolean]>;
+		phoneAction?: Snippet;
 		children: Snippet;
 		footer?: Snippet;
 	} = $props();
@@ -150,6 +168,21 @@
 	}
 
 	let dialog: HTMLDialogElement | undefined = $state();
+	let peekExpanded = $state(false);
+	// The keyboard can shrink the sheet after the first focus scroll. Keep the
+	// focused field in view once the new panel height has reached the DOM.
+	$effect(() => {
+		if (keyboardHeight === null || !open || !phonePeek || !phonePeekFocus) return;
+		const frame = requestAnimationFrame(() => {
+			const field = dialog?.querySelector<HTMLElement>(phonePeekFocus);
+			if (field && document.activeElement === field) field.scrollIntoView({ block: 'nearest' });
+		});
+		return () => cancelAnimationFrame(frame);
+	});
+
+	$effect(() => {
+		if (!open) peekExpanded = false;
+	});
 
 	/**
 	 * The sheet gesture, below `sm`.
@@ -164,6 +197,10 @@
 	let draggingSheet = $state(false);
 	let dragStartY = 0;
 	let dragStartAt = 0;
+	let sheetDeltaY = 0;
+	let headerTap = false;
+	const HEADER_TAP_SLOP = 8;
+	const EXPAND_SWIPE = 48;
 
 	function sheetDown(e: PointerEvent) {
 		// Not when the gesture starts on a control. The header doubles as the
@@ -173,6 +210,8 @@
 		draggingSheet = true;
 		dragStartY = e.clientY;
 		dragStartAt = performance.now();
+		sheetDeltaY = 0;
+		headerTap = true;
 		dragY = 0;
 		(e.currentTarget as Element).setPointerCapture(e.pointerId);
 	}
@@ -180,15 +219,22 @@
 	function sheetMove(e: PointerEvent) {
 		if (!draggingSheet) return;
 		const dy = e.clientY - dragStartY;
+		sheetDeltaY = dy;
+		if (Math.abs(dy) > HEADER_TAP_SLOP) headerTap = false;
 		dragY = dy > 0 ? dy : -Math.pow(-dy, 0.6);
 	}
 
-	function sheetUp() {
+	function sheetUp(cancelled = false) {
 		if (!draggingSheet) return;
 		draggingSheet = false;
+		if (cancelled) {
+			dragY = 0;
+			return;
+		}
 		// Far enough, or flung: closed. Anything less springs back.
 		const speed = dragY / Math.max(1, performance.now() - dragStartAt);
 		if (dragY > 96 || speed > 0.55) handleClose();
+		else if (phonePeek && (sheetDeltaY < -EXPAND_SWIPE || headerTap)) peekExpanded = true;
 		dragY = 0;
 	}
 
@@ -198,7 +244,7 @@
 		if (!dialog) return;
 		if (open && !dialog.open && !away) {
 			dialog.showModal();
-			focusFirstField();
+			if (!phonePeek || !isPhone() || phonePeekFocus) focusFirstField();
 		}
 		if (!open && dialog.open) dialog.close();
 	});
@@ -210,13 +256,16 @@
 	async function focusFirstField() {
 		await tick();
 		const field = dialog?.querySelector<HTMLElement>(
-			// Not a file chooser: focusing one rings a picture somebody has not
-			// pressed, and the field to type into is the one wanted.
-			'input:not([type=hidden]):not([type=file]):not([disabled]), select:not([disabled]), textarea:not([disabled])'
+			phonePeek && isPhone() && phonePeekFocus
+				? phonePeekFocus
+				: // Not a file chooser: focusing one rings a picture somebody has not
+					// pressed, and the field to type into is the one wanted.
+					'input:not([type=hidden]):not([type=file]):not([disabled]), select:not([disabled]), textarea:not([disabled])'
 		);
 		// `preventScroll`, because this element is inside the box the app
 		// scrolls and focusing it otherwise drags that box to the top.
 		field?.focus({ preventScroll: true });
+		if (phonePeek && isPhone() && phonePeekFocus) field?.scrollIntoView({ block: 'nearest' });
 	}
 
 	/**
@@ -356,34 +405,37 @@
 
 <dialog
 	bind:this={dialog}
+	class:peek={phonePeek && !peekExpanded}
+	class:keyboard={keyboardHeight !== null}
 	onclose={handleNativeClose}
 	onpointerdown={handlePointerDown}
 	onclick={handleClick}
 	aria-label={title}
 	class:docked={dock === 'side'}
 	data-away={away ? '' : undefined}
-	style="--modal-width: calc({WIDTHS[size]} + {widened}px)"
+	style="--modal-width: calc({WIDTHS[size]} + {widened}px); --modal-viewport-height: {keyboardHeight
+		? `${keyboardHeight}px`
+		: '100dvh'}; --modal-viewport-top: {keyboardTop}px"
 >
 	{#if open || away}
 		<div
 			class="rise panel border border-gray-200 bg-white shadow-overlay"
 			class:snapping={!draggingSheet}
-			style="transform: translateY({Math.round(dragY)}px); {keyboardHeight
-				? `height:${keyboardHeight}px; max-height:${keyboardHeight}px`
-				: ''}"
+			style="transform: translateY({Math.round(dragY)}px)"
 		>
 			<!--
 				The phone header: a back arrow and the title, the way a screen in an
 				app is headed. It doubles as the drag handle, so the sheet gesture
 				still dismisses the short ones.
 			-->
+			<!-- svelte-ignore a11y_no_static_element_interactions -->
 			<header
 				class="flex items-center gap-2 border-b border-gray-200 px-3 py-3 sm:hidden"
 				style="touch-action: none"
 				onpointerdown={sheetDown}
 				onpointermove={sheetMove}
-				onpointerup={sheetUp}
-				onpointercancel={sheetUp}
+				onpointerup={() => sheetUp()}
+				onpointercancel={() => sheetUp(true)}
 			>
 				<button
 					type="button"
@@ -404,13 +456,20 @@
 					</svg>
 				</button>
 				<div class="min-w-0 flex-1">
-					<h2 class="truncate text-base font-semibold text-gray-900">{title}</h2>
+					<div class="flex min-w-0 items-center gap-2">
+						<h2 class="truncate text-base font-semibold text-gray-900">{title}</h2>
+						{#if badge && phoneAction}
+							<div class="flex min-w-0 shrink items-center">{@render badge(true)}</div>
+						{/if}
+					</div>
 					{#if description}
 						<p class="truncate text-xs text-gray-500">{description}</p>
 					{/if}
 				</div>
-				{#if badge}
-					<div class="min-w-0 shrink-0 text-right">{@render badge()}</div>
+				{#if phoneAction}
+					<div class="shrink-0">{@render phoneAction()}</div>
+				{:else if badge}
+					<div class="min-w-0 shrink-0 text-right">{@render badge(false)}</div>
 				{/if}
 			</header>
 
@@ -424,7 +483,7 @@
 					{/if}
 				</div>
 				{#if badge}
-					<div class="ml-auto min-w-0 text-right">{@render badge()}</div>
+					<div class="ml-auto min-w-0 text-right">{@render badge(false)}</div>
 				{/if}
 				<button
 					type="button"
@@ -451,7 +510,9 @@
 				{/each}
 			{/if}
 
-			<div class="min-h-0 flex-1 overflow-y-auto overscroll-y-contain px-4 py-4 sm:px-5">
+			<div
+				class="modal-content min-h-0 flex-1 overflow-y-auto overscroll-y-contain px-4 py-4 sm:px-5"
+			>
 				{#if error}
 					<div class="mb-4"><Banner kind="error" message={error} /></div>
 				{/if}
@@ -461,7 +522,9 @@
 			{#if footer}
 				<footer
 					data-modal-footer
-					class="flex flex-wrap items-center justify-end gap-2 border-t border-gray-200 bg-gray-50 px-5 py-3"
+					class="flex flex-wrap items-center justify-end gap-2 border-t border-gray-200 bg-gray-50 px-5 py-3 {phoneAction
+						? 'max-sm:hidden'
+						: ''}"
 					style="padding-bottom: calc(0.75rem + var(--safe-bottom, 0px))"
 				>
 					{@render footer()}
@@ -480,10 +543,11 @@
 	dialog {
 		position: fixed;
 		inset: 0;
+		top: var(--modal-viewport-top, 0px);
 		width: 100%;
 		max-width: 100%;
-		height: 100dvh;
-		max-height: 100dvh;
+		height: var(--modal-viewport-height);
+		max-height: var(--modal-viewport-height);
 		margin: 0;
 		border: 0;
 		padding: 0;
@@ -502,10 +566,28 @@
 	.panel {
 		display: flex;
 		flex-direction: column;
-		height: 100dvh;
-		max-height: 100dvh;
+		height: var(--modal-viewport-height);
+		max-height: var(--modal-viewport-height);
 		border: 0;
 		padding-top: var(--safe-top, 0px);
+	}
+
+	.modal-content {
+		touch-action: pan-y;
+		-webkit-overflow-scrolling: touch;
+	}
+
+	:global([data-modal-footer] > :first-child:not(:last-child)) {
+		margin-inline-end: auto;
+	}
+
+	:global([data-modal-footer] > :last-child:not(:first-child)) {
+		margin-inline-start: auto;
+	}
+
+	:global([data-modal-footer] > [data-modal-cancel]) {
+		order: -1;
+		margin-inline-end: auto;
 	}
 
 	/* The edges that widen it: only with a mouse, and only where it floats. */
@@ -551,6 +633,28 @@
 	}
 
 	@media (max-width: 639px) {
+		dialog.peek[open] {
+			display: flex;
+			flex-direction: column;
+			justify-content: flex-end;
+		}
+
+		dialog.peek .panel {
+			height: 50%;
+			max-height: 50%;
+			padding-top: 0;
+		}
+
+		/*
+		 * With the keyboard up, half of what is left is a header and one field.
+		 * The keyboard already hides the page the half sheet was leaving room
+		 * for, so the sheet takes everything above it.
+		 */
+		dialog.peek.keyboard .panel {
+			height: 100%;
+			max-height: 100%;
+		}
+
 		/* Arrive the way a sheet does — from below, not fading in place. */
 		.panel {
 			animation: sheet-in 240ms cubic-bezier(0.2, 0.9, 0.3, 1);

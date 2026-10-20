@@ -35,9 +35,11 @@ shows up here on the next build.
 | [`billing`](#billing)                            | Billing, as the rest of the app sees it.                                                                                                                                                                                                                             |
 | [`bills`](#bills)                                | Bills: money expected to go out, on a rhythm.                                                                                                                                                                                                                        |
 | [`birthdays`](#birthdays)                        | Being told it is somebody's birthday, on the morning of it.                                                                                                                                                                                                          |
+| [`budgets`](#budgets)                            | Monthly ceilings share statement spending; they never write a bank or stock entry.                                                                                                                                                                                   |
 | [`calendar-feed`](#calendar-feed)                | The plan, published as a calendar anybody's software can read.                                                                                                                                                                                                       |
 | [`calendars`](#calendars)                        | Calendars somebody else controls.                                                                                                                                                                                                                                    |
 | [`client-errors`](#client-errors)                | Client-side errors, sent in with permission.                                                                                                                                                                                                                         |
+| [`commitments`](#commitments)                    | Custody, simple debts and reserves are stocks, not bank movements or budgets. A balance is the declared opening plus dated entries in its original currency. Splits and settlements retain their source evidence; nothing here invents money.                        |
 | [`companions`](#companions)                      | The processes an instance needs BESIDE the app, and whether they exist.                                                                                                                                                                                              |
 | [`ctx`](#ctx)                                    | The single argument every service function takes.                                                                                                                                                                                                                    |
 | [`demo`](#demo)                                  | A demo where everybody gets their own copy.                                                                                                                                                                                                                          |
@@ -46,6 +48,7 @@ shows up here on the next build.
 | [`entry-actions`](#entry-actions)                | Several notes at once, from wherever they are listed.                                                                                                                                                                                                                |
 | [`errors`](#errors)                              | Typed errors thrown by service functions.                                                                                                                                                                                                                            |
 | [`family-invite`](#family-invite)                | Inviting somebody to the plan, and the account that makes for them.                                                                                                                                                                                                  |
+| [`finance-summary`](#finance-summary)            | The four questions, answered once.                                                                                                                                                                                                                                   |
 | [`gallery`](#gallery)                            | Albums: lists of references over the one media table.                                                                                                                                                                                                                |
 | [`goal-actions`](#goal-actions)                  | Everything done to a goal, from wherever a goal is shown.                                                                                                                                                                                                            |
 | [`goals`](#goals)                                | Goals, and the progress that makes them more than a wish list.                                                                                                                                                                                                       |
@@ -1219,6 +1222,10 @@ enforces one payment per period, so this upserts). The expected amount is
 snapshotted from the bill as it stands, so a later edit to the bill does not
 rewrite what was actually asked at the time.
 
+#### `updatePayment(ctx, billId, paymentId, input)`
+
+Correct the date and amount of an existing paid period without changing its period.
+
 #### `markPaidFromMovement(ctx, billId, movementId, period)`
 
 Mark a bill paid by pointing at the line that paid it.
@@ -1245,6 +1252,10 @@ what was paid, and undoing the payment first is one press.
 Take a skip back — the period is open again. The inverse of `skipPeriod`.
 
 #### `listPayments(ctx, billId)`
+
+#### `listAllPayments(ctx)`
+
+The payments this account can name through the assistant.
 
 #### `billsSettledIn(ctx, period)`
 
@@ -1327,6 +1338,33 @@ Make sure today's birthdays exist as reminders for one account.
 Answers with how many rows it wrote, which is zero on all but a handful of
 days a year. Cheap enough to call on every delivery pass and from any page
 that is about to read reminders: one indexed query over an address book.
+
+## budgets
+
+Monthly ceilings share statement spending; they never write a bank or stock entry.
+
+### Functions
+
+#### `budgetMonth(value)`
+
+#### `listBudgets(ctx, filter, spent)`
+
+#### `getBudget(ctx, id)`
+
+#### `createBudget(ctx, input)`
+
+#### `updateBudget(ctx, id, input)`
+
+#### `deleteBudget(ctx, id)`
+
+#### `copyBudgets(ctx, input)`
+
+Copy existing ceilings as ceilings, preserving orphan labels and never overwriting a bucket.
+
+### Types
+
+- `Budget`
+- `BudgetInput`
 
 ## calendar-feed
 
@@ -1477,6 +1515,52 @@ Forget one, once it has been dealt with.
 
 - `ClientErrorState`
 - `ReportedError`
+
+## commitments
+
+Custody, simple debts and reserves are stocks, not bank movements or budgets.
+A balance is the declared opening plus dated entries in its original currency.
+Splits and settlements retain their source evidence; nothing here invents money.
+
+### Functions
+
+#### `listCommitments(ctx, options)`
+
+One aggregate per stock; closed records only appear when explicitly requested.
+
+#### `getCommitment(ctx, id)`
+
+#### `createCommitment(ctx, input)`
+
+#### `updateCommitment(ctx, id, input)`
+
+#### `archiveCommitment(ctx, id, archived)`
+
+#### `listCommitmentEntries(ctx, id)`
+
+#### `getCommitmentEntry(ctx, id)`
+
+#### `addCommitmentEntry(ctx, input)`
+
+#### `deleteCommitmentEntry(ctx, id)`
+
+#### `closeCommitment(ctx, id, input)`
+
+#### `deleteCommitment(ctx, id, options)`
+
+#### `commitmentTotals(ctx)`
+
+Each kind/currency stays a stock of its own; debts are never netted into funds.
+
+#### `settleCommitment(ctx, input)`
+
+#### `consumeReserve(ctx, input)`
+
+### Types
+
+- `CommitmentKind`
+- `Commitment`
+- `CommitmentEntry`
 
 ## companions
 
@@ -1874,6 +1958,40 @@ one the funnel already has.
 Creation is only offered where registration is open. On an invite-only or
 closed instance a payer typing addresses must not be a way to mint
 accounts, so those fall back to the old rule: the account has to exist.
+
+## finance-summary
+
+The four questions, answered once.
+
+What is mine, what is committed, what I spent this month, and what is left
+against my plans — for every original currency separately, because §4 says
+currencies never add (D6) and because a total that mixes them is a total
+nobody can act on.
+
+This module does no arithmetic of its own beyond the cross-room formulas in
+`architecture.md` §4: supported funds come from `ledgers.ts` (D5), spending
+from `statements.ts` (D4), budgets from `budgets.ts` (D7), stocks from
+`commitments.ts` (D7). It only puts them beside each other and names the
+gaps. Every figure is one aggregate query — the inputs are grouped reads;
+nothing here loads statement rows and re-sums them in JavaScript (D11).
+
+### Functions
+
+#### `moneyOverview(ctx, filter)`
+
+The money picture for one account at one civil month.
+
+Currencies are the union of the accounts, the open stocks, the month's
+budgets and the month's spending — a currency is on the screen if it has
+something to say, and an account in it is the only thing that can make a
+supported total.
+
+### Types
+
+- `MoneyGap` — A thing the screen must name instead of hiding in a confident total.
+- `CurrencyCoverage` — How much of one currency's money rests on a declared opening.
+- `CurrencyPicture`
+- `MoneyOverview`
 
 ## gallery
 
@@ -2954,6 +3072,20 @@ The ledgers, all of them or one subject's.
 tab is this room looking at one subject and draws the rows with the same
 component, so it needs exactly what the room needs.
 
+#### `supported(ctx, asOf)`
+
+Active covered ledgers only. Unknown currency is an exclusion, not an FX guess.
+
+#### `listBalanceChecks(ctx, ledgerId)`
+
+Observations remain evidence even when there is not yet an opening to check them against.
+
+#### `recordBalanceCheck(ctx, input)`
+
+#### `getBalanceCheck(ctx, id)`
+
+#### `deleteBalanceCheck(ctx, id)`
+
 #### `getLedger(ctx, id)`
 
 #### `createLedger(ctx, input)`
@@ -2986,6 +3118,8 @@ A place past either end is the end.
 
 - `LedgerKind`
 - `Ledger`
+- `CurrencyFunds`
+- `BalanceCheck`
 
 ## legal
 
@@ -5632,6 +5766,17 @@ the first paint wrong for half of visitors.
 
 #### `setTheme(userId, theme)`
 
+#### `isMoneyView(value)`
+
+#### `getMoneyView(userId)`
+
+Whether the money picture shows every account balance, including money held
+for somebody else, or only the part that is the reader's. The default is
+`all` so an existing picture does not change under a person who never chose;
+the money screen offers the switch and stores the answer.
+
+#### `setMoneyView(userId, view)`
+
 #### `getLocale(userId)`
 
 The language this account reads the app in.
@@ -5765,6 +5910,7 @@ simply does not find it among the notebooks it lists.
 
 ### Types
 
+- `MoneyView`
 - `WeekSettings`
 - `GridHours`
 
@@ -5954,6 +6100,14 @@ no resweep and nothing stored to drift.
 
 ### Functions
 
+#### `splitMovement(ctx, input)`
+
+A split never rewrites the bank line; custody entries and all parts land together.
+
+#### `unsplitMovement(ctx, id)`
+
+Remove parts only after the owner explicitly reverses their stock entries.
+
 #### `availableParsers()`
 
 The parsers an import can offer, by key and friendly name.
@@ -5982,6 +6136,41 @@ already sent adds nothing, provided it names the same `externalId`.
 
 #### `updateMovement(ctx, id, input)`
 
+#### `classifyMovements(ctx, input)`
+
+Say what several movements were at once, in one write.
+
+The point is a hundred lines in one gesture, not a hundred round trips, so
+the whole selection is checked first: a single leg of a transfer or an id
+from another account refuses the batch rather than half-applying it.
+
+#### `linkTransfer(ctx, input)`
+
+Two lines are one move between my own accounts (D2).
+
+A group of one is a _pending counterpart_ and is allowed to stand: the
+destination statement often arrives later. Two legs in the same ledger are
+refused — they would balance to zero and hide two real expenses — and legs
+in one currency must add up to nothing, because money that left one place
+arrived in the other.
+
+#### `unlinkTransfer(ctx, id)`
+
+Undo a pairing: both legs return to the sign's guess, and the group is gone.
+
+#### `linkMovement(ctx, input)`
+
+Attach a line to the one it belongs to (D8).
+
+A refund reverses one expense and a fee belongs to the payment it was
+charged on. One parent only: a credit returned against two expenses is two
+credits. The currencies must match — the ledgers may differ, the money may
+not — because netting unlike money is arithmetic, not reconciliation.
+
+#### `detachMovement(ctx, id)`
+
+Undo a refund or fee link: the line stands alone again, back to the sign's guess.
+
 #### `getMovementRow(ctx, id)`
 
 One movement as stored, or null — how an id somebody named is resolved.
@@ -5991,6 +6180,13 @@ One movement as stored, or null — how an id somebody named is resolved.
 Every movement as stored, or only those in some ledgers — what a key tied to a notebook reaches.
 
 #### `deleteMovement(ctx, id)`
+
+Gone.
+
+A leg of a transfer is refused while the group stands: deleting one leg is
+how a pair becomes a single line that still calls itself a transfer (D2).
+Anything that pointed at the line is unlinked first, so a refund survives
+its parent as an unmatched credit rather than disappearing with it.
 
 #### `listRules(ctx)`
 
@@ -6018,6 +6214,27 @@ What a description would be filed as, for anything that needs to ask.
 
 #### `listMovements(ctx, filter)`
 
+#### `listMovementPage(ctx, opts)`
+
+One bounded page of statement lines, newest first.
+
+A page, not a figure: `limit` is clamped and `beforeId` is the cursor the
+previous page answered with, so walking the history never loads all of it.
+The values are `listMovements`' own — same category, tags, allocations and
+counterpart state — because the API and the screen must tell one story.
+
+`beforeId` is the id of the last line already read; the keyset is that line's
+place in the order, not the id alone, so an import backdating a line cannot
+make a page skip or repeat a row.
+
+#### `recentForLinking(ctx, limit)`
+
+The few recent lines one meaning can be linked to.
+
+Deliberately not `listMovements`: that loads the whole history and runs
+every sorting rule over each row, which a picker of the last hundred lines
+has no use for and would pay for on every page load.
+
 #### `uncategorizedCount(ctx, filter)`
 
 How many lines no category rule claims — the number that says "more rules".
@@ -6026,15 +6243,29 @@ How many lines no category rule claims — the number that says "more rules".
 
 'YYYY-MM' keys ending at the month `now` is in.
 
+#### `statementWindow(ctx, months, filter)`
+
+One inclusive window for every finance series, in the account's civil month.
+
 #### `categorySlices(ctx, filter)`
 
-Spending by category over a window — the pie, and the table beside it.
-Every outgoing line is in exactly one slice, uncategorized included, so
-the slices are the whole of what was spent.
+Personal spending by category over a window — the pie, and the table beside it.
+Expenses and fees count, net of refunds, and only the personal part of a split
+line. Transfers, cash withdrawals and custody shares stay out; a month whose
+refunds outweigh its spending has no slice rather than a negative one.
+
+#### `spending(ctx, filter)`
+
+Personal consumption and its exclusions, grouped by original currency without a row cap.
 
 #### `monthlyTotals(ctx, months, filter)`
 
 In, out and net, month by month.
+
+This is cash flow as the bank shows it: a linked refund arrived, so it is
+money in. Personal spending — `categorySlices`, `categoryMonths` — nets that
+refund against the expense it reverses and leaves transfers, cash and custody
+shares out, so the two totals are not meant to match.
 
 #### `categoryMonths(ctx, months, filter)`
 
@@ -6070,9 +6301,16 @@ The ledgers a set of transaction ids belongs to — for bulk moves later.
 ### Types
 
 - `Movement`
+- `MovementAllocation`
+- `AllocationInput`
+- `MovementKind`
 - `Rule`
 - `MovementFilter`
+- `MovementPage`
+- `LinkCandidate` — A line a meaning can point at: a transfer's other side, a refund's expense.
 - `CategorySlice`
+- `SpendingCategory`
+- `Spending`
 - `StatementMonth`
 - `CategoryMonths`
 - `TagMonths`
@@ -7047,6 +7285,14 @@ Every validator enforces a bound — no unbounded strings reach the database.
 #### `optionalStr(value, field, opts)`
 
 #### `num(value, field, opts)`
+
+#### `civilDay(value, field)`
+
+A real civil day, preserved exactly rather than normalised into another date.
+
+#### `minorAmount(value, field)`
+
+Money must remain exact at both the write boundary and the aggregate result.
 
 #### `oneOf(value, field, allowed)`
 

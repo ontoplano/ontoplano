@@ -17,13 +17,21 @@ test('a ledger, its statement, the rules and the plots', async ({ page }) => {
 	test.setTimeout(120_000);
 	await register(page, testEmail('finance'));
 
-	// The finance door opens on Ledgers.
+	// The finance room opens on the money picture, not on one account.
 	await visit(page, '/finance');
+	await expect(page).toHaveURL(/\/finance(\?|$)/);
+	await expect(page.getByRole('heading', { name: 'Overview', exact: true })).toBeVisible();
+
+	// Ledgers is a tab of it.
+	await page.getByRole('link', { name: 'Ledgers', exact: true }).click();
 	await expect(page).toHaveURL(/\/finance\/ledgers/);
 
 	// A ledger, with the export it usually receives.
 	await page.getByRole('button', { name: 'New ledger' }).click();
 	await page.locator('[name="heading"]').fill('Current account');
+	// Declare the original currency: the Insights plots answer one currency at
+	// a time and are not drawn for an unspecified one (D6).
+	await page.locator('[name="currency"]').fill('BRL');
 	await page.locator('[name="defaultParser"]').selectOption('nubank:conta_corrente');
 	await page.getByRole('button', { name: 'Create', exact: true }).click();
 	// It is a tab along the top of the statement, with its balance beside it.
@@ -49,7 +57,9 @@ test('a ledger, its statement, the rules and the plots', async ({ page }) => {
 
 	// The statement is drawn twice — a table at this width, a list at a
 	// phone's — so the row is asked for in the one that is showing.
-	await expect(page.getByRole('cell', { name: /Mercado Bom Preço/ })).toBeVisible();
+	await expect(
+		page.getByRole('cell', { name: 'Compra no débito - Mercado Bom Preço', exact: true })
+	).toBeVisible();
 
 	// A category rule sorts the line that was already there — and can be
 	// rewritten afterwards, which re-sorts it again.

@@ -321,6 +321,36 @@ describe('an occurrence of a block', () => {
 		expect(() => instances.setStatusOn(ctx, 'slot', 999999, '2026-08-18', 'done')).toThrow();
 	});
 
+	test('is called by its activity, then one line of its notes — never all of them', () => {
+		const notes = '**Prep** for the review\n\n- slides\n- ![image.png](/media/12)';
+		const day = new Date('2026-08-18T00:00:00');
+		const titled = (id: number) => {
+			instances.generateForDate(ctx, day);
+			return instances.listForDate(ctx, day).find((o) => o.slotId === id)!;
+		};
+
+		const swim = activities.createActivity(ctx, { name: 'Swimming', categoryId: work });
+		const doing = slots.createSlot(ctx, {
+			weekday: 1,
+			startTime: '07:00',
+			durationMinutes: 30,
+			mode: 'activity',
+			activityId: swim,
+			label: notes
+		});
+		expect(titled(doing).title).toBe('Swimming');
+
+		const plain = slots.createSlot(ctx, {
+			weekday: 1,
+			startTime: '08:00',
+			durationMinutes: 30,
+			mode: 'category',
+			categoryId: work,
+			label: notes
+		});
+		expect(titled(plain).title).toBe('Prep for the review');
+	});
+
 	test('refuses a status that is not one', () => {
 		const id = anOccurrence();
 		expect(() => instances.setInstanceStatus(ctx, id, 'nearly')).toThrow();

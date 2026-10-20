@@ -84,7 +84,7 @@
 			return;
 		}
 
-		const action = getAction('/notebooks/tags', e.key);
+		const action = getAction('/notebooks/tags', e);
 		if (action === 'toggle-expand') {
 			const tag = shownTags[selectedIndex];
 			if (!tag) return;

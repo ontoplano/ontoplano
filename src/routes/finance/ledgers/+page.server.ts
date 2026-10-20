@@ -1,19 +1,41 @@
 import type { IsolatedEvent } from '$lib/isolated/routes';
+import { monthParam } from '$lib/when';
 import { buildCtx } from '$lib/services/ctx';
 import { pickableNotebooks } from '$lib/services/notebooks';
 import { ledgerHandlers } from '$lib/services/ledger-actions';
 import { getCurrency } from '$lib/services/settings';
-import { parseMoney } from '$lib/money';
-import { listLedgers } from '$lib/services/ledgers';
+import {
+	deleteBalanceCheck,
+	getBalanceCheck,
+	getLedger,
+	listBalanceChecks,
+	listLedgers,
+	recordBalanceCheck,
+	supported
+} from '$lib/services/ledgers';
+import { normaliseCurrency, parseSignedMoney } from '$lib/money';
+import { civilDay } from '$lib/services/validate';
+import { NotFoundError, ValidationError } from '$lib/services/errors';
 import { formAction } from '$lib/services/scoped-actions';
+import { listCommitments } from '$lib/services/commitments';
 import {
 	availableParsers,
+	classifyMovements,
 	deleteMovement,
+	detachMovement,
 	importStatement,
+	linkMovement,
+	linkTransfer,
+	getMovementRow,
 	listMovements,
 	recordMovement,
+	spending,
+	splitMovement,
+	unsplitMovement,
+	recentForLinking,
 	monthsWithLines,
 	uncategorizedCount,
+	unlinkTransfer,
 	UNCATEGORIZED,
 	updateMovement
 } from '$lib/services/statements';
@@ -33,7 +55,32 @@ export const load = async ({ locals, url }: IsolatedEvent) => {
 	const current = ledgers.find((l) => l.id === asked) ?? ledgers.find((l) => !l.archived) ?? null;
 
 	const query = url.searchParams.get('q') ?? '';
-	const month = url.searchParams.get('month') ?? '';
+	const month = monthParam(url.searchParams.get('month')) ?? '';
+	const reviewUnclassified = url.searchParams.get('unclassified') === '1';
+	const requestedCurrency = url.searchParams.get('currency');
+	// A hand-edited review URL falls back; it never answers with a 500.
+	const reviewCurrency =
+		requestedCurrency === 'unspecified'
+			? null
+			: requestedCurrency
+				? (normaliseCurrency(requestedCurrency) ?? undefined)
+				: undefined;
+	const day = (raw: string | null) => {
+		if (!raw) return undefined;
+		try {
+			return civilDay(raw);
+		} catch {
+			return undefined;
+		}
+	};
+	const reviewFilter = {
+		unclassified: true,
+		currency: reviewCurrency,
+		ledgerId: asked || undefined,
+		from: day(url.searchParams.get('from')),
+		to: day(url.searchParams.get('to')),
+		month: month || undefined
+	};
 	// Only the lines no category claims — the ones the Rules tab is for.
 	const loose = url.searchParams.get('uncategorized') === '1';
 	const filter = current
@@ -45,25 +92,79 @@ export const load = async ({ locals, url }: IsolatedEvent) => {
 		// notebook's tab opens this same form with its own notebook chosen.
 		notebooks: pickableNotebooks(ctx),
 		currency: getCurrency(ctx.userId),
+		// A money-picture gap links straight at the ledger it is about.
+		editId: Number(url.searchParams.get('edit')) || 0,
+		openChecks: url.searchParams.get('checks') === '1',
 		parsers: availableParsers(),
 		ledgers,
+		funds: supported(ctx),
+		commitments: listCommitments(ctx),
+		checks: current ? listBalanceChecks(ctx, current.id) : [],
 		current,
 		query,
 		month,
 		loose,
-		movements: filter
-			? listMovements(ctx, {
-					...filter,
-					limit: 500,
-					...(loose ? { category: UNCATEGORIZED, direction: 'out' as const } : {})
-				})
-			: [],
+		reviewUnclassified,
+		reviewFrom: reviewFilter.from ?? '',
+		reviewTo: reviewFilter.to ?? '',
+		reviewCount: reviewUnclassified
+			? spending(ctx, reviewFilter).reduce((sum, group) => sum + group.movementCount, 0)
+			: 0,
+		movements: reviewUnclassified
+			? listMovements(ctx, { ...reviewFilter, limit: 500 })
+			: filter
+				? listMovements(ctx, {
+						...filter,
+						limit: 500,
+						...(loose ? { category: UNCATEGORIZED, direction: 'out' as const } : {})
+					})
+				: [],
+		/*
+		 * The lines a meaning can point at: a transfer's counterpart, the
+		 * expense a refund reverses, the payment a fee was charged on. Recent
+		 * ones across every ledger — a counterpart is by definition in
+		 * another account, so the visible list cannot supply it.
+		 */
+		counterparts: recentForLinking(ctx),
 		months: current ? monthsWithLines(ctx, current.id) : [],
 		unsorted: filter ? uncategorizedCount(ctx, filter) : 0
 	};
 };
 
 export const actions = {
+	splitMovement: formAction((ctx, form) => {
+		const id = Number(form.get('id'));
+		const movement = getMovementRow(ctx, id);
+		if (!movement || movement.ledgerId === null) throw new NotFoundError('movement');
+		const ledger = getLedger(ctx, movement.ledgerId);
+		const parts = form.getAll('partData');
+		if (!parts.length || parts.length > 100)
+			throw new ValidationError('A split needs between 1 and 100 parts.');
+		const allocations = parts.map((raw) => {
+			let part;
+			try {
+				part = JSON.parse(String(raw));
+			} catch {
+				throw new ValidationError('Unreadable split part.');
+			}
+			if (!part || typeof part !== 'object' || Array.isArray(part))
+				throw new ValidationError('Unreadable split part.');
+			const amountMinor = parseSignedMoney(part.amount, ledger.currency);
+			if (amountMinor === null)
+				throw new ValidationError('Enter an exact signed part in the ledger currency.');
+			return {
+				kind: part.kind,
+				amountMinor,
+				category: part.category,
+				commitmentId: part.commitmentId,
+				note: part.note
+			};
+		});
+		splitMovement(ctx, { id, allocations });
+	}),
+	unsplitMovement: formAction((ctx, form) => {
+		unsplitMovement(ctx, Number(form.get('id')));
+	}),
 	/*
 	 * The ledger itself, under the names this room has always used.
 	 *
@@ -78,6 +179,26 @@ export const actions = {
 	archiveLedger: ledgerHandlers.archive,
 	deleteLedger: ledgerHandlers.delete,
 
+	recordBalanceCheck: formAction((ctx, form) => {
+		const ledger = getLedger(ctx, Number(form.get('ledgerId')));
+		const amount = parseSignedMoney(form.get('observedAmount'), ledger.currency);
+		if (amount === null)
+			throw new ValidationError(
+				'Enter an exact statement closing amount in the ledger currency, or whole minor units when unspecified.'
+			);
+		recordBalanceCheck(ctx, {
+			ledgerId: ledger.id,
+			asOf: form.get('asOf'),
+			observedMinor: amount,
+			note: form.get('note')
+		});
+	}),
+	deleteBalanceCheck: formAction((ctx, form) => {
+		const check = getBalanceCheck(ctx, Number(form.get('id')));
+		if (!check || check.ledgerId !== Number(form.get('ledgerId')))
+			throw new NotFoundError('balance check');
+		deleteBalanceCheck(ctx, check.id);
+	}),
 	import: formAction((ctx, form) => {
 		/*
 		 * The column mapping, when the screen sent one.
@@ -107,7 +228,12 @@ export const actions = {
 	}),
 
 	addMovement: formAction((ctx, form) => {
-		const amount = parseMoney(form.get('amount'), getCurrency(ctx.userId)) ?? 0;
+		const ledger = getLedger(ctx, Number(form.get('ledgerId')));
+		const amount = parseSignedMoney(form.get('amount'), ledger.currency);
+		if (amount === null)
+			throw new ValidationError(
+				'Enter an exact amount in the ledger currency, or whole minor units when unspecified.'
+			);
 		recordMovement(ctx, {
 			ledgerId: form.get('ledgerId'),
 			occurredOn: form.get('occurredOn'),
@@ -124,13 +250,53 @@ export const actions = {
 			description: form.get('heading') ?? undefined,
 			occurredOn: form.get('occurredOn') ?? undefined,
 			ledgerId: form.get('ledgerId') ?? undefined,
+			kind: form.get('kind') ?? undefined,
 			amountCents:
 				amount === null || amount === ''
 					? undefined
 					: (() => {
-							const cents = parseMoney(amount, getCurrency(ctx.userId)) ?? 0;
+							const ledger = getLedger(ctx, Number(form.get('ledgerId')));
+							const cents = parseSignedMoney(amount, ledger.currency);
+							if (cents === null)
+								throw new ValidationError(
+									'Enter an exact amount in the ledger currency, or whole minor units when unspecified.'
+								);
 							return form.get('direction') === 'in' ? Math.abs(cents) : -Math.abs(cents);
 						})()
+		});
+	}),
+
+	/** What several lines were, in one write — the checkbox column's verb. */
+	classify: formAction((ctx, form) => {
+		const ids = form
+			.getAll('ids')
+			.map((id) => Number(id))
+			.filter((id) => Number.isInteger(id));
+		const result = classifyMovements(ctx, { ids, kind: form.get('kind') });
+		return { success: true, updated: result.updated };
+	}),
+
+	linkTransfer: formAction((ctx, form) => {
+		linkTransfer(ctx, {
+			id: form.get('id'),
+			counterpartId: form.get('counterpartId')
+		});
+	}),
+
+	unlinkTransfer: formAction((ctx, form) => {
+		unlinkTransfer(ctx, Number(form.get('id')));
+	}),
+
+	/** A refund reverses an expense; a fee belongs to the payment it was charged on. */
+	detachMovement: formAction((ctx, form) => {
+		detachMovement(ctx, Number(form.get('id')));
+	}),
+
+	linkMovement: formAction((ctx, form) => {
+		linkMovement(ctx, {
+			id: form.get('id'),
+			parentId: form.get('parentId'),
+			relation: form.get('relation') === 'fee' ? 'fee' : 'refund'
 		});
 	}),
 

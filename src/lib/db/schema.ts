@@ -3012,6 +3012,9 @@ export const ledgers = sqliteTable(
 		/** A parser key like 'nubank:conta_corrente'. Null means "ask every time". */
 		defaultParser: text('default_parser'),
 		currency: text('currency'),
+		/** Balance immediately before the first movement on openingOn; no date means no coverage. */
+		openingMinor: integer('opening_minor').notNull().default(0),
+		openingOn: text('opening_on'),
 		sortOrder: integer('sort_order').notNull().default(0),
 		archived: integer('archived', { mode: 'boolean' }).notNull().default(false),
 		/** The subject this belongs to, if any — see `habits.notebookId`. */
@@ -3027,6 +3030,187 @@ export const ledgers = sqliteTable(
 		index('ledgers_user_idx').on(table.userId),
 		index('ledgers_notebook_idx').on(table.notebookId),
 		uniqueIndex('ledgers_user_name_unique').on(table.userId, table.name)
+	]
+);
+
+/** A statement observation, not a balancing movement. Corrections never rewrite history. */
+export const financeBalanceChecks = sqliteTable(
+	'finance_balance_checks',
+	{
+		id: integer('id').primaryKey({ autoIncrement: true }),
+		userId: text('user_id')
+			.notNull()
+			.references(() => user.id),
+		ledgerId: integer('ledger_id')
+			.notNull()
+			.references(() => ledgers.id, { onDelete: 'cascade' }),
+		asOf: text('as_of').notNull(),
+		observedMinor: integer('observed_minor').notNull(),
+		note: text('note'),
+		createdAt: text('created_at')
+			.notNull()
+			.default(sql`(CURRENT_TIMESTAMP)`)
+	},
+	(table) => [
+		uniqueIndex('finance_balance_checks_user_ledger_date_unique').on(
+			table.userId,
+			table.ledgerId,
+			table.asOf
+		)
+	]
+);
+
+/** A monthly category ceiling is a plan, never a bank movement or funded reserve. */
+export const financeBudgets = sqliteTable(
+	'finance_budgets',
+	{
+		id: integer('id').primaryKey({ autoIncrement: true }),
+		userId: text('user_id')
+			.notNull()
+			.references(() => user.id),
+		month: text('month').notNull(),
+		category: text('category').notNull(),
+		currency: text('currency').notNull(),
+		amountMinor: integer('amount_minor').notNull(),
+		createdAt: text('created_at')
+			.notNull()
+			.default(sql`(CURRENT_TIMESTAMP)`),
+		updatedAt: text('updated_at')
+			.notNull()
+			.default(sql`(CURRENT_TIMESTAMP)`)
+	},
+	(table) => [
+		uniqueIndex('finance_budgets_bucket_unique').on(
+			table.userId,
+			table.month,
+			table.category,
+			table.currency
+		),
+		check(
+			'finance_budgets_amount_check',
+			sql`typeof(${table.amountMinor}) = 'integer' and ${table.amountMinor} between 0 and 9007199254740991`
+		),
+		check(
+			'finance_budgets_month_check',
+			sql`${table.month} glob '[0-9][0-9][0-9][0-9]-[0-9][0-9]' and substr(${table.month}, 6, 2) between '01' and '12'`
+		)
+	]
+);
+
+/** A stock, not a bank movement: custody, debt or an earmark in one currency. */
+export const financeCommitments = sqliteTable(
+	'finance_commitments',
+	{
+		id: integer('id').primaryKey({ autoIncrement: true }),
+		userId: text('user_id')
+			.notNull()
+			.references(() => user.id),
+		kind: text('kind', { enum: ['custody', 'payable', 'receivable', 'reserve'] }).notNull(),
+		name: text('name').notNull(),
+		personId: integer('person_id').references(() => people.id, { onDelete: 'set null' }),
+		currency: text('currency').notNull(),
+		openingMinor: integer('opening_minor').notNull().default(0),
+		notes: text('notes').notNull().default(''),
+		status: text('status', { enum: ['open', 'settled', 'archived'] })
+			.notNull()
+			.default('open'),
+		createdAt: text('created_at')
+			.notNull()
+			.default(sql`(CURRENT_TIMESTAMP)`),
+		updatedAt: text('updated_at')
+			.notNull()
+			.default(sql`(CURRENT_TIMESTAMP)`)
+	},
+	(table) => [
+		index('finance_commitments_user_idx').on(table.userId, table.status),
+		check(
+			'finance_commitments_kind_check',
+			sql`${table.kind} in ('custody','payable','receivable','reserve')`
+		),
+		check(
+			'finance_commitments_status_check',
+			sql`${table.status} in ('open','settled','archived')`
+		),
+		check(
+			'finance_commitments_opening_check',
+			sql`typeof(${table.openingMinor}) = 'integer' and ${table.openingMinor} between 0 and 9007199254740991`
+		)
+	]
+);
+
+/** Signed changes to a stock, with optional retained bank evidence. */
+export const financeCommitmentEntries = sqliteTable(
+	'finance_commitment_entries',
+	{
+		id: integer('id').primaryKey({ autoIncrement: true }),
+		userId: text('user_id')
+			.notNull()
+			.references(() => user.id),
+		commitmentId: integer('commitment_id')
+			.notNull()
+			.references(() => financeCommitments.id, { onDelete: 'cascade' }),
+		occurredOn: text('occurred_on').notNull(),
+		amountMinor: integer('amount_minor').notNull(),
+		transactionId: integer('transaction_id').references(() => financeTransactions.id, {
+			onDelete: 'set null'
+		}),
+		note: text('note'),
+		createdAt: text('created_at')
+			.notNull()
+			.default(sql`(CURRENT_TIMESTAMP)`)
+	},
+	(table) => [
+		index('finance_commitment_entries_user_stock_idx').on(
+			table.userId,
+			table.commitmentId,
+			table.occurredOn
+		),
+		index('finance_commitment_entries_transaction_idx').on(table.userId, table.transactionId),
+		uniqueIndex('finance_commitment_entries_stock_transaction_unique').on(
+			table.userId,
+			table.commitmentId,
+			table.transactionId
+		),
+		check(
+			'finance_commitment_entries_amount_check',
+			sql`typeof(${table.amountMinor}) = 'integer' and ${table.amountMinor} between -9007199254740991 and 9007199254740991 and ${table.amountMinor} != 0`
+		)
+	]
+);
+
+/** Parts conserve their bank movement; custody never enters personal spending. */
+export const financeTransactionAllocations = sqliteTable(
+	'finance_transaction_allocations',
+	{
+		id: integer('id').primaryKey({ autoIncrement: true }),
+		userId: text('user_id')
+			.notNull()
+			.references(() => user.id),
+		transactionId: integer('transaction_id')
+			.notNull()
+			.references(() => financeTransactions.id, { onDelete: 'cascade' }),
+		kind: text('kind', { enum: ['personal', 'custody'] }).notNull(),
+		amountMinor: integer('amount_minor').notNull(),
+		category: text('category'),
+		commitmentId: integer('commitment_id').references(() => financeCommitments.id, {
+			onDelete: 'restrict'
+		}),
+		note: text('note'),
+		createdAt: text('created_at')
+			.notNull()
+			.default(sql`(CURRENT_TIMESTAMP)`)
+	},
+	(table) => [
+		index('finance_allocations_user_transaction_idx').on(table.userId, table.transactionId),
+		index('finance_allocations_commitment_idx').on(table.userId, table.commitmentId),
+		check(
+			'finance_allocations_kind_check',
+			sql`(${table.kind} = 'personal' and ${table.commitmentId} is null) or (${table.kind} = 'custody' and ${table.commitmentId} is not null)`
+		),
+		check(
+			'finance_allocations_amount_check',
+			sql`typeof(${table.amountMinor}) = 'integer' and ${table.amountMinor} between -9007199254740991 and 9007199254740991 and ${table.amountMinor} != 0`
+		)
 	]
 );
 
@@ -3068,6 +3252,32 @@ export const financeTransactions = sqliteTable(
 		/** The bank's own id for the movement, when the export carries one. */
 		externalId: text('external_id'),
 		fingerprint: text('fingerprint').notNull(),
+		/**
+		 * What the movement was, when somebody said so.
+		 *
+		 * Null is not "unknown to be filled later": it means *derived from the
+		 * sign* — negative is an expense, positive is income — and every
+		 * figure that uses it says the meaning was assumed. A re-import, a
+		 * rule change or a migration must never write this column, or history
+		 * would be redefined by whatever ran last.
+		 */
+		kind: text('kind', {
+			enum: ['expense', 'income', 'transfer', 'refund', 'fee', 'cash']
+		}),
+		/** Legs of one move between two owned accounts share this. */
+		groupId: text('group_id'),
+		/**
+		 * The movement this one belongs to: the expense a refund reverses, or
+		 * the payment a fee was charged on.
+		 *
+		 * No `REFERENCES` here on purpose. SQLite's `ALTER TABLE … ADD COLUMN`
+		 * cannot carry an `ON DELETE` action, so a self-reference declared in
+		 * this file would make the generated migration disagree with the
+		 * schema for ever after (the parity test says so). Deleting a parent
+		 * unlinks its children in `services/statements.ts`, where the sentence
+		 * about what survives also lives.
+		 */
+		parentId: integer('parent_id'),
 		createdAt: text('created_at')
 			.notNull()
 			.default(sql`(CURRENT_TIMESTAMP)`)
@@ -3075,6 +3285,8 @@ export const financeTransactions = sqliteTable(
 	(table) => [
 		index('finance_transactions_user_idx').on(table.userId),
 		index('finance_transactions_user_date_idx').on(table.userId, table.occurredOn),
+		index('finance_transactions_group_idx').on(table.groupId),
+		index('finance_transactions_parent_idx').on(table.parentId),
 		uniqueIndex('finance_transactions_fingerprint_unique').on(table.userId, table.fingerprint)
 	]
 );

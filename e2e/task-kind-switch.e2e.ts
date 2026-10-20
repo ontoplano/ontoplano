@@ -25,7 +25,7 @@ function weekLater(date: string): string {
 	return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 
-const dayView = (date: string) => `/tasks/plan?view=day&from=${date}`;
+const dayView = (date: string) => `/tasks/calendar?view=day&from=${date}`;
 
 /** The block on the grid, by what it says. */
 const block = (page: Page, label: string) =>
@@ -45,7 +45,7 @@ async function newRepeatingBlock(page: Page, label: string) {
 	await form.locator('[name="startTime"]').fill('09:00');
 	await form.locator('[name="label"]').fill(label);
 	await choose(form, 'mode', 'Category');
-	await form.getByRole('button', { name: /Add repeating task block/ }).click();
+	await form.getByRole('button', { name: 'Add', exact: true }).click();
 	await expect(form).toBeHidden({ timeout: 20_000 });
 }
 

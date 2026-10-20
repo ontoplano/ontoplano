@@ -13,7 +13,7 @@ test('the arrows keep the page where it is', async ({ page }) => {
 	test.setTimeout(180_000);
 	await page.setViewportSize({ width: 1280, height: 800 });
 	await register(page, testEmail('plan-hold'));
-	await visit(page, '/tasks/plan?view=week');
+	await visit(page, '/tasks/calendar?view=week');
 	await expect(page.locator('[data-tour="plan-grid"]')).toBeVisible({ timeout: 30_000 });
 	await page.waitForTimeout(1500);
 

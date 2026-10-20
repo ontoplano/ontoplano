@@ -117,7 +117,7 @@
 	/* `[` and `]` step the week, as PeriodNav's tooltips promise. */
 	function handleKeydown(e: KeyboardEvent) {
 		if (typing(e)) return;
-		const action = getAction(ROOM, e.key);
+		const action = getAction(ROOM, e);
 		if (action === 'prev-week') toWeek(data.week.prev);
 		else if (action === 'next-week') toWeek(data.week.next);
 		else if (!answer(action)) return;

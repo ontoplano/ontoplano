@@ -13,7 +13,7 @@
 	 * and a notebook is not a place somebody reads a statement.
 	 */
 	import { LEDGER_KIND_LABELS, type LedgerKind } from '$lib/services/ledgers';
-	import { formatMoney, type Currency } from '$lib/money';
+	import { formatMoney } from '$lib/money';
 	import { useT } from '$lib/i18n';
 
 	const t = useT();
@@ -24,11 +24,14 @@
 		kind: string;
 		count: number;
 		balanceCents: number;
+		currency: string | null;
+		supportedMinor: number | null;
+		recordedMinor: number;
+		balanceStatus: 'verified' | 'supported' | 'recorded';
 	};
 
 	let {
 		ledger,
-		currency,
 		/** Whether this is the one the page is showing. */
 		current = false,
 		/** Press to switch to it. Absent where the tile is a link instead. */
@@ -37,7 +40,6 @@
 		href
 	}: {
 		ledger: Shown;
-		currency: Currency;
 		current?: boolean;
 		onpick?: (id: number) => void;
 		href?: string;
@@ -54,6 +56,15 @@
 
 {#snippet body()}
 	<span class="w-full truncate text-sm font-medium text-gray-900">{ledger.name}</span>
+	<span class="text-xs text-gray-600"
+		>{t(
+			ledger.balanceStatus === 'verified'
+				? 'finance.ledgers.statusVerified'
+				: ledger.balanceStatus === 'supported'
+					? 'finance.ledgers.statusSupported'
+					: 'finance.ledgers.statusRecorded'
+		)}</span
+	>
 	<span class="flex w-full items-baseline gap-2">
 		<span class="text-xs text-gray-500">{t(LEDGER_KIND_LABELS[ledger.kind as LedgerKind])}</span>
 		<span class="text-xs text-gray-500 tabular-nums">{ledger.count}</span>
@@ -62,7 +73,9 @@
 				? 'text-gray-900'
 				: 'text-blue-700'}"
 		>
-			{formatMoney(ledger.balanceCents, currency)}
+			{ledger.currency
+				? formatMoney(ledger.supportedMinor ?? ledger.recordedMinor, ledger.currency)
+				: t('finance.ledgers.minorUnitsAmount', { amount: ledger.recordedMinor })}
 		</span>
 	</span>
 {/snippet}

@@ -23,12 +23,12 @@ test('stepping forward does not fetch the window it lands on', async ({ page }) 
 	let asked: string[] = [];
 	page.on('request', (r) => {
 		const url = new URL(r.url());
-		if (!url.pathname.includes('/tasks/plan')) return;
+		if (!url.pathname.includes('/tasks/calendar')) return;
 		const from = url.searchParams.get('from');
 		if (from) asked.push(from);
 	});
 
-	await visit(page, '/tasks/plan?view=week&from=2026-09-21');
+	await visit(page, '/tasks/calendar?view=week&from=2026-09-21');
 	await expect(page.locator('[data-tour="plan-week-start"]').first()).toBeVisible({
 		timeout: 30_000
 	});

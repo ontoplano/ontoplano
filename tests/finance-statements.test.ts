@@ -87,14 +87,14 @@ describe('importing', () => {
 			text: CREDIT_CARD
 		});
 		// Two identical Dm *Company charges are two purchases, not one.
-		expect(first).toEqual({ added: 3, skipped: 0 });
+		expect(first).toEqual({ added: 3, skipped: 0, recordedOnly: true });
 
 		const again = statements.importStatement(ctx, {
 			ledgerId: card,
 			source: 'nubank:credit_card_month',
 			text: CREDIT_CARD
 		});
-		expect(again).toEqual({ added: 0, skipped: 3 });
+		expect(again).toEqual({ added: 0, skipped: 3, recordedOnly: true });
 	});
 
 	test('an export with a bank id dedups on the id', () => {
@@ -104,14 +104,14 @@ describe('importing', () => {
 				source: 'nubank:conta_corrente',
 				text: CONTA_CORRENTE
 			})
-		).toEqual({ added: 2, skipped: 0 });
+		).toEqual({ added: 2, skipped: 0, recordedOnly: true });
 		expect(
 			statements.importStatement(ctx, {
 				ledgerId: account,
 				source: 'nubank:conta_corrente',
 				text: CONTA_CORRENTE
 			})
-		).toEqual({ added: 0, skipped: 2 });
+		).toEqual({ added: 0, skipped: 2, recordedOnly: true });
 	});
 
 	test('flip negates every amount', () => {
@@ -136,7 +136,7 @@ describe('importing', () => {
 					text: 'hello,world'
 				})
 			)
-		).toMatch(/no lines matched/);
+		).toMatch(/Could not read line 1/);
 		expect(
 			refusal(() =>
 				statements.importStatement(ctx, {
@@ -269,7 +269,7 @@ describe('the ledgers', () => {
 				source: 'nubank:credit_card_month',
 				text: CREDIT_CARD
 			})
-		).toEqual({ added: 3, skipped: 0 });
+		).toEqual({ added: 3, skipped: 0, recordedOnly: true });
 		expect(statements.listMovements(ctx, { ledgerId: second })).toHaveLength(3);
 		ledgers.deleteLedger(ctx, second);
 		// Deleting the ledger took its lines with it, and nobody else's.
@@ -334,7 +334,7 @@ describe('the ledgers', () => {
 });
 
 describe('the month series', () => {
-	test('statements aggregate by month, and the categories add up', () => {
+	test('statements aggregate by month, and for a month of personal lines the categories add up', () => {
 		const march = statements.monthlyTotals(ctx, 12).find((m) => m.month === '2026-03')!;
 		// In: 1200.00 received + 5.00 flipped refund. Out: the account's 50.00
 		// and the card's 10.00 + 23.90 + 23.90. The lines the editing tests
@@ -343,6 +343,10 @@ describe('the month series', () => {
 		expect(march.outCents).toBe(10780);
 		expect(march.netCents).toBe(march.inCents - march.outCents);
 
+		// Every line in this month is personal spending, so the two figures
+		// agree here. They are not the same measure in general: categorySlices
+		// leaves out transfers, cash and custody shares and nets refunds — see
+		// `finance-allocations.test.ts` for the cases where they differ.
 		const slices = statements.categorySlices(ctx, { month: '2026-03' });
 		expect(slices.reduce((sum, c) => sum + c.outCents, 0)).toBe(march.outCents);
 		expect(Math.round(slices.reduce((sum, c) => sum + c.share, 0))).toBe(1);
@@ -367,12 +371,37 @@ describe('the month series', () => {
 		expect(statements.tagMonths(ctx, 'pix', 12).totalCents).toBe(5000);
 	});
 
-	test('the categories-by-month table matches the months it is drawn from', () => {
+	test('the categories-by-month table adds up to the personal spending it is drawn from', () => {
 		const table = statements.categoryMonths(ctx, 12);
 		const index = table.months.indexOf('2026-03');
 		const stacked = table.categories.reduce((sum, c) => sum + c.byMonth[index], 0);
+		// March holds only personal lines; see the note above about the two measures.
 		expect(stacked).toBe(
 			statements.monthlyTotals(ctx, 12).find((m) => m.month === '2026-03')!.outCents
 		);
 	});
+});
+
+test('a budget category follows a rename and refuses to be orphaned by a delete', async () => {
+	const budgets = await import('../src/lib/services/budgets');
+	ledgers.createLedger(ctx, { name: 'Budget rule test ledger', currency: 'KES' });
+	const rule = statements.createRule(ctx, {
+		kind: 'category',
+		name: 'Budgeted category',
+		pattern: 'budgeted-never-matches'
+	});
+	const budget = budgets.createBudget(ctx, {
+		month: '2026-03',
+		category: rule.name,
+		currency: 'KES',
+		amountMinor: 10000
+	});
+	expect(() => statements.deleteRule(ctx, rule.id)).toThrow(/budget still uses the category/i);
+	expect(statements.listRules(ctx).some((r) => r.id === rule.id)).toBe(true);
+	const renamed = statements.updateRule(ctx, rule.id, { name: 'Renamed budgeted category' });
+	expect(renamed.name).toBe('Renamed budgeted category');
+	expect(budgets.getBudget(ctx, budget.id).category).toBe('Renamed budgeted category');
+	budgets.deleteBudget(ctx, budget.id);
+	statements.deleteRule(ctx, rule.id);
+	expect(() => budgets.getBudget(ctx, budget.id)).toThrow();
 });
