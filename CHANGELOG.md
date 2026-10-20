@@ -20,7 +20,8 @@ releases mattered.
 
 ## 0.186.3 — 2026-10-19
 
-- Renaming a budget category now carries its ceilings with it, and deleting a category that a budget still uses is refused instead of quietly orphaning that budget.
+- Finance Overview can show everything in the accounts or only your own money, leaving out what you hold for other people; the choice is remembered per account.
+- Currency fields use USD as their example placeholder, and renaming a budget category now carries its ceilings with it, and deleting a category that a budget still uses is refused instead of quietly orphaning that budget.
 - Finance now opens with one money picture: what is yours, what is committed, what you spent this month and what is left against your plans. Each currency stands on its own, and a missing opening or incomplete period is named at the total instead of guessed.
 - Scripts and assistants can read that picture, and the ledgers, movements, budgets and commitments behind it, with a `statements:read` token. Finance reads have no write endpoints in this release.
 - Account export, import and deletion now carry budgets, commitments, commitment history, balance checks and splits. The development seed shows each of them, including a transfer between two owned accounts, and the finance guide covers the overview and the read-only API.

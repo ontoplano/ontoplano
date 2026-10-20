@@ -1163,6 +1163,11 @@ export const messages: Catalogue = {
 	'finance.overview.leftPane': 'The plans set for {month}, and what is still theirs.',
 	'finance.overview.missingOpening': 'Accounts without a declared opening: {count}.',
 	'finance.overview.missingOpeningOne': 'Account without a declared opening: {count}.',
+	'finance.overview.moneyView': 'Display',
+	'finance.overview.myMoney': 'My money',
+	'finance.overview.myMoneyAvailableNote': 'Available after set aside: {available}.',
+	'finance.overview.myMoneyFormula':
+		'My money {funds} − set aside {reserves} = available {available}.',
 	'finance.overview.noAccounts': 'No accounts yet',
 	'finance.overview.noAccountsBody':
 		'Add a ledger in its original currency and import or write a statement. This screen answers the four money questions from those records.',
@@ -1176,6 +1181,7 @@ export const messages: Catalogue = {
 	'finance.overview.notABalance': 'No declared opening, so this is not a balance.',
 	'finance.overview.nothingSpent': 'Nothing personal was spent in {month}.',
 	'finance.overview.otherCurrencies': 'Committed in other currencies',
+	'finance.overview.otherCurrenciesMine': 'Set aside or owed in other currencies',
 	'finance.overview.outsideCoverageOne': 'Movements before the opening date on {count} account.',
 	'finance.overview.outsideCoverageTotal':
 		'Accounts holding movements before their opening: {count}.',
@@ -1184,11 +1190,17 @@ export const messages: Catalogue = {
 	'finance.overview.payables': 'Owed to others',
 	'finance.overview.plansNeedCurrency': 'Budgets are per currency; declare one on a ledger first.',
 	'finance.overview.receivables': 'Owed to me',
+	'finance.overview.setAside': 'Set aside',
+	'finance.overview.setAsideBody': 'Your own money reserved, not available to spend.',
 	'finance.overview.setBudget': 'Set a budget',
 	'finance.overview.spent': 'Spent this month',
 	'finance.overview.spentPane':
 		'Personal spending by category for {month}, with what is left out named below.',
 	'finance.overview.verified': '{count} checked against a statement',
+	'finance.overview.viewAll': 'Everything in accounts',
+	'finance.overview.viewHint':
+		'My money only leaves out money you hold for other people. Everything shows every account balance.',
+	'finance.overview.viewMine': 'My money only',
 	'finance.rules.aCategory': 'Categoria: uma linha recebe a primeira que corresponder',
 	'finance.rules.aLineBelongsToThe':
 		'Uma linha pertence à primeira categoria que corresponder, então a ordem abaixo decide empates e os totais sempre fecham.',

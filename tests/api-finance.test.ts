@@ -144,7 +144,7 @@ function withoutLegacyBalance(rows: { balanceCents: unknown }[]) {
 
 describe('the read endpoints answer the values the screen draws', () => {
 	test('ledgers', async () => {
-		const { status, body } = await get('/api/v1/finance/ledgers', s.read);
+		const { status, body } = await get('/api/v1/finance/ledgers?as_of=2026-10-19', s.read);
 		expect(status).toBe(200);
 		expect(body.ledgers).toEqual(
 			withoutLegacyBalance(s.ledgers.listLedgers(ctx, { includeArchived: true }))
@@ -205,7 +205,7 @@ describe('the read endpoints answer the values the screen draws', () => {
 
 describe('a caller reads only its own account', () => {
 	test('every list is the caller’s', async () => {
-		const ledgers = await get('/api/v1/finance/ledgers', s.theirRead);
+		const ledgers = await get('/api/v1/finance/ledgers?as_of=2026-10-19', s.theirRead);
 		expect(ledgers.body.ledgers).toEqual(
 			withoutLegacyBalance(s.ledgers.listLedgers(other, { includeArchived: true }))
 		);

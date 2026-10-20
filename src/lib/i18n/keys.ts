@@ -1025,6 +1025,10 @@ export type MessageKey =
 	| 'finance.overview.leftPane'
 	| 'finance.overview.missingOpening'
 	| 'finance.overview.missingOpeningOne'
+	| 'finance.overview.moneyView'
+	| 'finance.overview.myMoney'
+	| 'finance.overview.myMoneyAvailableNote'
+	| 'finance.overview.myMoneyFormula'
 	| 'finance.overview.noAccounts'
 	| 'finance.overview.noAccountsBody'
 	| 'finance.overview.noAccountsInCurrency'
@@ -1035,16 +1039,22 @@ export type MessageKey =
 	| 'finance.overview.notABalance'
 	| 'finance.overview.nothingSpent'
 	| 'finance.overview.otherCurrencies'
+	| 'finance.overview.otherCurrenciesMine'
 	| 'finance.overview.outsideCoverageOne'
 	| 'finance.overview.outsideCoverageTotal'
 	| 'finance.overview.overviewHint'
 	| 'finance.overview.payables'
 	| 'finance.overview.plansNeedCurrency'
 	| 'finance.overview.receivables'
+	| 'finance.overview.setAside'
+	| 'finance.overview.setAsideBody'
 	| 'finance.overview.setBudget'
 	| 'finance.overview.spent'
 	| 'finance.overview.spentPane'
 	| 'finance.overview.verified'
+	| 'finance.overview.viewAll'
+	| 'finance.overview.viewHint'
+	| 'finance.overview.viewMine'
 	| 'finance.rules.aCategory'
 	| 'finance.rules.aLineBelongsToThe'
 	| 'finance.rules.aTag'
@@ -4551,6 +4561,12 @@ export interface MessageValuesFor {
 	'finance.overview.leftPane': { month: string | number };
 	'finance.overview.missingOpening': { count: number };
 	'finance.overview.missingOpeningOne': { count: number };
+	'finance.overview.myMoneyAvailableNote': { available: string | number };
+	'finance.overview.myMoneyFormula': {
+		available: string | number;
+		funds: string | number;
+		reserves: string | number;
+	};
 	'finance.overview.noCurrencyBody': { currency: string | number };
 	'finance.overview.noPlans': { month: string | number };
 	'finance.overview.nothingSpent': { month: string | number };

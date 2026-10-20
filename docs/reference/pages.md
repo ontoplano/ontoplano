@@ -11,7 +11,7 @@ own write surface, the way the endpoints in [the API](api.md) are the
 write surface for everything else; both end up calling the same
 [services](services.md).
 
-**70 pages, 241 actions.**
+**70 pages, 242 actions.**
 
 | Page                                 | Actions                                                                                                                                                                                                                                                                                                                                                                                              |
 | ------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -23,7 +23,7 @@ write surface for everything else; both end up calling the same
 | `/data/[slug]`                       | —                                                                                                                                                                                                                                                                                                                                                                                                    |
 | `/demo`                              | `default`                                                                                                                                                                                                                                                                                                                                                                                            |
 | `/demo/isolated-db`                  | —                                                                                                                                                                                                                                                                                                                                                                                                    |
-| `/finance`                           | —                                                                                                                                                                                                                                                                                                                                                                                                    |
+| `/finance`                           | `setView`                                                                                                                                                                                                                                                                                                                                                                                            |
 | `/finance/bills`                     | —                                                                                                                                                                                                                                                                                                                                                                                                    |
 | `/finance/budgets`                   | `create`, `update`, `delete`, `copy`, `createCategory`                                                                                                                                                                                                                                                                                                                                               |
 | `/finance/commitments`               | `create`, `update`, `archive`, `close`, `delete`, `addEntry`, `deleteEntry`, `settle`, `consume`                                                                                                                                                                                                                                                                                                     |
@@ -146,6 +146,10 @@ The money picture.
 
 One month at a time, every original currency separately. The month is the
 one asked for; with none, the account's own current month, not the box's.
+
+`view` chooses whether the totals include money held for other people. It is
+a query when a link asks for one mode, and the account's stored answer
+otherwise — the switch on the screen writes that answer.
 
 ### `/finance/bills`
 

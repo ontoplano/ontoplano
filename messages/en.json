@@ -4799,5 +4799,15 @@
 	"finance.budgets.createCategory": "Create category",
 	"finance.budgets.categoryNameHint": "Saved on the Rules tab; you can refine the matching pattern there.",
 	"finance.budgets.manageRules": "Manage in Rules",
-	"finance.budgets.categoryCreated": "Category “{category}” created. Choose it from the list."
+	"finance.budgets.categoryCreated": "Category “{category}” created. Choose it from the list.",
+	"finance.overview.moneyView": "Display",
+	"finance.overview.viewMine": "My money only",
+	"finance.overview.viewAll": "Everything in accounts",
+	"finance.overview.viewHint": "My money only leaves out money you hold for other people. Everything shows every account balance.",
+	"finance.overview.myMoney": "My money",
+	"finance.overview.myMoneyAvailableNote": "Available after set aside: {available}.",
+	"finance.overview.setAside": "Set aside",
+	"finance.overview.setAsideBody": "Your own money reserved, not available to spend.",
+	"finance.overview.myMoneyFormula": "My money {funds} − set aside {reserves} = available {available}.",
+	"finance.overview.otherCurrenciesMine": "Set aside or owed in other currencies"
 }

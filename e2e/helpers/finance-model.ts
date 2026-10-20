@@ -59,6 +59,7 @@ export const EXPECTED = {
 	reserves: '1,500.00',
 	committed: '6,495.00',
 	available: '16,850.00',
+	myMoney: '18,350.00',
 	gross: '3,750.00',
 	refunds: '400.00',
 	net: '3,350.00',
@@ -461,6 +462,17 @@ export async function assertMoneyPicture(page: Page) {
 
 	// C06: unlike money is never added. KES + USD would be 16,970.00.
 	await expect(page.getByText(/16,970/)).toHaveCount(0);
+
+	// My money only drops the part held for other people; Everything restores it.
+	await page.getByRole('button', { name: 'My money only', exact: true }).click();
+	await expect(kes.getByTestId('available-formula')).toContainText('My money');
+	await expect(kes.getByTestId('available-formula')).toContainText(EXPECTED.myMoney);
+	await expect(kes.getByTestId('available-formula')).toContainText(EXPECTED.available);
+	await expect(kes.getByTestId('available-formula')).not.toContainText(EXPECTED.custody);
+	await page.reload();
+	await expect(kes.getByTestId('available-formula')).toContainText('My money');
+	await page.getByRole('button', { name: 'Everything in accounts', exact: true }).click();
+	await expect(kes.getByTestId('available-formula')).toContainText(EXPECTED.funds);
 
 	// Nothing overflows the phone width the same way at either width.
 	expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);

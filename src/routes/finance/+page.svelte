@@ -17,10 +17,16 @@
 	let { data }: { data: PageServerData } = $props();
 
 	const overview = $derived(data.overview);
+	const mine = $derived(data.view === 'mine');
 
 	const money = (minor: number, currency: string | null) =>
 		formatMoney(minorAmount(minor, 'money'), currency ?? data.defaultCurrency);
 
+	/** Funds after the part held for other people is taken out. */
+	const myFunds = (picture: CurrencyPicture) =>
+		picture.fundsMinor === null
+			? null
+			: minorAmount(picture.fundsMinor - picture.custodyMinor, 'my money');
 	const label = (picture: CurrencyPicture) => picture.currency ?? t('finance.insights.unspecified');
 	const key = (picture: CurrencyPicture) => picture.currency ?? 'unspecified';
 
@@ -42,10 +48,10 @@
 		overview.currencies.filter(
 			(picture) =>
 				!shown.includes(picture) &&
-				(picture.custodyMinor ||
-					picture.reservesMinor ||
+				(picture.reservesMinor ||
 					picture.payablesMinor ||
-					picture.receivablesMinor)
+					picture.receivablesMinor ||
+					(!mine && picture.custodyMinor))
 		)
 	);
 
@@ -125,6 +131,31 @@
 			/>
 			<span class="text-xs text-gray-500">{t('finance.ledgers.asOf', { day: overview.asOf })}</span>
 		</form>
+		<form
+			method="post"
+			action="?/setView"
+			class="flex flex-wrap items-center gap-1"
+			title={t('finance.overview.viewHint')}
+		>
+			<input type="hidden" name="month" value={overview.month} />
+			<span class="text-xs text-gray-500">{t('finance.overview.moneyView')}</span>
+			<button
+				type="submit"
+				name="view"
+				value="mine"
+				class="btn btn-sm"
+				class:btn-primary={mine}
+				aria-pressed={mine}>{t('finance.overview.viewMine')}</button
+			>
+			<button
+				type="submit"
+				name="view"
+				value="all"
+				class="btn btn-sm"
+				class:btn-primary={!mine}
+				aria-pressed={!mine}>{t('finance.overview.viewAll')}</button
+			>
+		</form>
 	{/snippet}
 
 	<h1 class="px-4 pt-4 text-xl font-semibold">{t('rooms.finance.tabs.overview')}</h1>
@@ -175,33 +206,58 @@
 					<!-- The four answers, in the same tiles the rest of Finance uses. -->
 					<StatTiles
 						tiles={[
-							{
-								label:
-									picture.fundsMinor === null
-										? t('finance.ledgers.statusRecorded')
-										: t('finance.overview.available'),
-								value: money(
-									picture.fundsMinor === null
-										? picture.recordedOnlyMinor
-										: (picture.availableMinor ?? 0),
-									picture.currency
-								),
-								note:
-									picture.fundsMinor === null
-										? t('finance.overview.notABalance')
-										: t('finance.overview.availableFormula')
-							},
-							{
-								label: t('finance.overview.committed'),
-								value: money(picture.custodyMinor + picture.reservesMinor, picture.currency),
-								note: `${t('finance.commitments.custody')}: ${money(
-									picture.custodyMinor,
-									picture.currency
-								)} · ${t('finance.commitments.reserve')}: ${money(
-									picture.reservesMinor,
-									picture.currency
-								)}`
-							},
+							mine
+								? {
+										label:
+											picture.fundsMinor === null
+												? t('finance.ledgers.statusRecorded')
+												: t('finance.overview.myMoney'),
+										value: money(
+											picture.fundsMinor === null
+												? picture.recordedOnlyMinor
+												: (myFunds(picture) ?? 0),
+											picture.currency
+										),
+										note:
+											picture.fundsMinor === null
+												? t('finance.overview.notABalance')
+												: t('finance.overview.myMoneyAvailableNote', {
+														available: money(picture.availableMinor ?? 0, picture.currency)
+													})
+									}
+								: {
+										label:
+											picture.fundsMinor === null
+												? t('finance.ledgers.statusRecorded')
+												: t('finance.overview.available'),
+										value: money(
+											picture.fundsMinor === null
+												? picture.recordedOnlyMinor
+												: (picture.availableMinor ?? 0),
+											picture.currency
+										),
+										note:
+											picture.fundsMinor === null
+												? t('finance.overview.notABalance')
+												: t('finance.overview.availableFormula')
+									},
+							mine
+								? {
+										label: t('finance.overview.setAside'),
+										value: money(picture.reservesMinor, picture.currency),
+										note: t('finance.overview.setAsideBody')
+									}
+								: {
+										label: t('finance.overview.committed'),
+										value: money(picture.custodyMinor + picture.reservesMinor, picture.currency),
+										note: `${t('finance.commitments.custody')}: ${money(
+											picture.custodyMinor,
+											picture.currency
+										)} · ${t('finance.commitments.reserve')}: ${money(
+											picture.reservesMinor,
+											picture.currency
+										)}`
+									},
 							{
 								label: t('finance.overview.spent'),
 								value: money(picture.spending.netMinor, picture.currency),
@@ -219,11 +275,17 @@
 					<!-- The subtractions, the claims and the gaps: rules, not a wall of text. -->
 					{#if picture.fundsMinor !== null}
 						<p class="text-sm text-gray-600" data-testid="available-formula">
-							{t('finance.overview.availableFormulaLong', {
-								funds: money(picture.fundsMinor, picture.currency),
-								custody: money(picture.custodyMinor, picture.currency),
-								reserves: money(picture.reservesMinor, picture.currency)
-							})}
+							{mine
+								? t('finance.overview.myMoneyFormula', {
+										funds: money(myFunds(picture) ?? 0, picture.currency),
+										reserves: money(picture.reservesMinor, picture.currency),
+										available: money(picture.availableMinor ?? 0, picture.currency)
+									})
+								: t('finance.overview.availableFormulaLong', {
+										funds: money(picture.fundsMinor, picture.currency),
+										custody: money(picture.custodyMinor, picture.currency),
+										reserves: money(picture.reservesMinor, picture.currency)
+									})}
 						</p>
 					{/if}
 					{#if picture.payablesMinor || picture.receivablesMinor}
@@ -347,10 +409,12 @@
 											count: picture.spending.cashCount,
 											amount: money(picture.spending.cashMinor, picture.currency)
 										})}
-										· {t('finance.insights.custody', {
-											count: picture.spending.custodyCount,
-											amount: money(picture.spending.custodyMinor, picture.currency)
-										})}
+										{#if !mine}
+											· {t('finance.insights.custody', {
+												count: picture.spending.custodyCount,
+												amount: money(picture.spending.custodyMinor, picture.currency)
+											})}
+										{/if}
 									</p>
 									{#if picture.spending.unclassifiedCount}
 										<p class="text-sm" data-testid="spending-unclassified">
@@ -418,15 +482,22 @@
 
 			{#if elsewhere.length}
 				<section aria-label={t('finance.overview.otherCurrencies')}>
-					<Card title={t('finance.overview.otherCurrencies')}>
+					<Card
+						title={mine
+							? t('finance.overview.otherCurrenciesMine')
+							: t('finance.overview.otherCurrencies')}
+					>
 						<ul class="divide-y divide-gray-200 text-sm">
 							{#each elsewhere as picture (key(picture))}
 								<li class="flex flex-wrap items-baseline justify-between gap-2 py-2">
 									<span class="font-medium">{label(picture)}</span>
 									<span class="text-right text-gray-600">
-										{t('finance.overview.committed')}:
+										{mine ? t('finance.overview.setAside') : t('finance.overview.committed')}:
 										<span class="font-semibold text-gray-900 tabular-nums">
-											{money(picture.custodyMinor + picture.reservesMinor, picture.currency)}
+											{money(
+												mine ? picture.reservesMinor : picture.custodyMinor + picture.reservesMinor,
+												picture.currency
+											)}
 										</span>
 										· {t('finance.overview.payables')}:
 										{money(picture.payablesMinor, picture.currency)}

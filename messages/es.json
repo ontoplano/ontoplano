@@ -4784,5 +4784,15 @@
 	"finance.budgets.createCategory": null,
 	"finance.budgets.categoryNameHint": null,
 	"finance.budgets.manageRules": null,
-	"finance.budgets.categoryCreated": null
+	"finance.budgets.categoryCreated": null,
+	"finance.overview.moneyView": null,
+	"finance.overview.viewMine": null,
+	"finance.overview.viewAll": null,
+	"finance.overview.viewHint": null,
+	"finance.overview.myMoney": null,
+	"finance.overview.myMoneyAvailableNote": null,
+	"finance.overview.setAside": null,
+	"finance.overview.setAsideBody": null,
+	"finance.overview.myMoneyFormula": null,
+	"finance.overview.otherCurrenciesMine": null
 }

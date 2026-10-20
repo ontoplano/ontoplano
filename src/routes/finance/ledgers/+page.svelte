@@ -1018,7 +1018,6 @@
 		<LedgerFields
 			parsers={data.parsers}
 			notebooks={data.notebooks}
-			defaultCurrency={data.currency}
 		/>
 	</form>
 	{#snippet footer()}
@@ -1053,7 +1052,6 @@
 				editing={editingLedger}
 				parsers={data.parsers}
 				notebooks={data.notebooks}
-				defaultCurrency={data.currency}
 			/>
 		</form>
 	{/if}

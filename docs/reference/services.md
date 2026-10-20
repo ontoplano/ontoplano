@@ -5766,6 +5766,17 @@ the first paint wrong for half of visitors.
 
 #### `setTheme(userId, theme)`
 
+#### `isMoneyView(value)`
+
+#### `getMoneyView(userId)`
+
+Whether the money picture shows every account balance, including money held
+for somebody else, or only the part that is the reader's. The default is
+`all` so an existing picture does not change under a person who never chose;
+the money screen offers the switch and stores the answer.
+
+#### `setMoneyView(userId, view)`
+
 #### `getLocale(userId)`
 
 The language this account reads the app in.
@@ -5899,6 +5910,7 @@ simply does not find it among the notebooks it lists.
 
 ### Types
 
+- `MoneyView`
 - `WeekSettings`
 - `GridHours`
 
