@@ -6,6 +6,7 @@
 		syncRinger
 	} from '$lib/phone-notifications';
 	import { ALARMS_CHANGED } from '$lib/alarms';
+	import { titleLine } from '$lib/markdown-plain';
 	import { useT } from '$lib/i18n';
 	import { browser } from '$app/environment';
 	import { enablePush, pushSupported } from '$lib/push';
@@ -122,7 +123,10 @@
 		if (typeof Notification === 'undefined' || Notification.permission !== 'granted') return;
 		for (const item of items) {
 			try {
-				new Notification(item.message, { tag: `ontoplano-reminder-${item.id}`, body: 'ontoplano' });
+				new Notification(titleLine(item.message), {
+					tag: `ontoplano-reminder-${item.id}`,
+					body: 'ontoplano'
+				});
 				written(item);
 			} catch {
 				// Some browsers refuse one outside a service worker, where push
@@ -147,7 +151,7 @@
 		void fetch('/api/notifications/raised', {
 			method: 'POST',
 			headers: { 'content-type': 'application/json' },
-			body: JSON.stringify({ title: item.message, kind: 'reminder' })
+			body: JSON.stringify({ title: titleLine(item.message), kind: 'reminder' })
 		}).catch(() => {});
 	}
 

@@ -18,7 +18,7 @@ import { defaultTagsOf, ownedNotebookId } from './notebooks.js';
 import { fileUnderNotebook } from './notebook-linking.js';
 import { MAX_BATCH } from './todos.js';
 import { stamp, stamps } from './time.js';
-import { str, chosenIds } from './validate.js';
+import { str, chosenIds, optionalColor } from './validate.js';
 
 /** The journal: free text, free-form tags, one running number per account. */
 
@@ -128,12 +128,19 @@ export function listTags(ctx: Ctx) {
 
 export function createEntry(
 	ctx: Ctx,
-	raw: { content: unknown; tags?: unknown; notebookId?: unknown; title?: unknown }
+	raw: {
+		content: unknown;
+		tags?: unknown;
+		notebookId?: unknown;
+		title?: unknown;
+		color?: unknown;
+	}
 ): number {
 	const content = str(raw.content, 'content', { max: MAX_ENTRY_LENGTH });
 	host.assertEntryWithinLimit(content);
+	const color = optionalColor(raw.color);
 	const notebookId = ownedNotebookId(ctx, raw.notebookId, 'notes');
-	const entryId = insertEntry(ctx, content, undefined, notebookId, noteTitle(raw.title));
+	const entryId = insertEntry(ctx, content, undefined, notebookId, noteTitle(raw.title), color);
 
 	/*
 	 * A notebook's own labels, for a note that named none.
@@ -184,10 +191,18 @@ export function createWins(
 export function updateEntry(
 	ctx: Ctx,
 	id: number,
-	raw: { content: unknown; tags?: unknown; notebookId?: unknown; title?: unknown }
+	raw: {
+		content: unknown;
+		tags?: unknown;
+		notebookId?: unknown;
+		title?: unknown;
+		color?: unknown;
+	}
 ): void {
 	const content = str(raw.content, 'content', { max: MAX_ENTRY_LENGTH });
 	host.assertEntryWithinLimit(content);
+	// Validated before anything is written, so a bad colour changes nothing.
+	const color = raw.color === undefined ? undefined : optionalColor(raw.color);
 
 	const current = placeOf(ctx, id);
 	const notebookId =
@@ -209,6 +224,8 @@ export function updateEntry(
 			 * rather than as "not my business".
 			 */
 			...(raw.title === undefined ? {} : { title: noteTitle(raw.title) }),
+			// The same rule again: the diary's form has no colour and must not clear one.
+			...(color === undefined ? {} : { color }),
 			updatedAt: stamp(ctx)
 		})
 		.where(and(eq(diaryEntries.id, id), eq(diaryEntries.userId, ctx.userId)))
@@ -246,12 +263,19 @@ export function updateEntry(
 export function getEntry(
 	ctx: Ctx,
 	id: number
-): { id: number; title: string; content: string; notebookId: number | null } {
+): {
+	id: number;
+	title: string;
+	content: string;
+	color: string | null;
+	notebookId: number | null;
+} {
 	const row = db
 		.select({
 			id: diaryEntries.id,
 			title: diaryEntries.title,
 			content: diaryEntries.content,
+			color: diaryEntries.color,
 			notebookId: diaryEntries.notebookId
 		})
 		.from(diaryEntries)
@@ -478,7 +502,8 @@ function insertEntry(
 	content: string,
 	forDate?: string,
 	notebookId?: number | null,
-	title = ''
+	title = '',
+	color: string | null = null
 ): number {
 	return db.transaction((tx) => {
 		// The high-water mark, not the highest number still present.
@@ -532,6 +557,7 @@ function insertEntry(
 				userId: ctx.userId,
 				title,
 				content,
+				color,
 				seq: highest + 1,
 				diarySeq,
 				notebookId: notebookId ?? null,

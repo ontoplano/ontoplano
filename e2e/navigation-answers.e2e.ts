@@ -24,7 +24,7 @@ test.describe('a navigation that takes a while', () => {
 			test.setTimeout(180_000);
 			await page.setViewportSize(size);
 			await register(page, testEmail(`nav-pending-${name}`));
-			await visit(page, '/tasks/todo');
+			await visit(page, '/calendar/todo');
 
 			await page.route(/__data\.json/, async (route) => {
 				await new Promise((done) => setTimeout(done, 2000));
@@ -35,7 +35,7 @@ test.describe('a navigation that takes a while', () => {
 			await board.click();
 			await expect(board).toHaveAttribute('aria-current', 'page', { timeout: 500 });
 			await expect(page.locator('.pending-page')).toBeVisible({ timeout: 1000 });
-			await page.waitForURL('**/tasks/board');
+			await page.waitForURL('**/calendar/board');
 			await expect(page.locator('.pending-page')).toHaveCount(0);
 
 			await page.evaluate(() =>

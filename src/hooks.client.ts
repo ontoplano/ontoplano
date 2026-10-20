@@ -9,8 +9,11 @@
  */
 import type { HandleClientError } from '@sveltejs/kit';
 import { isIsolated, isIsolatedBuild } from '$lib/isolated/mode';
-import { sendOutsideLinksToTheBrowser } from '$lib/outside-links';
+import { OUT_PATH, sendOutsideLinksToTheBrowser } from '$lib/outside-links';
+import { PLAY_PATH } from '$lib/play-billing';
+import { WIDGET_HANDOFF_PATH } from '$lib/notebook-widget';
 import { backGestureGoesBack } from '$lib/phone-back';
+import { holdKeysWhileComposing } from '$lib/composition';
 import { ringingFor } from '$lib/phone-notifications';
 import { startMarkSpin } from '$lib/mark-spin';
 import { notify } from '$lib/notify.svelte';
@@ -27,6 +30,7 @@ import {
 	inPhoneApp,
 	launchAddress,
 	openingOn,
+	RING_PATH,
 	rememberInstance,
 	storedInstance,
 	keptInstanceNow
@@ -58,6 +62,9 @@ import {
  */
 const LEAVING_VEIL_MS = 8000;
 
+/** The device's pages an instance sends somebody to and expects back from. */
+const DEVICE_TRIP_PATHS: string[] = [PLAY_PATH, RING_PATH, WIDGET_HANDOFF_PATH, OUT_PATH];
+
 if (inPhoneApp() && isIsolatedBuild()) {
 	const carried = new URLSearchParams(location.search);
 
@@ -88,7 +95,10 @@ if (inPhoneApp() && isIsolatedBuild()) {
 		const kept = storedInstance();
 		// A widget's tap names the page; the instance is still the one chosen —
 		// moved on first if it was a suggestion this build has replaced.
-		if (kept) {
+		// A trip page an instance sent somebody to — Play's sheet, the ringer's
+		// key, a widget, a link out — is the destination, and sending it on to
+		// the instance would pull the page out from under what it is doing.
+		if (kept && !DEVICE_TRIP_PATHS.includes(location.pathname)) {
 			veilWhileLeaving();
 			void keptInstanceNow(kept).then((going) =>
 				openInstance(going, false, openingOn(going, carried.get(OPENING_PARAM)))
@@ -195,7 +205,7 @@ const RINGER_ASK_MS = 400;
 	// Every load turns it, not only one the chooser handed over: the layout's
 	// first `afterNavigate` lands it, so even the quickest load goes round once.
 	const marks = [...document.querySelectorAll<HTMLElement>('[data-mark]')];
-	if (marks.length > 0) startMarkSpin(marks, 0);
+	if (marks.length > 0) startMarkSpin(marks);
 }
 
 if (isIsolated()) {
@@ -233,6 +243,7 @@ function optional(what: string, start: () => unknown): void {
 
 optional('opening outside links in the browser', sendOutsideLinksToTheBrowser);
 optional('the back gesture', backGestureGoesBack);
+optional('keys held while a word is composed', holdKeysWhileComposing);
 
 /*
  * A load cut off because the page is being left is not an error.

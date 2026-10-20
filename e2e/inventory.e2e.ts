@@ -158,6 +158,46 @@ test.describe('on a phone', () => {
 		);
 		expect(overflow).toBeLessThanOrEqual(1);
 	});
+
+	/*
+	 * Two categories in one place stand side by side, as on a desktop.
+	 *
+	 * One card per row on a phone was the list again with borders round it.
+	 */
+	test('the cards stand two to a row, inside the screen', async ({ page }) => {
+		await register(page, testEmail('inv-phone-cards'));
+		await visit(page, '/inventory');
+		await foodCategory(page);
+		await page.evaluate(async () => {
+			const body = new FormData();
+			body.set('label', 'Cleaning');
+			await fetch('/inventory?/createCategory', { method: 'POST', body });
+		});
+		await visit(page, '/inventory');
+		for (const [name, category] of [
+			['Olive oil', 'Food'],
+			['Dish soap', 'Cleaning']
+		] as const) {
+			await page
+				.getByRole('button', { name: /Add item/ })
+				.first()
+				.click();
+			const d = page.getByRole('dialog', { name: 'New item' });
+			await d.locator('[name="label"]').fill(name);
+			const field = d.locator('[name="inventoryCategoryId"]');
+			if (!(await field.isVisible())) await d.getByText(/more/i).first().click();
+			await field.selectOption({ label: category });
+			await d.getByRole('button', { name: 'Add item', exact: true }).click();
+			await expect(d).toBeHidden({ timeout: DIALOG_CLOSES });
+		}
+		// The dialog steps away before the server answers; the cards come after.
+		await expect(page.locator('.item-card')).toHaveCount(2);
+		const cards = await page
+			.locator('.item-card')
+			.evaluateAll((all) => all.map((one) => one.getBoundingClientRect().toJSON()));
+		expect(Math.abs(cards[0].y - cards[1].y)).toBeLessThan(2);
+		for (const card of cards) expect(card.right).toBeLessThanOrEqual(390);
+	});
 });
 
 /**
@@ -563,4 +603,87 @@ test.describe('what the filters are hiding', () => {
 		await page.getByRole('button', { name: 'Show what is in Kitchen' }).click();
 		await expect(drawer).toBeVisible();
 	});
+});
+
+/**
+ * A thing's notes are written and read like every other note: markdown, and
+ * folded to one line on the row until it is opened. They were a plain line
+ * printed in full beside the name, so a pasted shop link ran three lines long.
+ */
+test("a thing's notes are markdown, folded to their first line", async ({ page }) => {
+	await register(page, testEmail('inv-notes'));
+	await visit(page, '/inventory');
+
+	await page
+		.getByRole('button', { name: /Add item/ })
+		.first()
+		.click();
+	const d = page.getByRole('dialog', { name: 'New item' });
+	await d.locator('[name="label"]').fill('Lamp socket');
+	await d
+		.locator('textarea[name="notes"]')
+		.fill(
+			'Buy [the bulk pack](https://example.com/socket)\n\nE27, with a screw ring. ' +
+				'The cheap ones crack when the bulb is tightened, so the ceramic kind. '.repeat(4)
+		);
+	await d.getByRole('button', { name: 'Add item', exact: true }).click();
+	await expect(page.getByText('Lamp socket').first()).toBeVisible();
+
+	const row = page.locator('.row-card').filter({ hasText: 'Lamp socket' });
+	// The link is a link, not its markup.
+	await expect(row.getByRole('link', { name: 'the bulk pack' })).toBeVisible();
+	await expect(row.getByText('](https://')).toHaveCount(0);
+
+	const fold = row.getByRole('button', { name: 'Lamp socket', exact: true });
+	await expect(fold).toHaveAttribute('aria-expanded', 'false');
+	const notes = row.locator('.folding-notes');
+	const folded = (await notes.boundingBox())!.height;
+	await fold.click();
+	await expect(fold).toHaveAttribute('aria-expanded', 'true');
+	await expect.poll(async () => (await notes.boundingBox())!.height).toBeGreaterThan(folded * 2);
+});
+
+/*
+ * A colour picked stays picked.
+ *
+ * The form saves as the colour is let go of and then resets itself, and a
+ * colour input had no default of its own — so the well went black over the
+ * blue that had just been saved, though the blue was what was stored.
+ */
+test('a category colour shows what was chosen after it saves', async ({ page }) => {
+	await register(page, testEmail('inv-colour-stays'));
+	await visit(page, '/inventory');
+	await foodCategory(page);
+	await visit(page, '/inventory');
+
+	await page
+		.getByRole('button', { name: /Categories & attributes/ })
+		.first()
+		.click();
+	const dialog = page.getByRole('dialog');
+	await dialog
+		.getByRole('button', { name: /Rename|Edit/ })
+		.first()
+		.click();
+	const well = dialog.getByLabel('A colour for this category');
+	const saved = page.waitForResponse((r) => r.url().includes('setCategoryColor'));
+	await well.fill('#1d4ed8');
+	await saved;
+	await page.waitForTimeout(500);
+	await expect(well).toHaveValue('#1d4ed8');
+});
+
+/*
+ * The cupboard's filters on one line at a laptop's width.
+ *
+ * At 1280px "How many" and its two boxes did not fit beside the room's
+ * verbs and dropped onto a line of their own, under nothing.
+ */
+test('the filters stay on one line at 1280px', async ({ page }) => {
+	await page.setViewportSize({ width: 1280, height: 800 });
+	await register(page, testEmail('inv-one-line'));
+	await visit(page, '/inventory');
+	const search = (await page.getByRole('searchbox').first().boundingBox())!;
+	const most = (await page.getByRole('spinbutton', { name: /most/i }).boundingBox())!;
+	expect(Math.abs(most.y + most.height / 2 - (search.y + search.height / 2))).toBeLessThan(6);
 });

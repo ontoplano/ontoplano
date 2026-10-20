@@ -862,6 +862,20 @@
       "when": 1791306309739,
       "tag": "0122_goals_keep_what_happened_to_them",
       "breakpoints": true
+    },
+    {
+      "idx": 123,
+      "version": "6",
+      "when": 1791834315853,
+      "tag": "0123_user_last_active",
+      "breakpoints": true
+    },
+    {
+      "idx": 124,
+      "version": "6",
+      "when": 1791929171216,
+      "tag": "0124_note_background_colour",
+      "breakpoints": true
     }
   ]
 }

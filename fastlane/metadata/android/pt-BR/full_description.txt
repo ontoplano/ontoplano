@@ -1,0 +1,29 @@
+O Ontoplano é um app de organização da vida. Começou como um planner semanal e virou o lugar onde mora o resto: o que você tem que fazer, o que está tentando alcançar, o que vive querendo anotar, e a papelada recorrente da vida que ninguém gosta de carregar na cabeça — contas, listas de compras, treinos, compromissos.
+
+O QUE TEM DENTRO
+
+• Tarefas — uma semana que se repete, coisas avulsas com data, e uma lista para algum dia. Vistas como blocos de tempo ou como um quadro.
+• Metas — por semana, mês, trimestre e ano, com progresso medido em vez de um "check": um número que anda, vindo de um hábito, de um treino ou da sua mão.
+• Cadernos — um por assunto, com notas, tarefas e metas juntas, e as pessoas de quem as notas falam.
+• Saúde — hábitos em uma grade que se lê de relance, e treinos registrados com as cargas, as distâncias e as repetições que você realmente fez.
+• Finanças — contas a pagar, registros, e para onde o dinheiro foi, mês a mês.
+• Inventário — o que você tem, onde está, e o que está acabando.
+• Receitas e lista de compras, que se conhecem.
+• Lembretes que chegam no celular, não numa caixa de entrada.
+• Uma galeria, com as fotos guardadas na sua própria instância.
+
+UM ASSISTENTE CONSEGUE USAR DE VERDADE
+
+Tem um servidor MCP embutido. Qualquer assistente que fale Model Context Protocol lê o seu dia e mexe nele — cria as tarefas, marca os hábitos, escreve a nota, reorganiza a semana — pelas mesmas regras que o app obedece.
+
+O token é seu: você escolhe o que ele pode tocar e revoga quando quiser. Toda escrita fica registrada com o estado que substituiu, então dá para ver exatamente o que foi feito e desfazer em um toque. E quando o assistente termina, o celular te conta o que ele fez.
+
+Nada aqui chama um modelo, e nenhuma chave sua fica guardada. O assistente é o seu.
+
+É SEU
+
+Código aberto sob a AGPL-3.0. Nada é revendido, nada é medido, não tem anúncio, e nenhum terceiro recebe os seus dados.
+
+Aponte para uma instância que você mesmo hospeda, para a oficial em app.ontoplano.com, ou deixe tudo no próprio celular. Seus dados vão com você: a exportação é um arquivo só, com tudo dentro, e entra em qualquer instância.
+
+Código, issues e documentação: https://github.com/ontoplano/ontoplano

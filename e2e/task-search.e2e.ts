@@ -12,7 +12,7 @@ import { visit } from './helpers/visit';
 test('the task list can be searched by what is written on it', async ({ page }) => {
 	test.setTimeout(180_000);
 	await register(page, testEmail('task-search'));
-	await visit(page, '/tasks/todo');
+	await visit(page, '/calendar/todo');
 
 	const make = async (title: string, notes = '') => {
 		await page

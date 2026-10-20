@@ -22,9 +22,24 @@
 		onchange?: (event: Event & { currentTarget: HTMLInputElement }) => void;
 		class?: string;
 	} = $props();
+
+	/*
+	 * Its default is the colour it shows.
+	 *
+	 * A form answered in place resets itself after the save (`$lib/enhance`),
+	 * and a colour input's own default was never set — the value is bound as a
+	 * property — so the reset painted the well black over the blue that had
+	 * just been saved. Keeping the default in step makes a reset land on the
+	 * colour on screen.
+	 */
+	let well = $state<HTMLInputElement>();
+	$effect(() => {
+		if (well && value) well.defaultValue = value;
+	});
 </script>
 
 <input
+	bind:this={well}
 	type="color"
 	{name}
 	bind:value

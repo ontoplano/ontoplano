@@ -1,8 +1,12 @@
+import { fail } from '@sveltejs/kit';
 import type { IsolatedEvent } from '$lib/isolated/routes';
 import { host } from '$lib/services/host';
 import {
 	DASHBOARD_CARDS,
+	DASHBOARD_CARD_OPTIONS_KEY,
 	DASHBOARD_LAYOUT_KEY,
+	parseCardOptions,
+	withCardOption,
 	DASHBOARD_SEEN_KEY,
 	defaultLayout,
 	foldInNewCards,
@@ -14,7 +18,12 @@ import {
 	serialiseSeen,
 	type DashboardCardId
 } from '$lib/dashboard';
-import { getHiddenSections, getUserSetting, setUserSetting } from '$lib/services/settings';
+import {
+	getGridHours,
+	getHiddenSections,
+	getUserSetting,
+	setUserSetting
+} from '$lib/services/settings';
 import { buildCtx, localDateOf } from '$lib/services/ctx';
 import { createEntry, latestEntry, listTags } from '$lib/services/diary';
 import { listActiveOn } from '$lib/services/goals';
@@ -31,7 +40,7 @@ import { getCurrency } from '$lib/services/settings';
 import { listTodos } from '$lib/services/todos';
 import { listWins, saveWins } from '$lib/services/wins';
 import { addDays, getMonday } from '$lib/services/week-generator';
-import { localDay, minutesOfDay } from '$lib/services/time';
+import { localDay, minutesOfDay, startOfToday } from '$lib/services/time';
 import { formAction } from '$lib/services/scoped-actions';
 
 /**
@@ -82,12 +91,13 @@ export const load = async ({ locals }: IsolatedEvent) => {
 	 * The week was generated, then today again, then each of the next days in
 	 * turn — six passes of the generator over overlapping days, every load.
 	 */
-	const startOfToday = new Date(ctx.now.getFullYear(), ctx.now.getMonth(), ctx.now.getDate());
-	const horizon = addDays(startOfToday, NEXT_DAYS);
-	const weekEnd = addDays(getMonday(ctx.now), 7);
-	generateInstances(ctx, getMonday(ctx.now), horizon > weekEnd ? horizon : weekEnd);
+	const dayStart = startOfToday(ctx);
+	const horizon = addDays(dayStart, NEXT_DAYS);
+	const monday = getMonday(dayStart);
+	const weekEnd = addDays(monday, 7);
+	generateInstances(ctx, monday, horizon > weekEnd ? horizon : weekEnd);
 	const blocksByDay = new Map<string, Occurrence[]>();
-	for (const one of listInstances(ctx, startOfToday, horizon)) {
+	for (const one of listInstances(ctx, dayStart, horizon)) {
 		const held = blocksByDay.get(one.date);
 		if (held) held.push(one);
 		else blocksByDay.set(one.date, [one]);
@@ -96,7 +106,7 @@ export const load = async ({ locals }: IsolatedEvent) => {
 
 	// One call, both kinds of block. The union that used to live here is why
 	// one-offs were missing from this card in the first place.
-	const todayTasks = blocksOn(ctx.now).map((o) => ({
+	const todayTasks = blocksOn(dayStart).map((o) => ({
 		id: o.id,
 		kind: o.kind,
 		startTime: o.startTime,
@@ -166,7 +176,7 @@ export const load = async ({ locals }: IsolatedEvent) => {
 	 * the days already looked at shows tomorrow as empty.
 	 */
 	const nextDays = Array.from({ length: NEXT_DAYS }, (_, ahead) => {
-		const day = addDays(ctx.now, ahead);
+		const day = addDays(dayStart, ahead);
 		return {
 			date: localDay(day),
 			blocks: blocksOn(day).map((o) => ({
@@ -308,6 +318,10 @@ export const load = async ({ locals }: IsolatedEvent) => {
 		/** Set when last week had blocks in it and nobody has written it up yet. */
 		pendingReview: reviewPending(ctx),
 		nextDays,
+		/** Each card's own settings — see `CARD_OPTIONS`. */
+		cardOptions: parseCardOptions(getUserSetting(ctx.userId, DASHBOARD_CARD_OPTIONS_KEY)),
+		/** The planner's day, which a timeline of the next days is drawn across. */
+		gridHours: getGridHours(ctx.userId),
 		weekSoFar,
 		today
 	};
@@ -332,6 +346,21 @@ export const actions = {
 		const formData = await request.formData();
 		const ids = formData.getAll('card').map((v) => String(v)) as DashboardCardId[];
 		setUserSetting(locals.user!.id, DASHBOARD_LAYOUT_KEY, serialiseLayout(ids));
+		return { success: true };
+	},
+
+	/** One of a card's own settings — how it shows what it shows. See `CARD_OPTIONS`. */
+	setCardOption: async ({ request, locals }: IsolatedEvent) => {
+		const formData = await request.formData();
+		const userId = locals.user!.id;
+		const next = withCardOption(
+			getUserSetting(userId, DASHBOARD_CARD_OPTIONS_KEY),
+			String(formData.get('card') ?? ''),
+			String(formData.get('option') ?? ''),
+			String(formData.get('value') ?? '')
+		);
+		if (next === null) return fail(400, { message: 'That card has no such setting.' });
+		setUserSetting(userId, DASHBOARD_CARD_OPTIONS_KEY, next);
 		return { success: true };
 	},
 

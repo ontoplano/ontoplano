@@ -1,0 +1,9 @@
+• Las notas pueden tener color, legible en ambos temas
+• Las notas de un cuaderno pueden verse como tarjetas
+• Cerrar la captura rápida guarda un borrador
+• Un asistente limitado a un cuaderno puede archivar en otros, sin ver más que sus nombres
+• El inventario de un cuaderno agrupa las cosas por lugar
+• La lista de la compra archiva líneas en el sitio
+• En Android 15+, la hoja de bloque nuevo queda sobre el teclado
+
+Cuéntame qué se rompe: github.com/ontoplano/ontoplano/issues

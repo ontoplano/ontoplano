@@ -14,7 +14,7 @@ test('the task notes box previews what was typed', async ({ page }) => {
 	test.setTimeout(180_000);
 	await register(page, testEmail('notes-preview'));
 
-	await visit(page, '/tasks/todo');
+	await visit(page, '/calendar/todo');
 	await page
 		.getByRole('button', { name: /New task/ })
 		.first()

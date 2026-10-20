@@ -283,3 +283,20 @@ export function wantsTwelveHour(when: When): boolean {
 		new Intl.DateTimeFormat(when.locale, { hour: 'numeric' }).resolvedOptions().hour12
 	);
 }
+
+/**
+ * How far into its day a moment is, in minutes, where the reader is: the
+ * number a planner's `07:30` is compared against to say whether it has gone by.
+ */
+export function minutesIntoDay(moment: Moment, when: When): number {
+	const { at, naive } = parse(moment);
+	if (Number.isNaN(at.getTime())) return 0;
+	const parts = new Intl.DateTimeFormat('en-GB', {
+		timeZone: naive ? 'UTC' : when.tz,
+		hour: '2-digit',
+		minute: '2-digit',
+		hourCycle: 'h23'
+	}).formatToParts(at);
+	const part = (type: string) => Number(parts.find((p) => p.type === type)?.value ?? 0);
+	return part('hour') * 60 + part('minute');
+}

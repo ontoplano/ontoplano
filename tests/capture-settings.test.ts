@@ -34,6 +34,7 @@ describe('reading what is stored', () => {
 	test('nothing stored is every wedge, in the app order, and no notebook', () => {
 		expect(capture.parseCaptureSettings(null)).toEqual({
 			notebookId: null,
+			notebooks: {},
 			order: [...kinds],
 			off: []
 		});
@@ -58,11 +59,21 @@ describe('reading what is stored', () => {
 	});
 
 	test('the wheel draws the ticked ones in order, and falls back rather than opening empty', () => {
-		const set = { notebookId: null, order: ['note', 'todo', ...kinds], off: ['idea', 'buy'] };
+		const set = {
+			notebookId: null,
+			notebooks: {},
+			order: ['note', 'todo', ...kinds],
+			off: ['idea', 'buy']
+		};
 		expect(capture.wheelKinds(set, kinds).slice(0, 2)).toEqual(['note', 'todo']);
 		expect(capture.wheelKinds(set, kinds)).not.toContain('idea');
 		// Only `buy` on, and its room hidden: every available kind rather than none.
-		const lonely = { notebookId: null, order: [...kinds], off: kinds.filter((k) => k !== 'buy') };
+		const lonely = {
+			notebookId: null,
+			notebooks: {},
+			order: [...kinds],
+			off: kinds.filter((k) => k !== 'buy')
+		};
 		expect(capture.wheelKinds(lonely, ['idea', 'todo'])).toEqual(['idea', 'todo']);
 	});
 
@@ -82,6 +93,33 @@ describe('reading what is stored', () => {
 		expect(
 			capture.startingNotebook(capture.DEFAULT_CAPTURE_SETTINGS, { id: '/', params: {} })
 		).toBe(null);
+	});
+
+	/*
+	 * Tasks into Work, ideas into Someday. A kind with its own notebook goes
+	 * there; one without follows the main one; the notebook on screen still
+	 * wins over both.
+	 */
+	test('a kind’s own notebook goes before the main one, and after the one on screen', () => {
+		const set = { ...capture.DEFAULT_CAPTURE_SETTINGS, notebookId: 3, notebooks: { todo: 7 } };
+		const home = { id: '/', params: {} };
+		expect(capture.startingNotebook(set, home, 'todo')).toBe(7);
+		expect(capture.startingNotebook(set, home, 'idea')).toBe(3);
+		expect(capture.startingNotebook(set, home)).toBe(3);
+		expect(
+			capture.startingNotebook(set, { id: '/notebooks/[id]', params: { id: '8' } }, 'todo')
+		).toBe(8);
+	});
+
+	test('keeps a filed kind’s own notebook, and drops one for a kind no notebook holds', () => {
+		const read = capture.parseCaptureSettings(
+			JSON.stringify({ notebooks: { todo: 7, idea: '9', reminder: 4, hologram: 2, note: 'x' } })
+		);
+		expect(read.notebooks).toEqual({ todo: 7, idea: 9 });
+		expect(capture.parseCaptureSettings(capture.serialiseCaptureSettings(read)).notebooks).toEqual({
+			todo: 7,
+			idea: 9
+		});
 	});
 });
 
@@ -134,8 +172,94 @@ describe('saving', () => {
 		expect(settings.getCaptureSettings(OWNER)).toEqual(before);
 	});
 
+	test('keeps each kind’s own notebook, and an empty one means the main', () => {
+		const work = notebooks.createNotebook(mine, { title: 'Work' });
+		preferences.saveCaptureSettings(mine, {
+			notebookId: '',
+			notebooks: { todo: String(work), idea: '' },
+			order: kinds,
+			on: kinds
+		});
+		expect(settings.getCaptureSettings(OWNER).notebooks).toEqual({ todo: work });
+	});
+
+	test('refuses a kind’s notebook somebody else owns', () => {
+		const before = settings.getCaptureSettings(OWNER);
+		const strangers = notebooks.createNotebook(theirs, { title: 'Their work' });
+		expect(() =>
+			preferences.saveCaptureSettings(mine, {
+				notebookId: '',
+				notebooks: { todo: String(strangers) },
+				order: kinds,
+				on: kinds
+			})
+		).toThrow();
+		expect(settings.getCaptureSettings(OWNER)).toEqual(before);
+	});
+
 	test('no notebook is a real answer', () => {
 		preferences.saveCaptureSettings(mine, { notebookId: '', order: kinds, on: kinds });
 		expect(settings.getCaptureSettings(OWNER).notebookId).toBe(null);
+	});
+});
+
+describe('the picker over every wedge', () => {
+	// Kitchen (1) has notes and tasks; Shop (2) has everything.
+	const tabs: Record<number, string[]> = {
+		1: ['note', 'todo'],
+		2: ['idea', 'todo', 'note', 'buy']
+	};
+	const canHold = (kind: string, id: number) => tabs[id]?.includes(kind) ?? false;
+
+	test('sets the wedges that can take it, and none for the rest', () => {
+		expect(capture.everyInto(1, capture.FILED_KINDS, canHold)).toEqual({
+			idea: null,
+			todo: 1,
+			note: 1,
+			buy: null
+		});
+		expect(capture.everyInto(null, capture.FILED_KINDS, canHold)).toEqual({
+			idea: null,
+			todo: null,
+			note: null,
+			buy: null
+		});
+	});
+
+	test('says that notebook afterwards, not Mixed', () => {
+		expect(
+			capture.sharedNotebook(capture.everyInto(1, capture.FILED_KINDS, canHold), canHold)
+		).toBe(1);
+		expect(
+			capture.sharedNotebook(capture.everyInto(2, capture.FILED_KINDS, canHold), canHold)
+		).toBe(2);
+		expect(
+			capture.sharedNotebook(capture.everyInto(null, capture.FILED_KINDS, canHold), canHold)
+		).toBe(null);
+	});
+
+	test('is Mixed when two notebooks are in use', () => {
+		expect(capture.sharedNotebook({ idea: null, todo: 2, note: 1, buy: null }, canHold)).toBe(
+			undefined
+		);
+	});
+
+	test('is Mixed when a wedge that could be in it is not', () => {
+		expect(capture.sharedNotebook({ idea: null, todo: 1, note: null, buy: null }, canHold)).toBe(
+			undefined
+		);
+	});
+});
+
+describe('a form whose wedges disagree', () => {
+	test('posts the shared notebook as none', () => {
+		const read = capture.readCaptureForm({
+			notebookId: '',
+			notebooks: { todo: '2', note: '1', idea: '' },
+			order: ['todo'],
+			on: ['todo']
+		});
+		expect(read?.notebookId).toBe(null);
+		expect(read?.notebooks).toEqual({ todo: 2, note: 1 });
 	});
 });

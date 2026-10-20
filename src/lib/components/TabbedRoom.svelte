@@ -17,7 +17,6 @@
 		slidesHere,
 		stopHiding
 	} from '$lib/slide';
-	import { hintMarkSpin } from '$lib/mark-spin';
 	import { resolve } from '$app/paths';
 	import { visibleRoomTabs } from '$lib/sections';
 	import type { NavKey } from '$lib/sections-nav';
@@ -251,10 +250,6 @@
 		holdHeight(frame, body);
 		slideAway(stage, body, went);
 		slideOn(pane, went);
-		// The waiting medallion turns against the way the tabs are sweeping,
-		// the same rule the rooms follow. The layout starts the spin; this is
-		// the tab telling it which way things went.
-		hintMarkSpin(-went);
 	});
 
 	afterNavigate(() => {

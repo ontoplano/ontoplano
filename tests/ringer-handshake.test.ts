@@ -41,7 +41,7 @@ afterEach(() => {
 	vi.unstubAllGlobals();
 });
 
-const LAUNCH = new URL('https://my.ontoplano.example/tasks/todo?ring=1');
+const LAUNCH = new URL('https://my.ontoplano.example/calendar/todo?ring=1');
 
 describe('when it stays quiet', () => {
 	test('a browser is never asked to ring', async () => {
@@ -52,7 +52,7 @@ describe('when it stays quiet', () => {
 
 	test('a launch that did not say ring mints nothing', async () => {
 		pretendUserAgent(IN_APP);
-		await handOverRingerKey(new URL('https://my.ontoplano.example/tasks/todo'));
+		await handOverRingerKey(new URL('https://my.ontoplano.example/calendar/todo'));
 		expect(fetched).not.toHaveBeenCalled();
 	});
 });

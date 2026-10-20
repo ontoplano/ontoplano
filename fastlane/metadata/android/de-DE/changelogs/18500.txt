@@ -1,0 +1,10 @@
+Ein Monat Arbeit seit dem letzten Update:
+• Notizbücher fassen ein ganzes Thema: Aufgaben, Notizen, Ziele, Ideen, Rezepte, Rechnungen
+• Einheitliche Tags, mit gespeicherten Filtern
+• Dringlichkeit, Leichtigkeit und Interesse bei jeder Aufgabe
+• Alle Räume einheitlich neu gestaltet
+• Sprachaufnahmen, Widget, Verlauf der Benachrichtigungen
+• Jetzt auf Portugiesisch, Spanisch und Deutsch
+• Assistenten können über MCP viel mehr
+
+Sagen Sie mir, was kaputtgeht: github.com/ontoplano/ontoplano/issues

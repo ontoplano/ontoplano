@@ -2,7 +2,18 @@
 	import { page } from '$app/state';
 	import Written from '$lib/components/Written.svelte';
 	import TagInput from '$lib/components/TagInput.svelte';
-	import { civilOf, dayOf, momentOf, today, weekdayOf } from '$lib/when';
+	import {
+		civilOf,
+		dayOf,
+		dayStamp,
+		minutesIntoDay,
+		momentOf,
+		today,
+		wantsTwelveHour,
+		weekdayOf
+	} from '$lib/when';
+	import { sliding } from '$lib/actions/sliding';
+	import { tick, untrack } from 'svelte';
 	import { ordinal } from '$lib/ordinal';
 	import { useWhen } from '$lib/when-context.svelte';
 	import { resolve } from '$app/paths';
@@ -54,6 +65,8 @@
 	/** The week's ring, in pixels — and the room its empty state keeps for it. */
 	const PIE_SIZE = 116;
 	const MINUTES_IN_HOUR = 60;
+	/** How often the next days look at the clock again, to move "now" and grey what it passed. */
+	const CLOCK_TICK_MS = 30_000;
 
 	let { data, form }: { data: PageServerData; form: ActionData } = $props();
 
@@ -69,6 +82,95 @@
 		if (ahead === 0) return t('app.today');
 		if (ahead === 1) return t('home.tomorrow');
 		return weekdayOf(date, now(), { weekday: 'long' });
+	}
+
+	/** The next days as lists or as timelines, answered on the press. See `CARD_OPTIONS`. */
+	const NEXT_DAYS_VIEWS = [
+		{ value: 'list', icon: 'list', label: 'home.daysAsLists' },
+		{ value: 'timeline', icon: 'clock', label: 'home.daysAsTimelines' }
+	] as const;
+	let nextDaysView = $state<'list' | 'timeline'>(
+		untrack(() => data.cardOptions?.nextDays.view ?? 'list')
+	);
+	$effect(() => {
+		nextDaysView = data.cardOptions?.nextDays.view ?? 'list';
+	});
+
+	let nextDaysForm = $state<HTMLFormElement>();
+	async function chooseNextDaysView(view: 'list' | 'timeline') {
+		if (view === nextDaysView) return;
+		nextDaysView = view;
+		await tick();
+		nextDaysForm?.requestSubmit();
+	}
+
+	/** Faint rules across a timeline, at its quarters, so a time can be read off it. */
+	const TIMELINE_MARKS = [0.25, 0.5, 0.75];
+	/** How tall an hour of the timeline is, and the bounds on the whole of it, in rem. */
+	const TIMELINE_REM_PER_HOUR = 1.5;
+	const TIMELINE_MIN_REM = 6;
+	const TIMELINE_MAX_REM = 18;
+	const HOURS_IN_DAY = 24;
+
+	/**
+	 * The hours the timelines cover: from the first block of the three days to
+	 * the end of the last, in whole hours, the same for all three, and wide
+	 * enough to hold now so today's line is never off the end.
+	 *
+	 * The planner's whole day drawn at a fixed height was a column of nothing
+	 * with two blocks in it. With nothing planned, the planner's own hours.
+	 */
+	const timelineHours = $derived.by(() => {
+		// Both are absent only on the signed-out door, which draws no timeline.
+		const whole = data.gridHours ?? { start: 0, end: HOURS_IN_DAY };
+		const blocks = (data.nextDays ?? []).flatMap((day) => day.blocks);
+		if (blocks.length === 0) return whole;
+		const from = Math.min(minutesNow, ...blocks.map((b) => minutesOf(b.startTime)));
+		const to = Math.max(
+			minutesNow,
+			...blocks.map((b) => minutesOf(b.startTime) + b.durationMinutes)
+		);
+		const start = Math.floor(from / MINUTES_IN_HOUR);
+		const end = Math.min(HOURS_IN_DAY, Math.max(start + 1, Math.ceil(to / MINUTES_IN_HOUR)));
+		return { start, end };
+	});
+	const timelineHeight = $derived(
+		Math.min(
+			TIMELINE_MAX_REM,
+			Math.max(TIMELINE_MIN_REM, (timelineHours.end - timelineHours.start) * TIMELINE_REM_PER_HOUR)
+		)
+	);
+
+	/**
+	 * The clock the next days are read against, moved on while the page is
+	 * open: what has gone by today is greyed, and the timeline draws a line
+	 * where the day is now.
+	 */
+	let clock = $state(Date.now());
+	$effect(() => {
+		const timer = setInterval(() => (clock = Date.now()), CLOCK_TICK_MS);
+		return () => clearInterval(timer);
+	});
+	const todayStamp = $derived(dayStamp(clock, now()));
+	const minutesNow = $derived(minutesIntoDay(clock, now()));
+
+	/** A block that has already ended: today's, finished before now. */
+	function hasPassed(date: string, block: { startTime: string; durationMinutes: number }) {
+		if (date < todayStamp) return true;
+		return date === todayStamp && minutesOf(block.startTime) + block.durationMinutes <= minutesNow;
+	}
+
+	/** "07:30" as minutes into the day. */
+	function minutesOf(time: string): number {
+		const [h, m] = time.split(':').map(Number);
+		return (h || 0) * MINUTES_IN_HOUR + (m || 0);
+	}
+
+	/** An hour of the planner's day, the way this account reads a clock. */
+	function hourLabel(hour: number): string {
+		if (!wantsTwelveHour(now())) return `${String(hour).padStart(2, '0')}:00`;
+		const h = hour % 24;
+		return `${((h + 11) % 12) + 1} ${h < 12 ? 'AM' : 'PM'}`;
 	}
 
 	/** "19 Sep" — the date under the name, so "Tomorrow" is still a date. */
@@ -336,7 +438,7 @@
 			body.set('id', String(task.id));
 			body.set('kind', 'instance');
 			body.set('status', to);
-			return fetch('/tasks/board?/setStatus', {
+			return fetch('/calendar/board?/setStatus', {
 				method: 'POST',
 				headers: { 'x-sveltekit-action': 'true' },
 				body
@@ -532,7 +634,7 @@
 	-->
 		{#if data.pendingReview}
 			<a
-				href="{resolve('/tasks/review')}?week={data.pendingReview.weekStart}"
+				href="{resolve('/calendar/review')}?week={data.pendingReview.weekStart}"
 				class="flex items-center gap-3 border border-gray-200 bg-white px-4 py-3 shadow-card transition hover:bg-gray-50"
 			>
 				<span class="text-gray-500"><Icon name="clock" size={16} /></span>
@@ -664,12 +766,12 @@
 		{#snippet card_todayTasks()}
 			<Card title={t('home.todaySTasks')} accent={SECTION_COLORS.planner}>
 				{#snippet actions()}
-					{@render openLink(resolve('/tasks/board'))}
+					{@render openLink(resolve('/calendar/board'))}
 				{/snippet}
 				{#if data.taskSummary.total === 0}
 					{@render nothingYet(
 						t('home.nothingIsPlannedForToday'),
-						'/tasks/calendar',
+						'/calendar/calendar',
 						t('home.openThePlan')
 					)}
 				{:else}
@@ -840,52 +942,148 @@
 		{#snippet card_nextDays()}
 			<Card title={t('home.nextThreeDays')} accent={SECTION_COLORS.planner}>
 				{#snippet actions()}
-					{@render openLink(resolve('/tasks/calendar'))}
+					<!-- The card's own setting: the days as lists, or as timelines.
+					     Answered on the press; the form saves it for next time. -->
+					<!-- A position, not a switch: the buttons are plain buttons that
+					     send the form, so the press is answered by the state here and
+					     not flipped a second time by `$lib/enhance` (the notes' own
+					     list-or-cards control does the same). -->
+					<form
+						bind:this={nextDaysForm}
+						method="post"
+						action="?/setCardOption"
+						use:enhance
+						data-quiet
+					>
+						<input type="hidden" name="card" value="nextDays" />
+						<input type="hidden" name="option" value="view" />
+						<input type="hidden" name="value" value={nextDaysView} />
+						<div use:sliding class="seg" role="group" aria-label={t('home.showTheDaysAs')}>
+							{#each NEXT_DAYS_VIEWS as one (one.value)}
+								<button
+									type="button"
+									aria-pressed={nextDaysView === one.value}
+									title={t(one.label)}
+									aria-label={t(one.label)}
+									onclick={() => chooseNextDaysView(one.value)}><Icon name={one.icon} /></button
+								>
+							{/each}
+						</div>
+					</form>
+					{@render openLink(resolve('/calendar/calendar'))}
 				{/snippet}
-				<div class="grid gap-3 sm:grid-cols-3">
-					{#each data.nextDays as day, ahead (day.date)}
-						{@const shown = day.blocks.slice(0, DAY_PREVIEW)}
-						<div class="day-column {ahead === 0 ? 'is-today' : ''}">
-							<!-- The name and the date together, not one at each end: the
+				{#if nextDaysView === 'timeline'}
+					{@render nextDaysTimeline()}
+				{:else}
+					<div class="grid gap-3 sm:grid-cols-3">
+						{#each data.nextDays as day, ahead (day.date)}
+							{@const shown = day.blocks.slice(0, DAY_PREVIEW)}
+							<div class="day-column {ahead === 0 ? 'is-today' : ''}">
+								<!-- The name and the date together, not one at each end: the
 							     columns are half a screen wide on a desktop, and a heading
 							     split across that gap reads as two separate things. -->
-							<div class="flex items-baseline gap-2">
-								<span class="eyebrow text-gray-700">{dayHeading(day.date, ahead)}</span>
-								<span class="tabular text-xs text-gray-500">{dayNumber(day.date)}</span>
-							</div>
-							{#if day.blocks.length === 0}
-								<p class="mt-2 text-xs text-gray-500">{t('home.nothingPlanned')}</p>
-							{:else}
-								<!--
+								<div class="flex items-baseline gap-2">
+									<span class="eyebrow text-gray-700">{dayHeading(day.date, ahead)}</span>
+									<span class="tabular text-xs text-gray-500">{dayNumber(day.date)}</span>
+								</div>
+								{#if day.blocks.length === 0}
+									<p class="mt-2 text-xs text-gray-500">{t('home.nothingPlanned')}</p>
+								{:else}
+									<!--
 									Each block as the plan draws it: a small face in its
 									category's colour, the ink computed from that colour. The
 									hairline bar that stood beside each line was a sixth way of
 									wearing a category.
 								-->
-								<ul class="mt-2 flex flex-col gap-1">
-									{#each shown as block (block.id)}
-										<li
-											class="day-block pill-soft {block.status === 'done' ? 'is-done' : ''}"
-											style="--pill: {block.categoryColor || CATEGORY_FALLBACK_COLOR}"
-											title={block.categoryName
-												? `${block.name} · ${block.categoryName}`
-												: block.name}
-										>
-											<span class="tabular pill-quiet shrink-0">{block.startTime.slice(0, 5)}</span>
-											<span class="min-w-0 flex-1 truncate">{block.name}</span>
-										</li>
-									{/each}
-								</ul>
-								{#if day.blocks.length > shown.length}
-									<p class="dash-more">
-										{t('home.more3', { length: day.blocks.length - shown.length })}
-									</p>
+									<ul class="mt-2 flex flex-col gap-1">
+										{#each shown as block (block.id)}
+											<li
+												class="day-block pill-soft {block.status === 'done'
+													? 'is-done'
+													: ''} {hasPassed(day.date, block) ? 'is-past' : ''}"
+												style="--pill: {block.categoryColor || CATEGORY_FALLBACK_COLOR}"
+												title={block.categoryName
+													? `${block.name} · ${block.categoryName}`
+													: block.name}
+											>
+												<span class="tabular pill-quiet shrink-0"
+													>{block.startTime.slice(0, 5)}</span
+												>
+												<span class="min-w-0 flex-1 truncate">{block.name}</span>
+											</li>
+										{/each}
+									</ul>
+									{#if day.blocks.length > shown.length}
+										<p class="dash-more">
+											{t('home.more3', { length: day.blocks.length - shown.length })}
+										</p>
+									{/if}
+								{/if}
+							</div>
+						{/each}
+					</div>
+				{/if}
+			</Card>
+		{/snippet}
+
+		<!--
+			The next days as timelines: each day the planner's first hour at the
+			top and its last at the bottom, every block where it falls and as
+			long as it lasts. The same span for all three, so a free afternoon is
+			an empty stretch beside a full one rather than a shorter list.
+		-->
+		{#snippet nextDaysTimeline()}
+			{@const span = (timelineHours.end - timelineHours.start) * 60}
+			<div class="grid grid-cols-3 gap-2">
+				{#each data.nextDays as day, ahead (day.date)}
+					<div class="day-column min-w-0 {ahead === 0 ? 'is-today' : ''}">
+						<!-- Name over date on a phone, where a third of the screen will not
+						     hold "Tomorrow" beside "Oct 15" without breaking the word. -->
+						<div class="flex flex-col sm:flex-row sm:items-baseline sm:gap-2">
+							<span class="eyebrow truncate text-gray-700">{dayHeading(day.date, ahead)}</span>
+							<span class="tabular text-xs text-gray-500">{dayNumber(day.date)}</span>
+						</div>
+						<div class="day-timeline mt-2" style:height="{timelineHeight}rem" data-timeline>
+							{#each TIMELINE_MARKS as mark (mark)}
+								<span class="day-timeline-mark" style:top="{mark * 100}%" aria-hidden="true"></span>
+							{/each}
+							{#each day.blocks as block (block.id)}
+								{@const from = minutesOf(block.startTime) - timelineHours.start * 60}
+								{@const top = Math.max(0, from)}
+								{@const bottom = Math.min(span, from + block.durationMinutes)}
+								{#if bottom > top}
+									<div
+										class="day-timeline-block pill-soft {block.status === 'done'
+											? 'is-done'
+											: ''} {hasPassed(day.date, block) ? 'is-past' : ''}"
+										style:top="{(top / span) * 100}%"
+										style:height="{((bottom - top) / span) * 100}%"
+										style="--pill: {block.categoryColor || CATEGORY_FALLBACK_COLOR}"
+										title="{block.startTime.slice(0, 5)} {block.name}"
+									>
+										<span class="truncate">{block.name}</span>
+									</div>
+								{/if}
+							{/each}
+							{#if day.date === todayStamp}
+								{@const into = minutesNow - timelineHours.start * 60}
+								{#if into >= 0 && into <= span}
+									<span
+										class="day-timeline-now"
+										style:top="{(into / span) * 100}%"
+										data-now
+										aria-hidden="true"
+									></span>
 								{/if}
 							{/if}
 						</div>
-					{/each}
-				</div>
-			</Card>
+						<div class="tabular mt-1 flex justify-between text-[0.625rem] text-gray-500">
+							<span>{hourLabel(timelineHours.start)}</span>
+							<span>{hourLabel(timelineHours.end)}</span>
+						</div>
+					</div>
+				{/each}
+			</div>
 		{/snippet}
 
 		<!--
@@ -903,7 +1101,7 @@
 			{@const named = slices.slice(0, PIE_LEGEND)}
 			<Card title={t('home.whereTheWeekWent')} accent={SECTION_COLORS.planner}>
 				{#snippet actions()}
-					{@render openLink(resolve('/tasks/review'))}
+					{@render openLink(resolve('/calendar/review'))}
 				{/snippet}
 				{#if data.weekSoFar.minutesDone === 0}
 					<!--
@@ -1117,13 +1315,13 @@
 						>
 							<Icon name={todosNewestFirst ? 'arrow-down' : 'arrow-up'} />
 						</button>
-						{@render openLink(resolve('/tasks/todo'))}
+						{@render openLink(resolve('/calendar/todo'))}
 					</div>
 				{/snippet}
 				{#if sortedTodos.length === 0}
 					{@render nothingYet(
 						t('home.nothingOnTheListAnything'),
-						'/tasks/todo',
+						'/calendar/todo',
 						t('home.addATodo')
 					)}
 				{:else}
@@ -1657,5 +1855,78 @@
 
 	.day-column.is-today {
 		border-left-color: var(--card-accent, var(--color-gray-400));
+	}
+
+	/*
+	 * A day as a timeline: the planner's day top to bottom at one height for
+	 * all three, the blocks placed by their times. Quarter rules so an hour can
+	 * be read off it; an empty stretch is simply empty.
+	 */
+	/*
+	 * Its height is set where it is drawn, by the hours it covers
+	 * (`timelineHours`), and a block is exactly as tall as the time it covers: a short block is short, its name
+	 * clipped to what fits, and the whole of it in its tooltip. A floor under
+	 * every block's height made the short ones lie on top of each other.
+	 */
+	.day-timeline {
+		position: relative;
+		border-left: 1px solid var(--color-gray-200);
+		/* A rule, not a box: the playful style's corners hooked it at both ends. */
+		border-radius: 0;
+	}
+
+	.day-timeline-mark {
+		position: absolute;
+		left: 0;
+		right: 0;
+		border-top: 1px dashed var(--color-gray-200);
+	}
+
+	.day-timeline-block {
+		position: absolute;
+		left: 0.25rem;
+		right: 0;
+		display: flex;
+		align-items: flex-start;
+		overflow: hidden;
+		padding: 0 0.25rem;
+		font-size: 0.6875rem;
+		line-height: 1rem;
+	}
+
+	.day-timeline-block.is-done {
+		text-decoration: line-through;
+		opacity: 0.7;
+	}
+
+	/*
+	 * What today has already gone past, greyed rather than hidden: still
+	 * readable as what the day held, no longer competing with what is left.
+	 */
+	.day-block.is-past,
+	.day-timeline-block.is-past {
+		filter: grayscale(1);
+		opacity: 0.45;
+	}
+
+	/* Where today is now: a rule across the column, with a dot at its start. */
+	.day-timeline-now {
+		position: absolute;
+		left: -0.25rem;
+		right: 0;
+		z-index: 1;
+		border-top: 2px solid var(--color-gray-900);
+		pointer-events: none;
+	}
+
+	.day-timeline-now::before {
+		content: '';
+		position: absolute;
+		left: 0;
+		top: -0.3125rem;
+		width: 0.5rem;
+		height: 0.5rem;
+		border-radius: 9999px;
+		background: var(--color-gray-900);
 	}
 </style>

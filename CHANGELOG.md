@@ -18,6 +18,86 @@ the shape of the data changing. Bumping the minor per batch is what ran this
 file to 0.161 in a few months, which tells a reader nothing about which
 releases mattered.
 
+## 0.186.6 — 2026-10-17
+
+- The dashboard's Next three days turns over at midnight where you are, not at the server's midnight — three hours west of UTC it was showing tomorrow as today from nine in the evening.
+- Next three days as timelines covers the hours your blocks are in rather than the whole planner day, so it is no longer a tall column of empty space, and its edge is a straight rule in the playful style rather than a box with rounded ends.
+
+## 0.186.5 — 2026-10-14
+
+- The dashboard's Next three days can be shown as timelines: each day from the first hour of your planner to the last, the blocks where they fall, so a free afternoon looks free. The choice is the card's own setting, the first of its kind.
+- On the dashboard's Next three days, what today has already gone past is greyed out, and the timeline draws a line where the day is now.
+- The calendar opens on the week on a phone too, as it does on a computer; a block's name in a narrow column is clipped rather than broken mid-word.
+- On a laptop-width screen, Inventory's filters stay on one line: the how-many boxes are narrower and their word is left to the boxes' own “min” and “max” until there is room for it.
+- Choosing a colour for an inventory category or attribute no longer shows black once it saves: the swatch keeps the colour you picked.
+- Inventory's button for its categories and attributes is called Settings and wears a gear, rather than “Categories” with the icon filters use; its tooltip names both halves.
+- On a phone, an open notebook takes the top bar: its picture and name where “Notebooks” was, and its buttons — all notebooks, link, tags, favourite, rename, close — behind ⋮ with their names. Only its description is left above the tabs. Tapping the picture in the bar opens it whole. Going to the Diary or any other shelf gives the bar back.
+- On a phone, controls take the line they stand on: the calendar's Day / Week / Month switch fills the row beside two square buttons, the view switch under a list's search does the same, and a room's toolbar spends less of the screen on padding. The calendar's More button is a chevron that turns as its controls open and fold.
+- The calendar's zoom keeps + and − where they are as the percentage changes, so pressing + again presses + again. On a desktop the week and the day fill the window and the page ends with them: only the grid scrolls.
+- A notebook on the whole screen of a desktop says, along its right edge, that a tab dragged there opens beside the one showing — and pressing that edge opens the next tab beside it. The tabs show a grab cursor.
+- On a phone, the bottom bar is a floating pill of dark glass, clear of the screen's edges, with the puffin inside it rather than rising out of it.
+- Closing quick capture with something written in it keeps it as a draft and says “Saved as draft”: opening the same kind again brings it back. Cancel still throws it away.
+- Clicking a notebook's picture on its own page opens the notebook to edit, as it does in the list, instead of the file chooser; the picture is changed from there, or by dropping one on it.
+- A notebook's tabs open in a new browser tab with a middle click or a ctrl-click, landing on that tab; a plain click still switches in place.
+- The puffin's octagon always turns clockwise while a page loads; it no longer runs backwards when you move to a room or a tab on the left.
+- Cards stand at least two to a row on a phone: a notebook's notes and things shown as cards, and the Inventory room's categories. A half-width card tightens itself, with its buttons across its foot and its picture over its name.
+- On a phone, the filter strip above a list is two lines and never a third: the search box with the count and Filters, then the order and the list's own buttons.
+- A subscription refunded or voided through Google Play ends the plan it paid for, rather than running on until its period does.
+- An assistant key tied to one notebook that asks to move a task into another notebook, or to read one, is now told no — it used to answer “ok” and leave the task where it was. A new box on such a key, “…and let it file things into your other notebooks”, lets it put tasks, notes and things into them and move its own there: it sees their names, never what is in them.
+
+## 0.186.4 — 2026-10-13
+
+- A notebook's Inventory tab groups its things under the places they live, as the Inventory room does, and shows them as cards with the same list-or-cards switch as the notes.
+- A note can be given a colour, from its editor or when it is written: the whole note wears it, and the text on it stays readable whatever the colour, in either theme.
+- A notebook's notes can be laid out as cards instead of a list, with the switch beside the order. Each notebook remembers which you chose.
+- A thing's notes in Inventory are written in the same box as every other note and read as markdown — a link is a link — folded to their first line on the row, with the chevron to open the rest, the way a task's are.
+- In Inventory, a thing filed under a notebook names that notebook under its own name, and pressing the name opens it.
+- The shopping list can archive a line from the list itself: it dims where it is, with a button to put it back.
+
+## 0.186.3 — 2026-10-13
+
+- On a phone whose keyboard covers the page without saying so — the Android app on Android 15 and later, until its next update — the new-block sheet takes the whole screen as soon as you type, lifts the field you tapped above the keys and scrolls all the way to its last field, instead of sitting under the keyboard until you put it away.
+- On a phone, the new-block sheet opened by tapping the calendar scrolls with the keyboard up: a finger dragging it used to do nothing until the keyboard was put away.
+- On a phone, quick capture's settings fit the screen: the notebook pickers no longer run off its right edge, and the one that sets every wedge lines up with the rest.
+
+## 0.186.2 — 2026-10-12
+
+- The Tasks room is called Calendar, in the menu and in its addresses (`/calendar/…`). It holds the same tabs in the same order, and old `/tasks/…` links still arrive.
+- Reminders are on the calendar, at the time they ring: an alarm and the start of the message on the grid, the whole message on hover, and a press opens the reminders page.
+- Quick capture's settings are one list: each wedge has its switch, its place and the notebook it writes into, and a picker above them sets every wedge at once, saying “Mixed” when they differ. The same list opens from the gear beside the wheel and from Preferences.
+- The search box above a list is a line with its placeholder on it, and the order and filter buttons beside it are their words, without the grey boxes; a filter that is on still shows as pressed.
+- Above a list in a half-width card, the search, the count and the order share one line instead of two, and the administration page's accounts take the full width.
+- In the playful style, the search box above a list is a straight line again, not one curling up at both ends.
+- In quick capture's settings, the row that sets every wedge's notebook is a shaded band at the head of the list, its picker centred in it.
+- On a phone, tapping a time or a date field opens its clock or calendar, everywhere in the app, rather than selecting one part of it and waiting for the small icon at its end.
+- Tapping or holding the calendar on a phone starts the new block on the hour you touched — 16:00 rather than 16:15 — and the form still changes it.
+- On a phone, the short new-block sheet no longer slides its header under the status bar when the keyboard opens and it grows to the top of the screen.
+- In the Android app on Android 15 and later, a form scrolls while the keyboard is up, and nothing in it is left hidden behind the keys. In the browser, a new block's short sheet grows to fill what the keyboard leaves, as it already did on iPhone.
+
+## 0.186.1 — 2026-10-10
+
+- The administration page says when each account was last active, from any use of the app, and can sort the accounts by it. The privacy page says so too.
+- Quick capture can file each kind in its own notebook — tasks into Work, ideas into Someday — under Preferences, “Each kind's own notebook”; a kind without one still goes to the main notebook.
+- A reminder is written in markdown and can carry a picture or a recording, like a todo's notes; the list shows the picture, and a notification or an alarm shows the words.
+- A new note in a notebook starts empty, instead of holding the last note you wrote.
+- While writing a note, Save sits beside Cancel at the top, so a long note is not scrolled past to save it, and Cancel shows a cross instead of a plus.
+- AI & Integrations is one press away on the phone: a robot in the account fan opens it.
+- On the instance that lives on the phone, AI & Integrations is there too, saying why nothing can connect to it and what an instance with a server gives instead.
+- A field that is too long says how long it is and by how much — “Content is 5873/4000 characters, 1873 over the limit” — instead of only the limit.
+- In the Android app, “Use a different ontoplano” goes back to the instance question again, instead of trying to open a page in the browser.
+- A Google Play subscription that does not go through, at any step, is now recorded and reported to whoever runs the instance, instead of failing silently.
+- Sign-in, sign-up, password reset and the account page answer in your language, including “wrong email or password”.
+- French and Russian, in the app and in the Android app’s widget and reminder notifications.
+- The password rule under the sign-up and first-password fields is translated.
+- Typing with an input method — Japanese, Chinese, Korean, or a phone keyboard that composes words — no longer triggers shortcuts or Enter-to-submit before the word is finished.
+- The sign-up form asks for a “Display name”, the same word the account settings use.
+- In the Android app, links to the website, the docs, the demo and the legal pages open in the phone’s browser instead of replacing the app.
+- The signed-out front page in the Android app has “Use a different ontoplano”, so choosing the wrong instance can be undone before signing in.
+- Google Play’s purchase sheet, the alarm key and widget setup are no longer interrupted by the app reopening the chosen instance underneath them.
+- Subscribing from the Google Play app never opens the card checkout: it uses Google Play's own purchase sheet, or says plainly that a subscription cannot be started from the app.
+- The Android app's store listing — words, screenshots and release notes — is published with the source, so F-Droid shows the same listing as Google Play.
+- The Android build checks the Gradle it downloads against Gradle's published checksum.
+
 ## 0.186.0 — 2026-10-09
 
 - The short plan sheet stays scrollable above the keyboard, expands when its header is tapped or swiped up, and uses “Add” to save a new block.

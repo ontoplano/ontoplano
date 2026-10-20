@@ -29,7 +29,7 @@ const CORNERS = [
 ] as const;
 
 /** The rooms most likely to differ: a split, a list, a form, the dashboard. */
-const ROOMS = ['/', '/notebooks', '/tasks/todo', '/inventory', '/settings/account'];
+const ROOMS = ['/', '/notebooks', '/calendar/todo', '/inventory', '/settings/account'];
 
 for (const width of [390, 1280]) {
 	test(`nothing in a screen corner is rounded at ${width}px`, async ({ page }) => {

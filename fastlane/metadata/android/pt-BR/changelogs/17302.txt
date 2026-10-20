@@ -1,0 +1,10 @@
+O primeiro teste aberto do Ontoplano no Android.
+
+O app inteiro: sua semana em blocos de tempo, metas com progresso medido,
+cadernos, hábitos e treinos, finanças, inventário, receitas e a lista de
+compras — e lembretes que chegam no celular.
+
+Entre em uma instância sua, na app.ontoplano.com, ou deixe tudo no próprio
+aparelho, sem conta e sem internet.
+
+Me conte o que quebrar: github.com/ontoplano/ontoplano/issues

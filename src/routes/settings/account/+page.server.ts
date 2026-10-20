@@ -1,4 +1,4 @@
-import { fail, redirect } from '@sveltejs/kit';
+import { redirect } from '@sveltejs/kit';
 import { APIError } from 'better-auth/api';
 import type { Actions, PageServerLoad } from './$types';
 import { auth, verifyPassword } from '$lib/server/auth';
@@ -14,7 +14,9 @@ import {
 } from '$lib/server/services/account';
 import { buildCtx } from '$lib/services/ctx';
 import { renameAccount } from '$lib/services/account-profile';
-import { toActionFailure } from '$lib/http-errors';
+import { refuse, saying, toActionFailure } from '$lib/http-errors';
+import { authRefusal } from '$lib/server/auth-refusals';
+import type { MessageKey } from '$lib/i18n/core';
 import { listSessions, sessionTokenById } from '$lib/server/services/sessions';
 import { record } from '$lib/services/audit';
 import { EMPTY_CONFIRMATION } from '$lib/danger';
@@ -65,10 +67,10 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 };
 
 /** better-auth's messages are already user-facing; anything else is a bug. */
-function authFailure(error: unknown, fallback: string) {
-	if (error instanceof APIError) return fail(400, { message: error.message || fallback });
+function authFailure(error: unknown, fallback: MessageKey) {
+	if (error instanceof APIError) return refuse(400, authRefusal(error, fallback));
 	console.error('Account action error:', error);
-	return fail(500, { message: 'Unexpected error' });
+	return refuse(500, 'auth.refused.unexpected');
 }
 
 export const actions: Actions = {
@@ -99,18 +101,17 @@ export const actions: Actions = {
 	changeEmail: async ({ request, locals }) => {
 		// The instance decides whether this door exists. Checked here and not only
 		// in the page, because a form can be posted without loading one.
-		if (!loadConfig().account.allowEmailChange)
-			return fail(403, { message: 'This instance does not allow changing your address' });
+		if (!loadConfig().account.allowEmailChange) return refuse(403, 'auth.refused.noAddressChange');
 
 		const user = locals.user!;
 		const formData = await request.formData();
 		const newEmail = formData.get('newEmail')?.toString()?.trim() ?? '';
 		const password = formData.get('password')?.toString() ?? '';
 
-		if (!newEmail) return fail(400, { message: 'Enter the new address' });
-		if (newEmail.length > 254) return fail(400, { message: 'That address is too long' });
+		if (!newEmail) return refuse(400, 'auth.refused.enterNewAddress');
+		if (newEmail.length > 254) return refuse(400, 'auth.refused.addressTooLong');
 		if (!(await verifyPassword(user.id, password)))
-			return fail(400, { message: 'That is not your current password' });
+			return refuse(400, 'auth.refused.wrongCurrentPassword');
 
 		try {
 			await auth.api.changeEmail({
@@ -118,7 +119,7 @@ export const actions: Actions = {
 				headers: request.headers
 			});
 		} catch (error) {
-			return authFailure(error, 'Could not change the address');
+			return authFailure(error, 'auth.refused.couldNotChangeAddress');
 		}
 
 		record(user.id, 'email_change_requested', { detail: { to: newEmail } });
@@ -149,13 +150,11 @@ export const actions: Actions = {
 		const newPassword = formData.get('newPassword')?.toString() ?? '';
 		const confirmPassword = formData.get('confirmPassword')?.toString() ?? '';
 
-		if (!currentPassword || !newPassword) return fail(400, { message: 'Fill in both passwords' });
+		if (!currentPassword || !newPassword) return refuse(400, 'auth.refused.fillBothPasswords');
 		const weak = checkPassword(newPassword);
-		if (weak) return fail(400, { message: weak });
-		if (newPassword !== confirmPassword)
-			return fail(400, { message: 'The two new passwords do not match' });
-		if (newPassword === currentPassword)
-			return fail(400, { message: 'That is the password you already have' });
+		if (weak) return refuse(400, weak.key, 'values' in weak ? weak.values : undefined);
+		if (newPassword !== confirmPassword) return refuse(400, 'auth.refused.newPasswordsDiffer');
+		if (newPassword === currentPassword) return refuse(400, 'auth.refused.samePassword');
 
 		try {
 			await auth.api.changePassword({
@@ -163,7 +162,7 @@ export const actions: Actions = {
 				headers: request.headers
 			});
 		} catch (error) {
-			return authFailure(error, 'Could not change the password');
+			return authFailure(error, 'auth.refused.couldNotChangePassword');
 		}
 
 		record(locals.user!.id, 'password_changed');
@@ -171,7 +170,7 @@ export const actions: Actions = {
 		return {
 			success: true,
 			action: 'changePassword',
-			message: 'Password changed. Every other signed-in device was signed out.'
+			message: await saying('auth.said.passwordChanged')
 		};
 	},
 
@@ -184,11 +183,16 @@ export const actions: Actions = {
 			const token = sessionTokenById(buildCtx(locals.user!.id), id);
 			await auth.api.revokeSession({ body: { token }, headers: request.headers });
 		} catch (error) {
-			if (error instanceof APIError) return authFailure(error, 'Could not sign that device out');
+			if (error instanceof APIError)
+				return authFailure(error, 'auth.refused.couldNotSignDeviceOut');
 			return toActionFailure(error);
 		}
 
-		return { success: true, action: 'revokeSession', message: 'That device was signed out.' };
+		return {
+			success: true,
+			action: 'revokeSession',
+			message: await saying('auth.said.deviceSignedOut')
+		};
 	},
 
 	/**
@@ -204,7 +208,7 @@ export const actions: Actions = {
 		try {
 			await auth.api.revokeSessions({ headers: request.headers });
 		} catch (error) {
-			return authFailure(error, 'Could not sign the other devices out');
+			return authFailure(error, 'auth.refused.couldNotSignOthersOut');
 		}
 
 		redirect(303, '/login');
@@ -229,9 +233,9 @@ export const actions: Actions = {
 		const confirmation = formData.get('confirm')?.toString()?.trim() ?? '';
 
 		if (confirmation.toLowerCase() !== EMPTY_CONFIRMATION.toLowerCase())
-			return fail(400, { message: `Type ${EMPTY_CONFIRMATION} exactly to confirm` });
+			return refuse(400, 'auth.refused.typeWordToConfirm', { word: EMPTY_CONFIRMATION });
 		if (!(await verifyPassword(user.id, password)))
-			return fail(400, { message: 'That is not your password' });
+			return refuse(400, 'auth.refused.notYourPassword');
 
 		// Before, not after: `emptyAccount` keeps the audit log precisely so
 		// this line survives it, and writing it first means a failure in the
@@ -239,7 +243,7 @@ export const actions: Actions = {
 		record(user.id, 'account_emptied', { detail: { email: user.email } });
 		emptyAccount(user.id);
 
-		return { success: true, message: 'Everything in this account has been deleted.' };
+		return { success: true, message: await saying('auth.said.accountEmptied') };
 	},
 
 	/**
@@ -256,9 +260,9 @@ export const actions: Actions = {
 		const password = formData.get('password')?.toString() ?? '';
 
 		if (confirmation.toLowerCase() !== user.email.toLowerCase())
-			return fail(400, { message: 'Type your email address exactly to confirm' });
+			return refuse(400, 'auth.refused.typeEmailToConfirm');
 		if (!(await verifyPassword(user.id, password)))
-			return fail(400, { message: 'That is not your password' });
+			return refuse(400, 'auth.refused.notYourPassword');
 
 		// The instance's last note that the account was closed by its owner.
 		// `deleteAccount` disowns this row rather than deleting it with the

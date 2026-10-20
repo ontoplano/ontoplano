@@ -19,6 +19,18 @@ function Field(field: string): string {
 	return field.charAt(0).toUpperCase() + field.slice(1);
 }
 
+/**
+ * Too long, said with how long it is.
+ *
+ * "Has to be 4000 characters or fewer" leaves somebody guessing how much to
+ * cut; the count and the excess are the instructions.
+ */
+export function tooLong(field: string, length: number, max: number): ValidationError {
+	return new ValidationError(
+		`${Field(field)} is ${length}/${max} characters, ${length - max} over the limit`
+	);
+}
+
 export function str(
 	value: unknown,
 	field: string,
@@ -30,8 +42,7 @@ export function str(
 	const s = opts.trim === false ? value : value.trim();
 	const min = opts.min ?? 1;
 	if (s.length < min) throw new ValidationError(`${Field(field)} is required`);
-	if (s.length > opts.max)
-		throw new ValidationError(`${Field(field)} has to be ${opts.max} characters or fewer`);
+	if (s.length > opts.max) throw tooLong(field, s.length, opts.max);
 	if (opts.pattern && !opts.pattern.test(s)) throw new ValidationError(`Invalid ${field}`);
 	return s;
 }
@@ -43,6 +54,22 @@ export function optionalStr(
 ): string {
 	if (value === undefined || value === null || value === '') return '';
 	return str(value, field, { ...opts, min: 0 });
+}
+
+/** What `<input type="color">` produces, and nothing else — it is written into inline styles. */
+export const HEX_COLOR = /^#[0-9a-fA-F]{6}$/;
+
+/**
+ * A colour somebody chose, or none.
+ *
+ * Empty, null and absent all mean "no colour", because a colour input has no
+ * empty of its own and the forms say "none" by sending nothing. Lower-cased so
+ * one colour is stored one way.
+ */
+export function optionalColor(value: unknown, field = 'colour'): string | null {
+	if (value === undefined || value === null) return null;
+	if (typeof value === 'string' && value.trim() === '') return null;
+	return str(value, field, { max: 7, pattern: HEX_COLOR }).toLowerCase();
 }
 
 export function num(

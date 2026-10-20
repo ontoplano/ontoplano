@@ -1462,6 +1462,28 @@ const fill = (notebookId, notes, tasks) => {
 fill(kitchen, KITCHEN_NOTES, KITCHEN_TASKS);
 fill(portugal, PORTUGAL_NOTES, PORTUGAL_TASKS);
 
+/*
+ * A few notes in a colour, and the Portugal notebook looked at as cards — so
+ * the grid and a note's face are on screen in a used state, the plain notes
+ * beside them. Only the uncoloured are coloured, so a re-run keeps whatever
+ * was chosen since.
+ */
+[
+	['Booked the Lisbon flat: two nights, kitchen, no lift, fourth floor.', PALETTE[0]],
+	['Rough budget is nine hundred each, flights in. Food is cheap, the wine is not.', PALETTE[1]],
+	['Ana says go to Sintra on a weekday and start at the top of the hill.', PALETTE[4]],
+	['Adapter is the same as France. Not the same as here.', '#fde68a']
+].forEach(([content, colour]) =>
+	run(
+		'update diary_entries set color = ? where user_id = ? and content = ? and color is null',
+		colour,
+		uid,
+		content
+	)
+);
+if (!one("select id from user_settings where user_id = ? and key = 'notebooks.note_grid'", uid))
+	setting('notebooks.note_grid', JSON.stringify([portugal]));
+
 orphanNote('The old flat: the landlord kept the deposit over the scuffed floor.');
 
 // The ideas somebody who USES a planner writes down — not ideas about
@@ -3088,6 +3110,31 @@ for (const row of all(
 	localStamp(-30)
 )) {
 	reminder(row.id, 10, 'Coming up in ten minutes');
+}
+
+/*
+ * And one about nothing but itself, written with a picture in it — a reminder
+ * is markdown, and "this one, not the cheap one" is said with a photograph.
+ * Tomorrow evening, so it is on the reminders page and has not gone off.
+ */
+{
+	const oil = picture('item-olive-oil.jpg', 'olive oil', demoPicture('item-olive-oil.jpg'));
+	const message = oil
+		? `Olive oil on the way home — **this one**, not the cheap one\n\n![olive oil](/media/${oil})`
+		: 'Olive oil on the way home — **this one**, not the cheap one';
+	if (
+		!one(
+			"select id from reminders where user_id = ? and subject_kind = 'free' and message = ?",
+			uid,
+			message
+		)
+	)
+		run(
+			"insert into reminders (user_id, subject_kind, subject_id, remind_at, message, audible) values (?, 'free', null, ?, ?, 0)",
+			uid,
+			`${localStamp(24 * 60).slice(0, 10)}T18:00:00`,
+			message
+		);
 }
 
 // --- mail that did not go out (the /admin card and the /healthz warning) --------

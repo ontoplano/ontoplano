@@ -8,6 +8,7 @@ import {
 	rangeOf,
 	momentOf,
 	monthOf,
+	minutesIntoDay,
 	timeOf,
 	wantsTwelveHour,
 	weekdayOf,
@@ -81,6 +82,13 @@ describe('which zone', () => {
 		const instant = '2026-06-11T21:00:00Z';
 		expect(timeOf(instant, sao('24'))).toBe('18:00');
 		expect(timeOf(instant, london('24'))).toBe('22:00');
+	});
+
+	test('minutes into the day are counted where the reader is', () => {
+		// 21:30 UTC is 18:30 in São Paulo and 22:30 in London.
+		expect(minutesIntoDay('2026-06-11T21:30:00Z', sao())).toBe(18 * 60 + 30);
+		expect(minutesIntoDay('2026-06-11T21:30:00Z', london())).toBe(22 * 60 + 30);
+		expect(minutesIntoDay('2026-06-11T00:05', sao())).toBe(5);
 	});
 
 	test('a Date is an instant too', () => {

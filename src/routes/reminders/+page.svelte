@@ -30,10 +30,15 @@
 	import { resolve } from '$app/paths';
 	import { goto } from '$app/navigation';
 	import OneLine from '$lib/components/OneLine.svelte';
+	import MarkdownBox from '$lib/components/MarkdownBox.svelte';
+	import PictureAttach from '$lib/components/PictureAttach.svelte';
+	import RecordingAttach from '$lib/components/RecordingAttach.svelte';
+	import Written from '$lib/components/Written.svelte';
+	import { titleLine } from '$lib/markdown-plain';
 	import FilterBar from '$lib/components/FilterBar.svelte';
 	import SearchField from '$lib/components/SearchField.svelte';
 	import ShowingCount from '$lib/components/ShowingCount.svelte';
-	import ReminderFields from '$lib/components/fields/ReminderFields.svelte';
+	import ReminderFields, { SAY_ROWS } from '$lib/components/fields/ReminderFields.svelte';
 	import ReminderWhyNot from '$lib/components/ReminderWhyNot.svelte';
 	import { openPicker } from '$lib/open-picker';
 	import { hasBeen as clockHasBeen, isTooSoon as clockIsTooSoon } from '$lib/reminder-clock';
@@ -76,10 +81,10 @@
 	 * from `$lib/glyphs`; a cake is a birthday everywhere.
 	 */
 	const KINDS: Record<string, { label: PlainKey; icon: IconName }> = {
-		instance: { label: 'app.blocks', icon: routeGlyph('/tasks/calendar')! },
-		todo: { label: 'app.todos', icon: routeGlyph('/tasks/todo')! },
+		instance: { label: 'app.blocks', icon: routeGlyph('/calendar/calendar')! },
+		todo: { label: 'app.todos', icon: routeGlyph('/calendar/todo')! },
 		free: { label: 'app.alarms', icon: 'alarm' },
-		review: { label: 'app.theWeeklyReview', icon: routeGlyph('/tasks/review')! },
+		review: { label: 'app.theWeeklyReview', icon: routeGlyph('/calendar/review')! },
 		bill: { label: 'app.bills', icon: routeGlyph('/finance/bills')! },
 		person: { label: 'app.birthdays', icon: 'cake' },
 		day: { label: 'app.theEndOfTheDay', icon: 'moon' }
@@ -370,6 +375,8 @@
 	let editDay = $state('');
 	let editTime = $state('');
 	let editSay = $state('');
+	/** The edit form's box, so a picture or a recording lands at its cursor. One is open at a time. */
+	let editBox = $state<HTMLTextAreaElement>();
 	/** "kind" is the row saying nothing and following its kind's setting. */
 	let editSound = $state<'kind' | 'on' | 'off'>('kind');
 	let editTone = $state('');
@@ -812,7 +819,9 @@
 										<Icon name={kindOf(reminder.subjectKind).icon} size={14} />
 									</span>
 									<span class="min-w-0 flex-1">
-										<span class="block truncate text-sm text-gray-900">{reminder.message}</span>
+										<!-- Drawn, not quoted: a picture in it is a stamp-sized picture,
+										     not its address. -->
+										<Written content={reminder.message} oneLine class="block" />
 										<span class="flex items-center gap-1.5 text-xs text-gray-500">
 											{t(kindOf(reminder.subjectKind).label)}
 											<!-- On a phone the time rides here, so the sentence keeps the width. -->
@@ -871,7 +880,7 @@
 													editing === reminder.id ? (editing = null) : edit(reminder)}
 												class="icon-btn shrink-0"
 												title={t('reminders.changeThisReminder')}
-												aria-label={t('reminders.change', { message: reminder.message })}
+												aria-label={t('reminders.change', { message: titleLine(reminder.message) })}
 												aria-expanded={editing === reminder.id}
 											>
 												<Icon name="edit" />
@@ -881,7 +890,7 @@
 												onclick={() => (confirmingDelete = reminder.id)}
 												class="icon-btn icon-btn-danger shrink-0"
 												title={t('reminders.removeThisReminder')}
-												aria-label={t('reminders.remove', { message: reminder.message })}
+												aria-label={t('reminders.remove', { message: titleLine(reminder.message) })}
 											>
 												<Icon name="trash" />
 											</button>
@@ -951,7 +960,16 @@
 												/>
 											</Field>
 											<Field label={t('reminders.whatToSay')} span={12} required>
-												<OneLine name="label" required bind:value={editSay} class="input" />
+												<MarkdownBox
+													bind:element={editBox}
+													bind:value={editSay}
+													name="label"
+													required
+													rows={SAY_ROWS}
+													preview="written"
+												/>
+												<PictureAttach target={editBox} />
+												<RecordingAttach target={editBox} />
 											</Field>
 										</FormGrid>
 

@@ -11,9 +11,10 @@ import { listMovementRows } from '$lib/services/statements.js';
 import { FLOWS, listAllPayments, listBills } from '$lib/services/bills.js';
 import { listWorkouts } from '$lib/services/workouts.js';
 import { listIngredientItems, listRecipes } from '$lib/services/recipes.js';
-import { ForbiddenError } from '$lib/services/errors.js';
-import { setAt, type Ref, type RefKind } from './refs.js';
+import { ForbiddenError, NotFoundError } from '$lib/services/errors.js';
+import { KINDS, setAt, valuesAt, type Reach, type Ref, type RefKind } from './refs.js';
 import { TOOLS } from './tools.js';
+export { DELIVER_SCOPE, delivers } from './deliver.js';
 
 /**
  * A key that can only reach one thing.
@@ -38,10 +39,12 @@ import { TOOLS } from './tools.js';
  *   2. A tool that names a kind this confinement does not contain is refused
  *      — a person is not inside a notebook.
  *   3. Where a tool names the confining kind itself, the argument is *set*
- *      rather than checked. Asking for another notebook does not fail; it is
- *      simply not what the call ends up being about. Nothing here is ever read
- *      from a request: the kind comes from this table and the id from the
- *      token's own row.
+ *      when it is left out, and refused when it names any other one — with
+ *      the answer a notebook that does not exist gets, whether or not it
+ *      does, so the refusal tells nobody what the account holds. Pinning a
+ *      different id over it instead answered "ok" to a move that never
+ *      happened. Nothing here is ever read from a request: the kind comes
+ *      from this table and the id from the token's own row.
  */
 
 type Contains = Partial<Record<RefKind, (ctx: Ctx, id: number) => { id: number }[]>>;
@@ -208,7 +211,8 @@ export function confine(
 	confinement: Confinement,
 	refs: readonly Ref[] | undefined,
 	input: { required?: readonly string[] } | undefined,
-	args: Record<string, unknown>
+	args: Record<string, unknown>,
+	{ delivers = false }: { delivers?: boolean } = {}
 ): void {
 	const table = CONFINEMENTS[confinement.kind];
 	if (!table) throw new ForbiddenError('This key is confined to something that no longer exists.');
@@ -218,7 +222,32 @@ export function confine(
 			`This key can only work on ${table.label}, and that is not something it can reach.`
 		);
 
-	for (const ref of refs ?? []) if (ref.kind === table.kind) setAt(args, ref.arg, confinement.id);
+	for (const ref of refs ?? []) {
+		if (ref.kind !== table.kind) continue;
+		// The list of notebooks, for a key that may file into them: not pinned,
+		// and the tool answers with names and ids alone.
+		if (delivers && ref.deliverable === 'listing') continue;
+		// Filing into another notebook, for a key that may: left as asked, and
+		// resolved against the account's notebooks by `deliveryReach`.
+		if (delivers && ref.deliverable === 'into' && valuesAt(args, ref.arg).some(given)) continue;
+		// `0` is "take it out of its notebook", which is leaving too.
+		const elsewhere = valuesAt(args, ref.arg).some(
+			(one) => given(one) && Number(one) !== confinement.id
+		);
+		if (elsewhere) throw new NotFoundError(KINDS[table.kind].label);
+		setAt(args, ref.arg, confinement.id);
+	}
+}
+
+const given = (one: unknown) => one !== undefined && one !== null && one !== '';
+
+/**
+ * The reach a delivering call resolves against: the confinement's, except
+ * that a notebook is any of the account's — the ones `confine` let through
+ * are destinations, and every other kind still answers inside the key's own.
+ */
+export function deliveryReach(reach: Reach): Reach {
+	return (kind, ctx) => (kind === 'notebook' ? KINDS.notebook.rows(ctx) : reach(kind, ctx));
 }
 
 /**

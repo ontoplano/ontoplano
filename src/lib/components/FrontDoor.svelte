@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
 	import Logo from '$lib/components/Logo.svelte';
+	import AnotherInstance from '$lib/components/AnotherInstance.svelte';
 	import { useT } from '$lib/i18n';
 
 	const t = useT();
@@ -73,6 +74,8 @@
 			{t('frontDoor.thisInstanceIsNotTaking')}
 		</p>
 	{/if}
+
+	<AnotherInstance class="mt-6" />
 
 	<p class="mt-10 text-sm text-gray-500">
 		<a class="underline underline-offset-2 hover:text-gray-900" href={siteUrl} rel="external"

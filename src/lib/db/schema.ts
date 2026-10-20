@@ -491,6 +491,15 @@ export const diaryEntries = sqliteTable(
 		 * pinning a fourth one means.
 		 */
 		pinnedAt: text('pinned_at'),
+		/**
+		 * The colour the note is drawn in, `#rrggbb`, or null for the plain one.
+		 *
+		 * Nullable rather than defaulted, for the reason a tag's is: most notes
+		 * are not coloured, and a colour nobody chose is noise. The ink on it is
+		 * worked out by the stylesheet from the face (`.pill-soft`), so this is
+		 * the only thing stored.
+		 */
+		color: text('color'),
 		createdAt: text('created_at')
 			.notNull()
 			.default(sql`(CURRENT_TIMESTAMP)`),

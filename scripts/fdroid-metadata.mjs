@@ -15,6 +15,7 @@
  *
  *   node scripts/fdroid-metadata.mjs                      # a fresh recipe
  *   node scripts/fdroid-metadata.mjs --from path/to.yml   # add this release
+ *   node scripts/fdroid-metadata.mjs --listing            # only fastlane/, for a release
  *
  * `--from` takes the recipe as it currently stands in the fdroiddata fork and
  * appends this version to it, leaving every other line exactly as it was. That
@@ -23,11 +24,14 @@
  * eventually carry comments, anti-feature notes and hand edits from reviewers,
  * and a round-trip through a YAML library throws all of that away.
  *
- * It also copies the store listing out of ontoplano-marketing, writes the two
- * pieces of prose that have to be posted by a human, and refuses to pretend a
- * version is ready when the tag it would build does not exist.
+ * It also writes the store listing into `fastlane/metadata/android/`, where
+ * F-Droid reads it from the tag it builds, writes the two pieces of prose that
+ * have to be posted by a human, and refuses to pretend a version is ready when
+ * the tag it would build does not exist.
  *
- * Output goes to `fdroid-out/`, which is ignored. Nothing here is committed.
+ * The recipe and the prose go to `fdroid-out/`, which is ignored. `fastlane/`
+ * is committed: it is what the store shows, and a listing kept in fdroiddata
+ * instead could only be changed by asking their team.
  */
 import { execFileSync } from 'node:child_process';
 import {
@@ -55,6 +59,125 @@ const flag = (name) => {
 
 const OUT = flag('--out') ?? join(ROOT, 'fdroid-out');
 const FROM = flag('--from');
+const LISTING_ONLY = args.includes('--listing');
+
+/*
+ * The listing, assembled into the layout F-Droid reads.
+ *
+ * Its sources live in the marketing repository, beside Play's captioned sets
+ * and the pictures nobody publishes; what F-Droid shows is generated from them
+ * into `fastlane/metadata/android/`, committed, so the tag F-Droid builds
+ * carries its own listing. Without the marketing checkout — anybody but the
+ * maintainer — the committed tree is left exactly as it is.
+ *
+ * `metadata/android/<lang>/images/…` is five folders deep and is nobody's idea
+ * of a place to browse, so it is not kept that way: the store directory holds
+ * `play/<lang>/` for the words, `fdroid/` for the screenshots without
+ * captions, and `play/` for the banner and the icon the two stores share.
+ * `FDROID_STORE` points at yours; without one the recipe is still written,
+ * just with no listing beside it. This is where those become the tree to copy
+ * into a `fdroiddata` fork — a generated thing, so there is no fourth copy
+ * for somebody to update and forget.
+ */
+const STORE = process.env.FDROID_STORE
+	? resolve(process.env.FDROID_STORE)
+	: join(ROOT, '..', 'ontoplano-marketing', 'store');
+const PLAY = join(STORE, 'play');
+const listingOut = join(ROOT, 'fastlane', 'metadata', 'android');
+let listed = false;
+
+/*
+ * A language folder under `store/play/` holds words and pictures both, and
+ * only the words and the banner belong here.
+ *
+ * Play takes captioned screenshots and F-Droid takes plain ones, so that
+ * folder's `phoneScreenshots/` and the rest are Play's — copying them in
+ * would put a caption in the one listing that explicitly does not want one.
+ * `captions.json` is the words those captions are made of, and `banner.json`
+ * the words on the banner; both are sources the pictures were made from
+ * rather than anything a store reads.
+ */
+const WORDS = ['title.txt', 'short_description.txt', 'full_description.txt'];
+
+/**
+ * The release notes, which are not in a language folder at all.
+ *
+ * `store/play/changelogs/<code>.txt` holds every language at once, wrapped in
+ * `<en-US>…</en-US>` tags — the shape the Play console parses, which is why it
+ * is the shape somebody writes them in. F-Droid wants the other one, a file
+ * per language under `<lang>/changelogs/`, so this reads the blocks back out.
+ * The format is `ontoplano-marketing/scripts/store-notes.mjs`.
+ */
+const NOTES = 'changelogs';
+const BLOCK = /<([A-Za-z]{2}(?:-[A-Za-z0-9]{2,3})?)>\n?([\s\S]*?)\n?<\/\1>/g;
+
+if (existsSync(PLAY)) {
+	// Written fresh every run: a listing assembled on top of the last one keeps
+	// a screenshot that has since been dropped, and nobody would notice.
+	rmSync(listingOut, { recursive: true, force: true });
+
+	// The words, one directory per language, exactly as they are written.
+	for (const lang of readdirSync(PLAY, { withFileTypes: true })) {
+		if (!lang.isDirectory() || lang.name === NOTES) continue;
+		const from = join(PLAY, lang.name);
+		const to = join(listingOut, lang.name);
+		mkdirSync(to, { recursive: true });
+		for (const file of WORDS) {
+			if (existsSync(join(from, file))) cpSync(join(from, file), join(to, file));
+		}
+
+		/*
+		 * The banner is words as much as it is a picture — a headline and a
+		 * line under it, written in that language — so every language brings
+		 * its own, at 60KB each.
+		 */
+		const banner = join(from, 'featureGraphic.png');
+		if (existsSync(banner)) cpSync(banner, join(to, 'images', 'featureGraphic.png'));
+	}
+
+	// And every release's notes, split back into one file per language.
+	const notes = join(PLAY, NOTES);
+	if (existsSync(notes)) {
+		for (const file of readdirSync(notes)) {
+			if (!file.endsWith('.txt')) continue;
+			for (const [, lang, body] of readFileSync(join(notes, file), 'utf8').matchAll(BLOCK)) {
+				const to = join(listingOut, lang, NOTES, file);
+				mkdirSync(dirname(to), { recursive: true });
+				writeFileSync(to, `${body.trim()}\n`);
+			}
+		}
+	}
+
+	/*
+	 * And the pictures that are not words, into the language F-Droid shows by
+	 * default.
+	 *
+	 * Only en-US carries the screenshots and the icon: a Portuguese listing
+	 * with the same English screenshots under it is a second copy of two
+	 * megabytes to say nothing new, and the client picks a locale for each
+	 * kind of image on its own, falling back to the default listing's for any
+	 * that has none — which is why a language can carry its banner and nothing
+	 * else.
+	 */
+	const images = join(listingOut, 'en-US', 'images');
+	for (const size of ['phoneScreenshots', 'sevenInchScreenshots', 'tenInchScreenshots']) {
+		const from = join(STORE, 'fdroid', size);
+		if (existsSync(from)) cpSync(from, join(images, size), { recursive: true });
+	}
+	const icon = join(PLAY, 'icon.png');
+	if (existsSync(icon)) cpSync(icon, join(images, 'icon.png'));
+
+	listed = true;
+}
+
+if (LISTING_ONLY) {
+	console.log(
+		listed
+			? 'fastlane/metadata/android/ — the listing, from marketing'
+			: `no listing at ${PLAY} — fastlane/ left as it is`
+	);
+	process.exit(0);
+}
 
 const version = JSON.parse(readFileSync(join(ROOT, 'package.json'), 'utf8')).version;
 
@@ -251,114 +374,6 @@ if (FROM) {
 	note = 'a fresh recipe, for the first submission';
 }
 
-/*
- * The listing, assembled into the layout F-Droid reads.
- *
- * It lives in the marketing repository because a person cloning this one to
- * fix a bug does not want two megabytes of store furniture, and F-Droid reads
- * it from `fdroiddata` when the app's own repository has none — which is
- * exactly our arrangement.
- *
- * `metadata/android/<lang>/images/…` is five folders deep and is nobody's idea
- * of a place to browse, so it is not kept that way: the store directory holds
- * `play/<lang>/` for the words, `fdroid/` for the screenshots without
- * captions, and `play/` for the banner and the icon the two stores share.
- * `FDROID_STORE` points at yours; without one the recipe is still written,
- * just with no listing beside it. This is where those become the tree to copy
- * into a `fdroiddata` fork — a generated thing, so there is no fourth copy
- * for somebody to update and forget.
- */
-const STORE = process.env.FDROID_STORE
-	? resolve(process.env.FDROID_STORE)
-	: join(ROOT, '..', 'ontoplano-marketing', 'store');
-const PLAY = join(STORE, 'play');
-const listingOut = join(OUT, 'metadata', PACKAGE);
-let listed = false;
-
-/*
- * A language folder under `store/play/` holds words and pictures both, and
- * only the words and the banner belong here.
- *
- * Play takes captioned screenshots and F-Droid takes plain ones, so that
- * folder's `phoneScreenshots/` and the rest are Play's — copying them in
- * would put a caption in the one listing that explicitly does not want one.
- * `captions.json` is the words those captions are made of, and `banner.json`
- * the words on the banner; both are sources the pictures were made from
- * rather than anything a store reads.
- */
-const WORDS = ['title.txt', 'short_description.txt', 'full_description.txt'];
-
-/**
- * The release notes, which are not in a language folder at all.
- *
- * `store/play/changelogs/<code>.txt` holds every language at once, wrapped in
- * `<en-US>…</en-US>` tags — the shape the Play console parses, which is why it
- * is the shape somebody writes them in. F-Droid wants the other one, a file
- * per language under `<lang>/changelogs/`, so this reads the blocks back out.
- * The format is `ontoplano-marketing/scripts/store-notes.mjs`.
- */
-const NOTES = 'changelogs';
-const BLOCK = /<([A-Za-z]{2}(?:-[A-Za-z0-9]{2,3})?)>\n?([\s\S]*?)\n?<\/\1>/g;
-
-if (existsSync(PLAY)) {
-	// Written fresh every run: a listing assembled on top of the last one keeps
-	// a screenshot that has since been dropped, and nobody would notice.
-	rmSync(listingOut, { recursive: true, force: true });
-
-	// The words, one directory per language, exactly as they are written.
-	for (const lang of readdirSync(PLAY, { withFileTypes: true })) {
-		if (!lang.isDirectory() || lang.name === NOTES) continue;
-		const from = join(PLAY, lang.name);
-		const to = join(listingOut, lang.name);
-		mkdirSync(to, { recursive: true });
-		for (const file of WORDS) {
-			if (existsSync(join(from, file))) cpSync(join(from, file), join(to, file));
-		}
-
-		/*
-		 * The banner is words as much as it is a picture — a headline and a
-		 * line under it, written in that language — so every language brings
-		 * its own, at 60KB each.
-		 */
-		const banner = join(from, 'featureGraphic.png');
-		if (existsSync(banner)) cpSync(banner, join(to, 'images', 'featureGraphic.png'));
-	}
-
-	// And every release's notes, split back into one file per language.
-	const notes = join(PLAY, NOTES);
-	if (existsSync(notes)) {
-		for (const file of readdirSync(notes)) {
-			if (!file.endsWith('.txt')) continue;
-			for (const [, lang, body] of readFileSync(join(notes, file), 'utf8').matchAll(BLOCK)) {
-				const to = join(listingOut, lang, NOTES, file);
-				mkdirSync(dirname(to), { recursive: true });
-				writeFileSync(to, `${body.trim()}\n`);
-			}
-		}
-	}
-
-	/*
-	 * And the pictures that are not words, into the language F-Droid shows by
-	 * default.
-	 *
-	 * Only en-US carries the screenshots and the icon: a Portuguese listing
-	 * with the same English screenshots under it is a second copy of two
-	 * megabytes to say nothing new, and the client picks a locale for each
-	 * kind of image on its own, falling back to the default listing's for any
-	 * that has none — which is why a language can carry its banner and nothing
-	 * else.
-	 */
-	const images = join(listingOut, 'en-US', 'images');
-	for (const size of ['phoneScreenshots', 'sevenInchScreenshots', 'tenInchScreenshots']) {
-		const from = join(STORE, 'fdroid', size);
-		if (existsSync(from)) cpSync(from, join(images, size), { recursive: true });
-	}
-	const icon = join(PLAY, 'icon.png');
-	if (existsSync(icon)) cpSync(icon, join(images, 'icon.png'));
-
-	listed = true;
-}
-
 writeFileSync(
 	join(OUT, 'RFP.md'),
 	`<!-- Post as a new issue at https://gitlab.com/fdroid/rfp/-/issues -->
@@ -400,7 +415,8 @@ writeFileSync(
 	`<!-- Description for the fdroiddata merge request -->
 <!-- Title: New app: ontoplano (${PACKAGE}) -->
 
-Adds \`${PACKAGE}\` — ontoplano, an AGPL life management tool, and its listing.
+Adds \`${PACKAGE}\` — ontoplano, an AGPL life management tool. Its listing is
+fastlane metadata in the source repository.
 
 **Source:** ${SOURCE}
 **Builds:** \`${tag}\`, versionCode \`${versionCode}\`
@@ -425,11 +441,13 @@ friends, plain Java), reminders booked with Android's own alarms
 (\`@capacitor/local-notifications\`), links that leave ontoplano opening
 outside the app, and the back gesture walking the app's own history.
 
-**Nothing proprietary.** Dependencies are androidx, Capacitor and three of
-its plugins (app, browser, local-notifications). No Play services and no
-billing library anywhere in this project: there is a paid plan on the
-instance I host, paid on the web — the app contains no purchase code, and
-pages drawn inside it do not offer a checkout.
+**Nothing proprietary in what you build.** Dependencies are androidx,
+Capacitor and three of its plugins (app, browser, local-notifications). The
+one proprietary library is Play Billing, and only the \`play\` flavour links
+it (\`playImplementation\`, code in \`src/play\`); \`prebuild:\` deletes both
+before the scanner runs, and the \`official\` flavour built here has no
+purchase code. The instance I host has a paid plan, paid on the web; pages
+drawn inside this build do not offer a checkout.
 
 **Permissions**: \`INTERNET\`, plus what the notifications plugin declares
 for reminders (\`POST_NOTIFICATIONS\`, exact alarms).
@@ -443,15 +461,15 @@ in.
 
 console.log(`\nfdroid-out/ — ${note}\n`);
 console.log(`  metadata/${PACKAGE}.yml       the recipe`);
-if (listed) console.log(`  metadata/${PACKAGE}/    the listing, copied from marketing`);
+if (listed)
+	console.log('  fastlane/metadata/android/         the listing, in this repo — commit it');
 console.log('  RFP.md                             post at gitlab.com/fdroid/rfp');
 console.log('  MERGE-REQUEST.md                   the fdroiddata merge request\n');
 
 if (!tagged) {
 	console.error(`  ⚠  ${tag} is not a tag in this repository.`);
 	console.error('     F-Droid builds tags. Cut the release before submitting:\n');
-	// `github`, not `origin`: F-Droid's builder clones the public GitHub
-	// repository, and in this checkout `origin` is the forge.
-	console.error(`       git tag ${tag} && git push github ${tag}\n`);
+	// F-Droid's builder clones the public GitHub repository, which is `origin`.
+	console.error(`       git tag ${tag} && git push origin ${tag}\n`);
 	process.exitCode = 1;
 }

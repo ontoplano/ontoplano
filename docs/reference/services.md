@@ -1138,6 +1138,20 @@ by hand for anybody who needs one.
 
 #### `playRtdn(rawBody)`
 
+#### `playSheetFailed(userId, sku, code)`
+
+The store's own sheet said no, as the device reported it on the way back.
+
+#### `checkoutChannel(asking)`
+
+#### `checkoutRefused()`
+
+The refusal for `none`, so both pages say the same thing.
+
+### Types
+
+- `CheckoutChannel` — Which way a checkout goes, decided once for both pages that start one.
+
 ## bills
 
 Bills: money expected to go out, on a rhythm.
@@ -4370,7 +4384,7 @@ missing field — which is why this takes the posted value and not a boolean.
 
 #### `saveCaptureSettings(ctx, raw)`
 
-The capture wheel: its wedges, their order, and the notebook it writes into.
+The capture wheel: its wedges, their order, and the notebooks it writes into.
 
 At least one wedge, because a wheel with none is a button that does nothing.
 The notebook has to be one this account can file things in — its own, or
@@ -5771,6 +5785,10 @@ simply does not find it among the notebooks it lists.
 
 #### `setCaptureSettings(userId, settings)`
 
+#### `getNoteView(userId, notebookId)`
+
+#### `setNoteView(userId, notebookId, view)`
+
 ### Types
 
 - `WeekSettings`
@@ -6653,6 +6671,14 @@ For **wall-clock** values only — `task_records.scheduled_at` and the day
 bounds compared against it. Instants are UTC and come from `stamp()`;
 writing one of those with this is finding S7 all over again.
 
+#### `startOfToday(ctx)`
+
+The start of today where the person is, as a `Date` the civil-day helpers
+here read by its local parts.
+
+`startOfDay(ctx.now)` is the server's today, and the server is UTC: for an
+account three hours west, tomorrow began at nine in the evening.
+
 #### `startOfDay(d)`
 
 Local midnight of the day the instant falls on.
@@ -7050,9 +7076,24 @@ Every validator enforces a bound — no unbounded strings reach the database.
 
 ### Functions
 
+#### `tooLong(field, length, max)`
+
+Too long, said with how long it is.
+
+"Has to be 4000 characters or fewer" leaves somebody guessing how much to
+cut; the count and the excess are the instructions.
+
 #### `str(value, field, opts)`
 
 #### `optionalStr(value, field, opts)`
+
+#### `optionalColor(value, field)`
+
+A colour somebody chose, or none.
+
+Empty, null and absent all mean "no colour", because a colour input has no
+empty of its own and the forms say "none" by sending nothing. Lower-cased so
+one colour is stored one way.
 
 #### `num(value, field, opts)`
 

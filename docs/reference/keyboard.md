@@ -36,6 +36,101 @@ works is a key listed here and the reverse.
 | <kbd>k</kbd>     | Navigate accounts             |
 | <kbd>Enter</kbd> | Open the one under the cursor |
 
+## Activities — `/calendar/activities`
+
+| Key          | Does                          |
+| ------------ | ----------------------------- |
+| <kbd>j</kbd> | Navigate list                 |
+| <kbd>k</kbd> | Navigate list                 |
+| <kbd>n</kbd> | New activity                  |
+| <kbd>e</kbd> | Edit the one under the cursor |
+| <kbd>a</kbd> | Archive/unarchive             |
+| <kbd>x</kbd> | Ask to delete                 |
+| <kbd>1</kbd> | Toggle category filter        |
+| <kbd>2</kbd> | Toggle category filter        |
+| <kbd>3</kbd> | Toggle category filter        |
+| <kbd>4</kbd> | Toggle category filter        |
+| <kbd>5</kbd> | Toggle category filter        |
+| <kbd>6</kbd> | Toggle category filter        |
+| <kbd>7</kbd> | Toggle category filter        |
+| <kbd>8</kbd> | Toggle category filter        |
+| <kbd>9</kbd> | Toggle category filter        |
+
+## Board — `/calendar/board`
+
+| Key              | Does                          |
+| ---------------- | ----------------------------- |
+| <kbd>h</kbd>     | Move between columns          |
+| <kbd>j</kbd>     | Move between cards            |
+| <kbd>k</kbd>     | Move between cards            |
+| <kbd>l</kbd>     | Move between columns          |
+| <kbd><</kbd>     | Carry card to previous column |
+| <kbd>></kbd>     | Carry card to next column     |
+| <kbd>c</kbd>     | Mark done / reopen            |
+| <kbd>t</kbd>     | Pull onto today / put back    |
+| <kbd>g</kbd>     | Switch Today / General        |
+| <kbd>n</kbd>     | New card                      |
+| <kbd>Enter</kbd> | Open the card                 |
+| <kbd>1</kbd>     | Set the active rating         |
+| <kbd>2</kbd>     | Set the active rating         |
+| <kbd>3</kbd>     | Set the active rating         |
+| <kbd>4</kbd>     | Set the active rating         |
+| <kbd>5</kbd>     | Set the active rating         |
+| <kbd>u</kbd>     | Number keys set urgency       |
+| <kbd>i</kbd>     | Number keys set interest      |
+| <kbd>y</kbd>     | Number keys set ease          |
+| <kbd>x</kbd>     | Ask to delete card            |
+
+## Calendar — `/calendar/calendar`
+
+| Key          | Does                          |
+| ------------ | ----------------------------- |
+| <kbd>j</kbd> | Navigate slots                |
+| <kbd>k</kbd> | Navigate slots                |
+| <kbd>g</kbd> | Cycle day, week and month     |
+| <kbd>a</kbd> | Toggle list/grid view         |
+| <kbd>+</kbd> | Zoom in (grid)                |
+| <kbd>=</kbd> | Zoom in (grid)                |
+| <kbd>-</kbd> | Zoom out (grid)               |
+| <kbd>0</kbd> | Reset zoom (grid)             |
+| <kbd>h</kbd> | Switch day                    |
+| <kbd>l</kbd> | Switch day                    |
+| <kbd>[</kbd> | Switch week                   |
+| <kbd>]</kbd> | Switch week                   |
+| <kbd>n</kbd> | New weekly task block         |
+| <kbd>N</kbd> | New one-off task block        |
+| <kbd>e</kbd> | Edit task block               |
+| <kbd>d</kbd> | Toggle active                 |
+| <kbd>D</kbd> | Delete task block             |
+| <kbd>v</kbd> | Toggle multiselect            |
+| <kbd> </kbd> | Select/deselect (multiselect) |
+| <kbd>x</kbd> | Ask to delete selected        |
+| <kbd>p</kbd> | Copy to days (multiselect)    |
+
+## Review — `/calendar/review`
+
+| Key          | Does                                           |
+| ------------ | ---------------------------------------------- |
+| <kbd>c</kbd> | It happened after all                          |
+| <kbd>s</kbd> | It did not happen                              |
+| <kbd>t</kbd> | It still needs doing — put it on the todo list |
+| <kbd>d</kbd> | It still needs doing — give it a day           |
+| <kbd>u</kbd> | Ask about it again                             |
+| <kbd>[</kbd> | Switch week                                    |
+| <kbd>]</kbd> | Switch week                                    |
+
+## Tasks — `/calendar/todo`
+
+| Key          | Does          |
+| ------------ | ------------- |
+| <kbd>j</kbd> | Navigate list |
+| <kbd>k</kbd> | Navigate list |
+| <kbd>n</kbd> | New task      |
+| <kbd>e</kbd> | Edit task     |
+| <kbd>c</kbd> | Toggle done   |
+| <kbd>g</kbd> | Delegate      |
+| <kbd>x</kbd> | Ask to delete |
+
 ## Bills — `/finance/bills`
 
 | Key          | Does                          |
@@ -199,98 +294,3 @@ works is a key listed here and the reverse.
 | <kbd>e</kbd> | Edit the widget                          |
 | <kbd>x</kbd> | Ask to delete the widget                 |
 | <kbd>n</kbd> | New widget, when the phone sent you here |
-
-## Activities — `/tasks/activities`
-
-| Key          | Does                          |
-| ------------ | ----------------------------- |
-| <kbd>j</kbd> | Navigate list                 |
-| <kbd>k</kbd> | Navigate list                 |
-| <kbd>n</kbd> | New activity                  |
-| <kbd>e</kbd> | Edit the one under the cursor |
-| <kbd>a</kbd> | Archive/unarchive             |
-| <kbd>x</kbd> | Ask to delete                 |
-| <kbd>1</kbd> | Toggle category filter        |
-| <kbd>2</kbd> | Toggle category filter        |
-| <kbd>3</kbd> | Toggle category filter        |
-| <kbd>4</kbd> | Toggle category filter        |
-| <kbd>5</kbd> | Toggle category filter        |
-| <kbd>6</kbd> | Toggle category filter        |
-| <kbd>7</kbd> | Toggle category filter        |
-| <kbd>8</kbd> | Toggle category filter        |
-| <kbd>9</kbd> | Toggle category filter        |
-
-## Board — `/tasks/board`
-
-| Key              | Does                          |
-| ---------------- | ----------------------------- |
-| <kbd>h</kbd>     | Move between columns          |
-| <kbd>j</kbd>     | Move between cards            |
-| <kbd>k</kbd>     | Move between cards            |
-| <kbd>l</kbd>     | Move between columns          |
-| <kbd><</kbd>     | Carry card to previous column |
-| <kbd>></kbd>     | Carry card to next column     |
-| <kbd>c</kbd>     | Mark done / reopen            |
-| <kbd>t</kbd>     | Pull onto today / put back    |
-| <kbd>g</kbd>     | Switch Today / General        |
-| <kbd>n</kbd>     | New card                      |
-| <kbd>Enter</kbd> | Open the card                 |
-| <kbd>1</kbd>     | Set the active rating         |
-| <kbd>2</kbd>     | Set the active rating         |
-| <kbd>3</kbd>     | Set the active rating         |
-| <kbd>4</kbd>     | Set the active rating         |
-| <kbd>5</kbd>     | Set the active rating         |
-| <kbd>u</kbd>     | Number keys set urgency       |
-| <kbd>i</kbd>     | Number keys set interest      |
-| <kbd>y</kbd>     | Number keys set ease          |
-| <kbd>x</kbd>     | Ask to delete card            |
-
-## Calendar — `/tasks/calendar`
-
-| Key          | Does                          |
-| ------------ | ----------------------------- |
-| <kbd>j</kbd> | Navigate slots                |
-| <kbd>k</kbd> | Navigate slots                |
-| <kbd>g</kbd> | Cycle day, week and month     |
-| <kbd>a</kbd> | Toggle list/grid view         |
-| <kbd>+</kbd> | Zoom in (grid)                |
-| <kbd>=</kbd> | Zoom in (grid)                |
-| <kbd>-</kbd> | Zoom out (grid)               |
-| <kbd>0</kbd> | Reset zoom (grid)             |
-| <kbd>h</kbd> | Switch day                    |
-| <kbd>l</kbd> | Switch day                    |
-| <kbd>[</kbd> | Switch week                   |
-| <kbd>]</kbd> | Switch week                   |
-| <kbd>n</kbd> | New weekly task block         |
-| <kbd>N</kbd> | New one-off task block        |
-| <kbd>e</kbd> | Edit task block               |
-| <kbd>d</kbd> | Toggle active                 |
-| <kbd>D</kbd> | Delete task block             |
-| <kbd>v</kbd> | Toggle multiselect            |
-| <kbd> </kbd> | Select/deselect (multiselect) |
-| <kbd>x</kbd> | Ask to delete selected        |
-| <kbd>p</kbd> | Copy to days (multiselect)    |
-
-## Review — `/tasks/review`
-
-| Key          | Does                                           |
-| ------------ | ---------------------------------------------- |
-| <kbd>c</kbd> | It happened after all                          |
-| <kbd>s</kbd> | It did not happen                              |
-| <kbd>t</kbd> | It still needs doing — put it on the todo list |
-| <kbd>d</kbd> | It still needs doing — give it a day           |
-| <kbd>u</kbd> | Ask about it again                             |
-| <kbd>[</kbd> | Switch week                                    |
-| <kbd>]</kbd> | Switch week                                    |
-
-## Tasks — `/tasks/todo`
-
-| Key          | Does          |
-| ------------ | ------------- |
-| <kbd>j</kbd> | Navigate list |
-| <kbd>k</kbd> | Navigate list |
-| <kbd>n</kbd> | New task      |
-| <kbd>e</kbd> | Edit task     |
-| <kbd>c</kbd> | Toggle done   |
-| <kbd>g</kbd> | Delegate      |
-| <kbd>x</kbd> | Ask to delete |

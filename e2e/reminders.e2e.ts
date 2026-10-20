@@ -5,6 +5,7 @@ import { join } from 'node:path';
 import { register, testEmail } from './helpers/account';
 import { visit } from './helpers/visit';
 import { expectStill } from './helpers/position';
+import { pngOfSize } from './helpers/png';
 
 /**
  * Everything with a time on it.
@@ -511,3 +512,44 @@ test('a reminder that is already set can be moved, reworded and given a sound', 
 	await again.getByRole('button', { name: 'Save' }).click();
 	await expect(changed.getByTitle('This one makes a sound')).toHaveCount(0, { timeout: 15_000 });
 });
+
+/**
+ * A reminder is markdown, and can carry a picture.
+ *
+ * "This one, not the cheap one" is said with a photograph. The box takes a
+ * picture the way a todo's notes do, writes it into the text, and the list
+ * draws the picture and the emphasis rather than the marks — at a phone's
+ * width as much as a desk's.
+ */
+for (const [width, height] of [
+	[390, 844],
+	[1400, 900]
+]) {
+	test(`a reminder carries a picture and draws its markdown, at ${width}px`, async ({ page }) => {
+		await page.setViewportSize({ width, height });
+		await register(page, testEmail(`rem-pic-${width}`));
+		await visit(page, '/reminders');
+		await openTheForm(page);
+
+		const tomorrow = new Date();
+		tomorrow.setDate(tomorrow.getDate() + 1);
+		await page.locator('[name="day"]').fill(tomorrow.toISOString().slice(0, 10));
+		await page.locator('[name="time"]').fill('18:00');
+
+		const box = page.locator('dialog[open] textarea[name="label"]');
+		await box.fill('olive oil, **this one**');
+		await page
+			.locator('dialog[open] input[type="file"]')
+			.first()
+			.setInputFiles({ ...pngOfSize(24, 8), name: 'bottle.png' });
+		await expect(box).toHaveValue(/!\[bottle\.png\]\(\/media\/\d+\)/, { timeout: 20_000 });
+		await page.getByRole('button', { name: 'Set it' }).click();
+
+		const row = page.locator('li', { hasText: 'olive oil' });
+		await expect(row).toBeVisible({ timeout: 15_000 });
+		await expect(row.locator('strong', { hasText: 'this one' })).toBeVisible();
+		await expect(row.locator('img[src^="/media/"]')).toBeVisible();
+		await expect(row).not.toContainText('**');
+		await expect(row).not.toContainText('/media/');
+	});
+}

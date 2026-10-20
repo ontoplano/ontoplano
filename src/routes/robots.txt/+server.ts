@@ -45,7 +45,7 @@ export const GET: RequestHandler = () => {
 				// crawler has no business following it.
 				'Disallow: /kitchen/',
 				'Disallow: /login',
-				'Disallow: /tasks/',
+				'Disallow: /calendar/',
 				'Disallow: /search',
 				'Disallow: /settings/',
 				'Disallow: /inventory',

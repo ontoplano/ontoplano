@@ -36,6 +36,10 @@ async function importCatalogue(locale: Locale): Promise<Catalogue> {
 			return (await import('./catalogues/de.js')).messages;
 		case 'es':
 			return (await import('./catalogues/es.js')).messages;
+		case 'fr':
+			return (await import('./catalogues/fr.js')).messages;
+		case 'ru':
+			return (await import('./catalogues/ru.js')).messages;
 		default:
 			return (await import('./catalogues/en.js')).messages;
 	}
@@ -55,6 +59,10 @@ export async function loadBorrowed(locale: Locale): Promise<ReadonlySet<string>>
 			return (await import('./borrowed/de.js')).borrowed;
 		case 'es':
 			return (await import('./borrowed/es.js')).borrowed;
+		case 'fr':
+			return (await import('./borrowed/fr.js')).borrowed;
+		case 'ru':
+			return (await import('./borrowed/ru.js')).borrowed;
 		default:
 			return new Set();
 	}

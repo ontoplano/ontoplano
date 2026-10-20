@@ -68,19 +68,24 @@
 	/** The gear beside the wheel has been pressed: its settings are open. */
 	let configuring = $state(false);
 
-	/** Where a form opened from here starts — see `startingNotebook`. */
-	const notebookId = $derived(
-		startingNotebook(settings, {
-			id: page.route.id,
-			params: page.params,
-			search: page.url.searchParams
-		})
-	);
-
 	let open = $state(false);
 	let dragging = $state(false);
 	let origin = $state({ x: 0, y: 0 });
 	let writing = $state<Capture | null>(null);
+
+	/** Where a form opened from here starts — see `startingNotebook`. */
+	const notebookId = $derived(
+		startingNotebook(
+			settings,
+			{
+				id: page.route.id,
+				params: page.params,
+				search: page.url.searchParams
+			},
+			writing?.key
+		)
+	);
+
 	let inset = $state(0);
 
 	/** The file input the picture wedge reaches for, and the recorder's dialog. */

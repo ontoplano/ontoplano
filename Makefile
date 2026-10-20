@@ -1191,10 +1191,12 @@ android-project:
 
 # Everything F-Droid needs for this version, written into fdroid-out/.
 #
-# Their metadata lives in their repository, not in ours: one YAML file that
-# grows a build entry per release, plus the store listing. Keeping a copy here
-# would be a duplicate that is wrong three releases later, so nothing is
-# committed — the generator is, and this writes the current answer.
+# The recipe lives in their repository, not in ours: one YAML file that grows
+# a build entry per release. Keeping a copy here would be a duplicate that is
+# wrong three releases later, so it is not committed — the generator is, and
+# this writes the current answer. The store listing is the exception: it is
+# `fastlane/metadata/android/`, committed, because F-Droid reads it from the
+# tag it builds.
 #
 #   make fdroid                                a fresh recipe, first submission
 #   make fdroid RECIPE=path/to/existing.yml    the same recipe plus this release

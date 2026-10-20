@@ -17,7 +17,7 @@ test('shared modal actions span the footer in task, notebook, diary, and plan fo
 	await page.setViewportSize({ width: 1440, height: 900 });
 	await register(page, testEmail('modal-footer'));
 
-	await visit(page, '/tasks/todo');
+	await visit(page, '/calendar/todo');
 	await page.getByRole('button', { name: 'New task' }).first().click();
 	await expectSplitActions(page.getByRole('dialog', { name: 'New task' }), 'Create task');
 
@@ -32,7 +32,7 @@ test('shared modal actions span the footer in task, notebook, diary, and plan fo
 	await page.getByRole('button', { name: 'New entry' }).first().click();
 	await expectSplitActions(page.getByRole('dialog', { name: 'New entry' }), 'Post entry');
 
-	await visit(page, '/tasks/calendar');
+	await visit(page, '/calendar/calendar');
 	await page.getByRole('button', { name: 'New task block' }).click();
 	await expectSplitActions(page.getByRole('dialog', { name: 'New task block' }), 'Add');
 });

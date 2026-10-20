@@ -117,7 +117,7 @@ test('a to-do takes a picture, and the row draws it', async ({ page }) => {
 	test.setTimeout(120_000);
 	await page.setViewportSize({ width: 1280, height: 1000 });
 	await register(page, testEmail('todo-picture'));
-	await visit(page, '/tasks/todo');
+	await visit(page, '/calendar/todo');
 
 	await page.getByRole('button', { name: 'New task' }).click();
 	await page.locator('#todo-form [name="heading"]').fill('fix the header');

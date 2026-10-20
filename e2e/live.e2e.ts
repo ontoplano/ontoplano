@@ -84,7 +84,7 @@ test('a todo added by an assistant turns up without a reload', async ({ page, pl
 	 * reaches nobody. `data-live` is set from `EventSource`'s own `open`, which
 	 * fires on the first byte — by which time the other end has subscribed.
 	 */
-	await visit(page, '/tasks/todo');
+	await visit(page, '/calendar/todo');
 	await page.waitForSelector('html[data-live]', { timeout: 20000 });
 
 	const title = `written by an assistant ${Date.now()}`;
@@ -212,7 +212,7 @@ test('eight tabs share one stream, and it outlives the tab holding it', async ({
 	const tabs = [page];
 	while (tabs.length < 8) tabs.push(await context.newPage());
 	for (const tab of tabs) {
-		await visit(tab, '/tasks/todo');
+		await visit(tab, '/calendar/todo');
 		await tab.waitForSelector('html[data-live]', { timeout: 20000 });
 	}
 	expect(holders.size, 'every tab opened a stream of its own').toBe(1);

@@ -424,13 +424,16 @@ html[data-style='playful'] .card-pane {
  *   square, so the cards in it are the only curves.
  * - A box inside a square surface (the danger zone, the rows of the menu
  *   editor) is square like the surface round it.
+ * - A filter strip's search box is a line, not a box: rounded, its one rule
+ *   curled up at both ends.
  */
 html[data-style='playful'] .room-surface > *,
 html[data-style='playful'] .room-toolbar-inset,
 html[data-style='playful'] .lane,
 html[data-style='playful'] .danger-zone,
 html[data-style='playful'] .danger-zone > *,
-html[data-style='playful'] .toggle-row {
+html[data-style='playful'] .toggle-row,
+html[data-style='playful'] .filter-strip .input {
 	border-radius: 0;
 }
 
@@ -2374,12 +2377,12 @@ label:has(> input[type='radio']:not(:disabled)) {
 	 * has no mark and no margin, and its writing starts under the title like
 	 * everything else does.
 	 */
-	.todo-notes-foldable {
+	.folding-notes-foldable {
 		position: relative;
 		padding-left: 1.125rem;
 	}
 
-	.todo-fold {
+	.folding-notes-mark {
 		position: absolute;
 		top: 0;
 		left: 0;
@@ -2393,13 +2396,13 @@ label:has(> input[type='radio']:not(:disabled)) {
 		color: var(--color-gray-400);
 	}
 
-	.todo-fold:hover,
-	.todo-notes-hot .todo-fold {
+	.folding-notes-mark:hover,
+	.folding-notes-hot .folding-notes-mark {
 		color: var(--color-gray-900);
 	}
 
-	/* Where a press would fold or unfold it — see `foldHover`. */
-	.todo-notes-hot {
+	/* Where a press would fold or unfold it — see `FoldingNotes`. */
+	.folding-notes-hot {
 		cursor: pointer;
 	}
 
@@ -2503,6 +2506,39 @@ label:has(> input[type='radio']:not(:disabled)) {
 		padding-top: 0;
 		padding-bottom: 0;
 		font-size: 0.8125rem;
+	}
+
+	/*
+	 * A filter strip is read, not filled in.
+	 *
+	 * Its search box was a form field — a white box with an edge and a
+	 * shadow — and its order and filters were grey bordered slabs, so the
+	 * strip above a list looked heavier than the list. The box is a line with
+	 * its placeholder on it, and the buttons are their words until the
+	 * pointer reaches them. A toggle that is on keeps its fill and its edge:
+	 * that is how it says it is on.
+	 */
+	.filter-strip .input {
+		border-width: 0 0 1px;
+		border-radius: 0;
+		background-color: transparent;
+		box-shadow: none;
+		padding-inline: 0.125rem;
+	}
+
+	.filter-strip .input:focus {
+		outline: none;
+		border-bottom-color: var(--color-gray-900);
+		box-shadow: inset 0 -1px 0 var(--color-gray-900);
+	}
+
+	.filter-strip .btn:not([aria-pressed='true']) {
+		border-color: transparent;
+		box-shadow: none;
+	}
+
+	.filter-strip .btn:not([aria-pressed='true']):not(:hover) {
+		background-color: transparent;
 	}
 
 	:is(.room-toolbar-row, .filter-strip, .controls-sm) .seg > :is(button, a, label),
@@ -3322,6 +3358,34 @@ html[data-style='playful'] :is(.edge-stripe, .page-intro, .is-pinned) {
 	font-weight: 600;
 }
 
+/* A reminder: a moment rather than a stretch, so it is washed like the other
+   facts about a day, with its alarm before its words to say which kind of
+   fact. Pressing it opens the reminders page, so it keeps the pointer. */
+.og-event--reminder {
+	background-color: color-mix(in srgb, currentColor 10%, transparent) !important;
+	border-width: 1.5px !important;
+	border-left-width: 3px !important;
+}
+
+html .ec .ec-event.og-event .ec-event-reminder {
+	display: flex;
+	align-items: center;
+	gap: 0.25rem;
+	min-width: 0;
+	overflow: hidden;
+	white-space: nowrap;
+}
+
+html .ec .ec-event.og-event .ec-event-reminder svg {
+	flex-shrink: 0;
+}
+
+html .ec .ec-event.og-event .ec-event-reminder .ec-event-title {
+	min-width: 0;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
 /* Paid: quiet and struck through, so a week reads as what is left. */
 .og-event--bill-paid {
 	background-color: transparent !important;
@@ -4137,18 +4201,28 @@ option {
 	--gauge-ground: var(--color-gray-200);
 
 	/*
-	 * The mark on the phone's bottom bar, and everything that follows from it.
+	 * The phone's bar: a pill floating over the page, and everything that
+	 * follows from it. **Tweak it here** — every other number about the bar is
+	 * derived from these.
 	 *
-	 * One number. The button is clipped to the mark's outline and lifted so the
-	 * mark rises out of the bar, which stays a plain straight edge — no ground
-	 * shaped like the mark behind it. The measurements have to agree, and did
-	 * not once: they were four
-	 * literals in the markup and the mark quietly lost a quarter of its size
-	 * when the button stopped being a circle.
+	 * It used to be a full-width strip with the mark rising out of its middle;
+	 * now it stands clear of every edge, everything inside it, the mark too,
+	 * sized to the pill rather than proud of it. Black glass, the menu's own
+	 * material: see `.mobile-nav` below.
 	 */
-	--bar-mark: 4.5rem;
-	/* How far it stands proud of the bar. */
-	--bar-mark-rise: calc(var(--bar-mark) * 0.27);
+	/* The pill's own height. */
+	--bar-pill-height: 3.75rem;
+	/* The margin round it: from the sides and from the bottom (above the safe area). */
+	--bar-inset: 0.75rem;
+	/* Its glass: how dark, and how much of what is behind it is blurred. */
+	--bar-glass: rgb(0 0 0 / 0.62);
+	--bar-blur: 14px;
+	/* The faint rim that keeps the glass an object on a dark page. */
+	--bar-rim: rgb(255 255 255 / 0.1);
+	/* The mark, inside the pill and as tall as it with a little air. */
+	--bar-mark: calc(var(--bar-pill-height) - 0.5rem);
+	/* How far it stands proud of the pill: not at all, it is inside. */
+	--bar-mark-rise: 0rem;
 	/*
 	 * Where that mark's own box sits, measured from the bottom of the screen.
 	 *
@@ -4156,11 +4230,11 @@ option {
 	 * instance chooser draws the mark too, and choosing an instance should put
 	 * the app's bar mark in the place the chooser's already was — one object
 	 * that stays put while everything around it changes, rather than two that
-	 * happen to look alike. Derived from the four numbers above, so moving the
-	 * bar moves both.
+	 * happen to look alike. Derived from the numbers above, so moving the bar
+	 * moves both.
 	 */
 	--bar-mark-bottom: calc(
-		var(--safe-bottom) + var(--mobile-nav-height) + var(--bar-mark-rise) - var(--bar-mark)
+		var(--safe-bottom) + var(--bar-inset) + (var(--bar-pill-height) - var(--bar-mark)) / 2
 	);
 }
 
@@ -4311,6 +4385,28 @@ html .ec {
  *
  * `$lib/keyboard-inset` sets the attribute and the measurement.
  */
+/*
+ * The pill itself. Its numbers are the `--bar-*` ones further up.
+ *
+ * Fixed, clear of the edges by `--bar-inset`, rounded fully, and glass: the
+ * page shows through it dark and blurred, as it does through the wheel's
+ * plate. The ink on it is the chrome's light ink whatever the theme, since
+ * the glass is dark in both.
+ */
+.mobile-nav {
+	left: var(--bar-inset);
+	right: var(--bar-inset);
+	bottom: calc(var(--safe-bottom) + var(--bar-inset));
+	height: var(--bar-pill-height);
+	border-radius: 999px;
+	border: 1px solid var(--bar-rim);
+	background: var(--bar-glass);
+	-webkit-backdrop-filter: blur(var(--bar-blur)) saturate(1.4);
+	backdrop-filter: blur(var(--bar-blur)) saturate(1.4);
+	box-shadow: 0 8px 24px rgb(0 0 0 / 0.28);
+	overflow: hidden;
+}
+
 html[data-keyboard='open'] :is(nav.mobile-nav, .notice-band) {
 	transform: translateY(150%);
 	pointer-events: none;
@@ -4322,7 +4418,11 @@ html[data-keyboard='open'] {
 }
 
 :root {
-	--mobile-nav-height: 3.5rem;
+	/*
+	 * The room the bar takes from the bottom of the screen: the pill and the
+	 * margin under it. What everything that keeps clear of the bar reserves.
+	 */
+	--mobile-nav-height: calc(var(--bar-pill-height) + var(--bar-inset));
 	--safe-bottom: env(safe-area-inset-bottom, 0px);
 	--safe-top: env(safe-area-inset-top, 0px);
 	/*
@@ -5784,6 +5884,19 @@ html .ec .ec-event.og-event .ec-event-title {
 	font-weight: 600;
 }
 
+/*
+ * A block's words break between words, never inside one.
+ *
+ * The app lets any span break anywhere so a long name cannot push a phone's
+ * row off the screen — right for a row, wrong for a block a seventh of a phone
+ * wide, where "deep work" came out as "dee / p / wor / k". The block clips
+ * instead: the start of a word reads, a fragment of it does not.
+ */
+html .ec .ec-event.og-event :is(.ec-event-title, .ec-event-time) {
+	overflow-wrap: normal;
+	overflow: hidden;
+}
+
 html .ec .ec-event.og-event .ec-event-time {
 	display: block;
 	font-size: 0.6875rem;
@@ -6438,5 +6551,69 @@ input[type='search']::-webkit-search-cancel-button:hover {
 @keyframes pending-bone-pulse {
 	50% {
 		opacity: 0.5;
+	}
+}
+
+/*
+ * A card half a phone wide.
+ *
+ * Cards stand at least two to a row — a notebook's notes and things, the
+ * Inventory room's categories — and at about 170px the row's measures,
+ * made for a whole line, left the words a column of six characters. So
+ * inside a `.card-cell` whose content is narrower than 12rem — half a
+ * phone, and never a desktop's 16rem card, whose content box is about 14 —
+ * the padding and the gap
+ * tighten, the buttons take the card's whole foot rather than the width
+ * beside the rail, a picture goes across the top, and a label too long for
+ * the card is cut rather than pushed past its edge.
+ *
+ * Unlayered, and prefixed by the cell, because the rules it overrides are
+ * a component's own — a thing's picture size — and those are unlayered too.
+ */
+:root {
+	--card-tight-pad: 0.625rem;
+	--card-tight-gap: 0.5rem;
+}
+
+.card-cell {
+	container: card / inline-size;
+}
+
+@container card (width < 12rem) {
+	.card-cell .row-card {
+		--row-pad-x: var(--card-tight-pad);
+		--row-pad-y: var(--card-tight-pad);
+		--row-gap: var(--card-tight-gap);
+	}
+
+	.card-cell .task-actions {
+		width: calc(100% + var(--row-rail) + var(--row-gap));
+		margin-left: calc(-1 * (var(--row-rail) + var(--row-gap)));
+		justify-content: space-between;
+	}
+
+	.card-cell .task-actions .icon-btn {
+		width: 2rem;
+		height: 2rem;
+	}
+
+	.card-cell .row-card-thumb {
+		order: -1;
+		flex-basis: 100%;
+		margin-bottom: 0.5rem;
+	}
+
+	.card-cell .row-card-thumb > :is(.item-thumb, *) {
+		width: 100%;
+		height: auto;
+		aspect-ratio: 4 / 3;
+	}
+
+	.card-cell :is(.chip, .pill, .tag-chip) {
+		display: inline-block;
+		max-width: 100%;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
 	}
 }

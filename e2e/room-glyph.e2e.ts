@@ -9,7 +9,7 @@ import { visit } from './helpers/visit';
  * same grey word and the glyph the menu teaches was nowhere near it.
  */
 const ROOMS = [
-	'/tasks/todo',
+	'/calendar/todo',
 	'/notebooks',
 	'/health/habits',
 	'/goals',

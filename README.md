@@ -21,19 +21,54 @@
 
 </div>
 
-## Summary
+## Why Ontoplano?
 
-Ontoplano is a central hub for organizing your life. Powerful enough to handle small details,
-simple enough to be able to add a task or a note in your phone with one finger movement.
-You can [Connect with an AI agent](https://docs.ontoplano.com/ai-agents) (or not), and
-scope all your tasks, recipes, inventory, notes, bills etc. in specific notebooks.
+Most people run their life across a stack of separate apps: a calendar, a
+to-do list, a notes app, a habit tracker, a budget spreadsheet, a shopping
+list, a recipe box, a journal. Each one is fine on its own, but none of them
+knows about the others — the task is in one, the notes for it in another, the
+money for it in a third — and keeping them in step is work nobody signed up
+for.
+
+Ontoplano puts them in one app, with one way of doing things across all of
+them. A subject you are working through — a renovation, a trip, a book — is a
+notebook that holds its own tasks, notes, shopping, bills and goals, so
+everything about it is in one place. Adding something takes one gesture on
+your phone; the rest is there when you want the detail. It runs on the web,
+on Android and offline, on the official instance or on your own machine, and
+it is open source. It is meant for people who want one consistent place for
+their life without handing it over to someone else.
+
+To understand the values guiding it, read [the ethos](https://docs.ontoplano.com/ethos).
+
+## What it includes
+
+- **Planning** — a week calendar of repeating and one-off blocks, a board for
+  the day, tasks without a date until you give them one, reminders that ring
+  with the app shut, a weekly review, and goals whose progress counts itself
+  from the tasks linked to them.
+- **Notebooks** — notes per subject, in folders, as a list or as cards; a
+  diary, weekly notes, ideas, and the people in your life with their
+  birthdays and every mention of them; one tag vocabulary across everything.
+- **Home and health** — an inventory with places, quantities and restocking,
+  the shopping list it feeds, recipes made of the things you keep, habits,
+  and workouts with a register per exercise.
+- **Money** — ledgers, statement import with sorting rules, bills paid
+  straight from a movement, and insights.
+- **Getting things in** — a one-gesture capture wheel, keyboard shortcuts on
+  every screen, search across everything, data streams posted by other apps,
+  a calendar feed, webhooks, and an Android app.
+- **AI, if you want it** — an MCP server with scoped keys, including keys
+  tied to a single notebook, so an assistant works on exactly what you hand it
+  ([how](https://docs.ontoplano.com/ai-agents)).
+- **Yours** — export and import with pictures, delete everything, host it
+  yourself or keep it on your phone alone, six languages, AGPL-3.0.
 
 <div align="center">
 
 [![Try the demo](.github/badges/try-the-demo.svg)](https://demo.ontoplano.com)
 
 </div>
-
 
 ## Running it
 

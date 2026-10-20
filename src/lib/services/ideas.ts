@@ -15,7 +15,7 @@ import { NotFoundError, ValidationError } from './errors.js';
 import { numberedNotebookPatch } from './notebook-seq.js';
 import { stamp, stamps } from './time.js';
 import { host } from './host.js';
-import { str, chosenIds } from './validate.js';
+import { str, chosenIds, tooLong } from './validate.js';
 import { MAX_BATCH } from './todos.js';
 
 /** Quick capture: a thought, optionally tagged, optionally marked as applied. */
@@ -210,8 +210,7 @@ function optionalNote(value: unknown): string | null {
 	if (value === undefined || value === null) return null;
 	const s = String(value).trim();
 	if (!s) return null;
-	if (s.length > MAX_NOTE_LENGTH)
-		throw new ValidationError(`The note has to be ${MAX_NOTE_LENGTH} characters or fewer`);
+	if (s.length > MAX_NOTE_LENGTH) throw tooLong('the note', s.length, MAX_NOTE_LENGTH);
 	return s;
 }
 

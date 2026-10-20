@@ -64,7 +64,7 @@ test('an export restores into another account, and only the unportable is missin
 	// bytes rather than rows, and the part that makes one big.
 	await register(page, testEmail('move-from'));
 
-	await visit(page, '/tasks/todo');
+	await visit(page, '/calendar/todo');
 	await page.getByRole('button', { name: 'New task' }).click();
 	await page.locator('[name="heading"]').first().fill('water the tomatoes');
 	await page.getByRole('button', { name: 'Create task' }).click();
@@ -149,6 +149,6 @@ test('an export restores into another account, and only the unportable is missin
 	expect(landed.data.media?.[0]?.sha256).toBe(before.data.media?.[0]?.sha256);
 
 	// The writing came with it.
-	await visit(page, '/tasks/todo');
+	await visit(page, '/calendar/todo');
 	await expect(page.getByText('water the tomatoes').first()).toBeVisible();
 });

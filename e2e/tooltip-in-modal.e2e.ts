@@ -14,7 +14,7 @@ import { hoverUntil } from './helpers/press-until';
 test('the tooltip is a popover, so a dialog cannot cover it', async ({ page }) => {
 	test.setTimeout(180_000);
 	await register(page, testEmail('tooltip-layer'));
-	await visit(page, '/tasks/todo');
+	await visit(page, '/calendar/todo');
 	await page.waitForTimeout(800);
 
 	const target = page.locator('[title]').first();

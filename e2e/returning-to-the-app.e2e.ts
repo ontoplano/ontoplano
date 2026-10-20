@@ -13,7 +13,7 @@ import { visit } from './helpers/visit';
 test('what arrived while the app was away is there when it returns', async ({ page }) => {
 	test.setTimeout(120_000);
 	await register(page, testEmail('returning'));
-	await visit(page, '/tasks/todo');
+	await visit(page, '/calendar/todo');
 
 	// Away. Then something is written down for this account while it is.
 	await page.evaluate(() => {

@@ -209,6 +209,22 @@ describe('edit_entry', () => {
 		refused('edit_entry', { id, title: 'Renamed anyway', content: '' });
 		expect(now().title).toBe('Sunday');
 	});
+
+	it('sets a colour, keeps it through an edit that does not mention it, and takes it off', () => {
+		const { id } = ok('write_entry', { content: 'Tiles from the convent.', color: '#0F766E' });
+		const now = () => s.diary.getEntry(s.ctx, Number(id));
+		expect(now().color).toBe('#0f766e');
+
+		ok('edit_entry', { id, title: 'Tiles' });
+		expect(now().color).toBe('#0f766e');
+
+		refused('edit_entry', { id, title: 'Renamed anyway', color: 'teal' });
+		expect(now().title).toBe('Tiles');
+		expect(now().color).toBe('#0f766e');
+
+		ok('edit_entry', { id, color: '' });
+		expect(now().color).toBeNull();
+	});
 });
 
 describe('change_idea', () => {

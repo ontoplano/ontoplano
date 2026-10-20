@@ -188,7 +188,7 @@ describe('the demo refusals', () => {
 		// The demo is a playground: everything that is not the box or the
 		// account must still be usable, or there is nothing to look at.
 		for (const path of [
-			'/tasks/calendar',
+			'/calendar/calendar',
 			'/shopping',
 			'/notebooks/diary',
 			'/settings/preferences'
@@ -248,10 +248,10 @@ describe("the demo's front door", () => {
 		process.env.ONTOPLANO_DEMO = 'true';
 		const { load } = await door();
 		const data = await load({
-			url: new URL('http://x/demo?next=/tasks/calendar'),
+			url: new URL('http://x/demo?next=/calendar/calendar'),
 			locals: {}
 		} as never);
-		expect(data).toEqual({ next: '/tasks/calendar' });
+		expect(data).toEqual({ next: '/calendar/calendar' });
 	});
 
 	it('and never off this instance', async () => {

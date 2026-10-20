@@ -1,0 +1,8 @@
+• Una sala de Medios, y puedes grabar — mantén el +, escúchalo, ponle nombre o deja que se lo ponga
+• Las grabaciones caben en una nota o idea y suenan ahí
+• La app recuerda lo que te ha dicho
+• Corregido: los recordatorios no llegaban a un móvil apuntando a un servidor
+• Corregido: configurar el timbre solo funcionaba una vez
+• Configurar una IA aparece en tu idioma
+
+github.com/ontoplano/ontoplano/issues

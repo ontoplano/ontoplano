@@ -20,7 +20,7 @@ import { visit } from './helpers/visit';
 test('the task strip does not shift when its toggles are pressed', async ({ page }) => {
 	await page.setViewportSize({ width: 1280, height: 900 });
 	await register(page, testEmail('steady'));
-	await visit(page, '/tasks/todo');
+	await visit(page, '/calendar/todo');
 
 	// One finished task, so the completed toggle has something to say.
 	for (const title of ['one to finish', 'one to leave']) {

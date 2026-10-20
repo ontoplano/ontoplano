@@ -27,7 +27,7 @@ test('the todo page runs against the device, and the server never hears of it', 
 	});
 
 	await register(page, testEmail('localmode'));
-	await visit(page, '/tasks/todo?isolated=1');
+	await visit(page, '/calendar/todo?isolated=1');
 
 	// Create through the page's own form. The bridge answers the POST from
 	// the worker; the invalidation that follows re-reads the list from the
@@ -48,7 +48,7 @@ test('the todo page runs against the device, and the server never hears of it', 
 	// Navigating away and back stays on the bridge, and the row is still
 	// there: the write went to OPFS, not to the page's memory.
 	await page.getByRole('link', { name: 'Board' }).first().click();
-	await page.waitForURL('**/tasks/board');
+	await page.waitForURL('**/calendar/board');
 	await page.goBack();
 	await expect(page.getByText(title)).toBeVisible({ timeout: 30_000 });
 
@@ -56,9 +56,9 @@ test('the todo page runs against the device, and the server never hears of it', 
 	// navigation here is a __data.json the bridge resolves in the worker, and
 	// a route whose isolated twin broke would 500 instead of rendering.
 	for (const [name, path] of [
-		['Board', '/tasks/board'],
+		['Board', '/calendar/board'],
 		['Goals', '/goals'],
-		['Calendar', '/tasks/calendar'],
+		['Calendar', '/calendar/calendar'],
 		['Notebooks', '/notebooks'],
 		['Inventory', '/inventory/stock'],
 		['Finance', '/finance/ledgers'],
@@ -67,7 +67,7 @@ test('the todo page runs against the device, and the server never hears of it', 
 		// phone's bottom bar.
 		['Ontoplano', '/']
 	] as const) {
-		await visit(page, '/tasks/todo?isolated=1');
+		await visit(page, '/calendar/todo?isolated=1');
 		await page.getByRole('link', { name, exact: true }).first().click();
 		await page.waitForURL(`**${path}`);
 		await expect(page.locator('body')).not.toContainText('Internal Error');
@@ -108,7 +108,7 @@ test('the todo page runs against the device, and the server never hears of it', 
 
 	// The server's own render of the same page has never seen the row. This
 	// is the whole claim: isolated mode did not leak a single write.
-	await visit(page, '/tasks/todo');
+	await visit(page, '/calendar/todo');
 	await expect(page.getByRole('button', { name: /New task/ }).first()).toBeVisible();
 	await expect(page.getByText(title)).toHaveCount(0);
 	await visit(page, '/reminders');

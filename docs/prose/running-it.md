@@ -196,7 +196,7 @@ where the app was restarted across the moment a reminder fell due. The Docker
 image makes the same request from inside the container.
 
 **The weekly review mail.** On Monday, one message saying how much of last week
-you planned and did, linking to `/tasks/review`. It goes to accounts with a
+you planned and did, linking to `/calendar/review`. It goes to accounts with a
 confirmed address, and every message carries a link that turns it off without
 signing in. It needs SMTP, so it is not installed by default: from source,
 `make install-mail-service`; on a packaged install, your own timer or cron

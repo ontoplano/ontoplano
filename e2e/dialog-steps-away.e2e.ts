@@ -56,7 +56,7 @@ async function startTask(page: Page, title: string) {
 test('the dialog is gone on the press, and the task arrives behind it', async ({ page }) => {
 	test.setTimeout(180_000);
 	await register(page, testEmail('dialog-away'));
-	await visit(page, '/tasks/todo');
+	await visit(page, '/calendar/todo');
 	const release = await holdPosts(page, null);
 
 	await startTask(page, 'sent without waiting');
@@ -72,7 +72,7 @@ test('the dialog is gone on the press, and the task arrives behind it', async ({
 test('a refused save brings the dialog back, with what was typed and why', async ({ page }) => {
 	test.setTimeout(180_000);
 	await register(page, testEmail('dialog-back'));
-	await visit(page, '/tasks/todo');
+	await visit(page, '/calendar/todo');
 	const release = await holdPosts(page, 'The server said no');
 
 	await startTask(page, 'this one is refused');
@@ -139,7 +139,7 @@ test('a refusal is said in the dialog, never under the tabs', async ({ page }) =
 test('the opener pressed again while the save is out opens a fresh dialog', async ({ page }) => {
 	test.setTimeout(180_000);
 	await register(page, testEmail('dialog-again'));
-	await visit(page, '/tasks/todo');
+	await visit(page, '/calendar/todo');
 	const release = await holdPosts(page, null);
 
 	// The next one started before the first is answered: the press used to set
@@ -162,7 +162,7 @@ test('the opener pressed again while the save is out opens a fresh dialog', asyn
 test('a block saved on the plan says so', async ({ page }) => {
 	test.setTimeout(180_000);
 	await register(page, testEmail('dialog-plan-toast'));
-	await visit(page, '/tasks/calendar');
+	await visit(page, '/calendar/calendar');
 	await page.getByRole('button', { name: 'New task block' }).click();
 	await page.getByRole('button', { name: 'Once only' }).click();
 	// A category block needs nothing typed: the account's first category is chosen.
@@ -179,7 +179,7 @@ test('a confirmed rating and an archived task answer before the server', async (
 	test.setTimeout(180_000);
 	await page.setViewportSize({ width: 1280, height: 900 });
 	await register(page, testEmail('press-answers'));
-	await visit(page, '/tasks/todo');
+	await visit(page, '/calendar/todo');
 	for (const title of ['rate me', 'put me away']) {
 		await startTask(page, title);
 		await page.getByRole('button', { name: 'Create task' }).click();
@@ -213,7 +213,7 @@ test('a confirmed rating outlives a reload some other press asked for', async ({
 	test.setTimeout(180_000);
 	await page.setViewportSize({ width: 1280, height: 900 });
 	await register(page, testEmail('press-outlives'));
-	await visit(page, '/tasks/todo');
+	await visit(page, '/calendar/todo');
 	for (const title of ['rate me', 'put me away']) {
 		await startTask(page, title);
 		await page.getByRole('button', { name: 'Create task' }).click();

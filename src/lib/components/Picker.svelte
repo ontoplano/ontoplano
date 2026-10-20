@@ -55,6 +55,7 @@
 		required = false,
 		icon,
 		search = false,
+		placeholder,
 		class: klass = ''
 	}: {
 		value?: T;
@@ -112,6 +113,11 @@
 		icon?: IconName;
 		/** A box at the top of the list that narrows it as somebody types. */
 		search?: boolean;
+		/**
+		 * What the face says when the value is none of the options — "Mixed",
+		 * over a set of rows that disagree. Without it, the first option.
+		 */
+		placeholder?: string;
 		class?: string;
 	} = $props();
 
@@ -236,7 +242,9 @@
 	/** Which row the keyboard is on while the list is open. */
 	let at = $state(-1);
 
-	const chosen = $derived(options.find((one) => one.value === now) ?? options[0]);
+	const chosen = $derived(
+		options.find((one) => one.value === now) ?? (placeholder ? undefined : options[0])
+	);
 
 	/**
 	 * The group headings that open before option `i`: every level of its path
@@ -452,7 +460,9 @@
 			</span>
 			<Icon name="chevron-down" size={12} />
 		{:else}
-			<span class="truncate">{many ? saidMany : (chosen?.face ?? chosen?.label ?? '')}</span>
+			<span class="truncate"
+				>{many ? saidMany : (chosen?.face ?? chosen?.label ?? placeholder ?? '')}</span
+			>
 			<Icon name="chevron-down" size={12} />
 		{/if}
 	</button>

@@ -39,7 +39,7 @@
 	import Backlinks from '$lib/components/Backlinks.svelte';
 	import TodoFields from '$lib/components/fields/TodoFields.svelte';
 	import AttributesDialog from '$lib/components/AttributesDialog.svelte';
-	import Written from '$lib/components/Written.svelte';
+	import FoldingNotes from '$lib/components/FoldingNotes.svelte';
 	import NotebookSeq from '$lib/components/NotebookSeq.svelte';
 	import EmptyState from '$lib/components/EmptyState.svelte';
 	import Icon from '$lib/components/Icon.svelte';
@@ -160,7 +160,7 @@
 		error?: string | undefined;
 		notebookId?: number | null;
 		/**
-		 * Which screen's bindings these rows answer to — `/tasks/todo` and the
+		 * Which screen's bindings these rows answer to — `/calendar/todo` and the
 		 * like. Null leaves the keyboard alone entirely.
 		 */
 		shortcutRoom?: string | null;
@@ -337,89 +337,6 @@
 	let delegateLead: number | string = $state(0);
 	let confirmingDelete: number | null = $state(null);
 	/**
-	 * Which rows are showing everything written on them.
-	 *
-	 * A task's notes are one truncated line on the row, and the only way to
-	 * read the rest of them was to open the form that edits it — so reading
-	 * what you wrote meant opening a dialog and pressing Cancel. Pressing the
-	 * title unfolds it in place instead. Held per row, and per visit: it is a
-	 * way of looking at a list, not a fact about the list.
-	 */
-	let openNotes = new SvelteSet<number>();
-
-	function toggleNotes(id: number) {
-		if (openNotes.has(id)) openNotes.delete(id);
-		else openNotes.add(id);
-	}
-
-	/** Whether there is anything under the title worth unfolding. */
-	/**
-	 * The rows whose one-line notes are showing less than they hold.
-	 *
-	 * Measured rather than counted — see `$lib/actions/overflows`. A row is in
-	 * here only while it is folded; opening it stops it overflowing, which is
-	 * why `hasMore` keeps the open ones too, so the chevron that shuts one does
-	 * not vanish the moment it works.
-	 */
-	const truncated = new SvelteSet<number>();
-
-	const notesTruncate = (id: number) => (over: boolean) => {
-		// Opening a row takes the clamp off, so the element stops overflowing and
-		// says so. That is not "there was never anything folded" — it is the
-		// answer to a question nobody is asking while it is open, and acting on
-		// it would take away the chevron that shuts it again.
-		if (openNotes.has(id)) return;
-		if (over) truncated.add(id);
-		else truncated.delete(id);
-	};
-
-	/**
-	 * A press inside a task's writing: does it fold, unfold, or neither?
-	 *
-	 * Folded, anything in the block opens it — there is nothing to lose by
-	 * pressing in the wrong place when the only thing that can happen is seeing
-	 * more. Open, only the first line shuts it again, because everything below
-	 * is a paragraph being read.
-	 *
-	 * Which line was pressed comes from where the pointer was, measured against
-	 * the block's own first line height. An overlay over that line would have
-	 * been simpler and would have swallowed the links in it.
-	 */
-	function foldPress(todo: Todo, press: MouseEvent) {
-		if (folds(todo, press)) toggleNotes(todo.id);
-	}
-
-	/** Whether a press where this pointer is would fold or unfold the writing. */
-	function folds(todo: Todo, at: MouseEvent): boolean {
-		if (!hasMore(todo)) return false;
-
-		const target = at.target as HTMLElement;
-		if (target.closest('a, button, audio, input, textarea')) return false;
-		if (!openNotes.has(todo.id)) return true;
-
-		const block = at.currentTarget as HTMLElement;
-		const box = block.getBoundingClientRect();
-		const line = parseFloat(getComputedStyle(block).lineHeight);
-		return at.clientY - box.top <= (Number.isFinite(line) ? line : FALLBACK_LINE);
-	}
-
-	/**
-	 * The pointer says so before the press does.
-	 *
-	 * Over the line that folds an open note the cursor was the text one, so
-	 * the line read as words to select rather than a handle, and the chevron
-	 * beside it stayed grey. Asked with the same test the press uses, so the
-	 * two cannot disagree; a class on the block rather than state, since it
-	 * changes on every pixel of movement.
-	 */
-	function foldHover(todo: Todo, move: PointerEvent) {
-		(move.currentTarget as HTMLElement).classList.toggle('todo-notes-hot', folds(todo, move));
-	}
-
-	/** If a browser answers `normal` for the line height, a line is about this. */
-	const FALLBACK_LINE = 20;
-
-	/**
 	 * When this task was written down, and when it was last touched.
 	 *
 	 * On the number, because the number is the only part of a row that is about
@@ -432,17 +349,6 @@
 		const written = t('todoRows.writtenDown', { when: momentOf(todo.createdAt, now()) });
 		if (!todo.updatedAt || todo.updatedAt === todo.createdAt) return written;
 		return `${written}\n${t('todoRows.lastChanged', { when: momentOf(todo.updatedAt, now()) })}`;
-	}
-
-	/**
-	 * Whether this row has anything folded away.
-	 *
-	 * Not "does it have notes": a task whose note is one short line carried a
-	 * chevron, and pressing it swapped one line of text for the same line of
-	 * text. A control that unfolds nothing is not an offer.
-	 */
-	function hasMore(todo: Todo): boolean {
-		return Boolean(todo.notes) && (truncated.has(todo.id) || openNotes.has(todo.id));
 	}
 
 	let formRatings: Record<string, number | null> = $state({
@@ -1628,7 +1534,7 @@
 						     question from "which rows" and were crowding the answer to
 						     it off the strip. See `SavedFilters`. -->
 								<SavedFilters
-									surface="/tasks/todo"
+									surface="/calendar/todo"
 									narrowed={narrowed || showCompleted || showArchived}
 									context={notebookId !== null && page.url.pathname === resolve('/notebooks')
 										? { notebook: String(notebookId) }
@@ -2270,61 +2176,7 @@
 									so nothing moves when the row is pressed.
 								-->
 							{#if todo.notes}
-								<!--
-										The chevron sits on the first line of the writing, and
-										that line is what folds it.
-
-										Open, the press is the first line and the mark beside it —
-										nothing else. Everything under it is a paragraph somebody
-										is reading, and reading means selecting a word or
-										following a link, both of which used to fold the row away
-										mid-sentence. Which line was pressed is worked out from
-										where the pointer was rather than from an overlay, so the
-										words stay selectable and a link in them stays a link.
-
-										Folded, the whole block opens: the title, the line, a
-										picture in it, any of them. There is nothing to lose by
-										pressing in the wrong place when the only thing that can
-										happen is seeing more.
-
-										A picture or a recording is still its own control — the
-										press is caught here rather than bound to the block, so
-										playing something does not fold the row.
-									-->
-								<!-- svelte-ignore a11y_click_events_have_key_events -->
-								<!-- svelte-ignore a11y_no_static_element_interactions -->
-								<div
-									class="todo-notes {hasMore(todo) ? 'todo-notes-foldable' : ''}"
-									onclick={(press) => foldPress(todo, press)}
-									onpointermove={(move) => foldHover(todo, move)}
-									onpointerleave={(leave) =>
-										(leave.currentTarget as HTMLElement).classList.remove('todo-notes-hot')}
-								>
-									{#if hasMore(todo)}
-										<button
-											type="button"
-											class="todo-fold"
-											onclick={(press) => {
-												press.stopPropagation();
-												toggleNotes(todo.id);
-											}}
-											aria-expanded={openNotes.has(todo.id)}
-											aria-label={todo.title}
-										>
-											<Icon
-												name={openNotes.has(todo.id) ? 'chevron-down' : 'chevron-right'}
-												size={12}
-											/>
-										</button>
-									{/if}
-									<Written
-										content={todo.notes}
-										compact
-										oneLine={!openNotes.has(todo.id)}
-										ontruncate={notesTruncate(todo.id)}
-										todos={todoRefs}
-									/>
-								</div>
+								<FoldingNotes content={todo.notes} label={todo.title} todos={todoRefs} />
 							{/if}
 							<!-- Pressing one narrows the list to it, the way an idea's do:
 								     a label is only useful if reading back one of them is a

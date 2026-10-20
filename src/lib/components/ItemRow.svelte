@@ -31,6 +31,8 @@
 	import RowCard from '$lib/components/RowCard.svelte';
 	import TickBox from '$lib/components/TickBox.svelte';
 	import Counter from '$lib/components/Counter.svelte';
+	import Backlinks from '$lib/components/Backlinks.svelte';
+	import FoldingNotes from '$lib/components/FoldingNotes.svelte';
 	import { resolve } from '$app/paths';
 	import { enhance } from '$lib/enhance';
 	import { armed } from '$lib/actions/armed';
@@ -64,6 +66,12 @@
 		usedIn = [],
 		/** The colour an attribute was given, where the screen has the vocabulary. */
 		chipColor,
+		/**
+		 * The notebook it is filed under, where the screen is not that notebook.
+		 * The room shows every thing at once, and a row that does not say whose
+		 * it is leaves "which project was this filament for" to memory.
+		 */
+		notebook = null,
 		onedit,
 		/**
 		 * What a tick does while the browser is offline.
@@ -93,19 +101,23 @@
 		 * Keep a picture's room on this row, picture or not — the list passes
 		 * it when any row in it has one, so the names stay in one column.
 		 */
-		thumb = false
+		thumb = false,
+		/** Labels and actions on lines of their own, for a card — see `RowCard`. */
+		stacked = false
 	}: {
 		item: Shown;
 		currency: Currency;
 		actions: ItemActionNames;
 		usedIn?: { id: number; title: string }[];
 		chipColor?: (key: string, value: string) => string | undefined;
+		notebook?: { id: number; title: string } | null;
 		onedit?: (id: number) => void;
 		onsubmit?: SubmitFunction;
 		ondeletesubmit?: (item: { id: number; name: string }) => SubmitFunction;
 		confirming?: boolean | null;
 		onconfirm?: (id: number | null) => void;
 		thumb?: boolean;
+		stacked?: boolean;
 	} = $props();
 
 	let ownConfirming = $state(false);
@@ -148,7 +160,7 @@
 	</span>
 {/snippet}
 
-<RowCard thumb={thumb ? picture : undefined}>
+<RowCard thumb={thumb ? picture : undefined} {stacked}>
 	{#snippet rail()}
 		{#if item.type === 'someday'}
 			<!--
@@ -221,6 +233,7 @@
 			down the screen. Nothing appears here on a press.
 		-->
 		<span class="flex min-h-5 flex-wrap items-center gap-x-2 gap-y-1">
+			{#if notebook}<Backlinks {notebook} />{/if}
 			{#if usedIn.length > 0}
 				<span class="inline-flex flex-wrap items-center gap-1 align-middle">
 					<Icon name="utensils" size={12} class="text-gray-500" />
@@ -317,9 +330,6 @@
 				? 'text-gray-500 line-through'
 				: 'text-gray-900'}">{item.name}</span
 		>
-		{#if item.notes}
-			<span class="ml-2 text-xs text-gray-500">{item.notes}</span>
-		{/if}
 
 		<!--
 			What this usually costs, beside the thing it costs. It was summed into
@@ -332,6 +342,11 @@
 			</span>
 		{/if}
 	</p>
+	<!-- Markdown, folded to its first line: a pasted link of three hundred
+	     characters used to sit beside the name at full length. -->
+	{#if item.notes}
+		<FoldingNotes content={item.notes} label={item.name} />
+	{/if}
 </RowCard>
 
 <style>

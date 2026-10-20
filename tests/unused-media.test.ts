@@ -21,6 +21,7 @@ let s: {
 	ideas: typeof import('../src/lib/services/ideas');
 	todos: typeof import('../src/lib/services/todos');
 	goals: typeof import('../src/lib/services/goals');
+	reminders: typeof import('../src/lib/services/reminders');
 	people: typeof import('../src/lib/services/people');
 	gallery: typeof import('../src/lib/services/gallery');
 };
@@ -46,6 +47,7 @@ beforeAll(async () => {
 		ideas: await import('../src/lib/services/ideas'),
 		todos: await import('../src/lib/services/todos'),
 		goals: await import('../src/lib/services/goals'),
+		reminders: await import('../src/lib/services/reminders'),
 		people: await import('../src/lib/services/people'),
 		gallery: await import('../src/lib/services/gallery')
 	};
@@ -59,11 +61,16 @@ describe('unused pictures', () => {
 		const inTodo = await picture();
 		const inGoal = await picture();
 		const inAlbum = await picture();
+		const inReminder = await picture();
 
 		s.diary.createEntry(ctx, { content: `a day ![d](/media/${inNote})` });
 		s.ideas.createIdea(ctx, { content: `thought ![b](/media/${inIdea})` });
 		s.todos.createTodo(ctx, { title: 'fix it', notes: `![c](/media/${inTodo})` });
 		s.goals.createGoal(ctx, { title: 'Grow', horizon: 'year', notes: `![g](/media/${inGoal})` });
+		s.reminders.createFreeReminder(ctx, {
+			at: '2099-01-01T09:00',
+			message: `bins ![r](/media/${inReminder})`
+		});
 		const album = s.gallery.createAlbum(ctx, { name: 'Trips' });
 		s.gallery.addToAlbum(ctx, album.id, inAlbum);
 		const person = s.people.createPerson(ctx, { name: 'Ana' });
@@ -78,7 +85,7 @@ describe('unused pictures', () => {
 
 		const ids = unused.unusedPictures(ctx).map((p) => p.id);
 		expect(ids).toContain(loose);
-		for (const used of [inNote, inIdea, inTodo, inGoal, inAlbum, face])
+		for (const used of [inNote, inIdea, inTodo, inGoal, inAlbum, inReminder, face])
 			expect(ids).not.toContain(used);
 		expect(unused.unusedPictureCount(ctx)).toBe(ids.length);
 	});

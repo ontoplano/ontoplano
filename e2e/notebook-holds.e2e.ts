@@ -38,7 +38,7 @@ for (const size of [
 		await makeNotebook(page, 'Kitchen');
 		await makeNotebook(page, 'Just writing', ['notes']);
 
-		await visit(page, '/tasks/todo');
+		await visit(page, '/calendar/todo');
 		await page.getByRole('button', { name: 'New task' }).first().click();
 		const picker = page.locator('[data-picker="notebookId"]').first();
 		await expect(picker).toBeVisible();
