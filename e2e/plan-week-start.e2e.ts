@@ -128,7 +128,8 @@ test('a deleted block does not leave its hover card standing in the grid', async
 	await register(page, testEmail('plan-hover-card'));
 	await visit(page, '/calendar/calendar?view=week');
 
-	const block = page.locator('.ec-event').first();
+	// Not one already over: a click on its status mark ticks it instead.
+	const block = page.locator('.ec-event:not(:has(.ec-event-mark))').first();
 	await expect(block).toBeVisible();
 
 	// Raise the card, the way a pointer crossing the grid does.

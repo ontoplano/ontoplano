@@ -587,7 +587,9 @@ test.describe('saving a block', () => {
 		await register(page, testEmail('plan-save'));
 		await visit(page, '/calendar/calendar');
 
-		const block = page.locator('.ec-event').first();
+		// A block already over carries a status mark, and on a phone-width
+		// column a tap on its middle lands on the mark rather than the block.
+		const block = page.locator('.ec-event:not(:has(.ec-event-mark))').first();
 		await expect(block).toBeVisible();
 		await block.click();
 
