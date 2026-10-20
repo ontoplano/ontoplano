@@ -6,7 +6,13 @@ Money is shown per currency and never added across currencies. No exchange rate 
 
 ## The money overview
 
-- **What is yours:** supported funds per currency, with the number of that currency's accounts that are supported. Custody and reserves are subtracted to give available money, and both subtractions are listed beside it. Payables and receivables stay separate claims rather than being netted into funds.
+### Everything, or only your own money
+
+The Overview has a **Display** switch with two views. **Everything in accounts** shows every account balance and names money held for other people as custody. **My money only** removes custody money from the top figures: it shows **My money** (supported funds less custody), **Set aside** (your own reserves) and **Available** (My money less set aside). The choice is stored for the account and survives reloads; links can also ask for either view with `?view=mine` or `?view=all`.
+
+Currency fields use **USD** only as an example placeholder. The actual currency is still the ledger's own, and no conversion is assumed anywhere.
+
+- **What is yours:** every account balance when Everything is shown; in My money only, supported funds less the custody money held for other people. Reserves are then subtracted to give available money, and the subtraction is named beside it. Payables and receivables stay separate claims rather than being netted into funds.
 - **What you spent this month:** personal spending only. Transfers, cash withdrawals and custody shares are excluded and counted beside the figure, refunds reduce the month they land in, and the unclassified outgoing count is visible so assumed spending is not presented as fact.
 - **What is left against your plans:** each budget for the chosen month shows allocated, spent and remaining.
 - **What the figures cannot say:** an account with no declared opening or an incomplete period is named at the total with the way to fix it. A currency held only in recorded-only accounts shows a recorded subtotal marked as not a balance; nothing on it is labelled available. Ledgers that predate the original-currency column stay readable: their amounts are shown in the account's own currency and marked as an undeclared currency until one is set. Accounts with no declared original currency show no total at all.
