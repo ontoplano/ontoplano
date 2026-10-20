@@ -8,7 +8,7 @@ Money is shown per currency and never added across currencies. No exchange rate 
 
 ### Everything, or only your own money
 
-The Overview has a **Display** switch with two views. **Everything in accounts** shows every account balance and names money held for other people as custody. **My money only** removes custody money from the top figures: it shows **My money** (supported funds less custody), **Set aside** (your own reserves) and **Available** (My money less set aside). The choice is stored for the account and survives reloads; links can also ask for either view with `?view=mine` or `?view=all`.
+The Overview has a **Display** switch with two views. **Everything in accounts** shows every account balance and names money held for other people as custody. **My money only** removes custody money from the top figures: it shows **My money** (supported funds less custody), **Set aside** (your own reserves) and **Available** (My money less set aside). An account with no declared opening is not added to supported funds or My money; it stays separate as recorded-only until an opening is set. The choice is stored for the account and survives reloads; links can also ask for either view with `?view=mine` or `?view=all`. The switch affects the Overview; the other Finance screens keep their own rules.
 
 Currency fields use **USD** only as an example placeholder. The actual currency is still the ledger's own, and no conversion is assumed anywhere.
 
