@@ -333,6 +333,21 @@ test.describe('one account cannot reach another account by id', () => {
 			payloadKey: 'inventoryCategories',
 			create: { path: '/inventory?/createCategory', form: { label: "alice's shelf" } },
 			attack: (id) => ({ path: '/inventory?/renameCategory', form: { id, name: 'taken' } })
+		},
+		{
+			// Money held for somebody, or owed to them: the record most worth
+			// keeping from a stranger in the finance room.
+			name: 'commitment',
+			page: '/finance/commitments',
+			payloadKey: 'commitments',
+			create: {
+				path: '/finance/commitments?/create',
+				form: { heading: "alice's debt", kind: 'payable', currency: 'KES', openingAmount: '10' }
+			},
+			attack: (id) => ({
+				path: '/finance/commitments?/update',
+				form: { id, heading: 'taken', kind: 'payable', currency: 'KES', openingAmount: '0' }
+			})
 		}
 	];
 
@@ -375,6 +390,46 @@ test.describe('one account cannot reach another account by id', () => {
 			await request.dispose();
 		});
 	}
+
+	/**
+	 * A budget needs a ledger in its currency and a category rule before it can
+	 * exist, so it cannot be one row of the table above.
+	 */
+	test('a budget cannot be changed or deleted from another account', async ({ playwright }) => {
+		const request = await playwright.request.newContext({ baseURL: ORIGIN });
+		const ledger = await action(request, alice, '/finance/ledgers?/createLedger', {
+			heading: "alice's account",
+			kind: 'bank',
+			currency: 'KES'
+		});
+		expect(ledger.type, `Alice creating a ledger: ${ledger.message ?? ''}`).toBe('success');
+		const category = await action(request, alice, '/finance/budgets?/createCategory', {
+			categoryName: 'Groceries'
+		});
+		expect(category.type, `Alice creating a category: ${category.message ?? ''}`).toBe('success');
+		const month = new Date().toISOString().slice(0, 7);
+		const created = await action(request, alice, '/finance/budgets?/create', {
+			month,
+			category: 'Groceries',
+			currency: 'KES',
+			amount: '100'
+		});
+		expect(created.type, `Alice creating a budget: ${created.message ?? ''}`).toBe('success');
+		const id = await firstId(request, alice, `/finance/budgets?month=${month}`, 'budgets');
+
+		for (const [verb, form] of [
+			['update', (id: string) => ({ id, amount: '1' })],
+			['delete', (id: string) => ({ id })]
+		] as const) {
+			const stolen = await action(request, mallory, `/finance/budgets?/${verb}`, form(id));
+			const invented = await action(request, mallory, `/finance/budgets?/${verb}`, form('987654'));
+			expect(stolen.status, `budget ${verb}: reaching another account's row`).toBe(404);
+			expect(invented.status, `budget ${verb}: reaching a row that never existed`).toBe(404);
+			expect(stolen.message, `budget ${verb}: the two answers must match`).toBe(invented.message);
+		}
+
+		await request.dispose();
+	});
 
 	/**
 	 * A picture is bytes, so reaching one is reading it rather than editing it.
