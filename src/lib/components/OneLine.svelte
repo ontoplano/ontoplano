@@ -50,6 +50,8 @@
 		dataTour = undefined,
 		disabled = false,
 		readonly = false,
+		/** The id of a form the field belongs to while sitting outside it. */
+		form = undefined,
 		oninput = undefined,
 		onblur = undefined
 	}: {
@@ -66,6 +68,7 @@
 		dataTour?: string;
 		disabled?: boolean;
 		readonly?: boolean;
+		form?: string;
 		oninput?: (event: Event) => void;
 		onblur?: (event: FocusEvent) => void;
 	} = $props();
@@ -106,6 +109,7 @@
 	data-tour={dataTour}
 	{disabled}
 	{readonly}
+	{form}
 	{onblur}
 	aria-label={ariaLabel}
 	rows="1"

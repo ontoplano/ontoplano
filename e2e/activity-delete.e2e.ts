@@ -62,7 +62,7 @@ for (const viewport of [
 
 		// Handed to an activity made on the spot.
 		await page.getByTestId('move-to').selectOption({ label: 'A new activity…' });
-		const newName = dialog(page).locator('input[name=newName]');
+		const newName = dialog(page).locator('[name=newName]');
 		await expect(newName).toBeFocused();
 		await newName.fill('Paperwork');
 		await expect(page.getByTestId('delete-outcome')).toContainText('the new activity');

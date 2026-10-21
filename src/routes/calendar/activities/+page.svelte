@@ -30,7 +30,6 @@
 	import { useWhen } from '$lib/when-context.svelte';
 	import { resolve } from '$app/paths';
 	import { MOVE_TO_NEW } from './move-to';
-	import { autofocus } from '$lib/actions/autofocus';
 
 	const t = useT();
 	const when = useWhen();
@@ -648,14 +647,7 @@
 					</Field>
 					{#if moveTo === MOVE_TO_NEW}
 						<Field label={t('ui.name')} span={8} required>
-							<input
-								type="text"
-								name="newName"
-								form="delete-activity"
-								class="input"
-								required
-								use:autofocus
-							/>
+							<OneLine name="newName" form="delete-activity" required autofocus />
 						</Field>
 						<Field label={t('ui.category')} span={4} required>
 							<select name="newCategoryId" form="delete-activity" required class="select">
