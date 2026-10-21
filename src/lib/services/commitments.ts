@@ -116,12 +116,12 @@ function fields(ctx: Ctx, input: CommitmentInput, before?: Commitment) {
 			: oneOf(input.kind, 'commitment kind', COMMITMENT_KINDS);
 	const currency =
 		input.currency === undefined && before ? before.currency : normaliseCurrency(input.currency);
-	if (!currency) throw new ValidationError('Choose a valid original currency.');
+	if (!currency) throw new ValidationError({ key: 'errors.finance.chooseValidOriginalCurrency' });
 	const openingMinor = minorAmount(
 		input.openingMinor === undefined ? (before?.openingMinor ?? 0) : input.openingMinor,
 		'opening'
 	);
-	if (openingMinor < 0) throw new ValidationError('An opening stock cannot be negative.');
+	if (openingMinor < 0) throw new ValidationError({ key: 'errors.finance.openingStockNegative' });
 	const personId =
 		input.personId === undefined
 			? (before?.personId ?? null)
@@ -180,9 +180,7 @@ function assertHistory(ctx: Ctx, id: number, opening: number): void {
 		.all()) {
 		balance = minorAmount(balance + entry.amount, 'running balance');
 		if (balance < 0)
-			throw new ValidationError(
-				'The commitment’s running balance cannot become negative. Record an explicit increase before overpaying.'
-			);
+			throw new ValidationError({ key: 'errors.finance.commitmentsRunningBalanceBecomeNegative' });
 	}
 }
 
@@ -204,12 +202,10 @@ export function updateCommitment(ctx: Ctx, id: number, input: CommitmentInput): 
 			(before.entryCount || allocated) &&
 			(next.kind !== before.kind || next.currency !== before.currency)
 		)
-			throw new ValidationError(
-				'Kind and currency cannot change while history or allocations depend on them.'
-			);
+			throw new ValidationError({ key: 'errors.finance.kindCurrencyChangeHistoryAllocations' });
 		assertHistory(ctx, id, next.openingMinor);
 		if (before.status === 'settled' && next.openingMinor !== before.openingMinor)
-			throw new ValidationError('Reopen this commitment before correcting its opening.');
+			throw new ValidationError({ key: 'errors.finance.reopenCommitmentCorrectingOpening' });
 		tx.update(financeCommitments)
 			.set({ ...next, updatedAt: stamp(ctx) })
 			.where(and(eq(financeCommitments.userId, ctx.userId), eq(financeCommitments.id, id)))
@@ -275,8 +271,7 @@ export function addCommitmentEntry(ctx: Ctx, input: EntryInput) {
 	const id = num(input.commitmentId, 'commitment', { int: true, min: 1 });
 	const occurredOn = civilDay(input.occurredOn);
 	const amountMinor = minorAmount(input.amountMinor);
-	if (!amountMinor)
-		throw new ValidationError('An entry must change the stock by a nonzero amount.');
+	if (!amountMinor) throw new ValidationError({ key: 'errors.finance.entryChangeStockByNonzero' });
 	const transactionId =
 		input.transactionId === undefined || input.transactionId === null || input.transactionId === ''
 			? null
@@ -285,7 +280,7 @@ export function addCommitmentEntry(ctx: Ctx, input: EntryInput) {
 	return db.transaction((tx) => {
 		const stock = getCommitment(ctx, id);
 		if (stock.status !== 'open')
-			throw new ValidationError('Reopen the commitment before adding entries.');
+			throw new ValidationError({ key: 'errors.finance.reopenCommitmentAddingEntries' });
 		if (transactionId !== null) {
 			const { movement, currency } = payment(ctx, transactionId);
 			if (
@@ -301,13 +296,11 @@ export function addCommitmentEntry(ctx: Ctx, input: EntryInput) {
 					)
 					.get()
 			)
-				throw new ConflictError(
-					'This bank movement already changes a stock. Reverse its entry before reusing it.'
-				);
+				throw new ConflictError({ key: 'errors.finance.bankMovementAlreadyChangesStock' });
 			if (!currency || stock.currency !== currency)
-				throw new ValidationError('A stock and its payment must share a known currency.');
+				throw new ValidationError({ key: 'errors.finance.stockPaymentShareKnownCurrency' });
 			if (movement.occurredOn !== occurredOn)
-				throw new ValidationError('A linked entry keeps its bank movement’s date.');
+				throw new ValidationError({ key: 'errors.finance.linkedEntryKeepsBankMovements' });
 			if (
 				tx
 					.select({ id: financeCommitmentEntries.id })
@@ -321,7 +314,7 @@ export function addCommitmentEntry(ctx: Ctx, input: EntryInput) {
 					)
 					.get()
 			)
-				throw new ConflictError('This movement already has an entry in this commitment.');
+				throw new ConflictError({ key: 'errors.finance.movementAlreadyHasEntryCommitment' });
 			const parts = tx
 				.select()
 				.from(financeTransactionAllocations)
@@ -337,9 +330,7 @@ export function addCommitmentEntry(ctx: Ctx, input: EntryInput) {
 					.filter((part) => part.kind === 'custody' && part.commitmentId === id)
 					.reduce((sum, part) => minorAmount(sum + part.amountMinor), 0);
 				if (share !== amountMinor)
-					throw new ValidationError(
-						'A custody entry must match its retained allocation exactly. Split the movement first.'
-					);
+					throw new ValidationError({ key: 'errors.finance.custodyEntryMatchRetainedAllocation' });
 			} else if (stock.kind === 'reserve') {
 				const kind = movement.kind ?? (movement.amountCents < 0 ? 'expense' : 'income');
 				if (
@@ -348,7 +339,7 @@ export function addCommitmentEntry(ctx: Ctx, input: EntryInput) {
 					amountMinor !== movement.amountCents ||
 					amountMinor >= 0
 				)
-					throw new ValidationError('A reserve is consumed by one whole personal expense or fee.');
+					throw new ValidationError({ key: 'errors.finance.reserveConsumedByWholePersonal' });
 			} else if (
 				movement.amountCents <= 0 ||
 				amountMinor !== -movement.amountCents ||
@@ -356,9 +347,9 @@ export function addCommitmentEntry(ctx: Ctx, input: EntryInput) {
 				movement.groupId ||
 				![null, 'income'].includes(movement.kind)
 			) {
-				throw new ValidationError(
-					'A receivable settlement needs one incoming repayment in its original currency.'
-				);
+				throw new ValidationError({
+					key: 'errors.finance.receivableSettlementNeedsIncomingRepayment'
+				});
 			}
 		}
 		const entry = tx
@@ -411,13 +402,14 @@ export function closeCommitment(
 	db.transaction((tx) => {
 		const stock = getCommitment(ctx, id);
 		if (stock.status !== 'open')
-			throw new ValidationError('Reopen the commitment before closing it.');
+			throw new ValidationError({ key: 'errors.finance.reopenCommitmentClosing' });
 		if (stock.balanceMinor) {
 			const note = optionalStr(input.writeOffNote, 'write-off note', { max: MAX_NOTE });
 			if (!note)
-				throw new ValidationError(
-					`The outstanding balance is ${formatMoney(stock.balanceMinor, stock.currency)}. An explicit write-off note is required.`
-				);
+				throw new ValidationError({
+					key: 'errors.finance.writeOffNeedsNote',
+					values: { balance: formatMoney(stock.balanceMinor, stock.currency) }
+				});
 			addCommitmentEntry(ctx, {
 				commitmentId: id,
 				occurredOn:
@@ -461,7 +453,7 @@ export function deleteCommitment(
 			return;
 		}
 		if (stock.status !== 'archived')
-			throw new ValidationError('Archive this commitment before permanently deleting it.');
+			throw new ValidationError({ key: 'errors.finance.archiveCommitmentPermanentlyDeleting' });
 		if (
 			linked ||
 			tx
@@ -476,9 +468,9 @@ export function deleteCommitment(
 				)
 				.get()
 		)
-			throw new ValidationError(
-				'Unlink the movement evidence before permanently deleting this commitment.'
-			);
+			throw new ValidationError({
+				key: 'errors.finance.unlinkMovementEvidencePermanentlyDeleting'
+			});
 		tx.delete(financeCommitments)
 			.where(and(eq(financeCommitments.userId, ctx.userId), eq(financeCommitments.id, id)))
 			.run();
@@ -511,7 +503,7 @@ export function settleCommitment(
 		const stock = getCommitment(ctx, id);
 		const { movement } = payment(ctx, transactionId);
 		if (stock.kind === 'reserve')
-			throw new ValidationError('Use reserve consumption for an earmark.');
+			throw new ValidationError({ key: 'errors.finance.useReserveConsumptionEarmark' });
 		if (
 			db
 				.select({ id: financeCommitmentEntries.id })
@@ -524,11 +516,12 @@ export function settleCommitment(
 				)
 				.get()
 		)
-			throw new ConflictError('This movement already settles a stock.');
+			throw new ConflictError({ key: 'errors.finance.movementAlreadySettlesStock' });
 		if (Math.abs(movement.amountCents) > stock.balanceMinor)
-			throw new ValidationError(
-				`The outstanding balance is ${formatMoney(stock.balanceMinor, stock.currency)}. Record an explicit increase before overpaying.`
-			);
+			throw new ValidationError({
+				key: 'errors.finance.settlementExceedsBalance',
+				values: { balance: formatMoney(stock.balanceMinor, stock.currency) }
+			});
 		if (stock.kind === 'receivable') {
 			return addCommitmentEntry(ctx, {
 				commitmentId: id,
@@ -539,9 +532,7 @@ export function settleCommitment(
 			});
 		}
 		if (movement.amountCents >= 0)
-			throw new ValidationError(
-				'A settlement uses an outgoing payment. Use a custody split to record received funds.'
-			);
+			throw new ValidationError({ key: 'errors.finance.settlementUsesOutgoingPaymentUse' });
 		splitMovement(ctx, {
 			id: transactionId,
 			allocations: [
@@ -560,7 +551,7 @@ export function consumeReserve(
 		const id = num(input.commitmentId, 'commitment', { int: true, min: 1 });
 		const transactionId = num(input.transactionId, 'movement', { int: true, min: 1 });
 		if (getCommitment(ctx, id).kind !== 'reserve')
-			throw new ValidationError('Choose a reserve to consume.');
+			throw new ValidationError({ key: 'errors.finance.chooseReserveConsume' });
 		const { movement } = payment(ctx, transactionId);
 		if (
 			db
@@ -574,7 +565,7 @@ export function consumeReserve(
 				)
 				.get()
 		)
-			throw new ConflictError('This expense already consumes a stock.');
+			throw new ConflictError({ key: 'errors.finance.expenseAlreadyConsumesStock' });
 		return addCommitmentEntry(ctx, {
 			commitmentId: id,
 			transactionId,

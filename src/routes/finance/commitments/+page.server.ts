@@ -53,7 +53,7 @@ export const load = ({ locals, url }: IsolatedEvent) => {
 function amount(raw: unknown, currency: string | null): number {
 	const result = parseSignedMoney(raw, currency);
 	if (result === null)
-		throw new ValidationError('Enter an exact signed amount in the commitment currency.');
+		throw new ValidationError({ key: 'errors.finance.enterExactSignedAmountCommitment' });
 	return result;
 }
 

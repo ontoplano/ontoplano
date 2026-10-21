@@ -396,7 +396,9 @@ test('a budget category follows a rename and refuses to be orphaned by a delete'
 		currency: 'KES',
 		amountMinor: 10000
 	});
-	expect(() => statements.deleteRule(ctx, rule.id)).toThrow(/budget still uses the category/i);
+	expect(refusal(() => statements.deleteRule(ctx, rule.id))).toMatch(
+		/budget still uses the category/i
+	);
 	expect(statements.listRules(ctx).some((r) => r.id === rule.id)).toBe(true);
 	const renamed = statements.updateRule(ctx, rule.id, { name: 'Renamed budgeted category' });
 	expect(renamed.name).toBe('Renamed budgeted category');

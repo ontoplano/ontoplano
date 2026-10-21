@@ -1,5 +1,6 @@
 import { afterAll, expect, test } from 'vitest';
 import { makeDatabase, OWNER, STRANGER, seedAccounts } from './helpers/db';
+import { refusal } from './helpers/refusal';
 
 const database = makeDatabase();
 seedAccounts(database.path);
@@ -116,14 +117,18 @@ test('closing locks the opening, and reversing an entry reopens a settled or arc
 	});
 	stocks.closeCommitment(ctx, stock.id, { writeOffNote: 'Synthetic settled-state write-off' });
 	const writeOff = stocks.listCommitmentEntries(ctx, stock.id)[0];
-	expect(() => stocks.updateCommitment(ctx, stock.id, { openingMinor: 6000 })).toThrow(/reopen/i);
-	expect(() =>
-		stocks.addCommitmentEntry(ctx, {
-			commitmentId: stock.id,
-			occurredOn: '2026-10-18',
-			amountMinor: 1
-		})
-	).toThrow(/reopen/i);
+	expect(refusal(() => stocks.updateCommitment(ctx, stock.id, { openingMinor: 6000 }))).toMatch(
+		/reopen/i
+	);
+	expect(
+		refusal(() =>
+			stocks.addCommitmentEntry(ctx, {
+				commitmentId: stock.id,
+				occurredOn: '2026-10-18',
+				amountMinor: 1
+			})
+		)
+	).toMatch(/reopen/i);
 
 	// Reversing the write-off is a history edit, so the settled record reopens.
 	stocks.deleteCommitmentEntry(ctx, writeOff.id);
@@ -287,9 +292,11 @@ test('a repeated settlement is a conflict and overpayment names the outstanding 
 		amountCents: -901,
 		description: 'Too much'
 	});
-	expect(() =>
-		stocks.settleCommitment(ctx, { commitmentId: stock.id, transactionId: overpay.id })
-	).toThrow(/KES.*9[.,]00/);
+	expect(
+		refusal(() =>
+			stocks.settleCommitment(ctx, { commitmentId: stock.id, transactionId: overpay.id })
+		)
+	).toMatch(/KES.*9[.,]00/);
 });
 
 test('account export/import remaps stock, person, movement and allocation links; deletion leaves the other owner intact', async () => {

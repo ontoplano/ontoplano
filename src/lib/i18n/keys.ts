@@ -486,6 +486,69 @@ export type MessageKey =
 	| 'errors.familyInvite.noAccountHereUses'
 	| 'errors.familyInvite.thisPlanCoversOneAccount'
 	| 'errors.familyInvite.thisPlanIsNotActive'
+	| 'errors.finance.archiveCommitmentPermanentlyDeleting'
+	| 'errors.finance.balanceCheckAlreadyExistsLedger'
+	| 'errors.finance.bankExportUsesTwoDecimal'
+	| 'errors.finance.bankMovementAlreadyChangesStock'
+	| 'errors.finance.beforeOpening'
+	| 'errors.finance.budgetAlreadyExistsMonthCategory'
+	| 'errors.finance.budgetAmountNegative'
+	| 'errors.finance.budgetChangedReadAgainSaving'
+	| 'errors.finance.categoryGone'
+	| 'errors.finance.categoryHasBudget'
+	| 'errors.finance.chooseAtMost120Months'
+	| 'errors.finance.chooseOpenCustodyPayableCommitment'
+	| 'errors.finance.chooseOriginalCurrencyUnlikeMoney'
+	| 'errors.finance.chooseReserveConsume'
+	| 'errors.finance.chooseValidCurrencyCode'
+	| 'errors.finance.chooseValidOriginalCurrency'
+	| 'errors.finance.combinedNoteTooLong'
+	| 'errors.finance.commitmentsRunningBalanceBecomeNegative'
+	| 'errors.finance.currencyChangeLedgerHoldsMovements'
+	| 'errors.finance.custodyEntryMatchRetainedAllocation'
+	| 'errors.finance.custodyExcludedFromPersonalCategories'
+	| 'errors.finance.custodyPartMovementShareKnown'
+	| 'errors.finance.eachSplitPartNameKind'
+	| 'errors.finance.enterExactAmountLedgerCurrency'
+	| 'errors.finance.enterExactBudgetAmountOriginal'
+	| 'errors.finance.enterExactOpeningAmountLedger'
+	| 'errors.finance.enterExactSignedAmountCommitment'
+	| 'errors.finance.enterExactSignedPartLedger'
+	| 'errors.finance.enterExactStatementClosingAmount'
+	| 'errors.finance.entryChangeStockByNonzero'
+	| 'errors.finance.everySplitPartHaveMovements'
+	| 'errors.finance.expenseAlreadyConsumesStock'
+	| 'errors.finance.fileTooLong'
+	| 'errors.finance.firstDayNotAfterLast'
+	| 'errors.finance.kindCurrencyChangeHistoryAllocations'
+	| 'errors.finance.ledgerCurrencyChangedReadingFile'
+	| 'errors.finance.ledgerHasLinkedMovements'
+	| 'errors.finance.lineRejected'
+	| 'errors.finance.lineRejectedSaving'
+	| 'errors.finance.linkedEntryKeepsBankMovements'
+	| 'errors.finance.movementAlreadyHasEntryCommitment'
+	| 'errors.finance.movementAlreadySettlesStock'
+	| 'errors.finance.movementHasSplitOrEntry'
+	| 'errors.finance.noLedgerInCurrency'
+	| 'errors.finance.onlyCustodyPartsMayName'
+	| 'errors.finance.openingStockNegative'
+	| 'errors.finance.receivableSettlementNeedsIncomingRepayment'
+	| 'errors.finance.reopenCommitmentAddingEntries'
+	| 'errors.finance.reopenCommitmentClosing'
+	| 'errors.finance.reopenCommitmentCorrectingOpening'
+	| 'errors.finance.reserveConsumedByWholePersonal'
+	| 'errors.finance.reverseLinkedCommitmentEntryRemoving'
+	| 'errors.finance.settlementExceedsBalance'
+	| 'errors.finance.settlementUsesOutgoingPaymentUse'
+	| 'errors.finance.splitDoesNotAddUp'
+	| 'errors.finance.splitNeedsBetween1100'
+	| 'errors.finance.stockPaymentShareKnownCurrency'
+	| 'errors.finance.unlinkMovementEvidencePermanentlyDeleting'
+	| 'errors.finance.unlinkTransferClassifyMovementSplitting'
+	| 'errors.finance.unreadableSplitPart'
+	| 'errors.finance.useReserveConsumptionEarmark'
+	| 'errors.finance.writeOffNeedsNote'
+	| 'errors.finance.zeroMovementSplit'
 	| 'errors.gallery.anAlbumByThatName'
 	| 'errors.goals.invalidColorFormat'
 	| 'errors.goals.invalidDate'
@@ -4537,6 +4600,19 @@ export interface MessageValuesFor {
 	};
 	'errors.account.thatNameIsTooLong': { max: string | number };
 	'errors.audio.notesTooLong': { limit: string | number };
+	'errors.finance.beforeOpening': { earliest: string | number; opening: string | number };
+	'errors.finance.categoryGone': { category: string | number };
+	'errors.finance.categoryHasBudget': { name: string | number };
+	'errors.finance.combinedNoteTooLong': { max: string | number };
+	'errors.finance.fileTooLong': { max: string | number };
+	'errors.finance.ledgerHasLinkedMovements': { ids: string | number };
+	'errors.finance.lineRejected': { line: string | number };
+	'errors.finance.lineRejectedSaving': { line: string | number };
+	'errors.finance.movementHasSplitOrEntry': { id: string | number };
+	'errors.finance.noLedgerInCurrency': { currency: string | number };
+	'errors.finance.settlementExceedsBalance': { balance: string | number };
+	'errors.finance.splitDoesNotAddUp': { difference: string | number; total: string | number };
+	'errors.finance.writeOffNeedsNote': { balance: string | number };
 	'errors.notebooks.hasNoBillsTab': { notebook: string | number };
 	'errors.notebooks.hasNoGoalsTab': { notebook: string | number };
 	'errors.notebooks.hasNoHabitsTab': { notebook: string | number };

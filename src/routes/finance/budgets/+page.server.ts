@@ -72,7 +72,7 @@ export const load = ({ locals, url }: IsolatedEvent) => {
 function amount(raw: unknown, currency: string) {
 	const value = parseSignedMoney(raw, currency);
 	if (value === null)
-		throw new ValidationError('Enter an exact budget amount in its original currency.');
+		throw new ValidationError({ key: 'errors.finance.enterExactBudgetAmountOriginal' });
 	return value;
 }
 

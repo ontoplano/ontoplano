@@ -14,7 +14,7 @@
 	import OneLine from '$lib/components/OneLine.svelte';
 	import { LEDGER_KINDS, LEDGER_KIND_LABELS } from '$lib/services/ledgers';
 	import { useT } from '$lib/i18n';
-	import { minorUnits } from '$lib/money';
+	import { DEFAULT_CURRENCY, minorUnits } from '$lib/money';
 
 	const t = useT();
 
@@ -76,7 +76,7 @@
 			class="input"
 			value={editing?.currency ?? ''}
 			maxlength={3}
-			placeholder="USD"
+			placeholder={DEFAULT_CURRENCY}
 		/>
 	</Field>
 	<Field

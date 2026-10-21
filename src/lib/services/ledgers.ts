@@ -85,7 +85,7 @@ function fields(ctx: Ctx, input: LedgerInput, fallback?: Ledger) {
 				? null
 				: normaliseCurrency(input.currency);
 	if (input.currency !== undefined && input.currency !== null && input.currency !== '' && !currency)
-		throw new ValidationError('Choose a valid currency code.');
+		throw new ValidationError({ key: 'errors.finance.chooseValidCurrencyCode' });
 	if (fallback?.currency && currency !== fallback.currency) {
 		const check = db
 			.select({ id: financeBalanceChecks.id })
@@ -98,9 +98,7 @@ function fields(ctx: Ctx, input: LedgerInput, fallback?: Ledger) {
 			)
 			.get();
 		if (fallback.count > 0 || fallback.openingOn || check)
-			throw new ValidationError(
-				'Currency cannot change while this ledger holds movements, a declared opening or statement checks. No conversion is performed.'
-			);
+			throw new ValidationError({ key: 'errors.finance.currencyChangeLedgerHoldsMovements' });
 	}
 	return {
 		name: str(input.name ?? fallback?.name, 'name', { max: MAX_LEDGER_NAME_LENGTH }),
@@ -347,10 +345,7 @@ export function recordBalanceCheck(
 			})
 			.returning({ id: financeBalanceChecks.id })
 			.get();
-		if (!made)
-			throw new ConflictError(
-				'A balance check already exists for this ledger and date. Delete it explicitly before recording a correction.'
-			);
+		if (!made) throw new ConflictError({ key: 'errors.finance.balanceCheckAlreadyExistsLedger' });
 		return listBalanceChecks(ctx, ledgerId).find((check) => check.id === made.id)!;
 	});
 }
@@ -437,9 +432,10 @@ export function deleteLedger(ctx: Ctx, id: number): void {
 				or exists (select 1 from finance_commitment_entries e where e.user_id = ${ctx.userId} and e.transaction_id = t.id)
 			)`);
 		if (linked.length)
-			throw new ValidationError(
-				`Reverse linked entries and unsplit movements ${linked.map((row) => row.id).join(', ')} before deleting this ledger.`
-			);
+			throw new ValidationError({
+				key: 'errors.finance.ledgerHasLinkedMovements',
+				values: { ids: linked.map((row) => row.id).join(', ') }
+			});
 		tx.delete(financeTransactions)
 			.where(and(eq(financeTransactions.ledgerId, id), eq(financeTransactions.userId, ctx.userId)))
 			.run();

@@ -139,19 +139,19 @@ export const actions = {
 		const ledger = getLedger(ctx, movement.ledgerId);
 		const parts = form.getAll('partData');
 		if (!parts.length || parts.length > 100)
-			throw new ValidationError('A split needs between 1 and 100 parts.');
+			throw new ValidationError({ key: 'errors.finance.splitNeedsBetween1100' });
 		const allocations = parts.map((raw) => {
 			let part;
 			try {
 				part = JSON.parse(String(raw));
 			} catch {
-				throw new ValidationError('Unreadable split part.');
+				throw new ValidationError({ key: 'errors.finance.unreadableSplitPart' });
 			}
 			if (!part || typeof part !== 'object' || Array.isArray(part))
-				throw new ValidationError('Unreadable split part.');
+				throw new ValidationError({ key: 'errors.finance.unreadableSplitPart' });
 			const amountMinor = parseSignedMoney(part.amount, ledger.currency);
 			if (amountMinor === null)
-				throw new ValidationError('Enter an exact signed part in the ledger currency.');
+				throw new ValidationError({ key: 'errors.finance.enterExactSignedPartLedger' });
 			return {
 				kind: part.kind,
 				amountMinor,
@@ -183,9 +183,7 @@ export const actions = {
 		const ledger = getLedger(ctx, Number(form.get('ledgerId')));
 		const amount = parseSignedMoney(form.get('observedAmount'), ledger.currency);
 		if (amount === null)
-			throw new ValidationError(
-				'Enter an exact statement closing amount in the ledger currency, or whole minor units when unspecified.'
-			);
+			throw new ValidationError({ key: 'errors.finance.enterExactStatementClosingAmount' });
 		recordBalanceCheck(ctx, {
 			ledgerId: ledger.id,
 			asOf: form.get('asOf'),
@@ -231,9 +229,7 @@ export const actions = {
 		const ledger = getLedger(ctx, Number(form.get('ledgerId')));
 		const amount = parseSignedMoney(form.get('amount'), ledger.currency);
 		if (amount === null)
-			throw new ValidationError(
-				'Enter an exact amount in the ledger currency, or whole minor units when unspecified.'
-			);
+			throw new ValidationError({ key: 'errors.finance.enterExactAmountLedgerCurrency' });
 		recordMovement(ctx, {
 			ledgerId: form.get('ledgerId'),
 			occurredOn: form.get('occurredOn'),
@@ -258,9 +254,7 @@ export const actions = {
 							const ledger = getLedger(ctx, Number(form.get('ledgerId')));
 							const cents = parseSignedMoney(amount, ledger.currency);
 							if (cents === null)
-								throw new ValidationError(
-									'Enter an exact amount in the ledger currency, or whole minor units when unspecified.'
-								);
+								throw new ValidationError({ key: 'errors.finance.enterExactAmountLedgerCurrency' });
 							return form.get('direction') === 'in' ? Math.abs(cents) : -Math.abs(cents);
 						})()
 		});

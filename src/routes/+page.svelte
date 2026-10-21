@@ -1523,7 +1523,7 @@
 										{formatMoney(
 											minorAmount(
 												picture.budgets.reduce((total, budget) => total + budget.remainingMinor, 0),
-												'budget left'
+												'remaining'
 											),
 											picture.currency
 										)}

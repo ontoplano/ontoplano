@@ -1,5 +1,6 @@
 import { afterAll, expect, test } from 'vitest';
 import { makeDatabase, OWNER, STRANGER, seedAccounts } from './helpers/db';
+import { refusal } from './helpers/refusal';
 
 const database = makeDatabase();
 seedAccounts(database.path);
@@ -112,7 +113,9 @@ test('retained evidence blocks mutation and deletion; reverse the entry then uns
 		statements.classifyMovements(ctx, { ids: [movement.id], kind: 'transfer' })
 	).toThrow();
 	expect(() => statements.deleteMovement(ctx, movement.id)).toThrow();
-	expect(() => ledgerService.deleteLedger(ctx, ledger.id)).toThrow(new RegExp(String(movement.id)));
+	expect(refusal(() => ledgerService.deleteLedger(ctx, ledger.id))).toMatch(
+		new RegExp(String(movement.id))
+	);
 	expect(() => statements.unsplitMovement(ctx, movement.id)).toThrow();
 	stocks.deleteCommitmentEntry(ctx, stocks.listCommitmentEntries(ctx, commitment.id)[0].id);
 	statements.unsplitMovement(ctx, movement.id);
@@ -175,15 +178,17 @@ test('partial and competing settlements cannot overspend a commitment or change 
 test('custody parts for one stock become one entry, and a split line still accepts a refund link', () => {
 	const { ledger, commitment, movement } = fixture(-1000, 10000);
 	const long = 'x'.repeat(1500);
-	expect(() =>
-		statements.splitMovement(ctx, {
-			id: movement.id,
-			allocations: [
-				{ kind: 'custody', amountMinor: -400, commitmentId: commitment.id, note: long },
-				{ kind: 'custody', amountMinor: -600, commitmentId: commitment.id, note: long }
-			]
-		})
-	).toThrow(/combined note/i);
+	expect(
+		refusal(() =>
+			statements.splitMovement(ctx, {
+				id: movement.id,
+				allocations: [
+					{ kind: 'custody', amountMinor: -400, commitmentId: commitment.id, note: long },
+					{ kind: 'custody', amountMinor: -600, commitmentId: commitment.id, note: long }
+				]
+			})
+		)
+	).toMatch(/combined note/i);
 	expect(statements.listMovements(ctx, { ledgerId: ledger.id })[0].allocations).toEqual([]);
 
 	statements.splitMovement(ctx, {

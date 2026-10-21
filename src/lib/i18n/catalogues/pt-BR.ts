@@ -541,6 +541,111 @@ export const messages: Catalogue = {
 	'errors.familyInvite.noAccountHereUses': 'Nenhuma conta aqui usa esse endereço',
 	'errors.familyInvite.thisPlanCoversOneAccount': 'Esse plano cobre uma conta',
 	'errors.familyInvite.thisPlanIsNotActive': 'Esse plano não está ativo',
+	'errors.finance.archiveCommitmentPermanentlyDeleting':
+		'Archive this commitment before permanently deleting it.',
+	'errors.finance.balanceCheckAlreadyExistsLedger':
+		'A balance check already exists for this ledger and date. Delete it explicitly before recording a correction.',
+	'errors.finance.bankExportUsesTwoDecimal':
+		'This bank export uses two decimal places. Use the original-currency generic CSV format for this ledger.',
+	'errors.finance.bankMovementAlreadyChangesStock':
+		'This bank movement already changes a stock. Reverse its entry before reusing it.',
+	'errors.finance.beforeOpening':
+		'The earliest movement, {earliest}, is before the opening date {opening}. Nothing was imported.',
+	'errors.finance.budgetAlreadyExistsMonthCategory':
+		'A budget already exists for this month, category and currency.',
+	'errors.finance.budgetAmountNegative': 'A budget amount cannot be negative.',
+	'errors.finance.budgetChangedReadAgainSaving':
+		'This budget changed. Read it again before saving.',
+	'errors.finance.categoryGone':
+		'Category {category} no longer exists. Choose an existing category rule.',
+	'errors.finance.categoryHasBudget':
+		'A budget still uses the category “{name}”. Rename or delete that budget first.',
+	'errors.finance.chooseAtMost120Months': 'Choose at most 120 months.',
+	'errors.finance.chooseOpenCustodyPayableCommitment':
+		'Choose an open custody or payable commitment.',
+	'errors.finance.chooseOriginalCurrencyUnlikeMoney':
+		'Choose one original currency; unlike money cannot be combined.',
+	'errors.finance.chooseReserveConsume': 'Choose a reserve to consume.',
+	'errors.finance.chooseValidCurrencyCode': 'Choose a valid currency code.',
+	'errors.finance.chooseValidOriginalCurrency': 'Choose a valid original currency.',
+	'errors.finance.combinedNoteTooLong':
+		'The combined note for one stock must be {max} characters or fewer.',
+	'errors.finance.commitmentsRunningBalanceBecomeNegative':
+		'The commitment’s running balance cannot become negative. Record an explicit increase before overpaying.',
+	'errors.finance.currencyChangeLedgerHoldsMovements':
+		'Currency cannot change while this ledger holds movements, a declared opening or statement checks. No conversion is performed.',
+	'errors.finance.custodyEntryMatchRetainedAllocation':
+		'A custody entry must match its retained allocation exactly. Split the movement first.',
+	'errors.finance.custodyExcludedFromPersonalCategories':
+		'Custody is excluded from personal categories.',
+	'errors.finance.custodyPartMovementShareKnown':
+		'A custody part and its movement must share a known currency.',
+	'errors.finance.eachSplitPartNameKind': 'Each split part must name its kind and amount.',
+	'errors.finance.enterExactAmountLedgerCurrency':
+		'Enter an exact amount in the ledger currency, or whole minor units when unspecified.',
+	'errors.finance.enterExactBudgetAmountOriginal':
+		'Enter an exact budget amount in its original currency.',
+	'errors.finance.enterExactOpeningAmountLedger':
+		'Enter an exact opening amount in the ledger currency, or whole minor units when unspecified.',
+	'errors.finance.enterExactSignedAmountCommitment':
+		'Enter an exact signed amount in the commitment currency.',
+	'errors.finance.enterExactSignedPartLedger': 'Enter an exact signed part in the ledger currency.',
+	'errors.finance.enterExactStatementClosingAmount':
+		'Enter an exact statement closing amount in the ledger currency, or whole minor units when unspecified.',
+	'errors.finance.entryChangeStockByNonzero': 'An entry must change the stock by a nonzero amount.',
+	'errors.finance.everySplitPartHaveMovements':
+		'Every split part must have the movement’s sign and be nonzero.',
+	'errors.finance.expenseAlreadyConsumesStock': 'This expense already consumes a stock.',
+	'errors.finance.fileTooLong': 'That file exceeds {max} movements. Nothing was imported.',
+	'errors.finance.firstDayNotAfterLast': 'The first day must not be after the last day.',
+	'errors.finance.kindCurrencyChangeHistoryAllocations':
+		'Kind and currency cannot change while history or allocations depend on them.',
+	'errors.finance.ledgerCurrencyChangedReadingFile':
+		'Ledger currency changed while reading the file. Nothing was imported; retry with the current currency.',
+	'errors.finance.ledgerHasLinkedMovements':
+		'Reverse linked entries and unsplit movements {ids} before deleting this ledger.',
+	'errors.finance.lineRejected':
+		'Line {line} was rejected: invalid date, amount or description. Nothing was imported.',
+	'errors.finance.lineRejectedSaving':
+		'Line {line} was rejected while saving. Nothing was imported.',
+	'errors.finance.linkedEntryKeepsBankMovements': 'A linked entry keeps its bank movement’s date.',
+	'errors.finance.movementAlreadyHasEntryCommitment':
+		'This movement already has an entry in this commitment.',
+	'errors.finance.movementAlreadySettlesStock': 'This movement already settles a stock.',
+	'errors.finance.movementHasSplitOrEntry':
+		'Movement {id} has a split or settlement entry. Reverse linked entries and unsplit first.',
+	'errors.finance.noLedgerInCurrency':
+		'No ledger uses {currency}. Add a ledger in that original currency first.',
+	'errors.finance.onlyCustodyPartsMayName': 'Only custody parts may name a commitment.',
+	'errors.finance.openingStockNegative': 'An opening stock cannot be negative.',
+	'errors.finance.receivableSettlementNeedsIncomingRepayment':
+		'A receivable settlement needs one incoming repayment in its original currency.',
+	'errors.finance.reopenCommitmentAddingEntries': 'Reopen the commitment before adding entries.',
+	'errors.finance.reopenCommitmentClosing': 'Reopen the commitment before closing it.',
+	'errors.finance.reopenCommitmentCorrectingOpening':
+		'Reopen this commitment before correcting its opening.',
+	'errors.finance.reserveConsumedByWholePersonal':
+		'A reserve is consumed by one whole personal expense or fee.',
+	'errors.finance.reverseLinkedCommitmentEntryRemoving':
+		'Reverse the linked commitment entry before removing this split.',
+	'errors.finance.settlementExceedsBalance':
+		'The outstanding balance is {balance}. Record an explicit increase before overpaying.',
+	'errors.finance.settlementUsesOutgoingPaymentUse':
+		'A settlement uses an outgoing payment. Use a custody split to record received funds.',
+	'errors.finance.splitDoesNotAddUp':
+		'Split parts must add to {total} minor units; difference {difference}.',
+	'errors.finance.splitNeedsBetween1100': 'A split needs between 1 and 100 parts.',
+	'errors.finance.stockPaymentShareKnownCurrency':
+		'A stock and its payment must share a known currency.',
+	'errors.finance.unlinkMovementEvidencePermanentlyDeleting':
+		'Unlink the movement evidence before permanently deleting this commitment.',
+	'errors.finance.unlinkTransferClassifyMovementSplitting':
+		'Unlink the transfer or classify this movement before splitting it.',
+	'errors.finance.unreadableSplitPart': 'Unreadable split part.',
+	'errors.finance.useReserveConsumptionEarmark': 'Use reserve consumption for an earmark.',
+	'errors.finance.writeOffNeedsNote':
+		'The outstanding balance is {balance}. An explicit write-off note is required.',
+	'errors.finance.zeroMovementSplit': 'A zero movement cannot be split.',
 	'errors.gallery.anAlbumByThatName': 'Já existe um álbum com esse nome.',
 	'errors.goals.invalidColorFormat': 'Cor inválida',
 	'errors.goals.invalidDate': 'Data inválida',

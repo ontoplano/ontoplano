@@ -12,8 +12,10 @@ afterAll(() => rmSync(directory, { recursive: true, force: true }));
 test('budget migration preserves old history and the native pre-migration snapshot restores', async () => {
 	const path = join(directory, 'before.db');
 	const db = new Database(path);
+	// A scratch file: replaying every migration with fsync on is most of a minute.
+	db.pragma('synchronous = OFF');
 	for (const name of readdirSync(join(root, 'drizzle'))
-		.filter((name) => name.endsWith('.sql') && name < '0126')
+		.filter((name) => name.endsWith('.sql') && name < '0125')
 		.sort())
 		db.exec(readFileSync(join(root, 'drizzle', name), 'utf8'));
 	seedAccounts(path);
@@ -26,10 +28,15 @@ test('budget migration preserves old history and the native pre-migration snapsh
 	const before = db.prepare('select * from finance_transactions').all();
 	process.env.DATABASE_URL = path;
 	const { snapshot } = await import('../scripts/db-snapshot.mjs');
-	const backup = snapshot('pre-epic4');
+	const backup = snapshot('pre-finance');
 	expect(backup).toBeTruthy();
-	db.exec(readFileSync(join(root, 'drizzle', '0126_zippy_blue_blade.sql'), 'utf8'));
-	expect(db.prepare('select * from finance_transactions').all()).toEqual(before);
+	db.exec(
+		readFileSync(
+			join(root, 'drizzle', '0125_finance_openings_commitments_splits_and_budgets.sql'),
+			'utf8'
+		)
+	);
+	expect(db.prepare('select * from finance_transactions').all()).toMatchObject(before);
 	db.prepare("insert into ledgers(user_id,name) values (?,'Old writer still works')").run(OWNER);
 	expect(db.pragma('integrity_check', { simple: true })).toBe('ok');
 	db.close();

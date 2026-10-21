@@ -426,8 +426,8 @@ test('C06 — cross-currency transfer: no combined total, no invented FX, per-cu
 	);
 	// Each currency is a total of its own; unlike money is never added.
 	for (const row of spending) expect(row.transferCount).toBe(1);
-	expect(() => statements.monthlyTotals(ctx)).toThrow(/one.*currency/i);
-	expect(() => statements.categorySlices(ctx)).toThrow(/one.*currency/i);
+	expect(refusal(() => statements.monthlyTotals(ctx))).toMatch(/one.*currency/i);
+	expect(refusal(() => statements.categorySlices(ctx))).toMatch(/one.*currency/i);
 	expect(C.C06.expected.combinedCrossCurrencyTotal).toBeNull();
 	// No guessed rate or fee was written: exactly the two legs, amounts untouched.
 	const movements = statements.listMovements(ctx);
@@ -727,9 +727,11 @@ test('C11 — a repeated settlement request loses to a conflict; one movement, o
 		-C.C11.outstandingMinor,
 		'C11 second offer'
 	);
-	expect(() =>
-		commitments.settleCommitment(ctx, { commitmentId: payable.id, transactionId: competing })
-	).toThrow(/outstanding balance is .*0[.,]00/i);
+	expect(
+		refusal(() =>
+			commitments.settleCommitment(ctx, { commitmentId: payable.id, transactionId: competing })
+		)
+	).toMatch(/outstanding balance is .*0[.,]00/i);
 	expect(statements.getMovementRow(ctx, competing)!.allocations).toEqual([]);
 	expect(commitments.listCommitmentEntries(ctx, payable.id)).toHaveLength(
 		C.C11.expected.successfulSettlements

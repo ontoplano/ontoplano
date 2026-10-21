@@ -19,9 +19,7 @@ function openingFields(form: FormData) {
 	const openingMinor =
 		amount === null || amount === '' ? undefined : parseSignedMoney(amount, currency);
 	if (openingMinor === null)
-		throw new ValidationError(
-			'Enter an exact opening amount in the ledger currency, or whole minor units when unspecified.'
-		);
+		throw new ValidationError({ key: 'errors.finance.enterExactOpeningAmountLedger' });
 	return {
 		...(form.has('currency') ? { currency } : {}),
 		...(form.has('openingOn') ? { openingOn: form.get('openingOn') } : {}),

@@ -1,5 +1,6 @@
 import { afterAll, expect, test } from 'vitest';
 import { makeDatabase, OWNER, STRANGER, seedAccounts } from './helpers/db';
+import { refusal } from './helpers/refusal';
 
 const database = makeDatabase();
 seedAccounts(database.path);
@@ -116,10 +117,10 @@ test('currencies remain separate and single-series charts refuse a combined figu
 		{ currency: 'KES', netMinor: 0, transferOutMinor: 100 },
 		{ currency: 'USD', netMinor: 0, transferOutMinor: 100 }
 	]);
-	expect(() => statements.monthlyTotals(owner, 12)).toThrow(/one.*currency/i);
-	expect(() => statements.categorySlices(owner)).toThrow(/one.*currency/i);
-	expect(() => statements.categoryMonths(owner)).toThrow(/one.*currency/i);
-	expect(() => statements.tagMonths(owner, 'travel')).toThrow(/one.*currency/i);
+	expect(refusal(() => statements.monthlyTotals(owner, 12))).toMatch(/one.*currency/i);
+	expect(refusal(() => statements.categorySlices(owner))).toMatch(/one.*currency/i);
+	expect(refusal(() => statements.categoryMonths(owner))).toMatch(/one.*currency/i);
+	expect(refusal(() => statements.tagMonths(owner, 'travel'))).toMatch(/one.*currency/i);
 	expect(statements.monthlyTotals(owner, 1, { currency: 'KES' })[0].outCents).toBe(100);
 });
 

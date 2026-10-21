@@ -116,26 +116,25 @@ export function splitMovement(ctx: Ctx, input: { id: unknown; allocations: unkno
 		!input.allocations.length ||
 		input.allocations.length > 100
 	)
-		throw new ValidationError('A split needs between 1 and 100 parts.');
+		throw new ValidationError({ key: 'errors.finance.splitNeedsBetween1100' });
 	db.transaction((tx) => {
 		const movement = ownMovement(ctx, id);
 		assertMovementUnlinked(ctx, id);
 		if (movement.groupId || movement.kind === 'transfer' || movement.kind === 'cash')
-			throw new ValidationError(
-				'Unlink the transfer or classify this movement before splitting it.'
-			);
-		if (!movement.amountCents) throw new ValidationError('A zero movement cannot be split.');
+			throw new ValidationError({ key: 'errors.finance.unlinkTransferClassifyMovementSplitting' });
+		if (!movement.amountCents)
+			throw new ValidationError({ key: 'errors.finance.zeroMovementSplit' });
 		const currency = movement.ledgerId === null ? null : ledgerCurrency(ctx, movement.ledgerId);
 		const settlements = new Map<number, { amountMinor: number; notes: string[] }>();
 		let sum = 0;
 		const parts = (input.allocations as unknown[]).map((raw) => {
 			if (!raw || typeof raw !== 'object' || Array.isArray(raw))
-				throw new ValidationError('Each split part must name its kind and amount.');
+				throw new ValidationError({ key: 'errors.finance.eachSplitPartNameKind' });
 			const part = raw as AllocationInput;
 			const kind = oneOf(part.kind, 'allocation kind', ['personal', 'custody'] as const);
 			const amountMinor = minorAmount(part.amountMinor);
 			if (!amountMinor || Math.sign(amountMinor) !== Math.sign(movement.amountCents))
-				throw new ValidationError('Every split part must have the movement’s sign and be nonzero.');
+				throw new ValidationError({ key: 'errors.finance.everySplitPartHaveMovements' });
 			sum = minorAmount(sum + amountMinor, 'split total');
 			const category =
 				optionalStr(part.category, 'category', { max: MAX_RULE_NAME_LENGTH }) || null;
@@ -145,10 +144,13 @@ export function splitMovement(ctx: Ctx, input: { id: unknown; allocations: unkno
 				commitmentId = num(part.commitmentId, 'commitment', { int: true, min: 1 });
 				const commitment = getCommitment(ctx, commitmentId);
 				if (!['custody', 'payable'].includes(commitment.kind) || commitment.status !== 'open')
-					throw new ValidationError('Choose an open custody or payable commitment.');
+					throw new ValidationError({ key: 'errors.finance.chooseOpenCustodyPayableCommitment' });
 				if (!currency || commitment.currency !== currency)
-					throw new ValidationError('A custody part and its movement must share a known currency.');
-				if (category) throw new ValidationError('Custody is excluded from personal categories.');
+					throw new ValidationError({ key: 'errors.finance.custodyPartMovementShareKnown' });
+				if (category)
+					throw new ValidationError({
+						key: 'errors.finance.custodyExcludedFromPersonalCategories'
+					});
 				const entry = settlements.get(commitmentId) ?? { amountMinor: 0, notes: [] };
 				entry.amountMinor = minorAmount(entry.amountMinor + amountMinor);
 				if (note) entry.notes.push(note);
@@ -158,7 +160,7 @@ export function splitMovement(ctx: Ctx, input: { id: unknown; allocations: unkno
 				part.commitmentId !== null &&
 				part.commitmentId !== ''
 			) {
-				throw new ValidationError('Only custody parts may name a commitment.');
+				throw new ValidationError({ key: 'errors.finance.onlyCustodyPartsMayName' });
 			}
 			return {
 				userId: ctx.userId,
@@ -172,16 +174,18 @@ export function splitMovement(ctx: Ctx, input: { id: unknown; allocations: unkno
 			};
 		});
 		if (sum !== movement.amountCents)
-			throw new ValidationError(
-				`Split parts must add to ${movement.amountCents} minor units; difference ${minorAmount(movement.amountCents - sum)}.`
-			);
+			throw new ValidationError({
+				key: 'errors.finance.splitDoesNotAddUp',
+				values: { total: movement.amountCents, difference: minorAmount(movement.amountCents - sum) }
+			});
 		tx.insert(financeTransactionAllocations).values(parts).run();
 		for (const [commitmentId, entry] of settlements) {
 			const note = entry.notes.join('\n');
 			if (note.length > MAX_NOTE)
-				throw new ValidationError(
-					`The combined note for one stock must be ${MAX_NOTE} characters or fewer.`
-				);
+				throw new ValidationError({
+					key: 'errors.finance.combinedNoteTooLong',
+					values: { max: MAX_NOTE }
+				});
 			addCommitmentEntry(ctx, {
 				commitmentId,
 				occurredOn: movement.occurredOn,
@@ -209,7 +213,7 @@ export function unsplitMovement(ctx: Ctx, id: number): void {
 				)
 				.get()
 		)
-			throw new ValidationError('Reverse the linked commitment entry before removing this split.');
+			throw new ValidationError({ key: 'errors.finance.reverseLinkedCommitmentEntryRemoving' });
 		tx.delete(financeTransactionAllocations)
 			.where(
 				and(
@@ -244,9 +248,7 @@ function assertMovementUnlinked(ctx: Ctx, id: number): void {
 		)
 		.get();
 	if (allocation || entry)
-		throw new ValidationError(
-			`Movement ${id} has a split or settlement entry. Reverse linked entries and unsplit first.`
-		);
+		throw new ValidationError({ key: 'errors.finance.movementHasSplitOrEntry', values: { id } });
 }
 
 /**
@@ -335,9 +337,7 @@ export function importStatement(
 
 	const options = { strict: true, units: ledger.currency ? minorUnits(ledger.currency) : 100 };
 	if (source !== CSV_PARSER_KEY && options.units !== 100)
-		throw new ValidationError(
-			'This bank export uses two decimal places. Use the original-currency generic CSV format for this ledger.'
-		);
+		throw new ValidationError({ key: 'errors.finance.bankExportUsesTwoDecimal' });
 	let parsed: ParsedMovement[];
 	try {
 		parsed =
@@ -349,9 +349,10 @@ export function importStatement(
 		throw error;
 	}
 	if (parsed.length > MAX_STATEMENT_LINES)
-		throw new ValidationError(
-			`That file exceeds ${MAX_STATEMENT_LINES} movements. Nothing was imported.`
-		);
+		throw new ValidationError({
+			key: 'errors.finance.fileTooLong',
+			values: { max: MAX_STATEMENT_LINES }
+		});
 	if (parsed.length === 0)
 		throw new ValidationError(
 			source === CSV_PARSER_KEY
@@ -369,9 +370,10 @@ export function importStatement(
 			minorAmount(line.amountCents);
 			str(line.description, 'description', { max: Number.MAX_SAFE_INTEGER });
 		} catch {
-			throw new ValidationError(
-				`Line ${line.line ?? index + 1} was rejected: invalid date, amount or description. Nothing was imported.`
-			);
+			throw new ValidationError({
+				key: 'errors.finance.lineRejected',
+				values: { line: line.line ?? index + 1 }
+			});
 		}
 	}
 	const earliest = parsed.reduce(
@@ -390,13 +392,12 @@ export function importStatement(
 	return db.transaction((tx) => {
 		const current = getLedger(ctx, ledgerId);
 		if (current.currency !== ledger.currency)
-			throw new ValidationError(
-				'Ledger currency changed while reading the file. Nothing was imported; retry with the current currency.'
-			);
+			throw new ValidationError({ key: 'errors.finance.ledgerCurrencyChangedReadingFile' });
 		if (current.openingOn && earliest < current.openingOn)
-			throw new ValidationError(
-				`The earliest movement, ${earliest}, is before the opening date ${current.openingOn}. Nothing was imported.`
-			);
+			throw new ValidationError({
+				key: 'errors.finance.beforeOpening',
+				values: { earliest, opening: current.openingOn }
+			});
 		const seen = new Map<string, number>();
 		let added = 0;
 		for (const [index, line] of parsed.entries()) {
@@ -436,9 +437,10 @@ export function importStatement(
 					})
 					.run();
 			} catch {
-				throw new ValidationError(
-					`Line ${line.line ?? index + 1} was rejected while saving. Nothing was imported.`
-				);
+				throw new ValidationError({
+					key: 'errors.finance.lineRejectedSaving',
+					values: { line: line.line ?? index + 1 }
+				});
 			}
 			if (inserted.changes > 0) added += 1;
 		}
@@ -1072,9 +1074,10 @@ export function deleteRule(ctx: Ctx, id: number): void {
 			.limit(1)
 			.get();
 		if (used)
-			throw new ValidationError(
-				`A budget still uses the category “${rule.name}”. Rename or delete that budget first.`
-			);
+			throw new ValidationError({
+				key: 'errors.finance.categoryHasBudget',
+				values: { name: rule.name }
+			});
 	}
 	const gone = db
 		.delete(financeRules)
@@ -1268,7 +1271,7 @@ export function listMovements(ctx: Ctx, filter: MovementFilter = {}): Movement[]
 	if (filter.currency !== undefined) {
 		const currency = filter.currency === null ? null : normaliseCurrency(filter.currency);
 		if (filter.currency !== null && !currency)
-			throw new ValidationError('Choose a valid original currency.');
+			throw new ValidationError({ key: 'errors.finance.chooseValidOriginalCurrency' });
 		where.push(
 			sql`(select l.currency from ledgers l where l.id = ${financeTransactions.ledgerId} and l.user_id = ${ctx.userId}) is ${currency}`
 		);
@@ -1424,12 +1427,13 @@ export function statementWindow(ctx: Ctx, months = DEFAULT_MONTHS, filter: Movem
 			? civilDay(filter.from, 'first day')
 			: `${monthKeys(new Date(`${last}T12:00:00Z`), months)[0]}-01`;
 	const to = filter.to ? civilDay(filter.to, 'last day') : last;
-	if (from > to) throw new ValidationError('The first day must not be after the last day.');
+	if (from > to) throw new ValidationError({ key: 'errors.finance.firstDayNotAfterLast' });
 	const keys: string[] = [];
 	const cursor = new Date(`${from.slice(0, 7)}-01T12:00:00Z`);
 	while (cursor.toISOString().slice(0, 7) <= to.slice(0, 7)) {
 		keys.push(cursor.toISOString().slice(0, 7));
-		if (keys.length > 120) throw new ValidationError('Choose at most 120 months.');
+		if (keys.length > 120)
+			throw new ValidationError({ key: 'errors.finance.chooseAtMost120Months' });
 		cursor.setUTCMonth(cursor.getUTCMonth() + 1);
 	}
 	return { from, to, months: keys };
@@ -1535,7 +1539,7 @@ function movementWhere(ctx: Ctx, filter: MovementFilter) {
 	if (filter.from) where.push(sql`t.occurred_on >= ${civilDay(filter.from, 'first day')}`);
 	if (filter.to) where.push(sql`t.occurred_on <= ${civilDay(filter.to, 'last day')}`);
 	if (filter.from && filter.to && filter.from > filter.to)
-		throw new ValidationError('The first day must not be after the last day.');
+		throw new ValidationError({ key: 'errors.finance.firstDayNotAfterLast' });
 	if (filter.month) {
 		civilDay(`${filter.month}-01`, 'month');
 		where.push(sql`substr(t.occurred_on, 1, 7) = ${filter.month}`);
@@ -1543,7 +1547,7 @@ function movementWhere(ctx: Ctx, filter: MovementFilter) {
 	if (filter.currency === null) where.push(sql`l.currency is null`);
 	else if (filter.currency !== undefined) {
 		const currency = normaliseCurrency(filter.currency);
-		if (!currency) throw new ValidationError('Choose a valid original currency.');
+		if (!currency) throw new ValidationError({ key: 'errors.finance.chooseValidOriginalCurrency' });
 		where.push(sql`l.currency = ${currency}`);
 	}
 	if (filter.unclassified) where.push(sql`t.kind is null`);
@@ -1570,7 +1574,7 @@ function assertSingleCurrency(ctx: Ctx, filter: MovementFilter) {
 		where ${sql.join(movementWhere(ctx, filter), sql` and `)} limit 2
 	`);
 	if (currencies.length > 1)
-		throw new ValidationError('Choose one original currency; unlike money cannot be combined.');
+		throw new ValidationError({ key: 'errors.finance.chooseOriginalCurrencyUnlikeMoney' });
 }
 
 export type SpendingCategory = {

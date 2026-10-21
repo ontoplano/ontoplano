@@ -91,7 +91,7 @@ export function listBudgets(
 	];
 	if (filter.currency !== undefined) {
 		const currency = normaliseCurrency(filter.currency);
-		if (!currency) throw new ValidationError('Choose a valid original currency.');
+		if (!currency) throw new ValidationError({ key: 'errors.finance.chooseValidOriginalCurrency' });
 		where.push(eq(financeBudgets.currency, currency));
 	}
 	return progress(
@@ -131,13 +131,11 @@ function fields(ctx: Ctx, input: BudgetInput, before?: StoredBudget) {
 			)
 			.get()
 	)
-		throw new ValidationError(
-			`Category ${category} no longer exists. Choose an existing category rule.`
-		);
+		throw new ValidationError({ key: 'errors.finance.categoryGone', values: { category } });
 	const currency = normaliseCurrency(
 		input.currency === undefined ? before?.currency : input.currency
 	);
-	if (!currency) throw new ValidationError('Choose a valid original currency.');
+	if (!currency) throw new ValidationError({ key: 'errors.finance.chooseValidOriginalCurrency' });
 	if (
 		(before === undefined || currency !== before.currency) &&
 		!db
@@ -146,13 +144,11 @@ function fields(ctx: Ctx, input: BudgetInput, before?: StoredBudget) {
 			.where(and(eq(ledgers.userId, ctx.userId), eq(ledgers.currency, currency)))
 			.get()
 	)
-		throw new ValidationError(
-			`No ledger uses ${currency}. Add a ledger in that original currency first.`
-		);
+		throw new ValidationError({ key: 'errors.finance.noLedgerInCurrency', values: { currency } });
 	const amountMinor = minorAmount(
 		input.amountMinor === undefined ? before?.amountMinor : input.amountMinor
 	);
-	if (amountMinor < 0) throw new ValidationError('A budget amount cannot be negative.');
+	if (amountMinor < 0) throw new ValidationError({ key: 'errors.finance.budgetAmountNegative' });
 	return { month, category, currency, amountMinor };
 }
 
@@ -172,7 +168,7 @@ function assertUnique(ctx: Ctx, next: ReturnType<typeof fields>, id?: number) {
 			)
 			.get()
 	)
-		throw new ConflictError('A budget already exists for this month, category and currency.');
+		throw new ConflictError({ key: 'errors.finance.budgetAlreadyExistsMonthCategory' });
 }
 
 export function createBudget(ctx: Ctx, input: BudgetInput): Budget {
@@ -192,9 +188,12 @@ export function updateBudget(ctx: Ctx, id: number, input: BudgetInput): void {
 	db.transaction((tx) => {
 		const before = owned(ctx, id);
 		if (input.updatedAt !== undefined && input.updatedAt !== before.updatedAt)
-			throw new ConflictError('This budget changed. Read it again before saving.', {
-				updatedAt: before.updatedAt
-			});
+			throw new ConflictError(
+				{ key: 'errors.finance.budgetChangedReadAgainSaving' },
+				{
+					updatedAt: before.updatedAt
+				}
+			);
 		const next = fields(ctx, input, before);
 		assertUnique(ctx, next, id);
 		// Two edits in the same clock tick must not share a concurrency token.
@@ -213,7 +212,7 @@ export function updateBudget(ctx: Ctx, id: number, input: BudgetInput): void {
 			)
 			.run();
 		if (result.changes !== 1)
-			throw new ConflictError('This budget changed. Read it again before saving.');
+			throw new ConflictError({ key: 'errors.finance.budgetChangedReadAgainSaving' });
 	});
 }
 

@@ -1,5 +1,6 @@
 import { afterAll, expect, test } from 'vitest';
 import { makeDatabase, OWNER, STRANGER, seedAccounts } from './helpers/db';
+import { refusal } from './helpers/refusal';
 const database = makeDatabase();
 seedAccounts(database.path);
 afterAll(() => database.remove());
@@ -37,14 +38,16 @@ test('a monthly ceiling never moves ledger money and shares personal spending ar
 		orphaned: false
 	});
 	expect(ledgers.getLedger(ctx, ledger.id)).toEqual(before);
-	expect(() =>
-		budgets.createBudget(ctx, {
-			month: '2026-10',
-			category: 'Transport',
-			currency: 'KES',
-			amountMinor: 600000
-		})
-	).toThrow(/already|exists/i);
+	expect(
+		refusal(() =>
+			budgets.createBudget(ctx, {
+				month: '2026-10',
+				category: 'Transport',
+				currency: 'KES',
+				amountMinor: 600000
+			})
+		)
+	).toMatch(/already|exists/i);
 	expect(budgets.listBudgets(other)).toEqual([]);
 });
 
@@ -99,33 +102,37 @@ test('exact amounts, months, categories, ledger currencies and persisted uniquen
 		{ category: 'Missing rule' }
 	])
 		expect(() => budgets.createBudget(ctx, { ...input, ...change })).toThrow();
-	expect(() => budgets.createBudget(ctx, { ...input, currency: 'EUR' })).toThrow(/EUR/);
+	expect(refusal(() => budgets.createBudget(ctx, { ...input, currency: 'EUR' }))).toMatch(/EUR/);
 	const budget = budgets.createBudget(ctx, input);
-	expect(() =>
-		database.exec(
-			'insert into finance_budgets(user_id,month,category,currency,amount_minor) values (?,?,?,?,?)',
-			OWNER,
-			input.month,
-			input.category,
-			input.currency,
-			input.amountMinor
+	expect(
+		refusal(() =>
+			database.exec(
+				'insert into finance_budgets(user_id,month,category,currency,amount_minor) values (?,?,?,?,?)',
+				OWNER,
+				input.month,
+				input.category,
+				input.currency,
+				input.amountMinor
+			)
 		)
-	).toThrow(/unique/i);
+	).toMatch(/unique/i);
 	for (const [month, amount] of [
 		['2026-00', 1],
 		['2026-12', -1],
 		['2026-12', 0.5]
 	] as const)
-		expect(() =>
-			database.exec(
-				'insert into finance_budgets(user_id,month,category,currency,amount_minor) values (?,?,?,?,?)',
-				OWNER,
-				month,
-				'Invalid persisted row',
-				'KES',
-				amount
+		expect(
+			refusal(() =>
+				database.exec(
+					'insert into finance_budgets(user_id,month,category,currency,amount_minor) values (?,?,?,?,?)',
+					OWNER,
+					month,
+					'Invalid persisted row',
+					'KES',
+					amount
+				)
 			)
-		).toThrow(/check/i);
+		).toMatch(/check/i);
 	budgets.deleteBudget(ctx, budget.id);
 });
 
@@ -177,9 +184,11 @@ test('copy preserves existing buckets, orphans remain visible, and competing edi
 			.find((row) => row.category === 'Removed category')
 	).toMatchObject({ orphaned: true, amountMinor: 5000 });
 	budgets.updateBudget(ctx, target.id, { amountMinor: 12000, updatedAt: target.updatedAt });
-	expect(() =>
-		budgets.updateBudget(ctx, target.id, { amountMinor: 13000, updatedAt: target.updatedAt })
-	).toThrow(/changed/i);
+	expect(
+		refusal(() =>
+			budgets.updateBudget(ctx, target.id, { amountMinor: 13000, updatedAt: target.updatedAt })
+		)
+	).toMatch(/changed/i);
 	for (const id of [target.id, 999999]) {
 		expect(() => budgets.updateBudget(other, id, { amountMinor: 1 })).toThrow('budget not found');
 		expect(() => budgets.deleteBudget(other, id)).toThrow('budget not found');
