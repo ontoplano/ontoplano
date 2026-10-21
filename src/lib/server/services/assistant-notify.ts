@@ -94,6 +94,7 @@ export const VERB_KEYS = new Set([
 	'archive',
 	'cancel',
 	'change',
+	'classify',
 	'close',
 	'delete',
 	'describe',
@@ -154,7 +155,22 @@ export const PHRASE_OVERRIDES: Record<string, Phrase> = {
 	move_notes: { verb: 'move', noun: 'note' },
 	reorder_tasks: { verb: 'reorder', noun: 'task' },
 	// It sets a day's count, which to the person reads as logging the habit.
-	set_habit_count: { verb: 'log', noun: 'habit' }
+	set_habit_count: { verb: 'log', noun: 'habit' },
+	// Plural in the name because it takes a list; the noun is counted anyway.
+	classify_movements: { verb: 'classify', noun: 'movement' },
+	copy_budgets: { verb: 'add', noun: 'budget' },
+	// The name says where the line starts and ends; the nouns are what moved.
+	link_movement: { verb: 'link', noun: 'movement' },
+	link_transfer: { verb: 'link', noun: 'transfer' },
+	record_balance_check: { verb: 'record', noun: 'balanceCheck' },
+	delete_balance_check: { verb: 'delete', noun: 'balanceCheck' },
+	record_commitment_entry: { verb: 'record', noun: 'commitmentEntry' },
+	delete_commitment_entry: { verb: 'delete', noun: 'commitmentEntry' },
+	settle_commitment: { verb: 'pay', noun: 'commitment' },
+	consume_reserve: { verb: 'pay', noun: 'commitment' },
+	split_movement: { verb: 'change', noun: 'movement' },
+	unsplit_movement: { verb: 'change', noun: 'movement' },
+	unlink_transfer: { verb: 'unlink', noun: 'transfer' }
 };
 
 /** A verb's catalogue key, and the noun it acts on, as the identifier spells it. */
@@ -189,6 +205,10 @@ export function phraseFor(tool: string): Phrase | null {
  * identifier instead of rendering as a raw message key on somebody's phone.
  */
 export const NOUN_KEYS = new Set([
+	'budget',
+	'commitment',
+	'commitmentEntry',
+	'balanceCheck',
 	'activity',
 	'alarm',
 	'beforeBlock',
@@ -213,6 +233,7 @@ export const NOUN_KEYS = new Set([
 	'ledger',
 	'location',
 	'movement',
+	'transfer',
 	'note',
 	'notebook',
 	'notebookFolder',

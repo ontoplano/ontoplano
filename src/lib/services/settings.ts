@@ -110,6 +110,30 @@ export function setTheme(userId: string, theme: Theme): void {
 	setUserSetting(userId, THEME_KEY, theme);
 }
 
+// --- Finance money view -------------------------------------------------------
+
+export const FINANCE_MONEY_VIEW_KEY = 'finance.moneyView';
+export type MoneyView = 'all' | 'mine';
+
+export function isMoneyView(value: string | null | undefined): value is MoneyView {
+	return value === 'all' || value === 'mine';
+}
+
+/**
+ * Whether the money picture shows every account balance, including money held
+ * for somebody else, or only the part that is the reader's. The default is
+ * `all` so an existing picture does not change under a person who never chose;
+ * the money screen offers the switch and stores the answer.
+ */
+export function getMoneyView(userId: string): MoneyView {
+	const stored = getUserSetting(userId, FINANCE_MONEY_VIEW_KEY);
+	return isMoneyView(stored) ? stored : 'all';
+}
+
+export function setMoneyView(userId: string, view: MoneyView): void {
+	setUserSetting(userId, FINANCE_MONEY_VIEW_KEY, view);
+}
+
 // --- Language -----------------------------------------------------------------
 
 export const LOCALE_KEY = 'ui.locale';

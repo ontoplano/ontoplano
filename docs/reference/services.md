@@ -13,122 +13,125 @@ a server.
 Collected from the source, so a function renamed or a header rewritten
 shows up here on the next build.
 
-| Module                                           | What it is for                                                                                                                                                                                                                                                       |
-| ------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| [`access`](#access)                              | The account-level holds, decided in exactly one place.                                                                                                                                                                                                               |
-| [`account-data`](#account-data)                  | The account's data, table by table.                                                                                                                                                                                                                                  |
-| [`account-import`](#account-import)              | Putting an exported account back.                                                                                                                                                                                                                                    |
-| [`server/account-import`](#serveraccount-import) | Putting an exported account back, on a server — and the copy it keeps first.                                                                                                                                                                                         |
-| [`account-profile`](#account-profile)            | The account row itself, for whatever draws a name at the top of a page — and the name on it, which both instances let a person change.                                                                                                                               |
-| [`account`](#account)                            | Taking your data out, and closing your account — and what this instance allows of both.                                                                                                                                                                              |
-| [`activities`](#activities)                      | Categories are the areas of a life; activities are the named recurring things inside them. Both are referenced by planner slots and by history, so neither can be deleted while something still points at it — history that loses its category stops being readable. |
-| [`admin`](#admin)                                | Administration: looking at somebody else's account.                                                                                                                                                                                                                  |
-| [`assistant-chat`](#assistant-chat)              | The in-app chat: the same assistant surface MCP offers, spoken to a model the person brought a key for.                                                                                                                                                              |
-| [`assistant-log`](#assistant-log)                | What an assistant did to an account, and the way back.                                                                                                                                                                                                               |
-| [`assistant-notify`](#assistant-notify)          | Telling somebody what an assistant just did to their account.                                                                                                                                                                                                        |
-| [`attack-watch`](#attack-watch)                  | What an attack on the app itself looks like from inside the process.                                                                                                                                                                                                 |
-| [`attributes`](#attributes)                      | The attributes an account has actually used, and what they are worth reading.                                                                                                                                                                                        |
-| [`audio`](#audio)                                | Recordings: what is accepted, where they go, and who may hear one.                                                                                                                                                                                                   |
-| [`audit`](#audit)                                | What happened to an account.                                                                                                                                                                                                                                         |
-| [`backlinks`](#backlinks)                        | Which goal a thing belongs to.                                                                                                                                                                                                                                       |
-| [`bill-actions`](#bill-actions)                  | Everything that can be done to a bill, wherever the row is on screen.                                                                                                                                                                                                |
-| [`billing`](#billing)                            | Billing, as the rest of the app sees it.                                                                                                                                                                                                                             |
-| [`bills`](#bills)                                | Bills: money expected to go out, on a rhythm.                                                                                                                                                                                                                        |
-| [`birthdays`](#birthdays)                        | Being told it is somebody's birthday, on the morning of it.                                                                                                                                                                                                          |
-| [`calendar-feed`](#calendar-feed)                | The plan, published as a calendar anybody's software can read.                                                                                                                                                                                                       |
-| [`calendars`](#calendars)                        | Calendars somebody else controls.                                                                                                                                                                                                                                    |
-| [`client-errors`](#client-errors)                | Client-side errors, sent in with permission.                                                                                                                                                                                                                         |
-| [`companions`](#companions)                      | The processes an instance needs BESIDE the app, and whether they exist.                                                                                                                                                                                              |
-| [`ctx`](#ctx)                                    | The single argument every service function takes.                                                                                                                                                                                                                    |
-| [`demo`](#demo)                                  | A demo where everybody gets their own copy.                                                                                                                                                                                                                          |
-| [`diary`](#diary)                                | The journal: free text, free-form tags, one running number per account.                                                                                                                                                                                              |
-| [`digest`](#digest)                              | The content hash a picture is deduplicated by.                                                                                                                                                                                                                       |
-| [`entry-actions`](#entry-actions)                | Several notes at once, from wherever they are listed.                                                                                                                                                                                                                |
-| [`errors`](#errors)                              | Typed errors thrown by service functions.                                                                                                                                                                                                                            |
-| [`family-invite`](#family-invite)                | Inviting somebody to the plan, and the account that makes for them.                                                                                                                                                                                                  |
-| [`gallery`](#gallery)                            | Albums: lists of references over the one media table.                                                                                                                                                                                                                |
-| [`goal-actions`](#goal-actions)                  | Everything done to a goal, from wherever a goal is shown.                                                                                                                                                                                                            |
-| [`goals`](#goals)                                | Goals, and the progress that makes them more than a wish list.                                                                                                                                                                                                       |
-| [`habit-actions`](#habit-actions)                | Everything that can be done to a habit, wherever the row is on screen.                                                                                                                                                                                               |
-| [`habits`](#habits)                              | Habits are things to do or to avoid, logged one day at a time.                                                                                                                                                                                                       |
-| [`health`](#health)                              | Can this process actually reach the database?                                                                                                                                                                                                                        |
-| [`host`](#host)                                  | What the surrounding instance does for the services.                                                                                                                                                                                                                 |
-| [`idea-actions`](#idea-actions)                  | Everything that can be done to an idea, wherever the row is on screen.                                                                                                                                                                                               |
-| [`ideas`](#ideas)                                | Quick capture: a thought, optionally tagged, optionally marked as applied.                                                                                                                                                                                           |
-| [`import-vault`](#import-vault)                  | A vault of markdown becomes notebook entries.                                                                                                                                                                                                                        |
-| [`imports`](#imports)                            | Bringing a list in from somewhere else.                                                                                                                                                                                                                              |
-| [`instances`](#instances)                        | The one answer to "what is on, between these dates".                                                                                                                                                                                                                 |
-| [`inventory`](#inventory)                        | Two lists that share a table: `replenish` is stock you keep, `someday` is a wishlist. The difference is what "bought" means — a replenish item comes back when it runs out, a someday item is done.                                                                  |
-| [`item-actions`](#item-actions)                  | Everything that can be done to an inventory item, wherever the row is.                                                                                                                                                                                               |
-| [`ledger-actions`](#ledger-actions)              | Everything that can be done to a ledger, wherever the row is on screen.                                                                                                                                                                                              |
-| [`ledgers`](#ledgers)                            | Ledgers: the places money moves through.                                                                                                                                                                                                                             |
-| [`legal`](#legal)                                | The facts the policies are written around.                                                                                                                                                                                                                           |
-| [`locations`](#locations)                        | Locations: the tree an inventory hangs on.                                                                                                                                                                                                                           |
-| [`mail-log`](#mail-log)                          | Mail that must not fail silently.                                                                                                                                                                                                                                    |
-| [`media-kind`](#media-kind)                      | Which kind of thing a `media` row is.                                                                                                                                                                                                                                |
-| [`media-limits`](#media-limits)                  | What an instance allows a picture to be.                                                                                                                                                                                                                             |
-| [`media-permission`](#media-permission)          | Whether a caller may see a file, decided by what the file is used for.                                                                                                                                                                                               |
-| [`media-referrers`](#media-referrers)            | What points at a picture or a recording, and where it lives.                                                                                                                                                                                                         |
-| [`media`](#media)                                | Pictures: what is accepted, where they go, and who may see one.                                                                                                                                                                                                      |
-| [`model-catalog`](#model-catalog)                | What a provider will actually answer to, asked rather than typed.                                                                                                                                                                                                    |
-| [`model-keys`](#model-keys)                      | The model-provider key behind the in-app chat.                                                                                                                                                                                                                       |
-| [`newsletter`](#newsletter)                      | The one channel nobody else can take away.                                                                                                                                                                                                                           |
-| [`note-todos`](#note-todos)                      | Turning a note that is really a checklist into the todos it describes.                                                                                                                                                                                               |
-| [`notebook-linking`](#notebook-linking)          | Putting something that already exists under a subject.                                                                                                                                                                                                               |
-| [`notebook-media`](#notebook-media)              | Every picture that is in a notebook, as a gallery album.                                                                                                                                                                                                             |
-| [`notebook-sections`](#notebook-sections)        | One tab of one notebook, as lines.                                                                                                                                                                                                                                   |
-| [`notebook-seq`](#notebook-seq)                  | Numbers inside a notebook — what `TASK:#4`, `GOAL:#2` and `IDEA:#7` point at.                                                                                                                                                                                        |
-| [`notebooks`](#notebooks)                        | Notebooks: a subject you write against, with no deadline.                                                                                                                                                                                                            |
-| [`notifications`](#notifications)                | Everything the app will tell you about, in one list.                                                                                                                                                                                                                 |
-| [`oauth`](#oauth)                                | Connecting an assistant without anybody handling a key.                                                                                                                                                                                                              |
-| [`onboarding-templates`](#onboarding-templates)  | The starter weeks, as data.                                                                                                                                                                                                                                          |
-| [`onboarding`](#onboarding)                      | First run.                                                                                                                                                                                                                                                           |
-| [`people`](#people)                              | The people in your life, and where they turn up.                                                                                                                                                                                                                     |
-| [`phone-widgets`](#phone-widgets)                | Home-screen widgets that show one tab of one notebook.                                                                                                                                                                                                               |
-| [`plan-intent`](#plan-intent)                    | Which plan somebody said they wanted, carried from the front page to the card.                                                                                                                                                                                       |
-| [`plugins`](#plugins)                            | Plugin manifests: what a plugin says it understands.                                                                                                                                                                                                                 |
-| [`preferences`](#preferences)                    | The settings a person chooses about themselves.                                                                                                                                                                                                                      |
-| [`push`](#push)                                  | Telling somebody something while the app is closed.                                                                                                                                                                                                                  |
-| [`quotes`](#quotes)                              | The quotes shown one-per-day on the dashboard.                                                                                                                                                                                                                       |
-| [`recipes`](#recipes)                            | Recipes, and the loop they close.                                                                                                                                                                                                                                    |
-| [`regex-safety`](#regex-safety)                  | Patterns somebody types, and the ones that never finish.                                                                                                                                                                                                             |
-| [`registration`](#registration)                  | Who is allowed to create an account here.                                                                                                                                                                                                                            |
-| [`reminder-clock`](#reminder-clock)              | The thing that makes a reminder arrive when it says it will.                                                                                                                                                                                                         |
-| [`reminder-delivery`](#reminder-delivery)        | The pass that makes a reminder arrive with the app shut.                                                                                                                                                                                                             |
-| [`reminder-sources`](#reminder-sources)          | The reminders nobody types.                                                                                                                                                                                                                                          |
-| [`reminders`](#reminders)                        | Something that reaches out.                                                                                                                                                                                                                                          |
-| [`request-replays`](#request-replays)            | A create sent twice, answered once.                                                                                                                                                                                                                                  |
-| [`review-mail`](#review-mail)                    | The morning a week begins: what last week actually was, in the inbox.                                                                                                                                                                                                |
-| [`review`](#review)                              | Closing a week.                                                                                                                                                                                                                                                      |
-| [`ringtones`](#ringtones)                        | The sounds a reminder can make.                                                                                                                                                                                                                                      |
-| [`saved-filters`](#saved-filters)                | A narrowing somebody wants back, under a name they chose.                                                                                                                                                                                                            |
-| [`schedule`](#schedule)                          | Read-only view of what's coming up.                                                                                                                                                                                                                                  |
-| [`schemes`](#schemes)                            | Saved weeks.                                                                                                                                                                                                                                                         |
-| [`scoped-actions`](#scoped-actions)              | What a form handler needs of the request: the body, and who is signed in.                                                                                                                                                                                            |
-| [`search`](#search)                              | One box over everything the account owns.                                                                                                                                                                                                                            |
-| [`sent-notifications`](#sent-notifications)      | What the app has told somebody, kept so they can read it again.                                                                                                                                                                                                      |
-| [`sessions`](#sessions)                          | The sessions an account currently has open.                                                                                                                                                                                                                          |
-| [`settings`](#settings)                          | A person's own settings, kept in their rows.                                                                                                                                                                                                                         |
-| [`slots`](#slots)                                | The plan itself: blocks that repeat (`recurring_tasks`) and blocks that happen once (`exceptional_tasks`), plus the skips that cancel a single occurrence.                                                                                                           |
-| [`stale`](#stale)                                | Things that never ended.                                                                                                                                                                                                                                             |
-| [`statements`](#statements)                      | What moved through a ledger, and the rules that make sense of it.                                                                                                                                                                                                    |
-| [`streams`](#streams)                            | Declare a stream. Idempotent per (user, slug) so producers can call it at every startup.                                                                                                                                                                             |
-| [`subscriptions`](#subscriptions)                | What an account may do, and until when.                                                                                                                                                                                                                              |
-| [`tags`](#tags)                                  | Tags, and the rows that join them to what they tag.                                                                                                                                                                                                                  |
-| [`task-attributes`](#task-attributes)            | A task's attributes: user-defined key/value pairs on a task block or a todo.                                                                                                                                                                                         |
-| [`time`](#time)                                  | Time, in the two shapes this app actually has.                                                                                                                                                                                                                       |
-| [`today`](#today)                                | One day, in one request.                                                                                                                                                                                                                                             |
-| [`todo-actions`](#todo-actions)                  | Everything that can be done to a todo, wherever the row is on screen.                                                                                                                                                                                                |
-| [`todos`](#todos)                                | Todos: tasks that have no date yet.                                                                                                                                                                                                                                  |
-| [`tokens`](#tokens)                              | Scopes an API token can hold.                                                                                                                                                                                                                                        |
-| [`unused-media`](#unused-media)                  | The pictures nothing points at any more.                                                                                                                                                                                                                             |
-| [`validate`](#validate)                          | Small hand-rolled validators.                                                                                                                                                                                                                                        |
-| [`version`](#version)                            | What is running here, and since when.                                                                                                                                                                                                                                |
-| [`webhooks`](#webhooks)                          | Webhooks: plugins that listen instead of push.                                                                                                                                                                                                                       |
-| [`week-generator`](#week-generator)              | Format a Date as 'YYYY-MM-DDTHH:MM:SS' in local time (no UTC conversion).                                                                                                                                                                                            |
-| [`wins`](#wins)                                  | Three things that went well today.                                                                                                                                                                                                                                   |
-| [`workout-actions`](#workout-actions)            | Everything that can be done to a workout, wherever the row is on screen.                                                                                                                                                                                             |
-| [`workouts`](#workouts)                          | Workouts: workouts you plan like meals.                                                                                                                                                                                                                              |
+| Module                                           | What it is for                                                                                                                                                                                                                                                                                                                                                                      |
+| ------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [`access`](#access)                              | The account-level holds, decided in exactly one place.                                                                                                                                                                                                                                                                                                                              |
+| [`account-data`](#account-data)                  | The account's data, table by table.                                                                                                                                                                                                                                                                                                                                                 |
+| [`account-import`](#account-import)              | Putting an exported account back.                                                                                                                                                                                                                                                                                                                                                   |
+| [`server/account-import`](#serveraccount-import) | Putting an exported account back, on a server — and the copy it keeps first.                                                                                                                                                                                                                                                                                                        |
+| [`account-profile`](#account-profile)            | The account row itself, for whatever draws a name at the top of a page — and the name on it, which both instances let a person change.                                                                                                                                                                                                                                              |
+| [`account`](#account)                            | Taking your data out, and closing your account — and what this instance allows of both.                                                                                                                                                                                                                                                                                             |
+| [`activities`](#activities)                      | Categories are the areas of a life; activities are the named recurring things inside them. Both are referenced by planner slots and by history. A category cannot be deleted while something still points at it — history that loses its category stops being readable. An activity can: what named it falls back to its category, or moves to another activity (`deleteActivity`). |
+| [`admin`](#admin)                                | Administration: looking at somebody else's account.                                                                                                                                                                                                                                                                                                                                 |
+| [`assistant-chat`](#assistant-chat)              | The in-app chat: the same assistant surface MCP offers, spoken to a model the person brought a key for.                                                                                                                                                                                                                                                                             |
+| [`assistant-log`](#assistant-log)                | What an assistant did to an account, and the way back.                                                                                                                                                                                                                                                                                                                              |
+| [`assistant-notify`](#assistant-notify)          | Telling somebody what an assistant just did to their account.                                                                                                                                                                                                                                                                                                                       |
+| [`attack-watch`](#attack-watch)                  | What an attack on the app itself looks like from inside the process.                                                                                                                                                                                                                                                                                                                |
+| [`attributes`](#attributes)                      | The attributes an account has actually used, and what they are worth reading.                                                                                                                                                                                                                                                                                                       |
+| [`audio`](#audio)                                | Recordings: what is accepted, where they go, and who may hear one.                                                                                                                                                                                                                                                                                                                  |
+| [`audit`](#audit)                                | What happened to an account.                                                                                                                                                                                                                                                                                                                                                        |
+| [`backlinks`](#backlinks)                        | Which goal a thing belongs to.                                                                                                                                                                                                                                                                                                                                                      |
+| [`bill-actions`](#bill-actions)                  | Everything that can be done to a bill, wherever the row is on screen.                                                                                                                                                                                                                                                                                                               |
+| [`billing`](#billing)                            | Billing, as the rest of the app sees it.                                                                                                                                                                                                                                                                                                                                            |
+| [`bills`](#bills)                                | Bills: money expected to go out, on a rhythm.                                                                                                                                                                                                                                                                                                                                       |
+| [`birthdays`](#birthdays)                        | Being told it is somebody's birthday, on the morning of it.                                                                                                                                                                                                                                                                                                                         |
+| [`budgets`](#budgets)                            | Monthly ceilings share statement spending; they never write a bank or stock entry.                                                                                                                                                                                                                                                                                                  |
+| [`calendar-feed`](#calendar-feed)                | The plan, published as a calendar anybody's software can read.                                                                                                                                                                                                                                                                                                                      |
+| [`calendars`](#calendars)                        | Calendars somebody else controls.                                                                                                                                                                                                                                                                                                                                                   |
+| [`client-errors`](#client-errors)                | Client-side errors, sent in with permission.                                                                                                                                                                                                                                                                                                                                        |
+| [`commitments`](#commitments)                    | Custody, simple debts and reserves are stocks, not bank movements or budgets. A balance is the declared opening plus dated entries in its original currency. Splits and settlements retain their source evidence; nothing here invents money.                                                                                                                                       |
+| [`companions`](#companions)                      | The processes an instance needs BESIDE the app, and whether they exist.                                                                                                                                                                                                                                                                                                             |
+| [`ctx`](#ctx)                                    | The single argument every service function takes.                                                                                                                                                                                                                                                                                                                                   |
+| [`demo`](#demo)                                  | A demo where everybody gets their own copy.                                                                                                                                                                                                                                                                                                                                         |
+| [`diary`](#diary)                                | The journal: free text, free-form tags, one running number per account.                                                                                                                                                                                                                                                                                                             |
+| [`digest`](#digest)                              | The content hash a picture is deduplicated by.                                                                                                                                                                                                                                                                                                                                      |
+| [`entry-actions`](#entry-actions)                | Several notes at once, from wherever they are listed.                                                                                                                                                                                                                                                                                                                               |
+| [`errors`](#errors)                              | Typed errors thrown by service functions.                                                                                                                                                                                                                                                                                                                                           |
+| [`family-invite`](#family-invite)                | Inviting somebody to the plan, and the account that makes for them.                                                                                                                                                                                                                                                                                                                 |
+| [`finance-summary`](#finance-summary)            | The four questions, answered once.                                                                                                                                                                                                                                                                                                                                                  |
+| [`gallery`](#gallery)                            | Albums: lists of references over the one media table.                                                                                                                                                                                                                                                                                                                               |
+| [`goal-actions`](#goal-actions)                  | Everything done to a goal, from wherever a goal is shown.                                                                                                                                                                                                                                                                                                                           |
+| [`goals`](#goals)                                | Goals, and the progress that makes them more than a wish list.                                                                                                                                                                                                                                                                                                                      |
+| [`habit-actions`](#habit-actions)                | Everything that can be done to a habit, wherever the row is on screen.                                                                                                                                                                                                                                                                                                              |
+| [`habits`](#habits)                              | Habits are things to do or to avoid, logged one day at a time.                                                                                                                                                                                                                                                                                                                      |
+| [`health`](#health)                              | Can this process actually reach the database?                                                                                                                                                                                                                                                                                                                                       |
+| [`host`](#host)                                  | What the surrounding instance does for the services.                                                                                                                                                                                                                                                                                                                                |
+| [`idea-actions`](#idea-actions)                  | Everything that can be done to an idea, wherever the row is on screen.                                                                                                                                                                                                                                                                                                              |
+| [`ideas`](#ideas)                                | Quick capture: a thought, optionally tagged, optionally marked as applied.                                                                                                                                                                                                                                                                                                          |
+| [`import-vault`](#import-vault)                  | A vault of markdown becomes notebook entries.                                                                                                                                                                                                                                                                                                                                       |
+| [`imports`](#imports)                            | Bringing a list in from somewhere else.                                                                                                                                                                                                                                                                                                                                             |
+| [`instances`](#instances)                        | The one answer to "what is on, between these dates".                                                                                                                                                                                                                                                                                                                                |
+| [`inventory`](#inventory)                        | Two lists that share a table: `replenish` is stock you keep, `someday` is a wishlist. The difference is what "bought" means — a replenish item comes back when it runs out, a someday item is done.                                                                                                                                                                                 |
+| [`item-actions`](#item-actions)                  | Everything that can be done to an inventory item, wherever the row is.                                                                                                                                                                                                                                                                                                              |
+| [`ledger-actions`](#ledger-actions)              | Everything that can be done to a ledger, wherever the row is on screen.                                                                                                                                                                                                                                                                                                             |
+| [`ledgers`](#ledgers)                            | Ledgers: the places money moves through.                                                                                                                                                                                                                                                                                                                                            |
+| [`legal`](#legal)                                | The facts the policies are written around.                                                                                                                                                                                                                                                                                                                                          |
+| [`locations`](#locations)                        | Locations: the tree an inventory hangs on.                                                                                                                                                                                                                                                                                                                                          |
+| [`mail-log`](#mail-log)                          | Mail that must not fail silently.                                                                                                                                                                                                                                                                                                                                                   |
+| [`media-kind`](#media-kind)                      | Which kind of thing a `media` row is.                                                                                                                                                                                                                                                                                                                                               |
+| [`media-limits`](#media-limits)                  | What an instance allows a picture to be.                                                                                                                                                                                                                                                                                                                                            |
+| [`media-permission`](#media-permission)          | Whether a caller may see a file, decided by what the file is used for.                                                                                                                                                                                                                                                                                                              |
+| [`media-referrers`](#media-referrers)            | What points at a picture or a recording, and where it lives.                                                                                                                                                                                                                                                                                                                        |
+| [`media`](#media)                                | Pictures: what is accepted, where they go, and who may see one.                                                                                                                                                                                                                                                                                                                     |
+| [`model-catalog`](#model-catalog)                | What a provider will actually answer to, asked rather than typed.                                                                                                                                                                                                                                                                                                                   |
+| [`model-keys`](#model-keys)                      | The model-provider key behind the in-app chat.                                                                                                                                                                                                                                                                                                                                      |
+| [`newsletter`](#newsletter)                      | The one channel nobody else can take away.                                                                                                                                                                                                                                                                                                                                          |
+| [`note-todos`](#note-todos)                      | Turning a note that is really a checklist into the todos it describes.                                                                                                                                                                                                                                                                                                              |
+| [`notebook-linking`](#notebook-linking)          | Putting something that already exists under a subject.                                                                                                                                                                                                                                                                                                                              |
+| [`notebook-media`](#notebook-media)              | Every picture that is in a notebook, as a gallery album.                                                                                                                                                                                                                                                                                                                            |
+| [`notebook-sections`](#notebook-sections)        | One tab of one notebook, as lines.                                                                                                                                                                                                                                                                                                                                                  |
+| [`notebook-seq`](#notebook-seq)                  | Numbers inside a notebook — what `TASK:#4`, `GOAL:#2` and `IDEA:#7` point at.                                                                                                                                                                                                                                                                                                       |
+| [`notebooks`](#notebooks)                        | Notebooks: a subject you write against, with no deadline.                                                                                                                                                                                                                                                                                                                           |
+| [`notifications`](#notifications)                | Everything the app will tell you about, in one list.                                                                                                                                                                                                                                                                                                                                |
+| [`oauth`](#oauth)                                | Connecting an assistant without anybody handling a key.                                                                                                                                                                                                                                                                                                                             |
+| [`onboarding-templates`](#onboarding-templates)  | The starter weeks, as data.                                                                                                                                                                                                                                                                                                                                                         |
+| [`onboarding`](#onboarding)                      | First run.                                                                                                                                                                                                                                                                                                                                                                          |
+| [`people`](#people)                              | The people in your life, and where they turn up.                                                                                                                                                                                                                                                                                                                                    |
+| [`phone-widgets`](#phone-widgets)                | Home-screen widgets that show one tab of one notebook.                                                                                                                                                                                                                                                                                                                              |
+| [`plan-intent`](#plan-intent)                    | Which plan somebody said they wanted, carried from the front page to the card.                                                                                                                                                                                                                                                                                                      |
+| [`plugins`](#plugins)                            | Plugin manifests: what a plugin says it understands.                                                                                                                                                                                                                                                                                                                                |
+| [`preferences`](#preferences)                    | The settings a person chooses about themselves.                                                                                                                                                                                                                                                                                                                                     |
+| [`push`](#push)                                  | Telling somebody something while the app is closed.                                                                                                                                                                                                                                                                                                                                 |
+| [`quotes`](#quotes)                              | The quotes shown one-per-day on the dashboard.                                                                                                                                                                                                                                                                                                                                      |
+| [`recipes`](#recipes)                            | Recipes, and the loop they close.                                                                                                                                                                                                                                                                                                                                                   |
+| [`regex-safety`](#regex-safety)                  | Patterns somebody types, and the ones that never finish.                                                                                                                                                                                                                                                                                                                            |
+| [`registration`](#registration)                  | Who is allowed to create an account here.                                                                                                                                                                                                                                                                                                                                           |
+| [`reminder-clock`](#reminder-clock)              | The thing that makes a reminder arrive when it says it will.                                                                                                                                                                                                                                                                                                                        |
+| [`reminder-delivery`](#reminder-delivery)        | The pass that makes a reminder arrive with the app shut.                                                                                                                                                                                                                                                                                                                            |
+| [`reminder-sources`](#reminder-sources)          | The reminders nobody types.                                                                                                                                                                                                                                                                                                                                                         |
+| [`reminders`](#reminders)                        | Something that reaches out.                                                                                                                                                                                                                                                                                                                                                         |
+| [`request-replays`](#request-replays)            | A create sent twice, answered once.                                                                                                                                                                                                                                                                                                                                                 |
+| [`review-mail`](#review-mail)                    | The morning a week begins: what last week actually was, in the inbox.                                                                                                                                                                                                                                                                                                               |
+| [`review`](#review)                              | Closing a week.                                                                                                                                                                                                                                                                                                                                                                     |
+| [`ringtones`](#ringtones)                        | The sounds a reminder can make.                                                                                                                                                                                                                                                                                                                                                     |
+| [`saved-filters`](#saved-filters)                | A narrowing somebody wants back, under a name they chose.                                                                                                                                                                                                                                                                                                                           |
+| [`schedule`](#schedule)                          | Read-only view of what's coming up.                                                                                                                                                                                                                                                                                                                                                 |
+| [`schemes`](#schemes)                            | Saved weeks.                                                                                                                                                                                                                                                                                                                                                                        |
+| [`scoped-actions`](#scoped-actions)              | What a form handler needs of the request: the body, and who is signed in.                                                                                                                                                                                                                                                                                                           |
+| [`search`](#search)                              | One box over everything the account owns.                                                                                                                                                                                                                                                                                                                                           |
+| [`sent-notifications`](#sent-notifications)      | What the app has told somebody, kept so they can read it again.                                                                                                                                                                                                                                                                                                                     |
+| [`sessions`](#sessions)                          | The sessions an account currently has open.                                                                                                                                                                                                                                                                                                                                         |
+| [`settings`](#settings)                          | A person's own settings, kept in their rows.                                                                                                                                                                                                                                                                                                                                        |
+| [`slots`](#slots)                                | The plan itself: blocks that repeat (`recurring_tasks`) and blocks that happen once (`exceptional_tasks`), plus the skips that cancel a single occurrence.                                                                                                                                                                                                                          |
+| [`stale`](#stale)                                | Things that never ended.                                                                                                                                                                                                                                                                                                                                                            |
+| [`statements`](#statements)                      | What moved through a ledger, and the rules that make sense of it.                                                                                                                                                                                                                                                                                                                   |
+| [`streams`](#streams)                            | Declare a stream. Idempotent per (user, slug) so producers can call it at every startup.                                                                                                                                                                                                                                                                                            |
+| [`subscriptions`](#subscriptions)                | What an account may do, and until when.                                                                                                                                                                                                                                                                                                                                             |
+| [`tags`](#tags)                                  | Tags, and the rows that join them to what they tag.                                                                                                                                                                                                                                                                                                                                 |
+| [`task-attributes`](#task-attributes)            | A task's attributes: user-defined key/value pairs on a task block or a todo.                                                                                                                                                                                                                                                                                                        |
+| [`time`](#time)                                  | Time, in the two shapes this app actually has.                                                                                                                                                                                                                                                                                                                                      |
+| [`today`](#today)                                | One day, in one request.                                                                                                                                                                                                                                                                                                                                                            |
+| [`todo-actions`](#todo-actions)                  | Everything that can be done to a todo, wherever the row is on screen.                                                                                                                                                                                                                                                                                                               |
+| [`todos`](#todos)                                | Todos: tasks that have no date yet.                                                                                                                                                                                                                                                                                                                                                 |
+| [`tokens`](#tokens)                              | Scopes an API token can hold.                                                                                                                                                                                                                                                                                                                                                       |
+| [`unused-media`](#unused-media)                  | The pictures nothing points at any more.                                                                                                                                                                                                                                                                                                                                            |
+| [`validate`](#validate)                          | Small hand-rolled validators.                                                                                                                                                                                                                                                                                                                                                       |
+| [`version`](#version)                            | What is running here, and since when.                                                                                                                                                                                                                                                                                                                                               |
+| [`webhooks`](#webhooks)                          | Webhooks: plugins that listen instead of push.                                                                                                                                                                                                                                                                                                                                      |
+| [`week-generator`](#week-generator)              | Format a Date as 'YYYY-MM-DDTHH:MM:SS' in local time (no UTC conversion).                                                                                                                                                                                                                                                                                                           |
+| [`wins`](#wins)                                  | Three things that went well today.                                                                                                                                                                                                                                                                                                                                                  |
+| [`workout-actions`](#workout-actions)            | Everything that can be done to a workout, wherever the row is on screen.                                                                                                                                                                                                                                                                                                            |
+| [`workouts`](#workouts)                          | Workouts: workouts you plan like meals.                                                                                                                                                                                                                                                                                                                                             |
 
 ## access
 
@@ -397,9 +400,10 @@ How many exports this account's plan allows in a day.
 ## activities
 
 Categories are the areas of a life; activities are the named recurring things
-inside them. Both are referenced by planner slots and by history, so neither
-can be deleted while something still points at it — history that loses its
-category stops being readable.
+inside them. Both are referenced by planner slots and by history. A category
+cannot be deleted while something still points at it — history that loses
+its category stops being readable. An activity can: what named it falls back
+to its category, or moves to another activity (`deleteActivity`).
 
 ### Functions
 
@@ -409,7 +413,7 @@ category stops being readable.
 
 #### `listActivitiesWithUsage(ctx)`
 
-The activities page also wants to know what may be deleted.
+The activities page also says what deleting each one would touch.
 
 #### `createActivity(ctx, raw)`
 
@@ -423,7 +427,20 @@ Retiring an activity keeps its history; deleting it would not.
 
 Switched on or off by saying which, for a caller that should not have to read first.
 
-#### `deleteActivity(ctx, id)`
+#### `activityUsage(ctx)`
+
+The usage of every activity on the account, keyed by activity, in four statements.
+
+#### `deleteActivity(ctx, id, opts)`
+
+Delete an activity, whatever still names it.
+
+Nothing is left pointing at a row that is gone, and nothing loses the word
+it was shown under. Folded, every block that named it becomes a block of its
+category carrying its name as the label, and every occurrence keeps the
+name as its own; goals that counted it stop counting it. Moved, all of it —
+goal links included — names the other activity instead, which is the same
+as having edited each one by hand.
 
 #### `createCategory(ctx, raw)`
 
@@ -440,6 +457,11 @@ An activity id from a form or a call, or null for none — one of this
 account's own, or a 404. The planner's three services each had a copy.
 
 #### `deleteCategory(ctx, id)`
+
+### Types
+
+- `ActivityUsage` — Everything that names one activity, for the dialog that deletes it.
+- `DeleteActivityOptions` — Where what named a deleted activity goes. Nothing given folds it into the activity's category; `moveTo` hands it to another activity, and `moveToNew` makes that activity first.
 
 ## admin
 
@@ -1350,6 +1372,33 @@ Answers with how many rows it wrote, which is zero on all but a handful of
 days a year. Cheap enough to call on every delivery pass and from any page
 that is about to read reminders: one indexed query over an address book.
 
+## budgets
+
+Monthly ceilings share statement spending; they never write a bank or stock entry.
+
+### Functions
+
+#### `budgetMonth(value)`
+
+#### `listBudgets(ctx, filter, spent)`
+
+#### `getBudget(ctx, id)`
+
+#### `createBudget(ctx, input)`
+
+#### `updateBudget(ctx, id, input)`
+
+#### `deleteBudget(ctx, id)`
+
+#### `copyBudgets(ctx, input)`
+
+Copy existing ceilings as ceilings, preserving orphan labels and never overwriting a bucket.
+
+### Types
+
+- `Budget`
+- `BudgetInput`
+
 ## calendar-feed
 
 The plan, published as a calendar anybody's software can read.
@@ -1499,6 +1548,52 @@ Forget one, once it has been dealt with.
 
 - `ClientErrorState`
 - `ReportedError`
+
+## commitments
+
+Custody, simple debts and reserves are stocks, not bank movements or budgets.
+A balance is the declared opening plus dated entries in its original currency.
+Splits and settlements retain their source evidence; nothing here invents money.
+
+### Functions
+
+#### `listCommitments(ctx, options)`
+
+One aggregate per stock; closed records only appear when explicitly requested.
+
+#### `getCommitment(ctx, id)`
+
+#### `createCommitment(ctx, input)`
+
+#### `updateCommitment(ctx, id, input)`
+
+#### `archiveCommitment(ctx, id, archived)`
+
+#### `listCommitmentEntries(ctx, id)`
+
+#### `getCommitmentEntry(ctx, id)`
+
+#### `addCommitmentEntry(ctx, input)`
+
+#### `deleteCommitmentEntry(ctx, id)`
+
+#### `closeCommitment(ctx, id, input)`
+
+#### `deleteCommitment(ctx, id, options)`
+
+#### `commitmentTotals(ctx)`
+
+Each kind/currency stays a stock of its own; debts are never netted into funds.
+
+#### `settleCommitment(ctx, input)`
+
+#### `consumeReserve(ctx, input)`
+
+### Types
+
+- `CommitmentKind`
+- `Commitment`
+- `CommitmentEntry`
 
 ## companions
 
@@ -1896,6 +1991,40 @@ one the funnel already has.
 Creation is only offered where registration is open. On an invite-only or
 closed instance a payer typing addresses must not be a way to mint
 accounts, so those fall back to the old rule: the account has to exist.
+
+## finance-summary
+
+The four questions, answered once.
+
+What is mine, what is committed, what I spent this month, and what is left
+against my plans — for every original currency separately, because §4 says
+currencies never add (D6) and because a total that mixes them is a total
+nobody can act on.
+
+This module does no arithmetic of its own beyond the cross-room formulas in
+`architecture.md` §4: supported funds come from `ledgers.ts` (D5), spending
+from `statements.ts` (D4), budgets from `budgets.ts` (D7), stocks from
+`commitments.ts` (D7). It only puts them beside each other and names the
+gaps. Every figure is one aggregate query — the inputs are grouped reads;
+nothing here loads statement rows and re-sums them in JavaScript (D11).
+
+### Functions
+
+#### `moneyOverview(ctx, filter)`
+
+The money picture for one account at one civil month.
+
+Currencies are the union of the accounts, the open stocks, the month's
+budgets and the month's spending — a currency is on the screen if it has
+something to say, and an account in it is the only thing that can make a
+supported total.
+
+### Types
+
+- `MoneyGap` — A thing the screen must name instead of hiding in a confident total.
+- `CurrencyCoverage` — How much of one currency's money rests on a declared opening.
+- `CurrencyPicture`
+- `MoneyOverview`
 
 ## gallery
 
@@ -2976,6 +3105,20 @@ The ledgers, all of them or one subject's.
 tab is this room looking at one subject and draws the rows with the same
 component, so it needs exactly what the room needs.
 
+#### `supported(ctx, asOf)`
+
+Active covered ledgers only. Unknown currency is an exclusion, not an FX guess.
+
+#### `listBalanceChecks(ctx, ledgerId)`
+
+Observations remain evidence even when there is not yet an opening to check them against.
+
+#### `recordBalanceCheck(ctx, input)`
+
+#### `getBalanceCheck(ctx, id)`
+
+#### `deleteBalanceCheck(ctx, id)`
+
 #### `getLedger(ctx, id)`
 
 #### `createLedger(ctx, input)`
@@ -3008,6 +3151,8 @@ A place past either end is the end.
 
 - `LedgerKind`
 - `Ledger`
+- `CurrencyFunds`
+- `BalanceCheck`
 
 ## legal
 
@@ -5654,6 +5799,17 @@ the first paint wrong for half of visitors.
 
 #### `setTheme(userId, theme)`
 
+#### `isMoneyView(value)`
+
+#### `getMoneyView(userId)`
+
+Whether the money picture shows every account balance, including money held
+for somebody else, or only the part that is the reader's. The default is
+`all` so an existing picture does not change under a person who never chose;
+the money screen offers the switch and stores the answer.
+
+#### `setMoneyView(userId, view)`
+
 #### `getLocale(userId)`
 
 The language this account reads the app in.
@@ -5791,6 +5947,7 @@ simply does not find it among the notebooks it lists.
 
 ### Types
 
+- `MoneyView`
 - `WeekSettings`
 - `GridHours`
 
@@ -5980,6 +6137,14 @@ no resweep and nothing stored to drift.
 
 ### Functions
 
+#### `splitMovement(ctx, input)`
+
+A split never rewrites the bank line; custody entries and all parts land together.
+
+#### `unsplitMovement(ctx, id)`
+
+Remove parts only after the owner explicitly reverses their stock entries.
+
 #### `availableParsers()`
 
 The parsers an import can offer, by key and friendly name.
@@ -6008,6 +6173,41 @@ already sent adds nothing, provided it names the same `externalId`.
 
 #### `updateMovement(ctx, id, input)`
 
+#### `classifyMovements(ctx, input)`
+
+Say what several movements were at once, in one write.
+
+The point is a hundred lines in one gesture, not a hundred round trips, so
+the whole selection is checked first: a single leg of a transfer or an id
+from another account refuses the batch rather than half-applying it.
+
+#### `linkTransfer(ctx, input)`
+
+Two lines are one move between my own accounts (D2).
+
+A group of one is a _pending counterpart_ and is allowed to stand: the
+destination statement often arrives later. Two legs in the same ledger are
+refused — they would balance to zero and hide two real expenses — and legs
+in one currency must add up to nothing, because money that left one place
+arrived in the other.
+
+#### `unlinkTransfer(ctx, id)`
+
+Undo a pairing: both legs return to the sign's guess, and the group is gone.
+
+#### `linkMovement(ctx, input)`
+
+Attach a line to the one it belongs to (D8).
+
+A refund reverses one expense and a fee belongs to the payment it was
+charged on. One parent only: a credit returned against two expenses is two
+credits. The currencies must match — the ledgers may differ, the money may
+not — because netting unlike money is arithmetic, not reconciliation.
+
+#### `detachMovement(ctx, id)`
+
+Undo a refund or fee link: the line stands alone again, back to the sign's guess.
+
 #### `getMovementRow(ctx, id)`
 
 One movement as stored, or null — how an id somebody named is resolved.
@@ -6017,6 +6217,13 @@ One movement as stored, or null — how an id somebody named is resolved.
 Every movement as stored, or only those in some ledgers — what a key tied to a notebook reaches.
 
 #### `deleteMovement(ctx, id)`
+
+Gone.
+
+A leg of a transfer is refused while the group stands: deleting one leg is
+how a pair becomes a single line that still calls itself a transfer (D2).
+Anything that pointed at the line is unlinked first, so a refund survives
+its parent as an unmatched credit rather than disappearing with it.
 
 #### `listRules(ctx)`
 
@@ -6044,6 +6251,27 @@ What a description would be filed as, for anything that needs to ask.
 
 #### `listMovements(ctx, filter)`
 
+#### `listMovementPage(ctx, opts)`
+
+One bounded page of statement lines, newest first.
+
+A page, not a figure: `limit` is clamped and `beforeId` is the cursor the
+previous page answered with, so walking the history never loads all of it.
+The values are `listMovements`' own — same category, tags, allocations and
+counterpart state — because the API and the screen must tell one story.
+
+`beforeId` is the id of the last line already read; the keyset is that line's
+place in the order, not the id alone, so an import backdating a line cannot
+make a page skip or repeat a row.
+
+#### `recentForLinking(ctx, limit)`
+
+The few recent lines one meaning can be linked to.
+
+Deliberately not `listMovements`: that loads the whole history and runs
+every sorting rule over each row, which a picker of the last hundred lines
+has no use for and would pay for on every page load.
+
 #### `uncategorizedCount(ctx, filter)`
 
 How many lines no category rule claims — the number that says "more rules".
@@ -6052,15 +6280,29 @@ How many lines no category rule claims — the number that says "more rules".
 
 'YYYY-MM' keys ending at the month `now` is in.
 
+#### `statementWindow(ctx, months, filter)`
+
+One inclusive window for every finance series, in the account's civil month.
+
 #### `categorySlices(ctx, filter)`
 
-Spending by category over a window — the pie, and the table beside it.
-Every outgoing line is in exactly one slice, uncategorized included, so
-the slices are the whole of what was spent.
+Personal spending by category over a window — the pie, and the table beside it.
+Expenses and fees count, net of refunds, and only the personal part of a split
+line. Transfers, cash withdrawals and custody shares stay out; a month whose
+refunds outweigh its spending has no slice rather than a negative one.
+
+#### `spending(ctx, filter)`
+
+Personal consumption and its exclusions, grouped by original currency without a row cap.
 
 #### `monthlyTotals(ctx, months, filter)`
 
 In, out and net, month by month.
+
+This is cash flow as the bank shows it: a linked refund arrived, so it is
+money in. Personal spending — `categorySlices`, `categoryMonths` — nets that
+refund against the expense it reverses and leaves transfers, cash and custody
+shares out, so the two totals are not meant to match.
 
 #### `categoryMonths(ctx, months, filter)`
 
@@ -6096,9 +6338,16 @@ The ledgers a set of transaction ids belongs to — for bulk moves later.
 ### Types
 
 - `Movement`
+- `MovementAllocation`
+- `AllocationInput`
+- `MovementKind`
 - `Rule`
 - `MovementFilter`
+- `MovementPage`
+- `LinkCandidate` — A line a meaning can point at: a transfer's other side, a refund's expense.
 - `CategorySlice`
+- `SpendingCategory`
+- `Spending`
 - `StatementMonth`
 - `CategoryMonths`
 - `TagMonths`
@@ -7096,6 +7345,14 @@ empty of its own and the forms say "none" by sending nothing. Lower-cased so
 one colour is stored one way.
 
 #### `num(value, field, opts)`
+
+#### `civilDay(value, field)`
+
+A real civil day, preserved exactly rather than normalised into another date.
+
+#### `minorAmount(value, field)`
+
+Money must remain exact at both the write boundary and the aggregate result.
 
 #### `oneOf(value, field, allowed)`
 

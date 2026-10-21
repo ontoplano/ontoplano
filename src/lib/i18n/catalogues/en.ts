@@ -174,6 +174,7 @@ export const messages: Catalogue = {
 	'app.manageYourPlan': 'Manage your plan',
 	'app.matchMyDevice': 'Match my device',
 	'app.monday': 'Monday',
+	'app.moneyPicture': 'Money picture',
 	'app.monthly': 'Monthly',
 	'app.move': 'move',
 	'app.neutral': 'Neutral',
@@ -393,6 +394,8 @@ export const messages: Catalogue = {
 	'card.oneOfYourOwnQuotes': 'One of your own quotes, the same one all day.',
 	'card.theBlockYouAreIn':
 		'The task block you are in, or the next one, and the two answers it wants.',
+	'card.theFourAnswersAboutYourMoney':
+		'What is mine, what is committed, what I spent this month, and what is left.',
 	'card.theHoursYouHaveTicked': 'The hours you have ticked off this week, by category.',
 	'card.theLastFewIdeasYou': 'The last few ideas you had.',
 	'card.theMostRecentThingsYou': 'The most recent things you wrote down, newest first.',
@@ -454,10 +457,9 @@ export const messages: Catalogue = {
 		'The file carries a picture that is not a format this app accepts',
 	'errors.accountImport.theFileCarriesASound':
 		'The file carries a sound that is not a format this app accepts',
-	'errors.activities.cannotDeleteActivityIsReferenced':
-		'Cannot delete: activity is referenced by planner slots or task history',
 	'errors.activities.cannotDeleteCategoryHasActivities':
 		'Cannot delete: category has activities or planner slots',
+	'errors.activities.cannotMoveOntoItself': 'An activity cannot be handed over to itself.',
 	'errors.activities.categoryAlreadyExists': 'Category already exists',
 	'errors.activities.invalidColorFormat': 'Invalid color format',
 	'errors.admin.aSelfHostedInstance': 'A self-hosted instance has no plans',
@@ -523,6 +525,111 @@ export const messages: Catalogue = {
 	'errors.familyInvite.noAccountHereUses': 'No account here uses that address',
 	'errors.familyInvite.thisPlanCoversOneAccount': 'This plan covers one account',
 	'errors.familyInvite.thisPlanIsNotActive': 'This plan is not active',
+	'errors.finance.archiveCommitmentPermanentlyDeleting':
+		'Archive this commitment before permanently deleting it.',
+	'errors.finance.balanceCheckAlreadyExistsLedger':
+		'A balance check already exists for this ledger and date. Delete it explicitly before recording a correction.',
+	'errors.finance.bankExportUsesTwoDecimal':
+		'This bank export uses two decimal places. Use the original-currency generic CSV format for this ledger.',
+	'errors.finance.bankMovementAlreadyChangesStock':
+		'This bank movement already changes a stock. Reverse its entry before reusing it.',
+	'errors.finance.beforeOpening':
+		'The earliest movement, {earliest}, is before the opening date {opening}. Nothing was imported.',
+	'errors.finance.budgetAlreadyExistsMonthCategory':
+		'A budget already exists for this month, category and currency.',
+	'errors.finance.budgetAmountNegative': 'A budget amount cannot be negative.',
+	'errors.finance.budgetChangedReadAgainSaving':
+		'This budget changed. Read it again before saving.',
+	'errors.finance.categoryGone':
+		'Category {category} no longer exists. Choose an existing category rule.',
+	'errors.finance.categoryHasBudget':
+		'A budget still uses the category “{name}”. Rename or delete that budget first.',
+	'errors.finance.chooseAtMost120Months': 'Choose at most 120 months.',
+	'errors.finance.chooseOpenCustodyPayableCommitment':
+		'Choose an open custody or payable commitment.',
+	'errors.finance.chooseOriginalCurrencyUnlikeMoney':
+		'Choose one original currency; unlike money cannot be combined.',
+	'errors.finance.chooseReserveConsume': 'Choose a reserve to consume.',
+	'errors.finance.chooseValidCurrencyCode': 'Choose a valid currency code.',
+	'errors.finance.chooseValidOriginalCurrency': 'Choose a valid original currency.',
+	'errors.finance.combinedNoteTooLong':
+		'The combined note for one stock must be {max} characters or fewer.',
+	'errors.finance.commitmentsRunningBalanceBecomeNegative':
+		'The commitment’s running balance cannot become negative. Record an explicit increase before overpaying.',
+	'errors.finance.currencyChangeLedgerHoldsMovements':
+		'Currency cannot change while this ledger holds movements, a declared opening or statement checks. No conversion is performed.',
+	'errors.finance.custodyEntryMatchRetainedAllocation':
+		'A custody entry must match its retained allocation exactly. Split the movement first.',
+	'errors.finance.custodyExcludedFromPersonalCategories':
+		'Custody is excluded from personal categories.',
+	'errors.finance.custodyPartMovementShareKnown':
+		'A custody part and its movement must share a known currency.',
+	'errors.finance.eachSplitPartNameKind': 'Each split part must name its kind and amount.',
+	'errors.finance.enterExactAmountLedgerCurrency':
+		'Enter an exact amount in the ledger currency, or whole minor units when unspecified.',
+	'errors.finance.enterExactBudgetAmountOriginal':
+		'Enter an exact budget amount in its original currency.',
+	'errors.finance.enterExactOpeningAmountLedger':
+		'Enter an exact opening amount in the ledger currency, or whole minor units when unspecified.',
+	'errors.finance.enterExactSignedAmountCommitment':
+		'Enter an exact signed amount in the commitment currency.',
+	'errors.finance.enterExactSignedPartLedger': 'Enter an exact signed part in the ledger currency.',
+	'errors.finance.enterExactStatementClosingAmount':
+		'Enter an exact statement closing amount in the ledger currency, or whole minor units when unspecified.',
+	'errors.finance.entryChangeStockByNonzero': 'An entry must change the stock by a nonzero amount.',
+	'errors.finance.everySplitPartHaveMovements':
+		'Every split part must have the movement’s sign and be nonzero.',
+	'errors.finance.expenseAlreadyConsumesStock': 'This expense already consumes a stock.',
+	'errors.finance.fileTooLong': 'That file exceeds {max} movements. Nothing was imported.',
+	'errors.finance.firstDayNotAfterLast': 'The first day must not be after the last day.',
+	'errors.finance.kindCurrencyChangeHistoryAllocations':
+		'Kind and currency cannot change while history or allocations depend on them.',
+	'errors.finance.ledgerCurrencyChangedReadingFile':
+		'Ledger currency changed while reading the file. Nothing was imported; retry with the current currency.',
+	'errors.finance.ledgerHasLinkedMovements':
+		'Reverse linked entries and unsplit movements {ids} before deleting this ledger.',
+	'errors.finance.lineRejected':
+		'Line {line} was rejected: invalid date, amount or description. Nothing was imported.',
+	'errors.finance.lineRejectedSaving':
+		'Line {line} was rejected while saving. Nothing was imported.',
+	'errors.finance.linkedEntryKeepsBankMovements': 'A linked entry keeps its bank movement’s date.',
+	'errors.finance.movementAlreadyHasEntryCommitment':
+		'This movement already has an entry in this commitment.',
+	'errors.finance.movementAlreadySettlesStock': 'This movement already settles a stock.',
+	'errors.finance.movementHasSplitOrEntry':
+		'Movement {id} has a split or settlement entry. Reverse linked entries and unsplit first.',
+	'errors.finance.noLedgerInCurrency':
+		'No ledger uses {currency}. Add a ledger in that original currency first.',
+	'errors.finance.onlyCustodyPartsMayName': 'Only custody parts may name a commitment.',
+	'errors.finance.openingStockNegative': 'An opening stock cannot be negative.',
+	'errors.finance.receivableSettlementNeedsIncomingRepayment':
+		'A receivable settlement needs one incoming repayment in its original currency.',
+	'errors.finance.reopenCommitmentAddingEntries': 'Reopen the commitment before adding entries.',
+	'errors.finance.reopenCommitmentClosing': 'Reopen the commitment before closing it.',
+	'errors.finance.reopenCommitmentCorrectingOpening':
+		'Reopen this commitment before correcting its opening.',
+	'errors.finance.reserveConsumedByWholePersonal':
+		'A reserve is consumed by one whole personal expense or fee.',
+	'errors.finance.reverseLinkedCommitmentEntryRemoving':
+		'Reverse the linked commitment entry before removing this split.',
+	'errors.finance.settlementExceedsBalance':
+		'The outstanding balance is {balance}. Record an explicit increase before overpaying.',
+	'errors.finance.settlementUsesOutgoingPaymentUse':
+		'A settlement uses an outgoing payment. Use a custody split to record received funds.',
+	'errors.finance.splitDoesNotAddUp':
+		'Split parts must add to {total} minor units; difference {difference}.',
+	'errors.finance.splitNeedsBetween1100': 'A split needs between 1 and 100 parts.',
+	'errors.finance.stockPaymentShareKnownCurrency':
+		'A stock and its payment must share a known currency.',
+	'errors.finance.unlinkMovementEvidencePermanentlyDeleting':
+		'Unlink the movement evidence before permanently deleting this commitment.',
+	'errors.finance.unlinkTransferClassifyMovementSplitting':
+		'Unlink the transfer or classify this movement before splitting it.',
+	'errors.finance.unreadableSplitPart': 'Unreadable split part.',
+	'errors.finance.useReserveConsumptionEarmark': 'Use reserve consumption for an earmark.',
+	'errors.finance.writeOffNeedsNote':
+		'The outstanding balance is {balance}. An explicit write-off note is required.',
+	'errors.finance.zeroMovementSplit': 'A zero movement cannot be split.',
 	'errors.gallery.anAlbumByThatName': 'An album by that name already exists.',
 	'errors.goals.invalidColorFormat': 'Invalid color format',
 	'errors.goals.invalidDate': 'Invalid date',
@@ -675,7 +782,35 @@ export const messages: Catalogue = {
 	'errors.slots.noValidSlotsFound': 'No valid slots found in CSV',
 	'errors.slots.thatWorkoutIsNotYours': 'That workout is not yours.',
 	'errors.slots.workoutRequired': 'Workout required',
+	'errors.statements.alreadyChild': 'That line already belongs to line {id}.',
+	'errors.statements.alreadyChildLink':
+		'That line already belongs to another line as a refund or a fee. Unlink it first.',
+	'errors.statements.alreadyRefund':
+		'That line is already the refund of line {id}. A refund reverses one expense.',
+	'errors.statements.alreadyTransfer':
+		'One of those lines is already part of a transfer. Unlink it first.',
+	'errors.statements.legCannotBeChild': 'A leg of a transfer cannot be a refund or a fee.',
+	'errors.statements.legOfTransferChange':
+		'This line is one leg of a transfer. Unlink the transfer first, then change what it means.',
+	'errors.statements.legOfTransferClassify':
+		'One line in that selection is a leg of a transfer. Unlink the transfer first, then classify it.',
+	'errors.statements.legOfTransferDelete':
+		'This line is one leg of a transfer with line {id}. Unlink the transfer first.',
+	'errors.statements.legsDoNotBalance':
+		'Those two do not add up to nothing: {a} {first} and {b} {second}. A move between accounts leaves one and arrives in the other.',
+	'errors.statements.linkNeedsCurrency':
+		'One of those ledgers has no currency. Set the currency before linking money across them.',
+	'errors.statements.linkNeedsLedger': 'Both lines must be in a ledger before they can be linked.',
 	'errors.statements.noParserKnowsThatExport': 'No parser knows that export.',
+	'errors.statements.notATransfer': 'That line is not part of a transfer.',
+	'errors.statements.ownCounterpart': 'A line cannot be its own counterpart.',
+	'errors.statements.ownParent': 'A line cannot belong to itself.',
+	'errors.statements.refundOnLeg':
+		'A refund is attached to one of these legs (line {id}). Unlink the refund first.',
+	'errors.statements.sameLedgerTransfer':
+		'Both lines are in the same ledger. A pair that balances inside one account hides two real expenses.',
+	'errors.statements.unlikeCurrencies':
+		'Those are in different currencies: {a} and {b}. A refund or a fee must be in the money it belongs to.',
 	'errors.streams.pointMustBeAnObject': 'point must be an object',
 	'errors.streams.pointsMustBeAnArray': 'points must be an array',
 	'errors.subscriptions.anEmailAddressIsNeeded': 'An email address is needed',
@@ -855,33 +990,153 @@ export const messages: Catalogue = {
 	'finance.bills.whatPaidName': 'What paid {name}?',
 	'finance.bills.whenItTurnsUpOn': 'When it turns up on your week. 0 is the due day itself.',
 	'finance.bills.youWontBeReminded': "You won't be reminded to pay it.",
+	'finance.budgets.allCurrencies': 'All currencies',
+	'finance.budgets.allocated': 'Allocated amount',
+	'finance.budgets.allocatedAmount': 'Allocated amount',
+	'finance.budgets.cancel': 'Cancel',
+	'finance.budgets.category': 'Category',
+	'finance.budgets.categoryCreated': 'Category “{category}” created. Choose it from the list.',
+	'finance.budgets.categoryGone':
+		'{category} no longer exists. Choose an existing category or delete this budget.',
+	'finance.budgets.categoryHint': 'Budgets use the category rules from the Rules tab.',
+	'finance.budgets.categoryName': 'Category name',
+	'finance.budgets.categoryNameHint':
+		'Saved on the Rules tab; you can refine the matching pattern there.',
+	'finance.budgets.chooseCategory': 'Choose a category…',
+	'finance.budgets.chooseCurrency': 'Choose a currency…',
+	'finance.budgets.confirmDelete': 'Delete',
+	'finance.budgets.copied': 'Added {added}, skipped {skipped} already there.',
+	'finance.budgets.copy': 'Copy from last month',
+	'finance.budgets.create': 'Create',
+	'finance.budgets.createCategory': 'Create category',
+	'finance.budgets.credit': 'Credit',
+	'finance.budgets.currency': 'Currency',
+	'finance.budgets.currencyNeedsLedger': 'Only currencies with a ledger can have a budget.',
+	'finance.budgets.delete': 'Delete',
+	'finance.budgets.deleteConfirm': 'Delete budget',
+	'finance.budgets.edit': 'Edit budget',
+	'finance.budgets.manageRules': 'Manage in Rules',
+	'finance.budgets.month': 'Month',
+	'finance.budgets.new': 'New budget',
+	'finance.budgets.newCategory': 'New category',
+	'finance.budgets.noBudgets': 'No budgets set for this month.',
+	'finance.budgets.noBudgetsHint':
+		"A budget is a month's plan for one category; the overview shows what is left of it.",
+	'finance.budgets.noCategories': 'No category rules yet. Create one on the Rules tab first.',
+	'finance.budgets.noLedger': 'no ledger',
+	'finance.budgets.noLedgerCurrency': 'Budgets need a currency declared on a ledger.',
+	'finance.budgets.nothingToCopy': 'Nothing to copy from last month.',
+	'finance.budgets.orphaned': 'Category no longer exists',
+	'finance.budgets.remaining': 'Remaining',
+	'finance.budgets.save': 'Save',
+	'finance.budgets.spent': 'Spent',
+	'finance.budgets.title': 'Budgets',
+	'finance.commitments.addEntry': 'Record adjustment',
+	'finance.commitments.adjustment': 'Stock adjustment',
+	'finance.commitments.adjustmentHint':
+		'Positive increases the stock; negative reduces it. This creates no bank movement.',
+	'finance.commitments.after': 'Stock after payment',
+	'finance.commitments.archive': 'Archive',
+	'finance.commitments.archived': 'Settled and archived',
+	'finance.commitments.close': 'Close commitment',
+	'finance.commitments.closeHint':
+		'A nonzero stock needs an explicit write-off note. Closing never adjusts bank money.',
+	'finance.commitments.consume': 'Consume reserve',
+	'finance.commitments.consumeHint':
+		'The reserve decreases once. The existing payment remains personal spending; no bank movement is created.',
+	'finance.commitments.currency': 'Original currency',
+	'finance.commitments.current': 'Current',
+	'finance.commitments.custody': 'Custody',
+	'finance.commitments.custodyHint': 'Money you hold for somebody else.',
+	'finance.commitments.deleteHint':
+		'Delete puts the record away first. Permanent deletion is only available from the archived view and refuses linked bank evidence.',
+	'finance.commitments.deletePermanently': 'Delete permanently',
+	'finance.commitments.edit': 'Edit commitment',
+	'finance.commitments.hint':
+		'Stocks are not bank balances or budgets. Amounts stay separate by kind and original currency.',
+	'finance.commitments.history': 'Commitment history',
+	'finance.commitments.lastEntry': 'Last entry:',
+	'finance.commitments.movement': 'Bank movement',
+	'finance.commitments.new': 'New commitment',
+	'finance.commitments.none': 'Nothing here yet.',
+	'finance.commitments.opening': 'Opening stock',
+	'finance.commitments.payable': 'Payable',
+	'finance.commitments.payableHint': 'Money you owe somebody.',
+	'finance.commitments.person': 'Person (optional)',
+	'finance.commitments.receivable': 'Receivable',
+	'finance.commitments.receivableHint': 'Money somebody owes you.',
+	'finance.commitments.reopen': 'Reopen',
+	'finance.commitments.reserve': 'Reserve',
+	'finance.commitments.reserveHint': 'Your money set aside, not already spent.',
+	'finance.commitments.reverseEntry': 'Reverse entry',
+	'finance.commitments.reverseHint':
+		'This reverses the stock entry. The bank movement and any split stay intact; remove the split separately if needed.',
+	'finance.commitments.running': 'Running balance',
+	'finance.commitments.settle': 'Settle',
+	'finance.commitments.settleHint':
+		"The obligation decreases once. An owner's outgoing payment is excluded from personal spending. Bank money stays unchanged.",
+	'finance.commitments.status.archived': 'Archived',
+	'finance.commitments.status.open': 'Open',
+	'finance.commitments.status.settled': 'Settled',
+	'finance.commitments.writeOffNote': 'Authorize residual write-off with a note',
 	'finance.donut.empty': 'Nothing spent in this window yet.',
 	'finance.donut.heading': 'Spending by category',
 	'finance.donut.out': 'out',
 	'finance.insights.average': 'average {averageCents}',
 	'finance.insights.biggestCategory': 'Biggest category',
+	'finance.insights.budgetsWindow': 'Choose one month to see budget progress.',
+	'finance.insights.cash': 'Cash withdrawn, use unknown: {count} · {amount}',
+	'finance.insights.categories': 'Personal spending and refunds by category',
+	'finance.insights.category': 'Category',
+	'finance.insights.chooseMonth': 'Show month',
+	'finance.insights.credit':
+		'Refund credits are shown separately; charts draw positive spending only.',
+	'finance.insights.currency': 'Original currency',
+	'finance.insights.currencyNotDeclared':
+		'No ledger declares a currency — amounts are shown in {currency}.',
+	'finance.insights.custody': 'Custody excluded: {count} · {amount}',
 	'finance.insights.dearestMonth': 'Dearest month',
+	'finance.insights.defaultWindow': 'Last 12 months (default)',
+	'finance.insights.definitions':
+		'Personal spending includes expenses and fees, less refunds. It is not a bank balance.',
 	'finance.insights.everyLedger': 'Every ledger',
+	'finance.insights.exclusions': 'Transfers and cash excluded',
+	'finance.insights.gross': 'Gross expenses',
 	'finance.insights.importAStatementIntoA':
 		'Import a statement into a ledger and these come alive: what each month cost, where it went, and what any one tag adds up to.',
 	'finance.insights.in': 'In',
 	'finance.insights.inAndOut': 'In and out',
 	'finance.insights.inTotalAMonth':
 		'{totalCents} in total, {averageCents} a month across the {activeMonths} month{s} it appeared in. One tag at a time — tags overlap, so adding them up would count a line twice.',
+	'finance.insights.income': 'Personal income',
 	'finance.insights.lastMonths': 'last {w} months',
+	'finance.insights.minorUnits': '{amount} minor units (currency unspecified)',
+	'finance.insights.month': 'Month',
+	'finance.insights.monthBudgets': 'Budgets for this month',
 	'finance.insights.monthlyCostOf': 'Monthly cost of #{name}',
+	'finance.insights.net': 'Net personal spending',
+	'finance.insights.noActivity': 'No recorded activity in this period.',
 	'finance.insights.noTagsYet': 'No tags yet.',
 	'finance.insights.nothingToReadYet': 'Nothing to read yet',
 	'finance.insights.out': 'Out',
 	'finance.insights.overMonthWithAny': 'over {monthsWithSpending} month{s} with any',
-	'finance.insights.spendingStackedByCategory':
-		'Spending stacked by category — every outgoing line is in exactly one band.',
+	'finance.insights.partialBalance':
+		'{verified} of {total} ledgers verified at their latest check. Spending does not establish available funds.',
+	'finance.insights.refunds': 'Refunds',
+	'finance.insights.spendingStackedByCategory': 'Personal spending stacked by category.',
 	'finance.insights.spentPerMonthOnAverage': 'Spent, per month on average',
-	'finance.insights.theSameMoneyWithoutThe': 'The same money, without the months.',
+	'finance.insights.theSameMoneyWithoutThe': 'Personal spending, without the months.',
 	'finance.insights.theWholeWindowByCategory': 'The whole window, by category',
+	'finance.insights.transfers': 'Transfers: {count} · in {incoming} · out {outgoing}',
+	'finance.insights.unclassified': '{count} unclassified movements · review assumed meanings',
+	'finance.insights.unknownBalance':
+		'No verified balance for this currency. Spending reflects recorded activity only.',
+	'finance.insights.unmatchedRefunds': '{count} unmatched refunds',
+	'finance.insights.unspecified': 'Unspecified currency',
 	'finance.insights.whatArrivedAgainstWhatLeft': 'What arrived against what left.',
 	'finance.insights.whatEachMonthWasMade': 'What each month was made of',
 	'finance.insights.whatOneTagCosts': 'What one tag costs',
+	'finance.insights.window': 'Recorded activity: {from} to {to}',
 	'finance.insights.writeOne': 'Write one →',
 	'finance.ledgers.aLedgerIsOnePlace':
 		'A ledger is one place money moves through — a current account, a credit card. Make one, then import its statement or write a line by hand.',
@@ -889,13 +1144,36 @@ export const messages: Catalogue = {
 	'finance.ledgers.andItsLinesGoFor':
 		'and its {count} lines go for good. To keep the history, archive it instead.',
 	'finance.ledgers.archive': 'Archive {name}',
+	'finance.ledgers.asOf': 'As of {day}',
 	'finance.ledgers.askEveryTime': 'Ask every time',
+	'finance.ledgers.assumed': 'assumed from the sign',
+	'finance.ledgers.checkAmount': 'Observed closing amount',
+	'finance.ledgers.checkComputed': 'Computed: {amount}',
+	'finance.ledgers.checkDate': 'Statement closing date',
+	'finance.ledgers.checkDifference': 'Observed minus computed: {amount}',
+	'finance.ledgers.checkDifferent': 'Different',
+	'finance.ledgers.checkHistory': 'Statement balance checks',
+	'finance.ledgers.checkMatched': 'Matched',
+	'finance.ledgers.checkUnverified': 'Unverified — no opening covers this date',
+	'finance.ledgers.chooseCurrency':
+		'Set this ledger’s currency; amounts currently have unspecified units.',
 	'finance.ledgers.chooseTheFile': 'Choose the file',
+	'finance.ledgers.classifySelected': 'Classify selected',
 	'finance.ledgers.coffee': 'Coffee',
+	'finance.ledgers.counterpart': 'The other side',
+	'finance.ledgers.counterpartPending': 'counterpart pending',
+	'finance.ledgers.coverageTour':
+		'Declare the original currency and an opening date to support a balance. Statement closing checks show matches or differences without changing movements.',
+	'finance.ledgers.currency': 'Currency',
+	'finance.ledgers.currencyHint':
+		'Original ISO currency code. Leave blank only when unknown; no default or conversion is assumed.',
+	'finance.ledgers.currencyNotDeclared':
+		'Ledger currency not declared — amounts are shown in {currency}.',
 	'finance.ledgers.currentAccount': 'Current account',
 	'finance.ledgers.datesAreDayFirst': 'Dates are day first — 02/03 is the second of March',
 	'finance.ledgers.day': 'Day',
 	'finance.ledgers.delete': 'Delete {name}',
+	'finance.ledgers.deleteCheck': 'Delete this balance check',
 	'finance.ledgers.deleteThisLedger': 'Delete this ledger?',
 	'finance.ledgers.deleteThisLine': 'Delete this line',
 	'finance.ledgers.deleteThisLine2': 'Delete this line?',
@@ -905,20 +1183,37 @@ export const messages: Catalogue = {
 	'finance.ledgers.editLine': 'Edit line',
 	'finance.ledgers.editThisLine': 'Edit this line',
 	'finance.ledgers.everyMonth': 'Every month',
+	'finance.ledgers.excludedAccounts': 'Excluded: {names}',
 	'finance.ledgers.export': 'Export',
 	'finance.ledgers.flipAmountsForAn': 'Flip amounts — for an export whose signs mean the opposite',
 	'finance.ledgers.goesImportingTheSameStatement':
 		"goes. Importing the same statement again brings\n\t\t\tit back, since it is the bank's line rather than yours.",
 	'finance.ledgers.import': 'Import',
 	'finance.ledgers.importAStatement': 'Import a statement',
+	'finance.ledgers.importRecordedOnly':
+		'No opening is declared. Imported amounts are a recorded subtotal, not a supported balance.',
 	'finance.ledgers.importThisLedgerSExportOr':
 		"Import this ledger's export, or write a line by hand. Lines already imported are never added twice.",
 	'finance.ledgers.keepIt': 'Keep it',
+	'finance.ledgers.kindCash': 'Cash withdrawal',
+	'finance.ledgers.kindExpense': 'Spending',
+	'finance.ledgers.kindFee': 'Fee',
+	'finance.ledgers.kindIncome': 'Income',
+	'finance.ledgers.kindRefund': 'Refund',
+	'finance.ledgers.kindTransfer': 'Transfer',
 	'finance.ledgers.lastOn': 'last {day}',
 	'finance.ledgers.leaveTheIdAsNone':
 		"Leave the id as none unless the file really carries the bank's own reference per line.\n\t\t\t\t\t\t\tWithout one, a line is matched on its date, amount and description instead.",
 	'finance.ledgers.ledger': 'Ledger',
 	'finance.ledgers.lines': '{count} lines',
+	'finance.ledgers.linkAsTransfer': 'Link as transfer',
+	'finance.ledgers.linkParent': 'The line it belongs to',
+	'finance.ledgers.linkRelated': 'Link to this line',
+	'finance.ledgers.linkedToLine': 'This line belongs to line {id}.',
+	'finance.ledgers.linkedTransfer': 'This line is one leg of a transfer.',
+	'finance.ledgers.meaning': 'Meaning',
+	'finance.ledgers.meaningHint': 'What it was. Left as assumed, the sign decides.',
+	'finance.ledgers.minorUnitsAmount': '{amount} minor units (unspecified)',
 	'finance.ledgers.moneyIn': 'Money in',
 	'finance.ledgers.moneyOut': 'Money out',
 	'finance.ledgers.month': 'Month',
@@ -926,30 +1221,110 @@ export const messages: Catalogue = {
 	'finance.ledgers.moveLater': 'Move {name} later',
 	'finance.ledgers.newLedger': 'New ledger',
 	'finance.ledgers.newLine': 'New line',
+	'finance.ledgers.noChecks':
+		'No statement observations yet. Recording a check never creates an adjustment.',
 	'finance.ledgers.noHeaderRowSoThe':
 		'No header row, so the columns are numbered. Point at the right ones:',
 	'finance.ledgers.noLedgersYet': 'No ledgers yet',
 	'finance.ledgers.noLinesMatch': 'No line in this ledger matches the search and month.',
+	'finance.ledgers.noSupportedFunds': 'No supported subtotal',
 	'finance.ledgers.none': '— none —',
 	'finance.ledgers.nothingHereYet': 'Nothing here yet',
+	'finance.ledgers.openingAmount': 'Opening amount',
+	'finance.ledgers.openingAt': 'Opening {amount} on {day}',
+	'finance.ledgers.openingHint':
+		'Immediately before movements on the opening date. If currency is unspecified, enter whole minor units.',
+	'finance.ledgers.openingOn': 'Opening date',
 	'finance.ledgers.orPasteItBelow': 'or paste it below',
 	'finance.ledgers.orderLinesBy': 'Order lines by',
+	'finance.ledgers.outsideCoverage': 'Outside covered period: {count}',
 	'finance.ledgers.pasteExample': 'Date,Amount,Description\n02/03/2026,-12.30,Corner Bakery',
 	'finance.ledgers.preselectedWhenImportingIntoThis':
 		'Preselected when importing into this ledger. Changeable at import.',
 	'finance.ledgers.putItAway': 'Put it away',
 	'finance.ledgers.readFromTheHeaderChange': 'Read from the header. Change anything it got wrong:',
+	'finance.ledgers.recordCheck': 'Record balance check',
+	'finance.ledgers.recordedSubtotal': 'Recorded subtotal: {amount}',
+	'finance.ledgers.relatedLine': 'The line it belongs to',
 	'finance.ledgers.restore': 'Restore',
 	'finance.ledgers.searchDescriptions': 'Search descriptions',
+	'finance.ledgers.selectLine': 'Select {name}',
+	'finance.ledgers.selectedCount': '{count} selected',
 	'finance.ledgers.showingCount': { one: '{count} line showing', other: '{count} lines showing' },
+	'finance.ledgers.statusRecorded': 'Recorded movements only',
+	'finance.ledgers.statusSupported': 'Supported by opening',
+	'finance.ledgers.statusVerified': 'Verified at latest check',
+	'finance.ledgers.supportedFunds': 'Supported funds',
 	'finance.ledgers.theBankSOwnId': "The bank's own id",
 	'finance.ledgers.theRulesReadThisSo': 'The rules read this, so rewriting it re-sorts the line.',
 	'finance.ledgers.twoColumnsInstead': '— two columns instead —',
 	'finance.ledgers.uncategorizedCount': 'Uncategorized ({count})',
+	'finance.ledgers.unlinkRelated': 'Unlink it',
+	'finance.ledgers.unlinkTransfer': 'Unlink the transfer',
+	'finance.ledgers.unspecified': 'Unspecified',
 	'finance.ledgers.usualExport': 'Usual export',
 	'finance.ledgers.whatItIs': 'What it is',
 	'finance.monthBars.newest': 'Newest {shown} of {total} months',
 	'finance.monthlyBars.caption': 'net under each month',
+	'finance.overview.addLedger': 'Add a ledger',
+	'finance.overview.available': 'Available',
+	'finance.overview.availableFormula': 'Supported funds − held for others − set aside.',
+	'finance.overview.availableFormulaLong':
+		'Supported funds {funds} − held for others {custody} − set aside {reserves}.',
+	'finance.overview.balanceDiffers': 'Statement checks that differ: {count}.',
+	'finance.overview.balanceDiffersOne': 'Statement check that differs: {count}.',
+	'finance.overview.checkOpeningDate': 'Check the opening date',
+	'finance.overview.claimsBody':
+		'Money owed to others and money owed to me are claims, not funds: neither is subtracted from available money.',
+	'finance.overview.committed': 'Committed',
+	'finance.overview.coverage': '{supported} of {accounts} accounts have a declared opening.',
+	'finance.overview.coverageOne': '{supported} of {accounts} account has a declared opening.',
+	'finance.overview.declareCurrency': 'Declare a currency',
+	'finance.overview.excluded': 'Kept out of spending',
+	'finance.overview.fixOpening': 'Declare an opening',
+	'finance.overview.forTheMonth': 'For {month}',
+	'finance.overview.left': 'Left in plans',
+	'finance.overview.leftPane': 'The plans set for {month}, and what is still theirs.',
+	'finance.overview.missingOpening': 'Accounts without a declared opening: {count}.',
+	'finance.overview.missingOpeningOne': 'Account without a declared opening: {count}.',
+	'finance.overview.moneyView': 'Display',
+	'finance.overview.myMoney': 'My money',
+	'finance.overview.myMoneyAvailableNote': 'Available after set aside: {available}.',
+	'finance.overview.myMoneyFormula':
+		'My money {funds} − set aside {reserves} = available {available}.',
+	'finance.overview.noAccounts': 'No accounts yet',
+	'finance.overview.noAccountsBody':
+		'Add a ledger in its original currency and import or write a statement. This screen answers the four money questions from those records.',
+	'finance.overview.noAccountsInCurrency': 'No active account in this currency',
+	'finance.overview.noAccountsInCurrencyBody':
+		'No active account holds a declared opening here; its movements are not a balance.',
+	'finance.overview.noCurrencyBody':
+		'These accounts have no original currency, so no total is shown. Recorded amounts are in {currency}.',
+	'finance.overview.noCurrencyTotal': 'No currency total',
+	'finance.overview.noPlans': 'No plans for {month}.',
+	'finance.overview.notABalance': 'No declared opening, so this is not a balance.',
+	'finance.overview.nothingSpent': 'Nothing personal was spent in {month}.',
+	'finance.overview.otherCurrencies': 'Committed in other currencies',
+	'finance.overview.otherCurrenciesMine': 'Set aside or owed in other currencies',
+	'finance.overview.outsideCoverageOne': 'Movements before the opening date on {count} account.',
+	'finance.overview.outsideCoverageTotal':
+		'Accounts holding movements before their opening: {count}.',
+	'finance.overview.overviewHint':
+		'Four answers in one place: what is mine, what is committed, what I spent this month, and what is left against my plans. Every original currency stays separate.',
+	'finance.overview.payables': 'Owed to others',
+	'finance.overview.plansNeedCurrency': 'Budgets are per currency; declare one on a ledger first.',
+	'finance.overview.receivables': 'Owed to me',
+	'finance.overview.setAside': 'Set aside',
+	'finance.overview.setAsideBody': 'Your own money reserved, not available to spend.',
+	'finance.overview.setBudget': 'Set a budget',
+	'finance.overview.spent': 'Spent this month',
+	'finance.overview.spentPane':
+		'Personal spending by category for {month}, with what is left out named below.',
+	'finance.overview.verified': '{count} checked against a statement',
+	'finance.overview.viewAll': 'Everything in accounts',
+	'finance.overview.viewHint':
+		'My money only leaves out money you hold for other people. Everything shows every account balance.',
+	'finance.overview.viewMine': 'My money only',
 	'finance.rules.aCategory': 'Category: a line gets the first that matches',
 	'finance.rules.aLineBelongsToThe':
 		'A line belongs to the first category that matches, so the order below decides ties and the totals always add up.',
@@ -998,6 +1373,22 @@ export const messages: Catalogue = {
 	'finance.rules.tags': 'Tags',
 	'finance.rules.theFullSyntax': 'The full syntax →',
 	'finance.rules.whichLinesThisClaims': 'Which lines this claims',
+	'finance.splits.addPart': 'Add part',
+	'finance.splits.category': 'Personal category',
+	'finance.splits.commitment': 'Custody or payable',
+	'finance.splits.confirmUnsplit': 'Remove these parts? Reverse linked commitment entries first.',
+	'finance.splits.custody': 'Custody',
+	'finance.splits.difference': 'Difference: {amount}',
+	'finance.splits.hint':
+		'Parts keep the original bank amount. Custody changes the linked obligation, not personal spending.',
+	'finance.splits.history': 'View commitment history',
+	'finance.splits.linkedHint':
+		'This line already changes a commitment. Reverse that entry before splitting it.',
+	'finance.splits.personal': 'Personal',
+	'finance.splits.removePart': 'Remove part',
+	'finance.splits.save': 'Save split',
+	'finance.splits.title': 'Split this movement',
+	'finance.splits.unsplit': 'Remove split',
 	'finance.stackedMonths.caption': 'Spending by category, by month',
 	'frontDoor.createAnAccount': 'Create an account',
 	'frontDoor.howItWorks': 'How it works',
@@ -2478,6 +2869,7 @@ export const messages: Catalogue = {
 		'Monday morning: what last week actually was, with the page that closes it one press away.',
 	'notify.noun.activity': { one: '{count} activity', other: '{count} activities' },
 	'notify.noun.alarm': { one: '{count} alarm', other: '{count} alarms' },
+	'notify.noun.balanceCheck': { one: '{count} balance check', other: '{count} balance checks' },
 	'notify.noun.beforeBlock': {
 		one: '{count} task block reminder',
 		other: '{count} task block reminders'
@@ -2486,6 +2878,12 @@ export const messages: Catalogue = {
 	'notify.noun.billPayment': { one: '{count} bill payment', other: '{count} bill payments' },
 	'notify.noun.block': { one: '{count} task block', other: '{count} task blocks' },
 	'notify.noun.bought': { one: '{count} purchase', other: '{count} purchases' },
+	'notify.noun.budget': { one: '{count} budget', other: '{count} budgets' },
+	'notify.noun.commitment': { one: '{count} commitment', other: '{count} commitments' },
+	'notify.noun.commitmentEntry': {
+		one: '{count} commitment entry',
+		other: '{count} commitment entries'
+	},
 	'notify.noun.dataPoint': { one: '{count} data point', other: '{count} data points' },
 	'notify.noun.entry': { one: '{count} entry', other: '{count} entries' },
 	'notify.noun.fromGoal': { one: '{count} goal link', other: '{count} goal links' },
@@ -2529,6 +2927,7 @@ export const messages: Catalogue = {
 	'notify.noun.tag': { one: '{count} tag', other: '{count} tags' },
 	'notify.noun.task': { one: '{count} task', other: '{count} tasks' },
 	'notify.noun.toGoal': { one: '{count} goal link', other: '{count} goal links' },
+	'notify.noun.transfer': { one: '{count} transfer', other: '{count} transfers' },
 	'notify.noun.win': { one: '{count} win', other: '{count} wins' },
 	'notify.noun.workout': { one: '{count} workout', other: '{count} workouts' },
 	'notify.noun.workoutCategory': {
@@ -2556,6 +2955,7 @@ export const messages: Catalogue = {
 	'notify.verb.archive': 'archived',
 	'notify.verb.cancel': 'cancelled',
 	'notify.verb.change': 'changed',
+	'notify.verb.classify': 'classified',
 	'notify.verb.close': 'closed',
 	'notify.verb.cooked': 'cooked',
 	'notify.verb.delete': 'deleted',
@@ -2840,8 +3240,11 @@ export const messages: Catalogue = {
 	'reportDialog.yourIdea': 'Your idea',
 	'rooms.finance.sections': 'Finance sections',
 	'rooms.finance.tabs.bills': 'Bills',
+	'rooms.finance.tabs.budgets': 'Budgets',
+	'rooms.finance.tabs.commitments': 'Commitments',
 	'rooms.finance.tabs.insights': 'Insights',
 	'rooms.finance.tabs.ledgers': 'Ledgers',
+	'rooms.finance.tabs.overview': 'Overview',
 	'rooms.finance.tabs.rules': 'Rules',
 	'rooms.finance.title': 'Finance',
 	'rooms.goals.sections': 'Goals sections',
@@ -3948,23 +4351,47 @@ export const messages: Catalogue = {
 	'taskStatus.pending': 'Pending',
 	'tasks.activities.anActivityIsANamed':
 		'An activity is a named thing you do — gym, guitar, deep work. Task blocks on the grid point at these.',
+	'tasks.activities.archiveInstead': 'Archive instead',
 	'tasks.activities.categories': 'Categories',
 	'tasks.activities.colour': 'Colour',
 	'tasks.activities.confirm': 'Confirm?',
 	'tasks.activities.createActivity': 'Create activity',
 	'tasks.activities.deleteActivity': 'Delete activity',
+	'tasks.activities.deleteName': 'Delete {name}?',
 	'tasks.activities.editActivity': 'Edit activity',
 	'tasks.activities.everyCategory': 'Every category',
+	'tasks.activities.foldExplained':
+		'Deleting turns each of these into a {category} block labelled “{name}”. Past occurrences keep the name, and goals stop counting it.',
+	'tasks.activities.goalCountsIt': 'Goal: {goal}',
+	'tasks.activities.inSavedWeek': 'Saved week “{scheme}”',
+	'tasks.activities.keepIt': 'Keep it',
+	'tasks.activities.moveAndDelete': 'Move and delete',
+	'tasks.activities.moveExplained': 'All of these, goals included, will name {target} instead.',
+	'tasks.activities.moveExplainedNew':
+		'All of these, goals included, will name the new activity instead.',
+	'tasks.activities.moveThemTo': 'Move them to',
+	'tasks.activities.moveToCategory': 'Nothing: fall back to {category}',
+	'tasks.activities.moveToNew': 'A new activity…',
 	'tasks.activities.newActivity': 'New activity',
 	'tasks.activities.newCategoryName': 'New category name',
 	'tasks.activities.noActivitiesMatchTheSelected': 'No activities match the selected filters.',
 	'tasks.activities.noActivitiesYet': 'No activities yet',
 	'tasks.activities.nothingPutAway': 'Nothing is put away',
+	'tasks.activities.nothingUsesIt': 'Nothing uses it, so nothing else changes.',
+	'tasks.activities.pastOccurrences': {
+		one: '{count} past occurrence, {span}',
+		other: '{count} past occurrences, {span}'
+	},
+	'tasks.activities.ratherArchive':
+		'To keep everything as it is, archive it instead: it leaves the lists and pickers and its history is untouched. Or change those blocks one by one in the calendar first.',
+	'tasks.activities.ratherKeepArchived':
+		'It is already archived, which keeps its history untouched. Or change those blocks one by one in the calendar first.',
 	'tasks.activities.searchActivities': 'Search activities',
 	'tasks.activities.showingCount': {
 		one: '{count} activity showing',
 		other: '{count} activities showing'
 	},
+	'tasks.activities.whatNamesIt': 'What still names it',
 	'tasks.board.1Hour': '1 hour',
 	'tasks.board.addCard': 'Add card',
 	'tasks.board.anyEase': 'Any ease',
@@ -4456,6 +4883,10 @@ export const messages: Catalogue = {
 	'tour.booksKilosEurosAnything':
 		'Books, kilos, euros — anything countable. A goal can want several at once: three gigs played and five songs recorded is one goal with two numbers, and it is as far along as they are on average.',
 	'tour.boughtAndBackAgain': 'Bought, and back again',
+	'tour.budgets': 'Budgets',
+	'tour.budgetsBody': 'Set category spending limits for each month and track remaining amounts.',
+	'tour.budgetsRoom': 'Budgets',
+	'tour.budgetsTitle': 'Monthly budgets',
 	'tour.catchItNowJudgeIt': 'Catch it now, judge it later',
 	'tour.categoriesAreTheColours': 'Categories are the colours',
 	'tour.categoriesWashTheRowIn':
@@ -4772,6 +5203,7 @@ export const messages: Catalogue = {
 	'ui.restore': 'Restore',
 	'ui.save': 'Save',
 	'ui.search': 'Search',
+	'ui.select': 'Select',
 	'ui.show': 'Show',
 	'ui.showLess': 'Show less',
 	'ui.showMore': 'Show more',

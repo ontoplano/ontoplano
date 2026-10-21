@@ -1,0 +1,7 @@
+• As Finanças abrem com um só panorama: o que é seu, o que está comprometido, o gasto do mês e o que resta
+• Orçamentos mensais por categoria, copiados para o mês seguinte
+• Dinheiro que você guarda, deve ou separou, com histórico
+• Marque um lançamento como gasto, receita, transferência ou reembolso
+• Qualquer atividade pode ser excluída, e você escolhe para onde vão seus blocos e metas
+
+Me conte o que quebrar: github.com/ontoplano/ontoplano/issues

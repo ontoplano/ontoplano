@@ -275,6 +275,49 @@ describe('put it back', () => {
 		expect(back.currentValue).toBe(2);
 	});
 
+	it('a deleted balance observation, with its evidence and ownership intact', () => {
+		const ledger = rpc('add_ledger', { name: 'Statement evidence', currency: 'KES' });
+		const original = rpc('record_balance_check', {
+			ledger_id: ledger.id,
+			as_of: '2026-03-13',
+			observed_minor: -13262,
+			note: 'Original statement'
+		});
+		rpc('delete_balance_check', { id: original.id });
+		const removed = newestCall();
+		expect(removed.before).toMatchObject({
+			ledgerId: ledger.id,
+			asOf: '2026-03-13',
+			observedMinor: -13262,
+			note: 'Original statement'
+		});
+		expect(() => log.putBack(ctx(STRANGER), removed.id)).toThrow();
+		expect(rpc('balance_checks', { ledger_id: ledger.id }).checks).toEqual([]);
+
+		log.putBack(ctx(), removed.id);
+		expect(rpc('balance_checks', { ledger_id: ledger.id }).checks).toMatchObject([
+			{ asOf: '2026-03-13', observedMinor: -13262, note: 'Original statement' }
+		]);
+		expect(refusal(() => log.putBack(ctx(), removed.id))).toMatch(/already/i);
+	});
+
+	it('restoring a balance observation never overwrites a replacement for that date', () => {
+		const ledger = rpc('add_ledger', { name: 'Corrected statement evidence', currency: 'KES' });
+		const args = { ledger_id: ledger.id, as_of: '2026-03-13', observed_minor: 100 };
+		const original = rpc('record_balance_check', args);
+		rpc('delete_balance_check', { id: original.id });
+		const removed = newestCall();
+		rpc('record_balance_check', { ...args, observed_minor: 200 });
+
+		expect(() => log.putBack(ctx(), removed.id)).toThrow();
+		expect(rpc('balance_checks', { ledger_id: ledger.id }).checks).toMatchObject([
+			{ observedMinor: 200 }
+		]);
+		expect(
+			log.listAssistantCalls(ctx()).find((row) => row.id === removed.id)?.restoredAt
+		).toBeNull();
+	});
+
 	it('refuses a call that deleted nothing', () => {
 		rpc('add_task', { title: 'just an add' });
 		expect(refusal(() => log.putBack(ctx(), newestCall().id))).toMatch(/deleted nothing/i);

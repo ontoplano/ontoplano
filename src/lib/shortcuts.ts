@@ -280,6 +280,19 @@ export const PAGE_SHORTCUTS: Record<string, PageShortcuts> = {
 			{ key: 'n', action: 'new', description: 'finance.bills.newBill' }
 		]
 	},
+	'/finance/budgets': {
+		label: 'rooms.finance.tabs.budgets',
+		shortcuts: [
+			...BROWSE_SHORTCUTS.slice(2),
+			{ key: 'n', action: 'new', description: 'finance.budgets.new' },
+			{ key: 'x', action: 'delete', description: 'shortcut.askToDelete' }
+		]
+	},
+
+	'/finance/commitments': {
+		label: 'rooms.finance.tabs.commitments',
+		shortcuts: [{ key: 'n', action: 'new', description: 'finance.commitments.new' }]
+	},
 	'/finance/rules': {
 		label: 'rooms.finance.tabs.rules',
 		shortcuts: [

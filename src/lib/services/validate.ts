@@ -96,6 +96,24 @@ export function num(
 	return n;
 }
 
+/** A real civil day, preserved exactly rather than normalised into another date. */
+export function civilDay(value: unknown, field = 'date'): string {
+	const day = str(value, field, { max: 10, pattern: /^\d{4}-\d{2}-\d{2}$/ });
+	const parsed = new Date(`${day}T12:00:00Z`);
+	if (!Number.isFinite(parsed.getTime()) || parsed.toISOString().slice(0, 10) !== day)
+		throw new ValidationError(`Invalid ${field}`);
+	return day;
+}
+
+/** Money must remain exact at both the write boundary and the aggregate result. */
+export function minorAmount(value: unknown, field = 'amount'): number {
+	return num(value, field, {
+		int: true,
+		min: Number.MIN_SAFE_INTEGER,
+		max: Number.MAX_SAFE_INTEGER
+	});
+}
+
 export function oneOf<T extends string>(value: unknown, field: string, allowed: readonly T[]): T {
 	// The allowed values are the database's words, not the reader's, so they
 	// stay out of the message.

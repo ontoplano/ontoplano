@@ -9,11 +9,29 @@
  * than a sum. A rule written today therefore sorts last year's lines, with
  * no resweep and nothing stored to drift.
  */
-import { and, desc, eq, gte, inArray } from 'drizzle-orm';
+import {
+	and,
+	desc,
+	eq,
+	getTableColumns,
+	gte,
+	inArray,
+	isNotNull,
+	ne,
+	sql,
+	type SQL
+} from 'drizzle-orm';
 
 import { COLOUR_PALETTE } from '../colors.js';
 import { db } from '$lib/db/index.js';
-import { financeRules, financeTransactions, ledgers } from '$lib/db/schema.js';
+import {
+	financeRules,
+	financeTransactions,
+	financeTransactionAllocations,
+	financeCommitmentEntries,
+	financeBudgets,
+	ledgers
+} from '$lib/db/schema.js';
 import {
 	parserFor,
 	parseCsv,
@@ -22,11 +40,15 @@ import {
 	parserKey,
 	type CsvMapping
 } from '../bank-parsers/index.js';
-import type { Ctx } from './ctx.js';
+import { localDateOf, type Ctx } from './ctx.js';
 import { getLedger } from './ledgers.js';
+import { MAX_NOTE, addCommitmentEntry, getCommitment } from './commitments.js';
 import { stamp } from './time.js';
 import { NotFoundError, ValidationError } from './errors.js';
-import { num, oneOf, str } from './validate.js';
+import { num, oneOf, optionalStr, str } from './validate.js';
+import { civilDay, minorAmount } from './validate.js';
+import { minorUnits, normaliseCurrency } from '../money.js';
+import { StatementParseError, type ParsedMovement } from '../bank-parsers/shape.js';
 import { unsafePattern } from './regex-safety.js';
 
 export const MAX_PATTERN_LENGTH = 300;
@@ -61,10 +83,182 @@ export type Movement = {
 	amountCents: number;
 	description: string;
 	source: string;
+	/** What somebody said it was, or null when the sign is all there is. */
+	kind: MovementKind | null;
+	/** Legs of one move between two owned accounts share this. */
+	groupId: string | null;
+	/** A transfer leg whose counterpart has not been named yet. */
+	counterpartPending: boolean;
+	/** The expense a refund reverses, or the payment a fee belongs to. */
+	parentId: number | null;
 	category: string | null;
 	categoryColor: string | null;
 	tags: { name: string; color: string }[];
+	allocations: MovementAllocation[];
+	/** The commitment entry this line already evidences, if any. */
+	commitmentEntryId: number | null;
 };
+
+export type MovementAllocation = typeof financeTransactionAllocations.$inferSelect;
+export type AllocationInput = {
+	kind: unknown;
+	amountMinor: unknown;
+	category?: unknown;
+	commitmentId?: unknown;
+	note?: unknown;
+};
+
+/** A split never rewrites the bank line; custody entries and all parts land together. */
+export function splitMovement(ctx: Ctx, input: { id: unknown; allocations: unknown }): void {
+	const id = num(input.id, 'movement', { int: true, min: 1 });
+	if (
+		!Array.isArray(input.allocations) ||
+		!input.allocations.length ||
+		input.allocations.length > 100
+	)
+		throw new ValidationError({ key: 'errors.finance.splitNeedsBetween1100' });
+	db.transaction((tx) => {
+		const movement = ownMovement(ctx, id);
+		assertMovementUnlinked(ctx, id);
+		if (movement.groupId || movement.kind === 'transfer' || movement.kind === 'cash')
+			throw new ValidationError({ key: 'errors.finance.unlinkTransferClassifyMovementSplitting' });
+		if (!movement.amountCents)
+			throw new ValidationError({ key: 'errors.finance.zeroMovementSplit' });
+		const currency = movement.ledgerId === null ? null : ledgerCurrency(ctx, movement.ledgerId);
+		const settlements = new Map<number, { amountMinor: number; notes: string[] }>();
+		let sum = 0;
+		const parts = (input.allocations as unknown[]).map((raw) => {
+			if (!raw || typeof raw !== 'object' || Array.isArray(raw))
+				throw new ValidationError({ key: 'errors.finance.eachSplitPartNameKind' });
+			const part = raw as AllocationInput;
+			const kind = oneOf(part.kind, 'allocation kind', ['personal', 'custody'] as const);
+			const amountMinor = minorAmount(part.amountMinor);
+			if (!amountMinor || Math.sign(amountMinor) !== Math.sign(movement.amountCents))
+				throw new ValidationError({ key: 'errors.finance.everySplitPartHaveMovements' });
+			sum = minorAmount(sum + amountMinor, 'split total');
+			const category =
+				optionalStr(part.category, 'category', { max: MAX_RULE_NAME_LENGTH }) || null;
+			const note = optionalStr(part.note, 'note', { max: MAX_NOTE }) || null;
+			let commitmentId: number | null = null;
+			if (kind === 'custody') {
+				commitmentId = num(part.commitmentId, 'commitment', { int: true, min: 1 });
+				const commitment = getCommitment(ctx, commitmentId);
+				if (!['custody', 'payable'].includes(commitment.kind) || commitment.status !== 'open')
+					throw new ValidationError({ key: 'errors.finance.chooseOpenCustodyPayableCommitment' });
+				if (!currency || commitment.currency !== currency)
+					throw new ValidationError({ key: 'errors.finance.custodyPartMovementShareKnown' });
+				if (category)
+					throw new ValidationError({
+						key: 'errors.finance.custodyExcludedFromPersonalCategories'
+					});
+				const entry = settlements.get(commitmentId) ?? { amountMinor: 0, notes: [] };
+				entry.amountMinor = minorAmount(entry.amountMinor + amountMinor);
+				if (note) entry.notes.push(note);
+				settlements.set(commitmentId, entry);
+			} else if (
+				part.commitmentId !== undefined &&
+				part.commitmentId !== null &&
+				part.commitmentId !== ''
+			) {
+				throw new ValidationError({ key: 'errors.finance.onlyCustodyPartsMayName' });
+			}
+			return {
+				userId: ctx.userId,
+				transactionId: id,
+				kind,
+				amountMinor,
+				category,
+				commitmentId,
+				note,
+				createdAt: stamp(ctx)
+			};
+		});
+		if (sum !== movement.amountCents)
+			throw new ValidationError({
+				key: 'errors.finance.splitDoesNotAddUp',
+				values: { total: movement.amountCents, difference: minorAmount(movement.amountCents - sum) }
+			});
+		tx.insert(financeTransactionAllocations).values(parts).run();
+		for (const [commitmentId, entry] of settlements) {
+			const note = entry.notes.join('\n');
+			if (note.length > MAX_NOTE)
+				throw new ValidationError({
+					key: 'errors.finance.combinedNoteTooLong',
+					values: { max: MAX_NOTE }
+				});
+			addCommitmentEntry(ctx, {
+				commitmentId,
+				occurredOn: movement.occurredOn,
+				amountMinor: entry.amountMinor,
+				transactionId: id,
+				note
+			});
+		}
+	});
+}
+
+/** Remove parts only after the owner explicitly reverses their stock entries. */
+export function unsplitMovement(ctx: Ctx, id: number): void {
+	db.transaction((tx) => {
+		ownMovement(ctx, id);
+		if (
+			tx
+				.select({ id: financeCommitmentEntries.id })
+				.from(financeCommitmentEntries)
+				.where(
+					and(
+						eq(financeCommitmentEntries.userId, ctx.userId),
+						eq(financeCommitmentEntries.transactionId, id)
+					)
+				)
+				.get()
+		)
+			throw new ValidationError({ key: 'errors.finance.reverseLinkedCommitmentEntryRemoving' });
+		tx.delete(financeTransactionAllocations)
+			.where(
+				and(
+					eq(financeTransactionAllocations.userId, ctx.userId),
+					eq(financeTransactionAllocations.transactionId, id)
+				)
+			)
+			.run();
+	});
+}
+
+/** Retained splits and settlement evidence must not be edited out from underneath a stock. */
+function assertMovementUnlinked(ctx: Ctx, id: number): void {
+	const allocation = db
+		.select({ id: financeTransactionAllocations.id })
+		.from(financeTransactionAllocations)
+		.where(
+			and(
+				eq(financeTransactionAllocations.userId, ctx.userId),
+				eq(financeTransactionAllocations.transactionId, id)
+			)
+		)
+		.get();
+	const entry = db
+		.select({ id: financeCommitmentEntries.id })
+		.from(financeCommitmentEntries)
+		.where(
+			and(
+				eq(financeCommitmentEntries.userId, ctx.userId),
+				eq(financeCommitmentEntries.transactionId, id)
+			)
+		)
+		.get();
+	if (allocation || entry)
+		throw new ValidationError({ key: 'errors.finance.movementHasSplitOrEntry', values: { id } });
+}
+
+/**
+ * What a movement can be.
+ *
+ * `expense` and `income` are also what the sign means when nothing was said,
+ * which is why a stored null keeps its own name — *assumed* — in the UI.
+ */
+export const MOVEMENT_KINDS = ['expense', 'income', 'transfer', 'refund', 'fee', 'cash'] as const;
+export type MovementKind = (typeof MOVEMENT_KINDS)[number];
 
 export type Rule = {
 	id: number;
@@ -133,17 +327,32 @@ export function importStatement(
 		flip?: boolean;
 		mapping?: CsvMapping | null;
 	}
-): { added: number; skipped: number } {
+): { added: number; skipped: number; recordedOnly: boolean } {
 	const ledgerId = num(input.ledgerId, 'ledger', { int: true });
-	getLedger(ctx, ledgerId); // ownership
+	const ledger = getLedger(ctx, ledgerId); // ownership
 	const source = str(input.source, 'bank export', { max: 100 });
 	const parser = parserFor(source);
 	if (!parser) throw new ValidationError({ key: 'errors.statements.noParserKnowsThatExport' });
-	const text = str(input.text, 'statement', { max: MAX_STATEMENT_LENGTH });
+	const text = str(input.text, 'statement', { max: MAX_STATEMENT_LENGTH, trim: false });
 
-	const read =
-		source === CSV_PARSER_KEY && input.mapping ? parseCsv(text, input.mapping) : parser.parse(text);
-	const parsed = read.slice(0, MAX_STATEMENT_LINES);
+	const options = { strict: true, units: ledger.currency ? minorUnits(ledger.currency) : 100 };
+	if (source !== CSV_PARSER_KEY && options.units !== 100)
+		throw new ValidationError({ key: 'errors.finance.bankExportUsesTwoDecimal' });
+	let parsed: ParsedMovement[];
+	try {
+		parsed =
+			source === CSV_PARSER_KEY && input.mapping
+				? parseCsv(text, input.mapping, options)
+				: parser.parse(text, options);
+	} catch (error) {
+		if (error instanceof StatementParseError) throw new ValidationError(error.message);
+		throw error;
+	}
+	if (parsed.length > MAX_STATEMENT_LINES)
+		throw new ValidationError({
+			key: 'errors.finance.fileTooLong',
+			values: { max: MAX_STATEMENT_LINES }
+		});
 	if (parsed.length === 0)
 		throw new ValidationError(
 			source === CSV_PARSER_KEY
@@ -155,40 +364,88 @@ export function importStatement(
 	// same price, same day): each gets its occurrence number, so they keep
 	// distinct fingerprints while a re-import of the same file lands on the
 	// same ones and is ignored.
-	const seen = new Map<string, number>();
-	let added = 0;
-	for (const line of parsed) {
-		const amountCents = input.flip ? -line.amountCents : line.amountCents;
-		// A parser reads whatever the file said; the description it returns is
-		// still text from outside and is bounded here, where everything else
-		// that reaches this column is.
-		const description = line.description.slice(0, MAX_DESCRIPTION_LENGTH);
-		const base = line.externalId
-			? `${source}:${line.externalId}`
-			: (() => {
-					const content = `${source}|${line.occurredOn}|${amountCents}|${description}`;
-					const n = (seen.get(content) ?? 0) + 1;
-					seen.set(content, n);
-					return `h:${lineHash(`${content}|${n}`)}`;
-				})();
-		const inserted = db
-			.insert(financeTransactions)
-			.values({
-				userId: ctx.userId,
-				ledgerId,
-				occurredOn: line.occurredOn,
-				amountCents,
-				description,
-				source,
-				externalId: line.externalId ?? null,
-				fingerprint: `${ledgerId}|${base}`,
-				createdAt: stamp(ctx)
-			})
-			.onConflictDoNothing()
-			.run();
-		if (inserted.changes > 0) added += 1;
+	for (const [index, line] of parsed.entries()) {
+		try {
+			civilDay(line.occurredOn);
+			minorAmount(line.amountCents);
+			str(line.description, 'description', { max: Number.MAX_SAFE_INTEGER });
+		} catch {
+			throw new ValidationError({
+				key: 'errors.finance.lineRejected',
+				values: { line: line.line ?? index + 1 }
+			});
+		}
 	}
-	return { added, skipped: parsed.length - added };
+	const earliest = parsed.reduce(
+		(date, line) => (line.occurredOn < date ? line.occurredOn : date),
+		parsed[0].occurredOn
+	);
+
+	// Fingerprints retain the parser's historical two-decimal identity even when
+	// original-currency precision differs. Replays must not duplicate old history.
+	const identities =
+		source === CSV_PARSER_KEY && options.units !== 100
+			? input.mapping
+				? parseCsv(text, input.mapping)
+				: parser.parse(text)
+			: parsed;
+	return db.transaction((tx) => {
+		const current = getLedger(ctx, ledgerId);
+		if (current.currency !== ledger.currency)
+			throw new ValidationError({ key: 'errors.finance.ledgerCurrencyChangedReadingFile' });
+		if (current.openingOn && earliest < current.openingOn)
+			throw new ValidationError({
+				key: 'errors.finance.beforeOpening',
+				values: { earliest, opening: current.openingOn }
+			});
+		const seen = new Map<string, number>();
+		let added = 0;
+		for (const [index, line] of parsed.entries()) {
+			const amountCents = input.flip ? -line.amountCents : line.amountCents;
+			// A parser reads whatever the file said; the description it returns is
+			// still text from outside and is bounded here, where everything else
+			// that reaches this column is.
+			const description = line.description.slice(0, MAX_DESCRIPTION_LENGTH);
+			const base = line.externalId
+				? `${source}:${line.externalId}`
+				: (() => {
+						const identityAmount = input.flip
+							? -identities[index].amountCents
+							: identities[index].amountCents;
+						const content = `${source}|${line.occurredOn}|${identityAmount}|${description}`;
+						const n = (seen.get(content) ?? 0) + 1;
+						seen.set(content, n);
+						return `h:${lineHash(`${content}|${n}`)}`;
+					})();
+			let inserted;
+			try {
+				inserted = tx
+					.insert(financeTransactions)
+					.values({
+						userId: ctx.userId,
+						ledgerId,
+						occurredOn: line.occurredOn,
+						amountCents,
+						description,
+						source,
+						externalId: line.externalId ?? null,
+						fingerprint: `${ledgerId}|${base}`,
+						createdAt: stamp(ctx)
+					})
+					.onConflictDoNothing({
+						target: [financeTransactions.userId, financeTransactions.fingerprint]
+					})
+					.run();
+			} catch {
+				throw new ValidationError({
+					key: 'errors.finance.lineRejectedSaving',
+					values: { line: line.line ?? index + 1 }
+				});
+			}
+			if (inserted.changes > 0) added += 1;
+		}
+		return { added, skipped: parsed.length - added, recordedOnly: current.openingOn === null };
+	});
 }
 
 /**
@@ -210,8 +467,8 @@ export function recordMovement(
 ): { id: number; added: boolean } {
 	const ledgerId = num(input.ledgerId, 'ledger', { int: true });
 	getLedger(ctx, ledgerId);
-	const occurredOn = str(input.occurredOn, 'date', { max: 10, pattern: /^\d{4}-\d{2}-\d{2}$/ });
-	const amountCents = num(input.amountCents, 'amount', { int: true });
+	const occurredOn = civilDay(input.occurredOn);
+	const amountCents = minorAmount(input.amountCents);
 	const description = str(input.description, 'description', { max: MAX_DESCRIPTION_LENGTH });
 	const source = input.source ? str(input.source, 'source', { max: 100 }) : 'manual';
 	const externalId = input.externalId ? str(input.externalId, 'external id', { max: 200 }) : null;
@@ -253,50 +510,310 @@ export function recordMovement(
 export function updateMovement(
 	ctx: Ctx,
 	id: number,
-	input: { description?: unknown; occurredOn?: unknown; amountCents?: unknown; ledgerId?: unknown }
+	input: {
+		description?: unknown;
+		occurredOn?: unknown;
+		amountCents?: unknown;
+		ledgerId?: unknown;
+		kind?: unknown;
+	}
 ): void {
-	const current = db
+	db.transaction(() => {
+		const current = db
+			.select()
+			.from(financeTransactions)
+			.where(and(eq(financeTransactions.id, id), eq(financeTransactions.userId, ctx.userId)))
+			.get();
+		if (!current) throw new NotFoundError('movement');
+
+		const ledgerId =
+			input.ledgerId === undefined || input.ledgerId === null || input.ledgerId === ''
+				? current.ledgerId
+				: num(input.ledgerId, 'ledger', { int: true });
+		if (ledgerId !== current.ledgerId && ledgerId !== null) getLedger(ctx, ledgerId);
+
+		const kind = input.kind === undefined ? current.kind : movementKind(input.kind);
+		if (
+			(input.amountCents !== undefined &&
+				input.amountCents !== '' &&
+				minorAmount(input.amountCents) !== current.amountCents) ||
+			(input.occurredOn !== undefined &&
+				input.occurredOn !== '' &&
+				input.occurredOn !== current.occurredOn) ||
+			ledgerId !== current.ledgerId ||
+			kind !== current.kind
+		)
+			assertMovementUnlinked(ctx, id);
+		// A leg edited out of its pair is how a transfer becomes spending again:
+		// the group is undone first, deliberately, and never by an edit.
+		if (current.groupId && kind !== 'transfer')
+			throw new ValidationError({ key: 'errors.statements.legOfTransferChange' });
+		// The amount and the ledger are what the pairing conserved: editing one
+		// leg's amount silently breaks the sum the link proved.
+		if (
+			current.groupId &&
+			((input.amountCents !== undefined && input.amountCents !== '') ||
+				(input.ledgerId !== undefined && input.ledgerId !== null && input.ledgerId !== ''))
+		)
+			throw new ValidationError({ key: 'errors.statements.legOfTransferChange' });
+
+		db.update(financeTransactions)
+			.set({
+				ledgerId,
+				kind,
+				description:
+					input.description === undefined
+						? current.description
+						: str(input.description, 'description', { max: 500 }),
+				occurredOn:
+					input.occurredOn === undefined || input.occurredOn === ''
+						? current.occurredOn
+						: civilDay(input.occurredOn),
+				amountCents:
+					input.amountCents === undefined || input.amountCents === ''
+						? current.amountCents
+						: minorAmount(input.amountCents)
+			})
+			.where(and(eq(financeTransactions.id, id), eq(financeTransactions.userId, ctx.userId)))
+			.run();
+	});
+}
+
+/** A kind, or an empty string to clear it. */
+function movementKind(value: unknown): MovementKind | null {
+	if (value === null || value === '') return null;
+	return oneOf(value, 'kind', MOVEMENT_KINDS);
+}
+
+/** One movement of this account's, or the same refusal a missing id gets. */
+function ownMovement(ctx: Ctx, id: number) {
+	const row = db
 		.select()
 		.from(financeTransactions)
 		.where(and(eq(financeTransactions.id, id), eq(financeTransactions.userId, ctx.userId)))
 		.get();
-	if (!current) throw new NotFoundError('movement');
+	if (!row) throw new NotFoundError('movement');
+	return row;
+}
 
-	const ledgerId =
-		input.ledgerId === undefined || input.ledgerId === null || input.ledgerId === ''
-			? current.ledgerId
-			: num(input.ledgerId, 'ledger', { int: true });
-	if (ledgerId !== current.ledgerId && ledgerId !== null) getLedger(ctx, ledgerId);
+/**
+ * Say what several movements were at once, in one write.
+ *
+ * The point is a hundred lines in one gesture, not a hundred round trips, so
+ * the whole selection is checked first: a single leg of a transfer or an id
+ * from another account refuses the batch rather than half-applying it.
+ */
+export function classifyMovements(
+	ctx: Ctx,
+	input: { ids: unknown; kind?: unknown }
+): { updated: number } {
+	return db.transaction(() => {
+		const ids = Array.isArray(input.ids)
+			? input.ids.map((id) => num(id, 'movement', { int: true }))
+			: [num(input.ids, 'movement', { int: true })];
+		const kind = movementKind(input.kind);
+		if (ids.length === 0) return { updated: 0 };
 
+		const rows = db
+			.select({ id: financeTransactions.id, groupId: financeTransactions.groupId })
+			.from(financeTransactions)
+			.where(and(eq(financeTransactions.userId, ctx.userId), inArray(financeTransactions.id, ids)))
+			.all();
+		if (rows.length !== new Set(ids).size) throw new NotFoundError('movement');
+		if (kind !== 'transfer' && rows.some((r) => r.groupId))
+			throw new ValidationError({ key: 'errors.statements.legOfTransferClassify' });
+		for (const id of ids) assertMovementUnlinked(ctx, id);
+
+		db.update(financeTransactions)
+			.set({ kind })
+			.where(and(eq(financeTransactions.userId, ctx.userId), inArray(financeTransactions.id, ids)))
+			.run();
+		return { updated: ids.length };
+	});
+}
+
+/**
+ * Two lines are one move between my own accounts (D2).
+ *
+ * A group of one is a *pending counterpart* and is allowed to stand: the
+ * destination statement often arrives later. Two legs in the same ledger are
+ * refused — they would balance to zero and hide two real expenses — and legs
+ * in one currency must add up to nothing, because money that left one place
+ * arrived in the other.
+ */
+export function linkTransfer(
+	ctx: Ctx,
+	input: { id: unknown; counterpartId: unknown }
+): {
+	groupId: string;
+} {
+	const id = num(input.id, 'movement', { int: true });
+	const counterpartId = num(input.counterpartId, 'counterpart', { int: true });
+	if (id === counterpartId) throw new ValidationError({ key: 'errors.statements.ownCounterpart' });
+	const a = ownMovement(ctx, id);
+	const b = ownMovement(ctx, counterpartId);
+	if (a.groupId || b.groupId)
+		throw new ValidationError({ key: 'errors.statements.alreadyTransfer' });
+	if (a.parentId !== null || b.parentId !== null)
+		throw new ValidationError({ key: 'errors.statements.alreadyChildLink' });
+	if (a.ledgerId === null || b.ledgerId === null)
+		throw new ValidationError({ key: 'errors.statements.linkNeedsLedger' });
+	if (a.ledgerId === b.ledgerId)
+		throw new ValidationError({ key: 'errors.statements.sameLedgerTransfer' });
+
+	const ca = ledgerCurrency(ctx, a.ledgerId);
+	const cb = ledgerCurrency(ctx, b.ledgerId);
+	// An unlabelled ledger is not a different currency: without knowing both,
+	// neither the sum check nor the "no combined total" rule can be honoured.
+	if (!ca || !cb) throw new ValidationError({ key: 'errors.statements.linkNeedsCurrency' });
+	if (ca === cb && a.amountCents + b.amountCents !== 0)
+		throw new ValidationError({
+			key: 'errors.statements.legsDoNotBalance',
+			values: { a: ca, first: a.amountCents, b: cb, second: b.amountCents }
+		});
+	// Different currencies are allowed and never summed: the two legs stay
+	// two amounts, because no rate is known or invented (D6).
+
+	const groupId = `t:${crypto.randomUUID()}`;
+	db.transaction((tx) => {
+		assertMovementUnlinked(ctx, id);
+		assertMovementUnlinked(ctx, counterpartId);
+		for (const row of [a, b])
+			tx.update(financeTransactions)
+				.set({ groupId, kind: 'transfer' })
+				.where(and(eq(financeTransactions.id, row.id), eq(financeTransactions.userId, ctx.userId)))
+				.run();
+	});
+	return { groupId };
+}
+
+/** Undo a pairing: both legs return to the sign's guess, and the group is gone. */
+export function unlinkTransfer(ctx: Ctx, id: number): void {
+	const leg = ownMovement(ctx, id);
+	if (!leg.groupId) throw new ValidationError({ key: 'errors.statements.notATransfer' });
+	const legs = db
+		.select({ id: financeTransactions.id })
+		.from(financeTransactions)
+		.where(
+			and(eq(financeTransactions.userId, ctx.userId), eq(financeTransactions.groupId, leg.groupId))
+		)
+		.all();
+	const ids = legs.map((l) => l.id);
+	if (ids.length) {
+		const refund = db
+			.select({ id: financeTransactions.id })
+			.from(financeTransactions)
+			.where(
+				and(eq(financeTransactions.userId, ctx.userId), inArray(financeTransactions.parentId, ids))
+			)
+			.get();
+		if (refund)
+			throw new ValidationError({
+				key: 'errors.statements.refundOnLeg',
+				values: { id: refund.id }
+			});
+	}
 	db.update(financeTransactions)
-		.set({
-			ledgerId,
-			description:
-				input.description === undefined
-					? current.description
-					: str(input.description, 'description', { max: 500 }),
-			occurredOn:
-				input.occurredOn === undefined || input.occurredOn === ''
-					? current.occurredOn
-					: str(input.occurredOn, 'date', { max: 10, pattern: /^\d{4}-\d{2}-\d{2}$/ }),
-			amountCents:
-				input.amountCents === undefined || input.amountCents === ''
-					? current.amountCents
-					: num(input.amountCents, 'amount', { int: true })
-		})
-		.where(and(eq(financeTransactions.id, id), eq(financeTransactions.userId, ctx.userId)))
+		.set({ groupId: null, kind: null })
+		.where(
+			and(eq(financeTransactions.userId, ctx.userId), eq(financeTransactions.groupId, leg.groupId))
+		)
 		.run();
+}
+
+/**
+ * Attach a line to the one it belongs to (D8).
+ *
+ * A refund reverses one expense and a fee belongs to the payment it was
+ * charged on. One parent only: a credit returned against two expenses is two
+ * credits. The currencies must match — the ledgers may differ, the money may
+ * not — because netting unlike money is arithmetic, not reconciliation.
+ */
+export function linkMovement(
+	ctx: Ctx,
+	input: { id: unknown; parentId: unknown; relation: 'refund' | 'fee' }
+): void {
+	const kind = input.relation;
+	linkChild(ctx, { id: input.id, parentId: input.parentId }, kind);
+}
+
+function linkChild(ctx: Ctx, input: { id: unknown; parentId: unknown }, kind: 'refund' | 'fee') {
+	const id = num(input.id, 'movement', { int: true });
+	const parentId = num(input.parentId, 'parent', { int: true });
+	if (id === parentId) throw new ValidationError({ key: 'errors.statements.ownParent' });
+	const child = ownMovement(ctx, id);
+	const parent = ownMovement(ctx, parentId);
+	if (child.groupId) throw new ValidationError({ key: 'errors.statements.legCannotBeChild' });
+	if (child.parentId !== null && child.parentId !== parentId)
+		throw new ValidationError({
+			key: kind === 'refund' ? 'errors.statements.alreadyRefund' : 'errors.statements.alreadyChild',
+			values: { id: child.parentId }
+		});
+	if (child.ledgerId === null || parent.ledgerId === null)
+		throw new ValidationError({ key: 'errors.statements.linkNeedsLedger' });
+	const cc = ledgerCurrency(ctx, child.ledgerId);
+	const pc = ledgerCurrency(ctx, parent.ledgerId);
+	if (!cc || !pc) throw new ValidationError({ key: 'errors.statements.linkNeedsCurrency' });
+	if (cc !== pc)
+		throw new ValidationError({
+			key: 'errors.statements.unlikeCurrencies',
+			values: { a: cc, b: pc }
+		});
+
+	db.transaction((tx) => {
+		assertMovementUnlinked(ctx, id);
+		tx.update(financeTransactions)
+			.set({ kind, parentId })
+			.where(and(eq(financeTransactions.id, id), eq(financeTransactions.userId, ctx.userId)))
+			.run();
+	});
+}
+
+/** The ledger's currency, or null while it has none. */
+function ledgerCurrency(ctx: Ctx, ledgerId: number): string | null {
+	const row = db
+		.select({ currency: ledgers.currency })
+		.from(ledgers)
+		.where(and(eq(ledgers.id, ledgerId), eq(ledgers.userId, ctx.userId)))
+		.get();
+	return row?.currency ?? null;
+}
+
+/** Undo a refund or fee link: the line stands alone again, back to the sign's guess. */
+export function detachMovement(ctx: Ctx, id: number): void {
+	db.transaction(() => {
+		ownMovement(ctx, id);
+		assertMovementUnlinked(ctx, id);
+		db.update(financeTransactions)
+			.set({ parentId: null, kind: null })
+			.where(and(eq(financeTransactions.id, id), eq(financeTransactions.userId, ctx.userId)))
+			.run();
+	});
 }
 
 /** One movement as stored, or null — how an id somebody named is resolved. */
 export function getMovementRow(ctx: Ctx, id: number) {
-	return (
+	const row =
 		db
 			.select()
 			.from(financeTransactions)
 			.where(and(eq(financeTransactions.id, id), eq(financeTransactions.userId, ctx.userId)))
-			.get() ?? null
-	);
+			.get() ?? null;
+	return row ? { ...row, allocations: allocationsFor(ctx, id) } : null;
+}
+
+function allocationsFor(ctx: Ctx, id: number): MovementAllocation[] {
+	return db
+		.select()
+		.from(financeTransactionAllocations)
+		.where(
+			and(
+				eq(financeTransactionAllocations.userId, ctx.userId),
+				eq(financeTransactionAllocations.transactionId, id)
+			)
+		)
+		.orderBy(financeTransactionAllocations.id)
+		.all();
 }
 
 /** Every movement as stored, or only those in some ledgers — what a key tied to a notebook reaches. */
@@ -314,12 +831,50 @@ export function listMovementRows(ctx: Ctx, opts: { ledgerIds?: number[] } = {}) 
 		.all();
 }
 
+/**
+ * Gone.
+ *
+ * A leg of a transfer is refused while the group stands: deleting one leg is
+ * how a pair becomes a single line that still calls itself a transfer (D2).
+ * Anything that pointed at the line is unlinked first, so a refund survives
+ * its parent as an unmatched credit rather than disappearing with it.
+ */
 export function deleteMovement(ctx: Ctx, id: number): void {
-	const gone = db
-		.delete(financeTransactions)
-		.where(and(eq(financeTransactions.id, id), eq(financeTransactions.userId, ctx.userId)))
-		.run();
-	if (gone.changes === 0) throw new NotFoundError('movement');
+	db.transaction(() => {
+		const row = ownMovement(ctx, id);
+		assertMovementUnlinked(ctx, id);
+		if (row.groupId) {
+			const group = db
+				.select({ id: financeTransactions.id })
+				.from(financeTransactions)
+				.where(
+					and(
+						eq(financeTransactions.userId, ctx.userId),
+						eq(financeTransactions.groupId, row.groupId),
+						ne(financeTransactions.id, id)
+					)
+				)
+				.get();
+			if (group)
+				throw new ValidationError({
+					key: 'errors.statements.legOfTransferDelete',
+					values: { id: group.id }
+				});
+		}
+		db.transaction((tx) => {
+			tx.update(financeTransactions)
+				.set({ parentId: null })
+				.where(
+					and(eq(financeTransactions.userId, ctx.userId), eq(financeTransactions.parentId, id))
+				)
+				.run();
+			const gone = tx
+				.delete(financeTransactions)
+				.where(and(eq(financeTransactions.id, id), eq(financeTransactions.userId, ctx.userId)))
+				.run();
+			if (gone.changes === 0) throw new NotFoundError('movement');
+		});
+	});
 }
 
 // ── Rules ────────────────────────────────────────────────────────────────────
@@ -446,6 +1001,21 @@ export function updateRule(
 		pattern: input.pattern ?? found.pattern,
 		color: input.color ?? found.color
 	});
+	// A budget stores the category by name. Renaming a category would otherwise
+	// leave every ceiling on it orphaned, so the rename carries them with it.
+	if (found.kind === 'category' && f.kind === 'category' && f.name !== found.name) {
+		db.transaction((tx) => {
+			tx.update(financeRules)
+				.set({ kind: f.kind, name: f.name, pattern: f.pattern, color: f.color ?? found.color })
+				.where(and(eq(financeRules.id, id), eq(financeRules.userId, ctx.userId)))
+				.run();
+			tx.update(financeBudgets)
+				.set({ category: f.name })
+				.where(and(eq(financeBudgets.userId, ctx.userId), eq(financeBudgets.category, found.name)))
+				.run();
+		});
+		return listRules(ctx).find((r) => r.id === id)!;
+	}
 	db.update(financeRules)
 		.set({ kind: f.kind, name: f.name, pattern: f.pattern, color: f.color ?? found.color })
 		.where(and(eq(financeRules.id, id), eq(financeRules.userId, ctx.userId)))
@@ -490,6 +1060,25 @@ export function placeRule(ctx: Ctx, id: number, position: number): void {
 }
 
 export function deleteRule(ctx: Ctx, id: number): void {
+	const rule = db
+		.select({ kind: financeRules.kind, name: financeRules.name })
+		.from(financeRules)
+		.where(and(eq(financeRules.id, id), eq(financeRules.userId, ctx.userId)))
+		.get();
+	if (!rule) throw new NotFoundError('rule');
+	if (rule.kind === 'category') {
+		const used = db
+			.select({ id: financeBudgets.id })
+			.from(financeBudgets)
+			.where(and(eq(financeBudgets.userId, ctx.userId), eq(financeBudgets.category, rule.name)))
+			.limit(1)
+			.get();
+		if (used)
+			throw new ValidationError({
+				key: 'errors.finance.categoryHasBudget',
+				values: { name: rule.name }
+			});
+	}
 	const gone = db
 		.delete(financeRules)
 		.where(and(eq(financeRules.id, id), eq(financeRules.userId, ctx.userId)))
@@ -538,7 +1127,10 @@ export function sortByRules(ctx: Ctx, description: string) {
 
 export type MovementFilter = {
 	ledgerId?: number | null;
-	/** 'YYYY-MM', or a half-open range through `from`/`to` dates. */
+	/** Omitted means separate original currencies; null selects unspecified. */
+	currency?: string | null;
+	unclassified?: boolean;
+	/** 'YYYY-MM', or an inclusive civil-date range through `from`/`to`. */
 	month?: string;
 	from?: string;
 	to?: string;
@@ -550,7 +1142,34 @@ export type MovementFilter = {
 	limit?: number;
 };
 
-export function listMovements(ctx: Ctx, filter: MovementFilter = {}): Movement[] {
+/** One statement line as both the whole list and a bounded page read it. */
+type MovementRow = typeof financeTransactions.$inferSelect & { commitmentEntryId: number | null };
+
+function movementRows(ctx: Ctx, where: SQL[], limit?: number): MovementRow[] {
+	const query = db
+		.select({
+			...getTableColumns(financeTransactions),
+			/** One entry per line at most: a split or a settlement writes it. */
+			commitmentEntryId: sql<number | null>`(
+				select e.id from finance_commitment_entries e
+				where e.user_id = ${ctx.userId} and e.transaction_id = ${financeTransactions.id}
+				limit 1
+			)`
+		})
+		.from(financeTransactions)
+		.where(and(...where))
+		.orderBy(desc(financeTransactions.occurredOn), desc(financeTransactions.id));
+	return limit === undefined ? query.all() : query.limit(limit).all();
+}
+
+/**
+ * Rows as the screen draws them: category, tags, allocations, counterpart state.
+ *
+ * Split out so a bounded page and the whole list cannot drift apart — a second
+ * shaping would be a second answer to "what is this line", which is how the
+ * same movement ends up described differently on two surfaces.
+ */
+function shapedMovements(ctx: Ctx, rows: MovementRow[], boundedPage = false): Movement[] {
 	const rules = rawRules(ctx);
 	const names = new Map(
 		db
@@ -561,19 +1180,107 @@ export function listMovements(ctx: Ctx, filter: MovementFilter = {}): Movement[]
 			.map((l) => [l.id, l.name])
 	);
 
+	/*
+	 * A bounded page names its own rows in the `inArray`; the whole list reads
+	 * them account-wide. The split matters: SQLite binds one parameter per id,
+	 * and the whole history of a busy ledger passes its parameter ceiling.
+	 * (The paging test creates 100,001 lines in one ledger.)
+	 */
+	const allocations = new Map<number, MovementAllocation[]>();
+	if (rows.length) {
+		const parts = boundedPage
+			? db
+					.select()
+					.from(financeTransactionAllocations)
+					.where(
+						and(
+							eq(financeTransactionAllocations.userId, ctx.userId),
+							inArray(
+								financeTransactionAllocations.transactionId,
+								rows.map((r) => r.id)
+							)
+						)
+					)
+					.orderBy(financeTransactionAllocations.id)
+			: db
+					.select()
+					.from(financeTransactionAllocations)
+					.where(eq(financeTransactionAllocations.userId, ctx.userId))
+					.orderBy(financeTransactionAllocations.id);
+		for (const part of parts.all()) {
+			const held = allocations.get(part.transactionId) ?? [];
+			held.push(part);
+			allocations.set(part.transactionId, held);
+		}
+	}
+	// How many legs each group has — counted over the account, not the page,
+	// so a filtered list still knows a counterpart exists. Accounts with no
+	// transfers pay nothing for this.
+	const groupSize = new Map<string, number>();
+	if (rows.some((r) => r.groupId))
+		for (const r of db
+			.select({ groupId: financeTransactions.groupId, id: financeTransactions.id })
+			.from(financeTransactions)
+			.where(
+				and(eq(financeTransactions.userId, ctx.userId), isNotNull(financeTransactions.groupId))
+			)
+			.all())
+			groupSize.set(r.groupId!, (groupSize.get(r.groupId!) ?? 0) + 1);
+	return rows.map((r) => {
+		const sorted = sortDescription(rules, r.description);
+		const parts = allocations.get(r.id) ?? [];
+		// A splinter's own category is what Insights counts, so the list and
+		// the "uncategorized" count use it too rather than showing the line
+		// as unsorted on two screens and sorted on a third.
+		const override =
+			parts.find((part) => part.kind === 'personal' && part.category)?.category ?? null;
+		const categoryColor = override
+			? (rules.find((rule) => rule.kind === 'category' && rule.name === override)?.color ?? null)
+			: sorted.categoryColor;
+		return {
+			id: r.id,
+			ledgerId: r.ledgerId,
+			ledgerName: r.ledgerId === null ? null : (names.get(r.ledgerId) ?? null),
+			occurredOn: r.occurredOn,
+			amountCents: r.amountCents,
+			description: r.description,
+			source: r.source,
+			kind: (r.kind as MovementKind | null) ?? null,
+			groupId: r.groupId,
+			// A line marked as a transfer has no group until it is paired, and
+			// that is exactly the state the screen must name.
+			counterpartPending:
+				r.kind === 'transfer' && (r.groupId === null || (groupSize.get(r.groupId) ?? 0) < 2),
+			parentId: r.parentId,
+			category: override ?? sorted.category,
+			categoryColor,
+			tags: sorted.tags,
+			allocations: parts,
+			commitmentEntryId: r.commitmentEntryId
+		};
+	});
+}
+
+export function listMovements(ctx: Ctx, filter: MovementFilter = {}): Movement[] {
 	const where = [eq(financeTransactions.userId, ctx.userId)];
 	if (filter.ledgerId) where.push(eq(financeTransactions.ledgerId, filter.ledgerId));
-	if (filter.from) where.push(gte(financeTransactions.occurredOn, filter.from));
-
-	const rows = db
-		.select()
-		.from(financeTransactions)
-		.where(and(...where))
-		.orderBy(desc(financeTransactions.occurredOn), desc(financeTransactions.id))
-		.all();
+	if (filter.from) where.push(gte(financeTransactions.occurredOn, civilDay(filter.from)));
+	if (filter.to) where.push(sql`${financeTransactions.occurredOn} <= ${civilDay(filter.to)}`);
+	if (filter.month) civilDay(`${filter.month}-01`, 'month');
+	if (filter.unclassified) where.push(sql`${financeTransactions.kind} is null`);
+	if (filter.currency !== undefined) {
+		const currency = filter.currency === null ? null : normaliseCurrency(filter.currency);
+		if (filter.currency !== null && !currency)
+			throw new ValidationError({ key: 'errors.finance.chooseValidOriginalCurrency' });
+		where.push(
+			sql`(select l.currency from ledgers l where l.id = ${financeTransactions.ledgerId} and l.user_id = ${ctx.userId}) is ${currency}`
+		);
+	}
 
 	const text = filter.query?.trim().toLowerCase();
-	return rows
+	// Rows narrow before the rules describe them: a one-month drill-down must
+	// not run every category and tag pattern over the whole history.
+	const rows = movementRows(ctx, where)
 		.filter((r) => !filter.month || r.occurredOn.startsWith(filter.month))
 		.filter((r) => !filter.to || r.occurredOn <= filter.to)
 		.filter((r) => !text || r.description.toLowerCase().includes(text))
@@ -583,23 +1290,103 @@ export function listMovements(ctx: Ctx, filter: MovementFilter = {}): Movement[]
 				: filter.direction === 'out'
 					? r.amountCents < 0
 					: true
-		)
-		.map((r) => {
-			const sorted = sortDescription(rules, r.description);
-			return {
-				id: r.id,
-				ledgerId: r.ledgerId,
-				ledgerName: r.ledgerId === null ? null : (names.get(r.ledgerId) ?? null),
-				occurredOn: r.occurredOn,
-				amountCents: r.amountCents,
-				description: r.description,
-				source: r.source,
-				...sorted
-			};
-		})
+		);
+	return shapedMovements(ctx, rows)
 		.filter((m) => !filter.category || (m.category ?? UNCATEGORIZED) === filter.category)
 		.filter((m) => !filter.tag || m.tags.some((t) => t.name === filter.tag))
 		.slice(0, filter.limit ?? 1000);
+}
+
+/** The most lines one page may hold. A caller cannot ask for the whole history. */
+export const MOVEMENT_PAGE_MAX = 100;
+
+export type MovementPage = { movements: Movement[]; nextCursor: number | null };
+
+/**
+ * One bounded page of statement lines, newest first.
+ *
+ * A page, not a figure: `limit` is clamped and `beforeId` is the cursor the
+ * previous page answered with, so walking the history never loads all of it.
+ * The values are `listMovements`' own — same category, tags, allocations and
+ * counterpart state — because the API and the screen must tell one story.
+ *
+ * `beforeId` is the id of the last line already read; the keyset is that line's
+ * place in the order, not the id alone, so an import backdating a line cannot
+ * make a page skip or repeat a row.
+ */
+export function listMovementPage(
+	ctx: Ctx,
+	opts: { limit?: number; beforeId?: number; ledgerId?: number | null; month?: string } = {}
+): MovementPage {
+	const limit = Math.min(
+		Math.max(Math.trunc(opts.limit ?? MOVEMENT_PAGE_MAX) || MOVEMENT_PAGE_MAX, 1),
+		MOVEMENT_PAGE_MAX
+	);
+	const where: SQL[] = [eq(financeTransactions.userId, ctx.userId)];
+	if (opts.ledgerId !== undefined && opts.ledgerId !== null)
+		where.push(eq(financeTransactions.ledgerId, opts.ledgerId));
+	if (opts.month !== undefined && opts.month !== '') {
+		civilDay(`${opts.month}-01`, 'month');
+		where.push(gte(financeTransactions.occurredOn, `${opts.month}-01`));
+		where.push(sql`${financeTransactions.occurredOn} <= ${`${opts.month}-31`}`);
+	}
+	if (opts.beforeId !== undefined) {
+		const beforeId = num(opts.beforeId, 'cursor', { int: true, min: 1 });
+		const anchor = db
+			.select({
+				occurredOn: financeTransactions.occurredOn,
+				id: financeTransactions.id
+			})
+			.from(financeTransactions)
+			.where(and(eq(financeTransactions.id, beforeId), eq(financeTransactions.userId, ctx.userId)))
+			.get();
+		if (!anchor) throw new NotFoundError('movement');
+		where.push(
+			sql`(${financeTransactions.occurredOn} < ${anchor.occurredOn}
+				or (${financeTransactions.occurredOn} = ${anchor.occurredOn}
+				and ${financeTransactions.id} < ${anchor.id}))`
+		);
+	}
+	const rows = movementRows(ctx, where, limit + 1);
+	const page = rows.slice(0, limit);
+	return {
+		movements: shapedMovements(ctx, page, true),
+		nextCursor: rows.length > limit ? page[page.length - 1].id : null
+	};
+}
+
+/** A line a meaning can point at: a transfer's other side, a refund's expense. */
+export type LinkCandidate = {
+	id: number;
+	ledgerId: number | null;
+	occurredOn: string;
+	amountCents: number;
+	description: string;
+	groupId: string | null;
+};
+
+/**
+ * The few recent lines one meaning can be linked to.
+ *
+ * Deliberately not `listMovements`: that loads the whole history and runs
+ * every sorting rule over each row, which a picker of the last hundred lines
+ * has no use for and would pay for on every page load.
+ */
+export function recentForLinking(ctx: Ctx, limit = 100): LinkCandidate[] {
+	return db
+		.select({
+			id: financeTransactions.id,
+			ledgerId: financeTransactions.ledgerId,
+			occurredOn: financeTransactions.occurredOn,
+			amountCents: financeTransactions.amountCents,
+			description: financeTransactions.description,
+			groupId: financeTransactions.groupId
+		})
+		.from(financeTransactions)
+		.where(and(eq(financeTransactions.userId, ctx.userId), isNotNull(financeTransactions.ledgerId)))
+		.orderBy(desc(financeTransactions.occurredOn), desc(financeTransactions.id))
+		.limit(Math.min(Math.max(Math.trunc(limit) || 100, 1), 500))
+		.all();
 }
 
 /** How many lines no category rule claims — the number that says "more rules". */
@@ -620,26 +1407,262 @@ export function monthKeys(now: Date, months: number): string[] {
 	return keys;
 }
 
+/** One inclusive window for every finance series, in the account's civil month. */
+export function statementWindow(ctx: Ctx, months = DEFAULT_MONTHS, filter: MovementFilter = {}) {
+	num(months, 'months', { int: true, min: 1, max: 120 });
+	const endOfMonth = (month: string) => {
+		const date = new Date(`${civilDay(`${month}-01`)}T12:00:00Z`);
+		date.setUTCMonth(date.getUTCMonth() + 1);
+		date.setUTCDate(0);
+		return date.toISOString().slice(0, 10);
+	};
+	const last = filter.month
+		? endOfMonth(filter.month)
+		: filter.to
+			? civilDay(filter.to, 'last day')
+			: endOfMonth(localDateOf(ctx.now, ctx.tz).slice(0, 7));
+	const from = filter.month
+		? civilDay(`${filter.month}-01`)
+		: filter.from
+			? civilDay(filter.from, 'first day')
+			: `${monthKeys(new Date(`${last}T12:00:00Z`), months)[0]}-01`;
+	const to = filter.to ? civilDay(filter.to, 'last day') : last;
+	if (from > to) throw new ValidationError({ key: 'errors.finance.firstDayNotAfterLast' });
+	const keys: string[] = [];
+	const cursor = new Date(`${from.slice(0, 7)}-01T12:00:00Z`);
+	while (cursor.toISOString().slice(0, 7) <= to.slice(0, 7)) {
+		keys.push(cursor.toISOString().slice(0, 7));
+		if (keys.length > 120)
+			throw new ValidationError({ key: 'errors.finance.chooseAtMost120Months' });
+		cursor.setUTCMonth(cursor.getUTCMonth() + 1);
+	}
+	return { from, to, months: keys };
+}
+
 export type CategorySlice = { name: string; color: string; outCents: number; share: number };
 
 /**
- * Spending by category over a window — the pie, and the table beside it.
- * Every outgoing line is in exactly one slice, uncategorized included, so
- * the slices are the whole of what was spent.
+ * Personal spending by category over a window — the pie, and the table beside it.
+ * Expenses and fees count, net of refunds, and only the personal part of a split
+ * line. Transfers, cash withdrawals and custody shares stay out; a month whose
+ * refunds outweigh its spending has no slice rather than a negative one.
  */
 export function categorySlices(ctx: Ctx, filter: MovementFilter = {}): CategorySlice[] {
-	const out = listMovements(ctx, { ...filter, limit: 100_000 }).filter((m) => m.amountCents < 0);
+	const window = statementWindow(ctx, DEFAULT_MONTHS, filter);
+	const bounded = { ...filter, from: window.from, to: window.to };
+	assertSingleCurrency(ctx, bounded);
+	const out = personalSpending(ctx, bounded);
 	const totals = new Map<string, { cents: number; color: string }>();
 	for (const m of out) {
 		const name = m.category ?? UNCATEGORIZED;
 		const held = totals.get(name) ?? { cents: 0, color: m.categoryColor ?? '#94a3b8' };
-		held.cents -= m.amountCents;
+		held.cents = minorAmount(held.cents + m.spentMinor, 'category total');
 		totals.set(name, held);
 	}
-	const sum = [...totals.values()].reduce((n, t) => n + t.cents, 0) || 1;
-	return [...totals.entries()]
+	// A refund-only category nets below zero. A ring has no arc for that: the
+	// month simply has no spending in it.
+	const outgoing = [...totals.entries()].filter(([, total]) => total.cents > 0);
+	const sum = outgoing.reduce((n, [, total]) => n + total.cents, 0) || 1;
+	return outgoing
 		.map(([name, t]) => ({ name, color: t.color, outCents: t.cents, share: t.cents / sum }))
 		.sort((a, b) => b.outCents - a.outCents);
+}
+
+/**
+ * Personal spending per line, description and category, aggregated before the
+ * rules describe it. Expenses and fees count only when signed out; a refund
+ * counts only when signed in. A kind that contradicts its own sign is left out
+ * rather than counted backwards.
+ */
+function personalSpending(ctx: Ctx, filter: MovementFilter = {}) {
+	const where = movementWhere(ctx, filter);
+	const rows = db.all<{
+		month: string;
+		currency: string | null;
+		description: string;
+		categoryDescription: string;
+		categoryOverride: string | null;
+		grossMinor: number;
+		refundMinor: number;
+	}>(sql`
+		select substr(t.occurred_on, 1, 7) as month, l.currency, t.description,
+			case when t.kind = 'refund' then coalesce(p.description, t.description) else t.description end as categoryDescription,
+			case when t.kind = 'refund' then coalesce(
+				(select pa.category from finance_transaction_allocations pa
+				 where pa.transaction_id = p.id and pa.user_id = ${ctx.userId}
+				 and pa.kind = 'personal' and pa.category is not null order by pa.id limit 1), a.category)
+			else a.category end as categoryOverride,
+			sum(case when t.amount_cents < 0 then -case when a.id is null then t.amount_cents else a.amount_minor end else 0 end) as grossMinor,
+			sum(case when t.kind = 'refund' then case when a.id is null then t.amount_cents else a.amount_minor end else 0 end) as refundMinor
+		from finance_transactions t
+		left join ledgers l on l.id = t.ledger_id and l.user_id = ${ctx.userId}
+		left join finance_transaction_allocations a on a.transaction_id = t.id and a.user_id = ${ctx.userId}
+		left join finance_transactions p on p.id = t.parent_id and p.user_id = ${ctx.userId}
+		where ${sql.join(where, sql` and `)}
+			and (
+				(t.amount_cents < 0 and coalesce(t.kind, 'expense') in ('expense', 'fee'))
+				or (t.kind = 'refund' and t.amount_cents > 0)
+			)
+			and (a.id is null or a.kind = 'personal')
+		group by substr(t.occurred_on, 1, 7), l.currency, t.description, categoryDescription, categoryOverride
+	`);
+	const rules = rawRules(ctx);
+	const query = filter.query?.trim().toLowerCase();
+	return rows
+		.filter((row) => !query || row.description.toLowerCase().includes(query))
+		.map((row) => {
+			const sorted = sortDescription(rules, row.categoryDescription);
+			const tags = sortDescription(rules, row.description).tags;
+			return {
+				month: row.month,
+				currency: row.currency,
+				category: row.categoryOverride ?? sorted.category,
+				categoryColor: row.categoryOverride
+					? (rules.find((rule) => rule.kind === 'category' && rule.name === row.categoryOverride)
+							?.color ?? null)
+					: sorted.categoryColor,
+				tags,
+				grossMinor: minorAmount(row.grossMinor, 'gross expenses'),
+				refundMinor: minorAmount(row.refundMinor, 'refunds'),
+				spentMinor: minorAmount(row.grossMinor - row.refundMinor, 'spending total')
+			};
+		})
+		.filter((row) => !filter.category || (row.category ?? UNCATEGORIZED) === filter.category)
+		.filter((row) => !filter.tag || row.tags.some((tag) => tag.name === filter.tag));
+}
+
+/** Shared SQL boundary: original currencies and inclusive dates, never preference currency. */
+function movementWhere(ctx: Ctx, filter: MovementFilter) {
+	const where = [sql`t.user_id = ${ctx.userId}`];
+	if (filter.ledgerId)
+		where.push(sql`t.ledger_id = ${num(filter.ledgerId, 'ledger', { int: true, min: 1 })}`);
+	if (filter.from) where.push(sql`t.occurred_on >= ${civilDay(filter.from, 'first day')}`);
+	if (filter.to) where.push(sql`t.occurred_on <= ${civilDay(filter.to, 'last day')}`);
+	if (filter.from && filter.to && filter.from > filter.to)
+		throw new ValidationError({ key: 'errors.finance.firstDayNotAfterLast' });
+	if (filter.month) {
+		civilDay(`${filter.month}-01`, 'month');
+		where.push(sql`substr(t.occurred_on, 1, 7) = ${filter.month}`);
+	}
+	if (filter.currency === null) where.push(sql`l.currency is null`);
+	else if (filter.currency !== undefined) {
+		const currency = normaliseCurrency(filter.currency);
+		if (!currency) throw new ValidationError({ key: 'errors.finance.chooseValidOriginalCurrency' });
+		where.push(sql`l.currency = ${currency}`);
+	}
+	if (filter.unclassified) where.push(sql`t.kind is null`);
+	if (filter.direction === 'in') where.push(sql`t.amount_cents > 0`);
+	if (filter.direction === 'out') where.push(sql`t.amount_cents < 0`);
+	if (filter.query?.trim())
+		where.push(sql`instr(lower(t.description), ${filter.query.trim().toLowerCase()}) > 0`);
+	return where;
+}
+
+/** A split replaces, never adds to, the movement's personal share. */
+function personalAmount(ctx: Ctx) {
+	return sql`case when exists (select 1 from finance_transaction_allocations a
+		where a.transaction_id = t.id and a.user_id = ${ctx.userId})
+		then coalesce((select sum(a.amount_minor) from finance_transaction_allocations a
+		where a.transaction_id = t.id and a.user_id = ${ctx.userId} and a.kind = 'personal'), 0)
+		else t.amount_cents end`;
+}
+
+function assertSingleCurrency(ctx: Ctx, filter: MovementFilter) {
+	const currencies = db.all<{ currency: string | null }>(sql`
+		select distinct l.currency from finance_transactions t
+		left join ledgers l on l.id = t.ledger_id and l.user_id = ${ctx.userId}
+		where ${sql.join(movementWhere(ctx, filter), sql` and `)} limit 2
+	`);
+	if (currencies.length > 1)
+		throw new ValidationError({ key: 'errors.finance.chooseOriginalCurrencyUnlikeMoney' });
+}
+
+export type SpendingCategory = {
+	name: string;
+	color: string;
+	grossMinor: number;
+	refundMinor: number;
+	netMinor: number;
+};
+export type Spending = {
+	currency: string | null;
+	grossMinor: number;
+	refundMinor: number;
+	netMinor: number;
+	incomeMinor: number;
+	movementCount: number;
+	unclassifiedCount: number;
+	transferCount: number;
+	transferInMinor: number;
+	transferOutMinor: number;
+	cashCount: number;
+	cashMinor: number;
+	custodyCount: number;
+	custodyMinor: number;
+	unmatchedRefundCount: number;
+	byCategory: SpendingCategory[];
+};
+
+/** Personal consumption and its exclusions, grouped by original currency without a row cap. */
+export function spending(ctx: Ctx, filter: MovementFilter = {}): Spending[] {
+	const personal = personalAmount(ctx);
+	const totals = db.all<
+		Omit<Spending, 'grossMinor' | 'refundMinor' | 'netMinor' | 'byCategory'>
+	>(sql`
+		select l.currency, count(*) as movementCount,
+			sum(case when t.kind is null then 1 else 0 end) as unclassifiedCount,
+			sum(case when t.amount_cents > 0 and coalesce(t.kind, 'income') = 'income' then ${personal} else 0 end) as incomeMinor,
+			sum(case when t.kind = 'transfer' then 1 else 0 end) as transferCount,
+			sum(case when t.kind = 'transfer' and t.amount_cents > 0 then t.amount_cents else 0 end) as transferInMinor,
+			sum(case when t.kind = 'transfer' and t.amount_cents < 0 then -t.amount_cents else 0 end) as transferOutMinor,
+			sum(case when t.kind = 'cash' then 1 else 0 end) as cashCount,
+			sum(case when t.kind = 'cash' then abs(t.amount_cents) else 0 end) as cashMinor,
+			sum(case when t.amount_cents != ${personal} then 1 else 0 end) as custodyCount,
+			sum(abs(t.amount_cents - ${personal})) as custodyMinor,
+			sum(case when t.kind = 'refund' and t.amount_cents > 0 and p.id is null then 1 else 0 end) as unmatchedRefundCount
+		from finance_transactions t
+		left join ledgers l on l.id = t.ledger_id and l.user_id = ${ctx.userId}
+		left join finance_transactions p on p.id = t.parent_id and p.user_id = ${ctx.userId}
+		where ${sql.join(movementWhere(ctx, filter), sql` and `)}
+		group by l.currency order by l.currency
+	`);
+	const parts = personalSpending(ctx, filter);
+	return totals.map((row) => {
+		for (const [key, value] of Object.entries(row)) if (key !== 'currency') minorAmount(value, key);
+		const categories = new Map<string, SpendingCategory>();
+		for (const part of parts.filter((part) => part.currency === row.currency)) {
+			const name = part.category ?? UNCATEGORIZED;
+			const category = categories.get(name) ?? {
+				name,
+				color: part.categoryColor ?? '#94a3b8',
+				grossMinor: 0,
+				refundMinor: 0,
+				netMinor: 0
+			};
+			category.grossMinor = minorAmount(category.grossMinor + part.grossMinor);
+			category.refundMinor = minorAmount(category.refundMinor + part.refundMinor);
+			category.netMinor = minorAmount(category.grossMinor - category.refundMinor);
+			categories.set(name, category);
+		}
+		const byCategory = [...categories.values()].sort(
+			(a, b) => b.netMinor - a.netMinor || a.name.localeCompare(b.name)
+		);
+		const grossMinor = byCategory.reduce(
+			(sum, category) => minorAmount(sum + category.grossMinor),
+			0
+		);
+		const refundMinor = byCategory.reduce(
+			(sum, category) => minorAmount(sum + category.refundMinor),
+			0
+		);
+		return {
+			...row,
+			byCategory,
+			grossMinor,
+			refundMinor,
+			netMinor: minorAmount(grossMinor - refundMinor)
+		};
+	});
 }
 
 export type StatementMonth = {
@@ -649,19 +1672,49 @@ export type StatementMonth = {
 	netCents: number;
 };
 
-/** In, out and net, month by month. */
+/**
+ * In, out and net, month by month.
+ *
+ * This is cash flow as the bank shows it: a linked refund arrived, so it is
+ * money in. Personal spending — `categorySlices`, `categoryMonths` — nets that
+ * refund against the expense it reverses and leaves transfers, cash and custody
+ * shares out, so the two totals are not meant to match.
+ */
 export function monthlyTotals(
 	ctx: Ctx,
 	months = DEFAULT_MONTHS,
 	filter: MovementFilter = {}
 ): StatementMonth[] {
-	const keys = monthKeys(ctx.now, months);
-	const rows = listMovements(ctx, { ...filter, from: `${keys[0]}-01`, limit: 100_000 });
+	const window = statementWindow(ctx, months, filter);
+	const keys = window.months;
+	const bounded = { ...filter, from: window.from, to: window.to };
+	assertSingleCurrency(ctx, bounded);
+	const description = filter.category || filter.tag ? sql`t.description` : sql`''`;
+	const rules = filter.category || filter.tag ? rawRules(ctx) : [];
+	const rows = db
+		.all<{ month: string; description: string; inCents: number; outCents: number }>(
+			sql`
+		select substr(t.occurred_on, 1, 7) as month, ${description} as description,
+			sum(case when t.amount_cents > 0 then t.amount_cents else 0 end) as inCents,
+			sum(case when t.amount_cents < 0 then -t.amount_cents else 0 end) as outCents
+		from finance_transactions t
+		left join ledgers l on l.id = t.ledger_id and l.user_id = ${ctx.userId}
+		where ${sql.join(movementWhere(ctx, bounded), sql` and `)}
+		group by substr(t.occurred_on, 1, 7), ${description}
+	`
+		)
+		.filter((row) => {
+			const sorted = sortDescription(rules, row.description);
+			return (
+				(!filter.category || (sorted.category ?? UNCATEGORIZED) === filter.category) &&
+				(!filter.tag || sorted.tags.some((tag) => tag.name === filter.tag))
+			);
+		});
 	return keys.map((month) => {
-		const mine = rows.filter((r) => r.occurredOn.startsWith(month));
-		const inCents = mine.filter((r) => r.amountCents > 0).reduce((n, r) => n + r.amountCents, 0);
-		const outCents = mine.filter((r) => r.amountCents < 0).reduce((n, r) => n - r.amountCents, 0);
-		return { month, inCents, outCents, netCents: inCents - outCents };
+		const mine = rows.filter((r) => r.month === month);
+		const inCents = mine.reduce((n, r) => minorAmount(n + r.inCents, 'cash in'), 0);
+		const outCents = mine.reduce((n, r) => minorAmount(n + r.outCents, 'cash out'), 0);
+		return { month, inCents, outCents, netCents: minorAmount(inCents - outCents, 'cash flow') };
 	});
 }
 
@@ -676,21 +1729,26 @@ export function categoryMonths(
 	months = DEFAULT_MONTHS,
 	filter: MovementFilter = {}
 ): CategoryMonths {
-	const keys = monthKeys(ctx.now, months);
-	const rows = listMovements(ctx, { ...filter, from: `${keys[0]}-01`, limit: 100_000 }).filter(
-		(m) => m.amountCents < 0
-	);
+	const window = statementWindow(ctx, months, filter);
+	const keys = window.months;
+	assertSingleCurrency(ctx, { ...filter, from: window.from, to: window.to });
+	const personalRows = personalSpending(ctx, {
+		...filter,
+		from: window.from,
+		to: window.to
+	});
 	const names = new Map<string, string>();
-	for (const r of rows) names.set(r.category ?? UNCATEGORIZED, r.categoryColor ?? '#94a3b8');
+	for (const r of personalRows)
+		names.set(r.category ?? UNCATEGORIZED, r.categoryColor ?? '#94a3b8');
 
 	return {
 		months: keys,
 		categories: [...names.entries()]
 			.map(([name, color]) => {
 				const byMonth = keys.map((month) =>
-					rows
-						.filter((r) => (r.category ?? UNCATEGORIZED) === name && r.occurredOn.startsWith(month))
-						.reduce((n, r) => n - r.amountCents, 0)
+					personalRows
+						.filter((r) => (r.category ?? UNCATEGORIZED) === name && r.month === month)
+						.reduce((n, r) => minorAmount(n + r.spentMinor, 'category month'), 0)
 				);
 				return { name, color, byMonth, totalCents: byMonth.reduce((n, c) => n + c, 0) };
 			})
@@ -723,14 +1781,21 @@ export function tagMonths(
 	months = DEFAULT_MONTHS,
 	filter: MovementFilter = {}
 ): TagMonths {
-	const keys = monthKeys(ctx.now, months);
+	const window = statementWindow(ctx, months, filter);
+	const keys = window.months;
+	assertSingleCurrency(ctx, { ...filter, from: window.from, to: window.to });
 	const rules = rawRules(ctx);
 	const colour = rules.find((r) => r.kind === 'tag' && r.name === tag)?.color ?? '#475569';
-	const rows = listMovements(ctx, { ...filter, tag, from: `${keys[0]}-01`, limit: 100_000 }).filter(
-		(m) => m.amountCents < 0
-	);
+	const rows = personalSpending(ctx, {
+		...filter,
+		tag,
+		from: window.from,
+		to: window.to
+	});
 	const byMonth = keys.map((month) =>
-		rows.filter((r) => r.occurredOn.startsWith(month)).reduce((n, r) => n - r.amountCents, 0)
+		rows
+			.filter((r) => r.month === month)
+			.reduce((n, r) => minorAmount(n + r.spentMinor, 'tag month'), 0)
 	);
 	const active = byMonth.filter((c) => c > 0).length;
 	const totalCents = byMonth.reduce((n, c) => n + c, 0);

@@ -157,11 +157,16 @@ export const HEALTH_TABS = [
 
 /** The Finance room's tabs, in the order it shows them. */
 const FINANCE_TABS = [
+	// The overview is the room's front door: four answers before any one
+	// account or plan. It used to be a redirect to Ledgers.
+	{ href: '/finance', label: 'rooms.finance.tabs.overview', glyph: 'book' },
 	{ href: '/finance/ledgers', label: 'rooms.finance.tabs.ledgers', glyph: 'bank' },
 	// Bills had a room and nothing pointing at it, which is a room nobody
 	// finds. Beside Ledgers, because a bill is money leaving on a date and
 	// that is the same subject as the lines it will turn into.
 	{ href: '/finance/bills', label: 'rooms.finance.tabs.bills', glyph: 'receipt' },
+	{ href: '/finance/budgets', label: 'rooms.finance.tabs.budgets', glyph: 'budgets' },
+	{ href: '/finance/commitments', label: 'rooms.finance.tabs.commitments', glyph: 'commitments' },
 	{ href: '/finance/rules', label: 'rooms.finance.tabs.rules', glyph: 'sort' },
 	{ href: '/finance/insights', label: 'rooms.finance.tabs.insights', glyph: 'chart' }
 ] as const;

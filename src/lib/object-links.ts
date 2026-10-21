@@ -50,6 +50,10 @@ export const OBJECT_ROOMS = {
 	recording: { room: '/media/audio' },
 	tag: { room: '/notebooks/tags' },
 	ledger: { room: '/finance/ledgers' },
+	balanceCheck: { room: '/finance/ledgers' },
+	commitment: { room: '/finance/commitments', by: { param: 'commitment' } },
+	commitmentEntry: { room: '/finance/commitments' },
+	budget: { room: '/finance/budgets', by: { param: 'budget' } },
 	movement: { room: '/finance/ledgers' },
 	bill: { room: '/finance/bills', by: 'edit' },
 	billPayment: { room: '/finance/bills' }

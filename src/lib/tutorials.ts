@@ -498,6 +498,23 @@ export const TUTORIALS: Record<string, Tutorial> = {
 		]
 	},
 
+	'/finance': {
+		label: 'rooms.finance.tabs.overview',
+		steps: [
+			{ title: 'rooms.finance.tabs.overview', body: 'finance.overview.overviewHint' },
+			{
+				target: '[data-tour="finance-overview-money"]',
+				title: 'finance.overview.available',
+				body: 'finance.overview.availableFormula'
+			},
+			{
+				target: '[data-tour="finance-overview-spending"]',
+				title: 'finance.overview.spent',
+				body: 'finance.insights.definitions'
+			}
+		]
+	},
+
 	'/finance/ledgers': {
 		label: 'tour.ledgers',
 		steps: [
@@ -506,6 +523,11 @@ export const TUTORIALS: Record<string, Tutorial> = {
 				body: 'tour.aCurrentAccountIsOne'
 			},
 			{
+				title: 'finance.ledgers.supportedFunds',
+				body: 'finance.ledgers.coverageTour'
+			},
+			{ title: 'finance.splits.title', body: 'finance.splits.hint' },
+			{
 				title: 'tour.theStatementIsTheRecord',
 				body: 'tour.importTheBankU2019sOwnExport'
 			},
@@ -513,6 +535,19 @@ export const TUTORIALS: Record<string, Tutorial> = {
 				title: 'tour.rulesDoTheSorting',
 				body: 'tour.categoriesWashTheRowIn'
 			}
+		]
+	},
+	'/finance/commitments': {
+		label: 'rooms.finance.tabs.commitments',
+		steps: [
+			{ title: 'rooms.finance.tabs.commitments', body: 'finance.commitments.hint' },
+			{
+				target: '[data-tour="commitment-kinds"]',
+				title: 'finance.commitments.new',
+				body: 'finance.commitments.adjustmentHint'
+			},
+			{ title: 'finance.commitments.settle', body: 'finance.commitments.settleHint' },
+			{ title: 'finance.commitments.consume', body: 'finance.commitments.consumeHint' }
 		]
 	},
 	'/finance/bills': {
@@ -531,6 +566,15 @@ export const TUTORIALS: Record<string, Tutorial> = {
 				target: '[data-tour="bill-history"]',
 				title: 'tour.billsTheHistory',
 				body: 'tour.billsOpenARowToSee'
+			}
+		]
+	},
+	'/finance/budgets': {
+		label: 'rooms.finance.tabs.budgets',
+		steps: [
+			{
+				title: 'tour.budgetsTitle',
+				body: 'tour.budgetsBody'
 			}
 		]
 	},

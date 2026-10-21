@@ -541,28 +541,30 @@ is a gap an assistant cannot fill yet; _app only, on purpose_ is a decision,
 said below — mostly deletions kept for the person. Generated from `src/lib/server/mcp/capabilities.json`,
 which a test holds to the tools the server serves and the actions the app has.
 
-| Room                    | create                                               | read                                                                                          | change                                                                                                                                                                      | archive                  | unarchive                | delete                                                                             | reorder            |
-| ----------------------- | ---------------------------------------------------- | --------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------ | ------------------------ | ---------------------------------------------------------------------------------- | ------------------ |
-| Tasks                   | `add_task`, `note_to_tasks`                          | `tasks`, `up_next`                                                                            | `change_task`, `tag_task`, `finish_task`, `reopen_task`, `schedule_task`, `unschedule_task`                                                                                 | `archive_task`           | `unarchive_task`         | `drop_task`                                                                        | `reorder_tasks`    |
-| Blocks                  | `add_block`, `add_repeating_block`                   | `upcoming`, `past`, `repeating_week`                                                          | `change_block`, `finish_block`, `change_repeating_block`                                                                                                                    | `change_repeating_block` | `change_repeating_block` | `cancel_block`, `remove_repeating_block`                                           |                    |
-| Notes and diary entries | `write_entry`                                        | `diary`, `notebook_notes`                                                                     | `edit_entry`, `pin_note`, `unpin_note`, `move_notes`                                                                                                                        | `archive_note`           | `unarchive_note`         | _app only, on purpose_                                                             |                    |
-| Ideas                   | `add_idea`                                           | `ideas`                                                                                       | `change_idea`, `apply_idea`, `favorite_idea`                                                                                                                                |                          |                          | `remove_idea`                                                                      |                    |
-| Goals                   | `add_goal`, `add_goal_area`, `add_goal_target`       | `goals`, `goal_areas`                                                                         | `change_goal`, `log_goal_progress`, `link_to_goal`, `unlink_from_goal`, `remove_goal_target`, `change_goal_area`                                                            | `close_goal`             | `reopen_goal`            | _app only, on purpose_                                                             | `move_goal_area`   |
-| Habits                  | `add_habit`                                          | `habits`, `all_habits`                                                                        | `change_habit`, `tick_habit`, `set_habit_count`                                                                                                                             | `archive_habit`          | `unarchive_habit`        | _app only, on purpose_                                                             |                    |
-| Inventory               | `add_inventory_item`, `add_inventory_category`       | `shopping_list`, `inventory_categories`, `inventory_attributes`                               | `file_inventory_item`, `record_price`, `set_item_attributes`, `change_inventory_attribute`, `change_inventory_category`, `move_inventory_category`, `change_inventory_item` | `archive_item`           | `unarchive_item`         | `remove_inventory_item`, `remove_inventory_category`, `remove_inventory_attribute` |                    |
-| Places                  | `add_location`                                       | `locations`, `where_is`                                                                       | `change_location`, `put_item`                                                                                                                                               |                          |                          | `remove_location`                                                                  |                    |
-| Shopping list           | `add_inventory_item`                                 | `shopping_list`                                                                               | `tick_bought`, `untick_bought`, `record_price`, `change_inventory_item`                                                                                                     | `archive_item`           | `unarchive_item`         | `remove_inventory_item`                                                            |                    |
-| Recipes                 | `add_recipe`                                         | `recipes`                                                                                     | `change_recipe`, `cooked_recipe`                                                                                                                                            | `archive_recipe`         | `archive_recipe`         | _app only, on purpose_                                                             |                    |
-| Workouts                | `add_workout`, `add_workout_category`, `log_workout` | `workouts`, `workout_sessions`, `workout_history`, `workout_activities`, `workout_categories` | `change_workout`, `set_workout_measures`, `change_workout_session`, `workout_done`, `change_workout_category`                                                               | `archive_workout`        | `archive_workout`        | `remove_workout_session`, `remove_workout_category`                                |                    |
-| Bills                   | `add_bill`                                           | `bills`, `bill_payments`, `bill_history`, `month_bills`, `bills_due`                          | `change_bill`, `pay_bill`, `change_bill_payment`, `unpay_bill`, `skip_bill`, `unskip_bill`                                                                                  | `archive_bill`           | `archive_bill`           | _app only, on purpose_                                                             |                    |
-| Accounts and movements  | `add_ledger`, `record_movement`                      | `ledgers`, `movements`, `statement_months`, `spending_by_category`                            | `change_ledger`, `change_movement`                                                                                                                                          | `change_ledger`          | `change_ledger`          | `remove_movement`                                                                  | `change_ledger`    |
-| Sorting rules           | `add_sort_rule`                                      | `sort_rules`                                                                                  | `change_sort_rule`                                                                                                                                                          |                          |                          | `delete_sort_rule`                                                                 | `change_sort_rule` |
-| People                  | `add_person`                                         | `people`, `upcoming_birthdays`                                                                | `change_person`                                                                                                                                                             |                          |                          | _app only, on purpose_                                                             |                    |
-| Reminders               | `set_alarm`, `remind_before_block`, `remind_task`    | `reminders`                                                                                   | `change_reminder`, `dismiss_reminder`                                                                                                                                       |                          |                          | `cancel_alarm`                                                                     |                    |
-| Activities              | `add_activity`                                       | `activities`, `categories`                                                                    | `change_activity`                                                                                                                                                           | `change_activity`        | `change_activity`        | `remove_activity`                                                                  |                    |
-| Notebooks               | `add_notebook`                                       | `notebooks`                                                                                   | `change_notebook`, `rename_notebook_folder`, `favourite_notebook`, `share_notebook`                                                                                         | `change_notebook`        | `change_notebook`        | `remove_notebook`                                                                  |                    |
-| Labels                  | _app only, on purpose_                               | `tags`, `notebook_tags`                                                                       | `describe_tag`, `rename_tag`, `recolor_tag`, `untag_notebook`                                                                                                               |                          |                          | `remove_tag`                                                                       |                    |
-| Recordings              | _app only, on purpose_                               | `recordings`, `media`                                                                         | `change_recording`                                                                                                                                                          |                          |                          | _app only, on purpose_                                                             |                    |
+| Room                    | create                                                  | read                                                                                            | change                                                                                                                                                                      | archive                  | unarchive                | delete                                                                             | reorder            |
+| ----------------------- | ------------------------------------------------------- | ----------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------ | ------------------------ | ---------------------------------------------------------------------------------- | ------------------ |
+| Tasks                   | `add_task`, `note_to_tasks`                             | `tasks`, `up_next`                                                                              | `change_task`, `tag_task`, `finish_task`, `reopen_task`, `schedule_task`, `unschedule_task`                                                                                 | `archive_task`           | `unarchive_task`         | `drop_task`                                                                        | `reorder_tasks`    |
+| Blocks                  | `add_block`, `add_repeating_block`                      | `upcoming`, `past`, `repeating_week`                                                            | `change_block`, `finish_block`, `change_repeating_block`                                                                                                                    | `change_repeating_block` | `change_repeating_block` | `cancel_block`, `remove_repeating_block`                                           |                    |
+| Notes and diary entries | `write_entry`                                           | `diary`, `notebook_notes`                                                                       | `edit_entry`, `pin_note`, `unpin_note`, `move_notes`                                                                                                                        | `archive_note`           | `unarchive_note`         | _app only, on purpose_                                                             |                    |
+| Ideas                   | `add_idea`                                              | `ideas`                                                                                         | `change_idea`, `apply_idea`, `favorite_idea`                                                                                                                                |                          |                          | `remove_idea`                                                                      |                    |
+| Goals                   | `add_goal`, `add_goal_area`, `add_goal_target`          | `goals`, `goal_areas`                                                                           | `change_goal`, `log_goal_progress`, `link_to_goal`, `unlink_from_goal`, `remove_goal_target`, `change_goal_area`                                                            | `close_goal`             | `reopen_goal`            | _app only, on purpose_                                                             | `move_goal_area`   |
+| Habits                  | `add_habit`                                             | `habits`, `all_habits`                                                                          | `change_habit`, `tick_habit`, `set_habit_count`                                                                                                                             | `archive_habit`          | `unarchive_habit`        | _app only, on purpose_                                                             |                    |
+| Inventory               | `add_inventory_item`, `add_inventory_category`          | `shopping_list`, `inventory_categories`, `inventory_attributes`                                 | `file_inventory_item`, `record_price`, `set_item_attributes`, `change_inventory_attribute`, `change_inventory_category`, `move_inventory_category`, `change_inventory_item` | `archive_item`           | `unarchive_item`         | `remove_inventory_item`, `remove_inventory_category`, `remove_inventory_attribute` |                    |
+| Places                  | `add_location`                                          | `locations`, `where_is`                                                                         | `change_location`, `put_item`                                                                                                                                               |                          |                          | `remove_location`                                                                  |                    |
+| Shopping list           | `add_inventory_item`                                    | `shopping_list`                                                                                 | `tick_bought`, `untick_bought`, `record_price`, `change_inventory_item`                                                                                                     | `archive_item`           | `unarchive_item`         | `remove_inventory_item`                                                            |                    |
+| Recipes                 | `add_recipe`                                            | `recipes`                                                                                       | `change_recipe`, `cooked_recipe`                                                                                                                                            | `archive_recipe`         | `archive_recipe`         | _app only, on purpose_                                                             |                    |
+| Workouts                | `add_workout`, `add_workout_category`, `log_workout`    | `workouts`, `workout_sessions`, `workout_history`, `workout_activities`, `workout_categories`   | `change_workout`, `set_workout_measures`, `change_workout_session`, `workout_done`, `change_workout_category`                                                               | `archive_workout`        | `archive_workout`        | `remove_workout_session`, `remove_workout_category`                                |                    |
+| Bills                   | `add_bill`                                              | `bills`, `bill_payments`, `bill_history`, `month_bills`, `bills_due`                            | `change_bill`, `pay_bill`, `change_bill_payment`, `unpay_bill`, `skip_bill`, `unskip_bill`                                                                                  | `archive_bill`           | `archive_bill`           | _app only, on purpose_                                                             |                    |
+| Accounts and movements  | `add_ledger`, `record_movement`, `record_balance_check` | `ledgers`, `movements`, `statement_months`, `spending_by_category`, `balance_checks`, `summary` | `change_ledger`, `change_movement`, `classify_movements`, `link_movement`, `link_transfer`, `unlink_transfer`, `split_movement`, `unsplit_movement`                         | `change_ledger`          | `change_ledger`          | `remove_movement`, `delete_balance_check`                                          | `change_ledger`    |
+| Commitments             | `add_commitment`, `record_commitment_entry`             | `commitments`, `commitment_entries`                                                             | `change_commitment`, `close_commitment`, `settle_commitment`, `consume_reserve`                                                                                             | `archive_commitment`     | `archive_commitment`     | `delete_commitment_entry`                                                          |                    |
+| Budgets                 | `add_budget`, `copy_budgets`                            | `budgets`, `personal_spending`                                                                  | `change_budget`                                                                                                                                                             |                          |                          | `delete_budget`                                                                    |                    |
+| Sorting rules           | `add_sort_rule`                                         | `sort_rules`                                                                                    | `change_sort_rule`                                                                                                                                                          |                          |                          | `delete_sort_rule`                                                                 | `change_sort_rule` |
+| People                  | `add_person`                                            | `people`, `upcoming_birthdays`                                                                  | `change_person`                                                                                                                                                             |                          |                          | _app only, on purpose_                                                             |                    |
+| Reminders               | `set_alarm`, `remind_before_block`, `remind_task`       | `reminders`                                                                                     | `change_reminder`, `dismiss_reminder`                                                                                                                                       |                          |                          | `cancel_alarm`                                                                     |                    |
+| Activities              | `add_activity`                                          | `activities`, `categories`                                                                      | `change_activity`                                                                                                                                                           | `change_activity`        | `change_activity`        | `remove_activity`                                                                  |                    |
+| Notebooks               | `add_notebook`                                          | `notebooks`                                                                                     | `change_notebook`, `rename_notebook_folder`, `favourite_notebook`, `share_notebook`                                                                                         | `change_notebook`        | `change_notebook`        | `remove_notebook`                                                                  |                    |
+| Labels                  | _app only, on purpose_                                  | `tags`, `notebook_tags`                                                                         | `describe_tag`, `rename_tag`, `recolor_tag`, `untag_notebook`                                                                                                               |                          |                          | `remove_tag`                                                                       |                    |
+| Recordings              | _app only, on purpose_                                  | `recordings`, `media`                                                                           | `change_recording`                                                                                                                                                          |                          |                          | _app only, on purpose_                                                             |                    |
 
 **Not there yet** — what the app does and an assistant cannot:
 
@@ -575,6 +577,7 @@ which a test holds to the tools the server serves and the actions the app has.
 - **Workouts, delete.** An exercise carries its sessions: archived by a tool, deleted in the app. Sessions and categories can be removed.
 - **Bills, delete.** A bill carries its payment history: archived by a tool, deleted in the app where that history is in front of the person.
 - **Accounts and movements, delete.** A ledger takes every line in it when deleted: archived by a tool, deleted in the app. A single line can be removed.
+- **Commitments, delete.** A commitment carries financial history: assistants archive it; permanent deletion is only in the archived app view. Mistaken entries can be reversed and restored through the assistant log.
 - **People, delete.** A person's page stands for somebody: deleted only in the app.
 - **Labels, create.** A label comes into being by being used — `tags` on a task, a note or an idea — so there is nothing to make first.
 - **Recordings, create.** A recording is made by a microphone in the app; there is nothing for a tool to say into.
@@ -2005,15 +2008,16 @@ _Needs `schedule:write`; writes; answers with `before` and `after`._
 | `active`      | boolean | —        | `false` switches it off: it stops being offered for new blocks, and every block and record that names it stays as it is. `true` switches it back on.                                                                                      |
 | `ifUpdatedAt` | string  | —        | Only change it if nothing has changed it since: the `updatedAt` a read or an earlier change answered with. If something has, nothing is written and the call is refused with the code `conflict`, the current `updatedAt` in its details. |
 
-### `remove_activity` — Delete an activity nothing uses
+### `remove_activity` — Delete an activity
 
-Delete an activity that no block, record or todo names — one added by mistake. One that is used is refused: switch it off with `change_activity` and `active: false` instead, which keeps its history.
+Delete an activity, used or not. Without `moveTo`, every block that named it becomes a block of its category labelled with its name, past occurrences keep the name, and goals stop counting it. With `moveTo`, all of it — blocks, occurrences, goal links — names that activity instead. To keep it as it is, switch it off with `change_activity` and `active: false`.
 
 _Needs `schedule:write` and `destructive`; deletes; answers with `before` and `after`._
 
-| Parameter | Type    | Required | What it is                                  |
-| --------- | ------- | -------- | ------------------------------------------- |
-| `id`      | integer | yes      | The activity’s id, as `activities` gave it. |
+| Parameter | Type    | Required | What it is                                                                                           |
+| --------- | ------- | -------- | ---------------------------------------------------------------------------------------------------- |
+| `id`      | integer | yes      | The activity’s id, as `activities` gave it.                                                          |
+| `moveTo`  | integer | —        | Another activity to hand everything that named this one to. Left off, it falls back to the category. |
 
 ### `people` — The people in their life
 
@@ -2457,19 +2461,267 @@ _Needs `workouts:write`; writes; answers with `before` and `after`._
 | --------- | ------- | -------- | ----------------- |
 | `id`      | integer | yes      | The workout’s id. |
 
+### `budgets` — Monthly category budgets
+
+Allocated, spent, remaining and separate refund credits for one month in original currencies. Budgets do not move money. Orphaned categories remain visible. Defaults to the account’s current month.
+
+_Needs `statements:read`; read-only; answers a page._
+
+| Parameter  | Type    | Required | What it is                                                                                                                                              |
+| ---------- | ------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `month`    | string  | —        | YYYY-MM.                                                                                                                                                |
+| `currency` | string  | —        | One original ISO currency.                                                                                                                              |
+| `limit`    | integer | —        | Maximum budgets per page. Default `100`.                                                                                                                |
+| `offset`   | integer | —        | Skip this many before counting, so the rest of budgets can be read a page at a time. `nextOffset` on the answer is what to pass here next. Default `0`. |
+
+### `add_budget` — Set a monthly category ceiling
+
+Create a ceiling for one category, month and original currency with an owned ledger. Exact nonnegative minor units. No bank movement, stock entry or reserve is created.
+
+_Needs `statements:write`; writes; answers with `before` and `after`, `after` being the new budget._
+
+| Parameter      | Type    | Required | What it is                                                                                                                                                                                                                                                                                  |
+| -------------- | ------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `month`        | string  | yes      | YYYY-MM.                                                                                                                                                                                                                                                                                    |
+| `category`     | string  | yes      | Existing category rule name.                                                                                                                                                                                                                                                                |
+| `currency`     | string  | yes      | Original ISO currency.                                                                                                                                                                                                                                                                      |
+| `amount_minor` | integer | yes      | Nonnegative ceiling in original minor units.                                                                                                                                                                                                                                                |
+| `requestId`    | string  | —        | An id you choose for this call, such as a UUID, so it can be sent again safely: the same `requestId` with the same arguments within a day answers with the first answer, marked `replayed`, and nothing is made twice. Reused for a different call, it is refused with the code `conflict`. |
+
+### `change_budget` — Change a budget ceiling
+
+Change only named budget fields. Omitted values stay unchanged. ifUpdatedAt refuses stale edits; no bank or stock record changes.
+
+_Needs `statements:write`; writes; answers with `before` and `after`._
+
+| Parameter      | Type    | Required | What it is                                                                                                                                                                                                                                |
+| -------------- | ------- | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `id`           | integer | yes      | Budget id.                                                                                                                                                                                                                                |
+| `month`        | string  | —        | YYYY-MM.                                                                                                                                                                                                                                  |
+| `category`     | string  | —        | Category name.                                                                                                                                                                                                                            |
+| `currency`     | string  | —        | Original ISO currency.                                                                                                                                                                                                                    |
+| `amount_minor` | integer | —        | Nonnegative ceiling in original minor units.                                                                                                                                                                                              |
+| `ifUpdatedAt`  | string  | —        | Only change it if nothing has changed it since: the `updatedAt` a read or an earlier change answered with. If something has, nothing is written and the call is refused with the code `conflict`, the current `updatedAt` in its details. |
+
+### `delete_budget` — Remove a budget ceiling
+
+Remove only a monthly ceiling. The before state is retained for recovery; bank history and spending remain unchanged.
+
+_Needs `statements:write` and `destructive`; deletes; answers with `before` and `after`._
+
+| Parameter | Type    | Required | What it is |
+| --------- | ------- | -------- | ---------- |
+| `id`      | integer | yes      | Budget id. |
+
+### `copy_budgets` — Copy missing monthly budgets
+
+Copy ceilings between civil months in one transaction. Existing category/currency buckets are never overwritten. Returns added and skipped counts; no money moves.
+
+_Needs `statements:write`; writes; answers with `before` and `after`._
+
+| Parameter    | Type   | Required | What it is                                                                                                                                                                                                                                                                                  |
+| ------------ | ------ | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `from_month` | string | yes      | Source YYYY-MM.                                                                                                                                                                                                                                                                             |
+| `to_month`   | string | yes      | Target YYYY-MM.                                                                                                                                                                                                                                                                             |
+| `requestId`  | string | —        | An id you choose for this call, such as a UUID, so it can be sent again safely: the same `requestId` with the same arguments within a day answers with the first answer, marked `replayed`, and nothing is made twice. Reused for a different call, it is refused with the code `conflict`. |
+
+### `personal_spending` — Personal spending and exclusions
+
+Original-currency groups of gross expenses, refunds, signed net spending, personal income, transfer and cash exclusions, custody shares and unclassified counts. Refunds follow their actual date and parent category, never income. No balance or available-funds claim. Without a window reports the last 12 calendar months.
+
+_Needs `statements:read`; read-only._
+
+| Parameter   | Type    | Required | What it is                                                                         |
+| ----------- | ------- | -------- | ---------------------------------------------------------------------------------- |
+| `month`     | string  | —        | One civil month, YYYY-MM.                                                          |
+| `from`      | string  | —        | Inclusive first civil day, YYYY-MM-DD.                                             |
+| `to`        | string  | —        | Inclusive last civil day, YYYY-MM-DD.                                              |
+| `currency`  | string  | —        | One original ISO currency, or unspecified. Omit only for separate currency groups. |
+| `ledger_id` | integer | —        | Only this owned ledger.                                                            |
+
+### `summary` — The money picture
+
+One answer to the four money questions — what is mine, what is committed, what I spent this month and what is left against my plans — for every original currency separately, never a combined total. Funds, stocks (custody, reserves, payables, receivables), personal spending with its exclusions, and the month’s budgets. Available is funds minus custody minus reserves, never payables or receivables. Gaps such as an account without a declared opening or unclassified lines are named, not hidden in a confident number.
+
+_Needs `statements:read`; read-only._
+
+| Parameter | Type   | Required | What it is                                                                    |
+| --------- | ------ | -------- | ----------------------------------------------------------------------------- |
+| `month`   | string | —        | The civil month, YYYY-MM. Defaults to this month in the account timezone.     |
+| `as_of`   | string | —        | Inclusive balance date YYYY-MM-DD; defaults to today in the account timezone. |
+
+### `commitments` — What you owe, hold and set aside
+
+Custody, payables, receivables and reserves are stocks, not bank movements or budgets. Each balance is its opening plus entries, in its own currency. Totals stay separate by kind and currency; never subtract payables or add receivables to available bank funds.
+
+_Needs `statements:read`; read-only; answers a page._
+
+| Parameter          | Type    | Required | What it is                                                                                                                                                  |
+| ------------------ | ------- | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `include_archived` | boolean | —        | Include settled and archived records.                                                                                                                       |
+| `limit`            | integer | —        | Maximum records per page. Default `100`.                                                                                                                    |
+| `offset`           | integer | —        | Skip this many before counting, so the rest of commitments can be read a page at a time. `nextOffset` on the answer is what to pass here next. Default `0`. |
+
+### `commitment_entries` — A commitment’s history
+
+Entries and running balances for one commitment. Positive increases the obligation or earmark; negative reduces it. Linked movements remain in their original ledgers.
+
+_Needs `statements:read`; read-only; answers a page._
+
+| Parameter       | Type    | Required | What it is                                                                                                                                                         |
+| --------------- | ------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `commitment_id` | integer | yes      | Commitment id from commitments.                                                                                                                                    |
+| `limit`         | integer | —        | Maximum entries per page. Default `100`.                                                                                                                           |
+| `offset`        | integer | —        | Skip this many before counting, so the rest of commitment entries can be read a page at a time. `nextOffset` on the answer is what to pass here next. Default `0`. |
+
+### `add_commitment` — Record money owed, held or set aside
+
+Create a stock without moving money: custody is held for someone, payable is owed, receivable is owed to you, reserve is your earmark. Currency is explicit ISO 4217; opening_minor is nonnegative original-currency minor units. No bank line or expense is created.
+
+_Needs `statements:write`; writes; answers with `before` and `after`, `after` being the new commitment._
+
+| Parameter       | Type    | Required | What it is                                                                                                                                                                                                                                                                                  |
+| --------------- | ------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `name`          | string  | yes      | What this stock is called.                                                                                                                                                                                                                                                                  |
+| `kind`          | string  | yes      | The stock’s meaning. One of: `custody`, `payable`, `receivable`, `reserve`.                                                                                                                                                                                                                 |
+| `currency`      | string  | yes      | Original ISO 4217 currency; never inferred.                                                                                                                                                                                                                                                 |
+| `opening_minor` | integer | —        | Nonnegative opening in original minor units.                                                                                                                                                                                                                                                |
+| `person_id`     | integer | —        | Optional owner-scoped person id.                                                                                                                                                                                                                                                            |
+| `notes`         | string  | —        | Optional notes, at most 2000 characters.                                                                                                                                                                                                                                                    |
+| `requestId`     | string  | —        | An id you choose for this call, such as a UUID, so it can be sent again safely: the same `requestId` with the same arguments within a day answers with the first answer, marked `replayed`, and nothing is made twice. Reused for a different call, it is refused with the code `conflict`. |
+
+### `change_commitment` — Correct a commitment
+
+Edit the fields originally recorded. Omitted fields stay untouched; person_id 0 clears the person. Currency, kind and opening changes cannot invalidate retained history. Settlements and adjustments belong in entries, not in an invented bank movement.
+
+_Needs `statements:write`; writes; answers with `before` and `after`._
+
+| Parameter       | Type    | Required | What it is                                                                                                                                                                                                                                |
+| --------------- | ------- | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `id`            | integer | yes      | Commitment id.                                                                                                                                                                                                                            |
+| `name`          | string  | —        | A new name.                                                                                                                                                                                                                               |
+| `kind`          | string  | —        | A new kind, when history permits. One of: `custody`, `payable`, `receivable`, `reserve`.                                                                                                                                                  |
+| `currency`      | string  | —        | Original ISO currency; no conversion is performed.                                                                                                                                                                                        |
+| `opening_minor` | integer | —        | Corrected opening in minor units.                                                                                                                                                                                                         |
+| `person_id`     | integer | —        | Person id; 0 clears it.                                                                                                                                                                                                                   |
+| `notes`         | string  | —        | Replacement notes; an empty string clears them.                                                                                                                                                                                           |
+| `ifUpdatedAt`   | string  | —        | Only change it if nothing has changed it since: the `updatedAt` a read or an earlier change answered with. If something has, nothing is written and the call is refused with the code `conflict`, the current `updatedAt` in its details. |
+
+### `archive_commitment` — Put a commitment away or reopen it
+
+Archive without losing history. archived false reopens it. No balance or bank line changes.
+
+_Needs `statements:write`; writes; answers with `before` and `after`._
+
+| Parameter  | Type    | Required | What it is                    |
+| ---------- | ------- | -------- | ----------------------------- |
+| `id`       | integer | yes      | Commitment id.                |
+| `archived` | boolean | yes      | True archives; false reopens. |
+
+### `close_commitment` — Close a settled commitment
+
+Close a zero balance. A nonzero balance is refused unless write_off_note explicitly authorizes and explains an entry removing the residual. No ledger adjustment is made. archive_commitment with archived false reopens the record; undo any write-off separately through its entry.
+
+_Needs `statements:write`; writes; answers with `before` and `after`._
+
+| Parameter        | Type    | Required | What it is                                                                                                                                                                                                                                                                                  |
+| ---------------- | ------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `id`             | integer | yes      | Commitment id.                                                                                                                                                                                                                                                                              |
+| `write_off_note` | string  | —        | Explicit authorization and reason to write off the residual.                                                                                                                                                                                                                                |
+| `requestId`      | string  | —        | An id you choose for this call, such as a UUID, so it can be sent again safely: the same `requestId` with the same arguments within a day answers with the first answer, marked `replayed`, and nothing is made twice. Reused for a different call, it is refused with the code `conflict`. |
+
+### `record_commitment_entry` — Record a stock adjustment
+
+One dated adjustment in signed minor units: positive increases, negative reduces. An optional transaction_id links real evidence and must obey its currency, sign and allocation guards; use settle_commitment or consume_reserve for a payment. Nothing moves in the ledger. delete_commitment_entry reverses a mistake.
+
+_Needs `statements:write`; writes; answers with `before` and `after`, `after` being the new commitmentEntry._
+
+| Parameter        | Type    | Required | What it is                                                                                                                                                                                                                                                                                  |
+| ---------------- | ------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `commitment_id`  | integer | yes      | Commitment id.                                                                                                                                                                                                                                                                              |
+| `occurred_on`    | string  | yes      | Civil date YYYY-MM-DD.                                                                                                                                                                                                                                                                      |
+| `amount_minor`   | integer | yes      | Signed original-currency minor units.                                                                                                                                                                                                                                                       |
+| `transaction_id` | integer | —        | Optional bank movement evidence.                                                                                                                                                                                                                                                            |
+| `note`           | string  | —        | Why the stock changed, at most 2000 characters.                                                                                                                                                                                                                                             |
+| `requestId`      | string  | —        | An id you choose for this call, such as a UUID, so it can be sent again safely: the same `requestId` with the same arguments within a day answers with the first answer, marked `replayed`, and nothing is made twice. Reused for a different call, it is refused with the code `conflict`. |
+
+### `delete_commitment_entry` — Reverse a mistaken commitment entry
+
+Remove one mistaken stock entry, restoring its effect on the commitment. Refuses an invalid resulting balance. Movement and allocations stay intact; explicitly unsplit afterward if needed. The owner can Put it back from the assistant log through the same validated entry service.
+
+_Needs `statements:write` and `destructive`; deletes; answers with `before` and `after`._
+
+| Parameter | Type    | Required | What it is                        |
+| --------- | ------- | -------- | --------------------------------- |
+| `id`      | integer | yes      | Entry id from commitment_entries. |
+
+### `settle_commitment` — Offset or settle with an existing payment
+
+Apply one owned, same-currency bank movement to custody, payable or receivable once. Refuses overpayment and duplicate evidence. An owner’s expense becomes custody allocation, not personal spending. This never creates or changes a bank amount. Reverse its entry explicitly, then unsplit the movement.
+
+_Needs `statements:write`; writes; answers with `before` and `after`._
+
+| Parameter        | Type    | Required | What it is                                                                                                                                                                                                                                                                                  |
+| ---------------- | ------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `commitment_id`  | integer | yes      | Commitment to reduce.                                                                                                                                                                                                                                                                       |
+| `transaction_id` | integer | yes      | Existing payment movement.                                                                                                                                                                                                                                                                  |
+| `note`           | string  | —        | Optional settlement evidence.                                                                                                                                                                                                                                                               |
+| `requestId`      | string  | —        | An id you choose for this call, such as a UUID, so it can be sent again safely: the same `requestId` with the same arguments within a day answers with the first answer, marked `replayed`, and nothing is made twice. Reused for a different call, it is refused with the code `conflict`. |
+
+### `consume_reserve` — Use a reserve for an existing expense
+
+Reduce a reserve once using a same-currency expense or fee already recorded. The payment stays personal spending exactly once. Refuses overconsumption, duplicate evidence or a custody split. Reverse the entry to undo; ledger truth stays unchanged.
+
+_Needs `statements:write`; writes; answers with `before` and `after`._
+
+| Parameter        | Type    | Required | What it is                                                                                                                                                                                                                                                                                  |
+| ---------------- | ------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `commitment_id`  | integer | yes      | Reserve to reduce.                                                                                                                                                                                                                                                                          |
+| `transaction_id` | integer | yes      | Existing personal expense.                                                                                                                                                                                                                                                                  |
+| `note`           | string  | —        | Optional consumption evidence.                                                                                                                                                                                                                                                              |
+| `requestId`      | string  | —        | An id you choose for this call, such as a UUID, so it can be sent again safely: the same `requestId` with the same arguments within a day answers with the first answer, marked `replayed`, and nothing is made twice. Reused for a different call, it is refused with the code `conflict`. |
+
+### `split_movement` — Split personal and third-party money
+
+Partition a movement without altering its amount. Signed allocation amounts must have its sign and add exactly to it. Personal parts may override category. Each custody part requires an owned same-currency custody/payable commitment and atomically records one matching entry. Refuses replacement while linked entries remain.
+
+_Needs `statements:write`; writes; answers with `before` and `after`._
+
+| Parameter                     | Type     | Required | What it is                                                                                                                                                                                                                                                                                  |
+| ----------------------------- | -------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `id`                          | integer  | yes      | Movement id.                                                                                                                                                                                                                                                                                |
+| `allocations`                 | object[] | yes      | Signed parts which conserve the bank movement exactly. At most 100 items.                                                                                                                                                                                                                   |
+| `allocations[].kind`          | string   | yes      | Who the money belongs to. One of: `personal`, `custody`.                                                                                                                                                                                                                                    |
+| `allocations[].amount_minor`  | integer  | yes      | Signed part in original minor units.                                                                                                                                                                                                                                                        |
+| `allocations[].category`      | string   | —        | Optional personal category override.                                                                                                                                                                                                                                                        |
+| `allocations[].commitment_id` | integer  | —        | Required for custody; custody/payable only.                                                                                                                                                                                                                                                 |
+| `allocations[].note`          | string   | —        | Optional note for this part.                                                                                                                                                                                                                                                                |
+| `requestId`                   | string   | —        | An id you choose for this call, such as a UUID, so it can be sent again safely: the same `requestId` with the same arguments within a day answers with the first answer, marked `replayed`, and nothing is made twice. Reused for a different call, it is refused with the code `conflict`. |
+
+### `unsplit_movement` — Make a movement whole again
+
+Remove allocations only after every linked entry is explicitly reversed. The original movement and ledger amount never change.
+
+_Needs `statements:write`; writes; answers with `before` and `after`._
+
+| Parameter | Type    | Required | What it is   |
+| --------- | ------- | -------- | ------------ |
+| `id`      | integer | yes      | Movement id. |
+
 ### `ledgers` — Your ledgers
 
-The places money moves through — a current account, a credit card — with how many lines each holds and what they add up to. Amounts are in minor units (cents).
+Accounts with original currency, declared opening, as-of supported amount, outside-coverage count and recorded/supported/verified evidence status. No opening means supportedMinor is null. balanceCents is retained only as a legacy recorded subtotal, never a bank balance; use recordedMinor. Unknown currency stays unspecified and is never converted.
 
 _Needs `statements:read`; read-only._
 
 | Parameter    | Type    | Required | What it is                                                                             |
 | ------------ | ------- | -------- | -------------------------------------------------------------------------------------- |
 | `notebookId` | integer | —        | Only what is filed in this notebook, as `notebooks` gives its id. Left out, all of it. |
+| `as_of`      | string  | —        | Inclusive balance date YYYY-MM-DD; defaults to today in the account timezone.          |
 
 ### `add_ledger` — Add a ledger
 
-A new place money moves through. `kind` is bank, card, cash or other; `default_parser` preselects an export format when importing into it.
+A new place money moves through. Declare currency explicitly; omitted currency stays unspecified. opening_minor is signed minor units immediately before the first movement on opening_on. Without opening_on only a recorded subtotal is known.
 
 _Needs `statements:write`; writes; answers with `before` and `after`, `after` being the new ledger._
 
@@ -2478,6 +2730,9 @@ _Needs `statements:write`; writes; answers with `before` and `after`, `after` be
 | `name`           | string  | yes      | What it is called — "Nubank", "Visa".                                                                                                                                                                                                                                                       |
 | `kind`           | string  | —        | bank, card, cash or other.                                                                                                                                                                                                                                                                  |
 | `default_parser` | string  | —        | An export key like 'nubank:conta_corrente'.                                                                                                                                                                                                                                                 |
+| `currency`       | string  | —        | Original ISO 4217 currency, never inferred from user preferences.                                                                                                                                                                                                                           |
+| `opening_minor`  | integer | —        | Signed opening in the currency’s minor units.                                                                                                                                                                                                                                               |
+| `opening_on`     | string  | —        | First covered day YYYY-MM-DD; empty means no declared opening.                                                                                                                                                                                                                              |
 | `notebookId`     | integer | —        | The notebook this belongs to, as `notebooks` gives its id — a subject somebody is working through, like a renovation. Only when they said so. A notebook whose `modules` list does not hold this refuses it.                                                                                |
 | `requestId`      | string  | —        | An id you choose for this call, such as a UUID, so it can be sent again safely: the same `requestId` with the same arguments within a day answers with the first answer, marked `replayed`, and nothing is made twice. Reused for a different call, it is refused with the code `conflict`. |
 
@@ -2491,12 +2746,49 @@ _Needs `statements:write`; writes; answers with `before` and `after`._
 | ---------------- | ------- | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `id`             | integer | yes      | The ledger’s id, as `ledgers` gives it.                                                                                                                                                                                                   |
 | `name`           | string  | —        | A new name.                                                                                                                                                                                                                               |
+| `currency`       | string  | —        | Original ISO 4217 currency. Changes require no movements, declared opening or statement checks. No conversion is performed.                                                                                                               |
+| `opening_minor`  | integer | —        | Signed opening in original minor units; does not alter movements.                                                                                                                                                                         |
+| `opening_on`     | string  | —        | First covered day YYYY-MM-DD. Empty clears the opening coverage, preserving history.                                                                                                                                                      |
 | `kind`           | string  | —        | What sort of place it is. One of: `bank`, `card`, `cash`, `other`.                                                                                                                                                                        |
 | `default_parser` | string  | —        | The export key importing into it preselects, like 'nubank:conta_corrente'. An empty string clears it.                                                                                                                                     |
 | `notebookId`     | integer | —        | The notebook it belongs to, as `notebooks` gives its id. `0` takes it out of the one it is in.                                                                                                                                            |
 | `archived`       | boolean | —        | `true` puts it away with its lines kept; `false` brings it back.                                                                                                                                                                          |
 | `position`       | integer | —        | Its place in the order `ledgers` lists them, counting from 0. Past the end is the end.                                                                                                                                                    |
 | `ifUpdatedAt`    | string  | —        | Only change it if nothing has changed it since: the `updatedAt` a read or an earlier change answered with. If something has, nothing is written and the call is refused with the code `conflict`, the current `updatedAt` in its details. |
+
+### `balance_checks` — Statement balance observations
+
+Statement closing balances, newest first, with computed amounts, observed-minus-computed differences and matched, different or unverified status. No opening means unverified, not discarded evidence.
+
+_Needs `statements:read`; read-only._
+
+| Parameter   | Type    | Required | What it is |
+| ----------- | ------- | -------- | ---------- |
+| `ledger_id` | integer | yes      | Ledger id. |
+
+### `record_balance_check` — Record a statement closing balance
+
+Store observed signed minor units at an explicit date, once per ledger and date. Stores evidence even without an opening and never writes an adjustment. Delete an incorrect observation explicitly before replacing it.
+
+_Needs `statements:write`; writes; answers with `before` and `after`, `after` being the new balanceCheck._
+
+| Parameter        | Type    | Required | What it is                                                                                                                                                                                                                                                                                  |
+| ---------------- | ------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `ledger_id`      | integer | yes      | Ledger id.                                                                                                                                                                                                                                                                                  |
+| `as_of`          | string  | yes      | Statement closing date YYYY-MM-DD, inclusive of all movements that day.                                                                                                                                                                                                                     |
+| `observed_minor` | integer | yes      | Statement closing amount in original minor units.                                                                                                                                                                                                                                           |
+| `note`           | string  | —        | Optional evidence note, at most 1000 characters.                                                                                                                                                                                                                                            |
+| `requestId`      | string  | —        | An id you choose for this call, such as a UUID, so it can be sent again safely: the same `requestId` with the same arguments within a day answers with the first answer, marked `replayed`, and nothing is made twice. Reused for a different call, it is refused with the code `conflict`. |
+
+### `delete_balance_check` — Delete an incorrect balance observation
+
+Remove one statement observation explicitly. The opening and every movement remain untouched; ledger status is re-evaluated from remaining evidence.
+
+_Needs `statements:write` and `destructive`; deletes; answers with `before` and `after`._
+
+| Parameter | Type    | Required | What it is                          |
+| --------- | ------- | -------- | ----------------------------------- |
+| `id`      | integer | yes      | Observation id from balance_checks. |
 
 ### `record_movement` — Put a line in a ledger
 
@@ -2515,17 +2807,62 @@ _Needs `statements:write`; writes; answers with `before` and `after`._
 
 ### `change_movement` — Correct a statement line
 
-Correct a line in a ledger: what it says, the day, the amount, or which ledger it is in. Takes the id `movements` gives. Only `id` is needed: a field left out is untouched. Amounts are signed minor units — negative when money left.
+Correct a line in a ledger: what it says, the day, the amount, which ledger it is in, or what it meant. Takes the id `movements` gives. Only `id` is needed: a field left out is untouched. Amounts are signed minor units — negative when money left. `kind` says what the line was — expense, income, transfer, refund, fee or cash — and an empty string takes it back to the sign’s guess. A leg of a transfer cannot be re-kinded: unlink the transfer first.
 
 _Needs `statements:write`; writes; answers with `before` and `after`._
 
-| Parameter      | Type    | Required | What it is                                     |
-| -------------- | ------- | -------- | ---------------------------------------------- |
-| `id`           | integer | yes      | The line’s id, as `movements` gives it.        |
-| `description`  | string  | —        | What it says. The sorting rules read this.     |
-| `occurred_on`  | string  | —        | The day it moved, YYYY-MM-DD.                  |
-| `amount_cents` | integer | —        | Signed minor units — negative when money left. |
-| `ledger_id`    | integer | —        | Move it to this ledger, as `ledgers` gives it. |
+| Parameter      | Type    | Required | What it is                                                                                                                                   |
+| -------------- | ------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| `id`           | integer | yes      | The line’s id, as `movements` gives it.                                                                                                      |
+| `description`  | string  | —        | What it says. The sorting rules read this.                                                                                                   |
+| `occurred_on`  | string  | —        | The day it moved, YYYY-MM-DD.                                                                                                                |
+| `amount_cents` | integer | —        | Signed minor units — negative when money left.                                                                                               |
+| `ledger_id`    | integer | —        | Move it to this ledger, as `ledgers` gives it.                                                                                               |
+| `kind`         | string  | —        | What the line was. An empty string clears it back to the sign’s guess. One of: ``, `cash`, `expense`, `fee`, `income`, `refund`, `transfer`. |
+
+### `classify_movements` — Say what several lines were
+
+Give several statement lines the same meaning in one write — a hundred imported purchases marked as spending, a month of withdrawals marked as cash. `kind` is expense, income, transfer, refund, fee or cash; an empty string returns them to the sign’s guess. A leg of a transfer in the selection refuses the whole batch — unlink it first.
+
+_Needs `statements:write`; writes; answers with `before` and `after`._
+
+| Parameter | Type      | Required | What it is                                                                                                       |
+| --------- | --------- | -------- | ---------------------------------------------------------------------------------------------------------------- |
+| `ids`     | integer[] | yes      | The lines’ ids, as `movements` gives them.                                                                       |
+| `kind`    | string    | yes      | What they were. An empty string clears it. One of: ``, `cash`, `expense`, `fee`, `income`, `refund`, `transfer`. |
+
+### `link_transfer` — Link two lines as one transfer
+
+Two lines in different ledgers are one move of my own money: both become `transfer` legs sharing a group. In one currency they must add up to nothing; in different currencies each keeps its own amount and no total is produced. Two lines in the same ledger are refused. Give one line and its counterpart — the answer names the group, and `unlink_transfer` undoes it.
+
+_Needs `statements:write`; writes; answers with `before` and `after`._
+
+| Parameter        | Type    | Required | What it is                         |
+| ---------------- | ------- | -------- | ---------------------------------- |
+| `id`             | integer | yes      | One line, as `movements` gives it. |
+| `counterpart_id` | integer | yes      | The other line, in another ledger. |
+
+### `unlink_transfer` — Unlink a transfer
+
+Undo a transfer pairing: both legs go back to the sign’s guess and the group is cleared. A refund attached to a leg refuses the unlink until the refund is unlinked.
+
+_Needs `statements:write`; writes; answers with `before` and `after`._
+
+| Parameter | Type    | Required | What it is                           |
+| --------- | ------- | -------- | ------------------------------------ |
+| `id`      | integer | yes      | Either leg, as `movements` gives it. |
+
+### `link_movement` — Attach a refund or a fee
+
+A refund reverses one expense: it counts against that expense in the month it landed, under the expense’s category. A fee belongs to the payment it was charged on and leaves that payment untouched. `relation` is refund or fee; `parent_id` is the line it belongs to. Both must be in the same currency — the ledgers may differ. A line has one parent.
+
+_Needs `statements:write`; writes; answers with `before` and `after`._
+
+| Parameter   | Type    | Required | What it is                                                      |
+| ----------- | ------- | -------- | --------------------------------------------------------------- |
+| `id`        | integer | yes      | The refund or fee line, as `movements` gives it.                |
+| `parent_id` | integer | yes      | The expense a refund reverses, or the payment a fee belongs to. |
+| `relation`  | string  | yes      | What the line is to its parent. One of: `refund`, `fee`.        |
 
 ### `remove_movement` — Delete a statement line
 
@@ -2543,21 +2880,28 @@ What arrived and what left, month by month, across every ledger or one of them. 
 
 _Needs `statements:read`; read-only._
 
-| Parameter   | Type    | Required | What it is                           |
-| ----------- | ------- | -------- | ------------------------------------ |
-| `months`    | integer | —        | How many months back. 12 by default. |
-| `ledger_id` | integer | —        | Only this ledger.                    |
+| Parameter   | Type    | Required | What it is                                                                         |
+| ----------- | ------- | -------- | ---------------------------------------------------------------------------------- |
+| `months`    | integer | —        | How many months back. 12 by default.                                               |
+| `month`     | string  | —        | One civil month, YYYY-MM.                                                          |
+| `from`      | string  | —        | Inclusive first civil day, YYYY-MM-DD.                                             |
+| `to`        | string  | —        | Inclusive last civil day, YYYY-MM-DD.                                              |
+| `currency`  | string  | —        | One original ISO currency, or unspecified. Omit only for separate currency groups. |
+| `ledger_id` | integer | —        | Only this owned ledger.                                                            |
 
 ### `spending_by_category` — Where the money went
 
-Spending split by category over a window. Every outgoing line is in exactly one slice — uncategorized included — so the slices are the whole of what was spent.
+Personal spending by category over a window: expenses and fees, net of refunds, with only the personal part of a split line, uncategorized included. Transfers, cash withdrawals and custody shares are left out, so the slices are the whole of personal spending rather than of every outgoing line. For cash flow by month use statement_months.
 
 _Needs `statements:read`; read-only._
 
-| Parameter   | Type    | Required | What it is                     |
-| ----------- | ------- | -------- | ------------------------------ |
-| `month`     | string  | —        | Only this month, as 'YYYY-MM'. |
-| `ledger_id` | integer | —        | Only this ledger.              |
+| Parameter   | Type    | Required | What it is                                                                         |
+| ----------- | ------- | -------- | ---------------------------------------------------------------------------------- |
+| `month`     | string  | —        | One civil month, YYYY-MM.                                                          |
+| `from`      | string  | —        | Inclusive first civil day, YYYY-MM-DD.                                             |
+| `to`        | string  | —        | Inclusive last civil day, YYYY-MM-DD.                                              |
+| `currency`  | string  | —        | One original ISO currency, or unspecified. Omit only for separate currency groups. |
+| `ledger_id` | integer | —        | Only this owned ledger.                                                            |
 
 ### `change_sort_rule` — Change a sorting rule
 

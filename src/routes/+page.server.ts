@@ -35,6 +35,9 @@ import { listQuotes } from '$lib/services/quotes';
 import { readWeek, reviewPending, weekStartOf } from '$lib/services/review';
 import { shoppingRun } from '$lib/services/inventory';
 import { billsSettledIn, listBills, monthSummary } from '$lib/services/bills';
+import { supported } from '$lib/services/ledgers';
+import { commitmentTotals } from '$lib/services/commitments';
+import { moneyOverview } from '$lib/services/finance-summary';
 import { listWorkouts } from '$lib/services/workouts';
 import { getCurrency } from '$lib/services/settings';
 import { listTodos } from '$lib/services/todos';
@@ -230,6 +233,13 @@ export const load = async ({ locals }: IsolatedEvent) => {
 		setUserSetting(ctx.userId, DASHBOARD_SEEN_KEY, serialiseSeen());
 	}
 
+	/*
+	 * The money picture, only for an account that put the card on its
+	 * dashboard. It is several grouped reads; a glance nobody asked for is not
+	 * worth them on every visit. The room is the full answer.
+	 */
+	const moneyPictureCard = withNew.includes('moneyPicture') ? moneyOverview(ctx) : null;
+
 	return {
 		/** Null here is what tells the page it is the dashboard rather than the door. */
 		frontDoor: null,
@@ -271,6 +281,7 @@ export const load = async ({ locals }: IsolatedEvent) => {
 			kind: t.categoryName,
 			lastDoneAt: t.lastDoneAt
 		})),
+		moneyPictureCard,
 		billsCard: (() => {
 			// The month somebody is in, which on the first and the last day of one
 			// is not the month UTC is in.
@@ -279,6 +290,8 @@ export const load = async ({ locals }: IsolatedEvent) => {
 			const monthly = listBills(ctx).filter((b) => b.rhythm === 'monthly' && !b.automatic);
 			const paid = billsSettledIn(ctx, month);
 			return {
+				funds: supported(ctx),
+				commitments: commitmentTotals(ctx),
 				currency: getCurrency(ctx.userId),
 				summary: monthSummary(ctx, month),
 				open: monthly

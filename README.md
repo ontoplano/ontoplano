@@ -64,6 +64,8 @@ To understand the values guiding it, read [the ethos](https://docs.ontoplano.com
 - **Yours** — export and import with pictures, delete everything, host it
   yourself or keep it on your phone alone, six languages, AGPL-3.0.
 
+This fork's [finance guide](docs/finance.md) covers statement movements, balance checks, commitments and monthly budgets.
+
 <div align="center">
 
 [![Try the demo](.github/badges/try-the-demo.svg)](https://demo.ontoplano.com)

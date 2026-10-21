@@ -6,7 +6,7 @@ import { listTodos } from '$lib/services/todos.js';
 import { listIdeas } from '$lib/services/ideas.js';
 import { listItems } from '$lib/services/inventory.js';
 import { listHabits } from '$lib/services/habits.js';
-import { listLedgers } from '$lib/services/ledgers.js';
+import { listBalanceChecks, listLedgers } from '$lib/services/ledgers.js';
 import { listMovementRows } from '$lib/services/statements.js';
 import { FLOWS, listAllPayments, listBills } from '$lib/services/bills.js';
 import { listWorkouts } from '$lib/services/workouts.js';
@@ -104,6 +104,10 @@ export const CONFINEMENTS: Record<string, Confinable> = Object.freeze({
 			item: (ctx, id) => listItems(ctx, { notebookId: id }),
 			habit: (ctx, id) => listHabits(ctx, { notebookId: id, includeArchived: true }),
 			ledger: (ctx, id) => listLedgers(ctx, { notebookId: id, includeArchived: true }),
+			balanceCheck: (ctx, id) =>
+				listLedgers(ctx, { notebookId: id, includeArchived: true }).flatMap((ledger) =>
+					listBalanceChecks(ctx, ledger.id)
+				),
 			// The lines in its own ledgers, and no other account's.
 			movement: (ctx, id) =>
 				listMovementRows(ctx, {

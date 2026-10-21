@@ -181,6 +181,7 @@ export const messages: Catalogue = {
 	'app.manageYourPlan': 'Plan verwalten',
 	'app.matchMyDevice': 'An mein Gerät anpassen',
 	'app.monday': 'Montag',
+	'app.moneyPicture': 'Geldübersicht',
 	'app.monthly': 'Monatlich',
 	'app.move': 'verschieben',
 	'app.neutral': 'Neutral',
@@ -406,6 +407,8 @@ export const messages: Catalogue = {
 	'card.oneOfYourOwnQuotes': 'Eines Ihrer eigenen Zitate, den ganzen Tag über dasselbe.',
 	'card.theBlockYouAreIn':
 		'Der Aufgabenblock, in dem Sie gerade sind, oder der nächste, und die zwei Antworten dazu.',
+	'card.theFourAnswersAboutYourMoney':
+		'Was mir gehört, was gebunden ist, was ich diesen Monat ausgegeben habe und was übrig ist.',
 	'card.theHoursYouHaveTicked': 'Die Stunden, die Sie diese Woche abgehakt haben, nach Kategorie.',
 	'card.theLastFewIdeasYou': 'Ihre letzten paar Ideen.',
 	'card.theMostRecentThingsYou': 'Das zuletzt Notierte, neueste zuerst.',
@@ -469,10 +472,10 @@ export const messages: Catalogue = {
 		'Die Datei enthält ein Bild in einem Format, das diese App nicht annimmt',
 	'errors.accountImport.theFileCarriesASound':
 		'Die Datei enthält einen Ton in einem Format, das diese App nicht annimmt',
-	'errors.activities.cannotDeleteActivityIsReferenced':
-		'Löschen nicht möglich: Die Aktivität steckt in Planblöcken oder im Aufgabenverlauf',
 	'errors.activities.cannotDeleteCategoryHasActivities':
 		'Löschen nicht möglich: Die Kategorie hat Aktivitäten oder Planblöcke',
+	'errors.activities.cannotMoveOntoItself':
+		'Eine Aktivität kann nicht an sich selbst übergeben werden.',
 	'errors.activities.categoryAlreadyExists': 'Diese Kategorie gibt es schon',
 	'errors.activities.invalidColorFormat': 'Ungültige Farbe',
 	'errors.admin.aSelfHostedInstance': 'Eine selbst gehostete Instanz hat keine Tarife',
@@ -546,6 +549,118 @@ export const messages: Catalogue = {
 	'errors.familyInvite.noAccountHereUses': 'Kein Konto hier benutzt diese Adresse',
 	'errors.familyInvite.thisPlanCoversOneAccount': 'Dieser Tarif deckt ein Konto ab',
 	'errors.familyInvite.thisPlanIsNotActive': 'Dieser Tarif ist nicht aktiv',
+	'errors.finance.archiveCommitmentPermanentlyDeleting':
+		'Archiviere diese Verpflichtung, bevor du sie endgültig löschst.',
+	'errors.finance.balanceCheckAlreadyExistsLedger':
+		'Für dieses Konto und Datum gibt es schon einen Saldoabgleich. Lösche ihn ausdrücklich, bevor du eine Korrektur erfasst.',
+	'errors.finance.bankExportUsesTwoDecimal':
+		'Dieser Bankexport verwendet zwei Nachkommastellen. Nutze für dieses Konto das allgemeine CSV-Format in Originalwährung.',
+	'errors.finance.bankMovementAlreadyChangesStock':
+		'Diese Buchung verändert bereits einen Bestand. Mache diesen Eintrag rückgängig, bevor du sie erneut verwendest.',
+	'errors.finance.beforeOpening':
+		'Die früheste Buchung, {earliest}, liegt vor dem Eröffnungsdatum {opening}. Es wurde nichts importiert.',
+	'errors.finance.budgetAlreadyExistsMonthCategory':
+		'Für diesen Monat, diese Kategorie und Währung gibt es schon ein Budget.',
+	'errors.finance.budgetAmountNegative': 'Ein Budgetbetrag kann nicht negativ sein.',
+	'errors.finance.budgetChangedReadAgainSaving':
+		'Dieses Budget hat sich geändert. Öffne es erneut, bevor du speicherst.',
+	'errors.finance.categoryGone':
+		'Die Kategorie {category} gibt es nicht mehr. Wähle eine bestehende Kategorieregel.',
+	'errors.finance.categoryHasBudget':
+		'Ein Budget verwendet noch die Kategorie „{name}“. Benenne dieses Budget zuerst um oder lösche es.',
+	'errors.finance.chooseAtMost120Months': 'Wähle höchstens 120 Monate.',
+	'errors.finance.chooseOpenCustodyPayableCommitment':
+		'Wähle eine offene Verwahrung oder Verbindlichkeit.',
+	'errors.finance.chooseOriginalCurrencyUnlikeMoney':
+		'Wähle eine Originalwährung; verschiedene Währungen werden nicht zusammengerechnet.',
+	'errors.finance.chooseReserveConsume': 'Wähle eine Rücklage, die verbraucht werden soll.',
+	'errors.finance.chooseValidCurrencyCode': 'Wähle einen gültigen Währungscode.',
+	'errors.finance.chooseValidOriginalCurrency': 'Wähle eine gültige Originalwährung.',
+	'errors.finance.combinedNoteTooLong':
+		'Die zusammengefasste Notiz für einen Bestand darf höchstens {max} Zeichen haben.',
+	'errors.finance.commitmentsRunningBalanceBecomeNegative':
+		'Der laufende Saldo der Verpflichtung darf nicht negativ werden. Erfasse eine ausdrückliche Erhöhung, bevor du zu viel zahlst.',
+	'errors.finance.currencyChangeLedgerHoldsMovements':
+		'Die Währung kann nicht geändert werden, solange dieses Konto Buchungen, eine erklärte Eröffnung oder Auszugsabgleiche hat. Es wird nichts umgerechnet.',
+	'errors.finance.custodyEntryMatchRetainedAllocation':
+		'Ein Verwahrungseintrag muss genau dem zurückbehaltenen Anteil entsprechen. Teile die Buchung zuerst auf.',
+	'errors.finance.custodyExcludedFromPersonalCategories':
+		'Verwahrtes Geld gehört in keine persönliche Kategorie.',
+	'errors.finance.custodyPartMovementShareKnown':
+		'Ein Verwahrungsanteil und seine Buchung müssen dieselbe bekannte Währung haben.',
+	'errors.finance.eachSplitPartNameKind': 'Jeder Anteil der Aufteilung braucht Art und Betrag.',
+	'errors.finance.enterExactAmountLedgerCurrency':
+		'Gib einen genauen Betrag in der Kontowährung ein, oder ganze Untereinheiten, wenn keine festgelegt ist.',
+	'errors.finance.enterExactBudgetAmountOriginal':
+		'Gib einen genauen Budgetbetrag in der Originalwährung ein.',
+	'errors.finance.enterExactOpeningAmountLedger':
+		'Gib einen genauen Eröffnungsbetrag in der Kontowährung ein, oder ganze Untereinheiten, wenn keine festgelegt ist.',
+	'errors.finance.enterExactSignedAmountCommitment':
+		'Gib einen genauen Betrag mit Vorzeichen in der Währung der Verpflichtung ein.',
+	'errors.finance.enterExactSignedPartLedger':
+		'Gib einen genauen Anteil mit Vorzeichen in der Kontowährung ein.',
+	'errors.finance.enterExactStatementClosingAmount':
+		'Gib den genauen Schlusssaldo des Auszugs in der Kontowährung ein, oder ganze Untereinheiten, wenn keine festgelegt ist.',
+	'errors.finance.entryChangeStockByNonzero':
+		'Ein Eintrag muss den Bestand um einen Betrag ungleich null ändern.',
+	'errors.finance.everySplitPartHaveMovements':
+		'Jeder Anteil muss das Vorzeichen der Buchung haben und ungleich null sein.',
+	'errors.finance.expenseAlreadyConsumesStock': 'Diese Ausgabe verbraucht bereits einen Bestand.',
+	'errors.finance.fileTooLong':
+		'Diese Datei hat mehr als {max} Buchungen. Es wurde nichts importiert.',
+	'errors.finance.firstDayNotAfterLast': 'Der erste Tag darf nicht nach dem letzten liegen.',
+	'errors.finance.kindCurrencyChangeHistoryAllocations':
+		'Art und Währung können nicht geändert werden, solange Verlauf oder Aufteilungen davon abhängen.',
+	'errors.finance.ledgerCurrencyChangedReadingFile':
+		'Die Kontowährung hat sich beim Lesen der Datei geändert. Es wurde nichts importiert; versuche es mit der aktuellen Währung erneut.',
+	'errors.finance.ledgerHasLinkedMovements':
+		'Mache die verknüpften Einträge rückgängig und hebe die Aufteilung der Buchungen {ids} auf, bevor du dieses Konto löschst.',
+	'errors.finance.lineRejected':
+		'Zeile {line} wurde abgelehnt: ungültiges Datum, Betrag oder Beschreibung. Es wurde nichts importiert.',
+	'errors.finance.lineRejectedSaving':
+		'Zeile {line} wurde beim Speichern abgelehnt. Es wurde nichts importiert.',
+	'errors.finance.linkedEntryKeepsBankMovements':
+		'Ein verknüpfter Eintrag behält das Datum seiner Bankbuchung.',
+	'errors.finance.movementAlreadyHasEntryCommitment':
+		'Diese Buchung hat bereits einen Eintrag in dieser Verpflichtung.',
+	'errors.finance.movementAlreadySettlesStock': 'Diese Buchung begleicht bereits einen Bestand.',
+	'errors.finance.movementHasSplitOrEntry':
+		'Buchung {id} hat eine Aufteilung oder einen Ausgleichseintrag. Mache verknüpfte Einträge zuerst rückgängig und hebe die Aufteilung auf.',
+	'errors.finance.noLedgerInCurrency':
+		'Kein Konto verwendet {currency}. Lege zuerst ein Konto in dieser Originalwährung an.',
+	'errors.finance.onlyCustodyPartsMayName':
+		'Nur Verwahrungsanteile können eine Verpflichtung nennen.',
+	'errors.finance.openingStockNegative': 'Ein Anfangsbestand kann nicht negativ sein.',
+	'errors.finance.receivableSettlementNeedsIncomingRepayment':
+		'Eine Forderung wird mit einer eingehenden Rückzahlung in ihrer Originalwährung beglichen.',
+	'errors.finance.reopenCommitmentAddingEntries':
+		'Öffne die Verpflichtung wieder, bevor du Einträge hinzufügst.',
+	'errors.finance.reopenCommitmentClosing':
+		'Öffne die Verpflichtung wieder, bevor du sie schließt.',
+	'errors.finance.reopenCommitmentCorrectingOpening':
+		'Öffne diese Verpflichtung wieder, bevor du den Anfangsbestand korrigierst.',
+	'errors.finance.reserveConsumedByWholePersonal':
+		'Eine Rücklage wird durch eine ganze persönliche Ausgabe oder Gebühr verbraucht.',
+	'errors.finance.reverseLinkedCommitmentEntryRemoving':
+		'Mache den verknüpften Verpflichtungseintrag rückgängig, bevor du diese Aufteilung entfernst.',
+	'errors.finance.settlementExceedsBalance':
+		'Der offene Betrag ist {balance}. Erfasse eine ausdrückliche Erhöhung, bevor du zu viel zahlst.',
+	'errors.finance.settlementUsesOutgoingPaymentUse':
+		'Ein Ausgleich verwendet eine ausgehende Zahlung. Erfasse erhaltenes Geld mit einer Verwahrungsaufteilung.',
+	'errors.finance.splitDoesNotAddUp':
+		'Die Anteile müssen {total} Untereinheiten ergeben; Differenz {difference}.',
+	'errors.finance.splitNeedsBetween1100': 'Eine Aufteilung braucht zwischen 1 und 100 Anteile.',
+	'errors.finance.stockPaymentShareKnownCurrency':
+		'Ein Bestand und seine Zahlung müssen dieselbe bekannte Währung haben.',
+	'errors.finance.unlinkMovementEvidencePermanentlyDeleting':
+		'Löse die verknüpften Buchungen, bevor du diese Verpflichtung endgültig löschst.',
+	'errors.finance.unlinkTransferClassifyMovementSplitting':
+		'Löse die Umbuchung oder ordne diese Buchung ein, bevor du sie aufteilst.',
+	'errors.finance.unreadableSplitPart': 'Unlesbarer Anteil.',
+	'errors.finance.useReserveConsumptionEarmark': 'Für eine Rücklage nimm „Rücklage verbrauchen“.',
+	'errors.finance.writeOffNeedsNote':
+		'Der offene Betrag ist {balance}. Eine ausdrückliche Notiz zur Abschreibung ist nötig.',
+	'errors.finance.zeroMovementSplit': 'Eine Buchung über null kann nicht aufgeteilt werden.',
 	'errors.gallery.anAlbumByThatName': 'Ein Album mit diesem Namen gibt es schon.',
 	'errors.goals.invalidColorFormat': 'Ungültige Farbe',
 	'errors.goals.invalidDate': 'Ungültiges Datum',
@@ -704,7 +819,37 @@ export const messages: Catalogue = {
 	'errors.slots.noValidSlotsFound': 'Keine gültigen Blöcke in der CSV',
 	'errors.slots.thatWorkoutIsNotYours': 'Dieses Training gehört dir nicht.',
 	'errors.slots.workoutRequired': 'Training auswählen',
+	'errors.statements.alreadyChild': 'Diese Zeile gehört bereits zu Zeile {id}.',
+	'errors.statements.alreadyChildLink':
+		'Diese Zeile gehört bereits als Erstattung oder Gebühr zu einer anderen Zeile. Löse sie zuerst.',
+	'errors.statements.alreadyRefund':
+		'Diese Zeile ist bereits die Erstattung von Zeile {id}. Eine Erstattung hebt genau eine Ausgabe auf.',
+	'errors.statements.alreadyTransfer':
+		'Eine dieser Zeilen gehört bereits zu einer Umbuchung. Löse sie zuerst.',
+	'errors.statements.legCannotBeChild':
+		'Ein Teil einer Umbuchung kann keine Erstattung oder Gebühr sein.',
+	'errors.statements.legOfTransferChange':
+		'Diese Zeile ist ein Teil einer Umbuchung. Löse zuerst die Umbuchung und ändere dann, was sie bedeutet.',
+	'errors.statements.legOfTransferClassify':
+		'Eine Zeile in der Auswahl ist Teil einer Umbuchung. Löse zuerst die Umbuchung und ordne dann ein.',
+	'errors.statements.legOfTransferDelete':
+		'Diese Zeile ist Teil einer Umbuchung mit Zeile {id}. Löse zuerst die Umbuchung.',
+	'errors.statements.legsDoNotBalance':
+		'Die beiden heben sich nicht auf: {a} {first} und {b} {second}. Geld, das zwischen Konten wandert, verlässt das eine und kommt im anderen an.',
+	'errors.statements.linkNeedsCurrency':
+		'Eines dieser Konten hat keine Währung. Lege sie fest, bevor du Geld zwischen ihnen verknüpfst.',
+	'errors.statements.linkNeedsLedger':
+		'Beide Zeilen müssen in einem Konto sein, bevor sie verknüpft werden können.',
 	'errors.statements.noParserKnowsThatExport': 'Kein Leser erkennt diesen Export.',
+	'errors.statements.notATransfer': 'Diese Zeile gehört zu keiner Umbuchung.',
+	'errors.statements.ownCounterpart': 'Eine Zeile kann nicht ihre eigene Gegenbuchung sein.',
+	'errors.statements.ownParent': 'Eine Zeile kann nicht zu sich selbst gehören.',
+	'errors.statements.refundOnLeg':
+		'An einem dieser Teile hängt eine Erstattung (Zeile {id}). Löse zuerst die Erstattung.',
+	'errors.statements.sameLedgerTransfer':
+		'Beide Zeilen sind im selben Konto. Ein Paar, das sich in einem Konto aufhebt, versteckt zwei echte Ausgaben.',
+	'errors.statements.unlikeCurrencies':
+		'Die Währungen sind verschieden: {a} und {b}. Eine Erstattung oder Gebühr muss in der Währung sein, zu der sie gehört.',
 	'errors.streams.pointMustBeAnObject': 'point muss ein Objekt sein',
 	'errors.streams.pointsMustBeAnArray': 'points muss eine Liste sein',
 	'errors.subscriptions.anEmailAddressIsNeeded': 'Eine E-Mail-Adresse wird gebraucht',
@@ -896,33 +1041,156 @@ export const messages: Catalogue = {
 	'finance.bills.whenItTurnsUpOn':
 		'Wann sie in Ihrer Woche erscheint. 0 ist der Fälligkeitstag selbst.',
 	'finance.bills.youWontBeReminded': 'Du wirst nicht ans Bezahlen erinnert.',
+	'finance.budgets.allCurrencies': 'Alle Währungen',
+	'finance.budgets.allocated': 'Geplanter Betrag',
+	'finance.budgets.allocatedAmount': 'Geplanter Betrag',
+	'finance.budgets.cancel': 'Abbrechen',
+	'finance.budgets.category': 'Kategorie',
+	'finance.budgets.categoryCreated': 'Kategorie „{category}“ angelegt. Wähle sie in der Liste.',
+	'finance.budgets.categoryGone':
+		'{category} gibt es nicht mehr. Wähle eine bestehende Kategorie oder lösche dieses Budget.',
+	'finance.budgets.categoryHint': 'Budgets verwenden die Kategorieregeln aus dem Reiter Regeln.',
+	'finance.budgets.categoryName': 'Name der Kategorie',
+	'finance.budgets.categoryNameHint':
+		'Wird im Reiter Regeln gespeichert; dort lässt sich das Suchmuster verfeinern.',
+	'finance.budgets.chooseCategory': 'Kategorie wählen…',
+	'finance.budgets.chooseCurrency': 'Währung wählen…',
+	'finance.budgets.confirmDelete': 'Löschen',
+	'finance.budgets.copied': '{added} hinzugefügt, {skipped} waren schon da.',
+	'finance.budgets.copy': 'Vom Vormonat kopieren',
+	'finance.budgets.create': 'Anlegen',
+	'finance.budgets.createCategory': 'Kategorie anlegen',
+	'finance.budgets.credit': 'Gutschrift',
+	'finance.budgets.currency': 'Währung',
+	'finance.budgets.currencyNeedsLedger': 'Nur Währungen mit einem Konto können ein Budget haben.',
+	'finance.budgets.delete': 'Löschen',
+	'finance.budgets.deleteConfirm': 'Budget löschen',
+	'finance.budgets.edit': 'Budget bearbeiten',
+	'finance.budgets.manageRules': 'In Regeln verwalten',
+	'finance.budgets.month': 'Monat',
+	'finance.budgets.new': 'Neues Budget',
+	'finance.budgets.newCategory': 'Neue Kategorie',
+	'finance.budgets.noBudgets': 'Keine Budgets für diesen Monat.',
+	'finance.budgets.noBudgetsHint':
+		'Ein Budget ist der Plan eines Monats für eine Kategorie; die Übersicht zeigt, was davon übrig ist.',
+	'finance.budgets.noCategories':
+		'Noch keine Kategorieregeln. Lege zuerst eine im Reiter Regeln an.',
+	'finance.budgets.noLedger': 'kein Konto',
+	'finance.budgets.noLedgerCurrency':
+		'Budgets brauchen eine Währung, die bei einem Konto festgelegt ist.',
+	'finance.budgets.nothingToCopy': 'Nichts aus dem Vormonat zu kopieren.',
+	'finance.budgets.orphaned': 'Kategorie gibt es nicht mehr',
+	'finance.budgets.remaining': 'Übrig',
+	'finance.budgets.save': 'Speichern',
+	'finance.budgets.spent': 'Ausgegeben',
+	'finance.budgets.title': 'Budgets',
+	'finance.commitments.addEntry': 'Anpassung erfassen',
+	'finance.commitments.adjustment': 'Bestandsanpassung',
+	'finance.commitments.adjustmentHint':
+		'Positiv erhöht den Bestand, negativ verringert ihn. Es entsteht keine Bankbuchung.',
+	'finance.commitments.after': 'Bestand nach der Zahlung',
+	'finance.commitments.archive': 'Archivieren',
+	'finance.commitments.archived': 'Beglichen und archiviert',
+	'finance.commitments.close': 'Verpflichtung schließen',
+	'finance.commitments.closeHint':
+		'Ein Bestand ungleich null braucht eine Notiz zur Abschreibung. Schließen ändert nie das Geld auf der Bank.',
+	'finance.commitments.consume': 'Rücklage verbrauchen',
+	'finance.commitments.consumeHint':
+		'Die Rücklage sinkt einmal. Die Zahlung bleibt eine persönliche Ausgabe; es entsteht keine Bankbuchung.',
+	'finance.commitments.currency': 'Originalwährung',
+	'finance.commitments.current': 'Aktuell',
+	'finance.commitments.custody': 'Verwahrung',
+	'finance.commitments.custodyHint': 'Geld, das du für jemand anderen verwahrst.',
+	'finance.commitments.deleteHint':
+		'Löschen archiviert den Eintrag zuerst. Endgültig löschen geht nur in der Archivansicht und wird abgelehnt, solange Bankbuchungen verknüpft sind.',
+	'finance.commitments.deletePermanently': 'Endgültig löschen',
+	'finance.commitments.edit': 'Verpflichtung bearbeiten',
+	'finance.commitments.hint':
+		'Bestände sind weder Kontostände noch Budgets. Beträge bleiben nach Art und Originalwährung getrennt.',
+	'finance.commitments.history': 'Verlauf der Verpflichtung',
+	'finance.commitments.lastEntry': 'Letzter Eintrag:',
+	'finance.commitments.movement': 'Bankbuchung',
+	'finance.commitments.new': 'Neue Verpflichtung',
+	'finance.commitments.none': 'Noch nichts hier.',
+	'finance.commitments.opening': 'Anfangsbestand',
+	'finance.commitments.payable': 'Verbindlichkeit',
+	'finance.commitments.payableHint': 'Geld, das du jemandem schuldest.',
+	'finance.commitments.person': 'Person (optional)',
+	'finance.commitments.receivable': 'Forderung',
+	'finance.commitments.receivableHint': 'Geld, das dir jemand schuldet.',
+	'finance.commitments.reopen': 'Wieder öffnen',
+	'finance.commitments.reserve': 'Rücklage',
+	'finance.commitments.reserveHint': 'Dein beiseitegelegtes Geld, noch nicht ausgegeben.',
+	'finance.commitments.reverseEntry': 'Eintrag rückgängig machen',
+	'finance.commitments.reverseHint':
+		'Das macht den Bestandseintrag rückgängig. Die Bankbuchung und eine Aufteilung bleiben; entferne die Aufteilung bei Bedarf separat.',
+	'finance.commitments.running': 'Laufender Saldo',
+	'finance.commitments.settle': 'Begleichen',
+	'finance.commitments.settleHint':
+		'Die Verpflichtung sinkt einmal. Die ausgehende Zahlung zählt nicht als persönliche Ausgabe. Das Geld auf der Bank bleibt unverändert.',
+	'finance.commitments.status.archived': 'Archiviert',
+	'finance.commitments.status.open': 'Offen',
+	'finance.commitments.status.settled': 'Beglichen',
+	'finance.commitments.writeOffNote': 'Restbetrag mit einer Notiz abschreiben',
 	'finance.donut.empty': 'In diesem Zeitraum noch nichts ausgegeben.',
 	'finance.donut.heading': 'Ausgaben nach Kategorie',
 	'finance.donut.out': 'ausgegeben',
 	'finance.insights.average': 'Durchschnitt {averageCents}',
 	'finance.insights.biggestCategory': 'Größte Kategorie',
+	'finance.insights.budgetsWindow': 'Wähle einen Monat, um den Stand der Budgets zu sehen.',
+	'finance.insights.cash': 'Bargeld abgehoben, Verwendung unbekannt: {count} · {amount}',
+	'finance.insights.categories': 'Persönliche Ausgaben und Erstattungen nach Kategorie',
+	'finance.insights.category': 'Kategorie',
+	'finance.insights.chooseMonth': 'Monat zeigen',
+	'finance.insights.credit':
+		'Erstattungen werden getrennt gezeigt; die Diagramme zeichnen nur positive Ausgaben.',
+	'finance.insights.currency': 'Originalwährung',
+	'finance.insights.currencyNotDeclared':
+		'Kein Konto legt eine Währung fest — Beträge werden in {currency} gezeigt.',
+	'finance.insights.custody': 'Verwahrung ausgenommen: {count} · {amount}',
 	'finance.insights.dearestMonth': 'Teuerster Monat',
+	'finance.insights.defaultWindow': 'Letzte 12 Monate (Standard)',
+	'finance.insights.definitions':
+		'Persönliche Ausgaben sind Ausgaben und Gebühren abzüglich Erstattungen. Das ist kein Kontostand.',
 	'finance.insights.everyLedger': 'Jede Buchung',
+	'finance.insights.exclusions': 'Umbuchungen und Bargeld ausgenommen',
+	'finance.insights.gross': 'Ausgaben brutto',
 	'finance.insights.importAStatementIntoA':
 		'Importieren Sie einen Kontoauszug in eine Buchung, und diese Auswertungen erwachen zum Leben: was jeder Monat gekostet hat, wohin das Geld ging und was ein einzelnes Tag insgesamt ausmacht.',
 	'finance.insights.in': 'Ein',
 	'finance.insights.inAndOut': 'Eingänge und Ausgänge',
 	'finance.insights.inTotalAMonth':
 		'{totalCents} insgesamt, {averageCents} pro Monat über die {activeMonths} Monat{s}, in denen es vorkam. Immer ein Tag zur Zeit — Tags überschneiden sich, ihre Summe würde eine Zeile doppelt zählen.',
+	'finance.insights.income': 'Persönliche Einnahmen',
 	'finance.insights.lastMonths': 'letzte {w} Monate',
+	'finance.insights.minorUnits': '{amount} Untereinheiten (Währung nicht festgelegt)',
+	'finance.insights.month': 'Monat',
+	'finance.insights.monthBudgets': 'Budgets dieses Monats',
 	'finance.insights.monthlyCostOf': 'Monatliche Kosten von #{name}',
+	'finance.insights.net': 'Persönliche Ausgaben netto',
+	'finance.insights.noActivity': 'In diesem Zeitraum ist nichts erfasst.',
 	'finance.insights.noTagsYet': 'Noch keine Tags.',
 	'finance.insights.nothingToReadYet': 'Noch nichts zu lesen',
 	'finance.insights.out': 'Aus',
 	'finance.insights.overMonthWithAny': 'über {monthsWithSpending} Monat{s} mit Ausgaben',
-	'finance.insights.spendingStackedByCategory':
-		'Ausgaben gestapelt nach Kategorie — jede ausgehende Zeile gehört zu genau einem Band.',
+	'finance.insights.partialBalance':
+		'{verified} von {total} Konten beim letzten Abgleich bestätigt. Ausgaben sagen nichts über verfügbares Geld.',
+	'finance.insights.refunds': 'Erstattungen',
+	'finance.insights.spendingStackedByCategory': 'Persönliche Ausgaben, gestapelt nach Kategorie.',
 	'finance.insights.spentPerMonthOnAverage': 'Ausgegeben, im Durchschnitt pro Monat',
-	'finance.insights.theSameMoneyWithoutThe': 'Dasselbe Geld, ohne die Monate.',
+	'finance.insights.theSameMoneyWithoutThe': 'Persönliche Ausgaben, ohne Aufteilung nach Monaten.',
 	'finance.insights.theWholeWindowByCategory': 'Der ganze Zeitraum, nach Kategorie',
+	'finance.insights.transfers': 'Umbuchungen: {count} · ein {incoming} · aus {outgoing}',
+	'finance.insights.unclassified':
+		'{count} nicht eingeordnete Buchungen · angenommene Bedeutungen prüfen',
+	'finance.insights.unknownBalance':
+		'Kein bestätigter Saldo in dieser Währung. Ausgaben zeigen nur Erfasstes.',
+	'finance.insights.unmatchedRefunds': '{count} Erstattungen ohne Zuordnung',
+	'finance.insights.unspecified': 'Währung nicht festgelegt',
 	'finance.insights.whatArrivedAgainstWhatLeft': 'Was hereinkam gegenüber dem, was hinausging.',
 	'finance.insights.whatEachMonthWasMade': 'Woraus sich jeder Monat zusammensetzte',
 	'finance.insights.whatOneTagCosts': 'Was ein Tag kostet',
+	'finance.insights.window': 'Erfasste Buchungen: {from} bis {to}',
 	'finance.insights.writeOne': 'Eine schreiben →',
 	'finance.ledgers.aLedgerIsOnePlace':
 		'Eine Buchung ist ein Ort, durch den Geld fließt — ein Girokonto, eine Kreditkarte. Legen Sie eine an, dann importieren Sie deren Kontoauszug oder schreiben eine Zeile von Hand.',
@@ -930,13 +1198,36 @@ export const messages: Catalogue = {
 	'finance.ledgers.andItsLinesGoFor':
 		'und ihre {count} Zeilen sind endgültig weg. Um die Historie zu behalten, archivieren Sie sie stattdessen.',
 	'finance.ledgers.archive': '{name} archivieren',
+	'finance.ledgers.asOf': 'Stand {day}',
 	'finance.ledgers.askEveryTime': 'Jedes Mal fragen',
+	'finance.ledgers.assumed': 'aus dem Vorzeichen angenommen',
+	'finance.ledgers.checkAmount': 'Beobachteter Schlusssaldo',
+	'finance.ledgers.checkComputed': 'Berechnet: {amount}',
+	'finance.ledgers.checkDate': 'Abschlussdatum des Auszugs',
+	'finance.ledgers.checkDifference': 'Beobachtet minus berechnet: {amount}',
+	'finance.ledgers.checkDifferent': 'Abweichend',
+	'finance.ledgers.checkHistory': 'Saldoabgleiche mit Auszügen',
+	'finance.ledgers.checkMatched': 'Stimmt',
+	'finance.ledgers.checkUnverified': 'Nicht bestätigt — keine Eröffnung deckt dieses Datum',
+	'finance.ledgers.chooseCurrency':
+		'Lege die Währung dieses Kontos fest; die Beträge haben noch keine Einheit.',
 	'finance.ledgers.chooseTheFile': 'Datei auswählen',
+	'finance.ledgers.classifySelected': 'Auswahl einordnen',
 	'finance.ledgers.coffee': 'Kaffee',
+	'finance.ledgers.counterpart': 'Die Gegenseite',
+	'finance.ledgers.counterpartPending': 'Gegenbuchung ausstehend',
+	'finance.ledgers.coverageTour':
+		'Lege Originalwährung und Eröffnungsdatum fest, damit ein Saldo belegt ist. Auszugsabgleiche zeigen Übereinstimmung oder Abweichung, ohne Buchungen zu ändern.',
+	'finance.ledgers.currency': 'Währung',
+	'finance.ledgers.currencyHint':
+		'ISO-Code der Originalwährung. Nur leer lassen, wenn unbekannt; es wird kein Standard und keine Umrechnung angenommen.',
+	'finance.ledgers.currencyNotDeclared':
+		'Kontowährung nicht festgelegt — Beträge werden in {currency} gezeigt.',
 	'finance.ledgers.currentAccount': 'Girokonto',
 	'finance.ledgers.datesAreDayFirst': 'Daten beginnen mit dem Tag — 02/03 ist der zweite März',
 	'finance.ledgers.day': 'Tag',
 	'finance.ledgers.delete': '{name} löschen',
+	'finance.ledgers.deleteCheck': 'Diesen Saldoabgleich löschen',
 	'finance.ledgers.deleteThisLedger': 'Diese Buchung löschen?',
 	'finance.ledgers.deleteThisLine': 'Diese Zeile löschen',
 	'finance.ledgers.deleteThisLine2': 'Diese Zeile löschen?',
@@ -946,6 +1237,7 @@ export const messages: Catalogue = {
 	'finance.ledgers.editLine': 'Zeile bearbeiten',
 	'finance.ledgers.editThisLine': 'Diese Zeile bearbeiten',
 	'finance.ledgers.everyMonth': 'Jeden Monat',
+	'finance.ledgers.excludedAccounts': 'Ausgenommen: {names}',
 	'finance.ledgers.export': 'Exportieren',
 	'finance.ledgers.flipAmountsForAn':
 		'Beträge umkehren — für einen Export, dessen Vorzeichen das Gegenteil bedeuten',
@@ -953,14 +1245,30 @@ export const messages: Catalogue = {
 		'verschwindet sie. Denselben Kontoauszug erneut zu importieren bringt\n\t\t\tsie zurück, da es die Zeile der Bank ist, nicht Ihre.',
 	'finance.ledgers.import': 'Importieren',
 	'finance.ledgers.importAStatement': 'Kontoauszug importieren',
+	'finance.ledgers.importRecordedOnly':
+		'Keine Eröffnung festgelegt. Importierte Beträge sind eine erfasste Zwischensumme, kein belegter Saldo.',
 	'finance.ledgers.importThisLedgerSExportOr':
 		'Importieren Sie den Export dieser Buchung, oder schreiben Sie eine Zeile von Hand. Bereits importierte Zeilen werden nie doppelt hinzugefügt.',
 	'finance.ledgers.keepIt': 'Behalten',
+	'finance.ledgers.kindCash': 'Barabhebung',
+	'finance.ledgers.kindExpense': 'Ausgabe',
+	'finance.ledgers.kindFee': 'Gebühr',
+	'finance.ledgers.kindIncome': 'Einnahme',
+	'finance.ledgers.kindRefund': 'Erstattung',
+	'finance.ledgers.kindTransfer': 'Umbuchung',
 	'finance.ledgers.lastOn': 'zuletzt am {day}',
 	'finance.ledgers.leaveTheIdAsNone':
 		'Lassen Sie die ID auf keine, außer die Datei enthält wirklich die eigene Referenz der Bank pro Zeile.\n\t\t\t\t\t\t\tOhne sie wird eine Zeile stattdessen anhand von Datum, Betrag und Beschreibung abgeglichen.',
 	'finance.ledgers.ledger': 'Buchung',
 	'finance.ledgers.lines': '{count} Zeilen',
+	'finance.ledgers.linkAsTransfer': 'Als Umbuchung verknüpfen',
+	'finance.ledgers.linkParent': 'Die Zeile, zu der sie gehört',
+	'finance.ledgers.linkRelated': 'Mit dieser Zeile verknüpfen',
+	'finance.ledgers.linkedToLine': 'Diese Zeile gehört zu Zeile {id}.',
+	'finance.ledgers.linkedTransfer': 'Diese Zeile ist Teil einer Umbuchung.',
+	'finance.ledgers.meaning': 'Bedeutung',
+	'finance.ledgers.meaningHint': 'Was es war. Bleibt es angenommen, entscheidet das Vorzeichen.',
+	'finance.ledgers.minorUnitsAmount': '{amount} Untereinheiten (nicht festgelegt)',
 	'finance.ledgers.moneyIn': 'Eingänge',
 	'finance.ledgers.moneyOut': 'Ausgänge',
 	'finance.ledgers.month': 'Monat',
@@ -968,14 +1276,23 @@ export const messages: Catalogue = {
 	'finance.ledgers.moveLater': '{name} nach hinten verschieben',
 	'finance.ledgers.newLedger': 'Neue Buchung',
 	'finance.ledgers.newLine': 'Neue Zeile',
+	'finance.ledgers.noChecks':
+		'Noch keine Auszugswerte. Ein Abgleich erzeugt nie eine Korrekturbuchung.',
 	'finance.ledgers.noHeaderRowSoThe':
 		'Keine Kopfzeile, daher sind die Spalten nummeriert. Wählen Sie die richtigen aus:',
 	'finance.ledgers.noLedgersYet': 'Noch keine Buchungen',
 	'finance.ledgers.noLinesMatch': 'Keine Zeile in diesem Konto passt zu Suche und Monat.',
+	'finance.ledgers.noSupportedFunds': 'Keine belegte Zwischensumme',
 	'finance.ledgers.none': '— keine —',
 	'finance.ledgers.nothingHereYet': 'Noch nichts hier',
+	'finance.ledgers.openingAmount': 'Eröffnungsbetrag',
+	'finance.ledgers.openingAt': 'Eröffnung {amount} am {day}',
+	'finance.ledgers.openingHint':
+		'Unmittelbar vor den Buchungen am Eröffnungsdatum. Ohne festgelegte Währung ganze Untereinheiten eingeben.',
+	'finance.ledgers.openingOn': 'Eröffnungsdatum',
 	'finance.ledgers.orPasteItBelow': 'oder unten einfügen',
 	'finance.ledgers.orderLinesBy': 'Zeilen sortieren nach',
+	'finance.ledgers.outsideCoverage': 'Außerhalb des belegten Zeitraums: {count}',
 	'finance.ledgers.pasteExample':
 		'Datum,Betrag,Beschreibung\n02.03.2026,-12.30,Bäckerei an der Ecke',
 	'finance.ledgers.preselectedWhenImportingIntoThis':
@@ -983,21 +1300,94 @@ export const messages: Catalogue = {
 	'finance.ledgers.putItAway': 'Ablegen',
 	'finance.ledgers.readFromTheHeaderChange':
 		'Aus der Kopfzeile gelesen. Ändern Sie, was falsch erkannt wurde:',
+	'finance.ledgers.recordCheck': 'Saldoabgleich erfassen',
+	'finance.ledgers.recordedSubtotal': 'Erfasste Zwischensumme: {amount}',
+	'finance.ledgers.relatedLine': 'Die Zeile, zu der sie gehört',
 	'finance.ledgers.restore': 'Wiederherstellen',
 	'finance.ledgers.searchDescriptions': 'Beschreibungen durchsuchen',
+	'finance.ledgers.selectLine': '{name} auswählen',
+	'finance.ledgers.selectedCount': '{count} ausgewählt',
 	'finance.ledgers.showingCount': {
 		one: '{count} Zeile angezeigt',
 		other: '{count} Zeilen angezeigt'
 	},
+	'finance.ledgers.statusRecorded': 'Nur erfasste Buchungen',
+	'finance.ledgers.statusSupported': 'Durch Eröffnung belegt',
+	'finance.ledgers.statusVerified': 'Beim letzten Abgleich bestätigt',
+	'finance.ledgers.supportedFunds': 'Belegte Mittel',
 	'finance.ledgers.theBankSOwnId': 'Die eigene ID der Bank',
 	'finance.ledgers.theRulesReadThisSo':
 		'Die Regeln lesen dies, daher sortiert eine Änderung die Zeile neu ein.',
 	'finance.ledgers.twoColumnsInstead': '— stattdessen zwei Spalten —',
 	'finance.ledgers.uncategorizedCount': 'Ohne Kategorie ({count})',
+	'finance.ledgers.unlinkRelated': 'Verknüpfung lösen',
+	'finance.ledgers.unlinkTransfer': 'Umbuchung lösen',
+	'finance.ledgers.unspecified': 'Nicht festgelegt',
 	'finance.ledgers.usualExport': 'Üblicher Export',
 	'finance.ledgers.whatItIs': 'Was es ist',
 	'finance.monthBars.newest': 'Die neuesten {shown} von {total} Monaten',
 	'finance.monthlyBars.caption': 'Saldo unter jedem Monat',
+	'finance.overview.addLedger': 'Konto hinzufügen',
+	'finance.overview.available': 'Verfügbar',
+	'finance.overview.availableFormula': 'Belegte Mittel − für andere verwahrt − beiseitegelegt.',
+	'finance.overview.availableFormulaLong':
+		'Belegte Mittel {funds} − für andere verwahrt {custody} − beiseitegelegt {reserves}.',
+	'finance.overview.balanceDiffers': 'Abweichende Auszugsabgleiche: {count}.',
+	'finance.overview.balanceDiffersOne': 'Abweichender Auszugsabgleich: {count}.',
+	'finance.overview.checkOpeningDate': 'Eröffnungsdatum prüfen',
+	'finance.overview.claimsBody':
+		'Was ich anderen schulde und was man mir schuldet, sind Ansprüche, kein Geld: Keins von beiden wird vom Verfügbaren abgezogen.',
+	'finance.overview.committed': 'Gebunden',
+	'finance.overview.coverage':
+		'{supported} von {accounts} Konten haben eine festgelegte Eröffnung.',
+	'finance.overview.coverageOne':
+		'{supported} von {accounts} Konto hat eine festgelegte Eröffnung.',
+	'finance.overview.declareCurrency': 'Währung festlegen',
+	'finance.overview.excluded': 'Nicht als Ausgabe gezählt',
+	'finance.overview.fixOpening': 'Eröffnung festlegen',
+	'finance.overview.forTheMonth': 'Für {month}',
+	'finance.overview.left': 'Übrig in den Plänen',
+	'finance.overview.leftPane': 'Die Pläne für {month} und was davon noch übrig ist.',
+	'finance.overview.missingOpening': 'Konten ohne festgelegte Eröffnung: {count}.',
+	'finance.overview.missingOpeningOne': 'Konto ohne festgelegte Eröffnung: {count}.',
+	'finance.overview.moneyView': 'Anzeige',
+	'finance.overview.myMoney': 'Mein Geld',
+	'finance.overview.myMoneyAvailableNote': 'Verfügbar nach Rücklagen: {available}.',
+	'finance.overview.myMoneyFormula':
+		'Mein Geld {funds} − beiseitegelegt {reserves} = verfügbar {available}.',
+	'finance.overview.noAccounts': 'Noch keine Konten',
+	'finance.overview.noAccountsBody':
+		'Lege ein Konto in seiner Originalwährung an und importiere oder schreibe einen Auszug. Diese Seite beantwortet die vier Geldfragen aus diesen Daten.',
+	'finance.overview.noAccountsInCurrency': 'Kein aktives Konto in dieser Währung',
+	'finance.overview.noAccountsInCurrencyBody':
+		'Kein aktives Konto hat hier eine festgelegte Eröffnung; seine Buchungen ergeben keinen Saldo.',
+	'finance.overview.noCurrencyBody':
+		'Diese Konten haben keine Originalwährung, deshalb gibt es keine Summe. Erfasste Beträge werden in {currency} gezeigt.',
+	'finance.overview.noCurrencyTotal': 'Keine Summe pro Währung',
+	'finance.overview.noPlans': 'Keine Pläne für {month}.',
+	'finance.overview.notABalance': 'Keine festgelegte Eröffnung, deshalb ist das kein Saldo.',
+	'finance.overview.nothingSpent': 'Im {month} nichts Persönliches ausgegeben.',
+	'finance.overview.otherCurrencies': 'Gebunden in anderen Währungen',
+	'finance.overview.otherCurrenciesMine': 'Beiseitegelegt oder geschuldet in anderen Währungen',
+	'finance.overview.outsideCoverageOne': 'Buchungen vor dem Eröffnungsdatum auf {count} Konto.',
+	'finance.overview.outsideCoverageTotal': 'Konten mit Buchungen vor ihrer Eröffnung: {count}.',
+	'finance.overview.overviewHint':
+		'Vier Antworten an einem Ort: was mir gehört, was gebunden ist, was ich diesen Monat ausgegeben habe und was von meinen Plänen übrig ist. Jede Originalwährung bleibt für sich.',
+	'finance.overview.payables': 'Schulde ich anderen',
+	'finance.overview.plansNeedCurrency':
+		'Budgets gelten pro Währung; lege zuerst eine bei einem Konto fest.',
+	'finance.overview.receivables': 'Schuldet man mir',
+	'finance.overview.setAside': 'Beiseitegelegt',
+	'finance.overview.setAsideBody': 'Dein eigenes reserviertes Geld, nicht zum Ausgeben verfügbar.',
+	'finance.overview.setBudget': 'Budget festlegen',
+	'finance.overview.spent': 'Diesen Monat ausgegeben',
+	'finance.overview.spentPane':
+		'Persönliche Ausgaben nach Kategorie für {month}, mit dem, was nicht zählt, darunter genannt.',
+	'finance.overview.verified': '{count} mit einem Auszug abgeglichen',
+	'finance.overview.viewAll': 'Alles auf den Konten',
+	'finance.overview.viewHint':
+		'Nur mein Geld lässt weg, was du für andere verwahrst. Alles zeigt jeden Kontostand.',
+	'finance.overview.viewMine': 'Nur mein Geld',
 	'finance.rules.aCategory': 'Kategorie: Eine Zeile erhält die erste, die passt',
 	'finance.rules.aLineBelongsToThe':
 		'Eine Zeile gehört zur ersten passenden Kategorie, daher entscheidet die Reihenfolge unten bei Gleichstand, und die Summen gehen immer auf.',
@@ -1050,6 +1440,23 @@ export const messages: Catalogue = {
 	'finance.rules.tags': 'Schlagwörter',
 	'finance.rules.theFullSyntax': 'Die vollständige Syntax →',
 	'finance.rules.whichLinesThisClaims': 'Welche Zeilen dies beansprucht',
+	'finance.splits.addPart': 'Anteil hinzufügen',
+	'finance.splits.category': 'Persönliche Kategorie',
+	'finance.splits.commitment': 'Verwahrung oder Verbindlichkeit',
+	'finance.splits.confirmUnsplit':
+		'Diese Anteile entfernen? Mache zuerst verknüpfte Verpflichtungseinträge rückgängig.',
+	'finance.splits.custody': 'Verwahrung',
+	'finance.splits.difference': 'Differenz: {amount}',
+	'finance.splits.hint':
+		'Die Anteile behalten den ursprünglichen Bankbetrag. Verwahrung ändert die verknüpfte Verpflichtung, nicht die persönlichen Ausgaben.',
+	'finance.splits.history': 'Verlauf der Verpflichtung ansehen',
+	'finance.splits.linkedHint':
+		'Diese Zeile ändert bereits eine Verpflichtung. Mache diesen Eintrag rückgängig, bevor du sie aufteilst.',
+	'finance.splits.personal': 'Persönlich',
+	'finance.splits.removePart': 'Anteil entfernen',
+	'finance.splits.save': 'Aufteilung speichern',
+	'finance.splits.title': 'Diese Buchung aufteilen',
+	'finance.splits.unsplit': 'Aufteilung entfernen',
 	'finance.stackedMonths.caption': 'Ausgaben nach Kategorie, nach Monat',
 	'frontDoor.createAnAccount': 'Konto erstellen',
 	'frontDoor.howItWorks': 'So funktioniert es',
@@ -2579,6 +2986,7 @@ export const messages: Catalogue = {
 		'Montagmorgen: wie die letzte Woche wirklich war, mit der Seite, die sie abschließt, einen Klick entfernt.',
 	'notify.noun.activity': { one: '{count} Aktivität', other: '{count} Aktivitäten' },
 	'notify.noun.alarm': { one: '{count} Wecker', other: '{count} Wecker' },
+	'notify.noun.balanceCheck': { one: '{count} Saldoabgleich', other: '{count} Saldoabgleiche' },
 	'notify.noun.beforeBlock': { one: '{count} Blockhinweis', other: '{count} Blockhinweise' },
 	'notify.noun.bill': { one: '{count} Rechnung', other: '{count} Rechnungen' },
 	'notify.noun.billPayment': {
@@ -2587,6 +2995,12 @@ export const messages: Catalogue = {
 	},
 	'notify.noun.block': { one: '{count} Aufgabenblock', other: '{count} Aufgabenblöcke' },
 	'notify.noun.bought': { one: '{count} Einkauf', other: '{count} Einkäufe' },
+	'notify.noun.budget': { one: '{count} Budget', other: '{count} Budgets' },
+	'notify.noun.commitment': { one: '{count} Verpflichtung', other: '{count} Verpflichtungen' },
+	'notify.noun.commitmentEntry': {
+		one: '{count} Verpflichtungseintrag',
+		other: '{count} Verpflichtungseinträge'
+	},
 	'notify.noun.dataPoint': { one: '{count} Datenpunkt', other: '{count} Datenpunkte' },
 	'notify.noun.entry': { one: '{count} Eintrag', other: '{count} Einträge' },
 	'notify.noun.fromGoal': { one: '{count} Zielverknüpfung', other: '{count} Zielverknüpfungen' },
@@ -2630,6 +3044,7 @@ export const messages: Catalogue = {
 	'notify.noun.tag': { one: '{count} Schlagwort', other: '{count} Schlagwörter' },
 	'notify.noun.task': { one: '{count} Aufgabe', other: '{count} Aufgaben' },
 	'notify.noun.toGoal': { one: '{count} Zielverknüpfung', other: '{count} Zielverknüpfungen' },
+	'notify.noun.transfer': { one: '{count} Umbuchung', other: '{count} Umbuchungen' },
 	'notify.noun.win': { one: '{count} Erfolg', other: '{count} Erfolge' },
 	'notify.noun.workout': { one: '{count} Training', other: '{count} Trainings' },
 	'notify.noun.workoutCategory': {
@@ -2656,6 +3071,7 @@ export const messages: Catalogue = {
 	'notify.verb.archive': 'archiviert',
 	'notify.verb.cancel': 'abgesagt',
 	'notify.verb.change': 'geändert',
+	'notify.verb.classify': 'eingeordnet',
 	'notify.verb.close': 'geschlossen',
 	'notify.verb.cooked': 'gekocht',
 	'notify.verb.delete': 'gelöscht',
@@ -2943,8 +3359,11 @@ export const messages: Catalogue = {
 	'reportDialog.yourIdea': 'Ihre Idee',
 	'rooms.finance.sections': 'Finanzen-Bereiche',
 	'rooms.finance.tabs.bills': 'Rechnungen',
+	'rooms.finance.tabs.budgets': 'Budgets',
+	'rooms.finance.tabs.commitments': 'Verpflichtungen',
 	'rooms.finance.tabs.insights': 'Einblicke',
 	'rooms.finance.tabs.ledgers': 'Buchungen',
+	'rooms.finance.tabs.overview': 'Übersicht',
 	'rooms.finance.tabs.rules': 'Regeln',
 	'rooms.finance.title': 'Finanzen',
 	'rooms.goals.sections': 'Ziel-Bereiche',
@@ -4097,24 +4516,49 @@ export const messages: Catalogue = {
 	'taskStatus.pending': 'Ausstehend',
 	'tasks.activities.anActivityIsANamed':
 		'Eine Aktivität ist eine benannte Sache, die Sie tun — Fitnessstudio, Gitarre, konzentriertes Arbeiten. Aufgabenblöcke im Raster verweisen darauf.',
+	'tasks.activities.archiveInstead': 'Stattdessen archivieren',
 	'tasks.activities.categories': 'Kategorien',
 	'tasks.activities.colour': 'Farbe',
 	'tasks.activities.confirm': 'Bestätigen?',
 	'tasks.activities.createActivity': 'Aktivität erstellen',
 	'tasks.activities.deleteActivity': 'Aktivität löschen',
+	'tasks.activities.deleteName': '{name} löschen?',
 	'tasks.activities.editActivity': 'Aktivität bearbeiten',
 	'tasks.activities.everyCategory': 'Alle Kategorien',
+	'tasks.activities.foldExplained':
+		'Beim Löschen wird jeder dieser Einträge zu einem {category}-Block mit der Beschriftung „{name}“. Vergangene Termine behalten den Namen, und Ziele zählen ihn nicht mehr.',
+	'tasks.activities.goalCountsIt': 'Ziel: {goal}',
+	'tasks.activities.inSavedWeek': 'Gespeicherte Woche „{scheme}“',
+	'tasks.activities.keepIt': 'Behalten',
+	'tasks.activities.moveAndDelete': 'Verschieben und löschen',
+	'tasks.activities.moveExplained':
+		'All das, Ziele eingeschlossen, wird stattdessen {target} zugeordnet.',
+	'tasks.activities.moveExplainedNew':
+		'All das, Ziele eingeschlossen, wird stattdessen der neuen Aktivität zugeordnet.',
+	'tasks.activities.moveThemTo': 'Verschieben nach',
+	'tasks.activities.moveToCategory': 'Nichts: zurück zu {category}',
+	'tasks.activities.moveToNew': 'Eine neue Aktivität…',
 	'tasks.activities.newActivity': 'Neue Aktivität',
 	'tasks.activities.newCategoryName': 'Neuer Kategoriename',
 	'tasks.activities.noActivitiesMatchTheSelected':
 		'Keine Aktivitäten entsprechen den ausgewählten Filtern.',
 	'tasks.activities.noActivitiesYet': 'Noch keine Aktivitäten',
 	'tasks.activities.nothingPutAway': 'Nichts weggelegt',
+	'tasks.activities.nothingUsesIt': 'Nichts verwendet sie, also ändert sich sonst nichts.',
+	'tasks.activities.pastOccurrences': {
+		one: '{count} vergangener Termin, {span}',
+		other: '{count} vergangene Termine, {span}'
+	},
+	'tasks.activities.ratherArchive':
+		'Um alles so zu lassen, wie es ist, archiviere sie stattdessen: Sie verschwindet aus Listen und Auswahlen, und ihr Verlauf bleibt unberührt. Oder ändere diese Blöcke vorher einzeln im Kalender.',
+	'tasks.activities.ratherKeepArchived':
+		'Sie ist bereits archiviert, ihr Verlauf bleibt also unberührt. Oder ändere diese Blöcke vorher einzeln im Kalender.',
 	'tasks.activities.searchActivities': 'Aktivitäten durchsuchen',
 	'tasks.activities.showingCount': {
 		one: '{count} Aktivität angezeigt',
 		other: '{count} Aktivitäten angezeigt'
 	},
+	'tasks.activities.whatNamesIt': 'Was sie noch verwendet',
 	'tasks.board.1Hour': '1 Stunde',
 	'tasks.board.addCard': 'Karte hinzufügen',
 	'tasks.board.anyEase': 'Beliebige Leichtigkeit',
@@ -4619,6 +5063,11 @@ export const messages: Catalogue = {
 	'tour.booksKilosEurosAnything':
 		'Bücher, Kilos, Euro — alles Zählbare. Ein Ziel kann mehrere auf einmal wollen: drei gespielte Gigs und fünf aufgenommene Songs sind ein Ziel mit zwei Zahlen, und es ist so weit fortgeschritten wie ihr Durchschnitt.',
 	'tour.boughtAndBackAgain': 'Gekauft, und wieder da',
+	'tour.budgets': 'Budgets',
+	'tour.budgetsBody':
+		'Lege für jeden Monat Ausgabengrenzen pro Kategorie fest und sieh, was übrig ist.',
+	'tour.budgetsRoom': 'Budgets',
+	'tour.budgetsTitle': 'Monatliche Budgets',
 	'tour.catchItNowJudgeIt': 'Jetzt festhalten, später bewerten',
 	'tour.categoriesAreTheColours': 'Kategorien sind die Farben',
 	'tour.categoriesWashTheRowIn':
@@ -4940,6 +5389,7 @@ export const messages: Catalogue = {
 	'ui.restore': 'Wiederherstellen',
 	'ui.save': 'Speichern',
 	'ui.search': 'Suche',
+	'ui.select': 'Auswählen',
 	'ui.show': 'Anzeigen',
 	'ui.showLess': 'Weniger anzeigen',
 	'ui.showMore': 'Mehr anzeigen',

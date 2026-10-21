@@ -18,6 +18,16 @@ the shape of the data changing. Bumping the minor per batch is what ran this
 file to 0.161 in a few months, which tells a reader nothing about which
 releases mattered.
 
+## 0.186.7 — 2026-10-21
+
+- Finance opens with one money picture: what is yours, what is committed, what you spent this month and what is left against your budgets. Each currency stands on its own, and a missing opening or an incomplete period is named at the total rather than guessed. A switch shows everything in the accounts or only your own money, and is remembered.
+- Accounts take a declared opening balance and statement balance checks, and say when a total is only what was recorded. An import with an unreadable line, or one dated before the opening, writes nothing.
+- Commitments: money you hold for someone, money you owe, money owed to you and money set aside, each with dated history. A mixed bank line can be split into personal and held-for-someone parts; only the personal part counts as spending.
+- Monthly budgets per category, copied from one month to the next. Renaming a category carries its budgets; deleting one a budget still uses is refused.
+- A movement can be marked as an expense, income, transfer, refund, fee or cash withdrawal, and a transfer between two of your own accounts links its two legs.
+- Scripts and assistants can read the money picture, ledgers, movements, budgets and commitments with a `statements:read` token. Export, import and deletion carry all of it.
+- Any activity can be deleted now, used or not, without archiving it first. Delete always asks: it lists the blocks, saved weeks, past occurrences and goals that still name the activity, and says what will happen to them. By default they fall back to its category and keep its name as their label. They can instead be handed to another activity, or to a new one made right there in the dialog, and goals then count that one. Archiving is offered beside it for keeping everything as it is.
+
 ## 0.186.6 — 2026-10-17
 
 - The dashboard's Next three days turns over at midnight where you are, not at the server's midnight — three hours west of UTC it was showing tomorrow as today from nine in the evening.

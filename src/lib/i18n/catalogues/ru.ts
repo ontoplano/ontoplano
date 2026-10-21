@@ -188,6 +188,7 @@ export const messages: Catalogue = {
 	'app.manageYourPlan': 'Управлять тарифом',
 	'app.matchMyDevice': 'Как на устройстве',
 	'app.monday': 'Понедельник',
+	'app.moneyPicture': 'Картина денег',
 	'app.monthly': 'Ежемесячно',
 	'app.move': 'переместить',
 	'app.neutral': 'Нейтрально',
@@ -415,6 +416,8 @@ export const messages: Catalogue = {
 	'card.oneOfYourOwnQuotes': 'Одна из ваших цитат — одна и та же весь день.',
 	'card.theBlockYouAreIn':
 		'Блок задачи, в котором вы сейчас находитесь, или следующий, и два вопроса, на которые он хочет ответ.',
+	'card.theFourAnswersAboutYourMoney':
+		'Что моё, что связано обязательствами, сколько я потратил в этом месяце и что осталось.',
 	'card.theHoursYouHaveTicked': 'Часы, которые вы отметили на этой неделе, по категориям.',
 	'card.theLastFewIdeasYou': 'Несколько последних ваших идей.',
 	'card.theMostRecentThingsYou': 'Самое недавнее из того, что вы записали, сначала новое.',
@@ -476,10 +479,9 @@ export const messages: Catalogue = {
 		'В файле есть изображение в формате, который это приложение не принимает',
 	'errors.accountImport.theFileCarriesASound':
 		'В файле есть звук в формате, который это приложение не принимает',
-	'errors.activities.cannotDeleteActivityIsReferenced':
-		'Удалить нельзя: на занятие ссылаются блоки плана или история задач',
 	'errors.activities.cannotDeleteCategoryHasActivities':
 		'Удалить нельзя: у категории есть занятия или блоки плана',
+	'errors.activities.cannotMoveOntoItself': 'Занятие нельзя передать самому себе.',
 	'errors.activities.categoryAlreadyExists': 'Такая категория уже существует',
 	'errors.activities.invalidColorFormat': 'Неверный формат цвета',
 	'errors.admin.aSelfHostedInstance': 'У самостоятельно размещённой инстанции тарифов нет',
@@ -547,6 +549,114 @@ export const messages: Catalogue = {
 	'errors.familyInvite.noAccountHereUses': 'Здесь нет аккаунта с таким адресом',
 	'errors.familyInvite.thisPlanCoversOneAccount': 'Этот тариф охватывает только один аккаунт',
 	'errors.familyInvite.thisPlanIsNotActive': 'Этот тариф не активен',
+	'errors.finance.archiveCommitmentPermanentlyDeleting':
+		'Сначала переместите это обязательство в архив, потом удаляйте навсегда.',
+	'errors.finance.balanceCheckAlreadyExistsLedger':
+		'Сверка остатка для этого счёта на эту дату уже есть. Удалите её, прежде чем записывать исправление.',
+	'errors.finance.bankExportUsesTwoDecimal':
+		'В этой выгрузке банка два знака после запятой. Для этого счёта используйте общий формат CSV в исходной валюте.',
+	'errors.finance.bankMovementAlreadyChangesStock':
+		'Эта банковская операция уже меняет обязательство. Отмените ту запись, прежде чем использовать её снова.',
+	'errors.finance.beforeOpening':
+		'Самая ранняя операция, {earliest}, раньше даты открытия {opening}. Ничего не импортировано.',
+	'errors.finance.budgetAlreadyExistsMonthCategory':
+		'Бюджет на этот месяц, категорию и валюту уже есть.',
+	'errors.finance.budgetAmountNegative': 'Сумма бюджета не может быть отрицательной.',
+	'errors.finance.budgetChangedReadAgainSaving':
+		'Этот бюджет изменился. Откройте его заново перед сохранением.',
+	'errors.finance.categoryGone':
+		'Категории {category} больше нет. Выберите существующее правило категории.',
+	'errors.finance.categoryHasBudget':
+		'Категорию «{name}» ещё использует бюджет. Сначала переименуйте или удалите этот бюджет.',
+	'errors.finance.chooseAtMost120Months': 'Выберите не больше 120 месяцев.',
+	'errors.finance.chooseOpenCustodyPayableCommitment':
+		'Выберите открытое хранение или долг к оплате.',
+	'errors.finance.chooseOriginalCurrencyUnlikeMoney':
+		'Выберите одну исходную валюту: разные валюты не складываются.',
+	'errors.finance.chooseReserveConsume': 'Выберите резерв, который нужно израсходовать.',
+	'errors.finance.chooseValidCurrencyCode': 'Выберите правильный код валюты.',
+	'errors.finance.chooseValidOriginalCurrency': 'Выберите правильную исходную валюту.',
+	'errors.finance.combinedNoteTooLong':
+		'Общая заметка для одного обязательства должна быть не длиннее {max} символов.',
+	'errors.finance.commitmentsRunningBalanceBecomeNegative':
+		'Текущий остаток обязательства не может стать отрицательным. Запишите явное увеличение, прежде чем переплачивать.',
+	'errors.finance.currencyChangeLedgerHoldsMovements':
+		'Валюту нельзя изменить, пока на счёте есть операции, заявленное открытие или сверки с выпиской. Пересчёт не выполняется.',
+	'errors.finance.custodyEntryMatchRetainedAllocation':
+		'Запись о хранении должна точно совпадать с отложенной частью. Сначала разделите операцию.',
+	'errors.finance.custodyExcludedFromPersonalCategories':
+		'Чужие деньги на хранении не входят в личные категории.',
+	'errors.finance.custodyPartMovementShareKnown':
+		'Часть на хранении и её операция должны быть в одной известной валюте.',
+	'errors.finance.eachSplitPartNameKind': 'У каждой части должны быть тип и сумма.',
+	'errors.finance.enterExactAmountLedgerCurrency':
+		'Введите точную сумму в валюте счёта или целые минимальные единицы, если валюта не указана.',
+	'errors.finance.enterExactBudgetAmountOriginal':
+		'Введите точную сумму бюджета в его исходной валюте.',
+	'errors.finance.enterExactOpeningAmountLedger':
+		'Введите точную сумму открытия в валюте счёта или целые минимальные единицы, если валюта не указана.',
+	'errors.finance.enterExactSignedAmountCommitment':
+		'Введите точную сумму со знаком в валюте обязательства.',
+	'errors.finance.enterExactSignedPartLedger': 'Введите точную часть со знаком в валюте счёта.',
+	'errors.finance.enterExactStatementClosingAmount':
+		'Введите точный конечный остаток выписки в валюте счёта или целые минимальные единицы, если валюта не указана.',
+	'errors.finance.entryChangeStockByNonzero': 'Запись должна изменить остаток на ненулевую сумму.',
+	'errors.finance.everySplitPartHaveMovements':
+		'Каждая часть должна иметь знак операции и быть ненулевой.',
+	'errors.finance.expenseAlreadyConsumesStock': 'Этот расход уже списан с обязательства.',
+	'errors.finance.fileTooLong': 'В файле больше {max} операций. Ничего не импортировано.',
+	'errors.finance.firstDayNotAfterLast': 'Первый день не может быть позже последнего.',
+	'errors.finance.kindCurrencyChangeHistoryAllocations':
+		'Тип и валюту нельзя изменить, пока от них зависят история или разделения.',
+	'errors.finance.ledgerCurrencyChangedReadingFile':
+		'Валюта счёта изменилась во время чтения файла. Ничего не импортировано; повторите с текущей валютой.',
+	'errors.finance.ledgerHasLinkedMovements':
+		'Отмените связанные записи и разделения операций {ids}, прежде чем удалять этот счёт.',
+	'errors.finance.lineRejected':
+		'Строка {line} отклонена: неверная дата, сумма или описание. Ничего не импортировано.',
+	'errors.finance.lineRejectedSaving':
+		'Строка {line} отклонена при сохранении. Ничего не импортировано.',
+	'errors.finance.linkedEntryKeepsBankMovements':
+		'Связанная запись сохраняет дату своей банковской операции.',
+	'errors.finance.movementAlreadyHasEntryCommitment':
+		'У этой операции уже есть запись в этом обязательстве.',
+	'errors.finance.movementAlreadySettlesStock': 'Эта операция уже погашает обязательство.',
+	'errors.finance.movementHasSplitOrEntry':
+		'У операции {id} есть разделение или запись о погашении. Сначала отмените связанные записи и разделение.',
+	'errors.finance.noLedgerInCurrency':
+		'Ни один счёт не использует {currency}. Сначала добавьте счёт в этой исходной валюте.',
+	'errors.finance.onlyCustodyPartsMayName':
+		'Обязательство можно указать только у части на хранении.',
+	'errors.finance.openingStockNegative': 'Начальный остаток не может быть отрицательным.',
+	'errors.finance.receivableSettlementNeedsIncomingRepayment':
+		'Долг вам погашается одним входящим возвратом в исходной валюте.',
+	'errors.finance.reopenCommitmentAddingEntries':
+		'Откройте обязательство снова, прежде чем добавлять записи.',
+	'errors.finance.reopenCommitmentClosing':
+		'Откройте обязательство снова, прежде чем закрывать его.',
+	'errors.finance.reopenCommitmentCorrectingOpening':
+		'Откройте это обязательство снова, прежде чем исправлять начальный остаток.',
+	'errors.finance.reserveConsumedByWholePersonal':
+		'Резерв расходуется одним целым личным расходом или комиссией.',
+	'errors.finance.reverseLinkedCommitmentEntryRemoving':
+		'Отмените связанную запись обязательства, прежде чем убирать это разделение.',
+	'errors.finance.settlementExceedsBalance':
+		'Остаток долга — {balance}. Запишите явное увеличение, прежде чем переплачивать.',
+	'errors.finance.settlementUsesOutgoingPaymentUse':
+		'Погашение использует исходящий платёж. Полученные деньги записывайте разделением с хранением.',
+	'errors.finance.splitDoesNotAddUp':
+		'Части должны давать в сумме {total} минимальных единиц; разница {difference}.',
+	'errors.finance.splitNeedsBetween1100': 'В разделении должно быть от 1 до 100 частей.',
+	'errors.finance.stockPaymentShareKnownCurrency':
+		'Обязательство и его платёж должны быть в одной известной валюте.',
+	'errors.finance.unlinkMovementEvidencePermanentlyDeleting':
+		'Отвяжите банковские операции, прежде чем удалять это обязательство навсегда.',
+	'errors.finance.unlinkTransferClassifyMovementSplitting':
+		'Отвяжите перевод или укажите тип операции, прежде чем её разделять.',
+	'errors.finance.unreadableSplitPart': 'Не удалось прочитать часть.',
+	'errors.finance.useReserveConsumptionEarmark': 'Для резерва используйте «Израсходовать резерв».',
+	'errors.finance.writeOffNeedsNote': 'Остаток долга — {balance}. Нужна явная заметка о списании.',
+	'errors.finance.zeroMovementSplit': 'Нулевую операцию нельзя разделить.',
 	'errors.gallery.anAlbumByThatName': 'Альбом с таким именем уже существует.',
 	'errors.goals.invalidColorFormat': 'Неверный формат цвета',
 	'errors.goals.invalidDate': 'Неверная дата',
@@ -704,7 +814,36 @@ export const messages: Catalogue = {
 	'errors.slots.noValidSlotsFound': 'В CSV не найдено ни одного подходящего блока',
 	'errors.slots.thatWorkoutIsNotYours': 'Эта тренировка не ваша.',
 	'errors.slots.workoutRequired': 'Нужно указать тренировку',
+	'errors.statements.alreadyChild': 'Эта строка уже относится к строке {id}.',
+	'errors.statements.alreadyChildLink':
+		'Эта строка уже относится к другой как возврат или комиссия. Сначала отвяжите её.',
+	'errors.statements.alreadyRefund':
+		'Эта строка уже возврат по строке {id}. Возврат отменяет один расход.',
+	'errors.statements.alreadyTransfer':
+		'Одна из этих строк уже входит в перевод. Сначала отвяжите её.',
+	'errors.statements.legCannotBeChild': 'Часть перевода не может быть возвратом или комиссией.',
+	'errors.statements.legOfTransferChange':
+		'Эта строка — часть перевода. Сначала отвяжите перевод, потом меняйте её смысл.',
+	'errors.statements.legOfTransferClassify':
+		'Одна строка в выборке — часть перевода. Сначала отвяжите перевод, потом укажите тип.',
+	'errors.statements.legOfTransferDelete':
+		'Эта строка — часть перевода со строкой {id}. Сначала отвяжите перевод.',
+	'errors.statements.legsDoNotBalance':
+		'Эти две строки не дают в сумме ноль: {a} {first} и {b} {second}. Перевод между счетами уходит с одного и приходит на другой.',
+	'errors.statements.linkNeedsCurrency':
+		'У одного из этих счетов нет валюты. Укажите её, прежде чем связывать деньги между ними.',
+	'errors.statements.linkNeedsLedger':
+		'Обе строки должны быть на счёте, прежде чем их можно связать.',
 	'errors.statements.noParserKnowsThatExport': 'Ни один разбор не умеет читать этот экспорт.',
+	'errors.statements.notATransfer': 'Эта строка не входит в перевод.',
+	'errors.statements.ownCounterpart': 'Строка не может быть своей же парой.',
+	'errors.statements.ownParent': 'Строка не может относиться к самой себе.',
+	'errors.statements.refundOnLeg':
+		'К одной из этих частей привязан возврат (строка {id}). Сначала отвяжите возврат.',
+	'errors.statements.sameLedgerTransfer':
+		'Обе строки на одном счёте. Пара, которая обнуляется внутри одного счёта, прячет два настоящих расхода.',
+	'errors.statements.unlikeCurrencies':
+		'Они в разных валютах: {a} и {b}. Возврат или комиссия должны быть в той валюте, к которой относятся.',
 	'errors.streams.pointMustBeAnObject': 'point должен быть объектом',
 	'errors.streams.pointsMustBeAnArray': 'points должен быть массивом',
 	'errors.subscriptions.anEmailAddressIsNeeded': 'Нужен адрес электронной почты',
@@ -894,33 +1033,155 @@ export const messages: Catalogue = {
 	'finance.bills.whatPaidName': 'Чем оплачен «{name}»?',
 	'finance.bills.whenItTurnsUpOn': 'Когда он появляется в вашей неделе. 0 — это сам день срока.',
 	'finance.bills.youWontBeReminded': 'Вам не будут напоминать его оплатить.',
+	'finance.budgets.allCurrencies': 'Все валюты',
+	'finance.budgets.allocated': 'Запланировано',
+	'finance.budgets.allocatedAmount': 'Запланированная сумма',
+	'finance.budgets.cancel': 'Отмена',
+	'finance.budgets.category': 'Категория',
+	'finance.budgets.categoryCreated': 'Категория «{category}» создана. Выберите её в списке.',
+	'finance.budgets.categoryGone':
+		'Категории {category} больше нет. Выберите существующую или удалите этот бюджет.',
+	'finance.budgets.categoryHint': 'Бюджеты используют правила категорий со вкладки «Правила».',
+	'finance.budgets.categoryName': 'Название категории',
+	'finance.budgets.categoryNameHint':
+		'Сохраняется на вкладке «Правила»; там можно уточнить шаблон поиска.',
+	'finance.budgets.chooseCategory': 'Выберите категорию…',
+	'finance.budgets.chooseCurrency': 'Выберите валюту…',
+	'finance.budgets.confirmDelete': 'Удалить',
+	'finance.budgets.copied': 'Добавлено {added}, пропущено {skipped} — они уже были.',
+	'finance.budgets.copy': 'Скопировать с прошлого месяца',
+	'finance.budgets.create': 'Создать',
+	'finance.budgets.createCategory': 'Создать категорию',
+	'finance.budgets.credit': 'Возвраты',
+	'finance.budgets.currency': 'Валюта',
+	'finance.budgets.currencyNeedsLedger':
+		'Бюджет может быть только у валюты, для которой есть счёт.',
+	'finance.budgets.delete': 'Удалить',
+	'finance.budgets.deleteConfirm': 'Удалить бюджет',
+	'finance.budgets.edit': 'Изменить бюджет',
+	'finance.budgets.manageRules': 'Настроить в «Правилах»',
+	'finance.budgets.month': 'Месяц',
+	'finance.budgets.new': 'Новый бюджет',
+	'finance.budgets.newCategory': 'Новая категория',
+	'finance.budgets.noBudgets': 'На этот месяц бюджетов нет.',
+	'finance.budgets.noBudgetsHint':
+		'Бюджет — это план на месяц для одной категории; в обзоре видно, сколько от него осталось.',
+	'finance.budgets.noCategories':
+		'Правил категорий пока нет. Сначала создайте одно на вкладке «Правила».',
+	'finance.budgets.noLedger': 'нет счёта',
+	'finance.budgets.noLedgerCurrency': 'Для бюджетов нужна валюта, указанная у счёта.',
+	'finance.budgets.nothingToCopy': 'С прошлого месяца копировать нечего.',
+	'finance.budgets.orphaned': 'Категории больше нет',
+	'finance.budgets.remaining': 'Осталось',
+	'finance.budgets.save': 'Сохранить',
+	'finance.budgets.spent': 'Потрачено',
+	'finance.budgets.title': 'Бюджеты',
+	'finance.commitments.addEntry': 'Записать корректировку',
+	'finance.commitments.adjustment': 'Корректировка остатка',
+	'finance.commitments.adjustmentHint':
+		'Положительная сумма увеличивает остаток, отрицательная уменьшает. Банковская операция не создаётся.',
+	'finance.commitments.after': 'Остаток после платежа',
+	'finance.commitments.archive': 'В архив',
+	'finance.commitments.archived': 'Погашенные и в архиве',
+	'finance.commitments.close': 'Закрыть обязательство',
+	'finance.commitments.closeHint':
+		'Для ненулевого остатка нужна заметка о списании. Закрытие никогда не меняет деньги в банке.',
+	'finance.commitments.consume': 'Израсходовать резерв',
+	'finance.commitments.consumeHint':
+		'Резерв уменьшится один раз. Платёж остаётся личным расходом; банковская операция не создаётся.',
+	'finance.commitments.currency': 'Исходная валюта',
+	'finance.commitments.current': 'Сейчас',
+	'finance.commitments.custody': 'Хранение',
+	'finance.commitments.custodyHint': 'Деньги, которые вы храните для кого-то.',
+	'finance.commitments.deleteHint':
+		'Удаление сначала переносит запись в архив. Удалить навсегда можно только из архива, и только если нет связанных банковских операций.',
+	'finance.commitments.deletePermanently': 'Удалить навсегда',
+	'finance.commitments.edit': 'Изменить обязательство',
+	'finance.commitments.hint':
+		'Обязательства — это не остатки на счетах и не бюджеты. Суммы разделены по типу и исходной валюте.',
+	'finance.commitments.history': 'История обязательства',
+	'finance.commitments.lastEntry': 'Последняя запись:',
+	'finance.commitments.movement': 'Банковская операция',
+	'finance.commitments.new': 'Новое обязательство',
+	'finance.commitments.none': 'Здесь пока ничего нет.',
+	'finance.commitments.opening': 'Начальный остаток',
+	'finance.commitments.payable': 'Я должен',
+	'finance.commitments.payableHint': 'Деньги, которые вы кому-то должны.',
+	'finance.commitments.person': 'Человек (необязательно)',
+	'finance.commitments.receivable': 'Мне должны',
+	'finance.commitments.receivableHint': 'Деньги, которые кто-то должен вам.',
+	'finance.commitments.reopen': 'Открыть снова',
+	'finance.commitments.reserve': 'Резерв',
+	'finance.commitments.reserveHint': 'Ваши отложенные деньги, ещё не потраченные.',
+	'finance.commitments.reverseEntry': 'Отменить запись',
+	'finance.commitments.reverseHint':
+		'Это отменяет запись в обязательстве. Банковская операция и разделение остаются; при необходимости уберите разделение отдельно.',
+	'finance.commitments.running': 'Текущий остаток',
+	'finance.commitments.settle': 'Погасить',
+	'finance.commitments.settleHint':
+		'Обязательство уменьшится один раз. Исходящий платёж не считается личным расходом. Деньги в банке не меняются.',
+	'finance.commitments.status.archived': 'В архиве',
+	'finance.commitments.status.open': 'Открыто',
+	'finance.commitments.status.settled': 'Погашено',
+	'finance.commitments.writeOffNote': 'Разрешить списание остатка с заметкой',
 	'finance.donut.empty': 'В этом периоде пока ничего не потрачено.',
 	'finance.donut.heading': 'Расходы по категориям',
 	'finance.donut.out': 'расход',
 	'finance.insights.average': 'в среднем {averageCents}',
 	'finance.insights.biggestCategory': 'Крупнейшая категория',
+	'finance.insights.budgetsWindow': 'Выберите один месяц, чтобы увидеть исполнение бюджетов.',
+	'finance.insights.cash': 'Снято наличными, назначение неизвестно: {count} · {amount}',
+	'finance.insights.categories': 'Личные расходы и возвраты по категориям',
+	'finance.insights.category': 'Категория',
+	'finance.insights.chooseMonth': 'Показать месяц',
+	'finance.insights.credit':
+		'Возвраты показаны отдельно; на графиках только положительные расходы.',
+	'finance.insights.currency': 'Исходная валюта',
+	'finance.insights.currencyNotDeclared':
+		'Ни у одного счёта не указана валюта — суммы показаны в {currency}.',
+	'finance.insights.custody': 'Хранение исключено: {count} · {amount}',
 	'finance.insights.dearestMonth': 'Самый дорогой месяц',
+	'finance.insights.defaultWindow': 'Последние 12 месяцев (по умолчанию)',
+	'finance.insights.definitions':
+		'Личные расходы — это расходы и комиссии за вычетом возвратов. Это не остаток на счёте.',
 	'finance.insights.everyLedger': 'Все счета',
+	'finance.insights.exclusions': 'Переводы и наличные исключены',
+	'finance.insights.gross': 'Расходы до вычетов',
 	'finance.insights.importAStatementIntoA':
 		'Импортируйте выписку в счёт, и это оживёт: сколько стоил каждый месяц, куда уходили деньги и сколько в сумме даёт любой тег.',
 	'finance.insights.in': 'Доход',
 	'finance.insights.inAndOut': 'Доход и расход',
 	'finance.insights.inTotalAMonth':
 		'{totalCents} всего, {averageCents} в месяц за {activeMonths} месяц{s}, в котором это встречалось. Один тег за раз — теги пересекаются, так что сложить их означало бы посчитать строку дважды.',
+	'finance.insights.income': 'Личный доход',
 	'finance.insights.lastMonths': 'последние {w} месяцев',
+	'finance.insights.minorUnits': '{amount} минимальных единиц (валюта не указана)',
+	'finance.insights.month': 'Месяц',
+	'finance.insights.monthBudgets': 'Бюджеты этого месяца',
 	'finance.insights.monthlyCostOf': 'Стоимость #{name} в месяц',
+	'finance.insights.net': 'Личные расходы, итого',
+	'finance.insights.noActivity': 'За этот период ничего не записано.',
 	'finance.insights.noTagsYet': 'Пока нет тегов.',
 	'finance.insights.nothingToReadYet': 'Пока нечего показать',
 	'finance.insights.out': 'Расход',
 	'finance.insights.overMonthWithAny': 'за {monthsWithSpending} месяц{s} с хоть каким-то расходом',
-	'finance.insights.spendingStackedByCategory':
-		'Расходы, сложенные по категориям — каждая исходящая строка входит ровно в одну полосу.',
+	'finance.insights.partialBalance':
+		'Подтверждено при последней сверке: {verified} из {total} счетов. По расходам нельзя судить о доступных деньгах.',
+	'finance.insights.refunds': 'Возвраты',
+	'finance.insights.spendingStackedByCategory': 'Личные расходы по категориям, стопкой.',
 	'finance.insights.spentPerMonthOnAverage': 'Потрачено, в среднем за месяц',
-	'finance.insights.theSameMoneyWithoutThe': 'Те же деньги, без месяцев.',
+	'finance.insights.theSameMoneyWithoutThe': 'Личные расходы без разбивки по месяцам.',
 	'finance.insights.theWholeWindowByCategory': 'Весь период, по категориям',
+	'finance.insights.transfers': 'Переводы: {count} · входящие {incoming} · исходящие {outgoing}',
+	'finance.insights.unclassified': 'Операций без типа: {count} · проверьте предполагаемые значения',
+	'finance.insights.unknownBalance':
+		'Подтверждённого остатка в этой валюте нет. Расходы отражают только записанное.',
+	'finance.insights.unmatchedRefunds': 'Возвратов без пары: {count}',
+	'finance.insights.unspecified': 'Валюта не указана',
 	'finance.insights.whatArrivedAgainstWhatLeft': 'Что пришло против того, что ушло.',
 	'finance.insights.whatEachMonthWasMade': 'Из чего состоял каждый месяц',
 	'finance.insights.whatOneTagCosts': 'Сколько стоит один тег',
+	'finance.insights.window': 'Записанные операции: с {from} по {to}',
 	'finance.insights.writeOne': 'Написать →',
 	'finance.ledgers.aLedgerIsOnePlace':
 		'Счёт — это одно место, через которое проходят деньги: текущий счёт, кредитная карта. Создайте его, затем импортируйте выписку или добавьте строку вручную.',
@@ -928,13 +1189,34 @@ export const messages: Catalogue = {
 	'finance.ledgers.andItsLinesGoFor':
 		'и его {count} строк удаляются навсегда. Чтобы сохранить историю, архивируйте его вместо этого.',
 	'finance.ledgers.archive': 'Архивировать «{name}»',
+	'finance.ledgers.asOf': 'На {day}',
 	'finance.ledgers.askEveryTime': 'Спрашивать каждый раз',
+	'finance.ledgers.assumed': 'по знаку суммы',
+	'finance.ledgers.checkAmount': 'Конечный остаток по выписке',
+	'finance.ledgers.checkComputed': 'Расчётный: {amount}',
+	'finance.ledgers.checkDate': 'Дата закрытия выписки',
+	'finance.ledgers.checkDifference': 'По выписке минус расчётный: {amount}',
+	'finance.ledgers.checkDifferent': 'Расходится',
+	'finance.ledgers.checkHistory': 'Сверки остатка с выпиской',
+	'finance.ledgers.checkMatched': 'Совпадает',
+	'finance.ledgers.checkUnverified': 'Не подтверждено — ни одно открытие не покрывает эту дату',
+	'finance.ledgers.chooseCurrency': 'Укажите валюту этого счёта; у сумм пока нет единиц.',
 	'finance.ledgers.chooseTheFile': 'Выбрать файл',
+	'finance.ledgers.classifySelected': 'Указать тип выбранных',
 	'finance.ledgers.coffee': 'Кофе',
+	'finance.ledgers.counterpart': 'Другая сторона',
+	'finance.ledgers.counterpartPending': 'пара ещё не найдена',
+	'finance.ledgers.coverageTour':
+		'Укажите исходную валюту и дату открытия, чтобы остаток был подтверждён. Сверки с выпиской показывают совпадения и расхождения, не меняя операции.',
+	'finance.ledgers.currency': 'Валюта',
+	'finance.ledgers.currencyHint':
+		'Код исходной валюты по ISO. Оставляйте пустым, только если он неизвестен; валюта по умолчанию и пересчёт не подразумеваются.',
+	'finance.ledgers.currencyNotDeclared': 'Валюта счёта не указана — суммы показаны в {currency}.',
 	'finance.ledgers.currentAccount': 'Текущий счёт',
 	'finance.ledgers.datesAreDayFirst': 'Сначала день — 02/03 означает второе марта',
 	'finance.ledgers.day': 'День',
 	'finance.ledgers.delete': 'Удалить «{name}»',
+	'finance.ledgers.deleteCheck': 'Удалить эту сверку остатка',
 	'finance.ledgers.deleteThisLedger': 'Удалить этот счёт?',
 	'finance.ledgers.deleteThisLine': 'Удалить эту строку',
 	'finance.ledgers.deleteThisLine2': 'Удалить эту строку?',
@@ -944,6 +1226,7 @@ export const messages: Catalogue = {
 	'finance.ledgers.editLine': 'Изменить строку',
 	'finance.ledgers.editThisLine': 'Изменить эту строку',
 	'finance.ledgers.everyMonth': 'Каждый месяц',
+	'finance.ledgers.excludedAccounts': 'Исключены: {names}',
 	'finance.ledgers.export': 'Экспорт',
 	'finance.ledgers.flipAmountsForAn':
 		'Поменять знак суммы — для экспорта, где знаки означают противоположное',
@@ -951,14 +1234,30 @@ export const messages: Catalogue = {
 		'удаляется. Повторный импорт той же выписки вернёт\n\t\t\tего обратно — это строка банка, а не ваша собственная.',
 	'finance.ledgers.import': 'Импорт',
 	'finance.ledgers.importAStatement': 'Импортировать выписку',
+	'finance.ledgers.importRecordedOnly':
+		'Открытие не указано. Импортированные суммы — записанный промежуточный итог, а не подтверждённый остаток.',
 	'finance.ledgers.importThisLedgerSExportOr':
 		'Импортируйте выписку этого счёта или добавьте строку вручную. Уже импортированные строки никогда не добавляются повторно.',
 	'finance.ledgers.keepIt': 'Оставить',
+	'finance.ledgers.kindCash': 'Снятие наличных',
+	'finance.ledgers.kindExpense': 'Расход',
+	'finance.ledgers.kindFee': 'Комиссия',
+	'finance.ledgers.kindIncome': 'Доход',
+	'finance.ledgers.kindRefund': 'Возврат',
+	'finance.ledgers.kindTransfer': 'Перевод',
 	'finance.ledgers.lastOn': 'последний {day}',
 	'finance.ledgers.leaveTheIdAsNone':
 		'Оставьте id как «нет», если файл и правда не содержит собственный номер банка для каждой строки.\n\t\t\t\t\t\t\tБез него строка сопоставляется по дате, сумме и описанию.',
 	'finance.ledgers.ledger': 'Счёт',
 	'finance.ledgers.lines': '{count} строк',
+	'finance.ledgers.linkAsTransfer': 'Связать как перевод',
+	'finance.ledgers.linkParent': 'Строка, к которой она относится',
+	'finance.ledgers.linkRelated': 'Связать с этой строкой',
+	'finance.ledgers.linkedToLine': 'Эта строка относится к строке {id}.',
+	'finance.ledgers.linkedTransfer': 'Эта строка — часть перевода.',
+	'finance.ledgers.meaning': 'Смысл',
+	'finance.ledgers.meaningHint': 'Чем это было. Если оставить по умолчанию, решает знак суммы.',
+	'finance.ledgers.minorUnitsAmount': '{amount} минимальных единиц (не указана)',
 	'finance.ledgers.moneyIn': 'Приход',
 	'finance.ledgers.moneyOut': 'Расход',
 	'finance.ledgers.month': 'Месяц',
@@ -966,37 +1265,117 @@ export const messages: Catalogue = {
 	'finance.ledgers.moveLater': 'Переместить «{name}» позже',
 	'finance.ledgers.newLedger': 'Новый счёт',
 	'finance.ledgers.newLine': 'Новая строка',
+	'finance.ledgers.noChecks':
+		'Данных из выписок пока нет. Сверка никогда не создаёт корректировку.',
 	'finance.ledgers.noHeaderRowSoThe':
 		'Нет строки заголовка, поэтому столбцы пронумерованы. Укажите нужные:',
 	'finance.ledgers.noLedgersYet': 'Счетов пока нет',
 	'finance.ledgers.noLinesMatch': 'В этом счёте нет строк, подходящих по поиску и месяцу.',
+	'finance.ledgers.noSupportedFunds': 'Нет подтверждённого итога',
 	'finance.ledgers.none': '— нет —',
 	'finance.ledgers.nothingHereYet': 'Здесь пока ничего нет',
+	'finance.ledgers.openingAmount': 'Сумма открытия',
+	'finance.ledgers.openingAt': 'Открытие {amount} на {day}',
+	'finance.ledgers.openingHint':
+		'Остаток непосредственно перед операциями в день открытия. Если валюта не указана, вводите целые минимальные единицы.',
+	'finance.ledgers.openingOn': 'Дата открытия',
 	'finance.ledgers.orPasteItBelow': 'или вставьте его ниже',
 	'finance.ledgers.orderLinesBy': 'Порядок строк',
+	'finance.ledgers.outsideCoverage': 'Вне подтверждённого периода: {count}',
 	'finance.ledgers.pasteExample': 'Дата,Сумма,Описание\n02/03/2026,-12.30,Пекарня на углу',
 	'finance.ledgers.preselectedWhenImportingIntoThis':
 		'Выбирается заранее при импорте в этот счёт. Можно изменить при импорте.',
 	'finance.ledgers.putItAway': 'Убрать в архив',
 	'finance.ledgers.readFromTheHeaderChange':
 		'Прочитано из заголовка. Исправьте всё, что определено неверно:',
+	'finance.ledgers.recordCheck': 'Записать сверку остатка',
+	'finance.ledgers.recordedSubtotal': 'Записанный итог: {amount}',
+	'finance.ledgers.relatedLine': 'Строка, к которой она относится',
 	'finance.ledgers.restore': 'Восстановить',
 	'finance.ledgers.searchDescriptions': 'Поиск по описаниям',
+	'finance.ledgers.selectLine': 'Выбрать «{name}»',
+	'finance.ledgers.selectedCount': 'Выбрано: {count}',
 	'finance.ledgers.showingCount': {
 		one: 'Показана {count} строка',
 		few: 'Показано {count} строки',
 		many: 'Показано {count} строк',
 		other: 'Показано {count} строки'
 	},
+	'finance.ledgers.statusRecorded': 'Только записанные операции',
+	'finance.ledgers.statusSupported': 'Подтверждено открытием',
+	'finance.ledgers.statusVerified': 'Подтверждено последней сверкой',
+	'finance.ledgers.supportedFunds': 'Подтверждённые средства',
 	'finance.ledgers.theBankSOwnId': 'Собственный id банка',
 	'finance.ledgers.theRulesReadThisSo':
 		'Правила читают это, так что изменение здесь пересортирует строку.',
 	'finance.ledgers.twoColumnsInstead': '— два столбца вместо этого —',
 	'finance.ledgers.uncategorizedCount': 'Без категории ({count})',
+	'finance.ledgers.unlinkRelated': 'Отвязать',
+	'finance.ledgers.unlinkTransfer': 'Отвязать перевод',
+	'finance.ledgers.unspecified': 'Не указана',
 	'finance.ledgers.usualExport': 'Обычный экспорт',
 	'finance.ledgers.whatItIs': 'Что это',
 	'finance.monthBars.newest': 'Показаны {shown} из {total} месяцев, самые недавние',
 	'finance.monthlyBars.caption': 'сальдо под каждым месяцем',
+	'finance.overview.addLedger': 'Добавить счёт',
+	'finance.overview.available': 'Доступно',
+	'finance.overview.availableFormula':
+		'Подтверждённые средства − хранимое для других − отложенное.',
+	'finance.overview.availableFormulaLong':
+		'Подтверждённые средства {funds} − хранимое для других {custody} − отложенное {reserves}.',
+	'finance.overview.balanceDiffers': 'Сверок с расхождением: {count}.',
+	'finance.overview.balanceDiffersOne': 'Сверок с расхождением: {count}.',
+	'finance.overview.checkOpeningDate': 'Проверьте дату открытия',
+	'finance.overview.claimsBody':
+		'Мои долги и долги мне — это требования, а не средства: ни то, ни другое не вычитается из доступного.',
+	'finance.overview.committed': 'В обязательствах',
+	'finance.overview.coverage': 'Счетов с указанным открытием: {supported} из {accounts}.',
+	'finance.overview.coverageOne': 'Счетов с указанным открытием: {supported} из {accounts}.',
+	'finance.overview.declareCurrency': 'Указать валюту',
+	'finance.overview.excluded': 'Не входит в расходы',
+	'finance.overview.fixOpening': 'Указать открытие',
+	'finance.overview.forTheMonth': 'За {month}',
+	'finance.overview.left': 'Осталось по планам',
+	'finance.overview.leftPane': 'Планы на {month} и что от них ещё осталось.',
+	'finance.overview.missingOpening': 'Счетов без указанного открытия: {count}.',
+	'finance.overview.missingOpeningOne': 'Счетов без указанного открытия: {count}.',
+	'finance.overview.moneyView': 'Показать',
+	'finance.overview.myMoney': 'Мои деньги',
+	'finance.overview.myMoneyAvailableNote': 'Доступно за вычетом отложенного: {available}.',
+	'finance.overview.myMoneyFormula':
+		'Мои деньги {funds} − отложено {reserves} = доступно {available}.',
+	'finance.overview.noAccounts': 'Счетов пока нет',
+	'finance.overview.noAccountsBody':
+		'Добавьте счёт в его исходной валюте и импортируйте или впишите выписку. Этот экран отвечает на четыре вопроса о деньгах по этим записям.',
+	'finance.overview.noAccountsInCurrency': 'Нет активных счетов в этой валюте',
+	'finance.overview.noAccountsInCurrencyBody':
+		'Ни у одного активного счёта здесь нет указанного открытия; его операции не составляют остаток.',
+	'finance.overview.noCurrencyBody':
+		'У этих счетов нет исходной валюты, поэтому итога нет. Записанные суммы показаны в {currency}.',
+	'finance.overview.noCurrencyTotal': 'Нет итога по валюте',
+	'finance.overview.noPlans': 'Планов на {month} нет.',
+	'finance.overview.notABalance': 'Открытие не указано, поэтому это не остаток.',
+	'finance.overview.nothingSpent': 'Личных расходов за {month} нет.',
+	'finance.overview.otherCurrencies': 'Обязательства в других валютах',
+	'finance.overview.otherCurrenciesMine': 'Отложено или в долгах в других валютах',
+	'finance.overview.outsideCoverageOne': 'Счетов с операциями раньше даты открытия: {count}.',
+	'finance.overview.outsideCoverageTotal': 'Счетов с операциями раньше открытия: {count}.',
+	'finance.overview.overviewHint':
+		'Четыре ответа в одном месте: что моё, что в обязательствах, сколько я потратил в этом месяце и что осталось по планам. Каждая исходная валюта — отдельно.',
+	'finance.overview.payables': 'Я должен',
+	'finance.overview.plansNeedCurrency': 'Бюджеты задаются по валюте; сначала укажите её у счёта.',
+	'finance.overview.receivables': 'Мне должны',
+	'finance.overview.setAside': 'Отложено',
+	'finance.overview.setAsideBody': 'Ваши собственные отложенные деньги, не для трат.',
+	'finance.overview.setBudget': 'Задать бюджет',
+	'finance.overview.spent': 'Потрачено в этом месяце',
+	'finance.overview.spentPane':
+		'Личные расходы по категориям за {month}; что не вошло — перечислено ниже.',
+	'finance.overview.verified': 'Сверено с выпиской: {count}',
+	'finance.overview.viewAll': 'Всё на счетах',
+	'finance.overview.viewHint':
+		'«Только мои деньги» не учитывает то, что вы храните для других. «Всё» показывает остаток каждого счёта.',
+	'finance.overview.viewMine': 'Только мои деньги',
 	'finance.rules.aCategory': 'Категория: строка получает первую подходящую',
 	'finance.rules.aLineBelongsToThe':
 		'Строка принадлежит первой подходящей категории, поэтому порядок ниже решает спорные случаи и итоги всегда сходятся.',
@@ -1051,6 +1430,23 @@ export const messages: Catalogue = {
 	'finance.rules.tags': 'Теги',
 	'finance.rules.theFullSyntax': 'Полный синтаксис →',
 	'finance.rules.whichLinesThisClaims': 'Какие строки это находит',
+	'finance.splits.addPart': 'Добавить часть',
+	'finance.splits.category': 'Личная категория',
+	'finance.splits.commitment': 'Хранение или мой долг',
+	'finance.splits.confirmUnsplit':
+		'Убрать эти части? Сначала отмените связанные записи обязательств.',
+	'finance.splits.custody': 'Хранение',
+	'finance.splits.difference': 'Разница: {amount}',
+	'finance.splits.hint':
+		'Части сохраняют исходную сумму банка. Хранение меняет связанное обязательство, а не личные расходы.',
+	'finance.splits.history': 'Открыть историю обязательства',
+	'finance.splits.linkedHint':
+		'Эта строка уже меняет обязательство. Отмените ту запись, прежде чем разделять.',
+	'finance.splits.personal': 'Личное',
+	'finance.splits.removePart': 'Убрать часть',
+	'finance.splits.save': 'Сохранить разделение',
+	'finance.splits.title': 'Разделить операцию',
+	'finance.splits.unsplit': 'Убрать разделение',
 	'finance.stackedMonths.caption': 'Расходы по категориям, по месяцам',
 	'frontDoor.createAnAccount': 'Создать аккаунт',
 	'frontDoor.howItWorks': 'Как это работает',
@@ -2770,6 +3166,12 @@ export const messages: Catalogue = {
 		many: '{count} будильников',
 		other: '{count} будильника'
 	},
+	'notify.noun.balanceCheck': {
+		one: '{count} сверка остатка',
+		few: '{count} сверки остатка',
+		many: '{count} сверок остатка',
+		other: '{count} сверки остатка'
+	},
 	'notify.noun.beforeBlock': {
 		one: '{count} напоминание о блоке задачи',
 		few: '{count} напоминания о блоке задачи',
@@ -2799,6 +3201,24 @@ export const messages: Catalogue = {
 		few: '{count} покупки',
 		many: '{count} покупок',
 		other: '{count} покупки'
+	},
+	'notify.noun.budget': {
+		one: '{count} бюджет',
+		few: '{count} бюджета',
+		many: '{count} бюджетов',
+		other: '{count} бюджета'
+	},
+	'notify.noun.commitment': {
+		one: '{count} обязательство',
+		few: '{count} обязательства',
+		many: '{count} обязательств',
+		other: '{count} обязательства'
+	},
+	'notify.noun.commitmentEntry': {
+		one: '{count} запись обязательства',
+		few: '{count} записи обязательства',
+		many: '{count} записей обязательства',
+		other: '{count} записи обязательства'
 	},
 	'notify.noun.dataPoint': {
 		one: '{count} точка данных',
@@ -2986,6 +3406,12 @@ export const messages: Catalogue = {
 		many: '{count} связей с целью',
 		other: '{count} связи с целью'
 	},
+	'notify.noun.transfer': {
+		one: '{count} перевод',
+		few: '{count} перевода',
+		many: '{count} переводов',
+		other: '{count} перевода'
+	},
 	'notify.noun.win': {
 		one: '{count} победа',
 		few: '{count} победы',
@@ -3042,6 +3468,7 @@ export const messages: Catalogue = {
 	'notify.verb.archive': 'архивировано',
 	'notify.verb.cancel': 'отменено',
 	'notify.verb.change': 'изменено',
+	'notify.verb.classify': 'указан тип',
 	'notify.verb.close': 'закрыто',
 	'notify.verb.cooked': 'приготовлено',
 	'notify.verb.delete': 'удалено',
@@ -3358,8 +3785,11 @@ export const messages: Catalogue = {
 	'reportDialog.yourIdea': 'Ваша идея',
 	'rooms.finance.sections': 'Разделы финансов',
 	'rooms.finance.tabs.bills': 'Счета',
+	'rooms.finance.tabs.budgets': 'Бюджеты',
+	'rooms.finance.tabs.commitments': 'Обязательства',
 	'rooms.finance.tabs.insights': 'Аналитика',
 	'rooms.finance.tabs.ledgers': 'Журналы',
+	'rooms.finance.tabs.overview': 'Обзор',
 	'rooms.finance.tabs.rules': 'Правила',
 	'rooms.finance.title': 'Финансы',
 	'rooms.goals.sections': 'Разделы целей',
@@ -4522,19 +4952,43 @@ export const messages: Catalogue = {
 	'taskStatus.pending': 'Ожидает',
 	'tasks.activities.anActivityIsANamed':
 		'Активность — это именованное дело, которым вы занимаетесь: зал, гитара, сосредоточенная работа. Блоки задач на сетке указывают на них.',
+	'tasks.activities.archiveInstead': 'Лучше архивировать',
 	'tasks.activities.categories': 'Категории',
 	'tasks.activities.colour': 'Цвет',
 	'tasks.activities.confirm': 'Подтвердить?',
 	'tasks.activities.createActivity': 'Создать активность',
 	'tasks.activities.deleteActivity': 'Удалить активность',
+	'tasks.activities.deleteName': 'Удалить «{name}»?',
 	'tasks.activities.editActivity': 'Редактировать активность',
 	'tasks.activities.everyCategory': 'Все категории',
+	'tasks.activities.foldExplained':
+		'После удаления каждый из этих элементов станет блоком «{category}» с подписью «{name}». Прошлые повторения сохранят название, а цели перестанут его учитывать.',
+	'tasks.activities.goalCountsIt': 'Цель: {goal}',
+	'tasks.activities.inSavedWeek': 'Сохранённая неделя «{scheme}»',
+	'tasks.activities.keepIt': 'Оставить',
+	'tasks.activities.moveAndDelete': 'Перенести и удалить',
+	'tasks.activities.moveExplained': 'Всё это, включая цели, будет относиться к «{target}».',
+	'tasks.activities.moveExplainedNew': 'Всё это, включая цели, будет относиться к новому занятию.',
+	'tasks.activities.moveThemTo': 'Перенести в',
+	'tasks.activities.moveToCategory': 'Никуда: вернуть в «{category}»',
+	'tasks.activities.moveToNew': 'Новое занятие…',
 	'tasks.activities.newActivity': 'Новая активность',
 	'tasks.activities.newCategoryName': 'Название новой категории',
 	'tasks.activities.noActivitiesMatchTheSelected':
 		'Ни одна активность не подходит под выбранные фильтры.',
 	'tasks.activities.noActivitiesYet': 'Активностей пока нет',
 	'tasks.activities.nothingPutAway': 'Ничего не убрано в архив',
+	'tasks.activities.nothingUsesIt': 'Оно нигде не используется, больше ничего не изменится.',
+	'tasks.activities.pastOccurrences': {
+		one: '{count} прошлое повторение, {span}',
+		few: '{count} прошлых повторения, {span}',
+		many: '{count} прошлых повторений, {span}',
+		other: '{count} прошлого повторения, {span}'
+	},
+	'tasks.activities.ratherArchive':
+		'Чтобы всё осталось как есть, лучше архивируйте его: оно пропадёт из списков и выбора, а история не изменится. Или сначала измените эти блоки по одному в календаре.',
+	'tasks.activities.ratherKeepArchived':
+		'Оно уже в архиве, история не изменится. Или сначала измените эти блоки по одному в календаре.',
 	'tasks.activities.searchActivities': 'Поиск активностей',
 	'tasks.activities.showingCount': {
 		one: 'Показана {count} активность',
@@ -4542,6 +4996,7 @@ export const messages: Catalogue = {
 		many: 'Показано {count} активностей',
 		other: 'Показано {count} активности'
 	},
+	'tasks.activities.whatNamesIt': 'Что его ещё использует',
 	'tasks.board.1Hour': '1 час',
 	'tasks.board.addCard': 'Добавить карточку',
 	'tasks.board.anyEase': 'Любая лёгкость',
@@ -5067,6 +5522,11 @@ export const messages: Catalogue = {
 	'tour.booksKilosEurosAnything':
 		'Книги, килограммы, евро — всё, что можно считать. У цели может быть сразу несколько величин: три сыгранных концерта и пять записанных песен — это одна цель с двумя числами, и она продвинута ровно настолько, насколько они в среднем.',
 	'tour.boughtAndBackAgain': 'Куплено — и снова в деле',
+	'tour.budgets': 'Бюджеты',
+	'tour.budgetsBody':
+		'Задайте лимиты расходов по категориям на каждый месяц и следите за остатком.',
+	'tour.budgetsRoom': 'Бюджеты',
+	'tour.budgetsTitle': 'Месячные бюджеты',
 	'tour.catchItNowJudgeIt': 'Запишите сейчас, оцените потом',
 	'tour.categoriesAreTheColours': 'Категории — это цвета',
 	'tour.categoriesWashTheRowIn':
@@ -5388,6 +5848,7 @@ export const messages: Catalogue = {
 	'ui.restore': 'Восстановить',
 	'ui.save': 'Сохранить',
 	'ui.search': 'Поиск',
+	'ui.select': 'Выбрать',
 	'ui.show': 'Показать',
 	'ui.showLess': 'Показать меньше',
 	'ui.showMore': 'Показать больше',

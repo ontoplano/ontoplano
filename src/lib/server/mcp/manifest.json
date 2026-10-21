@@ -151,6 +151,76 @@
 			}
 		}
 	},
+	"add_budget": {
+		"scope": "statements:write",
+		"writes": true,
+		"destroys": false,
+		"creates": "budget",
+		"params": {
+			"amount_minor": {
+				"type": "integer",
+				"required": true
+			},
+			"category": {
+				"type": "string",
+				"required": true
+			},
+			"currency": {
+				"type": "string",
+				"required": true
+			},
+			"month": {
+				"type": "string",
+				"required": true
+			},
+			"requestId": {
+				"type": "string",
+				"required": false
+			}
+		}
+	},
+	"add_commitment": {
+		"scope": "statements:write",
+		"writes": true,
+		"destroys": false,
+		"creates": "commitment",
+		"params": {
+			"currency": {
+				"type": "string",
+				"required": true
+			},
+			"kind": {
+				"type": "string",
+				"required": true,
+				"enum": [
+					"custody",
+					"payable",
+					"receivable",
+					"reserve"
+				]
+			},
+			"name": {
+				"type": "string",
+				"required": true
+			},
+			"notes": {
+				"type": "string",
+				"required": false
+			},
+			"opening_minor": {
+				"type": "integer",
+				"required": false
+			},
+			"person_id": {
+				"type": "integer",
+				"required": false
+			},
+			"requestId": {
+				"type": "string",
+				"required": false
+			}
+		}
+	},
 	"add_goal": {
 		"scope": "tasks:write",
 		"writes": true,
@@ -386,6 +456,10 @@
 		"destroys": false,
 		"creates": "ledger",
 		"params": {
+			"currency": {
+				"type": "string",
+				"required": false
+			},
 			"default_parser": {
 				"type": "string",
 				"required": false
@@ -400,6 +474,14 @@
 			},
 			"notebookId": {
 				"type": "integer",
+				"required": false
+			},
+			"opening_minor": {
+				"type": "integer",
+				"required": false
+			},
+			"opening_on": {
+				"type": "string",
 				"required": false
 			},
 			"requestId": {
@@ -835,6 +917,21 @@
 			}
 		}
 	},
+	"archive_commitment": {
+		"scope": "statements:write",
+		"writes": true,
+		"destroys": false,
+		"params": {
+			"archived": {
+				"type": "boolean",
+				"required": true
+			},
+			"id": {
+				"type": "integer",
+				"required": true
+			}
+		}
+	},
 	"archive_habit": {
 		"scope": "habits:write",
 		"writes": true,
@@ -910,6 +1007,17 @@
 			}
 		}
 	},
+	"balance_checks": {
+		"scope": "statements:read",
+		"writes": false,
+		"destroys": false,
+		"params": {
+			"ledger_id": {
+				"type": "integer",
+				"required": true
+			}
+		}
+	},
 	"bill_history": {
 		"scope": "bills:read",
 		"writes": false,
@@ -963,6 +1071,32 @@
 			"to": {
 				"type": "string",
 				"required": true
+			}
+		}
+	},
+	"budgets": {
+		"scope": "statements:read",
+		"writes": false,
+		"destroys": false,
+		"pages": true,
+		"params": {
+			"currency": {
+				"type": "string",
+				"required": false
+			},
+			"limit": {
+				"type": "integer",
+				"required": false,
+				"default": 100
+			},
+			"month": {
+				"type": "string",
+				"required": false
+			},
+			"offset": {
+				"type": "integer",
+				"required": false,
+				"default": 0
 			}
 		}
 	},
@@ -1158,6 +1292,82 @@
 			},
 			"title": {
 				"type": "string",
+				"required": false
+			}
+		}
+	},
+	"change_budget": {
+		"scope": "statements:write",
+		"writes": true,
+		"destroys": false,
+		"params": {
+			"amount_minor": {
+				"type": "integer",
+				"required": false
+			},
+			"category": {
+				"type": "string",
+				"required": false
+			},
+			"currency": {
+				"type": "string",
+				"required": false
+			},
+			"id": {
+				"type": "integer",
+				"required": true
+			},
+			"ifUpdatedAt": {
+				"type": "string",
+				"required": false
+			},
+			"month": {
+				"type": "string",
+				"required": false
+			}
+		}
+	},
+	"change_commitment": {
+		"scope": "statements:write",
+		"writes": true,
+		"destroys": false,
+		"params": {
+			"currency": {
+				"type": "string",
+				"required": false
+			},
+			"id": {
+				"type": "integer",
+				"required": true
+			},
+			"ifUpdatedAt": {
+				"type": "string",
+				"required": false
+			},
+			"kind": {
+				"type": "string",
+				"required": false,
+				"enum": [
+					"custody",
+					"payable",
+					"receivable",
+					"reserve"
+				]
+			},
+			"name": {
+				"type": "string",
+				"required": false
+			},
+			"notes": {
+				"type": "string",
+				"required": false
+			},
+			"opening_minor": {
+				"type": "integer",
+				"required": false
+			},
+			"person_id": {
+				"type": "integer",
 				"required": false
 			}
 		}
@@ -1386,6 +1596,10 @@
 				"type": "boolean",
 				"required": false
 			},
+			"currency": {
+				"type": "string",
+				"required": false
+			},
 			"default_parser": {
 				"type": "string",
 				"required": false
@@ -1414,6 +1628,14 @@
 			},
 			"notebookId": {
 				"type": "integer",
+				"required": false
+			},
+			"opening_minor": {
+				"type": "integer",
+				"required": false
+			},
+			"opening_on": {
+				"type": "string",
 				"required": false
 			},
 			"position": {
@@ -1461,6 +1683,19 @@
 			"id": {
 				"type": "integer",
 				"required": true
+			},
+			"kind": {
+				"type": "string",
+				"required": false,
+				"enum": [
+					"",
+					"cash",
+					"expense",
+					"fee",
+					"income",
+					"refund",
+					"transfer"
+				]
 			},
 			"ledger_id": {
 				"type": "integer",
@@ -1940,6 +2175,52 @@
 			}
 		}
 	},
+	"classify_movements": {
+		"scope": "statements:write",
+		"writes": true,
+		"destroys": false,
+		"params": {
+			"ids": {
+				"type": "array",
+				"required": true,
+				"items": {
+					"type": "integer"
+				}
+			},
+			"kind": {
+				"type": "string",
+				"required": true,
+				"enum": [
+					"",
+					"cash",
+					"expense",
+					"fee",
+					"income",
+					"refund",
+					"transfer"
+				]
+			}
+		}
+	},
+	"close_commitment": {
+		"scope": "statements:write",
+		"writes": true,
+		"destroys": false,
+		"params": {
+			"id": {
+				"type": "integer",
+				"required": true
+			},
+			"requestId": {
+				"type": "string",
+				"required": false
+			},
+			"write_off_note": {
+				"type": "string",
+				"required": false
+			}
+		}
+	},
 	"close_goal": {
 		"scope": "tasks:write",
 		"writes": true,
@@ -1964,6 +2245,73 @@
 			}
 		}
 	},
+	"commitment_entries": {
+		"scope": "statements:read",
+		"writes": false,
+		"destroys": false,
+		"pages": true,
+		"params": {
+			"commitment_id": {
+				"type": "integer",
+				"required": true
+			},
+			"limit": {
+				"type": "integer",
+				"required": false,
+				"default": 100
+			},
+			"offset": {
+				"type": "integer",
+				"required": false,
+				"default": 0
+			}
+		}
+	},
+	"commitments": {
+		"scope": "statements:read",
+		"writes": false,
+		"destroys": false,
+		"pages": true,
+		"params": {
+			"include_archived": {
+				"type": "boolean",
+				"required": false
+			},
+			"limit": {
+				"type": "integer",
+				"required": false,
+				"default": 100
+			},
+			"offset": {
+				"type": "integer",
+				"required": false,
+				"default": 0
+			}
+		}
+	},
+	"consume_reserve": {
+		"scope": "statements:write",
+		"writes": true,
+		"destroys": false,
+		"params": {
+			"commitment_id": {
+				"type": "integer",
+				"required": true
+			},
+			"note": {
+				"type": "string",
+				"required": false
+			},
+			"requestId": {
+				"type": "string",
+				"required": false
+			},
+			"transaction_id": {
+				"type": "integer",
+				"required": true
+			}
+		}
+	},
 	"cooked_recipe": {
 		"scope": "kitchen:write",
 		"writes": true,
@@ -1979,6 +2327,25 @@
 				"items": {
 					"type": "integer"
 				}
+			}
+		}
+	},
+	"copy_budgets": {
+		"scope": "statements:write",
+		"writes": true,
+		"destroys": false,
+		"params": {
+			"from_month": {
+				"type": "string",
+				"required": true
+			},
+			"requestId": {
+				"type": "string",
+				"required": false
+			},
+			"to_month": {
+				"type": "string",
+				"required": true
 			}
 		}
 	},
@@ -1998,6 +2365,39 @@
 		"writes": false,
 		"destroys": false,
 		"params": {}
+	},
+	"delete_balance_check": {
+		"scope": "statements:write",
+		"writes": true,
+		"destroys": true,
+		"params": {
+			"id": {
+				"type": "integer",
+				"required": true
+			}
+		}
+	},
+	"delete_budget": {
+		"scope": "statements:write",
+		"writes": true,
+		"destroys": true,
+		"params": {
+			"id": {
+				"type": "integer",
+				"required": true
+			}
+		}
+	},
+	"delete_commitment_entry": {
+		"scope": "statements:write",
+		"writes": true,
+		"destroys": true,
+		"params": {
+			"id": {
+				"type": "integer",
+				"required": true
+			}
+		}
 	},
 	"delete_sort_rule": {
 		"scope": "statements:write",
@@ -2277,9 +2677,36 @@
 		"writes": false,
 		"destroys": false,
 		"params": {
+			"as_of": {
+				"type": "string",
+				"required": false
+			},
 			"notebookId": {
 				"type": "integer",
 				"required": false
+			}
+		}
+	},
+	"link_movement": {
+		"scope": "statements:write",
+		"writes": true,
+		"destroys": false,
+		"params": {
+			"id": {
+				"type": "integer",
+				"required": true
+			},
+			"parent_id": {
+				"type": "integer",
+				"required": true
+			},
+			"relation": {
+				"type": "string",
+				"required": true,
+				"enum": [
+					"fee",
+					"refund"
+				]
 			}
 		}
 	},
@@ -2305,6 +2732,21 @@
 				"items": {
 					"type": "integer"
 				}
+			}
+		}
+	},
+	"link_transfer": {
+		"scope": "statements:write",
+		"writes": true,
+		"destroys": false,
+		"params": {
+			"counterpart_id": {
+				"type": "integer",
+				"required": true
+			},
+			"id": {
+				"type": "integer",
+				"required": true
 			}
 		}
 	},
@@ -2676,6 +3118,33 @@
 		"destroys": false,
 		"params": {}
 	},
+	"personal_spending": {
+		"scope": "statements:read",
+		"writes": false,
+		"destroys": false,
+		"params": {
+			"currency": {
+				"type": "string",
+				"required": false
+			},
+			"from": {
+				"type": "string",
+				"required": false
+			},
+			"ledger_id": {
+				"type": "integer",
+				"required": false
+			},
+			"month": {
+				"type": "string",
+				"required": false
+			},
+			"to": {
+				"type": "string",
+				"required": false
+			}
+		}
+	},
 	"pin_note": {
 		"scope": "notes:write",
 		"writes": true,
@@ -2729,6 +3198,66 @@
 			"id": {
 				"type": "integer",
 				"required": true
+			}
+		}
+	},
+	"record_balance_check": {
+		"scope": "statements:write",
+		"writes": true,
+		"destroys": false,
+		"creates": "balanceCheck",
+		"params": {
+			"as_of": {
+				"type": "string",
+				"required": true
+			},
+			"ledger_id": {
+				"type": "integer",
+				"required": true
+			},
+			"note": {
+				"type": "string",
+				"required": false
+			},
+			"observed_minor": {
+				"type": "integer",
+				"required": true
+			},
+			"requestId": {
+				"type": "string",
+				"required": false
+			}
+		}
+	},
+	"record_commitment_entry": {
+		"scope": "statements:write",
+		"writes": true,
+		"destroys": false,
+		"creates": "commitmentEntry",
+		"params": {
+			"amount_minor": {
+				"type": "integer",
+				"required": true
+			},
+			"commitment_id": {
+				"type": "integer",
+				"required": true
+			},
+			"note": {
+				"type": "string",
+				"required": false
+			},
+			"occurred_on": {
+				"type": "string",
+				"required": true
+			},
+			"requestId": {
+				"type": "string",
+				"required": false
+			},
+			"transaction_id": {
+				"type": "integer",
+				"required": false
 			}
 		}
 	},
@@ -2889,6 +3418,10 @@
 			"id": {
 				"type": "integer",
 				"required": true
+			},
+			"moveTo": {
+				"type": "integer",
+				"required": false
 			}
 		}
 	},
@@ -3237,6 +3770,29 @@
 			}
 		}
 	},
+	"settle_commitment": {
+		"scope": "statements:write",
+		"writes": true,
+		"destroys": false,
+		"params": {
+			"commitment_id": {
+				"type": "integer",
+				"required": true
+			},
+			"note": {
+				"type": "string",
+				"required": false
+			},
+			"requestId": {
+				"type": "string",
+				"required": false
+			},
+			"transaction_id": {
+				"type": "integer",
+				"required": true
+			}
+		}
+	},
 	"share_notebook": {
 		"scope": "notes:write",
 		"writes": true,
@@ -3297,11 +3853,73 @@
 		"writes": false,
 		"destroys": false,
 		"params": {
+			"currency": {
+				"type": "string",
+				"required": false
+			},
+			"from": {
+				"type": "string",
+				"required": false
+			},
 			"ledger_id": {
 				"type": "integer",
 				"required": false
 			},
 			"month": {
+				"type": "string",
+				"required": false
+			},
+			"to": {
+				"type": "string",
+				"required": false
+			}
+		}
+	},
+	"split_movement": {
+		"scope": "statements:write",
+		"writes": true,
+		"destroys": false,
+		"params": {
+			"allocations": {
+				"type": "array",
+				"required": true,
+				"maxItems": 100,
+				"items": {
+					"type": "object",
+					"properties": {
+						"amount_minor": {
+							"type": "integer",
+							"required": true
+						},
+						"category": {
+							"type": "string",
+							"required": false
+						},
+						"commitment_id": {
+							"type": "integer",
+							"required": false
+						},
+						"kind": {
+							"type": "string",
+							"required": true,
+							"enum": [
+								"custody",
+								"personal"
+							]
+						},
+						"note": {
+							"type": "string",
+							"required": false
+						}
+					},
+					"additionalProperties": false
+				}
+			},
+			"id": {
+				"type": "integer",
+				"required": true
+			},
+			"requestId": {
 				"type": "string",
 				"required": false
 			}
@@ -3312,12 +3930,43 @@
 		"writes": false,
 		"destroys": false,
 		"params": {
+			"currency": {
+				"type": "string",
+				"required": false
+			},
+			"from": {
+				"type": "string",
+				"required": false
+			},
 			"ledger_id": {
 				"type": "integer",
 				"required": false
 			},
+			"month": {
+				"type": "string",
+				"required": false
+			},
 			"months": {
 				"type": "integer",
+				"required": false
+			},
+			"to": {
+				"type": "string",
+				"required": false
+			}
+		}
+	},
+	"summary": {
+		"scope": "statements:read",
+		"writes": false,
+		"destroys": false,
+		"params": {
+			"as_of": {
+				"type": "string",
+				"required": false
+			},
+			"month": {
+				"type": "string",
 				"required": false
 			}
 		}
@@ -3651,6 +4300,17 @@
 			}
 		}
 	},
+	"unlink_transfer": {
+		"scope": "statements:write",
+		"writes": true,
+		"destroys": false,
+		"params": {
+			"id": {
+				"type": "integer",
+				"required": true
+			}
+		}
+	},
 	"unpay_bill": {
 		"scope": "bills:write",
 		"writes": true,
@@ -3699,6 +4359,17 @@
 			},
 			"period": {
 				"type": "string",
+				"required": true
+			}
+		}
+	},
+	"unsplit_movement": {
+		"scope": "statements:write",
+		"writes": true,
+		"destroys": false,
+		"params": {
+			"id": {
+				"type": "integer",
 				"required": true
 			}
 		}

@@ -1,0 +1,7 @@
+• Finanzen öffnen mit einem Bild: was Ihnen gehört, was gebunden ist, die Ausgaben des Monats und was bleibt
+• Monatsbudgets pro Kategorie, in den nächsten Monat übernommen
+• Geld, das Sie halten, schulden oder beiseitelegen, mit Verlauf
+• Buchungen als Ausgabe, Einnahme, Umbuchung oder Rückzahlung
+• Jede Aktivität lässt sich löschen; Sie wählen, wohin Blöcke und Ziele gehen
+
+Sagen Sie mir, was kaputtgeht: github.com/ontoplano/ontoplano/issues

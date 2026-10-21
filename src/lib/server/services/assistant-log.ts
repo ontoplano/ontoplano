@@ -15,6 +15,9 @@ import { createSlot } from '$lib/services/slots.js';
 import { createLocation } from '$lib/services/locations.js';
 import { createWorkoutCategory } from '$lib/services/workouts.js';
 import { addGoalTarget, listGoals, setTargetProgress } from '$lib/services/goals.js';
+import { recordBalanceCheck } from '$lib/services/ledgers.js';
+import { addCommitmentEntry } from '$lib/services/commitments.js';
+import { createBudget } from '$lib/services/budgets.js';
 
 /**
  * What an assistant did to an account, and the way back.
@@ -197,6 +200,35 @@ function storedAttributes(value: unknown): string | undefined {
 /** One case per deleting tool. A tool this does not know is a bug, not a shrug. */
 function recreate(ctx: Ctx, tool: string, before: Record<string, unknown>): string {
 	switch (tool) {
+		case 'delete_budget': {
+			createBudget(ctx, {
+				month: before.month,
+				category: before.category,
+				currency: before.currency,
+				amountMinor: before.amountMinor
+			});
+			return `the budget for ${String(before.category)} in ${String(before.month)}`;
+		}
+		case 'delete_commitment_entry': {
+			addCommitmentEntry(ctx, {
+				commitmentId: before.commitmentId,
+				occurredOn: before.occurredOn,
+				amountMinor: before.amountMinor,
+				transactionId: before.transactionId,
+				note: before.note
+			});
+			return 'the commitment entry';
+		}
+		case 'delete_balance_check': {
+			recordBalanceCheck(ctx, {
+				ledgerId: before.ledgerId,
+				asOf: before.asOf,
+				observedMinor: before.observedMinor,
+				note: before.note
+			});
+			return `the balance check for ${String(before.asOf)}`;
+		}
+
 		case 'drop_task': {
 			createTodo(ctx, {
 				title: before.title,

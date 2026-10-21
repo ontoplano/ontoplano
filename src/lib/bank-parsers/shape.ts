@@ -8,6 +8,8 @@
  */
 
 export type ParsedMovement = {
+	/** Physical source line, supplied by strict imports for actionable diagnostics. */
+	line?: number;
 	/** The civil date the bank reports, YYYY-MM-DD. */
 	occurredOn: string;
 	/** Signed minor units: negative left the account. */
@@ -22,8 +24,14 @@ export type BankParser = {
 	slug: string;
 	/** What the import screen shows: "Nubank — conta corrente". */
 	name: string;
-	parse(text: string): ParsedMovement[];
+	parse(text: string, options?: { strict?: boolean; units?: number }): ParsedMovement[];
 };
+
+export class StatementParseError extends Error {
+	constructor(public line: number) {
+		super(`Could not read line ${line}. Nothing was imported.`);
+	}
+}
 
 /**
  * A decimal money string to signed cents, without passing through a float.

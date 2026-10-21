@@ -11,7 +11,7 @@ own write surface, the way the endpoints in [the API](api.md) are the
 write surface for everything else; both end up calling the same
 [services](services.md).
 
-**68 pages, 219 actions.**
+**71 pages, 243 actions.**
 
 | Page                                 | Actions                                                                                                                                                                                                                                                                                                                                                                                              |
 | ------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -28,9 +28,12 @@ write surface for everything else; both end up calling the same
 | `/data/[slug]`                       | —                                                                                                                                                                                                                                                                                                                                                                                                    |
 | `/demo`                              | `default`                                                                                                                                                                                                                                                                                                                                                                                            |
 | `/demo/isolated-db`                  | —                                                                                                                                                                                                                                                                                                                                                                                                    |
+| `/finance`                           | `setView`                                                                                                                                                                                                                                                                                                                                                                                            |
 | `/finance/bills`                     | —                                                                                                                                                                                                                                                                                                                                                                                                    |
+| `/finance/budgets`                   | `create`, `update`, `delete`, `copy`, `createCategory`                                                                                                                                                                                                                                                                                                                                               |
+| `/finance/commitments`               | `create`, `update`, `archive`, `close`, `delete`, `addEntry`, `deleteEntry`, `settle`, `consume`                                                                                                                                                                                                                                                                                                     |
 | `/finance/insights`                  | —                                                                                                                                                                                                                                                                                                                                                                                                    |
-| `/finance/ledgers`                   | `createLedger`, `updateLedger`, `moveLedger`, `archiveLedger`, `deleteLedger`, `import`, `addMovement`, `updateMovement`, `deleteMovement`                                                                                                                                                                                                                                                           |
+| `/finance/ledgers`                   | `splitMovement`, `unsplitMovement`, `createLedger`, `updateLedger`, `moveLedger`, `archiveLedger`, `deleteLedger`, `recordBalanceCheck`, `deleteBalanceCheck`, `import`, `addMovement`, `updateMovement`, `classify`, `linkTransfer`, `unlinkTransfer`, `detachMovement`, `linkMovement`, `deleteMovement`                                                                                           |
 | `/finance/rules`                     | `create`, `update`, `move`, `delete`                                                                                                                                                                                                                                                                                                                                                                 |
 | `/goals`                             | `createArea`, `updateArea`, `moveArea`, `deleteArea`, `create`, `update`, `setProgress`, `close`, `note`, `setLinks`, `setTodoStatus`, `remove`                                                                                                                                                                                                                                                      |
 | `/goals/history`                     | `setProgress`, `close`, `note`, `setTodoStatus`, `remove`                                                                                                                                                                                                                                                                                                                                            |
@@ -238,6 +241,17 @@ So the wait has a screen. It also has somewhere to go: with the work behind
 a page the visitor is already looking at, the seed can be made slower under
 load without anybody experiencing a hang.
 
+### `/finance`
+
+The money picture.
+
+One month at a time, every original currency separately. The month is the
+one asked for; with none, the account's own current month, not the box's.
+
+`view` chooses whether the totals include money held for other people. It is
+a query when a link asks for one mode, and the account's stored answer
+otherwise — the switch on the screen writes that answer.
+
 ### `/finance/bills`
 
 Bills are not the finance section any more — transactions are, and they
@@ -245,6 +259,19 @@ come from the bank rather than from a form. What a bill still is: a thing
 that wants paying on a day, which is why it rides the week and the
 reminders. So the page stays, reachable from Ledgers, and the money it
 describes is the money the statements will show arriving and leaving.
+
+### `/finance/budgets`
+
+The month before a `YYYY-MM` key, without going through a Date.
+
+**`createCategory`**
+
+A category made without leaving the budget form. It is a normal rule:
+the Rules tab lists it, imports can match it, and it survives reloads.
+
+### `/finance/commitments`
+
+Stocks and their evidence, kept separate from bank balances and monthly budgets.
 
 ### `/finance/insights`
 
@@ -262,6 +289,14 @@ The ledger in the URL is the one on screen; with none named it is the
 first. Everything the page can do to a line — file it elsewhere, correct
 it, drop it — is here, because a statement that can only be imported and
 never corrected is a statement somebody stops trusting.
+
+**`classify`**
+
+What several lines were, in one write — the checkbox column's verb.
+
+**`detachMovement`**
+
+A refund reverses an expense; a fee belongs to the payment it was charged on.
 
 ### `/finance/rules`
 

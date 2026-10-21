@@ -147,7 +147,8 @@ const PLACES: (Omit<NavPlace, 'icon'> & { glyph?: IconName })[] = [
 		glyph: 'wallet',
 		name: 'sections.finance.label',
 		section: 'finance',
-		href: '/finance/ledgers',
+		// The room opens on its money picture; Ledgers is a tab of it.
+		href: '/finance',
 		hide: 'finance'
 	},
 	{

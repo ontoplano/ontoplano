@@ -733,21 +733,44 @@ describe('change_activity active, and remove_activity', () => {
 		expect(activity(Number(id))!.active).toBe(1);
 	});
 
-	it('deletes one nothing names, and refuses one a block names', () => {
+	it('deletes one nothing names, and one a block names by folding the block', () => {
 		const { id } = ok('add_activity', { name: 'typo', category: 'work' });
 		ok('remove_activity', { id });
 		expect(activity(Number(id))).toBeUndefined();
 
 		const { id: used } = ok('add_activity', { name: 'chess', category: 'work' });
-		s.slots.createSlot(s.ctx, {
+		const slot = s.slots.createSlot(s.ctx, {
 			weekday: 3,
 			startTime: '20:00',
 			durationMinutes: 30,
 			mode: 'activity',
 			activityId: used
 		});
-		refused('remove_activity', { id: used });
-		expect(activity(Number(used))).toBeDefined();
+		ok('remove_activity', { id: used });
+		expect(activity(Number(used))).toBeUndefined();
+		expect(database.all('select * from recurring_tasks where id = ?', slot)[0]).toMatchObject({
+			mode: 'category',
+			activity_id: null,
+			label: 'chess'
+		});
+	});
+
+	it('hands what named it to another activity, and never to itself', () => {
+		const { id: from } = ok('add_activity', { name: 'sketching', category: 'work' });
+		const { id: to } = ok('add_activity', { name: 'drawing', category: 'work' });
+		const slot = s.slots.createSlot(s.ctx, {
+			weekday: 4,
+			startTime: '20:00',
+			durationMinutes: 30,
+			mode: 'activity',
+			activityId: from
+		});
+		refused('remove_activity', { id: from, moveTo: from });
+		ok('remove_activity', { id: from, moveTo: to });
+		expect(database.all('select * from recurring_tasks where id = ?', slot)[0]).toMatchObject({
+			mode: 'activity',
+			activity_id: Number(to)
+		});
 	});
 });
 

@@ -1783,6 +1783,33 @@ const ledger = (name, kind, defaultParser) => {
 const account = ledger('Current account', 'bank', 'csv:columns');
 const creditCard = ledger('Credit card', 'card', 'csv:columns');
 
+// Three synthetic coverage states; existing ledgers and their history are never backfilled.
+for (const [name, opening, observed] of [
+	['Statement checked example', 13262, 13262],
+	['Opening declared example', 25000, null],
+	['Recorded only example', null, null]
+]) {
+	if (one('select id from ledgers where user_id = ? and name = ?', uid, name)) continue;
+	const id = ledger(name, 'bank', 'csv:columns');
+	run(
+		'update ledgers set currency = ?, opening_minor = ?, opening_on = ? where user_id = ? and id = ?',
+		'KES',
+		opening ?? 0,
+		opening === null ? null : '2026-09-01',
+		uid,
+		id
+	);
+	if (observed !== null)
+		run(
+			'insert into finance_balance_checks (user_id, ledger_id, as_of, observed_minor, note) values (?, ?, ?, ?, ?)',
+			uid,
+			id,
+			'2026-09-01',
+			observed,
+			'Synthetic statement closing'
+		);
+}
+
 /*
  * The movements.
  *
@@ -1797,27 +1824,140 @@ const creditCard = ledger('Credit card', 'card', 'csv:columns');
  * Both signs as the app stores them: negative left the account, and a card
  * charge is money leaving whichever sign the export wrote it with.
  */
-const movement = (ledgerId, occurredOn, amountCents, description, n = 1) => {
+const movement = (ledgerId, occurredOn, amountCents, description, n = 1, extra = {}) => {
 	const fingerprint = `${ledgerId}|seed:${occurredOn}:${amountCents}:${description}:${n}`;
-	if (
-		one(
-			'select id from finance_transactions where user_id = ? and fingerprint = ?',
-			uid,
-			fingerprint
-		)
-	)
-		return;
-	run(
-		'insert into finance_transactions (user_id, ledger_id, occurred_on, amount_cents, description, source, fingerprint) values (?, ?, ?, ?, ?, ?, ?)',
+	const existing = one(
+		'select id from finance_transactions where user_id = ? and fingerprint = ?',
+		uid,
+		fingerprint
+	);
+	if (existing) return existing.id;
+	return run(
+		'insert into finance_transactions (user_id, ledger_id, occurred_on, amount_cents, description, source, fingerprint, kind, group_id) values (?, ?, ?, ?, ?, ?, ?, ?, ?)',
 		uid,
 		ledgerId,
 		occurredOn,
 		amountCents,
 		description,
 		'csv:columns',
-		fingerprint
+		fingerprint,
+		extra.kind ?? null,
+		extra.groupId ?? null
 	);
 };
+
+// Stocks and a mixed payment are synthetic; replay never rewrites their history.
+db.transaction(() => {
+	const stock = (kind, name, opening, currency = 'KES') => {
+		const existing = one(
+			'select id from finance_commitments where user_id = ? and name = ?',
+			uid,
+			name
+		);
+		if (existing) return { id: existing.id, added: false };
+		return {
+			id: run(
+				'insert into finance_commitments (user_id, kind, name, person_id, currency, opening_minor, notes) values (?, ?, ?, ?, ?, ?, ?)',
+				uid,
+				kind,
+				name,
+				kind === 'reserve' ? null : ana,
+				currency,
+				opening,
+				'Synthetic development example'
+			),
+			added: true
+		};
+	};
+	stock('custody', 'Travel money held for Ana', 150000);
+	stock('receivable', 'Shared purchase repayment', 7500, 'USD');
+	stock('reserve', 'Family support earmark', 500000);
+	const payable = stock('payable', 'Owner-approved household payment', 10000);
+	if (!payable.added) return;
+	let account = one(
+		'select id from ledgers where user_id = ? and name = ?',
+		uid,
+		'Mixed money example'
+	);
+	if (!account) {
+		const id = ledger('Mixed money example', 'bank', 'csv:columns');
+		run(
+			'update ledgers set currency = ?, opening_minor = ?, opening_on = ? where user_id = ? and id = ?',
+			'KES',
+			100000,
+			'2026-09-01',
+			uid,
+			id
+		);
+		account = { id };
+	}
+	movement(account.id, '2026-09-02', -10000, 'Synthetic mixed household payment');
+	const line = one(
+		'select id from finance_transactions where user_id = ? and ledger_id = ? and description = ?',
+		uid,
+		account.id,
+		'Synthetic mixed household payment'
+	);
+	for (const [kind, amount, category, commitment] of [
+		['personal', -7500, 'Household', null],
+		['custody', -2500, null, payable.id]
+	])
+		run(
+			'insert into finance_transaction_allocations (user_id, transaction_id, kind, amount_minor, category, commitment_id, note) values (?, ?, ?, ?, ?, ?, ?)',
+			uid,
+			line.id,
+			kind,
+			amount,
+			category,
+			commitment,
+			'Synthetic split'
+		);
+	run(
+		'insert into finance_commitment_entries (user_id, commitment_id, occurred_on, amount_minor, transaction_id, note) values (?, ?, ?, ?, ?, ?)',
+		uid,
+		payable.id,
+		'2026-09-02',
+		-2500,
+		line.id,
+		'Owner-approved synthetic offset'
+	);
+})();
+
+/*
+ * A move between two of the account's own ledgers (D2).
+ *
+ * Two legs share one `group_id` and both say `transfer`, so the overview can
+ * tell money that moved from money that was spent. Two ledgers of their own:
+ * the covered examples above are pinned to the statements they demonstrate,
+ * and moving money through one would change the balance it exists to show.
+ * Both legs are KES and add up to nothing, which is the invariant the app
+ * enforces when it pairs a transfer. Replay-safe like everything here: the
+ * fingerprints are fixed, so the second run finds both legs and writes nothing.
+ */
+db.transaction(() => {
+	const transferLedger = (name, opening) => {
+		const existing = one('select id from ledgers where user_id = ? and name = ?', uid, name);
+		if (existing) return existing.id;
+		const id = ledger(name, 'bank', 'csv:columns');
+		run(
+			'update ledgers set currency = ?, opening_minor = ?, opening_on = ? where user_id = ? and id = ?',
+			'KES',
+			opening,
+			'2026-09-01',
+			uid,
+			id
+		);
+		return id;
+	};
+	const from = transferLedger('Transfer source example', 200000);
+	const to = transferLedger('Transfer savings example', 0);
+	const groupId = 't:seed:synthetic-transfer-pair';
+	for (const [ledgerId, amount, description] of [
+		[from, -125000, 'Synthetic transfer to savings'],
+		[to, 125000, 'Synthetic transfer from current account']
+	])
+		movement(ledgerId, '2026-09-12', amount, description, 1, { kind: 'transfer', groupId });
+})();
 
 // The account, as a `date,amount,id,description` export reads it.
 //
@@ -1975,6 +2115,52 @@ sortRule('category', 'Subscriptions', String.raw`subscription \*|sonora|reelbox`
 sortRule('category', 'Savings', 'savings deposit|fixed income', 14, '#0f766e');
 sortRule('tag', 'healthy', 'farm|greengrocer|climbing|five-a-side', 0, '#0f766e');
 sortRule('tag', 'transfers', 'transfer', 1, '#9d174d');
+
+// Synthetic ceilings and a later-month refund; replay never overwrites a person's ceiling or meaning.
+db.transaction(() => {
+	const existing = one(
+		"select id from ledgers where user_id=? and name='Monthly budget example'",
+		uid
+	);
+	const id = existing?.id ?? ledger('Monthly budget example', 'bank', 'csv:columns');
+	if (!existing) run('update ledgers set currency=? where id=? and user_id=?', 'KES', id, uid);
+	if (one('select currency from ledgers where id=? and user_id=?', id, uid)?.currency !== 'KES')
+		return;
+	const parentDescription = 'Ride *Budget example September';
+	const refundDescription = 'Budget example October refund';
+	movement(id, '2026-09-15', -450000, parentDescription);
+	const parent = one(
+		'select id from finance_transactions where user_id=? and ledger_id=? and description=?',
+		uid,
+		id,
+		parentDescription
+	);
+	const oldRefund = one(
+		'select id from finance_transactions where user_id=? and ledger_id=? and description=?',
+		uid,
+		id,
+		refundDescription
+	);
+	if (!oldRefund) {
+		movement(id, '2026-10-03', 40000, refundDescription);
+		run(
+			"update finance_transactions set kind='refund',parent_id=? where user_id=? and ledger_id=? and description=?",
+			parent.id,
+			uid,
+			id,
+			refundDescription
+		);
+	}
+	for (const month of ['2026-09', '2026-10'])
+		run(
+			'insert into finance_budgets(user_id,month,category,currency,amount_minor) values (?,?,?,?,?) on conflict(user_id,month,category,currency) do nothing',
+			uid,
+			month,
+			'Transport',
+			'KES',
+			600000
+		);
+})();
 
 // --- locations (inventory) -----------------------------------------------------------
 //

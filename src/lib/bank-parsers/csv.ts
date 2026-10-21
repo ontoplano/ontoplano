@@ -1,4 +1,4 @@
-import { type BankParser, type ParsedMovement } from './shape.js';
+import { StatementParseError, type BankParser, type ParsedMovement } from './shape.js';
 
 /**
  * Any bank's CSV, by naming its columns.
@@ -160,11 +160,17 @@ function sniffDelimiter(lines: string[]): string {
  * Blank rows are dropped here rather than by the callers, which used to filter
  * lines before parsing and cannot any more.
  */
-export function readRows(text: string, delimiter: string): string[][] {
+export function readRows(
+	text: string,
+	delimiter: string,
+	options: { strict?: boolean; lines?: number[] } = {}
+): string[][] {
 	const rows: string[][] = [];
 	let row: string[] = [];
 	let field = '';
 	let quoted = false;
+	let line = 1;
+	let startLine = 1;
 
 	const endField = () => {
 		row.push(field.trim());
@@ -172,12 +178,16 @@ export function readRows(text: string, delimiter: string): string[][] {
 	};
 	const endRow = () => {
 		endField();
-		if (row.some((cell) => cell !== '')) rows.push(row);
+		if (row.some((cell) => cell !== '')) {
+			rows.push(row);
+			options.lines?.push(startLine);
+		}
 		row = [];
 	};
 
 	for (let i = 0; i < text.length; i++) {
 		const c = text[i];
+		if (c === '\n') line++;
 		if (quoted) {
 			if (c === '"') {
 				if (text[i + 1] === '"') {
@@ -189,9 +199,12 @@ export function readRows(text: string, delimiter: string): string[][] {
 		}
 		if (c === '"') quoted = true;
 		else if (c === delimiter) endField();
-		else if (c === '\n') endRow();
-		else if (c !== '\r') field += c;
+		else if (c === '\n') {
+			endRow();
+			startLine = line;
+		} else if (c !== '\r') field += c;
 	}
+	if (quoted && options.strict) throw new StatementParseError(startLine);
 	endRow();
 	return rows;
 }
@@ -227,7 +240,7 @@ export function readDate(raw: string, dayFirst: boolean): string | null {
  * off the pennies. A lone separator with exactly two digits after it is a
  * decimal; with three it is thousands, because `1,234` is not twelve reais.
  */
-export function readMoney(raw: string): number | null {
+export function readMoney(raw: string, units = 100): number | null {
 	let text = raw.trim();
 	if (!text) return null;
 
@@ -258,18 +271,27 @@ export function readMoney(raw: string): number | null {
 
 	const lastComma = text.lastIndexOf(',');
 	const lastDot = text.lastIndexOf('.');
+	const digits = Math.log10(units);
 	let decimalAt = -1;
 	if (lastComma >= 0 || lastDot >= 0) {
 		const candidate = Math.max(lastComma, lastDot);
 		const after = text.length - candidate - 1;
-		if (after === 1 || after === 2) decimalAt = candidate;
+		if (digits === 0 && after > 0 && after < 3 && !/^0+$/.test(text.slice(candidate + 1)))
+			return null;
+		if (after > digits && after !== 3 && !(digits === 0 && after <= 2)) return null;
+		if (
+			after >= 1 &&
+			(after <= digits || (digits === 0 && after <= 2 && /^0+$/.test(text.slice(candidate + 1))))
+		)
+			decimalAt = candidate;
 	}
 
 	const whole = (decimalAt < 0 ? text : text.slice(0, decimalAt)).replace(/[^\d]/g, '');
 	const frac = decimalAt < 0 ? '' : text.slice(decimalAt + 1).replace(/[^\d]/g, '');
 	if (!whole && !frac) return null;
 
-	const cents = Number(whole || '0') * 100 + Number((frac || '0').padEnd(2, '0').slice(0, 2));
+	const cents =
+		Number(whole || '0') * units + Number(frac.padEnd(digits, '0').slice(0, digits) || '0');
 	return negative ? -cents : cents;
 }
 
@@ -409,7 +431,11 @@ export function sniffCsv(text: string): CsvSniff | null {
 }
 
 /** The file, read through a mapping. Lines it cannot read are skipped. */
-export function parseCsv(text: string, mapping: CsvMapping): ParsedMovement[] {
+export function parseCsv(
+	text: string,
+	mapping: CsvMapping,
+	options: { strict?: boolean; units?: number } = {}
+): ParsedMovement[] {
 	const sniffed = sniffCsv(text);
 	if (!sniffed) return [];
 
@@ -423,29 +449,41 @@ export function parseCsv(text: string, mapping: CsvMapping): ParsedMovement[] {
 	const idAt = at(mapping.id);
 	if (dateAt < 0) return [];
 
-	const all = readRows(text, sniffed.delimiter);
+	const lineNumbers: number[] = [];
+	const all = readRows(text, sniffed.delimiter, { ...options, lines: lineNumbers });
 	const rows = sniffed.headerless ? all : all.slice(1);
+	const sourceLines = sniffed.headerless ? lineNumbers : lineNumbers.slice(1);
 
 	const out: ParsedMovement[] = [];
-	for (const row of rows) {
+	for (const [index, row] of rows.entries()) {
+		const line = sourceLines[index];
+		if (options.strict && row.length !== sniffed.headers.length)
+			throw new StatementParseError(line);
 		const occurredOn = readDate(row[dateAt] ?? '', mapping.dayFirst);
-		if (!occurredOn) continue;
+		if (!occurredOn) {
+			if (options.strict) throw new StatementParseError(line);
+			continue;
+		}
 
 		let amountCents: number | null = null;
-		if (amountAt >= 0) amountCents = readMoney(row[amountAt] ?? '');
+		if (amountAt >= 0) amountCents = readMoney(row[amountAt] ?? '', options.units);
 		else {
 			// Money out is money leaving, whichever sign the file wrote it with:
 			// plenty of exports put both columns positive and mean the direction
 			// by which one is filled.
-			const paidIn = inAt >= 0 ? readMoney(row[inAt] ?? '') : null;
-			const paidOut = outAt >= 0 ? readMoney(row[outAt] ?? '') : null;
+			const paidIn = inAt >= 0 ? readMoney(row[inAt] ?? '', options.units) : null;
+			const paidOut = outAt >= 0 ? readMoney(row[outAt] ?? '', options.units) : null;
 			if (paidOut !== null && paidOut !== 0) amountCents = -Math.abs(paidOut);
 			else if (paidIn !== null && paidIn !== 0) amountCents = Math.abs(paidIn);
 		}
-		if (amountCents === null) continue;
+		if (amountCents === null) {
+			if (options.strict) throw new StatementParseError(line);
+			continue;
+		}
 
 		const externalId = idAt >= 0 ? (row[idAt] ?? '').trim() : '';
 		out.push({
+			...(options.strict ? { line } : {}),
 			occurredOn,
 			amountCents,
 			description: (descAt >= 0 ? (row[descAt] ?? '') : '').trim(),
@@ -467,8 +505,8 @@ export const csvColumns: BankParser = {
 	bank: 'csv',
 	slug: 'columns',
 	name: 'Any CSV — name the columns',
-	parse(text) {
+	parse(text, options) {
 		const sniffed = sniffCsv(text);
-		return sniffed ? parseCsv(text, sniffed.mapping) : [];
+		return sniffed ? parseCsv(text, sniffed.mapping, options) : [];
 	}
 };

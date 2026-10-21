@@ -170,6 +170,8 @@ describe('single-line free text', () => {
 	const EXEMPT_NAMES = new Set([
 		// Money, typed and parsed as money rather than as words.
 		'amount',
+		'openingAmount',
+		'observedAmount',
 		'price',
 		'paid',
 		// A date in two shapes, with its own hint and pattern.

@@ -217,6 +217,17 @@ export function rangeOf(
  * neighbouring month. Worth having once rather than four times, and worth
  * saying why: the date is arbitrary and the month is the whole point.
  */
+/**
+ * A month from a query string, or nothing.
+ *
+ * `2026-02` is a month; `2026-13`, `abc` and the empty value are somebody
+ * editing the address bar, and a page must fall back to the account's current
+ * month rather than throw a 500 at them.
+ */
+export function monthParam(value: string | null | undefined): string | undefined {
+	return value && /^\d{4}-(0[1-9]|1[0-2])$/.test(value) ? value : undefined;
+}
+
 export function monthOf(key: string, when: When, extra: Intl.DateTimeFormatOptions = {}): string {
 	const at = new Date(`${key}-15T12:00:00Z`);
 	if (Number.isNaN(at.getTime())) return '';
