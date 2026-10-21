@@ -1,8 +1,18 @@
-import { and, count, eq, isNotNull } from 'drizzle-orm';
+import { and, count, eq, inArray, isNotNull, max, min, sql } from 'drizzle-orm';
 
 import { CATEGORY_DEFAULT_NEW } from '../colors.js';
 import { db } from '$lib/db/index.js';
-import { activities, categories, notebooks, taskRecords, recurringTasks } from '$lib/db/schema.js';
+import {
+	activities,
+	categories,
+	exceptionalTasks,
+	goalLinks,
+	notebooks,
+	planningSchemes,
+	recurringTasks,
+	schemeSlots,
+	taskRecords
+} from '$lib/db/schema.js';
 import type { Ctx } from './ctx.js';
 import { ConflictError, NotFoundError, ValidationError } from './errors.js';
 import { stamp, stamps } from './time.js';
@@ -10,9 +20,10 @@ import { num, optionalStr, str } from './validate.js';
 
 /**
  * Categories are the areas of a life; activities are the named recurring things
- * inside them. Both are referenced by planner slots and by history, so neither
- * can be deleted while something still points at it — history that loses its
- * category stops being readable.
+ * inside them. Both are referenced by planner slots and by history. A category
+ * cannot be deleted while something still points at it — history that loses
+ * its category stops being readable. An activity can: what named it falls back
+ * to its category, or moves to another activity (`deleteActivity`).
  */
 
 export const MAX_NAME_LENGTH = 100;
@@ -31,7 +42,7 @@ export function listActivities(ctx: Ctx, opts: { activeOnly?: boolean } = {}) {
 	return db.select().from(activities).where(where).orderBy(activities.name).all();
 }
 
-/** The activities page also wants to know what may be deleted. */
+/** The activities page also says what deleting each one would touch. */
 export function listActivitiesWithUsage(ctx: Ctx) {
 	const rows = db
 		.select({
@@ -50,26 +61,8 @@ export function listActivitiesWithUsage(ctx: Ctx) {
 		.orderBy(activities.name)
 		.all();
 
-	const referenced = referencedActivityIds(ctx);
-	return rows.map((a) => ({ ...a, hasReferences: referenced.has(a.id) }));
-}
-
-/**
- * Every activity something still points at, in two statements for the whole
- * account rather than two per activity — the page asked each one in turn.
- */
-function referencedActivityIds(ctx: Ctx): Set<number> {
-	const inSlots = db
-		.selectDistinct({ id: recurringTasks.activityId })
-		.from(recurringTasks)
-		.where(and(eq(recurringTasks.userId, ctx.userId), isNotNull(recurringTasks.activityId)))
-		.all();
-	const inRecords = db
-		.selectDistinct({ id: taskRecords.resolvedActivityId })
-		.from(taskRecords)
-		.where(and(eq(taskRecords.userId, ctx.userId), isNotNull(taskRecords.resolvedActivityId)))
-		.all();
-	return new Set([...inSlots, ...inRecords].map((row) => row.id as number));
+	const usage = activityUsage(ctx);
+	return rows.map((a) => ({ ...a, usage: usage[a.id] ?? emptyUsage() }));
 }
 
 export function createActivity(
@@ -133,16 +126,185 @@ export function setActivityActive(ctx: Ctx, id: number, active: boolean): void {
 	if (res.changes === 0) throw new NotFoundError('activity');
 }
 
-export function deleteActivity(ctx: Ctx, id: number): void {
-	if (activityReferences(ctx, id) > 0)
-		throw new ValidationError({ key: 'errors.activities.cannotDeleteActivityIsReferenced' });
+/**
+ * Everything that names one activity, for the dialog that deletes it.
+ *
+ * Blocks are listed one by one, because there are few and each is something a
+ * person might rather edit than lose; occurrences are many, so they are a
+ * count and the span of days they cover. Goals are not here: the page already
+ * has them from `goalBacklinks`.
+ */
+export type ActivityUsage = {
+	weekly: { id: number; weekday: number; recurrence: string; startTime: string; label: string }[];
+	once: { id: number; date: string; startTime: string; label: string }[];
+	schemes: { id: number; schemeName: string; weekday: number; startTime: string }[];
+	records: { count: number; first: string | null; last: string | null };
+};
 
-	const res = db
-		.delete(activities)
-		.where(and(eq(activities.id, id), eq(activities.userId, ctx.userId)))
-		.run();
+function emptyUsage(): ActivityUsage {
+	return { weekly: [], once: [], schemes: [], records: { count: 0, first: null, last: null } };
+}
 
-	if (res.changes === 0) throw new NotFoundError('activity');
+/** The usage of every activity on the account, keyed by activity, in four statements. */
+export function activityUsage(ctx: Ctx): Record<number, ActivityUsage> {
+	const out: Record<number, ActivityUsage> = {};
+	const of = (id: number) => (out[id] ??= emptyUsage());
+
+	for (const row of db
+		.select({
+			id: recurringTasks.id,
+			activityId: recurringTasks.activityId,
+			weekday: recurringTasks.weekday,
+			recurrence: recurringTasks.recurrence,
+			startTime: recurringTasks.startTime,
+			label: recurringTasks.label
+		})
+		.from(recurringTasks)
+		.where(and(eq(recurringTasks.userId, ctx.userId), isNotNull(recurringTasks.activityId)))
+		.orderBy(recurringTasks.weekday, recurringTasks.startTime)
+		.all())
+		of(row.activityId!).weekly.push({ ...row, label: row.label ?? '' });
+
+	for (const row of db
+		.select({
+			id: exceptionalTasks.id,
+			activityId: exceptionalTasks.activityId,
+			date: exceptionalTasks.date,
+			startTime: exceptionalTasks.startTime,
+			label: exceptionalTasks.label
+		})
+		.from(exceptionalTasks)
+		.where(and(eq(exceptionalTasks.userId, ctx.userId), isNotNull(exceptionalTasks.activityId)))
+		.orderBy(exceptionalTasks.date, exceptionalTasks.startTime)
+		.all())
+		of(row.activityId!).once.push({ ...row, label: row.label ?? '' });
+
+	for (const row of db
+		.select({
+			id: schemeSlots.id,
+			activityId: schemeSlots.activityId,
+			schemeName: planningSchemes.name,
+			weekday: schemeSlots.weekday,
+			startTime: schemeSlots.startTime
+		})
+		.from(schemeSlots)
+		.innerJoin(planningSchemes, eq(schemeSlots.schemeId, planningSchemes.id))
+		.where(and(eq(schemeSlots.userId, ctx.userId), isNotNull(schemeSlots.activityId)))
+		.orderBy(planningSchemes.name, schemeSlots.weekday, schemeSlots.startTime)
+		.all())
+		of(row.activityId!).schemes.push(row);
+
+	for (const row of db
+		.select({
+			activityId: taskRecords.resolvedActivityId,
+			count: count(),
+			first: min(taskRecords.scheduledAt),
+			last: max(taskRecords.scheduledAt)
+		})
+		.from(taskRecords)
+		.where(and(eq(taskRecords.userId, ctx.userId), isNotNull(taskRecords.resolvedActivityId)))
+		.groupBy(taskRecords.resolvedActivityId)
+		.all())
+		of(row.activityId!).records = {
+			count: row.count,
+			first: row.first?.slice(0, 10) ?? null,
+			last: row.last?.slice(0, 10) ?? null
+		};
+
+	return out;
+}
+
+/**
+ * Where what named a deleted activity goes. Nothing given folds it into the
+ * activity's category; `moveTo` hands it to another activity, and `moveToNew`
+ * makes that activity first.
+ */
+export type DeleteActivityOptions = {
+	moveTo?: number;
+	moveToNew?: { name: unknown; categoryId: unknown };
+};
+
+/**
+ * Delete an activity, whatever still names it.
+ *
+ * Nothing is left pointing at a row that is gone, and nothing loses the word
+ * it was shown under. Folded, every block that named it becomes a block of its
+ * category carrying its name as the label, and every occurrence keeps the
+ * name as its own; goals that counted it stop counting it. Moved, all of it —
+ * goal links included — names the other activity instead, which is the same
+ * as having edited each one by hand.
+ */
+export function deleteActivity(ctx: Ctx, id: number, opts: DeleteActivityOptions = {}): void {
+	db.transaction((tx) => {
+		const doomed = tx
+			.select({ name: activities.name, categoryId: activities.categoryId })
+			.from(activities)
+			.where(and(eq(activities.id, id), eq(activities.userId, ctx.userId)))
+			.get();
+		if (!doomed) throw new NotFoundError('activity');
+
+		const target = opts.moveToNew
+			? createActivity(ctx, opts.moveToNew)
+			: opts.moveTo !== undefined
+				? ownedActivity(ctx, opts.moveTo)
+				: null;
+		if (opts.moveTo !== undefined && target === null) throw new NotFoundError('activity');
+		if (target === id) throw new ValidationError({ key: 'errors.activities.cannotMoveOntoItself' });
+
+		const mine = <T extends typeof recurringTasks | typeof exceptionalTasks | typeof schemeSlots>(
+			t: T
+		) => and(eq(t.activityId, id), eq(t.userId, ctx.userId));
+
+		if (target !== null) {
+			for (const t of [recurringTasks, exceptionalTasks, schemeSlots])
+				tx.update(t).set({ activityId: target }).where(mine(t)).run();
+			tx.update(taskRecords)
+				.set({ resolvedActivityId: target })
+				.where(and(eq(taskRecords.resolvedActivityId, id), eq(taskRecords.userId, ctx.userId)))
+				.run();
+
+			// A goal already counting the target would count it twice.
+			const counting = tx
+				.select({ goalId: goalLinks.goalId })
+				.from(goalLinks)
+				.where(and(eq(goalLinks.activityId, target), eq(goalLinks.userId, ctx.userId)))
+				.all()
+				.map((row) => row.goalId);
+			const links = and(eq(goalLinks.activityId, id), eq(goalLinks.userId, ctx.userId));
+			if (counting.length > 0)
+				tx.delete(goalLinks)
+					.where(and(links, inArray(goalLinks.goalId, counting)))
+					.run();
+			tx.update(goalLinks).set({ activityId: target }).where(links).run();
+		} else {
+			const named = sql`CASE WHEN coalesce(label, '') = '' THEN ${doomed.name} ELSE label END`;
+			for (const t of [recurringTasks, exceptionalTasks, schemeSlots])
+				tx.update(t)
+					.set({
+						mode: sql`CASE WHEN mode = 'activity' THEN 'category' ELSE mode END`,
+						categoryId: sql`CASE WHEN mode = 'activity' THEN ${doomed.categoryId} ELSE category_id END`,
+						label: named,
+						activityId: null
+					})
+					.where(mine(t))
+					.run();
+			// The title an occurrence was shown under is the activity's name, which
+			// outranks a block's label; carried as its own, it reads as it did.
+			tx.update(taskRecords)
+				.set({
+					labelOverride: sql`coalesce(label_override, ${doomed.name})`,
+					resolvedActivityId: null
+				})
+				.where(and(eq(taskRecords.resolvedActivityId, id), eq(taskRecords.userId, ctx.userId)))
+				.run();
+		}
+
+		const res = tx
+			.delete(activities)
+			.where(and(eq(activities.id, id), eq(activities.userId, ctx.userId)))
+			.run();
+		if (res.changes === 0) throw new NotFoundError('activity');
+	});
 }
 
 export function createCategory(ctx: Ctx, raw: { name: unknown; color?: unknown }): number {
@@ -269,25 +431,6 @@ export function deleteCategory(ctx: Ctx, id: number): void {
 
 		if (res.changes === 0) throw new NotFoundError('category');
 	});
-}
-
-function activityReferences(ctx: Ctx, id: number): number {
-	const slotRefs = countRows(
-		db
-			.select({ cnt: count() })
-			.from(recurringTasks)
-			.where(and(eq(recurringTasks.activityId, id), eq(recurringTasks.userId, ctx.userId)))
-			.get()
-	);
-	const instanceRefs = countRows(
-		db
-			.select({ cnt: count() })
-			.from(taskRecords)
-			.where(and(eq(taskRecords.resolvedActivityId, id), eq(taskRecords.userId, ctx.userId)))
-			.get()
-	);
-
-	return slotRefs + instanceRefs;
 }
 
 function countRows(row: { cnt: number } | undefined): number {

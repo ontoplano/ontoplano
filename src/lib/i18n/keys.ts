@@ -427,8 +427,8 @@ export type MessageKey =
 	| 'errors.accountImport.thatFileIsTooBig'
 	| 'errors.accountImport.theFileCarriesAPicture'
 	| 'errors.accountImport.theFileCarriesASound'
-	| 'errors.activities.cannotDeleteActivityIsReferenced'
 	| 'errors.activities.cannotDeleteCategoryHasActivities'
+	| 'errors.activities.cannotMoveOntoItself'
 	| 'errors.activities.categoryAlreadyExists'
 	| 'errors.activities.invalidColorFormat'
 	| 'errors.admin.aSelfHostedInstance'
@@ -3759,20 +3759,37 @@ export type MessageKey =
 	| 'taskStatus.doing'
 	| 'taskStatus.pending'
 	| 'tasks.activities.anActivityIsANamed'
+	| 'tasks.activities.archiveInstead'
 	| 'tasks.activities.categories'
 	| 'tasks.activities.colour'
 	| 'tasks.activities.confirm'
 	| 'tasks.activities.createActivity'
 	| 'tasks.activities.deleteActivity'
+	| 'tasks.activities.deleteName'
 	| 'tasks.activities.editActivity'
 	| 'tasks.activities.everyCategory'
+	| 'tasks.activities.foldExplained'
+	| 'tasks.activities.goalCountsIt'
+	| 'tasks.activities.inSavedWeek'
+	| 'tasks.activities.keepIt'
+	| 'tasks.activities.moveAndDelete'
+	| 'tasks.activities.moveExplained'
+	| 'tasks.activities.moveExplainedNew'
+	| 'tasks.activities.moveThemTo'
+	| 'tasks.activities.moveToCategory'
+	| 'tasks.activities.moveToNew'
 	| 'tasks.activities.newActivity'
 	| 'tasks.activities.newCategoryName'
 	| 'tasks.activities.noActivitiesMatchTheSelected'
 	| 'tasks.activities.noActivitiesYet'
 	| 'tasks.activities.nothingPutAway'
+	| 'tasks.activities.nothingUsesIt'
+	| 'tasks.activities.pastOccurrences'
+	| 'tasks.activities.ratherArchive'
+	| 'tasks.activities.ratherKeepArchived'
 	| 'tasks.activities.searchActivities'
 	| 'tasks.activities.showingCount'
+	| 'tasks.activities.whatNamesIt'
 	| 'tasks.board.1Hour'
 	| 'tasks.board.addCard'
 	| 'tasks.board.anyEase'
@@ -5223,6 +5240,13 @@ export interface MessageValuesFor {
 	'tags.uses.notes': { count: number };
 	'tags.uses.pictures': { count: number };
 	'tags.uses.tasks': { count: number };
+	'tasks.activities.deleteName': { name: string | number };
+	'tasks.activities.foldExplained': { category: string | number; name: string | number };
+	'tasks.activities.goalCountsIt': { goal: string | number };
+	'tasks.activities.inSavedWeek': { scheme: string | number };
+	'tasks.activities.moveExplained': { target: string | number };
+	'tasks.activities.moveToCategory': { category: string | number };
+	'tasks.activities.pastOccurrences': { count: number; span: string | number };
 	'tasks.activities.showingCount': { count: number };
 	'tasks.board.deleteCard': { title: string | number };
 	'tasks.board.easeAtLeast': { value: string | number };

@@ -479,10 +479,9 @@ export const messages: Catalogue = {
 		'В файле есть изображение в формате, который это приложение не принимает',
 	'errors.accountImport.theFileCarriesASound':
 		'В файле есть звук в формате, который это приложение не принимает',
-	'errors.activities.cannotDeleteActivityIsReferenced':
-		'Удалить нельзя: на занятие ссылаются блоки плана или история задач',
 	'errors.activities.cannotDeleteCategoryHasActivities':
 		'Удалить нельзя: у категории есть занятия или блоки плана',
+	'errors.activities.cannotMoveOntoItself': 'Занятие нельзя передать самому себе.',
 	'errors.activities.categoryAlreadyExists': 'Такая категория уже существует',
 	'errors.activities.invalidColorFormat': 'Неверный формат цвета',
 	'errors.admin.aSelfHostedInstance': 'У самостоятельно размещённой инстанции тарифов нет',
@@ -4953,19 +4952,43 @@ export const messages: Catalogue = {
 	'taskStatus.pending': 'Ожидает',
 	'tasks.activities.anActivityIsANamed':
 		'Активность — это именованное дело, которым вы занимаетесь: зал, гитара, сосредоточенная работа. Блоки задач на сетке указывают на них.',
+	'tasks.activities.archiveInstead': 'Лучше архивировать',
 	'tasks.activities.categories': 'Категории',
 	'tasks.activities.colour': 'Цвет',
 	'tasks.activities.confirm': 'Подтвердить?',
 	'tasks.activities.createActivity': 'Создать активность',
 	'tasks.activities.deleteActivity': 'Удалить активность',
+	'tasks.activities.deleteName': 'Удалить «{name}»?',
 	'tasks.activities.editActivity': 'Редактировать активность',
 	'tasks.activities.everyCategory': 'Все категории',
+	'tasks.activities.foldExplained':
+		'После удаления каждый из этих элементов станет блоком «{category}» с подписью «{name}». Прошлые повторения сохранят название, а цели перестанут его учитывать.',
+	'tasks.activities.goalCountsIt': 'Цель: {goal}',
+	'tasks.activities.inSavedWeek': 'Сохранённая неделя «{scheme}»',
+	'tasks.activities.keepIt': 'Оставить',
+	'tasks.activities.moveAndDelete': 'Перенести и удалить',
+	'tasks.activities.moveExplained': 'Всё это, включая цели, будет относиться к «{target}».',
+	'tasks.activities.moveExplainedNew': 'Всё это, включая цели, будет относиться к новому занятию.',
+	'tasks.activities.moveThemTo': 'Перенести в',
+	'tasks.activities.moveToCategory': 'Никуда: вернуть в «{category}»',
+	'tasks.activities.moveToNew': 'Новое занятие…',
 	'tasks.activities.newActivity': 'Новая активность',
 	'tasks.activities.newCategoryName': 'Название новой категории',
 	'tasks.activities.noActivitiesMatchTheSelected':
 		'Ни одна активность не подходит под выбранные фильтры.',
 	'tasks.activities.noActivitiesYet': 'Активностей пока нет',
 	'tasks.activities.nothingPutAway': 'Ничего не убрано в архив',
+	'tasks.activities.nothingUsesIt': 'Оно нигде не используется, больше ничего не изменится.',
+	'tasks.activities.pastOccurrences': {
+		one: '{count} прошлое повторение, {span}',
+		few: '{count} прошлых повторения, {span}',
+		many: '{count} прошлых повторений, {span}',
+		other: '{count} прошлого повторения, {span}'
+	},
+	'tasks.activities.ratherArchive':
+		'Чтобы всё осталось как есть, лучше архивируйте его: оно пропадёт из списков и выбора, а история не изменится. Или сначала измените эти блоки по одному в календаре.',
+	'tasks.activities.ratherKeepArchived':
+		'Оно уже в архиве, история не изменится. Или сначала измените эти блоки по одному в календаре.',
 	'tasks.activities.searchActivities': 'Поиск активностей',
 	'tasks.activities.showingCount': {
 		one: 'Показана {count} активность',
@@ -4973,6 +4996,7 @@ export const messages: Catalogue = {
 		many: 'Показано {count} активностей',
 		other: 'Показано {count} активности'
 	},
+	'tasks.activities.whatNamesIt': 'Что его ещё использует',
 	'tasks.board.1Hour': '1 час',
 	'tasks.board.addCard': 'Добавить карточку',
 	'tasks.board.anyEase': 'Любая лёгкость',

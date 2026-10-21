@@ -4989,19 +4989,33 @@ export const TOOLS: Tool[] = [
 	},
 	{
 		name: 'remove_activity',
-		title: 'Delete an activity nothing uses',
+		title: 'Delete an activity',
 		description:
-			'Delete an activity that no block, record or todo names — one added by mistake. One that is used is refused: switch it off with `change_activity` and `active: false` instead, which keeps its history.',
+			'Delete an activity, used or not. Without `moveTo`, every block that named it becomes a block of its category labelled with its name, past occurrences keep the name, and goals stop counting it. With `moveTo`, all of it \u2014 blocks, occurrences, goal links \u2014 names that activity instead. To keep it as it is, switch it off with `change_activity` and `active: false`.',
 		scope: 'schedule:write',
 		writes: true,
 		destroys: true,
-		refs: [{ arg: 'id', kind: 'activity' }],
+		refs: [
+			{ arg: 'id', kind: 'activity' },
+			{ arg: 'moveTo', kind: 'activity' }
+		],
 		input: object(
-			{ id: { type: 'integer', description: 'The activity\u2019s id, as `activities` gave it.' } },
+			{
+				id: { type: 'integer', description: 'The activity\u2019s id, as `activities` gave it.' },
+				moveTo: {
+					type: 'integer',
+					description:
+						'Another activity to hand everything that named this one to. Left off, it falls back to the category.'
+				}
+			},
 			['id']
 		),
 		run: (ctx, args) => {
-			deleteActivity(ctx, Number(args.id));
+			deleteActivity(
+				ctx,
+				Number(args.id),
+				args.moveTo === undefined ? {} : { moveTo: Number(args.moveTo) }
+			);
 			return { ok: true };
 		}
 	},

@@ -469,10 +469,9 @@ export const messages: Catalogue = {
 		'O arquivo traz uma imagem em um formato que esse app não aceita',
 	'errors.accountImport.theFileCarriesASound':
 		'O arquivo traz um som em um formato que esse app não aceita',
-	'errors.activities.cannotDeleteActivityIsReferenced':
-		'Não dá para apagar: a atividade aparece em blocos da agenda ou no histórico de tarefas',
 	'errors.activities.cannotDeleteCategoryHasActivities':
 		'Não dá para apagar: a categoria tem atividades ou blocos da agenda',
+	'errors.activities.cannotMoveOntoItself': 'Uma atividade não pode ser passada para ela mesma.',
 	'errors.activities.categoryAlreadyExists': 'Essa categoria já existe',
 	'errors.activities.invalidColorFormat': 'Cor inválida',
 	'errors.admin.aSelfHostedInstance': 'Uma instância própria não tem planos',
@@ -4456,24 +4455,48 @@ export const messages: Catalogue = {
 	'taskStatus.pending': 'Pendente',
 	'tasks.activities.anActivityIsANamed':
 		'Uma atividade é algo com nome que você faz — academia, violão, trabalho focado. Os blocos de tarefa na grade apontam para elas.',
+	'tasks.activities.archiveInstead': 'Arquivar em vez disso',
 	'tasks.activities.categories': 'Categorias',
 	'tasks.activities.colour': 'Cor',
 	'tasks.activities.confirm': 'Confirmar?',
 	'tasks.activities.createActivity': 'Criar atividade',
 	'tasks.activities.deleteActivity': 'Excluir atividade',
+	'tasks.activities.deleteName': 'Excluir {name}?',
 	'tasks.activities.editActivity': 'Editar atividade',
 	'tasks.activities.everyCategory': 'Todas as categorias',
+	'tasks.activities.foldExplained':
+		'Ao excluir, cada um destes vira um bloco de {category} com o rótulo “{name}”. As ocorrências passadas mantêm o nome, e as metas deixam de contá-la.',
+	'tasks.activities.goalCountsIt': 'Meta: {goal}',
+	'tasks.activities.inSavedWeek': 'Semana salva “{scheme}”',
+	'tasks.activities.keepIt': 'Manter',
+	'tasks.activities.moveAndDelete': 'Mover e excluir',
+	'tasks.activities.moveExplained': 'Tudo isto, metas incluídas, passará a ser {target}.',
+	'tasks.activities.moveExplainedNew':
+		'Tudo isto, metas incluídas, passará a ser a nova atividade.',
+	'tasks.activities.moveThemTo': 'Mover para',
+	'tasks.activities.moveToCategory': 'Nada: voltar para {category}',
+	'tasks.activities.moveToNew': 'Uma nova atividade…',
 	'tasks.activities.newActivity': 'Nova atividade',
 	'tasks.activities.newCategoryName': 'Nome da nova categoria',
 	'tasks.activities.noActivitiesMatchTheSelected':
 		'Nenhuma atividade corresponde aos filtros selecionados.',
 	'tasks.activities.noActivitiesYet': 'Ainda não há atividades',
 	'tasks.activities.nothingPutAway': 'Nada guardado',
+	'tasks.activities.nothingUsesIt': 'Nada a usa, então nada mais muda.',
+	'tasks.activities.pastOccurrences': {
+		one: '{count} ocorrência passada, {span}',
+		other: '{count} ocorrências passadas, {span}'
+	},
+	'tasks.activities.ratherArchive':
+		'Para manter tudo como está, arquive-a: ela sai das listas e seletores e o histórico fica intacto. Ou altere esses blocos um a um no calendário antes.',
+	'tasks.activities.ratherKeepArchived':
+		'Ela já está arquivada, o que mantém o histórico intacto. Ou altere esses blocos um a um no calendário antes.',
 	'tasks.activities.searchActivities': 'Buscar atividades',
 	'tasks.activities.showingCount': {
 		one: '{count} atividade exibida',
 		other: '{count} atividades exibidas'
 	},
+	'tasks.activities.whatNamesIt': 'O que ainda a usa',
 	'tasks.board.1Hour': '1 hora',
 	'tasks.board.addCard': 'Adicionar cartão',
 	'tasks.board.anyEase': 'Qualquer facilidade',

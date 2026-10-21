@@ -24,8 +24,16 @@
 	import { getAction, keyFor } from '$lib/shortcuts';
 	import { listCursor } from '$lib/actions/list-cursor';
 	import { useT } from '$lib/i18n';
+	import { describeRecurrence, parseRecurrence } from '$lib/recurrence';
+	import { WEEKDAYS } from '$lib/bill-summary';
+	import { civilOf, rangeOf } from '$lib/when';
+	import { useWhen } from '$lib/when-context.svelte';
+	import { resolve } from '$app/paths';
+	import { MOVE_TO_NEW } from './move-to';
+	import { autofocus } from '$lib/actions/autofocus';
 
 	const t = useT();
+	const when = useWhen();
 	const ROOM = '/calendar/activities';
 
 	let { data, form }: { data: PageServerData; form: ActionData } = $props();
@@ -39,13 +47,39 @@
 	let editingCategoryId: number | null = $state(null);
 	let newCatColor = $state(CATEGORY_DEFAULT_NEW);
 	let confirmingDelete: string | null = $state(null);
+
+	type Row = PageServerData['activities'][number];
+	/** The activity whose delete dialog is open. */
+	let deleting: Row | null = $state(null);
+	/** Empty folds into the category; an id or `MOVE_TO_NEW` hands everything over. */
+	let moveTo = $state('');
+
+	function openDelete(activity: Row) {
+		moveTo = '';
+		deleting = activity;
+	}
+
+	function goalsOf(activity: Row) {
+		return data.goalLinks.activities[activity.id] ?? [];
+	}
+
+	function isUsed(activity: Row): boolean {
+		const u = activity.usage;
+		return (
+			u.weekly.length + u.once.length + u.schemes.length + u.records.count > 0 ||
+			goalsOf(activity).length > 0
+		);
+	}
+
+	const weekdayName = (d: number) => (WEEKDAYS[d] ? t(WEEKDAYS[d].label) : String(d));
+	const others = $derived(data.activities.filter((a) => a.id !== deleting?.id));
+	const moveTarget = $derived(others.find((a) => String(a.id) === moveTo) ?? null);
 	/**
 	 * Put-away activities, on their own.
 	 *
-	 * An activity that history names cannot be deleted without rewriting that
-	 * history, so it is put away instead: gone from the list and the plan's
-	 * pickers, every record under it kept. Deleting is for one nothing names,
-	 * and it is offered only here, once it has been put away.
+	 * Putting one away is the way to be rid of it without touching history:
+	 * gone from the list and the plan's pickers, every record under it kept.
+	 * Deleting rewrites what named it, and its dialog says how.
 	 */
 	let showArchived = $state(false);
 	const putAway = $derived(data.activities.filter((a) => !a.active).length);
@@ -176,9 +210,9 @@
 				break;
 			}
 			case 'delete': {
-				// Arms the confirmation only; deleting takes a deliberate press.
+				// Opens the dialog only; deleting takes a deliberate press.
 				const one = items[selectedIndex];
-				if (one && !one.active && !one.hasReferences) confirmingDelete = `act-${one.id}`;
+				if (one) openDelete(one);
 				break;
 			}
 			default: {
@@ -327,46 +361,16 @@
 									<Icon name={activity.active ? 'archive' : 'undo'} />
 								</button>
 							</form>
-							{#if !activity.active}
-								{#if confirmingDelete === `act-${activity.id}`}
-									<form
-										data-leaves
-										method="post"
-										action="?/delete"
-										use:enhance={() => {
-											return async ({ update }) => {
-												await update({ reset: false });
-												confirmingDelete = null;
-											};
-										}}
-									>
-										<input type="hidden" name="id" value={activity.id} />
-										<button type="submit" class="btn btn-sm btn-danger" use:armed>
-											{t('tasks.activities.confirm')}
-										</button>
-									</form>
-									<button
-										type="button"
-										onclick={() => (confirmingDelete = null)}
-										class="btn btn-sm"
-									>
-										{t('ui.cancel')}
-									</button>
-								{:else}
-									<!-- Held in place when history names it, so the column stays
-									     put: that one can only be put away, never deleted. -->
-									<button
-										type="button"
-										onclick={() => (confirmingDelete = `act-${activity.id}`)}
-										class="icon-btn icon-btn-danger {activity.hasReferences ? 'invisible' : ''}"
-										inert={activity.hasReferences}
-										title={t('tasks.activities.deleteActivity')}
-										aria-label={t('tasks.activities.deleteActivity')}
-									>
-										<Icon name="trash" />
-									</button>
-								{/if}
-							{/if}
+							<button
+								type="button"
+								onclick={() => openDelete(activity)}
+								class="icon-btn icon-btn-danger"
+								aria-haspopup="dialog"
+								title={t('tasks.activities.deleteActivity')}
+								aria-label={t('tasks.activities.deleteActivity')}
+							>
+								<Icon name="trash" />
+							</button>
 						</div>
 					</div>
 				{/each}
@@ -550,5 +554,178 @@
 		<button type="submit" form="activity-form" class="btn btn-primary">
 			{editingId ? t('ui.save') : t('tasks.activities.createActivity')}
 		</button>
+	{/snippet}
+</Modal>
+
+<Modal
+	open={deleting !== null}
+	error={form?.message}
+	title={deleting ? t('tasks.activities.deleteName', { name: deleting.name }) : ''}
+	onclose={() => (deleting = null)}
+	size="sm"
+>
+	{#if deleting}
+		{@const u = deleting.usage}
+		{@const goals = goalsOf(deleting)}
+		{#if !isUsed(deleting)}
+			<p class="text-sm text-gray-600">{t('tasks.activities.nothingUsesIt')}</p>
+		{:else}
+			<div class="space-y-3 text-sm" data-testid="activity-usage">
+				<p class="eyebrow">{t('tasks.activities.whatNamesIt')}</p>
+				<ul class="divide-y divide-gray-200 border border-gray-200">
+					{#each u.weekly as block (`w${block.id}`)}
+						<li class="flex items-center gap-2 px-3 py-2">
+							<Icon name="refresh" />
+							<a href={resolve('/calendar/calendar')} class="min-w-0 flex-1 truncate">
+								{describeRecurrence(parseRecurrence(block.recurrence), block.weekday, t)}
+								<span class="tabular">{block.startTime}</span>
+								{#if block.label}· {block.label}{/if}
+							</a>
+						</li>
+					{/each}
+					{#each u.once as block (`o${block.id}`)}
+						<li class="flex items-center gap-2 px-3 py-2">
+							<Icon name="calendar" />
+							<a
+								href="{resolve('/calendar/calendar')}?from={block.date}"
+								class="min-w-0 flex-1 truncate"
+							>
+								{civilOf(block.date, when())}
+								<span class="tabular">{block.startTime}</span>
+								{#if block.label}· {block.label}{/if}
+							</a>
+						</li>
+					{/each}
+					{#each u.schemes as slot (`s${slot.id}`)}
+						<li class="flex items-center gap-2 px-3 py-2">
+							<Icon name="scheme" />
+							<span class="min-w-0 flex-1 truncate">
+								{t('tasks.activities.inSavedWeek', { scheme: slot.schemeName })} · {weekdayName(
+									slot.weekday
+								)}
+								<span class="tabular">{slot.startTime}</span>
+							</span>
+						</li>
+					{/each}
+					{#if u.records.count > 0 && u.records.first && u.records.last}
+						<li class="flex items-center gap-2 px-3 py-2">
+							<Icon name="clock" />
+							<span class="min-w-0 flex-1">
+								{t('tasks.activities.pastOccurrences', {
+									count: u.records.count,
+									span: rangeOf(u.records.first, u.records.last, when())
+								})}
+							</span>
+						</li>
+					{/if}
+					{#each goals as goal (`g${goal.id}`)}
+						<li class="flex items-center gap-2 px-3 py-2">
+							<Icon name="target" />
+							<a href="{resolve('/goals')}#goal-{goal.id}" class="min-w-0 flex-1 truncate">
+								{t('tasks.activities.goalCountsIt', { goal: goal.title })}
+							</a>
+						</li>
+					{/each}
+				</ul>
+
+				<FormGrid>
+					<Field label={t('tasks.activities.moveThemTo')} span={12}>
+						<select
+							name="moveTo"
+							form="delete-activity"
+							class="select"
+							bind:value={moveTo}
+							data-testid="move-to"
+						>
+							<option value="">
+								{t('tasks.activities.moveToCategory', { category: deleting.categoryName ?? '' })}
+							</option>
+							{#each others as other (other.id)}
+								<option value={String(other.id)}>{other.name}</option>
+							{/each}
+							<option value={MOVE_TO_NEW}>{t('tasks.activities.moveToNew')}</option>
+						</select>
+					</Field>
+					{#if moveTo === MOVE_TO_NEW}
+						<Field label={t('ui.name')} span={8} required>
+							<input
+								type="text"
+								name="newName"
+								form="delete-activity"
+								class="input"
+								required
+								use:autofocus
+							/>
+						</Field>
+						<Field label={t('ui.category')} span={4} required>
+							<select name="newCategoryId" form="delete-activity" required class="select">
+								{#each data.categories as cat (cat.id)}
+									<option value={cat.id} selected={deleting.categoryId === cat.id}
+										>{cat.name}</option
+									>
+								{/each}
+							</select>
+						</Field>
+					{/if}
+				</FormGrid>
+
+				<p class="text-gray-600" data-testid="delete-outcome">
+					{#if moveTo === ''}
+						{t('tasks.activities.foldExplained', {
+							name: deleting.name,
+							category: deleting.categoryName ?? ''
+						})}
+					{:else if moveTo === MOVE_TO_NEW}
+						{t('tasks.activities.moveExplainedNew')}
+					{:else}
+						{t('tasks.activities.moveExplained', { target: moveTarget?.name ?? '' })}
+					{/if}
+				</p>
+
+				<p class="text-gray-600">
+					{deleting.active
+						? t('tasks.activities.ratherArchive')
+						: t('tasks.activities.ratherKeepArchived')}
+				</p>
+			</div>
+		{/if}
+	{/if}
+
+	{#snippet footer()}
+		<button class="btn" type="button" onclick={() => (deleting = null)}
+			>{t('tasks.activities.keepIt')}</button
+		>
+		{#if deleting?.active && isUsed(deleting)}
+			<form
+				method="post"
+				action="?/toggleActive"
+				use:enhance={() =>
+					({ result, update }) => {
+						if (result.type === 'success') deleting = null;
+						return update();
+					}}
+			>
+				<input type="hidden" name="id" value={deleting.id} />
+				<button class="btn" type="submit">
+					<Icon name="archive" />
+					{t('tasks.activities.archiveInstead')}
+				</button>
+			</form>
+		{/if}
+		<form
+			id="delete-activity"
+			method="post"
+			action="?/delete"
+			use:enhance={() =>
+				({ result, update }) => {
+					if (result.type === 'success') deleting = null;
+					return update();
+				}}
+		>
+			<input type="hidden" name="id" value={deleting?.id} />
+			<button class="btn btn-danger" type="submit" use:armed>
+				{moveTo === '' ? t('ui.delete') : t('tasks.activities.moveAndDelete')}
+			</button>
+		</form>
 	{/snippet}
 </Modal>

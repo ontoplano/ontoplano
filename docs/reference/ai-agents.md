@@ -2008,9 +2008,9 @@ _Needs `schedule:write`; writes; answers with `before` and `after`._
 | `active`      | boolean | —        | `false` switches it off: it stops being offered for new blocks, and every block and record that names it stays as it is. `true` switches it back on.                                                                                      |
 | `ifUpdatedAt` | string  | —        | Only change it if nothing has changed it since: the `updatedAt` a read or an earlier change answered with. If something has, nothing is written and the call is refused with the code `conflict`, the current `updatedAt` in its details. |
 
-### `remove_activity` — Delete an activity nothing uses
+### `remove_activity` — Delete an activity
 
-Delete an activity that no block, record or todo names — one added by mistake. One that is used is refused: switch it off with `change_activity` and `active: false` instead, which keeps its history.
+Delete an activity, used or not. Without `moveTo`, every block that named it becomes a block of its category labelled with its name, past occurrences keep the name, and goals stop counting it. With `moveTo`, all of it — blocks, occurrences, goal links — names that activity instead. To keep it as it is, switch it off with `change_activity` and `active: false`.
 
 _Needs `schedule:write` and `destructive`; deletes; answers with `before` and `after`._
 

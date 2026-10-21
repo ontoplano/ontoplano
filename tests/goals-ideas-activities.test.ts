@@ -4,7 +4,8 @@
  * A goal is anchored to the *period* containing the date you chose, not to the
  * date — otherwise two goals in the same quarter disagree about when that
  * quarter starts, and every comparison between them is wrong. An activity that
- * blocks point at cannot simply be deleted out from under them. And an idea's
+ * blocks point at is deleted by rewriting them, never by leaving them pointing
+ * at nothing. And an idea's
  * tags are replaced wholesale, so removing one is posting the rest.
  */
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
@@ -22,6 +23,9 @@ let ideas: typeof import('../src/lib/services/ideas');
 let activities: typeof import('../src/lib/services/activities');
 let slots: typeof import('../src/lib/services/slots');
 let todos: typeof import('../src/lib/services/todos');
+let backlinks: typeof import('../src/lib/services/backlinks');
+let schemes: typeof import('../src/lib/services/schemes');
+let instances: typeof import('../src/lib/services/instances');
 let ctx: { userId: string; now: Date; tz: string };
 let theirs: { userId: string; now: Date; tz: string };
 
@@ -31,6 +35,9 @@ beforeAll(async () => {
 	activities = await import('../src/lib/services/activities');
 	slots = await import('../src/lib/services/slots');
 	todos = await import('../src/lib/services/todos');
+	backlinks = await import('../src/lib/services/backlinks');
+	schemes = await import('../src/lib/services/schemes');
+	instances = await import('../src/lib/services/instances');
 	ctx = { userId: OWNER, now: new Date('2026-08-17T09:00:00'), tz: 'UTC' };
 	theirs = { ...ctx, userId: STRANGER };
 });
@@ -56,21 +63,94 @@ describe('categories and activities', () => {
 		expect(activities.listActivities(ctx).some((a) => a.id === id)).toBe(true);
 	});
 
-	test('an activity the plan points at is not deleted out from under it', () => {
+	/** A weekly block, a one-off and a saved week naming one activity, with a day of history. */
+	function used(name: string) {
 		const health = activities.listCategories(ctx).find((c) => c.name === 'Health')!;
-		const guitar = activities.createActivity(ctx, { name: 'Guitar', categoryId: health.id });
-
-		slots.createSlot(ctx, {
-			weekday: 1,
+		const id = activities.createActivity(ctx, { name, categoryId: health.id });
+		const weekly = slots.createSlot(ctx, {
+			weekday: 0,
 			startTime: '18:00',
 			durationMinutes: 60,
 			mode: 'activity',
-			activityId: guitar
+			activityId: id
 		});
+		slots.createExceptional(ctx, {
+			date: '2026-08-17',
+			startTime: '07:00',
+			durationMinutes: 30,
+			mode: 'activity',
+			activityId: id,
+			label: 'Early one'
+		});
+		const scheme = schemes.saveScheme(ctx, `${name} week`);
+		instances.generateForDate(ctx, new Date('2026-08-17T12:00:00'));
+		const goal = goals.createGoal(ctx, { title: `More ${name}`, horizon: 'month' });
+		goals.addGoalLinks(ctx, goal, { activityIds: [id] });
+		return { id, weekly, scheme, goal, category: health.id };
+	}
 
-		// A block pointing at a row that is gone is a block that cannot say what
-		// it is for.
-		expect(() => activities.deleteActivity(ctx, guitar)).toThrow();
+	const goalsCounting = (activity: number) =>
+		(backlinks.goalBacklinks(ctx).activities[activity] ?? []).map((g) => g.id);
+
+	const monday = () =>
+		instances.listInstances(ctx, new Date('2026-08-17T00:00:00'), new Date('2026-08-19T00:00:00'));
+
+	test('an activity the plan points at is listed with everything that names it', () => {
+		const { id, goal } = used('Guitar');
+		const usage = activities.activityUsage(ctx)[id];
+
+		expect(usage.weekly).toHaveLength(1);
+		expect(usage.once).toHaveLength(1);
+		expect(usage.schemes).toHaveLength(1);
+		expect(usage.records.count).toBeGreaterThanOrEqual(1);
+		expect(goalsCounting(id)).toContain(goal);
+	});
+
+	test('deleting a used activity folds it into its category, keeping its name', () => {
+		const { id, weekly, category } = used('Piano');
+		activities.deleteActivity(ctx, id);
+
+		expect(activities.listActivities(ctx).some((a) => a.id === id)).toBe(false);
+		const slot = slots.listWeeklySlots(ctx).find((s) => s.id === weekly)!;
+		expect(slot).toMatchObject({ mode: 'category', categoryId: category, label: 'Piano' });
+		// The occurrences read as they did: the activity's name, under its category.
+		const titles = monday().map((o) => o.title);
+		expect(titles).toContain('Piano');
+		expect(monday().find((o) => o.title === 'Piano')!.categoryId).toBe(category);
+		// A one-off's own label was there before the activity's name, and stays.
+		expect(monday().some((o) => o.kind === 'once' && o.label === 'Early one')).toBe(true);
+		expect(goalsCounting(id)).toEqual([]);
+	});
+
+	test('deleting can hand everything to another activity, goals included', () => {
+		const { id, weekly, goal } = used('Violin');
+		const health = activities.listCategories(ctx).find((c) => c.name === 'Health')!;
+		const cello = activities.createActivity(ctx, { name: 'Cello', categoryId: health.id });
+
+		activities.deleteActivity(ctx, id, { moveTo: cello });
+
+		expect(slots.listWeeklySlots(ctx).find((s) => s.id === weekly)).toMatchObject({
+			mode: 'activity',
+			activityId: cello
+		});
+		expect(activities.activityUsage(ctx)[cello].records.count).toBeGreaterThanOrEqual(1);
+		expect(goalsCounting(cello)).toEqual([goal]);
+		expect(goalsCounting(id)).toEqual([]);
+	});
+
+	test('deleting can hand everything to an activity made on the spot', () => {
+		const { id, weekly, category } = used('Flute');
+		activities.deleteActivity(ctx, id, { moveToNew: { name: 'Woodwind', categoryId: category } });
+
+		const made = activities.listActivities(ctx).find((a) => a.name === 'Woodwind')!;
+		expect(slots.listWeeklySlots(ctx).find((s) => s.id === weekly)!.activityId).toBe(made.id);
+	});
+
+	test('an activity is not handed to itself, nor to a stranger', () => {
+		const { id } = used('Drums');
+		expect(() => activities.deleteActivity(ctx, id, { moveTo: id })).toThrow();
+		expect(() => activities.deleteActivity(theirs, id)).toThrow();
+		expect(activities.listActivities(ctx).some((a) => a.id === id)).toBe(true);
 	});
 
 	test("another account's category is not yours to rename", () => {

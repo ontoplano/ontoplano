@@ -13,6 +13,7 @@ import {
 import { goalBacklinks } from '$lib/services/backlinks';
 import { buildCtx } from '$lib/services/ctx';
 import { formAction } from '$lib/services/scoped-actions';
+import { MOVE_TO_NEW } from './move-to';
 
 export const load = async ({ locals }: IsolatedEvent) => {
 	const ctx = buildCtx(locals.user!.id);
@@ -44,8 +45,23 @@ export const actions = {
 		toggleActivityActive(ctx, Number(formData.get('id')));
 	}),
 
+	// `moveTo` is empty to fold into the category, an id, or `new` with the new one's fields.
 	delete: formAction((ctx, formData) => {
-		deleteActivity(ctx, Number(formData.get('id')));
+		const moveTo = String(formData.get('moveTo') ?? '');
+		deleteActivity(
+			ctx,
+			Number(formData.get('id')),
+			moveTo === MOVE_TO_NEW
+				? {
+						moveToNew: {
+							name: formData.get('newName'),
+							categoryId: formData.get('newCategoryId')
+						}
+					}
+				: moveTo
+					? { moveTo: Number(moveTo) }
+					: {}
+		);
 	}),
 
 	createCategory: formAction((ctx, formData) => {
