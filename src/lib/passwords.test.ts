@@ -12,7 +12,10 @@ import { checkPassword, MIN_PASSWORD_LENGTH } from './passwords';
  */
 describe('what a password has to be', () => {
 	it('refuses anything shorter than the floor', () => {
-		expect(checkPassword('a1'.repeat(3))).toContain(String(MIN_PASSWORD_LENGTH));
+		expect(checkPassword('a1'.repeat(3))).toEqual({
+			key: 'passwords.tooShort',
+			values: { count: MIN_PASSWORD_LENGTH }
+		});
 		expect(checkPassword('short1')).toBeTruthy();
 	});
 

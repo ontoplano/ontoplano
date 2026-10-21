@@ -52,7 +52,8 @@ export const SCOPE_WORDS = {
 	'search:read': 'scopes.searchRead',
 	'tags:read': 'scopes.tagsRead',
 	'tags:write': 'scopes.tagsWrite',
-	destructive: 'scopes.destructive'
+	destructive: 'scopes.destructive',
+	'notebooks:deliver': 'scopes.notebooksDeliver'
 } as const satisfies Record<string, PlainKey>;
 
 /** The louder line under the wide grants, for the few that have one. */

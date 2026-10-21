@@ -32,6 +32,7 @@ export const messages: Catalogue = {
 	'admin.accountDeleted': 'Konto gelöscht',
 	'admin.accounts': 'Konten',
 	'admin.accountsShowing': { one: '{count} Konto angezeigt', other: '{count} Konten angezeigt' },
+	'admin.activeAgo': 'aktiv {when}',
 	'admin.admin': 'Admin',
 	'admin.allAccounts': '← alle Konten',
 	'admin.alwaysAnAdmin': 'immer admin',
@@ -55,7 +56,9 @@ export const messages: Catalogue = {
 	'admin.id.history': 'Verlauf',
 	'admin.id.joined': 'Beigetreten',
 	'admin.id.keepsTheAccountAndLoses': 'behält das Konto und verliert jede Admin-Berechtigung.',
+	'admin.id.lastActive': 'Zuletzt aktiv',
 	'admin.id.makeAdmin': 'Zum Admin machen',
+	'admin.id.neverActive': 'Nicht gesehen, seit das erfasst wird',
 	'admin.id.no': 'Nein',
 	'admin.id.noPlan': 'Keiner',
 	'admin.id.nothingRecordedYet': 'Noch nichts aufgezeichnet',
@@ -89,6 +92,7 @@ export const messages: Catalogue = {
 	'admin.makeAdmin': 'Zum Admin machen',
 	'admin.member': 'Mitglied',
 	'admin.minutesAgo': 'vor {count}m',
+	'admin.neverActive': 'noch nicht gesehen',
 	'admin.noAccountsYet': 'Noch keine Konten',
 	'admin.noIssueYet': 'Noch keine Version verschickt.',
 	'admin.noPage': 'keine Seite',
@@ -100,6 +104,7 @@ export const messages: Catalogue = {
 	'admin.nothingRecordedYet': 'Noch nichts aufgezeichnet',
 	'admin.nothingReported': 'Nichts gemeldet',
 	'admin.orderAccountsBy': 'Konten sortieren nach',
+	'admin.orderActive': 'Zuletzt aktiv',
 	'admin.orderAddress': 'Adresse',
 	'admin.orderJoined': 'Beigetreten',
 	'admin.owner': 'eigentümer',
@@ -328,6 +333,46 @@ export const messages: Catalogue = {
 	'audio.stop': 'Stoppen und behalten',
 	'audio.tooLong':
 		'Das hat die {kilobytes}KB erreicht, die eine Aufnahme haben darf, deshalb wurde dort gestoppt.',
+	'auth.refused.addressTooLong': 'Diese Adresse ist zu lang',
+	'auth.refused.cannotTakeACard':
+		'Die Registrierung ist gerade geschlossen — diese Instanz kann keine Karte annehmen.',
+	'auth.refused.couldNotChangeAddress': 'Die Adresse konnte nicht geändert werden',
+	'auth.refused.couldNotChangePassword': 'Das Passwort konnte nicht geändert werden',
+	'auth.refused.couldNotSignDeviceOut': 'Dieses Gerät konnte nicht abgemeldet werden',
+	'auth.refused.couldNotSignOthersOut': 'Die anderen Geräte konnten nicht abgemeldet werden',
+	'auth.refused.emailNotVerified':
+		'Bestätige zuerst deine E-Mail-Adresse — der Link ist in deinem Posteingang.',
+	'auth.refused.emailTaken': 'Es gibt bereits ein Konto mit dieser E-Mail-Adresse.',
+	'auth.refused.enterEmail': 'Gib deine E-Mail-Adresse ein',
+	'auth.refused.enterNewAddress': 'Gib die neue Adresse ein',
+	'auth.refused.fillBothPasswords': 'Fülle beide Passwortfelder aus',
+	'auth.refused.invalidEmail': 'Das ist keine gültige E-Mail-Adresse.',
+	'auth.refused.linkExpired': 'Dieser Link ist abgelaufen oder wurde schon benutzt',
+	'auth.refused.newPasswordsDiffer': 'Die beiden neuen Passwörter stimmen nicht überein',
+	'auth.refused.noAddressChange': 'Diese Instanz erlaubt keine Änderung deiner Adresse',
+	'auth.refused.notYourPassword': 'Das ist nicht dein Passwort',
+	'auth.refused.onlyDemoReset': 'Nur die Demo kann zurückgesetzt werden.',
+	'auth.refused.passwordTooLong': 'Dieses Passwort ist zu lang.',
+	'auth.refused.passwordsDiffer': 'Die beiden Passwörter stimmen nicht überein.',
+	'auth.refused.registrationFailed': 'Registrierung fehlgeschlagen',
+	'auth.refused.resetMissingToken': 'Diesem Link zum Zurücksetzen fehlt sein Token',
+	'auth.refused.samePassword': 'Das ist dein aktuelles Passwort',
+	'auth.refused.signInFailed': 'Anmeldung fehlgeschlagen',
+	'auth.refused.signInFirst': 'Melde dich zuerst an',
+	'auth.refused.tooManyAccounts': 'Zu viele Konten von hier aus. Versuche es später erneut.',
+	'auth.refused.typeEmailToConfirm': 'Tippe deine E-Mail-Adresse genau ab, um zu bestätigen',
+	'auth.refused.typeWordToConfirm': 'Tippe genau {word}, um zu bestätigen',
+	'auth.refused.unexpected': 'Unerwarteter Fehler',
+	'auth.refused.wrongCurrentPassword': 'Das ist nicht dein aktuelles Passwort.',
+	'auth.refused.wrongEmailOrPassword': 'E-Mail oder Passwort ist falsch.',
+	'auth.said.accountEmptied': 'Alles in diesem Konto wurde gelöscht.',
+	'auth.said.deviceSignedOut': 'Dieses Gerät wurde abgemeldet.',
+	'auth.said.passwordChanged':
+		'Passwort geändert. Alle anderen angemeldeten Geräte wurden abgemeldet.',
+	'auth.said.resetInLog':
+		'Dieser Server hat keinen Mailversand eingerichtet, daher steht der Link stattdessen in seinem Log.',
+	'auth.said.resetOnItsWay':
+		'Falls zu dieser Adresse ein Konto gehört, ist ein Link zum Zurücksetzen unterwegs.',
 	'buy.backToBilling': 'Zurück zur Abrechnung',
 	'buy.openingTheSecurePaymentWindow': 'Das sichere Zahlungsfenster wird geöffnet…',
 	'buy.playCouldNotStart':
@@ -343,17 +388,20 @@ export const messages: Catalogue = {
 	'capture.newThing': 'Neu: {thing}',
 	'capture.planDestination': 'deinem Kalender',
 	'captureDialog.notWrittenDown': 'Das wurde nicht aufgeschrieben.',
+	'captureDialog.savedAsDraft': 'Als Entwurf gespeichert',
 	'captureSettings.atLeastOne': 'mindestens eins',
+	'captureSettings.everyWedge': 'Alle Segmente',
+	'captureSettings.filedNowhere': 'Wird in keinem Notizbuch abgelegt',
 	'captureSettings.intro': 'Was das +-Rad enthält und wohin geht, was Sie darüber schreiben.',
-	'captureSettings.mainNotebook': 'Hauptnotizbuch',
-	'captureSettings.mainNotebookHint':
-		'Aufgaben, Notizen, Ideen und Einkäufe beginnen darin. In einem Notizbuch gilt dieses.',
+	'captureSettings.mixed': 'Gemischt',
 	'captureSettings.noNotebooksYet': 'Noch keine Notizbücher.',
+	'captureSettings.noneHolds': 'Noch kein Notizbuch hat diesen Reiter',
 	'captureSettings.save': 'Schnellerfassung speichern',
 	'captureSettings.saved': 'Schnellerfassung gespeichert.',
 	'captureSettings.title': 'Schnellerfassung einstellen',
 	'captureSettings.wedges': 'Segmente',
-	'captureSettings.wedgesHint': 'Das Rad zeigt die angehakten, in dieser Reihenfolge.',
+	'captureSettings.wedgesHint':
+		'Das Rad zeigt die angehakten, in dieser Reihenfolge, und jedes schreibt in sein Notizbuch. In einem Notizbuch gilt dieses.',
 	'card.currentStreaks': 'Aktuelle Serien.',
 	'card.goalsWhosePeriodCoversToday': 'Ziele, deren Zeitraum heute einschließt, mit Fortschritt.',
 	'card.oneOfYourOwnQuotes': 'Eines Ihrer eigenen Zitate, den ganzen Tag über dasselbe.',
@@ -470,6 +518,7 @@ export const messages: Catalogue = {
 	'errors.billing.noPurchaseToken': 'Dieser Kauf kam ohne etwas zum Prüfen.',
 	'errors.billing.noSubscriptionToChange': 'Es gibt kein Abo zum Ändern.',
 	'errors.billing.notConfiguredHere': 'Diese Instanz nimmt keine Zahlungen an.',
+	'errors.billing.notFromThisApp': 'Ein Abonnement kann nicht in dieser App abgeschlossen werden.',
 	'errors.billing.planNotSoldHere': 'Diesen Tarif verkauft diese Instanz nicht.',
 	'errors.billing.providerAnsweredStrangely':
 		'Der Zahlungsanbieter hat seltsam geantwortet. Versuche es erneut.',
@@ -587,7 +636,9 @@ export const messages: Catalogue = {
 	'errors.notebooks.hasNoRecipesTab': '„{notebook}“ hat keinen Tab Rezepte',
 	'errors.notebooks.hasNoTasksTab': '„{notebook}“ hat keinen Tab Aufgaben',
 	'errors.notebooks.hasNoWorkoutsTab': '„{notebook}“ hat keinen Tab Training',
+	'errors.notebooks.listOrCards': 'Notizen werden als Liste oder als Karten angezeigt',
 	'errors.notebooks.nameTheFolderToRename': 'Gib an, welcher Ordner umbenannt werden soll',
+	'errors.notebooks.noNotebookChosen': 'Kein Notizbuch gewählt',
 	'errors.notebooks.noSuchFolder': 'In diesem Ordner liegt kein Notizbuch',
 	'errors.notebooks.thatFolderPathIsTooLong': 'Dieser Ordnerpfad ist zu lang',
 	'errors.notifications.thatIsNotATime': 'Das ist keine Uhrzeit.',
@@ -1763,6 +1814,8 @@ export const messages: Catalogue = {
 	'home.bills': 'Rechnungen',
 	'home.blocksCount': { one: '{count} Aufgabenblock', other: '{count} Aufgabenblöcke' },
 	'home.countToGo': 'noch {count}',
+	'home.daysAsLists': 'Als Listen',
+	'home.daysAsTimelines': 'Als Zeitleisten, von der ersten bis zur letzten Stunde deines Planers',
 	'home.demoVersion': 'Demoversion',
 	'home.diary': 'Tagebuch',
 	'home.done': '{done} erledigt',
@@ -1859,6 +1912,7 @@ export const messages: Catalogue = {
 	'home.sentOnlyWhatBrokeWent':
 		'Gesendet. Nur was kaputt ist, wurde geschickt — nie was Sie geschrieben haben.',
 	'home.shopping': 'Einkauf',
+	'home.showTheDaysAs': 'Tage anzeigen als',
 	'home.showingNewestFirst': 'Neueste zuerst',
 	'home.showingOldestFirst': 'Älteste zuerst',
 	'home.signOut': 'Abmelden',
@@ -2025,6 +2079,7 @@ export const messages: Catalogue = {
 	'inventory.restock2': 'Auffüllen ({replenish})',
 	'inventory.saveTheName': 'Namen speichern',
 	'inventory.searchTheseThings': 'Diese Dinge durchsuchen',
+	'inventory.setUp': 'Einstellungen',
 	'inventory.sharedWithFamily': '{name} wird mit der Familie geteilt',
 	'inventory.shoppingList': 'Einkaufsliste',
 	'inventory.shoppingListCount': 'Einkaufsliste ({count})',
@@ -2103,6 +2158,8 @@ export const messages: Catalogue = {
 	'legal.privacy.thereIsNoAnalyticsNo':
 		'Es gibt keine Analyse, keine Werbung, kein Skript von Drittanbietern, und nichts wird an irgendjemanden verkauft.',
 	'legal.privacy.whatIsStored': 'Was gespeichert wird',
+	'legal.privacy.whenYouLastUsedThe':
+		'Wann Sie die App zuletzt benutzt haben, auf wenige Minuten genau, damit wer diese Instanz betreibt sehen kann, welche Konten genutzt werden.',
 	'legal.privacy.whereItIsStored': 'Wo es gespeichert wird',
 	'legal.privacy.whichHappensWithin': ', was innerhalb von',
 	'legal.privacy.whichIsWhatKeeps':
@@ -2393,6 +2450,8 @@ export const messages: Catalogue = {
 		'Ausgewählte Notizen weglegen? Sie lassen sich zurückholen.',
 	'notebookDetail.archived': '· archiviert',
 	'notebookDetail.archivedCount': 'Archiviert ({count})',
+	'notebookDetail.asCards': 'Karten',
+	'notebookDetail.asList': 'Liste',
 	'notebookDetail.ascendingPressForDescending': 'Aufsteigend — für absteigend drücken',
 	'notebookDetail.backToThePage': 'Zurück zur Seite',
 	'notebookDetail.batchArchive': 'Ausgewählte Notizen archivieren',
@@ -2408,6 +2467,7 @@ export const messages: Catalogue = {
 		'Ausgewählte Notizen löschen? Das lässt sich nicht rückgängig machen.',
 	'notebookDetail.deleteThisNote': 'Diese Notiz löschen',
 	'notebookDetail.descendingPressForAscending': 'Absteigend — für aufsteigend drücken',
+	'notebookDetail.dragATabHereToOpenItBeside': 'Zieh einen Tab hierher, um ihn daneben zu öffnen',
 	'notebookDetail.editThisNote': 'Diese Notiz bearbeiten',
 	'notebookDetail.goalAdded': 'Ziel erstellt',
 	'notebookDetail.hideArchived': 'Archivierte ausblenden',
@@ -2421,6 +2481,9 @@ export const messages: Catalogue = {
 	'notebookDetail.newNote': 'Neue Notiz',
 	'notebookDetail.newTask': 'Neue Aufgabe',
 	'notebookDetail.noGoalPointsAtThis': 'Kein Ziel zeigt auf dieses Notizbuch. Es braucht keines.',
+	'notebookDetail.noteColour': 'Farbe',
+	'notebookDetail.noteColourHint':
+		'Die Notiz wird darin gezeichnet. Eine Notiz ohne Farbe bleibt neutral.',
 	'notebookDetail.nothingChosen': 'Nichts ausgewählt',
 	'notebookDetail.nothingWrittenHereYet': 'Hier steht noch nichts.',
 	'notebookDetail.openBeside': 'Hier ablegen, um daneben zu öffnen',
@@ -2451,6 +2514,8 @@ export const messages: Catalogue = {
 		'Trennen Sie mit Kommas oder Leerzeichen. Ein vorangestelltes # ist in Ordnung.',
 	'notebookDetail.sharePanes': 'Ziehen, um die Breite zwischen den Bereichen zu teilen',
 	'notebookDetail.showArchived': 'Archivierte zeigen ({count})',
+	'notebookDetail.showNotesAs': 'Notizen anzeigen als',
+	'notebookDetail.showThingsAs': 'Dinge anzeigen als',
 	'notebookDetail.showingCount': {
 		one: '{count} Notiz sichtbar',
 		other: '{count} Notizen sichtbar'
@@ -2954,6 +3019,12 @@ export const messages: Catalogue = {
 	'ordinal.one': '.',
 	'ordinal.other': '.',
 	'ordinal.two': '.',
+	'out.couldNotOpen': 'Der Browser hat sich nicht geöffnet. Zurück…',
+	'out.opening': 'Browser wird geöffnet…',
+	'passwords.needsMix': 'Ein Passwort braucht einen Buchstaben und eine Zahl oder ein Symbol.',
+	'passwords.rule':
+		'Mindestens {count} Zeichen, mit einem Buchstaben und einer Zahl oder einem Symbol.',
+	'passwords.tooShort': 'Ein Passwort braucht mindestens {count} Zeichen.',
 	'people.friend': 'Freund',
 	'people.other': 'Andere',
 	'people.partner': 'Partner(in)',
@@ -3210,18 +3281,19 @@ export const messages: Catalogue = {
 	'rooms.settings.tabs.integrations': 'KI & Integrationen',
 	'rooms.settings.tabs.preferences': 'Präferenzen',
 	'rooms.settings.title': 'Einstellungen',
-	'rooms.tasks.sections': 'Aufgaben-Bereiche',
+	'rooms.tasks.sections': 'Kalender-Bereiche',
 	'rooms.tasks.tabs.activities': 'Aktivitäten',
 	'rooms.tasks.tabs.board': 'Board',
 	'rooms.tasks.tabs.plan': 'Kalender',
 	'rooms.tasks.tabs.review': 'Rückblick',
 	'rooms.tasks.tabs.todo': 'Aufgaben',
-	'rooms.tasks.title': 'Aufgaben',
+	'rooms.tasks.title': 'Kalender',
 	'scopeGroups.acrossEverything': 'Über alles hinweg',
 	'scopeGroups.describeItself': 'Eigene Beschreibung',
 	'scopeGroups.habitsAndWorkouts': 'Gewohnheiten und Workouts',
 	'scopeGroups.money': 'Geld',
 	'scopeGroups.neededToWrite': 'nötig zum Schreiben',
+	'scopeGroups.otherNotebooks': 'Deine anderen Notizbücher',
 	'scopeGroups.people': 'Menschen',
 	'scopeGroups.plumbing': 'Integrationen',
 	'scopeGroups.removingThings': 'Dinge löschen',
@@ -3256,6 +3328,8 @@ export const messages: Catalogue = {
 		'Sehen, wo Ihre Dinge sind, und was in jedem Raum und jeder Schublade liegt',
 	'scopes.locationsWrite':
 		'Räume und Schubladen anlegen und ändern und festlegen, wo ein Ding liegt',
+	'scopes.notebooksDeliver':
+		'Dinge in deine anderen Notizbücher legen und die dieses Notizbuchs dorthin verschieben — nur ihre Namen sehend, nie ihren Inhalt',
 	'scopes.notesRead':
 		'Ihr Tagebuch und Ihre Notizbücher lesen, samt der Bilder und Aufnahmen darin',
 	'scopes.notesWrite': 'In Ihr Tagebuch und Ihre Notizbücher schreiben',
@@ -3355,7 +3429,7 @@ export const messages: Catalogue = {
 	'sections.reminders.label': 'Erinnerungen',
 	'sections.tags.blurb': 'Die Labels, die Sie verwenden, und der Platz, sie aufzuräumen.',
 	'sections.tags.label': 'Labels',
-	'sections.tasks.label': 'Aufgaben',
+	'sections.tasks.label': 'Kalender',
 	'sections.weekly.blurb':
 		'Was der Wochenrückblick schreibt, dort aufbewahrt, wo Ihr übriges Schreiben liegt.',
 	'sections.weekly.label': 'Wochennotizen',
@@ -3391,7 +3465,7 @@ export const messages: Catalogue = {
 	'settings.account.deletePermanently': 'Endgültig löschen',
 	'settings.account.deleteThisInstance': 'Diese Instanz löschen',
 	'settings.account.deleteYourAccount': 'Ihr Konto löschen',
-	'settings.account.displayName': 'Name',
+	'settings.account.displayName': 'Anzeigename',
 	'settings.account.displayNameHint':
 		'Wie die App dich nennt und was die Leute sehen, mit denen du teilst',
 	'settings.account.download': 'Herunterladen',
@@ -3713,6 +3787,8 @@ export const messages: Catalogue = {
 	'settings.integrations.aiAssistantDefaultName': 'KI-Assistent',
 	'settings.integrations.allOfIt': 'Alles',
 	'settings.integrations.andLetItDeleteThings': '…und ihm erlauben, Dinge zu löschen',
+	'settings.integrations.andLetItFileIntoOthers':
+		'…und es Dinge in deine anderen Notizbücher legen lassen',
 	'settings.integrations.bankStatements': 'Kontoauszüge',
 	'settings.integrations.chat.answeringAs':
 		'{provider}, Schlüssel {prefix}…, antwortet als {model}.',
@@ -3873,12 +3949,32 @@ export const messages: Catalogue = {
 	'settings.integrations.copyThis': 'Dies kopieren',
 	'settings.integrations.createAKey': 'Einen Schlüssel erstellen',
 	'settings.integrations.createIt': 'Erstellen',
+	'settings.integrations.device.cannotConnect':
+		'Mit der Instanz auf diesem Handy lassen sich keine Assistenten oder anderen Apps verbinden.',
+	'settings.integrations.device.hostedAssistants':
+		'Assistenten, die an deinem Plan arbeiten — Claude, ChatGPT oder jeder MCP-Client, mit Schlüsseln, die du beschränkst und widerrufst.',
+	'settings.integrations.device.hostedBackups':
+		'Deine Daten außerhalb des Geräts gesichert – wer dieses Handy verliert, verliert nicht seine Woche.',
+	'settings.integrations.device.hostedComputer':
+		'Dasselbe Konto auf deinem Computer, in jedem Browser, und auf jedem Handy, auf dem du dich anmeldest.',
+	'settings.integrations.device.hostedFeeds':
+		'Dein Plan in jeder Kalender-App, Webhooks, Datenströme und Startbildschirm-Widgets.',
+	'settings.integrations.device.hostedNow':
+		'Hier liegt alles nur auf diesem Handy. Umziehen heißt exportieren und importieren unter Konto.',
+	'settings.integrations.device.hostedTitle': 'Eine Instanz mit Server bietet dir',
+	'settings.integrations.device.switch': 'Eine Instanz mit Server verwenden',
+	'settings.integrations.device.why': 'Warum?',
+	'settings.integrations.device.whyBody':
+		'Ein Assistent wie Claude oder ChatGPT läuft auf den Servern seines Anbieters, genau wie ein Kalender oder eine Automatisierung. Um deinen Plan zu lesen und zu ändern, müssen sie dein ontoplano über das Internet erreichen. Die Instanz auf diesem Handy ist nicht im Internet: Nichts außerhalb des Handys kann sie erreichen. Das hält sie privat – und deshalb kann sich auch nichts mit ihr verbinden.',
+	'settings.integrations.device.whyTitle': 'Warum sich hier nichts verbinden kann',
 	'settings.integrations.diaryAndNotebooks': 'Tagebuch und Notizbücher',
 	'settings.integrations.doNotShareItWith': 'Teilen Sie ihn mit niemandem.',
 	'settings.integrations.everyRead': 'Jedes Lesen',
 	'settings.integrations.everyWrite': 'Jedes Schreiben',
 	'settings.integrations.everythingAnAssistantHasChanged':
 		'Alles, was ein Assistent geändert hat, neueste zuerst. Alles, was er entfernt hat, kann wiederhergestellt werden.',
+	'settings.integrations.fileIntoOthersSeesOnlyNames':
+		'Es sieht ihre Namen und nichts darin – es kann eine Aufgabe, eine Notiz oder ein Ding dort ablegen oder eines aus diesem Notizbuch verschieben, aber nie lesen, was schon da ist.',
 	'settings.integrations.forAnAssistantWithTerminal':
 		'Für einen Assistenten mit einem Terminal. Er schreibt seine eigene Einstellung und übernimmt sie beim nächsten Start.',
 	'settings.integrations.hasTheFullFormWith':
@@ -4039,7 +4135,7 @@ export const messages: Catalogue = {
 	'settings.preferences.plannerHours': 'Planerstunden',
 	'settings.preferences.plannerHoursSaved': 'Planerstunden gespeichert.',
 	'settings.preferences.plansAreWorthlessButPlanning':
-		'Pläne sind wertlos, aber planen ist alles. — EisenhowernWas gemessen wird, wird gesteuert — Drucker',
+		'Pläne sind wertlos, aber planen ist alles. — Eisenhower\nWas gemessen wird, wird gesteuert — Drucker',
 	'settings.preferences.pricesWillRead': 'Preise werden angezeigt als',
 	'settings.preferences.quote': 'Zitat',
 	'settings.preferences.quotes': 'Zitate',
@@ -4910,13 +5006,16 @@ export const messages: Catalogue = {
 	'tour.lettingOtherThingsIn': 'Andere Dinge zulassen',
 	'tour.lightDarkOrWhateverThe': 'Hell, dunkel, oder was das Gerät sagt',
 	'tour.linkTheWorkToThe': 'Die Arbeit mit dem Ziel verknüpfen',
+	'tour.listOrCards': 'Eine Liste, oder Karten',
+	'tour.listOrCardsBody':
+		'Lies die Notizen als Liste oder lege sie als Karten aus. Eine Notiz mit Farbe trägt sie in beiden Fällen, und jedes Notizbuch merkt sich deine Wahl.',
 	'tour.markASessionDoneTo':
 		'Markieren Sie eine Einheit als erledigt, um sie zu stempeln. Archivieren Sie eine, die Sie nicht mehr machen — ihr Verlauf bleibt; Löschen ist nur für eine, die aus Versehen hinzugefügt wurde.',
 	'tour.matchingIsOnTheWords':
 		'Der Abgleich erfolgt auf den Wörtern selbst, sodass ein Satzfragment, das Sie geschrieben haben, den Eintrag findet, aus dem es stammt.',
 	'tour.movingAndSharing': 'Verschieben und Teilen',
 	'tour.notACalendarOfAppointments':
-		'Die Aufgabenblöcke, die sich wiederholen sollen. Alles andere in Aufgaben baut darauf auf.',
+		'Die Aufgabenblöcke, die sich wiederholen sollen. Alles andere im Kalender baut darauf auf.',
 	'tour.notJustNotesAndTasks': 'Nicht nur Notizen und Aufgaben',
 	'tour.noteSelection':
 		'Wähle mehrere Einträge aus, um sie in ein Notizbuch zu verschieben, Schlagwörter hinzuzufügen oder zu entfernen oder sie auf einmal zu löschen.',
@@ -5005,7 +5104,7 @@ export const messages: Catalogue = {
 	'tour.taskSelection':
 		'Mit „Mehrere auswählen“ werden Kästchen zu Kreisen. Wähle sichtbare Aufgaben aus, um ihren Status zu ändern, Schlagwörter hinzuzufügen oder zu entfernen, sie in ein Notizbuch zu verschieben oder ihre Löschung zu bestätigen. Filter heben ausgeblendete Auswahlen auf.',
 	'tour.tasksHoldYourWeekNotebooks':
-		'Aufgaben halten Ihre Woche, Notizbücher halten, was Sie schreiben — das Tagebuch eingeschlossen — und Ideen halten fest, was Ihnen im Bus eingefallen ist. Einstellungen ordnet die Bereiche neu und räumt die weg, die Sie nicht wollen.',
+		'Der Kalender hält Ihre Woche, Notizbücher halten, was Sie schreiben — das Tagebuch eingeschlossen — und Ideen halten fest, was Ihnen im Bus eingefallen ist. Einstellungen ordnet die Bereiche neu und räumt die weg, die Sie nicht wollen.',
 	'tour.theAppArrangedYourWay': 'Die App, nach Ihren Vorstellungen geordnet',
 	'tour.theArrowsStepAWholeWeek':
 		'Die Pfeile springen eine ganze Woche, sie landen also immer auf demselben Wochentag. Hier wählen Sie, an welchem Tag die Woche beginnt.',
@@ -5131,6 +5230,7 @@ export const messages: Catalogue = {
 	'ui.more': 'Mehr',
 	'ui.name': 'Name',
 	'ui.next': 'Weiter',
+	'ui.noColour': 'Keine Farbe',
 	'ui.none': '— keine —',
 	'ui.notNow': 'Jetzt nicht',
 	'ui.notebook': 'Notizbuch',

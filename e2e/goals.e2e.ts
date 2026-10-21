@@ -17,7 +17,7 @@ test('re-saving the choosing modal keeps the done todo linked', async ({ page })
 	await register(page, testEmail('goals'));
 
 	// Two todos, through the page's own form.
-	await visit(page, '/tasks/todo');
+	await visit(page, '/calendar/todo');
 	for (const title of ['first chore', 'second chore']) {
 		// `OneLine` is a textarea on purpose (see the component), so the field
 		// is found by its label rather than by an input selector.
@@ -98,7 +98,7 @@ test('re-saving the choosing modal keeps the done todo linked', async ({ page })
 
 	// And the other direction: a to-do finished BEFORE it was ever linked can
 	// still be linked — the completed list unfolds behind its own button.
-	await visit(page, '/tasks/todo');
+	await visit(page, '/calendar/todo');
 	{
 		const field = page.locator('[name="heading"]');
 		await pressUntil(page, page.getByRole('button', { name: /New task/ }).first(), field);

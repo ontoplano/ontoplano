@@ -1,0 +1,11 @@
+A pass over the whole app on the phone.
+
+Every screen's main action is in the same place, the bar takes the room's
+colour, and the tabs answer a swipe. A shopping list you can take to the shop,
+from Inventory.
+
+An instance that lives only on the phone can now export its data, take an
+export back in, and be deleted outright — and Android's own backup no longer
+copies it to Drive.
+
+Tell me what breaks: github.com/ontoplano/ontoplano/issues

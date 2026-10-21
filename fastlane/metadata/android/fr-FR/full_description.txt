@@ -1,0 +1,29 @@
+Ontoplano est une application pour organiser sa vie. Elle a commencé comme un planning hebdomadaire et elle est devenue l'endroit où vit tout le reste : ce que vous avez à faire, ce vers quoi vous avancez, ce que vous voulez noter depuis des jours, et toute la mécanique des choses récurrentes que personne n'aime garder en tête — factures, listes de courses, routines d'entraînement, rendez-vous, etc.
+
+CE QU'IL Y A DEDANS
+
+• Tâches — une semaine qui se répète, des choses ponctuelles à une date, et une liste pour un jour. En blocs de temps ou en tableau kanban.
+• Objectifs — par semaine, mois, trimestre et année, avec un progrès mesuré plutôt qu'une case à cocher : un chiffre qui bouge, venu d'une habitude, d'un entraînement ou de votre propre main.
+• Carnets — un par sujet, qui réunit notes, tâches et objectifs, et les personnes dont parlent les notes.
+• Santé — les habitudes en une grille lisible d'un coup d'œil, et les entraînements notés avec les charges, distances et répétitions réellement faites.
+• Finances — comptes, factures à payer, et où est passé l'argent, mois après mois.
+• Inventaire — ce que vous possédez, où c'est rangé, et ce qui va manquer.
+• Les recettes et la liste de courses, qui se connaissent.
+• Des rappels qui arrivent sur votre téléphone plutôt que dans une boîte mail.
+• Une galerie, avec les photos gardées dans votre propre instance.
+
+UN ASSISTANT PEUT VRAIMENT S'EN SERVIR
+
+Un serveur MCP est intégré. Tout assistant qui parle le Model Context Protocol peut lire votre journée et la modifier — ajouter les tâches, cocher les habitudes, écrire la note, réorganiser la semaine — en suivant les mêmes règles que l'application elle-même.
+
+C'est vous qui créez le jeton, vous qui choisissez ce qu'il peut toucher, et vous le révoquez quand vous voulez. Chaque écriture est enregistrée avec l'état qu'elle a remplacé : vous voyez exactement ce qui a été fait, et une chose supprimée revient d'un seul geste. Et quand un assistant a fini, votre téléphone vous dit ce qu'il a fait.
+
+Rien dans l'application n'appelle de modèle, et aucune de vos clés n'est stockée ici. Vous apportez votre propre assistant.
+
+ELLE EST À VOUS
+
+Open source sous licence AGPL-3.0. Rien n'est revendu, rien n'est mesuré, il n'y a pas de publicité, et vos données ne sont confiées à aucun tiers.
+
+Utilisez une instance que vous hébergez vous-même, l'instance officielle sur app.ontoplano.com, ou gardez tout sur le téléphone. Vos données vous suivent : un export est un seul fichier qui contient tout, et il s'importe dans n'importe quelle instance.
+
+Code source, tickets et documentation : https://github.com/ontoplano/ontoplano

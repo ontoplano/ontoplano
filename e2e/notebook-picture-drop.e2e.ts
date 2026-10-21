@@ -44,7 +44,19 @@ test('a picture dropped on a notebook becomes its picture', async ({ page }) => 
 	await square.dispatchEvent('dragover', { dataTransfer: carried });
 	await square.dispatchEvent('drop', { dataTransfer: carried });
 
-	await expect(page.getByRole('group', { name: 'Change the picture' }).locator('img')).toBeVisible({
+	await expect(
+		page.getByRole('group', { name: 'Change the picture' }).locator('img:visible')
+	).toBeVisible({
 		timeout: 15_000
 	});
+
+	// Pressing it, on the notebook's own page, opens the notebook to edit —
+	// not the file chooser, which changed the cover when that was not meant.
+	const chooser = page.waitForEvent('filechooser', { timeout: 1_500 }).catch(() => null);
+	await page
+		.getByRole('group', { name: 'Change the picture' })
+		.getByRole('button', { name: 'Edit notebook' })
+		.click();
+	await expect(page.locator('dialog[open]')).toHaveCount(1);
+	expect(await chooser).toBeNull();
 });

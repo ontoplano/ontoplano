@@ -60,15 +60,15 @@ describe('the registry', () => {
 	});
 
 	test('keyFor answers for a real binding and refuses a missing one', () => {
-		expect(keyFor('/tasks/todo', 'new')).toBe('n');
-		expect(() => keyFor('/tasks/todo', 'no-such-action')).toThrow(/no-such-action/);
+		expect(keyFor('/calendar/todo', 'new')).toBe('n');
+		expect(() => keyFor('/calendar/todo', 'no-such-action')).toThrow(/no-such-action/);
 		expect(() => keyFor('/no/such/page', 'new')).toThrow();
 	});
 
 	test('getAction answers keys and stays silent otherwise', () => {
-		expect(getAction('/tasks/board', 'Enter')).toBe('edit');
-		expect(getAction('/tasks/board', '3')).toBe('rate');
-		expect(getAction('/tasks/board', 'z')).toBeNull();
+		expect(getAction('/calendar/board', 'Enter')).toBe('edit');
+		expect(getAction('/calendar/board', '3')).toBe('rate');
+		expect(getAction('/calendar/board', 'z')).toBeNull();
 		for (const modifier of ['ctrlKey', 'metaKey', 'altKey'] as const) {
 			expect(
 				getAction('/notebooks', {

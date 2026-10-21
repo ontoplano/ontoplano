@@ -24,7 +24,7 @@ test('putting a task away and opening the archive at once keeps it put away', as
 	test.setTimeout(180_000);
 	await page.setViewportSize({ width: 1280, height: 900 });
 	await register(page, testEmail('away-then-archive'));
-	await visit(page, '/tasks/todo');
+	await visit(page, '/calendar/todo');
 	await page
 		.getByRole('button', { name: /New task/ })
 		.first()

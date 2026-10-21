@@ -26,6 +26,7 @@ import type { Ref, RefKind } from './refs.js';
 import { STATUSES } from '../../task-status.js';
 import { RATINGS, RATING_MAX, RATING_MIN } from '../../ratings.js';
 import type { Confinement } from './confinement.js';
+import { delivers } from './deliver.js';
 import { mayReadFile } from '$lib/services/media-permission.js';
 import { pictureReferrers, recordingReferrers } from '$lib/services/media-referrers.js';
 import { read as readPicture } from '$lib/services/media.js';
@@ -936,6 +937,7 @@ type NoteRow = {
 	updatedAt?: string | null;
 	archivedAt?: string | null;
 	pinnedAt?: string | null;
+	color?: string | null;
 	tags: { id?: number; name: string; taggedAt?: string | null }[];
 };
 
@@ -946,6 +948,7 @@ function noteLine(note: NoteRow): Record<string, unknown> {
 	out.opening = openingOf(note.content);
 	out.tags = note.tags.length > 0 ? note.tags.map((one) => one.name) : undefined;
 	out.pinned = note.pinnedAt ? true : undefined;
+	out.color = note.color || undefined;
 	out.archivedAt = note.archivedAt || undefined;
 
 	/*
@@ -2340,7 +2343,7 @@ export const TOOLS: Tool[] = [
 		scope: 'tasks:write',
 		writes: true,
 		refs: [
-			{ arg: 'notebookId', kind: 'notebook' },
+			{ arg: 'notebookId', kind: 'notebook', deliverable: 'into' },
 			{ arg: 'goalId', kind: 'goal' }
 		],
 		input: object(
@@ -2521,7 +2524,7 @@ export const TOOLS: Tool[] = [
 		writes: true,
 		refs: [
 			{ arg: 'id', kind: 'todo' },
-			{ arg: 'notebookId', kind: 'notebook', zeroIsNone: true }
+			{ arg: 'notebookId', kind: 'notebook', zeroIsNone: true, deliverable: 'into' }
 		],
 		input: object(
 			{
@@ -2879,7 +2882,7 @@ export const TOOLS: Tool[] = [
 			'Add an entry. Markdown. Writing one when asked is the point of this tool — keep their words and their voice where you have them, and do not invent an entry nobody asked for. Put it in a notebook when it is about one subject; leave the notebook off for an ordinary day.',
 		scope: 'notes:write',
 		writes: true,
-		refs: [{ arg: 'notebookId', kind: 'notebook' }],
+		refs: [{ arg: 'notebookId', kind: 'notebook', deliverable: 'into' }],
 		input: object(
 			{
 				content: text('The entry, as Markdown.'),
@@ -2888,6 +2891,9 @@ export const TOOLS: Tool[] = [
 				),
 				tags: text('Comma-separated tags.'),
 				notebookId: { type: 'integer', description: 'The notebook it belongs to, if any.' },
+				color: text(
+					'The colour the note is drawn in, as `#rrggbb`; the text on it is worked out to stay readable. Left out, it is the plain note.'
+				),
 				...RETRY_ARGS
 			},
 			['content']
@@ -2897,7 +2903,8 @@ export const TOOLS: Tool[] = [
 				content: args.content,
 				title: args.title ?? '',
 				tags: args.tags ?? '',
-				notebookId: args.notebookId ?? null
+				notebookId: args.notebookId ?? null,
+				color: args.color ?? null
 			});
 			return { id };
 		}
@@ -2991,7 +2998,7 @@ export const TOOLS: Tool[] = [
 		name: 'edit_entry',
 		title: 'Change what a note says',
 		description:
-			'Rewrite a note or a diary entry — its words, its title, its tags. Only the fields given change; the rest of it, and the notebook it lives in, are left alone. `notebook_notes` gives the id. To put one out of the way instead, `archive_note`.',
+			'Rewrite a note or a diary entry — its words, its title, its tags, its colour. Only the fields given change; the rest of it, and the notebook it lives in, are left alone. `notebook_notes` gives the id. To put one out of the way instead, `archive_note`.',
 		scope: 'notes:write',
 		writes: true,
 		refs: [{ arg: 'id', kind: 'note', subject: true }],
@@ -3005,6 +3012,9 @@ export const TOOLS: Tool[] = [
 				tags: text(
 					'The tags it should carry from now on, comma or space separated \u2014 this replaces the ones it has. Left out, they are untouched.'
 				),
+				color: text(
+					'The colour the note is drawn in, as `#rrggbb`; the text on it is worked out to stay readable. Left out, the colour is untouched; an empty string takes it off.'
+				),
 				...CONCURRENCY_ARGS
 			},
 			['id']
@@ -3015,7 +3025,8 @@ export const TOOLS: Tool[] = [
 			updateEntry(ctx, now.id, {
 				content: args.content ?? now.content,
 				...(args.title === undefined ? {} : { title: args.title }),
-				...(args.tags === undefined ? {} : { tags: args.tags })
+				...(args.tags === undefined ? {} : { tags: args.tags }),
+				...(args.color === undefined ? {} : { color: args.color })
 			});
 			return { ok: true };
 		}
@@ -3089,7 +3100,7 @@ export const TOOLS: Tool[] = [
 		writes: true,
 		refs: [
 			{ arg: 'ids', kind: 'note' },
-			{ arg: 'notebookId', kind: 'notebook', zeroIsNone: true }
+			{ arg: 'notebookId', kind: 'notebook', zeroIsNone: true, deliverable: 'into' }
 		],
 		input: object(
 			{
@@ -3134,7 +3145,7 @@ export const TOOLS: Tool[] = [
 			'The subjects being written against \u2014 a trip, a renovation, a book \u2014 with the id every other tool means by `notebookId`. Ask for these before writing an entry into one. A key tied to one notebook is answered with that one. `modules` is what each one holds: the tabs it shows, which is also what it will accept being filed under it. `favourite` is whether the person has starred it; favourites come first.',
 		scope: 'notes:read',
 		writes: false,
-		refs: [{ arg: 'id', kind: 'notebook' }],
+		refs: [{ arg: 'id', kind: 'notebook', deliverable: 'listing' }],
 		input: object({
 			id: {
 				type: 'integer',
@@ -3142,9 +3153,19 @@ export const TOOLS: Tool[] = [
 					'Only this one, by its id. Usually left off; a confined key is pinned to its own.'
 			}
 		}),
-		run: (ctx, args) => {
+		run: (ctx, args, caller) => {
 			const all = listNotebooks(ctx);
-			return args.id === undefined ? all : all.filter((one) => one.id === Number(args.id));
+			const asked = args.id === undefined ? all : all.filter((one) => one.id === Number(args.id));
+			/*
+			 * A notebook's key that may file into the others sees them to file
+			 * into: what each is called, its id and what it accepts — nothing
+			 * that is in them. Its own notebook it sees whole, as ever.
+			 */
+			if (!delivers(caller?.confinement, caller?.scopes ?? [])) return asked;
+			const own = caller?.confinement?.id;
+			return asked.map((one) =>
+				one.id === own ? one : { id: one.id, title: one.title, modules: one.modules }
+			);
 		}
 	},
 	{
@@ -3368,7 +3389,7 @@ export const TOOLS: Tool[] = [
 			'Write an idea down without deciding where it belongs. The lowest-friction thing here; prefer it to a todo when the person has not said they will do it.',
 		scope: 'ideas:write',
 		writes: true,
-		refs: [{ arg: 'notebookId', kind: 'notebook' }],
+		refs: [{ arg: 'notebookId', kind: 'notebook', deliverable: 'into' }],
 		input: object(
 			{
 				content: text('The idea.'),
@@ -3630,7 +3651,7 @@ export const TOOLS: Tool[] = [
 			'Put something on the list. If the cupboard already has it, this says so rather than adding a second one.',
 		scope: 'inventory:write',
 		writes: true,
-		refs: [{ arg: 'notebookId', kind: 'notebook' }],
+		refs: [{ arg: 'notebookId', kind: 'notebook', deliverable: 'into' }],
 		input: object(
 			{
 				name: text('What to buy.'),
@@ -3786,7 +3807,7 @@ export const TOOLS: Tool[] = [
 			'Write a recipe down. Ingredients are one per line — "200 g flour", "2 eggs" — and each becomes a shopping item, so the list knows about them the day the meal is planned.',
 		scope: 'kitchen:write',
 		writes: true,
-		refs: [{ arg: 'notebookId', kind: 'notebook' }],
+		refs: [{ arg: 'notebookId', kind: 'notebook', deliverable: 'into' }],
 		input: object(
 			{
 				title: text('What it is called.'),
@@ -4401,7 +4422,7 @@ export const TOOLS: Tool[] = [
 			'Start tracking a habit: something to keep doing (`good`), to avoid (`bad`), or just to watch (`neutral`). Scheduled days come in the same shape `all_habits` shows for existing ones; leave them out for every day.',
 		scope: 'habits:write',
 		writes: true,
-		refs: [{ arg: 'notebookId', kind: 'notebook' }],
+		refs: [{ arg: 'notebookId', kind: 'notebook', deliverable: 'into' }],
 		input: object(
 			{
 				name: text('The habit, in the person\u2019s own words.'),
@@ -4533,7 +4554,9 @@ export const TOOLS: Tool[] = [
 				at: text(
 					'When, as YYYY-MM-DDTHH:MM in the person\u2019s own timezone. Seconds allowed and honoured. A bare YYYY-MM-DD means the hour their day starts. It has to be ahead of now — check the year, which is the one people leave out.'
 				),
-				message: text('What it should say, in their words.'),
+				message: text(
+					'What it should say, in their words. Markdown, like a todo\u2019s notes: a picture is `![name](/media/12)`.'
+				),
 				sound: {
 					type: 'boolean',
 					description:
@@ -4573,7 +4596,9 @@ export const TOOLS: Tool[] = [
 				at: text(
 					'A new time, as YYYY-MM-DDTHH:MM in the person\u2019s own timezone. A bare YYYY-MM-DD means the hour their day starts. It has to be ahead of now.'
 				),
-				message: text('What it should say instead, in their words.'),
+				message: text(
+					'What it should say instead, in their words. Markdown, like a todo\u2019s notes.'
+				),
 				sound: {
 					type: 'boolean',
 					description:
@@ -4718,7 +4743,7 @@ export const TOOLS: Tool[] = [
 			'Add a block that comes back — "gym on Tuesdays at seven", "the bins every other Tuesday", "rent on the first". Weekly unless `repeats` says otherwise. This changes every week from now on; `add_block` is the one for a single day. Weekdays count from Monday: 0 is Monday, 6 is Sunday. A block can be a bare category rather than a named thing — leave the title out and it shows as the category itself, which is what "put work in those hours" means.',
 		scope: 'schedule:write',
 		writes: true,
-		refs: [{ arg: 'notebookId', kind: 'notebook', zeroIsNone: true }],
+		refs: [{ arg: 'notebookId', kind: 'notebook', zeroIsNone: true, deliverable: 'into' }],
 		input: object(
 			{
 				weekday: {
@@ -4773,7 +4798,7 @@ export const TOOLS: Tool[] = [
 		writes: true,
 		refs: [
 			{ arg: 'id', kind: 'repeatingBlock' },
-			{ arg: 'notebookId', kind: 'notebook', zeroIsNone: true }
+			{ arg: 'notebookId', kind: 'notebook', zeroIsNone: true, deliverable: 'into' }
 		],
 		input: object(
 			{
@@ -5813,7 +5838,7 @@ export const TOOLS: Tool[] = [
 		scope: 'workouts:write',
 		writes: true,
 		refs: [
-			{ arg: 'notebookId', kind: 'notebook' },
+			{ arg: 'notebookId', kind: 'notebook', deliverable: 'into' },
 			{ arg: 'category_id', kind: 'workoutCategory', zeroIsNone: true }
 		],
 		input: object(
@@ -6427,7 +6452,7 @@ export const TOOLS: Tool[] = [
 			'A new place money moves through. Declare currency explicitly; omitted currency stays unspecified. opening_minor is signed minor units immediately before the first movement on opening_on. Without opening_on only a recorded subtotal is known.',
 		scope: 'statements:write',
 		writes: true,
-		refs: [{ arg: 'notebookId', kind: 'notebook' }],
+		refs: [{ arg: 'notebookId', kind: 'notebook', deliverable: 'into' }],
 		input: object(
 			{
 				name: text('What it is called — "Nubank", "Visa".'),
@@ -6469,7 +6494,7 @@ export const TOOLS: Tool[] = [
 		writes: true,
 		refs: [
 			{ arg: 'id', kind: 'ledger' },
-			{ arg: 'notebookId', kind: 'notebook', zeroIsNone: true }
+			{ arg: 'notebookId', kind: 'notebook', zeroIsNone: true, deliverable: 'into' }
 		],
 		input: object(
 			{
@@ -7025,7 +7050,7 @@ export const TOOLS: Tool[] = [
 			'Write down a bill you expect to pay: a name, the expected amount in minor units (cents), and a rhythm (weekly, monthly, yearly, once). A monthly bill can name the day of the month it falls due.',
 		scope: 'bills:write',
 		writes: true,
-		refs: [{ arg: 'notebookId', kind: 'notebook' }],
+		refs: [{ arg: 'notebookId', kind: 'notebook', deliverable: 'into' }],
 		input: object(
 			{
 				name: text('What the bill is called.'),
@@ -7086,7 +7111,7 @@ export const TOOLS: Tool[] = [
 		writes: true,
 		refs: [
 			{ arg: 'id', kind: 'bill' },
-			{ arg: 'notebookId', kind: 'notebook', zeroIsNone: true }
+			{ arg: 'notebookId', kind: 'notebook', zeroIsNone: true, deliverable: 'into' }
 		],
 		input: object(
 			{

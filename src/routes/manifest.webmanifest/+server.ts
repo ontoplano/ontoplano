@@ -32,7 +32,7 @@ export const GET: RequestHandler = async ({ locals }) => {
 		{
 			name: t('app.board'),
 			short_name: t('app.board'),
-			url: '/tasks/board',
+			url: '/calendar/board',
 			description: t('manifest.todaysColumns'),
 			icon: 'shortcut-board'
 		},

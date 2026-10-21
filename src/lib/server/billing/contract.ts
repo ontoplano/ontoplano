@@ -94,6 +94,8 @@ export const BILLING_REFUSALS = {
 	storeDoesNotKnowThatPurchase: 'errors.billing.storeDoesNotKnowThatPurchase',
 	purchaseBelongsElsewhere: 'errors.billing.purchaseBelongsElsewhere',
 	purchaseIsForAnotherPlan: 'errors.billing.purchaseIsForAnotherPlan',
+	/** Inside the app, where only Play may sell, and Play cannot here. */
+	notFromThisApp: 'errors.billing.notFromThisApp',
 	/** A notification that did not arrive as JSON. */
 	bodyIsNotJson: 'errors.billing.bodyIsNotJson'
 } as const satisfies Record<string, MessageKey>;
@@ -231,8 +233,40 @@ export interface PlayChannel {
 	 * One real-time developer notification (Pub/Sub push body). The state is
 	 * re-fetched from Google rather than trusted from the message, so a
 	 * replayed or malformed notification can only ever cause a re-sync.
+	 * Throws only when Google refused the lookup, with `rtdn` on the error
+	 * saying which purchase it was about.
 	 */
-	handleRtdn(
-		rawBody: string
-	): Promise<{ applied: true; userId: string; event: string } | { applied: false; reason: string }>;
+	handleRtdn(rawBody: string): Promise<RtdnOutcome>;
 }
+
+/**
+ * What became of a notification. The reasons a not-applied one gives are
+ * `RTDN_REASONS`; `services/billing.ts` decides which of them is somebody's
+ * money going nowhere and which is only worth a line in the log.
+ */
+export type RtdnOutcome =
+	| { applied: true; userId: string; event: string }
+	| ({ applied: false; reason: RtdnReason } & RtdnTrace);
+
+/** Enough to find the purchase in the Play Console, and nothing to replay it with. */
+export type RtdnTrace = { sku?: string; orderId?: string; tokenTail?: string; account?: string };
+
+export const RTDN_REASONS = {
+	/** Google's own ping from the console. */
+	test: 'test',
+	/** Another app sharing the Pub/Sub topic. */
+	otherPackage: 'other_package',
+	/** Not a push body at all. */
+	malformed: 'malformed',
+	/** A kind of notification this app has nothing to do with. */
+	noToken: 'no_token',
+	/** A one-time product: this app sells none. */
+	oneTimeProduct: 'one_time_product',
+	/** A refund or a void of a one-time product. */
+	voidedOneTime: 'voided_one_time',
+	/** A refund or a void of a subscription that was never anybody's here. */
+	voidedUnknownAccount: 'voided_unknown_account',
+	/** A live subscription nobody here can be found for: possibly paid for nothing. */
+	unknownAccount: 'unknown_account'
+} as const;
+export type RtdnReason = (typeof RTDN_REASONS)[keyof typeof RTDN_REASONS];

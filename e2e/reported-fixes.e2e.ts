@@ -50,7 +50,7 @@ test('the danger zone is closed until it is opened', async ({ page }) => {
 test('pressing a task reads it, and does not open the form that edits it', async ({ page }) => {
 	test.setTimeout(120_000);
 	await register(page, testEmail('todo-unfold'));
-	await visit(page, '/tasks/todo');
+	await visit(page, '/calendar/todo');
 
 	await page.getByRole('button', { name: 'New task' }).click();
 	await page.locator('#todo-form [name="heading"]').fill('ring the plumber');

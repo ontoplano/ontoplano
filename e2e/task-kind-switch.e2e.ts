@@ -25,7 +25,7 @@ function weekLater(date: string): string {
 	return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 
-const dayView = (date: string) => `/tasks/calendar?view=day&from=${date}`;
+const dayView = (date: string) => `/calendar/calendar?view=day&from=${date}`;
 
 /** The block on the grid, by what it says. */
 const block = (page: Page, label: string) =>
@@ -102,7 +102,7 @@ for (const width of [
 			await visit(page, dayView(weekLater(day)));
 			await expect(page.locator('.ec-event').filter({ hasText: `${label}-saved` })).toHaveCount(0);
 
-			await visit(page, '/tasks/todo');
+			await visit(page, '/calendar/todo');
 			await expect(page.getByText(`${label}-saved`).first()).toBeVisible();
 		});
 	});
@@ -115,7 +115,7 @@ test('a todo placed on the day becomes repeating, then once only', async ({ page
 	const day = today();
 	const title = 'kind-from-a-todo';
 
-	await visit(page, '/tasks/todo');
+	await visit(page, '/calendar/todo');
 	await page.getByRole('button', { name: 'New task' }).first().click();
 	await page.locator('[name="heading"]').first().fill(title);
 	await page.getByRole('button', { name: 'Create task' }).click();

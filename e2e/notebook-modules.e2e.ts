@@ -47,6 +47,70 @@ async function makeNotebook(page: Page, title: string): Promise<void> {
 	await visit(page, `/notebooks/${id}`);
 }
 
+test('a tab opens in a new browser tab on a middle press, and in place on a plain one', async ({
+	page
+}) => {
+	await register(page, testEmail('nb-tab-middle'));
+	await makeNotebook(page, 'Garden');
+	const notes = page.getByRole('button', { name: /^Notes/ });
+
+	const opened = page.context().waitForEvent('page');
+	await notes.click({ button: 'middle' });
+	const other = await opened;
+	await other.waitForLoadState();
+	expect(new URL(other.url()).searchParams.get('tab')).toBe('notes');
+	await expect(other.getByRole('button', { name: /^Notes/ })).toHaveAttribute(
+		'aria-current',
+		'page'
+	);
+	await other.close();
+
+	const before = page.url();
+	await notes.click();
+	await expect(notes).toHaveAttribute('aria-current', 'page');
+	expect(page.url()).toBe(before);
+});
+
+test('the whole screen says tabs can stand side by side, and opens one beside on a press', async ({
+	page
+}) => {
+	await page.setViewportSize({ width: 1600, height: 900 });
+	await register(page, testEmail('nb-beside-hint'));
+	await makeNotebook(page, 'Garden');
+
+	await page.getByRole('button', { name: 'The whole screen' }).first().click();
+	const hint = page.getByRole('button', { name: 'Drag a tab here to open it beside' });
+	await expect(hint).toBeVisible();
+
+	await hint.click();
+	await expect(page.locator('dialog.nb-split')).toBeVisible();
+	// Two panes showing: the edge has said what it had to.
+	await expect(hint).toHaveCount(0);
+});
+
+test('on a phone an open notebook wears the bar, and its verbs are behind ⋮', async ({ page }) => {
+	await register(page, testEmail('nb-in-bar'));
+	await makeNotebook(page, 'Allotment');
+	await page.setViewportSize({ width: 390, height: 844 });
+
+	const bar = page.locator('.room-bar');
+	await expect(bar.getByRole('heading', { name: 'Allotment' })).toBeVisible();
+	// Not drawn a second time under the tabs.
+	await expect(page.getByRole('heading', { name: 'Allotment' })).toHaveCount(1);
+
+	await bar.getByRole('button', { name: 'More' }).click();
+	await expect(page.getByRole('link', { name: 'All notebooks' })).toBeVisible();
+	await expect(page.getByRole('button', { name: 'Rename' })).toBeVisible();
+	await page.keyboard.press('Escape');
+
+	// Another shelf of the room gives the bar back.
+	await page
+		.getByRole('link', { name: /^Diary/ })
+		.first()
+		.click();
+	await expect(bar.getByRole('heading', { name: 'Notebooks' })).toBeVisible();
+});
+
 test.describe('what a notebook holds', () => {
 	test('starts at notes and tasks, and gains a tab when one is switched on', async ({ page }) => {
 		await register(page, testEmail('nb-modules'));
@@ -82,6 +146,56 @@ test.describe('what a notebook holds', () => {
 		// It is an ordinary inventory row, in the room where inventory lives.
 		await visit(page, '/inventory');
 		await expect(page.getByText('Wall tiles').first()).toBeVisible();
+
+		// And the row says whose it is: the room shows every notebook's things
+		// at once, and a name alone leaves which subject it was for to memory.
+		const row = page.locator('.row-card').filter({ hasText: 'Wall tiles' });
+		await expect(row.getByRole('link', { name: 'Kitchen renovation' })).toBeVisible();
+	});
+
+	test('the Inventory tab says where things are, and shows them as cards when asked', async ({
+		page
+	}) => {
+		await register(page, testEmail('nb-inv-places'));
+
+		// A place to put things, made the way the room makes one.
+		await visit(page, '/inventory');
+		await page.evaluate(async () => {
+			const body = new FormData();
+			body.set('heading', 'Garage shelf');
+			await fetch('/inventory?/createLocation', { method: 'POST', body });
+		});
+
+		await makeNotebook(page, 'Workshop');
+		await page.getByRole('button', { name: 'Rename' }).click();
+		await page.getByRole('checkbox', { name: 'Inventory' }).check();
+		await save(page, page.getByRole('button', { name: 'Save' }));
+		await page.getByRole('button', { name: /^Inventory/ }).click();
+
+		await page.getByRole('button', { name: 'New item' }).click();
+		await page.getByRole('textbox', { name: /^Item\*?$/ }).fill('Drill bits');
+		await page.locator('select[name="locationId"]').selectOption({ label: 'Garage shelf' });
+		await save(page, page.getByRole('button', { name: 'Save' }));
+		await page.getByRole('button', { name: 'New item' }).click();
+		await page.getByRole('textbox', { name: /^Item\*?$/ }).fill('Sandpaper');
+		await save(page, page.getByRole('button', { name: 'Save' }));
+
+		// The room's headings: the place, and the things filed nowhere after it.
+		const headings = page.locator('h3[data-place]');
+		await expect(headings).toHaveText(['Garage shelf', 'Not filed anywhere']);
+
+		// Cards, the notes' own switch, kept across a reload.
+		const list = page.locator('[data-item-view]').first();
+		await expect(list).toHaveAttribute('data-item-view', 'list');
+		await page.getByRole('button', { name: 'Cards', exact: true }).click();
+		await expect(list).toHaveAttribute('data-item-view', 'grid');
+		await page.waitForTimeout(600);
+		await page.reload();
+		await page.getByRole('button', { name: /^Inventory/ }).click();
+		await expect(page.locator('[data-item-view]').first()).toHaveAttribute(
+			'data-item-view',
+			'grid'
+		);
 	});
 
 	test('switching a module off takes the tab, not the things', async ({ page }) => {
@@ -150,7 +264,7 @@ test.describe('what a notebook holds', () => {
 		 * the order a decoration.
 		 */
 		await page.reload();
-		const strip = page.locator('[data-tour="notebook-tabs"] button');
+		const strip = page.locator('[data-tour="notebook-tabs"]').getByRole('button');
 		await expect(strip.first()).toContainText('Tasks');
 		await expect(strip.first()).toHaveAttribute('aria-current', 'page');
 	});

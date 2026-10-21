@@ -12,6 +12,7 @@ import {
 	todoTasks
 } from '$lib/db/schema.js';
 import { blockName } from '../planner-grid.js';
+import { titleLine } from '../markdown-plain.js';
 
 import type { Ctx } from './ctx.js';
 import { NotFoundError, ValidationError } from './errors.js';
@@ -54,7 +55,12 @@ import { getGridHours } from './settings.js';
  * page you have open, or the push delivery job while the app is closed.
  */
 
-export const MAX_MESSAGE_LENGTH = 300;
+/**
+ * Room for a few lines and a picture or two: a reminder is markdown, the same
+ * writing a todo's notes are, and a picture's link alone is a few dozen
+ * characters of it.
+ */
+export const MAX_MESSAGE_LENGTH = 2000;
 
 /** Everything a reminder can be about, and the order the page groups them in. */
 export const REMINDER_KINDS = [
@@ -208,7 +214,8 @@ export function upcomingReminders(
 			 * has to guess — `remindAt` stays for whoever is showing it.
 			 */
 			at: instantOfLocal(r.remindAt, ctx.tz).toISOString(),
-			message: r.message,
+			// What an alarm shows, which draws no markdown: the words alone.
+			message: titleLine(r.message),
 			audible: r.audible
 		}));
 }

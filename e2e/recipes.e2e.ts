@@ -311,7 +311,7 @@ test('the calendar button on a recipe puts it on a day', async ({ page }) => {
 	await expect(plan).toBeHidden();
 
 	// It is a block on the plan like anything else, which is the whole claim.
-	await visit(page, '/tasks/calendar');
+	await visit(page, '/calendar/calendar');
 	await expect(page.getByText('Leek soup').first()).toBeVisible();
 });
 

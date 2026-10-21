@@ -1,0 +1,6 @@
+• La app ahora se lee en portugués, y pregunta qué idioma quieres en el primer uso.
+• Los recordatorios y notificaciones son más confiables: el sonido, la configuración en instancias solo de teléfono, y el aviso en pantalla están arreglados.
+• El ícono de la app vuelve a verse bien en un fondo oscuro.
+• El primer paso de la pestaña de IA es más claro, y las cuentas nuevas empiezan con mejores categorías.
+
+Cuéntame qué se rompe: github.com/ontoplano/ontoplano/issues

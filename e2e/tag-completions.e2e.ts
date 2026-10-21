@@ -12,7 +12,7 @@ import { visit } from './helpers/visit';
 test('the tag box offers what is already there, and Tab walks it', async ({ page }) => {
 	test.setTimeout(180_000);
 	await register(page, testEmail('tag-completions'));
-	await visit(page, '/tasks/todo');
+	await visit(page, '/calendar/todo');
 
 	// A task with two labels, so the account has a vocabulary.
 	await page

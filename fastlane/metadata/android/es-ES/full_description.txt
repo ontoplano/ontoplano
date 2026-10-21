@@ -1,0 +1,29 @@
+Ontoplano es una app de gestión de vida. Empezó como un planificador semanal y se convirtió en el lugar donde vive el resto: lo que tienes que hacer, lo que estás buscando lograr, lo que siempre quieres anotar, y el engranaje habitual de la vida que a nadie le gusta cargar en la cabeza — facturas, listas de compras, rutinas de entrenamiento, citas.
+
+QUÉ INCLUYE
+
+• Tareas — una semana que se repite, cosas puntuales con fecha, y una lista para algún día. Vistas como bloques de tiempo o como un tablero kanban.
+• Metas — por semana, mes, trimestre y año, con progreso medido en lugar de una marca: un número que avanza, desde un hábito, un entrenamiento o tu propia mano.
+• Cuadernos — uno por tema, con notas, tareas y metas juntas, y las personas de las que hablan las notas.
+• Salud — hábitos en una cuadrícula que se lee de un vistazo, y entrenamientos registrados con los pesos, distancias y repeticiones que realmente hiciste.
+• Finanzas — movimientos, las facturas por pagar, y a dónde fue el dinero, mes a mes.
+• Inventario — lo que tienes, dónde está, y lo que se está acabando.
+• Recetas y lista de compras, que se conocen entre sí.
+• Recordatorios que llegan a tu teléfono, no a una bandeja de entrada.
+• Una galería, con las fotos guardadas en tu propia instancia.
+
+UN ASISTENTE PUEDE USARLO DE VERDAD
+
+Trae un servidor MCP integrado. Cualquier asistente que hable Model Context Protocol puede leer tu día y modificarlo — agregar tareas, marcar hábitos, escribir la nota, reorganizar la semana — con las mismas reglas que sigue la app.
+
+Tú generas el token, eliges qué puede tocar, y lo revocas cuando quieras. Cada escritura queda registrada con el estado que reemplazó, así que puedes ver exactamente qué se hizo y devolver algo eliminado con un toque. Y cuando un asistente termina, tu teléfono te cuenta qué hizo.
+
+Nada aquí llama a un modelo, y ninguna clave tuya se guarda acá. Tú traes tu propio asistente.
+
+ES TUYO
+
+Código abierto bajo la AGPL-3.0. Nada se revende, nada se mide, no hay anuncios, y ningún tercero recibe tus datos.
+
+Apúntala a una instancia que hospedes tú mismo, a la oficial en app.ontoplano.com, o guarda todo en el propio teléfono. Tus datos van contigo: la exportación es un solo archivo con todo dentro, y se importa en cualquier instancia.
+
+Código, incidencias y documentación: https://github.com/ontoplano/ontoplano

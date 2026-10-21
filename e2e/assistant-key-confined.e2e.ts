@@ -38,6 +38,11 @@ test('the key form offers to tie a key to one notebook', async ({ page }) => {
 	const reach = page.getByRole('combobox', { name: 'What it may work on' });
 	await expect(reach).toBeVisible();
 
+	// Filing into the other notebooks is only a question for a notebook's key:
+	// out of sight until the key is tied, in a place kept for it.
+	const filing = page.getByRole('checkbox', { name: /file things into your other notebooks/ });
+	await expect(filing).toBeHidden();
+
 	/*
 	 * Found by its accessible name, not by `name="scopes"`.
 	 *
@@ -66,6 +71,9 @@ test('the key form offers to tie a key to one notebook', async ({ page }) => {
 	 */
 	await expect(people).toBeDisabled();
 	await expect(tasks).toBeEnabled();
+	await expect(filing).toBeVisible();
+	await expect(filing).toBeEnabled();
+	await expect(filing).not.toBeChecked();
 	// And one the tie brought into reach, which it did not have before.
 	await expect(page.getByRole('checkbox', { name: /Inventory: write/ })).toBeEnabled();
 	// A locked box says why on its cell, where a pointer can find it.
@@ -96,6 +104,7 @@ test('the key form offers to tie a key to one notebook', async ({ page }) => {
 		.fill('a key tied to one notebook');
 	// Nothing starts ticked, and a key with no grant is refused.
 	await tasks.check();
+	await filing.check();
 
 	await page.getByRole('button', { name: 'Create it' }).click();
 	await expect(page.getByText(/^onto_/).first()).toBeVisible({ timeout: 10000 });
@@ -103,4 +112,7 @@ test('the key form offers to tie a key to one notebook', async ({ page }) => {
 	// And the account says what it handed over, in the list of keys it has.
 	await visit(page, '/settings/integrations/connections');
 	await expect(page.getByText(/Tied to one notebook: The flat/).first()).toBeVisible();
+	// What it holds says it may file into the others.
+	await page.getByRole('button', { name: 'Permissions' }).first().click();
+	await expect(page.getByRole('dialog').getByText('Your other notebooks')).toBeVisible();
 });

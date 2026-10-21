@@ -80,12 +80,12 @@ test('what is written on the device stays there, and the server never shows thro
 	await register(page, testEmail('two'));
 
 	// One on the server, the ordinary way.
-	await visit(page, '/tasks/todo');
+	await visit(page, '/calendar/todo');
 	await addTodo(page, ON_THE_SERVER);
 
 	// The same screen, answered by the device.
 	const go = await onDevice(page);
-	await go('/tasks/todo');
+	await go('/calendar/todo');
 	await expect(page.getByRole('button', { name: 'New task' })).toBeVisible({ timeout: 60_000 });
 	await expect(page.getByText(ON_THE_SERVER)).toHaveCount(0);
 
@@ -95,7 +95,7 @@ test('what is written on the device stays there, and the server never shows thro
 	await expect(page.getByText(ON_THE_SERVER)).toHaveCount(0);
 
 	// Back to the server: it has its own and has never heard of the other.
-	await visit(page, '/tasks/todo');
+	await visit(page, '/calendar/todo');
 	await expect(page.getByText(ON_THE_SERVER).first()).toBeVisible();
 	await expect(page.getByText(ON_THE_DEVICE)).toHaveCount(0);
 
@@ -103,7 +103,7 @@ test('what is written on the device stays there, and the server never shows thro
 	// other half: neither one overwrote the other either.
 	await (
 		await onDevice(page)
-	)('/tasks/todo');
+	)('/calendar/todo');
 	await expect(page.getByText(ON_THE_DEVICE).first()).toBeVisible({ timeout: 60_000 });
 	await expect(page.getByText(ON_THE_SERVER)).toHaveCount(0);
 });
@@ -123,11 +123,11 @@ test('deleting the instance on the device leaves the server account untouched', 
 	test.setTimeout(180_000);
 	await register(page, testEmail('two-del'));
 
-	await visit(page, '/tasks/todo');
+	await visit(page, '/calendar/todo');
 	await addTodo(page, ON_THE_SERVER);
 
 	const go = await onDevice(page);
-	await go('/tasks/todo');
+	await go('/calendar/todo');
 	await expect(page.getByRole('button', { name: 'New task' })).toBeVisible({ timeout: 60_000 });
 	await addTodo(page, ON_THE_DEVICE);
 
@@ -153,7 +153,7 @@ test('deleting the instance on the device leaves the server account untouched', 
 	await page.waitForURL('**/instance', { timeout: 60_000 });
 
 	// The server's account is exactly as it was.
-	await visit(page, '/tasks/todo');
+	await visit(page, '/calendar/todo');
 	await expect(page.getByText(ON_THE_SERVER).first()).toBeVisible();
 	await expect(page.getByText(ON_THE_DEVICE)).toHaveCount(0);
 });
@@ -203,7 +203,7 @@ test('an export moves from the server onto the device, and the server keeps its 
 	test.setTimeout(240_000);
 	await register(page, testEmail('two-move'));
 
-	await visit(page, '/tasks/todo');
+	await visit(page, '/calendar/todo');
 	await addTodo(page, ON_THE_SERVER);
 
 	// The file, as the page would hand it over.
@@ -214,7 +214,7 @@ test('an export moves from the server onto the device, and the server keeps its 
 	expect(file).toContain(ON_THE_SERVER);
 
 	const go = await onDevice(page);
-	await go('/tasks/todo');
+	await go('/calendar/todo');
 	await expect(page.getByRole('button', { name: 'New task' })).toBeVisible({ timeout: 60_000 });
 	await addTodo(page, ON_THE_DEVICE);
 
@@ -241,12 +241,12 @@ test('an export moves from the server onto the device, and the server keeps its 
 	await expect(page.getByText(/Imported \d+ rows/).first()).toBeVisible({ timeout: 120_000 });
 
 	// The device now holds the server's week and not its own.
-	await go('/tasks/todo');
+	await go('/calendar/todo');
 	await expect(page.getByText(ON_THE_SERVER).first()).toBeVisible({ timeout: 60_000 });
 	await expect(page.getByText(ON_THE_DEVICE)).toHaveCount(0);
 
 	// And the server is exactly where it was: one to-do, its own.
-	await visit(page, '/tasks/todo');
+	await visit(page, '/calendar/todo');
 	await expect(page.getByText(ON_THE_SERVER).first()).toBeVisible();
 	await expect(page.getByText(ON_THE_DEVICE)).toHaveCount(0);
 });

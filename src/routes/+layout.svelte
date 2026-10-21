@@ -33,8 +33,7 @@
 		slidesHere,
 		stopHiding
 	} from '$lib/slide';
-	import { MARK_CLIP_PATH, MARK_FIELD } from '$lib/logo/mark-shape';
-	import { MARK_FIELD_ISOLATED } from '$lib/logo/brand';
+	import { MARK_CLIP_PATH } from '$lib/logo/mark-shape';
 	import { CHOOSE_PATH, inPhoneApp, storedChoice } from '$lib/instance-choice';
 	import { handOverRingerKey } from '$lib/ringer-handshake';
 	import { THEMES, THEME_LABELS } from '$lib/theme.js';
@@ -58,7 +57,9 @@
 	import { undo } from '$lib/undo.svelte';
 	import { opensPalette, palette } from '$lib/palette.svelte';
 	import { suppressAutofill } from '$lib/autofill';
+	import { tapOpensPicker } from '$lib/picker-fields';
 	import { APP_UPDATE_HUSH_KEY } from '$lib/platform';
+	import { tellTheShellVersion } from '$lib/outside-links';
 	import { startMarkSpin, stopMarkSpin } from '$lib/mark-spin';
 	import { clearTray } from '$lib/tray';
 	import { busy } from '$lib/busy.svelte';
@@ -90,6 +91,7 @@
 	 * warning standing, which is the safe way round.
 	 */
 	let updateHushed = $state(false);
+	$effect(() => tellTheShellVersion(data.shellVersion));
 	$effect(() => {
 		if (!data.appUpdate) return;
 		try {
@@ -144,6 +146,8 @@
 	// And once for every number box: clicking one selects what is in it, so
 	// typing 2 into a field showing 0 gives 2 rather than 02.
 	$effect(() => smartNumberFields(document));
+	// And for every time and date field: a tap opens its picker, not one segment.
+	$effect(() => tapOpensPicker(document));
 	/*
 	 * Every word under this point, in the language this page is in.
 	 *
@@ -174,14 +178,6 @@
 
 	/** This app is its own instance: no account, and leaving means choosing another. */
 	const onDevice = $derived(isIsolatedBuild());
-	/**
-	 * The bar's own colour: the field the mark in the middle of it is drawn on.
-	 *
-	 * The mark's dark behind a server, and the device's blue on the device —
-	 * so the bar and the mark it carries are one surface on both, and the copy
-	 * that lives on the phone says so from the bar as well as from the icon.
-	 */
-	const barField = $derived(onDevice ? MARK_FIELD_ISOLATED : MARK_FIELD);
 	let menuOpen = $state(false);
 	let pie = $state<CapturePie | undefined>();
 	let rooms = $state<NavPie | undefined>();
@@ -245,6 +241,9 @@
 		if (!onDevice) items.push({ key: 'report', label: 'app.tellTheOperator', icon: 'bug' });
 		items.push({ key: 'docs', label: 'app.documentation', icon: 'book' });
 		items.push({ key: 'support', label: 'app.supportOntoplano', icon: 'heart' });
+		// On a device too: there it says what an assistant would need, and
+		// where to get it.
+		items.push({ key: 'integrations', label: 'rooms.settings.tabs.integrations', icon: 'robot' });
 		return items;
 	});
 
@@ -278,6 +277,10 @@
 		}
 		if (key === 'report') {
 			reporting = true;
+			return;
+		}
+		if (key === 'integrations') {
+			goto(resolve('/settings/integrations'));
 			return;
 		}
 		// The two that leave the app, in a tab of their own.
@@ -394,7 +397,7 @@
 				path === '/notebooks' ||
 				(path.startsWith('/notebooks/') && !path.startsWith('/notebooks/people'))
 			);
-		if (href === '/tasks/calendar') return path.startsWith('/tasks');
+		if (href === '/calendar/calendar') return path.startsWith('/calendar');
 		if (href === '/goals') return path.startsWith('/goals');
 		if (href === '/health/habits') return path.startsWith('/health') || path.startsWith('/data/');
 		return path === href;
@@ -581,11 +584,8 @@
 		 * press rather than a wait, and `stopMarkSpin` in `afterNavigate`
 		 * carries it round to the next upright however early it is asked —
 		 * which from a standing start is one whole turn.
-		 *
-		 * `-changedRoom`, so the octagon turns the way the rooms are sweeping;
-		 * zero where nothing slid, which spins it the one way it always did.
 		 */
-		if (navigation.to && !navigation.willUnload) startMarkSpin([deskMark, barMark], -changedRoom);
+		if (navigation.to && !navigation.willUnload) startMarkSpin([deskMark, barMark]);
 
 		// Named again rather than left to `slides`: the same test, in the shape
 		// that tells the compiler these three are really here.
@@ -904,7 +904,7 @@
 	 */
 	$effect(() => {
 		if (!busy()) return;
-		startMarkSpin([deskMark, barMark], 0);
+		startMarkSpin([deskMark, barMark]);
 		return () => void stopMarkSpin();
 	});
 
@@ -1641,23 +1641,17 @@
 			be pushed by any of that; the main area pads its bottom to match.
 		-->
 		<!--
-			The bar wears the mark's own field — the dark ground between the
-			medallion and the ring, measured off the artwork — so the mark's
-			inside flows into the bar instead of ending at an edge. No hairline
-			on top: the edge IS the change of colour.
-
-			On the device it wears the device's blue, because that is the field
-			the mark above it is drawn on there: the two are a single surface, and
-			one of them changing colour without the other would draw exactly the
-			disc the flowing-in is there to avoid.
+			A pill of black glass floating over the page, clear of every edge,
+			with everything in it — the mark too, sized to the pill rather than
+			rising out of it. Its look is `.mobile-nav` in `layout.css` and its
+			numbers are the `--bar-*` properties there.
 		-->
 		<nav
-			class="mobile-nav fixed inset-x-0 bottom-0 z-40 lg:hidden"
-			style="padding-bottom: var(--safe-bottom); background: {barField}"
+			class="mobile-nav fixed z-40 lg:hidden"
 			aria-label={t('home.primary')}
 			data-tour="mobile-bar"
 		>
-			<div class="flex" style="height: var(--mobile-nav-height)">
+			<div class="flex h-full">
 				<!--
 					The account, so it wears a person. It used to wear the settings
 					glyph, which was a sun with rays: on a phone bar, next to search
@@ -1722,8 +1716,8 @@
 						bind:this={barMark}
 						data-mark
 						onpointerdown={(e) => rooms?.summon(e)}
-						style="clip-path: {MARK_CLIP_PATH}; top: calc(-1 * var(--bar-mark-rise)); height: var(--bar-mark); width: var(--bar-mark)"
-						class="tap tap-shape pie-handle absolute left-1/2 flex -translate-x-1/2 items-center justify-center {roomsOpen
+						style="clip-path: {MARK_CLIP_PATH}; height: var(--bar-mark); width: var(--bar-mark)"
+						class="tap tap-shape pie-handle absolute top-1/2 left-1/2 flex -translate-1/2 items-center justify-center {roomsOpen
 							? 'pie-handle-held text-chrome-ink'
 							: 'text-chrome-muted'}"
 						aria-label={t('home.goToASection')}

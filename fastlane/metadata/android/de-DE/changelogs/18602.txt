@@ -1,0 +1,9 @@
+• Aufgaben heißt jetzt Kalender
+• Erinnerungen stehen im Kalender, zur Zeit, zu der sie klingeln
+• Die Einstellungen der Schnellerfassung sind eine Liste, mit einem Notizbuch pro Segment
+• Auf dem Handy öffnet ein Tipp auf Zeit oder Datum die Auswahl
+• Ein neuer Block beginnt zur vollen Stunde, die Sie antippen
+• Ab Android 15 scrollen Formulare über der Tastatur
+• Aufgeräumte Suche und Filter über Listen
+
+Sagen Sie mir, was kaputtgeht: github.com/ontoplano/ontoplano/issues

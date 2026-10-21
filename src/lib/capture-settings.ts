@@ -1,4 +1,4 @@
-import { CAPTURE_KINDS } from '$lib/capture';
+import { CAPTURE_KINDS, CAPTURES } from '$lib/capture';
 
 /**
  * How somebody has set up the capture wheel: which wedges it holds, in what
@@ -12,6 +12,11 @@ import { CAPTURE_KINDS } from '$lib/capture';
 export type CaptureSettings = {
 	/** Where every capture form starts, or null for each form's own default. */
 	notebookId: number | null;
+	/**
+	 * A kind's own notebook, over the main one: tasks into Work, ideas into
+	 * Someday. A kind not named here follows `notebookId`.
+	 */
+	notebooks: Record<string, number>;
 	/** Every kind, in the order the wheel draws them. */
 	order: string[];
 	/** The kinds left off the wheel. Never all of them. */
@@ -22,6 +27,7 @@ export const CAPTURE_SETTINGS_KEY = 'capture.settings';
 
 export const DEFAULT_CAPTURE_SETTINGS: CaptureSettings = {
 	notebookId: null,
+	notebooks: {},
 	order: [...CAPTURE_KINDS],
 	off: []
 };
@@ -47,6 +53,64 @@ function notebookOf(value: unknown): number | null {
 }
 
 /**
+ * The kinds that land in a notebook, and so can be given one of their own. A
+ * reminder is about a time rather than a subject, and is filed nowhere.
+ */
+export const FILED_KINDS: readonly string[] = CAPTURES.filter((c) => c.holds).map((c) => c.key);
+
+/** The name a kind's own notebook is posted under. */
+export const kindNotebookField = (kind: string) => `notebook.${kind}`;
+
+/** The per-kind notebooks out of anything: filed kinds only, real ids only. */
+function notebooksOf(value: unknown): Record<string, number> {
+	if (!value || typeof value !== 'object' || Array.isArray(value)) return {};
+	const out: Record<string, number> = {};
+	for (const [kind, raw] of Object.entries(value)) {
+		const id = notebookOf(raw);
+		if (FILED_KINDS.includes(kind) && id !== null) out[kind] = id;
+	}
+	return out;
+}
+
+/** Whether a notebook can take what a kind writes — see `notebooksHolding`. */
+export type CanHold = (kind: string, notebookId: number) => boolean;
+
+/**
+ * The one notebook every filed kind writes into, for the picker over them.
+ *
+ * A kind that cannot take that notebook — an idea, where it has no Ideas tab —
+ * and has none is not disagreeing: putting everything into Kitchen leaves it
+ * with none, and the picker still says Kitchen. `undefined` is "Mixed": two
+ * notebooks, or one kind in a notebook while another that could be is not.
+ */
+export function sharedNotebook(
+	notebooks: Record<string, number | null>,
+	canHold: CanHold
+): number | null | undefined {
+	const kinds = FILED_KINDS.filter((kind) => kind in notebooks);
+	const chosen = new Set(kinds.map((kind) => notebooks[kind]).filter((id) => id !== null));
+	if (chosen.size === 0) return null;
+	if (chosen.size > 1) return undefined;
+	const [only] = chosen as Set<number>;
+	const agrees = kinds.every((kind) => notebooks[kind] === only || !canHold(kind, only));
+	return agrees ? only : undefined;
+}
+
+/** Every filed kind into one notebook: those that can take it, and none for the rest. */
+export function everyInto(
+	notebookId: number | null,
+	kinds: readonly string[],
+	canHold: CanHold
+): Record<string, number | null> {
+	return Object.fromEntries(
+		kinds.map((kind) => [
+			kind,
+			notebookId !== null && canHold(kind, notebookId) ? notebookId : null
+		])
+	);
+}
+
+/**
  * The stored answer, read leniently.
  *
  * Anything unreadable is the default, an unknown kind is dropped, and a set
@@ -62,10 +126,11 @@ export function parseCaptureSettings(stored: string | null | undefined): Capture
 		return DEFAULT_CAPTURE_SETTINGS;
 	}
 	if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return DEFAULT_CAPTURE_SETTINGS;
-	const { notebookId, order, off } = raw as Record<string, unknown>;
+	const { notebookId, notebooks, order, off } = raw as Record<string, unknown>;
 	const offKnown = knownKinds(Array.isArray(off) ? off : []);
 	return {
 		notebookId: notebookOf(notebookId),
+		notebooks: notebooksOf(notebooks),
 		order: orderKinds(Array.isArray(order) ? order : []),
 		off: offKnown.length >= CAPTURE_KINDS.length ? [] : offKnown
 	};
@@ -74,6 +139,7 @@ export function parseCaptureSettings(stored: string | null | undefined): Capture
 export function serialiseCaptureSettings(settings: CaptureSettings): string {
 	return JSON.stringify({
 		notebookId: settings.notebookId,
+		notebooks: notebooksOf(settings.notebooks),
 		order: orderKinds(settings.order),
 		off: knownKinds(settings.off)
 	});
@@ -82,11 +148,13 @@ export function serialiseCaptureSettings(settings: CaptureSettings): string {
 /**
  * What a form posted, before anything about notebooks is checked.
  *
- * `order` is every kind in the order the list showed; `on` the ticked ones.
+ * `order` is every kind in the order the list showed; `on` the ticked ones;
+ * `notebooks` each filed kind's own, empty for "the main one".
  * Returns null for the one answer that cannot be kept — nothing ticked.
  */
 export function readCaptureForm(raw: {
 	notebookId: unknown;
+	notebooks?: Record<string, unknown>;
 	order: readonly unknown[];
 	on: readonly unknown[];
 }): CaptureSettings | null {
@@ -95,6 +163,7 @@ export function readCaptureForm(raw: {
 	const order = orderKinds(raw.order);
 	return {
 		notebookId: notebookOf(raw.notebookId),
+		notebooks: notebooksOf(raw.notebooks),
 		order,
 		off: order.filter((kind) => !on.includes(kind))
 	};
@@ -118,7 +187,7 @@ export function wheelKinds(settings: CaptureSettings, available: readonly string
  *
  * The notebook on screen wins over the one in the settings: somebody who
  * opens the wheel while reading about the kitchen is writing about the
- * kitchen. Otherwise it is the chosen one, or none.
+ * kitchen. Otherwise it is the kind's own, then the main one, or none.
  */
 export function startingNotebook(
 	settings: CaptureSettings,
@@ -126,7 +195,8 @@ export function startingNotebook(
 		id: string | null;
 		params: Record<string, string | undefined>;
 		search?: URLSearchParams;
-	}
+	},
+	kind?: string
 ): number | null {
 	const here =
 		route.id === NOTEBOOK_ROUTE
@@ -134,7 +204,7 @@ export function startingNotebook(
 			: route.id === NOTEBOOKS_ROUTE
 				? notebookOf(route.search?.get(NOTEBOOK_PARAM) ?? null)
 				: null;
-	return here ?? settings.notebookId;
+	return here ?? (kind ? settings.notebooks[kind] : undefined) ?? settings.notebookId;
 }
 
 /** The screen that is one notebook, */

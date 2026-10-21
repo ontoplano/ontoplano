@@ -61,14 +61,14 @@ describe('an error report', () => {
 		service.setClientErrorConsent(ctx, 'yes');
 		service.recordClientError(ctx, {
 			message: 'Cannot read properties of undefined',
-			url: '/tasks/calendar',
+			url: '/calendar/calendar',
 			stack: 'at thing (app.js:1:1)',
 			userAgent: 'Mozilla/5.0 (Linux; Android 14)'
 		});
 
 		const [report] = service.recentClientErrors();
 		expect(report.message).toBe('Cannot read properties of undefined');
-		expect(report.url).toBe('/tasks/calendar');
+		expect(report.url).toBe('/calendar/calendar');
 		expect(report.stack).toContain('app.js');
 		expect(report.userAgent).toContain('Android');
 		// Joined rather than stored, so a deleted account takes its name out of
@@ -170,10 +170,10 @@ describe('an error report', () => {
 	 * choosing to write a sentence.
 	 */
 	it('carries a problem and an idea, told apart by their kind', () => {
-		service.recordBugReport(ctx, { message: 'the board scrolls wrong', url: '/tasks/board' });
+		service.recordBugReport(ctx, { message: 'the board scrolls wrong', url: '/calendar/board' });
 		service.recordBugReport(
 			ctx,
-			{ message: 'the board should scroll the other way', url: '/tasks/board' },
+			{ message: 'the board should scroll the other way', url: '/calendar/board' },
 			'suggestion'
 		);
 

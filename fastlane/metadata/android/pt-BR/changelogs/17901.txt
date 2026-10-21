@@ -1,0 +1,8 @@
+• Uma sala de Mídia, e dá para gravar nela — segure o +, ouça, dê um nome ou deixe o app dar
+• Gravações entram numa nota ou ideia e tocam ali
+• O app lembra o que já te avisou
+• Corrigido: lembretes não chegavam a celular apontado para um servidor
+• Corrigido: pôr um celular para tocar só funcionava uma vez
+• Configurar uma IA aparece no seu idioma
+
+github.com/ontoplano/ontoplano/issues

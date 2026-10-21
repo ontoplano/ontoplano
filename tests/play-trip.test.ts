@@ -5,7 +5,17 @@
  */
 import { describe, expect, test } from 'vitest';
 import { PLAY_PARAMS, playReturnAddress, playTripAddress } from '../src/lib/play-billing';
+import { askAgainOnThisPhone } from '../src/lib/instance-choice';
 import { fromPlayStore, PLAY_STORE_USER_AGENT, APP_USER_AGENT } from '../src/lib/platform';
+import {
+	atLeast,
+	leavesTheApp,
+	OUT_PARAM,
+	OUT_PATH,
+	OUT_SINCE,
+	outsideAddress,
+	outTripAddress
+} from '../src/lib/outside-links';
 
 const INSTANCE = 'https://app.ontoplano.com';
 const SKU = 'ontoplano.solo.monthly';
@@ -54,5 +64,40 @@ describe('the store copy', () => {
 	test('is recognised by its own token, not by being the app', () => {
 		expect(fromPlayStore(`Mozilla/5.0 ${APP_USER_AGENT} ${PLAY_STORE_USER_AGENT}`)).toBe(true);
 		expect(fromPlayStore(`Mozilla/5.0 ${APP_USER_AGENT}`)).toBe(false);
+	});
+});
+
+describe('a link out, from an instance', () => {
+	test('goes to the device copy carrying the address', () => {
+		const out = new URL(outTripAddress('https://docs.ontoplano.com/running-it'));
+		expect(out.origin).toBe('https://localhost');
+		expect(out.pathname).toBe(OUT_PATH);
+		expect(out.searchParams.get(OUT_PARAM)).toBe('https://docs.ontoplano.com/running-it');
+	});
+
+	test('only a web address is handed to the browser', () => {
+		expect(outsideAddress('https://ontoplano.com/')).toBe('https://ontoplano.com/');
+		expect(outsideAddress('javascript:alert(1)')).toBeNull();
+		expect(outsideAddress('intent://x#Intent;end')).toBeNull();
+		expect(outsideAddress(null)).toBeNull();
+	});
+
+	test('only a shell new enough to have the page takes the trip', () => {
+		expect(atLeast(OUT_SINCE, OUT_SINCE)).toBe(true);
+		expect(atLeast('0.186.0', OUT_SINCE)).toBe(false);
+		expect(atLeast('0.187.0', OUT_SINCE)).toBe(true);
+		expect(atLeast('garbled', OUT_SINCE)).toBe(false);
+	});
+
+	test('another website leaves the app; this instance and the phone’s own copy do not', () => {
+		const here = `${INSTANCE}/login`;
+		expect(leavesTheApp('https://docs.ontoplano.com/', here)).toBe(true);
+		expect(leavesTheApp(`${INSTANCE}/settings`, here)).toBe(false);
+		expect(leavesTheApp('/settings', here)).toBe(false);
+		expect(leavesTheApp('mailto:a@b.test', here)).toBe(false);
+	});
+
+	test('“Use a different ontoplano” goes back to the question, not to the browser', () => {
+		expect(leavesTheApp(askAgainOnThisPhone(), `${INSTANCE}/login`)).toBe(false);
 	});
 });

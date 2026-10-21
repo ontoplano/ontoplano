@@ -48,7 +48,7 @@ test('a picture in a task’s notes opens in the viewer, zooms, and back closes 
 	test.setTimeout(120_000);
 	await page.setViewportSize({ width: 390, height: 844 });
 	await register(page, testEmail('image-viewer-task'));
-	await visit(page, '/tasks/todo');
+	await visit(page, '/calendar/todo');
 
 	await page
 		.getByRole('button', { name: /New task/ })
@@ -77,13 +77,13 @@ test('a picture in a task’s notes opens in the viewer, zooms, and back closes 
 	// Back — the phone's gesture — takes it away and leaves the page where it was.
 	await page.goBack();
 	await expect(viewer).toHaveCount(0);
-	await expect(page).toHaveURL(/\/tasks\/todo/);
+	await expect(page).toHaveURL(/\/calendar\/todo/);
 });
 
 test('a tall picture opens whole and centred on a phone', async ({ page }) => {
 	await page.setViewportSize({ width: 390, height: 844 });
 	await register(page, testEmail('image-viewer-tall'));
-	await visit(page, '/tasks/todo');
+	await visit(page, '/calendar/todo');
 
 	// A phone screenshot's shape, drawn here so no upload is needed.
 	await page.evaluate(() => {
@@ -179,27 +179,33 @@ test.describe('notebook picture on a phone', () => {
 		await expect(page).toHaveURL(/\/notebooks\/\d+/);
 		await expect(page.getByRole('button', { name: 'New note', exact: true }).first()).toBeVisible();
 
+		/*
+		 * On a phone the open notebook wears the top bar — its picture there,
+		 * its verbs behind ⋮ — so the picture is given in the edit dialog and
+		 * looked at from the bar.
+		 */
 		const { pngOfSize } = await import('./helpers/png');
-		await page
-			.locator('input[type="file"][name="file"]:not([multiple])')
+		const bar = page.locator('.room-bar');
+		await bar.getByRole('button', { name: 'More' }).click();
+		await page.getByRole('button', { name: 'Rename' }).click();
+		const dialog = page.getByRole('dialog');
+		await dialog
+			.locator('input[type="file"][name="file"]')
 			.first()
 			.setInputFiles({ ...pngOfSize(24, 8), name: 'cover.png' });
+		await expect(dialog.locator('.picture-square img')).toBeVisible({ timeout: 15_000 });
+		await dialog.getByRole('button', { name: 'Cancel' }).click();
+		await expect(page.locator('dialog[open]')).toHaveCount(0);
 
-		const square = page.locator('.picture-square.view-on-touch').first();
-		const picture = square.locator('img');
+		const picture = bar.locator('img.room-bar-picture');
 		await expect(picture).toBeVisible();
-		await expect(square.locator('.picture-view svg')).toBeHidden();
 		const box = (await picture.boundingBox())!;
 		await page.touchscreen.tap(box.x + box.width / 2, box.y + box.height / 2);
 
-		const viewer = page.getByRole('dialog', { name: /View the picture|Picture/ });
-		await expect(viewer).toBeVisible();
+		// The viewer, over the page, showing the picture.
+		const viewer = page.locator('dialog[open]');
+		await expect(viewer.locator('img').first()).toBeVisible();
 		await page.keyboard.press('Escape');
 		await expect(viewer).toHaveCount(0);
-
-		await page.getByRole('button', { name: 'Rename' }).first().click();
-		await expect(page.getByRole('dialog').locator('input[type="file"][name="file"]')).toHaveCount(
-			1
-		);
 	});
 });

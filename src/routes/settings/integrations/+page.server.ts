@@ -15,7 +15,11 @@ import {
 } from '$lib/server/services/tokens';
 import { scopeCautionWord, scopeWord } from '$lib/scope-words';
 import { capabilities, isSelfHosted } from '$lib/server/settings';
-import { confinementChoices, describeConfinement } from '$lib/server/mcp/confinement';
+import {
+	confinementChoices,
+	describeConfinement,
+	DELIVER_SCOPE
+} from '$lib/server/mcp/confinement';
 import { translatorFor, SOURCE_LOCALE } from '$lib/i18n/core';
 
 import {
@@ -256,7 +260,9 @@ export const actions: Actions = {
 		 * never offers that.
 		 */
 		const asked = form.getAll('scopes').map(String);
-		const offered = [...ASSISTANT_SCOPES, 'destructive'];
+		// Filing into the other notebooks: `createToken` keeps it only on a
+		// key tied to a notebook.
+		const offered = [...ASSISTANT_SCOPES, 'destructive', DELIVER_SCOPE];
 		const scopes = offered.filter((scope) => asked.includes(scope));
 		if (scopes.length === 0) {
 			return fail(400, { message: t('settings.integrations.tickAtLeastOne') });

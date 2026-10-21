@@ -13,7 +13,7 @@ import { visit } from './helpers/visit';
 test('a search that matches nothing says so, not that there is nothing', async ({ page }) => {
 	test.setTimeout(180_000);
 	await register(page, testEmail('empty-why'));
-	await visit(page, '/tasks/todo');
+	await visit(page, '/calendar/todo');
 
 	await page
 		.getByRole('button', { name: /New task/ })

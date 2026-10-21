@@ -1,0 +1,4 @@
+• O Ontoplano está se preparando para o F-Droid: a página da loja agora vem junto com o código-fonte
+• Builds do Android mais seguros: as ferramentas de build são conferidas pelo checksum publicado
+
+Me conte o que quebrar: github.com/ontoplano/ontoplano/issues

@@ -1,0 +1,9 @@
+• Notizen können farbig sein, in beiden Designs lesbar
+• Notizen eines Notizbuchs auch als Karten
+• Schnellerfassung behält beim Schließen einen Entwurf
+• Ein Assistent mit einem Notizbuch kann in andere ablegen, sieht nur deren Namen
+• Das Inventar eines Notizbuchs ordnet Dinge nach Ort
+• Einträge der Einkaufsliste direkt archivieren
+• Ab Android 15 bleibt das Blatt für neue Blöcke über der Tastatur
+
+Sagen Sie mir, was kaputtgeht: github.com/ontoplano/ontoplano/issues

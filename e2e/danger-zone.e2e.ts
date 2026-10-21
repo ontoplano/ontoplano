@@ -23,7 +23,7 @@ const EMPTY = 'DELETE EVERYTHING';
  * supposed to take.
  */
 async function leaveSomething(page: import('@playwright/test').Page, title: string) {
-	await visit(page, '/tasks/board');
+	await visit(page, '/calendar/board');
 	await page.getByRole('button', { name: 'To-do', exact: true }).click();
 	await page.keyboard.press('n');
 	await page.fill('#card-form [name=heading]', title);
@@ -70,7 +70,7 @@ test('the danger zone empties this account and nothing else', async ({ page, bro
 	await expect(sheet.getByText(/not your password/)).toBeVisible();
 
 	// Nothing has gone yet.
-	await visit(page, '/tasks/board');
+	await visit(page, '/calendar/board');
 	await page.getByRole('button', { name: 'To-do', exact: true }).click();
 	await expect(page.getByText('My todo', { exact: true }).first()).toBeVisible();
 
@@ -89,12 +89,12 @@ test('the danger zone empties this account and nothing else', async ({ page, bro
 	await visit(page, '/settings/account');
 	await expect(page.getByText(mine)).toBeVisible();
 	// ...and empty.
-	await visit(page, '/tasks/board');
+	await visit(page, '/calendar/board');
 	await page.getByRole('button', { name: 'To-do', exact: true }).click();
 	await expect(page.getByText('My todo', { exact: true })).toHaveCount(0);
 
 	// And the other account never noticed.
-	await visit(theirs, '/tasks/board');
+	await visit(theirs, '/calendar/board');
 	await theirs.getByRole('button', { name: 'To-do', exact: true }).click();
 	await expect(theirs.getByText('Their untouched todo', { exact: true }).first()).toBeVisible();
 	await other.close();
@@ -144,7 +144,7 @@ test('a signed-out post, and one from another account, empty nothing', async ({
 	// It may well succeed — at emptying the attacker's own empty account.
 	expect(reply.status()).toBeLessThan(500);
 
-	await visit(page, '/tasks/board');
+	await visit(page, '/calendar/board');
 	await page.getByRole('button', { name: 'To-do', exact: true }).click();
 	await expect(page.getByText('Still here afterwards', { exact: true }).first()).toBeVisible();
 

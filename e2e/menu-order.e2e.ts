@@ -29,11 +29,11 @@ test.describe('the menu order', () => {
 
 		await visit(page, '/');
 
-		// The bar: Shopping now comes before Tasks, which it never did.
+		// The bar: Inventory now comes before Calendar, which it never did.
 		const tabs = page.locator('header a[href], nav a[href]');
 		const labels = (await tabs.allTextContents()).map((t) => t.trim()).filter(Boolean);
 		const inventory = labels.findIndex((t) => t.includes('Inventory'));
-		const planner = labels.findIndex((t) => t.includes('Tasks'));
+		const planner = labels.findIndex((t) => t.includes('Calendar'));
 		expect(inventory).toBeGreaterThanOrEqual(0);
 		expect(inventory).toBeLessThan(planner);
 	});
@@ -79,7 +79,7 @@ test.describe('the section colours', () => {
 
 		// The accent is a custom property on the page surface, which is where
 		// every card, rule and tab reads it from.
-		await visit(page, '/tasks/calendar');
+		await visit(page, '/calendar/calendar');
 		const accent = await page
 			.locator('.page-surface')
 			.first()
@@ -104,7 +104,7 @@ test.describe('the section colours', () => {
 			});
 		});
 
-		await visit(page, '/tasks/calendar');
+		await visit(page, '/calendar/calendar');
 		const accent = await page
 			.locator('.page-surface')
 			.first()

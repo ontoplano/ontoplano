@@ -1,0 +1,6 @@
+• The app now reads in Portuguese, and asks which language you want on first run.
+• Reminders and notifications are more reliable: sounds, phone-only setup, and the info banner are fixed.
+• The app icon looks right on a dark home screen again.
+• The AI tab's first step is clearer, and new accounts start with better default categories.
+
+Tell me what breaks: github.com/ontoplano/ontoplano/issues

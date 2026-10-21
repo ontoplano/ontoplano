@@ -1,0 +1,8 @@
+• A Media room, and you can record in it — hold the +, hear it back, name it or let it name itself
+• Recordings go into a note or an idea and play there
+• The app remembers what it has told you
+• Fixed: reminders reached no phone pointed at a server
+• Fixed: setting a phone up to ring worked once per account
+• Setting up an AI assistant reads in your language
+
+github.com/ontoplano/ontoplano/issues

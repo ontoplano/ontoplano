@@ -70,7 +70,7 @@ test('shows error on invalid login', async ({ page }) => {
 	await page.locator('button[type="submit"]').click();
 
 	await expect(page.getByRole('alert')).toBeVisible();
-	await expect(page.getByRole('alert')).toContainText(/invalid/i);
+	await expect(page.getByRole('alert')).toContainText(/wrong email or password/i);
 });
 
 test('protects /activities route', async ({ page }) => {
@@ -78,7 +78,7 @@ test('protects /activities route', async ({ page }) => {
 	await expect(page).toHaveURL('/login');
 });
 
-test('protects /tasks route', async ({ page }) => {
-	await page.goto('/tasks');
+test('protects /calendar route', async ({ page }) => {
+	await page.goto('/calendar');
 	await expect(page).toHaveURL('/login');
 });

@@ -24,6 +24,8 @@ import { argumentProblem, describeProblem } from './arguments.js';
 import { assertRefs, madeRow, resolveRef, type Reach, type Ref } from './refs.js';
 import {
 	confine,
+	deliveryReach,
+	delivers,
 	describeConfinement,
 	reachOf,
 	withinConfinement,
@@ -534,7 +536,17 @@ export function handle(caller: Caller, request: RpcRequest): RpcResponse | null 
 					expected: 'object'
 				});
 			const args = (params.arguments ?? {}) as Record<string, unknown>;
-			const reach = caller.confinement ? reachOf(caller.confinement) : undefined;
+			/*
+			 * A notebook's key that may file into the others resolves a notebook
+			 * against the whole account — only for the arguments `confine` let
+			 * through, which are destinations; everything else it names is still
+			 * looked for inside its own notebook.
+			 */
+			const filing =
+				delivers(caller.confinement, caller.scopes) &&
+				Boolean(tool.refs?.some((ref) => ref.deliverable));
+			const confined = caller.confinement ? reachOf(caller.confinement) : undefined;
+			const reach = confined && filing ? deliveryReach(confined) : confined;
 			try {
 				assertAllowed(caller, tool);
 
@@ -569,7 +581,7 @@ export function handle(caller: Caller, request: RpcRequest): RpcResponse | null 
 				// reaches by a link rather than by an id, so there is no
 				// argument here to pin. Refusing it here would refuse it always.
 				if (caller.confinement && !tool.confinesItself)
-					confine(caller.confinement, tool.refs, tool.input, args);
+					confine(caller.confinement, tool.refs, tool.input, args, { delivers: filing });
 
 				/*
 				 * The same budget a plugin spends on the REST API: reads are cheap

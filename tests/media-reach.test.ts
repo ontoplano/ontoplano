@@ -24,6 +24,7 @@ let diary: typeof import('../src/lib/services/diary');
 let ideas: typeof import('../src/lib/services/ideas');
 let todos: typeof import('../src/lib/services/todos');
 let notebooks: typeof import('../src/lib/services/notebooks');
+let reminders: typeof import('../src/lib/services/reminders');
 let ctx: { userId: string; now: Date; tz: string };
 let theirs: { userId: string; now: Date; tz: string };
 
@@ -33,6 +34,7 @@ beforeAll(async () => {
 	ideas = await import('../src/lib/services/ideas');
 	todos = await import('../src/lib/services/todos');
 	notebooks = await import('../src/lib/services/notebooks');
+	reminders = await import('../src/lib/services/reminders');
 	ctx = { userId: OWNER, now: new Date('2026-09-19T09:00:00'), tz: 'UTC' };
 	theirs = { ...ctx, userId: STRANGER };
 });
@@ -81,6 +83,29 @@ describe('what refers to a picture', () => {
 		// An idea lives in no notebook, and saying null is what refuses it to a
 		// key confined to one.
 		expect(found.find((r) => r.kind === 'idea')?.notebookId).toBeNull();
+	});
+
+	/*
+	 * A reminder is markdown too, and a picture in one is the bin that goes
+	 * out on Tuesdays. Referred to by nothing, it would be served to nobody
+	 * and offered for deleting as unused.
+	 */
+	test('a reminder counts, and lives in no notebook', () => {
+		reminders.createFreeReminder(ctx, {
+			at: '2026-09-20T09:00',
+			message: 'bins out ![bin](/media/43)'
+		});
+		reminders.createFreeReminder(ctx, {
+			at: '2026-09-20T10:00',
+			message: 'what she said [v](/media/audio/43)'
+		});
+		expect(referrers.pictureReferrers(ctx, 43)).toEqual([
+			expect.objectContaining({ kind: 'reminder', notebookId: null })
+		]);
+		expect(referrers.recordingReferrers(ctx, 43)).toEqual([
+			expect.objectContaining({ kind: 'reminder', notebookId: null })
+		]);
+		expect(referrers.pictureReferrers(theirs, 43)).toEqual([]);
 	});
 
 	test('nothing at all, for a picture nobody has used', () => {

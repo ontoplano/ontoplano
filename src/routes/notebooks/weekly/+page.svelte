@@ -96,7 +96,7 @@
 		return new Date(start).toISOString().slice(0, 10);
 	}
 
-	const reviewHref = (weekStart: string) => `${resolve('/tasks/review')}?week=${weekStart}`;
+	const reviewHref = (weekStart: string) => `${resolve('/calendar/review')}?week=${weekStart}`;
 
 	/*
 	 * One dialog for writing and rewriting: it is about a week, and a week has

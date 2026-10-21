@@ -14,7 +14,9 @@ const UNTRANSLATED: Record<Locale, number> = {
 	en: 0,
 	'pt-BR': 258,
 	de: 258,
-	es: 258
+	es: 258,
+	fr: 258,
+	ru: 258
 };
 
 export function untranslatedCount(locale: Locale): number {

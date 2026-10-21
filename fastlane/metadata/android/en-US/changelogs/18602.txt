@@ -1,0 +1,9 @@
+• Tasks is now called Calendar
+• Reminders show on the calendar at the time they ring
+• Quick capture's settings are one list, with a notebook per wedge
+• On a phone, tapping a time or date opens its picker
+• A new block starts on the hour you touched
+• On Android 15+, forms scroll above the keyboard; the new-block sheet no longer hides under the status bar
+• A cleaner search and filter line above lists
+
+Tell me what breaks: github.com/ontoplano/ontoplano/issues

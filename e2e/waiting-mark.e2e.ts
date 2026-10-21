@@ -20,13 +20,13 @@ test('the header mark turns while a navigation drags, then finishes its turn upr
 	page
 }) => {
 	await register(page, testEmail('menu-turn'));
-	await visit(page, '/tasks/todo');
+	await visit(page, '/calendar/todo');
 
 	await page.evaluate(async () => {
 		const registrations = await navigator.serviceWorker.getRegistrations();
 		await Promise.all(registrations.map((r) => r.unregister()));
 	});
-	await visit(page, '/tasks/todo');
+	await visit(page, '/calendar/todo');
 
 	const mark = page.locator('header [data-tour=rooms] .mark-turn');
 	await expect(mark).toBeAttached();
@@ -81,7 +81,7 @@ test.describe('on a phone', () => {
 
 	test('the rim turns in the bar and the bird stays where it is', async ({ page }) => {
 		await register(page, testEmail('bar-turn'));
-		await visit(page, '/tasks/todo');
+		await visit(page, '/calendar/todo');
 
 		const button = page.locator('nav [data-tour=rooms]');
 		await expect(button).toBeVisible();

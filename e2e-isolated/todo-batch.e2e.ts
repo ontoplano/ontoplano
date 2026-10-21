@@ -5,7 +5,7 @@ test('task batch actions persist on the isolated instance', async ({ page }) => 
 	const tour = page.getByRole('dialog', { name: 'Tutorial' });
 	await expect(tour).toBeVisible({ timeout: 20_000 });
 	await tour.getByRole('button', { name: 'Dismiss' }).click();
-	await page.goto('/tasks/todo');
+	await page.goto('/calendar/todo');
 	for (const title of ['Device first', 'Device second']) {
 		await page.getByRole('button', { name: /^New task(?: n)?$/ }).click();
 		await page.locator('#todo-form [name="heading"]').fill(title);

@@ -260,7 +260,7 @@ const layoutShells = import.meta.glob('/src/routes/**/+layout.svelte', {
 
 const PREFIX = '/src/routes';
 
-/** '/src/routes/tasks/todo/+page.server.ts' -> '/tasks/todo'; root -> '/'. */
+/** '/src/routes/calendar/todo/+page.server.ts' -> '/calendar/todo'; root -> '/'. */
 function dirOf(key: string, suffix: string): string {
 	return key.slice(PREFIX.length, -suffix.length) || '/';
 }

@@ -83,8 +83,8 @@ test('shift H and L walk the places inside the room you are in', async ({ page }
 	test.setTimeout(120_000);
 	await page.setViewportSize({ width: 1440, height: 900 });
 	await register(page, testEmail('room-keys'));
-	await visit(page, '/tasks/todo');
-	await expect(page).toHaveURL(/\/tasks\/todo/, { timeout: 60_000 });
+	await visit(page, '/calendar/todo');
+	await expect(page).toHaveURL(/\/calendar\/todo/, { timeout: 60_000 });
 	// Off any control the page may have focused, so the guard for "somebody is
 	// typing" does not swallow the key.
 	await page
@@ -93,14 +93,14 @@ test('shift H and L walk the places inside the room you are in', async ({ page }
 		.click({ position: { x: 5, y: 5 } });
 
 	await page.keyboard.press('Shift+L');
-	await expect(page).toHaveURL(/\/tasks\/(?!todo)/, { timeout: 30_000 });
+	await expect(page).toHaveURL(/\/calendar\/(?!todo)/, { timeout: 30_000 });
 	const forward = new URL(page.url()).pathname;
 
 	await page.keyboard.press('Shift+H');
-	await expect(page).toHaveURL(/\/tasks\/todo/, { timeout: 30_000 });
+	await expect(page).toHaveURL(/\/calendar\/todo/, { timeout: 30_000 });
 
 	// It moved somewhere inside Tasks, not out of it.
-	expect(forward.startsWith('/tasks/')).toBe(true);
+	expect(forward.startsWith('/calendar/')).toBe(true);
 });
 
 test('H and L walk Media and Finance too, in the strip order', async ({ page }) => {
@@ -139,15 +139,15 @@ test('the board keeps H and L, and carries a card with the angle brackets', asyn
 	 * one room you could not walk out of sideways. A key that means one thing
 	 * on nine screens and another on the tenth is a key nobody trusts.
 	 */
-	await visit(page, '/tasks/board');
-	await expect(page).toHaveURL(/\/tasks\/board/, { timeout: 60_000 });
+	await visit(page, '/calendar/board');
+	await expect(page).toHaveURL(/\/calendar\/board/, { timeout: 60_000 });
 	await page
 		.locator('h1, body')
 		.first()
 		.click({ position: { x: 5, y: 5 } });
 
 	await page.keyboard.press('Shift+L');
-	await expect(page).toHaveURL(/\/tasks\/(?!board)/, { timeout: 30_000 });
+	await expect(page).toHaveURL(/\/calendar\/(?!board)/, { timeout: 30_000 });
 });
 
 test('switching to the preview moves nothing below it', async ({ page }) => {

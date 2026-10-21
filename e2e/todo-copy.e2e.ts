@@ -5,7 +5,7 @@ import { visit } from './helpers/visit';
 test('copying selected task text does not complete it', async ({ page }) => {
 	test.setTimeout(120_000);
 	await register(page, testEmail('todo-copy'));
-	await visit(page, '/tasks/todo');
+	await visit(page, '/calendar/todo');
 	await page.getByRole('button', { name: /^New task(?: n)?$/ }).click();
 	const title = 'Select this task text to copy';
 	await page.locator('#todo-form [name="heading"]').fill(title);

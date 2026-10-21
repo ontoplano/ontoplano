@@ -186,6 +186,17 @@ export function toLocalISOString(d: Date): string {
 	return `${localDay(d)}T${pad2(d.getHours())}:${pad2(d.getMinutes())}:${pad2(d.getSeconds())}`;
 }
 
+/**
+ * The start of today where the person is, as a `Date` the civil-day helpers
+ * here read by its local parts.
+ *
+ * `startOfDay(ctx.now)` is the server's today, and the server is UTC: for an
+ * account three hours west, tomorrow began at nine in the evening.
+ */
+export function startOfToday(ctx: Ctx): Date {
+	return new Date(`${localOfInstant(ctx.now, ctx.tz).slice(0, 10)}T00:00:00`);
+}
+
 /** Local midnight of the day the instant falls on. */
 export function startOfDay(d: Date): Date {
 	return new Date(d.getFullYear(), d.getMonth(), d.getDate());

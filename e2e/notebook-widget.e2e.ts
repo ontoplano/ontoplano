@@ -44,8 +44,11 @@ for (const size of [
 
 		await post(page, '/notebooks?/create', { heading: 'The flat', modules: 'notes,tasks' });
 		const id = await notebookId(page, 'The flat');
-		await post(page, '/tasks/todo?/create', { heading: 'Paint the hall', notebookId: String(id) });
-		await post(page, '/tasks/todo?/create', { heading: 'Buy tiles', notebookId: String(id) });
+		await post(page, '/calendar/todo?/create', {
+			heading: 'Paint the hall',
+			notebookId: String(id)
+		});
+		await post(page, '/calendar/todo?/create', { heading: 'Buy tiles', notebookId: String(id) });
 
 		// The device's copy of the app is not running here; stand in for it and
 		// keep the address it was sent, which is the whole handoff.

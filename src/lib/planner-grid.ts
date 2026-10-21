@@ -4,7 +4,7 @@ import type { Calendar } from '@event-calendar/core';
 import { CATEGORY_FALLBACK_COLOR } from './colors.js';
 import { describeRecurrence, occursOn, parseRecurrence } from './recurrence.js';
 import { localDay } from './services/time.js';
-import { firstPlainLine } from './markdown-plain.js';
+import { firstPlainLine, titleLine } from './markdown-plain.js';
 
 /**
  * The default stretch of the day, when the account has not said otherwise.
@@ -79,6 +79,9 @@ export const GRID_SLOT_MINUTES = 30;
 // Drag/resize/select step. Independent from GRID_SLOT_DURATION so the gridlines stay
 // readable at 30min while placement is precise to the quarter hour.
 export const GRID_SNAP_DURATION = '00:15:00';
+// A tap on a phone is a guess at the hour, not at the quarter: the form it opens
+// starts on the hour the finger landed in, and is changed there if need be.
+export const GRID_TAP_DURATION = '01:00:00';
 
 // Slot heights (px per GRID_SLOT_MINUTES) the zoom control steps through.
 export const GRID_ZOOM_LEVELS = [16, 24, 36, 52, 72, 96];
@@ -575,6 +578,8 @@ export interface GridEventDetail {
 	repeats: string | null;
 	/** The notebook it is filed under, or null. */
 	notebookTitle: string | null;
+	/** A reminder's whole message, as markdown — it has no title to stand for it. */
+	message: string | null;
 }
 
 // Everything a block knows about itself, for the hover card — the way to read a slot
@@ -609,18 +614,23 @@ export function describeGridEvent(
 			? describeRecurrence(rule, (event.start.getDay() + 6) % 7, t)
 			: null;
 
+	// A reminder is a moment: when it rings, not a stretch of the day.
+	const reminder = props.kind === 'reminder';
 	return {
 		title,
-		timeText: clock.hour12
-			? clockRange(event, true, clock.locale)
-			: `${formatClock(event.start)} – ${formatClock(event.end)}`,
-		durationText: formatGridDuration(minutes),
+		timeText: reminder
+			? formatClock(event.start)
+			: clock.hour12
+				? clockRange(event, true, clock.locale)
+				: `${formatClock(event.start)} – ${formatClock(event.end)}`,
+		durationText: reminder ? '' : formatGridDuration(minutes),
 		categoryName: rawCategory || null,
 		label: rawLabel && rawLabel !== title ? rawLabel : null,
 		state,
 		repeats,
 		notebookTitle:
-			typeof props.notebookTitle === 'string' && props.notebookTitle ? props.notebookTitle : null
+			typeof props.notebookTitle === 'string' && props.notebookTitle ? props.notebookTitle : null,
+		message: reminder && typeof props.message === 'string' ? props.message : null
 	};
 }
 
@@ -685,6 +695,8 @@ export function baseGridOptions(
 		 * is plain TypeScript the tests import on their own.
 		 */
 		notebookGlyph?: string;
+		/** The alarm glyph's path, which a reminder wears before its words. */
+		alarmGlyph?: string;
 		/**
 		 * What the corner mark is called, as a control: tick it, untick it —
 		 * naming the block, since a week of them each carries one.
@@ -716,6 +728,19 @@ export function baseGridOptions(
 	const locale = opts.locale;
 	const hour12 = opts.twelveHour ?? false;
 	const notebookGlyph = opts.notebookGlyph ?? '';
+	const alarmGlyph = opts.alarmGlyph ?? '';
+
+	/** A reminder's words behind its alarm, the one way it differs from a block. */
+	const reminderHtml = (info: { event: GridEventLike }) => {
+		const glyph = alarmGlyph
+			? `<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="${alarmGlyph}"/></svg>`
+			: '';
+		return {
+			html: `<span class="ec-event-reminder">${glyph}<span class="ec-event-title">${escapeHtml(String(info.event.title ?? ''))}</span></span>`
+		};
+	};
+	const isReminder = (info: { event: GridEventLike }) =>
+		(info.event.extendedProps as { kind?: unknown } | undefined)?.kind === 'reminder';
 
 	/** The notebook line under the time, when the block is filed under one. */
 	const notebookHtml = (info: { event: GridEventLike }) => {
@@ -830,8 +855,9 @@ export function baseGridOptions(
 		// An all-day one has no hours to give, so it is its title alone, as in
 		// the month — otherwise it reads "12:00 – 12:00 AM".
 		eventContent: month
-			? (info) => info.event.title
+			? (info) => (isReminder(info) ? reminderHtml(info) : info.event.title)
 			: (info) => {
+					if (isReminder(info)) return reminderHtml(info);
 					if (info.event.allDay) return info.event.title;
 					const mark = markHtml(info as { event: GridEventLike });
 					if (!eventFitsText(info.event, slotHeight)) {
@@ -921,6 +947,12 @@ export function timeToMinutes(time: string): number {
 	return h * 60 + (m || 0);
 }
 
+/** A time moved back to the start of the `step` it falls in: 16:45 by an hour is 16:00. */
+export function snapTimeDown(time: string, step: string): string {
+	const size = timeToMinutes(step);
+	return minutesToTime(Math.floor(timeToMinutes(time) / size) * size);
+}
+
 /** Minutes past midnight as 'HH:MM', clamped to a real time of day. */
 export function minutesToTime(minutes: number): string {
 	const clamped = Math.min(Math.max(minutes, 0), 23 * 60 + 59);
@@ -969,6 +1001,51 @@ export function buildBillEvents(
 			paid: due.paid
 		}
 	}));
+}
+
+/** How tall a reminder stands on the grid: a moment, drawn tall enough to read. */
+export const REMINDER_GRID_MINUTES = 30;
+/** How much of a reminder's message is its label — about a short task title. */
+export const REMINDER_LABEL_CHARS = 24;
+
+/** A reminder's message, cut to a label: its words on one line, ended with "…" when longer. */
+export function reminderLabel(message: string): string {
+	const words = titleLine(message);
+	return words.length > REMINDER_LABEL_CHARS
+		? `${words.slice(0, REMINDER_LABEL_CHARS - 1).trimEnd()}…`
+		: words;
+}
+
+/**
+ * Reminders, where they ring.
+ *
+ * Outlined like a subscribed meeting and unmovable here — it is changed on the
+ * reminders page, which knows about its sound — with an alarm before its words.
+ * It has no title, so its label is the start of its message; the whole of it
+ * is the hover card's.
+ */
+export function buildReminderEvents(
+	reminders: { id: number; remindAt: string; message: string }[],
+	accent: string
+): Calendar.EventInput[] {
+	return reminders.map((reminder) => {
+		// A wall clock with no zone, read as the screen's own — as the blocks are.
+		const start = new Date(reminder.remindAt);
+		return {
+			id: `reminder:${reminder.id}`,
+			start,
+			end: new Date(start.getTime() + REMINDER_GRID_MINUTES * 60_000),
+			title: reminderLabel(reminder.message),
+			backgroundColor: 'transparent',
+			textColor: accent,
+			borderColor: accent,
+			editable: false,
+			startEditable: false,
+			durationEditable: false,
+			classNames: ['og-event', 'og-event--reminder'],
+			extendedProps: { kind: 'reminder', refId: reminder.id, message: reminder.message }
+		};
+	});
 }
 
 /**

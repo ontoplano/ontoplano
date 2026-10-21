@@ -351,3 +351,21 @@ test('admin actions refuse a non-admin, page load or no page load', async ({ pag
 	});
 	expect(posted.status(), 'grantTrial as a non-admin').toBe(404);
 });
+
+/**
+ * Who has been using this instance: every signed-in request stamps the
+ * account, so the administrator who just opened the page has just been active.
+ */
+test('the accounts say when each was last active', async ({ page }) => {
+	await signInAsOwner(page);
+	await page.goto('/admin');
+	await page.goto('/admin');
+
+	const own = page.locator('.list-row', { has: page.locator('.chip', { hasText: 'owner' }) });
+	await expect(own.getByText(/active (just now|\d+m ago)/)).toBeVisible();
+
+	await own.locator('a.list-row-main').click();
+	await expect(page).toHaveURL(/\/admin\/[^/]+$/);
+	await expect(page.getByText('Last active')).toBeVisible();
+	await expect(page.getByText('Not seen since this started being kept')).toHaveCount(0);
+});

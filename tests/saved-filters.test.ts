@@ -26,25 +26,25 @@ beforeAll(async () => {
 });
 
 test('a filter is a name and a query, and comes back as one', () => {
-	saved.saveFilter(OWNER, '/tasks/todo', 'Done and dusted', 'done=show');
+	saved.saveFilter(OWNER, '/calendar/todo', 'Done and dusted', 'done=show');
 
-	expect(saved.savedFilters(OWNER, '/tasks/todo')).toEqual([
+	expect(saved.savedFilters(OWNER, '/calendar/todo')).toEqual([
 		{ name: 'Done and dusted', query: 'done=show' }
 	]);
 });
 
 test('the leading question mark is not part of it', () => {
-	saved.saveFilter(OWNER, '/tasks/todo', 'With a mark', '?done=show&notebook=3');
+	saved.saveFilter(OWNER, '/calendar/todo', 'With a mark', '?done=show&notebook=3');
 
-	expect(saved.savedFilters(OWNER, '/tasks/todo').at(-1)?.query).toBe('done=show&notebook=3');
+	expect(saved.savedFilters(OWNER, '/calendar/todo').at(-1)?.query).toBe('done=show&notebook=3');
 });
 
 test('saving the same name again replaces it, rather than refusing', () => {
 	// Somebody saving "This week" twice has adjusted it; being told the name is
 	// taken sends them off to delete the old one for no reason.
-	saved.saveFilter(OWNER, '/tasks/todo', 'Done and dusted', 'done=show&away=show');
+	saved.saveFilter(OWNER, '/calendar/todo', 'Done and dusted', 'done=show&away=show');
 
-	const all = saved.savedFilters(OWNER, '/tasks/todo');
+	const all = saved.savedFilters(OWNER, '/calendar/todo');
 	expect(all.filter((one) => one.name === 'Done and dusted')).toHaveLength(1);
 	expect(all.find((one) => one.name === 'Done and dusted')?.query).toBe('done=show&away=show');
 });
@@ -52,7 +52,7 @@ test('saving the same name again replaces it, rather than refusing', () => {
 test('they are one screen’s, not the account’s', () => {
 	saved.saveFilter(OWNER, '/notebooks/diary', 'Done and dusted', 'tag=reading');
 
-	expect(saved.savedFilters(OWNER, '/tasks/todo').map((one) => one.query)).not.toContain(
+	expect(saved.savedFilters(OWNER, '/calendar/todo').map((one) => one.query)).not.toContain(
 		'tag=reading'
 	);
 	expect(saved.savedFilters(OWNER, '/notebooks/diary')).toEqual([
@@ -61,12 +61,12 @@ test('they are one screen’s, not the account’s', () => {
 });
 
 test('one account cannot read another’s', () => {
-	expect(saved.savedFilters(STRANGER, '/tasks/todo')).toEqual([]);
+	expect(saved.savedFilters(STRANGER, '/calendar/todo')).toEqual([]);
 });
 
 test('a name or a narrowing that is not there is refused', () => {
-	expect(() => saved.saveFilter(OWNER, '/tasks/todo', '  ', 'done=show')).toThrow();
-	expect(() => saved.saveFilter(OWNER, '/tasks/todo', 'Nothing', '')).toThrow();
+	expect(() => saved.saveFilter(OWNER, '/calendar/todo', '  ', 'done=show')).toThrow();
+	expect(() => saved.saveFilter(OWNER, '/calendar/todo', 'Nothing', '')).toThrow();
 });
 
 /*
@@ -76,17 +76,17 @@ test('a name or a narrowing that is not there is refused', () => {
 test('a surface that is not a screen cannot be written to', () => {
 	settings.setUserSetting(OWNER, 'theme', 'playful');
 
-	// A trailing space is a typo and is trimmed, deliberately: `/tasks/todo `
-	// and `/tasks/todo` are one screen and should not be two rows.
-	for (const nasty of ['../theme', 'theme', 'http://elsewhere/x', '', '/tasks/todo?x=1'])
+	// A trailing space is a typo and is trimmed, deliberately: `/calendar/todo `
+	// and `/calendar/todo` are one screen and should not be two rows.
+	for (const nasty of ['../theme', 'theme', 'http://elsewhere/x', '', '/calendar/todo?x=1'])
 		expect(() => saved.saveFilter(OWNER, nasty, 'Mine', 'done=show'), nasty).toThrow();
 
 	expect(settings.getUserSetting(OWNER, 'theme')).toBe('playful');
 });
 
 test('forgetting one leaves the rest', () => {
-	saved.saveFilter(OWNER, '/tasks/todo', 'Keep me', 'away=show');
-	const left = saved.deleteFilter(OWNER, '/tasks/todo', 'Done and dusted');
+	saved.saveFilter(OWNER, '/calendar/todo', 'Keep me', 'away=show');
+	const left = saved.deleteFilter(OWNER, '/calendar/todo', 'Done and dusted');
 
 	expect(left.map((one) => one.name)).toContain('Keep me');
 	expect(left.map((one) => one.name)).not.toContain('Done and dusted');

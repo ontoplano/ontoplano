@@ -1,4 +1,4 @@
-import { DEVICE_ORIGIN, RING_PARAM, inPhoneApp } from '$lib/instance-choice';
+import { DEVICE_ORIGIN, RING_PARAM, RING_PATH, inPhoneApp } from '$lib/instance-choice';
 
 /**
  * The instance's half of "this phone would like to ring for you".
@@ -49,7 +49,7 @@ export async function handOverRingerKey(url: URL): Promise<void> {
 		if (!key) return;
 
 		location.replace(
-			`${DEVICE_ORIGIN}/ring?at=${encodeURIComponent(url.origin)}&key=${encodeURIComponent(key)}`
+			`${DEVICE_ORIGIN}${RING_PATH}?at=${encodeURIComponent(url.origin)}&key=${encodeURIComponent(key)}`
 		);
 	} catch {
 		// Offline, refused, no such route: the app carries on as it is.

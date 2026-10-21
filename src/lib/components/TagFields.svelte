@@ -4,10 +4,10 @@
 	 *
 	 * The three questions the Tags screen asks, and the same three a notebook
 	 * asks from inside — one form, so an answer given in either lands the
-	 * same way. The form around it is the caller's: the action, the hidden
-	 * id, and the hidden `color` the server reads (a colour input has no
-	 * empty, so "no colour" is written there as nothing).
+	 * same way. The form around it is the caller's: the action and the hidden
+	 * id. The colour goes out as `color` through `ColorChoice`, empty for none.
 	 */
+	import ColorChoice from '$lib/components/ColorChoice.svelte';
 	import Field from '$lib/components/Field.svelte';
 	import FormGrid from '$lib/components/FormGrid.svelte';
 	import OneLine from '$lib/components/OneLine.svelte';
@@ -32,7 +32,6 @@
 	} = $props();
 </script>
 
-<input type="hidden" name="color" value={color ?? ''} />
 <FormGrid>
 	<Field label={t('ui.name')} span={12}>
 		<OneLine name="label" bind:value={name} class="input" required autofocus />
@@ -43,23 +42,13 @@
 		<TextBox name="description" bind:value={description} rows={2} />
 	</Field>
 	<Field label={t('ui.colour')} span={12} hint={t('notebooks.tags.aTagWithNoColour')}>
-		<div class="flex items-center gap-2">
-			<input
-				type="color"
-				value={color ?? TAG_COLOR_DEFAULT}
-				aria-label={t('ui.colour')}
-				oninput={(e) => (color = e.currentTarget.value)}
-				class="input h-9 w-14 p-1"
-			/>
+		<ColorChoice
+			bind:color
+			label={t('ui.colour')}
+			noneLabel={t('notebooks.tags.noColour')}
+			fallback={TAG_COLOR_DEFAULT}
+		>
 			<TagChip name={name || was} {color} />
-			<button
-				type="button"
-				onclick={() => (color = null)}
-				disabled={color === null}
-				class="btn btn-sm ml-auto"
-			>
-				{t('notebooks.tags.noColour')}
-			</button>
-		</div>
+		</ColorChoice>
 	</Field>
 </FormGrid>

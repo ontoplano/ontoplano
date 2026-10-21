@@ -35,7 +35,11 @@
 	 * charges: no subscribe, no cycle switch, no payment portal. Status,
 	 * seats and cancellation stay; none of them move money.
 	 */
-	const moneyStays = $derived(data.inApp && payChannel !== 'play');
+	// The store copy counts as the app even before the server's cookie says so,
+	// and its Play sheet is only an answer where this instance can verify it.
+	const moneyStays = $derived(
+		(data.inApp || payChannel === 'play') && !(payChannel === 'play' && data.playReady)
+	);
 
 	function when(iso: string | null): string {
 		if (!iso) return '';

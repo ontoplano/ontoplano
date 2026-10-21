@@ -1,0 +1,6 @@
+• Die App liest sich jetzt auf Portugiesisch und fragt beim ersten Start, welche Sprache Sie möchten.
+• Erinnerungen und Benachrichtigungen sind zuverlässiger: Ton, Einrichtung auf reinen Telefon-Instanzen und der Hinweisbanner sind repariert.
+• Das App-Symbol sieht auf einem dunklen Startbildschirm wieder richtig aus.
+• Der erste Schritt im KI-Tab ist klarer, und neue Konten starten mit besseren Standardkategorien.
+
+Sagen Sie mir, was kaputtgeht: github.com/ontoplano/ontoplano/issues

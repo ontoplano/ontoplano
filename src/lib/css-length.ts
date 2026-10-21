@@ -31,7 +31,22 @@ export function cssLengthPx(value: string, of: Element = document.documentElemen
 	return number;
 }
 
-/** The same, read straight off a custom property. */
+/**
+ * The same, read straight off a custom property — resolved by the browser.
+ *
+ * A property can be a `calc()` of others: `--mobile-nav-height` is the bar's
+ * pill plus the margin under it. No parse of the written text can answer
+ * that, so a probe that inherits the property takes it as its height and the
+ * layout says what it came to. The text is read only where there is no
+ * document to measure in.
+ */
 export function cssVarPx(name: string, of: Element = document.documentElement): number {
-	return cssLengthPx(getComputedStyle(of).getPropertyValue(name), of);
+	const host = of === document.documentElement ? document.body : of;
+	if (!host) return cssLengthPx(getComputedStyle(of).getPropertyValue(name), of);
+	const probe = document.createElement('div');
+	probe.style.cssText = `position:absolute;visibility:hidden;pointer-events:none;width:0;height:var(${name}, 0px)`;
+	host.appendChild(probe);
+	const px = probe.getBoundingClientRect().height;
+	probe.remove();
+	return Number.isFinite(px) ? px : 0;
 }

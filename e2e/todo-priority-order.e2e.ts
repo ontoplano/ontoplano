@@ -73,7 +73,7 @@ async function order(page: Page, titles: string[]): Promise<string[]> {
 test('the to-do list can be ordered by priority', async ({ page }) => {
 	test.setTimeout(150_000);
 	await register(page, testEmail('todo-priority'));
-	await visit(page, '/tasks/todo');
+	await visit(page, '/calendar/todo');
 
 	const titles = [
 		'whenever and easy',
@@ -117,7 +117,7 @@ test('two tasks rated alike can be put the other way round', async ({ page }) =>
 	test.setTimeout(180_000);
 	await page.setViewportSize({ width: 1280, height: 900 });
 	await register(page, testEmail('todo-tie'));
-	await visit(page, '/tasks/todo');
+	await visit(page, '/calendar/todo');
 
 	const titles = ['the older of the two', 'the newer of the two'];
 	await newTodo(page, titles[0], { Urgency: '3' });
@@ -148,7 +148,7 @@ test('the bars on a card are pressed to change them, and confirmed beside them',
 	test.setTimeout(180_000);
 	await page.setViewportSize({ width: 1280, height: 900 });
 	await register(page, testEmail('todo-rate'));
-	await visit(page, '/tasks/todo');
+	await visit(page, '/calendar/todo');
 	await newTodo(page, 'weigh this one', {});
 
 	const card = page.locator('.row-card').filter({ hasText: 'weigh this one' });
@@ -175,7 +175,7 @@ test('the bars on a card are pressed to change them, and confirmed beside them',
 	await expect(confirm).not.toHaveClass(/is-unarmed/);
 	await confirm.click();
 	await expect(holding).toBeHidden();
-	await visit(page, '/tasks/todo');
+	await visit(page, '/calendar/todo');
 	await expect(
 		page.locator('.row-card').filter({ hasText: 'weigh this one' }).locator('.rating-bars')
 	).toHaveAttribute('aria-label', /Urgency 5/);
@@ -187,7 +187,7 @@ test('a drag across the bars sets whichever bar is under it, and Edit carries it
 	test.setTimeout(180_000);
 	await page.setViewportSize({ width: 1280, height: 900 });
 	await register(page, testEmail('todo-rate-drag'));
-	await visit(page, '/tasks/todo');
+	await visit(page, '/calendar/todo');
 	await newTodo(page, 'drag these', {});
 
 	const bars = page.locator('.row-card').filter({ hasText: 'drag these' }).locator('.rating-bars');
@@ -217,7 +217,7 @@ test('the list can say which task you are on, and shows it', async ({ page }) =>
 	test.setTimeout(180_000);
 	await page.setViewportSize({ width: 1280, height: 900 });
 	await register(page, testEmail('todo-doing'));
-	await visit(page, '/tasks/todo');
+	await visit(page, '/calendar/todo');
 
 	await page
 		.getByRole('button', { name: /New task/ })
@@ -255,7 +255,7 @@ test('a rating held on a card can be put back to no answer', async ({ page }) =>
 	test.setTimeout(180_000);
 	await page.setViewportSize({ width: 1280, height: 900 });
 	await register(page, testEmail('todo-unrate'));
-	await visit(page, '/tasks/todo');
+	await visit(page, '/calendar/todo');
 	await newTodo(page, 'leave this one open', { Urgency: '4' });
 
 	const card = page.locator('.row-card').filter({ hasText: 'leave this one open' });
@@ -269,7 +269,7 @@ test('a rating held on a card can be put back to no answer', async ({ page }) =>
 	await holding.getByRole('button', { name: 'Confirm' }).click();
 	await expect(holding).toBeHidden();
 
-	await visit(page, '/tasks/todo');
+	await visit(page, '/calendar/todo');
 	await expect(
 		page.locator('.row-card').filter({ hasText: 'leave this one open' }).locator('.rating-bars')
 	).toHaveAttribute('aria-label', /Urgency –/);

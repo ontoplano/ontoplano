@@ -18,6 +18,11 @@ under the pointer.
 | ------------------------------------ | ------------------------------ | ----- |
 | `/`                                  | tour.ontoplano                 | 8     |
 | `/admin`                             | **none**                       | —     |
+| `/calendar/activities`               | tour.activities                | 3     |
+| `/calendar/board`                    | tour.board                     | 4     |
+| `/calendar/calendar`                 | tour.plan                      | 9     |
+| `/calendar/review`                   | tour.review                    | 3     |
+| `/calendar/todo`                     | tour.toDo                      | 5     |
 | `/finance/bills`                     | tour.bills                     | 3     |
 | `/finance/budgets`                   | rooms.finance.tabs.budgets     | 1     |
 | `/finance/commitments`               | rooms.finance.tabs.commitments | 4     |
@@ -28,7 +33,7 @@ under the pointer.
 | `/health/recipes`                    | tour.recipes                   | 5     |
 | `/health/workouts`                   | tour.workouts                  | 2     |
 | `/inventory/stock`                   | tour.shopping                  | 4     |
-| `/notebooks`                         | tour.notebooks                 | 6     |
+| `/notebooks`                         | tour.notebooks                 | 7     |
 | `/notebooks/diary`                   | tour.diary                     | 5     |
 | `/notebooks/ideas`                   | tour.ideas                     | 3     |
 | `/notebooks/people`                  | tour.people                    | 3     |
@@ -37,11 +42,6 @@ under the pointer.
 | `/settings/account`                  | tour.account                   | 3     |
 | `/settings/integrations/connections` | tour.integrations              | 3     |
 | `/settings/integrations/widget`      | tour.widgets                   | 2     |
-| `/tasks/activities`                  | tour.activities                | 3     |
-| `/tasks/board`                       | tour.board                     | 4     |
-| `/tasks/calendar`                    | tour.plan                      | 9     |
-| `/tasks/review`                      | tour.review                    | 3     |
-| `/tasks/todo`                        | tour.toDo                      | 5     |
 
 Toured as well, though nothing obliges them to be — a screen reached from
 a link rather than from the navigation:
@@ -68,6 +68,45 @@ at the button that reopens it, so it is not listed here.
 6. tour.everythingYouHaveWritten
 7. tour.whatTodayLooksLike
 8. tour.yoursToChange
+
+### `/calendar/activities` — tour.activities
+
+1. tour.theNamedThingsYouKeep
+2. tour.categoriesAreTheColours
+3. tour.retireOneWithoutLosingIt
+
+### `/calendar/board` — tour.board
+
+1. tour.todayAsCards
+2. tour.todayOrEverythingElse
+3. tour.dragACardOrCarry
+4. tour.urgencyEaseInterest
+
+### `/calendar/calendar` — tour.plan
+
+1. tour.theShapeOfANormal
+2. tour.sixViewsOfTheSame
+3. tour.dragToMakeABlock
+4. tour.aTaskBlockBelongsSomewhere
+5. tour.whereYouAreAndWhat
+6. tour.whereYourWeekBegins
+7. tour.theSameDaysAsAList
+8. tour.whatIsWaitingForATime
+9. tour.aWeekYouCanLay
+
+### `/calendar/review` — tour.review
+
+1. tour.closingAWeek
+2. tour.sayItInYourOwn
+3. tour.nothingCarriesItselfOver
+
+### `/calendar/todo` — tour.toDo
+
+1. tour.theThingsWithoutADay
+2. tour.oneLineIsEnough
+3. todoRows.selectMany
+4. tour.jAndKMoveE
+5. tour.whatATaskSaysAboutItself
 
 ### `/finance` — rooms.finance.tabs.overview
 
@@ -160,6 +199,7 @@ at the button that reopens it, so it is not listed here.
 4. tour.favouritesFirst
 5. tour.notJustNotesAndTasks
 6. selection.selectMany
+7. tour.listOrCards
 
 ### `/notebooks/diary` — tour.diary
 
@@ -226,42 +266,3 @@ at the button that reopens it, so it is not listed here.
 2. tour.yourRoomsYourOrderYour
 3. tour.quickCaptureYourWay
 4. tour.lightDarkOrWhateverThe
-
-### `/tasks/activities` — tour.activities
-
-1. tour.theNamedThingsYouKeep
-2. tour.categoriesAreTheColours
-3. tour.retireOneWithoutLosingIt
-
-### `/tasks/board` — tour.board
-
-1. tour.todayAsCards
-2. tour.todayOrEverythingElse
-3. tour.dragACardOrCarry
-4. tour.urgencyEaseInterest
-
-### `/tasks/calendar` — tour.plan
-
-1. tour.theShapeOfANormal
-2. tour.sixViewsOfTheSame
-3. tour.dragToMakeABlock
-4. tour.aTaskBlockBelongsSomewhere
-5. tour.whereYouAreAndWhat
-6. tour.whereYourWeekBegins
-7. tour.theSameDaysAsAList
-8. tour.whatIsWaitingForATime
-9. tour.aWeekYouCanLay
-
-### `/tasks/review` — tour.review
-
-1. tour.closingAWeek
-2. tour.sayItInYourOwn
-3. tour.nothingCarriesItselfOver
-
-### `/tasks/todo` — tour.toDo
-
-1. tour.theThingsWithoutADay
-2. tour.oneLineIsEnough
-3. todoRows.selectMany
-4. tour.jAndKMoveE
-5. tour.whatATaskSaysAboutItself

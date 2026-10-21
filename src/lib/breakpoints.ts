@@ -24,3 +24,11 @@ export const SPLIT_BREAKPOINT = 1024;
 
 /** The media query for "the columns are side by side", matching the CSS `lg:` side. */
 export const SPLIT_MEDIA = `(min-width: ${SPLIT_BREAKPOINT}px)`;
+
+/** The media query for a finger rather than a mouse — the phones a keyboard slides up on. */
+export const TOUCH_MEDIA = '(pointer: coarse)';
+
+/** Whether the main pointer is a finger. False during SSR. */
+export function isTouch(): boolean {
+	return typeof window !== 'undefined' && window.matchMedia(TOUCH_MEDIA).matches;
+}

@@ -1,0 +1,11 @@
+Uma revisão do app inteiro no celular.
+
+A ação principal de cada tela fica sempre no mesmo lugar, a barra assume a cor
+do cômodo e as abas respondem ao deslizar. E há uma lista de compras para levar
+ao mercado, no inventário.
+
+Uma instância que vive só no celular agora exporta seus dados, recebe uma
+exportação de volta e pode ser apagada por inteiro — e o backup do Android não
+a copia mais para o Drive.
+
+Me conte o que quebrar: github.com/ontoplano/ontoplano/issues

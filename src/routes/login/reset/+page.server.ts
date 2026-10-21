@@ -1,8 +1,10 @@
-import { fail, redirect } from '@sveltejs/kit';
+import { redirect } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 import { auth } from '$lib/server/auth';
 import { checkPassword } from '$lib/passwords';
 import { APIError } from 'better-auth/api';
+import { refuse } from '$lib/http-errors';
+import { authRefusal } from '$lib/server/auth-refusals';
 
 export const load: PageServerLoad = async ({ url, locals }) => {
 	if (locals.user) redirect(302, '/');
@@ -20,20 +22,18 @@ export const actions: Actions = {
 		const password = formData.get('password')?.toString() ?? '';
 		const confirm = formData.get('confirm')?.toString() ?? '';
 
-		if (!token) return fail(400, { message: 'This reset link is missing its token' });
+		if (!token) return refuse(400, 'auth.refused.resetMissingToken');
 		const weak = checkPassword(password);
-		if (weak) return fail(400, { message: weak });
-		if (password !== confirm) return fail(400, { message: 'The two passwords do not match' });
+		if (weak) return refuse(400, weak.key, 'values' in weak ? weak.values : undefined);
+		if (password !== confirm) return refuse(400, 'auth.refused.passwordsDiffer');
 
 		try {
 			await auth.api.resetPassword({ body: { newPassword: password, token } });
 		} catch (error) {
 			if (error instanceof APIError)
-				return fail(400, {
-					message: error.message || 'That link has expired or has already been used'
-				});
+				return refuse(400, authRefusal(error, 'auth.refused.linkExpired'));
 			console.error('Password reset error:', error);
-			return fail(500, { message: 'Unexpected error' });
+			return refuse(500, 'auth.refused.unexpected');
 		}
 
 		redirect(303, '/login?reset=1');

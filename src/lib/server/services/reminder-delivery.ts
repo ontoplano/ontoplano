@@ -1,4 +1,5 @@
 import { reminderLink } from '$lib/reminder-links.js';
+import { titleLine } from '$lib/markdown-plain.js';
 import { db } from '$lib/db/index.js';
 import { pushSubscriptions, user } from '$lib/db/schema.js';
 import { buildCtx } from '$lib/services/ctx.js';
@@ -177,7 +178,8 @@ export async function deliverDueReminders(now = new Date()): Promise<{
 			const late = reminder.remindAt < localFor(userId);
 
 			const { sent, failed } = await pushToUser(userId, {
-				title: reminder.message,
+				// Written as markdown, which a notification would show as marks.
+				title: titleLine(reminder.message),
 				body: late
 					? `${reminder.remindAt.slice(11, 16)} — ${lateLabel(reminder.remindAt, localFor(userId))}`
 					: reminder.remindAt.slice(11, 16),

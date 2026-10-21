@@ -28,12 +28,13 @@
 	 *
 	 *     search   count   [ the filters ]   clear   ——   verb   sort
 	 *
-	 * Folded, on a phone, it is two lines that are always the same two: the
-	 * search box across the top, then the list's verb and its order on the
-	 * left and the count with the Filters button on the right. Letting the
-	 * one line wrap put the verb and the order on a second line of their own,
-	 * right-aligned under the Filters button, which lined up with nothing —
-	 * and it squeezed the order into a square whose direction nobody found.
+	 * Folded, on a phone, it is two lines that are always the same two, and
+	 * neither ever wraps: the search box with the count, the way back and the
+	 * Filters button after it; then the list's order and its verbs, from the
+	 * left. The count and the Filters button used to close the second line, and
+	 * on a tab with a view switch beside the order that line overflowed and
+	 * dropped "Filters" onto a third line of its own — a third of a phone's
+	 * screen spent on the strip, for one button.
 	 *
 	 * A filter that should stay out on a phone — the only one a list has, say
 	 * — goes in `inline` rather than in the children: a sheet holding one
@@ -197,8 +198,20 @@
 	 */
 	const said = $derived(on && summary ? summary : t('filters.filters'));
 
-	/** Folded with a verb or an order: the fixed two lines described above. */
-	const twoRows = $derived(folded && Boolean(verb || trailing));
+	/**
+	 * Below this the folded strip is two lines; above it, one.
+	 *
+	 * Folding is about the filters, and a strip can be folded on a desktop —
+	 * a card half the page wide. There the search box, the count and the
+	 * order had room for one line and were still given a phone's two, with
+	 * thumb-sized buttons under a mouse. 35rem at the default type size.
+	 */
+	const TWO_ROWS_BELOW_PX = 560;
+
+	/** Folded with a verb or an order, and phone-narrow: the fixed two lines described above. */
+	const twoRows = $derived(
+		folded && Boolean(verb || trailing) && (width > 0 ? width < TWO_ROWS_BELOW_PX : phone.current)
+	);
 </script>
 
 <!--
@@ -254,7 +267,7 @@
 	{#if count}
 		<!-- As tall as a control, so its words sit level with the buttons on
 		     the first line whichever way the strip aligns. -->
-		<div class="filter-count flex min-h-(--control-sm) shrink-0 items-center">
+		<div class="filter-count flex min-h-(--control-sm) shrink-0 items-center whitespace-nowrap">
 			{@render count()}
 		</div>
 	{/if}
@@ -385,9 +398,9 @@
 	}
 
 	/*
-	 * The two folded lines: the search box (and any inline filter) on the
-	 * first; the verb and the order at the start of the second, the way back,
-	 * the count and the Filters button at its end.
+	 * The two folded lines: the search box, the count, the way back and the
+	 * Filters button on the first, in the order they are written; the order
+	 * and the verb alone on the second, from the left, never wrapping.
 	 */
 	.filter-break {
 		order: 1;
@@ -398,24 +411,21 @@
 	.filter-two-rows > .filter-tail {
 		order: 2;
 		margin-left: 0;
+		flex-wrap: nowrap;
+		/* The whole line, and a switch on it takes what the buttons leave:
+		   a row of small controls at one end of an empty line is the row
+		   spending a phone's width on gaps. */
+		flex: 1 0 100%;
 	}
 
-	.filter-two-rows > .filter-clear {
-		order: 3;
-		margin-left: auto;
+	.filter-two-rows > .filter-tail :global(.seg),
+	.filter-two-rows > .filter-tail :global(:has(> .seg)) {
+		display: flex;
+		flex: 1 1 auto;
 	}
 
-	.filter-two-rows > .filter-count {
-		order: 4;
-	}
-
-	/* With no way back to hold the slack, the count takes it. */
-	.filter-two-rows:not(:has(> .filter-clear)) > .filter-count {
-		margin-left: auto;
-	}
-
-	.filter-two-rows > .filter-toggle {
-		order: 5;
+	.filter-two-rows > .filter-tail :global(.seg > button) {
+		flex: 1 1 0;
 	}
 
 	/*
@@ -437,12 +447,6 @@
 	 */
 	.filter-two-rows > .filter-tail > .filter-verb {
 		order: 1;
-	}
-
-	/* The direction is a button among buttons here, not a bare glyph. */
-	.filter-two-rows > .filter-tail :global(.icon-btn) {
-		border: 1px solid var(--color-gray-300);
-		background-color: var(--btn-face);
 	}
 
 	.filter-inline-below > :global(*) {

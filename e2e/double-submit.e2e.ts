@@ -11,7 +11,7 @@ import { visit } from './helpers/visit';
 test('a double press on Create makes one task', async ({ page }) => {
 	test.setTimeout(180_000);
 	await register(page, testEmail('double-submit'));
-	await visit(page, '/tasks/todo');
+	await visit(page, '/calendar/todo');
 
 	await page
 		.getByRole('button', { name: /New task/ })
@@ -87,7 +87,7 @@ test('a double press on a notebook’s New note makes one note', async ({ page }
 test('Save is held while it is saving, on a form with an id field', async ({ page }) => {
 	test.setTimeout(180_000);
 	await register(page, testEmail('double-submit-edit'));
-	await visit(page, '/tasks/todo');
+	await visit(page, '/calendar/todo');
 
 	await page
 		.getByRole('button', { name: /New task/ })
@@ -101,7 +101,7 @@ test('Save is held while it is saving, on a form with an id field', async ({ pag
 	// Held open long enough that "while it is saving" is a window a test can
 	// look at, the way a real box's is.
 	await page.route(
-		(url) => url.pathname === '/tasks/todo' && url.search.includes('update'),
+		(url) => url.pathname === '/calendar/todo' && url.search.includes('update'),
 		async (route) => {
 			await new Promise((wait) => setTimeout(wait, 1500));
 			await route.continue();

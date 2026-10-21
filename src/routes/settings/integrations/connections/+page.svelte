@@ -769,6 +769,8 @@ Token: ${token}`;
 						scopes={data.scopes}
 						reachable={reachableFor(tiedTo)}
 						carried={carriedFor(tiedTo)}
+						deliver
+						delivering={tiedTo === 'notebook'}
 						destructive
 						showKeys
 					/>
@@ -806,6 +808,7 @@ Token: ${token}`;
 					reachable={reachableFor(viewing.confinement?.kind)}
 					carried={carriedFor(viewing.confinement?.kind)}
 					readonly
+					deliver
 					destructive
 					showKeys
 				/>

@@ -16,7 +16,7 @@ import {
 import { eq, and, count, inArray, isNotNull, notInArray, sql } from 'drizzle-orm';
 import { unionAll } from 'drizzle-orm/sqlite-core';
 import { NotFoundError, ValidationError } from './errors.js';
-import { optionalStr, str } from './validate.js';
+import { optionalColor, optionalStr, str } from './validate.js';
 
 /**
  * Tags, and the rows that join them to what they tag.
@@ -278,9 +278,6 @@ export function replaceMediaTags(mediaId: number, tagNames: string[], userId: st
 /** As long as one label may be. Longer than anybody types, short enough to index. */
 export const MAX_TAG_NAME_LENGTH = 60;
 
-/** What `<input type="color">` produces, and nothing else. */
-const HEX_COLOR = /^#[0-9a-fA-F]{6}$/;
-
 /**
  * Every table that joins a tag to something that carries it.
  *
@@ -357,8 +354,7 @@ function tagName(raw: unknown): string {
 
 /** `#rrggbb`, or null for the ones nobody has chosen a colour for. */
 function tagColor(raw: unknown): string | null {
-	if (raw === undefined || raw === null || raw === '') return null;
-	return str(raw, 'colour', { max: 7, pattern: HEX_COLOR }).toLowerCase();
+	return optionalColor(raw);
 }
 
 function tagOf(id: number, userId: string): TagRow {

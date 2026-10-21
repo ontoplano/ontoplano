@@ -6,7 +6,7 @@ import { archiveEntry, createEntry, deleteEntry, pinEntry, updateEntry } from '$
 import { makeTodosFromEntry } from '$lib/services/note-todos';
 import { removeNotebookPicture, setNotebookPicture } from '$lib/services/media';
 import { setEntryPeople } from '$lib/services/people';
-import { NOTEBOOK_PANEL_WIDTH_KEY, setPanelWidth } from '$lib/services/settings';
+import { NOTEBOOK_PANEL_WIDTH_KEY, setNoteView, setPanelWidth } from '$lib/services/settings';
 import { toActionFailure } from '$lib/http-errors';
 import { describeTag, recolorTag, renameTag, untagNotebook } from '$lib/services/tags';
 import { importVaultAction } from '$lib/import-vault-action';
@@ -200,6 +200,7 @@ export const notebookActions = {
 				title: formData.get('heading'),
 				content: formData.get('content'),
 				tags: formData.get('tags'),
+				color: formData.get('color'),
 				notebookId
 			});
 			setEntryPeople(ctx, id, formData.get('people'));
@@ -242,10 +243,18 @@ export const notebookActions = {
 			title: formData.get('heading'),
 			content: formData.get('content'),
 			tags: formData.get('tags'),
+			// Absent from a form that offers no colour, which keeps the one it has.
+			color: formData.get('color') ?? undefined,
 			notebookId
 		});
 		setEntryPeople(ctx, id, formData.get('people'));
 		return { success: true, action: 'updateEntry' };
+	}),
+
+	/** A notebook's notes as a list or as a grid of cards, for this reader. */
+	setNoteView: formAction((ctx, formData) => {
+		setNoteView(ctx.userId, formData.get('notebookId'), formData.get('view'));
+		return { success: true, action: 'setNoteView' };
 	}),
 
 	/**
