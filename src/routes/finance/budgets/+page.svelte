@@ -114,11 +114,10 @@
 
 	/** The currency filter is a link: the list is the server's, per currency. */
 	function pickCurrency(currency: string) {
-		const params = new URLSearchParams({ month: data.month });
-		if (currency) params.set('currency', currency);
+		const query = currency ? { month: data.month, currency } : { month: data.month };
 		// The path is resolved; the rule cannot see through the appended query.
 		// eslint-disable-next-line svelte/no-navigation-without-resolve
-		void goto(`${resolve('/finance/budgets')}?${params}`, { noScroll: true });
+		void goto(`${resolve('/finance/budgets')}?${new URLSearchParams(query)}`, { noScroll: true });
 	}
 
 	function onkeydown(event: KeyboardEvent) {
