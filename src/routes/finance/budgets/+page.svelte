@@ -2,7 +2,10 @@
 	import { resolve } from '$app/paths';
 	import { enhance } from '$lib/enhance';
 	import { armed } from '$lib/actions/armed';
-	import { typing } from '$lib/browse.svelte';
+	import { browsable, typing } from '$lib/browse.svelte';
+	import { goto } from '$app/navigation';
+	import Icon from '$lib/components/Icon.svelte';
+	import Picker from '$lib/components/Picker.svelte';
 	import { getAction } from '$lib/shortcuts';
 	import RoomSurface from '$lib/components/RoomSurface.svelte';
 	import Modal from '$lib/components/Modal.svelte';
@@ -37,7 +40,7 @@
 	let creating = $state(false);
 	let editing = $state(false);
 	let selectedBudget = $state<BudgetRow | null>(null);
-	let deletingId = $state<number | null>(null);
+	let deleting = $state<BudgetRow | null>(null);
 	/** The category the select is on; kept as state so an inline new rule can
 	   be selected the moment it is saved. */
 	let categoryValue = $state('');
@@ -100,11 +103,34 @@
 		formAmount = moneyInput(b.amountMinor, b.currency);
 	}
 
+	let cursor = $state(-1);
+	browsable(() => ({
+		items: () => data.budgets,
+		cursor: () => cursor,
+		moveTo: (i) => (cursor = i),
+		open: (i) => openEdit(data.budgets[i]),
+		edit: (i) => openEdit(data.budgets[i])
+	}));
+
+	/** The currency filter is a link: the list is the server's, per currency. */
+	function pickCurrency(currency: string) {
+		const params = new URLSearchParams({ month: data.month });
+		if (currency) params.set('currency', currency);
+		// The path is resolved; the rule cannot see through the appended query.
+		// eslint-disable-next-line svelte/no-navigation-without-resolve
+		void goto(`${resolve('/finance/budgets')}?${params}`, { noScroll: true });
+	}
+
 	function onkeydown(event: KeyboardEvent) {
 		if (typing(event) || event.ctrlKey || event.metaKey || event.altKey) return;
-		if (getAction('/finance/budgets', event) === 'new') {
+		const action = getAction('/finance/budgets', event);
+		if (action === 'new') {
 			event.preventDefault();
 			openNew();
+		} else if (action === 'delete' && cursor >= 0 && cursor < data.budgets.length) {
+			// Arms the confirmation; it never deletes on its own.
+			event.preventDefault();
+			deleting = data.budgets[cursor];
 		}
 	}
 </script>
@@ -126,23 +152,18 @@
 					onchange={(e) => e.currentTarget.form?.requestSubmit()}
 				/>
 			</label>
-			{#if data.currencies.length > 0}
-				<label class="flex items-center gap-2 text-sm whitespace-nowrap">
-					{t('finance.budgets.currency')}
-					<select
-						name="currency"
-						class="input input-sm"
-						value={data.currency}
-						onchange={(e) => e.currentTarget.form?.requestSubmit()}
-					>
-						<option value="">{t('finance.budgets.allCurrencies')}</option>
-						{#each data.currencies as cur (cur)}
-							<option value={cur}>{cur}</option>
-						{/each}
-					</select>
-				</label>
-			{/if}
 		</form>
+		{#if data.currencies.length > 0}
+			<Picker
+				value={data.currency}
+				options={[
+					{ value: '', label: t('finance.budgets.allCurrencies') },
+					...data.currencies.map((cur) => ({ value: cur, label: cur }))
+				]}
+				onpick={pickCurrency}
+				label={t('finance.budgets.currency')}
+			/>
+		{/if}
 	{/snippet}
 
 	<div class="space-y-6 p-4" data-tour="budgets">
@@ -235,43 +256,28 @@
 				{/snippet}
 			</EmptyState>
 		{:else}
-			<BudgetProgress budgets={data.budgets} />
-		{/if}
-
-		<!-- Controls for each budget (edit, armed delete) -->
-		{#if data.budgets.length > 0}
-			<div class="space-y-2 border-t border-gray-100 pt-2 dark:border-gray-800">
-				{#each data.budgets as budget (budget.id)}
-					<div
-						class="hover:bg-surface-1 dark:hover:bg-surface-2 flex flex-wrap items-center justify-between gap-2 rounded p-2 text-sm"
+			<BudgetProgress budgets={data.budgets} {cursor}>
+				{#snippet actions(budget)}
+					<button
+						class="icon-btn"
+						type="button"
+						title={t('ui.edit')}
+						aria-label={t('finance.budgets.edit')}
+						onclick={() => openEdit(budget)}
 					>
-						<div>
-							<span class="font-medium">{budget.category}</span>
-							<span class="text-dim ml-1 text-xs">({budget.currency})</span>
-						</div>
-						<div class="flex items-center gap-2">
-							<button class="btn btn-xs" type="button" onclick={() => openEdit(budget)}>
-								{t('finance.budgets.edit')}
-							</button>
-							{#if deletingId === budget.id}
-								<form method="post" action="?/delete" use:enhance>
-									<input type="hidden" name="id" value={budget.id} />
-									<button class="btn btn-xs btn-danger" type="submit" use:armed>
-										{t('finance.budgets.delete')}
-									</button>
-								</form>
-								<button class="btn btn-xs" type="button" onclick={() => (deletingId = null)}
-									>{t('finance.budgets.cancel')}</button
-								>
-							{:else}
-								<button class="btn btn-xs" type="button" onclick={() => (deletingId = budget.id)}
-									>{t('finance.budgets.deleteConfirm')}</button
-								>
-							{/if}
-						</div>
-					</div>
-				{/each}
-			</div>
+						<Icon name="edit" />
+					</button>
+					<button
+						class="icon-btn icon-btn-danger"
+						type="button"
+						title={t('ui.delete')}
+						aria-label={t('finance.budgets.deleteConfirm')}
+						onclick={() => (deleting = budget)}
+					>
+						<Icon name="trash" />
+					</button>
+				{/snippet}
+			</BudgetProgress>
 		{/if}
 	</div>
 </RoomSurface>
@@ -382,7 +388,7 @@
 						{t('finance.budgets.newCategory')}
 					</button>
 					{#if creatingCategory}
-						<div class="mt-2 space-y-2 rounded border border-gray-200 p-3 dark:border-gray-800">
+						<div class="mt-2 space-y-2 rounded border border-gray-200 p-3">
 							<label class="label" for="budget-new-category">
 								{t('finance.budgets.categoryName')}
 							</label>
@@ -490,4 +496,34 @@
 			</div>
 		</form>
 	{/if}
+</Modal>
+
+<Modal
+	open={deleting !== null}
+	title={t('finance.budgets.deleteConfirm')}
+	onclose={() => (deleting = null)}
+>
+	{#if deleting}
+		<p class="text-sm">
+			<strong>{deleting.category}</strong>
+			· {formatMoney(deleting.amountMinor, deleting.currency)} · {deleting.month}
+		</p>
+	{/if}
+	{#snippet footer()}
+		<button class="btn" type="button" onclick={() => (deleting = null)}
+			>{t('finance.budgets.cancel')}</button
+		>
+		<form
+			method="post"
+			action="?/delete"
+			use:enhance={() =>
+				({ result, update }) => {
+					if (result.type === 'success') deleting = null;
+					return update();
+				}}
+		>
+			<input type="hidden" name="id" value={deleting?.id} />
+			<button class="btn btn-danger" type="submit" use:armed>{t('finance.budgets.delete')}</button>
+		</form>
+	{/snippet}
 </Modal>

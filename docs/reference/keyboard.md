@@ -140,9 +140,10 @@ works is a key listed here and the reverse.
 
 ## Budgets — `/finance/budgets`
 
-| Key          | Does       |
-| ------------ | ---------- |
-| <kbd>n</kbd> | New budget |
+| Key          | Does          |
+| ------------ | ------------- |
+| <kbd>n</kbd> | New budget    |
+| <kbd>x</kbd> | Ask to delete |
 
 ## Commitments — `/finance/commitments`
 

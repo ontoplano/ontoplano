@@ -1,11 +1,23 @@
 <script lang="ts">
+	import type { Snippet } from 'svelte';
 	import { formatMoney } from '$lib/money';
 	import { useT } from '$lib/i18n';
+	import { listCursor } from '$lib/actions/list-cursor';
 
 	import type { Budget } from '$lib/services/budgets';
 	export type BudgetRow = Budget;
 
-	let { budgets = [] }: { budgets: BudgetRow[] } = $props();
+	let {
+		budgets = [],
+		cursor = -1,
+		actions
+	}: {
+		budgets: BudgetRow[];
+		/** The row the keyboard is on, where the list is walked with j/k. */
+		cursor?: number;
+		/** Each row's own buttons, where the list is the place to change it. */
+		actions?: Snippet<[BudgetRow]>;
+	} = $props();
 	const t = useT();
 
 	function progressPercent(budget: BudgetRow): number {
@@ -17,13 +29,15 @@
 
 <div class="space-y-4" data-testid="budget-progress">
 	{#if budgets.length === 0}
-		<p class="text-dim text-sm">{t('finance.budgets.noBudgets')}</p>
+		<p class="text-sm text-gray-600">{t('finance.budgets.noBudgets')}</p>
 	{:else}
 		<div class="space-y-3">
-			{#each budgets as budget (budget.id)}
+			{#each budgets as budget, index (budget.id)}
 				<div
-					class="space-y-2 rounded border border-gray-200 p-4 dark:border-gray-800"
+					class="space-y-2 rounded border border-gray-200 p-4"
 					data-testid="row"
+					data-row
+					use:listCursor={index === cursor}
 				>
 					<div class="flex flex-wrap items-center justify-between gap-2">
 						<div class="flex items-center gap-2">
@@ -34,13 +48,14 @@
 								</span>
 							{/if}
 						</div>
-						<div class="text-dim text-sm">
-							<span
+						<div class="flex items-center gap-2">
+							<span class="text-sm text-gray-600"
 								>{t('finance.budgets.allocated')}: {formatMoney(
 									budget.amountMinor,
 									budget.currency
 								)}</span
 							>
+							{@render actions?.(budget)}
 						</div>
 					</div>
 
@@ -58,10 +73,10 @@
 						></div>
 					</div>
 
-					<div class="text-dim flex flex-wrap items-center justify-between gap-2 text-xs">
+					<div class="flex flex-wrap items-center justify-between gap-2 text-xs text-gray-600">
 						<div>
 							<span>{t('finance.budgets.spent')}: </span>
-							<span class="text-foreground font-medium"
+							<span class="font-medium text-gray-900"
 								>{formatMoney(budget.spentMinor, budget.currency)}</span
 							>
 						</div>
