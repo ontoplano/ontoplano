@@ -1,0 +1,7 @@
+• Finance opens with one picture: what is yours, what is committed, what you spent this month and what is left
+• Monthly budgets per category, carried into the next month
+• Track money you hold, owe or set aside, with dated history
+• Mark a movement as expense, income, transfer, refund or fee
+• Any activity can be deleted, and you choose where its blocks and goals go
+
+Tell me what breaks: github.com/ontoplano/ontoplano/issues

@@ -1,0 +1,7 @@
+• Les Finances tiennent en une image : ce qui est à vous, ce qui est engagé, vos dépenses du mois et le reste
+• Des budgets mensuels par catégorie, repris le mois suivant
+• L'argent que vous gardez, devez ou mettez de côté, avec son historique
+• Un mouvement se marque en dépense, revenu, virement ou remboursement
+• Toute activité peut être supprimée ; vous choisissez où vont ses blocs et objectifs
+
+Dites-moi ce qui casse : github.com/ontoplano/ontoplano/issues

@@ -1,0 +1,7 @@
+• Finanzas abre con una sola imagen: lo que es tuyo, lo comprometido, el gasto del mes y lo que queda
+• Presupuestos mensuales por categoría, copiados al mes siguiente
+• Dinero que guardas, debes o has apartado, con su historial
+• Marca un movimiento como gasto, ingreso, traspaso o devolución
+• Puedes borrar cualquier actividad y eliges adónde van sus bloques y metas
+
+Cuéntame qué se rompe: github.com/ontoplano/ontoplano/issues
