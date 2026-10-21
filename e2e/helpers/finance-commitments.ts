@@ -33,6 +33,21 @@ async function confirm(page: Page, title: string) {
 	await expect(dialog).toBeHidden();
 }
 
+/**
+ * Opens one commitment's history, and waits until it is that one's.
+ *
+ * The link is a client navigation, and until it lands the panel still shows
+ * the commitment before. On a phone a dialog opened in that gap holds a
+ * history entry, and the arriving navigation takes it back out — the dialog
+ * closes itself before anything is typed into it.
+ */
+async function select(page: Page, name: string) {
+	await page.getByTestId('commitment').getByRole('link', { name, exact: true }).click();
+	await expect(
+		page.getByTestId('commitment-history').getByRole('heading', { level: 2 })
+	).toHaveText(new RegExp(`^${name} · `));
+}
+
 async function payment(
 	page: Page,
 	name: string,
@@ -40,7 +55,7 @@ async function payment(
 	description: string,
 	balance: string
 ) {
-	await page.getByTestId('commitment').getByRole('link', { name, exact: true }).click();
+	await select(page, name);
 	await page
 		.getByTestId('commitment-history')
 		.getByRole('button', { name: action, exact: true })
@@ -108,10 +123,7 @@ export async function commitmentJourney(page: Page) {
 	await expect(bank).toContainText(bankAmount);
 
 	await visit(page, '/finance/commitments');
-	await page
-		.getByTestId('commitment')
-		.getByRole('link', { name: 'Owner payable', exact: true })
-		.click();
+	await select(page, 'Owner payable');
 	await expect(page.getByTestId('commitment-history')).toContainText('75.00');
 	await expect(page.getByTestId('commitment-entry')).toHaveCount(1);
 	await page.getByRole('button', { name: 'Reverse entry', exact: true }).click();
@@ -130,10 +142,7 @@ export async function commitmentJourney(page: Page) {
 	await payment(page, 'Owner payable', 'Settle', 'Owner expense', '90.00');
 	await payment(page, 'Family earmark', 'Consume reserve', 'Family support', '45.00');
 	await payment(page, 'Repayment owed', 'Settle', 'Incoming repayment', '27.00');
-	await page
-		.getByTestId('commitment')
-		.getByRole('link', { name: 'Custody owner', exact: true })
-		.click();
+	await select(page, 'Custody owner');
 	const history = page.getByTestId('commitment-history');
 	await history.getByRole('button', { name: 'Edit', exact: true }).click();
 	const edit = page.getByRole('dialog', { name: 'Edit commitment', exact: true });
@@ -152,17 +161,11 @@ export async function commitmentJourney(page: Page) {
 	await expect(history).toContainText('Explicit synthetic residual write-off');
 	await expect(page.getByTestId('commitment').filter({ hasText: 'Custody owner' })).toHaveCount(0);
 	await page.getByRole('link', { name: 'Settled and archived', exact: true }).click();
-	await page
-		.getByTestId('commitment')
-		.getByRole('link', { name: 'Custody owner', exact: true })
-		.click();
+	await select(page, 'Custody owner');
 	await history.getByRole('button', { name: 'Delete', exact: true }).click();
 	await confirm(page, 'Delete');
 	await page.getByRole('link', { name: 'Settled and archived', exact: true }).click();
-	await page
-		.getByTestId('commitment')
-		.getByRole('link', { name: 'Custody owner', exact: true })
-		.click();
+	await select(page, 'Custody owner');
 	await history.getByRole('button', { name: 'Delete permanently', exact: true }).click();
 	await confirm(page, 'Delete');
 	await expect(page.getByTestId('commitment').filter({ hasText: 'Custody owner' })).toHaveCount(0);
