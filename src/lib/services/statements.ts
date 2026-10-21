@@ -1184,7 +1184,7 @@ function shapedMovements(ctx: Ctx, rows: MovementRow[], boundedPage = false): Mo
 	 * A bounded page names its own rows in the `inArray`; the whole list reads
 	 * them account-wide. The split matters: SQLite binds one parameter per id,
 	 * and the whole history of a busy ledger passes its parameter ceiling.
-	 * (Epic 4's proof creates 100,001 lines in one ledger.)
+	 * (The paging test creates 100,001 lines in one ledger.)
 	 */
 	const allocations = new Map<number, MovementAllocation[]>();
 	if (rows.length) {

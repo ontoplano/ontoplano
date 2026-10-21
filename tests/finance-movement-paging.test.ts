@@ -8,7 +8,7 @@ import { makeDatabase, OWNER, seedAccounts } from './helpers/db';
  * allocations. SQLite binds one parameter per id, so a ledger past the
  * parameter ceiling (32,767 here) threw "too many SQL variables" — the
  * Ledgers room, `movements` and every drill-down died on exactly the accounts
- * that had the most history. Epic 4's own proof seeds 100,001 lines.
+ * that had the most history. A test here seeds 100,001 lines.
  */
 const database = makeDatabase();
 seedAccounts(database.path);

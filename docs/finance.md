@@ -1,6 +1,6 @@
 # Finance
 
-Open **Finance** for the money overview: what is yours, what is committed, what you spent this month and what is left against your plans. Movement classification, balance checks, commitments and monthly budgets (Epics 1 to 4) sit underneath it, and each is linked below.
+Open **Finance** for the money overview: what is yours, what is committed, what you spent this month and what is left against your plans. Movement classification, balance checks, commitments and monthly budgets sit underneath it, and each is linked below.
 
 Money is shown per currency and never added across currencies. No exchange rate is assumed or invented.
 
@@ -45,4 +45,4 @@ Bulk classification saves the whole selection or nothing. Linked stock entries a
 
 MCP and the JSON tools API use the same finance rules. Reads need `statements:read`, writes need `statements:write`, and destructive tools also need `destructive`. Notebook-confined keys can reach their ledgers, but cannot access account-wide commitments or budgets. The assistant can read the overview summary as well as the individual records. Tool names, fields and retry/error handling are in the [assistant reference](reference/ai-agents.md).
 
-A full account export carries budgets, commitments, commitment history, balance checks and transaction splits, and import remaps their ledger, person and movement links. Emptying an account clears every one of those records for that account and leaves another account's rows untouched. The development seed includes a budget, one commitment of each kind, a synthetic transfer pair between two owned ledgers and a split payment. Before deploying a migration, keep a [database backup](BACKUP.md) and the previous application image. The current worktree's implementation and tests do not imply production deployment.
+A full account export carries budgets, commitments, commitment history, balance checks and transaction splits, and import remaps their ledger, person and movement links. Emptying an account clears every one of those records for that account and leaves another account's rows untouched. The development seed includes a budget, one commitment of each kind, a synthetic transfer pair between two owned ledgers and a split payment.

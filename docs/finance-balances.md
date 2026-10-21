@@ -39,6 +39,6 @@ Generic CSV uses the ledger's precision. Fingerprints retain historical two-deci
 
 Ledgers, dashboard and notebook tiles share the same balance evidence. Subtotals include active, covered ledgers with known currency and name exclusions.
 
-MCP supports opening/currency fields on `add_ledger` and `change_ledger`, plus `balance_checks`, `record_balance_check`, `delete_balance_check`. `statements:read` / `statements:write` apply; deletion also needs destructive permission. Notebook keys reach checks only for their ledgers. Dedicated finance REST endpoints remain in Epic 5.
+MCP supports opening/currency fields on `add_ledger` and `change_ledger`, plus `balance_checks`, `record_balance_check`, `delete_balance_check`. `statements:read` / `statements:write` apply; deletion also needs destructive permission. Notebook keys reach checks only for their ledgers. Read-only REST endpoints are in [Finance](finance.md#read-the-same-numbers-elsewhere).
 
 Migration `0124_milky_goliath.sql` adds nullable opening coverage, a zero default opening amount and statement checks. It rewrites no history. Export/import remaps ledger links; account deletion removes owned checks. Keep a native database snapshot and the previous image before deployment. Local implementation does not activate production.

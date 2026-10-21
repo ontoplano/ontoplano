@@ -79,7 +79,7 @@ describe('every table is accounted for', () => {
 	});
 
 	test('and the finance records the lifecycle grew are in it with rows', async () => {
-		// Named rather than counted with the rest: the Epic 5 records are the
+		// Named rather than counted with the rest: the finance records are the
 		// ones a full export must carry, and a table whose seed goes quiet would
 		// otherwise pass the round trip by having nothing to compare.
 		for (const name of [
