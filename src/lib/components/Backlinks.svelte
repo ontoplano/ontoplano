@@ -17,6 +17,9 @@
 	 * One quiet line, deliberately small. Seeing the goal is a reminder rather
 	 * than information, and a task carrying three goal names at full weight
 	 * reads as three tasks.
+	 *
+	 * A `span` drawn as a block, so it can sit inside a row's label line as
+	 * well as under a title.
 	 */
 	let {
 		goals = [],
@@ -28,7 +31,7 @@
 </script>
 
 {#if goals.length || notebook}
-	<p class="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-gray-500">
+	<span class="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-gray-500">
 		{#if notebook}
 			<a
 				href={resolve('/notebooks/[id]', { id: String(notebook.id) })}
@@ -52,5 +55,5 @@
 				{goal.title}
 			</a>
 		{/each}
-	</p>
+	</span>
 {/if}

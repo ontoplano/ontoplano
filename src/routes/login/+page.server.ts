@@ -1,4 +1,4 @@
-import { fail, redirect } from '@sveltejs/kit';
+import { redirect } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 import { auth } from '$lib/server/auth';
 import { checkPassword } from '$lib/passwords';
@@ -14,7 +14,8 @@ import {
 import { clientKey, rateLimit, signUpBudget } from '$lib/server/rate-limit';
 import { recordFailedSignIn, recordPasswordReset } from '$lib/server/services/attack-watch';
 import { ServiceError } from '$lib/services/errors';
-import { toActionFailure } from '$lib/http-errors';
+import { refuse, saying, toActionFailure } from '$lib/http-errors';
+import { authRefusal } from '$lib/server/auth-refusals';
 import { record } from '$lib/services/audit';
 import { isDemoAccount, resetDemoAccount } from '$lib/server/services/demo';
 import { claimFirstAccount } from '$lib/server/services/admin';
@@ -126,10 +127,10 @@ export const actions: Actions = {
 				// the refusals across ALL addresses have the shape of a password
 				// list being tried. See services/attack-watch.ts.
 				recordFailedSignIn(event.getClientAddress(), email);
-				return fail(400, { message: error.message || 'Sign in failed' });
+				return refuse(400, authRefusal(error, 'auth.refused.signInFailed'));
 			}
 			console.error('Sign-in non-API error:', error);
-			return fail(500, { message: 'Unexpected error' });
+			return refuse(500, 'auth.refused.unexpected');
 		}
 
 		return redirect(302, nextAfter(event.url));
@@ -146,7 +147,7 @@ export const actions: Actions = {
 		// one rule — and this one does not pass the hook at all.
 		const budget = signUpBudget(clientKey(event.request, event.getClientAddress));
 		if (!budget.allowed) {
-			return fail(429, { message: 'Too many accounts from here. Try again later.' });
+			return refuse(429, 'auth.refused.tooManyAccounts');
 		}
 
 		const formData = await event.request.formData();
@@ -159,20 +160,20 @@ export const actions: Actions = {
 		// find out about a typo: there is no old password to compare against,
 		// and the next time it is asked for is the next sign-in.
 		if (password !== (formData.get('confirm')?.toString() ?? '')) {
-			return fail(400, { message: 'The two passwords are not the same.' });
+			return refuse(400, 'auth.refused.passwordsDiffer');
 		}
 
 		// Before the account exists, so a refused password does not burn an
 		// invitation code or leave a half-made row behind.
 		const weak = checkPassword(password);
-		if (weak) return fail(400, { message: weak });
+		if (weak) return refuse(400, weak.key, 'values' in weak ? weak.values : undefined);
 
 		let invite;
 		try {
 			invite = checkSignUpAllowed(formData.get('invite'), now).invite;
 		} catch (error) {
-			if (error instanceof ServiceError) return fail(403, { message: error.message });
-			return fail(500, { message: 'Unexpected error' });
+			if (error instanceof ServiceError) return toActionFailure(error);
+			return refuse(500, 'auth.refused.unexpected');
 		}
 
 		/*
@@ -190,9 +191,7 @@ export const actions: Actions = {
 		 */
 		const cannotSell = invite ? null : whyItCannotSell();
 		if (cannotSell) {
-			return fail(503, {
-				message: 'Registration is closed right now — this instance cannot take a card.'
-			});
+			return refuse(503, 'auth.refused.cannotTakeACard');
 		}
 
 		// Where the fresh account goes. Card-first onboarding sends it to the
@@ -234,9 +233,9 @@ export const actions: Actions = {
 			}
 		} catch (error) {
 			if (error instanceof APIError) {
-				return fail(400, { message: error.message || 'Registration failed' });
+				return refuse(400, authRefusal(error, 'auth.refused.registrationFailed'));
 			}
-			return fail(500, { message: 'Unexpected error' });
+			return refuse(500, 'auth.refused.unexpected');
 		}
 
 		return redirect(302, landing);
@@ -251,7 +250,7 @@ export const actions: Actions = {
 		const formData = await event.request.formData();
 		const email = formData.get('email')?.toString()?.trim() ?? '';
 
-		if (!email) return fail(400, { message: 'Enter your email address' });
+		if (!email) return refuse(400, 'auth.refused.enterEmail');
 
 		// Every one of these sends mail, which makes a flood of them somebody
 		// else's bill as well as this instance's problem.
@@ -270,9 +269,9 @@ export const actions: Actions = {
 		return {
 			success: true,
 			action: 'requestReset',
-			message: isEmailConfigured()
-				? 'If that address has an account, a reset link is on its way.'
-				: 'This server has no mail configured, so the link was written to its log instead.'
+			message: await saying(
+				isEmailConfigured() ? 'auth.said.resetOnItsWay' : 'auth.said.resetInLog'
+			)
 		};
 	},
 
@@ -297,9 +296,9 @@ export const actions: Actions = {
 	 * and an action that erases an account is not one to leave lying around.
 	 */
 	resetDemo: async (event) => {
-		if (!isDemo()) return fail(403, { message: 'Only the demo can be reset.' });
+		if (!isDemo()) return refuse(403, 'auth.refused.onlyDemoReset');
 		const user = event.locals.user;
-		if (!user) return fail(401, { message: 'Sign in first' });
+		if (!user) return refuse(401, 'auth.refused.signInFirst');
 
 		try {
 			await resetDemoAccount(user.id);

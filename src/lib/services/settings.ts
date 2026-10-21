@@ -18,6 +18,8 @@ import { isClock, type Clock } from '../when.js';
 import { isLocale, type Locale } from '../i18n/locales.js';
 import { SECTIONS } from '../colors.js';
 import { isHexColor } from '../nav-order.js';
+import { DEFAULT_NOTE_VIEW, isNoteView, type NoteView } from '../note-view.js';
+import { ValidationError } from './errors.js';
 import {
 	CAPTURE_SETTINGS_KEY,
 	parseCaptureSettings,
@@ -564,4 +566,41 @@ export function getCaptureSettings(userId: string): CaptureSettings {
 
 export function setCaptureSettings(userId: string, settings: CaptureSettings): void {
 	setUserSetting(userId, CAPTURE_SETTINGS_KEY, serialiseCaptureSettings(settings));
+}
+
+// --- How a notebook's notes are laid out ---------------------------------------
+
+/**
+ * The notebooks this reader looks at as a grid of cards, as a JSON list of ids.
+ *
+ * Per notebook, because the answer depends on what is in it — a notebook of
+ * short coloured notes reads as a board, one of long write-ups as a list — and
+ * per reader, because in a shared notebook it is a way of looking rather than
+ * a fact about the notebook. One key rather than one per notebook, holding
+ * only the exceptions: the list is the default, and a notebook that was
+ * deleted leaves an id here that nothing ever asks about.
+ */
+export const NOTE_GRID_KEY = 'notebooks.note_grid';
+
+function gridNotebooks(userId: string): number[] {
+	try {
+		const parsed: unknown = JSON.parse(getUserSetting(userId, NOTE_GRID_KEY) ?? '[]');
+		return Array.isArray(parsed) ? parsed.filter((id) => Number.isInteger(id) && id > 0) : [];
+	} catch {
+		return [];
+	}
+}
+
+export function getNoteView(userId: string, notebookId: number | null): NoteView {
+	if (notebookId === null) return DEFAULT_NOTE_VIEW;
+	return gridNotebooks(userId).includes(notebookId) ? 'grid' : 'list';
+}
+
+export function setNoteView(userId: string, notebookId: unknown, view: unknown): void {
+	const id = Number(notebookId);
+	if (!Number.isInteger(id) || id <= 0)
+		throw new ValidationError({ key: 'errors.notebooks.noNotebookChosen' });
+	if (!isNoteView(view)) throw new ValidationError({ key: 'errors.notebooks.listOrCards' });
+	const rest = gridNotebooks(userId).filter((one) => one !== id);
+	setUserSetting(userId, NOTE_GRID_KEY, JSON.stringify(view === 'grid' ? [...rest, id] : rest));
 }

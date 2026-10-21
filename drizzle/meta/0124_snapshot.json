@@ -1,8 +1,8 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "4708a0f6-73fa-40c6-82f1-e44385542d05",
-  "prevId": "5be44525-a19d-4296-b5e4-f69ce2166744",
+  "id": "492dbe00-2af9-4011-add5-88b61c4ef0a2",
+  "prevId": "ad16dac9-3c0a-46d2-9667-6185792ca7b9",
   "tables": {
     "activities": {
       "name": "activities",
@@ -1968,6 +1968,13 @@
           "notNull": false,
           "autoincrement": false
         },
+        "color": {
+          "name": "color",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
         "created_at": {
           "name": "created_at",
           "type": "text",
@@ -2653,103 +2660,6 @@
         }
       }
     },
-    "finance_balance_checks": {
-      "name": "finance_balance_checks",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "integer",
-          "primaryKey": true,
-          "notNull": true,
-          "autoincrement": true
-        },
-        "user_id": {
-          "name": "user_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "ledger_id": {
-          "name": "ledger_id",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "as_of": {
-          "name": "as_of",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "observed_minor": {
-          "name": "observed_minor",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "note": {
-          "name": "note",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": "(CURRENT_TIMESTAMP)"
-        }
-      },
-      "indexes": {
-        "finance_balance_checks_user_ledger_date_unique": {
-          "name": "finance_balance_checks_user_ledger_date_unique",
-          "columns": [
-            "user_id",
-            "ledger_id",
-            "as_of"
-          ],
-          "isUnique": true
-        }
-      },
-      "foreignKeys": {
-        "finance_balance_checks_user_id_user_id_fk": {
-          "name": "finance_balance_checks_user_id_user_id_fk",
-          "tableFrom": "finance_balance_checks",
-          "tableTo": "user",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        },
-        "finance_balance_checks_ledger_id_ledgers_id_fk": {
-          "name": "finance_balance_checks_ledger_id_ledgers_id_fk",
-          "tableFrom": "finance_balance_checks",
-          "tableTo": "ledgers",
-          "columnsFrom": [
-            "ledger_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "checkConstraints": {}
-    },
     "finance_rules": {
       "name": "finance_rules",
       "columns": {
@@ -2916,27 +2826,6 @@
           "notNull": true,
           "autoincrement": false
         },
-        "kind": {
-          "name": "kind",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "group_id": {
-          "name": "group_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "parent_id": {
-          "name": "parent_id",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
         "created_at": {
           "name": "created_at",
           "type": "text",
@@ -2959,20 +2848,6 @@
           "columns": [
             "user_id",
             "occurred_on"
-          ],
-          "isUnique": false
-        },
-        "finance_transactions_group_idx": {
-          "name": "finance_transactions_group_idx",
-          "columns": [
-            "group_id"
-          ],
-          "isUnique": false
-        },
-        "finance_transactions_parent_idx": {
-          "name": "finance_transactions_parent_idx",
-          "columns": [
-            "parent_id"
           ],
           "isUnique": false
         },
@@ -4723,21 +4598,6 @@
         },
         "currency": {
           "name": "currency",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "opening_minor": {
-          "name": "opening_minor",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": 0
-        },
-        "opening_on": {
-          "name": "opening_on",
           "type": "text",
           "primaryKey": false,
           "notNull": false,
@@ -10346,6 +10206,13 @@
         },
         "ban_expires": {
           "name": "ban_expires",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "last_active_at": {
+          "name": "last_active_at",
           "type": "integer",
           "primaryKey": false,
           "notNull": false,

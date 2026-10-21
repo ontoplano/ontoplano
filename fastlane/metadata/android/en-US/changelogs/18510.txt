@@ -1,0 +1,7 @@
+• Any picture opens full screen, with pinch and double-tap zoom
+• A notification opens the task, bill or to-do it is about
+• Faster pages and a lighter first load
+• Every change shows a short receipt, and a refusal says why
+• Portuguese, Spanish and German are complete again
+
+Tell me what breaks: github.com/ontoplano/ontoplano/issues

@@ -7,6 +7,7 @@
 	import { notify } from '$lib/notify.svelte';
 	import { say } from '$lib/said.svelte';
 	import { editUrl } from '$lib/open-from-url.svelte';
+	import { discardForm, keptForm } from '$lib/kept-form';
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import type { Capture } from '$lib/capture';
@@ -31,6 +32,14 @@
 	 * having happened. The receipt names the room and quotes the thing, because
 	 * "saved" leaves somebody to go and check, and going to check is the work
 	 * capture was avoiding.
+	 *
+	 * ## And closing it is not throwing it away
+	 *
+	 * Somebody half-way through a task closes the dialog to look at something
+	 * and comes back to write the rest. Escape, the backdrop or the back arrow
+	 * keep what was typed, one draft per kind, and say so; opening the same
+	 * kind again puts it back (`$lib/kept-form`). Cancel and a save are the
+	 * two ways of saying it is finished with, and both let it go.
 	 */
 	let {
 		capture,
@@ -55,6 +64,14 @@
 	 */
 	const QUOTED = 60;
 
+	/** One draft per kind of thing: a half-written task does not turn up in an idea. */
+	const draftKey = (which: Capture) => `capture:${which.key}`;
+
+	function cancel() {
+		if (capture) discardForm(draftKey(capture));
+		onclose();
+	}
+
 	/** The thing itself, out of the field the capture says carries it. */
 	function wrote(form: HTMLFormElement, which: Capture): string {
 		const field = form.elements.namedItem(which.lead);
@@ -77,6 +94,7 @@
 			id="capture-form"
 			method="post"
 			action={which.action}
+			use:keptForm={{ key: draftKey(which), onkept: () => say(t('captureDialog.savedAsDraft')) }}
 			use:enhance={({ formElement }) => {
 				// Read before the submit: `update()` may reset the form, and on a
 				// failure the fields are the only place the thing still exists.
@@ -127,7 +145,7 @@
 								label: t('app.plan'),
 								// The query picks the block's day after resolving the route.
 								// eslint-disable-next-line svelte/no-navigation-without-resolve
-								run: () => goto(`${resolve('/tasks/calendar')}?from=${blockDate}`)
+								run: () => goto(`${resolve('/calendar/calendar')}?from=${blockDate}`)
 							});
 						else if (made > 0)
 							say(receipt, {
@@ -138,6 +156,7 @@
 								run: () => goto(editUrl(which.room, made))
 							});
 						else say(receipt);
+						discardForm(draftKey(which));
 						onclose();
 						return;
 					}
@@ -161,7 +180,7 @@
 	{/if}
 
 	{#snippet footer()}
-		<button type="button" class="btn" onclick={onclose}>{t('ui.cancel')}</button>
+		<button type="button" class="btn" onclick={cancel}>{t('ui.cancel')}</button>
 		<button type="submit" form="capture-form" class="btn btn-primary">
 			<Icon name="plus" />
 			{t('ui.save')}

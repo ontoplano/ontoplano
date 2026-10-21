@@ -17,7 +17,7 @@ test('the bar steps off the screen while somebody is typing', async ({ page }) =
 	test.setTimeout(180_000);
 	await page.setViewportSize({ width: 390, height: 844 });
 	await register(page, testEmail('keyboard-room'));
-	await visit(page, '/tasks/todo');
+	await visit(page, '/calendar/todo');
 	await page.waitForTimeout(800);
 
 	const bar = page.locator('nav.mobile-nav');

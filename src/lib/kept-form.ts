@@ -66,7 +66,14 @@ export function discardForm(key: string): void {
  * by the opening: by the time this action runs the fields are there and the
  * dialog is about to be shown.
  */
-export function keptForm(node: HTMLFormElement, key: string) {
+export function keptForm(
+	node: HTMLFormElement,
+	kept:
+		| string
+		| { key: string; /** Told when the form went away holding something. */ onkept?: () => void }
+) {
+	const key = typeof kept === 'string' ? kept : kept.key;
+	const onkept = typeof kept === 'string' ? undefined : kept.onkept;
 	/*
 	 * After the first flush, not during it.
 	 *
@@ -79,7 +86,7 @@ export function keptForm(node: HTMLFormElement, key: string) {
 
 	return {
 		destroy() {
-			remember(node, key);
+			if (remember(node, key)) onkept?.();
 		}
 	};
 }
@@ -105,8 +112,9 @@ function restore(node: HTMLFormElement, key: string): void {
 	}
 }
 
-function remember(node: HTMLFormElement, key: string): void {
-	if (finished.delete(key)) return;
+/** Writes the form down; true when it held something worth keeping. */
+function remember(node: HTMLFormElement, key: string): boolean {
+	if (finished.delete(key)) return false;
 
 	const typed = new Map<string, string>();
 	let anything = false;
@@ -125,4 +133,5 @@ function remember(node: HTMLFormElement, key: string): void {
 	// back over a form that had been seeded with something.
 	if (anything) drafts.set(key, typed);
 	else drafts.delete(key);
+	return anything;
 }

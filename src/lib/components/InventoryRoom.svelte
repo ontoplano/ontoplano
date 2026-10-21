@@ -309,6 +309,13 @@
 		})
 	);
 
+	/** The notebook a row is filed under, for the line under its name. */
+	const notebookTitles = $derived(new Map(data.notebooks.map((one) => [one.id, one.title])));
+	function notebookOf(id: number | null): { id: number; title: string } | null {
+		const title = id === null ? undefined : notebookTitles.get(id);
+		return id === null || title === undefined ? null : { id, title };
+	}
+
 	$effect(() => {
 		const send = async () => {
 			if (ticks.pending.length > 0 && (await flush()) > 0) await invalidateAll();
@@ -1296,9 +1303,12 @@
 					<div
 						role="group"
 						aria-labelledby="inventory-how-many"
-						class="flex shrink-0 items-center gap-1.5"
+						class="flex shrink-0 items-center gap-1"
 					>
-						<span id="inventory-how-many" class="text-sm text-gray-600"
+						<!-- Said aloud always, drawn where there is room for it: the
+						     boxes say min and max, and at a laptop's width the word was
+						     what pushed the pair onto a second line. -->
+						<span id="inventory-how-many" class="text-sm text-gray-600 max-2xl:sr-only"
 							>{t('inventory.howMany')}</span
 						>
 						<input
@@ -1310,7 +1320,7 @@
 							title={t('inventory.atLeastLabel')}
 							value={atLeast}
 							oninput={(e) => (atLeast = e.currentTarget.value)}
-							class="input input-sm w-16"
+							class="input input-sm w-12"
 						/>
 						<span class="text-gray-500" aria-hidden="true">–</span>
 						<input
@@ -1322,19 +1332,24 @@
 							title={t('inventory.atMostLabel')}
 							value={atMost}
 							oninput={(e) => (atMost = e.currentTarget.value)}
-							class="input input-sm w-16"
+							class="input input-sm w-12"
 						/>
 					</div>
 				{/if}
 				{#snippet verb()}
-					<!-- Named for the half most visits want; the dialog's second tab is
-					     the attributes. A phone's strip has room for one verb beside
-					     the order, and that is the shopping list: there this one
-					     stands on the house's line instead. -->
+					<!-- The room's own settings: the categories and the attributes
+					     both, which "Categories" undersold — said whole in the
+					     tooltip, and short on the strip, where the full name pushed
+					     the filters onto a second line. The gear rather than the
+					     sliders, which elsewhere mean filters and in its own dialog
+					     mean the attributes. A phone's strip has room
+					     for one verb beside the order, and that is the shopping list:
+					     there this one stands on the house's line instead. -->
 					<StripVerb
-						icon="sliders"
-						label={t('inventory.categories')}
+						icon="settings"
+						label={t('inventory.setUp')}
 						title={t('inventory.categoriesAndAttributes')}
+						aria-label={t('inventory.categoriesAndAttributes')}
 						class="btn btn-sm shrink-0 max-sm:hidden"
 						onclick={() => (organising = true)}
 					/>
@@ -1404,7 +1419,7 @@
 								onclick={() => (organising = true)}
 								class="icon-btn shrink-0 sm:hidden"
 								title={t('inventory.categoriesAndAttributes')}
-								aria-label={t('inventory.categories')}><Icon name="sliders" /></button
+								aria-label={t('inventory.categoriesAndAttributes')}><Icon name="settings" /></button
 							>
 							<button
 								onclick={() => (addingLocation = true)}
@@ -1489,13 +1504,17 @@
 										hundreds of pixels of empty body beside a long one. A place with
 										one category takes the whole width, rather than half of it beside
 										nothing. See `inColumns` for where each column is cut.
+
+										Two columns on a phone as well: one card per row there was a
+										list with borders round it. A half-width card tightens itself —
+										see `.card-cell`.
 									-->
-									<div class="item-cards md:flex md:items-start md:gap-4">
+									<div class="item-cards flex items-start gap-2 max-md:px-2 md:gap-4">
 										{#each inColumns(place.categories) as column, c (c)}
-											<div class="md:min-w-0 md:flex-1">
+											<div class="min-w-0 flex-1">
 												{#each column as category (category.name)}
 													<section
-														class="item-card mb-4 border border-gray-300 bg-white max-sm:border-x-0 sm:shadow-card"
+														class="item-card card-cell mb-2 border border-gray-300 bg-white shadow-card md:mb-4"
 													>
 														<h4 class="border-b border-gray-200 px-4 py-2">
 															{#if category.color}
@@ -1542,6 +1561,7 @@
 																		actions={ITEM_ROOM_ACTIONS}
 																		usedIn={data.usedIn[item.id] ?? []}
 																		{chipColor}
+																		notebook={notebookOf(item.notebookId)}
 																		onedit={() => startEdit(item)}
 																		onsubmit={tick(
 																			item.type === 'someday' ? 'toggleBought' : 'toggleSnoozed'
@@ -2086,8 +2106,11 @@
 	action: string;
 	qty: number | null;
 	enhanced: SubmitFunction;
+	archived: boolean;
 })}
-	<li class="list-row">
+	<!-- An archived line stays where it was, dimmed, with its way back: the list
+	     does not close up under the thumb for this any more than for a tick. -->
+	<li class="list-row {row.archived ? 'opacity-50' : ''}">
 		<form method="POST" action={row.action} use:enhance={row.enhanced} class="row-rail">
 			<input type="hidden" name="id" value={row.id} />
 			{#if row.qty !== null}<input type="hidden" name="qty" value={row.qty} />{/if}
@@ -2116,6 +2139,25 @@
 				{formatMoney(row.cents, data.currency)}
 			{/if}
 		</span>
+		<form
+			method="POST"
+			action="?/toggleSnoozed"
+			use:enhance={tick('toggleSnoozed')}
+			class="list-row-actions"
+		>
+			<input type="hidden" name="id" value={row.id} />
+			<button
+				type="submit"
+				class="icon-btn"
+				aria-pressed={row.archived}
+				title={row.archived ? t('inventory.putItBackOnThe') : t('inventory.archive')}
+				aria-label="{row.archived
+					? t('inventory.putItBackOnThe')
+					: t('inventory.archive')}: {row.name}"
+			>
+				<Icon name={row.archived ? 'undo' : 'archive'} />
+			</button>
+		</form>
 	</li>
 {/snippet}
 
@@ -2147,7 +2189,8 @@
 							line.id,
 							ticked ? basket[line.id] : Math.max(item?.idealQty ?? 0, was),
 							was
-						)
+						),
+						archived: item?.snoozed ?? false
 					})}
 				{/each}
 			</ul>
@@ -2181,7 +2224,8 @@
 						ticked: wishInBasket(want.id),
 						action: '?/toggleBought',
 						qty: null,
-						enhanced: tick('toggleBought')
+						enhanced: tick('toggleBought'),
+						archived: items.find((one) => one.id === want.id)?.snoozed ?? false
 					})}
 				{/each}
 			</ul>

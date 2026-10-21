@@ -1,3 +1,8 @@
+<script lang="ts" module>
+	/** How tall the box for what to say opens: a line or two, and a picture's link. */
+	export const SAY_ROWS = 3;
+</script>
+
 <script lang="ts">
 	/**
 	 * A reminder about nothing but itself: a day, a time, what to say, a sound.
@@ -10,7 +15,9 @@
 	 */
 	import type { Snippet } from 'svelte';
 	import Field from '$lib/components/Field.svelte';
-	import OneLine from '$lib/components/OneLine.svelte';
+	import MarkdownBox from '$lib/components/MarkdownBox.svelte';
+	import PictureAttach from '$lib/components/PictureAttach.svelte';
+	import RecordingAttach from '$lib/components/RecordingAttach.svelte';
 	import ReminderWhyNot from '$lib/components/ReminderWhyNot.svelte';
 	import { openPicker } from '$lib/open-picker';
 	import { useT } from '$lib/i18n';
@@ -51,6 +58,9 @@
 
 	const t = useT();
 	const now = useWhen();
+
+	/** The box, so a picture or a recording lands where the cursor is. */
+	let box = $state<HTMLTextAreaElement>();
 
 	/*
 	 * How long ago the clock was read, kept honest as the form sits open: the
@@ -168,14 +178,23 @@
 		class="input"
 	/>
 </Field>
+<!--
+	Markdown, like a todo's notes, with the same two attachments: "take the
+	bread out" is a line, and "this is the bin that goes out on Tuesdays" is a
+	picture. `written` because that is what the list draws it with.
+-->
 <Field label={t('reminders.whatToSay')} span={12} required>
-	<OneLine
+	<MarkdownBox
+		bind:element={box}
+		bind:value={say}
 		name="label"
 		required
-		bind:value={say}
+		rows={SAY_ROWS}
+		preview="written"
 		placeholder={t('reminders.eGTakeTheBreadOut')}
-		class="input"
 	/>
+	<PictureAttach target={box} />
+	<RecordingAttach target={box} />
 </Field>
 
 <div class="col-span-12">

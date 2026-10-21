@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { untrack } from 'svelte';
 	import { SvelteSet } from 'svelte/reactivity';
-	import { setRoomAction } from '$lib/room-action.svelte';
+	import { setRoomAction, type TabVerb } from '$lib/room-action.svelte';
 	import { getAction, keyFor } from '$lib/shortcuts';
 	import { enhance } from '$lib/enhance';
 	import { resolve } from '$app/paths';
@@ -103,9 +103,7 @@
 			: resolve('/notebooks/[id]', { id: String(id) });
 	}
 	/** The New button for whichever tab the panel is showing — see NotebookDetail. */
-	let newAction = $state<
-		{ label: string; labels: string[]; run?: () => void; href?: string } | undefined
-	>(undefined);
+	let newAction = $state<TabVerb | undefined>(undefined);
 	/** The Link button beside it — see NotebookDetail. */
 	let linkAction = $state<{ label: string; run: () => void } | undefined>(undefined);
 
@@ -689,6 +687,7 @@
 								todos={data.todos}
 								allTodos={data.allTodos}
 								activities={data.activities}
+								noteView={data.noteView}
 								error={form?.message ?? null}
 								bind:composing
 								bind:newAction

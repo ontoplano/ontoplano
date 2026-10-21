@@ -199,6 +199,20 @@ export type Ref = {
 	 * task out of its notebook that way — and names no row, so it passes.
 	 */
 	zeroIsNone?: boolean;
+	/**
+	 * What a key tied to one notebook may do with this argument when it also
+	 * holds `notebooks:deliver` — the grant to file things into the account's
+	 * other notebooks without reading them. Only on a `notebook` ref.
+	 *
+	 * `into`: the notebook something is being filed into or moved to. Another
+	 * of the account's notebooks is allowed; left out, it is still the key's
+	 * own. `listing`: the list of notebooks itself, which such a key reads
+	 * whole — names and ids, nothing inside (see `notebooks` in `tools.ts`).
+	 *
+	 * A notebook named as the subject — renamed, shared, removed — has no
+	 * mark, and stays the key's own whatever it holds.
+	 */
+	deliverable?: 'into' | 'listing';
 };
 
 /**

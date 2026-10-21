@@ -801,4 +801,60 @@ writeFileSync(
 	})
 );
 
+/*
+ * What a crawler and an assistant ask for before they ask for a page.
+ *
+ * `robots.txt` and a sitemap, so the pages are found; and `llms.txt` with
+ * `llms-full.txt` (llmstxt.org), so an assistant asked about the app can read
+ * the manual rather than guess at it — the first is the list of pages with a
+ * line each, the second is every page's markdown in one file. All written from
+ * `pages`, so a page added to the docs is in all four with nothing to remember.
+ */
+const SITE = 'https://docs.ontoplano.com';
+const plain = (markdown) =>
+	markdown
+		.replace(/<!--[\s\S]*?-->/g, '')
+		.replace(/\n{3,}/g, '\n\n')
+		.trim();
+/** The page's first paragraph of prose, as its one line in the list. */
+const gist = (markdown) =>
+	(
+		plain(markdown)
+			.split(/\n\n/)
+			.find((block) => !/^(#|\||<|```|-|\*|>)/.test(block.trim())) ?? ''
+	)
+		.replace(/\s+/g, ' ')
+		.replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+		// Its first sentence: a line in a list, not a paragraph cut mid-word.
+		.replace(/^(.+?[.!?])\s.*$/, '$1');
+
+writeFileSync(join(OUT, 'robots.txt'), `User-agent: *\nAllow: /\n\nSitemap: ${SITE}/sitemap.xml\n`);
+writeFileSync(
+	join(OUT, 'sitemap.xml'),
+	`<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n` +
+		pages.map((page) => `\t<url><loc>${SITE}${page.link}</loc></url>\n`).join('') +
+		`</urlset>\n`
+);
+writeFileSync(
+	join(OUT, 'llms.txt'),
+	`# Ontoplano documentation\n\n` +
+		`> Ontoplano is an open-source (AGPL-3.0) app for a whole life — the week as time blocks, tasks, notes and notebooks, goals, habits, workouts, recipes, a home inventory and the shopping list, bills — on the web, on Android, or on your own server, with an MCP server for AI assistants.\n\n` +
+		`The whole manual in one file: ${SITE}/llms-full.txt\n\n` +
+		`## Pages\n\n` +
+		pages
+			.filter((page) => page.link !== '/')
+			.map(
+				(page) =>
+					`- [${page.title}](${SITE}${page.link})${gist(page.markdown) ? `: ${gist(page.markdown)}` : ''}`
+			)
+			.join('\n') +
+		`\n`
+);
+writeFileSync(
+	join(OUT, 'llms-full.txt'),
+	pages
+		.map((page) => `<!-- ${SITE}${page.link} -->\n\n${plain(page.markdown)}`)
+		.join('\n\n---\n\n') + '\n'
+);
+
 console.log(`docs site: wrote ${pages.length} pages and a 404 to ${OUT.replace(ROOT + '/', '')}/`);

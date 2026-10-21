@@ -149,7 +149,7 @@ site_url = "https://ontoplano.com"
 operator = ""
 contact_email = ""
 jurisdiction = ""
-policy_updated = "25 August 2026"
+policy_updated = "12 October 2026"
 
 # What this instance charges, if it charges. Almost none do: leave sells off
 # and the money pages never appear.
@@ -807,7 +807,7 @@ function readConfig(): OntoplanoConfig {
 			operator: was(legal.operator, 'ONTOPLANO_OPERATOR') || '',
 			contactEmail: was(legal.contact_email, 'ONTOPLANO_CONTACT_EMAIL') || '',
 			jurisdiction: was(legal.jurisdiction, 'ONTOPLANO_JURISDICTION') || '',
-			policyUpdated: was(legal.policy_updated, 'ONTOPLANO_POLICY_UPDATED') || '25 August 2026'
+			policyUpdated: was(legal.policy_updated, 'ONTOPLANO_POLICY_UPDATED') || '12 October 2026'
 		},
 		pricing: {
 			sells: was(pricing.sells, 'ONTOPLANO_SELLS') === 'true',

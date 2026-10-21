@@ -2,8 +2,19 @@
 	import { tick, untrack, type Snippet } from 'svelte';
 	import { BackCloses } from '$lib/back-closes';
 	import Banner from '$lib/components/Banner.svelte';
-	import { isPhone } from '$lib/breakpoints';
-	import { panelHeight, panelTop, readViewport } from '$lib/keyboard';
+	import { isPhone, isTouch } from '$lib/breakpoints';
+	import {
+		ASSUMED_KEYBOARD_SHARE,
+		assumedScroll,
+		keyboardReported,
+		noteKeyboard,
+		openedHeight,
+		opensKeyboard,
+		panelHeight,
+		panelTop,
+		readViewport,
+		type Layout
+	} from '$lib/keyboard';
 	import { useT } from '$lib/i18n';
 	import { say, spokenCount } from '$lib/said.svelte';
 
@@ -40,20 +51,28 @@
 		if (!open || typeof window === 'undefined' || !window.visualViewport) return;
 
 		const viewport = window.visualViewport;
+		let before: Layout | null = null;
 		const update = () => {
 			const reading = readViewport();
+			if (reading) {
+				before = openedHeight(before, { width: window.innerWidth, height: reading.innerHeight });
+				reading.openedHeight = before.height;
+			}
 			keyboardHeight = reading ? panelHeight(reading) : null;
 			keyboardTop = reading ? panelTop(reading) : 0;
+			noteKeyboard(keyboardHeight);
 		};
 
 		update();
 		viewport.addEventListener('resize', update);
+		window.addEventListener('resize', update);
 		// iOS pushes the visible area down rather than only shrinking it, and
 		// reports that as a scroll of the visual viewport.
 		viewport.addEventListener('scroll', update);
 
 		return () => {
 			viewport.removeEventListener('resize', update);
+			window.removeEventListener('resize', update);
 			viewport.removeEventListener('scroll', update);
 			keyboardHeight = null;
 			keyboardTop = 0;
@@ -168,7 +187,49 @@
 	}
 
 	let dialog: HTMLDialogElement | undefined = $state();
+	let content: HTMLElement | undefined = $state();
 	let peekExpanded = $state(false);
+
+	/**
+	 * A text field took focus on a touch phone that has never reported a
+	 * keyboard — so one is assumed over the bottom of the screen. See
+	 * `$lib/keyboard.ts`, which has the reason and the share it covers.
+	 *
+	 * It stays assumed until the sheet closes. Nothing says when that keyboard
+	 * goes away either, and shrinking the sheet back whenever focus left a text
+	 * field pulled it out from under the press that moved the focus.
+	 */
+	let typing = $state(false);
+	const assumedKeyboard = $derived(typing && keyboardHeight === null && !keyboardReported());
+
+	function focusMoved(to: EventTarget | null) {
+		if (
+			!(to instanceof HTMLElement) ||
+			!dialog?.contains(to) ||
+			!opensKeyboard(to) ||
+			!isPhone() ||
+			!isTouch() ||
+			keyboardReported()
+		)
+			return;
+		typing = true;
+		const field = to;
+		// Once the sheet has grown and its room below is laid out.
+		requestAnimationFrame(() => {
+			if (!content || !dialog || document.activeElement !== field) return;
+			// Where the field ends once the sheet has arrived: it may still be
+			// sliding in, so measured against the content box, which moves with
+			// it, and that box's place in the dialog, which a transform leaves alone.
+			const within = field.getBoundingClientRect().bottom - content.getBoundingClientRect().top;
+			const settled = dialog.getBoundingClientRect().top + content.offsetTop + within;
+			const by = assumedScroll(settled, window.innerHeight);
+			if (by > 0) content.scrollBy({ top: by });
+		});
+	}
+
+	$effect(() => {
+		if (!open) typing = false;
+	});
 	// The keyboard can shrink the sheet after the first focus scroll. Keep the
 	// focused field in view once the new panel height has reached the DOM.
 	$effect(() => {
@@ -407,6 +468,8 @@
 	bind:this={dialog}
 	class:peek={phonePeek && !peekExpanded}
 	class:keyboard={keyboardHeight !== null}
+	class:assumed-keyboard={assumedKeyboard}
+	onfocusin={(event) => focusMoved(event.target)}
 	onclose={handleNativeClose}
 	onpointerdown={handlePointerDown}
 	onclick={handleClick}
@@ -415,7 +478,8 @@
 	data-away={away ? '' : undefined}
 	style="--modal-width: calc({WIDTHS[size]} + {widened}px); --modal-viewport-height: {keyboardHeight
 		? `${keyboardHeight}px`
-		: '100dvh'}; --modal-viewport-top: {keyboardTop}px"
+		: '100dvh'}; --modal-viewport-top: {keyboardTop}px; --assumed-keyboard: {ASSUMED_KEYBOARD_SHARE *
+		100}dvh"
 >
 	{#if open || away}
 		<div
@@ -511,6 +575,7 @@
 			{/if}
 
 			<div
+				bind:this={content}
 				class="modal-content min-h-0 flex-1 overflow-y-auto overscroll-y-contain px-4 py-4 sm:px-5"
 			>
 				{#if error}
@@ -650,9 +715,17 @@
 		 * The keyboard already hides the page the half sheet was leaving room
 		 * for, so the sheet takes everything above it.
 		 */
-		dialog.peek.keyboard .panel {
+		dialog.peek.keyboard .panel,
+		dialog.peek.assumed-keyboard .panel {
 			height: 100%;
 			max-height: 100%;
+			/* And it now reaches the top of the screen, where the status bar is. */
+			padding-top: var(--safe-top, 0px);
+		}
+
+		/* Room to scroll the last field above a keyboard nobody reported. */
+		dialog.assumed-keyboard .modal-content {
+			padding-bottom: var(--assumed-keyboard);
 		}
 
 		/* Arrive the way a sheet does — from below, not fading in place. */

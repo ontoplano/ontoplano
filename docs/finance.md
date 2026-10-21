@@ -41,6 +41,12 @@ Bulk classification saves the whole selection or nothing. Linked stock entries a
 - [Spending and Insights](finance-spending.md): choose a period, reconcile exclusions and review unclassified lines.
 - [Category budgets](finance-budgets.md): set monthly ceilings and track remaining amounts and refund credits.
 
+## Migration order
+
+Upstream's `0123_user_last_active` and `0124_note_background_colour` stay in place. The finance migrations follow them as `0125` through `0128`; their SQL contents and hashes are unchanged.
+
+A database from the earlier finance preview has already run the finance SQL, but not those two upstream migrations. Drizzle's timestamp cursor cannot discover that gap: it can report “already up to date” while the upstream columns are missing. Do not reset that database or replay the finance migrations. Stop the instance, take a consistent backup, and reconcile the two missing upstream migrations and their recorded hashes transactionally before starting this build. Verify row preservation, foreign keys and database integrity on a restored copy first. Fresh databases and databases on upstream's history use the ordinary migrator.
+
 ## Assistants and recovery
 
 MCP and the JSON tools API use the same finance rules. Reads need `statements:read`, writes need `statements:write`, and destructive tools also need `destructive`. Notebook-confined keys can reach their ledgers, but cannot access account-wide commitments or budgets. The assistant can read the overview summary as well as the individual records. Tool names, fields and retry/error handling are in the [assistant reference](reference/ai-agents.md).

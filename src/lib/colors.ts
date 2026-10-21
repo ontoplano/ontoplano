@@ -55,7 +55,7 @@ export const SECTIONS: Record<SectionKey, { accent: string; name: PlainKey }> = 
 
 /** Which section a pathname belongs to. */
 export function sectionFor(pathname: string): SectionKey {
-	if (pathname.startsWith('/tasks')) return 'planner';
+	if (pathname.startsWith('/calendar')) return 'planner';
 	if (pathname.startsWith('/goals')) return 'goals';
 	if (pathname.startsWith('/health')) return 'health';
 	// A data stream's page is one of Health's tabs; see `HealthRoom`.

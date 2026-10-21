@@ -16,10 +16,13 @@
 		notebook,
 		/** `icon-btn` on a cover, `btn btn-sm` in a page header. */
 		kind = 'icon-btn',
+		worded = false,
 		tour = false
 	}: {
 		notebook: { id: number; title: string; favourite: boolean };
 		kind?: 'icon-btn' | 'btn btn-sm';
+		/** Its word beside the star — as a row of a menu, where there is no tooltip. */
+		worded?: boolean;
 		/** Whether this one is the tutorial's anchor. */
 		tour?: boolean;
 	} = $props();
@@ -59,12 +62,14 @@
 	{:else}
 		<button
 			class="{kind} notebook-star"
+			class:w-full={worded}
 			class:is-on={notebook.favourite}
 			title={label}
 			aria-label={named}
 			aria-pressed={notebook.favourite}
 		>
 			<Icon name="star" />
+			{#if worded}<span>{label}</span>{/if}
 		</button>
 	{/if}
 </form>

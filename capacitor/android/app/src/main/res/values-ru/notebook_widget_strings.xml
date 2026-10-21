@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="notebook_widget_name">Ontoplano — Блокнот</string>
+    <string name="notebook_widget_description">Вкладка блокнота: его задачи, заметки, цели, идеи или покупки.</string>
+    <string name="notebook_widget_refresh">Обновить</string>
+    <string name="notebook_widget_set_up">Нажмите, чтобы выбрать блокнот</string>
+    <string name="notebook_widget_nothing">Здесь пусто</string>
+    <string name="notebook_widget_refused">Этот виджет удалён или его ключ отозван. Нажмите, чтобы настроить заново.</string>
+    <string name="notebook_widget_unreachable">Ваш сервер недоступен. Нажмите «Обновить», чтобы повторить.</string>
+    <string name="notebook_widget_section_notes">Заметки</string>
+    <string name="notebook_widget_section_tasks">Задачи</string>
+    <string name="notebook_widget_section_goals">Цели</string>
+    <string name="notebook_widget_section_ideas">Идеи</string>
+    <string name="notebook_widget_section_inventory">Инвентарь</string>
+</resources>

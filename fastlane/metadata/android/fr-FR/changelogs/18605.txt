@@ -1,0 +1,9 @@
+• Notes en couleur, lisibles dans les deux thèmes
+• Les notes d'un carnet s'affichent aussi en cartes
+• Fermer la saisie rapide garde un brouillon
+• Un assistant limité à un carnet peut ranger dans les autres, n'en voyant que les noms
+• L'inventaire d'un carnet regroupe les objets par lieu
+• Liste de courses : archivez une ligne sur place
+• Sous Android 15+, la fiche de nouveau bloc reste au-dessus du clavier
+
+Dites-moi ce qui casse : github.com/ontoplano/ontoplano/issues

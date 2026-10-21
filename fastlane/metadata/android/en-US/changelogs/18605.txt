@@ -1,0 +1,9 @@
+• Notes can have a color, readable in either theme
+• A notebook's notes can show as cards
+• Closing quick capture keeps what you wrote as a draft
+• An assistant limited to one notebook can file into your others, seeing only their names
+• A notebook's Inventory groups things by where they live
+• Archive shopping list lines right in the list
+• On Android 15+, the new-block sheet stays above the keyboard
+
+Tell me what breaks: github.com/ontoplano/ontoplano/issues

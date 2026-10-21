@@ -15,7 +15,7 @@ test('a task stays on screen, ticked and greyed, for a moment after it is done',
 }) => {
 	test.setTimeout(180_000);
 	await register(page, testEmail('tick-lingers'));
-	await visit(page, '/tasks/todo');
+	await visit(page, '/calendar/todo');
 
 	await page
 		.getByRole('button', { name: /New task/ })

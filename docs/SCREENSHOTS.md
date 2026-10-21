@@ -8,27 +8,27 @@ Every room on a desktop and on a phone. [Back to the README](../README.md).
 
 ![Home](screenshots/home/home.webp)
 
-## Tasks
+## Calendar
 
 ### Calendar
 
-![Tasks: Calendar](screenshots/tasks/calendar.webp)
+![Calendar: Calendar](screenshots/calendar/calendar.webp)
 
 ### Tasks
 
-![Tasks: Tasks](screenshots/tasks/tasks.webp)
+![Calendar: Tasks](screenshots/calendar/tasks.webp)
 
 ### Board
 
-![Tasks: Board](screenshots/tasks/board.webp)
+![Calendar: Board](screenshots/calendar/board.webp)
 
 ### Activities
 
-![Tasks: Activities](screenshots/tasks/activities.webp)
+![Calendar: Activities](screenshots/calendar/activities.webp)
 
 ### Review
 
-![Tasks: Review](screenshots/tasks/review.webp)
+![Calendar: Review](screenshots/calendar/review.webp)
 
 ## Notebooks
 

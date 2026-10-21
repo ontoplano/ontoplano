@@ -75,7 +75,7 @@ const DECLARED: Omit<Capture, 'icon'>[] = [
 	{
 		key: 'todo',
 		holds: 'tasks',
-		room: '/tasks/todo',
+		room: '/calendar/todo',
 		shortcut: 't',
 		// The singular, because the dialog says "New {thing}": the tab is
 		// called Tasks and one of them is a task.
@@ -83,7 +83,7 @@ const DECLARED: Omit<Capture, 'icon'>[] = [
 		color: SECTION_COLORS.planner,
 		lead: 'heading',
 		into: 'your to-dos',
-		action: '/tasks/todo?/create'
+		action: '/calendar/todo?/create'
 	},
 	{
 		key: 'note',

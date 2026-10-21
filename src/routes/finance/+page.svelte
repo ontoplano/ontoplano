@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
+	import { enhance } from '$lib/enhance';
 	import EmptyState from '$lib/components/EmptyState.svelte';
 	import RoomSurface from '$lib/components/RoomSurface.svelte';
 	import StatTiles from '$lib/components/StatTiles.svelte';
@@ -134,6 +135,7 @@
 		<form
 			method="post"
 			action="?/setView"
+			use:enhance
 			class="flex flex-wrap items-center gap-1"
 			title={t('finance.overview.viewHint')}
 		>

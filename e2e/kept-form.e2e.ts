@@ -15,7 +15,7 @@ import { visit } from './helpers/visit';
 test('Escape keeps the half-written task, Cancel throws it away', async ({ page }) => {
 	test.setTimeout(180_000);
 	await register(page, testEmail('kept-form'));
-	await visit(page, '/tasks/todo');
+	await visit(page, '/calendar/todo');
 
 	const open = async () => {
 		await page
@@ -52,7 +52,7 @@ test('Escape keeps the half-written task, Cancel throws it away', async ({ page 
 test('a task that was saved leaves no draft behind', async ({ page }) => {
 	test.setTimeout(180_000);
 	await register(page, testEmail('kept-form-saved'));
-	await visit(page, '/tasks/todo');
+	await visit(page, '/calendar/todo');
 
 	await page
 		.getByRole('button', { name: /New task/ })

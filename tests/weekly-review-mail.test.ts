@@ -251,7 +251,7 @@ describe('what it says', () => {
 		expect(sent.subject).toBe('Review your week: 1 of 2');
 		expect(sent.text).toContain('1 of the 2 task blocks');
 		expect(sent.text).toContain('no answer yet');
-		expect(sent.text).toContain(`/tasks/review?week=${LAST_WEEK}`);
+		expect(sent.text).toContain(`/calendar/review?week=${LAST_WEEK}`);
 	});
 
 	test('what did not happen, by name', async () => {

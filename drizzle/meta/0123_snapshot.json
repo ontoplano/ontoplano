@@ -1,7 +1,7 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "5be44525-a19d-4296-b5e4-f69ce2166744",
+  "id": "ad16dac9-3c0a-46d2-9667-6185792ca7b9",
   "prevId": "72dd1a42-1106-439c-b20a-191aad6050e0",
   "tables": {
     "activities": {
@@ -2819,27 +2819,6 @@
           "notNull": true,
           "autoincrement": false
         },
-        "kind": {
-          "name": "kind",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "group_id": {
-          "name": "group_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "parent_id": {
-          "name": "parent_id",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
         "created_at": {
           "name": "created_at",
           "type": "text",
@@ -2862,20 +2841,6 @@
           "columns": [
             "user_id",
             "occurred_on"
-          ],
-          "isUnique": false
-        },
-        "finance_transactions_group_idx": {
-          "name": "finance_transactions_group_idx",
-          "columns": [
-            "group_id"
-          ],
-          "isUnique": false
-        },
-        "finance_transactions_parent_idx": {
-          "name": "finance_transactions_parent_idx",
-          "columns": [
-            "parent_id"
           ],
           "isUnique": false
         },
@@ -10234,6 +10199,13 @@
         },
         "ban_expires": {
           "name": "ban_expires",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "last_active_at": {
+          "name": "last_active_at",
           "type": "integer",
           "primaryKey": false,
           "notNull": false,

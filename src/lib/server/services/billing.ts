@@ -4,7 +4,15 @@ import type { PlanTier } from '../billing/contract.js';
 import { loadConfig } from '../config.js';
 import { isSelfHosted, pricing } from '../settings.js';
 import { applySubscription, startTrial, trialCarryover } from './subscriptions.js';
-import { ServiceError } from '$lib/services/errors.js';
+import { ServiceError, ValidationError } from '$lib/services/errors.js';
+import { APP_USER_AGENT, fromPlayStore } from '$lib/platform.js';
+import {
+	BILLING_REFUSALS,
+	RTDN_REASONS,
+	type RtdnReason,
+	type RtdnTrace
+} from '../billing/contract.js';
+import { record } from '$lib/services/audit.js';
 
 /**
  * Billing, as the rest of the app sees it.
@@ -303,16 +311,102 @@ export function playSkus() {
 	return playChannel()?.skus() ?? null;
 }
 
-export function playClaim(userId: string, input: { sku: string; purchaseToken: string }) {
-	const channel = playChannel();
-	if (!channel || !channel.configured())
-		throw new Error('Play billing is not configured on this instance.');
-	return channel.claim(userId, input);
+/*
+ * The one notification that can mean somebody was charged and got nothing: a
+ * live subscription that nobody here can be found for. That, and Google
+ * refusing the lookup, is an alert. Everything else Play pushes — a refund, a
+ * one-time product, a kind of message this app has no use for — is a line in
+ * the server log, not a payment that failed.
+ */
+const RTDN_ALERTS: ReadonlySet<RtdnReason> = new Set([RTDN_REASONS.unknownAccount]);
+const RTDN_QUIET: ReadonlySet<RtdnReason> = new Set([RTDN_REASONS.test, RTDN_REASONS.otherPackage]);
+
+/**
+ * A step of a store purchase that did not deliver the plan, written down.
+ *
+ * Into the server log, for whoever is reading it, and into the audit log,
+ * which the ops watcher turns into a message. A customer who paid and got
+ * nothing must never be something only the customer knows.
+ */
+function paymentFailed(
+	userId: string | null,
+	stage: 'sheet' | 'claim' | 'rtdn',
+	detail: { sku?: string; code: string; message?: string } & RtdnTrace
+): void {
+	console.error(`billing: play ${stage} failed`, { userId, ...detail });
+	record(userId, 'payment_failed', { detail: { via: 'play', stage, ...detail } });
 }
 
-export function playRtdn(rawBody: string) {
+function failureOf(e: unknown): { code: string; message: string } {
+	const err = e as { code?: unknown; key?: unknown; message?: unknown };
+	const code =
+		typeof err?.key === 'string' ? err.key : typeof err?.code === 'string' ? err.code : 'error';
+	return { code, message: String(err?.message ?? e) };
+}
+
+export async function playClaim(userId: string, input: { sku: string; purchaseToken: string }) {
+	const channel = playChannel();
+	try {
+		if (!channel || !channel.configured())
+			throw new Error('Play billing is not configured on this instance.');
+		return await channel.claim(userId, input);
+	} catch (e) {
+		paymentFailed(userId, 'claim', { sku: input.sku, ...failureOf(e) });
+		throw e;
+	}
+}
+
+export async function playRtdn(rawBody: string) {
 	const channel = playChannel();
 	if (!channel || !channel.configured())
-		return Promise.resolve({ applied: false as const, reason: 'not_configured' });
-	return channel.handleRtdn(rawBody);
+		return { applied: false as const, reason: 'not_configured' };
+	try {
+		const outcome = await channel.handleRtdn(rawBody);
+		if (outcome.applied || RTDN_QUIET.has(outcome.reason)) return outcome;
+		const { reason, sku, orderId, tokenTail, account } = outcome;
+		const trace: RtdnTrace = { sku, orderId, tokenTail, account };
+		if (RTDN_ALERTS.has(reason)) paymentFailed(null, 'rtdn', { code: reason, ...trace });
+		else console.warn(`billing: play notification not applied: ${reason}`, trace);
+		return outcome;
+	} catch (e) {
+		// Thrown on: Google refused the lookup, so Pub/Sub will retry it.
+		const trace = (e as { rtdn?: RtdnTrace } | null)?.rtdn ?? {};
+		paymentFailed(null, 'rtdn', { ...failureOf(e), ...trace });
+		throw e;
+	}
+}
+
+/** The store's own sheet said no, as the device reported it on the way back. */
+export function playSheetFailed(userId: string, sku: string, code: string): void {
+	paymentFailed(userId, 'sheet', { sku, code: code.slice(0, 64) });
+}
+
+/**
+ * Which way a checkout goes, decided once for both pages that start one.
+ *
+ * `play` when the copy Google Play distributes is asking — the page says so
+ * in the form, and its agent says so too when the request carries it — and
+ * this instance can verify Play purchases. `provider` for a browser. `none`
+ * for everything else inside the app: the store copy on an instance without
+ * Play configured, and any other copy of the app. Never the provider there —
+ * Google pulls an app that opens an outside checkout, and falling back to it
+ * silently is how the store copy came to show a card form.
+ */
+export type CheckoutChannel = 'play' | 'provider' | 'none';
+
+export function checkoutChannel(asking: {
+	channel: FormDataEntryValue | null;
+	userAgent: string | null;
+	nativeApp: boolean;
+}): CheckoutChannel {
+	const agent = asking.userAgent ?? '';
+	const store = asking.channel === 'play' || fromPlayStore(agent);
+	if (store) return playConfigured() ? 'play' : 'none';
+	if (asking.nativeApp || agent.includes(APP_USER_AGENT)) return 'none';
+	return 'provider';
+}
+
+/** The refusal for `none`, so both pages say the same thing. */
+export function checkoutRefused(): ValidationError {
+	return new ValidationError({ key: BILLING_REFUSALS.notFromThisApp });
 }

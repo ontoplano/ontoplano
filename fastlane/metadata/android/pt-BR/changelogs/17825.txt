@@ -1,0 +1,6 @@
+• O app agora se lê em português, e pergunta qual idioma você quer no primeiro uso.
+• Lembretes e notificações estão mais confiáveis: som, configuração no celular sozinho, e o aviso na tela foram corrigidos.
+• O ícone do app volta a ficar certo num fundo escuro.
+• O primeiro passo da aba de IA ficou mais claro, e contas novas começam com categorias melhores.
+
+Me conte o que quebrar: github.com/ontoplano/ontoplano/issues

@@ -61,7 +61,8 @@ export const SCOPE_GROUPS = [
 		says: 'scopeGroups.plumbing',
 		scopes: ['plugin:declare', 'webhooks:manage']
 	},
-	{ key: 'removing', says: 'scopeGroups.removingThings', scopes: ['destructive'] }
+	{ key: 'removing', says: 'scopeGroups.removingThings', scopes: ['destructive'] },
+	{ key: 'filing', says: 'scopeGroups.otherNotebooks', scopes: ['notebooks:deliver'] }
 ] as const satisfies readonly { key: string; says: PlainKey; scopes: readonly string[] }[];
 
 export type ScopeGroup = (typeof SCOPE_GROUPS)[number];
@@ -156,13 +157,14 @@ export type PermissionRow = {
  * The grid's rows for whatever a screen offers, in the order of the groups.
  *
  * `destructive` is never a row: it is not a family, and it is drawn apart, on
- * the danger ground, because it is the one grant given on purpose.
+ * the danger ground, because it is the one grant given on purpose. Nor is
+ * `notebooks:deliver`, which is a box of its own under a notebook's key.
  */
 export function permissionRows(offered: readonly string[]): PermissionRow[] {
 	const order = SCOPE_GROUPS.flatMap((group) => group.scopes as readonly string[]);
 	const rows = new Map<string, PermissionRow>();
 	for (const scope of [...offered].sort((a, b) => order.indexOf(a) - order.indexOf(b))) {
-		if (scope === 'destructive') continue;
+		if (scope === 'destructive' || scope === 'notebooks:deliver') continue;
 		const [subject, verb] = scope.split(':');
 		const row = rows.get(subject) ?? {
 			subject,

@@ -87,7 +87,7 @@ test('the app opens onto a working instance and keeps what it is told', async ({
 	// A write through the app's own form, into OPFS. Straight to the todo
 	// list — the planner tab is not ported yet, and the point here is the
 	// write path, not coverage.
-	await page.goto('/tasks/todo');
+	await page.goto('/calendar/todo');
 	const title = `installed and working ${Date.now()}`;
 	const field = page.locator('[name="heading"]');
 	await expect(async () => {
@@ -131,8 +131,8 @@ test('the app opens onto a working instance and keeps what it is told', async ({
  */
 test('every room that runs on the device opens on it', async ({ page }) => {
 	const rooms = [
-		'/tasks/todo',
-		'/tasks/board',
+		'/calendar/todo',
+		'/calendar/board',
 		'/goals',
 		'/notebooks',
 		'/notebooks/diary',
@@ -392,7 +392,10 @@ test('settings offers nothing that needs somebody else to connect', async ({ pag
 	const tabs = await page.locator('nav[aria-label="Settings sections"] a').allInnerTexts();
 	expect(tabs).toContain('Account');
 	expect(tabs).toContain('Preferences');
-	expect(tabs.join(' ')).not.toMatch(/Integrations|Billing|Family|Administration/);
+	// AI & Integrations is there on purpose since 11 Oct 2026: it says why nothing
+	// in it applies to a device, rather than leaving somebody to wonder where
+	// it went. What a device must not offer is the rest.
+	expect(tabs.join(' ')).not.toMatch(/Billing|Family|Administration/);
 });
 
 /**
@@ -434,7 +437,7 @@ test('an endpoint that answers with no content is answered, not thrown', async (
  * replaced.
  */
 test('the main menu’s mark wears the device’s own field', async ({ page }) => {
-	await page.goto('/tasks/todo');
+	await page.goto('/calendar/todo');
 
 	const handle = page.locator('.pie-handle').first();
 	await expect(handle).toBeVisible({ timeout: 20_000 });
@@ -504,6 +507,26 @@ test('the Instance tab says this one is isolated', async ({ page }) => {
 	// rather than the words: `exact` would want a node holding only "Isolated".
 	await expect(page.getByText(/^Isolated/)).toBeVisible();
 	await expect(page.getByText(/This device, on its own/)).toBeVisible();
+});
+
+/**
+ * AI & Integrations comes to a device, to say why nothing can connect.
+ *
+ * Somebody who installed the app and went looking for their assistant gets
+ * the reason and the way to an instance with a server, not a refusal.
+ */
+test('AI & Integrations says why nothing connects, and where it would', async ({ page }) => {
+	await page.goto('/settings/integrations');
+
+	await expect(page.getByText(/can’t connect assistants or other apps/)).toBeVisible({
+		timeout: 20_000
+	});
+	await expect(page.getByRole('link', { name: 'AI & Integrations' })).toBeVisible();
+	await page.getByRole('button', { name: 'Why?' }).click();
+
+	const why = page.getByRole('dialog', { name: 'Why nothing can connect here' });
+	await expect(why.getByText(/backed up off the machine/)).toBeVisible();
+	await expect(why.getByRole('link', { name: 'Use an instance with a server' })).toBeVisible();
 });
 
 /**
@@ -714,12 +737,12 @@ test.describe('leaving for a chosen instance', () => {
 			await route.fulfill({ contentType: 'text/html', body: '<p>hosted</p>' });
 		});
 
-		void page.goto('/?open=/tasks/todo').catch(() => {});
+		void page.goto('/?open=/calendar/todo').catch(() => {});
 		// Long enough for the copy to have drawn itself, had it been allowed to.
 		await page.waitForTimeout(3000);
 		release();
 		await page.waitForURL((url) => url.origin === hosted);
 		expect(shown, 'the device copy was drawn on the way').toBe(0);
-		expect(new URL(page.url()).pathname).toBe('/tasks/todo');
+		expect(new URL(page.url()).pathname).toBe('/calendar/todo');
 	});
 });

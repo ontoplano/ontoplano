@@ -33,7 +33,7 @@ async function newTodo(page: import('@playwright/test').Page, title: string, tag
 test('a task takes labels, and the list narrows to one', async ({ page }) => {
 	test.setTimeout(150_000);
 	await register(page, testEmail('todo-tags'));
-	await visit(page, '/tasks/todo');
+	await visit(page, '/calendar/todo');
 
 	await newTodo(page, 'renew the domain', '#A1, Done');
 	// Normalised the way every other tag is: lower case, no hash, in order.
@@ -69,7 +69,7 @@ test('a task takes labels, and the list narrows to one', async ({ page }) => {
 test('labels are edited, and an edit that says nothing about them keeps them', async ({ page }) => {
 	test.setTimeout(150_000);
 	await register(page, testEmail('todo-tags-edit'));
-	await visit(page, '/tasks/todo');
+	await visit(page, '/calendar/todo');
 
 	await newTodo(page, 'sand the door', 'a1 wood');
 
@@ -120,7 +120,7 @@ test('labels are edited, and an edit that says nothing about them keeps them', a
 test('a label comes off from its pill, after one confirmation', async ({ page }) => {
 	test.setTimeout(150_000);
 	await register(page, testEmail('todo-untag'));
-	await visit(page, '/tasks/todo');
+	await visit(page, '/calendar/todo');
 	await newTodo(page, 'renew the domain', 'a1 done');
 
 	const ask = page.getByRole('dialog', { name: 'Untag?' });

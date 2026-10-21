@@ -148,9 +148,16 @@ for (const width of [1280, 390]) {
 		await favourites.getByRole('link', { name: /Countertops/ }).click();
 		if (width > 1024) await page.getByRole('link', { name: 'Open' }).first().click();
 		await page.waitForURL(/\/notebooks\/\d+/);
+		// On a phone the notebook wears the bar, and its verbs are behind ⋮.
+		const verbs = async () => {
+			if (width < 640)
+				await page.locator('.room-bar').getByRole('button', { name: 'More' }).click();
+		};
+		await verbs();
 		const off = page.getByRole('button', { name: 'Remove Countertops from favourites' });
 		await expect(off).toHaveAttribute('aria-pressed', 'true');
 		await off.click();
+		await verbs();
 		await expect(
 			page.getByRole('button', { name: 'Add Countertops to favourites' })
 		).toHaveAttribute('aria-pressed', 'false');

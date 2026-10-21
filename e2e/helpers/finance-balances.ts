@@ -18,11 +18,18 @@ export async function addLedger(page: Page, name: string, opening?: string, curr
 	}
 	await form.getByRole('button', { name: 'Create', exact: true }).click();
 	await expect(form).toBeHidden();
+	const escaped = name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+	const tab = page
+		.getByRole('navigation', { name: 'Ledgers', exact: true })
+		.getByRole('button', { name: new RegExp(`^${escaped}(\\b|$)`) });
+	await expect(tab).toBeVisible();
+	if ((await tab.getAttribute('aria-current')) === 'page') return;
 	await page
 		.getByTestId('ledger-balance')
 		.filter({ hasText: name })
 		.getByRole('button', { name, exact: true })
 		.click();
+	await expect(tab).toHaveAttribute('aria-current', 'page');
 }
 
 export async function balanceJourney(page: Page) {

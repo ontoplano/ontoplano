@@ -17,9 +17,29 @@ import { visit } from './helpers/visit';
 test.describe('with a finger', () => {
 	test.use({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
 
+	/*
+	 * The view switch and its two buttons take the line between them.
+	 *
+	 * They sat at their own widths with the row's slack in the gaps, a third
+	 * of the line empty under the thumb that was reaching for them.
+	 */
+	test('the view, More and Full screen fill their line', async ({ page }) => {
+		await register(page, testEmail('plan-fill'));
+		await visit(page, '/calendar/calendar');
+		const view = (await page.getByRole('group', { name: 'How much to show' }).boundingBox())!;
+		const more = (await page.getByRole('button', { name: 'More' }).boundingBox())!;
+		const full = (await page.getByRole('button', { name: 'Full screen' }).boundingBox())!;
+		// Squares, as tall as the switch.
+		expect(Math.abs(more.width - more.height)).toBeLessThan(2);
+		expect(Math.abs(more.height - view.height)).toBeLessThan(2);
+		// Nothing but the row's own gap between them.
+		expect(more.x - (view.x + view.width)).toBeLessThanOrEqual(12);
+		expect(full.x - (more.x + more.width)).toBeLessThanOrEqual(12);
+	});
+
 	test('a tap opens a short new-activity sheet with save visible', async ({ page }) => {
 		await register(page, testEmail('plan-tap'));
-		await visit(page, '/tasks/calendar');
+		await visit(page, '/calendar/calendar');
 		await expect(page.getByRole('button', { name: 'More' })).toHaveAttribute(
 			'aria-expanded',
 			'false'
@@ -100,11 +120,29 @@ test.describe('with a finger', () => {
 		const headerBox = (await phoneHeader.boundingBox())!;
 		const addBox = (await add.boundingBox())!;
 		expect(headerBox.x + headerBox.width - addBox.x - addBox.width).toBeLessThan(30);
+		// The name field has focus, so a keyboard is taking the bottom of the
+		// screen and the sheet has all of what is above it.
+		await expect(dialog).toHaveClass(/assumed-keyboard/);
+		await expect
+			.poll(() => dialog.locator('.panel').evaluate((el) => el.getBoundingClientRect().height))
+			.toBeGreaterThan(844 * 0.9);
+		// Where the keyboard is reported, and has been put away, it is the
+		// short sheet.
+		await page.evaluate(() => {
+			const viewport = window.visualViewport!;
+			Object.defineProperty(viewport, 'height', {
+				configurable: true,
+				value: window.innerHeight - 320
+			});
+			viewport.dispatchEvent(new Event('resize'));
+			Object.defineProperty(viewport, 'height', { configurable: true, value: window.innerHeight });
+			viewport.dispatchEvent(new Event('resize'));
+		});
+		await expect(dialog).not.toHaveClass(/assumed-keyboard/);
 		await page.screenshot({ path: 'test-results/plan-phone-sheet.png' });
-		const height = await dialog
-			.locator('.panel')
-			.evaluate((el) => el.getBoundingClientRect().height);
-		expect(height).toBeLessThanOrEqual(844 * 0.55);
+		await expect
+			.poll(() => dialog.locator('.panel').evaluate((el) => el.getBoundingClientRect().height))
+			.toBeLessThanOrEqual(844 * 0.55);
 		await dialog.locator('[name="newActivityName"]').fill('Garden planning');
 		await expect(phoneHeader.locator('.category-mark')).toBeVisible();
 		await expect(dialog).toHaveClass(/peek/);
@@ -123,9 +161,65 @@ test.describe('with a finger', () => {
 		await expect(page.locator('.ec-event').filter({ hasText: 'Garden planning' })).toBeVisible();
 	});
 
+	/**
+	 * The Android app on 15 and later, before its web view shrinks for the
+	 * keyboard: the keys cover the page and nothing on it is told. The sheet
+	 * opened short with its name focused, the keyboard covered all of it, and
+	 * it would not scroll until the keyboard was put away.
+	 */
+	test('a keyboard nobody reports still leaves the whole form reachable', async ({ page }) => {
+		await register(page, testEmail('plan-sheet-unreported'));
+		await visit(page, '/calendar/calendar');
+		await page.getByRole('button', { name: 'New task block' }).click();
+		const dialog = page.getByRole('dialog', { name: 'New task block' });
+		const content = dialog.locator('.modal-content');
+		await expect(dialog.locator('[name="newActivityName"]')).toBeFocused();
+		await expect(dialog).toHaveClass(/assumed-keyboard/);
+		await expect
+			.poll(() => dialog.locator('.panel').evaluate((el) => el.getBoundingClientRect().height))
+			.toBeGreaterThan(844 * 0.9);
+
+		// Everything in the form scrolls up above where the keys are.
+		const keyboardTop = 844 * 0.5;
+		const last = dialog.locator('.modal-content > *').last();
+		await content.evaluate((el) => el.scrollTo({ top: el.scrollHeight }));
+		await expect
+			.poll(() => last.evaluate((el) => el.getBoundingClientRect().bottom))
+			.toBeLessThanOrEqual(keyboardTop);
+
+		// A field tapped under the keys is lifted above them.
+		await content.evaluate((el) => el.scrollTo({ top: 0 }));
+		const duration = dialog.locator('[name="durationMinutes"]');
+		await duration.focus();
+		await expect
+			.poll(() => duration.evaluate((el) => el.getBoundingClientRect().bottom))
+			.toBeLessThanOrEqual(keyboardTop);
+		await page.screenshot({ path: 'test-results/plan-phone-unreported-keyboard.png' });
+
+		// Once a keyboard is reported, nothing is assumed again.
+		await page.evaluate(() => {
+			const viewport = window.visualViewport!;
+			Object.defineProperty(viewport, 'height', {
+				configurable: true,
+				value: window.innerHeight - 320
+			});
+			viewport.dispatchEvent(new Event('resize'));
+		});
+		await expect(dialog).toHaveClass(/(^|\s)keyboard(\s|$)/);
+		await expect(dialog).not.toHaveClass(/assumed-keyboard/);
+		await page.evaluate(() => {
+			const viewport = window.visualViewport!;
+			Object.defineProperty(viewport, 'height', { configurable: true, value: window.innerHeight });
+			viewport.dispatchEvent(new Event('resize'));
+		});
+		await expect(dialog).not.toHaveClass(/(^|\s)keyboard(\s|$)/);
+		await dialog.locator('[name="newActivityName"]').focus();
+		await expect(dialog).not.toHaveClass(/assumed-keyboard/);
+	});
+
 	test('the short sheet fills what the keyboard leaves and scrolls', async ({ page }) => {
 		await register(page, testEmail('plan-sheet-scroll'));
-		await visit(page, '/tasks/calendar');
+		await visit(page, '/calendar/calendar');
 		await page.getByRole('button', { name: 'New task block' }).click();
 		const dialog = page.getByRole('dialog', { name: 'New task block' });
 		const content = dialog.locator('.modal-content');
@@ -144,6 +238,19 @@ test.describe('with a finger', () => {
 		await expect
 			.poll(() => dialog.locator('.panel').evaluate((el) => el.getBoundingClientRect().height))
 			.toBeGreaterThan((844 - 320) * 0.9);
+		// Grown to the top of the screen, it keeps clear of the status bar: the
+		// half sheet needs no safe area, the whole-height one does.
+		await page.evaluate(() => document.documentElement.style.setProperty('--safe-top', '30px'));
+		// Measured once the sheet has slid in: on its way up it is below the bar.
+		await dialog
+			.locator('.panel')
+			.evaluate((el) => Promise.all(el.getAnimations().map((a) => a.finished)));
+		const headerTop = await dialog
+			.locator('header')
+			.first()
+			.evaluate((el) => el.getBoundingClientRect().top);
+		expect(headerTop).toBeGreaterThanOrEqual(30);
+		await page.evaluate(() => document.documentElement.style.removeProperty('--safe-top'));
 		await expect
 			.poll(() => content.evaluate((el) => el.getBoundingClientRect().bottom))
 			.toBeLessThanOrEqual(844 - 320);
@@ -237,7 +344,7 @@ test.describe('with a finger', () => {
 	 */
 	test('a real tap opens the sheet on the activity, focused', async ({ page }) => {
 		await register(page, testEmail('plan-real-tap'));
-		await visit(page, '/tasks/calendar');
+		await visit(page, '/calendar/calendar');
 		const body = page.locator('.ec-body').first();
 		const box = (await body.boundingBox())!;
 		await page.touchscreen.tap(box.x + box.width / 2, box.y + 60);
@@ -262,9 +369,47 @@ test.describe('with a finger', () => {
 		expect(await dialog.locator('.modal-content').evaluate((el) => el.scrollTop)).toBe(0);
 	});
 
+	test('the sheet a tap opened still scrolls under a finger', async ({ page }) => {
+		await register(page, testEmail('plan-tap-scroll'));
+		await visit(page, '/calendar/calendar');
+		const body = page.locator('.ec-body').first();
+		const box = (await body.boundingBox())!;
+		await page.touchscreen.tap(box.x + box.width / 2, box.y + 60);
+
+		const dialog = page.getByRole('dialog', { name: 'New task block' });
+		await expect(dialog).toBeVisible();
+		// Past the calendar's own long press, which used to go on running
+		// after the tap and cancel every drag on the page from then on.
+		await page.waitForTimeout(1500);
+
+		await page.evaluate(() => {
+			const w = window as unknown as { prevented: number };
+			w.prevented = 0;
+			addEventListener('touchmove', (e) => {
+				if (e.defaultPrevented) w.prevented++;
+			});
+		});
+		const name = (await dialog.locator('[name="newActivityName"]').boundingBox())!;
+		const x = name.x + name.width / 2;
+		const y = name.y + name.height / 2;
+		const cdp = await page.context().newCDPSession(page);
+		await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x, y }] });
+		for (let step = 1; step <= 5; step++) {
+			await cdp.send('Input.dispatchTouchEvent', {
+				type: 'touchMove',
+				touchPoints: [{ x, y: y - step * 20 }]
+			});
+		}
+		await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+
+		expect(await page.evaluate(() => (window as unknown as { prevented: number }).prevented)).toBe(
+			0
+		);
+	});
+
 	test('swiping up on the sheet header expands it', async ({ page }) => {
 		await register(page, testEmail('plan-sheet-expand'));
-		await visit(page, '/tasks/calendar');
+		await visit(page, '/calendar/calendar');
 		await page.getByRole('button', { name: 'New task block' }).click();
 		const dialog = page.getByRole('dialog', { name: 'New task block' });
 		await expect(dialog).toHaveClass(/peek/);
@@ -279,18 +424,19 @@ test.describe('with a finger', () => {
 
 	test('press and hold on the grid opens a new block there', async ({ page }) => {
 		await register(page, testEmail('plan-hold'));
-		await visit(page, '/tasks/calendar');
+		await visit(page, '/calendar/calendar');
 
 		const body = page.locator('.ec-body').first();
 		await expect(body).toBeVisible();
 		const box = (await body.boundingBox())!;
 
-		await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+		const y = box.y + box.height * 0.53;
+		await page.mouse.move(box.x + box.width / 2, y);
 		await page.dispatchEvent('.ec-body', 'pointerdown', {
 			pointerType: 'touch',
 			isPrimary: true,
 			clientX: box.x + box.width / 2,
-			clientY: box.y + box.height / 2
+			clientY: y
 		});
 		// Longer than the hold, and then the release the finger would make.
 		await page.waitForTimeout(700);
@@ -298,15 +444,18 @@ test.describe('with a finger', () => {
 			pointerType: 'touch',
 			isPrimary: true,
 			clientX: box.x + box.width / 2,
-			clientY: box.y + box.height / 2
+			clientY: y
 		});
 
 		await expect(page.getByRole('heading', { name: 'New task block' })).toBeVisible();
+		// On the hour the finger landed in, not on the quarter: the grid's middle
+		// is not on an hour, and the form says the hour.
+		await expect(page.locator('[name="startTime"]').first()).toHaveValue(/^\d\d:00$/);
 	});
 
 	test('a swipe over the grid is a scroll, not a new block', async ({ page }) => {
 		await register(page, testEmail('plan-swipe'));
-		await visit(page, '/tasks/calendar');
+		await visit(page, '/calendar/calendar');
 
 		const body = page.locator('.ec-body').first();
 		const box = (await body.boundingBox())!;
@@ -341,7 +490,7 @@ test('dragging a block asks whether to move or copy it', async ({ page }) => {
 	test.setTimeout(180_000);
 	await page.setViewportSize({ width: 1280, height: 900 });
 	await register(page, testEmail('plan-drag-choice'));
-	await visit(page, '/tasks/calendar?view=week');
+	await visit(page, '/calendar/calendar?view=week');
 	await page.getByRole('button', { name: 'New task block' }).click();
 	const editor = page.getByRole('dialog', { name: 'New task block' });
 	await editor.locator('[name="newActivityName"]').fill('Move or copy me');
@@ -411,7 +560,7 @@ test.describe('tapping a block', () => {
 	 */
 	test('tapping a block leaves no hover card behind', async ({ page }) => {
 		await register(page, testEmail('plan-hover'));
-		await visit(page, '/tasks/calendar');
+		await visit(page, '/calendar/calendar');
 
 		const block = page.locator('.ec-event.ec-draggable').first();
 		await expect(block).toBeVisible();
@@ -436,9 +585,11 @@ test.describe('saving a block', () => {
 
 	test('the fields keep their values until the form is gone', async ({ page }) => {
 		await register(page, testEmail('plan-save'));
-		await visit(page, '/tasks/calendar');
+		await visit(page, '/calendar/calendar');
 
-		const block = page.locator('.ec-event').first();
+		// A block already over carries a status mark, and on a phone-width
+		// column a tap on its middle lands on the mark rather than the block.
+		const block = page.locator('.ec-event:not(:has(.ec-event-mark))').first();
 		await expect(block).toBeVisible();
 		await block.click();
 
@@ -485,7 +636,7 @@ test.describe('an existing task', () => {
 	test('is put on the day from the new block form', async ({ page }) => {
 		test.setTimeout(180_000);
 		await register(page, testEmail('plan-existing-task'));
-		await visit(page, '/tasks/todo');
+		await visit(page, '/calendar/todo');
 		await page
 			.getByRole('button', { name: /New task/ })
 			.first()
@@ -494,7 +645,7 @@ test.describe('an existing task', () => {
 		await page.getByRole('button', { name: 'Create task' }).click();
 		await expect(page.getByText('call the glazier').first()).toBeVisible({ timeout: 30_000 });
 
-		await visit(page, '/tasks/calendar');
+		await visit(page, '/calendar/calendar');
 		await page.getByRole('button', { name: 'New task block' }).click();
 		await page.getByRole('button', { name: 'Mode' }).click();
 		await page.getByRole('option', { name: 'Existing task' }).click();

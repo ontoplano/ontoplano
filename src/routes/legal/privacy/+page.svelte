@@ -28,6 +28,7 @@
 		{t('legal.privacy.aShortHistoryOfWhat')}
 	</li>
 	<li>{t('legal.privacy.theAddressYouConnectedFrom')}</li>
+	<li>{t('legal.privacy.whenYouLastUsedThe')}</li>
 </ul>
 
 <h2>{t('legal.privacy.whereItIsStored')}</h2>

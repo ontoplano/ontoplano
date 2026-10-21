@@ -1,0 +1,9 @@
+• Tarefas agora se chama Calendário
+• Os lembretes aparecem no calendário, na hora em que tocam
+• Captura rápida: configurações numa lista, um caderno por fatia
+• No celular, tocar num campo de hora ou data abre o seletor
+• Um bloco novo começa na hora cheia que você tocou
+• No Android 15+, formulários rolam acima do teclado; a folha de bloco novo não some sob a barra de status
+• Busca e filtros mais limpos acima das listas
+
+Me conte o que quebrar: github.com/ontoplano/ontoplano/issues

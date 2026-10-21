@@ -17,7 +17,7 @@ import { visit } from './helpers/visit';
  * posting the half-step that only exists so the thumb has somewhere to rest.
  */
 async function openTheScales(page: import('@playwright/test').Page, title: string) {
-	await visit(page, '/tasks/board');
+	await visit(page, '/calendar/board');
 	await page.keyboard.press('n');
 
 	const heading = page.locator('#card-form [name=heading]');

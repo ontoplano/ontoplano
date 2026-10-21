@@ -62,17 +62,23 @@
 	 * The order of the accounts. The server answers newest first; the other
 	 * orders are this page's own, since the list is one page long.
 	 */
-	const ORDERS = ['joined', 'email'] as const;
+	const ORDERS = ['joined', 'active', 'email'] as const;
 	type Order = (typeof ORDERS)[number];
 	const ORDER_LABELS: Record<Order, PlainKey> = {
 		joined: 'admin.orderJoined',
+		active: 'admin.orderActive',
 		email: 'admin.orderAddress'
 	};
 	let order = $state<Order>('joined');
 	let direction = $state<'asc' | 'desc'>('desc');
 	const accounts = $derived.by(() => {
 		const sorted = [...data.accounts].sort((a, b) =>
-			order === 'email' ? a.email.localeCompare(b.email) : a.createdAt.localeCompare(b.createdAt)
+			order === 'email'
+				? a.email.localeCompare(b.email)
+				: order === 'active'
+					? // Never active sorts as the oldest of all.
+						(a.lastActiveAt ?? '').localeCompare(b.lastActiveAt ?? '')
+					: a.createdAt.localeCompare(b.createdAt)
 		);
 		return direction === 'desc' ? sorted.reverse() : sorted;
 	});
@@ -155,11 +161,14 @@
 	<!--
 		Two columns of cards, each one foldable: the page is read two cards at a
 		time, and the rest can be folded out of the way — remembered per card.
+		The accounts take both columns: a list of addresses and dates is the
+		one thing here that is read across, and half a page squeezed its search
+		and order onto two lines.
 		Inside the room's gutter on every side, the top included: the grid is
 		not one card meeting the track, so it floats like the rest of the page.
 	-->
 	<CardGrid class="items-start">
-		<Card id="admin-accounts" title={t('admin.accounts')} flush collapsible>
+		<Card id="admin-accounts" title={t('admin.accounts')} flush collapsible class="lg:col-span-2">
 			<RoomToolbar inset>
 				{#snippet tools()}
 					<FilterBar
@@ -204,6 +213,9 @@
 									{account.name}
 									{t('admin.joined')}
 									{when(account.createdAt)} ·
+									{account.lastActiveAt
+										? t('admin.activeAgo', { when: ago(account.lastActiveAt) })
+										: t('admin.neverActive')} ·
 									{t('admin.sessionCount', { count: account.sessions })}
 									<!-- Who pays: a family payer and their riders read differently
 									     from a plain subscriber. -->

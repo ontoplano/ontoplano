@@ -48,3 +48,20 @@ export function firstPlainLine(text: string): string {
 			.find(Boolean) ?? ''
 	);
 }
+
+/**
+ * Markdown as one line of words: what a notification, an alarm or a search
+ * result can hold. Line breaks and runs of space become one space.
+ */
+export function plainLine(text: string): string {
+	return plainMarkdown(text).replace(/\s+/g, ' ').trim();
+}
+
+/**
+ * Markdown as the title of a notification: its words on one line, or the text
+ * as typed when it has none — a reminder that is only a picture still says
+ * something rather than nothing.
+ */
+export function titleLine(text: string): string {
+	return plainLine(text) || text.trim();
+}

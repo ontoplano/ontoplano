@@ -36,6 +36,8 @@ export type Account = {
 	emailVerified: boolean;
 	role: Role;
 	createdAt: string;
+	/** When it last used the app — see `$lib/server/activity`. Null for never since this was kept. */
+	lastActiveAt: string | null;
 	sessions: number;
 	/** What they are entitled to right now, in the words the billing page uses. */
 	plan: string;
@@ -104,7 +106,8 @@ export function searchAccounts(query: string, limit = 25): Account[] {
 			name: user.name,
 			emailVerified: user.emailVerified,
 			role: user.role,
-			createdAt: user.createdAt
+			createdAt: user.createdAt,
+			lastActiveAt: user.lastActiveAt
 		})
 		.from(user)
 		.where(
@@ -131,6 +134,7 @@ function asAccount(row: {
 	emailVerified: boolean;
 	role: string | null;
 	createdAt: Date | string;
+	lastActiveAt: Date | null;
 }): Account {
 	return {
 		id: row.id,
@@ -139,6 +143,7 @@ function asAccount(row: {
 		emailVerified: row.emailVerified,
 		role: isRole(row.role) ? row.role : 'member',
 		createdAt: new Date(row.createdAt).toISOString(),
+		lastActiveAt: row.lastActiveAt ? row.lastActiveAt.toISOString() : null,
 		sessions: sessionCount(row.id),
 		plan: describePlan(row.id),
 		isOwner: isInstanceOwner(row.id)
@@ -153,7 +158,8 @@ export function accountById(id: string): Account {
 			name: user.name,
 			emailVerified: user.emailVerified,
 			role: user.role,
-			createdAt: user.createdAt
+			createdAt: user.createdAt,
+			lastActiveAt: user.lastActiveAt
 		})
 		.from(user)
 		.where(eq(user.id, id))

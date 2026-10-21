@@ -27,7 +27,7 @@ const strengthOf = (selector: string) => `(() => {
 test('a label keeps its ink while the row’s buttons are held back', async ({ page }) => {
 	test.setTimeout(120_000);
 	await register(page, testEmail('label-ink'));
-	await visit(page, '/tasks/todo');
+	await visit(page, '/calendar/todo');
 
 	await page.getByRole('button', { name: 'New task' }).first().click();
 	await page.locator('[name="heading"]').first().fill('A task with a label');

@@ -1,0 +1,4 @@
+• Ontoplano se prépare pour F-Droid : la fiche du store est désormais livrée avec le code source
+• Builds Android plus sûrs : les outils de build sont vérifiés avec leur somme de contrôle publiée
+
+Dites-moi ce qui casse : github.com/ontoplano/ontoplano/issues

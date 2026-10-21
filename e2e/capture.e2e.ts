@@ -152,7 +152,7 @@ test('press, flick and release writes the thing', async ({ page }) => {
 	await expect(page.getByRole('heading', { name: /new task/i })).toBeHidden();
 
 	// And it is really there, in the list that owns it.
-	await visit(page, '/tasks/todo');
+	await visit(page, '/calendar/todo');
 	await expect(page.getByText('buy a bigger pan')).toBeVisible();
 });
 
@@ -241,7 +241,7 @@ test('the section pie lands you in the room', async ({ page }) => {
 			(await page.locator('[data-pie="rooms"] .pie-hud-name').innerText()).trim().toLowerCase()
 		);
 	}
-	for (const room of ['Tasks', 'Goals', 'Notebooks', 'Health', 'Finance', 'Inventory']) {
+	for (const room of ['Calendar', 'Goals', 'Notebooks', 'Health', 'Finance', 'Inventory']) {
 		expect(announced).toContain(room.toLowerCase());
 	}
 	expect(announced).not.toContain('home');
@@ -321,7 +321,7 @@ test.describe('with a finger', () => {
 			);
 		}
 
-		for (const room of ['Tasks', 'Goals', 'Notebooks', 'Inventory']) {
+		for (const room of ['Calendar', 'Goals', 'Notebooks', 'Inventory']) {
 			expect(named, `${room} was never named while it was aimed at`).toContain(room);
 		}
 
@@ -422,7 +422,7 @@ test('a quick add says where the thing went, and quotes it', async ({ page }) =>
  */
 test('the pie says it too, from a page that is not the dashboard', async ({ page }) => {
 	await register(page, testEmail('capture-toast-pie'));
-	await visit(page, '/tasks/calendar');
+	await visit(page, '/calendar/calendar');
 
 	await (await trigger(page)).click();
 	// The way a person finds a wedge: point at each until the HUD says its name.
@@ -439,4 +439,37 @@ test('the pie says it too, from a page that is not the dashboard', async ({ page
 	await expect(page.getByText(/Added to your to-dos: ring the dentist/)).toBeVisible({
 		timeout: 15_000
 	});
+});
+
+/*
+ * Closing it to look at something is not throwing it away.
+ *
+ * Closing it keeps what was typed and says so; the same kind opened again has it
+ * back. Cancel is saying it is finished with, and lets it go.
+ */
+test('a half-written capture closed is kept as a draft, and Cancel lets it go', async ({
+	page
+}) => {
+	await register(page, testEmail('capture-draft'));
+	await visit(page, '/calendar/calendar');
+
+	const openTask = async () => {
+		await (await trigger(page)).click();
+		expect(await pickWedge(page, 'Task'), 'no wedge announced itself as Task').toBe(true);
+		await expect(page.getByRole('heading', { name: /new task/i })).toBeVisible({
+			timeout: 30_000
+		});
+	};
+
+	await openTask();
+	await page.locator('[name=heading]').fill('call the plumber about');
+	await page.getByRole('dialog').getByRole('button', { name: 'Close' }).click();
+	await expect(page.getByText('Saved as draft')).toBeVisible();
+
+	await openTask();
+	await expect(page.locator('[name=heading]')).toHaveValue('call the plumber about');
+
+	await page.getByRole('button', { name: 'Cancel' }).click();
+	await openTask();
+	await expect(page.locator('[name=heading]')).toHaveValue('');
 });

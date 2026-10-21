@@ -13,7 +13,7 @@ test('budget migration preserves old history and the native pre-migration snapsh
 	const path = join(directory, 'before.db');
 	const db = new Database(path);
 	for (const name of readdirSync(join(root, 'drizzle'))
-		.filter((name) => name.endsWith('.sql') && name < '0126')
+		.filter((name) => name.endsWith('.sql') && name < '0128')
 		.sort())
 		db.exec(readFileSync(join(root, 'drizzle', name), 'utf8'));
 	seedAccounts(path);
@@ -28,7 +28,7 @@ test('budget migration preserves old history and the native pre-migration snapsh
 	const { snapshot } = await import('../scripts/db-snapshot.mjs');
 	const backup = snapshot('pre-epic4');
 	expect(backup).toBeTruthy();
-	db.exec(readFileSync(join(root, 'drizzle', '0126_zippy_blue_blade.sql'), 'utf8'));
+	db.exec(readFileSync(join(root, 'drizzle', '0128_zippy_blue_blade.sql'), 'utf8'));
 	expect(db.prepare('select * from finance_transactions').all()).toEqual(before);
 	db.prepare("insert into ledgers(user_id,name) values (?,'Old writer still works')").run(OWNER);
 	expect(db.pragma('integrity_check', { simple: true })).toBe('ok');

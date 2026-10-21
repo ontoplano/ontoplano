@@ -28,6 +28,7 @@ import {
 	people,
 	recipeImages,
 	recipes,
+	reminders,
 	todoTasks
 } from '$lib/db/schema.js';
 import type { Ctx } from './ctx.js';
@@ -119,6 +120,11 @@ function usedPictureIds(ctx: Ctx): Set<number> {
 			.select({ text: recipes.notes })
 			.from(recipes)
 			.where(and(eq(recipes.userId, ctx.userId), like(recipes.notes, '%/media/%')))
+			.all(),
+		...db
+			.select({ text: reminders.message })
+			.from(reminders)
+			.where(and(eq(reminders.userId, ctx.userId), like(reminders.message, '%/media/%')))
 			.all()
 	];
 	for (const { text } of written) add(picturesMentionedIn(text ?? ''));

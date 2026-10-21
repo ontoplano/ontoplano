@@ -67,7 +67,9 @@
 </script>
 
 {#if group}
-	<fieldset class="col-span-12 block {SPANS[span]}">
+	<!-- `min-w-0`: a fieldset is min-content wide by default, so a group that
+	     cannot shrink pushed itself, and the form, off the side of a phone. -->
+	<fieldset class="col-span-12 block min-w-0 {SPANS[span]}">
 		<legend class="eyebrow text-gray-600">
 			{label}{#if required}<span class="text-gray-500"> *</span>{/if}
 		</legend>

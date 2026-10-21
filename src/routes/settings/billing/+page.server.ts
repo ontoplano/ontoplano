@@ -14,6 +14,8 @@ import {
 import {
 	changeInterval,
 	checkoutTrialDays,
+	checkoutChannel,
+	checkoutRefused,
 	createCheckout,
 	playConfigured,
 	currentInterval,
@@ -92,6 +94,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 		 * page pairs it with its own Play detection before hiding anything.
 		 */
 		inApp: Boolean(locals.nativeApp),
+		playReady: playConfigured(),
 		// A fresh portal session per look: the links carry a short-lived token
 		// and the provider says not to store them.
 		portal: standing ? await portalUrl(ctx.userId) : null
@@ -129,7 +132,13 @@ export const actions: Actions = {
 		const interval = formData.get('interval') === 'yearly' ? 'yearly' : 'monthly';
 		const tier = formData.get('tier') === 'family' ? 'family' : 'solo';
 		// The store copy pays through Play — see /start, same rule.
-		if (formData.get('channel') === 'play' && playConfigured()) {
+		const channel = checkoutChannel({
+			channel: formData.get('channel'),
+			userAgent: request.headers.get('user-agent'),
+			nativeApp: Boolean(locals.nativeApp)
+		});
+		if (channel === 'none') return toActionFailure(checkoutRefused());
+		if (channel === 'play') {
 			redirect(303, `/buy?play=1&interval=${interval}&tier=${tier}`);
 		}
 		let url: string;
@@ -143,6 +152,13 @@ export const actions: Actions = {
 	switchInterval: async ({ request, locals }) => {
 		const formData = await request.formData();
 		const interval = formData.get('interval') === 'monthly' ? 'monthly' : 'yearly';
+		// A provider subscription is only ever changed from outside the app.
+		const channel = checkoutChannel({
+			channel: null,
+			userAgent: request.headers.get('user-agent'),
+			nativeApp: Boolean(locals.nativeApp)
+		});
+		if (channel !== 'provider') return toActionFailure(checkoutRefused());
 		try {
 			// Twice a day: every switch moves real billing and sends provider
 			// mail, and flipping back and forth is a spam machine, not a plan.

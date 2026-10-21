@@ -14,7 +14,7 @@ test('additive balance migration preserves history, old SQL remains usable, and 
 	const path = join(directory, 'before.db');
 	const db = new Database(path);
 	for (const name of readdirSync(join(root, 'drizzle'))
-		.filter((n) => n.endsWith('.sql') && n < '0124')
+		.filter((n) => n.endsWith('.sql') && n < '0126')
 		.sort()) {
 		db.exec(readFileSync(join(root, 'drizzle', name), 'utf8'));
 	}
@@ -30,7 +30,7 @@ test('additive balance migration preserves history, old SQL remains usable, and 
 	const { snapshot } = await import('../scripts/db-snapshot.mjs');
 	const backup = snapshot('pre-epic2');
 	expect(backup).toBeTruthy();
-	db.exec(readFileSync(join(root, 'drizzle', '0124_milky_goliath.sql'), 'utf8'));
+	db.exec(readFileSync(join(root, 'drizzle', '0126_milky_goliath.sql'), 'utf8'));
 	expect(db.prepare('select * from finance_transactions').all()).toEqual(before);
 	expect(db.prepare('select opening_minor, opening_on from ledgers where id=1').get()).toEqual({
 		opening_minor: 0,

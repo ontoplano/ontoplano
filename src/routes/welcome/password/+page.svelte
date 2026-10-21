@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { enhance } from '$lib/enhance';
 	import Banner from '$lib/components/Banner.svelte';
-	import { MIN_PASSWORD_LENGTH, PASSWORD_RULE } from '$lib/passwords';
+	import { MIN_PASSWORD_LENGTH } from '$lib/passwords';
 	import type { ActionData } from './$types';
 	import { useT } from '$lib/i18n';
 	import PageTitle from '$lib/components/PageTitle.svelte';
@@ -35,7 +35,9 @@
 					autocomplete="new-password"
 					class="mt-1 block w-full border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
 				/>
-				<span class="mt-1 block text-xs text-gray-500">{PASSWORD_RULE}</span>
+				<span class="mt-1 block text-xs text-gray-500"
+					>{t('passwords.rule', { count: MIN_PASSWORD_LENGTH })}</span
+				>
 			</label>
 
 			<label class="mb-6 block">

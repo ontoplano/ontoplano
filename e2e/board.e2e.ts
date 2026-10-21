@@ -16,7 +16,7 @@ import { visit } from './helpers/visit';
  */
 
 async function newCard(page: import('@playwright/test').Page, title: string) {
-	await visit(page, '/tasks/board');
+	await visit(page, '/calendar/board');
 	await page.keyboard.press('n');
 	// Wait for the form the keystroke opens rather than typing into where it is
 	// about to be: under a loaded parallel run it has not mounted yet, and
@@ -108,7 +108,7 @@ test.describe('the todo rail', () => {
 
 		// A card made on the Todo tab has no day, which is what puts it in the
 		// rail; one made on Today would be a block on today's board instead.
-		await visit(page, '/tasks/board');
+		await visit(page, '/calendar/board');
 		await todoTab.click();
 		await page.keyboard.press('n');
 		await page.fill('#card-form [name=heading]', title);
@@ -276,7 +276,7 @@ test.describe('the board on a phone', () => {
  */
 test('n opens a new card and g switches the tab, from the keyboard', async ({ page }) => {
 	await register(page, testEmail('board-keys'));
-	await visit(page, '/tasks/board');
+	await visit(page, '/calendar/board');
 
 	await page.keyboard.press('g');
 	// The Today/To-do switch is the app's segmented control now — the same one

@@ -40,15 +40,15 @@ manager you already use.
 **Debian, Ubuntu, Mint, Pop!\_OS, Raspberry Pi OS**
 
 ```sh
-curl -LO https://github.com/ontoplano/ontoplano/releases/download/v0.186.0/ontoplano_0.186.0_amd64.deb
-sudo apt install ./ontoplano_0.186.0_amd64.deb
+curl -LO https://github.com/ontoplano/ontoplano/releases/download/v0.186.6/ontoplano_0.186.6_amd64.deb
+sudo apt install ./ontoplano_0.186.6_amd64.deb
 ```
 
 **Fedora, RHEL and its rebuilds, openSUSE**
 
 ```sh
-curl -LO https://github.com/ontoplano/ontoplano/releases/download/v0.186.0/ontoplano-0.186.0-1.x86_64.rpm
-sudo dnf install ./ontoplano-0.186.0-1.x86_64.rpm     # or: sudo zypper install ./ontoplano-0.186.0-1.x86_64.rpm
+curl -LO https://github.com/ontoplano/ontoplano/releases/download/v0.186.6/ontoplano-0.186.6-1.x86_64.rpm
+sudo dnf install ./ontoplano-0.186.6-1.x86_64.rpm     # or: sudo zypper install ./ontoplano-0.186.6-1.x86_64.rpm
 ```
 
 **Arch, Manjaro, EndeavourOS** — a recipe, built on your machine. It is not
@@ -56,8 +56,8 @@ on the AUR yet, so the two files it needs come from the release itself:
 
 ```sh
 mkdir ontoplano && cd ontoplano
-curl -LO https://github.com/ontoplano/ontoplano/releases/download/v0.186.0/PKGBUILD
-curl -LO https://github.com/ontoplano/ontoplano/releases/download/v0.186.0/ontoplano.install
+curl -LO https://github.com/ontoplano/ontoplano/releases/download/v0.186.6/PKGBUILD
+curl -LO https://github.com/ontoplano/ontoplano/releases/download/v0.186.6/ontoplano.install
 makepkg -si
 ```
 
@@ -67,7 +67,7 @@ Every release carries a `SHA256SUMS` covering each file attached to it. In the
 directory you downloaded into:
 
 ```sh
-curl -LO https://github.com/ontoplano/ontoplano/releases/download/v0.186.0/SHA256SUMS
+curl -LO https://github.com/ontoplano/ontoplano/releases/download/v0.186.6/SHA256SUMS
 sha256sum --ignore-missing -c SHA256SUMS
 ```
 
@@ -239,7 +239,7 @@ where the app was restarted across the moment a reminder fell due. The Docker
 image makes the same request from inside the container.
 
 **The weekly review mail.** On Monday, one message saying how much of last week
-you planned and did, linking to `/tasks/review`. It goes to accounts with a
+you planned and did, linking to `/calendar/review`. It goes to accounts with a
 confirmed address, and every message carries a link that turns it off without
 signing in. It needs SMTP, so it is not installed by default: from source,
 `make install-mail-service`; on a packaged install, your own timer or cron

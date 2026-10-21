@@ -2,7 +2,14 @@ package app.ontoplano.isolated;
 
 import android.content.Intent;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
+import android.view.View;
+import android.view.ViewGroup;
+
+import androidx.core.graphics.Insets;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowInsetsCompat;
 
 import com.getcapacitor.BridgeActivity;
 import com.getcapacitor.Plugin;
@@ -25,6 +32,41 @@ public class MainActivity extends BridgeActivity {
         registerPlugin(OntoplanoSettings.class);
         registerStorePlugins();
         super.onCreate(savedInstanceState);
+        makeRoomForKeyboard(bridge.getWebView());
+    }
+
+    /**
+     * Shrink the web view above the keyboard instead of letting it cover it.
+     *
+     * From Android 15 an app targeting it is drawn edge to edge whatever it
+     * asks, and `adjustResize` no longer resizes anything: the keyboard is laid
+     * over the web view, which is told nothing. The page kept its full height,
+     * a form shorter than the screen had nothing to scroll, and whatever sat
+     * under the keys could not be reached until the keyboard went away.
+     * Capacitor applies the system bars' insets at most, never the keyboard's.
+     *
+     * So the keyboard's inset becomes a bottom margin, which is the resize a
+     * browser does for `interactive-widget=resizes-content`. It is taken out of
+     * what the web view is then told, so a web view that also reacts to it does
+     * not make room twice. Earlier versions still resize the window themselves.
+     */
+    private static void makeRoomForKeyboard(View webView) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.VANILLA_ICE_CREAM) return;
+        ViewCompat.setOnApplyWindowInsetsListener(webView, (view, insets) -> {
+            int keyboard = insets.isVisible(WindowInsetsCompat.Type.ime())
+                    ? insets.getInsets(WindowInsetsCompat.Type.ime()).bottom
+                    : 0;
+            ViewGroup.MarginLayoutParams margins = (ViewGroup.MarginLayoutParams) view.getLayoutParams();
+            if (margins.bottomMargin != keyboard) {
+                margins.bottomMargin = keyboard;
+                view.setLayoutParams(margins);
+            }
+            WindowInsetsCompat rest = new WindowInsetsCompat.Builder(insets)
+                    .setInsets(WindowInsetsCompat.Type.ime(), Insets.NONE)
+                    .setVisible(WindowInsetsCompat.Type.ime(), false)
+                    .build();
+            return ViewCompat.onApplyWindowInsets(view, rest);
+        });
     }
 
     /**

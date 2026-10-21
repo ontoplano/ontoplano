@@ -31,6 +31,26 @@ export type RoomAction = {
 	 * then reads "Cancel" — one control, not two that disagree.
 	 */
 	open?: boolean;
+	/**
+	 * The id of the open composer's form, so a Save beside the Cancel submits
+	 * it — a long note is not scrolled past to reach its own button.
+	 */
+	form?: string;
+};
+
+/**
+ * A tabbed screen's New, as the tab below declares it to whoever draws it.
+ *
+ * `labels` is every word it can say, so the button is as wide as the longest
+ * and does not change width with the tab.
+ */
+export type TabVerb = {
+	label: string;
+	labels: string[];
+	run?: () => void;
+	href?: string;
+	open?: boolean;
+	form?: string;
 };
 
 const held = $state<{ action: RoomAction | null }>({ action: null });

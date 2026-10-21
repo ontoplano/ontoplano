@@ -32,7 +32,7 @@ test('the first line of a task’s writing folds it, and the rest of it does not
 }) => {
 	test.setTimeout(180_000);
 	await register(page, testEmail('open-by-description'));
-	await visit(page, '/tasks/todo');
+	await visit(page, '/calendar/todo');
 
 	await page
 		.getByRole('button', { name: /New task/ })
@@ -47,7 +47,7 @@ test('the first line of a task’s writing folds it, and the rest of it does not
 		.click();
 	await expect(page.getByText('ring the plumber').first()).toBeVisible({ timeout: 30_000 });
 
-	const fold = page.locator('.todo-fold');
+	const fold = page.locator('.folding-notes-mark');
 	await expect(fold).toHaveAttribute('aria-expanded', 'false');
 
 	// Folded, the words open it — anything in the block does.
@@ -62,7 +62,7 @@ test('the first line of a task’s writing folds it, and the rest of it does not
 	 * being read, and reading means selecting a word or following a link — both
 	 * of which used to fold the row away mid-sentence.
 	 */
-	const notes = page.locator('.todo-notes').first();
+	const notes = page.locator('.folding-notes').first();
 	const box = (await notes.boundingBox())!;
 	await page.mouse.click(box.x + box.width / 2, box.y + box.height - 4);
 	await expect(fold).toHaveAttribute('aria-expanded', 'true');
@@ -82,10 +82,10 @@ test('the first line of a task’s writing folds it, and the rest of it does not
 	const open = (await notes.boundingBox())!;
 	await page.mouse.move(open.x + open.width / 2, open.y + open.height - 4);
 	await expect(notes).not.toHaveCSS('cursor', 'pointer');
-	await expect(notes).not.toHaveClass(/todo-notes-hot/);
+	await expect(notes).not.toHaveClass(/folding-notes-hot/);
 	await page.mouse.move(open.x + open.width / 2, open.y + 6);
 	await expect(notes).toHaveCSS('cursor', 'pointer');
-	await expect(notes).toHaveClass(/todo-notes-hot/);
+	await expect(notes).toHaveClass(/folding-notes-hot/);
 });
 
 /**
@@ -97,7 +97,7 @@ test('the first line of a task’s writing folds it, and the rest of it does not
 test('a note that fits on one line has no chevron at all', async ({ page }) => {
 	test.setTimeout(180_000);
 	await register(page, testEmail('no-fold'));
-	await visit(page, '/tasks/todo');
+	await visit(page, '/calendar/todo');
 
 	await page
 		.getByRole('button', { name: /New task/ })
@@ -113,5 +113,5 @@ test('a note that fits on one line has no chevron at all', async ({ page }) => {
 	await expect(page.getByText('post the parcel').first()).toBeVisible({ timeout: 30_000 });
 
 	await expect(page.getByText('before five').first()).toBeVisible();
-	await expect(page.locator('.todo-fold')).toHaveCount(0);
+	await expect(page.locator('.folding-notes-mark')).toHaveCount(0);
 });

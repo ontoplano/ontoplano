@@ -28,6 +28,8 @@
 		reachable = null,
 		carried = null,
 		destructive = false,
+		deliver = false,
+		delivering = true,
 		showKeys = false,
 		name = 'scopes'
 	}: {
@@ -51,6 +53,17 @@
 		carried?: Record<string, string[]> | null;
 		/** Offer deleting, apart from the rest and unticked. */
 		destructive?: boolean;
+		/**
+		 * Offer filing into the other notebooks, apart and unticked — for a key
+		 * tied to a notebook, the only kind it means anything on.
+		 */
+		deliver?: boolean;
+		/**
+		 * Whether it applies to the key as it stands — tied to a notebook. Out
+		 * of it, the box keeps its room and goes invisible, so changing what the
+		 * key is tied to does not move the box under it.
+		 */
+		delivering?: boolean;
 		/** Put `bills:write` in the row's title, for somebody wiring up a script. */
 		showKeys?: boolean;
 		/** The field name the boxes post under. */
@@ -58,6 +71,9 @@
 	} = $props();
 
 	const t = useT();
+
+	/** The grant to file into the other notebooks — see `mcp/deliver.ts`. */
+	const DELIVER = 'notebooks:deliver';
 
 	const rows = $derived(permissionRows(scopes.map((one) => one.key)));
 	const choice = (key: string | null) => scopes.find((one) => one.key === key) ?? null;
@@ -87,7 +103,10 @@
 	let ticked = $state<Record<string, boolean>>(
 		untrack(() =>
 			Object.fromEntries(
-				[...scopes.map((one) => one.key), 'destructive'].map((key) => [key, checked.includes(key)])
+				[...scopes.map((one) => one.key), 'destructive', DELIVER].map((key) => [
+					key,
+					checked.includes(key)
+				])
 			)
 		)
 	);
@@ -298,6 +317,40 @@
 		</tbody>
 	</table>
 </div>
+{#if deliver && readonly}
+	{#if ticked[DELIVER]}
+		<p class="mt-3 flex max-w-md items-center gap-1.5 text-sm font-semibold text-gray-900">
+			<Icon name="notebook" size={14} />{t('scopeGroups.otherNotebooks')}
+		</p>
+	{/if}
+{:else if deliver}
+	<!-- Its own box rather than a row: it is not a room, it is how far a
+	     notebook's key reaches past its notebook. -->
+	<label
+		class="mt-3 flex max-w-md items-start gap-2 border border-gray-200 px-3 py-2 text-sm text-gray-700"
+		class:invisible={!delivering}
+		inert={!delivering}
+	>
+		<input
+			type="checkbox"
+			{name}
+			value={DELIVER}
+			class="mt-0.5"
+			disabled={!delivering}
+			bind:checked={ticked[DELIVER]}
+		/>
+		<span>
+			<strong class="flex items-center gap-1.5 font-semibold text-gray-900"
+				><Icon name="notebook" size={14} />{t(
+					'settings.integrations.andLetItFileIntoOthers'
+				)}</strong
+			>
+			<span class="mt-0.5 block text-xs leading-relaxed text-gray-600">
+				{t('settings.integrations.fileIntoOthersSeesOnlyNames')}
+			</span>
+		</span>
+	</label>
+{/if}
 {#if destructive && readonly}
 	{#if ticked.destructive}
 		<p class="mt-3 flex max-w-md items-center gap-1.5 text-sm font-semibold text-gray-900">

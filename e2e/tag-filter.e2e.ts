@@ -51,7 +51,7 @@ test('labels to show, labels to hide, any or all — and the address keeps it', 
 	test.setTimeout(240_000);
 	await page.setViewportSize({ width: 1280, height: 900 });
 	await register(page, testEmail('tag-filter'));
-	await visit(page, '/tasks/todo');
+	await visit(page, '/calendar/todo');
 	for (const [title, tags] of TASKS) await newTask(page, title, tags);
 
 	await openFilters(page);
@@ -135,11 +135,11 @@ test('at phone width it sits in the filter sheet and stays on the screen', async
 	test.setTimeout(180_000);
 	await page.setViewportSize({ width: 390, height: 844 });
 	await register(page, testEmail('tag-filter-phone'));
-	await visit(page, '/tasks/todo');
+	await visit(page, '/calendar/todo');
 	for (const [title, tags] of TASKS.slice(0, 3)) await newTask(page, title, tags);
 
 	// Arriving on a link that already carries a filter.
-	await visit(page, '/tasks/todo?nottag=home');
+	await visit(page, '/calendar/todo?nottag=home');
 	await expect.poll(() => showing(page)).toEqual(['read the Republic']);
 
 	// The phone's filter button says something is on.
@@ -215,7 +215,7 @@ test('the suggestions under a box are not cut off at the panel edge', async ({ p
 	test.setTimeout(180_000);
 	await page.setViewportSize({ width: 1280, height: 900 });
 	await register(page, testEmail('tag-filter-list'));
-	await visit(page, '/tasks/todo');
+	await visit(page, '/calendar/todo');
 	// Enough labels that the list is longer than the panel is tall.
 	await newTask(page, 'label the vocabulary', 'home urgent reading garden money music');
 
@@ -254,7 +254,7 @@ test('a comma or a space takes the word, and the symbol sits where it is typed',
 	test.setTimeout(180_000);
 	await page.setViewportSize({ width: 1280, height: 900 });
 	await register(page, testEmail('tag-filter-typing'));
-	await visit(page, '/tasks/todo');
+	await visit(page, '/calendar/todo');
 	for (const [title, tags] of TASKS) await newTask(page, title, tags);
 
 	await openFilters(page);

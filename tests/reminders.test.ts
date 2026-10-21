@@ -429,6 +429,19 @@ describe('what is handed to a phone to book', () => {
 		expect(s.reminders.upcomingReminders(after).some((r) => r.id === id)).toBe(false);
 	});
 
+	/*
+	 * An alarm draws no markdown, so a reminder written with a picture in it
+	 * reached the phone as `![bin](/media/12)`. The list hands over the words.
+	 */
+	test('as words, not the markdown they were written in', () => {
+		const id = s.reminders.createFreeReminder(west, {
+			at: '2026-08-17T07:00',
+			message: '**Bins** out\n![the green one](/media/12)'
+		});
+		const found = s.reminders.upcomingReminders(west).find((r) => r.id === id);
+		expect(found?.message).toBe('Bins out the green one');
+	});
+
 	test('and stops at the window it promises', () => {
 		const far = s.reminders.createFreeReminder(west, {
 			at: '2026-12-25T09:00',

@@ -21,7 +21,31 @@ export type Viewport = {
 	viewportHeight: number;
 	/** How far the visible part has been pushed down, if at all. */
 	offsetTop: number;
+	/**
+	 * The tallest the layout viewport has been at this width since the sheet
+	 * opened — see `openedHeight`. Left out, only the two above are compared.
+	 */
+	openedHeight?: number;
 };
+
+/** The layout viewport's size, as `openedHeight` remembers it. */
+export type Layout = { width: number; height: number };
+
+/**
+ * What the layout viewport measured before anything covered it.
+ *
+ * Comparing the visible part with the layout viewport only sees a keyboard
+ * that *covers* the page. Where the keyboard *resizes* it — Chrome honouring
+ * `interactive-widget=resizes-content`, and the Android app, which shrinks its
+ * web view for the keyboard — both shrink together, the difference is zero,
+ * and a short sheet stayed half of what was left: a header and one field. So
+ * the height before the keyboard is kept and compared too. A change of width is
+ * a rotation, not a keyboard, and starts the measure again.
+ */
+export function openedHeight(before: Layout | null, now: Layout): Layout {
+	if (!before || before.width !== now.width) return now;
+	return now.height > before.height ? now : before;
+}
 
 /**
  * Below this, it is not a keyboard.
@@ -40,7 +64,8 @@ export const KEYBOARD_THRESHOLD = 120;
  * pinned in pixels no longer follows a rotation or a resize.
  */
 export function panelHeight(view: Viewport): number | null {
-	const covered = view.innerHeight - view.viewportHeight - view.offsetTop;
+	const layout = Math.max(view.innerHeight, view.openedHeight ?? 0);
+	const covered = layout - view.viewportHeight - view.offsetTop;
 	if (!Number.isFinite(covered) || covered < KEYBOARD_THRESHOLD) return null;
 	// Never taller than the layout viewport, and never absurdly short: a bad
 	// reading is better ignored than obeyed.
@@ -71,4 +96,82 @@ export function readViewport(): Viewport | null {
 		viewportHeight: window.visualViewport.height,
 		offsetTop: window.visualViewport.offsetTop
 	};
+}
+
+/*
+ * When nothing reports the keyboard at all.
+ *
+ * Everything above depends on the page being told. The Android app on 15 and
+ * later is not, until its web view is rebuilt to shrink for the keyboard
+ * (MainActivity): the keys are laid over the page and every reading stays
+ * what it was. The new-block sheet opens short with its name field focused,
+ * the keyboard comes up over the whole of it, and nothing can be scrolled
+ * until the keyboard is dismissed — which is the one moment the sheet works.
+ *
+ * So until a keyboard has been seen being reported, a focused text field on a
+ * touch phone is taken to have one over the bottom of the screen: the sheet
+ * takes the whole height and leaves room below its last field to scroll
+ * above it. The first real report switches this off for the rest of the page.
+ */
+
+/** How much of the screen a keyboard nobody reports is assumed to cover. */
+export const ASSUMED_KEYBOARD_SHARE = 0.5;
+
+/** Space kept between a field and the top of an assumed keyboard, in pixels. */
+export const ASSUMED_KEYBOARD_GAP = 16;
+
+/** Input types that open a picker or nothing, rather than the keyboard. */
+const NO_KEYBOARD_TYPES = new Set([
+	'button',
+	'checkbox',
+	'color',
+	'date',
+	'datetime-local',
+	'file',
+	'hidden',
+	'image',
+	'month',
+	'radio',
+	'range',
+	'reset',
+	'submit',
+	'time',
+	'week'
+]);
+
+/** The parts of an element that say whether focusing it brings up the keyboard. */
+export type Focused = { tagName: string; type?: string; isContentEditable?: boolean };
+
+/** Whether focusing this brings up the software keyboard. */
+export function opensKeyboard(el: Focused | null | undefined): boolean {
+	if (!el) return false;
+	if (el.isContentEditable) return true;
+	const tag = el.tagName.toUpperCase();
+	if (tag === 'TEXTAREA') return true;
+	if (tag !== 'INPUT') return false;
+	return !NO_KEYBOARD_TYPES.has((el.type ?? 'text').toLowerCase());
+}
+
+let reported = false;
+
+/** Note a reading: once a keyboard has been reported, nothing is assumed again. */
+export function noteKeyboard(height: number | null): void {
+	if (height !== null) reported = true;
+}
+
+/** Whether this page has ever been told of a keyboard. */
+export function keyboardReported(): boolean {
+	return reported;
+}
+
+/**
+ * How far to scroll so a field ends above an assumed keyboard, or 0.
+ *
+ * `bottom` is the field's bottom edge and `screen` the window's height, both
+ * in the same pixels. Only ever down the form: a field already clear of the
+ * keyboard stays exactly where the finger left it.
+ */
+export function assumedScroll(bottom: number, screen: number): number {
+	const keyboardTop = screen * (1 - ASSUMED_KEYBOARD_SHARE) - ASSUMED_KEYBOARD_GAP;
+	return Math.max(0, Math.round(bottom - keyboardTop));
 }

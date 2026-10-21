@@ -19,12 +19,24 @@
 import { describe, expect, test } from 'vitest';
 import { execFileSync } from 'node:child_process';
 
-/** Migration files that differ from the last commit, whatever the change. */
+/** Existing migration bytes must survive; additions and byte-identical renames are safe. */
 function changedSinceHead(): string[] {
 	try {
-		return execFileSync('git', ['diff', 'HEAD', '--name-only', '--', 'drizzle/*.sql'], {
-			encoding: 'utf8'
-		})
+		return execFileSync(
+			'git',
+			[
+				'diff',
+				'--find-renames=100%',
+				'--diff-filter=MD',
+				'HEAD',
+				'--name-only',
+				'--',
+				'drizzle/*.sql'
+			],
+			{
+				encoding: 'utf8'
+			}
+		)
 			.trim()
 			.split('\n')
 			.filter(Boolean);
@@ -51,7 +63,16 @@ function everModified(): string[] {
 	}
 }
 
-describe('a migration, once written', () => {
+/**
+ * How long a walk over git may take.
+ *
+ * A fraction of a second on its own, but this runs in a worker beside three
+ * hundred other files, and on a busy machine the history walk went past the
+ * suite's default ten seconds — a failure that said nothing about migrations.
+ */
+const GIT_WALK_TIMEOUT_MS = 60_000;
+
+describe('a migration, once written', { timeout: GIT_WALK_TIMEOUT_MS }, () => {
 	test('is not edited in the working tree', () => {
 		expect(
 			changedSinceHead(),

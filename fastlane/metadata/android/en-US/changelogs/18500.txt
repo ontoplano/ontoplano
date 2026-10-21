@@ -1,0 +1,10 @@
+A month of work since the last update:
+• Notebooks hold a whole subject: tasks, notes, goals, ideas, recipes, workouts, bills
+• One set of tags everywhere, with saved filters
+• Urgency, ease and interest on every task
+• Every room redesigned to work the same way
+• Voice recordings, a home-screen widget, notification history
+• Now in Portuguese, Spanish and German
+• Assistants can do much more over MCP
+
+Tell me what breaks: github.com/ontoplano/ontoplano/issues

@@ -421,6 +421,7 @@ export function listOrphanedNotes(ctx: Ctx) {
 			content: diaryEntries.content,
 			forDate: diaryEntries.forDate,
 			archivedAt: diaryEntries.archivedAt,
+			color: diaryEntries.color,
 			createdAt: diaryEntries.createdAt,
 			// What the Edited order reads. Sent for the orphans too, because they
 			// are drawn by the same list with the same control above it.
@@ -547,6 +548,7 @@ function notebookEntries(ctx: Ctx, id: number) {
 				forDate: diaryEntries.forDate,
 				archivedAt: diaryEntries.archivedAt,
 				pinnedAt: diaryEntries.pinnedAt,
+				color: diaryEntries.color,
 				createdAt: diaryEntries.createdAt,
 				updatedAt: diaryEntries.updatedAt,
 				ownerId: diaryEntries.userId,

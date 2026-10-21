@@ -54,7 +54,17 @@ export const AUDIT_EVENTS = [
 	 * the operator has had to answer by guessing, and the digest can answer it
 	 * with a number instead.
 	 */
-	'demo_refused'
+	'demo_refused',
+	/*
+	 * Somebody paid, or tried to, and the plan did not arrive.
+	 *
+	 * Every step of a store purchase that can fail lands here with the step
+	 * and what it said: the sheet refusing, a claim the server turned down, a
+	 * notification from the store nobody could place. A purchase taken and
+	 * never delivered once went unnoticed because none of these were written
+	 * anywhere; the ops watcher reads this line and says so out loud.
+	 */
+	'payment_failed'
 ] as const;
 
 export type AuditEvent = (typeof AUDIT_EVENTS)[number];
@@ -69,7 +79,8 @@ export type AuditEntry = {
 };
 
 export function record(
-	subjectId: string,
+	/** Null when the event is about nobody this instance can name yet. */
+	subjectId: string | null,
 	event: AuditEvent,
 	options: { actorId?: string | null; detail?: Record<string, unknown>; ip?: string | null } = {}
 ): void {

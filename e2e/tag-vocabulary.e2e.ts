@@ -25,7 +25,7 @@ async function newTodo(page: import('@playwright/test').Page, title: string, tag
 test('a label renamed on the Tags tab is renamed on the task', async ({ page }) => {
 	test.setTimeout(150_000);
 	await register(page, testEmail('tag-vocabulary'));
-	await visit(page, '/tasks/todo');
+	await visit(page, '/calendar/todo');
 
 	await newTodo(page, 'file the return', 'taxess');
 	await expect(page.getByRole('button', { name: '#taxess', exact: true })).toBeVisible();
@@ -53,7 +53,7 @@ test('a label renamed on the Tags tab is renamed on the task', async ({ page }) 
 	).toBeVisible();
 
 	// And the task wears the new word.
-	await visit(page, '/tasks/todo');
+	await visit(page, '/calendar/todo');
 	await expect(page.getByRole('button', { name: '#taxes', exact: true })).toBeVisible();
 	await expect(page.getByRole('button', { name: '#taxess', exact: true })).toHaveCount(0);
 });
@@ -61,7 +61,7 @@ test('a label renamed on the Tags tab is renamed on the task', async ({ page }) 
 test('renaming onto a label that already exists merges the two', async ({ page }) => {
 	test.setTimeout(150_000);
 	await register(page, testEmail('tag-merge'));
-	await visit(page, '/tasks/todo');
+	await visit(page, '/calendar/todo');
 
 	await newTodo(page, 'the deck', 'hause');
 	await newTodo(page, 'the roof', 'house');
@@ -83,7 +83,7 @@ test('a label is deleted behind a confirmation, and comes off what carried it', 
 }) => {
 	test.setTimeout(150_000);
 	await register(page, testEmail('tag-delete'));
-	await visit(page, '/tasks/todo');
+	await visit(page, '/calendar/todo');
 
 	await newTodo(page, 'paint the fence', 'outside wood');
 
@@ -97,7 +97,7 @@ test('a label is deleted behind a confirmation, and comes off what carried it', 
 
 	await expect(page.getByText('#outside')).toHaveCount(0);
 
-	await visit(page, '/tasks/todo');
+	await visit(page, '/calendar/todo');
 	await expect(page.getByRole('button', { name: '#wood', exact: true })).toBeVisible();
 	await expect(page.getByRole('button', { name: '#outside', exact: true })).toHaveCount(0);
 });

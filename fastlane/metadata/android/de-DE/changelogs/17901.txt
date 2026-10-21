@@ -1,0 +1,8 @@
+• Ein Medien-Bereich mit Aufnahme — das + halten, anhören, benennen oder benennen lassen
+• Aufnahmen passen in eine Notiz oder Idee und laufen dort
+• Die App merkt sich, was sie Ihnen gesagt hat
+• Behoben: Erinnerungen erreichten kein Handy, das auf einen Server zeigt
+• Behoben: Klingeln einrichten ging nur einmal pro Konto
+• KI-Einrichtung erscheint in Ihrer Sprache
+
+github.com/ontoplano/ontoplano/issues

@@ -66,6 +66,20 @@ for (const size of [
 		await expect(dialog).toBeVisible();
 		await expect(page.locator('.pie-layer')).toHaveCount(0);
 
+		// Every notebook picker inside the dialog, in one column under the head's.
+		const content = (await dialog.locator('.modal-content').boundingBox())!;
+		const cells = await dialog.locator('.notebook-cell').evaluateAll((all) =>
+			all.map((one) => {
+				const box = one.getBoundingClientRect();
+				return { left: Math.round(box.left), right: Math.round(box.right) };
+			})
+		);
+		expect(cells.length).toBeGreaterThan(1);
+		for (const cell of cells) {
+			expect(cell.right).toBeLessThanOrEqual(Math.round(content.x + content.width));
+			expect(cell).toEqual(cells[0]);
+		}
+
 		// Down to one: the last cannot be unticked, and says so.
 		for (const kind of ['idea', 'buy', 'reminder', 'picture', 'recording', 'todo']) {
 			await dialog.locator(`input[name="on"][value="${kind}"]`).uncheck();
@@ -76,7 +90,7 @@ for (const size of [
 		// Two on, the note first.
 		await dialog.locator('input[name="on"][value="todo"]').check();
 		await dialog.getByRole('button', { name: 'Move Note up' }).click();
-		await choose(dialog, 'notebookId', 'Kitchen');
+		await choose(dialog, 'everyNotebook', 'Kitchen');
 		await page.getByRole('button', { name: 'Save', exact: true }).click();
 		await expect(dialog).toBeHidden();
 
@@ -94,7 +108,8 @@ for (const size of [
 		const prefs = page.locator('form[data-tour="prefs-capture"]');
 		await expect(prefs.locator('input[type="checkbox"][value="note"]')).toBeChecked();
 		await expect(prefs.locator('input[type="checkbox"][value="idea"]')).not.toBeChecked();
-		await expect(prefs.locator('[name="notebookId"]')).toHaveValue(kitchen);
+		await expect(prefs.locator('[name="notebook.todo"]')).toHaveValue(kitchen);
+		await expect(prefs.locator('[name="notebook.note"]')).toHaveValue(kitchen);
 	});
 }
 
@@ -108,7 +123,7 @@ test('a notebook on screen wins over the main one', async ({ page }) => {
 
 	await visit(page, '/settings/preferences');
 	const prefs = page.locator('form[data-tour="prefs-capture"]');
-	await choose(prefs, 'notebookId', 'Kitchen');
+	await choose(prefs, 'everyNotebook', 'Kitchen');
 	await prefs.getByRole('button', { name: 'Save quick capture' }).click();
 	await expect(page.getByText('Quick capture saved.')).toBeVisible();
 
@@ -134,3 +149,80 @@ test('saving a stranger’s notebook is refused', async ({ page }) => {
 	});
 	expect(await answer.text()).toContain('not_found');
 });
+
+/*
+ * Tasks into Work, notes into Kitchen: every wedge has its own notebook in its
+ * own row, and the picker above them sets them all — saying "Mixed" while
+ * they disagree.
+ */
+for (const size of [
+	{ name: 'phone', width: 390, height: 844 },
+	{ name: 'desktop', width: 1400, height: 900 }
+]) {
+	test(`each wedge has its notebook, and one picker sets them all (${size.name})`, async ({
+		page
+	}) => {
+		test.setTimeout(120_000);
+		await page.setViewportSize({ width: size.width, height: size.height });
+		await register(page, testEmail(`capture-kind-${size.name}`));
+		await visit(page, '/');
+		await makeNotebook(page, 'Kitchen');
+		await makeNotebook(page, 'Work');
+
+		await visit(page, '/settings/preferences');
+		const prefs = page.locator('form[data-tour="prefs-capture"]');
+		const every = prefs.locator('[data-picker="everyNotebook"] button').first();
+		await choose(prefs, 'everyNotebook', 'Kitchen');
+		await expect(every).toHaveText(/Kitchen/);
+		const kitchen = await prefs.locator('[name="notebook.todo"]').inputValue();
+		expect(Number(kitchen)).toBeGreaterThan(0);
+		await expect(prefs.locator('[name="notebook.note"]')).toHaveValue(kitchen);
+
+		// One row on its own: the picker over them all says so.
+		await choose(prefs, 'notebook.todo', 'Work');
+		await expect(every).toHaveText(/Mixed/);
+		const work = await prefs.locator('[name="notebook.todo"]').inputValue();
+		expect(work).not.toBe(kitchen);
+
+		// The rows' pickers stand in one column, under the one that sets them.
+		const xs = await prefs
+			.locator('.notebook-cell')
+			.evaluateAll((all) => all.map((one) => Math.round(one.getBoundingClientRect().x)));
+		expect(new Set(xs).size).toBe(1);
+		await page.screenshot({ path: `test-results/capture-settings-${size.name}.png` });
+
+		await prefs.getByRole('button', { name: 'Save quick capture' }).click();
+		await expect(page.getByText('Quick capture saved.')).toBeVisible();
+
+		await visit(page, '/');
+		await openWheel(page);
+		await page.locator('[data-wedge="todo"]').click();
+		const task = page.getByRole('dialog', { name: 'New task' });
+		await expect(task.locator('[name="notebookId"]')).toHaveValue(work);
+		await page.keyboard.press('Escape');
+		await expect(task).toBeHidden();
+
+		await visit(page, '/');
+		await openWheel(page);
+		await page.locator('[data-wedge="note"]').click();
+		const note = page.getByRole('dialog', { name: 'New note' });
+		await expect(note.locator('[name="notebookId"]')).toHaveValue(kitchen);
+		await page.keyboard.press('Escape');
+
+		// The gear's dialog is the same list, on the same answer.
+		await visit(page, '/');
+		await openWheel(page);
+		await page.getByRole('button', { name: 'Quick capture settings' }).click();
+		const dialog = page.getByRole('dialog', { name: 'Quick capture settings' });
+		await expect(dialog.locator('[name="notebook.todo"]')).toHaveValue(work);
+		await expect(dialog.locator('[name="notebook.note"]')).toHaveValue(kitchen);
+		await expect(dialog.locator('[data-picker="everyNotebook"] button').first()).toHaveText(
+			/Mixed/
+		);
+
+		// Setting them all again ends the mix.
+		await choose(dialog, 'everyNotebook', 'Work');
+		await expect(dialog.locator('[name="notebook.note"]')).toHaveValue(work);
+		await expect(dialog.locator('[data-picker="everyNotebook"] button').first()).toHaveText(/Work/);
+	});
+}

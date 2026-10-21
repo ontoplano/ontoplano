@@ -1,0 +1,4 @@
+• Ontoplano se prepara para F-Droid: la ficha de la tienda ahora viaja con el código fuente
+• Compilaciones de Android más seguras: las herramientas se verifican con su suma de comprobación publicada
+
+Cuéntame qué se rompe: github.com/ontoplano/ontoplano/issues

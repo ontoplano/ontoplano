@@ -65,13 +65,13 @@ export function settingsTabs(
 		 * a data stream are all something reaching this instance over a network,
 		 * and a phone-only instance is not reachable over anything. It has an
 		 * account — your data out, your data in, the end of it — and nothing for
-		 * anybody else to connect to.
+		 * anybody else to connect to. The tab still comes; its page reads this
+		 * and explains rather than offering keys nothing can use.
 		 */
 		reachable?: boolean;
 	}
 ): SettingsTab[] {
 	const account = who.hasAccount !== false;
-	const reachable = who.reachable !== false;
 	return [
 		...(account ? [tab('/settings/account', t('rooms.settings.tabs.account'))] : []),
 		tab('/settings/preferences', t('rooms.settings.tabs.preferences')),
@@ -79,9 +79,9 @@ export function settingsTabs(
 		...(who.family ? [tab('/settings/family', t('rooms.settings.tabs.family'))] : []),
 		// Named for the half people come here for. The tab strip inside splits
 		// assistants from the calendar link, the webhooks and the data streams.
-		...(account && reachable
-			? [tab('/settings/integrations', t('rooms.settings.tabs.integrations'))]
-			: []),
+		// Shown where nothing can reach this instance too: there it says why,
+		// and what an instance with a server would give.
+		...(account ? [tab('/settings/integrations', t('rooms.settings.tabs.integrations'))] : []),
 		...(who.canEditInstance ? [tab('/settings/instance', t('rooms.settings.tabs.instance'))] : []),
 		...(who.canAdminister ? [tab('/admin', t('rooms.settings.tabs.administration'))] : [])
 	];

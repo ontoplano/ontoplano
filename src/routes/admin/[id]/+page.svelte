@@ -87,6 +87,16 @@
 					<span class="tabular text-sm text-gray-900">{when(data.account.createdAt)}</span>
 				{/snippet}
 			</SettingRow>
+			<!-- Any signed-in request counts, wherever in the app it was made. -->
+			<SettingRow label={t('admin.id.lastActive')}>
+				{#snippet control()}
+					<span class="tabular text-sm text-gray-900"
+						>{data.account.lastActiveAt
+							? when(data.account.lastActiveAt)
+							: t('admin.id.neverActive')}</span
+					>
+				{/snippet}
+			</SettingRow>
 			<SettingRow
 				label={t('admin.id.addressConfirmed')}
 				hint={!data.account.emailVerified && !data.emailConfigured

@@ -15,7 +15,7 @@ import { visit } from './helpers/visit';
 test('the filters are out on a wide screen, and clear in one press', async ({ page }) => {
 	test.setTimeout(240_000);
 	await register(page, testEmail('filter-bar'));
-	await visit(page, '/tasks/todo');
+	await visit(page, '/calendar/todo');
 
 	for (const [title, tags] of [
 		['ring the plumber', 'home'],
@@ -62,7 +62,7 @@ test('on a phone they are a sheet, and the button says one is on', async ({ page
 	test.setTimeout(240_000);
 	await page.setViewportSize({ width: 390, height: 844 });
 	await register(page, testEmail('filter-sheet'));
-	await visit(page, '/tasks/todo');
+	await visit(page, '/calendar/todo');
 
 	await page
 		.getByRole('button', { name: /New task/ })
@@ -77,19 +77,22 @@ test('on a phone they are a sheet, and the button says one is on', async ({ page
 
 	// The controls are not on the strip: that is the whole point of the width.
 	const sheet = page.locator('.filter-toggle');
-	// Two lines: the search box across the top; under it the order at the
-	// left edge with the verb after it — not every tab has a verb, so the
-	// order is what stands still — the count and Filters at the right one.
+	// Two lines and never a third: the search box with Filters after it on
+	// the first; under it the order at the left edge with the verb after it —
+	// not every tab has a verb, so the order is what stands still.
 	const search = (await page.getByRole('searchbox', { name: 'Search these tasks' }).boundingBox())!;
 	const order = (await page.getByRole('button', { name: 'Order tasks by' }).boundingBox())!;
 	const verb = (await page.locator('.filter-tail > .filter-verb').boundingBox())!;
 	const filters = (await sheet.boundingBox())!;
+	const strip = (await page.locator('.filter-strip').first().boundingBox())!;
 	const middle = (b: { y: number; height: number }) => b.y + b.height / 2;
 	expect(order.y).toBeGreaterThan(search.y + search.height);
-	expect(Math.abs(middle(order) - middle(filters))).toBeLessThan(4);
+	expect(Math.abs(middle(search) - middle(filters))).toBeLessThan(4);
+	expect(filters.x).toBeGreaterThan(search.x + search.width);
+	expect(filters.x + filters.width).toBeLessThanOrEqual(strip.x + strip.width + 1);
 	expect(Math.abs(order.x - search.x)).toBeLessThan(2);
 	expect(verb.x).toBeGreaterThan(order.x + order.width);
-	expect(Math.abs(filters.x + filters.width - (search.x + search.width))).toBeLessThan(2);
+	expect(strip.y + strip.height).toBeLessThanOrEqual(order.y + order.height + 2);
 	// And the direction is its own button beside the order, not lost in its menu.
 	await expect(
 		page.getByRole('button', { name: /— press for (ascending|descending)/i })

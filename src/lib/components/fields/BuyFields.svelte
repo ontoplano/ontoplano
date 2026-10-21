@@ -5,6 +5,10 @@
 	import MoreOptions from '$lib/components/MoreOptions.svelte';
 	import NotebookField from '$lib/components/NotebookField.svelte';
 	import AttributeFields from '$lib/components/AttributeFields.svelte';
+	import MarkdownBox from '$lib/components/MarkdownBox.svelte';
+
+	/** How tall the notes box opens: a thing's notes are a line or a list, not a page. */
+	const NOTES_ROWS = 3;
 	import { useT } from '$lib/i18n';
 
 	const t = useT();
@@ -121,11 +125,7 @@
 		</Field>
 	{/if}
 
-	<NotebookField {notebooks} holds="inventory" value={notebookId ?? startingNotebook} span={12} />
-
-	<Field label={t('ui.notes')} span={8}>
-		<OneLine name="notes" bind:value={notes} class="input" />
-	</Field>
+	<NotebookField {notebooks} holds="inventory" value={notebookId ?? startingNotebook} span={8} />
 
 	<!-- What it costs, roughly. Prices move and shops disagree, which is why
 	     the total says "about" and never claims a receipt. -->
@@ -139,6 +139,12 @@
 			placeholder="1.60"
 			class="input tabular"
 		/>
+	</Field>
+
+	<!-- The box every other thing's notes are written in, so a link or a list
+	     reads as one on the row afterwards rather than as its markup. -->
+	<Field label={t('ui.notes')} span={12}>
+		<MarkdownBox name="notes" bind:value={notes} rows={NOTES_ROWS} preview="written" />
 	</Field>
 {/snippet}
 

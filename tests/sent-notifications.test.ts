@@ -27,11 +27,11 @@ const other = () => buildCtx(STRANGER, { tz: 'UTC', now: new Date('2026-03-14T10
 describe('the list', () => {
 	it('keeps what was said, newest first', () => {
 		sent.record(OWNER, { title: 'first', body: 'one', kind: 'reminder' });
-		sent.record(OWNER, { title: 'second', url: '/tasks', kind: 'reminder' });
+		sent.record(OWNER, { title: 'second', url: '/calendar', kind: 'reminder' });
 
 		const held = sent.list(ctx());
 		expect(held[0].title).toBe('second');
-		expect(held[0].url).toBe('/tasks');
+		expect(held[0].url).toBe('/calendar');
 		expect(held[1].title).toBe('first');
 		expect(held[1].body).toBe('one');
 	});

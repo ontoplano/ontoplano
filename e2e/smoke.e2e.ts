@@ -15,15 +15,25 @@ import { visit } from './helpers/visit';
  * It is deliberately not clever. A slow, dull test that visits everything is
  * worth more than a fast one that visits the three routes somebody remembered.
  */
+/*
+ * A walk of every route is a test of every route, and its budget is too.
+ *
+ * Alone, a route takes a fraction of a second; under the full suite the one
+ * server is shared by every worker and a route takes nearer one — and forty of
+ * them overran the default thirty seconds while every page answered fine. So
+ * the tests that walk the list get time per route rather than one fixed sum.
+ */
+const PER_ROUTE_MS = 3_000;
+
 const ROUTES = [
 	'/',
-	'/tasks/calendar',
-	'/tasks/calendar?view=day',
-	'/tasks/calendar?view=month',
-	'/tasks/board',
-	'/tasks/todo',
-	'/tasks/activities',
-	'/tasks/review',
+	'/calendar/calendar',
+	'/calendar/calendar?view=day',
+	'/calendar/calendar?view=month',
+	'/calendar/board',
+	'/calendar/todo',
+	'/calendar/activities',
+	'/calendar/review',
 	'/goals',
 	'/notebooks',
 	'/notebooks/diary',
@@ -92,6 +102,7 @@ for (const shape of ['desktop', 'mobile'] as const) {
 		);
 
 		test(`every page renders and says nothing alarming (${shape})`, async ({ page }) => {
+			test.setTimeout(ROUTES.length * PER_ROUTE_MS);
 			const watcher = watch(page);
 			await register(page, testEmail(`smoke-${shape}`));
 
@@ -166,6 +177,7 @@ test('a long unbroken name does not push its controls off the screen', async ({ 
 });
 
 test('a page title is never squeezed into one word per line', async ({ page }) => {
+	test.setTimeout(ROUTES.length * PER_ROUTE_MS);
 	await register(page, testEmail('titles'));
 	await page.setViewportSize({ width: 390, height: 844 });
 
