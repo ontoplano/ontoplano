@@ -2014,9 +2014,10 @@ Delete an activity, used or not. Without `moveTo`, every block that named it bec
 
 _Needs `schedule:write` and `destructive`; deletes; answers with `before` and `after`._
 
-| Parameter | Type    | Required | What it is                                  |
-| --------- | ------- | -------- | ------------------------------------------- |
-| `id`      | integer | yes      | The activity’s id, as `activities` gave it. |
+| Parameter | Type    | Required | What it is                                                                                           |
+| --------- | ------- | -------- | ---------------------------------------------------------------------------------------------------- |
+| `id`      | integer | yes      | The activity’s id, as `activities` gave it.                                                          |
+| `moveTo`  | integer | —        | Another activity to hand everything that named this one to. Left off, it falls back to the category. |
 
 ### `people` — The people in their life
 
