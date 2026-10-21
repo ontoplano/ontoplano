@@ -114,7 +114,9 @@
 
 	/** The currency filter is a link: the list is the server's, per currency. */
 	function pickCurrency(currency: string) {
-		const query = currency ? { month: data.month, currency } : { month: data.month };
+		const query: Record<string, string> = currency
+			? { month: data.month, currency }
+			: { month: data.month };
 		// The path is resolved; the rule cannot see through the appended query.
 		// eslint-disable-next-line svelte/no-navigation-without-resolve
 		void goto(`${resolve('/finance/budgets')}?${new URLSearchParams(query)}`, { noScroll: true });
