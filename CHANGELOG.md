@@ -18,6 +18,11 @@ the shape of the data changing. Bumping the minor per batch is what ran this
 file to 0.161 in a few months, which tells a reader nothing about which
 releases mattered.
 
+## 0.186.8 — 2026-10-22
+
+- Quick capture: whether a task is a block is now a switch above the fold rather than something to find under the notes, and turning it on opens the whole form — a block's day, time and category are all required, and three required fields behind a disclosure is a form the browser refuses without saying where to look.
+- A new block's time opens on the next whole hour instead of empty, so choosing six in the evening gives 18:00 rather than whatever minute the clock was on, and its day opens on today.
+
 ## 0.186.7 — 2026-10-21
 
 - Finance opens with one money picture: what is yours, what is committed, what you spent this month and what is left against your budgets. Each currency stands on its own, and a missing opening or an incomplete period is named at the total rather than guessed. A switch shows everything in the accounts or only your own money, and is remembered.
