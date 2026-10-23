@@ -444,10 +444,14 @@ export function createOwnedThing(
 
 export function updateItem(ctx: Ctx, id: number, raw: ItemInput): void {
 	const values = parseItem(ctx, raw, id);
+	const item = ownedItem(ctx, id);
+	const now = stamp(ctx);
 
 	const res = db
 		.update(inventoryItems)
-		.set({ ...values, updatedAt: stamp(ctx) })
+		// A new target moves the line `bought` is drawn at, so it is drawn
+		// again here: two of two raised to five is three to buy.
+		.set({ ...values, ...boughtState(item, item.qty, values.idealQty, now), updatedAt: now })
 		.where(itemWhere(ctx, id))
 		.run();
 
@@ -557,19 +561,12 @@ export function setQty(ctx: Ctx, id: number, wanted: number, raw: { paid?: unkno
 	const qty = Math.max(0, Math.floor(Number.isFinite(wanted) ? wanted : 0));
 	if (qty > 9999) throw new ValidationError({ key: 'errors.inventory.thatIsMoreOfOne' });
 
-	const enough = Math.max(item.idealQty ?? 1, 1);
-	const bought = qty >= enough;
 	const now = stamp(ctx);
+	const state = boughtState(item, qty, item.idealQty, now);
+	const { bought } = state;
 
 	db.update(inventoryItems)
-		.set({
-			qty,
-			bought,
-			// The date is when it stopped being something to get, and it stays
-			// put while the count changes above that line.
-			boughtAt: bought ? (item.bought ? item.boughtAt : now) : null,
-			updatedAt: now
-		})
+		.set({ qty, ...state, updatedAt: now })
 		.where(itemWhere(ctx, id))
 		.run();
 
@@ -580,6 +577,25 @@ export function setQty(ctx: Ctx, id: number, wanted: number, raw: { paid?: unkno
 
 	// Only the crossing, not every step up from two to three.
 	if (bought && !item.bought) host.emit(ctx, 'inventory.bought', { id, name: item.name });
+}
+
+/**
+ * Whether a count is enough, against how many are kept — the one rule for
+ * `bought`, shared by a change of count and a change of target.
+ */
+function boughtState(
+	item: { bought: boolean; boughtAt: string | null },
+	qty: number,
+	idealQty: number | null,
+	now: string
+) {
+	const bought = qty >= Math.max(idealQty ?? 1, 1);
+	return {
+		bought,
+		// The date is when it stopped being something to get, and it stays
+		// put while the count changes above that line.
+		boughtAt: bought ? (item.bought ? item.boughtAt : now) : null
+	};
 }
 
 /**

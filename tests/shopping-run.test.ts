@@ -48,6 +48,17 @@ describe('the shopping run', () => {
 		expect(s.shoppingRun(ctx).lines.some((line) => line.name === 'Rice')).toBe(false);
 	});
 
+	test('raising what you keep above a full cupboard puts the difference on the list', () => {
+		const id = keep('Basmati', 2);
+		s.setQty(ctx, id, 2);
+		s.updateItem(ctx, id, { name: 'Basmati', type: 'replenish', idealQty: 5 });
+		expect(s.shoppingRun(ctx).lines.find((line) => line.name === 'Basmati')?.needed).toBe(3);
+
+		// And lowering it back to what is there takes it off again.
+		s.updateItem(ctx, id, { name: 'Basmati', type: 'replenish', idealQty: 2 });
+		expect(s.shoppingRun(ctx).lines.some((line) => line.name === 'Basmati')).toBe(false);
+	});
+
 	test('only the shortfall is bought, not the whole shelf', () => {
 		const id = keep('Coffee', 3, '7.00');
 		s.setQty(ctx, id, 1);

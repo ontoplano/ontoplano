@@ -20,6 +20,7 @@ releases mattered.
 
 ## 0.186.9 — 2026-10-23
 
+- Raising how many of a thing you keep puts the difference on the shopping list straight away. Two of two raised to five used to stay off it, saying nothing had run low, until the count itself was changed.
 - The filters on a list look like filters again. They had lost their edges, so "Completed (58)", "Archived (1)", "Every notebook" and "Tags" read as a caption under the search box and nothing said they could be pressed until the pointer crossed one — which says nothing at all on a phone. They keep their quiet fill; they get their outline back.
 - The saved-filter row above a list is two controls instead of three labels. It read "Saved — Save these — Nothing saved for this list yet." on a list with none saved, all saying the one thing, and "these" named nothing on the screen. It is now the chooser, which says "No saved filter" by itself, and a button that says "Save this filter".
 - A saved filter that fails to save now says so. The notification used to carry the Save button's own words, so the answer to a failure was the instruction to try it.
