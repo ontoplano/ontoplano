@@ -18,6 +18,12 @@ the shape of the data changing. Bumping the minor per batch is what ran this
 file to 0.161 in a few months, which tells a reader nothing about which
 releases mattered.
 
+## 0.186.9 — 2026-10-23
+
+- The filters on a list look like filters again. They had lost their edges, so "Completed (58)", "Archived (1)", "Every notebook" and "Tags" read as a caption under the search box and nothing said they could be pressed until the pointer crossed one — which says nothing at all on a phone. They keep their quiet fill; they get their outline back.
+- The saved-filter row above a list is two controls instead of three labels. It read "Saved — Save these — Nothing saved for this list yet." on a list with none saved, all saying the one thing, and "these" named nothing on the screen. It is now the chooser, which says "No saved filter" by itself, and a button that says "Save this filter".
+- A saved filter that fails to save now says so. The notification used to carry the Save button's own words, so the answer to a failure was the instruction to try it.
+
 ## 0.186.8 — 2026-10-22
 
 - Quick capture: whether a task is a block is now a switch above the fold rather than something to find under the notes, and turning it on opens the whole form — a block's day, time and category are all required, and three required fields behind a disclosure is a form the browser refuses without saying where to look.

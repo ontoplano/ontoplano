@@ -669,6 +669,7 @@ export type MessageKey =
 	| 'errors.ringtones.thatIsNotAKind'
 	| 'errors.ringtones.thatIsNotASound'
 	| 'errors.savedFilters.aSavedFilterNeeds'
+	| 'errors.savedFilters.notSaved'
 	| 'errors.savedFilters.thatIsAsManySaved'
 	| 'errors.savedFilters.thatIsNotAScreen'
 	| 'errors.savedFilters.thereIsNothingToSave'
@@ -775,20 +776,17 @@ export type MessageKey =
 	| 'fields.todo.separateWithCommasOrSpaces'
 	| 'fields.todo.tagsExample'
 	| 'fields.todo.urgencyEaseInterest'
-	| 'filters.applyFilter'
 	| 'filters.clear'
 	| 'filters.editFilter'
 	| 'filters.editingFilter'
 	| 'filters.filters'
 	| 'filters.filtersOn'
-	| 'filters.forgetFilter'
 	| 'filters.forgetForGood'
 	| 'filters.forgetIt'
 	| 'filters.nameThisFilter'
 	| 'filters.narrowThisList'
 	| 'filters.noneChosen'
-	| 'filters.nothingSavedYet'
-	| 'filters.saveThese'
+	| 'filters.saveThisFilter'
 	| 'filters.saved'
 	| 'filters.savedFilterHint'
 	| 'filters.sureForget'
@@ -4650,8 +4648,6 @@ export interface MessageValuesFor {
 	};
 	'errors.statements.refundOnLeg': { id: string | number };
 	'errors.statements.unlikeCurrencies': { a: string | number; b: string | number };
-	'filters.applyFilter': { name: string | number };
-	'filters.forgetFilter': { name: string | number };
 	'filters.sureForget': { name: string | number };
 	'finance.bills.amountOver': { amount: string | number };
 	'finance.bills.amountUnder': { amount: string | number };

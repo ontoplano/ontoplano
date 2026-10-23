@@ -2509,14 +2509,22 @@ label:has(> input[type='radio']:not(:disabled)) {
 	}
 
 	/*
-	 * A filter strip is read, not filled in.
+	 * A filter strip is read, not filled in — but a control still has an edge.
 	 *
 	 * Its search box was a form field — a white box with an edge and a
 	 * shadow — and its order and filters were grey bordered slabs, so the
 	 * strip above a list looked heavier than the list. The box is a line with
-	 * its placeholder on it, and the buttons are their words until the
-	 * pointer reaches them. A toggle that is on keeps its fill and its edge:
-	 * that is how it says it is on.
+	 * its placeholder on it, and the buttons give up their fill and their
+	 * shadow.
+	 *
+	 * What they may not give up is the edge. They did, and the answer was
+	 * "where are the filters?" over a strip that had four of them on it:
+	 * "Completed (58)", "Archived (1)", "Every notebook", "Tags" read as a
+	 * caption under the search box, and nothing said any of them could be
+	 * pressed until the pointer happened to cross one — which is no use to
+	 * somebody looking for them, and no use at all on a phone, where there is
+	 * no pointer to cross anything. A toggle that is on still takes the
+	 * stronger edge and the fill: that is how it says it is on.
 	 */
 	.filter-strip .input {
 		border-width: 0 0 1px;
@@ -2533,7 +2541,6 @@ label:has(> input[type='radio']:not(:disabled)) {
 	}
 
 	.filter-strip .btn:not([aria-pressed='true']) {
-		border-color: transparent;
 		box-shadow: none;
 	}
 
