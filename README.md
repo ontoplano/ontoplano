@@ -17,6 +17,8 @@
 
 <a href="https://play.google.com/store/apps/details?id=app.ontoplano"><img src="https://play.google.com/intl/en_us/badges/static/images/badges/en_badge_web_generic.png" alt="Get it on Google Play" height="80"></a>
 
+Or keep the APK updated with [Obtainium](https://github.com/ImranR98/Obtainium) — [add it in one press](https://apps.obtainium.imranr.dev/redirect?r=obtainium%3A%2F%2Fapp%2F%257B%2522id%2522%253A%2522app.ontoplano%2522%252C%2522url%2522%253A%2522https%253A%252F%252Fgithub.com%252Fontoplano%252Fontoplano%2522%252C%2522author%2522%253A%2522ontoplano%2522%252C%2522name%2522%253A%2522Ontoplano%2522%252C%2522additionalSettings%2522%253A%2522%257B%255C%2522includePrereleases%255C%2522%253Afalse%257D%2522%257D), on the phone.
+
 [Screenshots](docs/SCREENSHOTS.md)
 
 </div>

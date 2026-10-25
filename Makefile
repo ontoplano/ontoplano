@@ -846,6 +846,10 @@ lint:
 	@# been stopped.
 	@node scripts/check-ship-list.mjs
 	@node scripts/check-android-version.mjs
+	@# The add-to-Obtainium link in the three docs that carry it is 400
+	@# characters of percent-encoded JSON, so nothing but a check can tell
+	@# whether it still names this repository and this application id.
+	@node scripts/obtainium-config.mjs --check
 	@# The floor on a reminder and the phone's polling interval are one fact
 	@# written in two languages, with nothing type-checking across the gap.
 	@node scripts/check-reminder-window.mjs

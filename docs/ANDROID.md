@@ -97,6 +97,40 @@ F-Droid's. Android only updates an app with one signed by the same key, so an
 APK from a release updates only an APK from a release; switching to a store's
 build means uninstalling first.
 
+## Obtainium
+
+[Obtainium](https://github.com/ImranR98/Obtainium) is how somebody tracks the
+GitHub release APK without watching the releases page: it reads the release,
+installs the APK and offers the next one. Nothing in the build is for it. A
+release carries exactly one `.apk`, signed each time with the key above, which
+is already everything it needs — the only thing that had to be written is the
+link, and that is generated:
+
+```sh
+node scripts/obtainium-config.mjs          # the configuration and both links
+node scripts/obtainium-config.mjs --link   # the one the docs carry
+```
+
+The configuration is `id`, `url`, `author`, `name` and `additionalSettings`, and
+every value comes from somewhere else in the repository — the application id and
+the name from the `official` flavour in the committed Gradle project, the
+address from `SOURCE_URL` in `$lib/links` — so a fork's link is its own. The
+link is `obtainium://app/<url-encoded JSON>` wrapped in Obtainium's redirect
+page, because Markdown renderers drop a custom scheme.
+
+It is written into `README.md`, `docs/ANDROID.md` and
+`docs/prose/on-your-phone.md` rather than generated into them, so
+`--check` runs in `make lint` and fails when they come apart. Nobody can proof-read
+400 characters of percent-encoding.
+
+**[Add Ontoplano to Obtainium](https://apps.obtainium.imranr.dev/redirect?r=obtainium%3A%2F%2Fapp%2F%257B%2522id%2522%253A%2522app.ontoplano%2522%252C%2522url%2522%253A%2522https%253A%252F%252Fgithub.com%252Fontoplano%252Fontoplano%2522%252C%2522author%2522%253A%2522ontoplano%2522%252C%2522name%2522%253A%2522Ontoplano%2522%252C%2522additionalSettings%2522%253A%2522%257B%255C%2522includePrereleases%255C%2522%253Afalse%257D%2522%257D)**
+
+There is deliberately no `apkFilterRegEx` in it. The press bakes the
+configuration into that person's copy, so a filter would be a promise about
+asset names made to everybody who ever added the app — rename the asset and
+they get an app with no APK to be found. One `.apk` per release is the thing
+that keeps this simple, so a second one is a decision, not a build detail.
+
 ## HTTPS while developing, so a phone gets a real browser
 
 Different problem, easier answer. Notifications, service workers and installing

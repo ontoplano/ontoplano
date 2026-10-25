@@ -18,6 +18,11 @@ the shape of the data changing. Bumping the minor per batch is what ran this
 file to 0.161 in a few months, which tells a reader nothing about which
 releases mattered.
 
+## 0.186.10 — 2026-10-25
+
+- The Android app can be kept up to date by [Obtainium](https://github.com/ImranR98/Obtainium), which watches the releases page for you and installs the next APK over the last one. There is a link that adds it in one press — in the readme, and under "Getting the app" in the documentation. Nothing about the release changed: it is the same APK, signed with the same key, so an install you already have carries on being updated.
+- The documentation said the app was not in Google Play. It has been for a while.
+
 ## 0.186.9 — 2026-10-23
 
 - Dragging a block that comes back on some days keeps all of its days. A Monday-to-Friday block moved an hour later used to keep only the Monday, and Undo did not bring the others back.
