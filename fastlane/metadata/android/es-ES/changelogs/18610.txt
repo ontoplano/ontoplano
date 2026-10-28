@@ -1,0 +1,8 @@
+• Obtainium mantiene la app al día; se configura con un toque
+• Mover un bloque que se repite conserva todos sus días
+• Si subes cuánto guardas de algo, la diferencia va a la lista de la compra
+• Los filtros sobre la lista vuelven a parecer pulsables
+• Captura rápida: el bloque es un interruptor arriba y abre el formulario completo
+• Un bloque nuevo se abre en hoy, a la próxima hora en punto
+
+Cuéntame qué se rompe: github.com/ontoplano/ontoplano/issues

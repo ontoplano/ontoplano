@@ -1,0 +1,8 @@
+• Obtainium can keep the app up to date, in one press
+• Moving a repeating block keeps every day it runs on
+• Raising how much of something you keep puts the difference on the shopping list
+• Filters above a list look pressable again
+• Quick capture asks up front whether a task is a block, and opens the full form when it is
+• A new block opens on today, at the next whole hour
+
+Tell me what breaks: github.com/ontoplano/ontoplano/issues
