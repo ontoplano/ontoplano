@@ -311,3 +311,25 @@ export function minutesIntoDay(moment: Moment, when: When): number {
 	const part = (type: string) => Number(parts.find((p) => p.type === type)?.value ?? 0);
 	return part('hour') * 60 + part('minute');
 }
+
+/** The step a suggested start time is rounded to: a whole hour. */
+const START_STEP_MINUTES = 60;
+
+/**
+ * The hour a new task block opens on: the next whole hour where the reader is,
+ * as the naive `HH:MM` a block stores.
+ *
+ * The field used to open empty, and a browser's own time picker then fills the
+ * minutes from the clock — so choosing six in the evening gave 18:27, which is
+ * almost never what anybody meant. The same bargain `soonest` makes for a
+ * reminder, an hour wide: a round number somebody accepts or replaces.
+ * Clamped to the last whole hour of the day rather than wrapping into
+ * tomorrow, because the day field beside it says which day and moving that
+ * from under somebody is worse than a tight hour.
+ */
+export function nextHourOf(when: When, now: Moment = new Date()): string {
+	const minutes = minutesIntoDay(now, when);
+	const rounded = Math.ceil(minutes / START_STEP_MINUTES) * START_STEP_MINUTES;
+	const last = Math.floor((24 * 60 - 1) / START_STEP_MINUTES) * START_STEP_MINUTES;
+	return `${String(Math.min(rounded, last) / START_STEP_MINUTES).padStart(2, '0')}:00`;
+}

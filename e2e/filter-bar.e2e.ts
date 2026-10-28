@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { register, testEmail } from './helpers/account';
+import { COLOUR_TOOLS } from './helpers/colour';
 import { visit } from './helpers/visit';
 
 /**
@@ -37,6 +38,37 @@ test('the filters are out on a wide screen, and clear in one press', async ({ pa
 	await expect(page.locator('#tasks-filters')).toBeVisible();
 	await expect(page.getByRole('button', { name: 'Filter by tag' }).first()).toBeVisible();
 	await expect(page.locator('.filter-toggle')).toHaveCount(0);
+
+	/*
+	 * Out on the strip is not the same as *visible* as a control.
+	 *
+	 * The strip took the fill, the shadow and the edge off its buttons, and
+	 * the filters became four phrases under the search box — "Completed (58)",
+	 * "Archived (1)", "Every notebook", "Tags" read as a caption, and nothing
+	 * said any of them was pressable until a pointer crossed one. The answer
+	 * was "where are the filters?" over a strip with four of them on it. The
+	 * fill can stay off; the edge is what makes it a control.
+	 */
+	const edges = await page.locator('#tasks-filters .btn').evaluateAll((nodes, tools) => {
+		const { toRGBA, groundOf } = new Function(tools)() as {
+			toRGBA: (css: string) => number[];
+			groundOf: (el: Element) => number[];
+		};
+		return nodes.map((node) => {
+			const edge = toRGBA(getComputedStyle(node).borderTopColor);
+			const ground = groundOf(node);
+			return {
+				said: (node.textContent ?? '').trim().slice(0, 24),
+				alpha: edge[3],
+				apart: Math.max(...[0, 1, 2].map((i) => Math.abs(edge[i] - ground[i])))
+			};
+		});
+	}, COLOUR_TOOLS);
+	expect(edges.length).toBeGreaterThan(0);
+	for (const edge of edges) {
+		expect(edge.alpha, `${edge.said}: its edge is see-through`).toBeGreaterThan(0);
+		expect(edge.apart, `${edge.said}: its edge is the colour behind it`).toBeGreaterThan(8);
+	}
 
 	// Narrow by a label.
 	await page.getByRole('button', { name: 'Filter by tag' }).first().click();

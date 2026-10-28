@@ -32,11 +32,11 @@ test('a filter can be kept by name, and putting it back sets the controls', asyn
 	// The narrowing is in the address, which is what makes it a link.
 	await expect.poll(() => new URL(page.url()).searchParams.get('done')).toBe('show');
 
-	await page.getByRole('button', { name: 'Save these' }).click();
+	await page.getByRole('button', { name: 'Save this filter' }).click();
 	const name = page.getByPlaceholder(/What to call it/);
 	await name.fill('Done and dusted');
 	await name.press('Enter');
-	const savedPicker = page.getByRole('button', { name: 'Saved', exact: true });
+	const savedPicker = page.getByRole('button', { name: 'Saved filters', exact: true });
 	await expect(savedPicker).toContainText('Done and dusted', { timeout: 20_000 });
 
 	// Back to everything, and then back to the saved one.
@@ -58,7 +58,7 @@ test('a filter can be kept by name, and putting it back sets the controls', asyn
 		'aria-pressed',
 		'true'
 	);
-	await expect(page.getByRole('button', { name: 'Saved', exact: true })).toContainText(
+	await expect(page.getByRole('button', { name: 'Saved filters', exact: true })).toContainText(
 		'Done and dusted',
 		{ timeout: 20_000 }
 	);
@@ -83,10 +83,12 @@ test('a saved task filter keeps the open notebook selected', async ({ page }) =>
 	await page.getByRole('button', { name: /^Tasks \d/ }).click();
 	await openFilters(page);
 	await page.getByRole('button', { name: /^Completed/ }).click();
-	await page.getByRole('button', { name: 'Save these' }).click();
+	await page.getByRole('button', { name: 'Save this filter' }).click();
 	await page.getByPlaceholder(/What to call it/).fill('Queue');
 	await page.getByPlaceholder(/What to call it/).press('Enter');
-	await expect(page.getByRole('button', { name: 'Saved', exact: true })).toContainText('Queue');
+	await expect(page.getByRole('button', { name: 'Saved filters', exact: true })).toContainText(
+		'Queue'
+	);
 
 	const gardenLink = page.getByRole('link', { name: /Garden/ }).first();
 	const garden = new URL((await gardenLink.getAttribute('href'))!, page.url()).searchParams.get(
@@ -96,7 +98,7 @@ test('a saved task filter keeps the open notebook selected', async ({ page }) =>
 	await expect.poll(() => new URL(page.url()).searchParams.get('notebook')).toBe(garden);
 	await page.getByRole('button', { name: /^Tasks \d/ }).click();
 	await openFilters(page);
-	await page.getByRole('button', { name: 'Saved', exact: true }).click();
+	await page.getByRole('button', { name: 'Saved filters', exact: true }).click();
 	await page.getByRole('option', { name: 'Queue' }).click();
 	await expect.poll(() => new URL(page.url()).searchParams.get('notebook')).toBe(garden);
 	await expect.poll(() => new URL(page.url()).searchParams.get('done')).toBe('show');

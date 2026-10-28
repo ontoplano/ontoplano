@@ -278,6 +278,64 @@ test('editing a block does not quietly shift the rhythm it already had', async (
 });
 
 /**
+ * A block on some days, moved by a drag.
+ *
+ * The drag rebuilt the rule from the form's fields and left out the days that
+ * were ticked, so the server read an empty set as plain weekly: a Monday to
+ * Friday block moved an hour kept the Monday alone.
+ */
+test('dragging a block on some days keeps every one of them', async ({ page }) => {
+	test.setTimeout(180_000);
+	await page.setViewportSize({ width: 1280, height: 900 });
+	await register(page, testEmail('rec-weekdays-drag'));
+
+	const anchor = dayAfter(monday(), 0);
+	const week = `/calendar/calendar?view=week&from=${anchor}`;
+	await visit(page, week);
+
+	await page.getByRole('button', { name: 'New task block' }).click();
+	const form = page.getByRole('dialog');
+	await form.getByRole('button', { name: 'Comes back', exact: true }).first().click();
+	await form.getByRole('button', { name: 'Some days', exact: true }).click();
+	const days = form.getByRole('group', { name: 'Some days' });
+	for (const [day, wanted] of [
+		['Mon', true],
+		['Tue', true],
+		['Wed', true],
+		['Thu', true],
+		['Fri', true],
+		['Sat', false],
+		['Sun', false]
+	] as const) {
+		const button = days.getByRole('button', { name: day, exact: true });
+		if ((await button.getAttribute('aria-pressed')) !== String(wanted)) await button.click();
+	}
+	await form.locator('[name="recurrenceAnchor"]').fill(anchor);
+	await form.locator('[name="startTime"]').fill('09:00');
+	await form.locator('[name="label"]').fill('weekday-study');
+	await choose(form, 'mode', 'Category');
+	await form.getByRole('button', { name: /^(Add|Save task block)$/ }).click();
+	await expect(form).toBeHidden({ timeout: 20_000 });
+	expect(await countIn(page, week, 'weekday-study')).toBe(5);
+
+	const block = page.locator('.ec-event.ec-draggable').filter({ hasText: 'weekday-study' }).first();
+	const box = (await block.boundingBox())!;
+	const x = box.x + box.width / 2;
+	const y = box.y + Math.min(20, box.height / 2);
+	await page.mouse.move(x, y);
+	await page.mouse.down();
+	await page.mouse.move(x, y + 80, { steps: 12 });
+	await page.mouse.up();
+	const choice = page.getByRole('dialog', { name: 'Place task block' });
+	const saved = page.waitForResponse((r) => r.url().includes('?/update') && r.ok());
+	await choice.getByRole('button', { name: 'Move here' }).click();
+	await saved;
+
+	// Read again from the server, not from what the grid still had drawn.
+	expect(await countIn(page, week, 'weekday-study')).toBe(5);
+});
+
+/**
  * The ghost a drag leaves behind.
  *
  * Dragging out a square on the grid leaves the calendar holding a selection it

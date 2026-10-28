@@ -85,11 +85,27 @@ test('quick capture can put a task block on the plan', async ({ page }) => {
 
 	const dialog = page.getByRole('dialog', { name: 'New task' });
 	await dialog.locator('[name="heading"]').fill('Plan the garden');
-	await dialog
-		.getByText(/Category, notebook/)
-		.first()
-		.click();
+
+	/*
+	 * Whether this is a block is the one decision the sheet has, so it stands
+	 * outside the fold, and switching it on opens the rest of the form: a
+	 * block's day, time and category are all required, and a required field
+	 * behind a disclosure is a form the browser refuses to submit without
+	 * saying where to look.
+	 */
+	const fold = dialog.getByText(/Category, notebook/);
+	await expect(fold).toHaveCount(1);
 	await dialog.getByRole('checkbox', { name: 'New task block' }).check();
+	await expect(fold).toHaveCount(0);
+
+	/*
+	 * And it opens on a day and a round hour rather than on two empty required
+	 * fields — the browser's own time picker fills the minutes from the clock,
+	 * so an empty field meant choosing six in the evening and getting 18:27.
+	 */
+	await expect(dialog.locator('[name="scheduledDate"]')).toHaveValue(/^\d{4}-\d{2}-\d{2}$/);
+	await expect(dialog.locator('[name="startTime"]')).toHaveValue(/^\d{2}:00$/);
+
 	await dialog.locator('[name="scheduledDate"]').fill(date);
 	await dialog.locator('[name="startTime"]').fill('10:30');
 	await dialog.locator('[name="durationMinutes"]').fill('45');

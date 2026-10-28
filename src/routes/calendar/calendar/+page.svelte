@@ -1520,13 +1520,20 @@
 	/**
 	 * Write a rule into the fields the block form posts.
 	 *
-	 * The server rebuilds the rule from these four rather than trusting a
+	 * The server rebuilds the rule from these fields rather than trusting a
 	 * serialised string, so a drag has to speak the same language the form does.
 	 */
 	function setRecurrenceFields(body: FormData, r: Recurrence) {
 		body.set('recurrenceKind', r.kind);
 		if (r.kind === 'weeks' || r.kind === 'days') body.set('recurrenceInterval', String(r.interval));
 		if (r.kind === 'monthly') body.set('recurrenceMonthDay', String(r.day));
+		// The days ticked, one field each as the form posts them. Without them
+		// the server reads an empty set as plain weekly, and a Monday-to-Friday
+		// block moved an hour keeps only the Monday.
+		if (r.kind === 'weekdays') {
+			body.delete('recurrenceWeekday');
+			for (const day of r.days) body.append('recurrenceWeekday', String(day));
+		}
 		// Every shape has a start date now, and a drag must not drop the one the
 		// block already had — an anchorless rule posts an empty field and stays
 		// anchorless rather than being given today.

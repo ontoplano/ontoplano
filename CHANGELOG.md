@@ -18,6 +18,24 @@ the shape of the data changing. Bumping the minor per batch is what ran this
 file to 0.161 in a few months, which tells a reader nothing about which
 releases mattered.
 
+## 0.186.10 — 2026-10-25
+
+- The Android app can be kept up to date by [Obtainium](https://github.com/ImranR98/Obtainium), which watches the releases page for you and installs the next APK over the last one. There is a link that adds it in one press — in the readme, and under "Getting the app" in the documentation. Nothing about the release changed: it is the same APK, signed with the same key, so an install you already have carries on being updated.
+- The documentation said the app was not in Google Play. It has been for a while.
+
+## 0.186.9 — 2026-10-23
+
+- Dragging a block that comes back on some days keeps all of its days. A Monday-to-Friday block moved an hour later used to keep only the Monday, and Undo did not bring the others back.
+- Raising how many of a thing you keep puts the difference on the shopping list straight away. Two of two raised to five used to stay off it, saying nothing had run low, until the count itself was changed.
+- The filters on a list look like filters again. They had lost their edges, so "Completed (58)", "Archived (1)", "Every notebook" and "Tags" read as a caption under the search box and nothing said they could be pressed until the pointer crossed one — which says nothing at all on a phone. They keep their quiet fill; they get their outline back.
+- The saved-filter row above a list is two controls instead of three labels. It read "Saved — Save these — Nothing saved for this list yet." on a list with none saved, all saying the one thing, and "these" named nothing on the screen. It is now the chooser, which says "No saved filter" by itself, and a button that says "Save this filter".
+- A saved filter that fails to save now says so. The notification used to carry the Save button's own words, so the answer to a failure was the instruction to try it.
+
+## 0.186.8 — 2026-10-22
+
+- Quick capture: whether a task is a block is now a switch above the fold rather than something to find under the notes, and turning it on opens the whole form — a block's day, time and category are all required, and three required fields behind a disclosure is a form the browser refuses without saying where to look.
+- A new block's time opens on the next whole hour instead of empty, so choosing six in the evening gives 18:00 rather than whatever minute the clock was on, and its day opens on today.
+
 ## 0.186.7 — 2026-10-21
 
 - Finance opens with one money picture: what is yours, what is committed, what you spent this month and what is left against your budgets. Each currency stands on its own, and a missing opening or an incomplete period is named at the total rather than guessed. A switch shows everything in the accounts or only your own money, and is remembered.

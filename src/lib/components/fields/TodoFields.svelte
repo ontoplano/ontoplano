@@ -16,9 +16,12 @@
 	import { ATTRIBUTE_FORM, attributePairs, mergeSuggestions } from '$lib/attribute-keys';
 	import { RATINGS, type Rating } from '$lib/ratings';
 	import { useT } from '$lib/i18n';
+	import { nextHourOf, today } from '$lib/when';
+	import { useWhen } from '$lib/when-context.svelte';
 	import { vocabularyFor } from '$lib/tag-vocabulary';
 
 	const t = useT();
+	const when = useWhen();
 
 	/**
 	 * What a todo is made of. See IdeaFields for why this is a component.
@@ -94,6 +97,23 @@
 	let attributeRows = $state(untrack(() => attributePairs(attributes)));
 	let asBlock = $state(false);
 	let chosenDate = $state(untrack(() => scheduledDate));
+	let chosenTime = $state('');
+
+	/*
+	 * Turning "block" on fills in the two answers a block cannot do without.
+	 *
+	 * The form used to open on two empty required fields, and a browser's own
+	 * time picker fills the minutes from the clock — so choosing six in the
+	 * evening gave 18:27. Today and the next whole hour instead; `nextHourOf`
+	 * says why the hour rather than the minute. Only ever a blank: a day or a
+	 * time already typed is the person's.
+	 */
+	function fillInTheBlock() {
+		if (!asBlock) return;
+		if (!chosenDate) chosenDate = today(when());
+		if (!chosenTime) chosenTime = nextHourOf(when());
+	}
+
 	// What plugins say they read, where the page has loaded their manifests.
 	const attributeKeys = $derived(mergeSuggestions(t, page.data.plugins ?? []));
 
@@ -126,7 +146,6 @@
 	const filled = $derived(
 		ratingsSet +
 			(chosenDate ? 1 : 0) +
-			(asBlock ? 1 : 0) +
 			(chosenCategory ? 1 : 0) +
 			(notebookId ? 1 : 0) +
 			(notes ? 1 : 0) +
@@ -148,6 +167,30 @@
 	-->
 	<OneLine name="heading" required bind:value={title} />
 </Field>
+
+<!--
+	Whether this is a block, outside the fold.
+
+	It was inside, under the notes and the labels, which made it a thing you
+	found rather than a thing you chose: a task given a time is a different
+	kind of thing from a task on a list, and that is the one decision this
+	form has. Switching it on opens the rest of the form too — a block needs a
+	day, a time and a category, and three required fields behind a disclosure
+	is a form the browser refuses to submit without saying where to look.
+-->
+{#if allowBlock}
+	<label class="col-span-12 flex items-center gap-2 text-sm text-gray-700">
+		<input
+			type="checkbox"
+			name="asBlock"
+			value="true"
+			bind:checked={asBlock}
+			onchange={fillInTheBlock}
+			class="size-4"
+		/>
+		{t('tasks.plan.newBlock')}
+	</label>
+{/if}
 
 {#snippet details()}
 	<!--
@@ -215,13 +258,6 @@
 		task and not say when, so "ring the plumber tomorrow" became a task
 		with the word tomorrow in its title and a day that still looked empty.
 	-->
-	{#if allowBlock}
-		<label class="col-span-12 flex items-center gap-2 text-sm text-gray-700">
-			<input type="checkbox" name="asBlock" value="true" bind:checked={asBlock} class="size-4" />
-			{t('tasks.plan.newBlock')}
-		</label>
-	{/if}
-
 	<Field
 		label={t('fields.todo.day')}
 		span={6}
@@ -240,7 +276,14 @@
 
 	{#if asBlock}
 		<Field label={t('tasks.plan.time')} span={3} required>
-			<input autocomplete="off" name="startTime" type="time" required class="input" />
+			<input
+				autocomplete="off"
+				name="startTime"
+				type="time"
+				required
+				bind:value={chosenTime}
+				class="input"
+			/>
 		</Field>
 		<Field label={t('tasks.plan.duration')} span={3} hint={t('tasks.plan.minutes')}>
 			<NumberBox name="durationMinutes" min="15" step="15" value="60" />
@@ -271,7 +314,7 @@
 	</div>
 {/snippet}
 
-{#if compact}
+{#if compact && !asBlock}
 	<MoreOptions label={t('fields.todo.categoryNotebookTagsNotesRatings')} count={filled}>
 		{@render details()}
 		{@render scales()}
@@ -280,6 +323,16 @@
 		{@render place?.()}
 	</MoreOptions>
 {:else}
+	<!--
+		The whole form: the quick sheet asked to be a block, or this was never
+		the quick sheet.
+
+		Capture collapses everything but the lead field because the reason it
+		exists is that it does not ask you for anything before you can write. A
+		block is the one answer that undoes that bargain on purpose — it has a
+		day, a time and a category of its own to fill in, and they are the
+		fields the fold was hiding.
+	-->
 	{@render details()}
 	<!--
 		Three scales, open.
@@ -292,5 +345,6 @@
 	-->
 	<MoreOptions label={t('fields.todo.urgencyEaseInterest')} count={ratingsSet} open>
 		{@render scales()}
+		{@render place?.()}
 	</MoreOptions>
 {/if}

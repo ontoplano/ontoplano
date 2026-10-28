@@ -11,8 +11,29 @@ another is a choice, not a reinstall.
 
 ## Getting the app
 
-The app is not in Google Play, F-Droid or the App Store yet. Until it is, there
-are three ways onto an Android phone.
+It is on [Google Play](https://play.google.com/store/apps/details?id=app.ontoplano).
+It is not in F-Droid or the App Store yet. Beside Play there are four ways onto
+an Android phone, and the first of them is the one that also keeps it updated.
+
+### Obtainium, which updates it for you
+
+[Obtainium](https://github.com/ImranR98/Obtainium) installs Android apps from
+wherever their releases are published and checks for new ones itself, so it
+does for a GitHub release what a store does for a listing. Nothing has to be
+set up for it: every Ontoplano release carries one `.apk`, signed with the same
+key each time, so an update installs over the last one rather than asking you
+to uninstall anything.
+
+With Obtainium on the phone, open this on the phone:
+
+**[Add Ontoplano to Obtainium](https://apps.obtainium.imranr.dev/redirect?r=obtainium%3A%2F%2Fapp%2F%257B%2522id%2522%253A%2522app.ontoplano%2522%252C%2522url%2522%253A%2522https%253A%252F%252Fgithub.com%252Fontoplano%252Fontoplano%2522%252C%2522author%2522%253A%2522ontoplano%2522%252C%2522name%2522%253A%2522Ontoplano%2522%252C%2522additionalSettings%2522%253A%2522%257B%255C%2522includePrereleases%255C%2522%253Afalse%257D%2522%257D)**
+
+It opens Obtainium with the app already filled in; press **Add**, then
+**Install**. By hand it is the same thing: **Add App**, paste
+`https://github.com/ontoplano/ontoplano`, and Obtainium works out the rest.
+
+Obtainium is itself not in Google Play — get it from
+[its releases](https://github.com/ImranR98/Obtainium/releases) or from F-Droid.
 
 ### The APK from a release
 

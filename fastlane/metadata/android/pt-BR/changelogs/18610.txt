@@ -1,0 +1,8 @@
+• Dá para manter o app atualizado pelo Obtainium, num toque
+• Arrastar um bloco que se repete mantém todos os dias dele
+• Aumentar quanto você guarda de algo joga a diferença na lista de compras
+• Os filtros acima da lista voltaram a parecer botões
+• Captura rápida: o bloco é uma chave no topo e abre o formulário inteiro
+• Um bloco novo abre em hoje, na próxima hora cheia
+
+Me conte o que quebrar: github.com/ontoplano/ontoplano/issues

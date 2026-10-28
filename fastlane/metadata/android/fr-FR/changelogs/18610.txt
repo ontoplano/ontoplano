@@ -1,0 +1,8 @@
+• Obtainium tient l'appli à jour, en une seule pression
+• Déplacer un bloc qui revient garde tous ses jours
+• Augmenter le stock gardé met la différence sur la liste de courses
+• Les filtres au-dessus d'une liste redeviennent cliquables
+• Saisie rapide : le bloc est un interrupteur en haut et ouvre tout le formulaire
+• Un nouveau bloc s'ouvre sur aujourd'hui, à l'heure pile suivante
+
+Dites-moi ce qui casse : github.com/ontoplano/ontoplano/issues

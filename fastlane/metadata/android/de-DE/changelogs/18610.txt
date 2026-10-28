@@ -1,0 +1,8 @@
+• Obtainium hält die App aktuell, mit einem Tipp eingerichtet
+• Ein verschobener Serienblock behält alle seine Tage
+• Erhöhter Vorrat legt die Differenz sofort auf die Einkaufsliste
+• Filter über einer Liste sehen wieder antippbar aus
+• Schnellerfassung: Block ist ein Schalter oben und öffnet das ganze Formular
+• Ein neuer Block beginnt heute, zur nächsten vollen Stunde
+
+Sagen Sie mir, was kaputtgeht: github.com/ontoplano/ontoplano/issues

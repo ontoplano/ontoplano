@@ -123,7 +123,11 @@
 			body: JSON.stringify({ surface, ...body })
 		}).catch(() => null);
 		const got = await res?.json().catch(() => null);
-		if (!res?.ok) return got?.message ?? t('filters.saveThese');
+		// Whatever the server said, or that it did not land. It used to fall
+		// back to the Save button's own label, so a filter that failed to save
+		// raised a notification reading "Save these" — an instruction where an
+		// answer belonged, and nothing a reader could act on.
+		if (!res?.ok) return got?.message ?? t('errors.savedFilters.notSaved');
 		filters = got?.filters ?? filters;
 		return null;
 	}
@@ -213,10 +217,16 @@
 	was supposed to be narrowing it. Pressing a control may not move the page.
 	So the button is always drawn and is simply dead until there is something
 	to keep.
+
+	Two controls and no captions. The row read "SAVED — Save these — Nothing
+	saved for this list yet." on a fresh account: three labels saying the one
+	thing, across the whole line above the filters, and a button whose "these"
+	named nothing on screen. The picker already says "No saved filter" when
+	there is none and its name when there is one, so the eyebrow was labelling
+	a control that labels itself and the sentence was repeating the picker that
+	was not there yet.
 -->
 <div class="flex w-full flex-wrap items-center gap-2">
-	<span class="eyebrow shrink-0 text-gray-500">{t('filters.saved')}</span>
-
 	{#if filters.length > 0}
 		<Picker
 			value={chosen}
@@ -283,12 +293,8 @@
 			onclick={() => (naming = true)}
 		>
 			<Icon name="check" size={14} />
-			{t('filters.saveThese')}
+			{t('filters.saveThisFilter')}
 		</button>
-	{/if}
-
-	{#if filters.length === 0}
-		<span class="text-xs text-gray-500">{t('filters.nothingSavedYet')}</span>
 	{/if}
 </div>
 

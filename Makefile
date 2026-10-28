@@ -333,7 +333,7 @@ SITE_DEV_LOG ?= $(CURDIR)/.dev-site.log
 ## the marketing site, watched and reloaded, in the background
 dev-site: _site-checkout
 	@if curl -fsS -m 2 -o /dev/null "http://localhost:$(SITE_PORT)/" 2>/dev/null; then \
-		$(GOOD) "already up — http://localhost:$(SITE_PORT)"; \
+		$(OK) "already up — http://localhost:$(SITE_PORT)"; \
 		echo "  make dev-site-logs   follow it"; \
 		echo "  make dev-site-stop   stop it"; \
 		exit 0; \
@@ -349,11 +349,11 @@ dev-site: _site-checkout
 		sleep 0.5; \
 	done
 	@if curl -fsS -m 2 -o /dev/null "http://localhost:$(SITE_PORT)/" 2>/dev/null; then \
-		$(GOOD) "site  ->  http://localhost:$(SITE_PORT)  (watching, reloads on save)"; \
+		$(OK) "site  ->  http://localhost:$(SITE_PORT)  (watching, reloads on save)"; \
 		echo "  make dev-site-logs   follow it"; \
 		echo "  make dev-site-stop   stop it"; \
 	else \
-		$(BAD) "the site watcher did not come up — $(SITE_DEV_LOG) says why"; \
+		$(NO) "the site watcher did not come up — $(SITE_DEV_LOG) says why"; \
 		tail -20 "$(SITE_DEV_LOG)" 2>/dev/null | sed 's/^/    /'; \
 		exit 1; \
 	fi
@@ -846,6 +846,10 @@ lint:
 	@# been stopped.
 	@node scripts/check-ship-list.mjs
 	@node scripts/check-android-version.mjs
+	@# The add-to-Obtainium link in the three docs that carry it is 400
+	@# characters of percent-encoded JSON, so nothing but a check can tell
+	@# whether it still names this repository and this application id.
+	@node scripts/obtainium-config.mjs --check
 	@# The floor on a reminder and the phone's polling interval are one fact
 	@# written in two languages, with nothing type-checking across the gap.
 	@node scripts/check-reminder-window.mjs
@@ -854,6 +858,12 @@ lint:
 	@# Over the makefiles actually loaded, the way `vars` reads them: a fresh
 	@# clone checks its own Makefile, and this checkout checks local.mk too.
 	@node scripts/make-vars.mjs --check $(sort $(MAKEFILE_LIST)) defaults.env $(wildcard $(SERVER_SRC)/defaults.env)
+	@# And again as a fresh clone reads it, over the tracked files alone. The
+	@# run above loads local.mk, so a public recipe that expands one of *its*
+	@# variables looks defined here and is empty for everybody else: `dev-site`
+	@# borrowed local.mk's GOOD and BAD and printed nothing on a clone, which
+	@# only showed up as two undescribed switches in this check.
+	@node scripts/make-vars.mjs --check Makefile defaults.env
 	@# The scheduled jobs run under `tsx` in a production install. A service
 	@# that reaches for a development-only package works everywhere except
 	@# there, and the box is where nobody is watching.

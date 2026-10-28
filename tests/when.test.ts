@@ -9,6 +9,7 @@ import {
 	momentOf,
 	monthOf,
 	minutesIntoDay,
+	nextHourOf,
 	timeOf,
 	wantsTwelveHour,
 	weekdayOf,
@@ -158,5 +159,37 @@ describe('the shapes nobody should build by hand', () => {
 	test('a span says the month and the year once, with the comma', () => {
 		expect(rangeOf('2026-09-07', '2026-09-13', en)).toMatch(/^Sep 7\s?–\s?13, 2026$/);
 		expect(rangeOf('2026-08-31', '2026-09-06', en)).toMatch(/^Aug 31\s?–\s?Sep 6, 2026$/);
+	});
+});
+
+describe('the hour a new block opens on', () => {
+	/*
+	 * The complaint this answers: an empty time field, and the browser's own
+	 * picker filling the minutes from the clock — 18:27 for a block nobody
+	 * meant to start at 27 minutes past.
+	 */
+	test('it is the next whole hour, where the reader is', () => {
+		// 21:27 UTC is 18:27 in São Paulo and 22:27 in London.
+		const instant = '2026-06-11T21:27:00Z';
+		expect(nextHourOf(sao(), instant)).toBe('19:00');
+		expect(nextHourOf(london(), instant)).toBe('23:00');
+	});
+
+	test('an exact hour stays where it is', () => {
+		expect(nextHourOf(sao(), '2026-06-11T21:00:00Z')).toBe('18:00');
+	});
+
+	test('the minutes are always 00', () => {
+		for (let minute = 0; minute < 60; minute++) {
+			const at = `2026-06-11T09:${String(minute).padStart(2, '0')}`;
+			expect(nextHourOf(sao(), at)).toMatch(/:00$/);
+		}
+	});
+
+	// The day field beside it says which day, so the far end of the day beats
+	// wrapping the time into tomorrow under somebody.
+	test('the end of the day clamps rather than wrapping', () => {
+		expect(nextHourOf(sao(), '2026-06-11T23:10')).toBe('23:00');
+		expect(nextHourOf(sao(), '2026-06-11T23:00')).toBe('23:00');
 	});
 });
