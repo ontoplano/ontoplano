@@ -1,4 +1,4 @@
-import { afterAll, expect, test } from 'vitest';
+import { afterAll, expect, test, vi } from 'vitest';
 import { makeDatabase, OWNER, seedAccounts } from './helpers/db';
 
 /*
@@ -24,6 +24,12 @@ const { DASHBOARD_LAYOUT_KEY, DASHBOARD_SEEN_KEY } = await import('../src/lib/da
 const { load } = await import('../src/routes/+page.server');
 
 const ctx = { userId: OWNER, tz: 'UTC', now: new Date('2026-10-19T12:00:00Z') };
+
+// The dashboard's load reads the clock itself, and the card is this month's.
+// Left on the real clock, the October budget below stopped being this month's
+// on the first of November and the test went red with nothing changed.
+vi.useFakeTimers({ toFake: ['Date'], now: ctx.now });
+afterAll(() => vi.useRealTimers());
 
 function dashboard() {
 	return load({ locals: { user: { id: OWNER } } } as never) as Promise<{
