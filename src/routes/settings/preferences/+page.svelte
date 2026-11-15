@@ -40,6 +40,9 @@
 
 	const t = useT();
 
+	/** How long the menu waits after a press before saving it. */
+	const MENU_SAVE_DELAY_MS = 400;
+
 	/*
 	 * What each choice actually looks like, rather than its name.
 	 *
@@ -109,37 +112,65 @@
 	/*
 	 * The rooms, in the order this account keeps them.
 	 *
-	 * A local copy so the arrows and the Hide buttons can move things before
-	 * anything is saved, reset from the server whenever the load re-runs — the
-	 * same shape the dashboard layout below uses, for the same reason.
+	 * A local copy so a tick or an arrow shows at once, before the save it
+	 * sends has come back. Reset from the server whenever the load re-runs —
+	 * but only once nothing is waiting to be sent or answered, or the answer
+	 * to the first of two quick presses puts back what the second one changed.
 	 */
 	let rooms = $state([...data.rooms]);
+	let menuForm = $state<HTMLFormElement>();
+	let menuSaveTimer = $state<ReturnType<typeof setTimeout> | null>(null);
+	let menuSaving = $state(0);
 	$effect(() => {
-		rooms = [...data.rooms];
+		const fresh = data.rooms;
+		if (menuSaving === 0 && menuSaveTimer === null) rooms = [...fresh];
 	});
 
 	/**
-	 * Shown first in their order, then the ones put away.
+	 * Every change to the menu saves itself, like the rest of this page.
 	 *
-	 * A room with no place in the menu has no place in the order either, so it
-	 * falls to the bottom and loses its number — which is also what the saved
-	 * order says, since the form posts this list.
+	 * It had a Save button at the top of the card, and on a phone the card is
+	 * longer than the screen: whoever scrolled down to tick a room back on
+	 * ticked it and left, and the room stayed away. A short wait first, so
+	 * three presses on an arrow are one save rather than three.
 	 */
-	const orderedRooms = $derived([
-		...rooms.filter((r) => !r.hidden),
-		...rooms.filter((r) => r.hidden)
-	]);
+	function saveMenuSoon() {
+		if (menuSaveTimer) clearTimeout(menuSaveTimer);
+		menuSaveTimer = setTimeout(() => {
+			menuSaveTimer = null;
+			menuForm?.requestSubmit();
+		}, MENU_SAVE_DELAY_MS);
+	}
 
-	/** The last row that can still move down: the ones below it are put away. */
-	const lastShownIndex = $derived(rooms.filter((r) => !r.hidden).length - 1);
+	/** A reset outranks a change still waiting to be sent. */
+	function cancelMenuSave() {
+		if (menuSaveTimer) clearTimeout(menuSaveTimer);
+		menuSaveTimer = null;
+	}
 
+	/**
+	 * A room's place in the menu, counted among the rooms that are in it.
+	 *
+	 * A room put away keeps its row where it was, rather than falling to the
+	 * bottom: on a phone the row under the thumb used to be replaced by the one
+	 * below it the moment it was unticked, so the next press landed on a
+	 * different room. It has no number while it is away, and it comes back to
+	 * the place it left.
+	 */
+	const roomPosition = $derived(
+		new Map(rooms.filter((r) => !r.hidden).map((r, i) => [r.key, i + 1]))
+	);
+
+	/** Swap with the next room that is shown; the ones put away hold their rows. */
 	function shiftRoom(key: string, by: number) {
-		const shown = rooms.filter((r) => !r.hidden);
-		const at = shown.findIndex((r) => r.key === key);
+		const shownAt = rooms.flatMap((r, i) => (r.hidden ? [] : [i]));
+		const at = shownAt.indexOf(rooms.findIndex((r) => r.key === key));
 		const to = at + by;
-		if (at === -1 || to < 0 || to >= shown.length) return;
-		[shown[at], shown[to]] = [shown[to], shown[at]];
-		rooms = [...shown, ...rooms.filter((r) => r.hidden)];
+		if (at === -1 || to < 0 || to >= shownAt.length) return;
+		const next = [...rooms];
+		[next[shownAt[at]], next[shownAt[to]]] = [next[shownAt[to]], next[shownAt[at]]];
+		rooms = next;
+		saveMenuSoon();
 	}
 
 	/** Put one tab away, or bring it back — the room stays where it is. */
@@ -148,10 +179,31 @@
 			...r,
 			leaves: r.leaves.map((l) => (l.id === id ? { ...l, hidden: !l.hidden } : l))
 		}));
+		saveMenuSoon();
 	}
 
+	/**
+	 * Put a room away, or bring it back.
+	 *
+	 * Its tabs keep their own answers while it is away. They used to be saved
+	 * as put away with it, so a room brought back came back empty, and getting
+	 * it back meant finding and ticking every tab as well — which on a phone
+	 * read as the room refusing to come back. A room that does come back with
+	 * every tab away, as those accounts have it, brings its tabs back with it:
+	 * a room with nothing in it is not what somebody ticking it is asking for.
+	 */
 	function toggleRoom(key: string) {
-		rooms = rooms.map((r) => (r.key === key ? { ...r, hidden: !r.hidden } : r));
+		rooms = rooms.map((r) => {
+			if (r.key !== key) return r;
+			const back = r.hidden;
+			const empty = r.leaves.length > 0 && r.leaves.every((l) => l.hidden);
+			return {
+				...r,
+				hidden: !r.hidden,
+				leaves: back && empty ? r.leaves.map((l) => ({ ...l, hidden: false })) : r.leaves
+			};
+		});
+		saveMenuSoon();
 	}
 
 	function shift(id: DashboardCardId, by: number) {
@@ -938,20 +990,31 @@
 		and the house in the phone bar are the way back.
 	-->
 		<form
+			bind:this={menuForm}
+			data-saving={menuSaving > 0 || menuSaveTimer !== null}
 			method="post"
 			action="?/saveMenu"
 			data-tour="prefs-menu"
-			use:settingsForm={{ notice: t('settings.preferences.menuSaved') }}
+			use:settingsForm={{
+				notice: t('settings.preferences.menuSaved'),
+				before: () => {
+					menuSaving++;
+					return true;
+				},
+				settled: () => menuSaving--
+			}}
 		>
 			<SettingGroup title={t('settings.preferences.theMenu')}>
 				{#snippet actions()}
-					{#if !data.menuIsDefault}
-						<button formaction="?/resetMenu" class="btn btn-sm"
-							><Icon name="undo" />{t('settings.preferences.backToTheDefaults')}</button
-						>
-					{/if}
-					<button class="btn btn-primary btn-sm"
-						><Icon name="check" />{t('settings.preferences.saveMenu')}</button
+					<!-- Drawn and made invisible rather than added, so saving the first
+					     change does not move the header under the thumb. -->
+					<button
+						formaction="?/resetMenu"
+						class="btn btn-sm"
+						class:invisible={data.menuIsDefault}
+						disabled={data.menuIsDefault}
+						onclick={cancelMenuSave}
+						><Icon name="undo" />{t('settings.preferences.backToTheDefaults')}</button
 					>
 				{/snippet}
 				<div class="space-y-3 px-4 py-3">
@@ -966,9 +1029,10 @@
 					<p class="text-xs text-gray-600">
 						{t('settings.preferences.pickDarkColoursTheLabels')}
 					</p>
-					<div class="w-full space-y-2">
-						{#each orderedRooms as room, i (room.key)}
+					<div class="w-full space-y-1.5" data-testid="menu-rooms">
+						{#each rooms as room (room.key)}
 							{@const shown = !room.hidden}
+							{@const position = roomPosition.get(room.key)}
 							<ToggleRow
 								label={t(room.name)}
 								on={shown}
@@ -983,16 +1047,43 @@
 									<!-- A number only where there is a position. A room that is put
 									     away has no place in the order, so it has no number. -->
 									<span class="tabular w-5 shrink-0 text-xs text-gray-500">
-										{shown ? i + 1 : ''}
+										{position ?? ''}
 									</span>
-									<!-- Arrows first, as the wheel's wedges have them, so the note a
-								     room carries at the end moves nothing. A room put away keeps
-								     their place empty rather than losing it. -->
-									<span class="flex shrink-0" class:invisible={!shown}>
+								{/snippet}
+								{#snippet trailing()}
+									{#if room.colorFrom}
+										<span class="hidden shrink-0 text-xs text-gray-500 sm:inline"
+											>{t('settings.menu.followsShort', { room: t(room.colorFrom) })}</span
+										>
+									{/if}
+									{#if room.ownsColor}
+										<input
+											type="color"
+											name="color.{room.section}"
+											value={room.accent}
+											onchange={saveMenuSoon}
+											class="h-7 w-9 shrink-0 cursor-pointer border border-gray-300 bg-white p-0.5"
+											aria-label={t('settings.menu.colourFor', { room: t(room.name) })}
+										/>
+									{:else}
+										<!-- Shown, not editable: this room wears another's colour, and
+										     three pickers for one value is three ways to disagree. -->
+										<span
+											class="h-7 w-9 shrink-0 border border-gray-200"
+											style="background-color: {room.accent}"
+											title={room.colorFrom
+												? t('settings.menu.follows', { room: t(room.colorFrom) })
+												: ''}
+										></span>
+									{/if}
+									<!-- The arrows last, in a column of their own down the right edge
+									     where the thumb is. A room put away keeps their place empty
+									     rather than losing it, so nothing beside them moves. -->
+									<span class="-mr-1.5 flex shrink-0" class:invisible={!shown}>
 										<button
 											type="button"
 											onclick={() => shiftRoom(room.key, -1)}
-											disabled={!shown || i === 0}
+											disabled={!shown || position === 1}
 											class="icon-btn"
 											title={t('settings.preferences.moveUp')}
 											aria-label={t('settings.menu.moveUp', { what: t(room.name) })}
@@ -1002,7 +1093,7 @@
 										<button
 											type="button"
 											onclick={() => shiftRoom(room.key, 1)}
-											disabled={!shown || i === lastShownIndex}
+											disabled={!shown || position === roomPosition.size}
 											class="icon-btn"
 											title={t('settings.preferences.moveDown')}
 											aria-label={t('settings.menu.moveDown', { what: t(room.name) })}
@@ -1010,38 +1101,13 @@
 											<Icon name="chevron-down" />
 										</button>
 									</span>
-									{#if room.ownsColor}
-										<input
-											type="color"
-											name="color.{room.section}"
-											value={room.accent}
-											class="h-6 w-8 shrink-0 cursor-pointer border border-gray-300 bg-white p-0.5"
-											aria-label={t('settings.menu.colourFor', { room: t(room.name) })}
-										/>
-									{:else}
-										<!-- Shown, not editable: this room wears another's colour, and
-										     three pickers for one value is three ways to disagree. -->
-										<span
-											class="h-6 w-8 shrink-0 border border-gray-200"
-											style="background-color: {room.accent}"
-											title={room.colorFrom
-												? t('settings.menu.follows', { room: t(room.colorFrom) })
-												: ''}
-										></span>
-									{/if}
-								{/snippet}
-								{#snippet trailing()}
-									{#if room.colorFrom}
-										<span class="hidden shrink-0 text-xs text-gray-500 sm:inline"
-											>{t('settings.menu.followsShort', { room: t(room.colorFrom) })}</span
-										>
-									{/if}
 								{/snippet}
 							</ToggleRow>
 							<!--
-								The tabs inside the room, one line each, indented under it:
-								they are not rooms, and putting Recipes away should leave
-								Workouts where it is.
+								The tabs inside the room, one line each, indented under its
+								name: they are not rooms, and putting Recipes away should leave
+								Workouts where it is. Each posts only its own answer, so a room
+								put away and brought back still has its tabs.
 							-->
 							{#each room.leaves as leaf (leaf.id)}
 								<ToggleRow
@@ -1052,7 +1118,7 @@
 									onToggle={() => toggleLeaf(leaf.id)}
 								>
 									{#snippet leading()}
-										{#if leaf.hidden || room.hidden}
+										{#if leaf.hidden}
 											<input type="hidden" name="hidden" value={leaf.id} />
 										{/if}
 									{/snippet}

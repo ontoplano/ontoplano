@@ -37,6 +37,8 @@ export function settingsForm(
 		before?: (formData: FormData) => boolean | Promise<boolean>;
 		/** After a successful save — a dialog holding the form closes here. */
 		saved?: () => void;
+		/** After the answer, whatever it was — for a caller counting saves in flight. */
+		settled?: () => void;
 	} = {}
 ) {
 	return enhance(node, async ({ formData, cancel }) => {
@@ -46,7 +48,11 @@ export function settingsForm(
 		}
 
 		return async ({ result, update }) => {
-			await update({ reset: false });
+			try {
+				await update({ reset: false });
+			} finally {
+				options.settled?.();
+			}
 
 			// Said here rather than at the top of the page. A settings page is long,
 			// and a confirmation drawn above the first card is invisible to somebody

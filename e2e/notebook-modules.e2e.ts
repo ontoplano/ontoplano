@@ -1,6 +1,7 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
 import { register, testEmail } from './helpers/account';
 import { visit } from './helpers/visit';
+import { changeMenu } from './helpers/menu';
 
 /**
  * A notebook holds what its subject actually accumulates.
@@ -232,8 +233,7 @@ test.describe('what a notebook holds', () => {
 		// Put Finance away, the way anybody would.
 		await visit(page, '/settings/preferences');
 		const menu = page.locator('form[action="?/saveMenu"]');
-		await menu.getByRole('checkbox', { name: 'Finance' }).uncheck();
-		await save(page, menu.getByRole('button', { name: 'Save menu' }));
+		await changeMenu(page, () => menu.getByRole('checkbox', { name: 'Finance' }).uncheck());
 
 		await makeNotebook(page, 'A subject');
 

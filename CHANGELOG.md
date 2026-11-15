@@ -18,6 +18,13 @@ the shape of the data changing. Bumping the minor per batch is what ran this
 file to 0.161 in a few months, which tells a reader nothing about which
 releases mattered.
 
+## 0.186.11 — 2026-11-15
+
+- The menu list in Preferences saves as you change it: a tick, an arrow or a colour is saved there and then, with no Save button to find at the top of the card.
+- Putting a room away no longer moves it to the bottom of the list, so the row under your thumb stays the one you pressed. It comes back to the same place.
+- A room put away and brought back keeps its tabs. They used to be put away with it, so the room came back empty; a room that was left that way brings its tabs back when it is ticked.
+- On a phone the list reads tick, name, colour, arrows. The tabs line up under their room's name, and no room's name is cut short.
+
 ## 0.186.10 — 2026-10-25
 
 - The Android app can be kept up to date by [Obtainium](https://github.com/ImranR98/Obtainium), which watches the releases page for you and installs the next APK over the last one. There is a link that adds it in one press — in the readme, and under "Getting the app" in the documentation. Nothing about the release changed: it is the same APK, signed with the same key, so an install you already have carries on being updated.
