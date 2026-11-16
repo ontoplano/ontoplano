@@ -1,0 +1,6 @@
+• Dans les Réglages, la liste des menus s'enregistre aussitôt : coche, flèche ou couleur tiennent
+• Ranger une salle ne la renvoie plus en bas, la ligne sous le doigt reste celle que vous avez touchée
+• Une salle rangée puis rouverte garde ses onglets au lieu de revenir vide
+• Sur téléphone : coche, nom, couleur, flèches, et aucun nom n'est coupé
+
+Dites-moi ce qui casse : github.com/ontoplano/ontoplano/issues

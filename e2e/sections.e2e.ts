@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test';
 import { register, testEmail } from './helpers/account';
 import { visit } from './helpers/visit';
+import { changeMenu } from './helpers/menu';
 
 /**
  * A hidden section is put away, not taken away.
@@ -28,8 +29,8 @@ test('hiding a section empties the menus but not the URL', async ({ page }) => {
 	const menu = page.locator('form[action="?/saveMenu"]');
 	// Ticked means the room is there — one control, one meaning, the same one
 	// a notebook's "what it holds" list uses. See `ToggleRow`.
-	await menu.getByRole('checkbox', { name: 'Inventory' }).uncheck();
-	await menu.getByRole('button', { name: 'Save menu' }).click();
+	// No Save button: the tick is the save.
+	await changeMenu(page, () => menu.getByRole('checkbox', { name: 'Inventory' }).uncheck());
 	await expect(page.getByText('Menu saved.')).toBeVisible();
 
 	// Gone from the navbar…
@@ -45,14 +46,9 @@ test('hiding a section empties the menus but not the URL', async ({ page }) => {
 
 	// And it comes back on, bringing the tab with it.
 	await visit(page, '/settings/preferences');
-	await page
-		.locator('form[action="?/saveMenu"]')
-		.getByRole('checkbox', { name: 'Inventory' })
-		.check();
-	await page
-		.locator('form[action="?/saveMenu"]')
-		.getByRole('button', { name: 'Save menu' })
-		.click();
+	await changeMenu(page, () =>
+		page.locator('form[action="?/saveMenu"]').getByRole('checkbox', { name: 'Inventory' }).check()
+	);
 	await expect(page.getByText('Menu saved.')).toBeVisible();
 	await visit(page, '/');
 	await expect(nav.getByRole('link', { name: 'Inventory' })).toBeVisible();
@@ -79,15 +75,14 @@ test('saving the menu does not empty the list', async ({ page }) => {
 	await visit(page, '/settings/preferences');
 
 	const menu = page.locator('form[action="?/saveMenu"]');
-	await menu.getByRole('checkbox', { name: 'Inventory' }).uncheck();
 
 	// Nothing may repaint the form after the submit — no data reload, so no
 	// re-render to hide a reset behind.
 	await page.route('**/__data.json*', (route) => route.abort());
 	// Listened for before the press: an answer that lands first is otherwise
-	// missed and waited for until the timeout.
+	// missed and waited for until the timeout. The press is the save.
 	const saved = page.waitForResponse((r) => r.url().includes('saveMenu'), { timeout: 60_000 });
-	await menu.getByRole('button', { name: 'Save menu' }).click();
+	await menu.getByRole('checkbox', { name: 'Inventory' }).uncheck();
 	await saved;
 	await page.waitForTimeout(500);
 

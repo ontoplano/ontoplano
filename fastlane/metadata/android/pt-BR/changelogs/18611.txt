@@ -1,0 +1,6 @@
+• Nas Preferências, a lista de menus salva sozinha: um visto, uma seta ou uma cor já ficam gravados
+• Guardar uma sala não a joga mais para o fim da lista; a linha sob o dedo continua a que você tocou
+• Uma sala guardada volta com suas abas, e não mais vazia
+• No celular a lista mostra visto, nome, cor e setas, sem cortar o nome
+
+Me conte o que quebrar: github.com/ontoplano/ontoplano/issues

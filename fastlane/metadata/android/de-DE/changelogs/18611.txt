@@ -1,0 +1,6 @@
+• In den Einstellungen speichert die Menüliste sofort: Häkchen, Pfeil oder Farbe sitzen gleich
+• Ein weggelegter Raum rutscht nicht mehr nach unten, die Zeile unter dem Finger bleibt dieselbe
+• Ein zurückgeholter Raum bringt seine Tabs mit, statt leer zu kommen
+• Auf dem Handy: Häkchen, Name, Farbe, Pfeile, und kein Name wird abgeschnitten
+
+Sagen Sie mir, was kaputtgeht: github.com/ontoplano/ontoplano/issues

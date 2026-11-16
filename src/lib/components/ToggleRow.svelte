@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { untrack, type Snippet } from 'svelte';
 	import { useT } from '$lib/i18n';
+	import Icon from '$lib/components/Icon.svelte';
 
 	const t = useT();
 
@@ -91,7 +92,7 @@
 
 <div
 	class="toggle-row flex items-center gap-3 border px-3 text-sm {nested
-		? 'ml-8 border-l-2 border-gray-200 border-l-gray-300 py-1.5'
+		? 'nested border-l-2 border-gray-200 border-l-gray-300 py-1.5'
 		: here
 			? 'border-gray-200 py-2'
 			: 'border-gray-200 bg-gray-50 py-2'}"
@@ -106,17 +107,28 @@
 			cannot use only teaches you that the controls do not work.
 		-->
 		<!--
-			The checkbox's place, kept empty. Without it the labels of the rows
-			that cannot be switched start a checkbox further left than the rest,
-			and a list of nine reads as two lists.
+			The checkbox's place. Kept, so the labels of the rows that cannot be
+			switched start where the rest do and a list of nine reads as one list;
+			holding a tick when the thing is always there, so the column of ticks
+			does not have a hole in it that reads as "off".
 		-->
-		<span class="size-4 shrink-0" aria-hidden="true"></span>
+		<span
+			class="flex size-4 shrink-0 items-center justify-center text-gray-500"
+			title={always ? (note ?? t('ui.alwaysOn')) : undefined}
+		>
+			{#if always}<Icon name="check" />{/if}
+		</span>
 		<span class="min-w-0 flex-1 truncate {always ? 'text-gray-900' : 'text-gray-500'}">{label}</span
 		>
-		{@render trailing?.()}
-		<span class="eyebrow shrink-0 text-gray-500"
+		<!--
+			The note before `trailing`, so whatever a list puts at the end — the
+			menu's arrows — stands in one column down every row. "Always on" is
+			said by the tick on a phone, where the words would cut the label short.
+		-->
+		<span class="eyebrow shrink-0 text-gray-500" class:said-by-tick={always && !note}
 			>{note ?? (always ? t('ui.alwaysOn') : t('ui.withTheRoom'))}</span
 		>
+		{@render trailing?.()}
 	{:else}
 		<label class="flex min-w-0 flex-1 cursor-pointer items-center gap-3">
 			<input
@@ -132,9 +144,31 @@
 			<span class="min-w-0 flex-1 truncate {here ? 'text-gray-900' : 'text-gray-500'}">{label}</span
 			>
 		</label>
-		{@render trailing?.()}
 		{#if note}
 			<span class="eyebrow shrink-0 text-gray-500">{note}</span>
 		{/if}
+		{@render trailing?.()}
 	{/if}
 </div>
+
+<style>
+	/*
+	 * A tab under its room starts its tick under the room's label, not under
+	 * the room's tick: one step in, which is what makes it read as inside.
+	 * The room's tick sits after its own border, padding and leading slot (the
+	 * menu's position number), so the step is that plus a tick and a gap,
+	 * less this row's wider left rule.
+	 */
+	.said-by-tick {
+		display: none;
+	}
+	@media (min-width: 40rem) {
+		.said-by-tick {
+			display: inline;
+		}
+	}
+
+	.nested {
+		margin-left: calc(1px + 0.75rem + 1.25rem + 0.75rem + 1rem + 0.75rem - 2px - 0.75rem);
+	}
+</style>

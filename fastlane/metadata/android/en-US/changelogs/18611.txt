@@ -1,0 +1,6 @@
+• In Preferences, the menu list saves as you change it: a tick, an arrow or a colour is kept right away
+• Putting a room away no longer sends it to the bottom, so the row under your thumb stays put
+• A room you put away and bring back keeps its tabs instead of coming back empty
+• On a phone the list reads tick, name, colour, arrows, with no name cut short
+
+Tell me what breaks: github.com/ontoplano/ontoplano/issues

@@ -1,0 +1,6 @@
+• En Ajustes, la lista de menús se guarda al momento: una marca, una flecha o un color quedan fijos
+• Guardar una sala ya no la manda al final, así la fila bajo tu dedo sigue siendo la que tocaste
+• Una sala que vuelve trae sus pestañas, en vez de llegar vacía
+• En el móvil la lista va marca, nombre, color y flechas, sin recortar ningún nombre
+
+Cuéntame qué se rompe: github.com/ontoplano/ontoplano/issues
